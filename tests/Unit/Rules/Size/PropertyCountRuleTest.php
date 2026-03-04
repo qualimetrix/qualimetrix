@@ -58,8 +58,7 @@ final class PropertyCountRuleTest extends TestCase
 
         self::assertCount(1, $violations);
         self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertStringContainsString('12 properties', $violations[0]->message);
-        self::assertStringContainsString('threshold of 10', $violations[0]->message);
+        self::assertStringContainsString('Property count is 12, exceeds threshold of 10. Consider splitting the class or using composition', $violations[0]->message);
     }
 
     public function testErrorAboveErrorThreshold(): void
@@ -74,8 +73,7 @@ final class PropertyCountRuleTest extends TestCase
 
         self::assertCount(1, $violations);
         self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertStringContainsString('18 properties', $violations[0]->message);
-        self::assertStringContainsString('threshold of 15', $violations[0]->message);
+        self::assertStringContainsString('Property count is 18, exceeds threshold of 15. Consider splitting the class or using composition', $violations[0]->message);
     }
 
     public function testCustomThresholds(): void

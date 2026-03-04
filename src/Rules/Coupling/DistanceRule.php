@@ -10,6 +10,7 @@ use AiMessDetector\Core\Rule\RuleCategory;
 use AiMessDetector\Core\Rule\RuleOptionsInterface;
 use AiMessDetector\Core\Symbol\SymbolType;
 use AiMessDetector\Core\Violation\Location;
+use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
 use AiMessDetector\Rules\AbstractRule;
 use InvalidArgumentException;
@@ -123,10 +124,11 @@ final class DistanceRule extends AbstractRule
                     symbolPath: $nsInfo->symbolPath,
                     ruleName: $this->getName(),
                     message: \sprintf(
-                        'Namespace has distance from main sequence of %.2f (A=%.2f, I=%.2f)',
+                        'Distance from main sequence is %.2f (A=%.2f, I=%.2f), exceeds threshold of %.2f. Balance abstractness and stability',
                         $distanceValue,
                         $abstractness,
                         $instability,
+                        $severity === Severity::Error ? $this->options->maxDistanceError : $this->options->maxDistanceWarning,
                     ),
                     severity: $severity,
                     metricValue: $distanceValue,

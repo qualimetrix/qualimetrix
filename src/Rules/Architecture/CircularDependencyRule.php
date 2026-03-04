@@ -103,7 +103,8 @@ final class CircularDependencyRule extends AbstractRule
                 symbolPath: SymbolPath::forClass($namespace, $className),
                 ruleName: $this->getName(),
                 message: \sprintf(
-                    'Circular dependency detected: %s',
+                    'Circular dependency (%d classes): %s. Break the cycle by introducing interfaces or restructuring',
+                    $cycle->getSize(),
                     $cycle->toShortString(),
                 ),
                 severity: $severity,

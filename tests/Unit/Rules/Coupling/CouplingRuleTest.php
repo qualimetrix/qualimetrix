@@ -168,7 +168,7 @@ final class CouplingRuleTest extends TestCase
 
         self::assertCount(1, $violations);
         self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertSame('Class has instability of 0.85 (Ca=2, Ce=12)', $violations[0]->message);
+        self::assertSame('Instability is 0.85 (Ca=2, Ce=12), exceeds threshold of 0.80. Reduce outgoing dependencies', $violations[0]->message);
         self::assertSame(0.85, $violations[0]->metricValue);
         self::assertSame('coupling', $violations[0]->ruleName);
         self::assertSame(RuleLevel::Class_, $violations[0]->level);
@@ -247,7 +247,7 @@ final class CouplingRuleTest extends TestCase
 
         self::assertCount(1, $violations);
         self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertStringContainsString('Namespace has instability of 0.88', $violations[0]->message);
+        self::assertStringContainsString('Instability is 0.88 (Ca=3, Ce=22), exceeds threshold of 0.80. Reduce outgoing dependencies', $violations[0]->message);
         self::assertSame(RuleLevel::Namespace_, $violations[0]->level);
     }
 
@@ -557,8 +557,7 @@ final class CouplingRuleTest extends TestCase
 
         $cboViolation = array_values($cboViolations)[0];
         self::assertSame(Severity::Warning, $cboViolation->severity);
-        self::assertStringContainsString('CBO (Coupling Between Objects) of 18', $cboViolation->message);
-        self::assertStringContainsString('Ca=8, Ce=10', $cboViolation->message);
+        self::assertStringContainsString('CBO (Coupling Between Objects) is 18 (Ca=8, Ce=10), exceeds threshold of 14. Reduce dependencies to lower coupling', $cboViolation->message);
         self::assertSame(18.0, $cboViolation->metricValue);
     }
 
@@ -593,7 +592,7 @@ final class CouplingRuleTest extends TestCase
 
         $cboViolation = array_values($cboViolations)[0];
         self::assertSame(Severity::Error, $cboViolation->severity);
-        self::assertStringContainsString('CBO (Coupling Between Objects) of 25', $cboViolation->message);
+        self::assertStringContainsString('CBO (Coupling Between Objects) is 25 (Ca=10, Ce=15), exceeds threshold of 20. Reduce dependencies to lower coupling', $cboViolation->message);
         self::assertSame(25.0, $cboViolation->metricValue);
     }
 
@@ -667,7 +666,7 @@ final class CouplingRuleTest extends TestCase
 
         $cboViolation = array_values($cboViolations)[0];
         self::assertSame(Severity::Warning, $cboViolation->severity);
-        self::assertStringContainsString('Namespace has CBO', $cboViolation->message);
+        self::assertStringContainsString('CBO (Coupling Between Objects) is 16 (Ca=6, Ce=10), exceeds threshold of 14. Reduce dependencies to lower coupling', $cboViolation->message);
         self::assertSame(RuleLevel::Namespace_, $cboViolation->level);
     }
 

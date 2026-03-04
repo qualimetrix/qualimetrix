@@ -11,6 +11,7 @@ use AiMessDetector\Core\Rule\RuleLevel;
 use AiMessDetector\Core\Rule\RuleOptionsInterface;
 use AiMessDetector\Core\Symbol\SymbolType;
 use AiMessDetector\Core\Violation\Location;
+use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
 use AiMessDetector\Rules\AbstractRule;
 use InvalidArgumentException;
@@ -162,12 +163,13 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
 
             if ($severity !== null) {
                 $displayValue = $npathValue >= self::MAX_DISPLAY ? '> 10^9' : (string) $npathValue;
+                $threshold = $severity === Severity::Error ? $methodOptions->error : $methodOptions->warning;
 
                 $violations[] = new Violation(
                     location: new Location($methodInfo->file, $methodInfo->line),
                     symbolPath: $methodInfo->symbolPath,
                     ruleName: $this->getName(),
-                    message: \sprintf('NPath complexity is %s', $displayValue),
+                    message: \sprintf('NPath complexity (execution paths) is %s, exceeds threshold of %s. Reduce branching or extract methods', $displayValue, $threshold),
                     severity: $severity,
                     metricValue: $npathValue,
                     level: RuleLevel::Method,
@@ -203,12 +205,13 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
 
             if ($severity !== null) {
                 $displayValue = $maxNpathValue >= self::MAX_DISPLAY ? '> 10^9' : (string) $maxNpathValue;
+                $threshold = $severity === Severity::Error ? $classOptions->max_error : $classOptions->max_warning;
 
                 $violations[] = new Violation(
                     location: new Location($classInfo->file, $classInfo->line),
                     symbolPath: $classInfo->symbolPath,
                     ruleName: $this->getName(),
-                    message: \sprintf('Class has maximum method NPath complexity of %s', $displayValue),
+                    message: \sprintf('Maximum method NPath complexity is %s, exceeds threshold of %s. Refactor the most complex methods', $displayValue, $threshold),
                     severity: $severity,
                     metricValue: $maxNpathValue,
                     level: RuleLevel::Class_,

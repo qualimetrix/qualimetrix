@@ -9,6 +9,7 @@ use AiMessDetector\Core\Rule\RuleCategory;
 use AiMessDetector\Core\Rule\RuleOptionsInterface;
 use AiMessDetector\Core\Symbol\SymbolType;
 use AiMessDetector\Core\Violation\Location;
+use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
 use AiMessDetector\Rules\AbstractRule;
 use InvalidArgumentException;
@@ -85,11 +86,19 @@ final class NocRule extends AbstractRule
             $severity = $this->options->getSeverity($nocValue);
 
             if ($severity !== null) {
+                $threshold = $severity === Severity::Error
+                    ? $this->options->error
+                    : $this->options->warning;
+
                 $violations[] = new Violation(
                     location: new Location($classInfo->file, $classInfo->line),
                     symbolPath: $classInfo->symbolPath,
                     ruleName: $this->getName(),
-                    message: \sprintf('Has %d direct subclasses (consider using interfaces)', $nocValue),
+                    message: \sprintf(
+                        'NOC (Number of Children) is %d, exceeds threshold of %d. Consider using interfaces instead of inheritance',
+                        $nocValue,
+                        $threshold,
+                    ),
                     severity: $severity,
                     metricValue: $nocValue,
                 );

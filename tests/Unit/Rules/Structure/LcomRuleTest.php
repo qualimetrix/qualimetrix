@@ -124,8 +124,9 @@ final class LcomRuleTest extends TestCase
 
         self::assertCount(1, $violations);
         self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertStringContainsString('LCOM is 2', $violations[0]->message);
-        self::assertStringContainsString('could be split into 2 parts', $violations[0]->message);
+        self::assertStringContainsString('LCOM (Lack of Cohesion) is 2', $violations[0]->message);
+        self::assertStringContainsString('exceeds threshold of 2', $violations[0]->message);
+        self::assertStringContainsString('Class could be split into 2 cohesive parts', $violations[0]->message);
         self::assertSame(2, $violations[0]->metricValue);
         self::assertSame('lcom', $violations[0]->ruleName);
     }

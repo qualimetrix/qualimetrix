@@ -11,6 +11,7 @@ use AiMessDetector\Core\Rule\RuleLevel;
 use AiMessDetector\Core\Rule\RuleOptionsInterface;
 use AiMessDetector\Core\Symbol\SymbolType;
 use AiMessDetector\Core\Violation\Location;
+use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
 use AiMessDetector\Rules\AbstractRule;
 use InvalidArgumentException;
@@ -157,11 +158,13 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
             $severity = $methodOptions->getSeverity($cognitiveValue);
 
             if ($severity !== null) {
+                $threshold = $severity === Severity::Error ? $methodOptions->error : $methodOptions->warning;
+
                 $violations[] = new Violation(
                     location: new Location($methodInfo->file, $methodInfo->line),
                     symbolPath: $methodInfo->symbolPath,
                     ruleName: $this->getName(),
-                    message: \sprintf('Cognitive complexity is %d', $cognitiveValue),
+                    message: \sprintf('Cognitive complexity is %d, exceeds threshold of %d. Reduce nesting and break into smaller methods', $cognitiveValue, $threshold),
                     severity: $severity,
                     metricValue: $cognitiveValue,
                     level: RuleLevel::Method,
@@ -196,11 +199,13 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
             $severity = $classOptions->getSeverity($maxCognitiveValue);
 
             if ($severity !== null) {
+                $threshold = $severity === Severity::Error ? $classOptions->maxError : $classOptions->maxWarning;
+
                 $violations[] = new Violation(
                     location: new Location($classInfo->file, $classInfo->line),
                     symbolPath: $classInfo->symbolPath,
                     ruleName: $this->getName(),
-                    message: \sprintf('Class has maximum method cognitive complexity of %d', $maxCognitiveValue),
+                    message: \sprintf('Maximum method cognitive complexity is %d, exceeds threshold of %d. Refactor the most complex methods', $maxCognitiveValue, $threshold),
                     severity: $severity,
                     metricValue: $maxCognitiveValue,
                     level: RuleLevel::Class_,

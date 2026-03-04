@@ -167,7 +167,7 @@ final class SizeRuleTest extends TestCase
 
         self::assertCount(1, $violations);
         self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertSame('Class has 15 methods', $violations[0]->message);
+        self::assertSame('Method count is 15, exceeds threshold of 10. Consider splitting into smaller focused classes', $violations[0]->message);
         self::assertSame(15, $violations[0]->metricValue);
         self::assertSame('size', $violations[0]->ruleName);
         self::assertSame(RuleLevel::Class_, $violations[0]->level);
@@ -197,7 +197,7 @@ final class SizeRuleTest extends TestCase
 
         self::assertCount(1, $violations);
         self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertSame('Class has 25 methods', $violations[0]->message);
+        self::assertSame('Method count is 25, exceeds threshold of 20. Consider splitting into smaller focused classes', $violations[0]->message);
     }
 
     // Namespace level tests
@@ -261,7 +261,7 @@ final class SizeRuleTest extends TestCase
 
         self::assertCount(1, $violations);
         self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertSame('Namespace has 18 classes', $violations[0]->message);
+        self::assertSame('Class count is 18, exceeds threshold of 15. Consider splitting into sub-namespaces', $violations[0]->message);
         self::assertSame(18, $violations[0]->metricValue);
         self::assertSame('size', $violations[0]->ruleName);
         self::assertSame(RuleLevel::Namespace_, $violations[0]->level);
@@ -290,7 +290,7 @@ final class SizeRuleTest extends TestCase
 
         self::assertCount(1, $violations);
         self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertSame('Namespace has 30 classes', $violations[0]->message);
+        self::assertSame('Class count is 30, exceeds threshold of 25. Consider splitting into sub-namespaces', $violations[0]->message);
     }
 
     // Legacy analyze() method

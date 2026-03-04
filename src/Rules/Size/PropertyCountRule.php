@@ -119,7 +119,7 @@ final class PropertyCountRule extends AbstractRule implements RuleInterface
                 symbolPath: $classInfo->symbolPath,
                 ruleName: $this->getName(),
                 message: \sprintf(
-                    'Class has %d properties, exceeds threshold of %d',
+                    'Property count is %d, exceeds threshold of %d. Consider splitting the class or using composition',
                     $propertyCountValue,
                     $threshold,
                 ),

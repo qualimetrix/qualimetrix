@@ -146,8 +146,9 @@ final class WmcRuleTest extends TestCase
 
         self::assertCount(1, $violations);
         self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertStringContainsString('WMC (Weighted Methods per Class) of 40', $violations[0]->message);
+        self::assertStringContainsString('WMC (Weighted Methods per Class) is 40', $violations[0]->message);
         self::assertStringContainsString('exceeds threshold of 35', $violations[0]->message);
+        self::assertStringContainsString('Simplify methods or split the class', $violations[0]->message);
         self::assertSame(40, $violations[0]->metricValue);
         self::assertSame('wmc', $violations[0]->ruleName);
     }
@@ -175,8 +176,9 @@ final class WmcRuleTest extends TestCase
 
         self::assertCount(1, $violations);
         self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertStringContainsString('WMC (Weighted Methods per Class) of 55', $violations[0]->message);
+        self::assertStringContainsString('WMC (Weighted Methods per Class) is 55', $violations[0]->message);
         self::assertStringContainsString('exceeds threshold of 50', $violations[0]->message);
+        self::assertStringContainsString('Simplify methods or split the class', $violations[0]->message);
         self::assertSame(55, $violations[0]->metricValue);
     }
 
