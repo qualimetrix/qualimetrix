@@ -4,6 +4,12 @@
 
 ---
 
+## Language Policy
+
+The repository language is **English**. All commits, documentation, code comments, docblocks, CLI output strings, and any other text must be written in English. Do not use any other language.
+
+---
+
 ## Development Environment
 
 The project is developed with the help of an AI agent in two environments:
