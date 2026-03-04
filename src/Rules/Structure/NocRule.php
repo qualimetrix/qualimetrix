@@ -94,6 +94,7 @@ final class NocRule extends AbstractRule
                     location: new Location($classInfo->file, $classInfo->line),
                     symbolPath: $classInfo->symbolPath,
                     ruleName: $this->getName(),
+                    violationCode: self::NAME,
                     message: \sprintf(
                         'NOC (Number of Children) is %d, exceeds threshold of %d. Consider using interfaces instead of inheritance',
                         $nocValue,

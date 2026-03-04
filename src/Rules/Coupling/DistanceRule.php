@@ -130,6 +130,7 @@ final class DistanceRule extends AbstractRule
                     location: new Location($nsInfo->file, $nsInfo->line),
                     symbolPath: $nsInfo->symbolPath,
                     ruleName: $this->getName(),
+                    violationCode: self::NAME,
                     message: \sprintf(
                         'Distance from main sequence is %.2f (A=%.2f, I=%.2f), exceeds threshold of %.2f. Balance abstractness and stability',
                         $distanceValue,

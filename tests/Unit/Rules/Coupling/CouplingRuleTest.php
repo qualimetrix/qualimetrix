@@ -586,7 +586,7 @@ final class CouplingRuleTest extends TestCase
         $violations = $rule->analyzeLevel(RuleLevel::Class_, $context);
 
         // No CBO violation, but may have instability violations
-        $cboViolations = array_filter($violations, fn($v) => str_contains($v->message, 'CBO'));
+        $cboViolations = array_filter($violations, fn($v) => str_contains($v->violationCode, '.cbo.'));
         self::assertCount(0, $cboViolations);
     }
 
@@ -616,7 +616,7 @@ final class CouplingRuleTest extends TestCase
         $violations = $rule->analyzeLevel(RuleLevel::Class_, $context);
 
         // Find CBO violation
-        $cboViolations = array_filter($violations, fn($v) => str_contains($v->message, 'CBO'));
+        $cboViolations = array_filter($violations, fn($v) => str_contains($v->violationCode, '.cbo.'));
         self::assertCount(1, $cboViolations);
 
         $cboViolation = array_values($cboViolations)[0];
@@ -651,7 +651,7 @@ final class CouplingRuleTest extends TestCase
         $violations = $rule->analyzeLevel(RuleLevel::Class_, $context);
 
         // Find CBO violation
-        $cboViolations = array_filter($violations, fn($v) => str_contains($v->message, 'CBO'));
+        $cboViolations = array_filter($violations, fn($v) => str_contains($v->violationCode, '.cbo.'));
         self::assertCount(1, $cboViolations);
 
         $cboViolation = array_values($cboViolations)[0];
@@ -692,7 +692,7 @@ final class CouplingRuleTest extends TestCase
         $context = new AnalysisContext($repository);
         $violations = $rule->analyzeLevel(RuleLevel::Class_, $context);
 
-        $cboViolations = array_filter($violations, fn($v) => str_contains($v->message, 'CBO'));
+        $cboViolations = array_filter($violations, fn($v) => str_contains($v->violationCode, '.cbo.'));
         self::assertCount(1, $cboViolations);
 
         $cboViolation = array_values($cboViolations)[0];
@@ -726,7 +726,7 @@ final class CouplingRuleTest extends TestCase
         $context = new AnalysisContext($repository);
         $violations = $rule->analyzeLevel(RuleLevel::Namespace_, $context);
 
-        $cboViolations = array_filter($violations, fn($v) => str_contains($v->message, 'CBO'));
+        $cboViolations = array_filter($violations, fn($v) => str_contains($v->violationCode, '.cbo.'));
         self::assertCount(1, $cboViolations);
 
         $cboViolation = array_values($cboViolations)[0];

@@ -27,6 +27,7 @@ final class SuppressionFilterTest extends TestCase
             location: new Location('src/Foo.php', 42),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
             ruleName: 'complexity',
+            violationCode: 'complexity',
             message: 'Test message',
             severity: Severity::Warning,
         );
@@ -45,6 +46,7 @@ final class SuppressionFilterTest extends TestCase
             location: new Location('src/Foo.php', 42),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
             ruleName: 'coupling',
+            violationCode: 'coupling',
             message: 'Test message',
             severity: Severity::Warning,
         );
@@ -63,6 +65,7 @@ final class SuppressionFilterTest extends TestCase
             location: new Location('src/Foo.php', 42),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
             ruleName: 'complexity',
+            violationCode: 'complexity',
             message: 'Test message',
             severity: Severity::Warning,
         );
@@ -71,6 +74,7 @@ final class SuppressionFilterTest extends TestCase
             location: new Location('src/Foo.php', 50),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'baz'),
             ruleName: 'coupling',
+            violationCode: 'coupling',
             message: 'Test message',
             severity: Severity::Error,
         );
@@ -87,6 +91,7 @@ final class SuppressionFilterTest extends TestCase
             location: new Location('src/Foo.php', 42),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
             ruleName: 'complexity',
+            violationCode: 'complexity',
             message: 'Test message',
             severity: Severity::Warning,
         );
@@ -105,6 +110,7 @@ final class SuppressionFilterTest extends TestCase
             location: new Location('src/Bar.php', 42),
             symbolPath: SymbolPath::forMethod('App', 'Bar', 'baz'),
             ruleName: 'complexity',
+            violationCode: 'complexity',
             message: 'Test message',
             severity: Severity::Warning,
         );
@@ -123,6 +129,7 @@ final class SuppressionFilterTest extends TestCase
             location: new Location('src/Foo.php', 42),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
             ruleName: 'complexity',
+            violationCode: 'complexity',
             message: 'Test message',
             severity: Severity::Warning,
         );
@@ -131,6 +138,7 @@ final class SuppressionFilterTest extends TestCase
             location: new Location('src/Foo.php', 50),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'baz'),
             ruleName: 'coupling',
+            violationCode: 'coupling',
             message: 'Test message',
             severity: Severity::Error,
         );
@@ -153,6 +161,7 @@ final class SuppressionFilterTest extends TestCase
             location: new Location('src/Foo.php', 42),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
             ruleName: 'complexity',
+            violationCode: 'complexity',
             message: 'Test message',
             severity: Severity::Warning,
         );
@@ -161,6 +170,7 @@ final class SuppressionFilterTest extends TestCase
             location: new Location('src/Foo.php', 50),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'baz'),
             ruleName: 'coupling',
+            violationCode: 'coupling',
             message: 'Test message',
             severity: Severity::Error,
         );
@@ -169,6 +179,7 @@ final class SuppressionFilterTest extends TestCase
             location: new Location('src/Foo.php', 60),
             symbolPath: SymbolPath::forClass('App', 'Foo'),
             ruleName: 'size',
+            violationCode: 'size',
             message: 'Test message',
             severity: Severity::Warning,
         );

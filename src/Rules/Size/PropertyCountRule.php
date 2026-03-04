@@ -118,6 +118,7 @@ final class PropertyCountRule extends AbstractRule implements RuleInterface
                 location: new Location($classInfo->file, $classInfo->line),
                 symbolPath: $classInfo->symbolPath,
                 ruleName: $this->getName(),
+                violationCode: self::NAME,
                 message: \sprintf(
                     'Property count is %d, exceeds threshold of %d. Consider splitting the class or using composition',
                     $propertyCountValue,

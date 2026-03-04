@@ -21,6 +21,7 @@ final class ViolationTest extends TestCase
             location: new Location('src/Service/UserService.php', 42),
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
             ruleName: 'cyclomatic-complexity',
+            violationCode: 'cyclomatic-complexity',
             message: 'Method has complexity of 15',
             severity: Severity::Warning,
             metricValue: 15,
@@ -38,6 +39,7 @@ final class ViolationTest extends TestCase
             location: new Location('src/Service/UserService.php', 10),
             symbolPath: SymbolPath::forClass('App\Service', 'UserService'),
             ruleName: 'class-size',
+            violationCode: 'class-size',
             message: 'Class is too large',
             severity: Severity::Error,
         );
@@ -54,6 +56,7 @@ final class ViolationTest extends TestCase
             location: new Location('src/Service/UserService.php'),
             symbolPath: SymbolPath::forNamespace('App\Service'),
             ruleName: 'namespace-size',
+            violationCode: 'namespace-size',
             message: 'Namespace has too many classes',
             severity: Severity::Warning,
             metricValue: 50,
@@ -71,6 +74,7 @@ final class ViolationTest extends TestCase
             location: new Location('src/bootstrap.php'),
             symbolPath: SymbolPath::forFile('src/bootstrap.php'),
             ruleName: 'file-length',
+            violationCode: 'file-length',
             message: 'File is too long',
             severity: Severity::Warning,
         );
@@ -87,6 +91,7 @@ final class ViolationTest extends TestCase
             location: new Location('src/functions.php', 5),
             symbolPath: SymbolPath::forGlobalFunction('', 'myFunction'),
             ruleName: 'cyclomatic-complexity',
+            violationCode: 'cyclomatic-complexity',
             message: 'Function has high complexity',
             severity: Severity::Warning,
         );
@@ -106,6 +111,7 @@ final class ViolationTest extends TestCase
             location: $location,
             symbolPath: $symbolPath,
             ruleName: 'test-rule',
+            violationCode: 'test-rule',
             message: 'Test message',
             severity: Severity::Error,
             metricValue: 10,
@@ -125,6 +131,7 @@ final class ViolationTest extends TestCase
             location: new Location('src/test.php'),
             symbolPath: SymbolPath::forFile('src/test.php'),
             ruleName: 'test-rule',
+            violationCode: 'test-rule',
             message: 'Test message',
             severity: Severity::Warning,
         );
@@ -138,6 +145,7 @@ final class ViolationTest extends TestCase
             location: new Location('src/Service/UserService.php', 42),
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
             ruleName: 'complexity',
+            violationCode: 'complexity',
             message: 'Method has complexity of 15',
             severity: Severity::Warning,
             metricValue: 15,
@@ -153,6 +161,7 @@ final class ViolationTest extends TestCase
             location: new Location('src/test.php'),
             symbolPath: SymbolPath::forFile('src/test.php'),
             ruleName: 'test-rule',
+            violationCode: 'test-rule',
             message: 'Test message',
             severity: Severity::Warning,
         );

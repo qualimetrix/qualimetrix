@@ -103,6 +103,7 @@ final class LcomRule extends AbstractRule
                     location: new Location($classInfo->file, $classInfo->line),
                     symbolPath: $classInfo->symbolPath,
                     ruleName: $this->getName(),
+                    violationCode: self::NAME,
                     message: \sprintf(
                         'LCOM (Lack of Cohesion) is %d, exceeds threshold of %d. Class could be split into %d cohesive parts',
                         $lcomValue,

@@ -12,7 +12,7 @@ use AiMessDetector\Reporting\Report;
 /**
  * Formats report as compact, parseable text output (one line per violation).
  *
- * Output format: file:line: severity[rule]: message (symbol)
+ * Output format: file:line: severity[violationCode]: message (symbol)
  *
  * This format is:
  * - Compatible with GCC/Clang error format
@@ -50,7 +50,7 @@ final class TextFormatter implements FormatterInterface
         $file = $violation->location->file;
         $line = $violation->location->line;
         $severity = $this->formatSeverity($violation->severity);
-        $rule = $violation->ruleName;
+        $rule = $violation->violationCode;
         $message = $violation->message;
         $symbol = $this->formatSymbol($violation);
 

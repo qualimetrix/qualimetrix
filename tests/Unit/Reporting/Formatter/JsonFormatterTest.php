@@ -75,6 +75,7 @@ final class JsonFormatterTest extends TestCase
                 location: new Location('src/Service/UserService.php', 42),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculateDiscount'),
                 ruleName: 'cyclomatic-complexity',
+                violationCode: 'cyclomatic-complexity',
                 message: 'Cyclomatic complexity of 25 exceeds threshold',
                 severity: Severity::Error,
                 metricValue: 25,
@@ -83,6 +84,7 @@ final class JsonFormatterTest extends TestCase
                 location: new Location('src/Service/UserService.php', 120),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'processOrder'),
                 ruleName: 'cyclomatic-complexity',
+                violationCode: 'cyclomatic-complexity',
                 message: 'Cyclomatic complexity of 12 exceeds threshold',
                 severity: Severity::Warning,
                 metricValue: 12,
@@ -104,6 +106,7 @@ final class JsonFormatterTest extends TestCase
         self::assertSame(42, $v1['beginLine']);
         self::assertSame(42, $v1['endLine']);
         self::assertSame('cyclomatic-complexity', $v1['rule']);
+        self::assertSame('cyclomatic-complexity', $v1['code']);
         self::assertSame('App\Service\UserService::calculateDiscount', $v1['symbol']);
         self::assertSame(1, $v1['priority']);
         self::assertSame('error', $v1['severity']);
@@ -113,6 +116,7 @@ final class JsonFormatterTest extends TestCase
         // Second violation
         $v2 = $data['files'][0]['violations'][1];
         self::assertSame(120, $v2['beginLine']);
+        self::assertSame('cyclomatic-complexity', $v2['code']);
         self::assertSame(3, $v2['priority']);
         self::assertSame('warning', $v2['severity']);
         self::assertSame(12, $v2['metricValue']);
@@ -132,6 +136,7 @@ final class JsonFormatterTest extends TestCase
                 location: new Location('src/A.php', 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'test',
+                violationCode: 'test',
                 message: 'Error in A',
                 severity: Severity::Error,
             ))
@@ -139,6 +144,7 @@ final class JsonFormatterTest extends TestCase
                 location: new Location('src/B.php', 20),
                 symbolPath: SymbolPath::forClass('App', 'B'),
                 ruleName: 'test',
+                violationCode: 'test',
                 message: 'Error in B',
                 severity: Severity::Error,
             ))
@@ -146,6 +152,7 @@ final class JsonFormatterTest extends TestCase
                 location: new Location('src/A.php', 30),
                 symbolPath: SymbolPath::forClass('App', 'A2'),
                 ruleName: 'test',
+                violationCode: 'test',
                 message: 'Second error in A',
                 severity: Severity::Warning,
             ))
@@ -181,6 +188,7 @@ final class JsonFormatterTest extends TestCase
                 location: new Location('src/Service/UserService.php'),
                 symbolPath: SymbolPath::forNamespace('App\Service'),
                 ruleName: 'namespace-size',
+                violationCode: 'namespace-size',
                 message: 'Namespace contains 16 classes (threshold: 10)',
                 severity: Severity::Error,
                 metricValue: 16,
@@ -205,6 +213,7 @@ final class JsonFormatterTest extends TestCase
                 location: new Location('src/A.php', 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'instability',
+                violationCode: 'instability',
                 message: 'Instability too high',
                 severity: Severity::Warning,
                 metricValue: 0.85,
@@ -230,5 +239,29 @@ final class JsonFormatterTest extends TestCase
         $timestamp = $data['timestamp'];
         $parsed = DateTimeImmutable::createFromFormat(DateTimeInterface::ATOM, $timestamp);
         self::assertInstanceOf(DateTimeImmutable::class, $parsed);
+    }
+
+    public function testViolationCodeDiffersFromRuleName(): void
+    {
+        $report = ReportBuilder::create()
+            ->addViolation(new Violation(
+                location: new Location('src/Foo.php', 10),
+                symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
+                ruleName: 'complexity',
+                violationCode: 'complexity.method',
+                message: 'Too complex',
+                severity: Severity::Error,
+            ))
+            ->filesAnalyzed(1)
+            ->filesSkipped(0)
+            ->duration(0.01)
+            ->build();
+
+        $output = $this->formatter->format($report);
+        $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
+
+        $violation = $data['files'][0]['violations'][0];
+        self::assertSame('complexity', $violation['rule']);
+        self::assertSame('complexity.method', $violation['code']);
     }
 }

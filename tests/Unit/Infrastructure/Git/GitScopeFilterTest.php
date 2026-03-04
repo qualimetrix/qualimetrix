@@ -56,6 +56,7 @@ final class GitScopeFilterTest extends TestCase
             location: new Location($this->tempDir . '/src/Service.php', 10),
             symbolPath: SymbolPath::forClass('App\\Service', 'UserService'),
             ruleName: 'complexity',
+            violationCode: 'complexity',
             message: 'Too complex',
             severity: Severity::Warning,
         );
@@ -78,6 +79,7 @@ final class GitScopeFilterTest extends TestCase
             location: new Location($this->tempDir . '/src/Controller.php', 10),
             symbolPath: SymbolPath::forClass('App\\Controller', 'HomeController'),
             ruleName: 'complexity',
+            violationCode: 'complexity',
             message: 'Too complex',
             severity: Severity::Warning,
         );
@@ -101,6 +103,7 @@ final class GitScopeFilterTest extends TestCase
             location: new Location($this->tempDir . '/src/Service/Aggregated.php', null),
             symbolPath: SymbolPath::forNamespace('App\\Service'),
             ruleName: 'size',
+            violationCode: 'size',
             message: 'Namespace too large',
             severity: Severity::Warning,
         );
@@ -128,6 +131,7 @@ final class GitScopeFilterTest extends TestCase
             location: new Location($this->tempDir . '/src/Service/Aggregated.php', null),
             symbolPath: SymbolPath::forNamespace('App\\Service'),
             ruleName: 'size',
+            violationCode: 'size',
             message: 'Namespace too large',
             severity: Severity::Warning,
         );
@@ -156,6 +160,7 @@ final class GitScopeFilterTest extends TestCase
             location: new Location($this->tempDir . '/src/Service.php', 10),
             symbolPath: SymbolPath::forClass('App\\Service', 'UserService'),
             ruleName: 'complexity',
+            violationCode: 'complexity',
             message: 'Too complex',
             severity: Severity::Warning,
         );
@@ -178,6 +183,7 @@ final class GitScopeFilterTest extends TestCase
             location: new Location($this->tempDir . '/README.md', 10),
             symbolPath: SymbolPath::forFile($this->tempDir . '/README.md'),
             ruleName: 'complexity',
+            violationCode: 'complexity',
             message: 'Too complex',
             severity: Severity::Warning,
         );
@@ -212,6 +218,7 @@ final class GitScopeFilterTest extends TestCase
                 location: new Location($this->tempDir . '/some/file.php', null),
                 symbolPath: SymbolPath::forNamespace($namespace),
                 ruleName: 'size',
+                violationCode: 'size',
                 message: 'Namespace too large',
                 severity: Severity::Warning,
             );
@@ -240,6 +247,7 @@ final class GitScopeFilterTest extends TestCase
             location: new Location($this->tempDir . '/src/legacy.php', 10),
             symbolPath: SymbolPath::forClass('', 'LegacyClass'),
             ruleName: 'complexity',
+            violationCode: 'complexity',
             message: 'Too complex',
             severity: Severity::Warning,
         );
@@ -274,6 +282,7 @@ final class GitScopeFilterTest extends TestCase
                 location: new Location($this->tempDir . '/src/Service.php', 10),
                 symbolPath: SymbolPath::forClass('App', 'Service'),
                 ruleName: 'complexity',
+                violationCode: 'complexity',
                 message: 'Too complex',
                 severity: Severity::Warning,
             ),
@@ -281,6 +290,7 @@ final class GitScopeFilterTest extends TestCase
                 location: new Location($this->tempDir . '/src/Controller.php', 20),
                 symbolPath: SymbolPath::forClass('App', 'Controller'),
                 ruleName: 'size',
+                violationCode: 'size',
                 message: 'Too large',
                 severity: Severity::Warning,
             ),
@@ -288,6 +298,7 @@ final class GitScopeFilterTest extends TestCase
                 location: new Location($this->tempDir . '/src/Repository.php', 30),
                 symbolPath: SymbolPath::forClass('App', 'Repository'),
                 ruleName: 'coupling',
+                violationCode: 'coupling',
                 message: 'Too coupled',
                 severity: Severity::Warning,
             ),
@@ -324,6 +335,7 @@ final class GitScopeFilterTest extends TestCase
             location: new Location($this->tempDir . '/src/Service.php', 10),
             symbolPath: SymbolPath::forClass('App\\Service', 'UserService'),
             ruleName: 'complexity',
+            violationCode: 'complexity',
             message: 'Too complex',
             severity: Severity::Warning,
         );
@@ -337,6 +349,7 @@ final class GitScopeFilterTest extends TestCase
             location: new Location($this->tempDir . '/src/Base.php', 10),
             symbolPath: SymbolPath::forClass('App', 'Base'),
             ruleName: 'complexity',
+            violationCode: 'complexity',
             message: 'Too complex',
             severity: Severity::Warning,
         );
@@ -366,6 +379,7 @@ final class GitScopeFilterTest extends TestCase
             location: new Location($this->tempDir . '/src/Deleted.php', 10),
             symbolPath: SymbolPath::forClass('App', 'Deleted'),
             ruleName: 'complexity',
+            violationCode: 'complexity',
             message: 'Too complex',
             severity: Severity::Warning,
         );
@@ -391,6 +405,7 @@ final class GitScopeFilterTest extends TestCase
             location: new Location($this->tempDir . '/src/Service.php', null),
             symbolPath: SymbolPath::forFile($this->tempDir . '/src/Service.php'),
             ruleName: 'size',
+            violationCode: 'size',
             message: 'File too large',
             severity: Severity::Warning,
         );
@@ -426,6 +441,7 @@ PHP;
             location: new Location($this->tempDir . '/some/file.php', null),
             symbolPath: SymbolPath::forNamespace('App\\Complex\\Nested'),
             ruleName: 'size',
+            violationCode: 'size',
             message: 'Namespace too large',
             severity: Severity::Warning,
         );

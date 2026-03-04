@@ -106,6 +106,7 @@ final class TextVerboseFormatter implements FormatterInterface
         $lines[] = \sprintf('  [%s] %s', $severity, $location);
         $lines[] = \sprintf('    %s', $symbol);
         $lines[] = \sprintf('    Rule: %s', $violation->ruleName);
+        $lines[] = \sprintf('    Code: %s', $violation->violationCode);
         $lines[] = \sprintf('    %s', $violation->message);
         $lines[] = '';
 

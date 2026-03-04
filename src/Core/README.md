@@ -284,6 +284,7 @@ A rule violation.
 - `location: Location`
 - `symbolPath: SymbolPath`
 - `ruleName: string`
+- `violationCode: string` — stable machine identifier for baseline hashing
 - `message: string`
 - `severity: Severity`
 - `metricValue: ?int` — metric value (for reports)

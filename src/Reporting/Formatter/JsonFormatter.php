@@ -52,7 +52,7 @@ final class JsonFormatter implements FormatterInterface
      *
      * @param list<Violation> $violations
      *
-     * @return list<array{file: string, violations: list<array{beginLine: int|null, endLine: int|null, rule: string, symbol: string, priority: int, severity: string, description: string, metricValue: int|float|null}>}>
+     * @return list<array{file: string, violations: list<array{beginLine: int|null, endLine: int|null, rule: string, code: string, symbol: string, priority: int, severity: string, description: string, metricValue: int|float|null}>}>
      */
     private function groupViolationsByFile(array $violations): array
     {
@@ -82,7 +82,7 @@ final class JsonFormatter implements FormatterInterface
     /**
      * Formats a single violation for JSON output.
      *
-     * @return array{beginLine: int|null, endLine: int|null, rule: string, symbol: string, priority: int, severity: string, description: string, metricValue: int|float|null}
+     * @return array{beginLine: int|null, endLine: int|null, rule: string, code: string, symbol: string, priority: int, severity: string, description: string, metricValue: int|float|null}
      */
     private function formatViolation(Violation $violation): array
     {
@@ -90,6 +90,7 @@ final class JsonFormatter implements FormatterInterface
             'beginLine' => $violation->location->line,
             'endLine' => $violation->location->line,
             'rule' => $violation->ruleName,
+            'code' => $violation->violationCode,
             'symbol' => $violation->symbolPath->toString(),
             'priority' => $this->severityToPriority($violation->severity),
             'severity' => $this->severityToString($violation->severity),

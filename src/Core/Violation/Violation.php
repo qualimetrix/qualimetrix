@@ -12,6 +12,7 @@ final readonly class Violation
         public Location $location,
         public SymbolPath $symbolPath,
         public string $ruleName,
+        public string $violationCode,
         public string $message,
         public Severity $severity,
         public int|float|null $metricValue = null,

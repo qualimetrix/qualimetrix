@@ -53,6 +53,7 @@ final class BaselineWorkflowTest extends TestCase
         $violations = [
             new Violation(
                 ruleName: 'complexity',
+                violationCode: 'complexity',
                 message: 'Complexity 15 exceeds threshold 10',
                 severity: Severity::Warning,
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculateDiscount'),
@@ -60,6 +61,7 @@ final class BaselineWorkflowTest extends TestCase
             ),
             new Violation(
                 ruleName: 'size',
+                violationCode: 'size',
                 message: 'Class has 300 lines of code',
                 severity: Severity::Warning,
                 symbolPath: SymbolPath::forClass('App\Service', 'UserService'),
@@ -100,6 +102,7 @@ final class BaselineWorkflowTest extends TestCase
         // Step 5: Test new violation (not in baseline)
         $newViolation = new Violation(
             ruleName: 'complexity',
+            violationCode: 'complexity',
             message: 'Complexity 25 exceeds threshold 10',
             severity: Severity::Error,
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'processOrder'),
@@ -119,6 +122,7 @@ final class BaselineWorkflowTest extends TestCase
         $initialViolations = [
             new Violation(
                 ruleName: 'complexity',
+                violationCode: 'complexity',
                 message: 'Complexity 15 exceeds threshold 10',
                 severity: Severity::Warning,
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'method1'),
@@ -126,6 +130,7 @@ final class BaselineWorkflowTest extends TestCase
             ),
             new Violation(
                 ruleName: 'complexity',
+                violationCode: 'complexity',
                 message: 'Complexity 20 exceeds threshold 10',
                 severity: Severity::Warning,
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'method2'),
@@ -146,6 +151,7 @@ final class BaselineWorkflowTest extends TestCase
         $currentViolations = [
             new Violation(
                 ruleName: 'complexity',
+                violationCode: 'complexity',
                 message: 'Complexity 15 exceeds threshold 10',
                 severity: Severity::Warning,
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'method1'),
@@ -169,6 +175,7 @@ final class BaselineWorkflowTest extends TestCase
         // Same violation at different lines
         $violation1 = new Violation(
             ruleName: 'complexity',
+            violationCode: 'complexity',
             message: 'Complexity 15 exceeds threshold 10',
             severity: Severity::Warning,
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
@@ -177,6 +184,7 @@ final class BaselineWorkflowTest extends TestCase
 
         $violation2 = new Violation(
             ruleName: 'complexity',
+            violationCode: 'complexity',
             message: 'Complexity 15 exceeds threshold 10',
             severity: Severity::Warning,
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
@@ -194,6 +202,7 @@ final class BaselineWorkflowTest extends TestCase
         // Same violation with different numeric values
         $violation1 = new Violation(
             ruleName: 'complexity',
+            violationCode: 'complexity',
             message: 'Complexity 15 exceeds threshold 10',
             severity: Severity::Warning,
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
@@ -202,6 +211,7 @@ final class BaselineWorkflowTest extends TestCase
 
         $violation2 = new Violation(
             ruleName: 'complexity',
+            violationCode: 'complexity',
             message: 'Complexity 25 exceeds threshold 20', // Different values
             severity: Severity::Warning,
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
@@ -218,6 +228,7 @@ final class BaselineWorkflowTest extends TestCase
 
         $violation1 = new Violation(
             ruleName: 'complexity',
+            violationCode: 'complexity',
             message: 'Complexity 15 exceeds threshold 10',
             severity: Severity::Warning,
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
@@ -226,6 +237,7 @@ final class BaselineWorkflowTest extends TestCase
 
         $violation2 = new Violation(
             ruleName: 'complexity',
+            violationCode: 'complexity',
             message: 'Complexity 15 exceeds threshold 10',
             severity: Severity::Warning,
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'compute'), // Different method

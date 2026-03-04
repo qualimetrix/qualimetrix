@@ -84,7 +84,7 @@ final class CheckstyleFormatter implements FormatterInterface
 
         $xml->writeAttribute('severity', $this->severityToString($violation->severity));
         $xml->writeAttribute('message', $violation->message);
-        $xml->writeAttribute('source', 'aimd.' . $violation->ruleName);
+        $xml->writeAttribute('source', 'aimd.' . $violation->violationCode);
 
         $xml->endElement(); // error
     }

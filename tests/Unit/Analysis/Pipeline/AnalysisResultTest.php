@@ -269,6 +269,7 @@ final class AnalysisResultTest extends TestCase
             location: new Location($file, $line),
             symbolPath: SymbolPath::forFile($file),
             ruleName: 'test-rule',
+            violationCode: 'test-rule',
             message: 'Test message',
             severity: $severity,
         );

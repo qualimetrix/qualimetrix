@@ -62,6 +62,7 @@ TEXT;
                 location: new Location('src/Service/UserService.php', 120),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'processOrder'),
                 ruleName: 'cyclomatic-complexity',
+                violationCode: 'cyclomatic-complexity',
                 message: 'Cyclomatic complexity of 12 exceeds threshold',
                 severity: Severity::Warning,
                 metricValue: 12,
@@ -70,6 +71,7 @@ TEXT;
                 location: new Location('src/Service/UserService.php', 42),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculateDiscount'),
                 ruleName: 'cyclomatic-complexity',
+                violationCode: 'cyclomatic-complexity',
                 message: 'Cyclomatic complexity of 25 exceeds threshold',
                 severity: Severity::Error,
                 metricValue: 25,
@@ -91,11 +93,13 @@ Violations:
   [ERROR] src/Service/UserService.php:42
     App\Service\UserService::calculateDiscount
     Rule: cyclomatic-complexity
+    Code: cyclomatic-complexity
     Cyclomatic complexity of 25 exceeds threshold
 
   [WARNING] src/Service/UserService.php:120
     App\Service\UserService::processOrder
     Rule: cyclomatic-complexity
+    Code: cyclomatic-complexity
     Cyclomatic complexity of 12 exceeds threshold
 
 --------------------------------------------------
@@ -114,6 +118,7 @@ TEXT;
                 location: new Location('src/Service/UserService.php'),
                 symbolPath: SymbolPath::forNamespace('App\Service'),
                 ruleName: 'namespace-size',
+                violationCode: 'namespace-size',
                 message: 'Namespace contains 16 classes (threshold: 10)',
                 severity: Severity::Error,
                 metricValue: 16,
@@ -128,6 +133,7 @@ TEXT;
         self::assertStringContainsString('[ERROR] src/Service/UserService.php', $output);
         self::assertStringContainsString('App\Service', $output);
         self::assertStringContainsString('Rule: namespace-size', $output);
+        self::assertStringContainsString('Code: namespace-size', $output);
         self::assertStringContainsString('Namespace contains 16 classes', $output);
     }
 
@@ -138,6 +144,7 @@ TEXT;
                 location: new Location('src/functions.php', 5),
                 symbolPath: SymbolPath::forGlobalFunction('', 'myComplexFunction'),
                 ruleName: 'cyclomatic-complexity',
+                violationCode: 'cyclomatic-complexity',
                 message: 'Function has complexity of 20',
                 severity: Severity::Warning,
             ))
@@ -160,6 +167,7 @@ TEXT;
                 location: new Location('b.php', 20),
                 symbolPath: SymbolPath::forClass('App', 'B'),
                 ruleName: 'test',
+                violationCode: 'test',
                 message: 'Msg B20',
                 severity: Severity::Error,
             ))
@@ -167,6 +175,7 @@ TEXT;
                 location: new Location('a.php', 10),
                 symbolPath: SymbolPath::forClass('App', 'A1'),
                 ruleName: 'test',
+                violationCode: 'test',
                 message: 'Msg A10',
                 severity: Severity::Error,
             ))
@@ -174,6 +183,7 @@ TEXT;
                 location: new Location('a.php', 5),
                 symbolPath: SymbolPath::forClass('App', 'A2'),
                 ruleName: 'test',
+                violationCode: 'test',
                 message: 'Msg A5',
                 severity: Severity::Error,
             ))
@@ -203,6 +213,7 @@ TEXT;
                 location: new Location('c.php', 3),
                 symbolPath: SymbolPath::forClass('App', 'C'),
                 ruleName: 'test',
+                violationCode: 'test',
                 message: 'Warning 1',
                 severity: Severity::Warning,
             ))
@@ -210,6 +221,7 @@ TEXT;
                 location: new Location('a.php', 1),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'test',
+                violationCode: 'test',
                 message: 'Error 1',
                 severity: Severity::Error,
             ))
@@ -217,6 +229,7 @@ TEXT;
                 location: new Location('b.php', 2),
                 symbolPath: SymbolPath::forClass('App', 'B'),
                 ruleName: 'test',
+                violationCode: 'test',
                 message: 'Error 2',
                 severity: Severity::Error,
             ))
@@ -240,6 +253,28 @@ TEXT;
         self::assertNotFalse($posWarning1);
         self::assertLessThan($posWarning1, $posError1);
         self::assertLessThan($posWarning1, $posError2);
+    }
+
+    public function testRuleAndCodeDisplayedSeparately(): void
+    {
+        $report = ReportBuilder::create()
+            ->addViolation(new Violation(
+                location: new Location('src/Foo.php', 10),
+                symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
+                ruleName: 'complexity',
+                violationCode: 'complexity.method',
+                message: 'Too complex',
+                severity: Severity::Error,
+            ))
+            ->filesAnalyzed(1)
+            ->filesSkipped(0)
+            ->duration(0.01)
+            ->build();
+
+        $output = $this->formatter->format($report);
+
+        self::assertStringContainsString('Rule: complexity', $output);
+        self::assertStringContainsString('Code: complexity.method', $output);
     }
 
     public function testOutputContainsHeader(): void

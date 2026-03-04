@@ -51,10 +51,10 @@ final class ViolationHasherTest extends TestCase
         );
     }
 
-    public function testHashStableAcrossNumericValueChanges(): void
+    public function testHashStableAcrossMessageChanges(): void
     {
         $violation1 = $this->createViolation(line: 42, message: 'Complexity 15 exceeds 10');
-        $violation2 = $this->createViolation(line: 42, message: 'Complexity 20 exceeds 10');
+        $violation2 = $this->createViolation(line: 42, message: 'Completely different message text');
 
         $hash1 = $this->hasher->hash($violation1);
         $hash2 = $this->hasher->hash($violation2);
@@ -62,7 +62,67 @@ final class ViolationHasherTest extends TestCase
         self::assertSame(
             $hash1,
             $hash2,
-            'Hash should be stable when numeric values in message change',
+            'Hash should be stable when message changes (only violationCode matters)',
+        );
+    }
+
+    public function testHashChangesWhenViolationCodeChanges(): void
+    {
+        $violation1 = new Violation(
+            location: new Location('src/Foo.php', 42),
+            symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
+            ruleName: 'complexity',
+            violationCode: 'complexity.method',
+            message: 'Test message',
+            severity: Severity::Warning,
+        );
+
+        $violation2 = new Violation(
+            location: new Location('src/Foo.php', 42),
+            symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
+            ruleName: 'complexity',
+            violationCode: 'complexity.class',
+            message: 'Test message',
+            severity: Severity::Warning,
+        );
+
+        $hash1 = $this->hasher->hash($violation1);
+        $hash2 = $this->hasher->hash($violation2);
+
+        self::assertNotSame(
+            $hash1,
+            $hash2,
+            'Hash should change when violationCode changes',
+        );
+    }
+
+    public function testSameViolationCodeProducesSameHash(): void
+    {
+        $violation1 = new Violation(
+            location: new Location('src/Foo.php', 42),
+            symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
+            ruleName: 'complexity',
+            violationCode: 'complexity.method',
+            message: 'First message',
+            severity: Severity::Warning,
+        );
+
+        $violation2 = new Violation(
+            location: new Location('src/Foo.php', 99),
+            symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
+            ruleName: 'complexity',
+            violationCode: 'complexity.method',
+            message: 'Completely different message',
+            severity: Severity::Error,
+        );
+
+        $hash1 = $this->hasher->hash($violation1);
+        $hash2 = $this->hasher->hash($violation2);
+
+        self::assertSame(
+            $hash1,
+            $hash2,
+            'Same violationCode with different message/severity/line should produce same hash',
         );
     }
 
@@ -72,6 +132,7 @@ final class ViolationHasherTest extends TestCase
             location: new Location('src/Foo.php', 42),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
             ruleName: 'complexity',
+            violationCode: 'complexity',
             message: 'Complexity 15 exceeds 10',
             severity: Severity::Warning,
         );
@@ -80,6 +141,7 @@ final class ViolationHasherTest extends TestCase
             location: new Location('src/Foo.php', 42),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
             ruleName: 'complexity',
+            violationCode: 'complexity',
             message: 'Complexity 15 exceeds 10',
             severity: Severity::Error,
         );
@@ -100,6 +162,7 @@ final class ViolationHasherTest extends TestCase
             location: new Location('src/Foo.php', 42),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
             ruleName: 'complexity',
+            violationCode: 'complexity',
             message: 'Test message',
             severity: Severity::Warning,
         );
@@ -108,6 +171,7 @@ final class ViolationHasherTest extends TestCase
             location: new Location('src/Foo.php', 42),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
             ruleName: 'coupling',
+            violationCode: 'coupling',
             message: 'Test message',
             severity: Severity::Warning,
         );
@@ -128,6 +192,7 @@ final class ViolationHasherTest extends TestCase
             location: new Location('src/Foo.php', 42),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'calculate'),
             ruleName: 'complexity',
+            violationCode: 'complexity',
             message: 'Test message',
             severity: Severity::Warning,
         );
@@ -136,6 +201,7 @@ final class ViolationHasherTest extends TestCase
             location: new Location('src/Foo.php', 42),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'process'),
             ruleName: 'complexity',
+            violationCode: 'complexity',
             message: 'Test message',
             severity: Severity::Warning,
         );
@@ -156,6 +222,7 @@ final class ViolationHasherTest extends TestCase
             location: new Location('src/Foo.php', 42),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
             ruleName: 'complexity',
+            violationCode: 'complexity',
             message: 'Test message',
             severity: Severity::Warning,
         );
@@ -164,6 +231,7 @@ final class ViolationHasherTest extends TestCase
             location: new Location('src/Baz.php', 42),
             symbolPath: SymbolPath::forMethod('App', 'Baz', 'bar'),
             ruleName: 'complexity',
+            violationCode: 'complexity',
             message: 'Test message',
             severity: Severity::Warning,
         );
@@ -184,6 +252,7 @@ final class ViolationHasherTest extends TestCase
             location: new Location('src/Service/UserService.php', 10),
             symbolPath: SymbolPath::forClass('App\Service', 'UserService'),
             ruleName: 'class-size',
+            violationCode: 'class-size',
             message: 'Class has 150 lines',
             severity: Severity::Warning,
         );
@@ -199,6 +268,7 @@ final class ViolationHasherTest extends TestCase
             location: new Location('src/Service/UserService.php'),
             symbolPath: SymbolPath::forNamespace('App\Service'),
             ruleName: 'namespace-size',
+            violationCode: 'namespace-size',
             message: 'Namespace has 50 classes',
             severity: Severity::Warning,
         );
@@ -214,6 +284,7 @@ final class ViolationHasherTest extends TestCase
             location: new Location('src/bootstrap.php'),
             symbolPath: SymbolPath::forFile('src/bootstrap.php'),
             ruleName: 'file-length',
+            violationCode: 'file-length',
             message: 'File has 500 lines',
             severity: Severity::Warning,
         );
@@ -229,6 +300,7 @@ final class ViolationHasherTest extends TestCase
             location: new Location('src/Service/UserService.php', $line),
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
             ruleName: 'cyclomatic-complexity',
+            violationCode: 'cyclomatic-complexity',
             message: $message,
             severity: Severity::Warning,
             metricValue: 15,
