@@ -157,6 +157,7 @@ final class ReportTest extends TestCase
             location: new Location('test.php', 1),
             symbolPath: SymbolPath::forClass('App', $name),
             ruleName: 'test-rule',
+            violationCode: 'test-rule',
             message: 'Test message',
             severity: $severity,
         );

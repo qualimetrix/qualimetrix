@@ -48,6 +48,7 @@ final class TextFormatterTest extends TestCase
                 location: new Location('src/Service/UserService.php', 42),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculateDiscount'),
                 ruleName: 'cyclomatic-complexity',
+                violationCode: 'cyclomatic-complexity',
                 message: 'Cyclomatic complexity of 25 exceeds threshold',
                 severity: Severity::Error,
                 metricValue: 25,
@@ -78,6 +79,7 @@ final class TextFormatterTest extends TestCase
                 location: new Location('src/Service/UserService.php', 42),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculateDiscount'),
                 ruleName: 'cyclomatic-complexity',
+                violationCode: 'cyclomatic-complexity',
                 message: 'Cyclomatic complexity of 25 exceeds threshold',
                 severity: Severity::Error,
                 metricValue: 25,
@@ -86,6 +88,7 @@ final class TextFormatterTest extends TestCase
                 location: new Location('src/Service/UserService.php', 120),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'processOrder'),
                 ruleName: 'cyclomatic-complexity',
+                violationCode: 'cyclomatic-complexity',
                 message: 'Cyclomatic complexity of 12 exceeds threshold',
                 severity: Severity::Warning,
                 metricValue: 12,
@@ -114,6 +117,7 @@ final class TextFormatterTest extends TestCase
                 location: new Location('src/Service/UserService.php', 10),
                 symbolPath: SymbolPath::forClass('App\Service', 'UserService'),
                 ruleName: 'lcom',
+                violationCode: 'lcom',
                 message: 'LCOM is 5',
                 severity: Severity::Warning,
             ))
@@ -134,6 +138,7 @@ final class TextFormatterTest extends TestCase
                 location: new Location('src/Service/UserService.php'),
                 symbolPath: SymbolPath::forNamespace('App\Service'),
                 ruleName: 'namespace-size',
+                violationCode: 'namespace-size',
                 message: 'Namespace contains 16 classes',
                 severity: Severity::Error,
             ))
@@ -155,6 +160,7 @@ final class TextFormatterTest extends TestCase
                 location: new Location('src/Service/UserService.php'),
                 symbolPath: SymbolPath::forFile('src/Service/UserService.php'),
                 ruleName: 'file-size',
+                violationCode: 'file-size',
                 message: 'File is too large',
                 severity: Severity::Warning,
             ))
@@ -176,6 +182,7 @@ final class TextFormatterTest extends TestCase
                 location: new Location('src/functions.php', 5),
                 symbolPath: SymbolPath::forGlobalFunction('', 'myComplexFunction'),
                 ruleName: 'cyclomatic-complexity',
+                violationCode: 'cyclomatic-complexity',
                 message: 'Function has complexity of 20',
                 severity: Severity::Warning,
             ))
@@ -196,6 +203,7 @@ final class TextFormatterTest extends TestCase
                 location: new Location('src/Foo.php', 10),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
                 ruleName: 'test-rule',
+                violationCode: 'test-rule',
                 message: 'Test message',
                 severity: Severity::Error,
             ))
@@ -217,5 +225,27 @@ final class TextFormatterTest extends TestCase
         self::assertSame('error', $matches[3]);
         self::assertSame('test-rule', $matches[4]);
         self::assertSame('Test message (Foo::bar)', $matches[5]);
+    }
+
+    public function testViolationCodeUsedInBrackets(): void
+    {
+        $report = ReportBuilder::create()
+            ->addViolation(new Violation(
+                location: new Location('src/Foo.php', 10),
+                symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
+                ruleName: 'complexity',
+                violationCode: 'complexity.method',
+                message: 'Too complex',
+                severity: Severity::Error,
+            ))
+            ->filesAnalyzed(1)
+            ->filesSkipped(0)
+            ->duration(0.01)
+            ->build();
+
+        $output = $this->formatter->format($report);
+
+        self::assertStringContainsString('[complexity.method]', $output);
+        self::assertStringNotContainsString('[complexity]', $output);
     }
 }

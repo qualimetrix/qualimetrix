@@ -23,7 +23,7 @@ final class GitLabCodeQualityFormatter implements FormatterInterface
         foreach ($report->violations as $violation) {
             $issues[] = [
                 'description' => $violation->message,
-                'check_name' => $violation->ruleName,
+                'check_name' => $violation->violationCode,
                 'fingerprint' => $this->generateFingerprint($violation),
                 'severity' => $this->mapSeverity($violation->severity),
                 'location' => [
@@ -48,12 +48,12 @@ final class GitLabCodeQualityFormatter implements FormatterInterface
     /**
      * Generates stable fingerprint for GitLab to track issues across MRs.
      *
-     * Format: md5(rule|symbolPath|line)
+     * Format: md5(violationCode|symbolPath|line)
      */
     private function generateFingerprint(Violation $violation): string
     {
         $parts = [
-            $violation->ruleName,
+            $violation->violationCode,
             $violation->symbolPath->toCanonical(),
             (string) ($violation->location->line ?? 0),
         ];

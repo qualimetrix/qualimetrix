@@ -81,6 +81,7 @@ abstract class AbstractCodeSmellRule extends AbstractRule
                 location: new Location($fileInfo->file, 1),
                 symbolPath: $fileInfo->symbolPath,
                 ruleName: $this->getName(),
+                violationCode: $this->getName(),
                 message: $message,
                 severity: $this->getSeverity(),
                 metricValue: $count,

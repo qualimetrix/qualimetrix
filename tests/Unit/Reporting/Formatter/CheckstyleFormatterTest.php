@@ -72,6 +72,7 @@ final class CheckstyleFormatterTest extends TestCase
                 location: new Location('src/Service/UserService.php', 42),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculateDiscount'),
                 ruleName: 'cyclomatic-complexity',
+                violationCode: 'cyclomatic-complexity',
                 message: 'Cyclomatic complexity of 25 exceeds threshold',
                 severity: Severity::Error,
                 metricValue: 25,
@@ -80,6 +81,7 @@ final class CheckstyleFormatterTest extends TestCase
                 location: new Location('src/Service/UserService.php', 120),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'processOrder'),
                 ruleName: 'cyclomatic-complexity',
+                violationCode: 'cyclomatic-complexity',
                 message: 'Cyclomatic complexity of 12 exceeds threshold',
                 severity: Severity::Warning,
                 metricValue: 12,
@@ -124,6 +126,7 @@ final class CheckstyleFormatterTest extends TestCase
                 location: new Location('src/A.php', 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'test',
+                violationCode: 'test',
                 message: 'Error in A',
                 severity: Severity::Error,
             ))
@@ -131,6 +134,7 @@ final class CheckstyleFormatterTest extends TestCase
                 location: new Location('src/B.php', 20),
                 symbolPath: SymbolPath::forClass('App', 'B'),
                 ruleName: 'test',
+                violationCode: 'test',
                 message: 'Error in B',
                 severity: Severity::Error,
             ))
@@ -138,6 +142,7 @@ final class CheckstyleFormatterTest extends TestCase
                 location: new Location('src/A.php', 30),
                 symbolPath: SymbolPath::forClass('App', 'A2'),
                 ruleName: 'test',
+                violationCode: 'test',
                 message: 'Second error in A',
                 severity: Severity::Warning,
             ))
@@ -176,6 +181,7 @@ final class CheckstyleFormatterTest extends TestCase
                 location: new Location('src/Service/UserService.php'),
                 symbolPath: SymbolPath::forNamespace('App\Service'),
                 ruleName: 'namespace-size',
+                violationCode: 'namespace-size',
                 message: 'Namespace contains 16 classes (threshold: 10)',
                 severity: Severity::Error,
                 metricValue: 16,
@@ -203,6 +209,7 @@ final class CheckstyleFormatterTest extends TestCase
                 location: new Location('src/Test.php', 10),
                 symbolPath: SymbolPath::forClass('App', 'Test'),
                 ruleName: 'test-rule',
+                violationCode: 'test-rule',
                 message: 'Message with <special> & "characters"',
                 severity: Severity::Error,
             ))
@@ -227,6 +234,28 @@ final class CheckstyleFormatterTest extends TestCase
         $output = $this->formatter->format($report);
 
         self::assertStringStartsWith('<?xml version="1.0" encoding="UTF-8"?>', $output);
+    }
+
+    public function testSourceUsesViolationCode(): void
+    {
+        $report = ReportBuilder::create()
+            ->addViolation(new Violation(
+                location: new Location('src/Foo.php', 10),
+                symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
+                ruleName: 'complexity',
+                violationCode: 'complexity.method',
+                message: 'Too complex',
+                severity: Severity::Error,
+            ))
+            ->filesAnalyzed(1)
+            ->filesSkipped(0)
+            ->duration(0.01)
+            ->build();
+
+        $output = $this->formatter->format($report);
+
+        self::assertStringContainsString('source="aimd.complexity.method"', $output);
+        self::assertStringNotContainsString('source="aimd.complexity"', $output);
     }
 
     private function parseXml(string $output): DOMDocument

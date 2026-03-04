@@ -95,6 +95,7 @@ final class WmcRule extends AbstractRule
                     location: new Location($classInfo->file, $classInfo->line),
                     symbolPath: $classInfo->symbolPath,
                     ruleName: $this->getName(),
+                    violationCode: self::NAME,
                     message: \sprintf(
                         'WMC (Weighted Methods per Class) is %d, exceeds threshold of %d. Simplify methods or split the class',
                         $wmcValue,

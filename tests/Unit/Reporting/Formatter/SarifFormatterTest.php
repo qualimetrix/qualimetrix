@@ -77,6 +77,7 @@ final class SarifFormatterTest extends TestCase
                 location: new Location('src/Service/UserService.php', 42),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculateDiscount'),
                 ruleName: 'cyclomatic-complexity',
+                violationCode: 'cyclomatic-complexity',
                 message: 'Cyclomatic complexity of 25 exceeds threshold',
                 severity: Severity::Error,
                 metricValue: 25,
@@ -85,6 +86,7 @@ final class SarifFormatterTest extends TestCase
                 location: new Location('src/Service/UserService.php', 120),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'processOrder'),
                 ruleName: 'cyclomatic-complexity',
+                violationCode: 'cyclomatic-complexity',
                 message: 'Cyclomatic complexity of 12 exceeds threshold',
                 severity: Severity::Warning,
                 metricValue: 12,
@@ -135,6 +137,7 @@ final class SarifFormatterTest extends TestCase
                 location: new Location('src/A.php', 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'cyclomatic-complexity',
+                violationCode: 'cyclomatic-complexity',
                 message: 'Complexity too high',
                 severity: Severity::Error,
             ))
@@ -142,6 +145,7 @@ final class SarifFormatterTest extends TestCase
                 location: new Location('src/B.php', 20),
                 symbolPath: SymbolPath::forClass('App', 'B'),
                 ruleName: 'class-size',
+                violationCode: 'class-size',
                 message: 'Class too large',
                 severity: Severity::Warning,
             ))
@@ -149,6 +153,7 @@ final class SarifFormatterTest extends TestCase
                 location: new Location('src/C.php', 30),
                 symbolPath: SymbolPath::forClass('App', 'C'),
                 ruleName: 'maintainability-index',
+                violationCode: 'maintainability-index',
                 message: 'Low maintainability',
                 severity: Severity::Warning,
             ))
@@ -187,6 +192,7 @@ final class SarifFormatterTest extends TestCase
                 location: new Location('src/Service/UserService.php'),
                 symbolPath: SymbolPath::forNamespace('App\Service'),
                 ruleName: 'namespace-size',
+                violationCode: 'namespace-size',
                 message: 'Namespace contains 16 classes (threshold: 10)',
                 severity: Severity::Error,
                 metricValue: 16,
@@ -211,6 +217,7 @@ final class SarifFormatterTest extends TestCase
                 location: new Location('src/A.php', 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'test',
+                violationCode: 'test',
                 message: 'Error violation',
                 severity: Severity::Error,
             ))
@@ -218,6 +225,7 @@ final class SarifFormatterTest extends TestCase
                 location: new Location('src/B.php', 20),
                 symbolPath: SymbolPath::forClass('App', 'B'),
                 ruleName: 'test',
+                violationCode: 'test',
                 message: 'Warning violation',
                 severity: Severity::Warning,
             ))
@@ -243,6 +251,7 @@ final class SarifFormatterTest extends TestCase
                 location: new Location('src/A.php', 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'lcom',
+                violationCode: 'lcom',
                 message: 'LCOM too high',
                 severity: Severity::Warning,
             ))
@@ -250,6 +259,7 @@ final class SarifFormatterTest extends TestCase
                 location: new Location('src/B.php', 20),
                 symbolPath: SymbolPath::forClass('App', 'B'),
                 ruleName: 'inheritance-depth',
+                violationCode: 'inheritance-depth',
                 message: 'Inheritance too deep',
                 severity: Severity::Warning,
             ))
@@ -279,5 +289,35 @@ final class SarifFormatterTest extends TestCase
         self::assertNotNull($inheritanceRule);
         self::assertSame('Lack of cohesion of methods exceeds threshold', $lcomRule['shortDescription']['text']);
         self::assertSame('Inheritance depth exceeds threshold', $inheritanceRule['shortDescription']['text']);
+    }
+
+    public function testRuleIdUsesViolationCode(): void
+    {
+        $report = ReportBuilder::create()
+            ->addViolation(new Violation(
+                location: new Location('src/Foo.php', 10),
+                symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
+                ruleName: 'complexity',
+                violationCode: 'complexity.method',
+                message: 'Too complex',
+                severity: Severity::Error,
+            ))
+            ->filesAnalyzed(1)
+            ->filesSkipped(0)
+            ->duration(0.01)
+            ->build();
+
+        $output = $this->formatter->format($report);
+        $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
+
+        $run = $data['runs'][0];
+
+        // Result ruleId should use violationCode
+        $result = $run['results'][0];
+        self::assertSame('complexity.method', $result['ruleId']);
+
+        // Rule in rules array should use violationCode as id
+        $rule = $run['tool']['driver']['rules'][0];
+        self::assertSame('complexity.method', $rule['id']);
     }
 }

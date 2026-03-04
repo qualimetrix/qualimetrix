@@ -32,6 +32,7 @@ final class BaselineFilterTest extends TestCase
             location: new Location('src/Foo.php', 45),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
             ruleName: 'complexity',
+            violationCode: 'complexity',
             message: 'Complexity 15 exceeds 10',
             severity: Severity::Warning,
         );
@@ -59,6 +60,7 @@ final class BaselineFilterTest extends TestCase
             location: new Location('src/Foo.php', 45),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
             ruleName: 'complexity',
+            violationCode: 'complexity',
             message: 'Complexity 15 exceeds 10',
             severity: Severity::Warning,
         );
@@ -80,6 +82,7 @@ final class BaselineFilterTest extends TestCase
             location: new Location('src/Bar.php', 45),
             symbolPath: SymbolPath::forMethod('App', 'Bar', 'baz'),
             ruleName: 'complexity',
+            violationCode: 'complexity',
             message: 'Complexity 15 exceeds 10',
             severity: Severity::Warning,
         );
@@ -106,6 +109,7 @@ final class BaselineFilterTest extends TestCase
             location: new Location('src/Foo.php', 45),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
             ruleName: 'complexity',
+            violationCode: 'complexity',
             message: 'Complexity 15 exceeds 10',
             severity: Severity::Warning,
         );
@@ -114,6 +118,7 @@ final class BaselineFilterTest extends TestCase
             location: new Location('src/Foo.php', 10),
             symbolPath: SymbolPath::forClass('App', 'Foo'),
             ruleName: 'size',
+            violationCode: 'size',
             message: 'Class too large',
             severity: Severity::Warning,
         );
@@ -148,6 +153,7 @@ final class BaselineFilterTest extends TestCase
             location: new Location('src/Foo.php', 45),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
             ruleName: 'complexity',
+            violationCode: 'complexity',
             message: 'Complexity 15 exceeds 10',
             severity: Severity::Warning,
         );
@@ -177,6 +183,7 @@ final class BaselineFilterTest extends TestCase
             location: new Location('src/Foo.php', 45),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
             ruleName: 'complexity',
+            violationCode: 'complexity',
             message: 'Complexity 15 exceeds 10',
             severity: Severity::Warning,
         );
@@ -198,6 +205,7 @@ final class BaselineFilterTest extends TestCase
             location: new Location('src/Foo.php', 55),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
             ruleName: 'complexity',
+            violationCode: 'complexity',
             message: 'Complexity 15 exceeds 10',
             severity: Severity::Warning,
         );

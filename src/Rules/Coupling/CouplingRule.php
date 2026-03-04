@@ -187,6 +187,7 @@ final class CouplingRule extends AbstractRule implements HierarchicalRuleInterfa
                     location: new Location($classInfo->file, $classInfo->line),
                     symbolPath: $classInfo->symbolPath,
                     ruleName: $this->getName(),
+                    violationCode: self::NAME . '.instability.class',
                     message: \sprintf(
                         'Instability is %.2f (Ca=%d, Ce=%d), exceeds threshold of %.2f. Reduce outgoing dependencies',
                         $instabilityValue,
@@ -253,6 +254,7 @@ final class CouplingRule extends AbstractRule implements HierarchicalRuleInterfa
                     location: new Location($nsInfo->file, $nsInfo->line),
                     symbolPath: $nsInfo->symbolPath,
                     ruleName: $this->getName(),
+                    violationCode: self::NAME . '.instability.namespace',
                     message: \sprintf(
                         'Instability is %.2f (Ca=%d, Ce=%d), exceeds threshold of %.2f. Reduce outgoing dependencies',
                         $instabilityValue,
@@ -290,6 +292,7 @@ final class CouplingRule extends AbstractRule implements HierarchicalRuleInterfa
                 location: new Location($symbolInfo->file, $symbolInfo->line),
                 symbolPath: $symbolInfo->symbolPath,
                 ruleName: $this->getName(),
+                violationCode: self::NAME . '.cbo.' . ($isNamespace ? 'namespace' : 'class'),
                 message: \sprintf(
                     'CBO (Coupling Between Objects) is %d (Ca=%d, Ce=%d), exceeds threshold of %d. Reduce dependencies to lower coupling',
                     $cbo,
@@ -308,6 +311,7 @@ final class CouplingRule extends AbstractRule implements HierarchicalRuleInterfa
                 location: new Location($symbolInfo->file, $symbolInfo->line),
                 symbolPath: $symbolInfo->symbolPath,
                 ruleName: $this->getName(),
+                violationCode: self::NAME . '.cbo.' . ($isNamespace ? 'namespace' : 'class'),
                 message: \sprintf(
                     'CBO (Coupling Between Objects) is %d (Ca=%d, Ce=%d), exceeds threshold of %d. Reduce dependencies to lower coupling',
                     $cbo,

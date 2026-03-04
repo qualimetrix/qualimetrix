@@ -128,6 +128,7 @@ AI Mess Detector Report
   [ERROR] src/Service/UserService.php:42
     App\Service\UserService::calculateDiscount
     Rule: cyclomatic-complexity
+    Code: complexity.method
     Cyclomatic complexity of 25 exceeds threshold
 
 --------------------------------------------------
@@ -158,7 +159,8 @@ PHPMD-compatible JSON for CI/CD. Structure: violations + summary. Example:
     "line": 42,
     "severity": "error",
     "message": "...",
-    "rule": "cyclomatic-complexity"
+    "rule": "cyclomatic-complexity",
+    "code": "complexity.method"
   }],
   "summary": { "filesAnalyzed": 42, "errors": 2, "warnings": 1 }
 }
@@ -272,6 +274,7 @@ Results will appear in the **Code Quality** tab with inline comments in the MR.
 $violation->severity      // Severity enum (Error, Warning, Info)
 $violation->message       // Violation description
 $violation->ruleName      // Rule name
+$violation->violationCode // Stable violation code for identification
 $violation->symbolPath    // SymbolPath object
 $violation->location      // Location object (file, line)
 $violation->metricValue   // int|float|null

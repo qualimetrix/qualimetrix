@@ -64,6 +64,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
                 location: new Location('src/Service/UserService.php', 42),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculateDiscount'),
                 ruleName: 'cyclomatic-complexity',
+                violationCode: 'cyclomatic-complexity',
                 message: 'Cyclomatic complexity of 25 exceeds threshold',
                 severity: Severity::Error,
                 metricValue: 25,
@@ -72,6 +73,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
                 location: new Location('src/Service/UserService.php', 120),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'processOrder'),
                 ruleName: 'cyclomatic-complexity',
+                violationCode: 'cyclomatic-complexity',
                 message: 'Cyclomatic complexity of 12 exceeds threshold',
                 severity: Severity::Warning,
                 metricValue: 12,
@@ -113,6 +115,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
                 location: new Location('src/A.php', 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'test',
+                violationCode: 'test',
                 message: 'Error violation',
                 severity: Severity::Error,
             ))
@@ -120,6 +123,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
                 location: new Location('src/B.php', 20),
                 symbolPath: SymbolPath::forClass('App', 'B'),
                 ruleName: 'test',
+                violationCode: 'test',
                 message: 'Warning violation',
                 severity: Severity::Warning,
             ))
@@ -142,6 +146,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
             location: new Location('src/Service/UserService.php', 42),
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
             ruleName: 'cyclomatic-complexity',
+            violationCode: 'cyclomatic-complexity',
             message: 'Cyclomatic complexity of 25 exceeds threshold',
             severity: Severity::Error,
             metricValue: 25,
@@ -175,6 +180,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
                 location: new Location('src/A.php', 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'test-rule',
+                violationCode: 'test-rule',
                 message: 'First violation',
                 severity: Severity::Warning,
             ))
@@ -182,6 +188,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
                 location: new Location('src/B.php', 20),
                 symbolPath: SymbolPath::forClass('App', 'B'),
                 ruleName: 'test-rule',
+                violationCode: 'test-rule',
                 message: 'Second violation',
                 severity: Severity::Warning,
             ))
@@ -189,6 +196,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
                 location: new Location('src/A.php', 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'other-rule',
+                violationCode: 'other-rule',
                 message: 'Same location, different rule',
                 severity: Severity::Warning,
             ))
@@ -215,6 +223,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
                 location: new Location('src/Service/UserService.php'),
                 symbolPath: SymbolPath::forNamespace('App\Service'),
                 ruleName: 'namespace-size',
+                violationCode: 'namespace-size',
                 message: 'Namespace contains 16 classes (threshold: 10)',
                 severity: Severity::Error,
                 metricValue: 16,
@@ -239,6 +248,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
                 location: new Location('src/Service/UserService.php', 45),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'foo'),
                 ruleName: 'complexity',
+                violationCode: 'complexity',
                 message: 'Method foo() has complexity 25, exceeds 10',
                 severity: Severity::Warning,
             ))
@@ -267,5 +277,28 @@ final class GitLabCodeQualityFormatterTest extends TestCase
         // Verify no extra fields in location (GitLab spec only requires path and lines.begin)
         self::assertCount(2, $issue['location']);
         self::assertCount(1, $issue['location']['lines']);
+    }
+
+    public function testCheckNameUsesViolationCode(): void
+    {
+        $report = ReportBuilder::create()
+            ->addViolation(new Violation(
+                location: new Location('src/Foo.php', 10),
+                symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
+                ruleName: 'complexity',
+                violationCode: 'complexity.method',
+                message: 'Too complex',
+                severity: Severity::Error,
+            ))
+            ->filesAnalyzed(1)
+            ->filesSkipped(0)
+            ->duration(0.01)
+            ->build();
+
+        $output = $this->formatter->format($report);
+        $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
+
+        $issue = $data[0];
+        self::assertSame('complexity.method', $issue['check_name']);
     }
 }

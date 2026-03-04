@@ -102,6 +102,7 @@ final class CircularDependencyRule extends AbstractRule
                 location: new Location('', 0), // No specific file location for architectural violations
                 symbolPath: SymbolPath::forClass($namespace, $className),
                 ruleName: $this->getName(),
+                violationCode: self::NAME,
                 message: \sprintf(
                     'Circular dependency (%d classes): %s. Break the cycle by introducing interfaces or restructuring',
                     $cycle->getSize(),

@@ -104,6 +104,7 @@ final class MaintainabilityRule extends AbstractRule
                     location: new Location($methodInfo->file, $methodInfo->line),
                     symbolPath: $methodInfo->symbolPath,
                     ruleName: $this->getName(),
+                    violationCode: self::NAME,
                     message: \sprintf(
                         'Maintainability Index is %.1f, below threshold of %.1f. Reduce complexity and size to improve maintainability',
                         $miValue,

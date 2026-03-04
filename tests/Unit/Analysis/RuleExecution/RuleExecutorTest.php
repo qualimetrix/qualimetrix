@@ -377,6 +377,7 @@ final class RuleExecutorTest extends TestCase
             ),
             symbolPath: SymbolPath::forFile('/test/file.php'),
             ruleName: $ruleName,
+            violationCode: $ruleName,
             message: "Violation from $ruleName",
             severity: Severity::Warning,
             level: $level,

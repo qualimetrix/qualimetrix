@@ -61,17 +61,17 @@ final class SarifFormatter implements FormatterInterface
      */
     private function collectRules(array $violations): array
     {
-        // Collect unique rule names
-        $ruleNames = [];
+        // Collect unique violation codes
+        $violationCodes = [];
         foreach ($violations as $violation) {
-            $ruleNames[$violation->ruleName] = true;
+            $violationCodes[$violation->violationCode] = $violation->ruleName;
         }
 
         $rules = [];
-        foreach (array_keys($ruleNames) as $ruleName) {
+        foreach ($violationCodes as $code => $ruleName) {
             $rules[] = [
-                'id' => $ruleName,
-                'name' => $this->formatRuleName($ruleName),
+                'id' => $code,
+                'name' => $this->formatRuleName($code),
                 'shortDescription' => [
                     'text' => $this->getRuleDescription($ruleName),
                 ],
@@ -89,8 +89,8 @@ final class SarifFormatter implements FormatterInterface
      */
     private function formatRuleName(string $ruleName): string
     {
-        // Convert kebab-case to words
-        $words = explode('-', $ruleName);
+        // Convert kebab-case and dot-separated names to words
+        $words = preg_split('/[-.]/', $ruleName) ?: [$ruleName];
         $words = array_map('ucfirst', $words);
 
         return implode(' ', $words);
@@ -122,7 +122,7 @@ final class SarifFormatter implements FormatterInterface
     {
         return array_map(
             fn(Violation $v): array => [
-                'ruleId' => $v->ruleName,
+                'ruleId' => $v->violationCode,
                 'level' => $this->mapLevel($v->severity),
                 'message' => ['text' => $v->message],
                 'locations' => [
