@@ -21,10 +21,6 @@ inputs:
     description: 'Output format (text, json, sarif, gitlab)'
     required: false
     default: 'text'
-  fail-on:
-    description: 'Fail threshold (error, warning, info)'
-    required: false
-    default: 'error'
   php-version:
     description: 'PHP version'
     required: false
@@ -83,9 +79,6 @@ runs:
 
         # Add format
         ARGS="$ARGS --format=${{ inputs.format }}"
-
-        # Add fail-on threshold
-        ARGS="$ARGS --fail-on=${{ inputs.fail-on }}"
 
         # Determine AIMD binary location
         if [ -f "vendor/bin/aimd" ]; then

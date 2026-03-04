@@ -27,7 +27,6 @@ jobs:
           paths: 'src/'
           baseline: 'baseline.json'
           format: 'text'
-          fail-on: 'error'
           php-version: ${{ matrix.php-version }}
 
       - name: Show results
