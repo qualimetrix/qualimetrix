@@ -32,7 +32,6 @@ jobs:
 | `baseline` | Path to baseline file | No | - |
 | `config` | Path to config file | No | - |
 | `format` | Output format: `text`, `json`, `sarif`, `gitlab` | No | `text` |
-| `fail-on` | Fail threshold: `error`, `warning`, `info` | No | `error` |
 | `php-version` | PHP version to use | No | `8.4` |
 | `working-directory` | Working directory for analysis | No | `.` |
 
@@ -62,7 +61,6 @@ jobs:
   with:
     paths: 'src/'
     baseline: 'baseline.json'
-    fail-on: 'error'
 ```
 
 ### Multiple Paths
@@ -94,7 +92,6 @@ jobs:
         with:
           paths: 'src/'
           format: 'sarif'
-          fail-on: 'warning'
         continue-on-error: true
 
       - name: Upload SARIF to GitHub Security
@@ -244,7 +241,6 @@ jobs:
         uses: fractalizer/ai-mess-detector@v1
         with:
           paths: 'src/'
-          fail-on: 'warning'
 ```
 
 ## Troubleshooting
