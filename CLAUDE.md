@@ -66,6 +66,7 @@ src/
 │   ├── Coupling/           # CouplingRule, DistanceRule
 │   ├── Structure/          # LcomRule, NocRule, WmcRule, InheritanceRule
 │   ├── Maintainability/    # MaintainabilityRule
+│   ├── CodeSmell/          # BooleanArgumentRule, CountInLoopRule, DebugCodeRule, EmptyCatchRule, ErrorSuppressionRule, EvalRule, ExitRule, GotoRule, SuperglobalsRule
 │   └── Module/             # [PLANNED]
 │
 ├── Baseline/               # Baseline Support

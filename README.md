@@ -84,7 +84,6 @@ bin/aimd analyze src/ --baseline=baseline.json
 - [Quick Start](docs/QUICK_START.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [GitHub Action](docs/GITHUB_ACTION.md)
-- [Benchmarks](docs/BENCHMARKS.md)
 
 ## Requirements
 

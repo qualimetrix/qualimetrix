@@ -433,9 +433,6 @@ echo ".git/" >> .dockerignore
 ## Additional Resources
 
 - **Documentation:** [docs/](.)
-- **Configuration:** [CONFIGURATION.md](CONFIGURATION.md)
-- **Baseline:** [docs/plans/1.4_BASELINE.md](plans/1.4_BASELINE.md)
-- **Caching:** [CACHING.md](CACHING.md)
 
 ---
 

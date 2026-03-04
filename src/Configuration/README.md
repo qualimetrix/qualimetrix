@@ -202,18 +202,34 @@ Creates rule options with priority handling.
 ```yaml
 # Rule settings
 rules:
-  cyclomatic-complexity:
+  complexity:
     enabled: true
-    warning_threshold: 10
-    error_threshold: 20
+    method:
+      warning: 10
+      error: 20
+    class:
+      max_warning: 50
+      max_error: 100
 
-  namespace-size:
+  size:
     enabled: true
-    warning_threshold: 10
-    error_threshold: 15
-    count_interfaces: true
-    count_traits: true
-    count_enums: true
+    namespace:
+      warning: 10
+      error: 15
+      count_interfaces: true
+      count_traits: true
+      count_enums: true
+    class:
+      warning: 200
+      error: 400
+
+  maintainability:
+    warning: 50
+    error: 25
+
+  lcom:
+    warning: 2
+    error: 3
 
 # Caching
 cache:
@@ -240,8 +256,9 @@ aggregation:
 
 ```yaml
 rules:
-  cyclomatic-complexity:
-    warning_threshold: 15
+  complexity:
+    method:
+      warning: 15
 ```
 
 ### Multiple Config Files
@@ -264,10 +281,44 @@ Order: base < local < ci (alphabetical or explicit priority).
 
 | Option | Rule | Field |
 |--------|------|-------|
-| `--cc-warning=N` | cyclomatic-complexity | warningThreshold |
-| `--cc-error=N` | cyclomatic-complexity | errorThreshold |
-| `--ns-warning=N` | namespace-size | warningThreshold |
-| `--ns-error=N` | namespace-size | errorThreshold |
+| `--cc-warning=N` | complexity | method.warning |
+| `--cc-error=N` | complexity | method.error |
+| `--cc-class-warning=N` | complexity | class.max_warning |
+| `--cc-class-error=N` | complexity | class.max_error |
+| `--cognitive-warning=N` | cognitive | method.warning |
+| `--cognitive-error=N` | cognitive | method.error |
+| `--cognitive-class-warning=N` | cognitive | class.max_warning |
+| `--cognitive-class-error=N` | cognitive | class.max_error |
+| `--npath-warning=N` | complexity.npath | method.warning |
+| `--npath-error=N` | complexity.npath | method.error |
+| `--npath-class-warning=N` | complexity.npath | class.max_warning |
+| `--npath-class-error=N` | complexity.npath | class.max_error |
+| `--size-class-warning=N` | size | class.warning |
+| `--size-class-error=N` | size | class.error |
+| `--ns-warning=N` | size | namespace.warning |
+| `--ns-error=N` | size | namespace.error |
+| `--mi-warning=N` | maintainability | warning |
+| `--mi-error=N` | maintainability | error |
+| `--lcom-warning=N` | lcom | warning |
+| `--lcom-error=N` | lcom | error |
+| `--wmc-warning=N` | wmc | warning |
+| `--wmc-error=N` | wmc | error |
+| `--dit-warning=N` | inheritance | warning |
+| `--dit-error=N` | inheritance | error |
+| `--noc-warning=N` | noc | warning |
+| `--noc-error=N` | noc | error |
+| `--distance-warning=N` | distance | max_distance_warning |
+| `--distance-error=N` | distance | max_distance_error |
+| `--coupling-class-warning=N` | coupling | class.max_instability_warning |
+| `--coupling-class-error=N` | coupling | class.max_instability_error |
+| `--coupling-ns-warning=N` | coupling | namespace.max_instability_warning |
+| `--coupling-ns-error=N` | coupling | namespace.max_instability_error |
+| `--cbo-class-warning=N` | coupling | class.cbo_warning_threshold |
+| `--cbo-class-error=N` | coupling | class.cbo_error_threshold |
+| `--cbo-ns-warning=N` | coupling | namespace.cbo_warning_threshold |
+| `--cbo-ns-error=N` | coupling | namespace.cbo_error_threshold |
+| `--no-circular-deps` | circular-dependency | enabled |
+| `--max-cycle-size=N` | circular-dependency | maxCycleSize |
 
 ### Unified Format
 
@@ -277,8 +328,9 @@ Order: base < local < ci (alphabetical or explicit priority).
 
 Examples:
 ```bash
---rule-opt=cyclomatic-complexity:count-nullsafe=false
---rule-opt=namespace-size:count-interfaces=false
+--rule-opt=complexity:method.warning=15
+--rule-opt=size:namespace.count_interfaces=false
+--rule-opt=lcom:minMethods=3
 ```
 
 ### Rule Management
@@ -315,8 +367,8 @@ Loading from `aimd.php` with IDE autocompletion:
 ```php
 return [
     'rules' => [
-        'cyclomatic-complexity' => [
-            'warningThreshold' => 10,
+        'complexity' => [
+            'method' => ['warning' => 10],
         ],
     ],
 ];

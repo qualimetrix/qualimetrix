@@ -1,7 +1,6 @@
 # Gap Implementation Plan — Summary Analysis
 
 > **Date:** 2025-12-11
-> **Source:** [FEATURE_GAP_ANALYSIS.md](../FEATURE_GAP_ANALYSIS.md)
 
 ---
 

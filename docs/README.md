@@ -48,13 +48,6 @@ Tool configuration, CLI interface, DI container, and caching.
 
 ---
 
-## Development
-
-- **[Benchmarks](BENCHMARKS.md)** — comparative analysis with competitors (PHPMD, PDepend, PHPMetrics)
-- **[Test Quality Report](TEST_QUALITY_REPORT.md)** — coverage and test quality report
-- **[Feature Gap Analysis](FEATURE_GAP_ANALYSIS.md)** — competitor features for future implementation
-- **[RFC-008: False Positive Reduction](RFC-008-FALSE-POSITIVE-REDUCTION.md)** — reducing false positives
-
 ---
 
 ## Quick Navigation

@@ -320,6 +320,4 @@ with:
 ## See Also
 
 - [Complete workflow examples](example-workflow.yml)
-- [Configuration guide](CONFIGURATION.md)
-- [Baseline support](plans/1.2_BASELINE.md)
 - [Quick Start guide](QUICK_START.md)
