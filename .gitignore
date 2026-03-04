@@ -1,0 +1,54 @@
+# Composer
+/vendor/
+composer.lock
+
+# IDE
+/.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+*~
+
+# PHPUnit
+/coverage/
+.phpunit.cache/
+.phpunit.result.cache
+phpunit.xml
+
+# PHPStan
+.phpstan.cache/
+
+# Deptrac
+.deptrac.cache
+
+# PHP-CS-Fixer
+.php-cs-fixer.cache
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Cache
+/.cache/
+/var/cache/
+
+# Logs
+*.log
+
+# Build artifacts
+/build/
+/dist/
+
+# Test fixtures (generated)
+/tests/Fixtures/generated/
+.aimd-cache/
+
+# Demo/example files
+examples/
+*.json

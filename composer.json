@@ -1,0 +1,88 @@
+{
+    "name": "fractalizer/ai-mess-detector",
+    "description": "CLI tool for static analysis of PHP code - detects architectural mess and complexity issues",
+    "type": "project",
+    "license": "MIT",
+    "keywords": [
+        "static-analysis",
+        "php",
+        "complexity",
+        "metrics",
+        "code-quality",
+        "cli"
+    ],
+    "authors": [
+        {
+            "name": "Fractalizer"
+        }
+    ],
+    "require": {
+        "php": "^8.4",
+        "amphp/parallel": "^2.0",
+        "nikic/php-parser": "^5.0",
+        "psr/log": "^3.0",
+        "symfony/config": "^8.0",
+        "symfony/console": "^8.0",
+        "symfony/dependency-injection": "^8.0",
+        "symfony/finder": "^8.0",
+        "symfony/yaml": "^8.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^12.0",
+        "phpstan/phpstan": "^2.0",
+        "friendsofphp/php-cs-fixer": "^3.0",
+        "deptrac/deptrac": "^2.0"
+    },
+    "suggest": {
+        "ext-igbinary": "For faster serialization in parallel processing",
+        "ext-pcntl": "Required for parallel processing on Unix (alternative to ext-parallel)",
+        "ext-parallel": "For true parallel processing with threads (alternative to ext-pcntl)"
+    },
+    "autoload": {
+        "psr-4": {
+            "AiMessDetector\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "AiMessDetector\\Tests\\": "tests/"
+        }
+    },
+    "bin": [
+        "bin/aimd"
+    ],
+    "scripts": {
+        "post-install-cmd": "@setup-hooks",
+        "post-update-cmd": "@setup-hooks",
+        "setup-hooks": "git config core.hooksPath .githooks || true",
+        "test": "phpunit --no-coverage",
+        "test:coverage": "phpunit --coverage-html coverage",
+        "phpstan": "phpstan analyse --memory-limit=512M",
+        "deptrac": "deptrac analyse",
+        "cs-check": "php-cs-fixer fix --dry-run --diff",
+        "cs-fix": "php-cs-fixer fix",
+        "check": [
+            "@test",
+            "@phpstan",
+            "@deptrac"
+        ]
+    },
+    "scripts-descriptions": {
+        "setup-hooks": "Configure git to use project hooks from .githooks/",
+        "test": "Run PHPUnit tests",
+        "test:coverage": "Run PHPUnit tests with HTML coverage report",
+        "phpstan": "Run PHPStan static analysis (level 8)",
+        "deptrac": "Check architectural layer dependencies",
+        "cs-check": "Check code style without fixing",
+        "cs-fix": "Fix code style with PHP-CS-Fixer",
+        "check": "Run all checks: tests, phpstan, deptrac"
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "php-http/discovery": false
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

@@ -1,0 +1,69 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+namespace AiMessDetector;
+
+use AiMessDetector\Infrastructure\Console\Application;
+use AiMessDetector\Infrastructure\Console\Command\AnalyzeCommand;
+use AiMessDetector\Infrastructure\Console\Command\BaselineCleanupCommand;
+use AiMessDetector\Infrastructure\Console\Command\GraphExportCommand;
+use AiMessDetector\Infrastructure\Console\Command\HookInstallCommand;
+use AiMessDetector\Infrastructure\Console\Command\HookStatusCommand;
+use AiMessDetector\Infrastructure\Console\Command\HookUninstallCommand;
+use AiMessDetector\Infrastructure\DependencyInjection\ContainerFactory;
+
+// Find autoloader
+$autoloadPaths = [
+    __DIR__ . '/../vendor/autoload.php',           // Local development
+    __DIR__ . '/../../../autoload.php',             // Installed as dependency
+];
+
+$autoloaderFound = false;
+foreach ($autoloadPaths as $autoloadPath) {
+    if (file_exists($autoloadPath)) {
+        require_once $autoloadPath;
+        $autoloaderFound = true;
+        break;
+    }
+}
+
+if (!$autoloaderFound) {
+    fwrite(STDERR, "Error: Could not find autoloader. Run 'composer install'.\n");
+    exit(1);
+}
+
+// Create single container with default configuration
+// Runtime configuration (CLI options, config file) will be applied
+// through ConfigurationProvider and RuleOptionsFactory before analysis
+$containerFactory = new ContainerFactory();
+$container = $containerFactory->create();
+
+// Get commands from container (all dependencies injected)
+/** @var AnalyzeCommand $analyzeCommand */
+$analyzeCommand = $container->get(AnalyzeCommand::class);
+/** @var BaselineCleanupCommand $baselineCleanupCommand */
+$baselineCleanupCommand = $container->get(BaselineCleanupCommand::class);
+/** @var GraphExportCommand $graphExportCommand */
+$graphExportCommand = $container->get(GraphExportCommand::class);
+/** @var HookInstallCommand $hookInstallCommand */
+$hookInstallCommand = $container->get(HookInstallCommand::class);
+/** @var HookUninstallCommand $hookUninstallCommand */
+$hookUninstallCommand = $container->get(HookUninstallCommand::class);
+/** @var HookStatusCommand $hookStatusCommand */
+$hookStatusCommand = $container->get(HookStatusCommand::class);
+
+// Create and run application
+$application = new Application();
+$application->addCommands([
+    $analyzeCommand,
+    $baselineCleanupCommand,
+    $graphExportCommand,
+    $hookInstallCommand,
+    $hookUninstallCommand,
+    $hookStatusCommand,
+]);
+// No default command - show help/list when run without arguments
+
+exit($application->run());

@@ -1,0 +1,62 @@
+<?php
+
+declare(strict_types=1);
+
+namespace AiMessDetector\Core\Metric;
+
+use AiMessDetector\Core\Dependency\DependencyGraphInterface;
+
+/**
+ * Interface for collectors that compute metrics from global context.
+ *
+ * Unlike MetricCollectorInterface which operates on individual files via AST,
+ * GlobalContextCollector operates on already-collected metrics and the dependency graph.
+ * This allows computing metrics that require cross-file knowledge (coupling, distance, etc.)
+ *
+ * Collectors declare their dependencies via requires() and are executed in topological order.
+ */
+interface GlobalContextCollectorInterface
+{
+    /**
+     * Returns unique collector name.
+     */
+    public function getName(): string;
+
+    /**
+     * Returns list of metric names this collector requires.
+     *
+     * These metrics must be already computed before this collector runs.
+     * Used for topological sorting of collectors.
+     *
+     * @return list<string>
+     */
+    public function requires(): array;
+
+    /**
+     * Returns list of metric names this collector provides.
+     *
+     * @return list<string>
+     */
+    public function provides(): array;
+
+    /**
+     * Returns metric definitions with aggregation strategies.
+     *
+     * @return list<MetricDefinition>
+     */
+    public function getMetricDefinitions(): array;
+
+    /**
+     * Computes metrics based on the dependency graph and existing metrics.
+     *
+     * Called once after all per-file metrics have been collected and aggregated.
+     * The collector should update the repository with computed metrics.
+     *
+     * @param DependencyGraphInterface $graph The dependency graph
+     * @param MetricRepositoryInterface $repository Repository with existing metrics
+     */
+    public function calculate(
+        DependencyGraphInterface $graph,
+        MetricRepositoryInterface $repository,
+    ): void;
+}

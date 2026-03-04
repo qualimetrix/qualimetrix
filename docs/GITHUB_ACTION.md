@@ -1,0 +1,329 @@
+# GitHub Action Usage Guide
+
+The AI Mess Detector provides a GitHub Action for easy integration into your CI/CD pipelines.
+
+## Quick Start
+
+Add this to your `.github/workflows/quality.yml`:
+
+```yaml
+name: Code Quality
+
+on: [push, pull_request]
+
+jobs:
+  aimd:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run AI Mess Detector
+        uses: fractalizer/ai-mess-detector@v1
+        with:
+          paths: 'src/'
+          baseline: 'baseline.json'
+```
+
+## Inputs
+
+| Input | Description | Required | Default |
+|-------|-------------|----------|---------|
+| `paths` | Paths to analyze (space-separated) | No | `src/` |
+| `baseline` | Path to baseline file | No | - |
+| `config` | Path to config file | No | - |
+| `format` | Output format: `text`, `json`, `sarif`, `gitlab` | No | `text` |
+| `fail-on` | Fail threshold: `error`, `warning`, `info` | No | `error` |
+| `php-version` | PHP version to use | No | `8.4` |
+| `working-directory` | Working directory for analysis | No | `.` |
+
+## Outputs
+
+| Output | Description |
+|--------|-------------|
+| `violations` | Number of violations found |
+| `exit-code` | Exit code of the analysis (0 = success, 1 = violations found) |
+
+## Examples
+
+### Basic Usage
+
+```yaml
+- name: Run AI Mess Detector
+  uses: fractalizer/ai-mess-detector@v1
+  with:
+    paths: 'src/'
+```
+
+### With Baseline
+
+```yaml
+- name: Run AI Mess Detector
+  uses: fractalizer/ai-mess-detector@v1
+  with:
+    paths: 'src/'
+    baseline: 'baseline.json'
+    fail-on: 'error'
+```
+
+### Multiple Paths
+
+```yaml
+- name: Run AI Mess Detector
+  uses: fractalizer/ai-mess-detector@v1
+  with:
+    paths: 'src/ lib/ app/'
+    config: 'aimd.yaml'
+```
+
+### SARIF Output for GitHub Security Tab
+
+```yaml
+jobs:
+  aimd:
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write  # Required for SARIF upload
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run AI Mess Detector
+        id: aimd
+        uses: fractalizer/ai-mess-detector@v1
+        with:
+          paths: 'src/'
+          format: 'sarif'
+          fail-on: 'warning'
+        continue-on-error: true
+
+      - name: Upload SARIF to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: results.sarif
+          category: aimd
+
+      - name: Fail if violations found
+        if: steps.aimd.outputs.exit-code != '0'
+        run: exit ${{ steps.aimd.outputs.exit-code }}
+```
+
+### JSON Output with Artifacts
+
+```yaml
+- name: Run AI Mess Detector
+  uses: fractalizer/ai-mess-detector@v1
+  with:
+    paths: 'src/'
+    format: 'json'
+
+- name: Upload results
+  if: always()
+  uses: actions/upload-artifact@v4
+  with:
+    name: aimd-results
+    path: aimd-results.json
+```
+
+### Custom PHP Version
+
+```yaml
+- name: Run AI Mess Detector
+  uses: fractalizer/ai-mess-detector@v1
+  with:
+    paths: 'src/'
+    php-version: '8.3'
+```
+
+### Using Outputs
+
+```yaml
+- name: Run AI Mess Detector
+  id: aimd
+  uses: fractalizer/ai-mess-detector@v1
+  with:
+    paths: 'src/'
+  continue-on-error: true
+
+- name: Comment on PR
+  if: github.event_name == 'pull_request'
+  uses: actions/github-script@v7
+  with:
+    script: |
+      github.rest.issues.createComment({
+        issue_number: context.issue.number,
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        body: `## AI Mess Detector Results\n\n` +
+              `Violations found: ${{ steps.aimd.outputs.violations }}\n` +
+              `Exit code: ${{ steps.aimd.outputs.exit-code }}`
+      })
+```
+
+### Matrix Testing (Multiple PHP Versions)
+
+```yaml
+jobs:
+  aimd:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php-version: ['8.3', '8.4']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run AI Mess Detector
+        uses: fractalizer/ai-mess-detector@v1
+        with:
+          paths: 'src/'
+          php-version: ${{ matrix.php-version }}
+```
+
+## Local Action Testing
+
+To test the action locally in your repository before publishing:
+
+```yaml
+- name: Run AI Mess Detector (Local)
+  uses: ./  # Use local action
+  with:
+    paths: 'src/'
+```
+
+## Integration with Other Tools
+
+### With PHPStan
+
+```yaml
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+
+      - name: Install dependencies
+        run: composer install
+
+      - name: Run PHPStan
+        run: vendor/bin/phpstan analyse
+
+      - name: Run AI Mess Detector
+        uses: fractalizer/ai-mess-detector@v1
+        with:
+          paths: 'src/'
+```
+
+### With PHP-CS-Fixer
+
+```yaml
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+
+      - name: Install dependencies
+        run: composer install
+
+      - name: Check code style
+        run: vendor/bin/php-cs-fixer fix --dry-run --diff
+
+      - name: Run AI Mess Detector
+        uses: fractalizer/ai-mess-detector@v1
+        with:
+          paths: 'src/'
+          fail-on: 'warning'
+```
+
+## Troubleshooting
+
+### Action fails with "AIMD binary not found"
+
+The action looks for AIMD in this order:
+1. `vendor/bin/aimd` - if installed as a project dependency
+2. `bin/aimd` - if running in the AIMD repository itself
+3. Falls back to global installation via `composer global require`
+
+If none of these work, ensure your `composer.json` includes AIMD as a dev dependency:
+```json
+{
+  "require-dev": {
+    "fractalizer/ai-mess-detector": "^1.0"
+  }
+}
+```
+
+### SARIF upload fails
+
+Ensure you have the correct permissions set:
+
+```yaml
+permissions:
+  security-events: write
+  contents: read
+```
+
+### Wrong PHP version
+
+Explicitly set the PHP version:
+
+```yaml
+with:
+  php-version: '8.4'
+```
+
+### Working directory issues
+
+If your PHP project is in a subdirectory:
+
+```yaml
+with:
+  working-directory: './backend'
+  paths: 'src/'
+```
+
+## Performance Tips
+
+1. **Use caching** for composer dependencies:
+
+```yaml
+- name: Cache composer dependencies
+  uses: actions/cache@v4
+  with:
+    path: ~/.composer/cache
+    key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+```
+
+2. **Run only on specific paths** to reduce analysis time:
+
+```yaml
+with:
+  paths: 'src/ lib/'  # Skip tests, vendors, etc.
+```
+
+3. **Use baseline** to focus on new issues:
+
+```yaml
+with:
+  baseline: 'baseline.json'
+  fail-on: 'error'
+```
+
+## See Also
+
+- [Complete workflow examples](example-workflow.yml)
+- [Configuration guide](CONFIGURATION.md)
+- [Baseline support](plans/1.2_BASELINE.md)
+- [Quick Start guide](QUICK_START.md)

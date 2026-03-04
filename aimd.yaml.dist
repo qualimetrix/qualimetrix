@@ -1,0 +1,47 @@
+# AI Mess Detector - Default Configuration
+# Copy this file to aimd.yaml and customize as needed.
+
+# General settings
+cache:
+  dir: .aimd-cache
+  enabled: true
+
+format: text  # text, json, checkstyle
+
+# Namespace detection
+namespace:
+  strategy: chain  # psr4, tokenizer, chain
+  # composer_json: composer.json  # Path for PSR-4 detection
+
+# Aggregation settings
+aggregation:
+  prefixes: []  # e.g., ['App\Domain', 'App\Infrastructure']
+  # auto_depth: 2
+
+# Rules configuration
+# Format: rule_name.level.threshold
+rules:
+  complexity:
+    method:
+      warning: 10
+      error: 20
+    class:
+      max_warning: 30   # Maximum CCN among class methods
+      max_error: 50
+
+  size:
+    class:
+      warning: 15   # Methods per class
+      error: 25
+    namespace:
+      warning: 10   # Classes per namespace
+      error: 15
+
+# Disable specific rules or levels
+# disabled_rules:
+#   - complexity.class    # Disable class-level complexity check
+#   - size                # Disable all size checks
+
+# Run only specific rules or levels
+# only_rules:
+#   - complexity.method   # Only run method-level complexity check

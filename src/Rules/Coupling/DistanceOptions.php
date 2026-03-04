@@ -1,0 +1,92 @@
+<?php
+
+declare(strict_types=1);
+
+namespace AiMessDetector\Rules\Coupling;
+
+use AiMessDetector\Core\Rule\RuleOptionsInterface;
+use AiMessDetector\Core\Violation\Severity;
+
+/**
+ * Options for DistanceRule.
+ *
+ * Distance from main sequence: D = |A + I - 1|
+ * Range: [0, 1]
+ * - 0: on the main sequence (balanced)
+ * - 1: far from the main sequence (problematic)
+ *
+ * Namespace filtering:
+ * - By default, auto-detects project namespaces from composer.json (autoload.psr-4)
+ * - Use `includeNamespaces` to override auto-detection with explicit list
+ * - Use `excludeNamespaces` to exclude specific namespaces from analysis
+ * - External dependencies (not matching project namespaces) are always excluded
+ */
+final readonly class DistanceOptions implements RuleOptionsInterface
+{
+    /**
+     * @param bool $enabled Enable distance rule
+     * @param float $maxDistanceWarning Warning threshold for distance
+     * @param float $maxDistanceError Error threshold for distance
+     * @param list<string>|null $includeNamespaces Override auto-detected project namespaces (null = auto-detect from composer.json)
+     * @param list<string> $excludeNamespaces Additional namespaces to exclude from analysis
+     */
+    public function __construct(
+        public bool $enabled = true,
+        public float $maxDistanceWarning = 0.3,
+        public float $maxDistanceError = 0.5,
+        public ?array $includeNamespaces = null,
+        public array $excludeNamespaces = [],
+    ) {}
+
+    /**
+     * @param array<string, mixed> $config
+     */
+    public static function fromArray(array $config): self
+    {
+        $includeNamespaces = null;
+        // Support both old (projectNamespaces) and new (includeNamespaces) config keys
+        $includeKey = $config['include_namespaces']
+            ?? $config['includeNamespaces']
+            ?? $config['project_namespaces']
+            ?? $config['projectNamespaces']
+            ?? null;
+
+        if (\is_array($includeKey)) {
+            $includeNamespaces = array_values($includeKey);
+        }
+
+        $excludeNamespaces = [];
+        $excludeKey = $config['exclude_namespaces'] ?? $config['excludeNamespaces'] ?? null;
+        if (\is_array($excludeKey)) {
+            $excludeNamespaces = array_values($excludeKey);
+        }
+
+        return new self(
+            enabled: (bool) ($config['enabled'] ?? true),
+            maxDistanceWarning: (float) ($config['max_distance_warning'] ?? $config['maxDistanceWarning'] ?? 0.3),
+            maxDistanceError: (float) ($config['max_distance_error'] ?? $config['maxDistanceError'] ?? 0.5),
+            includeNamespaces: $includeNamespaces,
+            excludeNamespaces: $excludeNamespaces,
+        );
+    }
+
+    public function isEnabled(): bool
+    {
+        return $this->enabled;
+    }
+
+    public function getSeverity(int|float $value): ?Severity
+    {
+        $distance = (float) $value;
+
+        if ($distance >= $this->maxDistanceError) {
+            return Severity::Error;
+        }
+
+        if ($distance >= $this->maxDistanceWarning) {
+            return Severity::Warning;
+        }
+
+        return null;
+    }
+}

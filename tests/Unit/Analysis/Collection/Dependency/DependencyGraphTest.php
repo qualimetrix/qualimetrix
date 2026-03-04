@@ -1,0 +1,216 @@
+<?php
+
+declare(strict_types=1);
+
+namespace AiMessDetector\Tests\Unit\Analysis\Collection\Dependency;
+
+use AiMessDetector\Analysis\Collection\Dependency\DependencyGraph;
+use AiMessDetector\Analysis\Collection\Dependency\DependencyGraphBuilder;
+use AiMessDetector\Core\Dependency\Dependency;
+use AiMessDetector\Core\Dependency\DependencyType;
+use AiMessDetector\Core\Violation\Location;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\TestCase;
+
+#[CoversClass(DependencyGraph::class)]
+#[CoversClass(DependencyGraphBuilder::class)]
+final class DependencyGraphTest extends TestCase
+{
+    private DependencyGraphBuilder $builder;
+
+    protected function setUp(): void
+    {
+        $this->builder = new DependencyGraphBuilder();
+    }
+
+    #[Test]
+    public function getClassDependencies_returnsOutgoingDependencies(): void
+    {
+        $deps = [
+            $this->dep('App\\Foo', 'Vendor\\Bar'),
+            $this->dep('App\\Foo', 'Vendor\\Baz'),
+            $this->dep('App\\Other', 'Vendor\\Bar'),
+        ];
+
+        $graph = $this->builder->build($deps);
+
+        $fooDeps = $graph->getClassDependencies('App\\Foo');
+        self::assertCount(2, $fooDeps);
+
+        $targets = array_map(fn($d) => $d->targetClass, $fooDeps);
+        self::assertContains('Vendor\\Bar', $targets);
+        self::assertContains('Vendor\\Baz', $targets);
+    }
+
+    #[Test]
+    public function getClassDependents_returnsIncomingDependencies(): void
+    {
+        $deps = [
+            $this->dep('App\\Foo', 'Vendor\\Bar'),
+            $this->dep('App\\Baz', 'Vendor\\Bar'),
+            $this->dep('App\\Foo', 'Vendor\\Other'),
+        ];
+
+        $graph = $this->builder->build($deps);
+
+        $barDependents = $graph->getClassDependents('Vendor\\Bar');
+        self::assertCount(2, $barDependents);
+
+        $sources = array_map(fn($d) => $d->sourceClass, $barDependents);
+        self::assertContains('App\\Foo', $sources);
+        self::assertContains('App\\Baz', $sources);
+    }
+
+    #[Test]
+    public function getClassCe_countsUniqueTargets(): void
+    {
+        $deps = [
+            $this->dep('App\\Foo', 'Vendor\\Bar'),
+            $this->dep('App\\Foo', 'Vendor\\Bar'), // duplicate
+            $this->dep('App\\Foo', 'Vendor\\Baz'),
+        ];
+
+        $graph = $this->builder->build($deps);
+
+        self::assertSame(2, $graph->getClassCe('App\\Foo'));
+    }
+
+    #[Test]
+    public function getClassCa_countsUniqueSources(): void
+    {
+        $deps = [
+            $this->dep('App\\Foo', 'Vendor\\Bar'),
+            $this->dep('App\\Foo', 'Vendor\\Bar'), // duplicate
+            $this->dep('App\\Baz', 'Vendor\\Bar'),
+        ];
+
+        $graph = $this->builder->build($deps);
+
+        self::assertSame(2, $graph->getClassCa('Vendor\\Bar'));
+    }
+
+    #[Test]
+    public function getNamespaceCe_countsExternalDependencies(): void
+    {
+        $deps = [
+            // App -> Vendor (cross-namespace)
+            $this->dep('App\\Foo', 'Vendor\\Bar'),
+            $this->dep('App\\Foo', 'Vendor\\Baz'),
+            $this->dep('App\\Baz', 'Vendor\\Bar'), // same target, different source
+            // App -> App (internal, should not count)
+            $this->dep('App\\Foo', 'App\\Internal'),
+        ];
+
+        $graph = $this->builder->build($deps);
+
+        // App namespace has Ce = 2 (Vendor\Bar, Vendor\Baz)
+        self::assertSame(2, $graph->getNamespaceCe('App'));
+    }
+
+    #[Test]
+    public function getNamespaceCa_countsExternalDependents(): void
+    {
+        $deps = [
+            // App -> Vendor (Vendor gets Ca)
+            $this->dep('App\\Foo', 'Vendor\\Bar'),
+            $this->dep('App\\Baz', 'Vendor\\Bar'),
+            // Other -> Vendor
+            $this->dep('Other\\Service', 'Vendor\\Bar'),
+            // Vendor -> Vendor (internal, should not count)
+            $this->dep('Vendor\\Internal', 'Vendor\\Bar'),
+        ];
+
+        $graph = $this->builder->build($deps);
+
+        // Vendor namespace has Ca = 3 (App\Foo, App\Baz, Other\Service)
+        self::assertSame(3, $graph->getNamespaceCa('Vendor'));
+    }
+
+    #[Test]
+    public function getAllClasses_returnsAllUniqueClasses(): void
+    {
+        $deps = [
+            $this->dep('App\\Foo', 'Vendor\\Bar'),
+            $this->dep('App\\Foo', 'Vendor\\Baz'),
+        ];
+
+        $graph = $this->builder->build($deps);
+        $classes = $graph->getAllClasses();
+
+        self::assertCount(3, $classes);
+        self::assertContains('App\\Foo', $classes);
+        self::assertContains('Vendor\\Bar', $classes);
+        self::assertContains('Vendor\\Baz', $classes);
+    }
+
+    #[Test]
+    public function getAllNamespaces_returnsAllUniqueNamespaces(): void
+    {
+        $deps = [
+            $this->dep('App\\Service\\Foo', 'Vendor\\Package\\Bar'),
+            $this->dep('App\\Domain\\Baz', 'Vendor\\Other\\Qux'),
+        ];
+
+        $graph = $this->builder->build($deps);
+        $namespaces = $graph->getAllNamespaces();
+
+        self::assertCount(4, $namespaces);
+        self::assertContains('App\\Service', $namespaces);
+        self::assertContains('App\\Domain', $namespaces);
+        self::assertContains('Vendor\\Package', $namespaces);
+        self::assertContains('Vendor\\Other', $namespaces);
+    }
+
+    #[Test]
+    public function getAllDependencies_returnsAllDependencies(): void
+    {
+        $deps = [
+            $this->dep('App\\Foo', 'Vendor\\Bar'),
+            $this->dep('App\\Baz', 'Vendor\\Qux'),
+        ];
+
+        $graph = $this->builder->build($deps);
+
+        self::assertCount(2, $graph->getAllDependencies());
+    }
+
+    #[Test]
+    public function emptyGraph_returnsEmptyResults(): void
+    {
+        $graph = $this->builder->build([]);
+
+        self::assertSame([], $graph->getAllClasses());
+        self::assertSame([], $graph->getAllNamespaces());
+        self::assertSame([], $graph->getAllDependencies());
+        self::assertSame(0, $graph->getClassCe('NonExistent'));
+        self::assertSame(0, $graph->getClassCa('NonExistent'));
+        self::assertSame(0, $graph->getNamespaceCe('NonExistent'));
+        self::assertSame(0, $graph->getNamespaceCa('NonExistent'));
+    }
+
+    #[Test]
+    public function handlesGlobalNamespace(): void
+    {
+        $deps = [
+            $this->dep('GlobalClass', 'App\\Foo'),
+        ];
+
+        $graph = $this->builder->build($deps);
+
+        // Global namespace class should still be in classes list
+        self::assertContains('GlobalClass', $graph->getAllClasses());
+        // But namespace should not include empty string
+        self::assertNotContains('', $graph->getAllNamespaces());
+    }
+
+    private function dep(string $source, string $target): Dependency
+    {
+        return new Dependency(
+            $source,
+            $target,
+            DependencyType::New_,
+            new Location('/test.php', 1),
+        );
+    }
+}

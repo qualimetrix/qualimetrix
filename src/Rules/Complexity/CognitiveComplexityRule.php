@@ -1,0 +1,213 @@
+<?php
+
+declare(strict_types=1);
+
+namespace AiMessDetector\Rules\Complexity;
+
+use AiMessDetector\Core\Rule\AnalysisContext;
+use AiMessDetector\Core\Rule\HierarchicalRuleInterface;
+use AiMessDetector\Core\Rule\RuleCategory;
+use AiMessDetector\Core\Rule\RuleLevel;
+use AiMessDetector\Core\Rule\RuleOptionsInterface;
+use AiMessDetector\Core\Symbol\SymbolType;
+use AiMessDetector\Core\Violation\Location;
+use AiMessDetector\Core\Violation\Violation;
+use AiMessDetector\Rules\AbstractRule;
+use InvalidArgumentException;
+
+/**
+ * Hierarchical rule that checks cognitive complexity at method and class levels.
+ *
+ * - Method level: checks individual method cognitive complexity
+ * - Class level: checks maximum cognitive complexity among class methods
+ */
+final class CognitiveComplexityRule extends AbstractRule implements HierarchicalRuleInterface
+{
+    public const string NAME = 'cognitive';
+    private const string METRIC_COGNITIVE = 'cognitive';
+
+    public function __construct(
+        RuleOptionsInterface $options,
+    ) {
+        if (!$options instanceof CognitiveComplexityOptions) {
+            throw new InvalidArgumentException(
+                \sprintf('Expected %s, got %s', CognitiveComplexityOptions::class, $options::class),
+            );
+        }
+        parent::__construct($options);
+    }
+
+    public function getName(): string
+    {
+        return self::NAME;
+    }
+
+    public function getDescription(): string
+    {
+        return 'Checks cognitive complexity at method and class levels';
+    }
+
+    public function getCategory(): RuleCategory
+    {
+        return RuleCategory::Complexity;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function requires(): array
+    {
+        return [self::METRIC_COGNITIVE];
+    }
+
+    /**
+     * @return list<RuleLevel>
+     */
+    public function getSupportedLevels(): array
+    {
+        return [RuleLevel::Method, RuleLevel::Class_];
+    }
+
+    /**
+     * Analyzes at a specific level.
+     *
+     * @return list<Violation>
+     */
+    public function analyzeLevel(RuleLevel $level, AnalysisContext $context): array
+    {
+        if (!$this->options instanceof CognitiveComplexityOptions) {
+            return [];
+        }
+
+        $levelOptions = $this->options->forLevel($level);
+        if (!$levelOptions->isEnabled()) {
+            return [];
+        }
+
+        return match ($level) {
+            RuleLevel::Method => $this->analyzeMethodLevel($context),
+            RuleLevel::Class_ => $this->analyzeClassLevel($context),
+            default => [],
+        };
+    }
+
+    /**
+     * Legacy analyze method for backward compatibility.
+     *
+     * @return list<Violation>
+     */
+    public function analyze(AnalysisContext $context): array
+    {
+        // When called directly (not via analyzeLevel), analyze all enabled levels
+        $violations = [];
+
+        foreach ($this->getSupportedLevels() as $level) {
+            if ($this->options instanceof CognitiveComplexityOptions && $this->options->isLevelEnabled($level)) {
+                $violations = [...$violations, ...$this->analyzeLevel($level, $context)];
+            }
+        }
+
+        return $violations;
+    }
+
+    /**
+     * @return class-string<CognitiveComplexityOptions>
+     */
+    public static function getOptionsClass(): string
+    {
+        return CognitiveComplexityOptions::class;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function getCliAliases(): array
+    {
+        return [
+            // Method-level aliases
+            'cognitive-warning' => 'method.warning',
+            'cognitive-error' => 'method.error',
+            // Class-level aliases
+            'cognitive-class-warning' => 'class.max_warning',
+            'cognitive-class-error' => 'class.max_error',
+        ];
+    }
+
+    /**
+     * @return list<Violation>
+     */
+    private function analyzeMethodLevel(AnalysisContext $context): array
+    {
+        if (!$this->options instanceof CognitiveComplexityOptions) {
+            return [];
+        }
+        $methodOptions = $this->options->method;
+
+        $violations = [];
+
+        foreach ($context->metrics->all(SymbolType::Method) as $methodInfo) {
+            $metrics = $context->metrics->get($methodInfo->symbolPath);
+            $cognitive = $metrics->get(self::METRIC_COGNITIVE);
+
+            if ($cognitive === null) {
+                continue;
+            }
+
+            $cognitiveValue = (int) $cognitive;
+            $severity = $methodOptions->getSeverity($cognitiveValue);
+
+            if ($severity !== null) {
+                $violations[] = new Violation(
+                    location: new Location($methodInfo->file, $methodInfo->line),
+                    symbolPath: $methodInfo->symbolPath,
+                    ruleName: $this->getName(),
+                    message: \sprintf('Cognitive complexity is %d', $cognitiveValue),
+                    severity: $severity,
+                    metricValue: $cognitiveValue,
+                    level: RuleLevel::Method,
+                );
+            }
+        }
+
+        return $violations;
+    }
+
+    /**
+     * @return list<Violation>
+     */
+    private function analyzeClassLevel(AnalysisContext $context): array
+    {
+        if (!$this->options instanceof CognitiveComplexityOptions) {
+            return [];
+        }
+        $classOptions = $this->options->class;
+
+        $violations = [];
+
+        foreach ($context->metrics->all(SymbolType::Class_) as $classInfo) {
+            $metrics = $context->metrics->get($classInfo->symbolPath);
+            $maxCognitive = $metrics->get('cognitive.max');
+
+            if ($maxCognitive === null) {
+                continue;
+            }
+
+            $maxCognitiveValue = (int) $maxCognitive;
+            $severity = $classOptions->getSeverity($maxCognitiveValue);
+
+            if ($severity !== null) {
+                $violations[] = new Violation(
+                    location: new Location($classInfo->file, $classInfo->line),
+                    symbolPath: $classInfo->symbolPath,
+                    ruleName: $this->getName(),
+                    message: \sprintf('Class has maximum method cognitive complexity of %d', $maxCognitiveValue),
+                    severity: $severity,
+                    metricValue: $maxCognitiveValue,
+                    level: RuleLevel::Class_,
+                );
+            }
+        }
+
+        return $violations;
+    }
+}

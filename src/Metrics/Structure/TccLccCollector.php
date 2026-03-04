@@ -1,0 +1,149 @@
+<?php
+
+declare(strict_types=1);
+
+namespace AiMessDetector\Metrics\Structure;
+
+use AiMessDetector\Core\Metric\AggregationStrategy;
+use AiMessDetector\Core\Metric\ClassMetricsProviderInterface;
+use AiMessDetector\Core\Metric\ClassWithMetrics;
+use AiMessDetector\Core\Metric\MetricBag;
+use AiMessDetector\Core\Metric\MetricDefinition;
+use AiMessDetector\Core\Metric\SymbolLevel;
+use AiMessDetector\Metrics\AbstractCollector;
+use Override;
+use PhpParser\Node;
+use SplFileInfo;
+
+/**
+ * Collects TCC and LCC (Tight/Loose Class Cohesion) metrics for classes.
+ *
+ * TCC (Tight Class Cohesion):
+ * - Measures direct connections via shared properties
+ * - TCC = NDC / NP, where NDC = directly connected pairs, NP = max possible pairs
+ * - Range: 0.0 (no cohesion) to 1.0 (perfect cohesion)
+ *
+ * LCC (Loose Class Cohesion):
+ * - Includes transitive connections (methods connected via intermediaries)
+ * - LCC = NIC / NP, where NIC = all connected pairs (direct + transitive)
+ * - Range: 0.0 (no cohesion) to 1.0 (perfect cohesion)
+ *
+ * Interpretation:
+ * - TCC >= 0.5: Good cohesion
+ * - TCC < 0.3: Low cohesion, consider splitting the class
+ * - TCC = 1.0: All methods share properties (perfect cohesion)
+ *
+ * Only PUBLIC methods are considered (unlike LCOM which considers all methods).
+ * Anonymous classes are ignored.
+ */
+final class TccLccCollector extends AbstractCollector implements ClassMetricsProviderInterface
+{
+    private const NAME = 'tcc_lcc';
+    private const METRIC_TCC = 'tcc';
+    private const METRIC_LCC = 'lcc';
+
+    public function __construct()
+    {
+        $this->visitor = new TccLccVisitor();
+    }
+
+    public function getName(): string
+    {
+        return self::NAME;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function provides(): array
+    {
+        return [self::METRIC_TCC, self::METRIC_LCC];
+    }
+
+    /**
+     * @param Node[] $ast
+     */
+    public function collect(SplFileInfo $file, array $ast): MetricBag
+    {
+        $bag = new MetricBag();
+
+        \assert($this->visitor instanceof TccLccVisitor);
+
+        foreach ($this->visitor->getClassData() as $classFqn => $classData) {
+            $tcc = $classData->calculateTcc();
+            $lcc = $classData->calculateLcc();
+
+            // Store metrics with class FQN as key
+            $bag = $bag->with(self::METRIC_TCC . ':' . $classFqn, round($tcc, 3));
+            $bag = $bag->with(self::METRIC_LCC . ':' . $classFqn, round($lcc, 3));
+        }
+
+        return $bag;
+    }
+
+    /**
+     * @return list<ClassWithMetrics>
+     */
+    public function getClassesWithMetrics(): array
+    {
+        \assert($this->visitor instanceof TccLccVisitor);
+
+        $result = [];
+
+        foreach ($this->visitor->getClassData() as $classData) {
+            $tcc = round($classData->calculateTcc(), 3);
+            $lcc = round($classData->calculateLcc(), 3);
+
+            $bag = (new MetricBag())
+                ->with(self::METRIC_TCC, $tcc)
+                ->with(self::METRIC_LCC, $lcc);
+
+            $result[] = new ClassWithMetrics(
+                namespace: $classData->namespace,
+                class: $classData->className,
+                line: $classData->line,
+                metrics: $bag,
+            );
+        }
+
+        return $result;
+    }
+
+    /**
+     * @return list<MetricDefinition>
+     */
+    #[Override]
+    public function getMetricDefinitions(): array
+    {
+        return [
+            new MetricDefinition(
+                name: self::METRIC_TCC,
+                collectedAt: SymbolLevel::Class_,
+                aggregations: [
+                    SymbolLevel::Namespace_->value => [
+                        AggregationStrategy::Average,
+                        AggregationStrategy::Min,
+                    ],
+                    SymbolLevel::Project->value => [
+                        AggregationStrategy::Average,
+                        AggregationStrategy::Min,
+                    ],
+                ],
+            ),
+            new MetricDefinition(
+                name: self::METRIC_LCC,
+                collectedAt: SymbolLevel::Class_,
+                aggregations: [
+                    SymbolLevel::Namespace_->value => [
+                        AggregationStrategy::Average,
+                        AggregationStrategy::Min,
+                    ],
+                    SymbolLevel::Project->value => [
+                        AggregationStrategy::Average,
+                        AggregationStrategy::Min,
+                    ],
+                ],
+            ),
+        ];
+    }
+}

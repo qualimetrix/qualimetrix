@@ -1,0 +1,42 @@
+<?php
+
+declare(strict_types=1);
+
+namespace AiMessDetector\Tests\Unit\Infrastructure\Console\Progress;
+
+use AiMessDetector\Core\Progress\NullProgressReporter;
+use AiMessDetector\Infrastructure\Console\Progress\ProgressReporterHolder;
+use PHPUnit\Framework\TestCase;
+
+final class ProgressReporterHolderTest extends TestCase
+{
+    public function testInitializesWithNullProgressReporter(): void
+    {
+        $holder = new ProgressReporterHolder();
+
+        $this->assertInstanceOf(NullProgressReporter::class, $holder->getReporter());
+    }
+
+    public function testCanSetAndGetReporter(): void
+    {
+        $holder = new ProgressReporterHolder();
+        $reporter = new NullProgressReporter();
+
+        $holder->setReporter($reporter);
+
+        $this->assertSame($reporter, $holder->getReporter());
+    }
+
+    public function testCanReplaceReporter(): void
+    {
+        $holder = new ProgressReporterHolder();
+        $reporter1 = new NullProgressReporter();
+        $reporter2 = new NullProgressReporter();
+
+        $holder->setReporter($reporter1);
+        $this->assertSame($reporter1, $holder->getReporter());
+
+        $holder->setReporter($reporter2);
+        $this->assertSame($reporter2, $holder->getReporter());
+    }
+}

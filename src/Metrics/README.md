@@ -1,0 +1,181 @@
+# Metrics — Metric Collectors
+
+## Overview
+
+Metrics are collectors that gather metrics from the AST. Each collector:
+- Implements `MetricCollectorInterface`
+- Has its own Visitor for AST traversal
+- Returns a `MetricBag` with collected metrics
+
+Collectors **do not interpret** metrics — they only collect them. Interpretation happens in Rules.
+
+---
+
+## Metrics Table
+
+| Metric | Category | Level | Description |
+|--------|----------|-------|-------------|
+| **Complexity** | | | |
+| `ccn` | Complexity | Method | Cyclomatic Complexity — number of execution paths |
+| `cognitive` | Complexity | Method | Cognitive Complexity — difficulty of understanding code |
+| `npath` | Complexity | Method | NPath Complexity — number of acyclic paths (exponential growth) |
+| **Maintainability** | | | |
+| `halstead.*` | Maintainability | Method | Halstead metrics (volume, difficulty, effort, bugs, time) |
+| `mi` | Maintainability | Method | Maintainability Index (derived from Halstead + CCN) |
+| **Size** | | | |
+| `loc`, `lloc`, `cloc` | Size | File | Lines of Code (total, logical, comments) |
+| `classCount`, `interfaceCount`, `traitCount`, `enumCount` | Size | File | Number of classes/interfaces/traits/enums |
+| `propertyCount` | Size | Class | Number of class properties (+ by visibility) |
+| `methodCount` | Size | Class | Number of class methods (+ getters/setters) |
+| **Structure** | | | |
+| `lcom` | Structure | Class | LCOM4 — method cohesion (number of graph components) |
+| `tcc`, `lcc` | Structure | Class | TCC/LCC — Tight/Loose Class Cohesion (0-1) |
+| `rfc` | Structure | Class | Response for Class — testability complexity |
+| `wmc` | Structure | Class | Weighted Methods per Class — sum of method CCN |
+| `dit` | Structure | Class | Depth of Inheritance Tree — inheritance depth |
+| `noc` | Structure | Class | Number of Children — number of direct subclasses |
+| **Coupling** | | | |
+| `ca`, `ce`, `instability` | Coupling | Class | Afferent/Efferent Coupling, instability |
+| `abstractness` | Coupling | Namespace | Proportion of abstract classes/interfaces |
+| `distance` | Coupling | Namespace | Distance from Main Sequence (derived) |
+
+---
+
+## Detailed Documentation by Category
+
+- **[Complexity/](Complexity/README.md)** — Cyclomatic, Cognitive, NPath Complexity
+- **[Maintainability/](Maintainability/README.md)** — Halstead, Maintainability Index
+- **[Size/](Size/README.md)** — LOC, Class Count, Property Count, Method Count
+- **[Structure/](Structure/README.md)** — TCC/LCC, LCOM, RFC, WMC, DIT, NOC
+- **[Coupling/](Coupling/README.md)** — Ca/Ce/Instability, Abstractness, Distance
+
+---
+
+## Self-Aggregating Metrics
+
+The system uses a **Self-Aggregating Metrics** pattern — each collector declares how its metrics should be aggregated. The aggregator becomes generic and contains no hardcoded metric names.
+
+### AggregationStrategy (Enum)
+
+| Value | Description | Example |
+|-------|-------------|---------|
+| `Sum` | Sum of values | `ccn.sum` |
+| `Average` | Arithmetic mean | `ccn.avg` |
+| `Max` | Maximum | `ccn.max` |
+| `Min` | Minimum | `mi.min` |
+| `Count` | Number of elements | — |
+
+### SymbolLevel (Enum)
+
+Symbol hierarchy for aggregation:
+
+```
+Project
+  └── Namespace
+      └── Class/Interface/Trait/Enum
+          └── Method/Function
+
+(File — separate level for file-scoped metrics)
+```
+
+### Naming Convention
+
+Aggregated metrics are named: `{metric}.{strategy}`
+
+**Examples:**
+- `ccn.sum`, `ccn.avg`, `ccn.max` (sum/average/maximum CCN in class/namespace)
+- `loc.sum`, `loc.avg` (sum/average LOC)
+- `mi.avg`, `mi.min` (average/minimum Maintainability Index)
+- `lcom.avg`, `lcom.max` (average/maximum LCOM)
+
+---
+
+## Collector Contract
+
+**Methods:**
+- `getName(): string` — unique name
+- `provides(): array<string>` — which metrics it collects
+- `getMetricDefinitions(): array<MetricDefinition>` — metric descriptions and aggregation strategies
+- `getVisitor(): NodeVisitorAbstract` — visitor for AST
+- `collect(SplFileInfo $file, array $ast): MetricBag` — collection after traversal
+- `reset(): void` — state reset between files
+
+**Optional interfaces:**
+- `MethodMetricsProviderInterface` — provides method-level metrics
+- `ClassMetricsProviderInterface` — provides class-level metrics
+- `DerivedCollectorInterface` — derived metrics (require other collectors)
+- `GlobalContextCollectorInterface` — use global context (dependency graph)
+
+**DI tags:** `aimd.collector`
+
+---
+
+## MetricDefinition (VO)
+
+Describes a metric and its aggregation strategies.
+
+**Fields:**
+- `name: string` — base name (`ccn`, `loc`, `classCount`)
+- `collectedAt: SymbolLevel` — collection level (Method, File, ...)
+- `aggregations: array<SymbolLevel, list<AggregationStrategy>>` — strategies by level
+
+**Methods:**
+- `aggregatedName(AggregationStrategy $strategy): string` — returns `{name}.{strategy}`
+- `getStrategiesForLevel(SymbolLevel $level): list<AggregationStrategy>`
+
+**Example:**
+
+```php
+new MetricDefinition(
+    name: 'ccn',
+    collectedAt: SymbolLevel::Method,
+    aggregations: [
+        SymbolLevel::Class_->value => [Sum, Average, Max],
+        SymbolLevel::Namespace_->value => [Sum, Average, Max],
+        SymbolLevel::Project->value => [Sum, Average, Max],
+    ],
+)
+```
+
+---
+
+## Creating a New Collector
+
+### Checklist
+
+1. [ ] Create a `{Name}Collector` class in the appropriate category
+2. [ ] Create a `{Name}Visitor` for AST traversal (with ResettableVisitorInterface)
+3. [ ] Implement `provides(): array` — list of metrics
+4. [ ] Implement `getMetricDefinitions(): array` — aggregation descriptions
+5. [ ] Implement `collect()` — metric collection from visitor
+6. [ ] For class-level metrics: implement `ClassMetricsProviderInterface`
+7. [ ] For method-level metrics: implement `MethodMetricsProviderInterface`
+8. [ ] Add `aimd.collector` DI tag (automatically via autoconfiguration)
+9. [ ] Write unit tests (including a test for getMetricDefinitions)
+
+### Metric Naming Conventions
+
+Metrics are stored in separate `MetricBag` instances for each symbol, so keys do not contain FQN.
+
+| Level | Example Keys |
+|-------|--------------|
+| Method | `ccn`, `cognitive`, `mi`, `halstead.volume` |
+| Class | `methodCount`, `lcom`, `tcc`, `rfc`, `ccn.sum`, `ccn.avg` |
+| File | `loc`, `lloc`, `cloc`, `classCount` |
+| Namespace | `loc.sum`, `loc.avg`, `ccn.sum`, `lcom.max` |
+| Project | same as Namespace |
+
+---
+
+## Edge Cases
+
+- Anonymous classes — do not count in classCount, LCOM, TCC/LCC, DIT, RFC
+- Nested functions — separate metrics
+- Closure — treated as a separate method with a generated name
+- File without classes — only file-level metrics
+- Empty file — `loc = 0`, `classCount = 0`
+- Class without methods — `lcom = 0`, `methodCount = 0`, `tcc = 1.0`, `lcc = 1.0`, `rfc = 0`
+- Class with one method — `tcc = 1.0`, `lcc = 1.0` (perfect cohesion by definition)
+- Class without properties — all methods are isolated, `lcom = methodCount`, `tcc = 0.0`, `lcc = 0.0`
+- TCC/LCC — consider only public methods
+- RFC — abstract methods are counted, `self::`/`static::`/`parent::` are not counted

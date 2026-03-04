@@ -1,0 +1,71 @@
+<?php
+
+declare(strict_types=1);
+
+namespace AiMessDetector\Rules\Maintainability;
+
+use AiMessDetector\Core\Rule\RuleOptionsInterface;
+use AiMessDetector\Core\Violation\Severity;
+
+/**
+ * Options for MaintainabilityRule.
+ *
+ * Maintainability Index thresholds (Microsoft/Visual Studio scale):
+ * - MI >= 65: good maintainability (no violation)
+ * - MI 20-64: moderate maintainability (warning)
+ * - MI < 20: poor maintainability (error)
+ *
+ * Note: Lower MI is worse, so thresholds work in reverse.
+ */
+final readonly class MaintainabilityOptions implements RuleOptionsInterface
+{
+    public function __construct(
+        public bool $enabled = true,
+        public float $warning = 65.0,
+        public float $error = 20.0,
+        public bool $excludeTests = true,
+        public int $minLoc = 10,
+    ) {}
+
+    /**
+     * @param array<string, mixed> $config
+     */
+    public static function fromArray(array $config): self
+    {
+        if ($config === []) {
+            return new self(enabled: false);
+        }
+
+        return new self(
+            enabled: (bool) ($config['enabled'] ?? true),
+            warning: (float) ($config['warning'] ?? 65.0),
+            error: (float) ($config['error'] ?? 20.0),
+            excludeTests: (bool) ($config['exclude_tests'] ?? $config['excludeTests'] ?? true),
+            minLoc: (int) ($config['min_loc'] ?? $config['minLoc'] ?? 10),
+        );
+    }
+
+    public function isEnabled(): bool
+    {
+        return $this->enabled;
+    }
+
+    /**
+     * Get severity for a given MI value.
+     *
+     * Lower MI = worse maintainability.
+     */
+    public function getSeverity(int|float $value): ?Severity
+    {
+        // Lower values are worse
+        if ($value < $this->error) {
+            return Severity::Error;
+        }
+
+        if ($value < $this->warning) {
+            return Severity::Warning;
+        }
+
+        return null;
+    }
+}

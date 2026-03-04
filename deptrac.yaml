@@ -1,0 +1,83 @@
+deptrac:
+  paths:
+    - ./src
+
+  exclude_files:
+    - '#.*Test\.php$#'
+
+  layers:
+    # Core layer - no dependencies on other layers
+    - name: Core
+      collectors:
+        - type: directory
+          value: src/Core/.*
+
+    # Domain layers - depend only on Core
+    - name: Metrics
+      collectors:
+        - type: directory
+          value: src/Metrics/.*
+
+    - name: Rules
+      collectors:
+        - type: directory
+          value: src/Rules/.*
+
+    - name: Reporting
+      collectors:
+        - type: directory
+          value: src/Reporting/.*
+
+    - name: Configuration
+      collectors:
+        - type: directory
+          value: src/Configuration/.*
+
+    # Analysis layer - depends on Core, orchestrates domain layers
+    - name: Analysis
+      collectors:
+        - type: directory
+          value: src/Analysis/.*
+
+    # Infrastructure layer - depends on everything
+    - name: Infrastructure
+      collectors:
+        - type: directory
+          value: src/Infrastructure/.*
+
+  ruleset:
+    # Core has no dependencies on other internal layers
+    Core: []
+
+    # Domain layers depend only on Core
+    Metrics:
+      - Core
+    Rules:
+      - Core
+    Reporting:
+      - Core
+    Configuration:
+      - Core
+
+    # Analysis orchestrates domain layers
+    Analysis:
+      - Core
+      - Metrics
+      - Rules
+      - Reporting
+      - Configuration
+
+    # Infrastructure can depend on everything
+    Infrastructure:
+      - Core
+      - Metrics
+      - Rules
+      - Reporting
+      - Configuration
+      - Analysis
+
+  formatters:
+    graphviz:
+      hidden_layers: []
+      groups: {}
+      point_to_groups: false

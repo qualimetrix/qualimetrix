@@ -1,0 +1,25 @@
+* text=auto eol=lf
+*.phar binary
+*.php diff=php
+
+# Exclude from composer dist package
+/.github/               export-ignore
+/.githooks/             export-ignore
+/docs/                  export-ignore
+/tests/                 export-ignore
+/scripts/               export-ignore
+/benchmark-results/     export-ignore
+/coverage/              export-ignore
+/.gitattributes         export-ignore
+/.gitignore             export-ignore
+/.editorconfig          export-ignore
+/.dockerignore          export-ignore
+/.php-cs-fixer.dist.php export-ignore
+/phpunit.xml.dist       export-ignore
+/phpstan.neon           export-ignore
+/deptrac.yaml           export-ignore
+/docker-compose.yml     export-ignore
+/Dockerfile             export-ignore
+/CLAUDE.md              export-ignore
+/baseline.json          export-ignore
+/profile.json           export-ignore

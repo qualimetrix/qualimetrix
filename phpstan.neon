@@ -1,0 +1,14 @@
+parameters:
+    level: 8
+    parallel:
+        maximumNumberOfProcesses: 4
+        processTimeout: 300.0
+        jobSize: 10
+    paths:
+        - src
+        - tests
+    excludePaths:
+        - tests/Fixtures
+    tmpDir: .phpstan.cache
+    reportUnmatchedIgnoredErrors: false
+    treatPhpDocTypesAsCertain: false

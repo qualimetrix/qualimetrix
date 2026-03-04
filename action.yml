@@ -1,0 +1,157 @@
+name: 'AI Mess Detector'
+description: 'Static analysis for PHP code quality metrics'
+author: 'FractalizeR'
+
+branding:
+  icon: 'check-circle'
+  color: 'blue'
+
+inputs:
+  paths:
+    description: 'Paths to analyze (space-separated)'
+    required: false
+    default: 'src/'
+  baseline:
+    description: 'Path to baseline file'
+    required: false
+  config:
+    description: 'Path to config file'
+    required: false
+  format:
+    description: 'Output format (text, json, sarif, gitlab)'
+    required: false
+    default: 'text'
+  fail-on:
+    description: 'Fail threshold (error, warning, info)'
+    required: false
+    default: 'error'
+  php-version:
+    description: 'PHP version'
+    required: false
+    default: '8.4'
+  working-directory:
+    description: 'Working directory for analysis'
+    required: false
+    default: '.'
+
+outputs:
+  violations:
+    description: 'Number of violations found'
+    value: ${{ steps.analysis.outputs.violations }}
+  exit-code:
+    description: 'Exit code of the analysis'
+    value: ${{ steps.analysis.outputs.exit-code }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ inputs.php-version }}
+        coverage: none
+        tools: composer:v2
+
+    - name: Install dependencies
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        if [ -f "composer.json" ]; then
+          echo "Installing composer dependencies..."
+          composer install --no-progress --prefer-dist --optimize-autoloader --no-dev
+        else
+          echo "No composer.json found, skipping dependency installation"
+        fi
+
+    - name: Run AI Mess Detector
+      id: analysis
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        # Build command
+        ARGS="${{ inputs.paths }}"
+
+        # Add baseline if specified
+        if [ -n "${{ inputs.baseline }}" ]; then
+          ARGS="$ARGS --baseline=${{ inputs.baseline }}"
+        fi
+
+        # Add config if specified
+        if [ -n "${{ inputs.config }}" ]; then
+          ARGS="$ARGS --config=${{ inputs.config }}"
+        fi
+
+        # Add format
+        ARGS="$ARGS --format=${{ inputs.format }}"
+
+        # Add fail-on threshold
+        ARGS="$ARGS --fail-on=${{ inputs.fail-on }}"
+
+        # Determine AIMD binary location
+        if [ -f "vendor/bin/aimd" ]; then
+          AIMD_BIN="vendor/bin/aimd"
+        elif [ -f "bin/aimd" ]; then
+          AIMD_BIN="bin/aimd"
+        else
+          echo "AIMD binary not found in project, installing globally..."
+          composer global require fractalizer/ai-mess-detector --no-progress --quiet || true
+          GLOBAL_BIN=$(composer global config bin-dir --absolute 2>/dev/null)/aimd
+          if [ -f "$GLOBAL_BIN" ]; then
+            AIMD_BIN="$GLOBAL_BIN"
+          else
+            echo "Error: Failed to find or install AIMD"
+            exit 1
+          fi
+        fi
+
+        # Determine output file for non-text formats
+        OUTPUT_FILE=""
+        case "${{ inputs.format }}" in
+          sarif)
+            OUTPUT_FILE="results.sarif"
+            ;;
+          json)
+            OUTPUT_FILE="aimd-results.json"
+            ;;
+          gitlab)
+            OUTPUT_FILE="code-quality-report.json"
+            ;;
+        esac
+
+        echo "Running: $AIMD_BIN analyze $ARGS"
+
+        # Run analysis and capture exit code
+        set +e
+        if [ -n "$OUTPUT_FILE" ]; then
+          # For structured formats, write to file
+          $AIMD_BIN analyze $ARGS > "$OUTPUT_FILE" 2>&1
+          EXIT_CODE=$?
+          OUTPUT=$(cat "$OUTPUT_FILE")
+          echo "Output written to: $OUTPUT_FILE"
+        else
+          # For text format, capture output
+          OUTPUT=$($AIMD_BIN analyze $ARGS 2>&1)
+          EXIT_CODE=$?
+          echo "$OUTPUT"
+        fi
+        set -e
+
+        # Extract violations count from output
+        VIOLATIONS=0
+        # Match format: "Errors: X | Warnings: Y" or "X violations"
+        if echo "$OUTPUT" | grep -qE "Errors:|violations"; then
+          ERRORS=$(echo "$OUTPUT" | grep -oE 'Errors: [0-9]+' | grep -oE '[0-9]+' || echo "0")
+          WARNINGS=$(echo "$OUTPUT" | grep -oE 'Warnings: [0-9]+' | grep -oE '[0-9]+' || echo "0")
+          if [ -n "$ERRORS" ] && [ -n "$WARNINGS" ]; then
+            VIOLATIONS=$((ERRORS + WARNINGS))
+          elif echo "$OUTPUT" | grep -qE '[0-9]+ violations'; then
+            VIOLATIONS=$(echo "$OUTPUT" | grep -oE '[0-9]+ violations' | grep -oE '[0-9]+' | head -1 || echo "0")
+          fi
+        fi
+
+        # Set outputs
+        echo "violations=$VIOLATIONS" >> "$GITHUB_OUTPUT"
+        echo "exit-code=$EXIT_CODE" >> "$GITHUB_OUTPUT"
+
+        # Exit with the original exit code
+        exit $EXIT_CODE

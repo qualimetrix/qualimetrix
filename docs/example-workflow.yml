@@ -1,0 +1,145 @@
+# Example GitHub Actions workflow for using AI Mess Detector
+# Copy this file to .github/workflows/ in your project
+
+name: Code Quality
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+
+jobs:
+  # Basic usage with text output
+  aimd-basic:
+    name: AI Mess Detector (Basic)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run AI Mess Detector
+        uses: fractalizer/ai-mess-detector@v1
+        with:
+          paths: 'src/'
+          baseline: 'baseline.json'
+          format: 'text'
+          fail-on: 'error'
+
+  # Advanced usage with SARIF output for GitHub Security tab
+  aimd-sarif:
+    name: AI Mess Detector (SARIF)
+    runs-on: ubuntu-latest
+    permissions:
+      # Required for uploading SARIF results
+      security-events: write
+      # Required for private repositories
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run AI Mess Detector
+        id: aimd
+        uses: fractalizer/ai-mess-detector@v1
+        with:
+          paths: 'src/ tests/'
+          baseline: 'baseline.json'
+          config: 'aimd.yaml'
+          format: 'sarif'
+          fail-on: 'warning'
+          php-version: '8.4'
+        continue-on-error: true
+
+      - name: Upload SARIF results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: results.sarif
+          category: aimd
+
+      - name: Show analysis summary
+        if: always()
+        run: |
+          echo "Exit code: ${{ steps.aimd.outputs.exit-code }}"
+          echo "Violations found: ${{ steps.aimd.outputs.violations }}"
+
+      - name: Fail if violations found
+        if: steps.aimd.outputs.exit-code != '0'
+        run: exit ${{ steps.aimd.outputs.exit-code }}
+
+  # Multi-path analysis with JSON output
+  aimd-json:
+    name: AI Mess Detector (JSON)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run AI Mess Detector
+        uses: fractalizer/ai-mess-detector@v1
+        with:
+          paths: 'src/ lib/ app/'
+          format: 'json'
+          fail-on: 'info'
+
+      - name: Upload JSON results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: aimd-results
+          path: |
+            aimd-results.json
+            aimd-report.txt
+          retention-days: 30
+
+  # GitLab CI format (useful for GitLab integration)
+  aimd-gitlab:
+    name: AI Mess Detector (GitLab format)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run AI Mess Detector
+        uses: fractalizer/ai-mess-detector@v1
+        with:
+          paths: 'src/'
+          format: 'gitlab'
+          fail-on: 'error'
+
+  # Using custom working directory
+  aimd-custom-dir:
+    name: AI Mess Detector (Custom Directory)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run AI Mess Detector in subdirectory
+        uses: fractalizer/ai-mess-detector@v1
+        with:
+          paths: 'src/'
+          working-directory: './backend'
+          php-version: '8.3'
+          config: '../aimd.yaml'
+
+  # Generate baseline on first run
+  aimd-generate-baseline:
+    name: Generate Baseline
+    runs-on: ubuntu-latest
+    # Only run manually or on specific branch
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/baseline-update'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate baseline
+        uses: fractalizer/ai-mess-detector@v1
+        with:
+          paths: 'src/'
+          format: 'text'
+          # Note: --generate-baseline would need to be added as an input
+          # For now, use direct CLI command in a separate step
+
+      - name: Commit baseline
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add baseline.json
+          git commit -m "chore: update baseline" || echo "No changes to commit"
+          git push

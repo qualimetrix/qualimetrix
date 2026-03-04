@@ -1,0 +1,41 @@
+#!/bin/bash
+
+# Commit-msg hook for AI Mess Detector
+# Validates commit message format
+
+COMMIT_MSG_FILE=$1
+COMMIT_MSG=$(cat "$COMMIT_MSG_FILE")
+
+# Pattern for conventional commits: type: description
+# Allowed types: feat, fix, refactor, test, docs, chore, style, perf, ci, build
+PATTERN="^(feat|fix|refactor|test|docs|chore|style|perf|ci|build)(\(.+\))?: .+"
+
+# Check first line
+FIRST_LINE=$(echo "$COMMIT_MSG" | head -n 1)
+
+if ! echo "$FIRST_LINE" | grep -qE "$PATTERN"; then
+    echo ""
+    echo "❌ Invalid commit message format!"
+    echo ""
+    echo "Expected format: <type>: <description>"
+    echo "or:              <type>(scope): <description>"
+    echo ""
+    echo "Types: feat, fix, refactor, test, docs, chore, style, perf, ci, build"
+    echo ""
+    echo "Examples:"
+    echo "  feat: add cyclomatic complexity collector"
+    echo "  fix(parser): handle anonymous classes correctly"
+    echo "  docs: update ARCHITECTURE.md"
+    echo ""
+    echo "Your message: $FIRST_LINE"
+    exit 1
+fi
+
+# Check first line length (recommended <= 72 characters)
+if [ ${#FIRST_LINE} -gt 72 ]; then
+    echo ""
+    echo "⚠️  Warning: commit message first line is longer than 72 characters (${#FIRST_LINE})"
+    echo "Consider making it shorter for better readability in git log"
+fi
+
+exit 0

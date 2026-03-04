@@ -1,0 +1,134 @@
+<?php
+
+declare(strict_types=1);
+
+namespace AiMessDetector\Rules\Size;
+
+use AiMessDetector\Core\Rule\AnalysisContext;
+use AiMessDetector\Core\Rule\RuleCategory;
+use AiMessDetector\Core\Rule\RuleInterface;
+use AiMessDetector\Core\Rule\RuleOptionsInterface;
+use AiMessDetector\Core\Symbol\SymbolType;
+use AiMessDetector\Core\Violation\Location;
+use AiMessDetector\Core\Violation\Severity;
+use AiMessDetector\Core\Violation\Violation;
+use AiMessDetector\Rules\AbstractRule;
+use InvalidArgumentException;
+
+/**
+ * Rule that checks if classes have too many properties.
+ *
+ * Too many properties may indicate a God Class that violates the Single Responsibility Principle.
+ */
+final class PropertyCountRule extends AbstractRule implements RuleInterface
+{
+    public const string NAME = 'size.propertyCount';
+
+    public function __construct(
+        RuleOptionsInterface $options,
+    ) {
+        if (!$options instanceof PropertyCountOptions) {
+            throw new InvalidArgumentException(
+                \sprintf('Expected %s, got %s', PropertyCountOptions::class, $options::class),
+            );
+        }
+        parent::__construct($options);
+    }
+
+    public function getName(): string
+    {
+        return self::NAME;
+    }
+
+    public function getDescription(): string
+    {
+        return 'Checks if classes have too many properties';
+    }
+
+    public function getCategory(): RuleCategory
+    {
+        return RuleCategory::Size;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function requires(): array
+    {
+        return ['propertyCount', 'isReadonly', 'isPromotedPropertiesOnly'];
+    }
+
+    /**
+     * @return class-string<PropertyCountOptions>
+     */
+    public static function getOptionsClass(): string
+    {
+        return PropertyCountOptions::class;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function getCliAliases(): array
+    {
+        return [
+            'property-exclude-readonly' => 'excludeReadonly',
+            'property-exclude-promoted-only' => 'excludePromotedOnly',
+        ];
+    }
+
+    public function analyze(AnalysisContext $context): array
+    {
+        if (!$this->options instanceof PropertyCountOptions || !$this->options->isEnabled()) {
+            return [];
+        }
+
+        $violations = [];
+
+        foreach ($context->metrics->all(SymbolType::Class_) as $classInfo) {
+            $metrics = $context->metrics->get($classInfo->symbolPath);
+            $propertyCount = $metrics->get('propertyCount');
+
+            if ($propertyCount === null) {
+                continue;
+            }
+
+            // Skip readonly classes if configured
+            if ($this->options->excludeReadonly && $metrics->get('isReadonly') === 1) {
+                continue;
+            }
+
+            // Skip classes with only promoted properties if configured
+            if ($this->options->excludePromotedOnly && $metrics->get('isPromotedPropertiesOnly') === 1) {
+                continue;
+            }
+
+            $propertyCountValue = (int) $propertyCount;
+            $severity = $this->options->getSeverity($propertyCountValue);
+
+            if ($severity === null) {
+                continue;
+            }
+
+            $threshold = $severity === Severity::Error
+                ? $this->options->error
+                : $this->options->warning;
+
+            $violations[] = new Violation(
+                location: new Location($classInfo->file, $classInfo->line),
+                symbolPath: $classInfo->symbolPath,
+                ruleName: $this->getName(),
+                message: \sprintf(
+                    'Class has %d properties, exceeds threshold of %d',
+                    $propertyCountValue,
+                    $threshold,
+                ),
+                severity: $severity,
+                metricValue: $propertyCountValue,
+            );
+        }
+
+        return $violations;
+    }
+
+}

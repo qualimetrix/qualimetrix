@@ -1,0 +1,5107 @@
+{
+    "version": 2,
+    "generated": "2025-12-09T14:47:21+00:00",
+    "count": 876,
+    "violations": {
+        "class:AiMessDetector\\Analysis\\Aggregator\\MetricAggregator": [
+            {
+                "rule": "cognitive",
+                "hash": "edb12dc9"
+            },
+            {
+                "rule": "lcom",
+                "hash": "de0b096c"
+            },
+            {
+                "rule": "wmc",
+                "hash": "ed7c7f1b"
+            }
+        ],
+        "class:AiMessDetector\\Analysis\\AnalysisResult": [
+            {
+                "rule": "lcom",
+                "hash": "96626e24"
+            }
+        ],
+        "class:AiMessDetector\\Analysis\\Analyzer": [
+            {
+                "rule": "lcom",
+                "hash": "9c00617c"
+            },
+            {
+                "rule": "size.propertyCount",
+                "hash": "3c18fc7c"
+            },
+            {
+                "rule": "wmc",
+                "hash": "0cadd20a"
+            }
+        ],
+        "class:AiMessDetector\\Analysis\\Collector\\CompositeCollector": [
+            {
+                "rule": "lcom",
+                "hash": "6ca31450"
+            }
+        ],
+        "class:AiMessDetector\\Analysis\\Collector\\GlobalCollectorSorter": [
+            {
+                "rule": "lcom",
+                "hash": "c53c1cc2"
+            }
+        ],
+        "class:AiMessDetector\\Analysis\\Dependency\\CircularDependencyDetector": [
+            {
+                "rule": "lcom",
+                "hash": "049953d0"
+            }
+        ],
+        "class:AiMessDetector\\Analysis\\Dependency\\Cycle": [
+            {
+                "rule": "lcom",
+                "hash": "195dfa4c"
+            }
+        ],
+        "class:AiMessDetector\\Analysis\\Dependency\\DependencyGraph": [
+            {
+                "rule": "lcom",
+                "hash": "ab124819"
+            }
+        ],
+        "class:AiMessDetector\\Analysis\\Dependency\\DependencyGraphBuilder": [
+            {
+                "rule": "lcom",
+                "hash": "c5004d63"
+            }
+        ],
+        "class:AiMessDetector\\Analysis\\Dependency\\DependencyResolver": [
+            {
+                "rule": "lcom",
+                "hash": "424f2c4a"
+            }
+        ],
+        "class:AiMessDetector\\Analysis\\Dependency\\DependencyVisitor": [
+            {
+                "rule": "lcom",
+                "hash": "02d2c7f8"
+            },
+            {
+                "rule": "wmc",
+                "hash": "339217a2"
+            }
+        ],
+        "class:AiMessDetector\\Analysis\\Dependency\\Export\\DotExporter": [
+            {
+                "rule": "lcom",
+                "hash": "df3c166a"
+            },
+            {
+                "rule": "wmc",
+                "hash": "7c2a64a8"
+            }
+        ],
+        "class:AiMessDetector\\Analysis\\Discovery\\FinderFileDiscovery": [
+            {
+                "rule": "lcom",
+                "hash": "291cd5c4"
+            }
+        ],
+        "class:AiMessDetector\\Analysis\\Namespace_\\Psr4NamespaceDetector": [
+            {
+                "rule": "lcom",
+                "hash": "18fc4b8a"
+            }
+        ],
+        "class:AiMessDetector\\Analysis\\Namespace_\\TokenizerNamespaceDetector": [
+            {
+                "rule": "lcom",
+                "hash": "6b7dc3ad"
+            }
+        ],
+        "class:AiMessDetector\\Analysis\\Parallel\\IpcChannel": [
+            {
+                "rule": "lcom",
+                "hash": "fd875310"
+            }
+        ],
+        "class:AiMessDetector\\Analysis\\Parallel\\ParallelCollector": [
+            {
+                "rule": "lcom",
+                "hash": "6d12f6bf"
+            }
+        ],
+        "class:AiMessDetector\\Analysis\\Parallel\\Strategy\\PcntlForkStrategy": [
+            {
+                "rule": "lcom",
+                "hash": "5f24a2e7"
+            }
+        ],
+        "class:AiMessDetector\\Analysis\\Parallel\\Strategy\\SequentialStrategy": [
+            {
+                "rule": "lcom",
+                "hash": "c352ea66"
+            }
+        ],
+        "class:AiMessDetector\\Analysis\\Parallel\\Strategy\\StrategySelector": [
+            {
+                "rule": "lcom",
+                "hash": "860a9c55"
+            }
+        ],
+        "class:AiMessDetector\\Analysis\\Parallel\\WorkerCountDetector": [
+            {
+                "rule": "lcom",
+                "hash": "c36a70d7"
+            }
+        ],
+        "class:AiMessDetector\\Baseline\\Baseline": [
+            {
+                "rule": "lcom",
+                "hash": "d79bb302"
+            }
+        ],
+        "class:AiMessDetector\\Baseline\\BaselineEntry": [
+            {
+                "rule": "lcom",
+                "hash": "57c87431"
+            }
+        ],
+        "class:AiMessDetector\\Baseline\\BaselineGenerator": [
+            {
+                "rule": "lcom",
+                "hash": "9493ebb5"
+            }
+        ],
+        "class:AiMessDetector\\Baseline\\BaselineLoader": [
+            {
+                "rule": "lcom",
+                "hash": "f5cc4e9a"
+            }
+        ],
+        "class:AiMessDetector\\Baseline\\BaselineWriter": [
+            {
+                "rule": "lcom",
+                "hash": "94543cc5"
+            }
+        ],
+        "class:AiMessDetector\\Baseline\\Suppression\\Suppression": [
+            {
+                "rule": "lcom",
+                "hash": "6a4eb528"
+            }
+        ],
+        "class:AiMessDetector\\Baseline\\Suppression\\SuppressionExtractor": [
+            {
+                "rule": "lcom",
+                "hash": "9b717d7c"
+            }
+        ],
+        "class:AiMessDetector\\Baseline\\Suppression\\SuppressionFilter": [
+            {
+                "rule": "lcom",
+                "hash": "7023af2a"
+            }
+        ],
+        "class:AiMessDetector\\Baseline\\ViolationHasher": [
+            {
+                "rule": "lcom",
+                "hash": "879e6e24"
+            }
+        ],
+        "class:AiMessDetector\\Configuration\\AnalysisConfiguration": [
+            {
+                "rule": "lcom",
+                "hash": "45c9ffff"
+            }
+        ],
+        "class:AiMessDetector\\Configuration\\ConfigurationHolder": [
+            {
+                "rule": "lcom",
+                "hash": "f18b16d4"
+            }
+        ],
+        "class:AiMessDetector\\Configuration\\Exception\\ConfigLoadException": [
+            {
+                "rule": "lcom",
+                "hash": "6b9fb51d"
+            }
+        ],
+        "class:AiMessDetector\\Configuration\\Loader\\YamlConfigLoader": [
+            {
+                "rule": "lcom",
+                "hash": "499404c3"
+            }
+        ],
+        "class:AiMessDetector\\Configuration\\RuleOptionsFactory": [
+            {
+                "rule": "lcom",
+                "hash": "288bd635"
+            }
+        ],
+        "class:AiMessDetector\\Configuration\\RuleOptionsParser": [
+            {
+                "rule": "lcom",
+                "hash": "7a97968a"
+            }
+        ],
+        "class:AiMessDetector\\Configuration\\RuleOptionsParserFactory": [
+            {
+                "rule": "lcom",
+                "hash": "9c63f8be"
+            }
+        ],
+        "class:AiMessDetector\\Core\\Dependency\\Dependency": [
+            {
+                "rule": "lcom",
+                "hash": "a8abf3da"
+            }
+        ],
+        "class:AiMessDetector\\Core\\Dependency\\DependencyType": [
+            {
+                "rule": "lcom",
+                "hash": "30d79581"
+            }
+        ],
+        "class:AiMessDetector\\Core\\Dependency\\EmptyDependencyGraph": [
+            {
+                "rule": "lcom",
+                "hash": "63e083ed"
+            }
+        ],
+        "class:AiMessDetector\\Core\\Metric\\ClassWithMetrics": [
+            {
+                "rule": "lcom",
+                "hash": "4ad8aa46"
+            }
+        ],
+        "class:AiMessDetector\\Core\\Metric\\MethodWithMetrics": [
+            {
+                "rule": "lcom",
+                "hash": "0d079b94"
+            }
+        ],
+        "class:AiMessDetector\\Core\\Metric\\MetricBag": [
+            {
+                "rule": "lcom",
+                "hash": "c08cd4bd"
+            }
+        ],
+        "class:AiMessDetector\\Core\\Metric\\MetricDefinition": [
+            {
+                "rule": "lcom",
+                "hash": "495a44a3"
+            }
+        ],
+        "class:AiMessDetector\\Core\\Namespace_\\ProjectNamespaceResolver": [
+            {
+                "rule": "lcom",
+                "hash": "b515eaa1"
+            }
+        ],
+        "class:AiMessDetector\\Core\\Progress\\NullProgressReporter": [
+            {
+                "rule": "lcom",
+                "hash": "53f24cab"
+            }
+        ],
+        "class:AiMessDetector\\Core\\Rule\\AnalysisContext": [
+            {
+                "rule": "lcom",
+                "hash": "61c4a014"
+            }
+        ],
+        "class:AiMessDetector\\Core\\Symbol\\ClassInfo": [
+            {
+                "rule": "lcom",
+                "hash": "346d07b4"
+            }
+        ],
+        "class:AiMessDetector\\Core\\Symbol\\MethodInfo": [
+            {
+                "rule": "lcom",
+                "hash": "aeb2226f"
+            }
+        ],
+        "class:AiMessDetector\\Core\\Util\\StringSet": [
+            {
+                "rule": "lcom",
+                "hash": "ab1d3e98"
+            }
+        ],
+        "class:AiMessDetector\\Core\\Violation\\Filter\\BaselineFilter": [
+            {
+                "rule": "lcom",
+                "hash": "562849e1"
+            }
+        ],
+        "class:AiMessDetector\\Core\\Violation\\Location": [
+            {
+                "rule": "lcom",
+                "hash": "e457c251"
+            }
+        ],
+        "class:AiMessDetector\\Core\\Violation\\Severity": [
+            {
+                "rule": "lcom",
+                "hash": "be05494e"
+            }
+        ],
+        "class:AiMessDetector\\Core\\Violation\\SymbolPath": [
+            {
+                "rule": "lcom",
+                "hash": "0309e154"
+            }
+        ],
+        "class:AiMessDetector\\Core\\Violation\\Violation": [
+            {
+                "rule": "lcom",
+                "hash": "23817d0b"
+            }
+        ],
+        "class:AiMessDetector\\Infrastructure\\Ast\\CachedFileParser": [
+            {
+                "rule": "lcom",
+                "hash": "9cf470a6"
+            }
+        ],
+        "class:AiMessDetector\\Infrastructure\\Ast\\FileParserFactory": [
+            {
+                "rule": "lcom",
+                "hash": "e4633037"
+            }
+        ],
+        "class:AiMessDetector\\Infrastructure\\Cache\\CacheFactory": [
+            {
+                "rule": "lcom",
+                "hash": "d9aa7181"
+            }
+        ],
+        "class:AiMessDetector\\Infrastructure\\Cache\\CacheKeyGenerator": [
+            {
+                "rule": "lcom",
+                "hash": "c00573c0"
+            }
+        ],
+        "class:AiMessDetector\\Infrastructure\\Cache\\CacheWriteException": [
+            {
+                "rule": "lcom",
+                "hash": "0fd22b09"
+            }
+        ],
+        "class:AiMessDetector\\Infrastructure\\Cache\\FileCache": [
+            {
+                "rule": "lcom",
+                "hash": "e904143b"
+            }
+        ],
+        "class:AiMessDetector\\Infrastructure\\Collector\\CachedCollector": [
+            {
+                "rule": "lcom",
+                "hash": "4377281b"
+            }
+        ],
+        "class:AiMessDetector\\Infrastructure\\Console\\CliOptionsParser": [
+            {
+                "rule": "lcom",
+                "hash": "b76ad905"
+            }
+        ],
+        "class:AiMessDetector\\Infrastructure\\Console\\Command\\AnalyzeCommand": [
+            {
+                "rule": "lcom",
+                "hash": "62b601a3"
+            },
+            {
+                "rule": "size",
+                "hash": "f2a34c1c"
+            },
+            {
+                "rule": "size.propertyCount",
+                "hash": "170556fc"
+            },
+            {
+                "rule": "wmc",
+                "hash": "d6fd846a"
+            }
+        ],
+        "class:AiMessDetector\\Infrastructure\\Console\\Command\\BaselineCleanupCommand": [
+            {
+                "rule": "lcom",
+                "hash": "fcc07b2b"
+            }
+        ],
+        "class:AiMessDetector\\Infrastructure\\Console\\Command\\GraphExportCommand": [
+            {
+                "rule": "lcom",
+                "hash": "89e3862b"
+            }
+        ],
+        "class:AiMessDetector\\Infrastructure\\Console\\Command\\HookInstallCommand": [
+            {
+                "rule": "lcom",
+                "hash": "1f3048f6"
+            }
+        ],
+        "class:AiMessDetector\\Infrastructure\\Console\\Command\\HookStatusCommand": [
+            {
+                "rule": "lcom",
+                "hash": "77fc9422"
+            }
+        ],
+        "class:AiMessDetector\\Infrastructure\\Console\\Command\\HookUninstallCommand": [
+            {
+                "rule": "lcom",
+                "hash": "03b98f8d"
+            }
+        ],
+        "class:AiMessDetector\\Infrastructure\\Console\\Progress\\ConsoleProgressBar": [
+            {
+                "rule": "lcom",
+                "hash": "b5888ba0"
+            }
+        ],
+        "class:AiMessDetector\\Infrastructure\\Console\\Progress\\DelegatingProgressReporter": [
+            {
+                "rule": "lcom",
+                "hash": "48f71da4"
+            }
+        ],
+        "class:AiMessDetector\\Infrastructure\\DependencyInjection\\ContainerFactory": [
+            {
+                "rule": "lcom",
+                "hash": "9dccec94"
+            },
+            {
+                "rule": "size",
+                "hash": "049a4e1c"
+            }
+        ],
+        "class:AiMessDetector\\Infrastructure\\Git\\ChangedFile": [
+            {
+                "rule": "lcom",
+                "hash": "df6393a9"
+            }
+        ],
+        "class:AiMessDetector\\Infrastructure\\Git\\GitClient": [
+            {
+                "rule": "lcom",
+                "hash": "7ebaf4f6"
+            }
+        ],
+        "class:AiMessDetector\\Infrastructure\\Git\\GitFileDiscovery": [
+            {
+                "rule": "lcom",
+                "hash": "5f9ff4bc"
+            }
+        ],
+        "class:AiMessDetector\\Infrastructure\\Git\\GitScopeFilter": [
+            {
+                "rule": "lcom",
+                "hash": "12b5aada"
+            }
+        ],
+        "class:AiMessDetector\\Infrastructure\\Git\\GitScopeParser": [
+            {
+                "rule": "lcom",
+                "hash": "005bff24"
+            }
+        ],
+        "class:AiMessDetector\\Infrastructure\\Logging\\ConsoleLogger": [
+            {
+                "rule": "lcom",
+                "hash": "1106ea3d"
+            }
+        ],
+        "class:AiMessDetector\\Infrastructure\\Logging\\DelegatingLogger": [
+            {
+                "rule": "lcom",
+                "hash": "b0cfc512"
+            }
+        ],
+        "class:AiMessDetector\\Infrastructure\\Logging\\FileLogger": [
+            {
+                "rule": "lcom",
+                "hash": "7a29d6ac"
+            }
+        ],
+        "class:AiMessDetector\\Infrastructure\\Rule\\RuleRegistry": [
+            {
+                "rule": "lcom",
+                "hash": "1e33f7c2"
+            }
+        ],
+        "class:AiMessDetector\\Infrastructure\\Storage\\ChangeDetector": [
+            {
+                "rule": "lcom",
+                "hash": "2dace502"
+            }
+        ],
+        "class:AiMessDetector\\Infrastructure\\Storage\\InMemoryStorage": [
+            {
+                "rule": "lcom",
+                "hash": "0f2d8760"
+            },
+            {
+                "rule": "wmc",
+                "hash": "1768c228"
+            }
+        ],
+        "class:AiMessDetector\\Infrastructure\\Storage\\SqliteStorage": [
+            {
+                "rule": "lcom",
+                "hash": "004d37f6"
+            },
+            {
+                "rule": "size",
+                "hash": "e14e76d2"
+            },
+            {
+                "rule": "wmc",
+                "hash": "0337f180"
+            }
+        ],
+        "class:AiMessDetector\\Metrics\\AbstractCollector": [
+            {
+                "rule": "lcom",
+                "hash": "df1c9831"
+            },
+            {
+                "rule": "noc",
+                "hash": "06b2a3d7"
+            }
+        ],
+        "class:AiMessDetector\\Metrics\\Complexity\\CognitiveComplexityCollector": [
+            {
+                "rule": "lcom",
+                "hash": "40b1cf47"
+            }
+        ],
+        "class:AiMessDetector\\Metrics\\Complexity\\CognitiveComplexityVisitor": [
+            {
+                "rule": "lcom",
+                "hash": "a8b40b64"
+            },
+            {
+                "rule": "wmc",
+                "hash": "5ed148ee"
+            }
+        ],
+        "class:AiMessDetector\\Metrics\\Complexity\\CyclomaticComplexityCollector": [
+            {
+                "rule": "lcom",
+                "hash": "523b6ea0"
+            }
+        ],
+        "class:AiMessDetector\\Metrics\\Complexity\\CyclomaticComplexityVisitor": [
+            {
+                "rule": "lcom",
+                "hash": "bb98c864"
+            },
+            {
+                "rule": "wmc",
+                "hash": "08d27e8e"
+            }
+        ],
+        "class:AiMessDetector\\Metrics\\Complexity\\NpathComplexityCollector": [
+            {
+                "rule": "lcom",
+                "hash": "6f46d982"
+            }
+        ],
+        "class:AiMessDetector\\Metrics\\Complexity\\NpathComplexityVisitor": [
+            {
+                "rule": "lcom",
+                "hash": "77dd5c35"
+            },
+            {
+                "rule": "size",
+                "hash": "a4b3ff81"
+            },
+            {
+                "rule": "wmc",
+                "hash": "bd939f6d"
+            }
+        ],
+        "class:AiMessDetector\\Metrics\\Coupling\\AbstractnessCollector": [
+            {
+                "rule": "lcom",
+                "hash": "81c38727"
+            }
+        ],
+        "class:AiMessDetector\\Metrics\\Coupling\\CouplingCollector": [
+            {
+                "rule": "lcom",
+                "hash": "6361e999"
+            }
+        ],
+        "class:AiMessDetector\\Metrics\\Coupling\\DistanceCollector": [
+            {
+                "rule": "lcom",
+                "hash": "d71cc4eb"
+            }
+        ],
+        "class:AiMessDetector\\Metrics\\Halstead\\HalsteadCollector": [
+            {
+                "rule": "lcom",
+                "hash": "13b825c0"
+            }
+        ],
+        "class:AiMessDetector\\Metrics\\Halstead\\HalsteadMetrics": [
+            {
+                "rule": "lcom",
+                "hash": "673b6b42"
+            }
+        ],
+        "class:AiMessDetector\\Metrics\\Halstead\\HalsteadVisitor": [
+            {
+                "rule": "lcom",
+                "hash": "232fd697"
+            },
+            {
+                "rule": "wmc",
+                "hash": "9c131ec8"
+            }
+        ],
+        "class:AiMessDetector\\Metrics\\Maintainability\\MaintainabilityIndexCalculator": [
+            {
+                "rule": "lcom",
+                "hash": "7493b831"
+            }
+        ],
+        "class:AiMessDetector\\Metrics\\Maintainability\\MaintainabilityIndexCollector": [
+            {
+                "rule": "lcom",
+                "hash": "61cb8c9a"
+            }
+        ],
+        "class:AiMessDetector\\Metrics\\Size\\ClassCountCollector": [
+            {
+                "rule": "lcom",
+                "hash": "3cc6b0be"
+            }
+        ],
+        "class:AiMessDetector\\Metrics\\Size\\LocCollector": [
+            {
+                "rule": "lcom",
+                "hash": "6f7aabe0"
+            }
+        ],
+        "class:AiMessDetector\\Metrics\\Structure\\ClassRfcData": [
+            {
+                "rule": "lcom",
+                "hash": "c57b4286"
+            }
+        ],
+        "class:AiMessDetector\\Metrics\\Structure\\InheritanceDepthCollector": [
+            {
+                "rule": "lcom",
+                "hash": "05c859dc"
+            }
+        ],
+        "class:AiMessDetector\\Metrics\\Structure\\LcomClassData": [
+            {
+                "rule": "lcom",
+                "hash": "8bceab62"
+            }
+        ],
+        "class:AiMessDetector\\Metrics\\Structure\\LcomCollector": [
+            {
+                "rule": "lcom",
+                "hash": "ed64aa20"
+            }
+        ],
+        "class:AiMessDetector\\Metrics\\Structure\\LcomVisitor": [
+            {
+                "rule": "lcom",
+                "hash": "1afe3bc9"
+            }
+        ],
+        "class:AiMessDetector\\Metrics\\Structure\\MethodCountCollector": [
+            {
+                "rule": "lcom",
+                "hash": "c5f9393f"
+            }
+        ],
+        "class:AiMessDetector\\Metrics\\Structure\\MethodCountMetrics": [
+            {
+                "rule": "lcom",
+                "hash": "43b1560b"
+            },
+            {
+                "rule": "size.propertyCount",
+                "hash": "162b166f"
+            }
+        ],
+        "class:AiMessDetector\\Metrics\\Structure\\MethodCountVisitor": [
+            {
+                "rule": "lcom",
+                "hash": "91376090"
+            },
+            {
+                "rule": "wmc",
+                "hash": "31108cfd"
+            }
+        ],
+        "class:AiMessDetector\\Metrics\\Structure\\NocCollector": [
+            {
+                "rule": "lcom",
+                "hash": "8df91cbe"
+            }
+        ],
+        "class:AiMessDetector\\Metrics\\Structure\\RfcCollector": [
+            {
+                "rule": "lcom",
+                "hash": "bcb82958"
+            }
+        ],
+        "class:AiMessDetector\\Metrics\\Structure\\RfcVisitor": [
+            {
+                "rule": "lcom",
+                "hash": "3c5d63ca"
+            },
+            {
+                "rule": "wmc",
+                "hash": "f780de6c"
+            }
+        ],
+        "class:AiMessDetector\\Metrics\\Structure\\TccLccClassData": [
+            {
+                "rule": "lcom",
+                "hash": "71c87b57"
+            }
+        ],
+        "class:AiMessDetector\\Metrics\\Structure\\TccLccCollector": [
+            {
+                "rule": "lcom",
+                "hash": "c1edd594"
+            }
+        ],
+        "class:AiMessDetector\\Metrics\\Structure\\TccLccVisitor": [
+            {
+                "rule": "lcom",
+                "hash": "b93012c9"
+            },
+            {
+                "rule": "wmc",
+                "hash": "35913058"
+            }
+        ],
+        "class:AiMessDetector\\Reporting\\Formatter\\CheckstyleFormatter": [
+            {
+                "rule": "lcom",
+                "hash": "431282c1"
+            }
+        ],
+        "class:AiMessDetector\\Reporting\\Formatter\\FormatterRegistry": [
+            {
+                "rule": "lcom",
+                "hash": "2ce47a4f"
+            }
+        ],
+        "class:AiMessDetector\\Reporting\\Formatter\\GitLabCodeQualityFormatter": [
+            {
+                "rule": "lcom",
+                "hash": "8a59fe42"
+            }
+        ],
+        "class:AiMessDetector\\Reporting\\Formatter\\JsonFormatter": [
+            {
+                "rule": "lcom",
+                "hash": "b2fc76b7"
+            }
+        ],
+        "class:AiMessDetector\\Reporting\\Formatter\\SarifFormatter": [
+            {
+                "rule": "lcom",
+                "hash": "f3b7d518"
+            }
+        ],
+        "class:AiMessDetector\\Reporting\\Formatter\\TextFormatter": [
+            {
+                "rule": "lcom",
+                "hash": "d3debb40"
+            }
+        ],
+        "class:AiMessDetector\\Reporting\\Report": [
+            {
+                "rule": "lcom",
+                "hash": "ac53c8f4"
+            }
+        ],
+        "class:AiMessDetector\\Reporting\\ReportBuilder": [
+            {
+                "rule": "lcom",
+                "hash": "62fcad62"
+            }
+        ],
+        "class:AiMessDetector\\Rules\\AbstractRule": [
+            {
+                "rule": "lcom",
+                "hash": "44ac95ba"
+            },
+            {
+                "rule": "noc",
+                "hash": "f521c75c"
+            }
+        ],
+        "class:AiMessDetector\\Rules\\Architecture\\CircularDependencyOptions": [
+            {
+                "rule": "lcom",
+                "hash": "e473bc10"
+            }
+        ],
+        "class:AiMessDetector\\Rules\\Architecture\\CircularDependencyRule": [
+            {
+                "rule": "lcom",
+                "hash": "0186ec63"
+            }
+        ],
+        "class:AiMessDetector\\Rules\\Complexity\\ClassCognitiveComplexityOptions": [
+            {
+                "rule": "lcom",
+                "hash": "24b733d2"
+            }
+        ],
+        "class:AiMessDetector\\Rules\\Complexity\\ClassComplexityOptions": [
+            {
+                "rule": "lcom",
+                "hash": "a4bdfd3a"
+            }
+        ],
+        "class:AiMessDetector\\Rules\\Complexity\\ClassNpathComplexityOptions": [
+            {
+                "rule": "lcom",
+                "hash": "7357720a"
+            }
+        ],
+        "class:AiMessDetector\\Rules\\Complexity\\CognitiveComplexityOptions": [
+            {
+                "rule": "lcom",
+                "hash": "27bb5ee1"
+            }
+        ],
+        "class:AiMessDetector\\Rules\\Complexity\\CognitiveComplexityRule": [
+            {
+                "rule": "lcom",
+                "hash": "f6e635e7"
+            }
+        ],
+        "class:AiMessDetector\\Rules\\Complexity\\ComplexityOptions": [
+            {
+                "rule": "lcom",
+                "hash": "7562301d"
+            }
+        ],
+        "class:AiMessDetector\\Rules\\Complexity\\ComplexityRule": [
+            {
+                "rule": "lcom",
+                "hash": "65b99b84"
+            }
+        ],
+        "class:AiMessDetector\\Rules\\Complexity\\MethodCognitiveComplexityOptions": [
+            {
+                "rule": "lcom",
+                "hash": "f81474f0"
+            }
+        ],
+        "class:AiMessDetector\\Rules\\Complexity\\MethodComplexityOptions": [
+            {
+                "rule": "lcom",
+                "hash": "94bcce0e"
+            }
+        ],
+        "class:AiMessDetector\\Rules\\Complexity\\MethodNpathComplexityOptions": [
+            {
+                "rule": "lcom",
+                "hash": "8e302027"
+            }
+        ],
+        "class:AiMessDetector\\Rules\\Complexity\\NpathComplexityOptions": [
+            {
+                "rule": "lcom",
+                "hash": "94621d6a"
+            }
+        ],
+        "class:AiMessDetector\\Rules\\Complexity\\NpathComplexityRule": [
+            {
+                "rule": "lcom",
+                "hash": "e8b6668d"
+            }
+        ],
+        "class:AiMessDetector\\Rules\\Coupling\\ClassCouplingOptions": [
+            {
+                "rule": "lcom",
+                "hash": "a5b757c9"
+            }
+        ],
+        "class:AiMessDetector\\Rules\\Coupling\\CouplingOptions": [
+            {
+                "rule": "lcom",
+                "hash": "4356634a"
+            }
+        ],
+        "class:AiMessDetector\\Rules\\Coupling\\CouplingRule": [
+            {
+                "rule": "lcom",
+                "hash": "23341c8e"
+            },
+            {
+                "rule": "wmc",
+                "hash": "a1624a46"
+            }
+        ],
+        "class:AiMessDetector\\Rules\\Coupling\\DistanceOptions": [
+            {
+                "rule": "lcom",
+                "hash": "10d61301"
+            }
+        ],
+        "class:AiMessDetector\\Rules\\Coupling\\DistanceRule": [
+            {
+                "rule": "lcom",
+                "hash": "5c939d6f"
+            }
+        ],
+        "class:AiMessDetector\\Rules\\Coupling\\NamespaceCouplingOptions": [
+            {
+                "rule": "lcom",
+                "hash": "8ddcb92d"
+            }
+        ],
+        "class:AiMessDetector\\Rules\\Maintainability\\MaintainabilityOptions": [
+            {
+                "rule": "lcom",
+                "hash": "692e6f52"
+            }
+        ],
+        "class:AiMessDetector\\Rules\\Maintainability\\MaintainabilityRule": [
+            {
+                "rule": "lcom",
+                "hash": "0543bad6"
+            }
+        ],
+        "class:AiMessDetector\\Rules\\Size\\ClassSizeOptions": [
+            {
+                "rule": "lcom",
+                "hash": "d52ef19c"
+            }
+        ],
+        "class:AiMessDetector\\Rules\\Size\\NamespaceLevelOptions": [
+            {
+                "rule": "lcom",
+                "hash": "6c633649"
+            }
+        ],
+        "class:AiMessDetector\\Rules\\Size\\PropertyCountOptions": [
+            {
+                "rule": "lcom",
+                "hash": "ceb46e1c"
+            }
+        ],
+        "class:AiMessDetector\\Rules\\Size\\PropertyCountRule": [
+            {
+                "rule": "lcom",
+                "hash": "86e50a9b"
+            }
+        ],
+        "class:AiMessDetector\\Rules\\Size\\SizeOptions": [
+            {
+                "rule": "lcom",
+                "hash": "17e696c1"
+            }
+        ],
+        "class:AiMessDetector\\Rules\\Size\\SizeRule": [
+            {
+                "rule": "lcom",
+                "hash": "5dc0e360"
+            }
+        ],
+        "class:AiMessDetector\\Rules\\Structure\\InheritanceOptions": [
+            {
+                "rule": "lcom",
+                "hash": "86ee4308"
+            }
+        ],
+        "class:AiMessDetector\\Rules\\Structure\\InheritanceRule": [
+            {
+                "rule": "lcom",
+                "hash": "f8e71c05"
+            }
+        ],
+        "class:AiMessDetector\\Rules\\Structure\\LcomOptions": [
+            {
+                "rule": "lcom",
+                "hash": "a3f05502"
+            }
+        ],
+        "class:AiMessDetector\\Rules\\Structure\\LcomRule": [
+            {
+                "rule": "lcom",
+                "hash": "6c2c6dc5"
+            }
+        ],
+        "class:AiMessDetector\\Rules\\Structure\\NocOptions": [
+            {
+                "rule": "lcom",
+                "hash": "5b151ac8"
+            }
+        ],
+        "class:AiMessDetector\\Rules\\Structure\\NocRule": [
+            {
+                "rule": "lcom",
+                "hash": "41d6b338"
+            }
+        ],
+        "class:AiMessDetector\\Rules\\Structure\\WmcOptions": [
+            {
+                "rule": "lcom",
+                "hash": "5f2b69bc"
+            }
+        ],
+        "class:AiMessDetector\\Rules\\Structure\\WmcRule": [
+            {
+                "rule": "lcom",
+                "hash": "e4dcf8bd"
+            }
+        ],
+        "class:PhpParser\\NodeVisitorAbstract": [
+            {
+                "rule": "noc",
+                "hash": "eb1a02ac"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Aggregator\\MetricAggregator::__construct": [
+            {
+                "rule": "maintainability",
+                "hash": "764f5e77"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Aggregator\\MetricAggregator::addSymbolCounts": [
+            {
+                "rule": "maintainability",
+                "hash": "d9ed871e"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Aggregator\\MetricAggregator::aggregate": [
+            {
+                "rule": "maintainability",
+                "hash": "f4178cda"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Aggregator\\MetricAggregator::aggregateMethodsToClasses": [
+            {
+                "rule": "maintainability",
+                "hash": "f631e805"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Aggregator\\MetricAggregator::aggregateToNamespaces": [
+            {
+                "rule": "maintainability",
+                "hash": "e61c0e45"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Aggregator\\MetricAggregator::aggregateToProject": [
+            {
+                "rule": "maintainability",
+                "hash": "570e3008"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Aggregator\\MetricAggregator::applyAggregations": [
+            {
+                "rule": "maintainability",
+                "hash": "9817cf49"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Aggregator\\MetricAggregator::applyStrategy": [
+            {
+                "rule": "maintainability",
+                "hash": "8b9f0b97"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Aggregator\\MetricAggregator::buildFileToNamespaceMap": [
+            {
+                "rule": "maintainability",
+                "hash": "c5c3dd3f"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Aggregator\\MetricAggregator::collectDefinitions": [
+            {
+                "rule": "maintainability",
+                "hash": "492a7e66"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Aggregator\\MetricAggregator::collectMetricValues": [
+            {
+                "rule": "maintainability",
+                "hash": "0f5e9aad"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Aggregator\\MetricAggregator::collectNamespaceMetricValues": [
+            {
+                "rule": "cognitive",
+                "hash": "5118b4e2"
+            },
+            {
+                "rule": "complexity.npath",
+                "hash": "153bc49c"
+            },
+            {
+                "rule": "maintainability",
+                "hash": "077d527f"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Aggregator\\MetricAggregator::getFileSymbolsForNamespace": [
+            {
+                "rule": "maintainability",
+                "hash": "ac5d8aa8"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Aggregator\\MetricAggregator::groupMethodsByClass": [
+            {
+                "rule": "maintainability",
+                "hash": "e37922fe"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\AnalysisResult::getExitCode": [
+            {
+                "rule": "maintainability",
+                "hash": "5016bf65"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\AnalysisResult::getViolationCountBySeverity": [
+            {
+                "rule": "maintainability",
+                "hash": "11ec4206"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\AnalysisResult::hasErrors": [
+            {
+                "rule": "maintainability",
+                "hash": "d711b4b5"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\AnalysisResult::hasWarnings": [
+            {
+                "rule": "maintainability",
+                "hash": "5afa209c"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\AnalysisResult::merge": [
+            {
+                "rule": "maintainability",
+                "hash": "2a82343a"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Analyzer::__construct": [
+            {
+                "rule": "maintainability",
+                "hash": "82338791"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Analyzer::aggregateMetrics": [
+            {
+                "rule": "maintainability",
+                "hash": "c8974eb4"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Analyzer::analyze": [
+            {
+                "rule": "maintainability",
+                "hash": "1cc9c778"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Analyzer::analyzeWithRules": [
+            {
+                "rule": "maintainability",
+                "hash": "b6c42be5"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Analyzer::buildDependencyGraph": [
+            {
+                "rule": "maintainability",
+                "hash": "7d249a67"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Analyzer::collectMetrics": [
+            {
+                "rule": "maintainability",
+                "hash": "3f0e159c"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Analyzer::collectMetricsInParallel": [
+            {
+                "rule": "maintainability",
+                "hash": "c7fcb2fa"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Analyzer::collectMetricsSequentially": [
+            {
+                "rule": "maintainability",
+                "hash": "d5b3e37c"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Analyzer::isValidMethodFqn": [
+            {
+                "rule": "maintainability",
+                "hash": "1efa96b5"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Analyzer::registerClassMetrics": [
+            {
+                "rule": "maintainability",
+                "hash": "87dbd8ec"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Analyzer::registerDerivedMethodMetrics": [
+            {
+                "rule": "cognitive",
+                "hash": "60140498"
+            },
+            {
+                "rule": "complexity.npath",
+                "hash": "9e2ae612"
+            },
+            {
+                "rule": "maintainability",
+                "hash": "9e72eb89"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Analyzer::registerFileResult": [
+            {
+                "rule": "maintainability",
+                "hash": "3b3199d5"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Analyzer::registerMethodMetrics": [
+            {
+                "rule": "maintainability",
+                "hash": "8f057029"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Collector\\CompositeCollector::__construct": [
+            {
+                "rule": "maintainability",
+                "hash": "cb8cb7db"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Collector\\CompositeCollector::applyDerivedCollectors": [
+            {
+                "rule": "maintainability",
+                "hash": "762ee0b5"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Collector\\CompositeCollector::collect": [
+            {
+                "rule": "maintainability",
+                "hash": "eea4c61f"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Collector\\CompositeCollector::indexMetricsByFqn": [
+            {
+                "rule": "maintainability",
+                "hash": "e22bf025"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Collector\\GlobalCollectorSorter::buildProvidersMap": [
+            {
+                "rule": "maintainability",
+                "hash": "77669a08"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Collector\\GlobalCollectorSorter::findCycle": [
+            {
+                "rule": "maintainability",
+                "hash": "199c4a05"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Collector\\GlobalCollectorSorter::findRequiredProviders": [
+            {
+                "rule": "maintainability",
+                "hash": "1b3403be"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Collector\\GlobalCollectorSorter::getBaseMetric": [
+            {
+                "rule": "maintainability",
+                "hash": "cf51145e"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Collector\\GlobalCollectorSorter::sort": [
+            {
+                "rule": "cognitive",
+                "hash": "9aa3bb2e"
+            },
+            {
+                "rule": "complexity.npath",
+                "hash": "a49162b7"
+            },
+            {
+                "rule": "maintainability",
+                "hash": "f3a98c6d"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Dependency\\CircularDependencyDetector::detect": [
+            {
+                "rule": "maintainability",
+                "hash": "359e3700"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Dependency\\CircularDependencyDetector::findPath": [
+            {
+                "rule": "cognitive",
+                "hash": "d8f33e35"
+            },
+            {
+                "rule": "maintainability",
+                "hash": "6dd785a9"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Dependency\\CircularDependencyDetector::reset": [
+            {
+                "rule": "maintainability",
+                "hash": "8eaf7606"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Dependency\\CircularDependencyDetector::strongConnect": [
+            {
+                "rule": "cognitive",
+                "hash": "aefadbc8"
+            },
+            {
+                "rule": "maintainability",
+                "hash": "ab81c6a9"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Dependency\\DependencyCollector::__construct": [
+            {
+                "rule": "maintainability",
+                "hash": "e3bf2cd7"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Dependency\\DependencyCollector::collectFromFile": [
+            {
+                "rule": "maintainability",
+                "hash": "a4c5726a"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Dependency\\DependencyGraph::getClassCa": [
+            {
+                "rule": "maintainability",
+                "hash": "3217e192"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Dependency\\DependencyGraph::getClassCe": [
+            {
+                "rule": "maintainability",
+                "hash": "f0248046"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Dependency\\DependencyGraphBuilder::build": [
+            {
+                "rule": "maintainability",
+                "hash": "412aa7a2"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Dependency\\DependencyGraphBuilder::computeNamespaceCa": [
+            {
+                "rule": "maintainability",
+                "hash": "dc3a9f62"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Dependency\\DependencyGraphBuilder::computeNamespaceCe": [
+            {
+                "rule": "maintainability",
+                "hash": "f203ea10"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Dependency\\DependencyResolver::addGroupUseStatement": [
+            {
+                "rule": "maintainability",
+                "hash": "7342c589"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Dependency\\DependencyResolver::addImport": [
+            {
+                "rule": "maintainability",
+                "hash": "a2b8f0d0"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Dependency\\DependencyResolver::addUseStatement": [
+            {
+                "rule": "maintainability",
+                "hash": "0bf8b697"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Dependency\\DependencyResolver::getShortName": [
+            {
+                "rule": "maintainability",
+                "hash": "c39d42d0"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Dependency\\DependencyResolver::resolve": [
+            {
+                "rule": "complexity.npath",
+                "hash": "deee1fdf"
+            },
+            {
+                "rule": "maintainability",
+                "hash": "da9a6415"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Dependency\\DependencyResolver::resolveInCurrentNamespace": [
+            {
+                "rule": "maintainability",
+                "hash": "4e478b6f"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Dependency\\DependencyResolver::resolveString": [
+            {
+                "rule": "maintainability",
+                "hash": "d84f8d99"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Dependency\\DependencyVisitor::addDependency": [
+            {
+                "rule": "maintainability",
+                "hash": "f8d9fabb"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Dependency\\DependencyVisitor::enterNode": [
+            {
+                "rule": "complexity.npath",
+                "hash": "5b18d9b6"
+            },
+            {
+                "rule": "maintainability",
+                "hash": "d001f94a"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Dependency\\DependencyVisitor::extractClassLikeName": [
+            {
+                "rule": "maintainability",
+                "hash": "cbb17fdf"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Dependency\\DependencyVisitor::isBuiltinType": [
+            {
+                "rule": "maintainability",
+                "hash": "153bbd64"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Dependency\\DependencyVisitor::processAttributes": [
+            {
+                "rule": "maintainability",
+                "hash": "a586f300"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Dependency\\DependencyVisitor::processClassLike": [
+            {
+                "rule": "complexity.npath",
+                "hash": "92c47607"
+            },
+            {
+                "rule": "maintainability",
+                "hash": "a796720d"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Dependency\\DependencyVisitor::processMethod": [
+            {
+                "rule": "maintainability",
+                "hash": "7ac7d3e8"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Dependency\\DependencyVisitor::processNode": [
+            {
+                "rule": "cognitive",
+                "hash": "b1c60673"
+            },
+            {
+                "rule": "complexity.npath",
+                "hash": "2e38565e"
+            },
+            {
+                "rule": "maintainability",
+                "hash": "91959a7b"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Dependency\\DependencyVisitor::processType": [
+            {
+                "rule": "complexity.npath",
+                "hash": "85d19933"
+            },
+            {
+                "rule": "maintainability",
+                "hash": "12bac47e"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Dependency\\DependencyVisitor::setFile": [
+            {
+                "rule": "maintainability",
+                "hash": "007b1ba2"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Dependency\\Export\\DotExporter::export": [
+            {
+                "rule": "maintainability",
+                "hash": "07729971"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Dependency\\Export\\DotExporter::exportFlat": [
+            {
+                "rule": "maintainability",
+                "hash": "5eac9cf3"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Dependency\\Export\\DotExporter::exportWithClusters": [
+            {
+                "rule": "maintainability",
+                "hash": "47855e84"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Dependency\\Export\\DotExporter::extractNamespace": [
+            {
+                "rule": "maintainability",
+                "hash": "048dff86"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Dependency\\Export\\DotExporter::filterClasses": [
+            {
+                "rule": "maintainability",
+                "hash": "2c5e9849"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Dependency\\Export\\DotExporter::getNodeColor": [
+            {
+                "rule": "maintainability",
+                "hash": "5f752b5b"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Dependency\\Export\\DotExporter::groupByNamespace": [
+            {
+                "rule": "maintainability",
+                "hash": "d0dbb290"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Dependency\\Export\\DotExporter::namespaceMatches": [
+            {
+                "rule": "maintainability",
+                "hash": "960b5fc5"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Dependency\\Export\\DotExporter::shouldIncludeClass": [
+            {
+                "rule": "maintainability",
+                "hash": "79f26ae5"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Discovery\\FinderFileDiscovery::discover": [
+            {
+                "rule": "complexity.npath",
+                "hash": "2d4e9880"
+            },
+            {
+                "rule": "maintainability",
+                "hash": "12694222"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Discovery\\FinderFileDiscovery::discoverInDirectories": [
+            {
+                "rule": "maintainability",
+                "hash": "dee57c7f"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Namespace_\\ChainNamespaceDetector::__construct": [
+            {
+                "rule": "maintainability",
+                "hash": "29fa11b7"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Namespace_\\ChainNamespaceDetector::detect": [
+            {
+                "rule": "maintainability",
+                "hash": "613bf848"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Namespace_\\Psr4NamespaceDetector::detect": [
+            {
+                "rule": "maintainability",
+                "hash": "402242e0"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Namespace_\\Psr4NamespaceDetector::loadMapping": [
+            {
+                "rule": "complexity.npath",
+                "hash": "c58eae3e"
+            },
+            {
+                "rule": "maintainability",
+                "hash": "8a8c5534"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Namespace_\\TokenizerNamespaceDetector::detect": [
+            {
+                "rule": "maintainability",
+                "hash": "3e0123fd"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Namespace_\\TokenizerNamespaceDetector::extractNamespace": [
+            {
+                "rule": "cognitive",
+                "hash": "647fb321"
+            },
+            {
+                "rule": "maintainability",
+                "hash": "28af8d29"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Parallel\\IpcChannel::create": [
+            {
+                "rule": "maintainability",
+                "hash": "7b3c9b3d"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Parallel\\IpcChannel::receive": [
+            {
+                "rule": "maintainability",
+                "hash": "4d80ac91"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Parallel\\IpcChannel::receiveError": [
+            {
+                "rule": "maintainability",
+                "hash": "13f44d64"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Parallel\\IpcChannel::send": [
+            {
+                "rule": "maintainability",
+                "hash": "d1bf7b5f"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Parallel\\ParallelCollector::collect": [
+            {
+                "rule": "maintainability",
+                "hash": "27dd68b8"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Parallel\\ParallelCollector::extractClassMetrics": [
+            {
+                "rule": "maintainability",
+                "hash": "810a2122"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Parallel\\ParallelCollector::extractMethodMetrics": [
+            {
+                "rule": "maintainability",
+                "hash": "23c6b8fe"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Parallel\\ParallelCollector::partition": [
+            {
+                "rule": "maintainability",
+                "hash": "0c51e280"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Parallel\\ParallelCollector::processBatch": [
+            {
+                "rule": "maintainability",
+                "hash": "88ab4c72"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Parallel\\ParallelCollector::symbolPathToKey": [
+            {
+                "rule": "maintainability",
+                "hash": "c8d2afb1"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Parallel\\Strategy\\PcntlForkStrategy::collectResults": [
+            {
+                "rule": "maintainability",
+                "hash": "c44cc037"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Parallel\\Strategy\\PcntlForkStrategy::execute": [
+            {
+                "rule": "maintainability",
+                "hash": "2e5e42a8"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Parallel\\Strategy\\PcntlForkStrategy::executeInWorker": [
+            {
+                "rule": "maintainability",
+                "hash": "56e330f5"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Parallel\\Strategy\\PcntlForkStrategy::isAvailable": [
+            {
+                "rule": "maintainability",
+                "hash": "a82d0747"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Parallel\\Strategy\\SequentialStrategy::execute": [
+            {
+                "rule": "maintainability",
+                "hash": "258f8d9c"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Parallel\\WorkerCountDetector::detect": [
+            {
+                "rule": "maintainability",
+                "hash": "01836a8e"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Parallel\\WorkerCountDetector::executeCommand": [
+            {
+                "rule": "maintainability",
+                "hash": "fdf2744a"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Repository\\InMemoryMetricRepository::add": [
+            {
+                "rule": "maintainability",
+                "hash": "6f0b6597"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Repository\\InMemoryMetricRepository::all": [
+            {
+                "rule": "maintainability",
+                "hash": "17e8eb91"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Repository\\InMemoryMetricRepository::forNamespace": [
+            {
+                "rule": "maintainability",
+                "hash": "8fabf7e5"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Repository\\InMemoryMetricRepository::get": [
+            {
+                "rule": "maintainability",
+                "hash": "82add4d8"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Repository\\InMemoryMetricRepository::getNamespaces": [
+            {
+                "rule": "maintainability",
+                "hash": "c46c720b"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\Repository\\InMemoryMetricRepository::mergeWith": [
+            {
+                "rule": "maintainability",
+                "hash": "8da307e9"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\RuleExecutor::__construct": [
+            {
+                "rule": "maintainability",
+                "hash": "1703afcf"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\RuleExecutor::execute": [
+            {
+                "rule": "maintainability",
+                "hash": "07b55d93"
+            }
+        ],
+        "method:AiMessDetector\\Analysis\\RuleExecutor::getActiveLevels": [
+            {
+                "rule": "maintainability",
+                "hash": "82a43c3a"
+            }
+        ],
+        "method:AiMessDetector\\Baseline\\Baseline::contains": [
+            {
+                "rule": "maintainability",
+                "hash": "b301887e"
+            }
+        ],
+        "method:AiMessDetector\\Baseline\\Baseline::diff": [
+            {
+                "rule": "maintainability",
+                "hash": "2fbb4f6e"
+            }
+        ],
+        "method:AiMessDetector\\Baseline\\Baseline::getStaleKeys": [
+            {
+                "rule": "maintainability",
+                "hash": "326dfaed"
+            }
+        ],
+        "method:AiMessDetector\\Baseline\\BaselineGenerator::generate": [
+            {
+                "rule": "maintainability",
+                "hash": "c574711d"
+            }
+        ],
+        "method:AiMessDetector\\Baseline\\BaselineLoader::load": [
+            {
+                "rule": "complexity.npath",
+                "hash": "b3ca1fc1"
+            },
+            {
+                "rule": "maintainability",
+                "hash": "1648cd1d"
+            }
+        ],
+        "method:AiMessDetector\\Baseline\\BaselineLoader::parseBaseline": [
+            {
+                "rule": "maintainability",
+                "hash": "cb0f75cc"
+            }
+        ],
+        "method:AiMessDetector\\Baseline\\BaselineLoader::validateStructure": [
+            {
+                "rule": "complexity.npath",
+                "hash": "bc8ee966"
+            },
+            {
+                "rule": "maintainability",
+                "hash": "6b98e783"
+            }
+        ],
+        "method:AiMessDetector\\Baseline\\BaselineLoader::validateViolationEntry": [
+            {
+                "rule": "maintainability",
+                "hash": "90e28c67"
+            }
+        ],
+        "method:AiMessDetector\\Baseline\\BaselineWriter::serializeBaseline": [
+            {
+                "rule": "maintainability",
+                "hash": "6c8c1345"
+            }
+        ],
+        "method:AiMessDetector\\Baseline\\BaselineWriter::write": [
+            {
+                "rule": "maintainability",
+                "hash": "02a64513"
+            }
+        ],
+        "method:AiMessDetector\\Baseline\\Suppression\\SuppressionExtractor::extract": [
+            {
+                "rule": "maintainability",
+                "hash": "d9f5e7c4"
+            }
+        ],
+        "method:AiMessDetector\\Baseline\\Suppression\\SuppressionExtractor::extractFileLevelSuppressions": [
+            {
+                "rule": "maintainability",
+                "hash": "1ed1fef1"
+            }
+        ],
+        "method:AiMessDetector\\Baseline\\Suppression\\SuppressionFilter::shouldInclude": [
+            {
+                "rule": "maintainability",
+                "hash": "bdacce2b"
+            }
+        ],
+        "method:AiMessDetector\\Baseline\\ViolationHasher::hash": [
+            {
+                "rule": "maintainability",
+                "hash": "67606681"
+            }
+        ],
+        "method:AiMessDetector\\Configuration\\AnalysisConfiguration::__construct": [
+            {
+                "rule": "maintainability",
+                "hash": "35074108"
+            }
+        ],
+        "method:AiMessDetector\\Configuration\\AnalysisConfiguration::fromArray": [
+            {
+                "rule": "maintainability",
+                "hash": "bd92e1f8"
+            }
+        ],
+        "method:AiMessDetector\\Configuration\\AnalysisConfiguration::getBool": [
+            {
+                "rule": "maintainability",
+                "hash": "e17f13db"
+            }
+        ],
+        "method:AiMessDetector\\Configuration\\AnalysisConfiguration::getIntOrNull": [
+            {
+                "rule": "maintainability",
+                "hash": "2895504a"
+            }
+        ],
+        "method:AiMessDetector\\Configuration\\AnalysisConfiguration::getNestedValue": [
+            {
+                "rule": "maintainability",
+                "hash": "7c17fde7"
+            }
+        ],
+        "method:AiMessDetector\\Configuration\\AnalysisConfiguration::getString": [
+            {
+                "rule": "maintainability",
+                "hash": "aabf57e3"
+            }
+        ],
+        "method:AiMessDetector\\Configuration\\AnalysisConfiguration::getStringList": [
+            {
+                "rule": "maintainability",
+                "hash": "f5525ad3"
+            }
+        ],
+        "method:AiMessDetector\\Configuration\\AnalysisConfiguration::getStringOrNull": [
+            {
+                "rule": "maintainability",
+                "hash": "4454f6c7"
+            }
+        ],
+        "method:AiMessDetector\\Configuration\\AnalysisConfiguration::isRuleEnabled": [
+            {
+                "rule": "maintainability",
+                "hash": "761ff0a1"
+            }
+        ],
+        "method:AiMessDetector\\Configuration\\AnalysisConfiguration::isRuleLevelEnabled": [
+            {
+                "rule": "complexity.npath",
+                "hash": "169e7822"
+            },
+            {
+                "rule": "maintainability",
+                "hash": "4036d9aa"
+            }
+        ],
+        "method:AiMessDetector\\Configuration\\AnalysisConfiguration::merge": [
+            {
+                "rule": "maintainability",
+                "hash": "6ee89592"
+            }
+        ],
+        "method:AiMessDetector\\Configuration\\ConfigurationHolder::getConfiguration": [
+            {
+                "rule": "maintainability",
+                "hash": "9bc72f0a"
+            }
+        ],
+        "method:AiMessDetector\\Configuration\\Loader\\YamlConfigLoader::load": [
+            {
+                "rule": "maintainability",
+                "hash": "aff1ebaf"
+            }
+        ],
+        "method:AiMessDetector\\Configuration\\Loader\\YamlConfigLoader::normalizeKeys": [
+            {
+                "rule": "maintainability",
+                "hash": "28152b78"
+            }
+        ],
+        "method:AiMessDetector\\Configuration\\Loader\\YamlConfigLoader::supports": [
+            {
+                "rule": "maintainability",
+                "hash": "eb7a387d"
+            }
+        ],
+        "method:AiMessDetector\\Configuration\\Loader\\YamlConfigLoader::validateStructure": [
+            {
+                "rule": "cognitive",
+                "hash": "89a43bce"
+            },
+            {
+                "rule": "complexity.npath",
+                "hash": "56f9d005"
+            },
+            {
+                "rule": "maintainability",
+                "hash": "cff1493a"
+            }
+        ],
+        "method:AiMessDetector\\Configuration\\RuleOptionsFactory::addCliOption": [
+            {
+                "rule": "maintainability",
+                "hash": "6dd83f29"
+            }
+        ],
+        "method:AiMessDetector\\Configuration\\RuleOptionsFactory::create": [
+            {
+                "rule": "maintainability",
+                "hash": "b69dd870"
+            }
+        ],
+        "method:AiMessDetector\\Configuration\\RuleOptionsFactory::deepMerge": [
+            {
+                "rule": "maintainability",
+                "hash": "2ebfb5f0"
+            }
+        ],
+        "method:AiMessDetector\\Configuration\\RuleOptionsFactory::expandDotNotation": [
+            {
+                "rule": "cognitive",
+                "hash": "f0e2adef"
+            },
+            {
+                "rule": "maintainability",
+                "hash": "d27c041c"
+            }
+        ],
+        "method:AiMessDetector\\Configuration\\RuleOptionsFactory::extractDefaults": [
+            {
+                "rule": "maintainability",
+                "hash": "00e38b3d"
+            }
+        ],
+        "method:AiMessDetector\\Configuration\\RuleOptionsFactory::getTypeDefault": [
+            {
+                "rule": "maintainability",
+                "hash": "d5d0405f"
+            }
+        ],
+        "method:AiMessDetector\\Configuration\\RuleOptionsFactory::normalizeKeys": [
+            {
+                "rule": "maintainability",
+                "hash": "69cb1427"
+            }
+        ],
+        "method:AiMessDetector\\Configuration\\RuleOptionsParser::normalizeOptionName": [
+            {
+                "rule": "maintainability",
+                "hash": "db1fff56"
+            }
+        ],
+        "method:AiMessDetector\\Configuration\\RuleOptionsParser::normalizeValue": [
+            {
+                "rule": "maintainability",
+                "hash": "89e9eff3"
+            }
+        ],
+        "method:AiMessDetector\\Configuration\\RuleOptionsParser::parseRuleOption": [
+            {
+                "rule": "maintainability",
+                "hash": "8cd93aa6"
+            }
+        ],
+        "method:AiMessDetector\\Configuration\\RuleOptionsParser::parseRuleOptions": [
+            {
+                "rule": "maintainability",
+                "hash": "24039341"
+            }
+        ],
+        "method:AiMessDetector\\Configuration\\RuleOptionsParser::parseShortAlias": [
+            {
+                "rule": "maintainability",
+                "hash": "cedb2212"
+            }
+        ],
+        "method:AiMessDetector\\Configuration\\RuleOptionsParserFactory::create": [
+            {
+                "rule": "maintainability",
+                "hash": "d91da3a9"
+            }
+        ],
+        "method:AiMessDetector\\Configuration\\RuleOptionsParserFactory::createFromClasses": [
+            {
+                "rule": "maintainability",
+                "hash": "84c28fba"
+            }
+        ],
+        "method:AiMessDetector\\Configuration\\RuleOptionsParserFactory::getRuleName": [
+            {
+                "rule": "maintainability",
+                "hash": "24872875"
+            }
+        ],
+        "method:AiMessDetector\\Core\\Dependency\\Dependency::getSourceNamespace": [
+            {
+                "rule": "maintainability",
+                "hash": "cf75898b"
+            }
+        ],
+        "method:AiMessDetector\\Core\\Dependency\\Dependency::getTargetNamespace": [
+            {
+                "rule": "maintainability",
+                "hash": "1693500a"
+            }
+        ],
+        "method:AiMessDetector\\Core\\Dependency\\Dependency::toString": [
+            {
+                "rule": "maintainability",
+                "hash": "3eead92a"
+            }
+        ],
+        "method:AiMessDetector\\Core\\Dependency\\DependencyType::description": [
+            {
+                "rule": "maintainability",
+                "hash": "76a67760"
+            }
+        ],
+        "method:AiMessDetector\\Core\\Metric\\MethodWithMetrics::getSymbolPath": [
+            {
+                "rule": "maintainability",
+                "hash": "3af5a783"
+            }
+        ],
+        "method:AiMessDetector\\Core\\Metric\\MethodWithMetrics::toSymbolInfo": [
+            {
+                "rule": "maintainability",
+                "hash": "54f1f12d"
+            }
+        ],
+        "method:AiMessDetector\\Core\\Metric\\MetricBag::merge": [
+            {
+                "rule": "maintainability",
+                "hash": "83778059"
+            }
+        ],
+        "method:AiMessDetector\\Core\\Metric\\MetricBag::with": [
+            {
+                "rule": "maintainability",
+                "hash": "b729ed99"
+            }
+        ],
+        "method:AiMessDetector\\Core\\Metric\\MetricBag::withPrefix": [
+            {
+                "rule": "maintainability",
+                "hash": "339f05fb"
+            }
+        ],
+        "method:AiMessDetector\\Core\\Metric\\MetricDefinition::hasAggregationsForLevel": [
+            {
+                "rule": "maintainability",
+                "hash": "17ae4593"
+            }
+        ],
+        "method:AiMessDetector\\Core\\Namespace_\\ProjectNamespaceResolver::__construct": [
+            {
+                "rule": "maintainability",
+                "hash": "8b9a0436"
+            }
+        ],
+        "method:AiMessDetector\\Core\\Namespace_\\ProjectNamespaceResolver::extractPrefixesFromComposer": [
+            {
+                "rule": "complexity.npath",
+                "hash": "9b4f8ad7"
+            },
+            {
+                "rule": "maintainability",
+                "hash": "b98c551d"
+            }
+        ],
+        "method:AiMessDetector\\Core\\Namespace_\\ProjectNamespaceResolver::findComposerJson": [
+            {
+                "rule": "maintainability",
+                "hash": "9275361b"
+            }
+        ],
+        "method:AiMessDetector\\Core\\Namespace_\\ProjectNamespaceResolver::isProjectNamespace": [
+            {
+                "rule": "maintainability",
+                "hash": "903f8a28"
+            }
+        ],
+        "method:AiMessDetector\\Core\\Namespace_\\ProjectNamespaceResolver::startsWith": [
+            {
+                "rule": "maintainability",
+                "hash": "64714b51"
+            }
+        ],
+        "method:AiMessDetector\\Core\\Util\\StringSet::add": [
+            {
+                "rule": "maintainability",
+                "hash": "7e350caf"
+            }
+        ],
+        "method:AiMessDetector\\Core\\Util\\StringSet::addAll": [
+            {
+                "rule": "maintainability",
+                "hash": "2a920bce"
+            }
+        ],
+        "method:AiMessDetector\\Core\\Util\\StringSet::diff": [
+            {
+                "rule": "maintainability",
+                "hash": "9960eddc"
+            }
+        ],
+        "method:AiMessDetector\\Core\\Util\\StringSet::filter": [
+            {
+                "rule": "maintainability",
+                "hash": "d445abf5"
+            }
+        ],
+        "method:AiMessDetector\\Core\\Util\\StringSet::fromArray": [
+            {
+                "rule": "maintainability",
+                "hash": "ece8d368"
+            }
+        ],
+        "method:AiMessDetector\\Core\\Util\\StringSet::intersect": [
+            {
+                "rule": "maintainability",
+                "hash": "d3fd621f"
+            }
+        ],
+        "method:AiMessDetector\\Core\\Util\\StringSet::union": [
+            {
+                "rule": "maintainability",
+                "hash": "ec638933"
+            }
+        ],
+        "method:AiMessDetector\\Core\\Violation\\Filter\\BaselineFilter::getResolvedFromBaseline": [
+            {
+                "rule": "maintainability",
+                "hash": "021b9819"
+            }
+        ],
+        "method:AiMessDetector\\Core\\Violation\\Filter\\BaselineFilter::shouldInclude": [
+            {
+                "rule": "maintainability",
+                "hash": "6e174e5b"
+            }
+        ],
+        "method:AiMessDetector\\Core\\Violation\\Location::toString": [
+            {
+                "rule": "maintainability",
+                "hash": "8fa8ec5f"
+            }
+        ],
+        "method:AiMessDetector\\Core\\Violation\\SymbolPath::buildClassCanonical": [
+            {
+                "rule": "maintainability",
+                "hash": "2d296a04"
+            }
+        ],
+        "method:AiMessDetector\\Core\\Violation\\SymbolPath::buildClassString": [
+            {
+                "rule": "maintainability",
+                "hash": "2de2261f"
+            }
+        ],
+        "method:AiMessDetector\\Core\\Violation\\SymbolPath::buildFunctionCanonical": [
+            {
+                "rule": "maintainability",
+                "hash": "aec610c6"
+            }
+        ],
+        "method:AiMessDetector\\Core\\Violation\\SymbolPath::buildFunctionString": [
+            {
+                "rule": "maintainability",
+                "hash": "56af415d"
+            }
+        ],
+        "method:AiMessDetector\\Core\\Violation\\SymbolPath::buildMethodCanonical": [
+            {
+                "rule": "maintainability",
+                "hash": "1c6c6d75"
+            }
+        ],
+        "method:AiMessDetector\\Core\\Violation\\SymbolPath::buildMethodString": [
+            {
+                "rule": "maintainability",
+                "hash": "48c8cb4e"
+            }
+        ],
+        "method:AiMessDetector\\Core\\Violation\\SymbolPath::getType": [
+            {
+                "rule": "maintainability",
+                "hash": "fdedc7bc"
+            }
+        ],
+        "method:AiMessDetector\\Core\\Violation\\SymbolPath::toCanonical": [
+            {
+                "rule": "maintainability",
+                "hash": "29bbb704"
+            }
+        ],
+        "method:AiMessDetector\\Core\\Violation\\SymbolPath::toString": [
+            {
+                "rule": "maintainability",
+                "hash": "f86d1cf9"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Ast\\CachedFileParser::parse": [
+            {
+                "rule": "maintainability",
+                "hash": "ccac8546"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Ast\\FileParserFactory::create": [
+            {
+                "rule": "maintainability",
+                "hash": "dbe91666"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Ast\\PhpFileParser::__construct": [
+            {
+                "rule": "maintainability",
+                "hash": "9d54e006"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Ast\\PhpFileParser::parse": [
+            {
+                "rule": "complexity.npath",
+                "hash": "772e89c3"
+            },
+            {
+                "rule": "maintainability",
+                "hash": "5f5d65e5"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Cache\\CacheFactory::create": [
+            {
+                "rule": "maintainability",
+                "hash": "0a4c16c4"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Cache\\CacheKeyGenerator::generate": [
+            {
+                "rule": "maintainability",
+                "hash": "193663da"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Cache\\CacheKeyGenerator::getPhpParserVersion": [
+            {
+                "rule": "maintainability",
+                "hash": "19279e2c"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Cache\\FileCache::clear": [
+            {
+                "rule": "maintainability",
+                "hash": "77b5cb0b"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Cache\\FileCache::delete": [
+            {
+                "rule": "maintainability",
+                "hash": "f76389cc"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Cache\\FileCache::deserialize": [
+            {
+                "rule": "maintainability",
+                "hash": "1a4bd006"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Cache\\FileCache::get": [
+            {
+                "rule": "maintainability",
+                "hash": "3ac525c4"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Cache\\FileCache::getPath": [
+            {
+                "rule": "maintainability",
+                "hash": "6eb2b5d4"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Cache\\FileCache::serialize": [
+            {
+                "rule": "maintainability",
+                "hash": "0bf44a6e"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Cache\\FileCache::set": [
+            {
+                "rule": "maintainability",
+                "hash": "afbf6d35"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Collector\\CachedCollector::collect": [
+            {
+                "rule": "maintainability",
+                "hash": "d2725540"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Console\\CliOptionsParser::parseConfigOverrides": [
+            {
+                "rule": "complexity.npath",
+                "hash": "454e647d"
+            },
+            {
+                "rule": "maintainability",
+                "hash": "b31b7644"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Console\\CliOptionsParser::parseRuleOptions": [
+            {
+                "rule": "complexity.npath",
+                "hash": "78deb2eb"
+            },
+            {
+                "rule": "maintainability",
+                "hash": "c87d63a4"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Console\\Command\\AnalyzeCommand::__construct": [
+            {
+                "rule": "maintainability",
+                "hash": "53fe0896"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Console\\Command\\AnalyzeCommand::applyBaselineFilter": [
+            {
+                "rule": "maintainability",
+                "hash": "c0bcc106"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Console\\Command\\AnalyzeCommand::applyFilters": [
+            {
+                "rule": "maintainability",
+                "hash": "23a4724b"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Console\\Command\\AnalyzeCommand::applyGitScopeFilter": [
+            {
+                "rule": "maintainability",
+                "hash": "84e7666f"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Console\\Command\\AnalyzeCommand::applySuppressionFilter": [
+            {
+                "rule": "maintainability",
+                "hash": "f1f204a5"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Console\\Command\\AnalyzeCommand::buildConfiguration": [
+            {
+                "rule": "maintainability",
+                "hash": "43f1350d"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Console\\Command\\AnalyzeCommand::clearCacheIfRequested": [
+            {
+                "rule": "maintainability",
+                "hash": "bfcf31b1"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Console\\Command\\AnalyzeCommand::configure": [
+            {
+                "rule": "maintainability",
+                "hash": "5f14aeed"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Console\\Command\\AnalyzeCommand::configureLogger": [
+            {
+                "rule": "maintainability",
+                "hash": "828c75ac"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Console\\Command\\AnalyzeCommand::configureProgressReporter": [
+            {
+                "rule": "maintainability",
+                "hash": "cc95051d"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Console\\Command\\AnalyzeCommand::configureRuntime": [
+            {
+                "rule": "maintainability",
+                "hash": "4fc677b1"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Console\\Command\\AnalyzeCommand::determineExitCode": [
+            {
+                "rule": "maintainability",
+                "hash": "2e75c180"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Console\\Command\\AnalyzeCommand::doExecute": [
+            {
+                "rule": "maintainability",
+                "hash": "a358f80d"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Console\\Command\\AnalyzeCommand::execute": [
+            {
+                "rule": "maintainability",
+                "hash": "0d8d1984"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Console\\Command\\AnalyzeCommand::generateBaselineIfRequested": [
+            {
+                "rule": "maintainability",
+                "hash": "4c58223d"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Console\\Command\\AnalyzeCommand::handleStaleBaselineEntries": [
+            {
+                "rule": "maintainability",
+                "hash": "9effcbe0"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Console\\Command\\AnalyzeCommand::loadConfiguration": [
+            {
+                "rule": "maintainability",
+                "hash": "edc10b84"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Console\\Command\\AnalyzeCommand::outputResults": [
+            {
+                "rule": "maintainability",
+                "hash": "cf208509"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Console\\Command\\AnalyzeCommand::resolveAnalyzeScope": [
+            {
+                "rule": "maintainability",
+                "hash": "0fc857bb"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Console\\Command\\AnalyzeCommand::resolveFilesToAnalyze": [
+            {
+                "rule": "maintainability",
+                "hash": "ec1a2b34"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Console\\Command\\AnalyzeCommand::resolveReportScope": [
+            {
+                "rule": "maintainability",
+                "hash": "4955f820"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Console\\Command\\AnalyzeCommand::showResolvedViolations": [
+            {
+                "rule": "maintainability",
+                "hash": "9393905b"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Console\\Command\\BaselineCleanupCommand::execute": [
+            {
+                "rule": "complexity.npath",
+                "hash": "ab97382a"
+            },
+            {
+                "rule": "maintainability",
+                "hash": "15b5741d"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Console\\Command\\GraphExportCommand::configure": [
+            {
+                "rule": "maintainability",
+                "hash": "9b0655f5"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Console\\Command\\GraphExportCommand::execute": [
+            {
+                "rule": "maintainability",
+                "hash": "99fc108b"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Console\\Command\\GraphExportCommand::getExporter": [
+            {
+                "rule": "maintainability",
+                "hash": "917580c6"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Console\\Command\\HookInstallCommand::execute": [
+            {
+                "rule": "complexity.npath",
+                "hash": "b936c4d1"
+            },
+            {
+                "rule": "maintainability",
+                "hash": "a99ba2b9"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Console\\Command\\HookInstallCommand::findGitDir": [
+            {
+                "rule": "maintainability",
+                "hash": "882e7cd4"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Console\\Command\\HookInstallCommand::getRelativePath": [
+            {
+                "rule": "maintainability",
+                "hash": "014c8558"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Console\\Command\\HookInstallCommand::getScriptPath": [
+            {
+                "rule": "maintainability",
+                "hash": "4f08496c"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Console\\Command\\HookStatusCommand::execute": [
+            {
+                "rule": "complexity.npath",
+                "hash": "44077c4e"
+            },
+            {
+                "rule": "maintainability",
+                "hash": "76df94c6"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Console\\Command\\HookStatusCommand::findGitDir": [
+            {
+                "rule": "maintainability",
+                "hash": "21d36e4d"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Console\\Command\\HookUninstallCommand::execute": [
+            {
+                "rule": "cognitive",
+                "hash": "d3d6f07c"
+            },
+            {
+                "rule": "complexity.npath",
+                "hash": "356f0889"
+            },
+            {
+                "rule": "maintainability",
+                "hash": "b46ea2c9"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Console\\Command\\HookUninstallCommand::findGitDir": [
+            {
+                "rule": "maintainability",
+                "hash": "550049bc"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Console\\Progress\\ConsoleProgressBar::finish": [
+            {
+                "rule": "maintainability",
+                "hash": "67845ce4"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Console\\Progress\\ConsoleProgressBar::start": [
+            {
+                "rule": "maintainability",
+                "hash": "7b564ca1"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\DependencyInjection\\CompilerPass\\CollectorCompilerPass::process": [
+            {
+                "rule": "maintainability",
+                "hash": "227ab1d2"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\DependencyInjection\\CompilerPass\\FormatterCompilerPass::process": [
+            {
+                "rule": "maintainability",
+                "hash": "1e822ab5"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\DependencyInjection\\CompilerPass\\GlobalCollectorCompilerPass::process": [
+            {
+                "rule": "maintainability",
+                "hash": "97e5117b"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\DependencyInjection\\CompilerPass\\RuleCompilerPass::process": [
+            {
+                "rule": "maintainability",
+                "hash": "fa5c80a4"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\DependencyInjection\\CompilerPass\\RuleRegistryCompilerPass::process": [
+            {
+                "rule": "maintainability",
+                "hash": "0ee423c2"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\DependencyInjection\\ContainerFactory::create": [
+            {
+                "rule": "maintainability",
+                "hash": "05122d74"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\DependencyInjection\\ContainerFactory::registerAnalysis": [
+            {
+                "rule": "maintainability",
+                "hash": "79cc65d2"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\DependencyInjection\\ContainerFactory::registerBaseline": [
+            {
+                "rule": "maintainability",
+                "hash": "3000fd10"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\DependencyInjection\\ContainerFactory::registerCache": [
+            {
+                "rule": "maintainability",
+                "hash": "2a054275"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\DependencyInjection\\ContainerFactory::registerCli": [
+            {
+                "rule": "maintainability",
+                "hash": "5428121a"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\DependencyInjection\\ContainerFactory::registerCollectors": [
+            {
+                "rule": "maintainability",
+                "hash": "97c0561d"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\DependencyInjection\\ContainerFactory::registerConfigurationHolder": [
+            {
+                "rule": "maintainability",
+                "hash": "2776faad"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\DependencyInjection\\ContainerFactory::registerFormatters": [
+            {
+                "rule": "maintainability",
+                "hash": "c929604f"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\DependencyInjection\\ContainerFactory::registerLogging": [
+            {
+                "rule": "maintainability",
+                "hash": "0417e853"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\DependencyInjection\\ContainerFactory::registerNamespaceDetection": [
+            {
+                "rule": "maintainability",
+                "hash": "b0a2ca5b"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\DependencyInjection\\ContainerFactory::registerParallel": [
+            {
+                "rule": "maintainability",
+                "hash": "d08fb3b1"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\DependencyInjection\\ContainerFactory::registerParsers": [
+            {
+                "rule": "maintainability",
+                "hash": "bbc50d39"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\DependencyInjection\\ContainerFactory::registerProgress": [
+            {
+                "rule": "maintainability",
+                "hash": "b01710d0"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\DependencyInjection\\ContainerFactory::registerRule": [
+            {
+                "rule": "maintainability",
+                "hash": "8855d6c4"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\DependencyInjection\\ContainerFactory::registerRuleRegistry": [
+            {
+                "rule": "maintainability",
+                "hash": "9d08be09"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\DependencyInjection\\ContainerFactory::registerRules": [
+            {
+                "rule": "maintainability",
+                "hash": "b0aa9937"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Git\\GitClient::exec": [
+            {
+                "rule": "maintainability",
+                "hash": "a542d846"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Git\\GitClient::getChangedFiles": [
+            {
+                "rule": "maintainability",
+                "hash": "3e4877a6"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Git\\GitClient::getDiffFrom": [
+            {
+                "rule": "maintainability",
+                "hash": "fa876c2b"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Git\\GitClient::getThreeDotDiff": [
+            {
+                "rule": "maintainability",
+                "hash": "fafb4cdc"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Git\\GitClient::getTwoDotDiff": [
+            {
+                "rule": "maintainability",
+                "hash": "d70a78e0"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Git\\GitClient::parseNameStatus": [
+            {
+                "rule": "maintainability",
+                "hash": "a5cae84b"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Git\\GitFileDiscovery::discover": [
+            {
+                "rule": "maintainability",
+                "hash": "923500db"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Git\\GitFileDiscovery::discoverChangedFiles": [
+            {
+                "rule": "complexity.npath",
+                "hash": "7b4329d8"
+            },
+            {
+                "rule": "maintainability",
+                "hash": "f7e043c6"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Git\\GitFileDiscovery::isInPaths": [
+            {
+                "rule": "maintainability",
+                "hash": "43d7fa0c"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Git\\GitScopeFilter::buildIndex": [
+            {
+                "rule": "maintainability",
+                "hash": "b2421329"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Git\\GitScopeFilter::extractNamespace": [
+            {
+                "rule": "maintainability",
+                "hash": "18b6f614"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Git\\GitScopeFilter::shouldInclude": [
+            {
+                "rule": "maintainability",
+                "hash": "81d04628"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Git\\GitScopeParser::parse": [
+            {
+                "rule": "maintainability",
+                "hash": "ff16185a"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Logging\\ConsoleLogger::format": [
+            {
+                "rule": "maintainability",
+                "hash": "c660820e"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Logging\\ConsoleLogger::log": [
+            {
+                "rule": "maintainability",
+                "hash": "74c10325"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Logging\\ConsoleLogger::shouldLog": [
+            {
+                "rule": "maintainability",
+                "hash": "7e1341a7"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Logging\\FileLogger::__construct": [
+            {
+                "rule": "maintainability",
+                "hash": "20c8b90d"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Logging\\FileLogger::__destruct": [
+            {
+                "rule": "maintainability",
+                "hash": "e16ffed6"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Logging\\FileLogger::log": [
+            {
+                "rule": "maintainability",
+                "hash": "dfd059e2"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Logging\\FileLogger::shouldLog": [
+            {
+                "rule": "maintainability",
+                "hash": "6db280d8"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Logging\\LoggerFactory::create": [
+            {
+                "rule": "maintainability",
+                "hash": "8f6ced8a"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Logging\\LoggerFactory::log": [
+            {
+                "rule": "maintainability",
+                "hash": "320f71ef"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Rule\\RuleRegistry::getAll": [
+            {
+                "rule": "maintainability",
+                "hash": "59a554b4"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Rule\\RuleRegistry::getAllCliAliases": [
+            {
+                "rule": "maintainability",
+                "hash": "a9d71270"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Rule\\RuleRegistry::getRuleName": [
+            {
+                "rule": "maintainability",
+                "hash": "876c79a5"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Storage\\ChangeDetector::getContentHash": [
+            {
+                "rule": "maintainability",
+                "hash": "84f9399e"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Storage\\ChangeDetector::quickCheck": [
+            {
+                "rule": "maintainability",
+                "hash": "222bbf28"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Storage\\InMemoryStorage::allMetrics": [
+            {
+                "rule": "maintainability",
+                "hash": "1f17e877"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Storage\\InMemoryStorage::clear": [
+            {
+                "rule": "maintainability",
+                "hash": "3e016670"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Storage\\InMemoryStorage::getAllDependencies": [
+            {
+                "rule": "maintainability",
+                "hash": "5c7edddc"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Storage\\InMemoryStorage::getMetrics": [
+            {
+                "rule": "maintainability",
+                "hash": "fd71dd4c"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Storage\\InMemoryStorage::getStats": [
+            {
+                "rule": "maintainability",
+                "hash": "1db5f45b"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Storage\\InMemoryStorage::hasFileChanged": [
+            {
+                "rule": "maintainability",
+                "hash": "f2097e31"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Storage\\InMemoryStorage::matchesType": [
+            {
+                "rule": "maintainability",
+                "hash": "c04a07bf"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Storage\\InMemoryStorage::removeFile": [
+            {
+                "rule": "maintainability",
+                "hash": "4777c21f"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Storage\\InMemoryStorage::rollback": [
+            {
+                "rule": "maintainability",
+                "hash": "5911fbd1"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Storage\\InMemoryStorage::storeDependency": [
+            {
+                "rule": "maintainability",
+                "hash": "155d85ca"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Storage\\InMemoryStorage::storeFile": [
+            {
+                "rule": "maintainability",
+                "hash": "e719cdeb"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Storage\\InMemoryStorage::storeMetrics": [
+            {
+                "rule": "maintainability",
+                "hash": "45fc6c97"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Storage\\SqliteStorage::__construct": [
+            {
+                "rule": "maintainability",
+                "hash": "a772cb40"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Storage\\SqliteStorage::allMetrics": [
+            {
+                "rule": "maintainability",
+                "hash": "cb7abe31"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Storage\\SqliteStorage::clear": [
+            {
+                "rule": "maintainability",
+                "hash": "30598e38"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Storage\\SqliteStorage::count": [
+            {
+                "rule": "maintainability",
+                "hash": "f91cf964"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Storage\\SqliteStorage::getAggregated": [
+            {
+                "rule": "maintainability",
+                "hash": "51edac9d"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Storage\\SqliteStorage::getAllDependencies": [
+            {
+                "rule": "maintainability",
+                "hash": "e7e7f363"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Storage\\SqliteStorage::getDependencies": [
+            {
+                "rule": "maintainability",
+                "hash": "7ddc37c6"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Storage\\SqliteStorage::getDependents": [
+            {
+                "rule": "maintainability",
+                "hash": "c139bf08"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Storage\\SqliteStorage::getFile": [
+            {
+                "rule": "maintainability",
+                "hash": "3db0186a"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Storage\\SqliteStorage::getMetrics": [
+            {
+                "rule": "maintainability",
+                "hash": "3eda4338"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Storage\\SqliteStorage::getOrCreateClassId": [
+            {
+                "rule": "maintainability",
+                "hash": "cf3232cb"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Storage\\SqliteStorage::getStats": [
+            {
+                "rule": "maintainability",
+                "hash": "d221d54a"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Storage\\SqliteStorage::getTableAndColumn": [
+            {
+                "rule": "maintainability",
+                "hash": "143ebb1a"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Storage\\SqliteStorage::hasFileChanged": [
+            {
+                "rule": "maintainability",
+                "hash": "04901566"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Storage\\SqliteStorage::migrate": [
+            {
+                "rule": "maintainability",
+                "hash": "68c5f6b0"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Storage\\SqliteStorage::optimize": [
+            {
+                "rule": "maintainability",
+                "hash": "2334c611"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Storage\\SqliteStorage::storeAggregated": [
+            {
+                "rule": "maintainability",
+                "hash": "8951b57a"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Storage\\SqliteStorage::storeDependency": [
+            {
+                "rule": "maintainability",
+                "hash": "bbc1a9cc"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Storage\\SqliteStorage::storeFile": [
+            {
+                "rule": "maintainability",
+                "hash": "9d456f4a"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Storage\\SqliteStorage::storeMetrics": [
+            {
+                "rule": "maintainability",
+                "hash": "19ae1ed1"
+            }
+        ],
+        "method:AiMessDetector\\Infrastructure\\Storage\\StorageFactory::create": [
+            {
+                "rule": "maintainability",
+                "hash": "c2af2739"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Complexity\\CognitiveComplexityCollector::collect": [
+            {
+                "rule": "maintainability",
+                "hash": "70f92cd2"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Complexity\\CognitiveComplexityCollector::getMetricDefinitions": [
+            {
+                "rule": "maintainability",
+                "hash": "368d3423"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Complexity\\CognitiveComplexityVisitor::buildClosureFqn": [
+            {
+                "rule": "maintainability",
+                "hash": "f5e5c8fa"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Complexity\\CognitiveComplexityVisitor::buildFunctionFqn": [
+            {
+                "rule": "maintainability",
+                "hash": "f0758997"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Complexity\\CognitiveComplexityVisitor::buildMethodFqn": [
+            {
+                "rule": "maintainability",
+                "hash": "ce8b2b94"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Complexity\\CognitiveComplexityVisitor::countComplexity": [
+            {
+                "rule": "maintainability",
+                "hash": "cbad4a0c"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Complexity\\CognitiveComplexityVisitor::enterNode": [
+            {
+                "rule": "cognitive",
+                "hash": "907642eb"
+            },
+            {
+                "rule": "complexity.npath",
+                "hash": "becbff8a"
+            },
+            {
+                "rule": "maintainability",
+                "hash": "18632eff"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Complexity\\CognitiveComplexityVisitor::extractClassLikeName": [
+            {
+                "rule": "maintainability",
+                "hash": "36e2a6d9"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Complexity\\CognitiveComplexityVisitor::getComplexityIncrement": [
+            {
+                "rule": "complexity.npath",
+                "hash": "ce21afce"
+            },
+            {
+                "rule": "maintainability",
+                "hash": "e6cb0ae8"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Complexity\\CognitiveComplexityVisitor::getLogicalOperatorIncrement": [
+            {
+                "rule": "maintainability",
+                "hash": "c321c3bf"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Complexity\\CognitiveComplexityVisitor::getMethodsWithMetrics": [
+            {
+                "rule": "maintainability",
+                "hash": "6fd0ef6d"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Complexity\\CognitiveComplexityVisitor::isNestingStructure": [
+            {
+                "rule": "maintainability",
+                "hash": "ba27d537"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Complexity\\CognitiveComplexityVisitor::isRecursiveCall": [
+            {
+                "rule": "maintainability",
+                "hash": "655a0202"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Complexity\\CognitiveComplexityVisitor::leaveNode": [
+            {
+                "rule": "complexity.npath",
+                "hash": "19f6d08d"
+            },
+            {
+                "rule": "maintainability",
+                "hash": "65fd1ddf"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Complexity\\CognitiveComplexityVisitor::reset": [
+            {
+                "rule": "maintainability",
+                "hash": "d9a241e9"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Complexity\\CognitiveComplexityVisitor::startMethod": [
+            {
+                "rule": "maintainability",
+                "hash": "e9bb8224"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Complexity\\CyclomaticComplexityCollector::collect": [
+            {
+                "rule": "maintainability",
+                "hash": "d47628f4"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Complexity\\CyclomaticComplexityCollector::getMetricDefinitions": [
+            {
+                "rule": "maintainability",
+                "hash": "4a8dcb3f"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Complexity\\CyclomaticComplexityVisitor::buildClosureFqn": [
+            {
+                "rule": "maintainability",
+                "hash": "74de2c77"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Complexity\\CyclomaticComplexityVisitor::buildFunctionFqn": [
+            {
+                "rule": "maintainability",
+                "hash": "1b69cd93"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Complexity\\CyclomaticComplexityVisitor::buildMethodFqn": [
+            {
+                "rule": "maintainability",
+                "hash": "a82fa37a"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Complexity\\CyclomaticComplexityVisitor::countDecisionPoint": [
+            {
+                "rule": "maintainability",
+                "hash": "3219a85b"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Complexity\\CyclomaticComplexityVisitor::enterNode": [
+            {
+                "rule": "complexity.npath",
+                "hash": "7967f3f1"
+            },
+            {
+                "rule": "maintainability",
+                "hash": "9b1074b7"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Complexity\\CyclomaticComplexityVisitor::extractClassLikeName": [
+            {
+                "rule": "maintainability",
+                "hash": "4f15480a"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Complexity\\CyclomaticComplexityVisitor::getDecisionPointWeight": [
+            {
+                "rule": "maintainability",
+                "hash": "fc5f8701"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Complexity\\CyclomaticComplexityVisitor::getMethodsWithMetrics": [
+            {
+                "rule": "maintainability",
+                "hash": "0faf400a"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Complexity\\CyclomaticComplexityVisitor::leaveNode": [
+            {
+                "rule": "maintainability",
+                "hash": "300dce63"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Complexity\\CyclomaticComplexityVisitor::reset": [
+            {
+                "rule": "maintainability",
+                "hash": "ddd8837c"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Complexity\\CyclomaticComplexityVisitor::startMethod": [
+            {
+                "rule": "maintainability",
+                "hash": "3f16ef44"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Complexity\\NpathComplexityCollector::collect": [
+            {
+                "rule": "maintainability",
+                "hash": "c31cba0a"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Complexity\\NpathComplexityCollector::getMetricDefinitions": [
+            {
+                "rule": "maintainability",
+                "hash": "96abf638"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Complexity\\NpathComplexityVisitor::buildClosureFqn": [
+            {
+                "rule": "maintainability",
+                "hash": "c924aab6"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Complexity\\NpathComplexityVisitor::buildFunctionFqn": [
+            {
+                "rule": "maintainability",
+                "hash": "59ef03d4"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Complexity\\NpathComplexityVisitor::buildMethodFqn": [
+            {
+                "rule": "maintainability",
+                "hash": "90c24c9e"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Complexity\\NpathComplexityVisitor::calculateExprNpath": [
+            {
+                "rule": "maintainability",
+                "hash": "e7e19d14"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Complexity\\NpathComplexityVisitor::calculateForNpath": [
+            {
+                "rule": "maintainability",
+                "hash": "65d79b00"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Complexity\\NpathComplexityVisitor::calculateIfNpath": [
+            {
+                "rule": "maintainability",
+                "hash": "ea1acc56"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Complexity\\NpathComplexityVisitor::calculateMatchNpath": [
+            {
+                "rule": "maintainability",
+                "hash": "292c6072"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Complexity\\NpathComplexityVisitor::calculateSequenceNpath": [
+            {
+                "rule": "maintainability",
+                "hash": "9700d638"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Complexity\\NpathComplexityVisitor::calculateStmtNpath": [
+            {
+                "rule": "maintainability",
+                "hash": "b6a4f99b"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Complexity\\NpathComplexityVisitor::calculateSwitchNpath": [
+            {
+                "rule": "maintainability",
+                "hash": "20915c9d"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Complexity\\NpathComplexityVisitor::calculateTernaryNpath": [
+            {
+                "rule": "maintainability",
+                "hash": "027d9860"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Complexity\\NpathComplexityVisitor::calculateTryCatchNpath": [
+            {
+                "rule": "maintainability",
+                "hash": "eaa04d9a"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Complexity\\NpathComplexityVisitor::enterNode": [
+            {
+                "rule": "complexity.npath",
+                "hash": "42a53752"
+            },
+            {
+                "rule": "maintainability",
+                "hash": "4c492aa1"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Complexity\\NpathComplexityVisitor::extractClassLikeName": [
+            {
+                "rule": "maintainability",
+                "hash": "a90518b2"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Complexity\\NpathComplexityVisitor::getMethodsWithMetrics": [
+            {
+                "rule": "maintainability",
+                "hash": "e24f59bc"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Complexity\\NpathComplexityVisitor::leaveNode": [
+            {
+                "rule": "maintainability",
+                "hash": "88f6463e"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Complexity\\NpathComplexityVisitor::reset": [
+            {
+                "rule": "maintainability",
+                "hash": "d8c90bc8"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Complexity\\NpathComplexityVisitor::safeMultiply": [
+            {
+                "rule": "maintainability",
+                "hash": "6dbb89e7"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Complexity\\NpathComplexityVisitor::startMethod": [
+            {
+                "rule": "maintainability",
+                "hash": "6c61c57a"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Coupling\\AbstractnessCollector::calculate": [
+            {
+                "rule": "maintainability",
+                "hash": "5865b0bd"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Coupling\\AbstractnessCollector::computeAbstractness": [
+            {
+                "rule": "maintainability",
+                "hash": "87a903c6"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Coupling\\CouplingCollector::computeClassMetrics": [
+            {
+                "rule": "maintainability",
+                "hash": "e99a6cde"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Coupling\\CouplingCollector::computeInstability": [
+            {
+                "rule": "maintainability",
+                "hash": "535fd072"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Coupling\\CouplingCollector::computeNamespaceMetrics": [
+            {
+                "rule": "maintainability",
+                "hash": "6ca68c28"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Coupling\\CouplingCollector::getMetricDefinitions": [
+            {
+                "rule": "maintainability",
+                "hash": "18aa8549"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Coupling\\CouplingCollector::parseClassName": [
+            {
+                "rule": "maintainability",
+                "hash": "4e9a26ce"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Coupling\\DistanceCollector::calculate": [
+            {
+                "rule": "maintainability",
+                "hash": "327586bd"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Halstead\\HalsteadCollector::collect": [
+            {
+                "rule": "maintainability",
+                "hash": "32a532bf"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Halstead\\HalsteadCollector::getMetricDefinitions": [
+            {
+                "rule": "maintainability",
+                "hash": "132f9722"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Halstead\\HalsteadMetrics::difficulty": [
+            {
+                "rule": "maintainability",
+                "hash": "ce705db2"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Halstead\\HalsteadMetrics::volume": [
+            {
+                "rule": "maintainability",
+                "hash": "2a105d0e"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Halstead\\HalsteadVisitor::buildClosureFqn": [
+            {
+                "rule": "maintainability",
+                "hash": "baa6dd5b"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Halstead\\HalsteadVisitor::buildFunctionFqn": [
+            {
+                "rule": "maintainability",
+                "hash": "b30a2771"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Halstead\\HalsteadVisitor::buildMethodFqn": [
+            {
+                "rule": "maintainability",
+                "hash": "b1028b18"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Halstead\\HalsteadVisitor::countOperands": [
+            {
+                "rule": "maintainability",
+                "hash": "ce618a4d"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Halstead\\HalsteadVisitor::countOperators": [
+            {
+                "rule": "maintainability",
+                "hash": "0b5262e0"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Halstead\\HalsteadVisitor::endMethod": [
+            {
+                "rule": "maintainability",
+                "hash": "dc3cab59"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Halstead\\HalsteadVisitor::enterNode": [
+            {
+                "rule": "complexity.npath",
+                "hash": "2013c9c9"
+            },
+            {
+                "rule": "maintainability",
+                "hash": "4ab5cd69"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Halstead\\HalsteadVisitor::extractClassLikeName": [
+            {
+                "rule": "maintainability",
+                "hash": "f9b1c18b"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Halstead\\HalsteadVisitor::getAssignOpName": [
+            {
+                "rule": "maintainability",
+                "hash": "1a7aa40d"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Halstead\\HalsteadVisitor::getAssignmentOpName": [
+            {
+                "rule": "maintainability",
+                "hash": "808e4205"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Halstead\\HalsteadVisitor::getBinaryOpName": [
+            {
+                "rule": "maintainability",
+                "hash": "50292955"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Halstead\\HalsteadVisitor::getCallOpName": [
+            {
+                "rule": "maintainability",
+                "hash": "eb0d0d23"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Halstead\\HalsteadVisitor::getCastName": [
+            {
+                "rule": "maintainability",
+                "hash": "3db2d0c3"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Halstead\\HalsteadVisitor::getControlFlowOpName": [
+            {
+                "rule": "maintainability",
+                "hash": "13e87259"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Halstead\\HalsteadVisitor::getMethodsWithMetrics": [
+            {
+                "rule": "maintainability",
+                "hash": "764c8796"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Halstead\\HalsteadVisitor::getOperandName": [
+            {
+                "rule": "cognitive",
+                "hash": "d9a1acf1"
+            },
+            {
+                "rule": "complexity.npath",
+                "hash": "1d2316b1"
+            },
+            {
+                "rule": "maintainability",
+                "hash": "4e61bd64"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Halstead\\HalsteadVisitor::getOperatorName": [
+            {
+                "rule": "maintainability",
+                "hash": "c5424cc5"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Halstead\\HalsteadVisitor::getOtherOpName": [
+            {
+                "rule": "maintainability",
+                "hash": "f6f0fe63"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Halstead\\HalsteadVisitor::getUnaryOpName": [
+            {
+                "rule": "maintainability",
+                "hash": "c724973b"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Halstead\\HalsteadVisitor::leaveNode": [
+            {
+                "rule": "maintainability",
+                "hash": "3ab22eb1"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Halstead\\HalsteadVisitor::reset": [
+            {
+                "rule": "maintainability",
+                "hash": "cd456333"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Halstead\\HalsteadVisitor::startMethod": [
+            {
+                "rule": "maintainability",
+                "hash": "8467527b"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Maintainability\\MaintainabilityIndexCalculator::calculate": [
+            {
+                "rule": "maintainability",
+                "hash": "2a0887c3"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Maintainability\\MaintainabilityIndexCalculator::calculateRaw": [
+            {
+                "rule": "maintainability",
+                "hash": "17225f1a"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Maintainability\\MaintainabilityIndexCollector::calculate": [
+            {
+                "rule": "maintainability",
+                "hash": "0b5a69fa"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Maintainability\\MaintainabilityIndexCollector::estimateLoc": [
+            {
+                "rule": "maintainability",
+                "hash": "ff099f2c"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Maintainability\\MaintainabilityIndexCollector::getMetricDefinitions": [
+            {
+                "rule": "maintainability",
+                "hash": "4f357044"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Size\\ClassCountCollector::collect": [
+            {
+                "rule": "maintainability",
+                "hash": "14d9781d"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Size\\ClassCountCollector::getMetricDefinitions": [
+            {
+                "rule": "maintainability",
+                "hash": "82fb9643"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Size\\ClassCountVisitor::enterNode": [
+            {
+                "rule": "maintainability",
+                "hash": "66e0bb40"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Size\\ClassCountVisitor::reset": [
+            {
+                "rule": "maintainability",
+                "hash": "8ee46c94"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Size\\LocCollector::calculateMetrics": [
+            {
+                "rule": "cognitive",
+                "hash": "829d613b"
+            },
+            {
+                "rule": "complexity.npath",
+                "hash": "f277a7c1"
+            },
+            {
+                "rule": "maintainability",
+                "hash": "7d553a31"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Size\\LocCollector::collect": [
+            {
+                "rule": "maintainability",
+                "hash": "2b83b479"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Size\\LocCollector::getMetricDefinitions": [
+            {
+                "rule": "maintainability",
+                "hash": "5cf0ff2e"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\InheritanceDepthCollector::calculateDit": [
+            {
+                "rule": "maintainability",
+                "hash": "b8694544"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\InheritanceDepthCollector::calculateReflectionDit": [
+            {
+                "rule": "maintainability",
+                "hash": "c0c4aa76"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\InheritanceDepthCollector::collect": [
+            {
+                "rule": "maintainability",
+                "hash": "e6123a88"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\InheritanceDepthCollector::getClassesWithMetrics": [
+            {
+                "rule": "maintainability",
+                "hash": "69377eb7"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\InheritanceDepthCollector::getMetricDefinitions": [
+            {
+                "rule": "maintainability",
+                "hash": "a743e9ea"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\InheritanceDepthCollector::isStandardPhpClass": [
+            {
+                "rule": "maintainability",
+                "hash": "e8002724"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\InheritanceDepthCollector::resolveExternalClassDit": [
+            {
+                "rule": "maintainability",
+                "hash": "677085b7"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\InheritanceDepthVisitor::buildFqn": [
+            {
+                "rule": "maintainability",
+                "hash": "4956c28f"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\InheritanceDepthVisitor::enterNode": [
+            {
+                "rule": "maintainability",
+                "hash": "785ef94e"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\InheritanceDepthVisitor::getClassParents": [
+            {
+                "rule": "maintainability",
+                "hash": "3cfb4d0c"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\InheritanceDepthVisitor::resolveClassName": [
+            {
+                "rule": "maintainability",
+                "hash": "068e50b2"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\LcomClassData::addPropertyAccess": [
+            {
+                "rule": "maintainability",
+                "hash": "315c67b2"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\LcomClassData::bfs": [
+            {
+                "rule": "maintainability",
+                "hash": "13f96b92"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\LcomClassData::calculateLcom": [
+            {
+                "rule": "complexity.npath",
+                "hash": "7693fd58"
+            },
+            {
+                "rule": "maintainability",
+                "hash": "29d6f68c"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\LcomClassData::shareProperty": [
+            {
+                "rule": "maintainability",
+                "hash": "c9a9ac45"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\LcomCollector::collect": [
+            {
+                "rule": "maintainability",
+                "hash": "aba40779"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\LcomCollector::getClassesWithMetrics": [
+            {
+                "rule": "maintainability",
+                "hash": "4b679c8b"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\LcomCollector::getMetricDefinitions": [
+            {
+                "rule": "maintainability",
+                "hash": "41672832"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\LcomVisitor::buildClassFqn": [
+            {
+                "rule": "maintainability",
+                "hash": "70c095d4"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\LcomVisitor::enterNode": [
+            {
+                "rule": "cognitive",
+                "hash": "9b8e500d"
+            },
+            {
+                "rule": "complexity.npath",
+                "hash": "4428e42f"
+            },
+            {
+                "rule": "maintainability",
+                "hash": "7899acb5"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\LcomVisitor::extractClassLikeName": [
+            {
+                "rule": "maintainability",
+                "hash": "4696f75d"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\LcomVisitor::getCurrentClass": [
+            {
+                "rule": "maintainability",
+                "hash": "6f299517"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\LcomVisitor::leaveNode": [
+            {
+                "rule": "maintainability",
+                "hash": "dca1d6cf"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\LcomVisitor::reset": [
+            {
+                "rule": "maintainability",
+                "hash": "b1614adc"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\MethodCountCollector::collect": [
+            {
+                "rule": "maintainability",
+                "hash": "8d83ba28"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\MethodCountCollector::getClassesWithMetrics": [
+            {
+                "rule": "maintainability",
+                "hash": "17098e0a"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\MethodCountCollector::getMetricDefinitions": [
+            {
+                "rule": "maintainability",
+                "hash": "ea82afdb"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\MethodCountCollector::provides": [
+            {
+                "rule": "maintainability",
+                "hash": "d03c12a1"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\MethodCountMetrics::addProperty": [
+            {
+                "rule": "maintainability",
+                "hash": "8fb58a96"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\MethodCountVisitor::buildClassFqn": [
+            {
+                "rule": "maintainability",
+                "hash": "b66c036f"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\MethodCountVisitor::countMethod": [
+            {
+                "rule": "complexity.npath",
+                "hash": "e8592633"
+            },
+            {
+                "rule": "maintainability",
+                "hash": "3fa4ebde"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\MethodCountVisitor::countProperty": [
+            {
+                "rule": "maintainability",
+                "hash": "0c906ef1"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\MethodCountVisitor::enterNode": [
+            {
+                "rule": "maintainability",
+                "hash": "9377e592"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\MethodCountVisitor::extractClassLikeName": [
+            {
+                "rule": "maintainability",
+                "hash": "961813df"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\MethodCountVisitor::getCurrentClass": [
+            {
+                "rule": "maintainability",
+                "hash": "fdcfb852"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\MethodCountVisitor::getParamVisibility": [
+            {
+                "rule": "maintainability",
+                "hash": "49dfd80f"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\MethodCountVisitor::getPropertyVisibility": [
+            {
+                "rule": "maintainability",
+                "hash": "f118643f"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\MethodCountVisitor::isGetter": [
+            {
+                "rule": "maintainability",
+                "hash": "c8689833"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\MethodCountVisitor::leaveNode": [
+            {
+                "rule": "maintainability",
+                "hash": "f8fdaee4"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\MethodCountVisitor::processConstructorPromotedProperties": [
+            {
+                "rule": "maintainability",
+                "hash": "4a70193f"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\NocCollector::buildChildrenMapFromGraph": [
+            {
+                "rule": "maintainability",
+                "hash": "e9f20956"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\NocCollector::calculate": [
+            {
+                "rule": "maintainability",
+                "hash": "3c6f009d"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\NocCollector::getMetricDefinitions": [
+            {
+                "rule": "maintainability",
+                "hash": "b903b63c"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\NocCollector::parseClassName": [
+            {
+                "rule": "maintainability",
+                "hash": "d2f49e2b"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\RfcCollector::collect": [
+            {
+                "rule": "maintainability",
+                "hash": "8c825685"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\RfcCollector::getClassesWithMetrics": [
+            {
+                "rule": "maintainability",
+                "hash": "84f24f56"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\RfcCollector::getMetricDefinitions": [
+            {
+                "rule": "maintainability",
+                "hash": "7b217450"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\RfcVisitor::buildClassFqn": [
+            {
+                "rule": "maintainability",
+                "hash": "fc8151e0"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\RfcVisitor::collectOwnMethods": [
+            {
+                "rule": "maintainability",
+                "hash": "2b777b5d"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\RfcVisitor::enterNode": [
+            {
+                "rule": "maintainability",
+                "hash": "98c0b5c3"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\RfcVisitor::extractClassLikeName": [
+            {
+                "rule": "maintainability",
+                "hash": "c5826b77"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\RfcVisitor::getCurrentClass": [
+            {
+                "rule": "maintainability",
+                "hash": "9a9f074e"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\RfcVisitor::handleClassLikeNode": [
+            {
+                "rule": "maintainability",
+                "hash": "cc75b465"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\RfcVisitor::handleConstructorCall": [
+            {
+                "rule": "maintainability",
+                "hash": "6320e16f"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\RfcVisitor::handleExternalCall": [
+            {
+                "rule": "maintainability",
+                "hash": "c3557f11"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\RfcVisitor::handleFunctionCall": [
+            {
+                "rule": "maintainability",
+                "hash": "8e0da5a9"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\RfcVisitor::handleMethodCall": [
+            {
+                "rule": "maintainability",
+                "hash": "b4829219"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\RfcVisitor::handleStaticCall": [
+            {
+                "rule": "maintainability",
+                "hash": "e23d8665"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\RfcVisitor::leaveNode": [
+            {
+                "rule": "maintainability",
+                "hash": "2c029adc"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\RfcVisitor::reset": [
+            {
+                "rule": "maintainability",
+                "hash": "bf99f0bf"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\TccLccClassData::addPropertyAccess": [
+            {
+                "rule": "maintainability",
+                "hash": "ecab35b2"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\TccLccClassData::buildMethodGraph": [
+            {
+                "rule": "maintainability",
+                "hash": "92ab43ae"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\TccLccClassData::calculateLcc": [
+            {
+                "rule": "maintainability",
+                "hash": "40717c9e"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\TccLccClassData::calculateTcc": [
+            {
+                "rule": "maintainability",
+                "hash": "fd935afe"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\TccLccClassData::countConnectedPairsBfs": [
+            {
+                "rule": "cognitive",
+                "hash": "f9594487"
+            },
+            {
+                "rule": "maintainability",
+                "hash": "c446642b"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\TccLccClassData::shareProperty": [
+            {
+                "rule": "maintainability",
+                "hash": "05422e29"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\TccLccCollector::collect": [
+            {
+                "rule": "maintainability",
+                "hash": "3058fb0e"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\TccLccCollector::getClassesWithMetrics": [
+            {
+                "rule": "maintainability",
+                "hash": "4b0b9181"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\TccLccCollector::getMetricDefinitions": [
+            {
+                "rule": "maintainability",
+                "hash": "6a79fcce"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\TccLccVisitor::buildClassFqn": [
+            {
+                "rule": "maintainability",
+                "hash": "47a0efc0"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\TccLccVisitor::enterNode": [
+            {
+                "rule": "cognitive",
+                "hash": "c6b63e3a"
+            },
+            {
+                "rule": "complexity.npath",
+                "hash": "e9d12ce7"
+            },
+            {
+                "rule": "maintainability",
+                "hash": "aad02069"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\TccLccVisitor::extractClassLikeName": [
+            {
+                "rule": "maintainability",
+                "hash": "4557a9ef"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\TccLccVisitor::getCurrentClass": [
+            {
+                "rule": "maintainability",
+                "hash": "4b8ba9fa"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\TccLccVisitor::leaveNode": [
+            {
+                "rule": "maintainability",
+                "hash": "065d7972"
+            }
+        ],
+        "method:AiMessDetector\\Metrics\\Structure\\TccLccVisitor::reset": [
+            {
+                "rule": "maintainability",
+                "hash": "c7434ced"
+            }
+        ],
+        "method:AiMessDetector\\Reporting\\Formatter\\CheckstyleFormatter::format": [
+            {
+                "rule": "maintainability",
+                "hash": "c0fcd17a"
+            }
+        ],
+        "method:AiMessDetector\\Reporting\\Formatter\\CheckstyleFormatter::writeError": [
+            {
+                "rule": "maintainability",
+                "hash": "1f440cc2"
+            }
+        ],
+        "method:AiMessDetector\\Reporting\\Formatter\\CheckstyleFormatter::writeFiles": [
+            {
+                "rule": "maintainability",
+                "hash": "588a0798"
+            }
+        ],
+        "method:AiMessDetector\\Reporting\\Formatter\\FormatterRegistry::get": [
+            {
+                "rule": "maintainability",
+                "hash": "fd17f0d9"
+            }
+        ],
+        "method:AiMessDetector\\Reporting\\Formatter\\FormatterRegistry::register": [
+            {
+                "rule": "maintainability",
+                "hash": "f37684c7"
+            }
+        ],
+        "method:AiMessDetector\\Reporting\\Formatter\\GitLabCodeQualityFormatter::format": [
+            {
+                "rule": "maintainability",
+                "hash": "9f2a0f1f"
+            }
+        ],
+        "method:AiMessDetector\\Reporting\\Formatter\\GitLabCodeQualityFormatter::generateFingerprint": [
+            {
+                "rule": "maintainability",
+                "hash": "11815975"
+            }
+        ],
+        "method:AiMessDetector\\Reporting\\Formatter\\JsonFormatter::format": [
+            {
+                "rule": "maintainability",
+                "hash": "7859d9e6"
+            }
+        ],
+        "method:AiMessDetector\\Reporting\\Formatter\\JsonFormatter::formatViolation": [
+            {
+                "rule": "maintainability",
+                "hash": "9c02a0a3"
+            }
+        ],
+        "method:AiMessDetector\\Reporting\\Formatter\\JsonFormatter::groupViolationsByFile": [
+            {
+                "rule": "maintainability",
+                "hash": "f58a9ec1"
+            }
+        ],
+        "method:AiMessDetector\\Reporting\\Formatter\\SarifFormatter::collectRules": [
+            {
+                "rule": "maintainability",
+                "hash": "b6e930cb"
+            }
+        ],
+        "method:AiMessDetector\\Reporting\\Formatter\\SarifFormatter::format": [
+            {
+                "rule": "maintainability",
+                "hash": "2bcac503"
+            }
+        ],
+        "method:AiMessDetector\\Reporting\\Formatter\\SarifFormatter::formatRuleName": [
+            {
+                "rule": "maintainability",
+                "hash": "fb74594d"
+            }
+        ],
+        "method:AiMessDetector\\Reporting\\Formatter\\SarifFormatter::getRuleDescription": [
+            {
+                "rule": "maintainability",
+                "hash": "120ffe55"
+            }
+        ],
+        "method:AiMessDetector\\Reporting\\Formatter\\TextFormatter::format": [
+            {
+                "rule": "maintainability",
+                "hash": "a3d83aae"
+            }
+        ],
+        "method:AiMessDetector\\Reporting\\Formatter\\TextFormatter::formatSummary": [
+            {
+                "rule": "maintainability",
+                "hash": "bc91c31c"
+            }
+        ],
+        "method:AiMessDetector\\Reporting\\Formatter\\TextFormatter::formatViolation": [
+            {
+                "rule": "maintainability",
+                "hash": "8247595b"
+            }
+        ],
+        "method:AiMessDetector\\Reporting\\Report::getExitCode": [
+            {
+                "rule": "maintainability",
+                "hash": "cc4bf247"
+            }
+        ],
+        "method:AiMessDetector\\Reporting\\ReportBuilder::build": [
+            {
+                "rule": "maintainability",
+                "hash": "86a9352a"
+            }
+        ],
+        "method:AiMessDetector\\Reporting\\ReportBuilder::duration": [
+            {
+                "rule": "maintainability",
+                "hash": "381476cd"
+            }
+        ],
+        "method:AiMessDetector\\Reporting\\ReportBuilder::filesAnalyzed": [
+            {
+                "rule": "maintainability",
+                "hash": "ebed17af"
+            }
+        ],
+        "method:AiMessDetector\\Reporting\\ReportBuilder::filesSkipped": [
+            {
+                "rule": "maintainability",
+                "hash": "809c2c26"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Architecture\\CircularDependencyOptions::fromArray": [
+            {
+                "rule": "maintainability",
+                "hash": "431c2e03"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Architecture\\CircularDependencyOptions::getSeverity": [
+            {
+                "rule": "maintainability",
+                "hash": "258eb6af"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Architecture\\CircularDependencyRule::__construct": [
+            {
+                "rule": "maintainability",
+                "hash": "bd8c5c3f"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Architecture\\CircularDependencyRule::analyze": [
+            {
+                "rule": "complexity.npath",
+                "hash": "bc4b2e5f"
+            },
+            {
+                "rule": "maintainability",
+                "hash": "d058cce4"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Architecture\\CircularDependencyRule::splitFqn": [
+            {
+                "rule": "maintainability",
+                "hash": "5425adcb"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Complexity\\ClassCognitiveComplexityOptions::fromArray": [
+            {
+                "rule": "maintainability",
+                "hash": "5fc02479"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Complexity\\ClassCognitiveComplexityOptions::getSeverity": [
+            {
+                "rule": "maintainability",
+                "hash": "ac8de77a"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Complexity\\ClassComplexityOptions::fromArray": [
+            {
+                "rule": "maintainability",
+                "hash": "ebccf376"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Complexity\\ClassComplexityOptions::getSeverity": [
+            {
+                "rule": "maintainability",
+                "hash": "7335a085"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Complexity\\ClassNpathComplexityOptions::fromArray": [
+            {
+                "rule": "maintainability",
+                "hash": "8983b179"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Complexity\\ClassNpathComplexityOptions::getSeverity": [
+            {
+                "rule": "maintainability",
+                "hash": "c02f0a2a"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Complexity\\CognitiveComplexityOptions::forLevel": [
+            {
+                "rule": "maintainability",
+                "hash": "bcd3a83d"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Complexity\\CognitiveComplexityOptions::fromArray": [
+            {
+                "rule": "maintainability",
+                "hash": "24481b95"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Complexity\\CognitiveComplexityOptions::isLevelEnabled": [
+            {
+                "rule": "maintainability",
+                "hash": "180f15b2"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Complexity\\CognitiveComplexityRule::__construct": [
+            {
+                "rule": "maintainability",
+                "hash": "8f156335"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Complexity\\CognitiveComplexityRule::analyze": [
+            {
+                "rule": "maintainability",
+                "hash": "3577bd2c"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Complexity\\CognitiveComplexityRule::analyzeClassLevel": [
+            {
+                "rule": "maintainability",
+                "hash": "fe0fb23b"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Complexity\\CognitiveComplexityRule::analyzeLevel": [
+            {
+                "rule": "maintainability",
+                "hash": "1fca175f"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Complexity\\CognitiveComplexityRule::analyzeMethodLevel": [
+            {
+                "rule": "maintainability",
+                "hash": "cdc128ee"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Complexity\\ComplexityOptions::forLevel": [
+            {
+                "rule": "maintainability",
+                "hash": "f2a39e99"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Complexity\\ComplexityOptions::fromArray": [
+            {
+                "rule": "maintainability",
+                "hash": "8e6d3861"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Complexity\\ComplexityOptions::isLevelEnabled": [
+            {
+                "rule": "maintainability",
+                "hash": "bb567736"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Complexity\\ComplexityRule::__construct": [
+            {
+                "rule": "maintainability",
+                "hash": "28915083"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Complexity\\ComplexityRule::analyze": [
+            {
+                "rule": "maintainability",
+                "hash": "bcf1541f"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Complexity\\ComplexityRule::analyzeClassLevel": [
+            {
+                "rule": "maintainability",
+                "hash": "eabf1051"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Complexity\\ComplexityRule::analyzeLevel": [
+            {
+                "rule": "maintainability",
+                "hash": "a5ad1c0e"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Complexity\\ComplexityRule::analyzeMethodLevel": [
+            {
+                "rule": "maintainability",
+                "hash": "8d23973c"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Complexity\\MethodCognitiveComplexityOptions::fromArray": [
+            {
+                "rule": "maintainability",
+                "hash": "55ffe219"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Complexity\\MethodCognitiveComplexityOptions::getSeverity": [
+            {
+                "rule": "maintainability",
+                "hash": "0a6777a2"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Complexity\\MethodComplexityOptions::fromArray": [
+            {
+                "rule": "maintainability",
+                "hash": "9a042cec"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Complexity\\MethodComplexityOptions::getSeverity": [
+            {
+                "rule": "maintainability",
+                "hash": "1f46ee4b"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Complexity\\MethodNpathComplexityOptions::fromArray": [
+            {
+                "rule": "maintainability",
+                "hash": "6574fe3e"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Complexity\\MethodNpathComplexityOptions::getSeverity": [
+            {
+                "rule": "maintainability",
+                "hash": "e9fa6100"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Complexity\\NpathComplexityOptions::forLevel": [
+            {
+                "rule": "maintainability",
+                "hash": "7448331f"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Complexity\\NpathComplexityOptions::fromArray": [
+            {
+                "rule": "maintainability",
+                "hash": "a52e649f"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Complexity\\NpathComplexityOptions::isLevelEnabled": [
+            {
+                "rule": "maintainability",
+                "hash": "588fa3e4"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Complexity\\NpathComplexityRule::__construct": [
+            {
+                "rule": "maintainability",
+                "hash": "e88da6ef"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Complexity\\NpathComplexityRule::analyze": [
+            {
+                "rule": "maintainability",
+                "hash": "cd1ed7d2"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Complexity\\NpathComplexityRule::analyzeClassLevel": [
+            {
+                "rule": "maintainability",
+                "hash": "90df1d70"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Complexity\\NpathComplexityRule::analyzeLevel": [
+            {
+                "rule": "maintainability",
+                "hash": "550b1582"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Complexity\\NpathComplexityRule::analyzeMethodLevel": [
+            {
+                "rule": "maintainability",
+                "hash": "8321d32b"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Coupling\\ClassCouplingOptions::fromArray": [
+            {
+                "rule": "maintainability",
+                "hash": "fd0b2f84"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Coupling\\ClassCouplingOptions::getSeverity": [
+            {
+                "rule": "maintainability",
+                "hash": "b5e86dd9"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Coupling\\CouplingOptions::forLevel": [
+            {
+                "rule": "maintainability",
+                "hash": "20c40040"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Coupling\\CouplingOptions::fromArray": [
+            {
+                "rule": "maintainability",
+                "hash": "b4e73c3c"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Coupling\\CouplingOptions::isLevelEnabled": [
+            {
+                "rule": "maintainability",
+                "hash": "3934191c"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Coupling\\CouplingRule::__construct": [
+            {
+                "rule": "maintainability",
+                "hash": "10710ab9"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Coupling\\CouplingRule::analyze": [
+            {
+                "rule": "maintainability",
+                "hash": "21318c2a"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Coupling\\CouplingRule::analyzeClassLevel": [
+            {
+                "rule": "maintainability",
+                "hash": "27f8c9e0"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Coupling\\CouplingRule::analyzeLevel": [
+            {
+                "rule": "maintainability",
+                "hash": "c8bdf135"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Coupling\\CouplingRule::analyzeNamespaceLevel": [
+            {
+                "rule": "maintainability",
+                "hash": "eb5a24da"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Coupling\\CouplingRule::checkCbo": [
+            {
+                "rule": "maintainability",
+                "hash": "7c98f7fe"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Coupling\\CouplingRule::getCliAliases": [
+            {
+                "rule": "maintainability",
+                "hash": "1a5ff575"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Coupling\\DistanceOptions::fromArray": [
+            {
+                "rule": "maintainability",
+                "hash": "2a8c4bc4"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Coupling\\DistanceOptions::getSeverity": [
+            {
+                "rule": "maintainability",
+                "hash": "cdd04ec3"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Coupling\\DistanceRule::__construct": [
+            {
+                "rule": "maintainability",
+                "hash": "7eec5b6d"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Coupling\\DistanceRule::analyze": [
+            {
+                "rule": "complexity.npath",
+                "hash": "09aa76bb"
+            },
+            {
+                "rule": "maintainability",
+                "hash": "7963786e"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Coupling\\DistanceRule::namespaceMatchesPrefix": [
+            {
+                "rule": "maintainability",
+                "hash": "2968f104"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Coupling\\DistanceRule::shouldAnalyzeNamespace": [
+            {
+                "rule": "maintainability",
+                "hash": "6ea778d6"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Coupling\\NamespaceCouplingOptions::fromArray": [
+            {
+                "rule": "maintainability",
+                "hash": "e31470ec"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Coupling\\NamespaceCouplingOptions::getSeverity": [
+            {
+                "rule": "maintainability",
+                "hash": "1c21fcc0"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Maintainability\\MaintainabilityOptions::fromArray": [
+            {
+                "rule": "maintainability",
+                "hash": "be146bcd"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Maintainability\\MaintainabilityOptions::getSeverity": [
+            {
+                "rule": "maintainability",
+                "hash": "83ad0bc3"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Maintainability\\MaintainabilityRule::__construct": [
+            {
+                "rule": "maintainability",
+                "hash": "3ac0a08f"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Maintainability\\MaintainabilityRule::analyze": [
+            {
+                "rule": "maintainability",
+                "hash": "9b4a0526"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Size\\ClassSizeOptions::fromArray": [
+            {
+                "rule": "maintainability",
+                "hash": "ca21c2ba"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Size\\ClassSizeOptions::getSeverity": [
+            {
+                "rule": "maintainability",
+                "hash": "76c2ca29"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Size\\NamespaceLevelOptions::fromArray": [
+            {
+                "rule": "maintainability",
+                "hash": "ee0d602f"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Size\\NamespaceLevelOptions::getSeverity": [
+            {
+                "rule": "maintainability",
+                "hash": "8a7b6187"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Size\\PropertyCountOptions::fromArray": [
+            {
+                "rule": "maintainability",
+                "hash": "a82abb3e"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Size\\PropertyCountOptions::getSeverity": [
+            {
+                "rule": "maintainability",
+                "hash": "21db414b"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Size\\PropertyCountRule::__construct": [
+            {
+                "rule": "maintainability",
+                "hash": "109f7d35"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Size\\PropertyCountRule::analyze": [
+            {
+                "rule": "maintainability",
+                "hash": "719a1cb5"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Size\\SizeOptions::forLevel": [
+            {
+                "rule": "maintainability",
+                "hash": "c8929197"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Size\\SizeOptions::fromArray": [
+            {
+                "rule": "maintainability",
+                "hash": "e273c299"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Size\\SizeOptions::isLevelEnabled": [
+            {
+                "rule": "maintainability",
+                "hash": "947a5dbe"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Size\\SizeRule::__construct": [
+            {
+                "rule": "maintainability",
+                "hash": "510474fc"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Size\\SizeRule::analyze": [
+            {
+                "rule": "maintainability",
+                "hash": "6c12a557"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Size\\SizeRule::analyzeClassLevel": [
+            {
+                "rule": "maintainability",
+                "hash": "1ff78c5d"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Size\\SizeRule::analyzeLevel": [
+            {
+                "rule": "maintainability",
+                "hash": "89b4632b"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Size\\SizeRule::analyzeNamespaceLevel": [
+            {
+                "rule": "maintainability",
+                "hash": "cb30b376"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Structure\\InheritanceOptions::fromArray": [
+            {
+                "rule": "maintainability",
+                "hash": "2b8a17a7"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Structure\\InheritanceOptions::getSeverity": [
+            {
+                "rule": "maintainability",
+                "hash": "e54cd537"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Structure\\InheritanceRule::__construct": [
+            {
+                "rule": "maintainability",
+                "hash": "73ffd13a"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Structure\\InheritanceRule::analyze": [
+            {
+                "rule": "maintainability",
+                "hash": "0508e67b"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Structure\\LcomOptions::fromArray": [
+            {
+                "rule": "maintainability",
+                "hash": "b3d3898e"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Structure\\LcomOptions::getSeverity": [
+            {
+                "rule": "maintainability",
+                "hash": "8e1aad89"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Structure\\LcomRule::__construct": [
+            {
+                "rule": "maintainability",
+                "hash": "433cc91d"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Structure\\LcomRule::analyze": [
+            {
+                "rule": "maintainability",
+                "hash": "9fc93972"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Structure\\NocOptions::fromArray": [
+            {
+                "rule": "maintainability",
+                "hash": "a0bf43c5"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Structure\\NocOptions::getSeverity": [
+            {
+                "rule": "maintainability",
+                "hash": "124bbc7e"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Structure\\NocRule::__construct": [
+            {
+                "rule": "maintainability",
+                "hash": "e1562a4e"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Structure\\NocRule::analyze": [
+            {
+                "rule": "maintainability",
+                "hash": "bc708efc"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Structure\\WmcOptions::fromArray": [
+            {
+                "rule": "maintainability",
+                "hash": "dc848856"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Structure\\WmcOptions::getSeverity": [
+            {
+                "rule": "maintainability",
+                "hash": "5b455cf8"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Structure\\WmcRule::__construct": [
+            {
+                "rule": "maintainability",
+                "hash": "fab6e049"
+            }
+        ],
+        "method:AiMessDetector\\Rules\\Structure\\WmcRule::analyze": [
+            {
+                "rule": "maintainability",
+                "hash": "ae34fb14"
+            }
+        ],
+        "ns:": [
+            {
+                "rule": "size",
+                "hash": "cac1ea07"
+            }
+        ],
+        "ns:AiMessDetector\\Analysis": [
+            {
+                "rule": "distance",
+                "hash": "07c23f2b"
+            }
+        ],
+        "ns:AiMessDetector\\Analysis\\Collector": [
+            {
+                "rule": "distance",
+                "hash": "75b36e89"
+            }
+        ],
+        "ns:AiMessDetector\\Analysis\\Discovery": [
+            {
+                "rule": "distance",
+                "hash": "9fdbdeaa"
+            }
+        ],
+        "ns:AiMessDetector\\Analysis\\Exception": [
+            {
+                "rule": "distance",
+                "hash": "22b50c7f"
+            }
+        ],
+        "ns:AiMessDetector\\Analysis\\Repository": [
+            {
+                "rule": "distance",
+                "hash": "833b9ebe"
+            }
+        ],
+        "ns:AiMessDetector\\Baseline": [
+            {
+                "rule": "distance",
+                "hash": "892444a1"
+            }
+        ],
+        "ns:AiMessDetector\\Baseline\\Suppression": [
+            {
+                "rule": "distance",
+                "hash": "c8729ae6"
+            }
+        ],
+        "ns:AiMessDetector\\Configuration": [
+            {
+                "rule": "distance",
+                "hash": "363e6d03"
+            }
+        ],
+        "ns:AiMessDetector\\Configuration\\Exception": [
+            {
+                "rule": "distance",
+                "hash": "b8fccd53"
+            }
+        ],
+        "ns:AiMessDetector\\Configuration\\Loader": [
+            {
+                "rule": "distance",
+                "hash": "74ec9224"
+            }
+        ],
+        "ns:AiMessDetector\\Core\\Ast": [
+            {
+                "rule": "distance",
+                "hash": "b0e5424c"
+            }
+        ],
+        "ns:AiMessDetector\\Core\\Exception": [
+            {
+                "rule": "distance",
+                "hash": "37fbb698"
+            }
+        ],
+        "ns:AiMessDetector\\Core\\Namespace_": [
+            {
+                "rule": "distance",
+                "hash": "3aa1e433"
+            }
+        ],
+        "ns:AiMessDetector\\Core\\Symbol": [
+            {
+                "rule": "distance",
+                "hash": "1ced443d"
+            }
+        ],
+        "ns:AiMessDetector\\Core\\Util": [
+            {
+                "rule": "distance",
+                "hash": "dfafecc6"
+            }
+        ],
+        "ns:AiMessDetector\\Core\\Violation": [
+            {
+                "rule": "distance",
+                "hash": "f8aaa970"
+            }
+        ],
+        "ns:AiMessDetector\\Core\\Violation\\Filter": [
+            {
+                "rule": "distance",
+                "hash": "231761e0"
+            }
+        ],
+        "ns:AiMessDetector\\Infrastructure\\Rule": [
+            {
+                "rule": "distance",
+                "hash": "ec3f4a3d"
+            }
+        ],
+        "ns:AiMessDetector\\Infrastructure\\Rule\\Exception": [
+            {
+                "rule": "distance",
+                "hash": "f4e92484"
+            }
+        ],
+        "ns:AiMessDetector\\Metrics\\Structure": [
+            {
+                "rule": "size",
+                "hash": "78309e54"
+            }
+        ],
+        "ns:AiMessDetector\\Reporting": [
+            {
+                "rule": "distance",
+                "hash": "398098a7"
+            }
+        ]
+    }
+}

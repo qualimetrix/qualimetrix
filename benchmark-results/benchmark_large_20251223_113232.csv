@@ -1,0 +1,11 @@
+tool,run,duration_sec
+aimd-seq,1,5.9
+aimd-seq,2,5.75
+aimd-par,1,9.73
+aimd-par,2,9.81
+phpmd,1,271.97
+phpmd,2,177.28
+phpmetrics,1,44.7
+phpmetrics,2,43.01
+pdepend,1,180.31
+pdepend,2,172.37

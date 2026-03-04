@@ -1,0 +1,97 @@
+<?php
+
+declare(strict_types=1);
+
+namespace AiMessDetector\Rules\CodeSmell;
+
+use AiMessDetector\Core\Rule\AnalysisContext;
+use AiMessDetector\Core\Rule\RuleCategory;
+use AiMessDetector\Core\Symbol\SymbolType;
+use AiMessDetector\Core\Violation\Location;
+use AiMessDetector\Core\Violation\Severity;
+use AiMessDetector\Core\Violation\Violation;
+use AiMessDetector\Rules\AbstractRule;
+
+/**
+ * Base class for code smell rules.
+ *
+ * Provides common functionality for analyzing code smell metrics
+ * from CodeSmellCollector.
+ */
+abstract class AbstractCodeSmellRule extends AbstractRule
+{
+    public function getCategory(): RuleCategory
+    {
+        return RuleCategory::CodeSmell;
+    }
+
+    /**
+     * Returns the code smell type this rule checks.
+     */
+    abstract protected function getSmellType(): string;
+
+    /**
+     * Returns severity for this smell.
+     */
+    abstract protected function getSeverity(): Severity;
+
+    /**
+     * Returns the violation message template.
+     *
+     * Use {count} placeholder for the count value.
+     */
+    abstract protected function getMessageTemplate(): string;
+
+    /**
+     * @return list<string>
+     */
+    public function requires(): array
+    {
+        $type = $this->getSmellType();
+
+        return [
+            "codeSmell.{$type}.count",
+        ];
+    }
+
+    /**
+     * @return list<Violation>
+     */
+    public function analyze(AnalysisContext $context): array
+    {
+        if (!$this->options->isEnabled()) {
+            return [];
+        }
+
+        $violations = [];
+        $type = $this->getSmellType();
+
+        foreach ($context->metrics->all(SymbolType::File) as $fileInfo) {
+            $metrics = $context->metrics->get($fileInfo->symbolPath);
+            $count = (int) ($metrics->get("codeSmell.{$type}.count") ?? 0);
+
+            if ($count === 0) {
+                continue;
+            }
+
+            // Create one violation per file with the count
+            $message = $this->formatMessage($count);
+
+            $violations[] = new Violation(
+                location: new Location($fileInfo->file, 1),
+                symbolPath: $fileInfo->symbolPath,
+                ruleName: $this->getName(),
+                message: $message,
+                severity: $this->getSeverity(),
+                metricValue: $count,
+            );
+        }
+
+        return $violations;
+    }
+
+    protected function formatMessage(int $count): string
+    {
+        return str_replace('{count}', (string) $count, $this->getMessageTemplate());
+    }
+}

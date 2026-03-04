@@ -1,0 +1,50 @@
+# Git and version control
+.git
+.gitignore
+.gitattributes
+
+# Dependencies (will be installed in container)
+vendor/
+composer.lock
+node_modules/
+
+# Development files
+.env
+.env.*.local
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Build and cache directories
+build/
+dist/
+.cache/
+
+# Test outputs and coverage
+tests/
+phpunit.xml*
+coverage/
+.phpunit.cache/
+
+# Examples and documentation (reference only)
+examples/
+docs/
+
+# Docker files
+docker-compose.*.yml
+docker-compose.override.yml
+Dockerfile.*
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+.directory
+
+# Project-specific ignores
+baseline*.json
+results*.sarif
+results*.json
+*.log
+.php-version

@@ -1,0 +1,115 @@
+name: AI Mess Detector
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+
+jobs:
+  # Example: Using the local GitHub Action
+  analyze-with-action:
+    name: Analyze with Action
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        php-version: ['8.3', '8.4']
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Get composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+
+      - name: Install dependencies
+        run: composer install --no-progress --prefer-dist --optimize-autoloader
+
+      - name: Run AI Mess Detector Action
+        id: aimd
+        uses: ./
+        with:
+          paths: 'src/'
+          baseline: 'baseline.json'
+          format: 'text'
+          fail-on: 'error'
+          php-version: ${{ matrix.php-version }}
+
+      - name: Show results
+        if: always()
+        run: |
+          echo "Exit code: ${{ steps.aimd.outputs.exit-code }}"
+          echo "Violations: ${{ steps.aimd.outputs.violations }}"
+
+      - name: Upload results (if failed)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: aimd-action-results-${{ matrix.php-version }}
+          path: |
+            aimd-report.txt
+            aimd-results.json
+          retention-days: 7
+          if-no-files-found: ignore
+
+  # Self-analysis: Direct execution (existing workflow)
+  analyze-direct:
+    name: Self-Analysis (Direct)
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        php-version: ['8.3', '8.4']
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          coverage: none
+          tools: composer:v2
+
+      - name: Get composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+
+      - name: Install dependencies
+        run: composer install --no-progress --prefer-dist --optimize-autoloader
+
+      - name: Run AI Mess Detector
+        run: |
+          if [ -f "baseline.json" ]; then
+            bin/aimd analyze src/ --baseline=baseline.json
+          else
+            bin/aimd analyze src/
+          fi
+
+      - name: Upload results (if failed)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: aimd-direct-results-${{ matrix.php-version }}
+          path: |
+            aimd-report.txt
+            aimd-results.json
+          retention-days: 7
+          if-no-files-found: ignore

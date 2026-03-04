@@ -1,0 +1,26 @@
+<?php
+
+declare(strict_types=1);
+
+namespace AiMessDetector\Core\Metric;
+
+/**
+ * Defines how metrics are aggregated when rolling up from child to parent symbols.
+ */
+enum AggregationStrategy: string
+{
+    /** Sum of all values (e.g., total LOC, total CCN) */
+    case Sum = 'sum';
+
+    /** Arithmetic mean of values (e.g., average CCN per method) */
+    case Average = 'avg';
+
+    /** Maximum value (e.g., highest CCN in a class) */
+    case Max = 'max';
+
+    /** Minimum value (e.g., lowest CCN in a class) */
+    case Min = 'min';
+
+    /** Count of elements (e.g., number of methods) */
+    case Count = 'count';
+}

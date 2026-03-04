@@ -1,0 +1,148 @@
+<?php
+
+declare(strict_types=1);
+
+namespace AiMessDetector\Tests\Infrastructure\Logging;
+
+use AiMessDetector\Infrastructure\Logging\LoggerFactory;
+use PHPUnit\Framework\TestCase;
+use Psr\Log\LogLevel;
+use Psr\Log\NullLogger;
+use Symfony\Component\Console\Output\BufferedOutput;
+use Symfony\Component\Console\Output\OutputInterface;
+
+final class LoggerFactoryTest extends TestCase
+{
+    private string $tempDir;
+
+    protected function setUp(): void
+    {
+        $this->tempDir = sys_get_temp_dir() . '/aimd_test_' . uniqid();
+        if (!is_dir($this->tempDir)) {
+            mkdir($this->tempDir, 0755, true);
+        }
+    }
+
+    protected function tearDown(): void
+    {
+        // Cleanup temp directory
+        if (is_dir($this->tempDir)) {
+            $files = glob($this->tempDir . '/*');
+            if ($files !== false) {
+                foreach ($files as $file) {
+                    if (is_file($file)) {
+                        unlink($file);
+                    }
+                }
+            }
+            rmdir($this->tempDir);
+        }
+    }
+
+    public function testCreatesNullLoggerByDefault(): void
+    {
+        $factory = new LoggerFactory();
+        $output = new BufferedOutput(OutputInterface::VERBOSITY_NORMAL);
+
+        $logger = $factory->create($output);
+
+        $this->assertInstanceOf(NullLogger::class, $logger);
+    }
+
+    public function testCreatesConsoleLoggerWithVerbosity(): void
+    {
+        $factory = new LoggerFactory();
+        $output = new BufferedOutput(OutputInterface::VERBOSITY_VERBOSE);
+
+        $logger = $factory->create($output);
+
+        // Logger should log to output
+        $logger->info('Test message');
+        $content = $output->fetch();
+        $this->assertStringContainsString('Test message', $content);
+    }
+
+    public function testCreatesFileLoggerWhenPathProvided(): void
+    {
+        $factory = new LoggerFactory();
+        $output = new BufferedOutput(OutputInterface::VERBOSITY_NORMAL);
+        $logFile = $this->tempDir . '/test.log';
+
+        $logger = $factory->create($output, $logFile);
+
+        $logger->info('Test');
+
+        $this->assertFileExists($logFile);
+        $content = file_get_contents($logFile);
+        $this->assertIsString($content);
+        $this->assertStringContainsString('Test', $content);
+    }
+
+    public function testCreatesCompositeLogger(): void
+    {
+        $factory = new LoggerFactory();
+        $output = new BufferedOutput(OutputInterface::VERBOSITY_VERBOSE);
+        $logFile = $this->tempDir . '/test.log';
+
+        $logger = $factory->create($output, $logFile);
+
+        $logger->info('Test message');
+
+        // Should log to both console and file
+        $consoleContent = $output->fetch();
+        $this->assertStringContainsString('Test message', $consoleContent);
+
+        $this->assertFileExists($logFile);
+        $fileContent = file_get_contents($logFile);
+        $this->assertIsString($fileContent);
+        $this->assertStringContainsString('Test message', $fileContent);
+    }
+
+    public function testRespectsLogLevel(): void
+    {
+        $factory = new LoggerFactory();
+        $output = new BufferedOutput(OutputInterface::VERBOSITY_VERBOSE);
+
+        $logger = $factory->create($output, null, LogLevel::WARNING);
+
+        $logger->info('Info message');
+        $logger->warning('Warning message');
+
+        $content = $output->fetch();
+        $this->assertStringNotContainsString('Info message', $content);
+        $this->assertStringContainsString('Warning message', $content);
+    }
+
+    public function testFileLoggerAlwaysUsesDebugLevel(): void
+    {
+        $factory = new LoggerFactory();
+        $output = new BufferedOutput(OutputInterface::VERBOSITY_NORMAL);
+        $logFile = $this->tempDir . '/test.log';
+
+        // Console logger won't log at NORMAL verbosity, but file logger should log everything
+        $logger = $factory->create($output, $logFile, LogLevel::INFO);
+
+        $logger->debug('Debug message');
+        $logger->info('Info message');
+
+        // Both should be in file (file logger uses DEBUG level)
+        $this->assertFileExists($logFile);
+        $content = file_get_contents($logFile);
+        $this->assertIsString($content);
+        $this->assertStringContainsString('Debug message', $content);
+        $this->assertStringContainsString('Info message', $content);
+    }
+
+    public function testHandlesEmptyLogFile(): void
+    {
+        $factory = new LoggerFactory();
+        $output = new BufferedOutput(OutputInterface::VERBOSITY_VERBOSE);
+
+        $logger = $factory->create($output, '');
+
+        // Should only create console logger
+        $logger->info('Test');
+        $content = $output->fetch();
+        $this->assertStringContainsString('Test', $content);
+    }
+}
