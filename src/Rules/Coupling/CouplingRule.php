@@ -219,6 +219,12 @@ final class CouplingRule extends AbstractRule implements HierarchicalRuleInterfa
         foreach ($context->metrics->all(SymbolType::Namespace_) as $nsInfo) {
             $metrics = $context->metrics->get($nsInfo->symbolPath);
 
+            // Skip namespaces with too few classes
+            $classCount = (int) ($metrics->get('classCount.sum') ?? 0);
+            if ($classCount < $namespaceOptions->minClassCount) {
+                continue;
+            }
+
             // Check CBO
             $cbo = $metrics->get(self::METRIC_CBO);
             if ($cbo !== null) {

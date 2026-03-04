@@ -144,9 +144,8 @@ final class TextFormatterTest extends TestCase
 
         $output = $this->formatter->format($report);
 
-        // Namespace-level violations have no symbol name in parentheses
-        self::assertStringContainsString('src/Service/UserService.php: error[namespace-size]: Namespace contains 16 classes', $output);
-        self::assertStringNotContainsString('(App\Service)', $output);
+        // Namespace-level violations show namespace path
+        self::assertStringContainsString('src/Service/UserService.php: error[namespace-size]: Namespace contains 16 classes (namespace: App\Service)', $output);
     }
 
     public function testFormatFileLevelViolation(): void

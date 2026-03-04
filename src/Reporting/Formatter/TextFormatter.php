@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Reporting\Formatter;
 
+use AiMessDetector\Core\Symbol\SymbolType;
 use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
 use AiMessDetector\Reporting\Report;
@@ -71,11 +72,17 @@ final class TextFormatter implements FormatterInterface
     {
         $symbol = $violation->symbolPath->getSymbolName();
 
-        if ($symbol === null || $symbol === '') {
-            return '';
+        if ($symbol !== null && $symbol !== '') {
+            return " ({$symbol})";
         }
 
-        return " ({$symbol})";
+        if ($violation->symbolPath->getType() === SymbolType::Namespace_) {
+            $namespace = $violation->symbolPath->toString();
+
+            return $namespace !== '' ? \sprintf(' (namespace: %s)', $namespace) : '';
+        }
+
+        return '';
     }
 
     private function formatSummary(Report $report): string

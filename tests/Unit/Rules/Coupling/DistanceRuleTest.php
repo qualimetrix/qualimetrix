@@ -25,14 +25,14 @@ final class DistanceRuleTest extends TestCase
 {
     public function testGetName(): void
     {
-        $rule = new DistanceRule(new DistanceOptions(includeNamespaces: ['App']));
+        $rule = new DistanceRule(new DistanceOptions(includeNamespaces: ['App'], minClassCount: 0));
 
         self::assertSame('distance', $rule->getName());
     }
 
     public function testGetDescription(): void
     {
-        $rule = new DistanceRule(new DistanceOptions(includeNamespaces: ['App']));
+        $rule = new DistanceRule(new DistanceOptions(includeNamespaces: ['App'], minClassCount: 0));
 
         self::assertSame(
             'Checks distance from main sequence at namespace level',
@@ -42,14 +42,14 @@ final class DistanceRuleTest extends TestCase
 
     public function testGetCategory(): void
     {
-        $rule = new DistanceRule(new DistanceOptions(includeNamespaces: ['App']));
+        $rule = new DistanceRule(new DistanceOptions(includeNamespaces: ['App'], minClassCount: 0));
 
         self::assertSame(RuleCategory::Coupling, $rule->getCategory());
     }
 
     public function testRequires(): void
     {
-        $rule = new DistanceRule(new DistanceOptions(includeNamespaces: ['App']));
+        $rule = new DistanceRule(new DistanceOptions(includeNamespaces: ['App'], minClassCount: 0));
 
         self::assertSame(['distance', 'abstractness', 'instability'], $rule->requires());
     }
@@ -86,7 +86,7 @@ final class DistanceRuleTest extends TestCase
 
     public function testAnalyzeReturnsEmptyWhenNoNamespaces(): void
     {
-        $rule = new DistanceRule(new DistanceOptions(includeNamespaces: ['App']));
+        $rule = new DistanceRule(new DistanceOptions(includeNamespaces: ['App'], minClassCount: 0));
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -100,10 +100,10 @@ final class DistanceRuleTest extends TestCase
 
     public function testAnalyzeSkipsWhenNoDistanceMetric(): void
     {
-        $rule = new DistanceRule(new DistanceOptions(includeNamespaces: ['App']));
+        $rule = new DistanceRule(new DistanceOptions(includeNamespaces: ['App'], minClassCount: 0));
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
-        $nsInfo = new SymbolInfo($symbolPath, 'src/Service', 0);
+        $nsInfo = new SymbolInfo($symbolPath, 'src/Service', null);
 
         $metricBag = new MetricBag();
 
@@ -122,10 +122,10 @@ final class DistanceRuleTest extends TestCase
 
     public function testAnalyzeGeneratesWarning(): void
     {
-        $rule = new DistanceRule(new DistanceOptions(includeNamespaces: ['App']));
+        $rule = new DistanceRule(new DistanceOptions(includeNamespaces: ['App'], minClassCount: 0));
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
-        $nsInfo = new SymbolInfo($symbolPath, 'src/Service', 0);
+        $nsInfo = new SymbolInfo($symbolPath, 'src/Service', null);
 
         // 0.35 is above warning (0.3), below error (0.5)
         $metricBag = (new MetricBag())
@@ -156,10 +156,10 @@ final class DistanceRuleTest extends TestCase
 
     public function testAnalyzeGeneratesError(): void
     {
-        $rule = new DistanceRule(new DistanceOptions(includeNamespaces: ['App']));
+        $rule = new DistanceRule(new DistanceOptions(includeNamespaces: ['App'], minClassCount: 0));
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
-        $nsInfo = new SymbolInfo($symbolPath, 'src/Service', 0);
+        $nsInfo = new SymbolInfo($symbolPath, 'src/Service', null);
 
         // 0.6 is above error (0.5)
         $metricBag = (new MetricBag())
@@ -185,10 +185,10 @@ final class DistanceRuleTest extends TestCase
 
     public function testAnalyzeNoViolationWhenOnMainSequence(): void
     {
-        $rule = new DistanceRule(new DistanceOptions(includeNamespaces: ['App']));
+        $rule = new DistanceRule(new DistanceOptions(includeNamespaces: ['App'], minClassCount: 0));
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
-        $nsInfo = new SymbolInfo($symbolPath, 'src/Service', 0);
+        $nsInfo = new SymbolInfo($symbolPath, 'src/Service', null);
 
         // Distance close to 0 = on main sequence
         $metricBag = (new MetricBag())
@@ -212,13 +212,13 @@ final class DistanceRuleTest extends TestCase
 
     public function testAnalyzeMultipleNamespaces(): void
     {
-        $rule = new DistanceRule(new DistanceOptions(includeNamespaces: ['App']));
+        $rule = new DistanceRule(new DistanceOptions(includeNamespaces: ['App'], minClassCount: 0));
 
         $nsPath1 = SymbolPath::forNamespace('App\Service');
-        $nsInfo1 = new SymbolInfo($nsPath1, 'src/Service', 0);
+        $nsInfo1 = new SymbolInfo($nsPath1, 'src/Service', null);
 
         $nsPath2 = SymbolPath::forNamespace('App\Controller');
-        $nsInfo2 = new SymbolInfo($nsPath2, 'src/Controller', 0);
+        $nsInfo2 = new SymbolInfo($nsPath2, 'src/Controller', null);
 
         $nsBag1 = (new MetricBag())
             ->with('distance', 0.4) // Warning
@@ -303,11 +303,11 @@ final class DistanceRuleTest extends TestCase
         ?Severity $expectedSeverity,
     ): void {
         $rule = new DistanceRule(
-            new DistanceOptions(maxDistanceWarning: $warning, maxDistanceError: $error, includeNamespaces: ['App']),
+            new DistanceOptions(maxDistanceWarning: $warning, maxDistanceError: $error, includeNamespaces: ['App'], minClassCount: 0),
         );
 
         $symbolPath = SymbolPath::forNamespace('App');
-        $nsInfo = new SymbolInfo($symbolPath, 'src', 0);
+        $nsInfo = new SymbolInfo($symbolPath, 'src', null);
 
         $metricBag = (new MetricBag())
             ->with('distance', $distance)
@@ -344,6 +344,122 @@ final class DistanceRuleTest extends TestCase
         yield 'at error threshold' => [0.5, 0.3, 0.5, Severity::Error];
         yield 'above error threshold' => [0.8, 0.3, 0.5, Severity::Error];
         yield 'maximum distance' => [1.0, 0.3, 0.5, Severity::Error];
+    }
+
+    public function testAnalyzeSkipsNamespaceWithTooFewClasses(): void
+    {
+        $rule = new DistanceRule(
+            new DistanceOptions(includeNamespaces: ['App'], minClassCount: 3),
+        );
+
+        $symbolPath = SymbolPath::forNamespace('App\Service');
+        $nsInfo = new SymbolInfo($symbolPath, 'src/Service', null);
+
+        // classCount.sum=2 is below minClassCount=3, so no violation despite high distance
+        $metricBag = (new MetricBag())
+            ->with('distance', 0.6)
+            ->with('abstractness', 0.1)
+            ->with('instability', 0.3)
+            ->with('classCount.sum', 2);
+
+        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->with(SymbolType::Namespace_)
+            ->willReturn([$nsInfo]);
+        $repository->method('get')
+            ->with($symbolPath)
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyze($context);
+
+        self::assertCount(0, $violations);
+    }
+
+    public function testAnalyzeReportsViolationWhenClassCountMeetsMinimum(): void
+    {
+        $rule = new DistanceRule(
+            new DistanceOptions(includeNamespaces: ['App'], minClassCount: 3),
+        );
+
+        $symbolPath = SymbolPath::forNamespace('App\Service');
+        $nsInfo = new SymbolInfo($symbolPath, 'src/Service', null);
+
+        // classCount.sum=3 meets minClassCount=3, so violation is reported
+        $metricBag = (new MetricBag())
+            ->with('distance', 0.6)
+            ->with('abstractness', 0.1)
+            ->with('instability', 0.3)
+            ->with('classCount.sum', 3);
+
+        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->with(SymbolType::Namespace_)
+            ->willReturn([$nsInfo]);
+        $repository->method('get')
+            ->with($symbolPath)
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyze($context);
+
+        self::assertCount(1, $violations);
+        self::assertSame(Severity::Error, $violations[0]->severity);
+    }
+
+    public function testAnalyzeWithMinClassCountZeroAnalyzesAll(): void
+    {
+        $rule = new DistanceRule(
+            new DistanceOptions(includeNamespaces: ['App'], minClassCount: 0),
+        );
+
+        $symbolPath = SymbolPath::forNamespace('App\Service');
+        $nsInfo = new SymbolInfo($symbolPath, 'src/Service', null);
+
+        // No classCount.sum metric at all, but minClassCount=0 so it should still be analyzed
+        $metricBag = (new MetricBag())
+            ->with('distance', 0.6)
+            ->with('abstractness', 0.1)
+            ->with('instability', 0.3);
+
+        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->with(SymbolType::Namespace_)
+            ->willReturn([$nsInfo]);
+        $repository->method('get')
+            ->with($symbolPath)
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyze($context);
+
+        self::assertCount(1, $violations);
+        self::assertSame(Severity::Error, $violations[0]->severity);
+    }
+
+    public function testOptionsFromArrayParsesMinClassCount(): void
+    {
+        $options = DistanceOptions::fromArray([
+            'min_class_count' => 5,
+        ]);
+
+        self::assertSame(5, $options->minClassCount);
+    }
+
+    public function testOptionsFromArrayParsesMinClassCountCamelCase(): void
+    {
+        $options = DistanceOptions::fromArray([
+            'minClassCount' => 7,
+        ]);
+
+        self::assertSame(7, $options->minClassCount);
+    }
+
+    public function testOptionsFromArrayDefaultsMinClassCount(): void
+    {
+        $options = DistanceOptions::fromArray([]);
+
+        self::assertSame(3, $options->minClassCount);
     }
 
     public function testConstructorThrowsForInvalidOptions(): void

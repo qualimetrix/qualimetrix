@@ -29,6 +29,7 @@ final readonly class DistanceOptions implements RuleOptionsInterface
      * @param float $maxDistanceError Error threshold for distance
      * @param list<string>|null $includeNamespaces Override auto-detected project namespaces (null = auto-detect from composer.json)
      * @param list<string> $excludeNamespaces Additional namespaces to exclude from analysis
+     * @param int $minClassCount Minimum number of classes in namespace for analysis (0 = disabled)
      */
     public function __construct(
         public bool $enabled = true,
@@ -36,6 +37,7 @@ final readonly class DistanceOptions implements RuleOptionsInterface
         public float $maxDistanceError = 0.5,
         public ?array $includeNamespaces = null,
         public array $excludeNamespaces = [],
+        public int $minClassCount = 3,
     ) {}
 
     /**
@@ -67,6 +69,7 @@ final readonly class DistanceOptions implements RuleOptionsInterface
             maxDistanceError: (float) ($config['max_distance_error'] ?? $config['maxDistanceError'] ?? 0.5),
             includeNamespaces: $includeNamespaces,
             excludeNamespaces: $excludeNamespaces,
+            minClassCount: (int) ($config['min_class_count'] ?? $config['minClassCount'] ?? 3),
         );
     }
 

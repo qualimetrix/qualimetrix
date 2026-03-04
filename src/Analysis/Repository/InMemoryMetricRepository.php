@@ -52,7 +52,7 @@ final class InMemoryMetricRepository implements MetricRepositoryInterface
      *
      * If the symbol already has metrics, new metrics are merged (new values override).
      */
-    public function add(SymbolPath $symbol, MetricBag $metrics, string $file, int $line): void
+    public function add(SymbolPath $symbol, MetricBag $metrics, string $file, ?int $line): void
     {
         $canonical = $symbol->toCanonical();
 

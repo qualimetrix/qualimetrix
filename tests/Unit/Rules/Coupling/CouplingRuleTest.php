@@ -226,13 +226,14 @@ final class CouplingRuleTest extends TestCase
         $rule = new CouplingRule(new CouplingOptions());
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
-        $nsInfo = new SymbolInfo($symbolPath, 'src/Service', 0);
+        $nsInfo = new SymbolInfo($symbolPath, 'src/Service', null);
 
         // 0.88 is above warning (0.8), below error (0.95)
         $metricBag = (new MetricBag())
             ->with('instability', 0.88)
             ->with('ca', 3)
-            ->with('ce', 22);
+            ->with('ce', 22)
+            ->with('classCount.sum', 5);
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -256,13 +257,14 @@ final class CouplingRuleTest extends TestCase
         $rule = new CouplingRule(new CouplingOptions());
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
-        $nsInfo = new SymbolInfo($symbolPath, 'src/Service', 0);
+        $nsInfo = new SymbolInfo($symbolPath, 'src/Service', null);
 
         // 0.98 is above error (0.95)
         $metricBag = (new MetricBag())
             ->with('instability', 0.98)
             ->with('ca', 1)
-            ->with('ce', 49);
+            ->with('ce', 49)
+            ->with('classCount.sum', 5);
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -280,6 +282,67 @@ final class CouplingRuleTest extends TestCase
         self::assertSame(0.98, $violations[0]->metricValue);
     }
 
+    // Namespace minClassCount tests
+
+    public function testAnalyzeLevelNamespaceSkipsWhenBelowMinClassCount(): void
+    {
+        $rule = new CouplingRule(new CouplingOptions());
+
+        $symbolPath = SymbolPath::forNamespace('App\Service');
+        $nsInfo = new SymbolInfo($symbolPath, 'src/Service', null);
+
+        // classCount.sum = 1, below default minClassCount (3)
+        // High instability that would normally trigger a violation
+        $metricBag = (new MetricBag())
+            ->with('instability', 0.98)
+            ->with('ca', 1)
+            ->with('ce', 49)
+            ->with('cbo', 50)
+            ->with('classCount.sum', 1);
+
+        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->with(SymbolType::Namespace_)
+            ->willReturn([$nsInfo]);
+        $repository->method('get')
+            ->with($symbolPath)
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyzeLevel(RuleLevel::Namespace_, $context);
+
+        self::assertCount(0, $violations);
+    }
+
+    public function testAnalyzeLevelNamespaceChecksWhenAboveMinClassCount(): void
+    {
+        $rule = new CouplingRule(new CouplingOptions());
+
+        $symbolPath = SymbolPath::forNamespace('App\Service');
+        $nsInfo = new SymbolInfo($symbolPath, 'src/Service', null);
+
+        // classCount.sum = 5, above default minClassCount (3)
+        $metricBag = (new MetricBag())
+            ->with('instability', 0.98)
+            ->with('ca', 1)
+            ->with('ce', 49)
+            ->with('classCount.sum', 5);
+
+        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->with(SymbolType::Namespace_)
+            ->willReturn([$nsInfo]);
+        $repository->method('get')
+            ->with($symbolPath)
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyzeLevel(RuleLevel::Namespace_, $context);
+
+        self::assertCount(1, $violations);
+        self::assertSame(Severity::Error, $violations[0]->severity);
+    }
+
     // Legacy analyze() tests
 
     public function testAnalyzeCallsBothLevels(): void
@@ -290,7 +353,7 @@ final class CouplingRuleTest extends TestCase
         $classInfo = new SymbolInfo($classPath, 'src/Service/UserService.php', 10);
 
         $nsPath = SymbolPath::forNamespace('App\Service');
-        $nsInfo = new SymbolInfo($nsPath, 'src/Service', 0);
+        $nsInfo = new SymbolInfo($nsPath, 'src/Service', null);
 
         $classBag = (new MetricBag())
             ->with('instability', 0.85)
@@ -299,7 +362,8 @@ final class CouplingRuleTest extends TestCase
         $nsBag = (new MetricBag())
             ->with('instability', 0.88)
             ->with('ca', 3)
-            ->with('ce', 22);
+            ->with('ce', 22)
+            ->with('classCount.sum', 5);
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -641,14 +705,15 @@ final class CouplingRuleTest extends TestCase
         $rule = new CouplingRule(new CouplingOptions());
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
-        $nsInfo = new SymbolInfo($symbolPath, 'src/Service', 0);
+        $nsInfo = new SymbolInfo($symbolPath, 'src/Service', null);
 
         // CBO = 16
         $metricBag = (new MetricBag())
             ->with('cbo', 16)
             ->with('ca', 6)
             ->with('ce', 10)
-            ->with('instability', 0.625);
+            ->with('instability', 0.625)
+            ->with('classCount.sum', 5);
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -698,5 +763,32 @@ final class CouplingRuleTest extends TestCase
         self::assertTrue($options->enabled);
         self::assertSame(10, $options->cboWarningThreshold);
         self::assertSame(16, $options->cboErrorThreshold);
+    }
+
+    public function testNamespaceOptionsFromArrayIncludesMinClassCount(): void
+    {
+        $options = NamespaceCouplingOptions::fromArray([
+            'min_class_count' => 5,
+        ]);
+
+        self::assertSame(5, $options->minClassCount);
+    }
+
+    public function testNamespaceOptionsFromArrayMinClassCountDefaultsToThree(): void
+    {
+        $options = NamespaceCouplingOptions::fromArray([
+            'enabled' => true,
+        ]);
+
+        self::assertSame(3, $options->minClassCount);
+    }
+
+    public function testNamespaceOptionsFromArrayMinClassCountCamelCaseAlias(): void
+    {
+        $options = NamespaceCouplingOptions::fromArray([
+            'minClassCount' => 7,
+        ]);
+
+        self::assertSame(7, $options->minClassCount);
     }
 }

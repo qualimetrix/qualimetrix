@@ -38,7 +38,7 @@ interface MetricRepositoryInterface
      * @param SymbolPath $symbol The symbol to add metrics for
      * @param MetricBag $metrics The metrics to add
      * @param string $file The source file path
-     * @param int $line The line number (0 for aggregated metrics)
+     * @param ?int $line The line number (null for aggregated/namespace metrics)
      */
-    public function add(SymbolPath $symbol, MetricBag $metrics, string $file, int $line): void;
+    public function add(SymbolPath $symbol, MetricBag $metrics, string $file, ?int $line): void;
 }

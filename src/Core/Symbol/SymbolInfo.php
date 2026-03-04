@@ -11,6 +11,6 @@ final readonly class SymbolInfo
     public function __construct(
         public SymbolPath $symbolPath,
         public string $file,
-        public int $line,
+        public ?int $line,
     ) {}
 }

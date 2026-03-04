@@ -27,6 +27,7 @@ final readonly class NamespaceCouplingOptions implements LevelOptionsInterface
         public float $maxInstabilityError = 0.95,
         public int $cboWarningThreshold = 14,
         public int $cboErrorThreshold = 20,
+        public int $minClassCount = 3,
     ) {}
 
     /**
@@ -45,6 +46,7 @@ final readonly class NamespaceCouplingOptions implements LevelOptionsInterface
             maxInstabilityError: (float) ($config['max_instability_error'] ?? 0.95),
             cboWarningThreshold: (int) ($config['cbo_warning_threshold'] ?? 14),
             cboErrorThreshold: (int) ($config['cbo_error_threshold'] ?? 20),
+            minClassCount: (int) ($config['min_class_count'] ?? $config['minClassCount'] ?? 3),
         );
     }
 
