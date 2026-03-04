@@ -106,6 +106,13 @@ final class DistanceRule extends AbstractRule
             }
 
             $metrics = $context->metrics->get($nsInfo->symbolPath);
+
+            // Skip namespaces with too few classes for meaningful analysis
+            $classCount = (int) ($metrics->get('classCount.sum') ?? 0);
+            if ($classCount < $this->options->minClassCount) {
+                continue;
+            }
+
             $distance = $metrics->get(self::METRIC_DISTANCE);
 
             if ($distance === null) {

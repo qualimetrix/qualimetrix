@@ -71,7 +71,7 @@ final class DistanceCollector implements GlobalContextCollectorInterface
 
             $newMetrics = (new MetricBag())->with('distance', $distance);
 
-            $repository->add($nsPath, $newMetrics, '', 0);
+            $repository->add($nsPath, $newMetrics, '', null);
         }
     }
 

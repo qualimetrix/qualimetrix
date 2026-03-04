@@ -201,7 +201,7 @@ final class MetricAggregator
             // Store aggregated metrics for namespace
             $firstFile = $symbolInfos[0]->file;
             $namespacePath = SymbolPath::forNamespace($namespace);
-            $repository->add($namespacePath, $namespaceBag, $firstFile, 0);
+            $repository->add($namespacePath, $namespaceBag, $firstFile, null);
         }
         $profiler->stop('aggregation.to_namespaces.process');
     }
@@ -263,7 +263,7 @@ final class MetricAggregator
         // Store aggregated metrics for project (empty namespace = project level)
         $firstFile = $allSymbolInfos[0]->file;
         $projectPath = SymbolPath::forNamespace('');
-        $repository->add($projectPath, $projectBag, $firstFile, 0);
+        $repository->add($projectPath, $projectBag, $firstFile, null);
         $profiler->stop('aggregation.to_project.process');
     }
 

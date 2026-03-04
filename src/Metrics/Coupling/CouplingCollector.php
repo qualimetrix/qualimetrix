@@ -143,7 +143,7 @@ final class CouplingCollector implements GlobalContextCollectorInterface
 
             $symbolPath = SymbolPath::forNamespace($namespace);
 
-            $repository->add($symbolPath, $metrics, '', 0);
+            $repository->add($symbolPath, $metrics, '', null);
         }
     }
 

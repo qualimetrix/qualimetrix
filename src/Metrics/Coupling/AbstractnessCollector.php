@@ -73,7 +73,7 @@ final class AbstractnessCollector implements GlobalContextCollectorInterface
 
             $newMetrics = (new MetricBag())->with('abstractness', $abstractness);
 
-            $repository->add($nsPath, $newMetrics, '', 0);
+            $repository->add($nsPath, $newMetrics, '', null);
         }
     }
 
