@@ -285,10 +285,10 @@ Standard Symfony practices are used: **autowiring** and **autoconfiguration**.
 | PHP | ^8.4 | Runtime |
 | nikic/php-parser | ^5.0 | AST parsing |
 | amphp/parallel | ^2.0 | Parallel file processing |
-| symfony/console | ^8.0 | CLI |
-| symfony/dependency-injection | ^8.0 | DI container |
-| symfony/yaml | ^8.0 | YAML configuration |
-| symfony/finder | ^8.0 | File discovery |
+| symfony/console | ^7.4 \|\| ^8.0 | CLI |
+| symfony/dependency-injection | ^7.4 \|\| ^8.0 | DI container |
+| symfony/yaml | ^7.4 \|\| ^8.0 | YAML configuration |
+| symfony/finder | ^7.4 \|\| ^8.0 | File discovery |
 | psr/log | ^3.0 | PSR-3 logging |
 | PHPUnit | ^12.0 | Tests |
 | PHPStan | ^2.0, level 8 | Static analysis |
