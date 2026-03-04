@@ -147,7 +147,7 @@ final class DistanceRuleTest extends TestCase
         self::assertCount(1, $violations);
         self::assertSame(Severity::Warning, $violations[0]->severity);
         self::assertSame(
-            'Namespace has distance from main sequence of 0.35 (A=0.20, I=0.45)',
+            'Distance from main sequence is 0.35 (A=0.20, I=0.45), exceeds threshold of 0.30. Balance abstractness and stability',
             $violations[0]->message,
         );
         self::assertSame(0.35, $violations[0]->metricValue);

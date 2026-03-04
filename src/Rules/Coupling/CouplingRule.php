@@ -188,10 +188,11 @@ final class CouplingRule extends AbstractRule implements HierarchicalRuleInterfa
                     symbolPath: $classInfo->symbolPath,
                     ruleName: $this->getName(),
                     message: \sprintf(
-                        'Class has instability of %.2f (Ca=%d, Ce=%d)',
+                        'Instability is %.2f (Ca=%d, Ce=%d), exceeds threshold of %.2f. Reduce outgoing dependencies',
                         $instabilityValue,
                         $ca,
                         $ce,
+                        $severity === Severity::Error ? $classOptions->maxInstabilityError : $classOptions->maxInstabilityWarning,
                     ),
                     severity: $severity,
                     metricValue: $instabilityValue,
@@ -247,10 +248,11 @@ final class CouplingRule extends AbstractRule implements HierarchicalRuleInterfa
                     symbolPath: $nsInfo->symbolPath,
                     ruleName: $this->getName(),
                     message: \sprintf(
-                        'Namespace has instability of %.2f (Ca=%d, Ce=%d)',
+                        'Instability is %.2f (Ca=%d, Ce=%d), exceeds threshold of %.2f. Reduce outgoing dependencies',
                         $instabilityValue,
                         $ca,
                         $ce,
+                        $severity === Severity::Error ? $namespaceOptions->maxInstabilityError : $namespaceOptions->maxInstabilityWarning,
                     ),
                     severity: $severity,
                     metricValue: $instabilityValue,
@@ -276,7 +278,6 @@ final class CouplingRule extends AbstractRule implements HierarchicalRuleInterfa
 
         // Namespace has type=null, class has type=<ClassName>
         $isNamespace = $symbolInfo->symbolPath->type === null && $symbolInfo->symbolPath->member === null;
-        $symbolType = $isNamespace ? 'Namespace' : 'Class';
 
         if ($cbo > $options->cboErrorThreshold) {
             return new Violation(
@@ -284,8 +285,7 @@ final class CouplingRule extends AbstractRule implements HierarchicalRuleInterfa
                 symbolPath: $symbolInfo->symbolPath,
                 ruleName: $this->getName(),
                 message: \sprintf(
-                    '%s has CBO (Coupling Between Objects) of %d (Ca=%d, Ce=%d), exceeds threshold of %d',
-                    $symbolType,
+                    'CBO (Coupling Between Objects) is %d (Ca=%d, Ce=%d), exceeds threshold of %d. Reduce dependencies to lower coupling',
                     $cbo,
                     $ca,
                     $ce,
@@ -303,8 +303,7 @@ final class CouplingRule extends AbstractRule implements HierarchicalRuleInterfa
                 symbolPath: $symbolInfo->symbolPath,
                 ruleName: $this->getName(),
                 message: \sprintf(
-                    '%s has CBO (Coupling Between Objects) of %d (Ca=%d, Ce=%d), exceeds threshold of %d',
-                    $symbolType,
+                    'CBO (Coupling Between Objects) is %d (Ca=%d, Ce=%d), exceeds threshold of %d. Reduce dependencies to lower coupling',
                     $cbo,
                     $ca,
                     $ce,

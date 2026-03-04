@@ -127,7 +127,7 @@ final class ComplexityRuleTest extends TestCase
 
         self::assertCount(1, $violations);
         self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertSame('Cyclomatic complexity is 15', $violations[0]->message);
+        self::assertSame('Cyclomatic complexity is 15, exceeds threshold of 10. Consider extracting methods or simplifying conditions', $violations[0]->message);
         self::assertSame(15, $violations[0]->metricValue);
         self::assertSame('complexity', $violations[0]->ruleName);
         self::assertSame(RuleLevel::Method, $violations[0]->level);
@@ -198,7 +198,7 @@ final class ComplexityRuleTest extends TestCase
 
         self::assertCount(1, $violations);
         self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertStringContainsString('maximum method complexity of 35', $violations[0]->message);
+        self::assertStringContainsString('Maximum method cyclomatic complexity is 35, exceeds threshold of 30', $violations[0]->message);
         self::assertSame(35, $violations[0]->metricValue);
         self::assertSame(RuleLevel::Class_, $violations[0]->level);
     }

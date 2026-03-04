@@ -127,7 +127,7 @@ final class CognitiveComplexityRuleTest extends TestCase
 
         self::assertCount(1, $violations);
         self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertSame('Cognitive complexity is 20', $violations[0]->message);
+        self::assertSame('Cognitive complexity is 20, exceeds threshold of 15. Reduce nesting and break into smaller methods', $violations[0]->message);
         self::assertSame(20, $violations[0]->metricValue);
         self::assertSame('cognitive', $violations[0]->ruleName);
         self::assertSame(RuleLevel::Method, $violations[0]->level);
@@ -198,7 +198,7 @@ final class CognitiveComplexityRuleTest extends TestCase
 
         self::assertCount(1, $violations);
         self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertStringContainsString('maximum method cognitive complexity of 35', $violations[0]->message);
+        self::assertStringContainsString('Maximum method cognitive complexity is 35, exceeds threshold of 30', $violations[0]->message);
         self::assertSame(35, $violations[0]->metricValue);
         self::assertSame(RuleLevel::Class_, $violations[0]->level);
     }

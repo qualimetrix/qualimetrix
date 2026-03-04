@@ -9,6 +9,7 @@ use AiMessDetector\Core\Rule\RuleCategory;
 use AiMessDetector\Core\Rule\RuleOptionsInterface;
 use AiMessDetector\Core\Symbol\SymbolType;
 use AiMessDetector\Core\Violation\Location;
+use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
 use AiMessDetector\Rules\AbstractRule;
 use InvalidArgumentException;
@@ -95,11 +96,19 @@ final class MaintainabilityRule extends AbstractRule
             $severity = $this->options->getSeverity($miValue);
 
             if ($severity !== null) {
+                $threshold = $severity === Severity::Error
+                    ? $this->options->error
+                    : $this->options->warning;
+
                 $violations[] = new Violation(
                     location: new Location($methodInfo->file, $methodInfo->line),
                     symbolPath: $methodInfo->symbolPath,
                     ruleName: $this->getName(),
-                    message: \sprintf('Maintainability Index is %.1f (low values indicate hard to maintain code)', $miValue),
+                    message: \sprintf(
+                        'Maintainability Index is %.1f, below threshold of %.1f. Reduce complexity and size to improve maintainability',
+                        $miValue,
+                        $threshold,
+                    ),
                     severity: $severity,
                     metricValue: (int) round($miValue),
                 );

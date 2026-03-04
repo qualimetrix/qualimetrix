@@ -127,7 +127,7 @@ final class NpathComplexityRuleTest extends TestCase
 
         self::assertCount(1, $violations);
         self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertSame('NPath complexity is 250', $violations[0]->message);
+        self::assertSame('NPath complexity (execution paths) is 250, exceeds threshold of 200. Reduce branching or extract methods', $violations[0]->message);
         self::assertSame(250, $violations[0]->metricValue);
         self::assertSame('complexity.npath', $violations[0]->ruleName);
         self::assertSame(RuleLevel::Method, $violations[0]->level);
@@ -202,7 +202,7 @@ final class NpathComplexityRuleTest extends TestCase
 
         self::assertCount(1, $violations);
         self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertStringContainsString('maximum method NPath complexity of 250', $violations[0]->message);
+        self::assertStringContainsString('Maximum method NPath complexity is 250, exceeds threshold of 200', $violations[0]->message);
         self::assertSame(250, $violations[0]->metricValue);
         self::assertSame(RuleLevel::Class_, $violations[0]->level);
     }
@@ -301,7 +301,7 @@ final class NpathComplexityRuleTest extends TestCase
         $violations = $rule->analyzeLevel(RuleLevel::Method, $context);
 
         self::assertCount(1, $violations);
-        self::assertSame('NPath complexity is > 10^9', $violations[0]->message);
+        self::assertSame('NPath complexity (execution paths) is > 10^9, exceeds threshold of 500. Reduce branching or extract methods', $violations[0]->message);
         self::assertSame(1_500_000_000, $violations[0]->metricValue);
     }
 

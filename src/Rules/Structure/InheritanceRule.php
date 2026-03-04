@@ -9,6 +9,7 @@ use AiMessDetector\Core\Rule\RuleCategory;
 use AiMessDetector\Core\Rule\RuleOptionsInterface;
 use AiMessDetector\Core\Symbol\SymbolType;
 use AiMessDetector\Core\Violation\Location;
+use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
 use AiMessDetector\Rules\AbstractRule;
 use InvalidArgumentException;
@@ -82,11 +83,19 @@ final class InheritanceRule extends AbstractRule
             $severity = $this->options->getSeverity($ditValue);
 
             if ($severity !== null) {
+                $threshold = $severity === Severity::Error
+                    ? $this->options->error
+                    : $this->options->warning;
+
                 $violations[] = new Violation(
                     location: new Location($classInfo->file, $classInfo->line),
                     symbolPath: $classInfo->symbolPath,
                     ruleName: $this->getName(),
-                    message: \sprintf('Inheritance depth is %d (consider using composition)', $ditValue),
+                    message: \sprintf(
+                        'DIT (Depth of Inheritance) is %d, exceeds threshold of %d. Prefer composition over deep inheritance',
+                        $ditValue,
+                        $threshold,
+                    ),
                     severity: $severity,
                     metricValue: $ditValue,
                 );

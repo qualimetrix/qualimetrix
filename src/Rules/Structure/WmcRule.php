@@ -96,7 +96,7 @@ final class WmcRule extends AbstractRule
                     symbolPath: $classInfo->symbolPath,
                     ruleName: $this->getName(),
                     message: \sprintf(
-                        'Class has WMC (Weighted Methods per Class) of %d, exceeds threshold of %d',
+                        'WMC (Weighted Methods per Class) is %d, exceeds threshold of %d. Simplify methods or split the class',
                         $wmcValue,
                         $severity === \AiMessDetector\Core\Violation\Severity::Error
                             ? $this->options->error

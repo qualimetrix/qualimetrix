@@ -11,6 +11,7 @@ use AiMessDetector\Core\Rule\RuleLevel;
 use AiMessDetector\Core\Rule\RuleOptionsInterface;
 use AiMessDetector\Core\Symbol\SymbolType;
 use AiMessDetector\Core\Violation\Location;
+use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
 use AiMessDetector\Rules\AbstractRule;
 use InvalidArgumentException;
@@ -158,11 +159,13 @@ final class SizeRule extends AbstractRule implements HierarchicalRuleInterface
             $severity = $classOptions->getSeverity($methodCountValue);
 
             if ($severity !== null) {
+                $threshold = $severity === Severity::Error ? $classOptions->error : $classOptions->warning;
+
                 $violations[] = new Violation(
                     location: new Location($classInfo->file, $classInfo->line),
                     symbolPath: $classInfo->symbolPath,
                     ruleName: $this->getName(),
-                    message: \sprintf('Class has %d methods', $methodCountValue),
+                    message: \sprintf('Method count is %d, exceeds threshold of %d. Consider splitting into smaller focused classes', $methodCountValue, $threshold),
                     severity: $severity,
                     metricValue: $methodCountValue,
                     level: RuleLevel::Class_,
@@ -200,11 +203,13 @@ final class SizeRule extends AbstractRule implements HierarchicalRuleInterface
             $severity = $namespaceOptions->getSeverity($classCount);
 
             if ($severity !== null) {
+                $threshold = $severity === Severity::Error ? $namespaceOptions->error : $namespaceOptions->warning;
+
                 $violations[] = new Violation(
                     location: new Location($namespaceInfo->file),
                     symbolPath: $namespaceInfo->symbolPath,
                     ruleName: $this->getName(),
-                    message: \sprintf('Namespace has %d classes', $classCount),
+                    message: \sprintf('Class count is %d, exceeds threshold of %d. Consider splitting into sub-namespaces', $classCount, $threshold),
                     severity: $severity,
                     metricValue: $classCount,
                     level: RuleLevel::Namespace_,

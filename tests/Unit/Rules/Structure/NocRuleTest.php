@@ -145,8 +145,9 @@ final class NocRuleTest extends TestCase
 
         self::assertCount(1, $violations);
         self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertStringContainsString('Has 7 direct subclasses', $violations[0]->message);
-        self::assertStringContainsString('consider using interfaces', $violations[0]->message);
+        self::assertStringContainsString('NOC (Number of Children) is 7', $violations[0]->message);
+        self::assertStringContainsString('exceeds threshold of 7', $violations[0]->message);
+        self::assertStringContainsString('Consider using interfaces instead of inheritance', $violations[0]->message);
         self::assertSame(7, $violations[0]->metricValue);
         self::assertSame('noc', $violations[0]->ruleName);
     }

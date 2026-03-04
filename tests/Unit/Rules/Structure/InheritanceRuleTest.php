@@ -121,7 +121,9 @@ final class InheritanceRuleTest extends TestCase
 
         self::assertCount(1, $violations);
         self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertStringContainsString('Inheritance depth is 5', $violations[0]->message);
+        self::assertStringContainsString('DIT (Depth of Inheritance) is 5', $violations[0]->message);
+        self::assertStringContainsString('exceeds threshold of 4', $violations[0]->message);
+        self::assertStringContainsString('Prefer composition over deep inheritance', $violations[0]->message);
         self::assertSame(5, $violations[0]->metricValue);
         self::assertSame('inheritance', $violations[0]->ruleName);
     }

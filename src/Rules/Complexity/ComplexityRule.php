@@ -11,6 +11,7 @@ use AiMessDetector\Core\Rule\RuleLevel;
 use AiMessDetector\Core\Rule\RuleOptionsInterface;
 use AiMessDetector\Core\Symbol\SymbolType;
 use AiMessDetector\Core\Violation\Location;
+use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
 use AiMessDetector\Rules\AbstractRule;
 use InvalidArgumentException;
@@ -157,11 +158,13 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
             $severity = $methodOptions->getSeverity($ccnValue);
 
             if ($severity !== null) {
+                $threshold = $severity === Severity::Error ? $methodOptions->error : $methodOptions->warning;
+
                 $violations[] = new Violation(
                     location: new Location($methodInfo->file, $methodInfo->line),
                     symbolPath: $methodInfo->symbolPath,
                     ruleName: $this->getName(),
-                    message: \sprintf('Cyclomatic complexity is %d', $ccnValue),
+                    message: \sprintf('Cyclomatic complexity is %d, exceeds threshold of %d. Consider extracting methods or simplifying conditions', $ccnValue, $threshold),
                     severity: $severity,
                     metricValue: $ccnValue,
                     level: RuleLevel::Method,
@@ -196,11 +199,13 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
             $severity = $classOptions->getSeverity($maxCcnValue);
 
             if ($severity !== null) {
+                $threshold = $severity === Severity::Error ? $classOptions->maxError : $classOptions->maxWarning;
+
                 $violations[] = new Violation(
                     location: new Location($classInfo->file, $classInfo->line),
                     symbolPath: $classInfo->symbolPath,
                     ruleName: $this->getName(),
-                    message: \sprintf('Class has maximum method complexity of %d', $maxCcnValue),
+                    message: \sprintf('Maximum method cyclomatic complexity is %d, exceeds threshold of %d. Refactor the most complex methods', $maxCcnValue, $threshold),
                     severity: $severity,
                     metricValue: $maxCcnValue,
                     level: RuleLevel::Class_,
