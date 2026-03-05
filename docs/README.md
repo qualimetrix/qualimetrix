@@ -63,9 +63,6 @@ Tool configuration, CLI interface, DI container, and caching.
 **I want to understand the entire system:**
 -> [Architecture Overview](ARCHITECTURE.md) -> [Core Primitives](../src/Core/README.md)
 
-**I want to implement a new feature:**
--> [Implementation Plans](plans/) -> the corresponding feature document
-
 ---
 
 ## Key Concepts
@@ -88,8 +85,8 @@ Quick reference for key concepts:
 
 - **PHP:** ^8.4
 - **Parser:** nikic/php-parser ^5.0
-- **DI Container:** symfony/dependency-injection ^8.0
-- **Console:** symfony/console ^8.0
+- **DI Container:** symfony/dependency-injection ^7.4 || ^8.0
+- **Console:** symfony/console ^7.4 || ^8.0
 - **Testing:** PHPUnit ^12.0
 - **Static Analysis:** PHPStan ^2.0 (level 8)
 - **Code Style:** PHP-CS-Fixer ^3.0 (PER-CS 2.0)
@@ -136,4 +133,4 @@ Follow the process:
 
 ---
 
-**Last updated:** 2025-12-11
+**Last updated:** 2026-03-05
