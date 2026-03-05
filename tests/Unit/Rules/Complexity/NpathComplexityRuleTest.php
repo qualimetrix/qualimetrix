@@ -112,7 +112,7 @@ final class NpathComplexityRuleTest extends TestCase
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
         $methodInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
 
-        $metricBag = (new MetricBag())->with('npath', 250); // Above warning (200), below error (500)
+        $metricBag = (new MetricBag())->with('npath', 250); // Above warning (200), below error (1000)
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -140,7 +140,7 @@ final class NpathComplexityRuleTest extends TestCase
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
         $methodInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
 
-        $metricBag = (new MetricBag())->with('npath', 600); // Above error (500)
+        $metricBag = (new MetricBag())->with('npath', 1200); // Above error (1000)
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -155,7 +155,7 @@ final class NpathComplexityRuleTest extends TestCase
 
         self::assertCount(1, $violations);
         self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertSame(600, $violations[0]->metricValue);
+        self::assertSame(1200, $violations[0]->metricValue);
     }
 
     // Class-level tests
@@ -187,7 +187,7 @@ final class NpathComplexityRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
         $classInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 5);
 
-        $metricBag = (new MetricBag())->with('npath.max', 250); // Above warning (200), below error (500)
+        $metricBag = (new MetricBag())->with('npath.max', 250); // Above warning (200), below error (1000)
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -218,7 +218,7 @@ final class NpathComplexityRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
         $classInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 5);
 
-        $metricBag = (new MetricBag())->with('npath.max', 600); // Above error (500)
+        $metricBag = (new MetricBag())->with('npath.max', 1200); // Above error (1000)
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -233,7 +233,7 @@ final class NpathComplexityRuleTest extends TestCase
 
         self::assertCount(1, $violations);
         self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertSame(600, $violations[0]->metricValue);
+        self::assertSame(1200, $violations[0]->metricValue);
     }
 
     // Legacy analyze() tests
@@ -301,7 +301,7 @@ final class NpathComplexityRuleTest extends TestCase
         $violations = $rule->analyzeLevel(RuleLevel::Method, $context);
 
         self::assertCount(1, $violations);
-        self::assertSame('NPath complexity (execution paths) is > 10^9, exceeds threshold of 500. Reduce branching or extract methods', $violations[0]->message);
+        self::assertSame('NPath complexity (execution paths) is > 10^9, exceeds threshold of 1000. Reduce branching or extract methods', $violations[0]->message);
         self::assertSame(1_500_000_000, $violations[0]->metricValue);
     }
 
@@ -326,7 +326,7 @@ final class NpathComplexityRuleTest extends TestCase
 
         self::assertTrue($options->enabled); // Default is true for method level
         self::assertSame(200, $options->warning);
-        self::assertSame(500, $options->error);
+        self::assertSame(1000, $options->error);
     }
 
     public function testClassOptionsFromArray(): void
@@ -348,7 +348,7 @@ final class NpathComplexityRuleTest extends TestCase
 
         self::assertFalse($options->enabled); // Default is false for class level
         self::assertSame(200, $options->max_warning);
-        self::assertSame(500, $options->max_error);
+        self::assertSame(1000, $options->max_error);
     }
 
     public function testNpathComplexityOptionsFromHierarchicalArray(): void

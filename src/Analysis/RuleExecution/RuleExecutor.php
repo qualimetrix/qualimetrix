@@ -43,7 +43,7 @@ final class RuleExecutor implements RuleExecutorInterface
             if ($rule instanceof HierarchicalRuleInterface) {
                 // For hierarchical rules, execute each enabled level
                 foreach ($rule->getSupportedLevels() as $level) {
-                    if ($config->isRuleLevelEnabled($rule->getName(), $level)) {
+                    if ($config->isRuleLevelEnabled($rule->getName(), $level, $rule->getCategory()->value)) {
                         $levelViolations = $rule->analyzeLevel($level, $context);
                         $violations = [...$violations, ...$levelViolations];
                     }
@@ -69,7 +69,7 @@ final class RuleExecutor implements RuleExecutorInterface
                     // For hierarchical rules, check if any level is enabled
                     if ($rule instanceof HierarchicalRuleInterface) {
                         foreach ($rule->getSupportedLevels() as $level) {
-                            if ($config->isRuleLevelEnabled($rule->getName(), $level)) {
+                            if ($config->isRuleLevelEnabled($rule->getName(), $level, $rule->getCategory()->value)) {
                                 return true;
                             }
                         }
@@ -77,7 +77,7 @@ final class RuleExecutor implements RuleExecutorInterface
                     }
 
                     // For regular rules, use standard check
-                    return $config->isRuleEnabled($rule->getName());
+                    return $config->isRuleEnabled($rule->getName(), $rule->getCategory()->value);
                 },
             ),
         );
@@ -94,7 +94,7 @@ final class RuleExecutor implements RuleExecutorInterface
         $activeLevels = [];
 
         foreach ($rule->getSupportedLevels() as $level) {
-            if ($config->isRuleLevelEnabled($rule->getName(), $level)) {
+            if ($config->isRuleLevelEnabled($rule->getName(), $level, $rule->getCategory()->value)) {
                 $activeLevels[] = $level;
             }
         }

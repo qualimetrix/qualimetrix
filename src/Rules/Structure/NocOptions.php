@@ -17,14 +17,14 @@ use AiMessDetector\Core\Violation\Severity;
  * - Potential violation of Liskov Substitution Principle
  *
  * Thresholds based on Chidamber & Kemerer research:
- * - Warning: 7 (many direct children, changes affect many classes)
+ * - Warning: 10 (many direct children, changes affect many classes)
  * - Error: 15 (too many children, consider using interfaces or composition)
  */
 final readonly class NocOptions implements RuleOptionsInterface
 {
     public function __construct(
         public bool $enabled = true,
-        public int $warning = 7,
+        public int $warning = 10,
         public int $error = 15,
     ) {}
 
@@ -39,7 +39,7 @@ final readonly class NocOptions implements RuleOptionsInterface
 
         return new self(
             enabled: (bool) ($config['enabled'] ?? true),
-            warning: (int) ($config['warning'] ?? 7),
+            warning: (int) ($config['warning'] ?? 10),
             error: (int) ($config['error'] ?? 15),
         );
     }

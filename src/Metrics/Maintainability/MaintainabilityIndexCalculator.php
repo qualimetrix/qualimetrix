@@ -17,10 +17,13 @@ namespace AiMessDetector\Metrics\Maintainability;
  * - CCN = Cyclomatic Complexity
  * - LOC = Lines of Code (logical)
  *
- * The result is typically normalized to 0-100 scale where:
- * - MI > 85: Good maintainability
- * - MI 65-85: Moderate complexity, some concern
- * - MI < 65: Low maintainability, needs attention
+ * The result is normalized to 0-100 scale where:
+ * - MI > 50: Good maintainability
+ * - MI 40-50: Moderate complexity, some concern
+ * - MI < 40: Low maintainability, needs attention
+ *
+ * Note: Original Oman-Hagemeister thresholds (65/85) are on the raw 0-171 scale.
+ * On the normalized 0-100 scale, Visual Studio and Radon use thresholds of 20/10.
  *
  * For the 0-100 normalized version:
  * MI_normalized = max(0, (171 - 5.2×ln(V) - 0.23×CCN - 16.2×ln(LOC)) × 100 / 171)

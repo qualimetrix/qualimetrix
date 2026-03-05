@@ -14,8 +14,8 @@ final readonly class PropertyCountOptions implements RuleOptionsInterface
 {
     public function __construct(
         public bool $enabled = true,
-        public int $warning = 10,
-        public int $error = 15,
+        public int $warning = 15,
+        public int $error = 20,
         public bool $excludeReadonly = true,
         public bool $excludePromotedOnly = true,
     ) {}
@@ -31,8 +31,8 @@ final readonly class PropertyCountOptions implements RuleOptionsInterface
 
         return new self(
             enabled: (bool) ($config['enabled'] ?? true),
-            warning: (int) ($config['warning'] ?? 10),
-            error: (int) ($config['error'] ?? 15),
+            warning: (int) ($config['warning'] ?? 15),
+            error: (int) ($config['error'] ?? 20),
             excludeReadonly: (bool) ($config['exclude_readonly'] ?? $config['excludeReadonly'] ?? true),
             excludePromotedOnly: (bool) ($config['exclude_promoted_only'] ?? $config['excludePromotedOnly'] ?? true),
         );

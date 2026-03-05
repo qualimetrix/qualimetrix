@@ -129,8 +129,8 @@ final class NocRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Service', 'BaseService');
         $classInfo = new SymbolInfo($symbolPath, 'src/Service/BaseService.php', 10);
 
-        // NOC of 7 is at warning threshold (7) but below error (15)
-        $metricBag = (new MetricBag())->with('noc', 7);
+        // NOC of 12 is above warning threshold (10) but below error (15)
+        $metricBag = (new MetricBag())->with('noc', 12);
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -145,10 +145,10 @@ final class NocRuleTest extends TestCase
 
         self::assertCount(1, $violations);
         self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertStringContainsString('NOC (Number of Children) is 7', $violations[0]->message);
-        self::assertStringContainsString('exceeds threshold of 7', $violations[0]->message);
+        self::assertStringContainsString('NOC (Number of Children) is 12', $violations[0]->message);
+        self::assertStringContainsString('exceeds threshold of 10', $violations[0]->message);
         self::assertStringContainsString('Consider using interfaces instead of inheritance', $violations[0]->message);
-        self::assertSame(7, $violations[0]->metricValue);
+        self::assertSame(12, $violations[0]->metricValue);
         self::assertSame('noc', $violations[0]->ruleName);
     }
 
@@ -253,7 +253,7 @@ final class NocRuleTest extends TestCase
         $options = new NocOptions();
 
         self::assertTrue($options->enabled);
-        self::assertSame(7, $options->warning);
+        self::assertSame(10, $options->warning);
         self::assertSame(15, $options->error);
     }
 

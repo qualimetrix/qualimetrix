@@ -15,7 +15,7 @@ final readonly class ClassNpathComplexityOptions implements LevelOptionsInterfac
     public function __construct(
         public bool $enabled = false,
         public int $max_warning = 200,
-        public int $max_error = 500,
+        public int $max_error = 1000,
     ) {}
 
     /**
@@ -26,7 +26,7 @@ final readonly class ClassNpathComplexityOptions implements LevelOptionsInterfac
         return new self(
             enabled: (bool) ($config['enabled'] ?? false),
             max_warning: (int) ($config['max_warning'] ?? 200),
-            max_error: (int) ($config['max_error'] ?? 500),
+            max_error: (int) ($config['max_error'] ?? 1000),
         );
     }
 

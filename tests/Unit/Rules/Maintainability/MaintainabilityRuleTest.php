@@ -105,9 +105,9 @@ final class MaintainabilityRuleTest extends TestCase
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
         $methodInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
 
-        // MI of 60 is below warning threshold (65) but above error (50)
+        // MI of 30 is below warning threshold (40) but above error (20)
         $metricBag = (new MetricBag())
-            ->with('mi', 60.0)
+            ->with('mi', 30.0)
             ->with('methodLoc', 15);
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
@@ -123,8 +123,8 @@ final class MaintainabilityRuleTest extends TestCase
 
         self::assertCount(1, $violations);
         self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertStringContainsString('Maintainability Index is 60.0', $violations[0]->message);
-        self::assertSame(60, $violations[0]->metricValue);
+        self::assertStringContainsString('Maintainability Index is 30.0', $violations[0]->message);
+        self::assertSame(30, $violations[0]->metricValue);
         self::assertSame('maintainability', $violations[0]->ruleName);
     }
 
@@ -233,7 +233,7 @@ final class MaintainabilityRuleTest extends TestCase
         $options = new MaintainabilityOptions();
 
         self::assertTrue($options->enabled);
-        self::assertSame(65.0, $options->warning);
+        self::assertSame(40.0, $options->warning);
         self::assertSame(20.0, $options->error);
     }
 
