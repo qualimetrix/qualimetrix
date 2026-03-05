@@ -12,7 +12,7 @@ use Symfony\Component\Console\Application as BaseApplication;
 final class Application extends BaseApplication
 {
     public const string NAME = 'AI Mess Detector';
-    public const string VERSION = '0.1.0';
+    public const string VERSION = '0.2.2';
 
     public function __construct()
     {
