@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Configuration;
 
-use AiMessDetector\Core\Rule\RuleLevel;
+use AiMessDetector\Core\Rule\RuleMatcher;
 
 /**
  * Value object containing general analysis configuration (not rule-specific).
@@ -94,16 +94,13 @@ final readonly class AnalysisConfiguration
     /**
      * Checks if a rule should be executed based on disabled_rules and only_rules settings.
      *
-     * Supports category-based filtering via 'category:<slug>' entries
-     * in disabled_rules and only_rules (e.g., 'category:code-smell').
+     * Uses prefix matching: 'complexity' matches 'complexity.cyclomatic', 'complexity.npath', etc.
+     * Also enables rules when onlyRules contain more specific patterns (e.g., 'complexity.method'
+     * enables rule 'complexity' so that its violations can be filtered by violationCode).
      */
-    public function isRuleEnabled(string $ruleName, ?string $categorySlug = null): bool
+    public function isRuleEnabled(string $ruleName): bool
     {
-        if (\in_array($ruleName, $this->disabledRules, true)) {
-            return false;
-        }
-
-        if ($categorySlug !== null && \in_array('category:' . $categorySlug, $this->disabledRules, true)) {
+        if (RuleMatcher::anyMatches($this->disabledRules, $ruleName)) {
             return false;
         }
 
@@ -111,81 +108,28 @@ final readonly class AnalysisConfiguration
             return true;
         }
 
-        if (\in_array($ruleName, $this->onlyRules, true)) {
-            return true;
-        }
-
-        if ($categorySlug !== null && \in_array('category:' . $categorySlug, $this->onlyRules, true)) {
-            return true;
-        }
-
-        return false;
+        // Check both directions: pattern matches ruleName OR ruleName is prefix of pattern
+        return RuleMatcher::anyMatches($this->onlyRules, $ruleName)
+            || RuleMatcher::anyReverseMatches($this->onlyRules, $ruleName);
     }
 
     /**
-     * Checks if a rule at a specific level should be executed.
+     * Checks if a violation code should be included in results.
      *
-     * Supports dot notation in disabled_rules:
-     * - 'complexity' disables all levels of complexity rule
-     * - 'complexity.class' disables only class level
-     * - 'category:code-smell' disables all rules in the category
-     *
-     * For only_rules:
-     * - 'complexity' enables all levels
-     * - 'complexity.method' enables only method level
-     * - 'category:code-smell' enables all rules in the category
+     * Uses prefix matching: 'complexity' matches 'complexity.cyclomatic.method', etc.
+     * This is used to filter individual violations after rule execution.
      */
-    public function isRuleLevelEnabled(string $ruleName, RuleLevel $level, ?string $categorySlug = null): bool
+    public function isViolationCodeEnabled(string $violationCode): bool
     {
-        $levelKey = $ruleName . '.' . $level->value;
-        $categoryKey = $categorySlug !== null ? 'category:' . $categorySlug : null;
-
-        // Check disabled_rules: 'rule', 'rule.level', or 'category:slug' can disable
-        if (\in_array($ruleName, $this->disabledRules, true)) {
-            return false;
-        }
-        if (\in_array($levelKey, $this->disabledRules, true)) {
-            return false;
-        }
-        if ($categoryKey !== null && \in_array($categoryKey, $this->disabledRules, true)) {
+        if (RuleMatcher::anyMatches($this->disabledRules, $violationCode)) {
             return false;
         }
 
-        // Check only_rules: if specified, 'rule', 'rule.level', or 'category:slug' must be present
-        if ($this->onlyRules !== []) {
-            $ruleMatches = \in_array($ruleName, $this->onlyRules, true);
-            $levelMatches = \in_array($levelKey, $this->onlyRules, true);
-            $categoryMatches = $categoryKey !== null && \in_array($categoryKey, $this->onlyRules, true);
-
-            // Check if any level of this rule is in only_rules (e.g., complexity.method)
-            $anyLevelMatches = false;
-            foreach ($this->onlyRules as $only) {
-                if (str_starts_with($only, $ruleName . '.')) {
-                    $anyLevelMatches = true;
-                    break;
-                }
-            }
-
-            // Category match enables all levels of all rules in the category
-            if ($categoryMatches) {
-                return true;
-            }
-
-            // If rule itself is in only_rules, all levels are enabled
-            if ($ruleMatches && !$anyLevelMatches) {
-                return true;
-            }
-
-            // If specific levels are specified, only those are enabled
-            if ($anyLevelMatches) {
-                return $levelMatches;
-            }
-
-            // Neither rule, level, nor category matches
-            return false;
+        if ($this->onlyRules === []) {
+            return true;
         }
 
-        return true;
+        return RuleMatcher::anyMatches($this->onlyRules, $violationCode);
     }
 
     /**

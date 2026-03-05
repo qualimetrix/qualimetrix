@@ -161,6 +161,173 @@ final class RuleExecutorTest extends TestCase
         self::assertSame([], $executor->getActiveRules());
     }
 
+    // --- Prefix matching tests ---
+
+    public function testExecuteWithPrefixDisable(): void
+    {
+        $v1 = $this->createViolation('complexity.cyclomatic', violationCode: 'complexity.cyclomatic');
+        $v2 = $this->createViolation('complexity.cognitive', violationCode: 'complexity.cognitive');
+        $v3 = $this->createViolation('size.method-count', violationCode: 'size.method-count');
+
+        $rule1 = $this->createRule('complexity.cyclomatic', [$v1]);
+        $rule2 = $this->createRule('complexity.cognitive', [$v2]);
+        $rule3 = $this->createRule('size.method-count', [$v3]);
+
+        // Disable entire complexity group
+        $config = new AnalysisConfiguration(disabledRules: ['complexity']);
+        $provider = $this->createConfiguredProvider($config);
+        $executor = new RuleExecutor([$rule1, $rule2, $rule3], $provider);
+
+        $context = $this->createMinimalContext();
+        $violations = $executor->execute($context);
+
+        self::assertCount(1, $violations);
+        self::assertSame('size.method-count', $violations[0]->ruleName);
+    }
+
+    public function testExecuteFiltersViolationsByViolationCode(): void
+    {
+        $methodViolation = $this->createViolation('complexity.cyclomatic', violationCode: 'complexity.cyclomatic.method');
+        $classViolation = $this->createViolation('complexity.cyclomatic', violationCode: 'complexity.cyclomatic.class');
+
+        $rule = $this->createHierarchicalRule(
+            'complexity.cyclomatic',
+            [RuleLevel::Method, RuleLevel::Class_],
+            [
+                RuleLevel::Method->value => [$methodViolation],
+                RuleLevel::Class_->value => [$classViolation],
+            ],
+        );
+
+        // Disable only class-level violations
+        $config = new AnalysisConfiguration(disabledRules: ['complexity.cyclomatic.class']);
+        $provider = $this->createConfiguredProvider($config);
+        $executor = new RuleExecutor([$rule], $provider);
+
+        $context = $this->createMinimalContext();
+        $violations = $executor->execute($context);
+
+        self::assertCount(1, $violations);
+        self::assertSame($methodViolation, $violations[0]);
+    }
+
+    public function testGetActiveRulesWithPrefixOnlyRules(): void
+    {
+        $rule1 = $this->createRule('complexity.cyclomatic', []);
+        $rule2 = $this->createRule('complexity.cognitive', []);
+        $rule3 = $this->createRule('size.method-count', []);
+
+        $config = new AnalysisConfiguration(onlyRules: ['complexity']);
+        $provider = $this->createConfiguredProvider($config);
+        $executor = new RuleExecutor([$rule1, $rule2, $rule3], $provider);
+
+        $activeRules = $executor->getActiveRules();
+
+        self::assertCount(2, $activeRules);
+    }
+
+    // --- Hierarchical rules tests ---
+
+    public function testExecuteHierarchicalRuleWithAllLevelsEnabled(): void
+    {
+        $methodViolation = $this->createViolation('complexity', violationCode: 'complexity.method', level: RuleLevel::Method);
+        $classViolation = $this->createViolation('complexity', violationCode: 'complexity.class', level: RuleLevel::Class_);
+
+        $rule = $this->createHierarchicalRule(
+            'complexity',
+            [RuleLevel::Method, RuleLevel::Class_],
+            [
+                RuleLevel::Method->value => [$methodViolation],
+                RuleLevel::Class_->value => [$classViolation],
+            ],
+        );
+
+        $provider = $this->createConfiguredProvider();
+        $executor = new RuleExecutor([$rule], $provider);
+
+        $context = $this->createMinimalContext();
+        $violations = $executor->execute($context);
+
+        self::assertCount(2, $violations);
+        self::assertContains($methodViolation, $violations);
+        self::assertContains($classViolation, $violations);
+    }
+
+    public function testExecuteHierarchicalRuleWithSpecificViolationCodeDisabled(): void
+    {
+        $methodViolation = $this->createViolation('complexity', violationCode: 'complexity.method', level: RuleLevel::Method);
+        $classViolation = $this->createViolation('complexity', violationCode: 'complexity.class', level: RuleLevel::Class_);
+
+        $rule = $this->createHierarchicalRule(
+            'complexity',
+            [RuleLevel::Method, RuleLevel::Class_],
+            [
+                RuleLevel::Method->value => [$methodViolation],
+                RuleLevel::Class_->value => [$classViolation],
+            ],
+        );
+
+        // Disable class-level violations via violationCode filtering
+        $config = new AnalysisConfiguration(disabledRules: ['complexity.class']);
+        $provider = $this->createConfiguredProvider($config);
+        $executor = new RuleExecutor([$rule], $provider);
+
+        $context = $this->createMinimalContext();
+        $violations = $executor->execute($context);
+
+        // Only method level should pass through
+        self::assertCount(1, $violations);
+        self::assertSame($methodViolation, $violations[0]);
+    }
+
+    public function testExecuteHierarchicalRuleWithEntireRuleDisabled(): void
+    {
+        $rule = $this->createHierarchicalRule(
+            'complexity',
+            [RuleLevel::Method, RuleLevel::Class_],
+            [
+                RuleLevel::Method->value => [$this->createViolation('complexity', violationCode: 'complexity.method')],
+                RuleLevel::Class_->value => [$this->createViolation('complexity', violationCode: 'complexity.class')],
+            ],
+        );
+
+        // Disable entire rule
+        $config = new AnalysisConfiguration(disabledRules: ['complexity']);
+        $provider = $this->createConfiguredProvider($config);
+        $executor = new RuleExecutor([$rule], $provider);
+
+        $context = $this->createMinimalContext();
+        $violations = $executor->execute($context);
+
+        self::assertSame([], $violations);
+    }
+
+    public function testHierarchicalRuleWithOnlyRulesFilter(): void
+    {
+        $methodViolation = $this->createViolation('complexity', violationCode: 'complexity.method', level: RuleLevel::Method);
+        $classViolation = $this->createViolation('complexity', violationCode: 'complexity.class', level: RuleLevel::Class_);
+
+        $rule = $this->createHierarchicalRule(
+            'complexity',
+            [RuleLevel::Method, RuleLevel::Class_],
+            [
+                RuleLevel::Method->value => [$methodViolation],
+                RuleLevel::Class_->value => [$classViolation],
+            ],
+        );
+
+        // Only enable method-level violations
+        $config = new AnalysisConfiguration(onlyRules: ['complexity.method']);
+        $provider = $this->createConfiguredProvider($config);
+        $executor = new RuleExecutor([$rule], $provider);
+
+        $context = $this->createMinimalContext();
+        $violations = $executor->execute($context);
+
+        self::assertCount(1, $violations);
+        self::assertSame($methodViolation, $violations[0]);
+    }
+
     private function createConfiguredProvider(?AnalysisConfiguration $config = null): ConfigurationHolder
     {
         $provider = new ConfigurationHolder();
@@ -190,166 +357,6 @@ final class RuleExecutorTest extends TestCase
         return new AnalysisContext($repository, []);
     }
 
-    // --- Hierarchical rules tests ---
-
-    public function testExecuteHierarchicalRuleWithAllLevelsEnabled(): void
-    {
-        $methodViolation = $this->createViolation('complexity', RuleLevel::Method);
-        $classViolation = $this->createViolation('complexity', RuleLevel::Class_);
-
-        $rule = $this->createHierarchicalRule(
-            'complexity',
-            [RuleLevel::Method, RuleLevel::Class_],
-            [
-                RuleLevel::Method->value => [$methodViolation],
-                RuleLevel::Class_->value => [$classViolation],
-            ],
-        );
-
-        $provider = $this->createConfiguredProvider();
-        $executor = new RuleExecutor([$rule], $provider);
-
-        $context = $this->createMinimalContext();
-        $violations = $executor->execute($context);
-
-        self::assertCount(2, $violations);
-        self::assertContains($methodViolation, $violations);
-        self::assertContains($classViolation, $violations);
-    }
-
-    public function testExecuteHierarchicalRuleWithSomeLevelsDisabled(): void
-    {
-        $methodViolation = $this->createViolation('complexity', RuleLevel::Method);
-        $classViolation = $this->createViolation('complexity', RuleLevel::Class_);
-
-        $rule = $this->createHierarchicalRule(
-            'complexity',
-            [RuleLevel::Method, RuleLevel::Class_],
-            [
-                RuleLevel::Method->value => [$methodViolation],
-                RuleLevel::Class_->value => [$classViolation],
-            ],
-        );
-
-        // Disable class level
-        $config = new AnalysisConfiguration(disabledRules: ['complexity.class']);
-        $provider = $this->createConfiguredProvider($config);
-        $executor = new RuleExecutor([$rule], $provider);
-
-        $context = $this->createMinimalContext();
-        $violations = $executor->execute($context);
-
-        // Only method level should be executed
-        self::assertCount(1, $violations);
-        self::assertSame($methodViolation, $violations[0]);
-    }
-
-    public function testExecuteHierarchicalRuleWithAllLevelsDisabled(): void
-    {
-        $rule = $this->createHierarchicalRule(
-            'complexity',
-            [RuleLevel::Method, RuleLevel::Class_],
-            [
-                RuleLevel::Method->value => [$this->createViolation('complexity')],
-                RuleLevel::Class_->value => [$this->createViolation('complexity')],
-            ],
-        );
-
-        // Disable entire rule
-        $config = new AnalysisConfiguration(disabledRules: ['complexity']);
-        $provider = $this->createConfiguredProvider($config);
-        $executor = new RuleExecutor([$rule], $provider);
-
-        $context = $this->createMinimalContext();
-        $violations = $executor->execute($context);
-
-        self::assertSame([], $violations);
-    }
-
-    public function testGetActiveRulesIncludesHierarchicalRuleIfAnyLevelEnabled(): void
-    {
-        $rule = $this->createHierarchicalRule(
-            'complexity',
-            [RuleLevel::Method, RuleLevel::Class_],
-            [],
-        );
-
-        // Disable only class level, method level still enabled
-        $config = new AnalysisConfiguration(disabledRules: ['complexity.class']);
-        $provider = $this->createConfiguredProvider($config);
-        $executor = new RuleExecutor([$rule], $provider);
-
-        $activeRules = $executor->getActiveRules();
-
-        self::assertCount(1, $activeRules);
-        self::assertSame('complexity', $activeRules[0]->getName());
-    }
-
-    public function testGetActiveRulesExcludesHierarchicalRuleIfAllLevelsDisabled(): void
-    {
-        $rule = $this->createHierarchicalRule(
-            'complexity',
-            [RuleLevel::Method, RuleLevel::Class_],
-            [],
-        );
-
-        // Disable all levels
-        $config = new AnalysisConfiguration(disabledRules: ['complexity.method', 'complexity.class']);
-        $provider = $this->createConfiguredProvider($config);
-        $executor = new RuleExecutor([$rule], $provider);
-
-        $activeRules = $executor->getActiveRules();
-
-        self::assertSame([], $activeRules);
-    }
-
-    public function testGetActiveLevelsForHierarchicalRule(): void
-    {
-        $rule = $this->createHierarchicalRule(
-            'complexity',
-            [RuleLevel::Method, RuleLevel::Class_, RuleLevel::Namespace_],
-            [],
-        );
-
-        // Disable class level only
-        $config = new AnalysisConfiguration(disabledRules: ['complexity.class']);
-        $provider = $this->createConfiguredProvider($config);
-        $executor = new RuleExecutor([$rule], $provider);
-
-        $activeLevels = $executor->getActiveLevels($rule);
-
-        self::assertCount(2, $activeLevels);
-        self::assertContains(RuleLevel::Method, $activeLevels);
-        self::assertContains(RuleLevel::Namespace_, $activeLevels);
-        self::assertNotContains(RuleLevel::Class_, $activeLevels);
-    }
-
-    public function testHierarchicalRuleWithOnlyRulesFilter(): void
-    {
-        $methodViolation = $this->createViolation('complexity', RuleLevel::Method);
-        $classViolation = $this->createViolation('complexity', RuleLevel::Class_);
-
-        $rule = $this->createHierarchicalRule(
-            'complexity',
-            [RuleLevel::Method, RuleLevel::Class_],
-            [
-                RuleLevel::Method->value => [$methodViolation],
-                RuleLevel::Class_->value => [$classViolation],
-            ],
-        );
-
-        // Only enable method level
-        $config = new AnalysisConfiguration(onlyRules: ['complexity.method']);
-        $provider = $this->createConfiguredProvider($config);
-        $executor = new RuleExecutor([$rule], $provider);
-
-        $context = $this->createMinimalContext();
-        $violations = $executor->execute($context);
-
-        self::assertCount(1, $violations);
-        self::assertSame($methodViolation, $violations[0]);
-    }
-
     /**
      * @param list<RuleLevel> $supportedLevels
      * @param array<string, list<Violation>> $violationsByLevel
@@ -372,7 +379,7 @@ final class RuleExecutorTest extends TestCase
         return $rule;
     }
 
-    private function createViolation(string $ruleName, ?RuleLevel $level = null): Violation
+    private function createViolation(string $ruleName, ?string $violationCode = null, ?RuleLevel $level = null): Violation
     {
         return new Violation(
             location: new Location(
@@ -381,7 +388,7 @@ final class RuleExecutorTest extends TestCase
             ),
             symbolPath: SymbolPath::forFile('/test/file.php'),
             ruleName: $ruleName,
-            violationCode: $ruleName,
+            violationCode: $violationCode ?? $ruleName,
             message: "Violation from $ruleName",
             severity: Severity::Warning,
             level: $level,

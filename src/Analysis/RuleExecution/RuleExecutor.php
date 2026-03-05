@@ -8,14 +8,13 @@ use AiMessDetector\Configuration\ConfigurationProviderInterface;
 use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\HierarchicalRuleInterface;
 use AiMessDetector\Core\Rule\RuleInterface;
-use AiMessDetector\Core\Rule\RuleLevel;
 use Traversable;
 
 /**
  * Default implementation of RuleExecutorInterface.
  *
  * Filters rules at runtime based on configuration (disabled_rules, only_rules)
- * and executes only active rules. Supports hierarchical rules with level-based filtering.
+ * and executes only active rules. Filters individual violations by violationCode.
  */
 final class RuleExecutor implements RuleExecutorInterface
 {
@@ -41,21 +40,22 @@ final class RuleExecutor implements RuleExecutorInterface
 
         foreach ($this->getActiveRules() as $rule) {
             if ($rule instanceof HierarchicalRuleInterface) {
-                // For hierarchical rules, execute each enabled level
+                // For hierarchical rules, execute all levels
                 foreach ($rule->getSupportedLevels() as $level) {
-                    if ($config->isRuleLevelEnabled($rule->getName(), $level, $rule->getCategory()->value)) {
-                        $levelViolations = $rule->analyzeLevel($level, $context);
-                        $violations = [...$violations, ...$levelViolations];
-                    }
+                    $levelViolations = $rule->analyzeLevel($level, $context);
+                    $violations = [...$violations, ...$levelViolations];
                 }
             } else {
-                // For regular rules, execute normally
                 $ruleViolations = $rule->analyze($context);
                 $violations = [...$violations, ...$ruleViolations];
             }
         }
 
-        return $violations;
+        // Filter violations by violationCode
+        return array_values(array_filter(
+            $violations,
+            static fn($v) => $config->isViolationCodeEnabled($v->violationCode),
+        ));
     }
 
     public function getActiveRules(): array
@@ -65,41 +65,9 @@ final class RuleExecutor implements RuleExecutorInterface
         return array_values(
             array_filter(
                 $this->allRules,
-                static function (RuleInterface $rule) use ($config): bool {
-                    // For hierarchical rules, check if any level is enabled
-                    if ($rule instanceof HierarchicalRuleInterface) {
-                        foreach ($rule->getSupportedLevels() as $level) {
-                            if ($config->isRuleLevelEnabled($rule->getName(), $level, $rule->getCategory()->value)) {
-                                return true;
-                            }
-                        }
-                        return false;
-                    }
-
-                    // For regular rules, use standard check
-                    return $config->isRuleEnabled($rule->getName(), $rule->getCategory()->value);
-                },
+                static fn(RuleInterface $rule): bool => $config->isRuleEnabled($rule->getName()),
             ),
         );
-    }
-
-    /**
-     * Returns active levels for a hierarchical rule.
-     *
-     * @return list<RuleLevel>
-     */
-    public function getActiveLevels(HierarchicalRuleInterface $rule): array
-    {
-        $config = $this->configurationProvider->getConfiguration();
-        $activeLevels = [];
-
-        foreach ($rule->getSupportedLevels() as $level) {
-            if ($config->isRuleLevelEnabled($rule->getName(), $level, $rule->getCategory()->value)) {
-                $activeLevels[] = $level;
-            }
-        }
-
-        return $activeLevels;
     }
 
     public function getTotalRulesCount(): int

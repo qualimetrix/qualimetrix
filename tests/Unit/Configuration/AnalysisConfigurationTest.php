@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace AiMessDetector\Tests\Unit\Configuration;
 
 use AiMessDetector\Configuration\AnalysisConfiguration;
-use AiMessDetector\Core\Rule\RuleLevel;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
@@ -52,8 +51,8 @@ final class AnalysisConfigurationTest extends TestCase
                 'prefixes' => ['App\\Domain', 'App\\Infrastructure'],
                 'auto_depth' => 2,
             ],
-            'disabled_rules' => ['cyclomatic-complexity'],
-            'only_rules' => ['namespace-size'],
+            'disabled_rules' => ['complexity.cyclomatic'],
+            'only_rules' => ['size'],
         ]);
 
         self::assertSame('/tmp/cache', $config->cacheDir);
@@ -63,8 +62,8 @@ final class AnalysisConfigurationTest extends TestCase
         self::assertSame('composer.json', $config->composerJsonPath);
         self::assertSame(['App\\Domain', 'App\\Infrastructure'], $config->aggregationPrefixes);
         self::assertSame(2, $config->aggregationAutoDepth);
-        self::assertSame(['cyclomatic-complexity'], $config->disabledRules);
-        self::assertSame(['namespace-size'], $config->onlyRules);
+        self::assertSame(['complexity.cyclomatic'], $config->disabledRules);
+        self::assertSame(['size'], $config->onlyRules);
     }
 
     public function testMerge(): void
@@ -163,234 +162,125 @@ final class AnalysisConfigurationTest extends TestCase
         self::assertSame([], $config->aggregationPrefixes);
     }
 
-    // --- isRuleLevelEnabled tests ---
+    // --- Prefix matching tests ---
 
-    public function testIsRuleLevelEnabledWithNoRestrictions(): void
-    {
-        $config = new AnalysisConfiguration();
-
-        self::assertTrue($config->isRuleLevelEnabled('complexity', RuleLevel::Method));
-        self::assertTrue($config->isRuleLevelEnabled('complexity', RuleLevel::Class_));
-        self::assertTrue($config->isRuleLevelEnabled('complexity', RuleLevel::Namespace_));
-    }
-
-    public function testIsRuleLevelEnabledDisableEntireRule(): void
+    public function testIsRuleEnabledPrefixMatchDisablesGroup(): void
     {
         $config = new AnalysisConfiguration(
             disabledRules: ['complexity'],
         );
 
-        // All levels disabled when rule name is in disabledRules
-        self::assertFalse($config->isRuleLevelEnabled('complexity', RuleLevel::Method));
-        self::assertFalse($config->isRuleLevelEnabled('complexity', RuleLevel::Class_));
-        self::assertFalse($config->isRuleLevelEnabled('complexity', RuleLevel::Namespace_));
+        // Prefix 'complexity' disables all rules starting with 'complexity.'
+        self::assertFalse($config->isRuleEnabled('complexity'));
+        self::assertFalse($config->isRuleEnabled('complexity.cyclomatic'));
+        self::assertFalse($config->isRuleEnabled('complexity.cognitive'));
+        self::assertFalse($config->isRuleEnabled('complexity.npath'));
 
-        // Other rules are not affected
-        self::assertTrue($config->isRuleLevelEnabled('size', RuleLevel::Class_));
+        // Other groups unaffected
+        self::assertTrue($config->isRuleEnabled('size.method-count'));
     }
 
-    public function testIsRuleLevelEnabledDisableSpecificLevel(): void
+    public function testIsRuleEnabledPrefixMatchDisablesSpecificRule(): void
     {
         $config = new AnalysisConfiguration(
-            disabledRules: ['complexity.class'],
+            disabledRules: ['complexity.cyclomatic'],
         );
 
-        // Only class level disabled
-        self::assertTrue($config->isRuleLevelEnabled('complexity', RuleLevel::Method));
-        self::assertFalse($config->isRuleLevelEnabled('complexity', RuleLevel::Class_));
-        self::assertTrue($config->isRuleLevelEnabled('complexity', RuleLevel::Namespace_));
+        // Only 'complexity.cyclomatic' and its sub-codes disabled
+        self::assertFalse($config->isRuleEnabled('complexity.cyclomatic'));
+        self::assertTrue($config->isRuleEnabled('complexity.cognitive'));
+        self::assertTrue($config->isRuleEnabled('complexity'));
     }
 
-    public function testIsRuleLevelEnabledDisableMixed(): void
-    {
-        $config = new AnalysisConfiguration(
-            disabledRules: ['complexity.class', 'size'],
-        );
-
-        // complexity: only class disabled
-        self::assertTrue($config->isRuleLevelEnabled('complexity', RuleLevel::Method));
-        self::assertFalse($config->isRuleLevelEnabled('complexity', RuleLevel::Class_));
-
-        // size: all disabled
-        self::assertFalse($config->isRuleLevelEnabled('size', RuleLevel::Method));
-        self::assertFalse($config->isRuleLevelEnabled('size', RuleLevel::Class_));
-        self::assertFalse($config->isRuleLevelEnabled('size', RuleLevel::Namespace_));
-    }
-
-    public function testIsRuleLevelEnabledOnlyRuleEnablesAllLevels(): void
+    public function testIsRuleEnabledOnlyRulesPrefixMatch(): void
     {
         $config = new AnalysisConfiguration(
             onlyRules: ['complexity'],
         );
 
-        // All levels enabled for complexity
-        self::assertTrue($config->isRuleLevelEnabled('complexity', RuleLevel::Method));
-        self::assertTrue($config->isRuleLevelEnabled('complexity', RuleLevel::Class_));
-        self::assertTrue($config->isRuleLevelEnabled('complexity', RuleLevel::Namespace_));
+        // Prefix match: 'complexity' enables all rules starting with 'complexity.'
+        self::assertTrue($config->isRuleEnabled('complexity'));
+        self::assertTrue($config->isRuleEnabled('complexity.cyclomatic'));
+        self::assertTrue($config->isRuleEnabled('complexity.cognitive'));
 
-        // Other rules are disabled
-        self::assertFalse($config->isRuleLevelEnabled('size', RuleLevel::Method));
+        // Other groups disabled
+        self::assertFalse($config->isRuleEnabled('size.method-count'));
     }
 
-    public function testIsRuleLevelEnabledOnlySpecificLevel(): void
+    public function testIsRuleEnabledOnlyRulesSpecificRule(): void
     {
         $config = new AnalysisConfiguration(
-            onlyRules: ['complexity.method'],
+            onlyRules: ['complexity.cyclomatic'],
         );
 
-        // Only method level enabled
-        self::assertTrue($config->isRuleLevelEnabled('complexity', RuleLevel::Method));
-        self::assertFalse($config->isRuleLevelEnabled('complexity', RuleLevel::Class_));
-        self::assertFalse($config->isRuleLevelEnabled('complexity', RuleLevel::Namespace_));
-
-        // Other rules still disabled
-        self::assertFalse($config->isRuleLevelEnabled('size', RuleLevel::Method));
+        self::assertTrue($config->isRuleEnabled('complexity.cyclomatic'));
+        self::assertFalse($config->isRuleEnabled('complexity.cognitive'));
+        // Parent group is enabled (rule 'complexity' needs to run so violations can be filtered)
+        self::assertTrue($config->isRuleEnabled('complexity'));
     }
 
-    public function testIsRuleLevelEnabledOnlyMultipleLevels(): void
+    public function testIsRuleEnabledOnlyRulesMultiplePatterns(): void
     {
         $config = new AnalysisConfiguration(
-            onlyRules: ['complexity.method', 'complexity.class', 'size.namespace'],
+            onlyRules: ['complexity', 'size.method-count'],
         );
 
-        // complexity: method and class enabled, namespace disabled
-        self::assertTrue($config->isRuleLevelEnabled('complexity', RuleLevel::Method));
-        self::assertTrue($config->isRuleLevelEnabled('complexity', RuleLevel::Class_));
-        self::assertFalse($config->isRuleLevelEnabled('complexity', RuleLevel::Namespace_));
-
-        // size: only namespace enabled
-        self::assertFalse($config->isRuleLevelEnabled('size', RuleLevel::Method));
-        self::assertFalse($config->isRuleLevelEnabled('size', RuleLevel::Class_));
-        self::assertTrue($config->isRuleLevelEnabled('size', RuleLevel::Namespace_));
+        self::assertTrue($config->isRuleEnabled('complexity.cyclomatic'));
+        self::assertTrue($config->isRuleEnabled('complexity.cognitive'));
+        self::assertTrue($config->isRuleEnabled('size.method-count'));
+        self::assertFalse($config->isRuleEnabled('size.class-count'));
+        self::assertFalse($config->isRuleEnabled('design.lcom'));
     }
 
-    public function testIsRuleLevelEnabledOnlyAndDisableCombined(): void
+    // --- isViolationCodeEnabled tests ---
+
+    public function testIsViolationCodeEnabledNoRestrictions(): void
+    {
+        $config = new AnalysisConfiguration();
+
+        self::assertTrue($config->isViolationCodeEnabled('complexity.cyclomatic.method'));
+    }
+
+    public function testIsViolationCodeEnabledDisabledGroup(): void
     {
         $config = new AnalysisConfiguration(
-            disabledRules: ['complexity.class'],
+            disabledRules: ['complexity'],
+        );
+
+        self::assertFalse($config->isViolationCodeEnabled('complexity.cyclomatic.method'));
+        self::assertFalse($config->isViolationCodeEnabled('complexity.cyclomatic.class'));
+        self::assertTrue($config->isViolationCodeEnabled('size.method-count'));
+    }
+
+    public function testIsViolationCodeEnabledDisabledSpecificCode(): void
+    {
+        $config = new AnalysisConfiguration(
+            disabledRules: ['complexity.cyclomatic.class'],
+        );
+
+        self::assertFalse($config->isViolationCodeEnabled('complexity.cyclomatic.class'));
+        self::assertTrue($config->isViolationCodeEnabled('complexity.cyclomatic.method'));
+    }
+
+    public function testIsViolationCodeEnabledOnlyRules(): void
+    {
+        $config = new AnalysisConfiguration(
+            onlyRules: ['complexity.cyclomatic'],
+        );
+
+        self::assertTrue($config->isViolationCodeEnabled('complexity.cyclomatic.method'));
+        self::assertTrue($config->isViolationCodeEnabled('complexity.cyclomatic.class'));
+        self::assertFalse($config->isViolationCodeEnabled('complexity.cognitive.method'));
+    }
+
+    public function testIsViolationCodeEnabledDisabledTakesPrecedence(): void
+    {
+        $config = new AnalysisConfiguration(
+            disabledRules: ['complexity.cyclomatic.class'],
             onlyRules: ['complexity'],
         );
 
-        // complexity enabled, but class level disabled
-        self::assertTrue($config->isRuleLevelEnabled('complexity', RuleLevel::Method));
-        self::assertFalse($config->isRuleLevelEnabled('complexity', RuleLevel::Class_));
-        self::assertTrue($config->isRuleLevelEnabled('complexity', RuleLevel::Namespace_));
-    }
-
-    public function testIsRuleLevelEnabledOnlyRuleAndOnlyLevelMixed(): void
-    {
-        $config = new AnalysisConfiguration(
-            onlyRules: ['complexity', 'size.namespace'],
-        );
-
-        // complexity: all levels enabled (no specific level specified)
-        self::assertTrue($config->isRuleLevelEnabled('complexity', RuleLevel::Method));
-        self::assertTrue($config->isRuleLevelEnabled('complexity', RuleLevel::Class_));
-        self::assertTrue($config->isRuleLevelEnabled('complexity', RuleLevel::Namespace_));
-
-        // size: only namespace specified, so only namespace enabled
-        self::assertFalse($config->isRuleLevelEnabled('size', RuleLevel::Method));
-        self::assertFalse($config->isRuleLevelEnabled('size', RuleLevel::Class_));
-        self::assertTrue($config->isRuleLevelEnabled('size', RuleLevel::Namespace_));
-    }
-
-    // --- isRuleEnabled with categorySlug tests ---
-
-    public function testIsRuleEnabledWithDisabledCategory(): void
-    {
-        $config = new AnalysisConfiguration(
-            disabledRules: ['category:code-smell'],
-        );
-
-        self::assertFalse($config->isRuleEnabled('eval', 'code-smell'));
-        self::assertTrue($config->isRuleEnabled('complexity', 'complexity'));
-    }
-
-    public function testIsRuleEnabledWithOnlyCategory(): void
-    {
-        $config = new AnalysisConfiguration(
-            onlyRules: ['category:complexity'],
-        );
-
-        self::assertTrue($config->isRuleEnabled('complexity', 'complexity'));
-        self::assertFalse($config->isRuleEnabled('eval', 'code-smell'));
-    }
-
-    public function testIsRuleEnabledCategoryAndRuleMixed(): void
-    {
-        $config = new AnalysisConfiguration(
-            disabledRules: ['category:code-smell', 'lcom'],
-        );
-
-        self::assertFalse($config->isRuleEnabled('eval', 'code-smell'));
-        self::assertFalse($config->isRuleEnabled('lcom', 'design'));
-        self::assertTrue($config->isRuleEnabled('complexity', 'complexity'));
-    }
-
-    public function testIsRuleEnabledDisabledCategoryTakesPrecedence(): void
-    {
-        $config = new AnalysisConfiguration(
-            disabledRules: ['category:code-smell'],
-            onlyRules: ['eval'],
-        );
-
-        // disabled category takes precedence over only_rules
-        self::assertFalse($config->isRuleEnabled('eval', 'code-smell'));
-    }
-
-    public function testIsRuleEnabledOnlyCategoryAndOnlyRuleMixed(): void
-    {
-        $config = new AnalysisConfiguration(
-            onlyRules: ['category:code-smell', 'complexity'],
-        );
-
-        self::assertTrue($config->isRuleEnabled('eval', 'code-smell'));
-        self::assertTrue($config->isRuleEnabled('complexity', 'complexity'));
-        self::assertFalse($config->isRuleEnabled('size', 'size'));
-    }
-
-    public function testIsRuleEnabledWithoutCategorySlugIgnoresCategories(): void
-    {
-        $config = new AnalysisConfiguration(
-            disabledRules: ['category:code-smell'],
-        );
-
-        // Without categorySlug, category-based filtering is not applied (backward compat)
-        self::assertTrue($config->isRuleEnabled('eval'));
-    }
-
-    // --- isRuleLevelEnabled with categorySlug tests ---
-
-    public function testIsRuleLevelEnabledWithDisabledCategory(): void
-    {
-        $config = new AnalysisConfiguration(
-            disabledRules: ['category:complexity'],
-        );
-
-        self::assertFalse($config->isRuleLevelEnabled('complexity', RuleLevel::Method, 'complexity'));
-        self::assertTrue($config->isRuleLevelEnabled('size', RuleLevel::Class_, 'size'));
-    }
-
-    public function testIsRuleLevelEnabledWithOnlyCategory(): void
-    {
-        $config = new AnalysisConfiguration(
-            onlyRules: ['category:complexity'],
-        );
-
-        self::assertTrue($config->isRuleLevelEnabled('complexity', RuleLevel::Method, 'complexity'));
-        self::assertTrue($config->isRuleLevelEnabled('complexity', RuleLevel::Class_, 'complexity'));
-        self::assertTrue($config->isRuleLevelEnabled('complexity', RuleLevel::Namespace_, 'complexity'));
-        self::assertFalse($config->isRuleLevelEnabled('size', RuleLevel::Class_, 'size'));
-    }
-
-    public function testIsRuleLevelEnabledCategoryWithSpecificLevelDisabled(): void
-    {
-        $config = new AnalysisConfiguration(
-            disabledRules: ['complexity.class'],
-            onlyRules: ['category:complexity'],
-        );
-
-        self::assertTrue($config->isRuleLevelEnabled('complexity', RuleLevel::Method, 'complexity'));
-        self::assertFalse($config->isRuleLevelEnabled('complexity', RuleLevel::Class_, 'complexity'));
+        self::assertTrue($config->isViolationCodeEnabled('complexity.cyclomatic.method'));
+        self::assertFalse($config->isViolationCodeEnabled('complexity.cyclomatic.class'));
     }
 }
