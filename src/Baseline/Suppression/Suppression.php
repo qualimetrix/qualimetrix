@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Baseline\Suppression;
 
+use AiMessDetector\Core\Rule\RuleMatcher;
+
 /**
  * Represents a suppression tag from docblock.
  *
@@ -18,11 +20,19 @@ final readonly class Suppression
     ) {}
 
     /**
-     * Checks if suppression matches given rule.
-     * Supports wildcard '*' to suppress all rules.
+     * Checks if suppression matches given violation code.
+     *
+     * Supports:
+     * - Wildcard '*' to suppress all rules
+     * - Prefix matching: 'complexity' suppresses 'complexity.cyclomatic.method'
+     * - Exact matching: 'complexity.cyclomatic' suppresses 'complexity.cyclomatic'
      */
-    public function matches(string $rule): bool
+    public function matches(string $violationCode): bool
     {
-        return $this->rule === $rule || $this->rule === '*';
+        if ($this->rule === '*') {
+            return true;
+        }
+
+        return RuleMatcher::matches($this->rule, $violationCode);
     }
 }

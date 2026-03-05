@@ -45,7 +45,7 @@ final class SuppressionFilter implements ViolationFilterInterface
         }
 
         foreach ($this->suppressions[$file] as $suppression) {
-            if ($suppression->matches($violation->ruleName)) {
+            if ($suppression->matches($violation->violationCode)) {
                 return false; // Suppressed — filter out
             }
         }
