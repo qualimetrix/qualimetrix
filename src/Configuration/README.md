@@ -337,9 +337,31 @@ Examples:
 
 | Option | Description |
 |--------|-------------|
-| `--disable-rule=RULE` | Disable a rule |
-| `--only-rule=RULE` | Run only the specified rule |
+| `--disable-rule=RULE` | Disable a rule or category |
+| `--only-rule=RULE` | Run only the specified rule or category |
 | `--config=PATH` | Path to config file |
+
+#### Category Filtering
+
+Use `category:<slug>` to target entire rule categories in `--disable-rule`, `--only-rule`,
+`disabled_rules`, and `only_rules`:
+
+```bash
+bin/aimd analyze src/ --disable-rule=category:code-smell
+bin/aimd analyze src/ --only-rule=category:complexity
+```
+
+```yaml
+disabled_rules:
+  - category:code-smell    # Disable all code smell rules at once
+  - complexity.class       # Still works: disable a specific rule level
+
+only_rules:
+  - category:complexity    # Run only complexity rules
+```
+
+Available categories: `complexity`, `size`, `design`, `naming`, `maintainability`,
+`coupling`, `architecture`, `code-smell`.
 
 ---
 

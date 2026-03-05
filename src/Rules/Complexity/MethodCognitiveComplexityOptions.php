@@ -15,7 +15,7 @@ final readonly class MethodCognitiveComplexityOptions implements LevelOptionsInt
     public function __construct(
         public bool $enabled = true,
         public int $warning = 15,
-        public int $error = 25,
+        public int $error = 30,
     ) {}
 
     /**
@@ -26,7 +26,7 @@ final readonly class MethodCognitiveComplexityOptions implements LevelOptionsInt
         return new self(
             enabled: (bool) ($config['enabled'] ?? true),
             warning: (int) ($config['warning'] ?? 15),
-            error: (int) ($config['error'] ?? 25),
+            error: (int) ($config['error'] ?? 30),
         );
     }
 

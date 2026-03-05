@@ -15,7 +15,7 @@ final readonly class MethodNpathComplexityOptions implements LevelOptionsInterfa
     public function __construct(
         public bool $enabled = true,
         public int $warning = 200,
-        public int $error = 500,
+        public int $error = 1000,
     ) {}
 
     /**
@@ -26,7 +26,7 @@ final readonly class MethodNpathComplexityOptions implements LevelOptionsInterfa
         return new self(
             enabled: (bool) ($config['enabled'] ?? true),
             warning: (int) ($config['warning'] ?? 200),
-            error: (int) ($config['error'] ?? 500),
+            error: (int) ($config['error'] ?? 1000),
         );
     }
 

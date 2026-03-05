@@ -31,17 +31,20 @@ rules:
 
   size:
     class:
-      warning: 15   # Methods per class
-      error: 25
+      warning: 20   # Methods per class
+      error: 30
     namespace:
-      warning: 10   # Classes per namespace
-      error: 15
+      warning: 15   # Classes per namespace
+      error: 25
 
 # Disable specific rules or levels
 # disabled_rules:
 #   - complexity.class    # Disable class-level complexity check
 #   - size                # Disable all size checks
+#   - category:code-smell # Disable entire category (complexity, size, design,
+#                         # naming, maintainability, coupling, architecture, code-smell)
 
 # Run only specific rules or levels
 # only_rules:
 #   - complexity.method   # Only run method-level complexity check
+#   - category:complexity # Only run rules from a specific category

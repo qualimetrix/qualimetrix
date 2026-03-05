@@ -93,18 +93,33 @@ final readonly class AnalysisConfiguration
 
     /**
      * Checks if a rule should be executed based on disabled_rules and only_rules settings.
+     *
+     * Supports category-based filtering via 'category:<slug>' entries
+     * in disabled_rules and only_rules (e.g., 'category:code-smell').
      */
-    public function isRuleEnabled(string $ruleName): bool
+    public function isRuleEnabled(string $ruleName, ?string $categorySlug = null): bool
     {
         if (\in_array($ruleName, $this->disabledRules, true)) {
             return false;
         }
 
-        if ($this->onlyRules !== [] && !\in_array($ruleName, $this->onlyRules, true)) {
+        if ($categorySlug !== null && \in_array('category:' . $categorySlug, $this->disabledRules, true)) {
             return false;
         }
 
-        return true;
+        if ($this->onlyRules === []) {
+            return true;
+        }
+
+        if (\in_array($ruleName, $this->onlyRules, true)) {
+            return true;
+        }
+
+        if ($categorySlug !== null && \in_array('category:' . $categorySlug, $this->onlyRules, true)) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -113,27 +128,34 @@ final readonly class AnalysisConfiguration
      * Supports dot notation in disabled_rules:
      * - 'complexity' disables all levels of complexity rule
      * - 'complexity.class' disables only class level
+     * - 'category:code-smell' disables all rules in the category
      *
      * For only_rules:
      * - 'complexity' enables all levels
      * - 'complexity.method' enables only method level
+     * - 'category:code-smell' enables all rules in the category
      */
-    public function isRuleLevelEnabled(string $ruleName, RuleLevel $level): bool
+    public function isRuleLevelEnabled(string $ruleName, RuleLevel $level, ?string $categorySlug = null): bool
     {
         $levelKey = $ruleName . '.' . $level->value;
+        $categoryKey = $categorySlug !== null ? 'category:' . $categorySlug : null;
 
-        // Check disabled_rules: both 'rule' and 'rule.level' can disable
+        // Check disabled_rules: 'rule', 'rule.level', or 'category:slug' can disable
         if (\in_array($ruleName, $this->disabledRules, true)) {
             return false;
         }
         if (\in_array($levelKey, $this->disabledRules, true)) {
             return false;
         }
+        if ($categoryKey !== null && \in_array($categoryKey, $this->disabledRules, true)) {
+            return false;
+        }
 
-        // Check only_rules: if specified, 'rule' or 'rule.level' must be present
+        // Check only_rules: if specified, 'rule', 'rule.level', or 'category:slug' must be present
         if ($this->onlyRules !== []) {
             $ruleMatches = \in_array($ruleName, $this->onlyRules, true);
             $levelMatches = \in_array($levelKey, $this->onlyRules, true);
+            $categoryMatches = $categoryKey !== null && \in_array($categoryKey, $this->onlyRules, true);
 
             // Check if any level of this rule is in only_rules (e.g., complexity.method)
             $anyLevelMatches = false;
@@ -142,6 +164,11 @@ final readonly class AnalysisConfiguration
                     $anyLevelMatches = true;
                     break;
                 }
+            }
+
+            // Category match enables all levels of all rules in the category
+            if ($categoryMatches) {
+                return true;
             }
 
             // If rule itself is in only_rules, all levels are enabled
@@ -154,7 +181,7 @@ final readonly class AnalysisConfiguration
                 return $levelMatches;
             }
 
-            // Neither rule nor any level matches
+            // Neither rule, level, nor category matches
             return false;
         }
 

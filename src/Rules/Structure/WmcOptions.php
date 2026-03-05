@@ -12,9 +12,9 @@ use AiMessDetector\Core\Violation\Severity;
  *
  * WMC (Weighted Methods per Class) - sum of cyclomatic complexities of all methods.
  * Thresholds based on Chidamber & Kemerer research and industry practice:
- * - WMC <= 35: well-maintained class (no violation)
- * - WMC 36-50: moderate complexity, needs attention (warning)
- * - WMC > 50: complex class, requires refactoring (error)
+ * - WMC <= 50: well-maintained class (no violation)
+ * - WMC 51-80: moderate complexity, needs attention (warning)
+ * - WMC > 80: complex class, requires refactoring (error)
  *
  * @see https://pdepend.org/documentation/software-metrics/weighted-method-count.html
  */
@@ -22,8 +22,8 @@ final readonly class WmcOptions implements RuleOptionsInterface
 {
     public function __construct(
         public bool $enabled = true,
-        public int $warning = 35,
-        public int $error = 50,
+        public int $warning = 50,
+        public int $error = 80,
         public bool $excludeDataClasses = false,
     ) {}
 
@@ -38,8 +38,8 @@ final readonly class WmcOptions implements RuleOptionsInterface
 
         return new self(
             enabled: (bool) ($config['enabled'] ?? true),
-            warning: (int) ($config['warning'] ?? 35),
-            error: (int) ($config['error'] ?? 50),
+            warning: (int) ($config['warning'] ?? 50),
+            error: (int) ($config['error'] ?? 80),
             excludeDataClasses: (bool) ($config['exclude_data_classes'] ?? $config['excludeDataClasses'] ?? false),
         );
     }

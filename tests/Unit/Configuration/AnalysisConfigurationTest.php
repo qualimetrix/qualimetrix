@@ -293,4 +293,104 @@ final class AnalysisConfigurationTest extends TestCase
         self::assertFalse($config->isRuleLevelEnabled('size', RuleLevel::Class_));
         self::assertTrue($config->isRuleLevelEnabled('size', RuleLevel::Namespace_));
     }
+
+    // --- isRuleEnabled with categorySlug tests ---
+
+    public function testIsRuleEnabledWithDisabledCategory(): void
+    {
+        $config = new AnalysisConfiguration(
+            disabledRules: ['category:code-smell'],
+        );
+
+        self::assertFalse($config->isRuleEnabled('eval', 'code-smell'));
+        self::assertTrue($config->isRuleEnabled('complexity', 'complexity'));
+    }
+
+    public function testIsRuleEnabledWithOnlyCategory(): void
+    {
+        $config = new AnalysisConfiguration(
+            onlyRules: ['category:complexity'],
+        );
+
+        self::assertTrue($config->isRuleEnabled('complexity', 'complexity'));
+        self::assertFalse($config->isRuleEnabled('eval', 'code-smell'));
+    }
+
+    public function testIsRuleEnabledCategoryAndRuleMixed(): void
+    {
+        $config = new AnalysisConfiguration(
+            disabledRules: ['category:code-smell', 'lcom'],
+        );
+
+        self::assertFalse($config->isRuleEnabled('eval', 'code-smell'));
+        self::assertFalse($config->isRuleEnabled('lcom', 'design'));
+        self::assertTrue($config->isRuleEnabled('complexity', 'complexity'));
+    }
+
+    public function testIsRuleEnabledDisabledCategoryTakesPrecedence(): void
+    {
+        $config = new AnalysisConfiguration(
+            disabledRules: ['category:code-smell'],
+            onlyRules: ['eval'],
+        );
+
+        // disabled category takes precedence over only_rules
+        self::assertFalse($config->isRuleEnabled('eval', 'code-smell'));
+    }
+
+    public function testIsRuleEnabledOnlyCategoryAndOnlyRuleMixed(): void
+    {
+        $config = new AnalysisConfiguration(
+            onlyRules: ['category:code-smell', 'complexity'],
+        );
+
+        self::assertTrue($config->isRuleEnabled('eval', 'code-smell'));
+        self::assertTrue($config->isRuleEnabled('complexity', 'complexity'));
+        self::assertFalse($config->isRuleEnabled('size', 'size'));
+    }
+
+    public function testIsRuleEnabledWithoutCategorySlugIgnoresCategories(): void
+    {
+        $config = new AnalysisConfiguration(
+            disabledRules: ['category:code-smell'],
+        );
+
+        // Without categorySlug, category-based filtering is not applied (backward compat)
+        self::assertTrue($config->isRuleEnabled('eval'));
+    }
+
+    // --- isRuleLevelEnabled with categorySlug tests ---
+
+    public function testIsRuleLevelEnabledWithDisabledCategory(): void
+    {
+        $config = new AnalysisConfiguration(
+            disabledRules: ['category:complexity'],
+        );
+
+        self::assertFalse($config->isRuleLevelEnabled('complexity', RuleLevel::Method, 'complexity'));
+        self::assertTrue($config->isRuleLevelEnabled('size', RuleLevel::Class_, 'size'));
+    }
+
+    public function testIsRuleLevelEnabledWithOnlyCategory(): void
+    {
+        $config = new AnalysisConfiguration(
+            onlyRules: ['category:complexity'],
+        );
+
+        self::assertTrue($config->isRuleLevelEnabled('complexity', RuleLevel::Method, 'complexity'));
+        self::assertTrue($config->isRuleLevelEnabled('complexity', RuleLevel::Class_, 'complexity'));
+        self::assertTrue($config->isRuleLevelEnabled('complexity', RuleLevel::Namespace_, 'complexity'));
+        self::assertFalse($config->isRuleLevelEnabled('size', RuleLevel::Class_, 'size'));
+    }
+
+    public function testIsRuleLevelEnabledCategoryWithSpecificLevelDisabled(): void
+    {
+        $config = new AnalysisConfiguration(
+            disabledRules: ['complexity.class'],
+            onlyRules: ['category:complexity'],
+        );
+
+        self::assertTrue($config->isRuleLevelEnabled('complexity', RuleLevel::Method, 'complexity'));
+        self::assertFalse($config->isRuleLevelEnabled('complexity', RuleLevel::Class_, 'complexity'));
+    }
 }

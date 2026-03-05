@@ -105,9 +105,9 @@ final class LcomRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Service', 'GodClass');
         $classInfo = new SymbolInfo($symbolPath, 'src/Service/GodClass.php', 10);
 
-        // LCOM of 2 is at warning threshold (2) but below error (4)
+        // LCOM of 4 is above warning threshold (3) but below error (5)
         $metricBag = (new MetricBag())
-            ->with('lcom', 2)
+            ->with('lcom', 4)
             ->with('methodCount', 5)
             ->with('isReadonly', 0);
 
@@ -124,10 +124,10 @@ final class LcomRuleTest extends TestCase
 
         self::assertCount(1, $violations);
         self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertStringContainsString('LCOM (Lack of Cohesion) is 2', $violations[0]->message);
-        self::assertStringContainsString('exceeds threshold of 2', $violations[0]->message);
-        self::assertStringContainsString('Class could be split into 2 cohesive parts', $violations[0]->message);
-        self::assertSame(2, $violations[0]->metricValue);
+        self::assertStringContainsString('LCOM (Lack of Cohesion) is 4', $violations[0]->message);
+        self::assertStringContainsString('exceeds threshold of 3', $violations[0]->message);
+        self::assertStringContainsString('Class could be split into 4 cohesive parts', $violations[0]->message);
+        self::assertSame(4, $violations[0]->metricValue);
         self::assertSame('lcom', $violations[0]->ruleName);
     }
 
@@ -235,8 +235,8 @@ final class LcomRuleTest extends TestCase
         $options = new LcomOptions();
 
         self::assertTrue($options->enabled);
-        self::assertSame(2, $options->warning);
-        self::assertSame(3, $options->error);
+        self::assertSame(3, $options->warning);
+        self::assertSame(5, $options->error);
     }
 
     #[DataProvider('thresholdDataProvider')]

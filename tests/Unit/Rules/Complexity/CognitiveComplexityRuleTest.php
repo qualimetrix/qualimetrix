@@ -286,7 +286,7 @@ final class CognitiveComplexityRuleTest extends TestCase
 
         self::assertTrue($options->enabled);
         self::assertSame(15, $options->warning);
-        self::assertSame(25, $options->error);
+        self::assertSame(30, $options->error);
     }
 
     public function testClassOptionsFromArray(): void

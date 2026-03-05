@@ -11,18 +11,18 @@ use AiMessDetector\Core\Violation\Severity;
  * Options for LcomRule.
  *
  * LCOM4 (Lack of Cohesion of Methods) thresholds:
- * - LCOM4 = 1: perfectly cohesive (no violation)
- * - LCOM4 = 2: warning (class may have two responsibilities)
- * - LCOM4 >= 3: error (class clearly does too much, should be split)
+ * - LCOM4 <= 2: cohesive class (no violation)
+ * - LCOM4 3-4: warning (class may have multiple responsibilities)
+ * - LCOM4 >= 5: error (class clearly does too much, should be split)
  *
- * Industry standard: LCOM4 >= 3 indicates serious cohesion problems.
+ * Industry standard: LCOM4 >= 5 indicates serious cohesion problems.
  */
 final readonly class LcomOptions implements RuleOptionsInterface
 {
     public function __construct(
         public bool $enabled = true,
-        public int $warning = 2,
-        public int $error = 3,
+        public int $warning = 3,
+        public int $error = 5,
         public bool $excludeReadonly = true,
         public int $minMethods = 3,
     ) {}
@@ -38,8 +38,8 @@ final readonly class LcomOptions implements RuleOptionsInterface
 
         return new self(
             enabled: (bool) ($config['enabled'] ?? true),
-            warning: (int) ($config['warning'] ?? 2),
-            error: (int) ($config['error'] ?? 3),
+            warning: (int) ($config['warning'] ?? 3),
+            error: (int) ($config['error'] ?? 5),
             excludeReadonly: (bool) ($config['exclude_readonly'] ?? $config['excludeReadonly'] ?? true),
             minMethods: (int) ($config['min_methods'] ?? $config['minMethods'] ?? 3),
         );

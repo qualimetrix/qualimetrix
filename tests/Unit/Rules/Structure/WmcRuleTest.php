@@ -106,7 +106,7 @@ final class WmcRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Service', 'SimpleClass');
         $classInfo = new SymbolInfo($symbolPath, 'src/Service/SimpleClass.php', 10);
 
-        // WMC of 20 is below warning threshold (35)
+        // WMC of 20 is below warning threshold (50)
         $metricBag = (new MetricBag())->with('wmc', 20);
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
@@ -130,8 +130,8 @@ final class WmcRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Service', 'MediumClass');
         $classInfo = new SymbolInfo($symbolPath, 'src/Service/MediumClass.php', 10);
 
-        // WMC of 40 is above warning threshold (35) but below error (50)
-        $metricBag = (new MetricBag())->with('wmc', 40);
+        // WMC of 60 is above warning threshold (50) but below error (80)
+        $metricBag = (new MetricBag())->with('wmc', 60);
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -146,10 +146,10 @@ final class WmcRuleTest extends TestCase
 
         self::assertCount(1, $violations);
         self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertStringContainsString('WMC (Weighted Methods per Class) is 40', $violations[0]->message);
-        self::assertStringContainsString('exceeds threshold of 35', $violations[0]->message);
+        self::assertStringContainsString('WMC (Weighted Methods per Class) is 60', $violations[0]->message);
+        self::assertStringContainsString('exceeds threshold of 50', $violations[0]->message);
         self::assertStringContainsString('Simplify methods or split the class', $violations[0]->message);
-        self::assertSame(40, $violations[0]->metricValue);
+        self::assertSame(60, $violations[0]->metricValue);
         self::assertSame('wmc', $violations[0]->ruleName);
     }
 
@@ -160,8 +160,8 @@ final class WmcRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Service', 'ComplexClass');
         $classInfo = new SymbolInfo($symbolPath, 'src/Service/ComplexClass.php', 10);
 
-        // WMC of 55 is above error threshold (50)
-        $metricBag = (new MetricBag())->with('wmc', 55);
+        // WMC of 85 is above error threshold (80)
+        $metricBag = (new MetricBag())->with('wmc', 85);
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -176,10 +176,10 @@ final class WmcRuleTest extends TestCase
 
         self::assertCount(1, $violations);
         self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertStringContainsString('WMC (Weighted Methods per Class) is 55', $violations[0]->message);
-        self::assertStringContainsString('exceeds threshold of 50', $violations[0]->message);
+        self::assertStringContainsString('WMC (Weighted Methods per Class) is 85', $violations[0]->message);
+        self::assertStringContainsString('exceeds threshold of 80', $violations[0]->message);
         self::assertStringContainsString('Simplify methods or split the class', $violations[0]->message);
-        self::assertSame(55, $violations[0]->metricValue);
+        self::assertSame(85, $violations[0]->metricValue);
     }
 
     public function testCustomThresholds(): void
@@ -242,7 +242,7 @@ final class WmcRuleTest extends TestCase
         $classInfo2 = new SymbolInfo($symbolPath2, 'src/ComplexClass.php', 20);
 
         $metricBag1 = (new MetricBag())->with('wmc', 20); // No violation
-        $metricBag2 = (new MetricBag())->with('wmc', 60); // Error
+        $metricBag2 = (new MetricBag())->with('wmc', 90); // Error
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -318,8 +318,8 @@ final class WmcRuleTest extends TestCase
         $options = new WmcOptions();
 
         self::assertTrue($options->enabled);
-        self::assertSame(35, $options->warning);
-        self::assertSame(50, $options->error);
+        self::assertSame(50, $options->warning);
+        self::assertSame(80, $options->error);
     }
 
     #[DataProvider('thresholdDataProvider')]
@@ -418,7 +418,7 @@ final class WmcRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Dto', 'UserDto');
         $classInfo = new SymbolInfo($symbolPath, 'src/Dto/UserDto.php', 10);
 
-        // WMC of 60 is above error threshold (50), but isDataClass = 1
+        // WMC of 60 is above warning threshold (50), but isDataClass = 1
         $metricBag = (new MetricBag())
             ->with('wmc', 60)
             ->with('isDataClass', 1);
@@ -445,9 +445,9 @@ final class WmcRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Dto', 'UserDto');
         $classInfo = new SymbolInfo($symbolPath, 'src/Dto/UserDto.php', 10);
 
-        // WMC of 60 is above error threshold (50), and isDataClass = 1
+        // WMC of 90 is above error threshold (80), and isDataClass = 1
         $metricBag = (new MetricBag())
-            ->with('wmc', 60)
+            ->with('wmc', 90)
             ->with('isDataClass', 1);
 
         $repository = $this->createMock(MetricRepositoryInterface::class);

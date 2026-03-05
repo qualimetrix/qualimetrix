@@ -9,6 +9,7 @@ use AiMessDetector\Configuration\AnalysisConfiguration;
 use AiMessDetector\Configuration\ConfigurationHolder;
 use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\HierarchicalRuleInterface;
+use AiMessDetector\Core\Rule\RuleCategory;
 use AiMessDetector\Core\Rule\RuleInterface;
 use AiMessDetector\Core\Rule\RuleLevel;
 use AiMessDetector\Core\Violation\Location;
@@ -171,11 +172,12 @@ final class RuleExecutorTest extends TestCase
     /**
      * @param list<Violation> $violations
      */
-    private function createRule(string $name, array $violations): RuleInterface
+    private function createRule(string $name, array $violations, RuleCategory $category = RuleCategory::Complexity): RuleInterface
     {
         $rule = $this->createMock(RuleInterface::class);
         $rule->method('getName')->willReturn($name);
         $rule->method('analyze')->willReturn($violations);
+        $rule->method('getCategory')->willReturn($category);
 
         return $rule;
     }
@@ -356,10 +358,12 @@ final class RuleExecutorTest extends TestCase
         string $name,
         array $supportedLevels,
         array $violationsByLevel,
+        RuleCategory $category = RuleCategory::Complexity,
     ): HierarchicalRuleInterface {
         $rule = $this->createMock(HierarchicalRuleInterface::class);
         $rule->method('getName')->willReturn($name);
         $rule->method('getSupportedLevels')->willReturn($supportedLevels);
+        $rule->method('getCategory')->willReturn($category);
 
         $rule->method('analyzeLevel')->willReturnCallback(
             static fn(RuleLevel $level): array => $violationsByLevel[$level->value] ?? [],

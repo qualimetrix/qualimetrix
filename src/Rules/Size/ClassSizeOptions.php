@@ -13,15 +13,15 @@ use AiMessDetector\Core\Violation\Severity;
  * Checks the number of methods in a class.
  * Thresholds based on common industry standards:
  * - <= 10-15 methods: good class size
- * - 15-20 methods: warning, class may be doing too much
- * - > 20 methods: error, class should be split
+ * - 20-30 methods: warning, class may be doing too much
+ * - > 30 methods: error, class should be split
  */
 final readonly class ClassSizeOptions implements LevelOptionsInterface
 {
     public function __construct(
         public bool $enabled = true,
-        public int $warning = 15,
-        public int $error = 20,
+        public int $warning = 20,
+        public int $error = 30,
     ) {}
 
     /**
@@ -31,8 +31,8 @@ final readonly class ClassSizeOptions implements LevelOptionsInterface
     {
         return new self(
             enabled: (bool) ($config['enabled'] ?? true),
-            warning: (int) ($config['warning'] ?? $config['warningThreshold'] ?? 15),
-            error: (int) ($config['error'] ?? $config['errorThreshold'] ?? 20),
+            warning: (int) ($config['warning'] ?? $config['warningThreshold'] ?? 20),
+            error: (int) ($config['error'] ?? $config['errorThreshold'] ?? 30),
         );
     }
 
