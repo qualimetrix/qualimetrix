@@ -24,7 +24,7 @@ final class PropertyCountRuleTest extends TestCase
     public function testGetName(): void
     {
         $rule = new PropertyCountRule(new PropertyCountOptions());
-        self::assertSame('size.propertyCount', $rule->getName());
+        self::assertSame('size.property-count', $rule->getName());
     }
 
     public function testGetCategory(): void

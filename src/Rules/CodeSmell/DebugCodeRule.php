@@ -15,7 +15,7 @@ use InvalidArgumentException;
  */
 final class DebugCodeRule extends AbstractCodeSmellRule
 {
-    public const string NAME = 'debug-code';
+    public const string NAME = 'code-smell.debug-code';
 
     public function __construct(RuleOptionsInterface $options)
     {

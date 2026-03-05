@@ -26,7 +26,7 @@ use InvalidArgumentException;
  */
 final class NocRule extends AbstractRule
 {
-    public const string NAME = 'noc';
+    public const string NAME = 'design.noc';
     private const string METRIC_NOC = 'noc';
 
     public function __construct(

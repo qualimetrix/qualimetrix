@@ -24,7 +24,7 @@ use InvalidArgumentException;
  */
 final class CognitiveComplexityRule extends AbstractRule implements HierarchicalRuleInterface
 {
-    public const string NAME = 'cognitive';
+    public const string NAME = 'complexity.cognitive';
     private const string METRIC_COGNITIVE = 'cognitive';
 
     public function __construct(

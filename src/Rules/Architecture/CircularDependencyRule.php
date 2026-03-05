@@ -24,7 +24,7 @@ use InvalidArgumentException;
  */
 final class CircularDependencyRule extends AbstractRule
 {
-    public const string NAME = 'circular-dependency';
+    public const string NAME = 'architecture.circular-dependency';
 
     public function __construct(
         RuleOptionsInterface $options,

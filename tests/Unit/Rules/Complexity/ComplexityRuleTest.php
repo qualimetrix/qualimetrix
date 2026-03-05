@@ -31,7 +31,7 @@ final class ComplexityRuleTest extends TestCase
     {
         $rule = new ComplexityRule(new ComplexityOptions());
 
-        self::assertSame('complexity', $rule->getName());
+        self::assertSame('complexity.cyclomatic', $rule->getName());
     }
 
     public function testGetDescription(): void
@@ -129,7 +129,7 @@ final class ComplexityRuleTest extends TestCase
         self::assertSame(Severity::Warning, $violations[0]->severity);
         self::assertSame('Cyclomatic complexity is 15, exceeds threshold of 10. Consider extracting methods or simplifying conditions', $violations[0]->message);
         self::assertSame(15, $violations[0]->metricValue);
-        self::assertSame('complexity', $violations[0]->ruleName);
+        self::assertSame('complexity.cyclomatic', $violations[0]->ruleName);
         self::assertSame(RuleLevel::Method, $violations[0]->level);
     }
 

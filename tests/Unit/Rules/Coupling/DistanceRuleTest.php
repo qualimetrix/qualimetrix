@@ -27,7 +27,7 @@ final class DistanceRuleTest extends TestCase
     {
         $rule = new DistanceRule(new DistanceOptions(includeNamespaces: ['App'], minClassCount: 0));
 
-        self::assertSame('distance', $rule->getName());
+        self::assertSame('coupling.distance', $rule->getName());
     }
 
     public function testGetDescription(): void
@@ -151,7 +151,7 @@ final class DistanceRuleTest extends TestCase
             $violations[0]->message,
         );
         self::assertSame(0.35, $violations[0]->metricValue);
-        self::assertSame('distance', $violations[0]->ruleName);
+        self::assertSame('coupling.distance', $violations[0]->ruleName);
     }
 
     public function testAnalyzeGeneratesError(): void

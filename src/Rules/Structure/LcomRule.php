@@ -23,7 +23,7 @@ use InvalidArgumentException;
  */
 final class LcomRule extends AbstractRule
 {
-    public const string NAME = 'lcom';
+    public const string NAME = 'design.lcom';
     private const string METRIC_LCOM = 'lcom';
 
     public function __construct(

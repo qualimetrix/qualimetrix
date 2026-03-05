@@ -24,7 +24,7 @@ use InvalidArgumentException;
  */
 final class ComplexityRule extends AbstractRule implements HierarchicalRuleInterface
 {
-    public const string NAME = 'complexity';
+    public const string NAME = 'complexity.cyclomatic';
     private const string METRIC_CCN = 'ccn';
 
     public function __construct(

@@ -21,7 +21,7 @@ final class CircularDependencyRuleTest extends TestCase
     {
         $rule = new CircularDependencyRule(new CircularDependencyOptions());
 
-        $this->assertSame('circular-dependency', $rule->getName());
+        $this->assertSame('architecture.circular-dependency', $rule->getName());
     }
 
     public function testGetDescription(): void
@@ -56,7 +56,7 @@ final class CircularDependencyRuleTest extends TestCase
         $violations = $rule->analyze($context);
 
         $this->assertCount(1, $violations);
-        $this->assertSame('circular-dependency', $violations[0]->ruleName);
+        $this->assertSame('architecture.circular-dependency', $violations[0]->ruleName);
         $this->assertStringContainsString('Circular dependency (2 classes)', $violations[0]->message);
         $this->assertStringContainsString('Break the cycle by introducing interfaces or restructuring', $violations[0]->message);
     }

@@ -28,7 +28,7 @@ final class WmcRuleTest extends TestCase
     {
         $rule = new WmcRule(new WmcOptions());
 
-        self::assertSame('wmc', $rule->getName());
+        self::assertSame('complexity.wmc', $rule->getName());
     }
 
     public function testGetDescription(): void
@@ -150,7 +150,7 @@ final class WmcRuleTest extends TestCase
         self::assertStringContainsString('exceeds threshold of 50', $violations[0]->message);
         self::assertStringContainsString('Simplify methods or split the class', $violations[0]->message);
         self::assertSame(60, $violations[0]->metricValue);
-        self::assertSame('wmc', $violations[0]->ruleName);
+        self::assertSame('complexity.wmc', $violations[0]->ruleName);
     }
 
     public function testErrorAboveErrorThreshold(): void

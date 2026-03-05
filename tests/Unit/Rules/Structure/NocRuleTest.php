@@ -27,7 +27,7 @@ final class NocRuleTest extends TestCase
     {
         $rule = new NocRule(new NocOptions());
 
-        self::assertSame('noc', $rule->getName());
+        self::assertSame('design.noc', $rule->getName());
     }
 
     public function testGetDescription(): void
@@ -149,7 +149,7 @@ final class NocRuleTest extends TestCase
         self::assertStringContainsString('exceeds threshold of 10', $violations[0]->message);
         self::assertStringContainsString('Consider using interfaces instead of inheritance', $violations[0]->message);
         self::assertSame(12, $violations[0]->metricValue);
-        self::assertSame('noc', $violations[0]->ruleName);
+        self::assertSame('design.noc', $violations[0]->ruleName);
     }
 
     public function testAnalyzeGeneratesError(): void

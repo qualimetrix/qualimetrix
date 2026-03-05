@@ -24,7 +24,7 @@ use InvalidArgumentException;
  */
 final class MaintainabilityRule extends AbstractRule
 {
-    public const string NAME = 'maintainability';
+    public const string NAME = 'maintainability.index';
     private const string METRIC_MI = 'mi';
 
     public function __construct(

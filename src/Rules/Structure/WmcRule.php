@@ -24,7 +24,7 @@ use InvalidArgumentException;
  */
 final class WmcRule extends AbstractRule
 {
-    public const string NAME = 'wmc';
+    public const string NAME = 'complexity.wmc';
     private const string METRIC_WMC = 'wmc';
     private const string METRIC_IS_DATA_CLASS = 'isDataClass';
 

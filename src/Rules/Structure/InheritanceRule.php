@@ -23,7 +23,7 @@ use InvalidArgumentException;
  */
 final class InheritanceRule extends AbstractRule
 {
-    public const string NAME = 'inheritance';
+    public const string NAME = 'design.inheritance';
     private const string METRIC_DIT = 'dit';
 
     public function __construct(

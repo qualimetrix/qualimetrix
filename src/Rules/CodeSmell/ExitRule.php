@@ -16,7 +16,7 @@ use InvalidArgumentException;
  */
 final class ExitRule extends AbstractCodeSmellRule
 {
-    public const string NAME = 'exit';
+    public const string NAME = 'code-smell.exit';
 
     public function __construct(RuleOptionsInterface $options)
     {

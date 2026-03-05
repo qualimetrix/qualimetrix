@@ -22,7 +22,7 @@ use InvalidArgumentException;
  */
 final class PropertyCountRule extends AbstractRule implements RuleInterface
 {
-    public const string NAME = 'size.propertyCount';
+    public const string NAME = 'size.property-count';
 
     public function __construct(
         RuleOptionsInterface $options,
