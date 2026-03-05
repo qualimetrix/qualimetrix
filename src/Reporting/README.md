@@ -28,12 +28,16 @@ Reporting is responsible for formatting analysis results for user output. It sup
 Reporting/
 ├── Report.php                              # Report aggregate
 ├── ReportBuilder.php                       # Builder for creating reports
+├── FormatterContext.php                    # Context passed to formatters (color, grouping, options)
+├── GroupBy.php                             # Grouping mode enum (None, File, Rule, Severity)
+├── AnsiColor.php                           # Lightweight ANSI color wrapper
+├── ViolationSorter.php                     # Sorting/grouping utility for violations
 └── Formatter/
     ├── FormatterInterface.php              # Formatter contract
     ├── FormatterRegistryInterface.php      # Registry contract
     ├── FormatterRegistry.php               # Registry implementation
-    ├── TextFormatter.php                   # Compact text output
-    ├── TextVerboseFormatter.php            # Verbose text output with details
+    ├── TextFormatter.php                   # Compact text output (with colors)
+    ├── TextVerboseFormatter.php            # Verbose text output (grouped, colored)
     ├── JsonFormatter.php                   # PHPMD-compatible JSON
     ├── CheckstyleFormatter.php             # Checkstyle XML
     ├── SarifFormatter.php                  # SARIF 2.1.0
@@ -47,6 +51,8 @@ Reporting/
 ```php
 namespace AiMessDetector\Reporting\Formatter;
 
+use AiMessDetector\Reporting\FormatterContext;
+use AiMessDetector\Reporting\GroupBy;
 use AiMessDetector\Reporting\Report;
 
 interface FormatterInterface
@@ -54,12 +60,44 @@ interface FormatterInterface
     /**
      * Formats the report into a string for output.
      */
-    public function format(Report $report): string;
+    public function format(Report $report, FormatterContext $context): string;
 
     /**
      * Unique formatter name (used in --format=NAME).
      */
     public function getName(): string;
+
+    /**
+     * Returns the default grouping mode for this formatter.
+     */
+    public function getDefaultGroupBy(): GroupBy;
+}
+```
+
+### FormatterContext
+
+```php
+final readonly class FormatterContext
+{
+    public function __construct(
+        public bool $useColor = true,      // from OutputInterface::isDecorated()
+        public GroupBy $groupBy = GroupBy::None,
+        public array $options = [],        // from --format-opt key=value
+    ) {}
+
+    public function getOption(string $key, string $default = ''): string;
+}
+```
+
+### GroupBy
+
+```php
+enum GroupBy: string
+{
+    case None = 'none';
+    case File = 'file';
+    case Rule = 'rule';
+    case Severity = 'severity';
 }
 ```
 
@@ -118,27 +156,67 @@ final readonly class Report
 
 ### TextFormatter
 
-**Name:** `text`
+**Name:** `text` | **Default grouping:** `none`
 
-**Output format:**
-- Header with title
-- Violations (if any) or "No violations found"
-- Summary: files analyzed/skipped, errors, warnings, time
+Compact, parseable text output (one line per violation). GCC/Clang-compatible format.
+Supports ANSI colors for severity and summary (auto-detected, disabled with `--no-ansi`).
 
-## Output Example (TextFormatter)
+**Output format:** `file:line: severity[code]: message (symbol)`
+
+### TextVerboseFormatter
+
+**Name:** `text-verbose` | **Default grouping:** `file`
+
+Human-readable verbose output with:
+- Violations grouped by file (default), rule, severity, or flat
+- File headers with violation count
+- ANSI colors for severity tags and summary
+- Compact violation format (2 lines per violation)
+- Metric values highlighted when present
+
+## CLI Options
+
+```bash
+# Grouping (overrides formatter default)
+bin/aimd analyze src/ --group-by=file      # group by file
+bin/aimd analyze src/ --group-by=rule      # group by rule name
+bin/aimd analyze src/ --group-by=severity  # group by severity
+bin/aimd analyze src/ --group-by=none      # flat list
+
+# Formatter-specific options
+bin/aimd analyze src/ --format-opt key=value
+
+# Disable colors
+bin/aimd analyze src/ --no-ansi
+```
+
+## Output Examples
+
+### TextFormatter (`--format=text`)
+
+```
+src/Service/UserService.php:42: error[cyclomatic-complexity]: Cyclomatic complexity of 25 exceeds threshold (UserService::calculateDiscount)
+src/Service/UserService.php:120: warning[cyclomatic-complexity]: Cyclomatic complexity of 12 exceeds threshold (UserService::processOrder)
+
+1 error(s), 1 warning(s) in 1 file(s)
+```
+
+### TextVerboseFormatter (`--format=text-verbose`)
 
 ```
 AI Mess Detector Report
-==================================================
+──────────────────────────────────────────────────
 
-  [ERROR] src/Service/UserService.php:42
-    App\Service\UserService::calculateDiscount
-    Rule: cyclomatic-complexity
-    Code: complexity.method
-    Cyclomatic complexity of 25 exceeds threshold
+src/Service/UserService.php (2)
 
---------------------------------------------------
-Files: 42 analyzed, 1 skipped | Errors: 2 | Warnings: 1 | Time: 0.23s
+  ERROR :42  App\Service\UserService::calculateDiscount
+    Cyclomatic complexity of 25 exceeds threshold (25) [cyclomatic-complexity]
+
+  WARN :120  App\Service\UserService::processOrder
+    Cyclomatic complexity of 12 exceeds threshold (12) [cyclomatic-complexity]
+
+──────────────────────────────────────────────────
+Files: 1 analyzed, 0 skipped | Errors: 1 | Warnings: 1 | Time: 0.23s
 ```
 
 ## Implemented Formats
@@ -189,12 +267,6 @@ Checkstyle XML for Jenkins/SonarQube. Example:
 ```
 
 ---
-
-## TextVerboseFormatter
-
-**Name:** `text-verbose`
-
-Detailed text output with violations sorted by severity (errors first, then warnings, then info). Shows full violation details including rule name, violation code, metric value, and symbol path.
 
 ---
 
@@ -263,7 +335,7 @@ Results will appear in the **Code Quality** tab with inline comments in the MR.
 ### Steps
 
 1. Create a `*Formatter.php` class in `src/Reporting/Formatter/`
-2. Implement `FormatterInterface` (methods: `format()`, `getName()`)
+2. Implement `FormatterInterface` (methods: `format(Report, FormatterContext)`, `getName()`, `getDefaultGroupBy()`)
 3. Use it: `bin/aimd analyze src/ --format=myformat`
 
 **Automatic registration:** the class will be registered via `FormatterCompilerPass` — no need to modify `ContainerFactory`.
@@ -290,6 +362,8 @@ $report->duration         // float (seconds)
 
 | Characteristic | Text | Text Verbose | JSON | Checkstyle | SARIF | GitLab |
 |---|---|---|---|---|---|---|
+| **ANSI Colors** | Yes | Yes | No | No | No | No |
+| **Grouping** | No | Yes (file) | No | No | No | No |
 | **Readability** | High | High | No | No | No | No |
 | **CI/CD integration** | No | No | Generic | Jenkins/SonarQube | GitHub/Azure | GitLab |
 | **IDE support** | No | No | No | Limited | VS Code/JB | No |

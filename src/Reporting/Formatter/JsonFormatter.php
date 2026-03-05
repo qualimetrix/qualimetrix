@@ -6,6 +6,8 @@ namespace AiMessDetector\Reporting\Formatter;
 
 use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
+use AiMessDetector\Reporting\FormatterContext;
+use AiMessDetector\Reporting\GroupBy;
 use AiMessDetector\Reporting\Report;
 
 /**
@@ -18,7 +20,7 @@ final class JsonFormatter implements FormatterInterface
     private const VERSION = '1.0.0';
     private const PACKAGE = 'aimd';
 
-    public function format(Report $report): string
+    public function format(Report $report, FormatterContext $context): string
     {
         $files = $this->groupViolationsByFile($report->violations);
 
@@ -45,6 +47,11 @@ final class JsonFormatter implements FormatterInterface
     public function getName(): string
     {
         return 'json';
+    }
+
+    public function getDefaultGroupBy(): GroupBy
+    {
+        return GroupBy::None;
     }
 
     /**

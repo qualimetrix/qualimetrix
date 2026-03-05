@@ -6,6 +6,8 @@ namespace AiMessDetector\Reporting\Formatter;
 
 use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
+use AiMessDetector\Reporting\FormatterContext;
+use AiMessDetector\Reporting\GroupBy;
 use AiMessDetector\Reporting\Report;
 
 /**
@@ -16,7 +18,7 @@ use AiMessDetector\Reporting\Report;
  */
 final class GitLabCodeQualityFormatter implements FormatterInterface
 {
-    public function format(Report $report): string
+    public function format(Report $report, FormatterContext $context): string
     {
         $issues = [];
 
@@ -43,6 +45,11 @@ final class GitLabCodeQualityFormatter implements FormatterInterface
     public function getName(): string
     {
         return 'gitlab';
+    }
+
+    public function getDefaultGroupBy(): GroupBy
+    {
+        return GroupBy::None;
     }
 
     /**

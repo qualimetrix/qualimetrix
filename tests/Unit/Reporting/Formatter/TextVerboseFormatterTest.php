@@ -9,6 +9,8 @@ use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\SymbolPath;
 use AiMessDetector\Core\Violation\Violation;
 use AiMessDetector\Reporting\Formatter\TextVerboseFormatter;
+use AiMessDetector\Reporting\FormatterContext;
+use AiMessDetector\Reporting\GroupBy;
 use AiMessDetector\Reporting\Report;
 use AiMessDetector\Reporting\ReportBuilder;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -18,15 +20,22 @@ use PHPUnit\Framework\TestCase;
 final class TextVerboseFormatterTest extends TestCase
 {
     private TextVerboseFormatter $formatter;
+    private FormatterContext $plainContext;
 
     protected function setUp(): void
     {
         $this->formatter = new TextVerboseFormatter();
+        $this->plainContext = new FormatterContext(useColor: false, groupBy: GroupBy::File);
     }
 
     public function testGetNameReturnsTextVerbose(): void
     {
         self::assertSame('text-verbose', $this->formatter->getName());
+    }
+
+    public function testGetDefaultGroupByReturnsFile(): void
+    {
+        self::assertSame(GroupBy::File, $this->formatter->getDefaultGroupBy());
     }
 
     public function testFormatEmptyReport(): void
@@ -37,81 +46,219 @@ final class TextVerboseFormatterTest extends TestCase
             ->duration(0.15)
             ->build();
 
-        $output = $this->formatter->format($report);
+        $output = $this->formatter->format($report, $this->plainContext);
 
-        $expected = <<<'TEXT'
-AI Mess Detector Report
-==================================================
-
-No violations found.
-
---------------------------------------------------
-Files: 42 analyzed, 0 skipped | Errors: 0 | Warnings: 0 | Time: 0.15s
-
-TEXT;
-
-        self::assertSame($expected, $output);
-        self::assertStringEndsWith("\n", $output);
+        self::assertStringContainsString('AI Mess Detector Report', $output);
+        self::assertStringContainsString('No violations found.', $output);
+        self::assertStringContainsString('Files: 42 analyzed, 0 skipped | Errors: 0 | Warnings: 0 | Time: 0.15s', $output);
     }
 
-    public function testFormatReportWithViolationsSortedBySeverity(): void
+    public function testFormatGroupedByFile(): void
     {
-        // Add warning first, then error - should be sorted: error first
+        $report = $this->buildMultiFileReport();
+        $output = $this->formatter->format($report, $this->plainContext);
+
+        // File headers with counts
+        self::assertStringContainsString('a.php (2)', $output);
+        self::assertStringContainsString('b.php (1)', $output);
+
+        // Violations within groups show line-only location
+        self::assertStringContainsString(':5', $output);
+        self::assertStringContainsString(':10', $output);
+        self::assertStringContainsString(':20', $output);
+    }
+
+    public function testFormatGroupedByRule(): void
+    {
+        $context = new FormatterContext(useColor: false, groupBy: GroupBy::Rule);
+        $report = $this->buildMultiFileReport();
+        $output = $this->formatter->format($report, $context);
+
+        // Rule headers with counts
+        self::assertStringContainsString('complexity (2)', $output);
+        self::assertStringContainsString('lcom (1)', $output);
+    }
+
+    public function testFormatGroupedBySeverity(): void
+    {
+        $context = new FormatterContext(useColor: false, groupBy: GroupBy::Severity);
+        $report = $this->buildMultiFileReport();
+        $output = $this->formatter->format($report, $context);
+
+        // Severity headers
+        self::assertStringContainsString('Errors (2)', $output);
+        self::assertStringContainsString('Warnings (1)', $output);
+
+        // Errors should appear before warnings
+        $posErrors = strpos($output, 'Errors (2)');
+        $posWarnings = strpos($output, 'Warnings (1)');
+        self::assertLessThan($posWarnings, $posErrors);
+    }
+
+    public function testFormatFlat(): void
+    {
+        $context = new FormatterContext(useColor: false, groupBy: GroupBy::None);
+        $report = $this->buildMultiFileReport();
+        $output = $this->formatter->format($report, $context);
+
+        // No file headers, but full file paths in violations
+        self::assertStringNotContainsString('a.php (2)', $output);
+        self::assertStringContainsString('a.php:5', $output);
+        self::assertStringContainsString('b.php:20', $output);
+    }
+
+    public function testCompactViolationFormat(): void
+    {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
-                location: new Location('src/Service/UserService.php', 120),
-                symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'processOrder'),
-                ruleName: 'cyclomatic-complexity',
-                violationCode: 'cyclomatic-complexity',
-                message: 'Cyclomatic complexity of 12 exceeds threshold',
-                severity: Severity::Warning,
-                metricValue: 12,
-            ))
-            ->addViolation(new Violation(
-                location: new Location('src/Service/UserService.php', 42),
-                symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculateDiscount'),
-                ruleName: 'cyclomatic-complexity',
-                violationCode: 'cyclomatic-complexity',
+                location: new Location('src/Foo.php', 42),
+                symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
+                ruleName: 'complexity',
+                violationCode: 'complexity.method',
                 message: 'Cyclomatic complexity of 25 exceeds threshold',
                 severity: Severity::Error,
                 metricValue: 25,
             ))
-            ->filesAnalyzed(42)
-            ->filesSkipped(1)
-            ->duration(0.23)
+            ->filesAnalyzed(1)
+            ->filesSkipped(0)
+            ->duration(0.01)
             ->build();
 
-        $output = $this->formatter->format($report);
+        $output = $this->formatter->format($report, $this->plainContext);
 
-        // Error should appear before warning
-        $expected = <<<'TEXT'
-AI Mess Detector Report
-==================================================
-
-Violations:
-
-  [ERROR] src/Service/UserService.php:42
-    App\Service\UserService::calculateDiscount
-    Rule: cyclomatic-complexity
-    Code: cyclomatic-complexity
-    Cyclomatic complexity of 25 exceeds threshold
-
-  [WARNING] src/Service/UserService.php:120
-    App\Service\UserService::processOrder
-    Rule: cyclomatic-complexity
-    Code: cyclomatic-complexity
-    Cyclomatic complexity of 12 exceeds threshold
-
---------------------------------------------------
-Files: 42 analyzed, 1 skipped | Errors: 1 | Warnings: 1 | Time: 0.23s
-
-TEXT;
-
-        self::assertSame($expected, $output);
-        self::assertStringEndsWith("\n", $output);
+        // Severity tag
+        self::assertStringContainsString('ERROR', $output);
+        // Violation code in brackets
+        self::assertStringContainsString('[complexity.method]', $output);
+        // Message
+        self::assertStringContainsString('Cyclomatic complexity of 25 exceeds threshold', $output);
+        // Metric value
+        self::assertStringContainsString('(25)', $output);
+        // Symbol
+        self::assertStringContainsString('App\Foo::bar', $output);
     }
 
-    public function testFormatNamespaceLevelViolation(): void
+    public function testMetricValueNotShownWhenNull(): void
+    {
+        $report = ReportBuilder::create()
+            ->addViolation(new Violation(
+                location: new Location('src/Foo.php', 10),
+                symbolPath: SymbolPath::forClass('App', 'Foo'),
+                ruleName: 'test',
+                violationCode: 'test',
+                message: 'Something wrong',
+                severity: Severity::Warning,
+            ))
+            ->filesAnalyzed(1)
+            ->filesSkipped(0)
+            ->duration(0.01)
+            ->build();
+
+        $output = $this->formatter->format($report, $this->plainContext);
+
+        // No metric value parentheses (only the violation code brackets)
+        self::assertStringNotContainsString('(null)', $output);
+    }
+
+    public function testColoredOutput(): void
+    {
+        $colorContext = new FormatterContext(useColor: true, groupBy: GroupBy::File);
+
+        $report = ReportBuilder::create()
+            ->addViolation(new Violation(
+                location: new Location('src/Foo.php', 10),
+                symbolPath: SymbolPath::forClass('App', 'Foo'),
+                ruleName: 'test',
+                violationCode: 'test',
+                message: 'Error msg',
+                severity: Severity::Error,
+            ))
+            ->filesAnalyzed(1)
+            ->filesSkipped(0)
+            ->duration(0.01)
+            ->build();
+
+        $output = $this->formatter->format($report, $colorContext);
+
+        // Contains ANSI codes
+        self::assertStringContainsString("\e[", $output);
+        // Bold red ERROR
+        self::assertStringContainsString("\e[1;31mERROR\e[0m", $output);
+    }
+
+    public function testNoAnsiCodesWithColorDisabled(): void
+    {
+        $report = ReportBuilder::create()
+            ->addViolation(new Violation(
+                location: new Location('src/Foo.php', 10),
+                symbolPath: SymbolPath::forClass('App', 'Foo'),
+                ruleName: 'test',
+                violationCode: 'test',
+                message: 'Test',
+                severity: Severity::Error,
+            ))
+            ->filesAnalyzed(1)
+            ->filesSkipped(0)
+            ->duration(0.01)
+            ->build();
+
+        $output = $this->formatter->format($report, $this->plainContext);
+
+        self::assertStringNotContainsString("\e[", $output);
+    }
+
+    public function testSummaryColorReflectsViolations(): void
+    {
+        $colorContext = new FormatterContext(useColor: true, groupBy: GroupBy::File);
+
+        // Report with errors => red summary
+        $errorReport = ReportBuilder::create()
+            ->addViolation(new Violation(
+                location: new Location('a.php', 1),
+                symbolPath: SymbolPath::forClass('App', 'A'),
+                ruleName: 'test',
+                violationCode: 'test',
+                message: 'Err',
+                severity: Severity::Error,
+            ))
+            ->filesAnalyzed(1)
+            ->filesSkipped(0)
+            ->duration(0.01)
+            ->build();
+
+        $output = $this->formatter->format($errorReport, $colorContext);
+        self::assertStringContainsString("\e[1;31mFiles:", $output);
+
+        // Report with only warnings => yellow summary
+        $warnReport = ReportBuilder::create()
+            ->addViolation(new Violation(
+                location: new Location('a.php', 1),
+                symbolPath: SymbolPath::forClass('App', 'A'),
+                ruleName: 'test',
+                violationCode: 'test',
+                message: 'Warn',
+                severity: Severity::Warning,
+            ))
+            ->filesAnalyzed(1)
+            ->filesSkipped(0)
+            ->duration(0.01)
+            ->build();
+
+        $output = $this->formatter->format($warnReport, $colorContext);
+        self::assertStringContainsString("\e[1;33mFiles:", $output);
+
+        // Empty report => green summary
+        $emptyReport = ReportBuilder::create()
+            ->filesAnalyzed(1)
+            ->filesSkipped(0)
+            ->duration(0.01)
+            ->build();
+
+        $output = $this->formatter->format($emptyReport, $colorContext);
+        self::assertStringContainsString("\e[1;32m", $output);
+    }
+
+    public function testNamespaceLevelViolation(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -128,161 +275,86 @@ TEXT;
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report);
+        $output = $this->formatter->format($report, $this->plainContext);
 
-        self::assertStringContainsString('[ERROR] src/Service/UserService.php', $output);
+        self::assertStringContainsString('ERROR', $output);
         self::assertStringContainsString('App\Service', $output);
-        self::assertStringContainsString('Rule: namespace-size', $output);
-        self::assertStringContainsString('Code: namespace-size', $output);
-        self::assertStringContainsString('Namespace contains 16 classes', $output);
+        self::assertStringContainsString('[namespace-size]', $output);
     }
 
-    public function testFormatGlobalFunctionViolation(): void
+    public function testOutputContainsHeader(): void
+    {
+        $report = new Report([], 0, 0, 0.0, 0, 0);
+        $output = $this->formatter->format($report, $this->plainContext);
+
+        self::assertStringContainsString('AI Mess Detector Report', $output);
+    }
+
+    public function testSortingWithinFileGroup(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
-                location: new Location('src/functions.php', 5),
-                symbolPath: SymbolPath::forGlobalFunction('', 'myComplexFunction'),
-                ruleName: 'cyclomatic-complexity',
-                violationCode: 'cyclomatic-complexity',
-                message: 'Function has complexity of 20',
+                location: new Location('a.php', 30),
+                symbolPath: SymbolPath::forClass('App', 'A'),
+                ruleName: 'test',
+                violationCode: 'test',
+                message: 'Line 30',
                 severity: Severity::Warning,
+            ))
+            ->addViolation(new Violation(
+                location: new Location('a.php', 5),
+                symbolPath: SymbolPath::forClass('App', 'B'),
+                ruleName: 'test',
+                violationCode: 'test',
+                message: 'Line 5',
+                severity: Severity::Error,
             ))
             ->filesAnalyzed(1)
             ->filesSkipped(0)
             ->duration(0.01)
             ->build();
 
-        $output = $this->formatter->format($report);
+        $output = $this->formatter->format($report, $this->plainContext);
 
-        self::assertStringContainsString('[WARNING] src/functions.php:5', $output);
-        self::assertStringContainsString('::myComplexFunction', $output);
+        // Within file group: sorted by severity then line
+        $posError = strpos($output, 'Line 5');
+        $posWarning = strpos($output, 'Line 30');
+
+        self::assertNotFalse($posError);
+        self::assertNotFalse($posWarning);
+        self::assertLessThan($posWarning, $posError);
     }
 
-    public function testSortingByFileThenLine(): void
+    private function buildMultiFileReport(): Report
     {
-        // Same severity, different files/lines - should be sorted by file then line
-        $report = ReportBuilder::create()
+        return ReportBuilder::create()
             ->addViolation(new Violation(
                 location: new Location('b.php', 20),
                 symbolPath: SymbolPath::forClass('App', 'B'),
-                ruleName: 'test',
-                violationCode: 'test',
-                message: 'Msg B20',
-                severity: Severity::Error,
+                ruleName: 'lcom',
+                violationCode: 'lcom',
+                message: 'LCOM is 5',
+                severity: Severity::Warning,
             ))
             ->addViolation(new Violation(
                 location: new Location('a.php', 10),
                 symbolPath: SymbolPath::forClass('App', 'A1'),
-                ruleName: 'test',
-                violationCode: 'test',
-                message: 'Msg A10',
+                ruleName: 'complexity',
+                violationCode: 'complexity.method',
+                message: 'Too complex',
                 severity: Severity::Error,
             ))
             ->addViolation(new Violation(
                 location: new Location('a.php', 5),
                 symbolPath: SymbolPath::forClass('App', 'A2'),
-                ruleName: 'test',
-                violationCode: 'test',
-                message: 'Msg A5',
+                ruleName: 'complexity',
+                violationCode: 'complexity.class',
+                message: 'Class too complex',
                 severity: Severity::Error,
             ))
             ->filesAnalyzed(2)
             ->filesSkipped(0)
             ->duration(0.05)
             ->build();
-
-        $output = $this->formatter->format($report);
-
-        // Should be: a.php:5, a.php:10, b.php:20
-        $posA5 = strpos($output, 'Msg A5');
-        $posA10 = strpos($output, 'Msg A10');
-        $posB20 = strpos($output, 'Msg B20');
-
-        self::assertNotFalse($posA5);
-        self::assertNotFalse($posA10);
-        self::assertNotFalse($posB20);
-        self::assertLessThan($posA10, $posA5, 'a.php:5 should come before a.php:10');
-        self::assertLessThan($posB20, $posA10, 'a.php:10 should come before b.php:20');
-    }
-
-    public function testFormatMultipleErrorsAndWarnings(): void
-    {
-        $report = ReportBuilder::create()
-            ->addViolation(new Violation(
-                location: new Location('c.php', 3),
-                symbolPath: SymbolPath::forClass('App', 'C'),
-                ruleName: 'test',
-                violationCode: 'test',
-                message: 'Warning 1',
-                severity: Severity::Warning,
-            ))
-            ->addViolation(new Violation(
-                location: new Location('a.php', 1),
-                symbolPath: SymbolPath::forClass('App', 'A'),
-                ruleName: 'test',
-                violationCode: 'test',
-                message: 'Error 1',
-                severity: Severity::Error,
-            ))
-            ->addViolation(new Violation(
-                location: new Location('b.php', 2),
-                symbolPath: SymbolPath::forClass('App', 'B'),
-                ruleName: 'test',
-                violationCode: 'test',
-                message: 'Error 2',
-                severity: Severity::Error,
-            ))
-            ->filesAnalyzed(3)
-            ->filesSkipped(0)
-            ->duration(0.05)
-            ->build();
-
-        $output = $this->formatter->format($report);
-
-        self::assertStringContainsString('Errors: 2', $output);
-        self::assertStringContainsString('Warnings: 1', $output);
-
-        // Errors should come before warnings
-        $posError1 = strpos($output, 'Error 1');
-        $posError2 = strpos($output, 'Error 2');
-        $posWarning1 = strpos($output, 'Warning 1');
-
-        self::assertNotFalse($posError1);
-        self::assertNotFalse($posError2);
-        self::assertNotFalse($posWarning1);
-        self::assertLessThan($posWarning1, $posError1);
-        self::assertLessThan($posWarning1, $posError2);
-    }
-
-    public function testRuleAndCodeDisplayedSeparately(): void
-    {
-        $report = ReportBuilder::create()
-            ->addViolation(new Violation(
-                location: new Location('src/Foo.php', 10),
-                symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
-                ruleName: 'complexity',
-                violationCode: 'complexity.method',
-                message: 'Too complex',
-                severity: Severity::Error,
-            ))
-            ->filesAnalyzed(1)
-            ->filesSkipped(0)
-            ->duration(0.01)
-            ->build();
-
-        $output = $this->formatter->format($report);
-
-        self::assertStringContainsString('Rule: complexity', $output);
-        self::assertStringContainsString('Code: complexity.method', $output);
-    }
-
-    public function testOutputContainsHeader(): void
-    {
-        $report = new Report([], 0, 0, 0.0, 0, 0);
-        $output = $this->formatter->format($report);
-
-        self::assertStringContainsString('AI Mess Detector Report', $output);
-        self::assertStringContainsString('==================================================', $output);
     }
 }

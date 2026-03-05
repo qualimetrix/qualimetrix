@@ -6,6 +6,8 @@ namespace AiMessDetector\Tests\Unit\Reporting\Formatter;
 
 use AiMessDetector\Reporting\Formatter\FormatterInterface;
 use AiMessDetector\Reporting\Formatter\FormatterRegistry;
+use AiMessDetector\Reporting\FormatterContext;
+use AiMessDetector\Reporting\GroupBy;
 use AiMessDetector\Reporting\Report;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -103,7 +105,7 @@ final class FormatterRegistryTest extends TestCase
         $formatter = $registry->get('text');
         $report = new Report([], 0, 0, 0.0, 0, 0);
 
-        self::assertSame('second', $formatter->format($report));
+        self::assertSame('second', $formatter->format($report, new FormatterContext()));
     }
 
     private function createMockFormatter(string $name, string $output = ''): FormatterInterface
@@ -114,7 +116,7 @@ final class FormatterRegistryTest extends TestCase
                 private readonly string $output,
             ) {}
 
-            public function format(Report $report): string
+            public function format(Report $report, FormatterContext $context): string
             {
                 return $this->output;
             }
@@ -122,6 +124,11 @@ final class FormatterRegistryTest extends TestCase
             public function getName(): string
             {
                 return $this->name;
+            }
+
+            public function getDefaultGroupBy(): GroupBy
+            {
+                return GroupBy::None;
             }
         };
     }

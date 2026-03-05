@@ -48,6 +48,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Throwable;
+use ValueError;
 
 #[AsCommand(
     name: 'analyze',
@@ -228,6 +229,19 @@ final class AnalyzeCommand extends Command
                 InputOption::VALUE_REQUIRED,
                 'Profile export format (json or chrome-tracing)',
                 'json',
+            )
+            ->addOption(
+                'group-by',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Group violations by: none, file, rule, severity (default: formatter-specific)',
+            )
+            ->addOption(
+                'format-opt',
+                null,
+                InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
+                'Formatter-specific option (format: key=value)',
+                [],
             );
 
         // Dynamic rule options from registry
@@ -855,6 +869,7 @@ final class AnalyzeCommand extends Command
         /** @var string $format */
         $format = $input->getOption('format') ?? AnalysisConfiguration::DEFAULT_FORMAT;
         $formatter = $this->formatterRegistry->get($format);
+        $context = $this->buildFormatterContext($input, $output, $formatter);
 
         // Build and output report with filtered violations
         $report = ReportBuilder::create()
@@ -863,9 +878,52 @@ final class AnalyzeCommand extends Command
             ->filesSkipped($result->filesSkipped)
             ->duration($result->duration)
             ->build();
-        OutputHelper::write($output, $formatter->format($report));
+        OutputHelper::write($output, $formatter->format($report, $context));
 
         return $this->determineExitCode($violations);
+    }
+
+    private function buildFormatterContext(
+        InputInterface $input,
+        OutputInterface $output,
+        \AiMessDetector\Reporting\Formatter\FormatterInterface $formatter,
+    ): \AiMessDetector\Reporting\FormatterContext {
+        // Resolve group-by: explicit CLI option or formatter default
+        /** @var string|null $groupByValue */
+        $groupByValue = $input->getOption('group-by');
+        try {
+            $groupBy = $groupByValue !== null
+                ? \AiMessDetector\Reporting\GroupBy::from($groupByValue)
+                : $formatter->getDefaultGroupBy();
+        } catch (ValueError) {
+            $valid = implode(', ', array_column(\AiMessDetector\Reporting\GroupBy::cases(), 'value'));
+            throw new InvalidArgumentException(\sprintf(
+                'Invalid --group-by value "%s". Valid values: %s',
+                $groupByValue,
+                $valid,
+            ));
+        }
+
+        // Parse --format-opt key=value pairs
+        /** @var list<string> $formatOpts */
+        $formatOpts = $input->getOption('format-opt');
+        $options = [];
+        foreach ($formatOpts as $opt) {
+            $eqPos = strpos($opt, '=');
+            if ($eqPos === false) {
+                throw new InvalidArgumentException(\sprintf(
+                    'Invalid --format-opt value "%s": expected format key=value',
+                    $opt,
+                ));
+            }
+            $options[substr($opt, 0, $eqPos)] = substr($opt, $eqPos + 1);
+        }
+
+        return new \AiMessDetector\Reporting\FormatterContext(
+            useColor: $output->isDecorated(),
+            groupBy: $groupBy,
+            options: $options,
+        );
     }
 
     /**

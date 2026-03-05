@@ -6,47 +6,51 @@ namespace AiMessDetector\Reporting\Formatter;
 
 use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
+use AiMessDetector\Reporting\AnsiColor;
+use AiMessDetector\Reporting\FormatterContext;
+use AiMessDetector\Reporting\GroupBy;
 use AiMessDetector\Reporting\Report;
+use AiMessDetector\Reporting\ViolationSorter;
+use LogicException;
 
 /**
  * Formats report as human-readable verbose text output.
  *
- * Violations are sorted by severity (errors first), then by file and line.
+ * Default grouping: by file. Supports all GroupBy modes.
  * Use --format=text for compact, parseable output.
  */
 final class TextVerboseFormatter implements FormatterInterface
 {
     private const HEADER = 'AI Mess Detector Report';
-    private const SEPARATOR_DOUBLE = '==================================================';
-    private const SEPARATOR_SINGLE = '--------------------------------------------------';
+    private const SEPARATOR = '──────────────────────────────────────────────────';
 
-    public function format(Report $report): string
+    public function format(Report $report, FormatterContext $context): string
     {
+        $color = new AnsiColor($context->useColor);
         $lines = [];
 
         // Header
-        $lines[] = self::HEADER;
-        $lines[] = self::SEPARATOR_DOUBLE;
+        $lines[] = $color->bold(self::HEADER);
+        $lines[] = self::SEPARATOR;
         $lines[] = '';
 
-        // Violations or empty message
         if ($report->isEmpty()) {
-            $lines[] = 'No violations found.';
+            $lines[] = $color->boldGreen('No violations found.');
             $lines[] = '';
         } else {
-            $lines[] = 'Violations:';
-            $lines[] = '';
+            $sorted = ViolationSorter::sort($report->violations, $context->groupBy);
 
-            $sortedViolations = $this->sortViolations($report->violations);
-
-            foreach ($sortedViolations as $violation) {
-                $lines = [...$lines, ...$this->formatViolation($violation)];
+            if ($context->groupBy === GroupBy::None) {
+                $this->renderFlat($sorted, $color, $lines);
+            } else {
+                $groups = ViolationSorter::group($sorted, $context->groupBy);
+                $this->renderGrouped($groups, $context->groupBy, $color, $lines);
             }
         }
 
         // Summary
-        $lines[] = self::SEPARATOR_SINGLE;
-        $lines[] = $this->formatSummary($report);
+        $lines[] = self::SEPARATOR;
+        $lines[] = $this->formatSummary($report, $color);
 
         return implode("\n", $lines) . "\n";
     }
@@ -56,74 +60,121 @@ final class TextVerboseFormatter implements FormatterInterface
         return 'text-verbose';
     }
 
+    public function getDefaultGroupBy(): GroupBy
+    {
+        return GroupBy::File;
+    }
+
     /**
-     * Sort violations: errors first, then by file path, then by line number.
-     *
      * @param list<Violation> $violations
-     *
-     * @return list<Violation>
+     * @param list<string> $lines
      */
-    private function sortViolations(array $violations): array
+    private function renderFlat(array $violations, AnsiColor $color, array &$lines): void
     {
-        usort($violations, static function (Violation $a, Violation $b): int {
-            // Errors before warnings
-            $severityOrder = self::severityOrder($a->severity) <=> self::severityOrder($b->severity);
-            if ($severityOrder !== 0) {
-                return $severityOrder;
-            }
-
-            // Then by file path
-            $fileOrder = $a->location->file <=> $b->location->file;
-            if ($fileOrder !== 0) {
-                return $fileOrder;
-            }
-
-            // Then by line number
-            return ($a->location->line ?? 0) <=> ($b->location->line ?? 0);
-        });
-
-        return $violations;
-    }
-
-    private static function severityOrder(Severity $severity): int
-    {
-        return match ($severity) {
-            Severity::Error => 0,
-            Severity::Warning => 1,
-        };
+        foreach ($violations as $violation) {
+            $this->renderViolation($violation, $color, $lines, showFile: true);
+        }
     }
 
     /**
-     * @return list<string>
+     * @param array<string, list<Violation>> $groups
+     * @param list<string> $lines
      */
-    private function formatViolation(Violation $violation): array
+    private function renderGrouped(array $groups, GroupBy $groupBy, AnsiColor $color, array &$lines): void
     {
-        $severity = $this->formatSeverity($violation->severity);
-        $location = $violation->location->toString();
+        foreach ($groups as $key => $violations) {
+            $count = \count($violations);
+            $header = match ($groupBy) {
+                GroupBy::File => \sprintf('%s (%d)', $color->bold($key !== '' ? $key : '<no file>'), $count),
+                GroupBy::Rule => \sprintf('%s (%d)', $color->bold($key !== '' ? $key : '<unknown>'), $count),
+                GroupBy::Severity => \sprintf('%s (%d)', $this->formatSeverityLabel($key, $color), $count),
+                GroupBy::None => throw new LogicException('GroupBy::None is handled by renderFlat()'),
+            };
+
+            $lines[] = $header;
+            $lines[] = '';
+
+            $showFile = $groupBy !== GroupBy::File;
+
+            foreach ($violations as $violation) {
+                $this->renderViolation($violation, $color, $lines, showFile: $showFile);
+            }
+        }
+    }
+
+    /**
+     * Renders a single violation in compact format (2-3 lines).
+     *
+     * @param list<string> $lines
+     */
+    private function renderViolation(
+        Violation $violation,
+        AnsiColor $color,
+        array &$lines,
+        bool $showFile,
+    ): void {
+        // Line 1: severity + location + symbol
+        $severity = $this->formatSeverityTag($violation->severity, $color);
+        $location = $showFile
+            ? $violation->location->toString()
+            : $this->formatLineOnly($violation);
         $symbol = $violation->symbolPath->toString();
 
-        $lines = [];
-        $lines[] = \sprintf('  [%s] %s', $severity, $location);
-        $lines[] = \sprintf('    %s', $symbol);
-        $lines[] = \sprintf('    Rule: %s', $violation->ruleName);
-        $lines[] = \sprintf('    Code: %s', $violation->violationCode);
-        $lines[] = \sprintf('    %s', $violation->message);
-        $lines[] = '';
+        $line1 = \sprintf('  %s %s', $severity, $location);
+        if ($symbol !== '') {
+            $line1 .= \sprintf('  %s', $color->dim($symbol));
+        }
+        $lines[] = $line1;
 
-        return $lines;
+        // Line 2: message + rule code
+        $message = $violation->message;
+        $metricStr = $this->formatMetricValue($violation, $color);
+        $ruleCode = $color->dim('[' . $violation->violationCode . ']');
+
+        $lines[] = \sprintf('    %s%s %s', $message, $metricStr, $ruleCode);
+        $lines[] = '';
     }
 
-    private function formatSeverity(Severity $severity): string
+    private function formatSeverityTag(Severity $severity, AnsiColor $color): string
     {
         return match ($severity) {
-            Severity::Error => 'ERROR',
-            Severity::Warning => 'WARNING',
+            Severity::Error => $color->boldRed('ERROR'),
+            Severity::Warning => $color->boldYellow('WARN'),
         };
     }
 
-    private function formatSummary(Report $report): string
+    private function formatSeverityLabel(string $key, AnsiColor $color): string
     {
-        return \sprintf(
+        return match ($key) {
+            'error' => $color->boldRed('Errors'),
+            'warning' => $color->boldYellow('Warnings'),
+            default => $key,
+        };
+    }
+
+    private function formatLineOnly(Violation $violation): string
+    {
+        $line = $violation->location->line;
+
+        return $line !== null && $line > 0 ? \sprintf(':%d', $line) : '';
+    }
+
+    private function formatMetricValue(Violation $violation, AnsiColor $color): string
+    {
+        if ($violation->metricValue === null) {
+            return '';
+        }
+
+        $formatted = \is_float($violation->metricValue)
+            ? \sprintf('%.2f', $violation->metricValue)
+            : (string) $violation->metricValue;
+
+        return ' ' . $color->bold('(' . $formatted . ')');
+    }
+
+    private function formatSummary(Report $report, AnsiColor $color): string
+    {
+        $summary = \sprintf(
             'Files: %d analyzed, %d skipped | Errors: %d | Warnings: %d | Time: %.2fs',
             $report->filesAnalyzed,
             $report->filesSkipped,
@@ -131,5 +182,15 @@ final class TextVerboseFormatter implements FormatterInterface
             $report->warningCount,
             $report->duration,
         );
+
+        if ($report->errorCount > 0) {
+            return $color->boldRed($summary);
+        }
+
+        if ($report->warningCount > 0) {
+            return $color->boldYellow($summary);
+        }
+
+        return $color->boldGreen($summary);
     }
 }

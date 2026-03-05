@@ -9,6 +9,8 @@ use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\SymbolPath;
 use AiMessDetector\Core\Violation\Violation;
 use AiMessDetector\Reporting\Formatter\CheckstyleFormatter;
+use AiMessDetector\Reporting\FormatterContext;
+use AiMessDetector\Reporting\GroupBy;
 use AiMessDetector\Reporting\Report;
 use AiMessDetector\Reporting\ReportBuilder;
 use DOMDocument;
@@ -38,7 +40,7 @@ final class CheckstyleFormatterTest extends TestCase
             ->duration(0.5)
             ->build();
 
-        $output = $this->formatter->format($report);
+        $output = $this->formatter->format($report, new FormatterContext());
 
         $xml = new DOMDocument();
         $loaded = $xml->loadXML($output);
@@ -54,7 +56,7 @@ final class CheckstyleFormatterTest extends TestCase
             ->duration(0.15)
             ->build();
 
-        $output = $this->formatter->format($report);
+        $output = $this->formatter->format($report, new FormatterContext());
         $xml = $this->parseXml($output);
 
         $checkstyle = $xml->getElementsByTagName('checkstyle')->item(0);
@@ -91,7 +93,7 @@ final class CheckstyleFormatterTest extends TestCase
             ->duration(0.23)
             ->build();
 
-        $output = $this->formatter->format($report);
+        $output = $this->formatter->format($report, new FormatterContext());
         $xml = $this->parseXml($output);
 
         $files = $xml->getElementsByTagName('file');
@@ -151,7 +153,7 @@ final class CheckstyleFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report);
+        $output = $this->formatter->format($report, new FormatterContext());
         $xml = $this->parseXml($output);
 
         $files = $xml->getElementsByTagName('file');
@@ -191,7 +193,7 @@ final class CheckstyleFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report);
+        $output = $this->formatter->format($report, new FormatterContext());
         $xml = $this->parseXml($output);
 
         $error = $xml->getElementsByTagName('error')->item(0);
@@ -218,7 +220,7 @@ final class CheckstyleFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report);
+        $output = $this->formatter->format($report, new FormatterContext());
 
         // Should produce valid XML (the parser will throw if invalid)
         $xml = $this->parseXml($output);
@@ -231,7 +233,7 @@ final class CheckstyleFormatterTest extends TestCase
     public function testXmlDeclarationIsPresent(): void
     {
         $report = new Report([], 0, 0, 0.0, 0, 0);
-        $output = $this->formatter->format($report);
+        $output = $this->formatter->format($report, new FormatterContext());
 
         self::assertStringStartsWith('<?xml version="1.0" encoding="UTF-8"?>', $output);
     }
@@ -252,7 +254,7 @@ final class CheckstyleFormatterTest extends TestCase
             ->duration(0.01)
             ->build();
 
-        $output = $this->formatter->format($report);
+        $output = $this->formatter->format($report, new FormatterContext());
 
         self::assertStringContainsString('source="aimd.complexity.method"', $output);
         self::assertStringNotContainsString('source="aimd.complexity"', $output);
@@ -268,5 +270,10 @@ final class CheckstyleFormatterTest extends TestCase
         }
 
         return $xml;
+    }
+
+    public function testGetDefaultGroupBy(): void
+    {
+        self::assertSame(GroupBy::None, $this->formatter->getDefaultGroupBy());
     }
 }

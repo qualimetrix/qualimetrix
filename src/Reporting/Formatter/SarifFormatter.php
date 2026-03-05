@@ -6,6 +6,8 @@ namespace AiMessDetector\Reporting\Formatter;
 
 use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
+use AiMessDetector\Reporting\FormatterContext;
+use AiMessDetector\Reporting\GroupBy;
 use AiMessDetector\Reporting\Report;
 
 /**
@@ -20,7 +22,7 @@ final class SarifFormatter implements FormatterInterface
     private const SCHEMA = 'https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json';
     private const INFORMATION_URI = 'https://github.com/FractalizeR/php_ai_mess_detector';
 
-    public function format(Report $report): string
+    public function format(Report $report, FormatterContext $context): string
     {
         $rules = $this->collectRules($report->violations);
 
@@ -50,6 +52,11 @@ final class SarifFormatter implements FormatterInterface
     public function getName(): string
     {
         return 'sarif';
+    }
+
+    public function getDefaultGroupBy(): GroupBy
+    {
+        return GroupBy::None;
     }
 
     /**

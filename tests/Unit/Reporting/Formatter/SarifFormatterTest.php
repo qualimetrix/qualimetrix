@@ -9,6 +9,8 @@ use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\SymbolPath;
 use AiMessDetector\Core\Violation\Violation;
 use AiMessDetector\Reporting\Formatter\SarifFormatter;
+use AiMessDetector\Reporting\FormatterContext;
+use AiMessDetector\Reporting\GroupBy;
 use AiMessDetector\Reporting\ReportBuilder;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
@@ -36,7 +38,7 @@ final class SarifFormatterTest extends TestCase
             ->duration(0.5)
             ->build();
 
-        $output = $this->formatter->format($report);
+        $output = $this->formatter->format($report, new FormatterContext());
 
         self::assertJson($output);
     }
@@ -49,7 +51,7 @@ final class SarifFormatterTest extends TestCase
             ->duration(0.15)
             ->build();
 
-        $output = $this->formatter->format($report);
+        $output = $this->formatter->format($report, new FormatterContext());
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         // Verify SARIF structure
@@ -96,7 +98,7 @@ final class SarifFormatterTest extends TestCase
             ->duration(0.23)
             ->build();
 
-        $output = $this->formatter->format($report);
+        $output = $this->formatter->format($report, new FormatterContext());
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         $run = $data['runs'][0];
@@ -162,7 +164,7 @@ final class SarifFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report);
+        $output = $this->formatter->format($report, new FormatterContext());
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         $run = $data['runs'][0];
@@ -202,7 +204,7 @@ final class SarifFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report);
+        $output = $this->formatter->format($report, new FormatterContext());
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         $result = $data['runs'][0]['results'][0];
@@ -234,7 +236,7 @@ final class SarifFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report);
+        $output = $this->formatter->format($report, new FormatterContext());
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         $results = $data['runs'][0]['results'];
@@ -268,7 +270,7 @@ final class SarifFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report);
+        $output = $this->formatter->format($report, new FormatterContext());
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         $rules = $data['runs'][0]['tool']['driver']['rules'];
@@ -307,7 +309,7 @@ final class SarifFormatterTest extends TestCase
             ->duration(0.01)
             ->build();
 
-        $output = $this->formatter->format($report);
+        $output = $this->formatter->format($report, new FormatterContext());
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         $run = $data['runs'][0];
@@ -319,5 +321,10 @@ final class SarifFormatterTest extends TestCase
         // Rule in rules array should use violationCode as id
         $rule = $run['tool']['driver']['rules'][0];
         self::assertSame('complexity.method', $rule['id']);
+    }
+
+    public function testGetDefaultGroupBy(): void
+    {
+        self::assertSame(GroupBy::None, $this->formatter->getDefaultGroupBy());
     }
 }

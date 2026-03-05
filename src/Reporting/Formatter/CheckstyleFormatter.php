@@ -6,6 +6,8 @@ namespace AiMessDetector\Reporting\Formatter;
 
 use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
+use AiMessDetector\Reporting\FormatterContext;
+use AiMessDetector\Reporting\GroupBy;
 use AiMessDetector\Reporting\Report;
 use XMLWriter;
 
@@ -19,7 +21,7 @@ final class CheckstyleFormatter implements FormatterInterface
 {
     private const VERSION = '3.0';
 
-    public function format(Report $report): string
+    public function format(Report $report, FormatterContext $context): string
     {
         $xml = new XMLWriter();
         $xml->openMemory();
@@ -41,6 +43,11 @@ final class CheckstyleFormatter implements FormatterInterface
     public function getName(): string
     {
         return 'checkstyle';
+    }
+
+    public function getDefaultGroupBy(): GroupBy
+    {
+        return GroupBy::None;
     }
 
     /**

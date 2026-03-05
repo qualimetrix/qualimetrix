@@ -9,6 +9,8 @@ use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\SymbolPath;
 use AiMessDetector\Core\Violation\Violation;
 use AiMessDetector\Reporting\Formatter\JsonFormatter;
+use AiMessDetector\Reporting\FormatterContext;
+use AiMessDetector\Reporting\GroupBy;
 use AiMessDetector\Reporting\Report;
 use AiMessDetector\Reporting\ReportBuilder;
 use DateTimeImmutable;
@@ -39,7 +41,7 @@ final class JsonFormatterTest extends TestCase
             ->duration(0.5)
             ->build();
 
-        $output = $this->formatter->format($report);
+        $output = $this->formatter->format($report, new FormatterContext());
 
         self::assertJson($output);
     }
@@ -52,7 +54,7 @@ final class JsonFormatterTest extends TestCase
             ->duration(0.15)
             ->build();
 
-        $output = $this->formatter->format($report);
+        $output = $this->formatter->format($report, new FormatterContext());
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertSame('1.0.0', $data['version']);
@@ -94,7 +96,7 @@ final class JsonFormatterTest extends TestCase
             ->duration(0.23)
             ->build();
 
-        $output = $this->formatter->format($report);
+        $output = $this->formatter->format($report, new FormatterContext());
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertCount(1, $data['files']);
@@ -161,7 +163,7 @@ final class JsonFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report);
+        $output = $this->formatter->format($report, new FormatterContext());
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertCount(2, $data['files']);
@@ -198,7 +200,7 @@ final class JsonFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report);
+        $output = $this->formatter->format($report, new FormatterContext());
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         $v = $data['files'][0]['violations'][0];
@@ -223,7 +225,7 @@ final class JsonFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report);
+        $output = $this->formatter->format($report, new FormatterContext());
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertSame(0.85, $data['files'][0]['violations'][0]['metricValue']);
@@ -232,7 +234,7 @@ final class JsonFormatterTest extends TestCase
     public function testTimestampIsIso8601(): void
     {
         $report = new Report([], 0, 0, 0.0, 0, 0);
-        $output = $this->formatter->format($report);
+        $output = $this->formatter->format($report, new FormatterContext());
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         // Validate ISO 8601 format
@@ -257,11 +259,16 @@ final class JsonFormatterTest extends TestCase
             ->duration(0.01)
             ->build();
 
-        $output = $this->formatter->format($report);
+        $output = $this->formatter->format($report, new FormatterContext());
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         $violation = $data['files'][0]['violations'][0];
         self::assertSame('complexity', $violation['rule']);
         self::assertSame('complexity.method', $violation['code']);
+    }
+
+    public function testGetDefaultGroupBy(): void
+    {
+        self::assertSame(GroupBy::None, $this->formatter->getDefaultGroupBy());
     }
 }

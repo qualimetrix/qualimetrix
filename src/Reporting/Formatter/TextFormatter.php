@@ -7,7 +7,11 @@ namespace AiMessDetector\Reporting\Formatter;
 use AiMessDetector\Core\Symbol\SymbolType;
 use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
+use AiMessDetector\Reporting\AnsiColor;
+use AiMessDetector\Reporting\FormatterContext;
+use AiMessDetector\Reporting\GroupBy;
 use AiMessDetector\Reporting\Report;
+use AiMessDetector\Reporting\ViolationSorter;
 
 /**
  * Formats report as compact, parseable text output (one line per violation).
@@ -23,19 +27,22 @@ use AiMessDetector\Reporting\Report;
  */
 final class TextFormatter implements FormatterInterface
 {
-    public function format(Report $report): string
+    public function format(Report $report, FormatterContext $context): string
     {
+        $color = new AnsiColor($context->useColor);
+        $sorted = ViolationSorter::sort($report->violations, $context->groupBy);
+
         $lines = [];
 
-        foreach ($report->violations as $violation) {
-            $lines[] = $this->formatViolation($violation);
+        foreach ($sorted as $violation) {
+            $lines[] = $this->formatViolation($violation, $color);
         }
 
         // Summary line at the end
         if ($lines !== []) {
             $lines[] = '';
         }
-        $lines[] = $this->formatSummary($report);
+        $lines[] = $this->formatSummary($report, $color);
 
         return implode("\n", $lines) . "\n";
     }
@@ -45,12 +52,17 @@ final class TextFormatter implements FormatterInterface
         return 'text';
     }
 
-    private function formatViolation(Violation $violation): string
+    public function getDefaultGroupBy(): GroupBy
+    {
+        return GroupBy::None;
+    }
+
+    private function formatViolation(Violation $violation, AnsiColor $color): string
     {
         $file = $violation->location->file;
         $line = $violation->location->line;
-        $severity = $this->formatSeverity($violation->severity);
-        $rule = $violation->violationCode;
+        $severity = $this->formatSeverity($violation->severity, $color);
+        $rule = $color->dim($violation->violationCode);
         $message = $violation->message;
         $symbol = $this->formatSymbol($violation);
 
@@ -60,11 +72,11 @@ final class TextFormatter implements FormatterInterface
         return \sprintf('%s: %s[%s]: %s%s', $location, $severity, $rule, $message, $symbol);
     }
 
-    private function formatSeverity(Severity $severity): string
+    private function formatSeverity(Severity $severity, AnsiColor $color): string
     {
         return match ($severity) {
-            Severity::Error => 'error',
-            Severity::Warning => 'warning',
+            Severity::Error => $color->red('error'),
+            Severity::Warning => $color->yellow('warning'),
         };
     }
 
@@ -85,13 +97,23 @@ final class TextFormatter implements FormatterInterface
         return '';
     }
 
-    private function formatSummary(Report $report): string
+    private function formatSummary(Report $report, AnsiColor $color): string
     {
-        return \sprintf(
+        $summary = \sprintf(
             '%d error(s), %d warning(s) in %d file(s)',
             $report->errorCount,
             $report->warningCount,
             $report->filesAnalyzed,
         );
+
+        if ($report->errorCount > 0) {
+            return $color->boldRed($summary);
+        }
+
+        if ($report->warningCount > 0) {
+            return $color->boldYellow($summary);
+        }
+
+        return $color->boldGreen($summary);
     }
 }

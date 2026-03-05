@@ -9,6 +9,8 @@ use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\SymbolPath;
 use AiMessDetector\Core\Violation\Violation;
 use AiMessDetector\Reporting\Formatter\GitLabCodeQualityFormatter;
+use AiMessDetector\Reporting\FormatterContext;
+use AiMessDetector\Reporting\GroupBy;
 use AiMessDetector\Reporting\ReportBuilder;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
@@ -36,7 +38,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
             ->duration(0.5)
             ->build();
 
-        $output = $this->formatter->format($report);
+        $output = $this->formatter->format($report, new FormatterContext());
 
         self::assertJson($output);
     }
@@ -49,7 +51,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
             ->duration(0.15)
             ->build();
 
-        $output = $this->formatter->format($report);
+        $output = $this->formatter->format($report, new FormatterContext());
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         // Empty report should return empty array
@@ -83,7 +85,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
             ->duration(0.23)
             ->build();
 
-        $output = $this->formatter->format($report);
+        $output = $this->formatter->format($report, new FormatterContext());
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         // Should have 2 issues
@@ -132,7 +134,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report);
+        $output = $this->formatter->format($report, new FormatterContext());
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         // Verify GitLab severity mapping
@@ -160,8 +162,8 @@ final class GitLabCodeQualityFormatterTest extends TestCase
             ->build();
 
         // Format twice
-        $output1 = $this->formatter->format($report);
-        $output2 = $this->formatter->format($report);
+        $output1 = $this->formatter->format($report, new FormatterContext());
+        $output2 = $this->formatter->format($report, new FormatterContext());
 
         $data1 = json_decode($output1, true, 512, \JSON_THROW_ON_ERROR);
         $data2 = json_decode($output2, true, 512, \JSON_THROW_ON_ERROR);
@@ -205,7 +207,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report);
+        $output = $this->formatter->format($report, new FormatterContext());
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         // All fingerprints should be unique
@@ -233,7 +235,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report);
+        $output = $this->formatter->format($report, new FormatterContext());
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         $issue = $data[0];
@@ -257,7 +259,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report);
+        $output = $this->formatter->format($report, new FormatterContext());
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         $issue = $data[0];
@@ -295,10 +297,15 @@ final class GitLabCodeQualityFormatterTest extends TestCase
             ->duration(0.01)
             ->build();
 
-        $output = $this->formatter->format($report);
+        $output = $this->formatter->format($report, new FormatterContext());
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         $issue = $data[0];
         self::assertSame('complexity.method', $issue['check_name']);
+    }
+
+    public function testGetDefaultGroupBy(): void
+    {
+        self::assertSame(GroupBy::None, $this->formatter->getDefaultGroupBy());
     }
 }
