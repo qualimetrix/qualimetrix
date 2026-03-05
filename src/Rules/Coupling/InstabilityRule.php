@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Rules\Coupling;
 
-use AiMessDetector\Core\Metric\MetricBag;
 use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\HierarchicalRuleInterface;
 use AiMessDetector\Core\Rule\RuleCategory;
@@ -27,20 +26,19 @@ use InvalidArgumentException;
  * Classes/namespaces with high instability are hard to maintain since changes
  * may break many dependents.
  */
-final class CouplingRule extends AbstractRule implements HierarchicalRuleInterface
+final class InstabilityRule extends AbstractRule implements HierarchicalRuleInterface
 {
-    public const string NAME = 'coupling';
+    public const string NAME = 'coupling.instability';
     private const string METRIC_INSTABILITY = 'instability';
     private const string METRIC_CA = 'ca';
     private const string METRIC_CE = 'ce';
-    private const string METRIC_CBO = 'cbo';
 
     public function __construct(
         RuleOptionsInterface $options,
     ) {
-        if (!$options instanceof CouplingOptions) {
+        if (!$options instanceof InstabilityOptions) {
             throw new InvalidArgumentException(
-                \sprintf('Expected %s, got %s', CouplingOptions::class, $options::class),
+                \sprintf('Expected %s, got %s', InstabilityOptions::class, $options::class),
             );
         }
         parent::__construct($options);
@@ -53,7 +51,7 @@ final class CouplingRule extends AbstractRule implements HierarchicalRuleInterfa
 
     public function getDescription(): string
     {
-        return 'Checks instability (coupling) at class and namespace levels';
+        return 'Checks instability at class and namespace levels';
     }
 
     public function getCategory(): RuleCategory
@@ -66,7 +64,7 @@ final class CouplingRule extends AbstractRule implements HierarchicalRuleInterfa
      */
     public function requires(): array
     {
-        return [self::METRIC_INSTABILITY, self::METRIC_CA, self::METRIC_CE, self::METRIC_CBO];
+        return [self::METRIC_INSTABILITY, self::METRIC_CA, self::METRIC_CE];
     }
 
     /**
@@ -84,7 +82,7 @@ final class CouplingRule extends AbstractRule implements HierarchicalRuleInterfa
      */
     public function analyzeLevel(RuleLevel $level, AnalysisContext $context): array
     {
-        if (!$this->options instanceof CouplingOptions) {
+        if (!$this->options instanceof InstabilityOptions) {
             return [];
         }
 
@@ -107,11 +105,10 @@ final class CouplingRule extends AbstractRule implements HierarchicalRuleInterfa
      */
     public function analyze(AnalysisContext $context): array
     {
-        // When called directly (not via analyzeLevel), analyze all enabled levels
         $violations = [];
 
         foreach ($this->getSupportedLevels() as $level) {
-            if ($this->options instanceof CouplingOptions && $this->options->isLevelEnabled($level)) {
+            if ($this->options instanceof InstabilityOptions && $this->options->isLevelEnabled($level)) {
                 $violations = [...$violations, ...$this->analyzeLevel($level, $context)];
             }
         }
@@ -120,11 +117,11 @@ final class CouplingRule extends AbstractRule implements HierarchicalRuleInterfa
     }
 
     /**
-     * @return class-string<CouplingOptions>
+     * @return class-string<InstabilityOptions>
      */
     public static function getOptionsClass(): string
     {
-        return CouplingOptions::class;
+        return InstabilityOptions::class;
     }
 
     /**
@@ -133,14 +130,10 @@ final class CouplingRule extends AbstractRule implements HierarchicalRuleInterfa
     public static function getCliAliases(): array
     {
         return [
-            'coupling-class-warning' => 'class.max_instability_warning',
-            'coupling-class-error' => 'class.max_instability_error',
-            'coupling-ns-warning' => 'namespace.max_instability_warning',
-            'coupling-ns-error' => 'namespace.max_instability_error',
-            'cbo-class-warning' => 'class.cbo_warning_threshold',
-            'cbo-class-error' => 'class.cbo_error_threshold',
-            'cbo-ns-warning' => 'namespace.cbo_warning_threshold',
-            'cbo-ns-error' => 'namespace.cbo_error_threshold',
+            'coupling-class-warning' => 'class.max_warning',
+            'coupling-class-error' => 'class.max_error',
+            'coupling-ns-warning' => 'namespace.max_warning',
+            'coupling-ns-error' => 'namespace.max_error',
         ];
     }
 
@@ -149,7 +142,7 @@ final class CouplingRule extends AbstractRule implements HierarchicalRuleInterfa
      */
     private function analyzeClassLevel(AnalysisContext $context): array
     {
-        if (!$this->options instanceof CouplingOptions) {
+        if (!$this->options instanceof InstabilityOptions) {
             return [];
         }
         $classOptions = $this->options->class;
@@ -159,17 +152,6 @@ final class CouplingRule extends AbstractRule implements HierarchicalRuleInterfa
         foreach ($context->metrics->all(SymbolType::Class_) as $classInfo) {
             $metrics = $context->metrics->get($classInfo->symbolPath);
 
-            // Check CBO
-            $cbo = $metrics->get(self::METRIC_CBO);
-            if ($cbo !== null) {
-                $cboValue = (int) $cbo;
-                $cboViolation = $this->checkCbo($cboValue, $classInfo, $metrics, $classOptions);
-                if ($cboViolation !== null) {
-                    $violations[] = $cboViolation;
-                }
-            }
-
-            // Check Instability
             $instability = $metrics->get(self::METRIC_INSTABILITY);
 
             if ($instability === null) {
@@ -187,13 +169,13 @@ final class CouplingRule extends AbstractRule implements HierarchicalRuleInterfa
                     location: new Location($classInfo->file, $classInfo->line),
                     symbolPath: $classInfo->symbolPath,
                     ruleName: $this->getName(),
-                    violationCode: self::NAME . '.instability.class',
+                    violationCode: self::NAME . '.class',
                     message: \sprintf(
                         'Instability is %.2f (Ca=%d, Ce=%d), exceeds threshold of %.2f. Reduce outgoing dependencies',
                         $instabilityValue,
                         $ca,
                         $ce,
-                        $severity === Severity::Error ? $classOptions->maxInstabilityError : $classOptions->maxInstabilityWarning,
+                        $severity === Severity::Error ? $classOptions->maxError : $classOptions->maxWarning,
                     ),
                     severity: $severity,
                     metricValue: $instabilityValue,
@@ -210,7 +192,7 @@ final class CouplingRule extends AbstractRule implements HierarchicalRuleInterfa
      */
     private function analyzeNamespaceLevel(AnalysisContext $context): array
     {
-        if (!$this->options instanceof CouplingOptions) {
+        if (!$this->options instanceof InstabilityOptions) {
             return [];
         }
         $namespaceOptions = $this->options->namespace;
@@ -226,17 +208,6 @@ final class CouplingRule extends AbstractRule implements HierarchicalRuleInterfa
                 continue;
             }
 
-            // Check CBO
-            $cbo = $metrics->get(self::METRIC_CBO);
-            if ($cbo !== null) {
-                $cboValue = (int) $cbo;
-                $cboViolation = $this->checkCbo($cboValue, $nsInfo, $metrics, $namespaceOptions);
-                if ($cboViolation !== null) {
-                    $violations[] = $cboViolation;
-                }
-            }
-
-            // Check Instability
             $instability = $metrics->get(self::METRIC_INSTABILITY);
 
             if ($instability === null) {
@@ -254,13 +225,13 @@ final class CouplingRule extends AbstractRule implements HierarchicalRuleInterfa
                     location: new Location($nsInfo->file, $nsInfo->line),
                     symbolPath: $nsInfo->symbolPath,
                     ruleName: $this->getName(),
-                    violationCode: self::NAME . '.instability.namespace',
+                    violationCode: self::NAME . '.namespace',
                     message: \sprintf(
                         'Instability is %.2f (Ca=%d, Ce=%d), exceeds threshold of %.2f. Reduce outgoing dependencies',
                         $instabilityValue,
                         $ca,
                         $ce,
-                        $severity === Severity::Error ? $namespaceOptions->maxInstabilityError : $namespaceOptions->maxInstabilityWarning,
+                        $severity === Severity::Error ? $namespaceOptions->maxError : $namespaceOptions->maxWarning,
                     ),
                     severity: $severity,
                     metricValue: $instabilityValue,
@@ -270,61 +241,5 @@ final class CouplingRule extends AbstractRule implements HierarchicalRuleInterfa
         }
 
         return $violations;
-    }
-
-    /**
-     * Checks CBO (Coupling Between Objects) threshold for a symbol.
-     */
-    private function checkCbo(
-        int $cbo,
-        \AiMessDetector\Core\Symbol\SymbolInfo $symbolInfo,
-        MetricBag $metrics,
-        ClassCouplingOptions|NamespaceCouplingOptions $options,
-    ): ?Violation {
-        $ca = (int) ($metrics->get(self::METRIC_CA) ?? 0);
-        $ce = (int) ($metrics->get(self::METRIC_CE) ?? 0);
-
-        // Namespace has type=null, class has type=<ClassName>
-        $isNamespace = $symbolInfo->symbolPath->type === null && $symbolInfo->symbolPath->member === null;
-
-        if ($cbo > $options->cboErrorThreshold) {
-            return new Violation(
-                location: new Location($symbolInfo->file, $symbolInfo->line),
-                symbolPath: $symbolInfo->symbolPath,
-                ruleName: $this->getName(),
-                violationCode: self::NAME . '.cbo.' . ($isNamespace ? 'namespace' : 'class'),
-                message: \sprintf(
-                    'CBO (Coupling Between Objects) is %d (Ca=%d, Ce=%d), exceeds threshold of %d. Reduce dependencies to lower coupling',
-                    $cbo,
-                    $ca,
-                    $ce,
-                    $options->cboErrorThreshold,
-                ),
-                severity: Severity::Error,
-                metricValue: (float) $cbo,
-                level: $isNamespace ? RuleLevel::Namespace_ : RuleLevel::Class_,
-            );
-        }
-
-        if ($cbo > $options->cboWarningThreshold) {
-            return new Violation(
-                location: new Location($symbolInfo->file, $symbolInfo->line),
-                symbolPath: $symbolInfo->symbolPath,
-                ruleName: $this->getName(),
-                violationCode: self::NAME . '.cbo.' . ($isNamespace ? 'namespace' : 'class'),
-                message: \sprintf(
-                    'CBO (Coupling Between Objects) is %d (Ca=%d, Ce=%d), exceeds threshold of %d. Reduce dependencies to lower coupling',
-                    $cbo,
-                    $ca,
-                    $ce,
-                    $options->cboWarningThreshold,
-                ),
-                severity: Severity::Warning,
-                metricValue: (float) $cbo,
-                level: $isNamespace ? RuleLevel::Namespace_ : RuleLevel::Class_,
-            );
-        }
-
-        return null;
     }
 }

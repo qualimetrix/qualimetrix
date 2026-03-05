@@ -11,15 +11,15 @@ use AiMessDetector\Core\Violation\Severity;
 use InvalidArgumentException;
 
 /**
- * Options for CouplingRule (hierarchical).
+ * Options for CboRule (hierarchical).
  *
- * Supports class and namespace levels for instability thresholds.
+ * Supports class and namespace levels for CBO thresholds.
  */
-final readonly class CouplingOptions implements HierarchicalRuleOptionsInterface
+final readonly class CboOptions implements HierarchicalRuleOptionsInterface
 {
     public function __construct(
-        public ClassCouplingOptions $class = new ClassCouplingOptions(),
-        public NamespaceCouplingOptions $namespace = new NamespaceCouplingOptions(),
+        public ClassCboOptions $class = new ClassCboOptions(),
+        public NamespaceCboOptions $namespace = new NamespaceCboOptions(),
     ) {}
 
     /**
@@ -27,20 +27,6 @@ final readonly class CouplingOptions implements HierarchicalRuleOptionsInterface
      */
     public static function fromArray(array $config): self
     {
-        // Handle legacy flat format: {maxInstabilityWarning, maxInstabilityError}
-        if (isset($config['maxInstabilityWarning']) || isset($config['maxInstabilityError'])) {
-            $options = new ClassCouplingOptions(
-                enabled: (bool) ($config['enabled'] ?? true),
-                maxInstabilityWarning: (float) ($config['maxInstabilityWarning'] ?? 0.8),
-                maxInstabilityError: (float) ($config['maxInstabilityError'] ?? 0.95),
-            );
-
-            return new self(
-                class: $options,
-                namespace: new NamespaceCouplingOptions(enabled: false),
-            );
-        }
-
         // Handle hierarchical format: {class: {...}, namespace: {...}}
         $classConfig = isset($config['class']) && \is_array($config['class'])
             ? $config['class']
@@ -50,8 +36,8 @@ final readonly class CouplingOptions implements HierarchicalRuleOptionsInterface
             : [];
 
         return new self(
-            class: ClassCouplingOptions::fromArray($classConfig),
-            namespace: NamespaceCouplingOptions::fromArray($namespaceConfig),
+            class: ClassCboOptions::fromArray($classConfig),
+            namespace: NamespaceCboOptions::fromArray($namespaceConfig),
         );
     }
 
@@ -62,7 +48,6 @@ final readonly class CouplingOptions implements HierarchicalRuleOptionsInterface
 
     public function getSeverity(int|float $value): ?Severity
     {
-        // For general rule-level checks, use class level thresholds
         return $this->class->getSeverity($value);
     }
 
@@ -72,7 +57,7 @@ final readonly class CouplingOptions implements HierarchicalRuleOptionsInterface
             RuleLevel::Class_ => $this->class,
             RuleLevel::Namespace_ => $this->namespace,
             default => throw new InvalidArgumentException(
-                \sprintf('Level %s is not supported by CouplingRule', $level->value),
+                \sprintf('Level %s is not supported by CboRule', $level->value),
             ),
         };
     }
