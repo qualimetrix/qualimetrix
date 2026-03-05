@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Rules\Size;
 
-use AiMessDetector\Core\Rule\LevelOptionsInterface;
+use AiMessDetector\Core\Rule\RuleOptionsInterface;
 use AiMessDetector\Core\Violation\Severity;
 
 /**
- * Options for class-level size checks.
+ * Options for MethodCountRule.
  *
  * Checks the number of methods in a class.
  * Thresholds based on common industry standards:
@@ -16,7 +16,7 @@ use AiMessDetector\Core\Violation\Severity;
  * - 20-30 methods: warning, class may be doing too much
  * - > 30 methods: error, class should be split
  */
-final readonly class ClassSizeOptions implements LevelOptionsInterface
+final readonly class MethodCountOptions implements RuleOptionsInterface
 {
     public function __construct(
         public bool $enabled = true,
@@ -29,10 +29,14 @@ final readonly class ClassSizeOptions implements LevelOptionsInterface
      */
     public static function fromArray(array $config): self
     {
+        if ($config === []) {
+            return new self(enabled: false);
+        }
+
         return new self(
             enabled: (bool) ($config['enabled'] ?? true),
-            warning: (int) ($config['warning'] ?? $config['warningThreshold'] ?? 20),
-            error: (int) ($config['error'] ?? $config['errorThreshold'] ?? 30),
+            warning: (int) ($config['warning'] ?? 20),
+            error: (int) ($config['error'] ?? 30),
         );
     }
 
