@@ -10,14 +10,13 @@ Reporting is responsible for formatting analysis results for user output. It sup
 
 | Aspect | Compatibility | Comment |
 |--------|---------------|---------|
-| **Output formats** | Full | text, json, xml, checkstyle — identical to PHPMD |
+| **Output formats** | Partial | text, json, checkstyle — compatible with PHPMD |
 | **Input parameters** | No | Our options are richer; compatibility would limit them |
 | **Configuration** | No | Custom YAML format, different structure |
 
 ### PHPMD-Compatible Formats
 
 - **text** — text output (identical format)
-- **xml** — PHPMD XML format
 - **json** — PHPMD JSON format
 - **checkstyle** — Checkstyle XML
 
@@ -27,13 +26,18 @@ Reporting is responsible for formatting analysis results for user output. It sup
 
 ```
 Reporting/
-├── Report.php                    # Report aggregate
-├── ReportBuilder.php             # Builder for creating reports
+├── Report.php                              # Report aggregate
+├── ReportBuilder.php                       # Builder for creating reports
 └── Formatter/
-    ├── FormatterInterface.php    # Formatter contract
-    ├── FormatterRegistryInterface.php  # Registry contract
-    ├── FormatterRegistry.php     # Registry implementation
-    └── TextFormatter.php         # Text output
+    ├── FormatterInterface.php              # Formatter contract
+    ├── FormatterRegistryInterface.php      # Registry contract
+    ├── FormatterRegistry.php               # Registry implementation
+    ├── TextFormatter.php                   # Compact text output
+    ├── TextVerboseFormatter.php            # Verbose text output with details
+    ├── JsonFormatter.php                   # PHPMD-compatible JSON
+    ├── CheckstyleFormatter.php             # Checkstyle XML
+    ├── SarifFormatter.php                  # SARIF 2.1.0
+    └── GitLabCodeQualityFormatter.php      # GitLab Code Climate JSON
 ```
 
 ## Contracts
@@ -67,21 +71,21 @@ namespace AiMessDetector\Reporting\Formatter;
 interface FormatterRegistryInterface
 {
     /**
-     * Returns a formatter by name.
+     * Returns formatter by name.
      *
-     * @throws \InvalidArgumentException If the formatter is not found
+     * @throws InvalidArgumentException If formatter not found
      */
     public function get(string $name): FormatterInterface;
 
     /**
-     * Checks whether a formatter exists.
+     * Checks if formatter exists.
      */
     public function has(string $name): bool;
 
     /**
-     * Returns a list of available formatters.
+     * Returns list of available formatter names.
      *
-     * @return string[]
+     * @return list<string>
      */
     public function getAvailableNames(): array;
 }
@@ -107,6 +111,8 @@ final readonly class Report
 
     public function isEmpty(): bool;
     public function getTotalViolations(): int;
+    public function getViolationsBySeverity(Severity $severity): array;
+    public function getExitCode(): int;
 }
 ```
 
@@ -139,10 +145,10 @@ Files: 42 analyzed, 1 skipped | Errors: 2 | Warnings: 1 | Time: 0.23s
 
 | Format | Name | Description | Integration |
 |--------|------|-------------|-------------|
-| Text | `text` | Human-readable text output | CLI |
+| Text | `text` | Compact human-readable text output | CLI |
+| Text Verbose | `text-verbose` | Detailed text output with sorting by severity | CLI |
 | JSON | `json` | PHPMD-compatible JSON for CI/CD | Generic CI/CD |
 | Checkstyle | `checkstyle` | Checkstyle XML for CI systems | Jenkins, SonarQube |
-| XML (PHPMD) | `xml` | PHPMD-compatible XML | IDE plugins |
 | SARIF | `sarif` | SARIF 2.1.0 for static analysis | GitHub, VS Code, JetBrains |
 | GitLab | `gitlab` | Code Climate JSON for GitLab MR | GitLab CI |
 
@@ -184,17 +190,11 @@ Checkstyle XML for Jenkins/SonarQube. Example:
 
 ---
 
-## XmlFormatter
+## TextVerboseFormatter
 
-**Name:** `xml`
+**Name:** `text-verbose`
 
-PHPMD-compatible XML. Grouped by files, priority mapping:
-
-| AIMD Severity | PMD Priority |
-|---------------|--------------|
-| Error | 1 |
-| Warning | 2 |
-| Info | 3 |
+Detailed text output with violations sorted by severity (errors first, then warnings, then info). Shows full violation details including rule name, violation code, metric value, and symbol path.
 
 ---
 
@@ -288,21 +288,21 @@ $report->duration         // float (seconds)
 
 ## Formatter Comparison
 
-| Characteristic | Text | JSON | Checkstyle | XML | SARIF | GitLab |
+| Characteristic | Text | Text Verbose | JSON | Checkstyle | SARIF | GitLab |
 |---|---|---|---|---|---|---|
-| **Readability** | High | No | No | Moderate | No | No |
-| **CI/CD integration** | No | Generic | Jenkins/SonarQube | IDE | GitHub/Azure | GitLab |
-| **IDE support** | No | No | Limited | PHPMD plugins | VS Code/JB | No |
-| **PHPMD compatibility** | Full | Full | Full | Full | No | No |
+| **Readability** | High | High | No | No | No | No |
+| **CI/CD integration** | No | No | Generic | Jenkins/SonarQube | GitHub/Azure | GitLab |
+| **IDE support** | No | No | No | Limited | VS Code/JB | No |
+| **PHPMD compatibility** | Full | No | Full | Full | No | No |
 | **Fingerprinting** | No | No | No | No | No | Yes |
 | **Output** | STDOUT | STDOUT | STDOUT | STDOUT | STDOUT | STDOUT |
 
 ### Choosing the Right Format
 
-- **CLI usage** -> `text`
+- **CLI usage (compact)** -> `text`
+- **CLI usage (detailed)** -> `text-verbose`
 - **Generic CI/CD** (GitLab CI, CircleCI, Travis) -> `json`
 - **Jenkins / SonarQube** -> `checkstyle`
-- **Legacy IDE** -> `xml`
 - **GitHub** -> `sarif`
 - **GitLab** -> `gitlab`
 - **VS Code** -> `sarif`
