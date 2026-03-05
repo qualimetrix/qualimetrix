@@ -16,7 +16,7 @@ use InvalidArgumentException;
  */
 final class CountInLoopRule extends AbstractCodeSmellRule
 {
-    public const string NAME = 'count-in-loop';
+    public const string NAME = 'code-smell.count-in-loop';
 
     public function __construct(RuleOptionsInterface $options)
     {

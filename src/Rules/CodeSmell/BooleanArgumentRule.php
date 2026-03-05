@@ -20,7 +20,7 @@ use InvalidArgumentException;
  */
 final class BooleanArgumentRule extends AbstractCodeSmellRule
 {
-    public const string NAME = 'boolean-argument';
+    public const string NAME = 'code-smell.boolean-argument';
 
     public function __construct(RuleOptionsInterface $options)
     {

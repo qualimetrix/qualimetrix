@@ -16,7 +16,7 @@ use InvalidArgumentException;
  */
 final class EmptyCatchRule extends AbstractCodeSmellRule
 {
-    public const string NAME = 'empty-catch';
+    public const string NAME = 'code-smell.empty-catch';
 
     public function __construct(RuleOptionsInterface $options)
     {

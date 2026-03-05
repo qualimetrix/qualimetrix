@@ -16,7 +16,7 @@ use InvalidArgumentException;
  */
 final class EvalRule extends AbstractCodeSmellRule
 {
-    public const string NAME = 'eval';
+    public const string NAME = 'code-smell.eval';
 
     public function __construct(RuleOptionsInterface $options)
     {

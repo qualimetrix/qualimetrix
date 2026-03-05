@@ -36,7 +36,7 @@ use InvalidArgumentException;
  */
 final class DistanceRule extends AbstractRule
 {
-    public const string NAME = 'distance';
+    public const string NAME = 'coupling.distance';
     private const string METRIC_DISTANCE = 'distance';
     private const string METRIC_ABSTRACTNESS = 'abstractness';
     private const string METRIC_INSTABILITY = 'instability';

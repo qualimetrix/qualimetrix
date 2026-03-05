@@ -16,7 +16,7 @@ use InvalidArgumentException;
  */
 final class SuperglobalsRule extends AbstractCodeSmellRule
 {
-    public const string NAME = 'superglobals';
+    public const string NAME = 'code-smell.superglobals';
 
     public function __construct(RuleOptionsInterface $options)
     {

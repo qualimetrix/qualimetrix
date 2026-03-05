@@ -27,7 +27,7 @@ final class LcomRuleTest extends TestCase
     {
         $rule = new LcomRule(new LcomOptions());
 
-        self::assertSame('lcom', $rule->getName());
+        self::assertSame('design.lcom', $rule->getName());
     }
 
     public function testGetDescription(): void
@@ -128,7 +128,7 @@ final class LcomRuleTest extends TestCase
         self::assertStringContainsString('exceeds threshold of 3', $violations[0]->message);
         self::assertStringContainsString('Class could be split into 4 cohesive parts', $violations[0]->message);
         self::assertSame(4, $violations[0]->metricValue);
-        self::assertSame('lcom', $violations[0]->ruleName);
+        self::assertSame('design.lcom', $violations[0]->ruleName);
     }
 
     public function testAnalyzeGeneratesError(): void

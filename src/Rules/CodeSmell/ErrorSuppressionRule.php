@@ -16,7 +16,7 @@ use InvalidArgumentException;
  */
 final class ErrorSuppressionRule extends AbstractCodeSmellRule
 {
-    public const string NAME = 'error-suppression';
+    public const string NAME = 'code-smell.error-suppression';
 
     public function __construct(RuleOptionsInterface $options)
     {

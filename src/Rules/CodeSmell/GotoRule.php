@@ -16,7 +16,7 @@ use InvalidArgumentException;
  */
 final class GotoRule extends AbstractCodeSmellRule
 {
-    public const string NAME = 'goto';
+    public const string NAME = 'code-smell.goto';
 
     public function __construct(RuleOptionsInterface $options)
     {
