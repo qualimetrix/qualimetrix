@@ -8,26 +8,18 @@ use AiMessDetector\Core\Rule\LevelOptionsInterface;
 use AiMessDetector\Core\Violation\Severity;
 
 /**
- * Options for namespace-level coupling checks.
+ * Options for class-level instability checks.
  *
  * Instability range: [0, 1]
  * - 0: maximally stable (only incoming dependencies)
  * - 1: maximally unstable (only outgoing dependencies)
- *
- * CBO (Coupling Between Objects) = Ca + Ce
- * - Low CBO (≤14): weakly coupled
- * - Medium CBO (15-20): acceptable
- * - High CBO (>20): tightly coupled
  */
-final readonly class NamespaceCouplingOptions implements LevelOptionsInterface
+final readonly class ClassInstabilityOptions implements LevelOptionsInterface
 {
     public function __construct(
         public bool $enabled = true,
-        public float $maxInstabilityWarning = 0.8,
-        public float $maxInstabilityError = 0.95,
-        public int $cboWarningThreshold = 14,
-        public int $cboErrorThreshold = 20,
-        public int $minClassCount = 3,
+        public float $maxWarning = 0.8,
+        public float $maxError = 0.95,
     ) {}
 
     /**
@@ -42,11 +34,8 @@ final readonly class NamespaceCouplingOptions implements LevelOptionsInterface
 
         return new self(
             enabled: (bool) ($config['enabled'] ?? true),
-            maxInstabilityWarning: (float) ($config['max_instability_warning'] ?? 0.8),
-            maxInstabilityError: (float) ($config['max_instability_error'] ?? 0.95),
-            cboWarningThreshold: (int) ($config['cbo_warning_threshold'] ?? 14),
-            cboErrorThreshold: (int) ($config['cbo_error_threshold'] ?? 20),
-            minClassCount: (int) ($config['min_class_count'] ?? $config['minClassCount'] ?? 3),
+            maxWarning: (float) ($config['max_warning'] ?? 0.8),
+            maxError: (float) ($config['max_error'] ?? 0.95),
         );
     }
 
@@ -59,11 +48,11 @@ final readonly class NamespaceCouplingOptions implements LevelOptionsInterface
     {
         $instability = (float) $value;
 
-        if ($instability >= $this->maxInstabilityError) {
+        if ($instability >= $this->maxError) {
             return Severity::Error;
         }
 
-        if ($instability >= $this->maxInstabilityWarning) {
+        if ($instability >= $this->maxWarning) {
             return Severity::Warning;
         }
 
