@@ -61,9 +61,9 @@ src/
 │
 ├── Rules/                  # Analysis rules (README.md)
 │   ├── Complexity/         # ComplexityRule, CognitiveComplexityRule, NpathComplexityRule
-│   ├── Size/               # SizeRule, PropertyCountRule
+│   ├── Size/               # MethodCountRule, ClassCountRule, PropertyCountRule
 │   ├── Architecture/       # CircularDependencyRule
-│   ├── Coupling/           # CouplingRule, DistanceRule
+│   ├── Coupling/           # InstabilityRule, CboRule, DistanceRule
 │   ├── Structure/          # LcomRule, NocRule, WmcRule, InheritanceRule
 │   ├── Maintainability/    # MaintainabilityRule
 │   ├── CodeSmell/          # BooleanArgumentRule, CountInLoopRule, DebugCodeRule, EmptyCatchRule, ErrorSuppressionRule, EvalRule, ExitRule, GotoRule, SuperglobalsRule
@@ -247,7 +247,7 @@ Standard Symfony practices are used: **autowiring** and **autoconfiguration**.
 **Adding a new rule:**
 1. Create a `*Rule.php` class in `src/Rules/{Category}/` (e.g., `src/Rules/Complexity/`)
 2. Implement `RuleInterface` (or extend `AbstractRule`)
-3. Add a `NAME` constant with the rule slug (e.g., `'complexity'`)
+3. Add a `NAME` constant with the rule slug in `group.rule-name` format (e.g., `'complexity.cyclomatic'`)
 4. Add a static `getOptionsClass()` method returning the Options class
 5. Create an Options class in the same directory, implementing `RuleOptionsInterface`
 6. The class will be registered **automatically** — NO need to modify `ContainerFactory`

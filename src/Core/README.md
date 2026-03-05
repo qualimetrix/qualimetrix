@@ -222,11 +222,13 @@ A rule analyzes metrics and generates violations. **Completely stateless.**
 
 | Value | Description |
 |-------|-------------|
-| `Complexity` | CC, NPath, Cognitive |
-| `Size` | NamespaceSize, ClassSize, MethodLength |
-| `Design` | GodClass, Coupling |
-| `Naming` | ShortVariable, LongVariable |
-| `Maintainability` | MI, Code Duplication |
+| `Complexity` | CCN, NPath, Cognitive, WMC |
+| `Size` | MethodCount, ClassCount, PropertyCount |
+| `Design` | LCOM, NOC, Inheritance |
+| `Maintainability` | Maintainability Index |
+| `Coupling` | Instability, CBO, Distance |
+| `Architecture` | Circular Dependencies |
+| `CodeSmell` | Boolean Arguments, Debug Code, etc. |
 
 ---
 

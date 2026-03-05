@@ -39,7 +39,7 @@ final class BaselineLoaderTest extends TestCase
     {
         $json = <<<'JSON'
         {
-            "version": 2,
+            "version": 3,
             "generated": "2025-12-08T10:00:00+00:00",
             "count": 2,
             "violations": {
@@ -64,11 +64,38 @@ final class BaselineLoaderTest extends TestCase
 
         $baseline = $this->loader->load($path);
 
-        self::assertSame(2, $baseline->version);
+        self::assertSame(3, $baseline->version);
         self::assertSame('2025-12-08T10:00:00+00:00', $baseline->generated->format('c'));
         self::assertCount(2, $baseline->entries);
         self::assertCount(1, $baseline->entries['method:App\Foo::bar']);
         self::assertCount(1, $baseline->entries['class:App\Foo']);
+    }
+
+    public function testThrowsOnVersion2Baseline(): void
+    {
+        $json = <<<'JSON'
+        {
+            "version": 2,
+            "generated": "2025-12-08T10:00:00+00:00",
+            "count": 1,
+            "violations": {
+                "method:App\\Foo::bar": [
+                    {
+                        "rule": "complexity",
+                        "hash": "a1b2c3d4"
+                    }
+                ]
+            }
+        }
+        JSON;
+
+        $path = $this->tempDir . '/baseline.json';
+        file_put_contents($path, $json);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Unsupported baseline version: 2. Expected version 3. Please regenerate with --generate-baseline.');
+
+        $this->loader->load($path);
     }
 
     public function testThrowsWhenFileNotFound(): void
@@ -122,7 +149,7 @@ final class BaselineLoaderTest extends TestCase
         file_put_contents($path, $json);
 
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Unsupported baseline version: 99');
+        $this->expectExceptionMessage('Unsupported baseline version: 99. Expected version 3. Please regenerate with --generate-baseline.');
 
         $this->loader->load($path);
     }
@@ -131,7 +158,7 @@ final class BaselineLoaderTest extends TestCase
     {
         $json = <<<'JSON'
         {
-            "version": 2,
+            "version": 3,
             "violations": {}
         }
         JSON;
@@ -149,7 +176,7 @@ final class BaselineLoaderTest extends TestCase
     {
         $json = <<<'JSON'
         {
-            "version": 2,
+            "version": 3,
             "generated": "2025-12-08T10:00:00+00:00"
         }
         JSON;
@@ -167,7 +194,7 @@ final class BaselineLoaderTest extends TestCase
     {
         $json = <<<'JSON'
         {
-            "version": 2,
+            "version": 3,
             "generated": "2025-12-08T10:00:00+00:00",
             "count": 0,
             "violations": {}

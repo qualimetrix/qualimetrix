@@ -19,9 +19,9 @@ aggregation:
   # auto_depth: 2
 
 # Rules configuration
-# Format: rule_name.level.threshold
+# Rule names use group.rule-name format (e.g., complexity.cyclomatic)
 rules:
-  complexity:
+  complexity.cyclomatic:
     method:
       warning: 10
       error: 20
@@ -29,22 +29,22 @@ rules:
       max_warning: 30   # Maximum CCN among class methods
       max_error: 50
 
-  size:
-    class:
-      warning: 20   # Methods per class
-      error: 30
-    namespace:
-      warning: 15   # Classes per namespace
-      error: 25
+  size.method-count:
+    warning: 20   # Methods per class
+    error: 30
 
-# Disable specific rules or levels
+  size.class-count:
+    warning: 15   # Classes per namespace
+    error: 25
+
+# Disable specific rules or violation codes
+# Uses prefix matching: 'complexity' disables all complexity.* rules
 # disabled_rules:
-#   - complexity.class    # Disable class-level complexity check
-#   - size                # Disable all size checks
-#   - category:code-smell # Disable entire category (complexity, size, design,
-#                         # naming, maintainability, coupling, architecture, code-smell)
+#   - complexity.cyclomatic.class  # Disable class-level cyclomatic check
+#   - size                         # Disable all size checks
+#   - code-smell                   # Disable all code-smell rules
 
-# Run only specific rules or levels
+# Run only specific rules (prefix matching applies)
 # only_rules:
-#   - complexity.method   # Only run method-level complexity check
-#   - category:complexity # Only run rules from a specific category
+#   - complexity           # Only run all complexity rules
+#   - size.method-count    # Only run method count check

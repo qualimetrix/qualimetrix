@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace AiMessDetector\Infrastructure\DependencyInjection\CompilerPass;
 
 use AiMessDetector\Infrastructure\Rule\RuleRegistry;
+use LogicException;
+use ReflectionClass;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
@@ -36,6 +38,43 @@ final class RuleRegistryCompilerPass implements CompilerPassInterface
             }
         }
 
+        /** @var list<class-string> $ruleClasses */
+        $this->validateNoDuplicateNames($ruleClasses);
+
         $definition->setArgument('$ruleClasses', $ruleClasses);
+    }
+
+    /**
+     * @param list<class-string> $ruleClasses
+     */
+    private function validateNoDuplicateNames(array $ruleClasses): void
+    {
+        /** @var array<string, class-string> $nameToClass */
+        $nameToClass = [];
+
+        foreach ($ruleClasses as $class) {
+            $reflection = new ReflectionClass($class);
+
+            if (!$reflection->hasConstant('NAME')) {
+                continue;
+            }
+
+            $name = $reflection->getConstant('NAME');
+
+            if (!\is_string($name)) {
+                continue;
+            }
+
+            if (isset($nameToClass[$name])) {
+                throw new LogicException(\sprintf(
+                    'Duplicate rule NAME "%s" found in classes %s and %s. Each rule must have a unique NAME constant.',
+                    $name,
+                    $nameToClass[$name],
+                    $class,
+                ));
+            }
+
+            $nameToClass[$name] = $class;
+        }
     }
 }

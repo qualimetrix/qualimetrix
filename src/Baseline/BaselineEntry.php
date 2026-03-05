@@ -7,7 +7,7 @@ namespace AiMessDetector\Baseline;
 /**
  * Represents a single violation entry in baseline.
  *
- * Since version 2, the symbol path is stored as the key (not in the entry).
+ * Since version 2/3, the symbol path is stored as the key (not in the entry).
  */
 final readonly class BaselineEntry
 {

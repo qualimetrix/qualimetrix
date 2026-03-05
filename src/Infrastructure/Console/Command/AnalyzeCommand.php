@@ -246,13 +246,13 @@ final class AnalyzeCommand extends Command
                 'disable-rule',
                 null,
                 InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
-                'Disable a rule or level (e.g., complexity, complexity.class)',
+                'Disable a rule or group by prefix (e.g., complexity, size.class-count)',
             )
             ->addOption(
                 'only-rule',
                 null,
                 InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
-                'Run only specified rules or levels (e.g., complexity, complexity.method)',
+                'Run only specified rules or group by prefix (e.g., complexity, code-smell)',
             )
             ->addOption(
                 'rule-opt',

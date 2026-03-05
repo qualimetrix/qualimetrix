@@ -6,7 +6,7 @@ rules:
   # Default: warning=0.3, error=0.5
   # Core namespaces (primitives, exceptions) naturally fall in "Zone of Pain"
   # which is acceptable for stable primitives
-  distance:
+  coupling.distance:
     max_distance_warning: 0.4
     max_distance_error: 0.6
     exclude_namespaces:
@@ -17,6 +17,6 @@ rules:
   # NOC (Number of Children)
   # Default: warning=10, error=15
   # AbstractRule and AbstractCollector have many children by design (Template Method pattern)
-  noc:
+  design.noc:
     warning: 12
     error: 20

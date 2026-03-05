@@ -20,28 +20,30 @@ Rules are analysis rule implementations for static analysis. Rules are **complet
 
 | Rule | Category | Type | Description | Default Thresholds |
 |------|----------|------|-------------|-------------------|
-| **complexity** | Complexity | Hierarchical (Method, Class) | Cyclomatic Complexity (CCN) | method: 10/20, class.max: 30/50 |
-| **cognitive** | Complexity | Hierarchical (Method, Class) | Cognitive Complexity | method: 15/25, class.max: 30/50 |
+| **complexity.cyclomatic** | Complexity | Hierarchical (Method, Class) | Cyclomatic Complexity (CCN) | method: 10/20, class.max: 30/50 |
+| **complexity.cognitive** | Complexity | Hierarchical (Method, Class) | Cognitive Complexity | method: 15/25, class.max: 30/50 |
 | **complexity.npath** | Complexity | Hierarchical (Method, Class) | NPATH Complexity | method: 200/500, class (disabled) |
-| **size** | Size | Hierarchical (Class, Namespace) | Method/class count | class: 15/25, namespace: 10/15 |
-| **size.propertyCount** | Size | Simple | Class property count | warning: 10, error: 15 |
-| **maintainability** | Maintainability | Simple | Maintainability Index | warning: 65, error: 20 |
-| **lcom** | Structure | Simple | Lack of Cohesion (LCOM4) | warning: 2, error: 3 |
-| **wmc** | Structure | Simple | Weighted Methods per Class | warning: 35, error: 50 |
-| **noc** | Structure | Simple | Number of Children | warning: 7, error: 15 |
-| **inheritance** | Structure | Simple | Depth of Inheritance Tree (DIT) | warning: 4, error: 6 |
-| **coupling** | Coupling | Hierarchical (Class, Namespace) | Instability (Ca/Ce) | class/ns: 0.8/0.95 |
-| **distance** | Coupling | Simple | Distance from Main Sequence | warning: 0.3, error: 0.5 |
-| **circular-dependency** | Architecture | Simple | Circular dependencies | enabled: true |
-| **boolean-argument** | CodeSmell | Simple | Boolean arguments in signatures | enabled: true |
-| **count-in-loop** | CodeSmell | Simple | count() calls in loops | enabled: true |
-| **debug-code** | CodeSmell | Simple | Debug code (var_dump, etc.) | enabled: true |
-| **empty-catch** | CodeSmell | Simple | Empty catch blocks | enabled: true |
-| **error-suppression** | CodeSmell | Simple | Error suppression operator (@) | enabled: true |
-| **eval** | CodeSmell | Simple | eval() usage | enabled: true |
-| **exit** | CodeSmell | Simple | exit/die usage | enabled: true |
-| **goto** | CodeSmell | Simple | goto statements | enabled: true |
-| **superglobals** | CodeSmell | Simple | Direct superglobal access | enabled: true |
+| **complexity.wmc** | Complexity | Simple | Weighted Methods per Class | warning: 35, error: 50 |
+| **size.method-count** | Size | Simple | Method count per class | warning: 15, error: 25 |
+| **size.class-count** | Size | Simple | Class count per namespace | warning: 10, error: 15 |
+| **size.property-count** | Size | Simple | Class property count | warning: 10, error: 15 |
+| **maintainability.index** | Maintainability | Simple | Maintainability Index | warning: 65, error: 20 |
+| **design.lcom** | Design | Simple | Lack of Cohesion (LCOM4) | warning: 2, error: 3 |
+| **design.noc** | Design | Simple | Number of Children | warning: 7, error: 15 |
+| **design.inheritance** | Design | Simple | Depth of Inheritance Tree (DIT) | warning: 4, error: 6 |
+| **coupling.instability** | Coupling | Simple | Instability (Ca/Ce) | warning: 0.8, error: 0.95 |
+| **coupling.cbo** | Coupling | Simple | Coupling Between Objects | warning: ..., error: ... |
+| **coupling.distance** | Coupling | Simple | Distance from Main Sequence | warning: 0.3, error: 0.5 |
+| **architecture.circular-dependency** | Architecture | Simple | Circular dependencies | enabled: true |
+| **code-smell.boolean-argument** | CodeSmell | Simple | Boolean arguments in signatures | enabled: true |
+| **code-smell.count-in-loop** | CodeSmell | Simple | count() calls in loops | enabled: true |
+| **code-smell.debug-code** | CodeSmell | Simple | Debug code (var_dump, etc.) | enabled: true |
+| **code-smell.empty-catch** | CodeSmell | Simple | Empty catch blocks | enabled: true |
+| **code-smell.error-suppression** | CodeSmell | Simple | Error suppression operator (@) | enabled: true |
+| **code-smell.eval** | CodeSmell | Simple | eval() usage | enabled: true |
+| **code-smell.exit** | CodeSmell | Simple | exit/die usage | enabled: true |
+| **code-smell.goto** | CodeSmell | Simple | goto statements | enabled: true |
+| **code-smell.superglobals** | CodeSmell | Simple | Direct superglobal access | enabled: true |
 
 ---
 
@@ -57,18 +59,19 @@ interface HierarchicalRuleInterface extends RuleInterface {
 }
 ```
 
-**CLI with dot notation:**
+**CLI with prefix matching:**
 ```bash
---disable-rule=complexity.class    # Disable a specific level
---only-rule=complexity.method      # Enable only method-level
---disable-rule=complexity          # Disable the entire rule
+--disable-rule=complexity.cyclomatic.class  # Disable a specific level
+--only-rule=complexity.cyclomatic.method    # Enable only method-level
+--disable-rule=complexity                   # Disable all complexity.* rules (prefix match)
+--disable-rule=complexity.cyclomatic        # Disable the entire rule
 ```
 
 ---
 
 ## Complexity Rule (Hierarchical)
 
-**Name:** `complexity` | **Category:** Complexity | **Levels:** Method, Class
+**Name:** `complexity.cyclomatic` | **Category:** Complexity | **Levels:** Method, Class
 
 Checks cyclomatic complexity of methods and classes.
 
@@ -78,7 +81,7 @@ Checks cyclomatic complexity of methods and classes.
 **Configuration:**
 ```yaml
 rules:
-  complexity:
+  complexity.cyclomatic:
     method:
       warning: 10
       error: 20
@@ -93,7 +96,7 @@ rules:
 
 ## Cognitive Complexity Rule (Hierarchical)
 
-**Name:** `cognitive` | **Category:** Complexity | **Levels:** Method, Class
+**Name:** `complexity.cognitive` | **Category:** Complexity | **Levels:** Method, Class
 
 Checks cognitive complexity of methods and classes. Unlike CCN, it considers:
 - **Nesting** — each level adds a penalty
@@ -106,7 +109,7 @@ Checks cognitive complexity of methods and classes. Unlike CCN, it considers:
 **Configuration:**
 ```yaml
 rules:
-  cognitive:
+  complexity.cognitive:
     method:
       warning: 15
       error: 25
@@ -151,32 +154,45 @@ rules:
 
 ---
 
-## Size Rule (Hierarchical)
+## Method Count Rule
 
-**Name:** `size` | **Category:** Size | **Levels:** Class, Namespace
+**Name:** `size.method-count` | **Category:** Size | **Type:** Simple
 
-**Class-level:** Checks the number of methods in a class (default: 15/25)
-**Namespace-level:** Checks the number of classes in a namespace (default: 10/15)
+Checks the number of methods in a class (default: 15/25).
 
 **Configuration:**
 ```yaml
 rules:
-  size:
-    class:
-      warning: 15
-      error: 25
-    namespace:
-      warning: 10
-      error: 15
+  size.method-count:
+    warning: 15
+    error: 25
 ```
 
-**CLI:** `--size-class-warning=15 --size-class-error=25 --ns-warning=10 --ns-error=15`
+**CLI:** `--size-class-warning=15 --size-class-error=25`
+
+---
+
+## Class Count Rule
+
+**Name:** `size.class-count` | **Category:** Size | **Type:** Simple
+
+Checks the number of classes in a namespace (default: 10/15).
+
+**Configuration:**
+```yaml
+rules:
+  size.class-count:
+    warning: 10
+    error: 15
+```
+
+**CLI:** `--ns-warning=10 --ns-error=15`
 
 ---
 
 ## Property Count Rule
 
-**Name:** `size.propertyCount` | **Category:** Size | **Type:** Simple
+**Name:** `size.property-count` | **Category:** Size | **Type:** Simple
 
 Checks the number of properties in a class (default: 10/15).
 
@@ -190,7 +206,7 @@ Checks the number of properties in a class (default: 10/15).
 
 ## Maintainability Rule
 
-**Name:** `maintainability` | **Category:** Maintainability | **Type:** Simple
+**Name:** `maintainability.index` | **Category:** Maintainability | **Type:** Simple
 
 Checks Maintainability Index of methods (default: 65/20).
 MI = 171 - 5.2xln(HV) - 0.23xCCN - 16.2xln(LOC)
@@ -205,7 +221,7 @@ MI = 171 - 5.2xln(HV) - 0.23xCCN - 16.2xln(LOC)
 
 ## LCOM Rule
 
-**Name:** `lcom` | **Category:** Structure | **Type:** Simple
+**Name:** `design.lcom` | **Category:** Design | **Type:** Simple
 
 Checks Lack of Cohesion (LCOM4) of classes (default: 2/3).
 LCOM4 = number of connected components in the method graph.
@@ -220,7 +236,7 @@ LCOM4 = number of connected components in the method graph.
 
 ## WMC Rule
 
-**Name:** `wmc` | **Category:** Structure | **Type:** Simple
+**Name:** `complexity.wmc` | **Category:** Complexity | **Type:** Simple
 
 Checks Weighted Methods per Class (default: 35/50).
 WMC = sum of complexities of all class methods.
@@ -234,7 +250,7 @@ WMC = sum of complexities of all class methods.
 
 ## NOC Rule
 
-**Name:** `noc` | **Category:** Structure | **Type:** Simple
+**Name:** `design.noc` | **Category:** Design | **Type:** Simple
 
 Checks Number of Children — number of direct subclasses (default: 7/15).
 
@@ -244,7 +260,7 @@ Checks Number of Children — number of direct subclasses (default: 7/15).
 
 ## Inheritance Rule
 
-**Name:** `inheritance` | **Category:** Structure | **Type:** Simple
+**Name:** `design.inheritance` | **Category:** Design | **Type:** Simple
 
 Checks Depth of Inheritance Tree — depth of the inheritance tree (default: 4/6).
 
@@ -252,25 +268,32 @@ Checks Depth of Inheritance Tree — depth of the inheritance tree (default: 4/6
 
 ---
 
-## Coupling Rule (Hierarchical)
+## Instability Rule
 
-**Name:** `coupling` | **Category:** Coupling | **Levels:** Class, Namespace
+**Name:** `coupling.instability` | **Category:** Coupling | **Type:** Simple
 
 Checks instability = Ce / (Ca + Ce), where:
 - **Ce** — efferent coupling (outgoing dependencies)
 - **Ca** — afferent coupling (incoming dependencies)
 
-Also supports CBO (Coupling Between Objects) thresholds.
-
-**Default:** max_instability: 0.8/0.95 for class and namespace
+**Default:** max_instability: 0.8/0.95
 
 **CLI:**
 ```bash
-# Instability thresholds
 --coupling-class-warning=0.8 --coupling-class-error=0.95
 --coupling-ns-warning=0.8 --coupling-ns-error=0.95
+```
 
-# CBO thresholds
+---
+
+## CBO Rule
+
+**Name:** `coupling.cbo` | **Category:** Coupling | **Type:** Simple
+
+Checks Coupling Between Objects (CBO) — the number of classes a given class depends on.
+
+**CLI:**
+```bash
 --cbo-class-warning=... --cbo-class-error=...
 --cbo-ns-warning=... --cbo-ns-error=...
 ```
@@ -279,7 +302,7 @@ Also supports CBO (Coupling Between Objects) thresholds.
 
 ## Distance Rule
 
-**Name:** `distance` | **Category:** Coupling | **Type:** Simple
+**Name:** `coupling.distance` | **Category:** Coupling | **Type:** Simple
 
 Checks Distance from Main Sequence at the namespace level.
 Distance = |A + I - 1|, where A = abstractness, I = instability.
@@ -297,7 +320,7 @@ Distance = |A + I - 1|, where A = abstractness, I = instability.
 
 ## Circular Dependency Rule
 
-**Name:** `circular-dependency` | **Category:** Architecture | **Type:** Simple
+**Name:** `architecture.circular-dependency` | **Category:** Architecture | **Type:** Simple
 
 Detects circular dependencies between classes using Tarjan's algorithm (SCC).
 
@@ -308,7 +331,7 @@ Detects circular dependencies between classes using Tarjan's algorithm (SCC).
 **Configuration:**
 ```yaml
 rules:
-  circular-dependency:
+  architecture.circular-dependency:
     enabled: true
     max_cycle_size: 0  # 0 = report all
 ```
@@ -333,30 +356,30 @@ Code smell rules detect common anti-patterns and bad practices. All code smell r
 
 | Rule | Description | What it detects |
 |------|-------------|-----------------|
-| **boolean-argument** | Boolean arguments in signatures | `function save(bool $overwrite)` — suggests splitting methods or using enums |
-| **count-in-loop** | count() calls in loops | `for ($i = 0; $i < count($arr); $i++)` — should be extracted to a variable |
-| **debug-code** | Debug code | `var_dump()`, `print_r()`, `dd()`, `dump()`, etc. |
-| **empty-catch** | Empty catch blocks | `catch (Exception $e) {}` — should at least log the error |
-| **error-suppression** | Error suppression operator | `@fopen()` — hides errors, use proper error handling |
-| **eval** | eval() usage | `eval($code)` — security risk, usually avoidable |
-| **exit** | exit/die usage | `exit(1)`, `die()` — should not be used in library/application code |
-| **goto** | goto statements | `goto label;` — makes control flow hard to follow |
-| **superglobals** | Direct superglobal access | `$_GET`, `$_POST`, `$_SERVER` — use request abstraction |
+| **code-smell.boolean-argument** | Boolean arguments in signatures | `function save(bool $overwrite)` — suggests splitting methods or using enums |
+| **code-smell.count-in-loop** | count() calls in loops | `for ($i = 0; $i < count($arr); $i++)` — should be extracted to a variable |
+| **code-smell.debug-code** | Debug code | `var_dump()`, `print_r()`, `dd()`, `dump()`, etc. |
+| **code-smell.empty-catch** | Empty catch blocks | `catch (Exception $e) {}` — should at least log the error |
+| **code-smell.error-suppression** | Error suppression operator | `@fopen()` — hides errors, use proper error handling |
+| **code-smell.eval** | eval() usage | `eval($code)` — security risk, usually avoidable |
+| **code-smell.exit** | exit/die usage | `exit(1)`, `die()` — should not be used in library/application code |
+| **code-smell.goto** | goto statements | `goto label;` — makes control flow hard to follow |
+| **code-smell.superglobals** | Direct superglobal access | `$_GET`, `$_POST`, `$_SERVER` — use request abstraction |
 
 **Configuration:**
 ```yaml
 rules:
-  boolean-argument:
+  code-smell.debug-code:
     enabled: true   # or false to disable
-  debug-code:
+  code-smell.boolean-argument:
     enabled: false  # disable this rule
 ```
 
 **CLI:**
 ```bash
---disable-rule=debug-code         # Disable a specific code smell rule
---disable-rule=boolean-argument   # Disable another
---only-rule=debug-code            # Enable only this rule
+--disable-rule=code-smell.debug-code       # Disable a specific code smell rule
+--disable-rule=code-smell                  # Disable all code-smell.* rules (prefix match)
+--only-rule=code-smell.debug-code          # Enable only this rule
 ```
 
 ---
@@ -374,7 +397,7 @@ rules:
 **Example:**
 ```php
 final class ExampleRule extends AbstractRule {
-    public const NAME = 'example';
+    public const NAME = 'category.example';
 
     public static function getOptionsClass(): string {
         return ExampleOptions::class;
@@ -431,8 +454,9 @@ final class ExampleRule extends AbstractRule {
 - Global functions -> `SymbolPath::forGlobalFunction(namespace, name)`
 - Anonymous classes -> do not consider
 - Methods in a trait -> `SymbolPath::forMethod(namespace, trait, method)`
-- `--disable-rule=complexity` -> disables all rule levels
-- `--disable-rule=complexity.class` -> disables only class-level
+- `--disable-rule=complexity` -> disables all complexity.* rules (prefix match)
+- `--disable-rule=complexity.cyclomatic` -> disables the entire cyclomatic rule (all levels)
+- `--disable-rule=complexity.cyclomatic.class` -> disables only class-level
 - DependencyGraph = null -> skip rules that require the graph
 
 ---
@@ -449,15 +473,15 @@ Rules support filters to reduce false positives:
 **Configuration:**
 ```yaml
 rules:
-  lcom:
+  design.lcom:
     exclude_readonly: true
     min_methods: 3
-  size.propertyCount:
+  size.property-count:
     exclude_readonly: true
     exclude_promoted_only: true
-  wmc:
+  complexity.wmc:
     exclude_data_classes: false  # opt-in
-  maintainability:
+  maintainability.index:
     exclude_tests: true
     min_loc: 10
 ```

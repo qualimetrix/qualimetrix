@@ -112,8 +112,11 @@ final readonly class BaselineLoader
             throw new RuntimeException('Baseline "version" must be an integer');
         }
 
-        if ($data['version'] !== 2) {
-            throw new RuntimeException("Unsupported baseline version: {$data['version']}. Expected version 2.");
+        if ($data['version'] !== 3) {
+            throw new RuntimeException(\sprintf(
+                'Unsupported baseline version: %d. Expected version 3. Please regenerate with --generate-baseline.',
+                $data['version'],
+            ));
         }
 
         if (!isset($data['generated'])) {

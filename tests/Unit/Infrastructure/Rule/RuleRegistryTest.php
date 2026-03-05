@@ -7,7 +7,7 @@ namespace AiMessDetector\Tests\Unit\Infrastructure\Rule;
 use AiMessDetector\Infrastructure\Rule\Exception\ConflictingCliAliasException;
 use AiMessDetector\Infrastructure\Rule\RuleRegistry;
 use AiMessDetector\Rules\Complexity\ComplexityRule;
-use AiMessDetector\Rules\Size\SizeRule;
+use AiMessDetector\Rules\Size\ClassCountRule;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -18,13 +18,13 @@ final class RuleRegistryTest extends TestCase
     {
         $registry = new RuleRegistry([
             ComplexityRule::class,
-            SizeRule::class,
+            ClassCountRule::class,
         ]);
 
         $rules = iterator_to_array($registry->getAll());
         self::assertCount(2, $rules);
         self::assertInstanceOf(ComplexityRule::class, $rules[0]);
-        self::assertInstanceOf(SizeRule::class, $rules[1]);
+        self::assertInstanceOf(ClassCountRule::class, $rules[1]);
     }
 
     #[Test]
@@ -32,13 +32,13 @@ final class RuleRegistryTest extends TestCase
     {
         $registry = new RuleRegistry([
             ComplexityRule::class,
-            SizeRule::class,
+            ClassCountRule::class,
         ]);
 
         $classes = $registry->getClasses();
         self::assertCount(2, $classes);
         self::assertSame(ComplexityRule::class, $classes[0]);
-        self::assertSame(SizeRule::class, $classes[1]);
+        self::assertSame(ClassCountRule::class, $classes[1]);
     }
 
     #[Test]
@@ -46,7 +46,7 @@ final class RuleRegistryTest extends TestCase
     {
         $registry = new RuleRegistry([
             ComplexityRule::class,
-            SizeRule::class,
+            ClassCountRule::class,
         ]);
 
         $aliases = $registry->getAllCliAliases();
@@ -54,14 +54,14 @@ final class RuleRegistryTest extends TestCase
         // ComplexityRule defines: cc-warning, cc-error (for method level)
         self::assertArrayHasKey('cc-warning', $aliases);
         self::assertArrayHasKey('cc-error', $aliases);
-        self::assertSame('complexity', $aliases['cc-warning']['rule']);
+        self::assertSame('complexity.cyclomatic', $aliases['cc-warning']['rule']);
         self::assertSame('method.warning', $aliases['cc-warning']['option']);
 
-        // SizeRule defines: ns-warning, ns-error (for namespace level)
+        // ClassCountRule defines: ns-warning, ns-error
         self::assertArrayHasKey('ns-warning', $aliases);
         self::assertArrayHasKey('ns-error', $aliases);
-        self::assertSame('size', $aliases['ns-warning']['rule']);
-        self::assertSame('namespace.warning', $aliases['ns-warning']['option']);
+        self::assertSame('size.class-count', $aliases['ns-warning']['rule']);
+        self::assertSame('warning', $aliases['ns-warning']['option']);
     }
 
     #[Test]
@@ -74,7 +74,7 @@ final class RuleRegistryTest extends TestCase
         ]);
 
         $this->expectException(ConflictingCliAliasException::class);
-        $this->expectExceptionMessage('CLI alias "cc-warning" is defined by both "complexity" and "complexity" rules');
+        $this->expectExceptionMessage('CLI alias "cc-warning" is defined by both "complexity.cyclomatic" and "complexity.cyclomatic" rules');
 
         $registry->getAllCliAliases();
     }

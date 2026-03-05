@@ -119,8 +119,8 @@ Export dependency graph to DOT format (Graphviz).
 |--------|-------------|
 | `--cc-warning` | Cyclomatic complexity warning threshold |
 | `--cc-error` | Cyclomatic complexity error threshold |
-| `--disable-rule` | Disable a rule |
-| `--only-rule` | Run only the specified rule |
+| `--disable-rule` | Disable a rule or group (prefix match) |
+| `--only-rule` | Run only the specified rule or group (prefix match) |
 | `--rule-opt` | Rule option `RULE:OPTION=VALUE` |
 
 Full list of options available via `bin/aimd analyze --help`.

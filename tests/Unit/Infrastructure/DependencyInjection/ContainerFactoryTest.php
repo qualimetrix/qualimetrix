@@ -40,11 +40,13 @@ use AiMessDetector\Rules\CodeSmell\SuperglobalsRule;
 use AiMessDetector\Rules\Complexity\CognitiveComplexityRule;
 use AiMessDetector\Rules\Complexity\ComplexityRule;
 use AiMessDetector\Rules\Complexity\NpathComplexityRule;
-use AiMessDetector\Rules\Coupling\CouplingRule;
+use AiMessDetector\Rules\Coupling\CboRule;
 use AiMessDetector\Rules\Coupling\DistanceRule;
+use AiMessDetector\Rules\Coupling\InstabilityRule;
 use AiMessDetector\Rules\Maintainability\MaintainabilityRule;
+use AiMessDetector\Rules\Size\ClassCountRule;
+use AiMessDetector\Rules\Size\MethodCountRule;
 use AiMessDetector\Rules\Size\PropertyCountRule;
-use AiMessDetector\Rules\Size\SizeRule;
 use AiMessDetector\Rules\Structure\InheritanceRule;
 use AiMessDetector\Rules\Structure\LcomRule;
 use AiMessDetector\Rules\Structure\NocRule;
@@ -331,14 +333,16 @@ final class ContainerFactoryTest extends TestCase
             ComplexityRule::class,
             CognitiveComplexityRule::class,
             NpathComplexityRule::class,
-            SizeRule::class,
+            MethodCountRule::class,
+            ClassCountRule::class,
             PropertyCountRule::class,
             MaintainabilityRule::class,
             LcomRule::class,
             InheritanceRule::class,
             WmcRule::class,
             NocRule::class,
-            CouplingRule::class,
+            InstabilityRule::class,
+            CboRule::class,
             DistanceRule::class,
             CircularDependencyRule::class,
             BooleanArgumentRule::class,

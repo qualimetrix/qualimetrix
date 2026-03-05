@@ -202,7 +202,7 @@ Creates rule options with priority handling.
 ```yaml
 # Rule settings
 rules:
-  complexity:
+  complexity.cyclomatic:
     enabled: true
     method:
       warning: 10
@@ -211,23 +211,21 @@ rules:
       max_warning: 50
       max_error: 100
 
-  size:
+  size.method-count:
     enabled: true
-    namespace:
-      warning: 10
-      error: 15
-      count_interfaces: true
-      count_traits: true
-      count_enums: true
-    class:
-      warning: 200
-      error: 400
+    warning: 15
+    error: 25
 
-  maintainability:
+  size.class-count:
+    enabled: true
+    warning: 10
+    error: 15
+
+  maintainability.index:
     warning: 50
     error: 25
 
-  lcom:
+  design.lcom:
     warning: 2
     error: 3
 
@@ -256,7 +254,7 @@ aggregation:
 
 ```yaml
 rules:
-  complexity:
+  complexity.cyclomatic:
     method:
       warning: 15
 ```
@@ -281,44 +279,44 @@ Order: base < local < ci (alphabetical or explicit priority).
 
 | Option | Rule | Field |
 |--------|------|-------|
-| `--cc-warning=N` | complexity | method.warning |
-| `--cc-error=N` | complexity | method.error |
-| `--cc-class-warning=N` | complexity | class.max_warning |
-| `--cc-class-error=N` | complexity | class.max_error |
-| `--cognitive-warning=N` | cognitive | method.warning |
-| `--cognitive-error=N` | cognitive | method.error |
-| `--cognitive-class-warning=N` | cognitive | class.max_warning |
-| `--cognitive-class-error=N` | cognitive | class.max_error |
+| `--cc-warning=N` | complexity.cyclomatic | method.warning |
+| `--cc-error=N` | complexity.cyclomatic | method.error |
+| `--cc-class-warning=N` | complexity.cyclomatic | class.max_warning |
+| `--cc-class-error=N` | complexity.cyclomatic | class.max_error |
+| `--cognitive-warning=N` | complexity.cognitive | method.warning |
+| `--cognitive-error=N` | complexity.cognitive | method.error |
+| `--cognitive-class-warning=N` | complexity.cognitive | class.max_warning |
+| `--cognitive-class-error=N` | complexity.cognitive | class.max_error |
 | `--npath-warning=N` | complexity.npath | method.warning |
 | `--npath-error=N` | complexity.npath | method.error |
 | `--npath-class-warning=N` | complexity.npath | class.max_warning |
 | `--npath-class-error=N` | complexity.npath | class.max_error |
-| `--size-class-warning=N` | size | class.warning |
-| `--size-class-error=N` | size | class.error |
-| `--ns-warning=N` | size | namespace.warning |
-| `--ns-error=N` | size | namespace.error |
-| `--mi-warning=N` | maintainability | warning |
-| `--mi-error=N` | maintainability | error |
-| `--lcom-warning=N` | lcom | warning |
-| `--lcom-error=N` | lcom | error |
-| `--wmc-warning=N` | wmc | warning |
-| `--wmc-error=N` | wmc | error |
-| `--dit-warning=N` | inheritance | warning |
-| `--dit-error=N` | inheritance | error |
-| `--noc-warning=N` | noc | warning |
-| `--noc-error=N` | noc | error |
-| `--distance-warning=N` | distance | max_distance_warning |
-| `--distance-error=N` | distance | max_distance_error |
-| `--coupling-class-warning=N` | coupling | class.max_instability_warning |
-| `--coupling-class-error=N` | coupling | class.max_instability_error |
-| `--coupling-ns-warning=N` | coupling | namespace.max_instability_warning |
-| `--coupling-ns-error=N` | coupling | namespace.max_instability_error |
-| `--cbo-class-warning=N` | coupling | class.cbo_warning_threshold |
-| `--cbo-class-error=N` | coupling | class.cbo_error_threshold |
-| `--cbo-ns-warning=N` | coupling | namespace.cbo_warning_threshold |
-| `--cbo-ns-error=N` | coupling | namespace.cbo_error_threshold |
-| `--no-circular-deps` | circular-dependency | enabled |
-| `--max-cycle-size=N` | circular-dependency | maxCycleSize |
+| `--size-class-warning=N` | size.method-count | warning |
+| `--size-class-error=N` | size.method-count | error |
+| `--ns-warning=N` | size.class-count | warning |
+| `--ns-error=N` | size.class-count | error |
+| `--mi-warning=N` | maintainability.index | warning |
+| `--mi-error=N` | maintainability.index | error |
+| `--lcom-warning=N` | design.lcom | warning |
+| `--lcom-error=N` | design.lcom | error |
+| `--wmc-warning=N` | complexity.wmc | warning |
+| `--wmc-error=N` | complexity.wmc | error |
+| `--dit-warning=N` | design.inheritance | warning |
+| `--dit-error=N` | design.inheritance | error |
+| `--noc-warning=N` | design.noc | warning |
+| `--noc-error=N` | design.noc | error |
+| `--distance-warning=N` | coupling.distance | max_distance_warning |
+| `--distance-error=N` | coupling.distance | max_distance_error |
+| `--coupling-class-warning=N` | coupling.instability | class.max_instability_warning |
+| `--coupling-class-error=N` | coupling.instability | class.max_instability_error |
+| `--coupling-ns-warning=N` | coupling.instability | namespace.max_instability_warning |
+| `--coupling-ns-error=N` | coupling.instability | namespace.max_instability_error |
+| `--cbo-class-warning=N` | coupling.cbo | class.cbo_warning_threshold |
+| `--cbo-class-error=N` | coupling.cbo | class.cbo_error_threshold |
+| `--cbo-ns-warning=N` | coupling.cbo | namespace.cbo_warning_threshold |
+| `--cbo-ns-error=N` | coupling.cbo | namespace.cbo_error_threshold |
+| `--no-circular-deps` | architecture.circular-dependency | enabled |
+| `--max-cycle-size=N` | architecture.circular-dependency | maxCycleSize |
 
 ### Unified Format
 
@@ -328,9 +326,9 @@ Order: base < local < ci (alphabetical or explicit priority).
 
 Examples:
 ```bash
---rule-opt=complexity:method.warning=15
---rule-opt=size:namespace.count_interfaces=false
---rule-opt=lcom:minMethods=3
+--rule-opt=complexity.cyclomatic:method.warning=15
+--rule-opt=size.class-count:count_interfaces=false
+--rule-opt=design.lcom:minMethods=3
 ```
 
 ### Rule Management
@@ -341,26 +339,27 @@ Examples:
 | `--only-rule=RULE` | Run only the specified rule or category |
 | `--config=PATH` | Path to config file |
 
-#### Category Filtering
+#### Prefix Matching
 
-Use `category:<slug>` to target entire rule categories in `--disable-rule`, `--only-rule`,
-`disabled_rules`, and `only_rules`:
+Rule names use `group.rule-name` format (kebab-case). The `--disable-rule` and `--only-rule`
+options support prefix matching — specifying a group prefix targets all rules in that group:
 
 ```bash
-bin/aimd analyze src/ --disable-rule=category:code-smell
-bin/aimd analyze src/ --only-rule=category:complexity
+bin/aimd analyze src/ --disable-rule=code-smell         # Disable all code-smell.* rules
+bin/aimd analyze src/ --only-rule=complexity             # Run only complexity.* rules
+bin/aimd analyze src/ --disable-rule=coupling.instability  # Disable a specific rule
 ```
 
 ```yaml
 disabled_rules:
-  - category:code-smell    # Disable all code smell rules at once
-  - complexity.class       # Still works: disable a specific rule level
+  - code-smell               # Disable all code-smell.* rules (prefix match)
+  - complexity.cyclomatic    # Disable a specific rule
 
 only_rules:
-  - category:complexity    # Run only complexity rules
+  - complexity               # Run only complexity.* rules
 ```
 
-Available categories: `complexity`, `size`, `design`, `naming`, `maintainability`,
+Available groups: `complexity`, `size`, `design`, `maintainability`,
 `coupling`, `architecture`, `code-smell`.
 
 ---
@@ -389,7 +388,7 @@ Loading from `aimd.php` with IDE autocompletion:
 ```php
 return [
     'rules' => [
-        'complexity' => [
+        'complexity.cyclomatic' => [
             'method' => ['warning' => 10],
         ],
     ],

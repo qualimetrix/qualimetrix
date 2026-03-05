@@ -38,7 +38,7 @@ final class BaselineGeneratorTest extends TestCase
 
         $baseline = $this->generator->generate($violations);
 
-        self::assertSame(2, $baseline->version);
+        self::assertSame(3, $baseline->version);
         self::assertCount(1, $baseline->entries);
         self::assertArrayHasKey('method:App\Foo::bar', $baseline->entries);
         self::assertCount(1, $baseline->entries['method:App\Foo::bar']);
