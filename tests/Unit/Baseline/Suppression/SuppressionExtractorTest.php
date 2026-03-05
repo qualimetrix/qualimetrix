@@ -130,6 +130,49 @@ final class SuppressionExtractorTest extends TestCase
         self::assertSame('complexity', $suppressions[0]->rule);
     }
 
+    public function testExtractsDottedRuleName(): void
+    {
+        $docComment = new Doc(
+            <<<'DOC'
+            /**
+             * @aimd-ignore complexity.cyclomatic.method Complex logic
+             */
+            DOC,
+            10,
+            10,
+        );
+
+        $node = new Class_('Foo');
+        $node->setDocComment($docComment);
+
+        $suppressions = $this->extractor->extract($node);
+
+        self::assertCount(1, $suppressions);
+        self::assertSame('complexity.cyclomatic.method', $suppressions[0]->rule);
+        self::assertSame('Complex logic', $suppressions[0]->reason);
+    }
+
+    public function testExtractsRuleNameWithDashes(): void
+    {
+        $docComment = new Doc(
+            <<<'DOC'
+            /**
+             * @aimd-ignore code-smell.boolean-argument
+             */
+            DOC,
+            10,
+            10,
+        );
+
+        $node = new Class_('Foo');
+        $node->setDocComment($docComment);
+
+        $suppressions = $this->extractor->extract($node);
+
+        self::assertCount(1, $suppressions);
+        self::assertSame('code-smell.boolean-argument', $suppressions[0]->rule);
+    }
+
     public function testReturnsEmptyWhenNoDocComment(): void
     {
         $node = new Class_('Foo');

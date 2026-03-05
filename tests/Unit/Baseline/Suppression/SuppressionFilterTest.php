@@ -149,6 +149,36 @@ final class SuppressionFilterTest extends TestCase
         self::assertSame($violation1, $suppressed[0]);
     }
 
+    public function testSuppressionMatchesViolationCodeWithPrefixMatching(): void
+    {
+        $filter = new SuppressionFilter();
+        // Suppress 'complexity' — should match all complexity.* violation codes
+        $filter->addSuppressions('src/Foo.php', [
+            new Suppression('complexity', null, 10),
+        ]);
+
+        $violation1 = new Violation(
+            location: new Location('src/Foo.php', 42),
+            symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
+            ruleName: 'complexity.cyclomatic',
+            violationCode: 'complexity.cyclomatic.method',
+            message: 'Test message',
+            severity: Severity::Warning,
+        );
+
+        $violation2 = new Violation(
+            location: new Location('src/Foo.php', 50),
+            symbolPath: SymbolPath::forMethod('App', 'Foo', 'baz'),
+            ruleName: 'coupling.distance',
+            violationCode: 'coupling.distance',
+            message: 'Test message',
+            severity: Severity::Error,
+        );
+
+        self::assertFalse($filter->shouldInclude($violation1), 'complexity.cyclomatic.method should be suppressed by complexity');
+        self::assertTrue($filter->shouldInclude($violation2), 'coupling.distance should not be suppressed by complexity');
+    }
+
     public function testMultipleSuppressionsForSameFile(): void
     {
         $filter = new SuppressionFilter();

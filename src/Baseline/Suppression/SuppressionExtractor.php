@@ -16,7 +16,7 @@ use PhpParser\Node;
  */
 final readonly class SuppressionExtractor
 {
-    private const PATTERN = '/@aimd-ignore(?:-next-line|-file)?\s+(\w+|\*)(?:\s+([^\n\r*]+))?/';
+    private const PATTERN = '/@aimd-ignore(?:-next-line|-file)?\s+([\w.-]+|\*)(?:\s+([^\n\r*]+))?/';
 
     /**
      * Extracts suppression tags from node's docblock.

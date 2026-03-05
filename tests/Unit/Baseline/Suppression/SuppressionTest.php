@@ -11,7 +11,19 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(Suppression::class)]
 final class SuppressionTest extends TestCase
 {
-    public function testMatchesSpecificRule(): void
+    public function testMatchesExactRule(): void
+    {
+        $suppression = new Suppression(
+            rule: 'complexity.cyclomatic',
+            reason: 'Legacy code',
+            line: 10,
+        );
+
+        self::assertTrue($suppression->matches('complexity.cyclomatic'));
+        self::assertFalse($suppression->matches('complexity.cognitive'));
+    }
+
+    public function testMatchesPrefixRule(): void
     {
         $suppression = new Suppression(
             rule: 'complexity',
@@ -19,7 +31,10 @@ final class SuppressionTest extends TestCase
             line: 10,
         );
 
+        // Prefix matching: 'complexity' matches all complexity.* violations
         self::assertTrue($suppression->matches('complexity'));
+        self::assertTrue($suppression->matches('complexity.cyclomatic'));
+        self::assertTrue($suppression->matches('complexity.cyclomatic.method'));
         self::assertFalse($suppression->matches('coupling'));
     }
 
@@ -31,20 +46,20 @@ final class SuppressionTest extends TestCase
             line: 10,
         );
 
-        self::assertTrue($suppression->matches('complexity'));
-        self::assertTrue($suppression->matches('coupling'));
-        self::assertTrue($suppression->matches('size'));
+        self::assertTrue($suppression->matches('complexity.cyclomatic'));
+        self::assertTrue($suppression->matches('coupling.distance'));
+        self::assertTrue($suppression->matches('size.method-count'));
     }
 
     public function testConstructorProperties(): void
     {
         $suppression = new Suppression(
-            rule: 'complexity',
+            rule: 'complexity.cyclomatic',
             reason: 'Complex business logic',
             line: 42,
         );
 
-        self::assertSame('complexity', $suppression->rule);
+        self::assertSame('complexity.cyclomatic', $suppression->rule);
         self::assertSame('Complex business logic', $suppression->reason);
         self::assertSame(42, $suppression->line);
     }
@@ -58,5 +73,18 @@ final class SuppressionTest extends TestCase
         );
 
         self::assertNull($suppression->reason);
+    }
+
+    public function testReverseDoesNotMatch(): void
+    {
+        $suppression = new Suppression(
+            rule: 'complexity.cyclomatic.method',
+            reason: null,
+            line: 10,
+        );
+
+        // More specific pattern does NOT match less specific subject
+        self::assertFalse($suppression->matches('complexity.cyclomatic'));
+        self::assertFalse($suppression->matches('complexity'));
     }
 }
