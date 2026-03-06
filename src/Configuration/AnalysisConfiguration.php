@@ -30,6 +30,7 @@ final readonly class AnalysisConfiguration
      * @param int|null $aggregationAutoDepth Auto-detect depth for namespace aggregation
      * @param list<string> $disabledRules List of disabled rule names
      * @param list<string> $onlyRules List of rules to run (empty = all enabled)
+     * @param list<string> $excludePaths Path patterns to suppress violations for
      * @param int|null $workers Number of parallel workers (null = auto-detect, 1 = sequential)
      * @param string $projectRoot Project root directory (for parallel workers)
      */
@@ -43,6 +44,7 @@ final readonly class AnalysisConfiguration
         public ?int $aggregationAutoDepth = null,
         public array $disabledRules = [],
         public array $onlyRules = [],
+        public array $excludePaths = [],
         public ?int $workers = null,
         public string $projectRoot = '.',
     ) {}
@@ -64,6 +66,7 @@ final readonly class AnalysisConfiguration
             aggregationAutoDepth: self::getIntOrNull($config, 'aggregation.auto_depth'),
             disabledRules: self::getStringList($config, 'disabled_rules'),
             onlyRules: self::getStringList($config, 'only_rules'),
+            excludePaths: self::getStringList($config, 'exclude_paths'),
             workers: self::getIntOrNull($config, 'parallel.workers'),
             projectRoot: self::getString($config, 'project_root', '.'),
         );
@@ -86,6 +89,7 @@ final readonly class AnalysisConfiguration
             aggregationAutoDepth: self::getIntOrNull($overrides, 'aggregation.auto_depth') ?? $this->aggregationAutoDepth,
             disabledRules: array_values(array_unique([...$this->disabledRules, ...self::getStringList($overrides, 'disabled_rules')])),
             onlyRules: self::getStringList($overrides, 'only_rules') ?: $this->onlyRules,
+            excludePaths: array_values(array_unique([...$this->excludePaths, ...self::getStringList($overrides, 'exclude_paths')])),
             workers: self::getIntOrNull($overrides, 'parallel.workers') ?? $this->workers,
             projectRoot: self::getString($overrides, 'project_root', $this->projectRoot),
         );

@@ -329,6 +329,31 @@ docker run --rm -v $(pwd):/app yourusername/aimd analyze src/
 
 ---
 
+## Excluding Paths from Violations
+
+You can suppress violations for files matching glob patterns. This is useful for generated code,
+DTOs, or entity classes where certain rules may not apply. Note that excluded files are still
+analyzed (metrics are collected) — only violations are suppressed.
+
+### YAML Configuration
+
+```yaml
+# .aimd.yaml
+exclude_paths:
+  - src/Entity/*
+  - src/DTO/*
+```
+
+### CLI
+
+```bash
+bin/aimd analyze src/ --exclude-path='src/Entity/*' --exclude-path='*/DTO/*'
+```
+
+CLI patterns are merged with those defined in the config file.
+
+---
+
 ## Method Comparison
 
 | Method | When to use | Advantages | Disadvantages |

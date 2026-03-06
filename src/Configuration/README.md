@@ -72,7 +72,7 @@ automatically detecting paths from `composer.json`.
 | `DefaultsStage` | 0 | hardcoded | Defaults: `paths=['.']`, `excludes=['vendor','node_modules','.git']` |
 | `ComposerDiscoveryStage` | 10 | composer.json | Extracts PSR-4 autoload paths |
 | `ConfigFileStage` | 20 | aimd.yaml | Loads config file |
-| `CliStage` | 30 | CLI | Parses `--exclude`, `--format`, `--cache-*`, paths argument |
+| `CliStage` | 30 | CLI | Parses `--exclude`, `--exclude-path`, `--format`, `--cache-*`, paths argument |
 
 ### Layer Merging
 
@@ -200,6 +200,14 @@ Creates rule options with priority handling.
 ### aimd.yaml
 
 ```yaml
+# Exclude paths from violations (glob patterns, fnmatch syntax)
+# Note: files are still analyzed and metrics are collected,
+# but violations for matching files are suppressed.
+# Namespace-level/aggregated violations are not affected (they have no specific file).
+exclude_paths:
+  - src/Entity/*
+  - src/DTO/*
+
 # Rule settings
 rules:
   complexity.cyclomatic:
@@ -337,7 +345,13 @@ Examples:
 |--------|-------------|
 | `--disable-rule=RULE` | Disable a rule or category |
 | `--only-rule=RULE` | Run only the specified rule or category |
+| `--exclude-path=PATTERN` | Suppress violations for files matching glob pattern (repeatable) |
 | `--config=PATH` | Path to config file |
+
+**`--exclude-path`** uses `fnmatch()` glob syntax (e.g., `src/Entity/*`, `*/DTO/*`).
+CLI patterns are **merged** with `exclude_paths` from the config file, not overridden.
+Note: excluded files are still analyzed and their metrics are collected — only violations are suppressed.
+Namespace-level and aggregated violations are not affected, as they have no specific file path.
 
 #### Prefix Matching
 
