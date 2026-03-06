@@ -24,6 +24,7 @@ final class AnalysisConfigurationTest extends TestCase
         self::assertNull($config->aggregationAutoDepth);
         self::assertSame([], $config->disabledRules);
         self::assertSame([], $config->onlyRules);
+        self::assertSame([], $config->excludePaths);
     }
 
     public function testFromArrayWithDefaults(): void
@@ -53,6 +54,7 @@ final class AnalysisConfigurationTest extends TestCase
             ],
             'disabled_rules' => ['complexity.cyclomatic'],
             'only_rules' => ['size'],
+            'exclude_paths' => ['src/Generated/*', 'src/Legacy/*'],
         ]);
 
         self::assertSame('/tmp/cache', $config->cacheDir);
@@ -64,6 +66,7 @@ final class AnalysisConfigurationTest extends TestCase
         self::assertSame(2, $config->aggregationAutoDepth);
         self::assertSame(['complexity.cyclomatic'], $config->disabledRules);
         self::assertSame(['size'], $config->onlyRules);
+        self::assertSame(['src/Generated/*', 'src/Legacy/*'], $config->excludePaths);
     }
 
     public function testMerge(): void
@@ -104,6 +107,32 @@ final class AnalysisConfigurationTest extends TestCase
         self::assertContains('rule-a', $merged->disabledRules);
         self::assertContains('rule-b', $merged->disabledRules);
         self::assertContains('rule-c', $merged->disabledRules);
+    }
+
+    public function testMergeAccumulatesExcludePaths(): void
+    {
+        $base = new AnalysisConfiguration(
+            excludePaths: ['src/Generated/*'],
+        );
+
+        $merged = $base->merge([
+            'exclude_paths' => ['src/Legacy/*', 'src/Vendor/*'],
+        ]);
+
+        self::assertSame(['src/Generated/*', 'src/Legacy/*', 'src/Vendor/*'], $merged->excludePaths);
+    }
+
+    public function testMergeExcludePathsDeduplicates(): void
+    {
+        $base = new AnalysisConfiguration(
+            excludePaths: ['src/Generated/*'],
+        );
+
+        $merged = $base->merge([
+            'exclude_paths' => ['src/Generated/*', 'src/Legacy/*'],
+        ]);
+
+        self::assertSame(['src/Generated/*', 'src/Legacy/*'], $merged->excludePaths);
     }
 
     public function testIsRuleEnabledWithNoRestrictions(): void

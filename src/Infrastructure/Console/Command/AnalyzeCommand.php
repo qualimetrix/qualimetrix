@@ -22,6 +22,8 @@ use AiMessDetector\Configuration\RuleOptionsFactory;
 use AiMessDetector\Configuration\RuleOptionsParserFactory;
 use AiMessDetector\Core\Profiler\ProfilerHolder;
 use AiMessDetector\Core\Progress\NullProgressReporter;
+use AiMessDetector\Core\Util\PathMatcher;
+use AiMessDetector\Core\Violation\Filter\PathExclusionFilter;
 use AiMessDetector\Infrastructure\Cache\CacheFactory;
 use AiMessDetector\Infrastructure\Console\CliOptionsParser;
 use AiMessDetector\Infrastructure\Console\OutputHelper;
@@ -91,6 +93,13 @@ final class AnalyzeCommand extends Command
                 null,
                 InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
                 'Directories to exclude (can be repeated)',
+                [],
+            )
+            ->addOption(
+                'exclude-path',
+                null,
+                InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
+                'Suppress violations for files matching pattern (can be repeated, e.g., src/Entity/*)',
                 [],
             )
             ->addOption(
@@ -623,7 +632,7 @@ final class AnalyzeCommand extends Command
     }
 
     /**
-     * Applies all filters to violations (baseline, suppression, git scope).
+     * Applies all filters to violations (baseline, suppression, path exclusion, git scope).
      *
      * @return list<\AiMessDetector\Core\Violation\Violation>
      */
@@ -637,6 +646,7 @@ final class AnalyzeCommand extends Command
     ): array {
         $violations = $this->applyBaselineFilter($result->violations, $result, $input, $output);
         $violations = $this->applySuppressionFilter($violations, $input, $output);
+        $violations = $this->applyPathExclusionFilter($violations, $input, $output);
         $violations = $this->applyGitScopeFilter($violations, $gitClient, $reportScope, $analyzeScope, $input, $output);
 
         return $violations;
@@ -787,6 +797,49 @@ final class AnalyzeCommand extends Command
             $output->writeln(\sprintf(
                 '<info>%d violations were suppressed by @aimd-ignore tags</info>',
                 $suppressedCount,
+            ));
+        }
+
+        return $violations;
+    }
+
+    /**
+     * Applies path exclusion filter to suppress violations for matching files.
+     *
+     * @param list<\AiMessDetector\Core\Violation\Violation> $violations
+     *
+     * @return list<\AiMessDetector\Core\Violation\Violation>
+     */
+    private function applyPathExclusionFilter(
+        array $violations,
+        InputInterface $input,
+        OutputInterface $output,
+    ): array {
+        // Merge CLI --exclude-path with config exclude_paths
+        $config = $this->configurationProvider->getConfiguration();
+        /** @var list<string> $cliPaths */
+        $cliPaths = $input->getOption('exclude-path');
+        $configPaths = $config->excludePaths;
+        $allPaths = array_values(array_unique([...$configPaths, ...$cliPaths]));
+
+        if ($allPaths === []) {
+            return $violations;
+        }
+
+        $pathMatcher = new PathMatcher($allPaths);
+        $filter = new PathExclusionFilter($pathMatcher);
+
+        $beforeCount = \count($violations);
+        $violations = array_values(array_filter(
+            $violations,
+            fn($v) => $filter->shouldInclude($v),
+        ));
+        $excludedCount = $beforeCount - \count($violations);
+
+        if ($excludedCount > 0 && $output->isVerbose()) {
+            $output->writeln(\sprintf(
+                '<info>%d violation(s) suppressed by path exclusion patterns</info>',
+                $excludedCount,
             ));
         }
 
