@@ -28,7 +28,7 @@ Collectors **do not interpret** metrics — they only collect them. Interpretati
 | `propertyCount` | Size | Class | Number of class properties (+ by visibility) |
 | `methodCount` | Size | Class | Number of class methods (+ getters/setters) |
 | **Structure** | | | |
-| `lcom` | Structure | Class | LCOM4 — method cohesion (number of graph components) |
+| `lcom` | Structure | Class | LCOM4 — method cohesion (graph components; edges from shared properties and `$this->method()` calls; static methods excluded) |
 | `tcc`, `lcc` | Structure | Class | TCC/LCC — Tight/Loose Class Cohesion (0-1) |
 | `rfc` | Structure | Class | Response for Class — testability complexity |
 | `wmc` | Structure | Class | Weighted Methods per Class — sum of method CCN |
@@ -176,6 +176,7 @@ Metrics are stored in separate `MetricBag` instances for each symbol, so keys do
 - Empty file — `loc = 0`, `classCount = 0`
 - Class without methods — `lcom = 0`, `methodCount = 0`, `tcc = 1.0`, `lcc = 1.0`, `rfc = 0`
 - Class with one method — `tcc = 1.0`, `lcc = 1.0` (perfect cohesion by definition)
-- Class without properties — all methods are isolated, `lcom = methodCount`, `tcc = 0.0`, `lcc = 0.0`
+- Class without properties — methods are isolated unless connected by `$this->method()` calls, `tcc = 0.0`, `lcc = 0.0`
+- LCOM — static methods are excluded from the graph; `$this->method()` calls create edges; `self::`/`static::` calls do not
 - TCC/LCC — consider only public methods
 - RFC — abstract methods are counted, `self::`/`static::`/`parent::` are not counted
