@@ -6,6 +6,7 @@ namespace AiMessDetector\Configuration\Pipeline\Stage;
 
 use AiMessDetector\Configuration\Pipeline\ConfigurationContext;
 use AiMessDetector\Configuration\Pipeline\ConfigurationLayer;
+use Symfony\Component\Console\Input\InputInterface;
 
 /**
  * CLI arguments and options (priority: 30).
@@ -31,66 +32,24 @@ final class CliStage implements ConfigurationStageInterface
         $values = [];
         $input = $context->input;
 
-        // Paths from arguments (if paths argument exists)
-        if ($input->hasArgument('paths')) {
-            $paths = $input->getArgument('paths');
-            if (\is_array($paths) && $paths !== []) {
-                $values['paths'] = $paths;
-            }
-        }
+        // Paths from arguments
+        $this->setIfNotEmpty($values, 'paths', $this->extractArrayArgument($input, 'paths'));
 
-        // Excludes from option
-        if ($input->hasOption('exclude')) {
-            $excludes = $input->getOption('exclude');
-            if (\is_array($excludes) && $excludes !== []) {
-                $values['excludes'] = $excludes;
-            }
-        }
+        // Options: excludes, format, cache, rules
+        $this->setIfNotEmpty($values, 'excludes', $this->extractArrayOption($input, 'exclude'));
+        $this->setIfNotEmpty($values, 'format', $this->extractStringOption($input, 'format'));
+        $this->setIfNotEmpty($values, 'cache.dir', $this->extractStringOption($input, 'cache-dir'));
+        $this->setIfNotEmpty($values, 'disabled_rules', $this->extractArrayOption($input, 'disable-rule'));
+        $this->setIfNotEmpty($values, 'only_rules', $this->extractArrayOption($input, 'only-rule'));
 
-        // Format
-        if ($input->hasOption('format')) {
-            $format = $input->getOption('format');
-            if (\is_string($format) && $format !== '') {
-                $values['format'] = $format;
-            }
-        }
-
-        // Cache options
+        // Cache disable flag
         if ($input->hasOption('no-cache') && $input->getOption('no-cache') === true) {
             $values['cache.enabled'] = false;
         }
 
-        if ($input->hasOption('cache-dir')) {
-            $cacheDir = $input->getOption('cache-dir');
-            if (\is_string($cacheDir) && $cacheDir !== '') {
-                $values['cache.dir'] = $cacheDir;
-            }
-        }
-
-        // Disabled rules
-        if ($input->hasOption('disable-rule')) {
-            $disabledRules = $input->getOption('disable-rule');
-            if (\is_array($disabledRules) && $disabledRules !== []) {
-                $values['disabled_rules'] = $disabledRules;
-            }
-        }
-
-        // Only rules
-        if ($input->hasOption('only-rule')) {
-            $onlyRules = $input->getOption('only-rule');
-            if (\is_array($onlyRules) && $onlyRules !== []) {
-                $values['only_rules'] = $onlyRules;
-            }
-        }
-
-        // Parallel workers
-        if ($input->hasOption('workers')) {
-            $workers = $input->getOption('workers');
-            if ($workers !== null) {
-                $workersInt = (int) $workers;
-                // 0 means auto-detect, 1 means sequential, >1 means parallel
-                $values['parallel.workers'] = $workersInt;
-            }
+        // Parallel workers (0 = auto-detect, 1 = sequential, >1 = parallel)
+        if ($input->hasOption('workers') && $input->getOption('workers') !== null) {
+            $values['parallel.workers'] = (int) $input->getOption('workers');
         }
 
         if ($values === []) {
@@ -98,5 +57,54 @@ final class CliStage implements ConfigurationStageInterface
         }
 
         return new ConfigurationLayer('cli', $values);
+    }
+
+    /**
+     * @return non-empty-array<array-key, mixed>|null
+     */
+    private function extractArrayArgument(InputInterface $input, string $name): ?array
+    {
+        if (!$input->hasArgument($name)) {
+            return null;
+        }
+
+        $value = $input->getArgument($name);
+
+        return \is_array($value) && $value !== [] ? $value : null;
+    }
+
+    /**
+     * @return non-empty-array<array-key, mixed>|null
+     */
+    private function extractArrayOption(InputInterface $input, string $name): ?array
+    {
+        if (!$input->hasOption($name)) {
+            return null;
+        }
+
+        $value = $input->getOption($name);
+
+        return \is_array($value) && $value !== [] ? $value : null;
+    }
+
+    private function extractStringOption(InputInterface $input, string $name): ?string
+    {
+        if (!$input->hasOption($name)) {
+            return null;
+        }
+
+        $value = $input->getOption($name);
+
+        return \is_string($value) && $value !== '' ? $value : null;
+    }
+
+    /**
+     * @param array<string, mixed> $values
+     */
+    private function setIfNotEmpty(array &$values, string $key, mixed $value): void
+    {
+        if ($value !== null) {
+            $values[$key] = $value;
+        }
     }
 }
