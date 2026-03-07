@@ -33,6 +33,11 @@ deptrac:
         - type: directory
           value: src/Configuration/.*
 
+    - name: Baseline
+      collectors:
+        - type: directory
+          value: src/Baseline/.*
+
     # Analysis layer - depends on Core, orchestrates domain layers
     - name: Analysis
       collectors:
@@ -58,6 +63,8 @@ deptrac:
       - Core
     Configuration:
       - Core
+    Baseline:
+      - Core
 
     # Analysis orchestrates domain layers
     Analysis:
@@ -66,6 +73,7 @@ deptrac:
       - Rules
       - Reporting
       - Configuration
+      - Baseline
 
     # Infrastructure can depend on everything
     Infrastructure:
@@ -74,6 +82,7 @@ deptrac:
       - Rules
       - Reporting
       - Configuration
+      - Baseline
       - Analysis
 
   formatters:
