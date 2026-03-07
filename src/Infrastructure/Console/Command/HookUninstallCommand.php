@@ -43,14 +43,28 @@ final class HookUninstallCommand extends Command
 
         $hookPath = $gitDir . '/hooks/pre-commit';
 
-        // Check if hook exists
         if (!file_exists($hookPath)) {
             $output->writeln('<comment>Pre-commit hook not found. Nothing to uninstall.</comment>');
 
             return self::SUCCESS;
         }
 
-        // Check if it's our hook
+        $removeResult = $this->removeHookFile($hookPath, $output);
+        if ($removeResult !== self::SUCCESS) {
+            return $removeResult;
+        }
+
+        if ($input->getOption('restore-backup')) {
+            return $this->restoreBackup($hookPath, $output);
+        }
+
+        $this->notifyBackupExists($hookPath, $output);
+
+        return self::SUCCESS;
+    }
+
+    private function removeHookFile(string $hookPath, OutputInterface $output): int
+    {
         $content = file_get_contents($hookPath);
         if ($content === false) {
             $output->writeln('<error>Failed to read hook file</error>');
@@ -65,7 +79,6 @@ final class HookUninstallCommand extends Command
             return self::FAILURE;
         }
 
-        // Remove the hook
         if (!unlink($hookPath)) {
             $output->writeln('<error>Failed to remove hook file</error>');
 
@@ -74,36 +87,46 @@ final class HookUninstallCommand extends Command
 
         $output->writeln('<info>✓ Pre-commit hook removed</info>');
 
-        // Restore backup if requested
-        if ($input->getOption('restore-backup')) {
-            $backupPath = $hookPath . '.backup';
-            if (file_exists($backupPath)) {
-                if (copy($backupPath, $hookPath)) {
-                    if (!chmod($hookPath, 0755)) {
-                        $output->writeln('<error>Failed to make restored hook executable</error>');
+        return self::SUCCESS;
+    }
 
-                        return self::FAILURE;
-                    }
-                    $output->writeln('<info>✓ Backup restored</info>');
-                } else {
-                    $output->writeln('<error>Failed to restore backup</error>');
+    private function restoreBackup(string $hookPath, OutputInterface $output): int
+    {
+        $backupPath = $hookPath . '.backup';
 
-                    return self::FAILURE;
-                }
-            } else {
-                $output->writeln('<comment>No backup found to restore</comment>');
-            }
-        } else {
-            // Check if backup exists and inform user
-            $backupPath = $hookPath . '.backup';
-            if (file_exists($backupPath)) {
-                $output->writeln('');
-                $output->writeln(\sprintf('Backup file exists: %s', $backupPath));
-                $output->writeln('Use --restore-backup to restore it.');
-            }
+        if (!file_exists($backupPath)) {
+            $output->writeln('<comment>No backup found to restore</comment>');
+
+            return self::SUCCESS;
         }
 
+        if (!copy($backupPath, $hookPath)) {
+            $output->writeln('<error>Failed to restore backup</error>');
+
+            return self::FAILURE;
+        }
+
+        if (!chmod($hookPath, 0755)) {
+            $output->writeln('<error>Failed to make restored hook executable</error>');
+
+            return self::FAILURE;
+        }
+
+        $output->writeln('<info>✓ Backup restored</info>');
+
         return self::SUCCESS;
+    }
+
+    private function notifyBackupExists(string $hookPath, OutputInterface $output): void
+    {
+        $backupPath = $hookPath . '.backup';
+        if (!file_exists($backupPath)) {
+            return;
+        }
+
+        $output->writeln('');
+        $output->writeln(\sprintf('Backup file exists: %s', $backupPath));
+        $output->writeln('Use --restore-backup to restore it.');
     }
 
     /**
