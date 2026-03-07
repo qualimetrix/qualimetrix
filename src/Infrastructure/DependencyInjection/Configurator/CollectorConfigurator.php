@@ -46,7 +46,7 @@ final class CollectorConfigurator implements ContainerConfiguratorInterface
             $prototype,
             'AiMessDetector\\Metrics\\',
             $this->srcDir . '/Metrics/*',
-            $this->srcDir . '/Metrics/{Abstract*.php,*Interface.php,*Visitor.php,*ClassData.php,*Metrics.php,*Calculator.php}',
+            $this->srcDir . '/Metrics/{Abstract*.php,*Interface.php,*Visitor.php,*Trait.php,*ClassData.php,*Metrics.php,*Calculator.php}',
         );
 
         // Auto-register global context collectors from src/Metrics/Coupling/*
