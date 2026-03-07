@@ -7,6 +7,7 @@ namespace AiMessDetector\Metrics\Complexity;
 use AiMessDetector\Core\Metric\MethodWithMetrics;
 use AiMessDetector\Core\Metric\MetricBag;
 use AiMessDetector\Metrics\ResettableVisitorInterface;
+use AiMessDetector\Metrics\VisitorMethodTrackingTrait;
 use PhpParser\Node;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Expr\BinaryOp;
@@ -45,6 +46,8 @@ use PhpParser\NodeVisitorAbstract;
  */
 final class NpathComplexityVisitor extends NodeVisitorAbstract implements ResettableVisitorInterface
 {
+    use VisitorMethodTrackingTrait;
+
     /**
      * Maximum NPath value to prevent integer overflow (10^9).
      */
@@ -382,80 +385,4 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
         return min($result, self::MAX_NPATH);
     }
 
-    /**
-     * Extracts class name from class-like nodes (class, interface, trait, enum).
-     * Returns null for anonymous classes or non-class-like nodes.
-     */
-    private function extractClassLikeName(Node $node): ?string
-    {
-        return match (true) {
-            $node instanceof Node\Stmt\Class_ && $node->name !== null => $node->name->toString(),
-            $node instanceof Node\Stmt\Interface_ && $node->name !== null => $node->name->toString(),
-            $node instanceof Node\Stmt\Trait_ && $node->name !== null => $node->name->toString(),
-            $node instanceof Node\Stmt\Enum_ && $node->name !== null => $node->name->toString(),
-            default => null,
-        };
-    }
-
-    /**
-     * Checks if node is a class-like type (class, interface, trait, enum).
-     */
-    private function isClassLikeNode(Node $node): bool
-    {
-        return $node instanceof Node\Stmt\Class_
-            || $node instanceof Node\Stmt\Interface_
-            || $node instanceof Node\Stmt\Trait_
-            || $node instanceof Node\Stmt\Enum_;
-    }
-
-    private function buildMethodFqn(string $methodName): string
-    {
-        $parts = [];
-
-        if ($this->currentNamespace !== null && $this->currentNamespace !== '') {
-            $parts[] = $this->currentNamespace;
-        }
-
-        if ($this->currentClass !== null) {
-            if ($parts !== []) {
-                $parts[] = '\\';
-            }
-            $parts[] = $this->currentClass;
-        }
-
-        $parts[] = '::';
-        $parts[] = $methodName;
-
-        return implode('', $parts);
-    }
-
-    private function buildFunctionFqn(string $functionName): string
-    {
-        if ($this->currentNamespace !== null && $this->currentNamespace !== '') {
-            return $this->currentNamespace . '\\' . $functionName;
-        }
-
-        return $functionName;
-    }
-
-    private function buildClosureFqn(): string
-    {
-        $parts = [];
-
-        if ($this->currentNamespace !== null && $this->currentNamespace !== '') {
-            $parts[] = $this->currentNamespace;
-        }
-
-        if ($this->currentClass !== null) {
-            if ($parts !== []) {
-                $parts[] = '\\';
-            }
-            $parts[] = $this->currentClass;
-        }
-
-        $parts[] = '::';
-        $parts[] = '{closure#' . $this->closureCounter . '}';
-
-        return implode('', $parts);
-    }
 }

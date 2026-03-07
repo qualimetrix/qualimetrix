@@ -7,6 +7,7 @@ namespace AiMessDetector\Metrics\Halstead;
 use AiMessDetector\Core\Metric\MethodWithMetrics;
 use AiMessDetector\Core\Metric\MetricBag;
 use AiMessDetector\Metrics\ResettableVisitorInterface;
+use AiMessDetector\Metrics\VisitorMethodTrackingTrait;
 use PhpParser\Node;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Stmt;
@@ -63,6 +64,8 @@ use PhpParser\NodeVisitorAbstract;
  */
 final class HalsteadVisitor extends NodeVisitorAbstract implements ResettableVisitorInterface
 {
+    use VisitorMethodTrackingTrait;
+
     /** @var array<string, HalsteadMetrics> FQN => metrics */
     private array $metrics = [];
 
@@ -546,73 +549,4 @@ final class HalsteadVisitor extends NodeVisitorAbstract implements ResettableVis
         return null;
     }
 
-    private function extractClassLikeName(Node $node): ?string
-    {
-        return match (true) {
-            $node instanceof Stmt\Class_ && $node->name !== null => $node->name->toString(),
-            $node instanceof Stmt\Interface_ && $node->name !== null => $node->name->toString(),
-            $node instanceof Stmt\Trait_ && $node->name !== null => $node->name->toString(),
-            $node instanceof Stmt\Enum_ && $node->name !== null => $node->name->toString(),
-            default => null,
-        };
-    }
-
-    private function isClassLikeNode(Node $node): bool
-    {
-        return $node instanceof Stmt\Class_
-            || $node instanceof Stmt\Interface_
-            || $node instanceof Stmt\Trait_
-            || $node instanceof Stmt\Enum_;
-    }
-
-    private function buildMethodFqn(string $methodName): string
-    {
-        $parts = [];
-
-        if ($this->currentNamespace !== null && $this->currentNamespace !== '') {
-            $parts[] = $this->currentNamespace;
-        }
-
-        if ($this->currentClass !== null) {
-            if ($parts !== []) {
-                $parts[] = '\\';
-            }
-            $parts[] = $this->currentClass;
-        }
-
-        $parts[] = '::';
-        $parts[] = $methodName;
-
-        return implode('', $parts);
-    }
-
-    private function buildFunctionFqn(string $functionName): string
-    {
-        if ($this->currentNamespace !== null && $this->currentNamespace !== '') {
-            return $this->currentNamespace . '\\' . $functionName;
-        }
-
-        return $functionName;
-    }
-
-    private function buildClosureFqn(): string
-    {
-        $parts = [];
-
-        if ($this->currentNamespace !== null && $this->currentNamespace !== '') {
-            $parts[] = $this->currentNamespace;
-        }
-
-        if ($this->currentClass !== null) {
-            if ($parts !== []) {
-                $parts[] = '\\';
-            }
-            $parts[] = $this->currentClass;
-        }
-
-        $parts[] = '::';
-        $parts[] = '{closure#' . $this->closureCounter . '}';
-
-        return implode('', $parts);
-    }
 }
