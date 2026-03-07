@@ -7,7 +7,7 @@ namespace AiMessDetector\Metrics\Structure;
 /**
  * Data structure for LCOM calculation.
  *
- * Tracks methods and their property accesses for a single class.
+ * Tracks methods, their property accesses and method calls for a single class.
  */
 final class LcomClassData
 {
@@ -24,6 +24,20 @@ final class LcomClassData
      * @var array<string, array<string, true>>
      */
     private array $propertyAccesses = [];
+
+    /**
+     * Map of method => set of called methods (via $this->method()).
+     *
+     * @var array<string, array<string, true>>
+     */
+    private array $methodCalls = [];
+
+    /**
+     * Set of static methods (excluded from LCOM graph).
+     *
+     * @var array<string, true>
+     */
+    private array $staticMethods = [];
 
     public function __construct(
         public readonly ?string $namespace = null,
@@ -42,6 +56,19 @@ final class LcomClassData
             $this->propertyAccesses[$methodName] = [];
         }
         $this->propertyAccesses[$methodName][$propertyName] = true;
+    }
+
+    public function addMethodCall(string $callerMethod, string $calledMethod): void
+    {
+        if (!isset($this->methodCalls[$callerMethod])) {
+            $this->methodCalls[$callerMethod] = [];
+        }
+        $this->methodCalls[$callerMethod][$calledMethod] = true;
+    }
+
+    public function markStatic(string $method): void
+    {
+        $this->staticMethods[$method] = true;
     }
 
     /**
@@ -65,13 +92,18 @@ final class LcomClassData
      *
      * LCOM4 is the number of connected components in the graph where:
      * - Vertices = methods
-     * - Edges = (m1, m2) if m1 and m2 share at least one property
+     * - Edges = (m1, m2) if m1 and m2 share a property OR one calls the other via $this->
+     * - Static methods are excluded from the graph
      *
      * @return int Number of connected components (1 = perfectly cohesive)
      */
     public function calculateLcom(): int
     {
-        $methods = $this->getMethods();
+        // Exclude static methods from the graph
+        $methods = array_values(array_filter(
+            $this->getMethods(),
+            fn(string $m): bool => !isset($this->staticMethods[$m]),
+        ));
         $count = \count($methods);
 
         if ($count === 0) {
@@ -81,6 +113,8 @@ final class LcomClassData
         if ($count === 1) {
             return 1;
         }
+
+        $methodSet = array_flip($methods);
 
         // Build adjacency list
         $adjacency = [];
@@ -97,6 +131,19 @@ final class LcomClassData
                 if ($this->shareProperty($m1, $m2)) {
                     $adjacency[$m1][] = $m2;
                     $adjacency[$m2][] = $m1;
+                }
+            }
+        }
+
+        // Add edges for method calls ($this->method())
+        foreach ($this->methodCalls as $caller => $callees) {
+            if (!isset($methodSet[$caller])) {
+                continue;
+            }
+            foreach ($callees as $callee => $_) {
+                if (isset($methodSet[$callee]) && $caller !== $callee) {
+                    $adjacency[$caller][] = $callee;
+                    $adjacency[$callee][] = $caller;
                 }
             }
         }

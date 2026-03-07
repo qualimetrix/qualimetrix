@@ -19,8 +19,8 @@ use SplFileInfo;
  * Collects LCOM4 (Lack of Cohesion of Methods) metric for classes.
  *
  * LCOM4 measures class cohesion by counting connected components in the graph where:
- * - Vertices = methods in the class
- * - Edges = (m1, m2) if m1 and m2 access at least one common property
+ * - Vertices = instance methods in the class (static methods are excluded)
+ * - Edges = (m1, m2) if m1 and m2 share a property OR one calls the other via $this->
  *
  * Interpretation:
  * - LCOM = 1: perfectly cohesive class (all methods share properties)

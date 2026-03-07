@@ -480,6 +480,223 @@ PHP;
         self::assertSame(5, $metrics->get('lcom:App\GodClass'));
     }
 
+    public function testMethodCallsConnectMethods(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class MethodCallCohesion
+{
+    public function doWork(): void
+    {
+        $this->helper();
+    }
+
+    public function doOtherWork(): void
+    {
+        $this->helper();
+    }
+
+    private function helper(): void
+    {
+        // shared helper with no property access
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // doWork -> helper, doOtherWork -> helper => all connected via helper = LCOM 1
+        self::assertSame(1, $metrics->get('lcom:App\MethodCallCohesion'));
+    }
+
+    public function testMethodCallChainConnectsAllMethods(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class MethodCallChain
+{
+    public function a(): void
+    {
+        $this->b();
+    }
+
+    public function b(): void
+    {
+        $this->c();
+    }
+
+    public function c(): void
+    {
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // a -> b -> c => all in one component = LCOM 1
+        self::assertSame(1, $metrics->get('lcom:App\MethodCallChain'));
+    }
+
+    public function testMethodCallWithoutSharedProperties(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class DirectMethodCall
+{
+    public function caller(): void
+    {
+        $this->callee();
+    }
+
+    public function callee(): void
+    {
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // caller calls callee => connected = LCOM 1
+        self::assertSame(1, $metrics->get('lcom:App\DirectMethodCall'));
+    }
+
+    public function testStaticMethodsExcludedFromLcom(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class WithStaticMethod
+{
+    private $data;
+
+    public function getData()
+    {
+        return $this->data;
+    }
+
+    public function setData($value): void
+    {
+        $this->data = $value;
+    }
+
+    public static function create(): self
+    {
+        return new self();
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // Static method excluded; getData and setData share $data = LCOM 1
+        self::assertSame(1, $metrics->get('lcom:App\WithStaticMethod'));
+    }
+
+    public function testStaticMethodDoesNotInflateLcom(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class StaticInflation
+{
+    private $value;
+
+    public function getValue()
+    {
+        return $this->value;
+    }
+
+    public static function factory(): self
+    {
+        return new self();
+    }
+
+    public static function anotherStatic(): void
+    {
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // Only 1 instance method (getValue) => LCOM 1, static methods excluded
+        self::assertSame(1, $metrics->get('lcom:App\StaticInflation'));
+    }
+
+    public function testSelfAndStaticCallsDoNotCreateEdges(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class StaticCallClass
+{
+    private $a;
+    private $b;
+
+    public function methodA(): void
+    {
+        $this->a = 1;
+        self::staticHelper();
+    }
+
+    public function methodB(): void
+    {
+        $this->b = 1;
+        static::anotherStaticHelper();
+    }
+
+    public static function staticHelper(): void
+    {
+    }
+
+    public static function anotherStaticHelper(): void
+    {
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // methodA uses $a, methodB uses $b, self::/static:: do not create edges
+        // Static methods excluded from graph, methodA and methodB disconnected = LCOM 2
+        self::assertSame(2, $metrics->get('lcom:App\StaticCallClass'));
+    }
+
+    public function testOnlyStaticMethodsResultsInZeroLcom(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class AllStatic
+{
+    public static function a(): void {}
+    public static function b(): void {}
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // All methods are static => 0 instance methods => LCOM 0
+        self::assertSame(0, $metrics->get('lcom:App\AllStatic'));
+    }
+
     public function testDynamicPropertyAccessIgnored(): void
     {
         $code = <<<'PHP'

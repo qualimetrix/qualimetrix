@@ -6,20 +6,23 @@ namespace AiMessDetector\Metrics\Structure;
 
 use AiMessDetector\Metrics\ResettableVisitorInterface;
 use PhpParser\Node;
+use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Expr\PropertyFetch;
 use PhpParser\Node\Expr\Variable;
+use PhpParser\Node\Identifier;
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\Node\Stmt\Enum_;
-// Note: Trait_ and Interface_ are intentionally NOT imported - LCOM is not meaningful for traits or interfaces
 use PhpParser\NodeVisitorAbstract;
 
 /**
  * Visitor for collecting method-property relationships for LCOM calculation.
  *
  * For each class, tracks:
- * - List of methods
+ * - List of methods (instance and static)
  * - For each method: set of properties accessed via $this->property
+ * - For each method: set of methods called via $this->method()
+ * - Static method markers (excluded from LCOM graph)
  *
  * Anonymous classes are ignored.
  */
@@ -87,6 +90,7 @@ final class LcomVisitor extends NodeVisitorAbstract implements ResettableVisitor
 
         // Track method
         $currentClass = $this->getCurrentClass();
+
         if ($node instanceof ClassMethod && $currentClass !== null) {
             $methodName = $node->name->toString();
             $this->currentMethod = $methodName;
@@ -94,28 +98,44 @@ final class LcomVisitor extends NodeVisitorAbstract implements ResettableVisitor
             $fqn = $this->buildClassFqn($currentClass);
             if (isset($this->classData[$fqn])) {
                 $this->classData[$fqn]->addMethod($methodName);
+
+                if ($node->isStatic()) {
+                    $this->classData[$fqn]->markStatic($methodName);
+                }
             }
 
             return null;
         }
 
+        if ($this->currentMethod === null || $currentClass === null) {
+            return null;
+        }
+
+        $fqn = $this->buildClassFqn($currentClass);
+        if (!isset($this->classData[$fqn])) {
+            return null;
+        }
+
         // Track property access via $this->property
-        if ($node instanceof PropertyFetch && $this->currentMethod !== null) {
-            $currentClass = $this->getCurrentClass();
-            if ($currentClass === null) {
-                return null;
+        if ($node instanceof PropertyFetch
+            && $node->var instanceof Variable
+            && $node->var->name === 'this'
+        ) {
+            $propertyName = $this->extractPropertyName($node);
+            if ($propertyName !== null) {
+                $this->classData[$fqn]->addPropertyAccess($this->currentMethod, $propertyName);
             }
 
-            // Check if it's $this->property
-            if ($node->var instanceof Variable && $node->var->name === 'this') {
-                $propertyName = $this->extractPropertyName($node);
-                if ($propertyName !== null) {
-                    $fqn = $this->buildClassFqn($currentClass);
-                    if (isset($this->classData[$fqn])) {
-                        $this->classData[$fqn]->addPropertyAccess($this->currentMethod, $propertyName);
-                    }
-                }
-            }
+            return null;
+        }
+
+        // Track method call via $this->method()
+        if ($node instanceof MethodCall
+            && $node->var instanceof Variable
+            && $node->var->name === 'this'
+            && $node->name instanceof Identifier
+        ) {
+            $this->classData[$fqn]->addMethodCall($this->currentMethod, $node->name->toString());
 
             return null;
         }
