@@ -1,0 +1,292 @@
+<?php
+
+declare(strict_types=1);
+
+namespace AiMessDetector\Infrastructure\Console;
+
+use AiMessDetector\Configuration\AnalysisConfiguration;
+use AiMessDetector\Infrastructure\Rule\RuleRegistryInterface;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputOption;
+
+/**
+ * Defines all arguments and options for the analyze command.
+ *
+ * Extracted from AnalyzeCommand::configure() to keep the command class focused
+ * on orchestration logic.
+ */
+final class AnalyzeCommandDefinition
+{
+    /**
+     * Adds all arguments and options to the analyze command.
+     */
+    public static function addOptions(Command $command, RuleRegistryInterface $ruleRegistry): void
+    {
+        self::addPathArgument($command);
+        self::addFileOptions($command);
+        self::addOutputOptions($command);
+        self::addCacheOptions($command);
+        self::addBaselineOptions($command);
+        self::addSuppressionOptions($command);
+        self::addGitScopeOptions($command);
+        self::addRuntimeOptions($command);
+        self::addProfileOptions($command);
+        self::addFormatterOptions($command);
+        self::addDynamicRuleOptions($command, $ruleRegistry);
+        self::addGenericRuleOptions($command);
+    }
+
+    private static function addPathArgument(Command $command): void
+    {
+        $command->addArgument(
+            'paths',
+            InputArgument::OPTIONAL | InputArgument::IS_ARRAY,
+            'Paths to analyze [default: auto-detect from composer.json]',
+            [],
+        );
+    }
+
+    private static function addFileOptions(Command $command): void
+    {
+        $command
+            ->addOption(
+                'exclude',
+                null,
+                InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
+                'Directories to exclude (can be repeated)',
+                [],
+            )
+            ->addOption(
+                'exclude-path',
+                null,
+                InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
+                'Suppress violations for files matching pattern (can be repeated, e.g., src/Entity/*)',
+                [],
+            )
+            ->addOption(
+                'config',
+                'c',
+                InputOption::VALUE_REQUIRED,
+                'Path to configuration file',
+            );
+    }
+
+    private static function addOutputOptions(Command $command): void
+    {
+        $command->addOption(
+            'format',
+            'f',
+            InputOption::VALUE_REQUIRED,
+            'Output format (text)',
+            AnalysisConfiguration::DEFAULT_FORMAT,
+        );
+    }
+
+    private static function addCacheOptions(Command $command): void
+    {
+        $command
+            ->addOption(
+                'no-cache',
+                null,
+                InputOption::VALUE_NONE,
+                'Disable caching',
+            )
+            ->addOption(
+                'cache-dir',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Cache directory',
+                AnalysisConfiguration::DEFAULT_CACHE_DIR,
+            )
+            ->addOption(
+                'clear-cache',
+                null,
+                InputOption::VALUE_NONE,
+                'Clear cache before analysis',
+            );
+    }
+
+    private static function addBaselineOptions(Command $command): void
+    {
+        $command
+            ->addOption(
+                'baseline',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Path to baseline file for filtering known violations',
+            )
+            ->addOption(
+                'generate-baseline',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Generate baseline file with current violations',
+            )
+            ->addOption(
+                'show-resolved',
+                null,
+                InputOption::VALUE_NONE,
+                'Show count of violations resolved since baseline',
+            )
+            ->addOption(
+                'baseline-ignore-stale',
+                null,
+                InputOption::VALUE_NONE,
+                'Ignore stale baseline entries instead of failing',
+            );
+    }
+
+    private static function addSuppressionOptions(Command $command): void
+    {
+        $command
+            ->addOption(
+                'show-suppressed',
+                null,
+                InputOption::VALUE_NONE,
+                'Show suppressed violations',
+            )
+            ->addOption(
+                'no-suppression',
+                null,
+                InputOption::VALUE_NONE,
+                'Ignore suppression tags',
+            );
+    }
+
+    private static function addGitScopeOptions(Command $command): void
+    {
+        $command
+            ->addOption(
+                'analyze',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Scope of files to analyze (e.g., git:staged, git:main..HEAD)',
+            )
+            ->addOption(
+                'report',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Scope of violations to report (e.g., git:main..HEAD)',
+            )
+            ->addOption(
+                'report-strict',
+                null,
+                InputOption::VALUE_NONE,
+                'Only show violations exactly in changed files (exclude parent namespaces)',
+            )
+            ->addOption(
+                'staged',
+                null,
+                InputOption::VALUE_NONE,
+                'Shortcut for --analyze=git:staged (analyze only staged files)',
+            )
+            ->addOption(
+                'diff',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Shortcut for --report=git:<ref>..HEAD (show only violations in changed files)',
+            );
+    }
+
+    private static function addRuntimeOptions(Command $command): void
+    {
+        $command
+            ->addOption(
+                'workers',
+                'w',
+                InputOption::VALUE_REQUIRED,
+                'Number of parallel workers (0 to disable, default: auto-detect)',
+            )
+            ->addOption(
+                'log-file',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Write debug log to file',
+            )
+            ->addOption(
+                'log-level',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Minimum log level (debug, info, warning, error)',
+                'info',
+            )
+            ->addOption(
+                'no-progress',
+                null,
+                InputOption::VALUE_NONE,
+                'Disable progress bar',
+            );
+    }
+
+    private static function addProfileOptions(Command $command): void
+    {
+        $command
+            ->addOption(
+                'profile',
+                null,
+                InputOption::VALUE_OPTIONAL,
+                'Enable profiling and export to file (or show summary if no file specified)',
+                false,
+            )
+            ->addOption(
+                'profile-format',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Profile export format (json or chrome-tracing)',
+                'json',
+            );
+    }
+
+    private static function addFormatterOptions(Command $command): void
+    {
+        $command
+            ->addOption(
+                'group-by',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Group violations by: none, file, rule, severity (default: formatter-specific)',
+            )
+            ->addOption(
+                'format-opt',
+                null,
+                InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
+                'Formatter-specific option (format: key=value)',
+                [],
+            );
+    }
+
+    private static function addDynamicRuleOptions(Command $command, RuleRegistryInterface $ruleRegistry): void
+    {
+        foreach ($ruleRegistry->getAllCliAliases() as $alias => $info) {
+            $command->addOption(
+                $alias,
+                null,
+                InputOption::VALUE_REQUIRED,
+                \sprintf('[%s] %s', $info['rule'], $info['option']),
+            );
+        }
+    }
+
+    private static function addGenericRuleOptions(Command $command): void
+    {
+        $command
+            ->addOption(
+                'disable-rule',
+                null,
+                InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
+                'Disable a rule or group by prefix (e.g., complexity, size.class-count)',
+            )
+            ->addOption(
+                'only-rule',
+                null,
+                InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
+                'Run only specified rules or group by prefix (e.g., complexity, code-smell)',
+            )
+            ->addOption(
+                'rule-opt',
+                null,
+                InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
+                'Rule-specific option (format: rule-name:option=value)',
+            );
+    }
+}

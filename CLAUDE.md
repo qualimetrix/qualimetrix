@@ -86,11 +86,19 @@ src/
 │   ├── Discovery/          # FileDiscoveryInterface
 │   ├── Collection/         # Data collection phase
 │   │   ├── FileProcessor, CollectionOrchestrator
-│   │   ├── Metric/         # CompositeCollector, GlobalCollectorSorter
-│   │   ├── Dependency/     # DependencyGraph, DependencyCollector, CircularDependencyDetector
+│   │   ├── Metric/         # CompositeCollector, GlobalCollectorSorter, DerivedMetricExtractor
+│   │   ├── Dependency/     # DependencyGraph, DependencyVisitor, CircularDependencyDetector
+│   │   │   ├── Handler/    # NodeDependencyHandlerInterface + handlers (ClassLike, TraitUse, etc.)
 │   │   │   └── Export/     # DotExporter for graph visualization
 │   │   └── Strategy/       # ExecutionStrategy (Sequential, AmphpParallel), Serializer
-│   ├── Aggregation/        # MetricAggregator, GlobalCollectorRunner
+│   ├── Aggregator/         # Decomposed metric aggregation phases
+│   │   ├── AggregationPhaseInterface.php
+│   │   ├── AggregationHelper.php
+│   │   ├── MethodToClassAggregator.php
+│   │   ├── ClassToNamespaceAggregator.php
+│   │   ├── NamespaceToProjectAggregator.php
+│   │   └── MetricAggregator.php  # Thin orchestrator
+│   ├── Aggregation/        # GlobalCollectorRunner
 │   ├── RuleExecution/      # RuleExecutor
 │   ├── Repository/         # InMemoryMetricRepository
 │   └── Namespace_/         # PSR-4, Tokenizer detectors
@@ -106,14 +114,21 @@ src/
     ├── Cache/              # FileCache, CacheKeyGenerator
     ├── Collector/          # CachedCollector
     ├── Storage/            # SqliteStorage, InMemoryStorage, StorageFactory
-    ├── Git/                # GitClient, GitScopeParser, GitFileDiscovery
+    ├── Git/                # GitClient, GitScopeParser, GitFileDiscovery, GitScopeResolver
     ├── Logging/            # ConsoleLogger, FileLogger, LoggerFactory
     ├── Rule/               # RuleRegistry
     ├── Profiler/           # ProfilerInterface, Profiler, NullProfiler, Span, Export
     ├── DependencyInjection/
-    └── Console/            # AnalyzeCommand, BaselineCleanupCommand, Hook commands
+    │   ├── ContainerFactory.php
+    │   ├── Configurator/   # Decomposed container configurators (Core, Parser, Collector, Rule, etc.)
+    │   └── CompilerPass/
+    └── Console/            # AnalyzeCommand (decomposed), BaselineCleanupCommand, Hook commands
         ├── Command/        # CLI commands
-        └── Progress/       # ConsoleProgressBar, ProgressReporterHolder
+        ├── Progress/       # ConsoleProgressBar, ProgressReporterHolder
+        ├── ViolationFilterPipeline.php  # Violation filtering orchestration
+        ├── RuntimeConfigurator.php      # Runtime DI configuration
+        ├── ResultPresenter.php          # Output presentation
+        └── AnalyzeCommandDefinition.php # Command option definitions
 ```
 
 ---

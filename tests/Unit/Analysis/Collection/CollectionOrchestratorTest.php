@@ -8,6 +8,7 @@ use AiMessDetector\Analysis\Collection\CollectionOrchestrator;
 use AiMessDetector\Analysis\Collection\FileProcessingResult;
 use AiMessDetector\Analysis\Collection\FileProcessorInterface;
 use AiMessDetector\Analysis\Collection\Metric\CompositeCollector;
+use AiMessDetector\Analysis\Collection\Metric\DerivedMetricExtractor;
 use AiMessDetector\Analysis\Collection\Strategy\ExecutionStrategyInterface;
 use AiMessDetector\Analysis\Collection\Strategy\StrategySelectorInterface;
 use AiMessDetector\Analysis\Repository\InMemoryMetricRepository;
@@ -33,7 +34,7 @@ final class CollectionOrchestratorTest extends TestCase
     private StrategySelectorInterface&MockObject $strategySelector;
     private ProgressReporter&MockObject $progress;
     private LoggerInterface&MockObject $logger;
-    private CompositeCollector $compositeCollector;
+    private DerivedMetricExtractor $derivedMetricExtractor;
 
     protected function setUp(): void
     {
@@ -43,7 +44,7 @@ final class CollectionOrchestratorTest extends TestCase
         $this->strategySelector->method('select')->willReturn($this->strategy);
         $this->progress = $this->createMock(ProgressReporter::class);
         $this->logger = $this->createMock(LoggerInterface::class);
-        $this->compositeCollector = new CompositeCollector([]);
+        $this->derivedMetricExtractor = new DerivedMetricExtractor(new CompositeCollector([]));
     }
 
     #[Test]
@@ -428,7 +429,7 @@ final class CollectionOrchestratorTest extends TestCase
         $orchestrator = new CollectionOrchestrator(
             fileProcessor: $this->fileProcessor,
             strategySelector: $this->strategySelector,
-            compositeCollector: $compositeCollector,
+            derivedMetricExtractor: new DerivedMetricExtractor($compositeCollector),
             progress: $this->progress,
             logger: $this->logger,
         );
@@ -472,7 +473,7 @@ final class CollectionOrchestratorTest extends TestCase
         $orchestrator = new CollectionOrchestrator(
             fileProcessor: $this->fileProcessor,
             strategySelector: $this->strategySelector,
-            compositeCollector: $compositeCollector,
+            derivedMetricExtractor: new DerivedMetricExtractor($compositeCollector),
             progress: $this->progress,
             logger: $this->logger,
         );
@@ -517,7 +518,7 @@ final class CollectionOrchestratorTest extends TestCase
         $orchestrator = new CollectionOrchestrator(
             fileProcessor: $this->fileProcessor,
             strategySelector: $this->strategySelector,
-            compositeCollector: $compositeCollector,
+            derivedMetricExtractor: new DerivedMetricExtractor($compositeCollector),
             progress: $this->progress,
             logger: $this->logger,
         );
@@ -566,7 +567,7 @@ final class CollectionOrchestratorTest extends TestCase
         $orchestrator = new CollectionOrchestrator(
             fileProcessor: $this->fileProcessor,
             strategySelector: $this->strategySelector,
-            compositeCollector: $compositeCollector,
+            derivedMetricExtractor: new DerivedMetricExtractor($compositeCollector),
             progress: $this->progress,
             logger: $this->logger,
         );
@@ -618,7 +619,7 @@ final class CollectionOrchestratorTest extends TestCase
         $orchestrator = new CollectionOrchestrator(
             fileProcessor: $this->fileProcessor,
             strategySelector: $this->strategySelector,
-            compositeCollector: $compositeCollector,
+            derivedMetricExtractor: new DerivedMetricExtractor($compositeCollector),
             progress: $this->progress,
             logger: $this->logger,
         );
@@ -665,7 +666,7 @@ final class CollectionOrchestratorTest extends TestCase
         $orchestrator = new CollectionOrchestrator(
             fileProcessor: $this->fileProcessor,
             strategySelector: $this->strategySelector,
-            compositeCollector: $compositeCollector,
+            derivedMetricExtractor: new DerivedMetricExtractor($compositeCollector),
             progress: $this->progress,
             logger: $this->logger,
         );
@@ -716,7 +717,7 @@ final class CollectionOrchestratorTest extends TestCase
         $orchestrator = new CollectionOrchestrator(
             fileProcessor: $this->fileProcessor,
             strategySelector: $this->strategySelector,
-            compositeCollector: $compositeCollector,
+            derivedMetricExtractor: new DerivedMetricExtractor($compositeCollector),
             progress: $this->progress,
             logger: $this->logger,
         );
@@ -767,7 +768,7 @@ final class CollectionOrchestratorTest extends TestCase
         $orchestrator = new CollectionOrchestrator(
             fileProcessor: $this->fileProcessor,
             strategySelector: $this->strategySelector,
-            compositeCollector: $compositeCollector,
+            derivedMetricExtractor: new DerivedMetricExtractor($compositeCollector),
             progress: $this->progress,
             logger: $this->logger,
         );
@@ -787,7 +788,7 @@ final class CollectionOrchestratorTest extends TestCase
         return new CollectionOrchestrator(
             fileProcessor: $this->fileProcessor,
             strategySelector: $this->strategySelector,
-            compositeCollector: $this->compositeCollector,
+            derivedMetricExtractor: $this->derivedMetricExtractor,
             progress: $this->progress,
             logger: $this->logger,
         );

@@ -41,7 +41,9 @@ Infrastructure/
 │   ├── ChangedFile.php
 │   ├── ChangeStatus.php
 │   ├── GitFileDiscovery.php
-│   └── GitScopeFilter.php
+│   ├── GitScopeFilter.php
+│   ├── GitScopeResolver.php          # Resolves git scope from CLI options
+│   └── GitScopeResolution.php        # Resolution result VO
 ├── Logging/                          # -> See Logging/README.md
 │   ├── LoggerFactory.php
 │   ├── LoggerHolder.php
@@ -55,7 +57,16 @@ Infrastructure/
 │   ├── Span.php
 │   └── Export/
 ├── DependencyInjection/
-│   ├── ContainerFactory.php
+│   ├── ContainerFactory.php           # Thin orchestrator (delegates to configurators)
+│   ├── Configurator/                  # Decomposed container configuration
+│   │   ├── ContainerConfiguratorInterface.php
+│   │   ├── CoreServicesConfigurator.php
+│   │   ├── ConfigurationConfigurator.php
+│   │   ├── ParserConfigurator.php
+│   │   ├── CollectorConfigurator.php
+│   │   ├── RuleConfigurator.php
+│   │   ├── AnalysisConfigurator.php
+│   │   └── OutputConfigurator.php
 │   └── CompilerPass/
 │       ├── CollectorCompilerPass.php
 │       ├── GlobalCollectorCompilerPass.php
@@ -72,12 +83,19 @@ Infrastructure/
 └── Console/                          # -> See Console/README.md
     ├── Application.php
     ├── CliOptionsParser.php
+    ├── ViolationFilterPipeline.php    # Violation filtering orchestration
+    ├── ViolationFilterOptions.php     # Filter options VO
+    ├── ViolationFilterResult.php      # Filter result VO
+    ├── GitScopeFilterConfig.php       # Git scope filter config VO
+    ├── RuntimeConfigurator.php        # Runtime DI configuration
+    ├── ResultPresenter.php            # Output presentation
+    ├── AnalyzeCommandDefinition.php   # Command option definitions
     ├── Progress/
     │   ├── ConsoleProgressBar.php
     │   ├── ProgressReporterHolder.php
     │   └── DelegatingProgressReporter.php
     └── Command/
-        ├── AnalyzeCommand.php
+        ├── AnalyzeCommand.php         # Thin orchestrator (delegates to extracted classes)
         ├── BaselineCleanupCommand.php
         ├── GraphExportCommand.php
         ├── HookInstallCommand.php
@@ -108,12 +126,20 @@ ContainerFactory.create()
    4. Analyzer.analyze() -> Rules are created with correct options
 ```
 
-### ContainerFactory
+### ContainerFactory (Decomposed)
 
-Creates a unified Symfony DI ContainerBuilder without parameters.
+Creates a unified Symfony DI ContainerBuilder without parameters. Delegates configuration to specialized configurators implementing `ContainerConfiguratorInterface`:
+
+- `CoreServicesConfigurator` — core services (logger, profiler, etc.)
+- `ConfigurationConfigurator` — configuration pipeline and providers
+- `ParserConfigurator` — AST parser and caching
+- `CollectorConfigurator` — metric collectors registration
+- `RuleConfigurator` — rules and rule options
+- `AnalysisConfigurator` — analysis pipeline, repository, strategies
+- `OutputConfigurator` — formatters and output
 
 **Method:**
-- `create(): ContainerBuilder` — returns a compiled container
+- `create(): ContainerBuilder` — runs all configurators and returns a compiled container
 
 **Runtime configuration:**
 Configuration is set via mutable services AFTER container creation:

@@ -25,14 +25,27 @@ Analysis/
 │   ├── CollectionOrchestrator.php       # Collection coordination
 │   │
 │   ├── Metric/
-│   │   └── CompositeCollector.php       # Combines visitors (unified AST traversal)
+│   │   ├── CompositeCollector.php       # Combines visitors (unified AST traversal)
+│   │   └── DerivedMetricExtractor.php   # Extracts derived metrics from collected data
 │   │
 │   ├── Dependency/
 │   │   ├── DependencyGraph.php          # Dependency graph
 │   │   ├── DependencyGraphBuilder.php
-│   │   ├── DependencyVisitor.php
+│   │   ├── DependencyVisitor.php        # AST visitor (delegates to handlers)
+│   │   ├── DependencyResolver.php
 │   │   ├── CircularDependencyDetector.php # Tarjan's algorithm
-│   │   └── Cycle.php
+│   │   ├── Cycle.php
+│   │   └── Handler/                     # Decomposed dependency handlers
+│   │       ├── NodeDependencyHandlerInterface.php
+│   │       ├── DependencyContext.php
+│   │       ├── TypeDependencyHelper.php
+│   │       ├── ClassLikeHandler.php
+│   │       ├── TraitUseHandler.php
+│   │       ├── InstantiationHandler.php
+│   │       ├── StaticAccessHandler.php
+│   │       ├── CatchInstanceofHandler.php
+│   │       ├── PropertyHandler.php
+│   │       └── MethodHandler.php
 │   │
 │   └── Strategy/                        # Execution strategies
 │       ├── SequentialStrategy.php
@@ -40,8 +53,15 @@ Analysis/
 │       ├── StrategySelector.php
 │       └── Serializer/                  # IgbinarySerializer, PhpSerializer
 │
+├── Aggregator/                          # Decomposed metric aggregation
+│   ├── AggregationPhaseInterface.php    # Phase contract
+│   ├── AggregationHelper.php            # Static helper methods
+│   ├── MethodToClassAggregator.php      # Method → Class phase
+│   ├── ClassToNamespaceAggregator.php   # Class → Namespace phase
+│   ├── NamespaceToProjectAggregator.php # Namespace → Project phase
+│   └── MetricAggregator.php             # Thin orchestrator
+│
 ├── Aggregation/
-│   ├── MetricAggregator.php             # Metric aggregation by levels
 │   └── GlobalCollectorRunner.php
 │
 ├── RuleExecution/
@@ -222,15 +242,17 @@ Combines visitors of all collectors and DependencyVisitor for a single AST pass 
 
 ---
 
-## MetricAggregator
+## MetricAggregator (Decomposed)
 
 Aggregates metrics by hierarchy levels based on `MetricDefinition` from collectors. Completely generic — no hardcoded metric names.
 
-**Algorithm (3 phases):**
+The aggregator has been decomposed into individual phases, each implementing `AggregationPhaseInterface`:
 
-1. **Method -> Class**: applying strategies from `aggregations[Class_]` (result: `ccn.sum`, `ccn.avg`, `ccn.max`)
-2. **File/Class -> Namespace**: applying strategies from `aggregations[Namespace_]`
-3. **Namespace -> Project**: aggregating across all namespaces
+- **MethodToClassAggregator** — applies strategies from `aggregations[Class_]` (result: `ccn.sum`, `ccn.avg`, `ccn.max`)
+- **ClassToNamespaceAggregator** — applies strategies from `aggregations[Namespace_]`
+- **NamespaceToProjectAggregator** — aggregates across all namespaces
+
+`MetricAggregator` is now a thin orchestrator that runs these phases in order. `AggregationHelper` provides shared static helper methods used by the phases.
 
 **Naming convention:** `{metric}.{strategy}` (e.g.: `ccn.sum`, `ccn.avg`, `loc.sum`)
 
@@ -255,14 +277,22 @@ Value object representing the dependency graph between classes.
 
 Builds the graph from collected dependencies: grouping by classes -> building the graph.
 
-### DependencyVisitor
+### DependencyVisitor (Decomposed)
 
-Collects dependencies from AST. Integrated into `CompositeCollector` for unified AST traversal.
+Collects dependencies from AST. Integrated into `CompositeCollector` for unified AST traversal. Delegates to specialized handlers via `NodeDependencyHandlerInterface`.
 
-**What counts as a dependency:**
-- `use` statements, `extends`, `implements`
-- Parameter/return/property types
-- `new ClassName()`, `ClassName::method()`
+**Handlers** (in `Handler/` directory):
+- `ClassLikeHandler` — `use` statements, `extends`, `implements`
+- `TraitUseHandler` — trait usage
+- `PropertyHandler` — property type dependencies
+- `MethodHandler` — parameter/return types
+- `InstantiationHandler` — `new ClassName()`
+- `StaticAccessHandler` — `ClassName::method()`
+- `CatchInstanceofHandler` — catch blocks, instanceof checks
+
+**Shared infrastructure:**
+- `DependencyContext` — context passed to handlers during traversal
+- `TypeDependencyHelper` — extracts class names from type nodes
 
 ### CircularDependencyDetector
 
