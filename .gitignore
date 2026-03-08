@@ -44,6 +44,11 @@ Thumbs.db
 # Build artifacts
 /build/
 /dist/
+/site/
+/_site/
+
+# Python venv (MkDocs)
+/.venv/
 
 # Test fixtures (generated)
 /tests/Fixtures/generated/

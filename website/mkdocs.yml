@@ -1,0 +1,108 @@
+site_name: AI Mess Detector
+site_description: Fast PHP static analysis tool for code quality metrics
+site_url: https://fractalizer.github.io/ai-mess-detector/
+repo_url: https://github.com/fractalizer/ai-mess-detector
+repo_name: fractalizer/ai-mess-detector
+edit_uri: edit/main/website/docs/
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: deep purple
+      accent: amber
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: deep purple
+      accent: amber
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.highlight
+    - search.suggest
+    - content.code.copy
+    - content.code.annotate
+
+plugins:
+  - search
+  - i18n:
+      languages:
+        - locale: en
+          name: English
+          default: true
+          build: true
+        - locale: ru
+          name: Русский
+          build: true
+          nav_translations:
+            Home: Главная
+            Getting Started: Начало работы
+            Installation: Установка
+            Quick Start: Быстрый старт
+            Configuration: Конфигурация
+            Usage: Использование
+            CLI Options: Опции CLI
+            Git Integration: Интеграция с Git
+            Baseline: Baseline
+            Output Formats: Форматы вывода
+            Rules: Правила
+            Overview: Обзор
+            Complexity: Сложность
+            Coupling: Связанность
+            Size: Размер
+            Maintainability: Сопровождаемость
+            Design: Проектирование
+            Architecture: Архитектура
+            Code Smells: Запахи кода
+            CI/CD Integration: Интеграция с CI/CD
+            GitHub Actions: GitHub Actions
+            Other CI Systems: Другие CI системы
+            Reference: Справочник
+            Default Thresholds: Пороговые значения
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Installation: getting-started/installation.md
+      - Quick Start: getting-started/quick-start.md
+      - Configuration: getting-started/configuration.md
+  - Usage:
+      - CLI Options: usage/cli-options.md
+      - Git Integration: usage/git-integration.md
+      - Baseline: usage/baseline.md
+      - Output Formats: usage/output-formats.md
+  - Rules:
+      - Overview: rules/index.md
+      - Complexity: rules/complexity.md
+      - Coupling: rules/coupling.md
+      - Size: rules/size.md
+      - Maintainability: rules/maintainability.md
+      - Design: rules/design.md
+      - Architecture: rules/architecture.md
+      - Code Smells: rules/code-smell.md
+  - CI/CD Integration:
+      - GitHub Actions: ci-cd/github-actions.md
+      - Other CI Systems: ci-cd/other-ci.md
+  - Reference:
+      - Default Thresholds: reference/default-thresholds.md

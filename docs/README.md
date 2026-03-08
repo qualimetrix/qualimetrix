@@ -8,8 +8,9 @@ Complete documentation for the PHP static analysis tool. Choose the relevant cat
 
 Start here if you are new to the project or want to quickly integrate the tool.
 
-- **[Quick Start](QUICK_START.md)** — three ways to quickly integrate (pre-commit hook, GitHub Action, Docker)
-- **[GitHub Action Integration](GITHUB_ACTION.md)** — detailed guide for CI/CD pipeline integration
+- **[Quick Start](../website/docs/getting-started/quick-start.md)** — three ways to quickly integrate (pre-commit hook, GitHub Action, Docker)
+- **[GitHub Action Integration](../website/docs/ci-cd/github-actions.md)** — detailed guide for CI/CD pipeline integration
+- **[Documentation website](https://fractalizer.github.io/ai-mess-detector/)** — user-facing documentation
 
 ---
 

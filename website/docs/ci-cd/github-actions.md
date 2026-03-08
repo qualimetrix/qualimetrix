@@ -1,12 +1,11 @@
-# GitHub Action Usage Guide
+# GitHub Actions Integration
 
 The AI Mess Detector provides a GitHub Action for easy integration into your CI/CD pipelines.
 
 ## Quick Start
 
-Add this to your `.github/workflows/quality.yml`:
-
 ```yaml
+# .github/workflows/quality.yml
 name: Code Quality
 
 on: [push, pull_request]
@@ -40,18 +39,9 @@ jobs:
 | Output | Description |
 |--------|-------------|
 | `violations` | Number of violations found |
-| `exit-code` | Exit code of the analysis (0 = success, 1 = violations found) |
+| `exit-code` | Exit code (0 = success, 1 = violations found) |
 
 ## Examples
-
-### Basic Usage
-
-```yaml
-- name: Run AI Mess Detector
-  uses: fractalizer/ai-mess-detector@v1
-  with:
-    paths: 'src/'
-```
 
 ### With Baseline
 
@@ -80,7 +70,7 @@ jobs:
   aimd:
     runs-on: ubuntu-latest
     permissions:
-      security-events: write  # Required for SARIF upload
+      security-events: write
       contents: read
 
     steps:
@@ -123,16 +113,6 @@ jobs:
     path: aimd-results.json
 ```
 
-### Custom PHP Version
-
-```yaml
-- name: Run AI Mess Detector
-  uses: fractalizer/ai-mess-detector@v1
-  with:
-    paths: 'src/'
-    php-version: '8.3'
-```
-
 ### Using Outputs
 
 ```yaml
@@ -158,7 +138,7 @@ jobs:
       })
 ```
 
-### Matrix Testing (Multiple PHP Versions)
+### Matrix Testing
 
 ```yaml
 jobs:
@@ -178,15 +158,59 @@ jobs:
           php-version: ${{ matrix.php-version }}
 ```
 
-## Local Action Testing
-
-To test the action locally in your repository before publishing:
+## Complete Workflow Example
 
 ```yaml
-- name: Run AI Mess Detector (Local)
-  uses: ./  # Use local action
-  with:
-    paths: 'src/'
+name: Code Quality
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+
+jobs:
+  aimd-basic:
+    name: AI Mess Detector
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run AI Mess Detector
+        uses: fractalizer/ai-mess-detector@v1
+        with:
+          paths: 'src/'
+          baseline: 'baseline.json'
+          format: 'text'
+
+  aimd-sarif:
+    name: AI Mess Detector (SARIF)
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run AI Mess Detector
+        id: aimd
+        uses: fractalizer/ai-mess-detector@v1
+        with:
+          paths: 'src/'
+          baseline: 'baseline.json'
+          format: 'sarif'
+        continue-on-error: true
+
+      - name: Upload SARIF results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: results.sarif
+          category: aimd
+
+      - name: Fail if violations found
+        if: steps.aimd.outputs.exit-code != '0'
+        run: exit ${{ steps.aimd.outputs.exit-code }}
 ```
 
 ## Integration with Other Tools
@@ -217,42 +241,18 @@ jobs:
           paths: 'src/'
 ```
 
-### With PHP-CS-Fixer
-
-```yaml
-jobs:
-  quality:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.4'
-
-      - name: Install dependencies
-        run: composer install
-
-      - name: Check code style
-        run: vendor/bin/php-cs-fixer fix --dry-run --diff
-
-      - name: Run AI Mess Detector
-        uses: fractalizer/ai-mess-detector@v1
-        with:
-          paths: 'src/'
-```
-
 ## Troubleshooting
 
 ### Action fails with "AIMD binary not found"
 
 The action looks for AIMD in this order:
-1. `vendor/bin/aimd` - if installed as a project dependency
-2. `bin/aimd` - if running in the AIMD repository itself
+
+1. `vendor/bin/aimd` — if installed as a project dependency
+2. `bin/aimd` — if running in the AIMD repository itself
 3. Falls back to global installation via `composer global require`
 
-If none of these work, ensure your `composer.json` includes AIMD as a dev dependency:
+Ensure your `composer.json` includes AIMD as a dev dependency:
+
 ```json
 {
   "require-dev": {
@@ -263,21 +263,12 @@ If none of these work, ensure your `composer.json` includes AIMD as a dev depend
 
 ### SARIF upload fails
 
-Ensure you have the correct permissions set:
+Ensure correct permissions:
 
 ```yaml
 permissions:
   security-events: write
   contents: read
-```
-
-### Wrong PHP version
-
-Explicitly set the PHP version:
-
-```yaml
-with:
-  php-version: '8.4'
 ```
 
 ### Working directory issues
@@ -294,30 +285,13 @@ with:
 
 1. **Use caching** for composer dependencies:
 
-```yaml
-- name: Cache composer dependencies
-  uses: actions/cache@v4
-  with:
-    path: ~/.composer/cache
-    key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
-```
+    ```yaml
+    - name: Cache composer dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.composer/cache
+        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+    ```
 
-2. **Run only on specific paths** to reduce analysis time:
-
-```yaml
-with:
-  paths: 'src/ lib/'  # Skip tests, vendors, etc.
-```
-
-3. **Use baseline** to focus on new issues:
-
-```yaml
-with:
-  baseline: 'baseline.json'
-  fail-on: 'error'
-```
-
-## See Also
-
-- [Complete workflow examples](example-workflow.yml)
-- [Quick Start guide](QUICK_START.md)
+2. **Use baseline** to focus on new issues only
+3. **Limit paths** to relevant source directories

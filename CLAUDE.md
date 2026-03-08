@@ -368,5 +368,5 @@ bin/aimd analyze --help
 
 ### General Documentation (in docs/)
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — overall architecture
-- [docs/QUICK_START.md](docs/QUICK_START.md) — quick start
-- [docs/GITHUB_ACTION.md](docs/GITHUB_ACTION.md) — GitHub Action integration
+- [website/docs/getting-started/quick-start.md](website/docs/getting-started/quick-start.md) — quick start
+- [website/docs/ci-cd/github-actions.md](website/docs/ci-cd/github-actions.md) — GitHub Action integration
