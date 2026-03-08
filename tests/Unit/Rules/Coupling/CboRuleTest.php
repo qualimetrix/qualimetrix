@@ -545,6 +545,94 @@ final class CboRuleTest extends TestCase
         self::assertSame(7, $options->minClassCount);
     }
 
+    public function testNamespaceOptionsFromArrayParsesExcludeNamespaces(): void
+    {
+        $options = NamespaceCboOptions::fromArray([
+            'exclude_namespaces' => ['App\Core', 'App\Shared'],
+        ]);
+
+        self::assertSame(['App\Core', 'App\Shared'], $options->excludeNamespaces);
+    }
+
+    public function testNamespaceOptionsFromArrayParsesExcludeNamespacesCamelCase(): void
+    {
+        $options = NamespaceCboOptions::fromArray([
+            'excludeNamespaces' => ['App\Core'],
+        ]);
+
+        self::assertSame(['App\Core'], $options->excludeNamespaces);
+    }
+
+    public function testNamespaceOptionsExcludeNamespacesDefaultsToEmpty(): void
+    {
+        $options = NamespaceCboOptions::fromArray([
+            'enabled' => true,
+        ]);
+
+        self::assertSame([], $options->excludeNamespaces);
+    }
+
+    public function testIsNamespaceExcludedExactMatch(): void
+    {
+        $options = new NamespaceCboOptions(excludeNamespaces: ['App\Core']);
+
+        self::assertTrue($options->isNamespaceExcluded('App\Core'));
+        self::assertFalse($options->isNamespaceExcluded('App\Service'));
+    }
+
+    public function testIsNamespaceExcludedPrefixMatch(): void
+    {
+        $options = new NamespaceCboOptions(excludeNamespaces: ['App\Core']);
+
+        self::assertTrue($options->isNamespaceExcluded('App\Core\Exception'));
+        self::assertTrue($options->isNamespaceExcluded('App\Core\Symbol\Deep'));
+        self::assertFalse($options->isNamespaceExcluded('App\CoreExtra'));
+    }
+
+    public function testIsNamespaceExcludedTrailingBackslash(): void
+    {
+        $options = new NamespaceCboOptions(excludeNamespaces: ['App\Core\\']);
+
+        self::assertTrue($options->isNamespaceExcluded('App\Core'));
+        self::assertTrue($options->isNamespaceExcluded('App\Core\Sub'));
+    }
+
+    public function testAnalyzeNamespaceLevelSkipsExcludedNamespace(): void
+    {
+        $rule = new CboRule(
+            new CboOptions(
+                namespace: new NamespaceCboOptions(
+                    excludeNamespaces: ['App\Core'],
+                ),
+            ),
+        );
+
+        $includedPath = SymbolPath::forNamespace('App\Service');
+        $excludedPath = SymbolPath::forNamespace('App\Core\Symbol');
+
+        $includedInfo = new SymbolInfo($includedPath, 'src/Service', null);
+        $excludedInfo = new SymbolInfo($excludedPath, 'src/Core/Symbol', null);
+
+        $violatingBag = (new MetricBag())
+            ->with('cbo', 25)
+            ->with('ca', 10)
+            ->with('ce', 15)
+            ->with('classCount.sum', 5);
+
+        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->with(SymbolType::Namespace_)
+            ->willReturn([$includedInfo, $excludedInfo]);
+        $repository->method('get')
+            ->willReturn($violatingBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyzeLevel(RuleLevel::Namespace_, $context);
+
+        self::assertCount(1, $violations);
+        self::assertSame('App\Service', $violations[0]->symbolPath->namespace);
+    }
+
     #[DataProvider('cboThresholdDataProvider')]
     public function testCboThresholdBoundaries(
         int $cbo,
