@@ -27,7 +27,7 @@ final class JsonFormatter implements FormatterInterface
         $data = [
             'version' => self::VERSION,
             'package' => self::PACKAGE,
-            'timestamp' => date('c'),
+            'timestamp' => gmdate('c'),
             'files' => $files,
             'summary' => [
                 'filesAnalyzed' => $report->filesAnalyzed,

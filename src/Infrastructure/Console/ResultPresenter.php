@@ -55,6 +55,7 @@ final class ResultPresenter
             ->filesAnalyzed($analysisResult->filesAnalyzed)
             ->filesSkipped($analysisResult->filesSkipped)
             ->duration($analysisResult->duration)
+            ->metrics($analysisResult->metrics)
             ->build();
         OutputHelper::write($output, $formatter->format($report, $context));
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Tests\Unit\Reporting;
 
+use AiMessDetector\Core\Metric\MetricRepositoryInterface;
 use AiMessDetector\Core\Violation\Location;
 use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\SymbolPath;
@@ -138,6 +139,24 @@ final class ReportBuilderTest extends TestCase
         self::assertSame(3, $report->errorCount);
         self::assertSame(2, $report->warningCount);
         self::assertSame(5, $report->getTotalViolations());
+    }
+
+    public function testMetricsDefaultsToNull(): void
+    {
+        $report = ReportBuilder::create()->build();
+
+        self::assertNull($report->metrics);
+    }
+
+    public function testMetricsPassedThrough(): void
+    {
+        $metrics = $this->createMock(MetricRepositoryInterface::class);
+
+        $report = ReportBuilder::create()
+            ->metrics($metrics)
+            ->build();
+
+        self::assertSame($metrics, $report->metrics);
     }
 
     private function createViolation(Severity $severity): Violation

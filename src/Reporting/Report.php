@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Reporting;
 
+use AiMessDetector\Core\Metric\MetricRepositoryInterface;
 use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
 
@@ -22,6 +23,7 @@ final readonly class Report
         public float $duration,
         public int $errorCount,
         public int $warningCount,
+        public ?MetricRepositoryInterface $metrics = null,
     ) {}
 
     /**
