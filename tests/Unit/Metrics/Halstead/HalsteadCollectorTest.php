@@ -657,6 +657,62 @@ PHP;
         self::assertGreaterThan(50, $volume); // Complex method
     }
 
+    public function testAnonymousClassMethodsAreNotAttributedToOuterClass(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Outer
+{
+    public function simple(): int
+    {
+        return 1;
+    }
+
+    public function factory(): object
+    {
+        return new class {
+            public function innerComplex(): int
+            {
+                $a = 1 + 2;
+                $b = $a * 3;
+                $c = $b - $a;
+                return $c + $a + $b;
+            }
+        };
+    }
+
+    public function afterAnonymous(): int
+    {
+        return 2 + 3;
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // simple should have low volume (just return + literal)
+        $simpleVolume = $metrics->get('halstead.volume:App\Outer::simple');
+        self::assertIsFloat($simpleVolume);
+        self::assertGreaterThan(0, $simpleVolume);
+
+        // factory should have minimal volume — anonymous class operators/operands should NOT leak
+        $factoryVolume = $metrics->get('halstead.volume:App\Outer::factory');
+        self::assertIsFloat($factoryVolume);
+        // factory only has 'return' and 'new' — should be less than innerComplex would be
+        self::assertLessThan(30, $factoryVolume);
+
+        // afterAnonymous should work correctly
+        $afterVolume = $metrics->get('halstead.volume:App\Outer::afterAnonymous');
+        self::assertIsFloat($afterVolume);
+        self::assertGreaterThan(0, $afterVolume);
+
+        // Anonymous class methods should NOT appear in metrics
+        self::assertNull($metrics->get('halstead.volume:App\Outer::innerComplex'));
+    }
+
     private function collectMetrics(string $code): MetricBag
     {
         $parser = (new ParserFactory())->createForHostVersion();

@@ -322,6 +322,9 @@ PHP;
         self::assertSame(3, $metrics->get('parameterCount:App\Outer::before'));
         self::assertSame(0, $metrics->get('parameterCount:App\Outer::factory'));
         self::assertSame(2, $metrics->get('parameterCount:App\Outer::after'));
+
+        // Anonymous class methods should NOT appear in metrics
+        self::assertNull($metrics->get('parameterCount:App\Outer::inner'));
     }
 
     private function collectMetrics(string $code): \AiMessDetector\Core\Metric\MetricBag

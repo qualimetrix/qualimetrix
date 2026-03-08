@@ -57,16 +57,17 @@ final class RfcVisitor extends NodeVisitorAbstract implements ResettableVisitorI
     private array $classStack = [];
 
     /**
-     * Track if we're inside a method (to count external calls).
+     * Track method nesting depth (to count external calls).
+     * Using a counter instead of boolean to handle closures/anonymous classes inside methods.
      */
-    private bool $insideMethod = false;
+    private int $insideMethodDepth = 0;
 
     public function reset(): void
     {
         $this->classes = [];
         $this->currentNamespace = null;
         $this->classStack = [];
-        $this->insideMethod = false;
+        $this->insideMethodDepth = 0;
     }
 
     /**
@@ -104,13 +105,13 @@ final class RfcVisitor extends NodeVisitorAbstract implements ResettableVisitorI
 
         // Track method entry
         if ($node instanceof ClassMethod) {
-            $this->insideMethod = true;
+            $this->insideMethodDepth++;
 
             return null;
         }
 
         // Track external calls (only inside methods of named classes)
-        if ($this->insideMethod && $this->getCurrentClass() !== null) {
+        if ($this->insideMethodDepth > 0 && $this->getCurrentClass() !== null) {
             $this->handleExternalCall($node);
         }
 
@@ -219,7 +220,7 @@ final class RfcVisitor extends NodeVisitorAbstract implements ResettableVisitorI
     {
         // Exit method
         if ($node instanceof ClassMethod) {
-            $this->insideMethod = false;
+            $this->insideMethodDepth--;
 
             return null;
         }

@@ -62,6 +62,9 @@ final class CyclomaticComplexityVisitor extends NodeVisitorAbstract implements R
     private ?string $currentClass = null;
     private int $closureCounter = 0;
 
+    /** @var int Depth of anonymous class nesting (methods inside anonymous classes are skipped) */
+    private int $anonymousClassDepth = 0;
+
     public function reset(): void
     {
         $this->complexities = [];
@@ -70,6 +73,7 @@ final class CyclomaticComplexityVisitor extends NodeVisitorAbstract implements R
         $this->currentNamespace = null;
         $this->currentClass = null;
         $this->closureCounter = 0;
+        $this->anonymousClassDepth = 0;
     }
 
     /**
@@ -112,15 +116,25 @@ final class CyclomaticComplexityVisitor extends NodeVisitorAbstract implements R
         }
 
         // Track class-like types (skip anonymous classes)
-        $className = $this->extractClassLikeName($node);
-        if ($className !== null) {
-            $this->currentClass = $className;
+        if ($node instanceof Node\Stmt\Class_) {
+            if ($node->name === null) {
+                ++$this->anonymousClassDepth;
+            } else {
+                $this->currentClass = $node->name->toString();
+            }
+        } elseif ($this->isClassLikeNode($node)) {
+            $className = $this->extractClassLikeName($node);
+            if ($className !== null) {
+                $this->currentClass = $className;
+            }
         }
 
-        // Start of a method
+        // Start of a method (skip if inside anonymous class)
         if ($node instanceof ClassMethod) {
-            $fqn = $this->buildMethodFqn($node->name->toString());
-            $this->startMethod($fqn, $node->name->toString(), $node->getStartLine());
+            if ($this->anonymousClassDepth === 0) {
+                $fqn = $this->buildMethodFqn($node->name->toString());
+                $this->startMethod($fqn, $node->name->toString(), $node->getStartLine());
+            }
 
             return null;
         }
@@ -151,15 +165,29 @@ final class CyclomaticComplexityVisitor extends NodeVisitorAbstract implements R
 
     public function leaveNode(Node $node): ?int
     {
-        // End of method
-        if ($node instanceof ClassMethod || $node instanceof Function_ || $node instanceof Closure) {
+        // End of method (skip if inside anonymous class — we didn't start it)
+        if ($node instanceof ClassMethod) {
+            if ($this->anonymousClassDepth === 0) {
+                $this->endMethod();
+            }
+
+            return null;
+        }
+
+        if ($node instanceof Function_ || $node instanceof Closure) {
             $this->endMethod();
 
             return null;
         }
 
-        // Exit class-like scope (skip anonymous classes — they don't set currentClass on enter)
-        if ($this->isClassLikeNode($node) && $this->extractClassLikeName($node) !== null) {
+        // Exit class-like scope
+        if ($node instanceof Node\Stmt\Class_) {
+            if ($node->name === null) {
+                --$this->anonymousClassDepth;
+            } else {
+                $this->currentClass = null;
+            }
+        } elseif ($this->isClassLikeNode($node)) {
             $this->currentClass = null;
         }
 
@@ -193,6 +221,11 @@ final class CyclomaticComplexityVisitor extends NodeVisitorAbstract implements R
     private function countDecisionPoint(Node $node): void
     {
         if ($this->methodStack === []) {
+            return;
+        }
+
+        // Don't count decision points inside anonymous classes
+        if ($this->anonymousClassDepth > 0) {
             return;
         }
 

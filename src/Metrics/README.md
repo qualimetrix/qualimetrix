@@ -184,7 +184,7 @@ Metrics are stored in separate `MetricBag` instances for each symbol, so keys do
 
 ## Edge Cases
 
-- Anonymous classes — do not count in classCount, LCOM, TCC/LCC, DIT, RFC
+- Anonymous classes — do not count in classCount, LCOM, TCC/LCC, DIT, RFC, CCN, NPath, Halstead
 - Nested functions — separate metrics
 - Closure — treated as a separate method with a generated name
 - File without classes — only file-level metrics

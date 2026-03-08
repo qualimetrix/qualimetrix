@@ -44,7 +44,7 @@ Coupling metrics measure dependencies between components. All collectors in this
 ### Formula
 
 ```
-A = (abstractClassCount + interfaceCount) / classCount
+A = (abstractClassCount + interfaceCount) / (classCount + enumCount + traitCount + interfaceCount)
 ```
 
 ### Interpretation

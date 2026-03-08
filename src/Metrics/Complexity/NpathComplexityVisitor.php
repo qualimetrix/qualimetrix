@@ -66,6 +66,9 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
     private ?string $currentClass = null;
     private int $closureCounter = 0;
 
+    /** @var int Depth of anonymous class nesting (methods inside anonymous classes are skipped) */
+    private int $anonymousClassDepth = 0;
+
     public function reset(): void
     {
         $this->npath = [];
@@ -74,6 +77,7 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
         $this->currentNamespace = null;
         $this->currentClass = null;
         $this->closureCounter = 0;
+        $this->anonymousClassDepth = 0;
     }
 
     /**
@@ -116,16 +120,26 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
         }
 
         // Track class-like types (skip anonymous classes)
-        $className = $this->extractClassLikeName($node);
-        if ($className !== null) {
-            $this->currentClass = $className;
+        if ($node instanceof Node\Stmt\Class_) {
+            if ($node->name === null) {
+                ++$this->anonymousClassDepth;
+            } else {
+                $this->currentClass = $node->name->toString();
+            }
+        } elseif ($this->isClassLikeNode($node)) {
+            $className = $this->extractClassLikeName($node);
+            if ($className !== null) {
+                $this->currentClass = $className;
+            }
         }
 
-        // Start of a method
+        // Start of a method (skip if inside anonymous class)
         if ($node instanceof ClassMethod) {
-            $fqn = $this->buildMethodFqn($node->name->toString());
-            $npath = $this->calculateSequenceNpath($node->stmts ?? []);
-            $this->startMethod($fqn, $node->name->toString(), $node->getStartLine(), $npath);
+            if ($this->anonymousClassDepth === 0) {
+                $fqn = $this->buildMethodFqn($node->name->toString());
+                $npath = $this->calculateSequenceNpath($node->stmts ?? []);
+                $this->startMethod($fqn, $node->name->toString(), $node->getStartLine(), $npath);
+            }
 
             return null;
         }
@@ -155,15 +169,29 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
 
     public function leaveNode(Node $node): ?int
     {
-        // End of method
-        if ($node instanceof ClassMethod || $node instanceof Function_ || $node instanceof Closure) {
+        // End of method (skip if inside anonymous class — we didn't start it)
+        if ($node instanceof ClassMethod) {
+            if ($this->anonymousClassDepth === 0) {
+                $this->endMethod();
+            }
+
+            return null;
+        }
+
+        if ($node instanceof Function_ || $node instanceof Closure) {
             $this->endMethod();
 
             return null;
         }
 
-        // Exit class-like scope (skip anonymous classes — they don't set currentClass on enter)
-        if ($this->isClassLikeNode($node) && $this->extractClassLikeName($node) !== null) {
+        // Exit class-like scope
+        if ($node instanceof Node\Stmt\Class_) {
+            if ($node->name === null) {
+                --$this->anonymousClassDepth;
+            } else {
+                $this->currentClass = null;
+            }
+        } elseif ($this->isClassLikeNode($node)) {
             $this->currentClass = null;
         }
 

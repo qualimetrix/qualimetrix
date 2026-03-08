@@ -457,6 +457,57 @@ PHP;
         self::assertSame(1_000_000_000, $metrics->get('npath:Test::deep'));
     }
 
+    public function testAnonymousClassMethodsAreNotAttributedToOuterClass(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Outer
+{
+    public function simple(): void
+    {
+    }
+
+    public function factory(): object
+    {
+        return new class {
+            public function innerComplex(): void
+            {
+                if (true) {
+                    if (false) {
+                        // nested ifs
+                    }
+                }
+            }
+        };
+    }
+
+    public function afterAnonymous(): void
+    {
+        if (true) {
+            // one path
+        }
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // simple: NPath = 1 (empty)
+        self::assertSame(1, $metrics->get('npath:App\Outer::simple'));
+
+        // factory: NPath = 1 — anonymous class complexity should NOT leak
+        self::assertSame(1, $metrics->get('npath:App\Outer::factory'));
+
+        // afterAnonymous: NPath = 2 (if with implicit else)
+        self::assertSame(2, $metrics->get('npath:App\Outer::afterAnonymous'));
+
+        // Anonymous class methods should NOT appear in metrics
+        self::assertNull($metrics->get('npath:App\Outer::innerComplex'));
+    }
+
     private function collectMetrics(string $code): \AiMessDetector\Core\Metric\MetricBag
     {
         $parser = (new ParserFactory())->createForHostVersion();
