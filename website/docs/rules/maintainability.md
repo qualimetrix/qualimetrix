@@ -39,28 +39,6 @@ These three factors are combined into a single number. The original formula prod
 | 20--39     | Warning  | Maintainability is deteriorating     |
 | Below 20   | Error    | Code is very hard to maintain        |
 
-### Options
-
-| Option         | Default | Description                                       |
-|----------------|---------|---------------------------------------------------|
-| `enabled`      | `true`  | Enable or disable this rule                       |
-| `warning`      | `40.0`  | Score below this triggers a warning               |
-| `error`        | `20.0`  | Score below this triggers an error                |
-| `excludeTests` | `true`  | Skip test files                                   |
-| `minLoc`       | `10`    | Skip methods with fewer lines (avoids noise)      |
-
-### Configuration example
-
-```yaml
-# aimd.yaml
-rules:
-  maintainability.index:
-    warning: 40
-    error: 20
-    exclude_tests: true
-    min_loc: 10
-```
-
 ### Example
 
 A method with low maintainability (MI around 15):
@@ -149,3 +127,49 @@ This method has high complexity, many lines, and many operators/operands, all of
 
 !!! tip
     The `minLoc` option (default: 10) filters out trivially small methods. Simple getters and setters would produce extreme MI scores that are meaningless. Adjust this if you get too many false positives on small methods.
+
+### Implementation notes
+
+The Maintainability Index uses the **Oman-Hagemeister formula**:
+
+```
+MI = 171 - 5.2 x ln(V) - 0.23 x CCN - 16.2 x ln(LOC)
+```
+
+Where:
+
+- **V** = Halstead Volume (a measure of information content based on operators and operands)
+- **CCN** = Cyclomatic Complexity ([CCN2+ variant](complexity.md#implementation-notes))
+- **LOC** = Logical Lines of Code (LLOC -- statement count, not physical line count)
+
+The raw MI value (0-171 scale) is normalized to a **0-100 scale**: `max(0, MI x 100 / 171)`.
+
+**Scope:** MI is calculated per method, then aggregated to class/namespace/project level using average and minimum values.
+
+!!! note "LOC input"
+    AIMD uses LLOC (logical lines -- the number of statements) for the MI formula, which aligns with the original Oman-Hagemeister paper. Some tools use physical LOC (including blank lines and comments) or ELOC (executable lines), which produces different results. LLOC gives the most stable and meaningful values because it is not affected by formatting or comment density.
+
+### Configuration
+
+| Option         | Default | Description                                       |
+|----------------|---------|---------------------------------------------------|
+| `enabled`      | `true`  | Enable or disable this rule                       |
+| `warning`      | `40.0`  | Score below this triggers a warning               |
+| `error`        | `20.0`  | Score below this triggers an error                |
+| `excludeTests` | `true`  | Skip test files                                   |
+| `minLoc`       | `10`    | Skip methods with fewer lines (avoids noise)      |
+
+```yaml
+# aimd.yaml
+rules:
+  maintainability.index:
+    warning: 40
+    error: 20
+    exclude_tests: true
+    min_loc: 10
+```
+
+```bash
+bin/aimd analyze src/ --rule-opt="maintainability.index:warning=35"
+bin/aimd analyze src/ --rule-opt="maintainability.index:min_loc=15"
+```

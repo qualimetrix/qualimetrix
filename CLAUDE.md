@@ -32,6 +32,9 @@ When starting a session in the web environment, `scripts/init-environment.sh` is
 - Check the Definition of Done at the end of the document
 - Study the related interfaces in `src/Core/README.md`
 
+**Before updating website documentation:**
+- Read [website/CONTRIBUTING_DOCS.md](website/CONTRIBUTING_DOCS.md) — structure and style rules
+
 ---
 
 ## Project Structure
@@ -352,6 +355,23 @@ bin/aimd analyze --help
 4. Commit
 
 **Commit format:** `<type>: short description` (`feat`, `fix`, `refactor`, `test`, `docs`, `chore`)
+
+---
+
+## Website Documentation
+
+When modifying any user-facing functionality, update the corresponding website documentation.
+See [website/CONTRIBUTING_DOCS.md](website/CONTRIBUTING_DOCS.md) for the full mapping table and structure guidelines.
+
+Key rules:
+- Update both EN (`.md`) and RU (`.ru.md`) versions simultaneously
+- Follow the canonical page structure defined in the guide
+- When changing a metric algorithm, add/update the "Implementation notes" section
+- Keep `website/docs/reference/default-thresholds.md` in sync with actual defaults
+- After any documentation changes, verify the site builds without errors or warnings:
+  ```bash
+  cd website && pip install -r requirements.txt && mkdocs build --strict
+  ```
 
 ---
 

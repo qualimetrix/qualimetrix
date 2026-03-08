@@ -78,8 +78,12 @@ markdown_extensions:
   - pymdownx.tabbed:
       alternate_style: true
   - tables
+  - attr_list
   - toc:
       permalink: true
+      slugify: !!python/object/apply:pymdownx.slugs.slugify
+        kwds:
+          case: lower
 
 nav:
   - Home: index.md

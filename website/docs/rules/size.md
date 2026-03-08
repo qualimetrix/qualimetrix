@@ -20,7 +20,7 @@ Counts the number of methods in a class. A class with too many methods is likely
 | 20--29  | Warning  | Class is getting large, consider splitting |
 | 30+     | Error    | Class is too large, should be refactored   |
 
-### Options
+### Configuration
 
 | Option    | Default | Description                        |
 |-----------|---------|------------------------------------|
@@ -28,14 +28,17 @@ Counts the number of methods in a class. A class with too many methods is likely
 | `warning` | `20`    | Method count that triggers warning |
 | `error`   | `30`    | Method count that triggers error   |
 
-### Configuration example
-
 ```yaml
 # aimd.yaml
 rules:
   size.method-count:
     warning: 20
     error: 30
+```
+
+```bash
+bin/aimd analyze src/ --rule-opt="size.method-count:warning=25"
+bin/aimd analyze src/ --rule-opt="size.method-count:error=40"
 ```
 
 ### Example
@@ -101,7 +104,7 @@ Counts the number of classes in a namespace (package). This is measured at the n
 | 15--24  | Warning  | Namespace is getting crowded                     |
 | 25+     | Error    | Namespace should be split into sub-namespaces    |
 
-### Options
+### Configuration
 
 | Option    | Default | Description                       |
 |-----------|---------|-----------------------------------|
@@ -109,14 +112,17 @@ Counts the number of classes in a namespace (package). This is measured at the n
 | `warning` | `15`    | Class count that triggers warning |
 | `error`   | `25`    | Class count that triggers error   |
 
-### Configuration example
-
 ```yaml
 # aimd.yaml
 rules:
   size.class-count:
     warning: 15
     error: 25
+```
+
+```bash
+bin/aimd analyze src/ --rule-opt="size.class-count:warning=20"
+bin/aimd analyze src/ --rule-opt="size.class-count:error=30"
 ```
 
 ### Example
@@ -165,7 +171,7 @@ Counts the number of properties (fields) in a class. A class with many propertie
 | 16--20  | Warning  | Too many properties, consider extracting objects  |
 | 21+     | Error    | Far too many properties, refactor needed          |
 
-### Options
+### Configuration
 
 | Option                | Default | Description                                                                |
 |-----------------------|---------|----------------------------------------------------------------------------|
@@ -175,8 +181,6 @@ Counts the number of properties (fields) in a class. A class with many propertie
 | `excludeReadonly`     | `true`  | Skip `readonly` classes (DTOs, value objects)                              |
 | `excludePromotedOnly` | `true` | Skip classes where all properties are promoted constructor parameters      |
 
-### Configuration example
-
 ```yaml
 # aimd.yaml
 rules:
@@ -185,6 +189,11 @@ rules:
     error: 20
     exclude_readonly: true
     exclude_promoted_only: true
+```
+
+```bash
+bin/aimd analyze src/ --rule-opt="size.property-count:warning=18"
+bin/aimd analyze src/ --rule-opt="size.property-count:error=25"
 ```
 
 ### Example

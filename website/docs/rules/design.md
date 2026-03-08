@@ -71,14 +71,35 @@ This class has LCOM = 2. The profile methods and the financial methods use compl
 !!! tip
     Readonly classes (DTOs, value objects) are excluded by default because their properties are typically set once in the constructor and read individually -- this naturally produces high LCOM values even though the class design is fine. You can control this with the `excludeReadonly` option.
 
+### Implementation notes
+
+AIMD uses the **LCOM4** algorithm (Hitz & Montazeri, 1995), which is graph-based:
+
+1. Build a graph where each method is a node
+2. Add an edge between two methods if they share a property or one calls the other
+3. LCOM4 = the number of **connected components** in this graph
+
+This is the most widely accepted LCOM variant in modern literature. A value of 1 means all methods are interconnected — the class is cohesive.
+
+!!! note "Comparing with other tools"
+    phpmetrics uses the **Henderson-Sellers LCOM** formula, which produces values on a completely different scale (0.0 to 1.0+). These values are **not comparable** with AIMD's LCOM4. A class that scores LCOM=2 in AIMD might show LCOM=0.8 in phpmetrics — both indicate low cohesion, but the numbers mean different things.
+
 ### Configuration
+
+```yaml
+# aimd.yaml
+rules:
+  design.lcom:
+    warning: 4
+    error: 6
+    min_methods: 5
+    exclude_readonly: true
+```
 
 ```bash
 bin/aimd analyze src/ --rule-opt="design.lcom:warning=4"
 bin/aimd analyze src/ --rule-opt="design.lcom:error=6"
 bin/aimd analyze src/ --rule-opt="design.lcom:min_methods=5"
-
-# Include readonly classes in the check
 bin/aimd analyze src/ --rule-opt="design.lcom:exclude_readonly=false"
 ```
 
@@ -138,6 +159,14 @@ class CreateOrderHandler extends BaseHandler { /* ... */ }
 - **Move shared logic to a trait** if you still need common functionality without the tight coupling of inheritance.
 
 ### Configuration
+
+```yaml
+# aimd.yaml
+rules:
+  design.noc:
+    warning: 12
+    error: 20
+```
 
 ```bash
 bin/aimd analyze src/ --rule-opt="design.noc:warning=12"
@@ -218,6 +247,14 @@ To understand `UserEntity`, you need to read all 7 classes in the chain.
     Framework base classes (like Doctrine entities or Symfony controllers) count toward DIT. If your framework forces 2--3 levels of inheritance, adjust the thresholds accordingly.
 
 ### Configuration
+
+```yaml
+# aimd.yaml
+rules:
+  design.inheritance:
+    warning: 5
+    error: 7
+```
 
 ```bash
 bin/aimd analyze src/ --rule-opt="design.inheritance:warning=5"

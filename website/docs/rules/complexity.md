@@ -59,17 +59,38 @@ function processOrder(Order $order): void
 - **Replace conditionals with polymorphism.** If you have a long `switch` or chain of `if/elseif`, consider using the Strategy or State pattern.
 - **Simplify boolean expressions.** Complex conditions like `if ($a && ($b || $c) && !$d)` can often be broken into named boolean variables or separate methods.
 
+### Implementation notes
+
+AIMD uses an extended variant of Cyclomatic Complexity, sometimes called **CCN2+**. In addition to the standard decision points (if, elseif, while, for, foreach, case, catch, &&, ||, ?:), AIMD also counts:
+
+- `??` (null coalescing operator) — +1
+- `?->` (nullsafe method call) — +1
+- `?->` (nullsafe property fetch) — +1
+
+This is a deliberate choice: all these constructs represent hidden branching. For example, `$a ?? $b` is equivalent to `$a !== null ? $a : $b` — a decision point that is easy to overlook.
+
+!!! note "Comparing with other tools"
+    Because of these additional decision points, AIMD will report **higher CCN values** than phpmd or pdepend for code that uses null coalescing or nullsafe operators. This is not a bug — it reflects a stricter definition of complexity. The difference is most noticeable in code with chained `??` expressions.
+
 ### Configuration
 
+```yaml
+# aimd.yaml
+rules:
+  complexity.cyclomatic:
+    method:
+      warning: 15
+      error: 25
+    class:
+      max_warning: 40
+      enabled: true   # set to false to disable class-level check
+```
+
 ```bash
-# Adjust method-level thresholds
+# CLI overrides
 bin/aimd analyze src/ --rule-opt="complexity.cyclomatic:method.warning=15"
 bin/aimd analyze src/ --rule-opt="complexity.cyclomatic:method.error=25"
-
-# Adjust class-level thresholds
 bin/aimd analyze src/ --rule-opt="complexity.cyclomatic:class.max_warning=40"
-
-# Disable class-level check
 bin/aimd analyze src/ --rule-opt="complexity.cyclomatic:class.enabled=false"
 ```
 
@@ -135,6 +156,17 @@ Notice how nesting makes the penalty grow. The deeply nested `if ($item->hasDisc
 
 ### Configuration
 
+```yaml
+# aimd.yaml
+rules:
+  complexity.cognitive:
+    method:
+      warning: 20
+      error: 40
+    class:
+      max_warning: 40
+```
+
 ```bash
 bin/aimd analyze src/ --rule-opt="complexity.cognitive:method.warning=20"
 bin/aimd analyze src/ --rule-opt="complexity.cognitive:method.error=40"
@@ -190,13 +222,31 @@ Just 8 independent `if` statements already produce 256 paths.
 - **Reduce independent branches.** Combine related conditions or use data-driven validation (e.g., loop over a list of required fields).
 - **Avoid deeply nested conditions** -- they multiply NPath even faster than sequential ones.
 
+### Implementation notes
+
+AIMD handles PHP 8.0+ `match` expressions using an **additive** approach, consistent with Nejmeh's original NPath formula for `switch` statements:
+
+```
+NPath(match) = 1 + sum of NPath(each arm body)
+```
+
+Some other tools (notably pdepend) use a multiplicative approach for `match`, which can produce extreme values (millions) for methods with large `match` expressions. AIMD's additive approach yields practical, actionable values.
+
 ### Configuration
+
+```yaml
+# aimd.yaml
+rules:
+  complexity.npath:
+    method:
+      warning: 300
+      error: 2000
+    class:
+      enabled: false   # disabled by default
+```
 
 ```bash
 bin/aimd analyze src/ --rule-opt="complexity.npath:method.warning=300"
-bin/aimd analyze src/ --rule-opt="complexity.npath:method.error=2000"
-
-# Enable class-level check
 bin/aimd analyze src/ --rule-opt="complexity.npath:class.enabled=true"
 ```
 
@@ -241,12 +291,22 @@ class OrderProcessor
 - **Simplify individual methods.** If WMC is high because a few methods are very complex, refactor those methods first.
 - **Consider the Single Responsibility Principle.** A class should have only one reason to change.
 
+### Implementation notes
+
+WMC is calculated as the sum of [Cyclomatic Complexity](#cyclomatic-complexity) of all methods in a class. Since AIMD uses the CCN2+ variant (which counts `??` and `?->` as decision points), WMC values will be correspondingly higher than those reported by other tools.
+
 ### Configuration
+
+```yaml
+# aimd.yaml
+rules:
+  complexity.wmc:
+    warning: 60
+    error: 100
+    exclude_data_classes: true
+```
 
 ```bash
 bin/aimd analyze src/ --rule-opt="complexity.wmc:warning=60"
 bin/aimd analyze src/ --rule-opt="complexity.wmc:error=100"
-
-# Exclude data classes (DTOs, entities) from the check
-bin/aimd analyze src/ --rule-opt="complexity.wmc:exclude_data_classes=true"
 ```

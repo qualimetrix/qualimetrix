@@ -1,7 +1,7 @@
 # AIMD Product Roadmap
 
 **Date:** 2026-03-07
-**Based on:** Competitive analysis (docs/COMPETITOR_COMPARISON.md)
+**Based on:** [Competitive analysis](COMPETITOR_COMPARISON.md)
 
 ---
 
@@ -40,22 +40,15 @@ What AIMD should own:              What to leave to others:
 
 Must-fix issues that affect trust in AIMD's output.
 
-### 1.1 MI Uses Physical LOC Instead of LLOC
+### 1.1 ~~MI Uses Physical LOC Instead of LLOC~~ [DONE]
+
+Fixed in commit 1048c9f. AIMD now uses LLOC (logical lines -- statement count) instead of physical LOC for the MI formula.
 
 **Classification:** Real accuracy issue
-**Impact:** MI systematically underestimated by 10-16 points
-**Location:** `src/Metrics/Halstead/HalsteadVisitor.php:113`
+**Impact:** MI was systematically underestimated by 10-16 points
+**Location:** `src/Metrics/Halstead/HalsteadVisitor.php` (fixed)
 
-```php
-// Current (physical LOC — includes blank lines and comments)
-$methodLoc = max(1, $info['endLine'] - $info['line'] + 1);
-
-// Should use: LLOC from LocCollector, or at minimum count non-empty/non-comment lines
-```
-
-The Oman-Hagemeister MI formula uses "lines of code" which in metrics literature means logical/executable LOC. The sensitivity of `16.2 * ln(LOC)` amplifies the difference significantly.
-
-**Fix approach:** MaintainabilityIndexCollector should use LLOC from the LocCollector instead of physical LOC from HalsteadVisitor. This requires making MI depend on the `loc` collector in addition to `halstead` and `cyclomatic-complexity`.
+MaintainabilityIndexCollector now uses LLOC from the LocCollector instead of physical LOC from HalsteadVisitor.
 
 ### 1.2 Document CCN Variant
 

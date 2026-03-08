@@ -20,7 +20,7 @@
 | 20--29   | Warning     | Класс становится большим, подумайте о разделении |
 | 30+      | Error       | Класс слишком большой, нужен рефакторинг      |
 
-### Настройки
+### Конфигурация
 
 | Опция     | По умолчанию | Описание                                    |
 |-----------|-------------|---------------------------------------------|
@@ -28,14 +28,17 @@
 | `warning` | `20`        | Количество методов для предупреждения       |
 | `error`   | `30`        | Количество методов для ошибки               |
 
-### Пример конфигурации
-
 ```yaml
 # aimd.yaml
 rules:
   size.method-count:
     warning: 20
     error: 30
+```
+
+```bash
+bin/aimd analyze src/ --rule-opt="size.method-count:warning=25"
+bin/aimd analyze src/ --rule-opt="size.method-count:error=40"
 ```
 
 ### Пример
@@ -101,7 +104,7 @@ class OrderService
 | 15--24   | Warning     | Пространство имен переполнено                         |
 | 25+      | Error       | Нужно разделить на подпространства имен               |
 
-### Настройки
+### Конфигурация
 
 | Опция     | По умолчанию | Описание                                      |
 |-----------|-------------|-----------------------------------------------|
@@ -109,14 +112,17 @@ class OrderService
 | `warning` | `15`        | Количество классов для предупреждения         |
 | `error`   | `25`        | Количество классов для ошибки                 |
 
-### Пример конфигурации
-
 ```yaml
 # aimd.yaml
 rules:
   size.class-count:
     warning: 15
     error: 25
+```
+
+```bash
+bin/aimd analyze src/ --rule-opt="size.class-count:warning=20"
+bin/aimd analyze src/ --rule-opt="size.class-count:error=30"
 ```
 
 ### Пример
@@ -165,7 +171,7 @@ App\Service\                  # 28 классов -- слишком много!
 | 16--20   | Warning     | Слишком много свойств, подумайте об извлечении объектов |
 | 21+      | Error       | Значительно слишком много, нужен рефакторинг          |
 
-### Настройки
+### Конфигурация
 
 | Опция                 | По умолчанию | Описание                                                               |
 |-----------------------|-------------|------------------------------------------------------------------------|
@@ -175,8 +181,6 @@ App\Service\                  # 28 классов -- слишком много!
 | `excludeReadonly`     | `true`      | Пропускать `readonly` классы (DTO, value objects)                      |
 | `excludePromotedOnly` | `true`     | Пропускать классы, где все свойства -- promoted-параметры конструктора  |
 
-### Пример конфигурации
-
 ```yaml
 # aimd.yaml
 rules:
@@ -185,6 +189,11 @@ rules:
     error: 20
     exclude_readonly: true
     exclude_promoted_only: true
+```
+
+```bash
+bin/aimd analyze src/ --rule-opt="size.property-count:warning=18"
+bin/aimd analyze src/ --rule-opt="size.property-count:error=25"
 ```
 
 ### Пример

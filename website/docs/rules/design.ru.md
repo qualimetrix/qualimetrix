@@ -71,14 +71,35 @@ class UserManager
 !!! tip "Совет"
     Readonly-классы (DTO, value objects) исключены по умолчанию, потому что их свойства обычно задаются один раз в конструкторе и читаются по отдельности -- это естественно даёт высокие значения LCOM, хотя дизайн класса в порядке. Управлять этим можно через опцию `excludeReadonly`.
 
+### Особенности реализации
+
+AIMD использует алгоритм **LCOM4** (Hitz & Montazeri, 1995), основанный на графах:
+
+1. Строится граф, где каждый метод — это узел
+2. Ребро добавляется между двумя методами, если они разделяют свойство или один вызывает другой
+3. LCOM4 = количество **компонентов связности** в этом графе
+
+Это наиболее общепринятый вариант LCOM в современной литературе. Значение 1 означает, что все методы взаимосвязаны — класс связный.
+
+!!! note "Сравнение с другими инструментами"
+    phpmetrics использует формулу **Henderson-Sellers LCOM**, которая даёт значения в совершенно другой шкале (0.0 до 1.0+). Эти значения **несравнимы** с LCOM4 в AIMD. Класс с LCOM=2 в AIMD может показать LCOM=0.8 в phpmetrics — оба значения указывают на низкую связность, но числа означают разное.
+
 ### Настройка
+
+```yaml
+# aimd.yaml
+rules:
+  design.lcom:
+    warning: 4
+    error: 6
+    min_methods: 5
+    exclude_readonly: true
+```
 
 ```bash
 bin/aimd analyze src/ --rule-opt="design.lcom:warning=4"
 bin/aimd analyze src/ --rule-opt="design.lcom:error=6"
 bin/aimd analyze src/ --rule-opt="design.lcom:min_methods=5"
-
-# Включить readonly-классы в проверку
 bin/aimd analyze src/ --rule-opt="design.lcom:exclude_readonly=false"
 ```
 
@@ -138,6 +159,14 @@ class CreateOrderHandler extends BaseHandler { /* ... */ }
 - **Переместите общую логику в трейт**, если вам всё ещё нужна общая функциональность без жёсткой связи наследования.
 
 ### Настройка
+
+```yaml
+# aimd.yaml
+rules:
+  design.noc:
+    warning: 12
+    error: 20
+```
 
 ```bash
 bin/aimd analyze src/ --rule-opt="design.noc:warning=12"
@@ -218,6 +247,14 @@ class UserEntity extends TenantEntity {}                  // DIT = 6  -> Error!
     Базовые классы фреймворков (например, сущности Doctrine или контроллеры Symfony) учитываются в DIT. Если ваш фреймворк навязывает 2--3 уровня наследования, скорректируйте пороговые значения соответственно.
 
 ### Настройка
+
+```yaml
+# aimd.yaml
+rules:
+  design.inheritance:
+    warning: 5
+    error: 7
+```
 
 ```bash
 bin/aimd analyze src/ --rule-opt="design.inheritance:warning=5"

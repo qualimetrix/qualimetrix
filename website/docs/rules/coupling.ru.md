@@ -72,15 +72,22 @@ class ReportGenerator
 
 ### Настройка
 
+```yaml
+# aimd.yaml
+rules:
+  coupling.cbo:
+    class:
+      warning: 18
+      error: 25
+    namespace:
+      enabled: true
+      min_class_count: 5
+```
+
 ```bash
-# Настройка порогов на уровне класса
 bin/aimd analyze src/ --rule-opt="coupling.cbo:class.warning=18"
 bin/aimd analyze src/ --rule-opt="coupling.cbo:class.error=25"
-
-# Настройка минимального числа классов на уровне пространства имён
 bin/aimd analyze src/ --rule-opt="coupling.cbo:namespace.min_class_count=5"
-
-# Отключить проверку на уровне пространства имён
 bin/aimd analyze src/ --rule-opt="coupling.cbo:namespace.enabled=false"
 ```
 
@@ -156,11 +163,20 @@ class DailyReportJob
 
 ### Настройка
 
+```yaml
+# aimd.yaml
+rules:
+  coupling.instability:
+    class:
+      max_warning: 0.9
+      max_error: 1.0
+    namespace:
+      min_class_count: 5
+```
+
 ```bash
 bin/aimd analyze src/ --rule-opt="coupling.instability:class.max_warning=0.9"
 bin/aimd analyze src/ --rule-opt="coupling.instability:class.max_error=1.0"
-
-# Настройка минимального числа классов на уровне пространства имён
 bin/aimd analyze src/ --rule-opt="coupling.instability:namespace.min_class_count=5"
 ```
 
@@ -225,22 +241,24 @@ D = |A + I - 1|
 
 ### Настройка
 
-```bash
-bin/aimd analyze src/ --rule-opt="coupling.distance:max_distance_warning=0.4"
-bin/aimd analyze src/ --rule-opt="coupling.distance:max_distance_error=0.6"
-bin/aimd analyze src/ --rule-opt="coupling.distance:min_class_count=5"
-```
-
-Также можно фильтровать анализируемые пространства имён:
-
 ```yaml
+# aimd.yaml
 rules:
   coupling.distance:
+    max_distance_warning: 0.4
+    max_distance_error: 0.6
+    min_class_count: 5
     include_namespaces:
       - App\Domain
       - App\Infrastructure
     exclude_namespaces:
       - App\Tests
+```
+
+```bash
+bin/aimd analyze src/ --rule-opt="coupling.distance:max_distance_warning=0.4"
+bin/aimd analyze src/ --rule-opt="coupling.distance:max_distance_error=0.6"
+bin/aimd analyze src/ --rule-opt="coupling.distance:min_class_count=5"
 ```
 
 По умолчанию пространства имён проекта автоматически определяются из `composer.json` (`autoload.psr-4`).
