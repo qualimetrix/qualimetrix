@@ -195,7 +195,7 @@ final class AnalyzeCommandDefinition
                 'workers',
                 'w',
                 InputOption::VALUE_REQUIRED,
-                'Number of parallel workers (0 to disable, default: auto-detect)',
+                'Number of parallel workers (0 = disable parallel, default: auto-detect)',
             )
             ->addOption(
                 'log-file',

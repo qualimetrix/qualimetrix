@@ -69,10 +69,10 @@ final class HalsteadVisitor extends NodeVisitorAbstract implements ResettableVis
     /** @var array<string, HalsteadMetrics> FQN => metrics */
     private array $metrics = [];
 
-    /** @var array<string, array{namespace: ?string, class: ?string, method: string, line: int, endLine: int}> */
+    /** @var array<string, array{namespace: ?string, class: ?string, method: string, line: int, endLine: int, lloc: int}> */
     private array $methodInfos = [];
 
-    /** @var list<array{fqn: string, operators: array<string, int>, operands: array<string, int>}> */
+    /** @var list<array{fqn: string, operators: array<string, int>, operands: array<string, int>, codeLines: array<int, true>}> */
     private array $methodStack = [];
 
     private ?string $currentNamespace = null;
@@ -109,8 +109,11 @@ final class HalsteadVisitor extends NodeVisitorAbstract implements ResettableVis
         foreach ($this->methodInfos as $fqn => $info) {
             $halstead = $this->metrics[$fqn] ?? HalsteadMetrics::empty();
 
-            // Calculate method LOC from start and end lines
-            $methodLoc = max(1, $info['endLine'] - $info['line'] + 1);
+            // Use LLOC (logical lines — statement count) for accurate MI calculation.
+            // Falls back to physical LOC only if no statements were counted.
+            $methodLoc = $info['lloc'] > 0
+                ? $info['lloc']
+                : max(1, $info['endLine'] - $info['line'] + 1);
 
             $bag = (new MetricBag())
                 ->with('halstead.volume', $halstead->volume())
@@ -181,8 +184,12 @@ final class HalsteadVisitor extends NodeVisitorAbstract implements ResettableVis
             return null;
         }
 
-        // Count operators and operands
+        // Track code lines and count operators/operands
         if ($this->methodStack !== []) {
+            $idx = array_key_last($this->methodStack);
+            if ($idx !== null) {
+                $this->methodStack[$idx]['codeLines'][$node->getStartLine()] = true;
+            }
             $this->countOperators($node);
             $this->countOperands($node);
         }
@@ -222,6 +229,7 @@ final class HalsteadVisitor extends NodeVisitorAbstract implements ResettableVis
             'fqn' => $fqn,
             'operators' => [],
             'operands' => [],
+            'codeLines' => [],
         ];
 
         $this->methodInfos[$fqn] = [
@@ -230,6 +238,7 @@ final class HalsteadVisitor extends NodeVisitorAbstract implements ResettableVis
             'method' => $methodName,
             'line' => $line,
             'endLine' => $line, // Will be updated in endMethod
+            'lloc' => 0,
         ];
     }
 
@@ -244,9 +253,10 @@ final class HalsteadVisitor extends NodeVisitorAbstract implements ResettableVis
         $operators = $current['operators'];
         $operands = $current['operands'];
 
-        // Update endLine in methodInfos
+        // Update endLine and LLOC (executable lines of code) in methodInfos
         if (isset($this->methodInfos[$fqn])) {
             $this->methodInfos[$fqn]['endLine'] = $endLine;
+            $this->methodInfos[$fqn]['lloc'] = \count($current['codeLines']);
         }
 
         $n1 = \count($operators);  // unique operators

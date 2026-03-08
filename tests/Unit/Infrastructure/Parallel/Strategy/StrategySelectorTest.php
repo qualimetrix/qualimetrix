@@ -34,6 +34,19 @@ final class StrategySelectorTest extends TestCase
 
 
     #[Test]
+    public function itSelectsSequentialWhenWorkersIsZero(): void
+    {
+        $config = new AnalysisConfiguration(workers: 0);
+        $this->configProvider->method('getConfiguration')->willReturn($config);
+
+        $selector = $this->createSelector();
+
+        $strategy = $selector->select();
+
+        self::assertSame($this->sequentialStrategy, $strategy);
+    }
+
+    #[Test]
     public function itSelectsSequentialWhenWorkersIsOne(): void
     {
         $config = new AnalysisConfiguration(workers: 1);

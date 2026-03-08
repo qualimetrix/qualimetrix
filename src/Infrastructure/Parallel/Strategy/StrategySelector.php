@@ -20,7 +20,7 @@ use Psr\Log\NullLogger;
  * 2. SequentialStrategy - always available (fallback)
  *
  * Configuration is read from ConfigurationProviderInterface:
- * - workers: number of parallel workers (null = auto-detect, 1 = sequential)
+ * - workers: number of parallel workers (null = auto-detect, 0/1 = sequential)
  * - projectRoot: project root directory (required for parallel)
  * - cacheDir: cache directory for AST caching
  * - cacheEnabled: whether caching is enabled
@@ -48,7 +48,7 @@ final class StrategySelector implements StrategySelectorInterface
      * Returns the best available strategy for the current system and configuration.
      *
      * Configures the strategy based on:
-     * - workers setting (null = auto-detect, 1 = sequential, >1 = parallel)
+     * - workers setting (null = auto-detect, 0/1 = sequential, >1 = parallel)
      * - projectRoot (required for parallel processing)
      * - cacheDir (optional, for AST caching in workers)
      * - collectorClasses (for worker process synchronization)
@@ -66,9 +66,11 @@ final class StrategySelector implements StrategySelectorInterface
             'collectors' => \count($this->collectorClasses),
         ]);
 
-        // Explicit sequential mode (workers = 1)
-        if ($requestedWorkers === 1) {
-            $this->logger->debug('StrategySelector: sequential mode requested (workers=1)');
+        // Explicit sequential mode (workers = 0 or 1)
+        if ($requestedWorkers === 0 || $requestedWorkers === 1) {
+            $this->logger->debug('StrategySelector: sequential mode requested', [
+                'workers' => $requestedWorkers,
+            ]);
 
             return $this->sequentialStrategy;
         }
@@ -84,7 +86,7 @@ final class StrategySelector implements StrategySelectorInterface
         }
 
         // Auto-detect or use requested worker count
-        $workerCount = $requestedWorkers === null || $requestedWorkers === 0
+        $workerCount = $requestedWorkers === null
             ? $this->workerCountDetector->detect()
             : $requestedWorkers;
 
