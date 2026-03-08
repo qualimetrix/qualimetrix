@@ -112,13 +112,19 @@ final class HalsteadCollector extends AbstractCollector implements MethodMetrics
 
         \assert($this->visitor instanceof HalsteadVisitor);
 
-        foreach ($this->visitor->getMetrics() as $fqn => $halstead) {
+        foreach ($this->visitor->getMethodsWithMetrics() as $method) {
+            $fqn = ($method->namespace ? $method->namespace . '\\' : '')
+                . ($method->class ? $method->class . '::' : '')
+                . $method->method;
+            $metrics = $method->metrics;
+
             $bag = $bag
-                ->with(self::METRIC_VOLUME . ':' . $fqn, $halstead->volume())
-                ->with(self::METRIC_DIFFICULTY . ':' . $fqn, $halstead->difficulty())
-                ->with(self::METRIC_EFFORT . ':' . $fqn, $halstead->effort())
-                ->with(self::METRIC_BUGS . ':' . $fqn, $halstead->bugs())
-                ->with(self::METRIC_TIME . ':' . $fqn, $halstead->time());
+                ->with(self::METRIC_VOLUME . ':' . $fqn, $metrics->get('halstead.volume') ?? 0.0)
+                ->with(self::METRIC_DIFFICULTY . ':' . $fqn, $metrics->get('halstead.difficulty') ?? 0.0)
+                ->with(self::METRIC_EFFORT . ':' . $fqn, $metrics->get('halstead.effort') ?? 0.0)
+                ->with(self::METRIC_BUGS . ':' . $fqn, $metrics->get('halstead.bugs') ?? 0.0)
+                ->with(self::METRIC_TIME . ':' . $fqn, $metrics->get('halstead.time') ?? 0.0)
+                ->with('methodLoc:' . $fqn, $metrics->get('methodLoc') ?? 0);
         }
 
         return $bag;
