@@ -140,22 +140,22 @@ vendor/bin/aimd analyze src/
 
 Pick the output format that works best with your CI system:
 
-| Format | Flag | Best For |
-|--------|------|----------|
-| Text | `--format=text` | Console output, simple CI |
-| JSON | `--format=json` | Custom integrations, scripts |
+| Format     | Flag                  | Best For                                |
+| ---------- | --------------------- | --------------------------------------- |
+| Text       | `--format=text`       | Console output, simple CI               |
+| JSON       | `--format=json`       | Custom integrations, scripts            |
 | Checkstyle | `--format=checkstyle` | Jenkins, tools that read Checkstyle XML |
-| SARIF | `--format=sarif` | GitHub, VS Code, security dashboards |
-| GitLab | `--format=gitlab` | GitLab Code Quality widget |
+| SARIF      | `--format=sarif`      | GitHub, VS Code, security dashboards    |
+| GitLab     | `--format=gitlab`     | GitLab Code Quality widget              |
 
 ### 4. Handle Exit Codes
 
 AIMD uses standard exit codes:
 
-| Exit Code | Meaning |
-|-----------|---------|
-| `0` | No violations found |
-| `1` | Violations found |
+| Exit Code | Meaning             |
+| --------- | ------------------- |
+| `0`       | No violations found |
+| `1`       | Violations found    |
 
 Most CI systems treat a non-zero exit code as a failure. If you want the pipeline to continue even when violations are found, suppress the exit code:
 

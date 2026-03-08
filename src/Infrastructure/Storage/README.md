@@ -9,22 +9,22 @@ Unified metric storage architecture based on SQLite, addressing two goals:
 
 **Speedup scenarios:**
 
-| Scenario | Without cache | With cache | Speedup |
-|----------|--------------|------------|---------|
-| 1000 files, 0 changed | 30s | 0.5s | 60x |
-| 1000 files, 1 changed | 30s | 0.8s | 37x |
-| 10000 files, InMemory | OOM | 10s | — |
+| Scenario              | Without cache | With cache | Speedup |
+| --------------------- | ------------- | ---------- | ------- |
+| 1000 files, 0 changed | 30s           | 0.5s       | 60x     |
+| 1000 files, 1 changed | 30s           | 0.8s       | 37x     |
+| 10000 files, InMemory | OOM           | 10s        | —       |
 
 ## Architectural Decision
 
 **Storage separation:**
 
-| Data | Storage | Reason |
-|------|---------|--------|
-| AST | File-based | Large objects, fast PHP serialization |
-| Metrics | SQLite | Many small records, queries needed |
-| Dependencies | SQLite | Graph, JOINs needed |
-| Aggregated | SQLite | GROUP BY needed |
+| Data         | Storage    | Reason                                |
+| ------------ | ---------- | ------------------------------------- |
+| AST          | File-based | Large objects, fast PHP serialization |
+| Metrics      | SQLite     | Many small records, queries needed    |
+| Dependencies | SQLite     | Graph, JOINs needed                   |
+| Aggregated   | SQLite     | GROUP BY needed                       |
 
 ```
 .aimd-cache/
@@ -120,11 +120,11 @@ File change detection for cache invalidation.
 
 ## CLI Options
 
-| Option | Description |
-|--------|-------------|
-| `--storage=<type>` | Storage type (auto/sqlite/memory) |
+| Option               | Description                            |
+| -------------------- | -------------------------------------- |
+| `--storage=<type>`   | Storage type (auto/sqlite/memory)      |
 | `--cache-dir=<path>` | Cache directory (default: .aimd-cache) |
-| `--no-cache` | Disable cache |
+| `--no-cache`         | Disable cache                          |
 
 ## Examples
 

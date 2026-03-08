@@ -39,21 +39,21 @@ Circular dependencies cause real problems:
 
 ### Thresholds
 
-| Cycle type            | Severity | Meaning                                      |
-|-----------------------|----------|----------------------------------------------|
-| Direct (size 2)       | Error    | Two classes directly depend on each other     |
-| Transitive (size 3+)  | Warning  | A longer chain of classes forms a loop        |
+| Cycle type           | Severity | Meaning                                   |
+| -------------------- | -------- | ----------------------------------------- |
+| Direct (size 2)      | Error    | Two classes directly depend on each other |
+| Transitive (size 3+) | Warning  | A longer chain of classes forms a loop    |
 
 !!! note
     Direct cycles (A depends on B, B depends on A) are reported as **Error** by default because they represent the tightest coupling. Transitive cycles are reported as **Warning** because they are often easier to break.
 
 ### Options
 
-| Option          | Default | Description                                              |
-|-----------------|---------|----------------------------------------------------------|
-| `enabled`       | `true`  | Enable or disable this rule                              |
-| `maxCycleSize`  | `0`     | Maximum cycle size to report (0 = report all sizes)      |
-| `directAsError` | `true`  | Treat direct cycles (size 2) as errors                   |
+| Option          | Default | Description                                         |
+| --------------- | ------- | --------------------------------------------------- |
+| `enabled`       | `true`  | Enable or disable this rule                         |
+| `maxCycleSize`  | `0`     | Maximum cycle size to report (0 = report all sizes) |
+| `directAsError` | `true`  | Treat direct cycles (size 2) as errors              |
 
 ### Configuration example
 

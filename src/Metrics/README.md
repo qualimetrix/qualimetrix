@@ -13,31 +13,31 @@ Collectors **do not interpret** metrics — they only collect them. Interpretati
 
 ## Metrics Table
 
-| Metric | Category | Level | Description |
-|--------|----------|-------|-------------|
-| **Complexity** | | | |
-| `ccn` | Complexity | Method | Cyclomatic Complexity — number of execution paths |
-| `cognitive` | Complexity | Method | Cognitive Complexity — difficulty of understanding code |
-| `npath` | Complexity | Method | NPath Complexity — number of acyclic paths (exponential growth) |
-| **Maintainability** | | | |
-| `halstead.*` | Maintainability | Method | Halstead metrics (volume, difficulty, effort, bugs, time) |
-| `mi` | Maintainability | Method | Maintainability Index (derived from Halstead + CCN) |
-| **Size** | | | |
-| `loc`, `lloc`, `cloc` | Size | File | Lines of Code (total, logical, comments) |
-| `classCount`, `interfaceCount`, `traitCount`, `enumCount` | Size | File | Number of classes/interfaces/traits/enums |
-| `propertyCount` | Size | Class | Number of class properties (+ by visibility) |
-| `methodCount` | Size | Class | Number of class methods (+ getters/setters) |
-| **Structure** | | | |
-| `lcom` | Structure | Class | LCOM4 — method cohesion (graph components; edges from shared properties and `$this->method()` calls; static methods excluded) |
-| `tcc`, `lcc` | Structure | Class | TCC/LCC — Tight/Loose Class Cohesion (0-1) |
-| `rfc` | Structure | Class | Response for Class — testability complexity |
-| `wmc` | Structure | Class | Weighted Methods per Class — sum of method CCN |
-| `dit` | Structure | Class | Depth of Inheritance Tree — inheritance depth |
-| `noc` | Structure | Class | Number of Children — number of direct subclasses |
-| **Coupling** | | | |
-| `ca`, `ce`, `instability` | Coupling | Class | Afferent/Efferent Coupling, instability |
-| `abstractness` | Coupling | Namespace | Proportion of abstract classes/interfaces |
-| `distance` | Coupling | Namespace | Distance from Main Sequence (derived) |
+| Metric                                                    | Category        | Level     | Description                                                                                                                   |
+| --------------------------------------------------------- | --------------- | --------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| **Complexity**                                            |                 |           |                                                                                                                               |
+| `ccn`                                                     | Complexity      | Method    | Cyclomatic Complexity — number of execution paths                                                                             |
+| `cognitive`                                               | Complexity      | Method    | Cognitive Complexity — difficulty of understanding code                                                                       |
+| `npath`                                                   | Complexity      | Method    | NPath Complexity — number of acyclic paths (exponential growth)                                                               |
+| **Maintainability**                                       |                 |           |                                                                                                                               |
+| `halstead.*`                                              | Maintainability | Method    | Halstead metrics (volume, difficulty, effort, bugs, time)                                                                     |
+| `mi`                                                      | Maintainability | Method    | Maintainability Index (derived from Halstead + CCN)                                                                           |
+| **Size**                                                  |                 |           |                                                                                                                               |
+| `loc`, `lloc`, `cloc`                                     | Size            | File      | Lines of Code (total, logical, comments)                                                                                      |
+| `classCount`, `interfaceCount`, `traitCount`, `enumCount` | Size            | File      | Number of classes/interfaces/traits/enums                                                                                     |
+| `propertyCount`                                           | Size            | Class     | Number of class properties (+ by visibility)                                                                                  |
+| `methodCount`                                             | Size            | Class     | Number of class methods (+ getters/setters)                                                                                   |
+| **Structure**                                             |                 |           |                                                                                                                               |
+| `lcom`                                                    | Structure       | Class     | LCOM4 — method cohesion (graph components; edges from shared properties and `$this->method()` calls; static methods excluded) |
+| `tcc`, `lcc`                                              | Structure       | Class     | TCC/LCC — Tight/Loose Class Cohesion (0-1)                                                                                    |
+| `rfc`                                                     | Structure       | Class     | Response for Class — testability complexity                                                                                   |
+| `wmc`                                                     | Structure       | Class     | Weighted Methods per Class — sum of method CCN                                                                                |
+| `dit`                                                     | Structure       | Class     | Depth of Inheritance Tree — inheritance depth                                                                                 |
+| `noc`                                                     | Structure       | Class     | Number of Children — number of direct subclasses                                                                              |
+| **Coupling**                                              |                 |           |                                                                                                                               |
+| `ca`, `ce`, `instability`                                 | Coupling        | Class     | Afferent/Efferent Coupling, instability                                                                                       |
+| `abstractness`                                            | Coupling        | Namespace | Proportion of abstract classes/interfaces                                                                                     |
+| `distance`                                                | Coupling        | Namespace | Distance from Main Sequence (derived)                                                                                         |
 
 ---
 
@@ -57,13 +57,13 @@ The system uses a **Self-Aggregating Metrics** pattern — each collector declar
 
 ### AggregationStrategy (Enum)
 
-| Value | Description | Example |
-|-------|-------------|---------|
-| `Sum` | Sum of values | `ccn.sum` |
-| `Average` | Arithmetic mean | `ccn.avg` |
-| `Max` | Maximum | `ccn.max` |
-| `Min` | Minimum | `mi.min` |
-| `Count` | Number of elements | — |
+| Value     | Description        | Example   |
+| --------- | ------------------ | --------- |
+| `Sum`     | Sum of values      | `ccn.sum` |
+| `Average` | Arithmetic mean    | `ccn.avg` |
+| `Max`     | Maximum            | `ccn.max` |
+| `Min`     | Minimum            | `mi.min`  |
+| `Count`   | Number of elements | —         |
 
 ### SymbolLevel (Enum)
 
@@ -157,13 +157,13 @@ new MetricDefinition(
 
 Metrics are stored in separate `MetricBag` instances for each symbol, so keys do not contain FQN.
 
-| Level | Example Keys |
-|-------|--------------|
-| Method | `ccn`, `cognitive`, `mi`, `halstead.volume` |
-| Class | `methodCount`, `lcom`, `tcc`, `rfc`, `ccn.sum`, `ccn.avg` |
-| File | `loc`, `lloc`, `cloc`, `classCount` |
-| Namespace | `loc.sum`, `loc.avg`, `ccn.sum`, `lcom.max` |
-| Project | same as Namespace |
+| Level     | Example Keys                                              |
+| --------- | --------------------------------------------------------- |
+| Method    | `ccn`, `cognitive`, `mi`, `halstead.volume`               |
+| Class     | `methodCount`, `lcom`, `tcc`, `rfc`, `ccn.sum`, `ccn.avg` |
+| File      | `loc`, `lloc`, `cloc`, `classCount`                       |
+| Namespace | `loc.sum`, `loc.avg`, `ccn.sum`, `lcom.max`               |
+| Project   | same as Namespace                                         |
 
 ---
 

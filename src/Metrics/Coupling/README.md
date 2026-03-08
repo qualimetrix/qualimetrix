@@ -13,19 +13,19 @@ Coupling metrics measure dependencies between components. All collectors in this
 
 ### Metrics
 
-| Metric | Description | Formula |
-|--------|-------------|---------|
-| `ca` | Afferent Coupling — incoming dependencies | count(dependents) |
-| `ce` | Efferent Coupling — outgoing dependencies | count(dependencies) |
-| `instability` | Class instability | Ce / (Ca + Ce) |
+| Metric        | Description                               | Formula             |
+| ------------- | ----------------------------------------- | ------------------- |
+| `ca`          | Afferent Coupling — incoming dependencies | count(dependents)   |
+| `ce`          | Efferent Coupling — outgoing dependencies | count(dependencies) |
+| `instability` | Class instability                         | Ce / (Ca + Ce)      |
 
 ### Instability Interpretation
 
-| Value | Description |
-|-------|-------------|
-| 0.0 | Maximally stable (only incoming dependencies) |
-| 0.5 | Balanced |
-| 1.0 | Maximally unstable (only outgoing dependencies) |
+| Value | Description                                     |
+| ----- | ----------------------------------------------- |
+| 0.0   | Maximally stable (only incoming dependencies)   |
+| 0.5   | Balanced                                        |
+| 1.0   | Maximally unstable (only outgoing dependencies) |
 
 **Stable classes (I ~ 0):** Used by many, depend on few. Difficult to change.
 
@@ -49,11 +49,11 @@ A = (abstractClassCount + interfaceCount) / classCount
 
 ### Interpretation
 
-| Value | Description |
-|-------|-------------|
-| 0.0 | All classes are concrete |
-| 0.5 | Balanced abstraction |
-| 1.0 | All classes are abstract/interfaces |
+| Value | Description                         |
+| ----- | ----------------------------------- |
+| 0.0   | All classes are concrete            |
+| 0.5   | Balanced abstraction                |
+| 1.0   | All classes are abstract/interfaces |
 
 ---
 
@@ -79,12 +79,12 @@ Ideal packages lie on the line `A + I = 1`:
 
 ### Distance Interpretation
 
-| Value | Description |
-|-------|-------------|
-| 0.0 | On the main sequence (ideal) |
-| 0.1-0.3 | Acceptable |
-| 0.3-0.5 | Needs attention |
-| 0.5+ | Problem zone |
+| Value   | Description                  |
+| ------- | ---------------------------- |
+| 0.0     | On the main sequence (ideal) |
+| 0.1-0.3 | Acceptable                   |
+| 0.3-0.5 | Needs attention              |
+| 0.5+    | Problem zone                 |
 
 ### Problem Zones
 

@@ -18,53 +18,53 @@ App/
 ## Method-Level Metrics
 
 ### App\Service\UserService
-| Method | CCN | Description |
-|--------|-----|-------------|
-| findById() | 2 | Simple if check |
-| findByEmail() | 3 | if + foreach |
-| create() | 5 | Multiple conditions and loop |
-| **Class Total** | **10** | **sum=10, max=5, avg=3.33** |
+| Method          | CCN    | Description                  |
+| --------------- | ------ | ---------------------------- |
+| findById()      | 2      | Simple if check              |
+| findByEmail()   | 3      | if + foreach                 |
+| create()        | 5      | Multiple conditions and loop |
+| **Class Total** | **10** | **sum=10, max=5, avg=3.33**  |
 
 ### App\Service\OrderService
-| Method | CCN | Description |
-|--------|-----|-------------|
-| validate() | 1 | No branches |
-| process() | 8 | Complex branching (if + foreach + nested conditions) |
-| **Class Total** | **9** | **sum=9, max=8, avg=4.5** |
+| Method          | CCN   | Description                                          |
+| --------------- | ----- | ---------------------------------------------------- |
+| validate()      | 1     | No branches                                          |
+| process()       | 8     | Complex branching (if + foreach + nested conditions) |
+| **Class Total** | **9** | **sum=9, max=8, avg=4.5**                            |
 
 ### App\Service\PaymentService
-| Method | CCN | Description |
-|--------|-----|-------------|
-| authorize() | 4 | Three if checks |
-| charge() | 6 | if + switch with 3 cases |
+| Method          | CCN    | Description                |
+| --------------- | ------ | -------------------------- |
+| authorize()     | 4      | Three if checks            |
+| charge()        | 6      | if + switch with 3 cases   |
 | **Class Total** | **10** | **sum=10, max=6, avg=5.0** |
 
 ### App\Repository\UserRepository
-| Method | CCN | Description |
-|--------|-----|-------------|
-| findAll() | 1 | No branches |
-| findOne() | 1 | No branches |
-| save() | 2 | Single if |
-| delete() | 3 | Two if checks |
+| Method          | CCN   | Description                |
+| --------------- | ----- | -------------------------- |
+| findAll()       | 1     | No branches                |
+| findOne()       | 1     | No branches                |
+| save()          | 2     | Single if                  |
+| delete()        | 3     | Two if checks              |
 | **Class Total** | **7** | **sum=7, max=3, avg=1.75** |
 
 ### App\Repository\OrderRepository
-| Method | CCN | Description |
-|--------|-----|-------------|
-| findByUser() | 2 | foreach loop |
-| findByStatus() | 3 | foreach + nested if |
-| updateStatus() | 2 | Single if |
+| Method          | CCN   | Description                |
+| --------------- | ----- | -------------------------- |
+| findByUser()    | 2     | foreach loop               |
+| findByStatus()  | 3     | foreach + nested if        |
+| updateStatus()  | 2     | Single if                  |
 | **Class Total** | **7** | **sum=7, max=3, avg=2.33** |
 
 ## Class-Level Aggregation
 
-| Class | Methods | CCN Sum | CCN Max | CCN Avg |
-|-------|---------|---------|---------|---------|
-| UserService | 3 | 10 | 5 | 3.33 |
-| OrderService | 2 | 9 | 8 | 4.5 |
-| PaymentService | 2 | 10 | 6 | 5.0 |
-| UserRepository | 4 | 7 | 3 | 1.75 |
-| OrderRepository | 3 | 7 | 3 | 2.33 |
+| Class           | Methods | CCN Sum | CCN Max | CCN Avg |
+| --------------- | ------- | ------- | ------- | ------- |
+| UserService     | 3       | 10      | 5       | 3.33    |
+| OrderService    | 2       | 9       | 8       | 4.5     |
+| PaymentService  | 2       | 10      | 6       | 5.0     |
+| UserRepository  | 4       | 7       | 3       | 1.75    |
+| OrderRepository | 3       | 7       | 3       | 2.33    |
 
 ## Namespace-Level Aggregation
 

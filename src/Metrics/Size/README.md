@@ -12,11 +12,11 @@ Size metrics measure the amount of code, classes, and structural elements.
 
 ### Metrics
 
-| Metric | Description |
-|--------|-------------|
-| `loc` | Total number of lines in the file |
+| Metric | Description                                        |
+| ------ | -------------------------------------------------- |
+| `loc`  | Total number of lines in the file                  |
 | `lloc` | Logical lines (excluding blank lines and comments) |
-| `cloc` | Comment lines |
+| `cloc` | Comment lines                                      |
 
 ### What Is Counted
 
@@ -64,12 +64,12 @@ class Calculator  // LLOC +1
 
 ### Metrics
 
-| Metric | Description |
-|--------|-------------|
-| `classCount` | Named classes (not anonymous) |
-| `interfaceCount` | Interfaces |
-| `traitCount` | Traits |
-| `enumCount` | Enums (PHP 8.1+) |
+| Metric           | Description                   |
+| ---------------- | ----------------------------- |
+| `classCount`     | Named classes (not anonymous) |
+| `interfaceCount` | Interfaces                    |
+| `traitCount`     | Traits                        |
+| `enumCount`      | Enums (PHP 8.1+)              |
 
 ### What Is Counted
 
@@ -113,13 +113,13 @@ $anon = new class { };  // NOT counted
 
 ### Metrics
 
-| Metric | Description |
-|--------|-------------|
-| `propertyCount` | Total number of properties |
-| `propertyCountPublic` | Public properties |
-| `propertyCountProtected` | Protected properties |
-| `propertyCountPrivate` | Private properties |
-| `propertyCountStatic` | Static properties (any visibility) |
+| Metric                   | Description                        |
+| ------------------------ | ---------------------------------- |
+| `propertyCount`          | Total number of properties         |
+| `propertyCountPublic`    | Public properties                  |
+| `propertyCountProtected` | Protected properties               |
+| `propertyCountPrivate`   | Private properties                 |
+| `propertyCountStatic`    | Static properties (any visibility) |
 
 ### What Is Counted
 
@@ -156,12 +156,12 @@ class User
 
 ### Interpretation
 
-| Property Count | Quality |
-|----------------|---------|
-| 0-5 | Normal |
-| 6-10 | Moderate complexity |
-| 11-15 | Too much state (SRP?) |
-| 15+ | Too many, refactoring required |
+| Property Count | Quality                        |
+| -------------- | ------------------------------ |
+| 0-5            | Normal                         |
+| 6-10           | Moderate complexity            |
+| 11-15          | Too much state (SRP?)          |
+| 15+            | Too many, refactoring required |
 
 ---
 
@@ -173,15 +173,15 @@ class User
 
 ### Metrics
 
-| Metric | Description |
-|--------|-------------|
-| `methodCount` | Methods excluding getters/setters |
-| `methodCountTotal` | All methods |
-| `methodCountPublic` | Public methods (excluding getters/setters) |
+| Metric                 | Description                                   |
+| ---------------------- | --------------------------------------------- |
+| `methodCount`          | Methods excluding getters/setters             |
+| `methodCountTotal`     | All methods                                   |
+| `methodCountPublic`    | Public methods (excluding getters/setters)    |
 | `methodCountProtected` | Protected methods (excluding getters/setters) |
-| `methodCountPrivate` | Private methods (excluding getters/setters) |
-| `getterCount` | Getters (`get*`, `is*`, `has*`) |
-| `setterCount` | Setters (`set*`) |
+| `methodCountPrivate`   | Private methods (excluding getters/setters)   |
+| `getterCount`          | Getters (`get*`, `is*`, `has*`)               |
+| `setterCount`          | Setters (`set*`)                              |
 
 ### Getter/Setter Detection
 

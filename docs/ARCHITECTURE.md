@@ -2,16 +2,16 @@
 
 ## Navigation
 
-| Task | Document |
-|------|----------|
-| **Getting started** | [CLAUDE.md](../CLAUDE.md) — rules, structure, commands |
-| **New collector** | [src/Metrics/README.md](../src/Metrics/README.md) |
-| **New rule** | [src/Rules/README.md](../src/Rules/README.md) |
-| **Understanding contracts** | [src/Core/README.md](../src/Core/README.md) |
-| **Analysis pipeline** | [src/Analysis/README.md](../src/Analysis/README.md) |
-| **Formatters** | [src/Reporting/README.md](../src/Reporting/README.md) |
-| **Configuration** | [src/Configuration/README.md](../src/Configuration/README.md) |
-| **DI, cache, CLI** | [src/Infrastructure/README.md](../src/Infrastructure/README.md) |
+| Task                        | Document                                                        |
+| --------------------------- | --------------------------------------------------------------- |
+| **Getting started**         | [CLAUDE.md](../CLAUDE.md) — rules, structure, commands          |
+| **New collector**           | [src/Metrics/README.md](../src/Metrics/README.md)               |
+| **New rule**                | [src/Rules/README.md](../src/Rules/README.md)                   |
+| **Understanding contracts** | [src/Core/README.md](../src/Core/README.md)                     |
+| **Analysis pipeline**       | [src/Analysis/README.md](../src/Analysis/README.md)             |
+| **Formatters**              | [src/Reporting/README.md](../src/Reporting/README.md)           |
+| **Configuration**           | [src/Configuration/README.md](../src/Configuration/README.md)   |
+| **DI, cache, CLI**          | [src/Infrastructure/README.md](../src/Infrastructure/README.md) |
 
 ---
 
@@ -38,21 +38,21 @@ Collection (parallel) -> Aggregation -> RuleExecution -> Reporting
   MetricBag[]        AggregatedMetrics  Violation[]   Output
 ```
 
-| Phase | % of time | Parallel |
-|-------|-----------|----------|
-| Collection | 85-95% | Yes (amphp/parallel) |
-| Aggregation | 2-5% | No |
-| RuleExecution | 1-3% | No |
-| Reporting | <1% | No |
+| Phase         | % of time | Parallel             |
+| ------------- | --------- | -------------------- |
+| Collection    | 85-95%    | Yes (amphp/parallel) |
+| Aggregation   | 2-5%      | No                   |
+| RuleExecution | 1-3%      | No                   |
+| Reporting     | <1%       | No                   |
 
 **Collection** — the only parallelizable phase (AST parsing is the bottleneck).
 
 ### 3. Collector/Rule Separation
 
-| Component | State | Task |
-|-----------|-------|------|
-| **Collector** | Stateful per-file | AST traversal -> MetricBag |
-| **Rule** | Stateless | MetricRepository -> Violation[] |
+| Component     | State             | Task                            |
+| ------------- | ----------------- | ------------------------------- |
+| **Collector** | Stateful per-file | AST traversal -> MetricBag      |
+| **Rule**      | Stateless         | MetricRepository -> Violation[] |
 
 **Collectors** gather metrics (one metric = one AST pass).
 **Rules** analyze pre-computed metrics (do NOT perform AST traversal).
@@ -75,12 +75,12 @@ Used for:
 
 Symfony DI with autoconfiguration — new components are registered automatically:
 
-| Component | Condition | DI Tag |
-|-----------|-----------|--------|
-| Collector | implements `MetricCollectorInterface` | `aimd.collector` |
-| Rule | implements `RuleInterface` | `aimd.rule` |
-| Formatter | implements `FormatterInterface` | `aimd.formatter` |
-| Stage | implements `ConfigurationStageInterface` | `aimd.config_stage` |
+| Component | Condition                                | DI Tag              |
+| --------- | ---------------------------------------- | ------------------- |
+| Collector | implements `MetricCollectorInterface`    | `aimd.collector`    |
+| Rule      | implements `RuleInterface`               | `aimd.rule`         |
+| Formatter | implements `FormatterInterface`          | `aimd.formatter`    |
+| Stage     | implements `ConfigurationStageInterface` | `aimd.config_stage` |
 
 **No need** to modify `ContainerFactory` when adding new components.
 

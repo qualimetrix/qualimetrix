@@ -15,11 +15,11 @@ AIMD is **9-39x faster** than competitors on large codebases (sequential and par
 
 ### 1.1 Test Environments
 
-| Codebase | Files | Description |
-|----------|------:|-------------|
-| **Small** | 320 | AI Mess Detector (src/) |
-| **Medium** | 10,308 | Symfony Framework (src/) |
-| **Large** | 9,953 | Production backend (Eda/backend_core) |
+| Codebase   | Files  | Description                           |
+| ---------- | -----: | ------------------------------------- |
+| **Small**  | 320    | AI Mess Detector (src/)               |
+| **Medium** | 10,308 | Symfony Framework (src/)              |
+| **Large**  | 9,953  | Production backend (Eda/backend_core) |
 
 All benchmarks: cold cache, PHP 8.4, macOS, Apple Silicon (14 cores).
 
@@ -29,43 +29,43 @@ All benchmarks: cold cache, PHP 8.4, macOS, Apple Silicon (14 cores).
 
 Detailed benchmarks on `/Users/fractalizer/PhpstormProjects/Eda/all/backend_core` (9,953 files). AIMD numbers are medians of 3 runs.
 
-| Tool | Wall time | CPU time | CPU% | Notes |
-|------|----------:|--------:|-----:|-------|
-| **AIMD parallel** (14 workers) | **7.9s** | ~35s | 481% | Collection phase: 4.5s |
-| **AIMD sequential** (workers=1) | **33.0s** | ~31s | 94% | Collection phase: 29.4s |
-| phpmd (all rulesets) | 305s | 295s | 98% | O(n²) scaling |
-| phpmd (codesize only) | 159s | 151s | 97% | |
-| phpmetrics | 67.6s | - | - | |
-| pdepend | 241.5s | - | - | |
+| Tool                            | Wall time | CPU time | CPU% | Notes                   |
+| ------------------------------- | --------: | -------: | ---: | ----------------------- |
+| **AIMD parallel** (14 workers)  | **7.9s**  | ~35s     | 481% | Collection phase: 4.5s  |
+| **AIMD sequential** (workers=1) | **33.0s** | ~31s     | 94%  | Collection phase: 29.4s |
+| phpmd (all rulesets)            | 305s      | 295s     | 98%  | O(n²) scaling           |
+| phpmd (codesize only)           | 159s      | 151s     | 97%  |                         |
+| phpmetrics                      | 67.6s     | -        | -    |                         |
+| pdepend                         | 241.5s    | -        | -    |                         |
 
 *pdepend crashes on Symfony due to PHP 8.4 compatibility issues (deprecated implicit nullable types).*
 
 ### 1.3 Relative Performance (vs AIMD, large codebase)
 
-| Tool | vs AIMD sequential | vs AIMD parallel |
-|------|-------------------:|-----------------:|
-| phpmd (all rules) | **9.2x slower** | **38.6x slower** |
-| phpmd (codesize) | 4.8x slower | 20.1x slower |
-| phpmetrics | 2.0x slower | 8.6x slower |
-| pdepend | 7.3x slower | 30.6x slower |
+| Tool              | vs AIMD sequential | vs AIMD parallel |
+| ----------------- | -----------------: | ---------------: |
+| phpmd (all rules) | **9.2x slower**    | **38.6x slower** |
+| phpmd (codesize)  | 4.8x slower        | 20.1x slower     |
+| phpmetrics        | 2.0x slower        | 8.6x slower      |
+| pdepend           | 7.3x slower        | 30.6x slower     |
 
 ### 1.4 AIMD Parallel vs Sequential
 
-| Mode | No cache | With cache | Cache speedup |
-|------|------:|------:|---:|
-| Sequential (workers=1) | 33.0s | 32.9s | 1.00x |
-| Parallel (14 workers) | 7.9s | 7.5s | 1.06x |
-| **Parallel speedup** | **4.2x** | **4.4x** | |
+| Mode                   | No cache | With cache | Cache speedup |
+| ---------------------- | -------: | ---------: | ------------: |
+| Sequential (workers=1) | 33.0s    | 32.9s      | 1.00x         |
+| Parallel (14 workers)  | 7.9s     | 7.5s       | 1.06x         |
+| **Parallel speedup**   | **4.2x** | **4.4x**   |               |
 
 Phase breakdown (profiler, no cache):
 
-| Phase | Sequential | Parallel | Speedup |
-|-------|----------:|--------:|--------:|
-| collection.execute_strategy | 29.4s | 4.45s | **6.6x** |
-| aggregation | 0.92s | 0.96s | 1.0x |
-| dependency | 0.59s | 0.62s | 1.0x |
-| rules | 0.51s | 0.49s | 1.0x |
-| discovery | 0.30s | 0.30s | 1.0x |
+| Phase                       | Sequential | Parallel | Speedup  |
+| --------------------------- | ---------: | -------: | -------: |
+| collection.execute_strategy | 29.4s      | 4.45s    | **6.6x** |
+| aggregation                 | 0.92s      | 0.96s    | 1.0x     |
+| dependency                  | 0.59s      | 0.62s    | 1.0x     |
+| rules                       | 0.51s      | 0.49s    | 1.0x     |
+| discovery                   | 0.30s      | 0.30s    | 1.0x     |
 
 ### 1.5 Performance Conclusions
 
@@ -84,11 +84,11 @@ Detailed comparison on 10 classes from AIMD source code (74 methods total).
 
 ### 2.1 Cyclomatic Complexity
 
-| Agreement Category | Methods | % |
-|-------------------|--------:|----:|
-| AIMD = pdepend CCN (exact) | 50 | 67.6% |
-| AIMD = pdepend CCN2 (not CCN) | 11 | 14.9% |
-| AIMD matches neither | 13 | 17.6% |
+| Agreement Category            | Methods | %     |
+| ----------------------------- | ------: | ----: |
+| AIMD = pdepend CCN (exact)    | 50      | 67.6% |
+| AIMD = pdepend CCN2 (not CCN) | 11      | 14.9% |
+| AIMD matches neither          | 13      | 17.6% |
 
 **AIMD is always >= pdepend CCN.** Never lower.
 
@@ -109,12 +109,12 @@ Detailed comparison on 10 classes from AIMD source code (74 methods total).
 
 ### 2.2 NPath Complexity
 
-| Method | AIMD | pdepend | Ratio |
-|--------|-----:|--------:|------:|
-| getOperandName | 24,576 | 1,417,176 | 0.02x |
-| getComplexityIncrement | 256 | 5,832 | 0.04x |
-| collectNamespaceMetricValues | 528 | 348 | 1.52x |
-| enterNode | 240 | 360 | 0.67x |
+| Method                       | AIMD   | pdepend   | Ratio |
+| ---------------------------- | -----: | --------: | ----: |
+| getOperandName               | 24,576 | 1,417,176 | 0.02x |
+| getComplexityIncrement       | 256    | 5,832     | 0.04x |
+| collectNamespaceMetricValues | 528    | 348       | 1.52x |
+| enterNode                    | 240    | 360       | 0.67x |
 
 **Massive discrepancies** (up to 58x) due to `match` expression handling. pdepend multiplies NPath by number of `match` arms; AIMD appears to undercount significantly. **This needs investigation.**
 
@@ -151,12 +151,12 @@ These are **not comparable** — different algorithms can give opposite conclusi
 
 ### 2.6 WMC (Weighted Methods per Class)
 
-| Class | AIMD | phpmetrics | pdepend | Notes |
-|-------|-----:|---------:|-------:|-------|
-| CognitiveComplexityVisitor | 82 | 80 | 77 | AIMD highest due to CCN2+ |
-| HalsteadVisitor | 79 | 77 | 68 | delta=11, `??` chaining |
-| AggregationHelper | - | 35 | 34 | delta=1 |
-| FileCache | - | 20 | 20 | exact match |
+| Class                      | AIMD | phpmetrics | pdepend | Notes                     |
+| -------------------------- | ---: | ---------: | ------: | ------------------------- |
+| CognitiveComplexityVisitor | 82   | 80         | 77      | AIMD highest due to CCN2+ |
+| HalsteadVisitor            | 79   | 77         | 68      | delta=11, `??` chaining   |
+| AggregationHelper          | -    | 35         | 34      | delta=1                   |
+| FileCache                  | -    | 20         | 20      | exact match               |
 
 AIMD WMC is consistently highest due to CCN2+ variant propagation.
 
@@ -166,39 +166,39 @@ AIMD WMC is consistently highest due to CCN2+ variant propagation.
 
 ### 3.1 Metrics
 
-| Metric | AIMD | pdepend | phpmetrics | phpmd |
-|--------|:----:|:-------:|:----------:|:-----:|
-| **Complexity** | | | | |
-| CCN (Cyclomatic) | CCN2+* | CCN+CCN2 | CCN | CCN |
-| NPath | ✅ | ✅ | ❌ | ✅ |
-| Cognitive Complexity | ✅ | ❌ | ❌ | ❌ |
-| **Halstead** | | | | |
-| Volume, Difficulty, Effort, Bugs | ✅ | ✅ | ✅ | ❌ |
-| Time | ✅ | ✅ | ❌ | ❌ |
-| **Maintainability** | | | | |
-| MI (Index) | ✅** | ✅ | ✅ | ❌ |
-| MI without comments | ❌ | ❌ | ✅ | ❌ |
-| **Size** | | | | |
-| LOC / LLOC / CLOC | ✅ | ✅ | ✅ | ❌ |
-| ELOC | ❌ | ✅ | ❌ | ❌ |
-| Class Count / Method Count | ✅ | ✅ | ✅/✅ | ❌/✅ |
-| **Coupling** | | | | |
-| CBO | ✅ | ✅ | ❌ | ✅ |
-| Ca (Afferent) / Ce (Efferent) | ✅ | ✅ | ✅ | ❌ |
-| Instability | ✅ | ❌ | ✅ | ❌ |
-| Abstractness / Distance | ✅ | ❌ | ❌ | ❌ |
-| RFC | ✅ | ❌ | ❌ | ❌ |
-| **Cohesion** | | | | |
-| LCOM | LCOM4 | ❌ | HS-LCOM | ❌ |
-| TCC / LCC | ✅ | ❌ | ❌ | ❌ |
-| WMC | ✅ | ✅ | ✅ | ✅ |
-| WOC | ✅ | ❌ | ❌ | ❌ |
-| **Inheritance** | | | | |
-| DIT / NOC | ✅ | ✅ | ✅/❌ | ✅ |
-| **Graph-based** | | | | |
-| ClassRank / PageRank | ❌ | CodeRank | PageRank | ❌ |
-| Kan Defects | ❌ | ❌ | ✅ | ❌ |
-| System Complexity | ❌ | ❌ | ✅ | ❌ |
+| Metric                           | AIMD   | pdepend  | phpmetrics | phpmd |
+| -------------------------------- | :----: | :------: | :--------: | :---: |
+| **Complexity**                   |        |          |            |       |
+| CCN (Cyclomatic)                 | CCN2+* | CCN+CCN2 | CCN        | CCN   |
+| NPath                            | ✅     | ✅       | ❌         | ✅    |
+| Cognitive Complexity             | ✅     | ❌       | ❌         | ❌    |
+| **Halstead**                     |        |          |            |       |
+| Volume, Difficulty, Effort, Bugs | ✅     | ✅       | ✅         | ❌    |
+| Time                             | ✅     | ✅       | ❌         | ❌    |
+| **Maintainability**              |        |          |            |       |
+| MI (Index)                       | ✅**   | ✅       | ✅         | ❌    |
+| MI without comments              | ❌     | ❌       | ✅         | ❌    |
+| **Size**                         |        |          |            |       |
+| LOC / LLOC / CLOC                | ✅     | ✅       | ✅         | ❌    |
+| ELOC                             | ❌     | ✅       | ❌         | ❌    |
+| Class Count / Method Count       | ✅     | ✅       | ✅/✅      | ❌/✅ |
+| **Coupling**                     |        |          |            |       |
+| CBO                              | ✅     | ✅       | ❌         | ✅    |
+| Ca (Afferent) / Ce (Efferent)    | ✅     | ✅       | ✅         | ❌    |
+| Instability                      | ✅     | ❌       | ✅         | ❌    |
+| Abstractness / Distance          | ✅     | ❌       | ❌         | ❌    |
+| RFC                              | ✅     | ❌       | ❌         | ❌    |
+| **Cohesion**                     |        |          |            |       |
+| LCOM                             | LCOM4  | ❌       | HS-LCOM    | ❌    |
+| TCC / LCC                        | ✅     | ❌       | ❌         | ❌    |
+| WMC                              | ✅     | ✅       | ✅         | ✅    |
+| WOC                              | ✅     | ❌       | ❌         | ❌    |
+| **Inheritance**                  |        |          |            |       |
+| DIT / NOC                        | ✅     | ✅       | ✅/❌      | ✅    |
+| **Graph-based**                  |        |          |            |       |
+| ClassRank / PageRank             | ❌     | CodeRank | PageRank   | ❌    |
+| Kan Defects                      | ❌     | ❌       | ✅         | ❌    |
+| System Complexity                | ❌     | ❌       | ✅         | ❌    |
 
 \* AIMD CCN = CCN2 + null coalescing `??` counting (stricter than standard)
 \** AIMD MI previously used physical LOC; fixed to use LLOC in commit 1048c9f
@@ -216,27 +216,27 @@ AIMD WMC is consistently highest due to CCN2+ variant propagation.
 
 ## 4. Feature Comparison
 
-| Feature | AIMD | phpmd | phpmetrics | pdepend |
-|---------|:----:|:-----:|:----------:|:-------:|
-| Parallel processing | ✅ | ❌ | ❌ | ❌ |
-| Baseline (ignore known issues) | ✅ | ✅ | ❌ | ❌ |
-| Git integration (--diff/--staged) | ✅ | ❌ | ✅ | ❌ |
-| Inline suppression (@aimd-ignore) | ✅ | ✅ (@SuppressWarnings) | ❌ | ❌ |
-| SARIF output | ✅ | ✅ | ❌ | ❌ |
-| GitLab Code Quality | ✅ | ❌ | ❌ | ❌ |
-| Checkstyle output | ✅ | ✅ | ❌ | ❌ |
-| JSON output | ✅ | ✅ | ✅ | ❌ |
-| HTML reports | ❌ | ✅ | ✅ | ❌ |
-| Graph visualization | ✅ (DOT) | ❌ | ✅ (HTML) | ✅ (SVG) |
-| AST caching | ✅ | ✅ | ❌ | ❌ |
-| Analysis rules with thresholds | ✅ | ✅ | ❌ | ❌ |
-| Custom rules | Planned | ✅ | ❌ | ❌ |
-| PHP 8.4 support | ✅ | ⚠️ (deprecated) | ✅ | ⚠️ (crashes) |
-| Raw metric export | ❌ | ❌ | ✅ (JSON) | ✅ (XML) |
-| Code duplication | ❌ | ❌ | ❌ | ❌ |
-| Security rules | Basic* | ❌ | ❌ | ❌ |
-| Dead code detection | ❌ | ✅ (unused params) | ❌ | ❌ |
-| Type coverage metrics | ❌ | ❌ | ❌ | ❌ |
+| Feature                           | AIMD     | phpmd                  | phpmetrics | pdepend      |
+| --------------------------------- | :------: | :--------------------: | :--------: | :----------: |
+| Parallel processing               | ✅       | ❌                     | ❌         | ❌           |
+| Baseline (ignore known issues)    | ✅       | ✅                     | ❌         | ❌           |
+| Git integration (--diff/--staged) | ✅       | ❌                     | ✅         | ❌           |
+| Inline suppression (@aimd-ignore) | ✅       | ✅ (@SuppressWarnings) | ❌         | ❌           |
+| SARIF output                      | ✅       | ✅                     | ❌         | ❌           |
+| GitLab Code Quality               | ✅       | ❌                     | ❌         | ❌           |
+| Checkstyle output                 | ✅       | ✅                     | ❌         | ❌           |
+| JSON output                       | ✅       | ✅                     | ✅         | ❌           |
+| HTML reports                      | ❌       | ✅                     | ✅         | ❌           |
+| Graph visualization               | ✅ (DOT) | ❌                     | ✅ (HTML)  | ✅ (SVG)     |
+| AST caching                       | ✅       | ✅                     | ❌         | ❌           |
+| Analysis rules with thresholds    | ✅       | ✅                     | ❌         | ❌           |
+| Custom rules                      | Planned  | ✅                     | ❌         | ❌           |
+| PHP 8.4 support                   | ✅       | ⚠️ (deprecated)        | ✅         | ⚠️ (crashes) |
+| Raw metric export                 | ❌       | ❌                     | ✅ (JSON)  | ✅ (XML)     |
+| Code duplication                  | ❌       | ❌                     | ❌         | ❌           |
+| Security rules                    | Basic*   | ❌                     | ❌         | ❌           |
+| Dead code detection               | ❌       | ✅ (unused params)     | ❌         | ❌           |
+| Type coverage metrics             | ❌       | ❌                     | ❌         | ❌           |
 
 \* AIMD has superglobals, eval, exit, error suppression rules — but no taint analysis or injection detection.
 
@@ -268,16 +268,16 @@ AIMD only outputs metrics as violations (when thresholds are exceeded). There is
 
 ## Appendix A: Methodology Notes
 
-| Aspect | AIMD | phpmetrics | pdepend |
-|--------|------|-----------|---------|
-| Parser | nikic/php-parser 5.x | nikic/php-parser 4/5.x | Custom tokenizer |
-| CCN variant | CCN2 + `??` counting | CCN (class-level) | CCN + CCN2 |
-| MI scope | Method-level, normalized 0-100 | Class-level, raw 0-171 + comment weight | Method-level, raw 0-171 |
-| MI LOC input | LLOC (fixed) | LLOC | ELOC |
-| LCOM variant | LCOM4 (connected components) | Henderson-Sellers | Not reported |
-| CBO scope | Efferent coupling (unique types) | Afferent + efferent separated | CA + CE separated |
-| Halstead scope | Method-level | Class-level aggregated | Method-level |
-| NPath | Method-level | Not reported | Method-level |
+| Aspect         | AIMD                             | phpmetrics                              | pdepend                 |
+| -------------- | -------------------------------- | --------------------------------------- | ----------------------- |
+| Parser         | nikic/php-parser 5.x             | nikic/php-parser 4/5.x                  | Custom tokenizer        |
+| CCN variant    | CCN2 + `??` counting             | CCN (class-level)                       | CCN + CCN2              |
+| MI scope       | Method-level, normalized 0-100   | Class-level, raw 0-171 + comment weight | Method-level, raw 0-171 |
+| MI LOC input   | LLOC (fixed)                     | LLOC                                    | ELOC                    |
+| LCOM variant   | LCOM4 (connected components)     | Henderson-Sellers                       | Not reported            |
+| CBO scope      | Efferent coupling (unique types) | Afferent + efferent separated           | CA + CE separated       |
+| Halstead scope | Method-level                     | Class-level aggregated                  | Method-level            |
+| NPath          | Method-level                     | Not reported                            | Method-level            |
 
 ## Appendix B: Benchmark Environment
 

@@ -70,15 +70,15 @@ Tool configuration, CLI interface, DI container, and caching.
 
 Quick reference for key concepts:
 
-| Term | Description |
-|------|-------------|
-| **SymbolPath** | Unique code identifier (method, class, namespace, or file) |
-| **MetricBag** | Container for collected metrics from a single file |
-| **MetricCollector** | Component that collects metrics from AST (stateful per-file) |
-| **Rule** | Component that interprets metrics and generates violations (stateless) |
-| **Violation** | Detected rule violation with severity, location, and message |
-| **AnalysisContext** | Analysis context containing metrics and the dependency graph |
-| **Pipeline** | Four-phase process: Collection -> Aggregation -> Analysis -> Reporting |
+| Term                | Description                                                            |
+| ------------------- | ---------------------------------------------------------------------- |
+| **SymbolPath**      | Unique code identifier (method, class, namespace, or file)             |
+| **MetricBag**       | Container for collected metrics from a single file                     |
+| **MetricCollector** | Component that collects metrics from AST (stateful per-file)           |
+| **Rule**            | Component that interprets metrics and generates violations (stateless) |
+| **Violation**       | Detected rule violation with severity, location, and message           |
+| **AnalysisContext** | Analysis context containing metrics and the dependency graph           |
+| **Pipeline**        | Four-phase process: Collection -> Aggregation -> Analysis -> Reporting |
 
 ---
 

@@ -9,41 +9,41 @@ Rules are analysis rule implementations for static analysis. Rules are **complet
 
 ### Rule Types
 
-| Type | Interface | Description |
-|------|-----------|-------------|
-| Simple | `RuleInterface` | Single analysis level |
+| Type         | Interface                   | Description                                |
+| ------------ | --------------------------- | ------------------------------------------ |
+| Simple       | `RuleInterface`             | Single analysis level                      |
 | Hierarchical | `HierarchicalRuleInterface` | Multiple levels (method, class, namespace) |
 
 ---
 
 ## Implemented Rules
 
-| Rule | Category | Type | Description | Default Thresholds |
-|------|----------|------|-------------|-------------------|
-| **complexity.cyclomatic** | Complexity | Hierarchical (Method, Class) | Cyclomatic Complexity (CCN) | method: 10/20, class.max: 30/50 |
-| **complexity.cognitive** | Complexity | Hierarchical (Method, Class) | Cognitive Complexity | method: 15/25, class.max: 30/50 |
-| **complexity.npath** | Complexity | Hierarchical (Method, Class) | NPATH Complexity | method: 200/500, class (disabled) |
-| **complexity.wmc** | Complexity | Simple | Weighted Methods per Class | warning: 35, error: 50 |
-| **size.method-count** | Size | Simple | Method count per class | warning: 15, error: 25 |
-| **size.class-count** | Size | Simple | Class count per namespace | warning: 10, error: 15 |
-| **size.property-count** | Size | Simple | Class property count | warning: 10, error: 15 |
-| **maintainability.index** | Maintainability | Simple | Maintainability Index | warning: 65, error: 20 |
-| **design.lcom** | Design | Simple | Lack of Cohesion (LCOM4) | warning: 2, error: 3 |
-| **design.noc** | Design | Simple | Number of Children | warning: 7, error: 15 |
-| **design.inheritance** | Design | Simple | Depth of Inheritance Tree (DIT) | warning: 4, error: 6 |
-| **coupling.instability** | Coupling | Simple | Instability (Ca/Ce) | warning: 0.8, error: 0.95 |
-| **coupling.cbo** | Coupling | Simple | Coupling Between Objects | warning: ..., error: ... |
-| **coupling.distance** | Coupling | Simple | Distance from Main Sequence | warning: 0.3, error: 0.5 |
-| **architecture.circular-dependency** | Architecture | Simple | Circular dependencies | enabled: true |
-| **code-smell.boolean-argument** | CodeSmell | Simple | Boolean arguments in signatures | enabled: true |
-| **code-smell.count-in-loop** | CodeSmell | Simple | count() calls in loops | enabled: true |
-| **code-smell.debug-code** | CodeSmell | Simple | Debug code (var_dump, etc.) | enabled: true |
-| **code-smell.empty-catch** | CodeSmell | Simple | Empty catch blocks | enabled: true |
-| **code-smell.error-suppression** | CodeSmell | Simple | Error suppression operator (@) | enabled: true |
-| **code-smell.eval** | CodeSmell | Simple | eval() usage | enabled: true |
-| **code-smell.exit** | CodeSmell | Simple | exit/die usage | enabled: true |
-| **code-smell.goto** | CodeSmell | Simple | goto statements | enabled: true |
-| **code-smell.superglobals** | CodeSmell | Simple | Direct superglobal access | enabled: true |
+| Rule                                 | Category        | Type                         | Description                     | Default Thresholds                |
+| ------------------------------------ | --------------- | ---------------------------- | ------------------------------- | --------------------------------- |
+| **complexity.cyclomatic**            | Complexity      | Hierarchical (Method, Class) | Cyclomatic Complexity (CCN)     | method: 10/20, class.max: 30/50   |
+| **complexity.cognitive**             | Complexity      | Hierarchical (Method, Class) | Cognitive Complexity            | method: 15/25, class.max: 30/50   |
+| **complexity.npath**                 | Complexity      | Hierarchical (Method, Class) | NPATH Complexity                | method: 200/500, class (disabled) |
+| **complexity.wmc**                   | Complexity      | Simple                       | Weighted Methods per Class      | warning: 35, error: 50            |
+| **size.method-count**                | Size            | Simple                       | Method count per class          | warning: 15, error: 25            |
+| **size.class-count**                 | Size            | Simple                       | Class count per namespace       | warning: 10, error: 15            |
+| **size.property-count**              | Size            | Simple                       | Class property count            | warning: 10, error: 15            |
+| **maintainability.index**            | Maintainability | Simple                       | Maintainability Index           | warning: 65, error: 20            |
+| **design.lcom**                      | Design          | Simple                       | Lack of Cohesion (LCOM4)        | warning: 2, error: 3              |
+| **design.noc**                       | Design          | Simple                       | Number of Children              | warning: 7, error: 15             |
+| **design.inheritance**               | Design          | Simple                       | Depth of Inheritance Tree (DIT) | warning: 4, error: 6              |
+| **coupling.instability**             | Coupling        | Simple                       | Instability (Ca/Ce)             | warning: 0.8, error: 0.95         |
+| **coupling.cbo**                     | Coupling        | Simple                       | Coupling Between Objects        | warning: ..., error: ...          |
+| **coupling.distance**                | Coupling        | Simple                       | Distance from Main Sequence     | warning: 0.3, error: 0.5          |
+| **architecture.circular-dependency** | Architecture    | Simple                       | Circular dependencies           | enabled: true                     |
+| **code-smell.boolean-argument**      | CodeSmell       | Simple                       | Boolean arguments in signatures | enabled: true                     |
+| **code-smell.count-in-loop**         | CodeSmell       | Simple                       | count() calls in loops          | enabled: true                     |
+| **code-smell.debug-code**            | CodeSmell       | Simple                       | Debug code (var_dump, etc.)     | enabled: true                     |
+| **code-smell.empty-catch**           | CodeSmell       | Simple                       | Empty catch blocks              | enabled: true                     |
+| **code-smell.error-suppression**     | CodeSmell       | Simple                       | Error suppression operator (@)  | enabled: true                     |
+| **code-smell.eval**                  | CodeSmell       | Simple                       | eval() usage                    | enabled: true                     |
+| **code-smell.exit**                  | CodeSmell       | Simple                       | exit/die usage                  | enabled: true                     |
+| **code-smell.goto**                  | CodeSmell       | Simple                       | goto statements                 | enabled: true                     |
+| **code-smell.superglobals**          | CodeSmell       | Simple                       | Direct superglobal access       | enabled: true                     |
 
 ---
 
@@ -354,17 +354,17 @@ Code smell rules detect common anti-patterns and bad practices. All code smell r
 - Operate at file level — report counts per file
 - Have no CLI aliases (use `--disable-rule=<name>` to disable)
 
-| Rule | Description | What it detects |
-|------|-------------|-----------------|
-| **code-smell.boolean-argument** | Boolean arguments in signatures | `function save(bool $overwrite)` — suggests splitting methods or using enums |
-| **code-smell.count-in-loop** | count() calls in loops | `for ($i = 0; $i < count($arr); $i++)` — should be extracted to a variable |
-| **code-smell.debug-code** | Debug code | `var_dump()`, `print_r()`, `dd()`, `dump()`, etc. |
-| **code-smell.empty-catch** | Empty catch blocks | `catch (Exception $e) {}` — should at least log the error |
-| **code-smell.error-suppression** | Error suppression operator | `@fopen()` — hides errors, use proper error handling |
-| **code-smell.eval** | eval() usage | `eval($code)` — security risk, usually avoidable |
-| **code-smell.exit** | exit/die usage | `exit(1)`, `die()` — should not be used in library/application code |
-| **code-smell.goto** | goto statements | `goto label;` — makes control flow hard to follow |
-| **code-smell.superglobals** | Direct superglobal access | `$_GET`, `$_POST`, `$_SERVER` — use request abstraction |
+| Rule                             | Description                     | What it detects                                                              |
+| -------------------------------- | ------------------------------- | ---------------------------------------------------------------------------- |
+| **code-smell.boolean-argument**  | Boolean arguments in signatures | `function save(bool $overwrite)` — suggests splitting methods or using enums |
+| **code-smell.count-in-loop**     | count() calls in loops          | `for ($i = 0; $i < count($arr); $i++)` — should be extracted to a variable   |
+| **code-smell.debug-code**        | Debug code                      | `var_dump()`, `print_r()`, `dd()`, `dump()`, etc.                            |
+| **code-smell.empty-catch**       | Empty catch blocks              | `catch (Exception $e) {}` — should at least log the error                    |
+| **code-smell.error-suppression** | Error suppression operator      | `@fopen()` — hides errors, use proper error handling                         |
+| **code-smell.eval**              | eval() usage                    | `eval($code)` — security risk, usually avoidable                             |
+| **code-smell.exit**              | exit/die usage                  | `exit(1)`, `die()` — should not be used in library/application code          |
+| **code-smell.goto**              | goto statements                 | `goto label;` — makes control flow hard to follow                            |
+| **code-smell.superglobals**      | Direct superglobal access       | `$_GET`, `$_POST`, `$_SERVER` — use request abstraction                      |
 
 **Configuration:**
 ```yaml

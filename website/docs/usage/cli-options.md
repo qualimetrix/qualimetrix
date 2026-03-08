@@ -341,66 +341,66 @@ Many rules have dedicated CLI flags for quick threshold adjustments:
 
 === "Complexity"
 
-    | Flag | Rule | Option |
-    |------|------|--------|
-    | `--cc-warning=N` | complexity.cyclomatic | method.warning |
-    | `--cc-error=N` | complexity.cyclomatic | method.error |
-    | `--cc-class-warning=N` | complexity.cyclomatic | class.max_warning |
-    | `--cc-class-error=N` | complexity.cyclomatic | class.max_error |
-    | `--cognitive-warning=N` | complexity.cognitive | method.warning |
-    | `--cognitive-error=N` | complexity.cognitive | method.error |
-    | `--cognitive-class-warning=N` | complexity.cognitive | class.max_warning |
-    | `--cognitive-class-error=N` | complexity.cognitive | class.max_error |
-    | `--npath-warning=N` | complexity.npath | method.warning |
-    | `--npath-error=N` | complexity.npath | method.error |
-    | `--npath-class-warning=N` | complexity.npath | class.max_warning |
-    | `--npath-class-error=N` | complexity.npath | class.max_error |
-    | `--wmc-warning=N` | complexity.wmc | warning |
-    | `--wmc-error=N` | complexity.wmc | error |
+| Flag                          | Rule                  | Option            |
+| ----------------------------- | --------------------- | ----------------- |
+| `--cc-warning=N`              | complexity.cyclomatic | method.warning    |
+| `--cc-error=N`                | complexity.cyclomatic | method.error      |
+| `--cc-class-warning=N`        | complexity.cyclomatic | class.max_warning |
+| `--cc-class-error=N`          | complexity.cyclomatic | class.max_error   |
+| `--cognitive-warning=N`       | complexity.cognitive  | method.warning    |
+| `--cognitive-error=N`         | complexity.cognitive  | method.error      |
+| `--cognitive-class-warning=N` | complexity.cognitive  | class.max_warning |
+| `--cognitive-class-error=N`   | complexity.cognitive  | class.max_error   |
+| `--npath-warning=N`           | complexity.npath      | method.warning    |
+| `--npath-error=N`             | complexity.npath      | method.error      |
+| `--npath-class-warning=N`     | complexity.npath      | class.max_warning |
+| `--npath-class-error=N`       | complexity.npath      | class.max_error   |
+| `--wmc-warning=N`             | complexity.wmc        | warning           |
+| `--wmc-error=N`               | complexity.wmc        | error             |
 
 === "Coupling"
 
-    | Flag | Rule | Option |
-    |------|------|--------|
-    | `--cbo-class-warning=N` | coupling.cbo | class.warning |
-    | `--cbo-class-error=N` | coupling.cbo | class.error |
-    | `--cbo-ns-warning=N` | coupling.cbo | namespace.warning |
-    | `--cbo-ns-error=N` | coupling.cbo | namespace.error |
-    | `--distance-warning=N` | coupling.distance | max_distance_warning |
-    | `--distance-error=N` | coupling.distance | max_distance_error |
-    | `--coupling-class-warning=N` | coupling.instability | class.max_warning |
-    | `--coupling-class-error=N` | coupling.instability | class.max_error |
-    | `--coupling-ns-warning=N` | coupling.instability | namespace.max_warning |
-    | `--coupling-ns-error=N` | coupling.instability | namespace.max_error |
+| Flag                         | Rule                 | Option                |
+| ---------------------------- | -------------------- | --------------------- |
+| `--cbo-class-warning=N`      | coupling.cbo         | class.warning         |
+| `--cbo-class-error=N`        | coupling.cbo         | class.error           |
+| `--cbo-ns-warning=N`         | coupling.cbo         | namespace.warning     |
+| `--cbo-ns-error=N`           | coupling.cbo         | namespace.error       |
+| `--distance-warning=N`       | coupling.distance    | max_distance_warning  |
+| `--distance-error=N`         | coupling.distance    | max_distance_error    |
+| `--coupling-class-warning=N` | coupling.instability | class.max_warning     |
+| `--coupling-class-error=N`   | coupling.instability | class.max_error       |
+| `--coupling-ns-warning=N`    | coupling.instability | namespace.max_warning |
+| `--coupling-ns-error=N`      | coupling.instability | namespace.max_error   |
 
 === "Size"
 
-    | Flag | Rule | Option |
-    |------|------|--------|
-    | `--ns-warning=N` | size.class-count | warning |
-    | `--ns-error=N` | size.class-count | error |
-    | `--size-class-warning=N` | size.method-count | warning |
-    | `--size-class-error=N` | size.method-count | error |
+| Flag                     | Rule              | Option  |
+| ------------------------ | ----------------- | ------- |
+| `--ns-warning=N`         | size.class-count  | warning |
+| `--ns-error=N`           | size.class-count  | error   |
+| `--size-class-warning=N` | size.method-count | warning |
+| `--size-class-error=N`   | size.method-count | error   |
 
 === "Design"
 
-    | Flag | Rule | Option |
-    |------|------|--------|
-    | `--dit-warning=N` | design.inheritance | warning |
-    | `--dit-error=N` | design.inheritance | error |
-    | `--lcom-warning=N` | design.lcom | warning |
-    | `--lcom-error=N` | design.lcom | error |
-    | `--lcom-min-methods=N` | design.lcom | minMethods |
-    | `--noc-warning=N` | design.noc | warning |
-    | `--noc-error=N` | design.noc | error |
+| Flag                   | Rule               | Option     |
+| ---------------------- | ------------------ | ---------- |
+| `--dit-warning=N`      | design.inheritance | warning    |
+| `--dit-error=N`        | design.inheritance | error      |
+| `--lcom-warning=N`     | design.lcom        | warning    |
+| `--lcom-error=N`       | design.lcom        | error      |
+| `--lcom-min-methods=N` | design.lcom        | minMethods |
+| `--noc-warning=N`      | design.noc         | warning    |
+| `--noc-error=N`        | design.noc         | error      |
 
 === "Maintainability"
 
-    | Flag | Rule | Option |
-    |------|------|--------|
-    | `--mi-warning=N` | maintainability.index | warning |
-    | `--mi-error=N` | maintainability.index | error |
-    | `--mi-min-loc=N` | maintainability.index | minLoc |
+| Flag             | Rule                  | Option  |
+| ---------------- | --------------------- | ------- |
+| `--mi-warning=N` | maintainability.index | warning |
+| `--mi-error=N`   | maintainability.index | error   |
+| `--mi-min-loc=N` | maintainability.index | minLoc  |
 
 ---
 
@@ -438,14 +438,14 @@ bin/aimd graph:export src/ --direction=TB
 bin/aimd graph:export src/ --no-clusters
 ```
 
-| Option | Description |
-|--------|-------------|
-| `-o`, `--output=FILE` | Output file (default: stdout) |
-| `-f`, `--format=FORMAT` | `dot` (default) or `mermaid` |
-| `-d`, `--direction=DIR` | Graph direction: `LR`, `TB`, `RL`, `BT` (default: `LR`) |
-| `--no-clusters` | Do not group nodes by namespace |
-| `--namespace=NS` | Include only these namespaces (repeatable) |
-| `--exclude-namespace=NS` | Exclude these namespaces (repeatable) |
+| Option                   | Description                                             |
+| ------------------------ | ------------------------------------------------------- |
+| `-o`, `--output=FILE`    | Output file (default: stdout)                           |
+| `-f`, `--format=FORMAT`  | `dot` (default) or `mermaid`                            |
+| `-d`, `--direction=DIR`  | Graph direction: `LR`, `TB`, `RL`, `BT` (default: `LR`) |
+| `--no-clusters`          | Do not group nodes by namespace                         |
+| `--namespace=NS`         | Include only these namespaces (repeatable)              |
+| `--exclude-namespace=NS` | Exclude these namespaces (repeatable)                   |
 
 ### hook:install
 

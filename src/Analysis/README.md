@@ -218,11 +218,11 @@ Automatic strategy selection:
 **Expected speedup (1000 files):**
 
 | Workers | Time | Speedup |
-|---------|------|---------|
-| 1 | 30s | 1x |
-| 2 | 16s | 1.9x |
-| 4 | 9s | 3.3x |
-| 8 | 5s | 6x |
+| ------- | ---- | ------- |
+| 1       | 30s  | 1x      |
+| 2       | 16s  | 1.9x    |
+| 4       | 9s   | 3.3x    |
+| 8       | 5s   | 6x      |
 
 Speedup is not linear due to fork overhead, IPC serialization, disk I/O contention.
 

@@ -67,12 +67,12 @@ automatically detecting paths from `composer.json`.
 
 ### Stages
 
-| Stage | Priority | Source | Description |
-|-------|----------|--------|-------------|
-| `DefaultsStage` | 0 | hardcoded | Defaults: `paths=['.']`, `excludes=['vendor','node_modules','.git']` |
-| `ComposerDiscoveryStage` | 10 | composer.json | Extracts PSR-4 autoload paths |
-| `ConfigFileStage` | 20 | aimd.yaml | Loads config file |
-| `CliStage` | 30 | CLI | Parses `--exclude`, `--exclude-path`, `--format`, `--cache-*`, paths argument |
+| Stage                    | Priority | Source        | Description                                                                   |
+| ------------------------ | -------- | ------------- | ----------------------------------------------------------------------------- |
+| `DefaultsStage`          | 0        | hardcoded     | Defaults: `paths=['.']`, `excludes=['vendor','node_modules','.git']`          |
+| `ComposerDiscoveryStage` | 10       | composer.json | Extracts PSR-4 autoload paths                                                 |
+| `ConfigFileStage`        | 20       | aimd.yaml     | Loads config file                                                             |
+| `CliStage`               | 30       | CLI           | Parses `--exclude`, `--exclude-path`, `--format`, `--cache-*`, paths argument |
 
 ### Layer Merging
 
@@ -285,46 +285,46 @@ Order: base < local < ci (alphabetical or explicit priority).
 
 ### Short Aliases
 
-| Option | Rule | Field |
-|--------|------|-------|
-| `--cc-warning=N` | complexity.cyclomatic | method.warning |
-| `--cc-error=N` | complexity.cyclomatic | method.error |
-| `--cc-class-warning=N` | complexity.cyclomatic | class.max_warning |
-| `--cc-class-error=N` | complexity.cyclomatic | class.max_error |
-| `--cognitive-warning=N` | complexity.cognitive | method.warning |
-| `--cognitive-error=N` | complexity.cognitive | method.error |
-| `--cognitive-class-warning=N` | complexity.cognitive | class.max_warning |
-| `--cognitive-class-error=N` | complexity.cognitive | class.max_error |
-| `--npath-warning=N` | complexity.npath | method.warning |
-| `--npath-error=N` | complexity.npath | method.error |
-| `--npath-class-warning=N` | complexity.npath | class.max_warning |
-| `--npath-class-error=N` | complexity.npath | class.max_error |
-| `--size-class-warning=N` | size.method-count | warning |
-| `--size-class-error=N` | size.method-count | error |
-| `--ns-warning=N` | size.class-count | warning |
-| `--ns-error=N` | size.class-count | error |
-| `--mi-warning=N` | maintainability.index | warning |
-| `--mi-error=N` | maintainability.index | error |
-| `--lcom-warning=N` | design.lcom | warning |
-| `--lcom-error=N` | design.lcom | error |
-| `--wmc-warning=N` | complexity.wmc | warning |
-| `--wmc-error=N` | complexity.wmc | error |
-| `--dit-warning=N` | design.inheritance | warning |
-| `--dit-error=N` | design.inheritance | error |
-| `--noc-warning=N` | design.noc | warning |
-| `--noc-error=N` | design.noc | error |
-| `--distance-warning=N` | coupling.distance | max_distance_warning |
-| `--distance-error=N` | coupling.distance | max_distance_error |
-| `--coupling-class-warning=N` | coupling.instability | class.max_instability_warning |
-| `--coupling-class-error=N` | coupling.instability | class.max_instability_error |
-| `--coupling-ns-warning=N` | coupling.instability | namespace.max_instability_warning |
-| `--coupling-ns-error=N` | coupling.instability | namespace.max_instability_error |
-| `--cbo-class-warning=N` | coupling.cbo | class.cbo_warning_threshold |
-| `--cbo-class-error=N` | coupling.cbo | class.cbo_error_threshold |
-| `--cbo-ns-warning=N` | coupling.cbo | namespace.cbo_warning_threshold |
-| `--cbo-ns-error=N` | coupling.cbo | namespace.cbo_error_threshold |
-| `--no-circular-deps` | architecture.circular-dependency | enabled |
-| `--max-cycle-size=N` | architecture.circular-dependency | maxCycleSize |
+| Option                        | Rule                             | Field                             |
+| ----------------------------- | -------------------------------- | --------------------------------- |
+| `--cc-warning=N`              | complexity.cyclomatic            | method.warning                    |
+| `--cc-error=N`                | complexity.cyclomatic            | method.error                      |
+| `--cc-class-warning=N`        | complexity.cyclomatic            | class.max_warning                 |
+| `--cc-class-error=N`          | complexity.cyclomatic            | class.max_error                   |
+| `--cognitive-warning=N`       | complexity.cognitive             | method.warning                    |
+| `--cognitive-error=N`         | complexity.cognitive             | method.error                      |
+| `--cognitive-class-warning=N` | complexity.cognitive             | class.max_warning                 |
+| `--cognitive-class-error=N`   | complexity.cognitive             | class.max_error                   |
+| `--npath-warning=N`           | complexity.npath                 | method.warning                    |
+| `--npath-error=N`             | complexity.npath                 | method.error                      |
+| `--npath-class-warning=N`     | complexity.npath                 | class.max_warning                 |
+| `--npath-class-error=N`       | complexity.npath                 | class.max_error                   |
+| `--size-class-warning=N`      | size.method-count                | warning                           |
+| `--size-class-error=N`        | size.method-count                | error                             |
+| `--ns-warning=N`              | size.class-count                 | warning                           |
+| `--ns-error=N`                | size.class-count                 | error                             |
+| `--mi-warning=N`              | maintainability.index            | warning                           |
+| `--mi-error=N`                | maintainability.index            | error                             |
+| `--lcom-warning=N`            | design.lcom                      | warning                           |
+| `--lcom-error=N`              | design.lcom                      | error                             |
+| `--wmc-warning=N`             | complexity.wmc                   | warning                           |
+| `--wmc-error=N`               | complexity.wmc                   | error                             |
+| `--dit-warning=N`             | design.inheritance               | warning                           |
+| `--dit-error=N`               | design.inheritance               | error                             |
+| `--noc-warning=N`             | design.noc                       | warning                           |
+| `--noc-error=N`               | design.noc                       | error                             |
+| `--distance-warning=N`        | coupling.distance                | max_distance_warning              |
+| `--distance-error=N`          | coupling.distance                | max_distance_error                |
+| `--coupling-class-warning=N`  | coupling.instability             | class.max_instability_warning     |
+| `--coupling-class-error=N`    | coupling.instability             | class.max_instability_error       |
+| `--coupling-ns-warning=N`     | coupling.instability             | namespace.max_instability_warning |
+| `--coupling-ns-error=N`       | coupling.instability             | namespace.max_instability_error   |
+| `--cbo-class-warning=N`       | coupling.cbo                     | class.cbo_warning_threshold       |
+| `--cbo-class-error=N`         | coupling.cbo                     | class.cbo_error_threshold         |
+| `--cbo-ns-warning=N`          | coupling.cbo                     | namespace.cbo_warning_threshold   |
+| `--cbo-ns-error=N`            | coupling.cbo                     | namespace.cbo_error_threshold     |
+| `--no-circular-deps`          | architecture.circular-dependency | enabled                           |
+| `--max-cycle-size=N`          | architecture.circular-dependency | maxCycleSize                      |
 
 ### Unified Format
 
@@ -341,12 +341,12 @@ Examples:
 
 ### Rule Management
 
-| Option | Description |
-|--------|-------------|
-| `--disable-rule=RULE` | Disable a rule or category |
-| `--only-rule=RULE` | Run only the specified rule or category |
+| Option                   | Description                                                      |
+| ------------------------ | ---------------------------------------------------------------- |
+| `--disable-rule=RULE`    | Disable a rule or category                                       |
+| `--only-rule=RULE`       | Run only the specified rule or category                          |
 | `--exclude-path=PATTERN` | Suppress violations for files matching glob pattern (repeatable) |
-| `--config=PATH` | Path to config file |
+| `--config=PATH`          | Path to config file                                              |
 
 **`--exclude-path`** uses `fnmatch()` glob syntax (e.g., `src/Entity/*`, `*/DTO/*`).
 CLI patterns are **merged** with `exclude_paths` from the config file, not overridden.

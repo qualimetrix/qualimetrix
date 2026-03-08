@@ -30,11 +30,11 @@ CLI application based on Symfony Console with support for:
 
 **Exit codes:**
 
-| Code | Description |
-|------|-------------|
-| 0 | No violations |
-| 1 | Warnings present (but no errors) |
-| 2 | Errors present |
+| Code | Description                      |
+| ---- | -------------------------------- |
+| 0    | No violations                    |
+| 1    | Warnings present (but no errors) |
+| 2    | Errors present                   |
 
 ### BaselineCleanupCommand
 
@@ -70,58 +70,58 @@ Export dependency graph to DOT format (Graphviz).
 
 ### Configuration and Formatting
 
-| Option | Short | Default | Description |
-|--------|-------|---------|-------------|
-| `--config` | `-c` | — | Path to config file |
-| `--format` | `-f` | `text` | Output format (text/json/checkstyle/sarif/gitlab) |
+| Option     | Short | Default | Description                                       |
+| ---------- | ----- | ------- | ------------------------------------------------- |
+| `--config` | `-c`  | —       | Path to config file                               |
+| `--format` | `-f`  | `text`  | Output format (text/json/checkstyle/sarif/gitlab) |
 
 ### Caching
 
-| Option | Default | Description |
-|--------|---------|-------------|
-| `--no-cache` | false | Disable caching |
-| `--cache-dir` | `.aimd-cache` | Cache directory |
-| `--clear-cache` | false | Clear cache before analysis |
-| `--storage` | `auto` | Storage type (auto/sqlite/memory) |
+| Option          | Default       | Description                       |
+| --------------- | ------------- | --------------------------------- |
+| `--no-cache`    | false         | Disable caching                   |
+| `--cache-dir`   | `.aimd-cache` | Cache directory                   |
+| `--clear-cache` | false         | Clear cache before analysis       |
+| `--storage`     | `auto`        | Storage type (auto/sqlite/memory) |
 
 ### Git Integration
 
-| Option | Default | Description |
-|--------|---------|-------------|
-| `--analyze` | — | File scope for analysis (git:staged, git:main..HEAD) |
-| `--report` | — | Violation scope for report |
-| `--staged` | false | Alias for --analyze=git:staged |
-| `--diff` | — | Alias for --report=git:<ref>..HEAD |
-| `--report-strict` | false | Show only violations in changed files |
+| Option            | Default | Description                                          |
+| ----------------- | ------- | ---------------------------------------------------- |
+| `--analyze`       | —       | File scope for analysis (git:staged, git:main..HEAD) |
+| `--report`        | —       | Violation scope for report                           |
+| `--staged`        | false   | Alias for --analyze=git:staged                       |
+| `--diff`          | —       | Alias for --report=git:<ref>..HEAD                   |
+| `--report-strict` | false   | Show only violations in changed files                |
 
 ### Logging and Progress
 
-| Option | Default | Description |
-|--------|---------|-------------|
-| `--log-file` | — | Log file path (JSON Lines) |
-| `--log-level` | `info` | Minimum log level |
-| `--no-progress` | false | Disable progress bar |
+| Option          | Default | Description                |
+| --------------- | ------- | -------------------------- |
+| `--log-file`    | —       | Log file path (JSON Lines) |
+| `--log-level`   | `info`  | Minimum log level          |
+| `--no-progress` | false   | Disable progress bar       |
 
 ### Baseline
 
-| Option | Description |
-|--------|-------------|
-| `--baseline` | Use baseline file |
-| `--generate-baseline` | Generate baseline from current violations |
-| `--show-resolved` | Show count of resolved violations |
-| `--baseline-ignore-stale` | Ignore stale entries (do not fail) |
-| `--show-suppressed` | Show suppressed violations (@aimd-ignore) |
-| `--no-suppression` | Ignore suppression tags |
+| Option                    | Description                               |
+| ------------------------- | ----------------------------------------- |
+| `--baseline`              | Use baseline file                         |
+| `--generate-baseline`     | Generate baseline from current violations |
+| `--show-resolved`         | Show count of resolved violations         |
+| `--baseline-ignore-stale` | Ignore stale entries (do not fail)        |
+| `--show-suppressed`       | Show suppressed violations (@aimd-ignore) |
+| `--no-suppression`        | Ignore suppression tags                   |
 
 ### Rules
 
-| Option | Description |
-|--------|-------------|
-| `--cc-warning` | Cyclomatic complexity warning threshold |
-| `--cc-error` | Cyclomatic complexity error threshold |
-| `--disable-rule` | Disable a rule or group (prefix match) |
-| `--only-rule` | Run only the specified rule or group (prefix match) |
-| `--rule-opt` | Rule option `RULE:OPTION=VALUE` |
+| Option           | Description                                         |
+| ---------------- | --------------------------------------------------- |
+| `--cc-warning`   | Cyclomatic complexity warning threshold             |
+| `--cc-error`     | Cyclomatic complexity error threshold               |
+| `--disable-rule` | Disable a rule or group (prefix match)              |
+| `--only-rule`    | Run only the specified rule or group (prefix match) |
+| `--rule-opt`     | Rule option `RULE:OPTION=VALUE`                     |
 
 Full list of options available via `bin/aimd analyze --help`.
 

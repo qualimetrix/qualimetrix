@@ -54,22 +54,22 @@ Parses strings in format `git:staged`, `git:main..HEAD` into a `GitScope` object
 
 ## Use Cases
 
-| Scenario | --analyze | --report | Aggregated |
-|----------|-----------|----------|------------|
-| Full analysis | (entire project) | (entire project) | yes |
-| Quick pre-commit | git:staged | (implicit) | no |
-| PR review (fast) | git:main..HEAD | (implicit) | no |
-| PR review (full) | (entire project) | git:main..HEAD | yes |
+| Scenario         | --analyze        | --report         | Aggregated |
+| ---------------- | ---------------- | ---------------- | ---------- |
+| Full analysis    | (entire project) | (entire project) | yes        |
+| Quick pre-commit | git:staged       | (implicit)       | no         |
+| PR review (fast) | git:main..HEAD   | (implicit)       | no         |
+| PR review (full) | (entire project) | git:main..HEAD   | yes        |
 
 ## CLI Options
 
-| Option | Description |
-|--------|-------------|
+| Option              | Description                                         |
+| ------------------- | --------------------------------------------------- |
 | `--analyze=<scope>` | Which files to analyze (git:staged, git:main..HEAD) |
-| `--report=<scope>` | Which violations to show in the report |
-| `--staged` | Alias for --analyze=git:staged |
-| `--diff=<ref>` | Alias for --report=git:<ref>..HEAD |
-| `--report-strict` | Show only violations exactly in changed files |
+| `--report=<scope>`  | Which violations to show in the report              |
+| `--staged`          | Alias for --analyze=git:staged                      |
+| `--diff=<ref>`      | Alias for --report=git:<ref>..HEAD                  |
+| `--report-strict`   | Show only violations exactly in changed files       |
 
 ## Examples
 

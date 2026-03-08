@@ -22,11 +22,11 @@ Think of it like a team: if all team members work on the same project, the team 
 
 ### Thresholds
 
-| Value | Severity | Meaning |
-|-------|----------|---------|
-| 1--2 | OK | Cohesive class, all methods work together |
-| 3--4 | Warning | Class may have multiple responsibilities |
-| 5+ | Error | Class clearly does too much, should be split |
+| Value | Severity | Meaning                                      |
+| ----- | -------- | -------------------------------------------- |
+| 1--2  | OK       | Cohesive class, all methods work together    |
+| 3--4  | Warning  | Class may have multiple responsibilities     |
+| 5+    | Error    | Class clearly does too much, should be split |
 
 ### Example
 
@@ -127,11 +127,11 @@ High NOC can also indicate:
 
 ### Thresholds
 
-| Value | Severity | Meaning |
-|-------|----------|---------|
-| 0--9 | OK | Manageable number of subclasses |
-| 10--14 | Warning | Many children, changes will have wide impact |
-| 15+ | Error | Too many children, consider using interfaces instead |
+| Value  | Severity | Meaning                                              |
+| ------ | -------- | ---------------------------------------------------- |
+| 0--9   | OK       | Manageable number of subclasses                      |
+| 10--14 | Warning  | Many children, changes will have wide impact         |
+| 15+    | Error    | Too many children, consider using interfaces instead |
 
 ### Example
 
@@ -196,11 +196,11 @@ A class with DIT = 6 means you potentially need to read 7 classes to understand 
 
 ### Thresholds
 
-| DIT | Severity | Meaning |
-|-----|----------|---------|
-| 0--3 | OK | Reasonable inheritance depth |
-| 4--5 | Warning | Getting deep, review whether inheritance is needed |
-| 6+ | Error | Too deep, likely a design problem |
+| DIT  | Severity | Meaning                                            |
+| ---- | -------- | -------------------------------------------------- |
+| 0--3 | OK       | Reasonable inheritance depth                       |
+| 4--5 | Warning  | Getting deep, review whether inheritance is needed |
+| 6+   | Error    | Too deep, likely a design problem                  |
 
 ### Example
 

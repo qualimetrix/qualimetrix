@@ -18,26 +18,26 @@ CCN = 1 + number of branching points
 
 ### Branching Points
 
-| Construct | Contribution |
-|-----------|--------------|
-| `if` | +1 |
-| `elseif` | +1 |
-| `while`, `for`, `foreach` | +1 |
-| `case` (in switch) | +1 |
-| `catch` | +1 |
-| `&&`, `\|\|`, `and`, `or` | +1 |
-| `?:` (ternary) | +1 |
-| `??` (null coalescing) | +1 |
-| `?->` (nullsafe) | +1 |
+| Construct                 | Contribution |
+| ------------------------- | ------------ |
+| `if`                      | +1           |
+| `elseif`                  | +1           |
+| `while`, `for`, `foreach` | +1           |
+| `case` (in switch)        | +1           |
+| `catch`                   | +1           |
+| `&&`, `\|\|`, `and`, `or` | +1           |
+| `?:` (ternary)            | +1           |
+| `??` (null coalescing)    | +1           |
+| `?->` (nullsafe)          | +1           |
 
 ### Interpretation
 
-| CCN | Quality |
-|-----|---------|
-| 1-5 | Simple function |
-| 6-10 | Moderate complexity |
-| 11-20 | Complex function |
-| 21+ | Very complex, needs refactoring |
+| CCN   | Quality                         |
+| ----- | ------------------------------- |
+| 1-5   | Simple function                 |
+| 6-10  | Moderate complexity             |
+| 11-20 | Complex function                |
+| 21+   | Very complex, needs refactoring |
 
 ---
 
@@ -49,12 +49,12 @@ CCN = 1 + number of branching points
 
 ### Differences from CCN
 
-| Aspect | CCN | Cognitive |
-|--------|-----|-----------|
-| Goal | Number of paths | Difficulty of understanding |
-| `a && b && c` | +3 | +1 (single chain) |
-| Nesting | Not considered | +1 per level |
-| `switch` | +N cases | +1 |
+| Aspect        | CCN             | Cognitive                   |
+| ------------- | --------------- | --------------------------- |
+| Goal          | Number of paths | Difficulty of understanding |
+| `a && b && c` | +3              | +1 (single chain)           |
+| Nesting       | Not considered  | +1 per level                |
+| `switch`      | +N cases        | +1                          |
 
 ### Algorithm
 
@@ -95,12 +95,12 @@ function processItems(array $data): void {
 
 ### Interpretation
 
-| Cognitive | Quality |
-|-----------|---------|
-| 0-10 | Simple code |
-| 11-15 | Moderate complexity |
-| 16-25 | Complex code |
-| 25+ | Very complex, refactoring required |
+| Cognitive | Quality                            |
+| --------- | ---------------------------------- |
+| 0-10      | Simple code                        |
+| 11-15     | Moderate complexity                |
+| 16-25     | Complex code                       |
+| 25+       | Very complex, refactoring required |
 
 ---
 
@@ -112,11 +112,11 @@ function processItems(array $data): void {
 
 ### Differences from CCN
 
-| Aspect | CCN | NPath |
-|--------|-----|-------|
+| Aspect         | CCN                        | NPath                          |
+| -------------- | -------------------------- | ------------------------------ |
 | What it counts | Independent paths (linear) | All combinations (exponential) |
-| Nesting | Not considered | Multiplication |
-| `if + if` | +2 | x2 (2 x 2 = 4 paths) |
+| Nesting        | Not considered             | Multiplication                 |
+| `if + if`      | +2                         | x2 (2 x 2 = 4 paths)           |
 
 ### Formulas
 
@@ -171,12 +171,12 @@ function manyIfs(bool $a, bool $b, bool $c, bool $d): int {
 
 ### Interpretation
 
-| NPath | Quality |
-|-------|---------|
-| 1-10 | Simple function |
-| 11-50 | Moderate complexity |
-| 51-200 | Complex function |
-| 200+ | Practically impossible to test all paths |
+| NPath  | Quality                                  |
+| ------ | ---------------------------------------- |
+| 1-10   | Simple function                          |
+| 11-50  | Moderate complexity                      |
+| 51-200 | Complex function                         |
+| 200+   | Practically impossible to test all paths |
 
 ---
 

@@ -20,14 +20,14 @@ ExtremelyDeepEntity (DIT=5) 🚨 Error threshold
 
 ## Expected Metrics
 
-| Class | DIT | NOC | Inherited Methods | Status |
-|-------|-----|-----|-------------------|--------|
-| BaseEntity | 0 | 1 | 0 | ✅ OK |
-| ChildEntity | 1 | 1 | 2 | ✅ OK |
-| GrandChildEntity | 2 | 1 | 4 | ✅ OK |
-| GreatGrandChildEntity | 3 | 1 | 6 | ✅ OK |
-| VeryDeepEntity | 4 | 1 | 8 | ⚠️ Warning |
-| ExtremelyDeepEntity | 5 | 0 | 10 | 🚨 Error |
+| Class                 | DIT | NOC | Inherited Methods | Status     |
+| --------------------- | --- | --- | ----------------- | ---------- |
+| BaseEntity            | 0   | 1   | 0                 | ✅ OK      |
+| ChildEntity           | 1   | 1   | 2                 | ✅ OK      |
+| GrandChildEntity      | 2   | 1   | 4                 | ✅ OK      |
+| GreatGrandChildEntity | 3   | 1   | 6                 | ✅ OK      |
+| VeryDeepEntity        | 4   | 1   | 8                 | ⚠️ Warning |
+| ExtremelyDeepEntity   | 5   | 0   | 10                | 🚨 Error   |
 
 ## Metrics Glossary
 

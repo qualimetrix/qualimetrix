@@ -150,25 +150,25 @@ foreach ($repository->all(SymbolType::Method) as $methodInfo) {
 
 Defines how metrics are aggregated when transitioning to a higher level.
 
-| Value | Description |
-|-------|-------------|
-| `Sum` | Sum of values |
-| `Average` | Arithmetic mean |
-| `Max` | Maximum |
-| `Min` | Minimum |
-| `Count` | Number of elements |
+| Value     | Description        |
+| --------- | ------------------ |
+| `Sum`     | Sum of values      |
+| `Average` | Arithmetic mean    |
+| `Max`     | Maximum            |
+| `Min`     | Minimum            |
+| `Count`   | Number of elements |
 
 ### SymbolLevel (Enum)
 
 Hierarchy level of a symbol in the aggregation tree.
 
-| Value | Description |
-|-------|-------------|
-| `Method` | Method or function (leaf) |
-| `Class_` | Class, interface, trait, enum |
-| `File` | File |
-| `Namespace_` | Namespace |
-| `Project` | Project (root) |
+| Value        | Description                   |
+| ------------ | ----------------------------- |
+| `Method`     | Method or function (leaf)     |
+| `Class_`     | Class, interface, trait, enum |
+| `File`       | File                          |
+| `Namespace_` | Namespace                     |
+| `Project`    | Project (root)                |
 
 ### MetricDefinition
 
@@ -220,15 +220,15 @@ A rule analyzes metrics and generates violations. **Completely stateless.**
 
 ### RuleCategory (Enum)
 
-| Value | Description |
-|-------|-------------|
-| `Complexity` | CCN, NPath, Cognitive, WMC |
-| `Size` | MethodCount, ClassCount, PropertyCount |
-| `Design` | LCOM, NOC, Inheritance |
-| `Maintainability` | Maintainability Index |
-| `Coupling` | Instability, CBO, Distance |
-| `Architecture` | Circular Dependencies |
-| `CodeSmell` | Boolean Arguments, Debug Code, etc. |
+| Value             | Description                            |
+| ----------------- | -------------------------------------- |
+| `Complexity`      | CCN, NPath, Cognitive, WMC             |
+| `Size`            | MethodCount, ClassCount, PropertyCount |
+| `Design`          | LCOM, NOC, Inheritance                 |
+| `Maintainability` | Maintainability Index                  |
+| `Coupling`        | Instability, CBO, Distance             |
+| `Architecture`    | Circular Dependencies                  |
+| `CodeSmell`       | Boolean Arguments, Debug Code, etc.    |
 
 ---
 
@@ -236,10 +236,10 @@ A rule analyzes metrics and generates violations. **Completely stateless.**
 
 ### Severity (Enum)
 
-| Value | Exit Code | Description |
-|-------|-----------|-------------|
-| `Warning` | 1 | Requires attention |
-| `Error` | 2 | Critical issue |
+| Value     | Exit Code | Description        |
+| --------- | --------- | ------------------ |
+| `Warning` | 1         | Requires attention |
+| `Error`   | 2         | Critical issue     |
 
 ### Location
 
