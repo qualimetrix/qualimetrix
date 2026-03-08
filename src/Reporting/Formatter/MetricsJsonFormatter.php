@@ -28,6 +28,7 @@ final class MetricsJsonFormatter implements FormatterInterface
         if ($report->metrics !== null) {
             $symbolTypes = [
                 SymbolType::File,
+                SymbolType::Project,
                 SymbolType::Namespace_,
                 SymbolType::Class_,
                 SymbolType::Method,

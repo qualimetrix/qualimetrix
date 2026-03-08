@@ -7,7 +7,11 @@ namespace AiMessDetector\Configuration\Discovery;
 final class ComposerReader
 {
     /**
-     * Extracts paths from autoload.psr-4.
+     * Extracts paths from autoload.psr-4 and autoload-dev.psr-4.
+     *
+     * Handles both single-path strings and multi-path arrays per PSR-4 spec:
+     *   "App\\": "src/"
+     *   "Lib\\": ["lib/", "packages/"]
      *
      * @return list<string> Paths relative to composer.json
      */
@@ -29,29 +33,52 @@ final class ComposerReader
 
         $paths = [];
 
-        // autoload.psr-4
-        if (isset($data['autoload']['psr-4']) && \is_array($data['autoload']['psr-4'])) {
-            foreach ($data['autoload']['psr-4'] as $path) {
-                $normalized = $this->normalizePath($path);
-                if ($normalized !== '') {
-                    $paths[] = $normalized;
-                }
-            }
-        }
+        $this->collectPsr4Paths($data, 'autoload', $paths);
+        $this->collectPsr4Paths($data, 'autoload-dev', $paths);
 
         return array_values(array_unique($paths));
     }
 
     /**
-     * @param string|list<string> $path
+     * Collects normalized PSR-4 paths from the given autoload section.
+     *
+     * @param array<string, mixed> $data Decoded composer.json
+     * @param string $section Either 'autoload' or 'autoload-dev'
+     * @param list<string> $paths Collected paths (modified by reference)
      */
-    private function normalizePath(string|array $path): string
+    private function collectPsr4Paths(array $data, string $section, array &$paths): void
     {
-        // PSR-4 can be a string or an array
-        if (\is_array($path)) {
-            $path = $path[0] ?? '';
+        if (!isset($data[$section]['psr-4']) || !\is_array($data[$section]['psr-4'])) {
+            return;
         }
 
-        return rtrim($path, '/');
+        foreach ($data[$section]['psr-4'] as $pathOrPaths) {
+            foreach ($this->normalizePaths($pathOrPaths) as $normalized) {
+                if ($normalized !== '') {
+                    $paths[] = $normalized;
+                }
+            }
+        }
+    }
+
+    /**
+     * Normalizes a PSR-4 path value (string or array of strings).
+     *
+     * @param string|list<string> $pathOrPaths
+     *
+     * @return list<string>
+     */
+    private function normalizePaths(string|array $pathOrPaths): array
+    {
+        if (\is_string($pathOrPaths)) {
+            return [rtrim($pathOrPaths, '/')];
+        }
+
+        $result = [];
+        foreach ($pathOrPaths as $path) {
+            $result[] = rtrim($path, '/');
+        }
+
+        return $result;
     }
 }

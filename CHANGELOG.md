@@ -8,12 +8,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- `DependencyGraphInterface` and `Dependency` VO now use `SymbolPath` instead of raw string FQNs
+- `SymbolPath::forProject()` factory for project-level metrics, separated from global namespace
+- `AnalysisContext::$cycles` typed property replaces untyped `additionalData` side-channel
+- `CachedCollector` now caches file dependencies alongside metrics — cache hit skips AST traversal entirely
+- SARIF and GitLab Code Quality formatters now output repo-relative paths instead of absolute paths
+- `--config` CLI option is now functional (was defined but silently ignored)
+- `RuntimeConfigurator` uses deep merge for rule options — CLI overrides individual keys instead of replacing entire rule config
+- `ComposerReader` handles multi-path PSR-4 arrays and `autoload-dev` paths
+- Hook commands use shared `GitRepositoryLocator` with git-worktree support
 - `security.hardcoded-credentials` rule for detecting hardcoded passwords, API keys, secrets, and other credentials in PHP code
 - Code smell rules now report violations per occurrence with precise line numbers instead of a single violation per file
 - Global collector metrics (CBO, Instability, NOC, Distance) are now properly aggregated to namespace and project levels
 - Circular dependency detection is now active — `architecture.circular-dependency` rule produces violations
 
 ### Fixed
+- Fixed NPath complexity undercounting loop conditions — `while ($a && $b)` now correctly analyzes boolean operators
+- Fixed getter/setter false positives — `isolate()`, `setup()`, `getaway()`, `hasty()` no longer classified as accessors
+- Fixed global PHP namespace collision with project-level metrics — classes without a namespace are now properly included in namespace-level analysis
 - Fixed anonymous class leakage in CCN, NPath, Halstead, ParameterCount, UnreachableCode visitors — methods inside anonymous classes were incorrectly attributed to the enclosing named class
 - Fixed abstractness formula to include interfaces in denominator (namespace with only interfaces now correctly returns 1.0)
 - Fixed cognitive complexity undercounting when consecutive statements use the same logical operator

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Infrastructure\Storage;
 
+use AiMessDetector\Core\Dependency\Dependency;
 use AiMessDetector\Core\Symbol\SymbolType;
 use AiMessDetector\Core\Violation\SymbolPath;
 use Generator;
@@ -28,6 +29,9 @@ final class InMemoryStorage implements StorageInterface
 
     /** @var array<string, array<string, int|float>> scope => metrics */
     private array $aggregated = [];
+
+    /** @var array<int, list<Dependency>> file_id => dependencies */
+    private array $fileDependencies = [];
 
     /** @var array<string, list<array{to: string, type: string}>> from_class => dependencies */
     private array $dependencies = [];
@@ -73,7 +77,7 @@ final class InMemoryStorage implements StorageInterface
                 unset($this->fileSymbols[$fileId]);
             }
 
-            unset($this->fileIds[$fileId]);
+            unset($this->fileDependencies[$fileId], $this->fileIds[$fileId]);
         }
 
         unset($this->files[$path]);
@@ -124,7 +128,23 @@ final class InMemoryStorage implements StorageInterface
         }
     }
 
-    // === Dependencies ===
+    // === File-level dependencies (for caching) ===
+
+    public function storeFileDependencies(int $fileId, array $dependencies): void
+    {
+        $this->fileDependencies[$fileId] = $dependencies;
+    }
+
+    public function getFileDependencies(int $fileId): ?array
+    {
+        if (!\array_key_exists($fileId, $this->fileDependencies)) {
+            return null;
+        }
+
+        return $this->fileDependencies[$fileId];
+    }
+
+    // === Class-level dependencies (for graph analysis) ===
 
     public function storeDependency(string $from, string $to, string $type): void
     {
@@ -197,6 +217,7 @@ final class InMemoryStorage implements StorageInterface
             $this->fileIds = $this->transactionBackup->fileIds;
             $this->metrics = $this->transactionBackup->metrics;
             $this->aggregated = $this->transactionBackup->aggregated;
+            $this->fileDependencies = $this->transactionBackup->fileDependencies;
             $this->dependencies = $this->transactionBackup->dependencies;
             $this->dependents = $this->transactionBackup->dependents;
             $this->nextFileId = $this->transactionBackup->nextFileId;
@@ -214,6 +235,7 @@ final class InMemoryStorage implements StorageInterface
         $this->metrics = [];
         $this->fileSymbols = [];
         $this->aggregated = [];
+        $this->fileDependencies = [];
         $this->dependencies = [];
         $this->dependents = [];
         $this->nextFileId = 1;
@@ -250,6 +272,7 @@ final class InMemoryStorage implements StorageInterface
             SymbolType::Class_ => 'class:',
             SymbolType::Method => 'method:',
             SymbolType::Function_ => 'func:',
+            SymbolType::Project => 'project:',
         };
 
         return str_starts_with($storageKey, $prefix);

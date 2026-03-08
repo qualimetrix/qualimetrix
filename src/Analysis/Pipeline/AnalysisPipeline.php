@@ -165,7 +165,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
             $repository,
             $this->configurationProvider->getRuleOptions(),
             $graph,
-            ['cycles' => $cycles],
+            $cycles,
         );
         $violations = $this->ruleExecutor->execute($context);
         $profiler?->stop('rules');

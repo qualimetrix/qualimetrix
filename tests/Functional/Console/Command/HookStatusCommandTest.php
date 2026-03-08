@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AiMessDetector\Tests\Functional\Console\Command;
 
 use AiMessDetector\Infrastructure\Console\Command\HookStatusCommand;
+use AiMessDetector\Infrastructure\Git\GitRepositoryLocator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -42,7 +43,7 @@ final class HookStatusCommandTest extends TestCase
     #[Test]
     public function itReportsHookNotInstalled(): void
     {
-        $command = new HookStatusCommand();
+        $command = new HookStatusCommand(new GitRepositoryLocator());
 
         $application = new Application();
         $application->addCommand($command);
@@ -72,7 +73,7 @@ final class HookStatusCommandTest extends TestCase
         symlink($tempScript, $hookPath);
         chmod($hookPath, 0755);
 
-        $command = new HookStatusCommand();
+        $command = new HookStatusCommand(new GitRepositoryLocator());
 
         $application = new Application();
         $application->addCommand($command);
@@ -96,7 +97,7 @@ final class HookStatusCommandTest extends TestCase
         file_put_contents($hookPath, "#!/bin/bash\n# AI Mess Detector pre-commit hook\necho 'Running hook'\n");
         chmod($hookPath, 0755);
 
-        $command = new HookStatusCommand();
+        $command = new HookStatusCommand(new GitRepositoryLocator());
 
         $application = new Application();
         $application->addCommand($command);
@@ -120,7 +121,7 @@ final class HookStatusCommandTest extends TestCase
         file_put_contents($hookPath, "#!/bin/bash\necho 'Some other hook'\n");
         chmod($hookPath, 0755);
 
-        $command = new HookStatusCommand();
+        $command = new HookStatusCommand(new GitRepositoryLocator());
 
         $application = new Application();
         $application->addCommand($command);
@@ -144,7 +145,7 @@ final class HookStatusCommandTest extends TestCase
         file_put_contents($hookPath, "#!/bin/bash\n# AI Mess Detector pre-commit hook\necho 'test'\n");
         chmod($hookPath, 0644); // Not executable
 
-        $command = new HookStatusCommand();
+        $command = new HookStatusCommand(new GitRepositoryLocator());
 
         $application = new Application();
         $application->addCommand($command);
@@ -172,7 +173,7 @@ final class HookStatusCommandTest extends TestCase
 
         file_put_contents($backupPath, "#!/bin/bash\necho 'backup'\n");
 
-        $command = new HookStatusCommand();
+        $command = new HookStatusCommand(new GitRepositoryLocator());
 
         $application = new Application();
         $application->addCommand($command);
@@ -193,7 +194,7 @@ final class HookStatusCommandTest extends TestCase
         // Remove .git directory
         $this->removeDirectory($this->gitDir);
 
-        $command = new HookStatusCommand();
+        $command = new HookStatusCommand(new GitRepositoryLocator());
 
         $application = new Application();
         $application->addCommand($command);

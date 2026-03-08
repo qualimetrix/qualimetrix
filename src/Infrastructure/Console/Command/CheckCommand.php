@@ -147,7 +147,13 @@ final class CheckCommand extends Command
      */
     private function resolveConfiguration(InputInterface $input): ResolvedConfiguration
     {
-        $context = new ConfigurationContext($input, getcwd() ?: '.');
+        $configPath = $input->getOption('config');
+        $context = new ConfigurationContext(
+            $input,
+            getcwd() ?: '.',
+            \is_string($configPath) && $configPath !== '' ? $configPath : null,
+        );
+
         return $this->configurationPipeline->resolve($context);
     }
 

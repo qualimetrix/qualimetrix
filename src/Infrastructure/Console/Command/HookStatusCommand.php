@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Infrastructure\Console\Command;
 
+use AiMessDetector\Infrastructure\Git\GitRepositoryLocator;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -15,6 +16,12 @@ use Symfony\Component\Console\Output\OutputInterface;
 )]
 final class HookStatusCommand extends Command
 {
+    public function __construct(
+        private readonly GitRepositoryLocator $gitRepositoryLocator,
+    ) {
+        parent::__construct();
+    }
+
     /**
      * Marker comment to identify our hook.
      */
@@ -23,7 +30,7 @@ final class HookStatusCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         // Find .git directory
-        $gitDir = $this->findGitDir();
+        $gitDir = $this->gitRepositoryLocator->findGitDir();
         if ($gitDir === null) {
             $output->writeln('<error>Not a git repository</error>');
             $output->writeln('');
@@ -104,40 +111,4 @@ final class HookStatusCommand extends Command
         return self::SUCCESS;
     }
 
-    /**
-     * Find .git directory in current directory or parent directories.
-     *
-     * @return string|null Absolute path to .git directory or null if not found
-     */
-    private function findGitDir(): ?string
-    {
-        $currentDir = getcwd();
-        if ($currentDir === false) {
-            return null;
-        }
-
-        // Check current directory and up to 5 parent directories
-        $maxDepth = 5;
-        $depth = 0;
-
-        while ($depth < $maxDepth) {
-            $gitDir = $currentDir . '/.git';
-
-            if (is_dir($gitDir)) {
-                return $gitDir;
-            }
-
-            // Move to parent directory
-            $parentDir = \dirname($currentDir);
-            if ($parentDir === $currentDir) {
-                // Reached root directory
-                break;
-            }
-
-            $currentDir = $parentDir;
-            ++$depth;
-        }
-
-        return null;
-    }
 }

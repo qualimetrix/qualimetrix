@@ -11,4 +11,5 @@ enum SymbolType: string
     case Class_ = 'class';
     case File = 'file';
     case Namespace_ = 'namespace';
+    case Project = 'project';
 }

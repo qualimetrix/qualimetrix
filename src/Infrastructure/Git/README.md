@@ -25,6 +25,18 @@ Wrapper around git commands for obtaining the list of changed files.
 - `main...HEAD` — three-dot syntax (changes since merge-base)
 - `HEAD~3` — last N commits
 
+### GitRepositoryLocator
+
+Locates the `.git` directory for the current repository. Used by hook commands
+(`hook:install`, `hook:status`, `hook:uninstall`) to find the hooks directory.
+
+**Strategy:**
+1. Primary: `git rev-parse --git-dir` (handles regular repos, worktrees, bare repos)
+2. Fallback: manual directory traversal (when git is not in PATH)
+
+**Methods:**
+- `findGitDir(?string $workingDir = null): ?string` — find `.git` directory path
+
 ### GitScopeParser
 
 Parses strings in format `git:staged`, `git:main..HEAD` into a `GitScope` object.

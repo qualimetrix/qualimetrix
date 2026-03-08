@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Infrastructure\Storage;
 
+use AiMessDetector\Core\Dependency\Dependency;
+use AiMessDetector\Core\Dependency\DependencyType;
 use AiMessDetector\Core\Symbol\SymbolType;
+use AiMessDetector\Core\Violation\Location;
 use AiMessDetector\Core\Violation\SymbolPath;
 use Generator;
 use PDO;
@@ -114,6 +117,19 @@ final class SqliteStorage implements StorageInterface
             )
         SQL);
 
+        // File dependencies table (for caching per-file dependency lists)
+        $this->pdo->exec(<<<'SQL'
+            CREATE TABLE IF NOT EXISTS file_dependencies (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                file_id INTEGER NOT NULL REFERENCES files(id) ON DELETE CASCADE,
+                source_class TEXT NOT NULL,
+                target_class TEXT NOT NULL,
+                type TEXT NOT NULL,
+                file_path TEXT NOT NULL,
+                line INTEGER
+            )
+        SQL);
+
         // Dependencies table
         $this->pdo->exec(<<<'SQL'
             CREATE TABLE IF NOT EXISTS dependencies (
@@ -132,6 +148,7 @@ final class SqliteStorage implements StorageInterface
         $this->pdo->exec('CREATE INDEX IF NOT EXISTS idx_class_namespace ON class_metrics(namespace)');
         $this->pdo->exec('CREATE INDEX IF NOT EXISTS idx_method_symbol ON method_metrics(symbol_path)');
         $this->pdo->exec('CREATE INDEX IF NOT EXISTS idx_method_class ON method_metrics(class_id)');
+        $this->pdo->exec('CREATE INDEX IF NOT EXISTS idx_file_deps_file_id ON file_dependencies(file_id)');
         $this->pdo->exec('CREATE INDEX IF NOT EXISTS idx_deps_from ON dependencies(from_class)');
         $this->pdo->exec('CREATE INDEX IF NOT EXISTS idx_deps_to ON dependencies(to_class)');
     }
@@ -289,7 +306,89 @@ final class SqliteStorage implements StorageInterface
         }
     }
 
-    // === Dependencies ===
+    // === File-level dependencies (for caching) ===
+
+    public function storeFileDependencies(int $fileId, array $dependencies): void
+    {
+        // Remove old dependencies for this file
+        $stmt = $this->pdo->prepare('DELETE FROM file_dependencies WHERE file_id = :file_id');
+        $stmt->execute(['file_id' => $fileId]);
+
+        if ($dependencies === []) {
+            return;
+        }
+
+        $stmt = $this->pdo->prepare(
+            'INSERT INTO file_dependencies (file_id, source_class, target_class, type, file_path, line)
+             VALUES (:file_id, :source_class, :target_class, :type, :file_path, :line)',
+        );
+
+        foreach ($dependencies as $dep) {
+            $stmt->execute([
+                'file_id' => $fileId,
+                'source_class' => $dep->source->toString(),
+                'target_class' => $dep->target->toString(),
+                'type' => $dep->type->value,
+                'file_path' => $dep->location->file,
+                'line' => $dep->location->line,
+            ]);
+        }
+    }
+
+    public function getFileDependencies(int $fileId): ?array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT source_class, target_class, type, file_path, line
+             FROM file_dependencies WHERE file_id = :file_id',
+        );
+        $stmt->execute(['file_id' => $fileId]);
+
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if ($rows === [] || $rows === false) {
+            // Distinguish "no deps cached" from "file has zero deps":
+            // Check if the file exists in the files table
+            $fileStmt = $this->pdo->prepare('SELECT id FROM files WHERE id = :id');
+            $fileStmt->execute(['id' => $fileId]);
+
+            if ($fileStmt->fetch() === false) {
+                return null; // File not in cache at all
+            }
+
+            // File exists but has no dependencies — return empty list
+            // However, we can't distinguish "stored empty" from "never stored"
+            // without a marker. We use a sentinel approach: storeFileDependencies
+            // always deletes first, so if file_dependencies has no rows but file
+            // exists, it means either never stored or stored empty.
+            // We solve this by checking if file_metrics exist (both are stored together).
+            $metricsStmt = $this->pdo->prepare('SELECT file_id FROM file_metrics WHERE file_id = :id');
+            $metricsStmt->execute(['id' => $fileId]);
+
+            if ($metricsStmt->fetch() === false) {
+                return null; // Metrics not cached either — old cache format
+            }
+
+            return []; // Metrics cached, deps are intentionally empty
+        }
+
+        $dependencies = [];
+
+        foreach ($rows as $row) {
+            $dependencies[] = new Dependency(
+                source: SymbolPath::fromClassFqn($row['source_class']),
+                target: SymbolPath::fromClassFqn($row['target_class']),
+                type: DependencyType::from($row['type']),
+                location: new Location(
+                    file: $row['file_path'],
+                    line: $row['line'] !== null ? (int) $row['line'] : null,
+                ),
+            );
+        }
+
+        return $dependencies;
+    }
+
+    // === Class-level dependencies (for graph analysis) ===
 
     public function storeDependency(string $from, string $to, string $type): void
     {
@@ -399,6 +498,7 @@ final class SqliteStorage implements StorageInterface
         $this->pdo->exec('DELETE FROM class_metrics');
         $this->pdo->exec('DELETE FROM method_metrics');
         $this->pdo->exec('DELETE FROM aggregated_metrics');
+        $this->pdo->exec('DELETE FROM file_dependencies');
         $this->pdo->exec('DELETE FROM dependencies');
     }
 
@@ -458,7 +558,7 @@ final class SqliteStorage implements StorageInterface
             SymbolType::Class_ => ['class_metrics', 'symbol_path'],
             SymbolType::Method => ['method_metrics', 'symbol_path'],
             SymbolType::Function_ => ['method_metrics', 'symbol_path'], // Functions stored with methods
-            SymbolType::Namespace_ => ['aggregated_metrics', 'scope'],
+            SymbolType::Namespace_, SymbolType::Project => ['aggregated_metrics', 'scope'],
         };
     }
 

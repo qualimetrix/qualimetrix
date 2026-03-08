@@ -26,27 +26,34 @@ final class SarifFormatter implements FormatterInterface
     {
         $rules = $this->collectRules($report->violations);
 
+        $run = [
+            'tool' => [
+                'driver' => [
+                    'name' => 'AI Mess Detector',
+                    'version' => self::VERSION,
+                    'informationUri' => self::INFORMATION_URI,
+                    'rules' => $rules,
+                ],
+            ],
+            'results' => $this->formatResults($report->violations, $context),
+        ];
+
+        // Add originalUriBaseIds when basePath is provided
+        if ($context->basePath !== '') {
+            $run['originalUriBaseIds'] = [
+                '%SRCROOT%' => [
+                    'uri' => rtrim($context->basePath, '/') . '/',
+                ],
+            ];
+        }
+
         $sarif = [
             '$schema' => self::SCHEMA,
             'version' => '2.1.0',
-            'runs' => [
-                [
-                    'tool' => [
-                        'driver' => [
-                            'name' => 'AI Mess Detector',
-                            'version' => self::VERSION,
-                            'informationUri' => self::INFORMATION_URI,
-                            'rules' => $rules,
-                        ],
-                    ],
-                    'results' => $this->formatResults($report->violations),
-                ],
-            ],
+            'runs' => [$run],
         ];
 
-        $json = json_encode($sarif, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR);
-
-        return $json;
+        return json_encode($sarif, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR);
     }
 
     public function getName(): string
@@ -123,9 +130,9 @@ final class SarifFormatter implements FormatterInterface
      *
      * @param list<Violation> $violations
      *
-     * @return list<array{ruleId: string, level: string, message: array{text: string}, locations: list<array{physicalLocation: array{artifactLocation: array{uri: string, uriBaseId: string}, region: array{startLine: int, startColumn: int}}}>}>
+     * @return list<array{ruleId: string, level: string, message: array{text: string}, locations: list<array{physicalLocation: array{artifactLocation: array<string, string>, region: array{startLine: int, startColumn: int}}}>}>
      */
-    private function formatResults(array $violations): array
+    private function formatResults(array $violations, FormatterContext $context): array
     {
         return array_map(
             fn(Violation $v): array => [
@@ -135,10 +142,10 @@ final class SarifFormatter implements FormatterInterface
                 'locations' => [
                     [
                         'physicalLocation' => [
-                            'artifactLocation' => [
-                                'uri' => $v->location->file,
-                                'uriBaseId' => '%SRCROOT%',
-                            ],
+                            'artifactLocation' => $this->buildArtifactLocation(
+                                $context->relativizePath($v->location->file),
+                                $context->basePath !== '',
+                            ),
                             'region' => [
                                 'startLine' => $v->location->line ?? 1,
                                 'startColumn' => 1,
@@ -156,6 +163,20 @@ final class SarifFormatter implements FormatterInterface
      *
      * SARIF levels: error, warning, note, none
      */
+    /**
+     * @return array<string, string>
+     */
+    private function buildArtifactLocation(string $uri, bool $hasBasePath): array
+    {
+        $location = ['uri' => $uri];
+
+        if ($hasBasePath) {
+            $location['uriBaseId'] = '%SRCROOT%';
+        }
+
+        return $location;
+    }
+
     private function mapLevel(Severity $severity): string
     {
         return match ($severity) {

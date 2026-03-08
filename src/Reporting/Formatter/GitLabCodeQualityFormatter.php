@@ -29,7 +29,7 @@ final class GitLabCodeQualityFormatter implements FormatterInterface
                 'fingerprint' => $this->generateFingerprint($violation),
                 'severity' => $this->mapSeverity($violation->severity),
                 'location' => [
-                    'path' => $violation->location->file,
+                    'path' => $context->relativizePath($violation->location->file),
                     'lines' => [
                         'begin' => $violation->location->line ?? 1,
                     ],
@@ -37,9 +37,7 @@ final class GitLabCodeQualityFormatter implements FormatterInterface
             ];
         }
 
-        $json = json_encode($issues, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR);
-
-        return $json;
+        return json_encode($issues, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR);
     }
 
     public function getName(): string

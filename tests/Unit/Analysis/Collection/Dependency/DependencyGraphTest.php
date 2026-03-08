@@ -203,9 +203,9 @@ final class DependencyGraphTest extends TestCase
         $classStrings = array_map(fn(SymbolPath $p) => $p->toString(), $graph->getAllClasses());
         self::assertContains('GlobalClass', $classStrings);
 
-        // Namespaces should not include null-namespace entries
-        $nsStrings = array_map(fn(SymbolPath $p) => $p->namespace ?? '', $graph->getAllNamespaces());
-        self::assertNotContains('', $nsStrings);
+        // Global namespace should be included as a valid namespace
+        $nsStrings = array_map(fn(SymbolPath $p) => $p->namespace, $graph->getAllNamespaces());
+        self::assertContains('', $nsStrings);
     }
 
     private function dep(string $source, string $target): Dependency

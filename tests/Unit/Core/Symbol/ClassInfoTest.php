@@ -92,7 +92,7 @@ final class ClassInfoTest extends TestCase
 
         $symbolPath = $classInfo->getSymbolPath();
 
-        self::assertNull($symbolPath->namespace);
+        self::assertSame('', $symbolPath->namespace);
         self::assertSame('GlobalClass', $symbolPath->type);
         self::assertSame('class:GlobalClass', $symbolPath->toCanonical());
     }

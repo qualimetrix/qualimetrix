@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Tests\Unit\Core\Rule;
 
+use AiMessDetector\Core\Dependency\CycleInterface;
 use AiMessDetector\Core\Dependency\EmptyDependencyGraph;
 use AiMessDetector\Core\Metric\MetricRepositoryInterface;
 use AiMessDetector\Core\Rule\AnalysisContext;
@@ -21,7 +22,7 @@ final class AnalysisContextTest extends TestCase
         self::assertSame($metrics, $context->metrics);
         self::assertSame([], $context->ruleOptions);
         self::assertNull($context->dependencyGraph);
-        self::assertSame([], $context->additionalData);
+        self::assertSame([], $context->cycles);
     }
 
     public function testConstructorWithAllParameters(): void
@@ -32,22 +33,21 @@ final class AnalysisContextTest extends TestCase
             'complexity' => ['threshold' => 10],
             'size' => ['max_lines' => 100],
         ];
-        $additionalData = [
-            'cycles' => [],
-            'violations' => [],
+        $cycles = [
+            $this->createMock(CycleInterface::class),
         ];
 
         $context = new AnalysisContext(
             metrics: $metrics,
             ruleOptions: $ruleOptions,
             dependencyGraph: $dependencyGraph,
-            additionalData: $additionalData,
+            cycles: $cycles,
         );
 
         self::assertSame($metrics, $context->metrics);
         self::assertSame($ruleOptions, $context->ruleOptions);
         self::assertSame($dependencyGraph, $context->dependencyGraph);
-        self::assertSame($additionalData, $context->additionalData);
+        self::assertSame($cycles, $context->cycles);
     }
 
     public function testGetOptionsForRuleReturnsOptionsWhenExists(): void
@@ -88,42 +88,26 @@ final class AnalysisContextTest extends TestCase
         self::assertSame([], $context->getOptionsForRule('complexity'));
     }
 
-    public function testGetAdditionalDataReturnsValueWhenExists(): void
+    public function testCyclesPropertyWithValues(): void
     {
         $metrics = $this->createMock(MetricRepositoryInterface::class);
-        $additionalData = [
-            'cycles' => [['A', 'B', 'C']],
-            'count' => 42,
-        ];
+        $cycle = $this->createMock(CycleInterface::class);
 
         $context = new AnalysisContext(
             metrics: $metrics,
-            additionalData: $additionalData,
+            cycles: [$cycle],
         );
 
-        self::assertSame([['A', 'B', 'C']], $context->getAdditionalData('cycles'));
-        self::assertSame(42, $context->getAdditionalData('count'));
+        self::assertCount(1, $context->cycles);
+        self::assertSame($cycle, $context->cycles[0]);
     }
 
-    public function testGetAdditionalDataReturnsNullWhenNotExists(): void
-    {
-        $metrics = $this->createMock(MetricRepositoryInterface::class);
-        $additionalData = ['cycles' => []];
-
-        $context = new AnalysisContext(
-            metrics: $metrics,
-            additionalData: $additionalData,
-        );
-
-        self::assertNull($context->getAdditionalData('nonexistent'));
-    }
-
-    public function testGetAdditionalDataReturnsNullWhenNoAdditionalData(): void
+    public function testCyclesPropertyDefaultsToEmpty(): void
     {
         $metrics = $this->createMock(MetricRepositoryInterface::class);
         $context = new AnalysisContext($metrics);
 
-        self::assertNull($context->getAdditionalData('cycles'));
+        self::assertSame([], $context->cycles);
     }
 
     public function testContextIsReadonly(): void

@@ -14,5 +14,6 @@ final readonly class ConfigurationContext
     public function __construct(
         public InputInterface $input,
         public string $workingDirectory,
+        public ?string $configFilePath = null,
     ) {}
 }

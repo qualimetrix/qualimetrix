@@ -64,9 +64,9 @@ final class InMemoryMetricRepository implements MetricRepositoryInterface
             $info = new SymbolInfo($symbol, $file, $line);
             $this->symbolInfos[$canonical] = $info;
 
-            // Update namespace index
+            // Update namespace index (null = file-level, skip indexing)
             $namespace = $symbol->namespace;
-            if ($namespace !== null) {
+            if ($namespace !== null && $symbol->getType() !== SymbolType::Project) {
                 $this->byNamespace[$namespace][] = $info;
                 $this->namespaceSet[$namespace] = true;
             }
@@ -126,9 +126,9 @@ final class InMemoryMetricRepository implements MetricRepositoryInterface
                 $merged->metrics[$canonical] = $other->metrics[$canonical];
                 $merged->symbolInfos[$canonical] = $info;
 
-                // Update namespace index for new symbols
+                // Update namespace index for new symbols (skip project-level)
                 $namespace = $info->symbolPath->namespace;
-                if ($namespace !== null) {
+                if ($namespace !== null && $info->symbolPath->getType() !== SymbolType::Project) {
                     $merged->byNamespace[$namespace][] = $info;
                     $merged->namespaceSet[$namespace] = true;
                 }

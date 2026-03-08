@@ -8,6 +8,12 @@ use AiMessDetector\Core\Symbol\SymbolType;
 
 final readonly class SymbolPath
 {
+    /**
+     * Sentinel value used internally to represent project-level SymbolPath.
+     * Must never appear as an actual PHP namespace.
+     */
+    private const string PROJECT_SENTINEL = '__PROJECT__';
+
     private function __construct(
         public ?string $namespace,
         public ?string $type,
@@ -18,7 +24,7 @@ final readonly class SymbolPath
     public static function forMethod(string $namespace, string $class, string $method): self
     {
         return new self(
-            namespace: $namespace !== '' ? $namespace : null,
+            namespace: $namespace,
             type: $class,
             member: $method,
         );
@@ -27,7 +33,7 @@ final readonly class SymbolPath
     public static function forClass(string $namespace, string $class): self
     {
         return new self(
-            namespace: $namespace !== '' ? $namespace : null,
+            namespace: $namespace,
             type: $class,
             member: null,
         );
@@ -36,7 +42,19 @@ final readonly class SymbolPath
     public static function forNamespace(string $namespace): self
     {
         return new self(
-            namespace: $namespace !== '' ? $namespace : null,
+            namespace: $namespace,
+            type: null,
+            member: null,
+        );
+    }
+
+    /**
+     * Creates a SymbolPath representing the entire project (all namespaces aggregated).
+     */
+    public static function forProject(): self
+    {
+        return new self(
+            namespace: self::PROJECT_SENTINEL,
             type: null,
             member: null,
         );
@@ -80,7 +98,7 @@ final readonly class SymbolPath
     public static function forGlobalFunction(string $namespace, string $function): self
     {
         return new self(
-            namespace: $namespace !== '' ? $namespace : null,
+            namespace: $namespace,
             type: null,
             member: $function,
         );
@@ -93,6 +111,10 @@ final readonly class SymbolPath
     {
         if ($this->filePath !== null) {
             return SymbolType::File;
+        }
+
+        if ($this->namespace === self::PROJECT_SENTINEL && $this->type === null && $this->member === null) {
+            return SymbolType::Project;
         }
 
         // Function: has member but no type (class)
@@ -123,6 +145,8 @@ final readonly class SymbolPath
      * - class:App\Service\UserService — class
      * - file:src/Service/UserService.php — file
      * - ns:App\Service — namespace
+     * - ns: — global namespace (empty)
+     * - project: — project level
      * - func:App\Utils::helper — namespaced function
      * - func::globalFunction — global function (no namespace)
      */
@@ -132,6 +156,7 @@ final readonly class SymbolPath
 
         return match ($type) {
             SymbolType::File => 'file:' . $this->filePath,
+            SymbolType::Project => 'project:',
             SymbolType::Function_ => $this->buildFunctionCanonical(),
             SymbolType::Method => $this->buildMethodCanonical(),
             SymbolType::Class_ => $this->buildClassCanonical(),
@@ -147,6 +172,8 @@ final readonly class SymbolPath
      * - App\Service\UserService — class
      * - src/Service/UserService.php — file
      * - App\Service — namespace
+     * - (global) — global namespace
+     * - (project) — project level
      * - App\Utils::helper — namespaced function
      * - helper — global function (no namespace)
      */
@@ -156,10 +183,11 @@ final readonly class SymbolPath
 
         return match ($type) {
             SymbolType::File => $this->filePath ?? '',
+            SymbolType::Project => '(project)',
             SymbolType::Function_ => $this->buildFunctionString(),
             SymbolType::Method => $this->buildMethodString(),
             SymbolType::Class_ => $this->buildClassString(),
-            SymbolType::Namespace_ => $this->namespace ?? '',
+            SymbolType::Namespace_ => $this->namespace !== '' ? ($this->namespace ?? '') : '(global)',
         };
     }
 
@@ -170,7 +198,7 @@ final readonly class SymbolPath
      * - UserService::calculateTotal — for method
      * - UserService — for class
      * - helper — for function
-     * - null — for file or namespace level symbols
+     * - null — for file, namespace, or project level symbols
      */
     public function getSymbolName(): ?string
     {
@@ -182,13 +210,21 @@ final readonly class SymbolPath
                 : $this->member,
             SymbolType::Class_ => $this->type,
             SymbolType::Function_ => $this->member,
-            SymbolType::File, SymbolType::Namespace_ => null,
+            SymbolType::File, SymbolType::Namespace_, SymbolType::Project => null,
         };
+    }
+
+    /**
+     * Returns whether this SymbolPath has a non-empty namespace.
+     */
+    private function hasNamespace(): bool
+    {
+        return $this->namespace !== null && $this->namespace !== '' && $this->namespace !== self::PROJECT_SENTINEL;
     }
 
     private function buildFunctionCanonical(): string
     {
-        if ($this->namespace !== null) {
+        if ($this->hasNamespace()) {
             return 'func:' . $this->namespace . '::' . $this->member;
         }
 
@@ -199,7 +235,7 @@ final readonly class SymbolPath
     {
         $parts = ['method:'];
 
-        if ($this->namespace !== null) {
+        if ($this->hasNamespace()) {
             $parts[] = $this->namespace;
             $parts[] = '\\';
         }
@@ -215,7 +251,7 @@ final readonly class SymbolPath
     {
         $parts = ['class:'];
 
-        if ($this->namespace !== null) {
+        if ($this->hasNamespace()) {
             $parts[] = $this->namespace;
             $parts[] = '\\';
         }
@@ -227,18 +263,18 @@ final readonly class SymbolPath
 
     private function buildFunctionString(): string
     {
-        if ($this->namespace !== null) {
+        if ($this->hasNamespace()) {
             return $this->namespace . '\\' . $this->member;
         }
 
-        return '::' . ($this->member ?? '');
+        return $this->member ?? '';
     }
 
     private function buildMethodString(): string
     {
         $parts = [];
 
-        if ($this->namespace !== null) {
+        if ($this->hasNamespace()) {
             $parts[] = $this->namespace;
             $parts[] = '\\';
         }
@@ -254,7 +290,7 @@ final readonly class SymbolPath
     {
         $parts = [];
 
-        if ($this->namespace !== null) {
+        if ($this->hasNamespace()) {
             $parts[] = $this->namespace;
             $parts[] = '\\';
         }

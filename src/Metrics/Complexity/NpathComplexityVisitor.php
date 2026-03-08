@@ -291,8 +291,8 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
     private function calculateLoopNpath(?Expr $cond, array $stmts): int
     {
         // NPath(loop) = NPath(cond) + NPath(body) + 1 (exit path)
-        // Cond is always 1 for simple expressions
-        $npath = 1; // condition
+        $condNpath = $cond !== null ? $this->calculateExprNpath($cond) : 1;
+        $npath = $condNpath;
         $npath += $this->calculateSequenceNpath($stmts);
         $npath += 1; // Exit without entering
 
@@ -302,9 +302,17 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
     private function calculateForNpath(For_ $for): int
     {
         // For has init, cond, loop expressions
-        // NPath = 1 (init) + cond + body + exit
+        // NPath = 1 (init) + NPath(cond) + body + exit
+        // Multiple conditions in for(;;cond1, cond2) are each evaluated;
+        // calculate NPath for each and multiply (each is an execution point).
         $npath = 1; // init
-        $npath += 1; // condition
+        $condNpath = 1;
+
+        foreach ($for->cond as $condExpr) {
+            $condNpath = $this->safeMultiply($condNpath, $this->calculateExprNpath($condExpr));
+        }
+
+        $npath += $condNpath;
         $npath += $this->calculateSequenceNpath($for->stmts);
         $npath += 1; // Exit path
 

@@ -192,23 +192,61 @@ final class MethodCountVisitor extends NodeVisitorAbstract implements Resettable
     }
 
     /**
-     * Check if method is a getter (get*, is*, has*).
+     * Check if method is a getter (get[A-Z], is[A-Z], has[A-Z], or exact match).
+     *
+     * Uses the original (non-lowercased) name to verify the character after the
+     * prefix is uppercase, avoiding false positives like isolate(), getaway(), hasty().
      */
     private function isGetter(string $methodName): bool
     {
-        $lower = strtolower($methodName);
-
-        return str_starts_with($lower, 'get')
-            || str_starts_with($lower, 'is')
-            || str_starts_with($lower, 'has');
+        return $this->matchesAccessorPrefix($methodName, ['get', 'is', 'has']);
     }
 
     /**
-     * Check if method is a setter (set*).
+     * Check if method is a setter (set[A-Z] or exact match).
+     *
+     * Uses the original (non-lowercased) name to verify the character after the
+     * prefix is uppercase, avoiding false positives like setup(), settle().
      */
     private function isSetter(string $methodName): bool
     {
-        return str_starts_with(strtolower($methodName), 'set');
+        return $this->matchesAccessorPrefix($methodName, ['set']);
+    }
+
+    /**
+     * Check if method name matches an accessor prefix pattern.
+     *
+     * A method is considered an accessor if:
+     * - Its name exactly equals one of the prefixes (case-insensitive), OR
+     * - It starts with a prefix (case-insensitive) followed by an uppercase letter.
+     *
+     * This avoids false positives like isolate(), setup(), getaway(), hasty().
+     *
+     * @param list<string> $prefixes
+     */
+    private function matchesAccessorPrefix(string $methodName, array $prefixes): bool
+    {
+        $lower = strtolower($methodName);
+
+        foreach ($prefixes as $prefix) {
+            $prefixLen = \strlen($prefix);
+
+            if (!str_starts_with($lower, $prefix)) {
+                continue;
+            }
+
+            // Exact match (e.g., "get", "set", "is", "has")
+            if (\strlen($methodName) === $prefixLen) {
+                return true;
+            }
+
+            // Prefix followed by an uppercase letter (checked on original name)
+            if (ctype_upper($methodName[$prefixLen])) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

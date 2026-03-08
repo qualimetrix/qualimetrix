@@ -64,7 +64,7 @@ final class ComposerReaderTest extends TestCase
     }
 
     #[Test]
-    public function handlesArrayPaths(): void
+    public function handlesMultiPathArrayMapping(): void
     {
         $composerJson = [
             'autoload' => [
@@ -77,7 +77,68 @@ final class ComposerReaderTest extends TestCase
 
         $paths = $this->reader->extractAutoloadPaths($this->tempDir . '/composer.json');
 
-        // Takes the first element of the array
+        self::assertSame(['src', 'lib'], $paths);
+    }
+
+    #[Test]
+    public function includesAutoloadDevPaths(): void
+    {
+        $composerJson = [
+            'autoload-dev' => [
+                'psr-4' => [
+                    'Tests\\' => 'tests/',
+                ],
+            ],
+        ];
+        $this->writeComposerJson($composerJson);
+
+        $paths = $this->reader->extractAutoloadPaths($this->tempDir . '/composer.json');
+
+        self::assertSame(['tests'], $paths);
+    }
+
+    #[Test]
+    public function mergesAutoloadAndAutoloadDevPaths(): void
+    {
+        $composerJson = [
+            'autoload' => [
+                'psr-4' => [
+                    'App\\' => 'src/',
+                ],
+            ],
+            'autoload-dev' => [
+                'psr-4' => [
+                    'Tests\\' => 'tests/',
+                    'Fixtures\\' => ['fixtures/', 'test-data/'],
+                ],
+            ],
+        ];
+        $this->writeComposerJson($composerJson);
+
+        $paths = $this->reader->extractAutoloadPaths($this->tempDir . '/composer.json');
+
+        self::assertSame(['src', 'tests', 'fixtures', 'test-data'], $paths);
+    }
+
+    #[Test]
+    public function deduplicatesAcrossAutoloadAndAutoloadDev(): void
+    {
+        $composerJson = [
+            'autoload' => [
+                'psr-4' => [
+                    'App\\' => 'src/',
+                ],
+            ],
+            'autoload-dev' => [
+                'psr-4' => [
+                    'Tests\\' => 'src/',
+                ],
+            ],
+        ];
+        $this->writeComposerJson($composerJson);
+
+        $paths = $this->reader->extractAutoloadPaths($this->tempDir . '/composer.json');
+
         self::assertSame(['src'], $paths);
     }
 

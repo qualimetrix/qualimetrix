@@ -201,6 +201,7 @@ enum SymbolType: string {
     case Class_;     // all classes
     case File;       // all files
     case Namespace_; // all namespaces
+    case Project;    // project-level (aggregated from all namespaces)
 }
 ```
 
@@ -410,7 +411,8 @@ Stable symbol identifier for baseline. Does not depend on line number.
 **Factory methods:**
 - `forMethod(namespace, class, method): self`
 - `forClass(namespace, class): self`
-- `forNamespace(namespace): self`
+- `forNamespace(namespace): self` — use empty string for global PHP namespace
+- `forProject(): self` — project-level (aggregated from all namespaces)
 - `forFile(path): self`
 - `forGlobalFunction(namespace, function): self`
 

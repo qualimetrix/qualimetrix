@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AiMessDetector\Tests\Functional\Console\Command;
 
 use AiMessDetector\Infrastructure\Console\Command\HookInstallCommand;
+use AiMessDetector\Infrastructure\Git\GitRepositoryLocator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -50,7 +51,7 @@ final class HookInstallCommandTest extends TestCase
     #[Test]
     public function itInstallsPreCommitHook(): void
     {
-        $command = new HookInstallCommand();
+        $command = new HookInstallCommand(new GitRepositoryLocator());
 
         $application = new Application();
         $application->addCommand($command);
@@ -78,7 +79,7 @@ final class HookInstallCommandTest extends TestCase
         $hookPath = $this->gitDir . '/hooks/pre-commit';
         file_put_contents($hookPath, "#!/bin/bash\necho 'Existing hook'\n");
 
-        $command = new HookInstallCommand();
+        $command = new HookInstallCommand(new GitRepositoryLocator());
 
         $application = new Application();
         $application->addCommand($command);
@@ -100,7 +101,7 @@ final class HookInstallCommandTest extends TestCase
         $hookPath = $this->gitDir . '/hooks/pre-commit';
         file_put_contents($hookPath, "#!/bin/bash\necho 'Old hook'\n");
 
-        $command = new HookInstallCommand();
+        $command = new HookInstallCommand(new GitRepositoryLocator());
 
         $application = new Application();
         $application->addCommand($command);
@@ -130,7 +131,7 @@ final class HookInstallCommandTest extends TestCase
         // Remove .git directory
         $this->removeDirectory($this->gitDir);
 
-        $command = new HookInstallCommand();
+        $command = new HookInstallCommand(new GitRepositoryLocator());
 
         $application = new Application();
         $application->addCommand($command);
@@ -147,7 +148,7 @@ final class HookInstallCommandTest extends TestCase
     #[Test]
     public function itMakesHookExecutable(): void
     {
-        $command = new HookInstallCommand();
+        $command = new HookInstallCommand(new GitRepositoryLocator());
 
         $application = new Application();
         $application->addCommand($command);

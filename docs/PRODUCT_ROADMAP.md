@@ -9,7 +9,7 @@
 `MetricBag` stores only `int|float` values. Several collectors need to pass richer data (line numbers per occurrence, dependency lists, pattern names). Current workarounds:
 
 - **Indexed keys hack** (`line.0`, `line.1`, `pattern.0`) — used by `HardcodedCredentialsCollector`, `CodeSmellCollector`. Works but is fragile, non-type-safe, and prevents proper aggregation of such metrics.
-- **Side-channels** (`MethodWithMetrics`, `ClassWithMetrics`, `additionalData`) — ad-hoc, not unified.
+- **Side-channels** (`MethodWithMetrics`, `ClassWithMetrics`) — ad-hoc, not unified.
 
 **Options to explore**:
 - `DataBag` companion object alongside `MetricBag` in collection results

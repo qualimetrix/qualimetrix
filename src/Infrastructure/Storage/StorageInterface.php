@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Infrastructure\Storage;
 
+use AiMessDetector\Core\Dependency\Dependency;
 use AiMessDetector\Core\Symbol\SymbolType;
 use AiMessDetector\Core\Violation\SymbolPath;
 
@@ -60,7 +61,25 @@ interface StorageInterface
      */
     public function allMetrics(SymbolType $type): iterable;
 
-    // === Dependencies ===
+    // === File-level dependencies (for caching) ===
+
+    /**
+     * Stores all dependencies collected from a file.
+     * Replaces any previously stored dependencies for the given file.
+     *
+     * @param list<Dependency> $dependencies
+     */
+    public function storeFileDependencies(int $fileId, array $dependencies): void;
+
+    /**
+     * Retrieves all dependencies collected from a file.
+     * Returns null if no dependencies are cached for this file.
+     *
+     * @return list<Dependency>|null
+     */
+    public function getFileDependencies(int $fileId): ?array;
+
+    // === Class-level dependencies (for graph analysis) ===
 
     /**
      * Stores a dependency relationship.

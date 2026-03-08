@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Tests\Configuration\Pipeline\Stage;
 
+use AiMessDetector\Configuration\Exception\ConfigLoadException;
 use AiMessDetector\Configuration\Loader\ConfigLoaderInterface;
 use AiMessDetector\Configuration\Pipeline\ConfigurationContext;
 use AiMessDetector\Configuration\Pipeline\Stage\ConfigFileStage;
@@ -174,6 +175,83 @@ final class ConfigFileStageTest extends TestCase
 
         self::assertNotNull($layer);
         self::assertSame(['vendor/', 'tests/'], $layer->values['exclude_paths']);
+    }
+
+    #[Test]
+    public function loadsFromExplicitConfigPath(): void
+    {
+        $configFile = $this->tempDir . '/custom-config.yaml';
+        touch($configFile);
+
+        $loader = $this->createMock(ConfigLoaderInterface::class);
+        $loader->expects(self::once())
+            ->method('load')
+            ->with($configFile)
+            ->willReturn(['paths' => ['lib']]);
+
+        $stage = new ConfigFileStage($loader);
+        $context = new ConfigurationContext(new ArrayInput([]), $this->tempDir, $configFile);
+
+        $layer = $stage->apply($context);
+
+        self::assertNotNull($layer);
+        self::assertSame('custom-config.yaml', $layer->source);
+        self::assertSame(['lib'], $layer->values['paths']);
+    }
+
+    #[Test]
+    public function explicitConfigPathOverridesAutoDetection(): void
+    {
+        // Create both auto-detected and explicit config files
+        touch($this->tempDir . '/aimd.yaml');
+        $customConfig = $this->tempDir . '/custom.yaml';
+        touch($customConfig);
+
+        $loader = $this->createMock(ConfigLoaderInterface::class);
+        $loader->expects(self::once())
+            ->method('load')
+            ->with($customConfig)
+            ->willReturn(['format' => 'json']);
+
+        $stage = new ConfigFileStage($loader);
+        $context = new ConfigurationContext(new ArrayInput([]), $this->tempDir, $customConfig);
+
+        $layer = $stage->apply($context);
+
+        self::assertNotNull($layer);
+        self::assertSame('custom.yaml', $layer->source);
+    }
+
+    #[Test]
+    public function throwsWhenExplicitConfigPathDoesNotExist(): void
+    {
+        $missingPath = $this->tempDir . '/nonexistent.yaml';
+
+        $loader = $this->createMock(ConfigLoaderInterface::class);
+        $loader->expects(self::never())->method('load');
+
+        $stage = new ConfigFileStage($loader);
+        $context = new ConfigurationContext(new ArrayInput([]), $this->tempDir, $missingPath);
+
+        $this->expectException(ConfigLoadException::class);
+        $this->expectExceptionMessage('Configuration file not found');
+
+        $stage->apply($context);
+    }
+
+    #[Test]
+    public function autoDetectsWhenNoExplicitConfigPath(): void
+    {
+        // No aimd.yaml, no explicit path — should return null
+        $loader = $this->createMock(ConfigLoaderInterface::class);
+        $loader->expects(self::never())->method('load');
+
+        $stage = new ConfigFileStage($loader);
+        $context = new ConfigurationContext(new ArrayInput([]), $this->tempDir);
+
+        $layer = $stage->apply($context);
+
+        self::assertNull($layer);
     }
 
     private function removeDir(string $dir): void

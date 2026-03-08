@@ -508,6 +508,152 @@ PHP;
         self::assertNull($metrics->get('npath:App\Outer::innerComplex'));
     }
 
+    public function testWhileWithBooleanAndCondition(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Test
+{
+    public function loop(bool $a, bool $b): void
+    {
+        while ($a && $b) {
+            $x = 1;
+        }
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // NPath = cond(2: left(1)+right(1)) + body(1) + exit(1) = 4
+        self::assertSame(4, $metrics->get('npath:App\Test::loop'));
+    }
+
+    public function testWhileWithTripleBooleanOrCondition(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Test
+{
+    public function loop(bool $a, bool $b, bool $c): void
+    {
+        while ($a || $b || $c) {
+            $x = 1;
+        }
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // ($a || $b) has NPath=2, then (($a || $b) || $c) has NPath=2+1=3
+        // NPath = cond(3) + body(1) + exit(1) = 5
+        self::assertSame(5, $metrics->get('npath:App\Test::loop'));
+    }
+
+    public function testDoWhileWithBooleanAndCondition(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Test
+{
+    public function loop(bool $a, bool $b): void
+    {
+        do {
+            $x = 1;
+        } while ($a && $b);
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // NPath = cond(2) + body(1) + exit(1) = 4
+        self::assertSame(4, $metrics->get('npath:App\Test::loop'));
+    }
+
+    public function testForWithBooleanAndCondition(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Test
+{
+    public function loop(int $n, bool $flag): void
+    {
+        for ($i = 0; $i < $n && $flag; $i++) {
+            $x = 1;
+        }
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // NPath = init(1) + cond(2: &&) + body(1) + exit(1) = 5
+        self::assertSame(5, $metrics->get('npath:App\Test::loop'));
+    }
+
+    public function testForeachHasNoConditionExpression(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Test
+{
+    public function iterate(array $items): void
+    {
+        foreach ($items as $item) {
+            $x = 1;
+        }
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // Foreach has no condition, so cond=1: NPath = 1 + 1 + 1 = 3
+        self::assertSame(3, $metrics->get('npath:App\Test::iterate'));
+    }
+
+    public function testWhileWithTernaryCondition(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Test
+{
+    public function loop(bool $a, int $b, int $c): void
+    {
+        while ($a ? $b : $c) {
+            $x = 1;
+        }
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // Ternary condition NPath = cond(1) + true(1) + false(1) = 3
+        // NPath = cond(3) + body(1) + exit(1) = 5
+        self::assertSame(5, $metrics->get('npath:App\Test::loop'));
+    }
+
     private function collectMetrics(string $code): \AiMessDetector\Core\Metric\MetricBag
     {
         $parser = (new ParserFactory())->createForHostVersion();

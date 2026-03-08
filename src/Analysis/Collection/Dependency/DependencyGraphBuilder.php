@@ -106,7 +106,7 @@ final class DependencyGraphBuilder
             $sourceNs = $dep->source->namespace;
             $targetNs = $dep->target->namespace;
 
-            // Skip if source namespace is null (global namespace)
+            // Skip file-level symbols (namespace is null only for file-level SymbolPaths)
             if ($sourceNs === null) {
                 continue;
             }
@@ -150,7 +150,7 @@ final class DependencyGraphBuilder
             $sourceNs = $dep->source->namespace;
             $targetNs = $dep->target->namespace;
 
-            // Skip if target namespace is null (global namespace)
+            // Skip file-level symbols (namespace is null only for file-level SymbolPaths)
             if ($targetNs === null) {
                 continue;
             }

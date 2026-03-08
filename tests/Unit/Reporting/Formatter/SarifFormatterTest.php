@@ -120,7 +120,7 @@ final class SarifFormatterTest extends TestCase
         self::assertSame('error', $result1['level']);
         self::assertSame('Cyclomatic complexity of 25 exceeds threshold', $result1['message']['text']);
         self::assertSame('src/Service/UserService.php', $result1['locations'][0]['physicalLocation']['artifactLocation']['uri']);
-        self::assertSame('%SRCROOT%', $result1['locations'][0]['physicalLocation']['artifactLocation']['uriBaseId']);
+        self::assertArrayNotHasKey('uriBaseId', $result1['locations'][0]['physicalLocation']['artifactLocation']);
         self::assertSame(42, $result1['locations'][0]['physicalLocation']['region']['startLine']);
         self::assertSame(1, $result1['locations'][0]['physicalLocation']['region']['startColumn']);
 
@@ -326,5 +326,91 @@ final class SarifFormatterTest extends TestCase
     public function testGetDefaultGroupBy(): void
     {
         self::assertSame(GroupBy::None, $this->formatter->getDefaultGroupBy());
+    }
+
+    public function testRelativizesAbsolutePathsWithBasePath(): void
+    {
+        $report = ReportBuilder::create()
+            ->addViolation(new Violation(
+                location: new Location('/home/user/project/src/Service/UserService.php', 42),
+                symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
+                ruleName: 'cyclomatic-complexity',
+                violationCode: 'cyclomatic-complexity',
+                message: 'Too complex',
+                severity: Severity::Error,
+            ))
+            ->filesAnalyzed(1)
+            ->filesSkipped(0)
+            ->duration(0.1)
+            ->build();
+
+        $context = new FormatterContext(basePath: '/home/user/project');
+        $output = $this->formatter->format($report, $context);
+        $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
+
+        $run = $data['runs'][0];
+
+        // Path should be relativized
+        $uri = $run['results'][0]['locations'][0]['physicalLocation']['artifactLocation']['uri'];
+        self::assertSame('src/Service/UserService.php', $uri);
+
+        // Should have originalUriBaseIds
+        self::assertArrayHasKey('originalUriBaseIds', $run);
+        self::assertSame('/home/user/project/', $run['originalUriBaseIds']['%SRCROOT%']['uri']);
+    }
+
+    public function testAlreadyRelativePathUnchanged(): void
+    {
+        $report = ReportBuilder::create()
+            ->addViolation(new Violation(
+                location: new Location('src/Service/UserService.php', 42),
+                symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
+                ruleName: 'cyclomatic-complexity',
+                violationCode: 'cyclomatic-complexity',
+                message: 'Too complex',
+                severity: Severity::Error,
+            ))
+            ->filesAnalyzed(1)
+            ->filesSkipped(0)
+            ->duration(0.1)
+            ->build();
+
+        $context = new FormatterContext(basePath: '/home/user/project');
+        $output = $this->formatter->format($report, $context);
+        $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
+
+        // Already-relative path should remain unchanged
+        $uri = $data['runs'][0]['results'][0]['locations'][0]['physicalLocation']['artifactLocation']['uri'];
+        self::assertSame('src/Service/UserService.php', $uri);
+    }
+
+    public function testNoBasePathKeepsAbsolutePaths(): void
+    {
+        $report = ReportBuilder::create()
+            ->addViolation(new Violation(
+                location: new Location('/home/user/project/src/Service/UserService.php', 42),
+                symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
+                ruleName: 'cyclomatic-complexity',
+                violationCode: 'cyclomatic-complexity',
+                message: 'Too complex',
+                severity: Severity::Error,
+            ))
+            ->filesAnalyzed(1)
+            ->filesSkipped(0)
+            ->duration(0.1)
+            ->build();
+
+        // No basePath (default)
+        $output = $this->formatter->format($report, new FormatterContext());
+        $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
+
+        $run = $data['runs'][0];
+
+        // Absolute path should remain unchanged
+        $uri = $run['results'][0]['locations'][0]['physicalLocation']['artifactLocation']['uri'];
+        self::assertSame('/home/user/project/src/Service/UserService.php', $uri);
+
+        // No originalUriBaseIds when basePath is empty
+        self::assertArrayNotHasKey('originalUriBaseIds', $run);
     }
 }

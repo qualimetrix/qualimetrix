@@ -26,7 +26,12 @@ use AiMessDetector\Core\Violation\SymbolPath;
  * - A extends B, C extends B → NOC(B) = 2
  * - D extends C → does NOT increase NOC(B)
  *
- * Interfaces (implements) and traits (use) are NOT counted.
+ * Design decision: only `extends` is counted, NOT `implements` or trait `use`.
+ * This follows the canonical Chidamber & Kemerer (1994) definition where NOC
+ * measures class inheritance hierarchy depth, not interface contracts.
+ * Interface implementations represent a different type of relationship
+ * (contractual, not structural) and should be tracked separately if needed.
+ *
  * Anonymous classes are ignored (not in dependency graph).
  */
 final class NocCollector implements GlobalContextCollectorInterface

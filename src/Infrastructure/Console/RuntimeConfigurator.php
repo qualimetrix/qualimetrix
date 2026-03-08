@@ -56,7 +56,7 @@ final class RuntimeConfigurator
 
         // Parse rule options from CLI and merge with config file options
         $cliRuleOptions = $cliParser->parseRuleOptions($input);
-        $ruleOptions = array_merge($resolved->ruleOptions, $cliRuleOptions);
+        $ruleOptions = array_replace_recursive($resolved->ruleOptions, $cliRuleOptions);
 
         // Configure runtime providers
         $this->configureRuntime($resolved->analysis, $ruleOptions);

@@ -51,7 +51,7 @@ final class CircularDependencyRuleTest extends TestCase
 
         $context = new AnalysisContext(
             metrics: new InMemoryMetricRepository(),
-            additionalData: ['cycles' => $cycles],
+            cycles: $cycles,
         );
 
         $violations = $rule->analyze($context);
@@ -74,7 +74,7 @@ final class CircularDependencyRuleTest extends TestCase
 
         $context = new AnalysisContext(
             metrics: new InMemoryMetricRepository(),
-            additionalData: ['cycles' => $cycles],
+            cycles: $cycles,
         );
 
         $violations = $rule->analyze($context);
@@ -95,7 +95,7 @@ final class CircularDependencyRuleTest extends TestCase
 
         $context = new AnalysisContext(
             metrics: new InMemoryMetricRepository(),
-            additionalData: ['cycles' => $cycles],
+            cycles: $cycles,
         );
 
         $violations = $rule->analyze($context);
@@ -117,7 +117,7 @@ final class CircularDependencyRuleTest extends TestCase
 
         $context = new AnalysisContext(
             metrics: new InMemoryMetricRepository(),
-            additionalData: ['cycles' => $cycles],
+            cycles: $cycles,
         );
 
         $violations = $rule->analyze($context);
@@ -138,7 +138,7 @@ final class CircularDependencyRuleTest extends TestCase
 
         $context = new AnalysisContext(
             metrics: new InMemoryMetricRepository(),
-            additionalData: ['cycles' => $cycles],
+            cycles: $cycles,
         );
 
         $violations = $rule->analyze($context);
@@ -152,7 +152,7 @@ final class CircularDependencyRuleTest extends TestCase
 
         $context = new AnalysisContext(
             metrics: new InMemoryMetricRepository(),
-            additionalData: [],
+            cycles: [],
         );
 
         $violations = $rule->analyze($context);
@@ -172,7 +172,7 @@ final class CircularDependencyRuleTest extends TestCase
 
         $context = new AnalysisContext(
             metrics: new InMemoryMetricRepository(),
-            additionalData: ['cycles' => $cycles],
+            cycles: $cycles,
         );
 
         $violations = $rule->analyze($context);

@@ -31,6 +31,7 @@ use AiMessDetector\Infrastructure\Console\Progress\ProgressReporterHolder;
 use AiMessDetector\Infrastructure\Console\ResultPresenter;
 use AiMessDetector\Infrastructure\Console\RuntimeConfigurator;
 use AiMessDetector\Infrastructure\Console\ViolationFilterPipeline;
+use AiMessDetector\Infrastructure\Git\GitRepositoryLocator;
 use AiMessDetector\Infrastructure\Logging\DelegatingLogger;
 use AiMessDetector\Infrastructure\Logging\LoggerFactory;
 use AiMessDetector\Infrastructure\Logging\LoggerHolder;
@@ -154,16 +155,28 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
             ])
             ->setPublic(true);
 
-        // HookInstallCommand (no dependencies)
+        // GitRepositoryLocator (shared by hook commands)
+        $container->register(GitRepositoryLocator::class);
+
+        // HookInstallCommand
         $container->register(HookInstallCommand::class)
+            ->setArguments([
+                new Reference(GitRepositoryLocator::class),
+            ])
             ->setPublic(true);
 
-        // HookUninstallCommand (no dependencies)
+        // HookUninstallCommand
         $container->register(HookUninstallCommand::class)
+            ->setArguments([
+                new Reference(GitRepositoryLocator::class),
+            ])
             ->setPublic(true);
 
-        // HookStatusCommand (no dependencies)
+        // HookStatusCommand
         $container->register(HookStatusCommand::class)
+            ->setArguments([
+                new Reference(GitRepositoryLocator::class),
+            ])
             ->setPublic(true);
 
         // GraphExportCommand

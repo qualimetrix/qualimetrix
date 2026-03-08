@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AiMessDetector\Tests\Functional\Console\Command;
 
 use AiMessDetector\Infrastructure\Console\Command\HookUninstallCommand;
+use AiMessDetector\Infrastructure\Git\GitRepositoryLocator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -47,7 +48,7 @@ final class HookUninstallCommandTest extends TestCase
         file_put_contents($hookPath, "#!/bin/bash\n# AI Mess Detector pre-commit hook\necho 'Running hook'\n");
         chmod($hookPath, 0755);
 
-        $command = new HookUninstallCommand();
+        $command = new HookUninstallCommand(new GitRepositoryLocator());
 
         $application = new Application();
         $application->addCommand($command);
@@ -67,7 +68,7 @@ final class HookUninstallCommandTest extends TestCase
     #[Test]
     public function itReportsNothingToUninstallWhenHookNotFound(): void
     {
-        $command = new HookUninstallCommand();
+        $command = new HookUninstallCommand(new GitRepositoryLocator());
 
         $application = new Application();
         $application->addCommand($command);
@@ -90,7 +91,7 @@ final class HookUninstallCommandTest extends TestCase
         file_put_contents($hookPath, "#!/bin/bash\necho 'Some other hook'\n");
         chmod($hookPath, 0755);
 
-        $command = new HookUninstallCommand();
+        $command = new HookUninstallCommand(new GitRepositoryLocator());
 
         $application = new Application();
         $application->addCommand($command);
@@ -120,7 +121,7 @@ final class HookUninstallCommandTest extends TestCase
         $backupPath = $hookPath . '.backup';
         file_put_contents($backupPath, "#!/bin/bash\necho 'Backup hook'\n");
 
-        $command = new HookUninstallCommand();
+        $command = new HookUninstallCommand(new GitRepositoryLocator());
 
         $application = new Application();
         $application->addCommand($command);
@@ -152,7 +153,7 @@ final class HookUninstallCommandTest extends TestCase
         file_put_contents($hookPath, "#!/bin/bash\n# AI Mess Detector pre-commit hook\necho 'Running hook'\n");
         chmod($hookPath, 0755);
 
-        $command = new HookUninstallCommand();
+        $command = new HookUninstallCommand(new GitRepositoryLocator());
 
         $application = new Application();
         $application->addCommand($command);
@@ -179,7 +180,7 @@ final class HookUninstallCommandTest extends TestCase
         $backupPath = $hookPath . '.backup';
         file_put_contents($backupPath, "#!/bin/bash\necho 'Backup hook'\n");
 
-        $command = new HookUninstallCommand();
+        $command = new HookUninstallCommand(new GitRepositoryLocator());
 
         $application = new Application();
         $application->addCommand($command);
@@ -205,7 +206,7 @@ final class HookUninstallCommandTest extends TestCase
         // Remove .git directory
         $this->removeDirectory($this->gitDir);
 
-        $command = new HookUninstallCommand();
+        $command = new HookUninstallCommand(new GitRepositoryLocator());
 
         $application = new Application();
         $application->addCommand($command);

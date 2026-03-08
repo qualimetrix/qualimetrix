@@ -18,8 +18,10 @@ use SplFileInfo;
  * Caching wrapper for CompositeCollector.
  * Uses storage to avoid re-analyzing unchanged files.
  *
- * Note: Dependencies are NOT cached - only file-level metrics are cached.
- * Dependencies must be re-collected on each analysis to ensure consistency.
+ * Both metrics and dependencies are cached per file. On cache hit,
+ * no AST traversal is performed — the cached data is returned directly.
+ * Dependencies are deterministic based on file content, so if the
+ * contentHash hasn't changed, neither have the dependencies.
  */
 final class CachedCollector
 {
@@ -31,11 +33,8 @@ final class CachedCollector
 
     /**
      * Collects metrics with caching.
-     * Returns cached metrics if file unchanged, otherwise collects fresh and updates cache.
-     *
-     * Note: Only metrics are cached, dependencies are always collected fresh
-     * (this is intentional - dependency collection is fast and caching them
-     * would require complex invalidation logic for cross-file dependencies).
+     * Returns cached metrics and dependencies if file unchanged,
+     * otherwise collects fresh and updates cache.
      *
      * @param Node[] $ast
      */
@@ -48,20 +47,30 @@ final class CachedCollector
         if (!$this->storage->hasFileChanged($path, $contentHash)) {
             $cached = $this->storage->getMetrics(SymbolPath::forFile($path));
             if ($cached !== null) {
-                // Still need to collect dependencies (not cached)
-                $output = $this->inner->collect($file, $ast);
+                // Try to get cached dependencies too
+                $fileRecord = $this->storage->getFile($path);
+                if ($fileRecord !== null) {
+                    $fileId = $this->storage->storeFile($fileRecord);
+                    $cachedDeps = $this->storage->getFileDependencies($fileId);
 
-                return new CollectionOutput(
-                    metrics: MetricBag::fromArray($cached),
-                    dependencies: $output->dependencies,
-                );
+                    if ($cachedDeps !== null) {
+                        // Full cache hit — no AST traversal needed
+                        return new CollectionOutput(
+                            metrics: MetricBag::fromArray($cached),
+                            dependencies: $cachedDeps,
+                        );
+                    }
+                }
+
+                // Backward compat: metrics cached but dependencies not.
+                // Fall through to full collection.
             }
         }
 
         // Cache miss — collect fresh metrics and dependencies
         $output = $this->inner->collect($file, $ast);
 
-        // Store metrics in cache (not dependencies)
+        // Store file record, metrics, and dependencies in cache
         $fileId = $this->storage->storeFile(new FileRecord(
             path: $path,
             contentHash: $contentHash,
@@ -74,6 +83,8 @@ final class CachedCollector
             $output->metrics->all(),
             $fileId,
         );
+
+        $this->storage->storeFileDependencies($fileId, $output->dependencies);
 
         return $output;
     }

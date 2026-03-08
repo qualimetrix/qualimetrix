@@ -450,9 +450,10 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(4, $metrics->get('getterCount:App\CaseTest'));
+        // HAS_permission is NOT a getter: underscore after prefix, not uppercase letter
+        self::assertSame(3, $metrics->get('getterCount:App\CaseTest'));
         self::assertSame(2, $metrics->get('setterCount:App\CaseTest'));
-        self::assertSame(0, $metrics->get('methodCount:App\CaseTest'));
+        self::assertSame(1, $metrics->get('methodCount:App\CaseTest')); // HAS_permission
     }
 
     public function testConstructorNotCountedAsGetter(): void
@@ -477,30 +478,55 @@ PHP;
         self::assertSame(3, $metrics->get('methodCount:App\WithConstructor'));
     }
 
-    public function testMethodsStartingWithIsHasGet(): void
+    public function testExactPrefixMatchIsAccessor(): void
     {
         $code = <<<'PHP'
 <?php
 
 namespace App;
 
-class EdgeCases
+class ExactPrefixes
 {
-    public function get(): void {} // Just "get" - still a getter
-    public function is(): void {}  // Just "is" - still a getter
-    public function has(): void {} // Just "has" - still a getter
-    public function set(): void {} // Just "set" - still a setter
-    public function getting(): void {} // Starts with "get"
-    public function isset(): void {} // Starts with "is"
-    public function setting(): void {} // Starts with "set"
+    public function get(): void {} // Exact "get" - getter
+    public function is(): void {}  // Exact "is" - getter
+    public function has(): void {} // Exact "has" - getter
+    public function set(): void {} // Exact "set" - setter
 }
 PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(5, $metrics->get('getterCount:App\EdgeCases')); // get, is, has, getting, isset
-        self::assertSame(2, $metrics->get('setterCount:App\EdgeCases')); // set, setting
-        self::assertSame(0, $metrics->get('methodCount:App\EdgeCases'));
+        self::assertSame(3, $metrics->get('getterCount:App\ExactPrefixes')); // get, is, has
+        self::assertSame(1, $metrics->get('setterCount:App\ExactPrefixes')); // set
+        self::assertSame(0, $metrics->get('methodCount:App\ExactPrefixes'));
+    }
+
+    public function testFalsePositiveGetterSetterPrefixes(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class FalsePositives
+{
+    public function isolate(): void {}   // NOT a getter (is + lowercase)
+    public function island(): void {}    // NOT a getter (is + lowercase)
+    public function isset(): void {}     // NOT a getter (is + lowercase)
+    public function getaway(): void {}   // NOT a getter (get + lowercase)
+    public function getting(): void {}   // NOT a getter (get + lowercase)
+    public function hasty(): void {}     // NOT a getter (has + lowercase)
+    public function setup(): void {}     // NOT a setter (set + lowercase)
+    public function settle(): void {}    // NOT a setter (set + lowercase)
+    public function setting(): void {}   // NOT a setter (set + lowercase)
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(0, $metrics->get('getterCount:App\FalsePositives'));
+        self::assertSame(0, $metrics->get('setterCount:App\FalsePositives'));
+        self::assertSame(9, $metrics->get('methodCount:App\FalsePositives'));
     }
 
     public function testCountsPublicProperties(): void

@@ -22,6 +22,12 @@ use PhpParser\NodeVisitorAbstract;
  * - List of public methods
  * - For each method: set of properties accessed via $this->property
  *
+ * Design decision: connectivity is measured through shared property access only,
+ * NOT through method-to-method calls ($this->method()). This follows the canonical
+ * Bieman & Kang (1995) definition. Method-call connectivity would make the metric
+ * non-standard and incomparable with other tools (PHPMD, PHPMetrics, JHawk).
+ * Classes that delegate via methods may show lower cohesion than expected.
+ *
  * Anonymous classes are ignored.
  */
 final class TccLccVisitor extends NodeVisitorAbstract implements ResettableVisitorInterface

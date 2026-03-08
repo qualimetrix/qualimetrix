@@ -133,7 +133,7 @@ final class MetricAggregatorTest extends TestCase
         $aggregator->aggregate($repository);
 
         // Project level (empty namespace)
-        $projectMetrics = $repository->get(SymbolPath::forNamespace(''));
+        $projectMetrics = $repository->get(SymbolPath::forProject());
 
         self::assertInstanceOf(MetricBag::class, $projectMetrics);
         self::assertSame(2, $projectMetrics->get('symbolMethodCount'));
@@ -150,7 +150,7 @@ final class MetricAggregatorTest extends TestCase
         $aggregator->aggregate($repository);
 
         // No namespaces, so no project metrics
-        $projectMetrics = $repository->get(SymbolPath::forNamespace(''));
+        $projectMetrics = $repository->get(SymbolPath::forProject());
 
         // Empty MetricBag is returned for non-existent symbols
         self::assertInstanceOf(MetricBag::class, $projectMetrics);
@@ -409,7 +409,7 @@ final class MetricAggregatorTest extends TestCase
         self::assertSame(8, (int) $ns2Metrics->get('ccn.sum'));
 
         // Check project level
-        $projectMetrics = $repository->get(SymbolPath::forNamespace(''));
+        $projectMetrics = $repository->get(SymbolPath::forProject());
         self::assertSame(3, $projectMetrics->get('symbolClassCount'));
         self::assertSame(16, (int) $projectMetrics->get('ccn.sum')); // 8 + 8
     }

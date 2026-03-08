@@ -41,7 +41,7 @@ use SplFileInfo;
  *
  * These tests expose known bugs in the pipeline where:
  * 1. dependencyGraph is not passed to AnalysisContext (line 127 of AnalysisPipeline)
- * 2. CircularDependencyDetector is never invoked, so additionalData['cycles'] is empty
+ * 2. CircularDependencyDetector is never invoked, so AnalysisContext::$cycles is empty
  * 3. Global collector MetricDefinitions are not included in MetricAggregator,
  *    so their metrics are never aggregated to namespace/project level
  *
@@ -112,9 +112,9 @@ final class AnalysisPipelineIntegrationTest extends TestCase
     }
 
     /**
-     * Bug: CircularDependencyRule expects additionalData['cycles'] to be populated,
+     * Bug: CircularDependencyRule expects AnalysisContext::$cycles to be populated,
      * but AnalysisPipeline never calls CircularDependencyDetector and never populates
-     * additionalData in AnalysisContext.
+     * cycles in AnalysisContext.
      *
      * This test creates a circular dependency (A -> B -> A) and runs the full pipeline
      * with CircularDependencyRule. It should produce violations but currently won't.
@@ -183,7 +183,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
             $circularViolations,
             'CircularDependencyRule should produce violations when circular dependencies exist. '
             . 'Currently the pipeline never calls CircularDependencyDetector and never populates '
-            . 'additionalData[\'cycles\'] in AnalysisContext.',
+            . 'the $cycles property in AnalysisContext.',
         );
     }
 

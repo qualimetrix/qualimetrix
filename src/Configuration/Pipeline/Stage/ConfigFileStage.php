@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Configuration\Pipeline\Stage;
 
+use AiMessDetector\Configuration\Exception\ConfigLoadException;
 use AiMessDetector\Configuration\Loader\ConfigLoaderInterface;
 use AiMessDetector\Configuration\Pipeline\ConfigurationContext;
 use AiMessDetector\Configuration\Pipeline\ConfigurationLayer;
@@ -35,7 +36,7 @@ final class ConfigFileStage implements ConfigurationStageInterface
 
     public function apply(ConfigurationContext $context): ?ConfigurationLayer
     {
-        $configPath = $this->findConfigFile($context->workingDirectory);
+        $configPath = $this->resolveConfigPath($context);
 
         if ($configPath === null) {
             return null;
@@ -47,6 +48,25 @@ final class ConfigFileStage implements ConfigurationStageInterface
             basename($configPath),
             $this->normalizeConfigData($data),
         );
+    }
+
+    /**
+     * Resolves the config file path.
+     *
+     * If an explicit path was provided via --config, uses that (throws on missing file).
+     * Otherwise, auto-detects aimd.yaml in the working directory.
+     */
+    private function resolveConfigPath(ConfigurationContext $context): ?string
+    {
+        if ($context->configFilePath !== null) {
+            if (!file_exists($context->configFilePath)) {
+                throw ConfigLoadException::fileNotFound($context->configFilePath);
+            }
+
+            return $context->configFilePath;
+        }
+
+        return $this->findConfigFile($context->workingDirectory);
     }
 
     private function findConfigFile(string $dir): ?string

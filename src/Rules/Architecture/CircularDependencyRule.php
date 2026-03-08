@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Rules\Architecture;
 
-use AiMessDetector\Core\Dependency\CycleInterface;
 use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\RuleCategory;
 use AiMessDetector\Core\Violation\Location;
@@ -17,7 +16,7 @@ use AiMessDetector\Rules\AbstractRule;
  * Circular dependencies (A depends on B, B depends on C, C depends on A) are
  * architectural anti-patterns that make code harder to test, understand, and maintain.
  *
- * This rule expects cycles to be provided via AnalysisContext::additionalData['cycles'].
+ * This rule reads cycles from the typed AnalysisContext::$cycles property.
  */
 final class CircularDependencyRule extends AbstractRule
 {
@@ -59,18 +58,13 @@ final class CircularDependencyRule extends AbstractRule
             return [];
         }
 
-        // Get cycles from additional data (populated by Analyzer)
-        $cycles = $context->getAdditionalData('cycles');
-        if ($cycles === null || !\is_array($cycles)) {
-            return []; // No cycles data available
+        if ($context->cycles === []) {
+            return [];
         }
 
         $violations = [];
 
-        foreach ($cycles as $cycle) {
-            if (!$cycle instanceof CycleInterface) {
-                continue; // Skip invalid entries
-            }
+        foreach ($context->cycles as $cycle) {
             $severity = $this->options->getSeverity($cycle->getSize());
             if ($severity === null) {
                 continue; // Cycle too large or filtered out

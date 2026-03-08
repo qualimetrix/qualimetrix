@@ -64,7 +64,7 @@ final class MethodInfoTest extends TestCase
 
         $symbolPath = $methodInfo->getSymbolPath();
 
-        self::assertNull($symbolPath->namespace);
+        self::assertSame('', $symbolPath->namespace);
         self::assertSame('GlobalClass', $symbolPath->type);
         self::assertSame('method', $symbolPath->member);
         self::assertSame('method:GlobalClass::method', $symbolPath->toCanonical());

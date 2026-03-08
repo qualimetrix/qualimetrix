@@ -179,6 +179,7 @@ final class ResultPresenter
             useColor: $output->isDecorated(),
             groupBy: $groupBy,
             options: $options,
+            basePath: getcwd() ?: '.',
         );
     }
 

@@ -49,9 +49,14 @@ final class SymbolPathTest extends TestCase
             'ns:App\Service',
         ];
 
-        yield 'empty namespace' => [
+        yield 'global namespace' => [
             SymbolPath::forNamespace(''),
             'ns:',
+        ];
+
+        yield 'project' => [
+            SymbolPath::forProject(),
+            'project:',
         ];
 
         yield 'file' => [
@@ -110,9 +115,16 @@ final class SymbolPathTest extends TestCase
     {
         $symbolPath = SymbolPath::forGlobalFunction('', 'myFunction');
 
-        self::assertNull($symbolPath->namespace);
+        self::assertSame('', $symbolPath->namespace);
         self::assertNull($symbolPath->type);
         self::assertSame('myFunction', $symbolPath->member);
+    }
+
+    public function testForGlobalFunctionToStringOmitsNamespace(): void
+    {
+        $symbolPath = SymbolPath::forGlobalFunction('', 'myFunction');
+
+        self::assertSame('myFunction', $symbolPath->toString());
     }
 
     #[DataProvider('typeDataProvider')]
@@ -151,9 +163,14 @@ final class SymbolPathTest extends TestCase
             SymbolType::Namespace_,
         ];
 
-        yield 'empty namespace' => [
+        yield 'global namespace' => [
             SymbolPath::forNamespace(''),
             SymbolType::Namespace_,
+        ];
+
+        yield 'project' => [
+            SymbolPath::forProject(),
+            SymbolType::Project,
         ];
 
         yield 'file' => [
@@ -170,6 +187,27 @@ final class SymbolPathTest extends TestCase
             SymbolPath::forGlobalFunction('App\Utils', 'helper'),
             SymbolType::Function_,
         ];
+    }
+
+    public function testGlobalNamespaceIsDistinctFromProject(): void
+    {
+        $globalNs = SymbolPath::forNamespace('');
+        $project = SymbolPath::forProject();
+
+        self::assertSame(SymbolType::Namespace_, $globalNs->getType());
+        self::assertSame(SymbolType::Project, $project->getType());
+        self::assertNotSame($globalNs->toCanonical(), $project->toCanonical());
+        self::assertNotSame($globalNs->toString(), $project->toString());
+    }
+
+    public function testForProjectToString(): void
+    {
+        self::assertSame('(project)', SymbolPath::forProject()->toString());
+    }
+
+    public function testForGlobalNamespaceToString(): void
+    {
+        self::assertSame('(global)', SymbolPath::forNamespace('')->toString());
     }
 
     #[DataProvider('symbolNameDataProvider')]
@@ -205,6 +243,11 @@ final class SymbolPathTest extends TestCase
 
         yield 'namespace' => [
             SymbolPath::forNamespace('App\Service'),
+            null,
+        ];
+
+        yield 'project' => [
+            SymbolPath::forProject(),
             null,
         ];
 
@@ -260,7 +303,7 @@ final class SymbolPathTest extends TestCase
 
         yield 'global class (no namespace)' => [
             'GlobalClass',
-            null,
+            '',
             'GlobalClass',
         ];
     }
