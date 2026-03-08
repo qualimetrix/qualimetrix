@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- `security.hardcoded-credentials` rule for detecting hardcoded passwords, API keys, secrets, and other credentials in PHP code
 - `code-smell.long-parameter-list` rule — detects methods with too many parameters (warning: 4, error: 6)
 - `code-smell.unreachable-code` rule — detects dead code after return/throw/exit statements
 - `design.type-coverage` rule — measures type declaration coverage for parameters, return types, and properties per class

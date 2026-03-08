@@ -48,6 +48,8 @@ Collectors **do not interpret** metrics — they only collect them. Interpretati
 | `typeCoverage.paramTotal`, `typeCoverage.paramTyped`                 | Design          | Class     | Raw counts: total and typed parameters                                                                                        |
 | `typeCoverage.returnTotal`, `typeCoverage.returnTyped`               | Design          | Class     | Raw counts: total and typed return declarations                                                                               |
 | `typeCoverage.propertyTotal`, `typeCoverage.propertyTyped`           | Design          | Class     | Raw counts: total and typed properties                                                                                        |
+| **Security**                                                         |                 |           |                                                                                                                               |
+| `hardcodedCredentials`                                               | Security        | File      | Number of hardcoded credentials detected (passwords, API keys, secrets, tokens)                                               |
 
 ---
 
@@ -60,6 +62,7 @@ Collectors **do not interpret** metrics — they only collect them. Interpretati
 - **[Coupling/](Coupling/README.md)** — Ca/Ce/Instability, Abstractness, Distance
 - **[CodeSmell/](CodeSmell/README.md)** — Code pattern detectors (goto, eval, debug code, parameter count, unreachable code, etc.)
 - **[Design/](Design/)** — Type coverage metrics
+- **[Security/](Security/)** — Hardcoded credentials detection
 
 ---
 

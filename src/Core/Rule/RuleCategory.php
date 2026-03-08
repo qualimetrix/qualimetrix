@@ -13,4 +13,5 @@ enum RuleCategory: string
     case Coupling = 'coupling';
     case Architecture = 'architecture';
     case CodeSmell = 'code-smell';
+    case Security = 'security';
 }

@@ -47,6 +47,7 @@ Rules are analysis rule implementations for static analysis. Rules are **complet
 | **code-smell.superglobals**          | CodeSmell       | Simple                          | Direct superglobal access       | enabled: true                     |
 | **code-smell.unreachable-code**      | CodeSmell       | Simple                          | Unreachable code detection      | warning: 1, error: 1              |
 | **design.type-coverage**             | Design          | Simple                          | Type declaration coverage       | param/return/property: 80%/50%    |
+| **security.hardcoded-credentials**   | Security        | Simple                          | Hardcoded credentials           | enabled: true                     |
 
 ---
 
@@ -412,6 +413,52 @@ rules:
 --disable-rule=code-smell.debug-code       # Disable a specific code smell rule
 --disable-rule=code-smell                  # Disable all code-smell.* rules (prefix match)
 --only-rule=code-smell.debug-code          # Enable only this rule
+```
+
+---
+
+## Security Rules
+
+Security rules detect patterns that may lead to security vulnerabilities.
+
+### Hardcoded Credentials Rule
+
+**Name:** `security.hardcoded-credentials` | **Category:** Security | **Type:** Simple
+
+Detects hardcoded credentials in PHP code: string literal values assigned to variables, properties, constants, array keys, and parameters with credential-related names.
+
+**Detection patterns:**
+| Pattern             | Example                        | AST match                              |
+| ------------------- | ------------------------------ | -------------------------------------- |
+| Variable assignment | `$password = 'secret';`        | `Assign(Variable, String_)`            |
+| Array item          | `['api_key' => 'abc123']`      | `ArrayItem(String_, String_)`          |
+| Class constant      | `const DB_PASSWORD = 'root';`  | `ClassConst(String_)`                  |
+| define() call       | `define('API_KEY', '...');`    | `FuncCall('define', String_, String_)` |
+| Property default    | `private string $token = 'x';` | `Property(String_ default)`            |
+| Parameter default   | `function f($pwd = 'root')`    | `Param(String_ default)`               |
+
+**Sensitive name matching:**
+- Suffix words (match anywhere): `password`, `passwd`, `pwd`, `secret`, `credential(s)`
+- Compound "key" (only with qualifier): `apiKey`, `secretKey`, `privateKey`, `encryptionKey`, `signingKey`, `authKey`, `accessKey`
+- Compound "token" (only with qualifier): `authToken`, `accessToken`, `bearerToken`, `apiToken`, `refreshToken`
+- Context blacklists filter out non-credential names like `$passwordHash`, `$tokenStorage`, `$cacheKey`, `OPTION_PASSWORD`
+
+**Value filtering:** skips empty strings, strings shorter than 4 characters, and strings of identical characters (`***`, `xxx`).
+
+**Severity:** Error
+
+**Configuration:**
+```yaml
+rules:
+  security.hardcoded-credentials:
+    enabled: true  # or false to disable
+```
+
+**CLI:**
+```bash
+--disable-rule=security.hardcoded-credentials  # Disable this rule
+--disable-rule=security                        # Disable all security.* rules
+--only-rule=security.hardcoded-credentials     # Enable only this rule
 ```
 
 ---

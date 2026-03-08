@@ -361,6 +361,7 @@ final class ContainerFactoryTest extends TestCase
             SuperglobalsRule::class,
             UnreachableCodeRule::class,
             TypeCoverageRule::class,
+            \AiMessDetector\Rules\Security\HardcodedCredentialsRule::class,
         ];
 
         $registeredClasses = $registry->getClasses();
