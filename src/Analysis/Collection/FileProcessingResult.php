@@ -7,7 +7,7 @@ namespace AiMessDetector\Analysis\Collection;
 use AiMessDetector\Baseline\Suppression\Suppression;
 use AiMessDetector\Core\Dependency\Dependency;
 use AiMessDetector\Core\Metric\MetricBag;
-use AiMessDetector\Core\Violation\SymbolPath;
+use AiMessDetector\Core\Symbol\SymbolPath;
 
 /**
  * Result of processing a single file.

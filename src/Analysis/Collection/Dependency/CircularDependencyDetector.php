@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace AiMessDetector\Analysis\Collection\Dependency;
 
 use AiMessDetector\Core\Dependency\DependencyGraphInterface;
-use AiMessDetector\Core\Violation\SymbolPath;
+use AiMessDetector\Core\Symbol\SymbolPath;
 
 /**
  * Detects circular dependencies using Tarjan's strongly connected components algorithm.

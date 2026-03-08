@@ -61,7 +61,7 @@ final class CheckstyleFormatter implements FormatterInterface
         $grouped = [];
 
         foreach ($violations as $violation) {
-            $file = $violation->location->file;
+            $file = $violation->location->isNone() ? '[project]' : $violation->location->file;
             $grouped[$file] ??= [];
             $grouped[$file][] = $violation;
         }

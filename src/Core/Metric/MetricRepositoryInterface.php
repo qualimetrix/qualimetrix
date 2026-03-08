@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace AiMessDetector\Core\Metric;
 
 use AiMessDetector\Core\Symbol\SymbolInfo;
+use AiMessDetector\Core\Symbol\SymbolPath;
 use AiMessDetector\Core\Symbol\SymbolType;
-use AiMessDetector\Core\Violation\SymbolPath;
 
 interface MetricRepositoryInterface
 {

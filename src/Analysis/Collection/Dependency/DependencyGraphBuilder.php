@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace AiMessDetector\Analysis\Collection\Dependency;
 
 use AiMessDetector\Core\Dependency\Dependency;
+use AiMessDetector\Core\Symbol\SymbolPath;
 use AiMessDetector\Core\Util\StringSet;
-use AiMessDetector\Core\Violation\SymbolPath;
 
 /**
  * Builds a DependencyGraph from a collection of dependencies.

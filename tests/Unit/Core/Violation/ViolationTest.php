@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace AiMessDetector\Tests\Unit\Core\Violation;
 
 use AiMessDetector\Core\Rule\RuleLevel;
+use AiMessDetector\Core\Symbol\SymbolPath;
 use AiMessDetector\Core\Violation\Location;
 use AiMessDetector\Core\Violation\Severity;
-use AiMessDetector\Core\Violation\SymbolPath;
 use AiMessDetector\Core\Violation\Violation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;

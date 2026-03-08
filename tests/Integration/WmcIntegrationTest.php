@@ -8,8 +8,8 @@ use AiMessDetector\Analysis\Aggregator\AggregationHelper;
 use AiMessDetector\Analysis\Aggregator\MetricAggregator;
 use AiMessDetector\Analysis\Repository\InMemoryMetricRepository;
 use AiMessDetector\Core\Metric\MetricBag;
+use AiMessDetector\Core\Symbol\SymbolPath;
 use AiMessDetector\Core\Symbol\SymbolType;
-use AiMessDetector\Core\Violation\SymbolPath;
 use AiMessDetector\Metrics\Complexity\CyclomaticComplexityCollector;
 use PHPUnit\Framework\TestCase;
 

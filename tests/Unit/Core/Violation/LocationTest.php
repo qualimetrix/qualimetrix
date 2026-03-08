@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AiMessDetector\Tests\Unit\Core\Violation;
 
 use AiMessDetector\Core\Violation\Location;
+use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -79,11 +80,35 @@ final class LocationTest extends TestCase
         self::assertInstanceOf(Location::class, $location);
     }
 
-    public function testLocationWithLineZero(): void
+    public function testLocationWithLineZeroThrowsException(): void
     {
-        $location = new Location('src/test.php', 0);
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Line number must be >= 1 or null, got 0');
 
-        self::assertSame(0, $location->line);
-        self::assertSame('src/test.php:0', $location->toString());
+        new Location('src/test.php', 0);
+    }
+
+    public function testLocationWithNegativeLineThrowsException(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        new Location('src/test.php', -1);
+    }
+
+    public function testNoneCreatesLocationWithoutFile(): void
+    {
+        $location = Location::none();
+
+        self::assertTrue($location->isNone());
+        self::assertSame('', $location->file);
+        self::assertNull($location->line);
+        self::assertSame('', $location->toString());
+    }
+
+    public function testIsNoneReturnsFalseForRegularLocation(): void
+    {
+        $location = new Location('src/test.php', 10);
+
+        self::assertFalse($location->isNone());
     }
 }

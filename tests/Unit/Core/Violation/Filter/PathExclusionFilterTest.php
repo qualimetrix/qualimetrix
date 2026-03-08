@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Tests\Unit\Core\Violation\Filter;
 
+use AiMessDetector\Core\Symbol\SymbolPath;
 use AiMessDetector\Core\Util\PathMatcher;
 use AiMessDetector\Core\Violation\Filter\PathExclusionFilter;
 use AiMessDetector\Core\Violation\Location;
 use AiMessDetector\Core\Violation\Severity;
-use AiMessDetector\Core\Violation\SymbolPath;
 use AiMessDetector\Core\Violation\Violation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;

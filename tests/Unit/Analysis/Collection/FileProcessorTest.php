@@ -16,7 +16,7 @@ use AiMessDetector\Core\Metric\MethodMetricsProviderInterface;
 use AiMessDetector\Core\Metric\MethodWithMetrics;
 use AiMessDetector\Core\Metric\MetricBag;
 use AiMessDetector\Core\Metric\MetricCollectorInterface;
-use AiMessDetector\Core\Violation\SymbolPath;
+use AiMessDetector\Core\Symbol\SymbolPath;
 use PhpParser\NodeVisitorAbstract;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;

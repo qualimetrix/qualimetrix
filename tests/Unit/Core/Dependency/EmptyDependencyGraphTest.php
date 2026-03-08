@@ -6,7 +6,7 @@ namespace AiMessDetector\Tests\Unit\Core\Dependency;
 
 use AiMessDetector\Core\Dependency\DependencyGraphInterface;
 use AiMessDetector\Core\Dependency\EmptyDependencyGraph;
-use AiMessDetector\Core\Violation\SymbolPath;
+use AiMessDetector\Core\Symbol\SymbolPath;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 

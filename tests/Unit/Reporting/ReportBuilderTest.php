@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace AiMessDetector\Tests\Unit\Reporting;
 
 use AiMessDetector\Core\Metric\MetricRepositoryInterface;
+use AiMessDetector\Core\Symbol\SymbolPath;
 use AiMessDetector\Core\Violation\Location;
 use AiMessDetector\Core\Violation\Severity;
-use AiMessDetector\Core\Violation\SymbolPath;
 use AiMessDetector\Core\Violation\Violation;
 use AiMessDetector\Reporting\ReportBuilder;
 use ArrayIterator;

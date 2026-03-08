@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace AiMessDetector\Core\Metric;
 
 use AiMessDetector\Core\Symbol\SymbolInfo;
-use AiMessDetector\Core\Violation\SymbolPath;
+use AiMessDetector\Core\Symbol\SymbolPath;
 
 /**
  * Value object representing a class with its collected metrics.

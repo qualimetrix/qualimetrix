@@ -2,9 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Core\Violation;
-
-use AiMessDetector\Core\Symbol\SymbolType;
+namespace AiMessDetector\Core\Symbol;
 
 final readonly class SymbolPath
 {

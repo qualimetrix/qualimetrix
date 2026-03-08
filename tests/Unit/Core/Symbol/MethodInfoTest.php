@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace AiMessDetector\Tests\Unit\Core\Symbol;
 
 use AiMessDetector\Core\Symbol\MethodInfo;
-use AiMessDetector\Core\Violation\SymbolPath;
+use AiMessDetector\Core\Symbol\SymbolPath;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 

@@ -7,8 +7,8 @@ namespace AiMessDetector\Analysis\Repository;
 use AiMessDetector\Core\Metric\MetricBag;
 use AiMessDetector\Core\Metric\MetricRepositoryInterface;
 use AiMessDetector\Core\Symbol\SymbolInfo;
+use AiMessDetector\Core\Symbol\SymbolPath;
 use AiMessDetector\Core\Symbol\SymbolType;
-use AiMessDetector\Core\Violation\SymbolPath;
 
 final class InMemoryMetricRepository implements MetricRepositoryInterface
 {

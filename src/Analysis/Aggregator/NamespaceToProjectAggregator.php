@@ -8,8 +8,8 @@ use AiMessDetector\Analysis\Repository\InMemoryMetricRepository;
 use AiMessDetector\Core\Metric\MetricDefinition;
 use AiMessDetector\Core\Metric\SymbolLevel;
 use AiMessDetector\Core\Profiler\ProfilerHolder;
+use AiMessDetector\Core\Symbol\SymbolPath;
 use AiMessDetector\Core\Symbol\SymbolType;
-use AiMessDetector\Core\Violation\SymbolPath;
 
 final class NamespaceToProjectAggregator implements AggregationPhaseInterface
 {

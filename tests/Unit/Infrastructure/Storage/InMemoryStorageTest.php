@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Tests\Unit\Infrastructure\Storage;
 
+use AiMessDetector\Core\Symbol\SymbolPath;
 use AiMessDetector\Core\Symbol\SymbolType;
-use AiMessDetector\Core\Violation\SymbolPath;
 use AiMessDetector\Infrastructure\Storage\FileRecord;
 use AiMessDetector\Infrastructure\Storage\InMemoryStorage;
 use PHPUnit\Framework\TestCase;

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace AiMessDetector\Analysis\Collection\Dependency;
 
 use AiMessDetector\Core\Dependency\CycleInterface;
-use AiMessDetector\Core\Violation\SymbolPath;
+use AiMessDetector\Core\Symbol\SymbolPath;
 
 /**
  * Represents a circular dependency in the dependency graph.

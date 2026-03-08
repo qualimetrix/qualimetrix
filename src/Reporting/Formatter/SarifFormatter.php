@@ -130,30 +130,39 @@ final class SarifFormatter implements FormatterInterface
      *
      * @param list<Violation> $violations
      *
-     * @return list<array{ruleId: string, level: string, message: array{text: string}, locations: list<array{physicalLocation: array{artifactLocation: array<string, string>, region: array{startLine: int, startColumn: int}}}>}>
+     * @return list<array{ruleId: string, level: string, message: array{text: string}, locations: list<array{physicalLocation: array<string, mixed>}>}>
      */
     private function formatResults(array $violations, FormatterContext $context): array
     {
         return array_map(
-            fn(Violation $v): array => [
-                'ruleId' => $v->violationCode,
-                'level' => $this->mapLevel($v->severity),
-                'message' => ['text' => $v->message],
-                'locations' => [
-                    [
-                        'physicalLocation' => [
-                            'artifactLocation' => $this->buildArtifactLocation(
-                                $context->relativizePath($v->location->file),
-                                $context->basePath !== '',
-                            ),
-                            'region' => [
-                                'startLine' => $v->location->line ?? 1,
-                                'startColumn' => 1,
+            function (Violation $v) use ($context): array {
+                $result = [
+                    'ruleId' => $v->violationCode,
+                    'level' => $this->mapLevel($v->severity),
+                    'message' => ['text' => $v->message],
+                ];
+
+                if ($v->location->isNone()) {
+                    $result['locations'] = [['physicalLocation' => []]];
+                } else {
+                    $result['locations'] = [
+                        [
+                            'physicalLocation' => [
+                                'artifactLocation' => $this->buildArtifactLocation(
+                                    $context->relativizePath($v->location->file),
+                                    $context->basePath !== '',
+                                ),
+                                'region' => [
+                                    'startLine' => $v->location->line ?? 1,
+                                    'startColumn' => 1,
+                                ],
                             ],
                         ],
-                    ],
-                ],
-            ],
+                    ];
+                }
+
+                return $result;
+            },
             $violations,
         );
     }

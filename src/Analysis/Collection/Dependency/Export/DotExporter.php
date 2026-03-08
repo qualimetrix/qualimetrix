@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace AiMessDetector\Analysis\Collection\Dependency\Export;
 
 use AiMessDetector\Core\Dependency\DependencyGraphInterface;
-use AiMessDetector\Core\Violation\SymbolPath;
+use AiMessDetector\Core\Symbol\SymbolPath;
 
 /**
  * Exports dependency graphs to DOT format (Graphviz).

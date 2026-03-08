@@ -6,7 +6,7 @@ namespace AiMessDetector\Analysis\Collection\Metric;
 
 use AiMessDetector\Core\Metric\MetricBag;
 use AiMessDetector\Core\Metric\MetricRepositoryInterface;
-use AiMessDetector\Core\Violation\SymbolPath;
+use AiMessDetector\Core\Symbol\SymbolPath;
 
 /**
  * Extracts derived method-level metrics from file-level MetricBag

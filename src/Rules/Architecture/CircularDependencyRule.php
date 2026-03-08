@@ -78,7 +78,7 @@ final class CircularDependencyRule extends AbstractRule
             }
 
             $violations[] = new Violation(
-                location: new Location('', 0), // No specific file location for architectural violations
+                location: Location::none(),
                 symbolPath: $firstClass,
                 ruleName: $this->getName(),
                 violationCode: self::NAME,
