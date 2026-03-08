@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Infrastructure\Console;
 
+use Composer\InstalledVersions;
 use Symfony\Component\Console\Application as BaseApplication;
 
 /**
@@ -12,10 +13,9 @@ use Symfony\Component\Console\Application as BaseApplication;
 final class Application extends BaseApplication
 {
     public const string NAME = 'AI Mess Detector';
-    public const string VERSION = '0.2.2';
 
     public function __construct()
     {
-        parent::__construct(self::NAME, self::VERSION);
+        parent::__construct(self::NAME, InstalledVersions::getRootPackage()['pretty_version']);
     }
 }
