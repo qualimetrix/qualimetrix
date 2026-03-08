@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Core\Dependency;
 
+use AiMessDetector\Core\Violation\SymbolPath;
+
 /**
  * Interface for circular dependency cycles.
  *
@@ -15,14 +17,14 @@ interface CycleInterface
     /**
      * Returns all classes involved in the cycle.
      *
-     * @return list<string> FQN of classes
+     * @return list<SymbolPath> Class-level SymbolPaths
      */
     public function getClasses(): array;
 
     /**
      * Returns the path forming the cycle.
      *
-     * @return list<string> Path with start class at both ends (e.g., [A, B, C, A])
+     * @return list<SymbolPath> Path with start class at both ends (e.g., [A, B, C, A])
      */
     public function getPath(): array;
 

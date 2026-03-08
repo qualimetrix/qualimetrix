@@ -201,8 +201,8 @@ final class CollectionOrchestratorTest extends TestCase
     public function itCollectsDependenciesFromResults(): void
     {
         $files = [new SplFileInfo('/tmp/test.php')];
-        $dependency1 = new Dependency('App\Foo', 'App\Bar', DependencyType::New_, new Location('/tmp/test.php', 10));
-        $dependency2 = new Dependency('App\Foo', 'App\Baz', DependencyType::Extends, new Location('/tmp/test.php', 5));
+        $dependency1 = new Dependency(SymbolPath::fromClassFqn('App\Foo'), SymbolPath::fromClassFqn('App\Bar'), DependencyType::New_, new Location('/tmp/test.php', 10));
+        $dependency2 = new Dependency(SymbolPath::fromClassFqn('App\Foo'), SymbolPath::fromClassFqn('App\Baz'), DependencyType::Extends, new Location('/tmp/test.php', 5));
 
         $processingResults = [
             FileProcessingResult::success(
@@ -222,9 +222,9 @@ final class CollectionOrchestratorTest extends TestCase
         $result = $orchestrator->collect($files, $repository);
 
         self::assertCount(2, $result->dependencies);
-        self::assertSame('App\Foo', $result->dependencies[0]->sourceClass);
-        self::assertSame('App\Bar', $result->dependencies[0]->targetClass);
-        self::assertSame('App\Baz', $result->dependencies[1]->targetClass);
+        self::assertSame('App\Foo', $result->dependencies[0]->source->toString());
+        self::assertSame('App\Bar', $result->dependencies[0]->target->toString());
+        self::assertSame('App\Baz', $result->dependencies[1]->target->toString());
     }
 
     #[Test]
@@ -235,8 +235,8 @@ final class CollectionOrchestratorTest extends TestCase
             new SplFileInfo('/tmp/file2.php'),
         ];
 
-        $dep1 = new Dependency('App\Foo', 'App\Bar', DependencyType::New_, new Location('/tmp/file1.php', 10));
-        $dep2 = new Dependency('App\Baz', 'App\Qux', DependencyType::Implements, new Location('/tmp/file2.php', 5));
+        $dep1 = new Dependency(SymbolPath::fromClassFqn('App\Foo'), SymbolPath::fromClassFqn('App\Bar'), DependencyType::New_, new Location('/tmp/file1.php', 10));
+        $dep2 = new Dependency(SymbolPath::fromClassFqn('App\Baz'), SymbolPath::fromClassFqn('App\Qux'), DependencyType::Implements, new Location('/tmp/file2.php', 5));
 
         $processingResults = [
             FileProcessingResult::success(

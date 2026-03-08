@@ -223,4 +223,73 @@ final class SymbolPathTest extends TestCase
             'helper',
         ];
     }
+
+    #[DataProvider('fromClassFqnDataProvider')]
+    public function testFromClassFqn(string $fqn, ?string $expectedNamespace, string $expectedType): void
+    {
+        $path = SymbolPath::fromClassFqn($fqn);
+
+        self::assertSame($expectedNamespace, $path->namespace);
+        self::assertSame($expectedType, $path->type);
+        self::assertNull($path->member);
+        self::assertSame(SymbolType::Class_, $path->getType());
+    }
+
+    /**
+     * @return iterable<string, array{string, string|null, string}>
+     */
+    public static function fromClassFqnDataProvider(): iterable
+    {
+        yield 'namespaced class' => [
+            'App\Service\UserService',
+            'App\Service',
+            'UserService',
+        ];
+
+        yield 'single namespace level' => [
+            'App\User',
+            'App',
+            'User',
+        ];
+
+        yield 'deep namespace' => [
+            'App\Module\Sub\Service\User',
+            'App\Module\Sub\Service',
+            'User',
+        ];
+
+        yield 'global class (no namespace)' => [
+            'GlobalClass',
+            null,
+            'GlobalClass',
+        ];
+    }
+
+    public function testFromNamespaceFqn(): void
+    {
+        $path = SymbolPath::fromNamespaceFqn('App\Service');
+
+        self::assertSame('App\Service', $path->namespace);
+        self::assertNull($path->type);
+        self::assertNull($path->member);
+        self::assertSame(SymbolType::Namespace_, $path->getType());
+    }
+
+    public function testFromClassFqnProducesEquivalentToForClass(): void
+    {
+        $fromFqn = SymbolPath::fromClassFqn('App\Service\UserService');
+        $forClass = SymbolPath::forClass('App\Service', 'UserService');
+
+        self::assertSame($forClass->toCanonical(), $fromFqn->toCanonical());
+        self::assertSame($forClass->toString(), $fromFqn->toString());
+    }
+
+    public function testFromClassFqnGlobalEquivalentToForClass(): void
+    {
+        $fromFqn = SymbolPath::fromClassFqn('GlobalClass');
+        $forClass = SymbolPath::forClass('', 'GlobalClass');
+
+        self::assertSame($forClass->toCanonical(), $fromFqn->toCanonical());
+        self::assertSame($forClass->toString(), $fromFqn->toString());
+    }
 }

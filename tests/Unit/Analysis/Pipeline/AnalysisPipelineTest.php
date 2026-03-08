@@ -16,6 +16,7 @@ use AiMessDetector\Core\Dependency\Dependency;
 use AiMessDetector\Core\Dependency\DependencyType;
 use AiMessDetector\Core\Metric\MetricRepositoryInterface;
 use AiMessDetector\Core\Violation\Location;
+use AiMessDetector\Core\Violation\SymbolPath;
 use ArrayIterator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -108,7 +109,7 @@ final class AnalysisPipelineTest extends TestCase
     {
         $files = [new SplFileInfo('/tmp/test.php')];
         $dependencies = [
-            new Dependency('App\Foo', 'App\Bar', DependencyType::New_, new Location('/tmp/test.php', 10)),
+            new Dependency(SymbolPath::fromClassFqn('App\Foo'), SymbolPath::fromClassFqn('App\Bar'), DependencyType::New_, new Location('/tmp/test.php', 10)),
         ];
 
         $this->defaultDiscovery->method('discover')->willReturn(new ArrayIterator($files));

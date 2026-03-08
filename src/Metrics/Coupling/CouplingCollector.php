@@ -11,7 +11,6 @@ use AiMessDetector\Core\Metric\MetricBag;
 use AiMessDetector\Core\Metric\MetricDefinition;
 use AiMessDetector\Core\Metric\MetricRepositoryInterface;
 use AiMessDetector\Core\Metric\SymbolLevel;
-use AiMessDetector\Core\Violation\SymbolPath;
 
 /**
  * Computes coupling metrics from the dependency graph.
@@ -102,18 +101,14 @@ final class CouplingCollector implements GlobalContextCollectorInterface
         DependencyGraphInterface $graph,
         MetricRepositoryInterface $repository,
     ): void {
-        foreach ($graph->getAllClasses() as $className) {
-            // Parse class name to get namespace and type
-            $parts = $this->parseClassName($className);
-            $symbolPath = SymbolPath::forClass($parts['namespace'] ?? '', $parts['class']);
-
+        foreach ($graph->getAllClasses() as $symbolPath) {
             // Skip classes not in the repository (e.g. vendor/external classes)
             if (!$repository->has($symbolPath)) {
                 continue;
             }
 
-            $ca = $graph->getClassCa($className);
-            $ce = $graph->getClassCe($className);
+            $ca = $graph->getClassCa($symbolPath);
+            $ce = $graph->getClassCe($symbolPath);
             $cbo = $ca + $ce;
             $instability = $this->computeInstability($ca, $ce);
 
@@ -134,16 +129,14 @@ final class CouplingCollector implements GlobalContextCollectorInterface
         DependencyGraphInterface $graph,
         MetricRepositoryInterface $repository,
     ): void {
-        foreach ($graph->getAllNamespaces() as $namespace) {
-            $symbolPath = SymbolPath::forNamespace($namespace);
-
+        foreach ($graph->getAllNamespaces() as $symbolPath) {
             // Skip namespaces not in the repository (e.g. vendor namespaces)
             if (!$repository->has($symbolPath)) {
                 continue;
             }
 
-            $ca = $graph->getNamespaceCa($namespace);
-            $ce = $graph->getNamespaceCe($namespace);
+            $ca = $graph->getNamespaceCa($symbolPath);
+            $ce = $graph->getNamespaceCe($symbolPath);
             $cbo = $ca + $ce;
             $instability = $this->computeInstability($ca, $ce);
 
@@ -170,23 +163,5 @@ final class CouplingCollector implements GlobalContextCollectorInterface
         }
 
         return $ce / $total;
-    }
-
-    /**
-     * Parses a fully qualified class name into namespace and class parts.
-     *
-     * @return array{namespace: string|null, class: string}
-     */
-    private function parseClassName(string $className): array
-    {
-        $pos = strrpos($className, '\\');
-        if ($pos === false) {
-            return ['namespace' => null, 'class' => $className];
-        }
-
-        return [
-            'namespace' => substr($className, 0, $pos),
-            'class' => substr($className, $pos + 1),
-        ];
     }
 }

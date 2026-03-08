@@ -290,8 +290,7 @@ final class CouplingCollectorTest extends TestCase
 
         $this->collector->calculate($graph, $repository);
 
-        // Create an isolated class (only for testing - normally it would not appear in graph)
-        // Instead, test Bar which only has incoming dependency
+        // Test Bar which only has incoming dependency
         $barPath = SymbolPath::forClass('App', 'Bar');
         $barMetrics = $repository->get($barPath);
 
@@ -407,8 +406,8 @@ final class CouplingCollectorTest extends TestCase
     private function dep(string $source, string $target): Dependency
     {
         return new Dependency(
-            $source,
-            $target,
+            SymbolPath::fromClassFqn($source),
+            SymbolPath::fromClassFqn($target),
             DependencyType::New_,
             new Location('/test.php', 1),
         );
@@ -416,15 +415,7 @@ final class CouplingCollectorTest extends TestCase
 
     private function registerClass(InMemoryMetricRepository $repository, string $fqn): void
     {
-        $pos = strrpos($fqn, '\\');
-        if ($pos !== false) {
-            $namespace = substr($fqn, 0, $pos);
-            $class = substr($fqn, $pos + 1);
-        } else {
-            $namespace = '';
-            $class = $fqn;
-        }
-        $repository->add(SymbolPath::forClass($namespace, $class), new MetricBag(), '/test.php', 1);
+        $repository->add(SymbolPath::fromClassFqn($fqn), new MetricBag(), '/test.php', 1);
     }
 
     private function registerNamespace(InMemoryMetricRepository $repository, string $namespace): void

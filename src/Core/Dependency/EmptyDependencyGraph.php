@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Core\Dependency;
 
+use AiMessDetector\Core\Violation\SymbolPath;
+
 /**
  * A no-op implementation of DependencyGraphInterface.
  *
@@ -12,32 +14,32 @@ namespace AiMessDetector\Core\Dependency;
  */
 final class EmptyDependencyGraph implements DependencyGraphInterface
 {
-    public function getClassDependencies(string $className): array
+    public function getClassDependencies(SymbolPath $class): array
     {
         return [];
     }
 
-    public function getClassDependents(string $className): array
+    public function getClassDependents(SymbolPath $class): array
     {
         return [];
     }
 
-    public function getClassCe(string $className): int
+    public function getClassCe(SymbolPath $class): int
     {
         return 0;
     }
 
-    public function getClassCa(string $className): int
+    public function getClassCa(SymbolPath $class): int
     {
         return 0;
     }
 
-    public function getNamespaceCe(string $namespace): int
+    public function getNamespaceCe(SymbolPath $namespace): int
     {
         return 0;
     }
 
-    public function getNamespaceCa(string $namespace): int
+    public function getNamespaceCa(SymbolPath $namespace): int
     {
         return 0;
     }

@@ -42,6 +42,31 @@ final readonly class SymbolPath
         );
     }
 
+    /**
+     * Creates a class-level SymbolPath from a fully qualified class name.
+     *
+     * Examples:
+     * - 'App\Service\UserService' → forClass('App\Service', 'UserService')
+     * - 'GlobalClass' → forClass('', 'GlobalClass')
+     */
+    public static function fromClassFqn(string $fqn): self
+    {
+        $pos = strrpos($fqn, '\\');
+        if ($pos !== false) {
+            return self::forClass(substr($fqn, 0, $pos), substr($fqn, $pos + 1));
+        }
+
+        return self::forClass('', $fqn);
+    }
+
+    /**
+     * Creates a namespace-level SymbolPath from a namespace string.
+     */
+    public static function fromNamespaceFqn(string $fqn): self
+    {
+        return self::forNamespace($fqn);
+    }
+
     public static function forFile(string $path): self
     {
         return new self(

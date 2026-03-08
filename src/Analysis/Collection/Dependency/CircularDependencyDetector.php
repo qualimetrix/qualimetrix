@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AiMessDetector\Analysis\Collection\Dependency;
 
 use AiMessDetector\Core\Dependency\DependencyGraphInterface;
+use AiMessDetector\Core\Violation\SymbolPath;
 
 /**
  * Detects circular dependencies using Tarjan's strongly connected components algorithm.
@@ -30,6 +31,9 @@ class CircularDependencyDetector
     /** @var array<array<string>> */
     private array $sccs = [];
 
+    /** @var array<string, SymbolPath> */
+    private array $symbolPathMap = [];
+
     /**
      * Detects all circular dependencies in the graph.
      *
@@ -39,9 +43,16 @@ class CircularDependencyDetector
     {
         $this->reset();
 
-        foreach ($graph->getAllClasses() as $class) {
-            if (!isset($this->indices[$class])) {
-                $this->strongConnect($class, $graph);
+        // Build a map of canonical key → SymbolPath for reverse lookup
+        foreach ($graph->getAllClasses() as $classPath) {
+            $key = $classPath->toCanonical();
+            $this->symbolPathMap[$key] = $classPath;
+        }
+
+        foreach ($graph->getAllClasses() as $classPath) {
+            $key = $classPath->toCanonical();
+            if (!isset($this->indices[$key])) {
+                $this->strongConnect($key, $graph);
             }
         }
 
@@ -49,7 +60,12 @@ class CircularDependencyDetector
         $cycles = [];
         foreach ($this->sccs as $scc) {
             if (\count($scc) > 1) {
-                $cycles[] = new Cycle(array_values($scc), $this->findPath($scc, $graph));
+                $sccPaths = array_map(fn(string $key): SymbolPath => $this->symbolPathMap[$key], $scc);
+                $pathPaths = array_map(
+                    fn(string $key): SymbolPath => $this->symbolPathMap[$key],
+                    $this->findPath($scc, $graph),
+                );
+                $cycles[] = new Cycle(array_values($sccPaths), array_values($pathPaths));
             }
         }
 
@@ -67,41 +83,43 @@ class CircularDependencyDetector
         $this->indices = [];
         $this->lowlinks = [];
         $this->sccs = [];
+        $this->symbolPathMap = [];
     }
 
     /**
      * Tarjan's algorithm: recursively visits nodes to find SCCs.
      */
-    private function strongConnect(string $node, DependencyGraphInterface $graph): void
+    private function strongConnect(string $nodeKey, DependencyGraphInterface $graph): void
     {
-        $this->indices[$node] = $this->index;
-        $this->lowlinks[$node] = $this->index;
+        $this->indices[$nodeKey] = $this->index;
+        $this->lowlinks[$nodeKey] = $this->index;
         $this->index++;
-        $this->stack[] = $node;
-        $this->onStack[$node] = true;
+        $this->stack[] = $nodeKey;
+        $this->onStack[$nodeKey] = true;
 
         // Visit all dependencies
-        foreach ($graph->getClassDependencies($node) as $dependency) {
-            $target = $dependency->targetClass;
+        $nodePath = $this->symbolPathMap[$nodeKey];
+        foreach ($graph->getClassDependencies($nodePath) as $dependency) {
+            $targetKey = $dependency->target->toCanonical();
 
-            if (!isset($this->indices[$target])) {
+            if (!isset($this->indices[$targetKey])) {
                 // Target not visited yet
-                $this->strongConnect($target, $graph);
-                $this->lowlinks[$node] = min(
-                    $this->lowlinks[$node],
-                    $this->lowlinks[$target],
+                $this->strongConnect($targetKey, $graph);
+                $this->lowlinks[$nodeKey] = min(
+                    $this->lowlinks[$nodeKey],
+                    $this->lowlinks[$targetKey],
                 );
-            } elseif ($this->onStack[$target] ?? false) {
+            } elseif ($this->onStack[$targetKey] ?? false) {
                 // Target is on stack (part of current SCC)
-                $this->lowlinks[$node] = min(
-                    $this->lowlinks[$node],
-                    $this->indices[$target],
+                $this->lowlinks[$nodeKey] = min(
+                    $this->lowlinks[$nodeKey],
+                    $this->indices[$targetKey],
                 );
             }
         }
 
         // If this is the root of an SCC, pop the SCC from stack
-        if ($this->lowlinks[$node] === $this->indices[$node]) {
+        if ($this->lowlinks[$nodeKey] === $this->indices[$nodeKey]) {
             $scc = [];
             do {
                 $w = array_pop($this->stack);
@@ -110,7 +128,7 @@ class CircularDependencyDetector
                 }
                 $this->onStack[$w] = false;
                 $scc[] = $w;
-            } while ($w !== $node && $this->stack !== []);
+            } while ($w !== $nodeKey && $this->stack !== []);
 
             if ($scc !== []) {
                 $this->sccs[] = $scc;
@@ -123,9 +141,9 @@ class CircularDependencyDetector
      *
      * Uses BFS to find the shortest path from the first class back to itself.
      *
-     * @param array<string> $scc Classes in the strongly connected component
+     * @param array<string> $scc Canonical keys of classes in the strongly connected component
      *
-     * @return list<string> Path forming a cycle (e.g., [A, B, C, A])
+     * @return list<string> Path forming a cycle as canonical keys (e.g., [A, B, C, A])
      */
     private function findPath(array $scc, DependencyGraphInterface $graph): array
     {
@@ -143,21 +161,22 @@ class CircularDependencyDetector
                 continue; // Empty path, skip
             }
 
-            foreach ($graph->getClassDependencies($current) as $dependency) {
-                $target = $dependency->targetClass;
+            $currentPath = $this->symbolPathMap[$current];
+            foreach ($graph->getClassDependencies($currentPath) as $dependency) {
+                $targetKey = $dependency->target->toCanonical();
 
-                if (!isset($sccSet[$target])) {
+                if (!isset($sccSet[$targetKey])) {
                     continue; // Not in this SCC
                 }
 
-                if ($target === $start && \count($path) > 1) {
+                if ($targetKey === $start && \count($path) > 1) {
                     // Found a cycle back to start
                     return array_values([...$path, $start]);
                 }
 
-                if (!isset($visited[$target])) {
-                    $visited[$target] = true;
-                    $queue[] = [...$path, $target];
+                if (!isset($visited[$targetKey])) {
+                    $visited[$targetKey] = true;
+                    $queue[] = [...$path, $targetKey];
                 }
             }
         }

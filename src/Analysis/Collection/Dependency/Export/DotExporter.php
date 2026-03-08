@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AiMessDetector\Analysis\Collection\Dependency\Export;
 
 use AiMessDetector\Core\Dependency\DependencyGraphInterface;
+use AiMessDetector\Core\Violation\SymbolPath;
 
 /**
  * Exports dependency graphs to DOT format (Graphviz).
@@ -50,23 +51,27 @@ final class DotExporter implements GraphExporterInterface
     }
 
     /**
-     * @param array<string> $classes
+     * @param array<SymbolPath> $classes
      *
      * @return array<string>
      */
     private function exportFlat(DependencyGraphInterface $graph, array $classes): array
     {
         $lines = [];
-        $classSet = array_flip($classes);
+        $classSet = [];
+        foreach ($classes as $classPath) {
+            $classSet[$classPath->toCanonical()] = true;
+        }
 
         // Nodes
         $lines[] = '    // Nodes';
-        foreach ($classes as $class) {
-            $label = $this->getLabel($class);
-            $color = $this->getNodeColor($class, $graph);
+        foreach ($classes as $classPath) {
+            $fqcn = $classPath->toString();
+            $label = $this->getLabel($fqcn);
+            $color = $this->getNodeColor($classPath, $graph);
             $lines[] = \sprintf(
                 '    "%s" [label="%s", fillcolor="%s"];',
-                $this->escape($class),
+                $this->escape($fqcn),
                 $this->escape($label),
                 $color,
             );
@@ -78,14 +83,14 @@ final class DotExporter implements GraphExporterInterface
         $lines[] = '    // Edges';
         foreach ($graph->getAllDependencies() as $dependency) {
             // Only include edges where both nodes are in filtered set
-            if (!isset($classSet[$dependency->sourceClass]) || !isset($classSet[$dependency->targetClass])) {
+            if (!isset($classSet[$dependency->source->toCanonical()]) || !isset($classSet[$dependency->target->toCanonical()])) {
                 continue;
             }
 
             $lines[] = \sprintf(
                 '    "%s" -> "%s";',
-                $this->escape($dependency->sourceClass),
-                $this->escape($dependency->targetClass),
+                $this->escape($dependency->source->toString()),
+                $this->escape($dependency->target->toString()),
             );
         }
 
@@ -93,7 +98,7 @@ final class DotExporter implements GraphExporterInterface
     }
 
     /**
-     * @param array<string> $classes
+     * @param array<SymbolPath> $classes
      *
      * @return array<string>
      */
@@ -101,7 +106,10 @@ final class DotExporter implements GraphExporterInterface
     {
         $lines = [];
         $byNamespace = $this->groupByNamespace($classes);
-        $classSet = array_flip($classes);
+        $classSet = [];
+        foreach ($classes as $classPath) {
+            $classSet[$classPath->toCanonical()] = true;
+        }
 
         // Subgraphs for each namespace
         $clusterIndex = 0;
@@ -112,12 +120,13 @@ final class DotExporter implements GraphExporterInterface
             $lines[] = '        fillcolor=lightyellow;';
             $lines[] = '';
 
-            foreach ($namespaceClasses as $class) {
-                $label = $this->getShortLabel($class);
-                $color = $this->getNodeColor($class, $graph);
+            foreach ($namespaceClasses as $classPath) {
+                $fqcn = $classPath->toString();
+                $label = $classPath->type ?? $fqcn;
+                $color = $this->getNodeColor($classPath, $graph);
                 $lines[] = \sprintf(
                     '        "%s" [label="%s", fillcolor="%s"];',
-                    $this->escape($class),
+                    $this->escape($fqcn),
                     $this->escape($label),
                     $color,
                 );
@@ -131,14 +140,14 @@ final class DotExporter implements GraphExporterInterface
         $lines[] = '    // Edges';
         foreach ($graph->getAllDependencies() as $dependency) {
             // Only include edges where both nodes are in filtered set
-            if (!isset($classSet[$dependency->sourceClass]) || !isset($classSet[$dependency->targetClass])) {
+            if (!isset($classSet[$dependency->source->toCanonical()]) || !isset($classSet[$dependency->target->toCanonical()])) {
                 continue;
             }
 
             $lines[] = \sprintf(
                 '    "%s" -> "%s";',
-                $this->escape($dependency->sourceClass),
-                $this->escape($dependency->targetClass),
+                $this->escape($dependency->source->toString()),
+                $this->escape($dependency->target->toString()),
             );
         }
 
@@ -161,7 +170,7 @@ final class DotExporter implements GraphExporterInterface
         return end($parts);
     }
 
-    private function getNodeColor(string $class, DependencyGraphInterface $graph): string
+    private function getNodeColor(SymbolPath $class, DependencyGraphInterface $graph): string
     {
         if (!$this->options->colorByInstability) {
             return 'lightblue';
@@ -192,17 +201,17 @@ final class DotExporter implements GraphExporterInterface
     /**
      * Groups classes by their namespace.
      *
-     * @param array<string> $classes
+     * @param array<SymbolPath> $classes
      *
-     * @return array<string, array<string>>
+     * @return array<string, array<SymbolPath>>
      */
     private function groupByNamespace(array $classes): array
     {
         $grouped = [];
 
-        foreach ($classes as $class) {
-            $namespace = $this->extractNamespace($class);
-            $grouped[$namespace][] = $class;
+        foreach ($classes as $classPath) {
+            $namespace = $classPath->namespace ?? '';
+            $grouped[$namespace][] = $classPath;
         }
 
         ksort($grouped);
@@ -210,38 +219,31 @@ final class DotExporter implements GraphExporterInterface
         return $grouped;
     }
 
-    private function extractNamespace(string $fqcn): string
-    {
-        $pos = strrpos($fqcn, '\\');
-
-        return $pos !== false ? substr($fqcn, 0, $pos) : '';
-    }
-
     /**
      * Filters classes based on include/exclude namespaces.
      *
-     * @param array<string> $classes
+     * @param array<SymbolPath> $classes
      *
-     * @return array<string>
+     * @return array<SymbolPath>
      */
     private function filterClasses(array $classes): array
     {
         $filtered = [];
 
-        foreach ($classes as $class) {
-            if (!$this->shouldIncludeClass($class)) {
+        foreach ($classes as $classPath) {
+            if (!$this->shouldIncludeClass($classPath)) {
                 continue;
             }
 
-            $filtered[] = $class;
+            $filtered[] = $classPath;
         }
 
         return $filtered;
     }
 
-    private function shouldIncludeClass(string $class): bool
+    private function shouldIncludeClass(SymbolPath $classPath): bool
     {
-        $namespace = $this->extractNamespace($class);
+        $namespace = $classPath->namespace ?? '';
 
         // Check exclude list first
         foreach ($this->options->excludeNamespaces as $excludeNs) {

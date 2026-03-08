@@ -8,6 +8,7 @@ use AiMessDetector\Analysis\Collection\Dependency\DependencyResolver;
 use AiMessDetector\Core\Dependency\Dependency;
 use AiMessDetector\Core\Dependency\DependencyType;
 use AiMessDetector\Core\Violation\Location;
+use AiMessDetector\Core\Violation\SymbolPath;
 
 final class DependencyContext
 {
@@ -31,8 +32,8 @@ final class DependencyContext
         }
 
         $this->dependencies[] = new Dependency(
-            $this->currentClass,
-            $resolvedTargetClass,
+            SymbolPath::fromClassFqn($this->currentClass),
+            SymbolPath::fromClassFqn($resolvedTargetClass),
             $type,
             new Location($this->file, $line),
         );

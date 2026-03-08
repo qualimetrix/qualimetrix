@@ -6,6 +6,7 @@ namespace AiMessDetector\Tests\Unit\Core\Dependency;
 
 use AiMessDetector\Core\Dependency\DependencyGraphInterface;
 use AiMessDetector\Core\Dependency\EmptyDependencyGraph;
+use AiMessDetector\Core\Violation\SymbolPath;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
@@ -26,44 +27,38 @@ final class EmptyDependencyGraphTest extends TestCase
 
     public function testGetClassDependenciesReturnsEmptyArray(): void
     {
-        self::assertSame([], $this->graph->getClassDependencies('App\Service\UserService'));
-        self::assertSame([], $this->graph->getClassDependencies('NonExistent'));
-        self::assertSame([], $this->graph->getClassDependencies(''));
+        self::assertSame([], $this->graph->getClassDependencies(SymbolPath::fromClassFqn('App\Service\UserService')));
+        self::assertSame([], $this->graph->getClassDependencies(SymbolPath::fromClassFqn('NonExistent')));
     }
 
     public function testGetClassDependentsReturnsEmptyArray(): void
     {
-        self::assertSame([], $this->graph->getClassDependents('App\Service\UserService'));
-        self::assertSame([], $this->graph->getClassDependents('NonExistent'));
-        self::assertSame([], $this->graph->getClassDependents(''));
+        self::assertSame([], $this->graph->getClassDependents(SymbolPath::fromClassFqn('App\Service\UserService')));
+        self::assertSame([], $this->graph->getClassDependents(SymbolPath::fromClassFqn('NonExistent')));
     }
 
     public function testGetClassCeReturnsZero(): void
     {
-        self::assertSame(0, $this->graph->getClassCe('App\Service\UserService'));
-        self::assertSame(0, $this->graph->getClassCe('NonExistent'));
-        self::assertSame(0, $this->graph->getClassCe(''));
+        self::assertSame(0, $this->graph->getClassCe(SymbolPath::fromClassFqn('App\Service\UserService')));
+        self::assertSame(0, $this->graph->getClassCe(SymbolPath::fromClassFqn('NonExistent')));
     }
 
     public function testGetClassCaReturnsZero(): void
     {
-        self::assertSame(0, $this->graph->getClassCa('App\Service\UserService'));
-        self::assertSame(0, $this->graph->getClassCa('NonExistent'));
-        self::assertSame(0, $this->graph->getClassCa(''));
+        self::assertSame(0, $this->graph->getClassCa(SymbolPath::fromClassFqn('App\Service\UserService')));
+        self::assertSame(0, $this->graph->getClassCa(SymbolPath::fromClassFqn('NonExistent')));
     }
 
     public function testGetNamespaceCeReturnsZero(): void
     {
-        self::assertSame(0, $this->graph->getNamespaceCe('App\Service'));
-        self::assertSame(0, $this->graph->getNamespaceCe('NonExistent'));
-        self::assertSame(0, $this->graph->getNamespaceCe(''));
+        self::assertSame(0, $this->graph->getNamespaceCe(SymbolPath::fromNamespaceFqn('App\Service')));
+        self::assertSame(0, $this->graph->getNamespaceCe(SymbolPath::fromNamespaceFqn('NonExistent')));
     }
 
     public function testGetNamespaceCaReturnsZero(): void
     {
-        self::assertSame(0, $this->graph->getNamespaceCa('App\Service'));
-        self::assertSame(0, $this->graph->getNamespaceCa('NonExistent'));
-        self::assertSame(0, $this->graph->getNamespaceCa(''));
+        self::assertSame(0, $this->graph->getNamespaceCa(SymbolPath::fromNamespaceFqn('App\Service')));
+        self::assertSame(0, $this->graph->getNamespaceCa(SymbolPath::fromNamespaceFqn('NonExistent')));
     }
 
     public function testGetAllClassesReturnsEmptyArray(): void
@@ -83,14 +78,15 @@ final class EmptyDependencyGraphTest extends TestCase
 
     public function testMultipleCallsReturnConsistentResults(): void
     {
+        $classPath = SymbolPath::fromClassFqn('App\Test');
         // First calls
-        self::assertSame([], $this->graph->getClassDependencies('App\Test'));
-        self::assertSame(0, $this->graph->getClassCe('App\Test'));
+        self::assertSame([], $this->graph->getClassDependencies($classPath));
+        self::assertSame(0, $this->graph->getClassCe($classPath));
         self::assertSame([], $this->graph->getAllClasses());
 
         // Second calls - should return same results
-        self::assertSame([], $this->graph->getClassDependencies('App\Test'));
-        self::assertSame(0, $this->graph->getClassCe('App\Test'));
+        self::assertSame([], $this->graph->getClassDependencies($classPath));
+        self::assertSame(0, $this->graph->getClassCe($classPath));
         self::assertSame([], $this->graph->getAllClasses());
     }
 
@@ -100,7 +96,10 @@ final class EmptyDependencyGraphTest extends TestCase
         $graph2 = new EmptyDependencyGraph();
 
         self::assertEquals($graph1->getAllClasses(), $graph2->getAllClasses());
-        self::assertEquals($graph1->getClassCe('Test'), $graph2->getClassCe('Test'));
+        self::assertEquals(
+            $graph1->getClassCe(SymbolPath::fromClassFqn('Test')),
+            $graph2->getClassCe(SymbolPath::fromClassFqn('Test')),
+        );
         self::assertEquals($graph1->getAllDependencies(), $graph2->getAllDependencies());
     }
 }

@@ -304,13 +304,13 @@ PHP;
         // Filter dependencies from OuterClass
         $outerDeps = array_filter(
             $deps,
-            static fn($dep) => $dep->sourceClass === 'App\Service\OuterClass',
+            static fn($dep) => $dep->source->toString() === 'App\Service\OuterClass',
         );
 
         // Both UserRepository (beforeAnonymous) and User (afterAnonymous)
         // should be attributed to OuterClass
         $targetClasses = array_map(
-            static fn($dep) => $dep->targetClass,
+            static fn($dep) => $dep->target->toString(),
             array_values($outerDeps),
         );
 
