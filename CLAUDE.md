@@ -67,11 +67,13 @@ Each domain has its own `README.md` with detailed structure, classes, and contra
 ### Metrics and Rules
 - **Complexity**: Cyclomatic (CCN), Cognitive Complexity, NPATH Complexity
 - **Maintainability**: Halstead, Maintainability Index
-- **Coupling**: RFC (Response for Class), Distance from Main Sequence, Instability, Abstractness
+- **Coupling**: CBO (Coupling Between Objects), Distance from Main Sequence, Instability, Abstractness
 - **Cohesion**: TCC/LCC (Tight/Loose Class Cohesion), LCOM4, WMC (Weighted Methods per Class)
 - **Size**: LOC, Class Count, Namespace Size, Property Count, Method Count
-- **Structure**: DIT (Depth of Inheritance Tree), NOC (Number of Children)
+- **Design**: DIT (Depth of Inheritance Tree), NOC (Number of Children), Type Coverage
 - **Architecture**: Circular Dependency Detection, Dependency Graph Export (DOT)
+- **Code Smell**: Boolean Argument, Debug Code, Empty Catch, eval, exit/die, goto, Superglobals, Error Suppression, Count in Loop, Long Parameter List, Unreachable Code
+- **Security**: Hardcoded Credentials
 
 ### Infrastructure
 - **Parallel Processing**: Multi-worker file processing via amphp/parallel
@@ -79,7 +81,7 @@ Each domain has its own `README.md` with detailed structure, classes, and contra
 - **Serialization**: Automatic selection of the best serializer (igbinary/PHP serialize)
 - **Git Integration**: Analysis of changed files only, staged files
 - **Baseline Support**: Ignoring known issues, @aimd-ignore tags
-- **Multiple Formats**: Text, JSON, Checkstyle, SARIF, GitLab Code Quality
+- **Multiple Formats**: Text, JSON, Metrics JSON, Checkstyle, SARIF, GitLab Code Quality
 - **Caching**: AST caching for faster repeated runs
 - **Progress Reporting**: Progress bar, PSR-3 logging
 - **Git Hooks**: Automatic pre-commit checks
@@ -279,7 +281,8 @@ bin/aimd check --help
 2. Write unit tests
 3. `composer check` — validation
 4. Update `README.md` in the affected `src/` directory (add new files, fix outdated info)
-5. Commit
+5. Update website documentation (see [Website Documentation](#website-documentation) section below)
+6. Commit
 
 **Commit format:** `<type>: short description` (`feat`, `fix`, `refactor`, `test`, `docs`, `chore`)
 
