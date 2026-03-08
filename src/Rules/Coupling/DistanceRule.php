@@ -13,7 +13,6 @@ use AiMessDetector\Core\Violation\Location;
 use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
 use AiMessDetector\Rules\AbstractRule;
-use InvalidArgumentException;
 
 /**
  * Rule that checks distance from main sequence at namespace level.
@@ -41,21 +40,11 @@ final class DistanceRule extends AbstractRule
     private const string METRIC_ABSTRACTNESS = 'abstractness';
     private const string METRIC_INSTABILITY = 'instability';
 
-    private ?ProjectNamespaceResolverInterface $namespaceResolver;
-
     public function __construct(
         RuleOptionsInterface $options,
-        ?ProjectNamespaceResolverInterface $namespaceResolver = null,
+        private readonly ?ProjectNamespaceResolverInterface $namespaceResolver = null,
     ) {
-        if (!$options instanceof DistanceOptions) {
-            throw new InvalidArgumentException(
-                \sprintf('Expected %s, got %s', DistanceOptions::class, $options::class),
-            );
-        }
         parent::__construct($options);
-
-        // Store namespace resolver (lazily initialized if not provided)
-        $this->namespaceResolver = $namespaceResolver;
     }
 
     public function getName(): string

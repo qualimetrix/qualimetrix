@@ -6,13 +6,11 @@ namespace AiMessDetector\Rules\Structure;
 
 use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\RuleCategory;
-use AiMessDetector\Core\Rule\RuleOptionsInterface;
 use AiMessDetector\Core\Symbol\SymbolType;
 use AiMessDetector\Core\Violation\Location;
 use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
 use AiMessDetector\Rules\AbstractRule;
-use InvalidArgumentException;
 
 /**
  * Rule that checks NOC (Number of Children) at class level.
@@ -28,17 +26,6 @@ final class NocRule extends AbstractRule
 {
     public const string NAME = 'design.noc';
     private const string METRIC_NOC = 'noc';
-
-    public function __construct(
-        RuleOptionsInterface $options,
-    ) {
-        if (!$options instanceof NocOptions) {
-            throw new InvalidArgumentException(
-                \sprintf('Expected %s, got %s', NocOptions::class, $options::class),
-            );
-        }
-        parent::__construct($options);
-    }
 
     public function getName(): string
     {

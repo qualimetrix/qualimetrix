@@ -7,12 +7,10 @@ namespace AiMessDetector\Rules\Architecture;
 use AiMessDetector\Core\Dependency\CycleInterface;
 use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\RuleCategory;
-use AiMessDetector\Core\Rule\RuleOptionsInterface;
 use AiMessDetector\Core\Violation\Location;
 use AiMessDetector\Core\Violation\SymbolPath;
 use AiMessDetector\Core\Violation\Violation;
 use AiMessDetector\Rules\AbstractRule;
-use InvalidArgumentException;
 
 /**
  * Detects circular dependencies between classes.
@@ -25,17 +23,6 @@ use InvalidArgumentException;
 final class CircularDependencyRule extends AbstractRule
 {
     public const string NAME = 'architecture.circular-dependency';
-
-    public function __construct(
-        RuleOptionsInterface $options,
-    ) {
-        if (!$options instanceof CircularDependencyOptions) {
-            throw new InvalidArgumentException(
-                \sprintf('Expected %s, got %s', CircularDependencyOptions::class, $options::class),
-            );
-        }
-        parent::__construct($options);
-    }
 
     public function getName(): string
     {

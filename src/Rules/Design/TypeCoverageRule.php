@@ -6,13 +6,11 @@ namespace AiMessDetector\Rules\Design;
 
 use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\RuleCategory;
-use AiMessDetector\Core\Rule\RuleOptionsInterface;
 use AiMessDetector\Core\Symbol\SymbolType;
 use AiMessDetector\Core\Violation\Location;
 use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
 use AiMessDetector\Rules\AbstractRule;
-use InvalidArgumentException;
 
 /**
  * Rule that checks type coverage per class.
@@ -25,17 +23,6 @@ use InvalidArgumentException;
 final class TypeCoverageRule extends AbstractRule
 {
     public const string NAME = 'design.type-coverage';
-
-    public function __construct(
-        RuleOptionsInterface $options,
-    ) {
-        if (!$options instanceof TypeCoverageOptions) {
-            throw new InvalidArgumentException(
-                \sprintf('Expected %s, got %s', TypeCoverageOptions::class, $options::class),
-            );
-        }
-        parent::__construct($options);
-    }
 
     public function getName(): string
     {

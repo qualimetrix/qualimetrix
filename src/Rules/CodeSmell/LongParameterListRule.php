@@ -6,14 +6,12 @@ namespace AiMessDetector\Rules\CodeSmell;
 
 use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\RuleCategory;
-use AiMessDetector\Core\Rule\RuleOptionsInterface;
 use AiMessDetector\Core\Symbol\SymbolInfo;
 use AiMessDetector\Core\Symbol\SymbolType;
 use AiMessDetector\Core\Violation\Location;
 use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
 use AiMessDetector\Rules\AbstractRule;
-use InvalidArgumentException;
 
 /**
  * Rule that checks number of parameters per method/function.
@@ -24,17 +22,6 @@ use InvalidArgumentException;
 final class LongParameterListRule extends AbstractRule
 {
     public const string NAME = 'code-smell.long-parameter-list';
-
-    public function __construct(
-        RuleOptionsInterface $options,
-    ) {
-        if (!$options instanceof LongParameterListOptions) {
-            throw new InvalidArgumentException(
-                \sprintf('Expected %s, got %s', LongParameterListOptions::class, $options::class),
-            );
-        }
-        parent::__construct($options);
-    }
 
     public function getName(): string
     {

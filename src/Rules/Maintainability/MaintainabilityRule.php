@@ -6,13 +6,11 @@ namespace AiMessDetector\Rules\Maintainability;
 
 use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\RuleCategory;
-use AiMessDetector\Core\Rule\RuleOptionsInterface;
 use AiMessDetector\Core\Symbol\SymbolType;
 use AiMessDetector\Core\Violation\Location;
 use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
 use AiMessDetector\Rules\AbstractRule;
-use InvalidArgumentException;
 
 /**
  * Rule that checks Maintainability Index at method level.
@@ -26,17 +24,6 @@ final class MaintainabilityRule extends AbstractRule
 {
     public const string NAME = 'maintainability.index';
     private const string METRIC_MI = 'mi';
-
-    public function __construct(
-        RuleOptionsInterface $options,
-    ) {
-        if (!$options instanceof MaintainabilityOptions) {
-            throw new InvalidArgumentException(
-                \sprintf('Expected %s, got %s', MaintainabilityOptions::class, $options::class),
-            );
-        }
-        parent::__construct($options);
-    }
 
     public function getName(): string
     {

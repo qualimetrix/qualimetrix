@@ -6,13 +6,11 @@ namespace AiMessDetector\Rules\Structure;
 
 use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\RuleCategory;
-use AiMessDetector\Core\Rule\RuleOptionsInterface;
 use AiMessDetector\Core\Symbol\SymbolType;
 use AiMessDetector\Core\Violation\Location;
 use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
 use AiMessDetector\Rules\AbstractRule;
-use InvalidArgumentException;
 
 /**
  * Rule that checks LCOM (Lack of Cohesion of Methods) at class level.
@@ -25,17 +23,6 @@ final class LcomRule extends AbstractRule
 {
     public const string NAME = 'design.lcom';
     private const string METRIC_LCOM = 'lcom';
-
-    public function __construct(
-        RuleOptionsInterface $options,
-    ) {
-        if (!$options instanceof LcomOptions) {
-            throw new InvalidArgumentException(
-                \sprintf('Expected %s, got %s', LcomOptions::class, $options::class),
-            );
-        }
-        parent::__construct($options);
-    }
 
     public function getName(): string
     {

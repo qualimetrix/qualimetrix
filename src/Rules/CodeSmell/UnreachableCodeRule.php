@@ -6,13 +6,11 @@ namespace AiMessDetector\Rules\CodeSmell;
 
 use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\RuleCategory;
-use AiMessDetector\Core\Rule\RuleOptionsInterface;
 use AiMessDetector\Core\Symbol\SymbolInfo;
 use AiMessDetector\Core\Symbol\SymbolType;
 use AiMessDetector\Core\Violation\Location;
 use AiMessDetector\Core\Violation\Violation;
 use AiMessDetector\Rules\AbstractRule;
-use InvalidArgumentException;
 
 /**
  * Rule that detects unreachable code after terminal statements.
@@ -23,17 +21,6 @@ use InvalidArgumentException;
 final class UnreachableCodeRule extends AbstractRule
 {
     public const string NAME = 'code-smell.unreachable-code';
-
-    public function __construct(
-        RuleOptionsInterface $options,
-    ) {
-        if (!$options instanceof UnreachableCodeOptions) {
-            throw new InvalidArgumentException(
-                \sprintf('Expected %s, got %s', UnreachableCodeOptions::class, $options::class),
-            );
-        }
-        parent::__construct($options);
-    }
 
     public function getName(): string
     {

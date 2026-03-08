@@ -6,13 +6,11 @@ namespace AiMessDetector\Rules\Structure;
 
 use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\RuleCategory;
-use AiMessDetector\Core\Rule\RuleOptionsInterface;
 use AiMessDetector\Core\Symbol\SymbolType;
 use AiMessDetector\Core\Violation\Location;
 use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
 use AiMessDetector\Rules\AbstractRule;
-use InvalidArgumentException;
 
 /**
  * Rule that checks DIT (Depth of Inheritance Tree) at class level.
@@ -25,17 +23,6 @@ final class InheritanceRule extends AbstractRule
 {
     public const string NAME = 'design.inheritance';
     private const string METRIC_DIT = 'dit';
-
-    public function __construct(
-        RuleOptionsInterface $options,
-    ) {
-        if (!$options instanceof InheritanceOptions) {
-            throw new InvalidArgumentException(
-                \sprintf('Expected %s, got %s', InheritanceOptions::class, $options::class),
-            );
-        }
-        parent::__construct($options);
-    }
 
     public function getName(): string
     {

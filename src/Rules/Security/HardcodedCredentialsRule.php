@@ -7,12 +7,10 @@ namespace AiMessDetector\Rules\Security;
 use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\RuleCategory;
 use AiMessDetector\Core\Rule\RuleInterface;
-use AiMessDetector\Core\Rule\RuleOptionsInterface;
 use AiMessDetector\Core\Symbol\SymbolType;
 use AiMessDetector\Core\Violation\Location;
 use AiMessDetector\Core\Violation\Violation;
 use AiMessDetector\Rules\AbstractRule;
-use InvalidArgumentException;
 
 /**
  * Detects hardcoded credentials in PHP code.
@@ -23,17 +21,6 @@ use InvalidArgumentException;
 final class HardcodedCredentialsRule extends AbstractRule implements RuleInterface
 {
     public const string NAME = 'security.hardcoded-credentials';
-
-    public function __construct(
-        RuleOptionsInterface $options,
-    ) {
-        if (!$options instanceof HardcodedCredentialsOptions) {
-            throw new InvalidArgumentException(
-                \sprintf('Expected %s, got %s', HardcodedCredentialsOptions::class, $options::class),
-            );
-        }
-        parent::__construct($options);
-    }
 
     public function getName(): string
     {

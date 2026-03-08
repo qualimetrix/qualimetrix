@@ -8,13 +8,11 @@ use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\HierarchicalRuleInterface;
 use AiMessDetector\Core\Rule\RuleCategory;
 use AiMessDetector\Core\Rule\RuleLevel;
-use AiMessDetector\Core\Rule\RuleOptionsInterface;
 use AiMessDetector\Core\Symbol\SymbolType;
 use AiMessDetector\Core\Violation\Location;
 use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
 use AiMessDetector\Rules\AbstractRule;
-use InvalidArgumentException;
 
 /**
  * Hierarchical rule that checks NPath complexity at method and class levels.
@@ -30,17 +28,6 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
     public const string NAME = 'complexity.npath';
     private const string METRIC_NPATH = 'npath';
     private const int MAX_DISPLAY = 1_000_000_000;
-
-    public function __construct(
-        RuleOptionsInterface $options,
-    ) {
-        if (!$options instanceof NpathComplexityOptions) {
-            throw new InvalidArgumentException(
-                \sprintf('Expected %s, got %s', NpathComplexityOptions::class, $options::class),
-            );
-        }
-        parent::__construct($options);
-    }
 
     public function getName(): string
     {
@@ -97,13 +84,10 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
     }
 
     /**
-     * Legacy analyze method for backward compatibility.
-     *
      * @return list<Violation>
      */
     public function analyze(AnalysisContext $context): array
     {
-        // When called directly (not via analyzeLevel), analyze all enabled levels
         $violations = [];
 
         foreach ($this->getSupportedLevels() as $level) {
