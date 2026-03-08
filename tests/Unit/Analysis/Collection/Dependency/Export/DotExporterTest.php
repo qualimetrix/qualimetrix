@@ -329,6 +329,8 @@ final class DotExporterTest extends TestCase
             array_values($namespaceMap),
             $namespaceCe,
             $namespaceCa,
+            [],
+            [],
         );
     }
 }

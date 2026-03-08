@@ -170,6 +170,8 @@ final class DistanceCollectorTest extends TestCase
             [],
             [],
             [],
+            [],
+            [],
         );
     }
 }

@@ -69,6 +69,10 @@ final class DependencyGraphBuilder
         $namespaceCe = $this->computeNamespaceCe($dependencies, $namespaceMap);
         $namespaceCa = $this->computeNamespaceCa($dependencies, $namespaceMap);
 
+        // Precompute class-level Ce/Ca (unique targets/sources per class)
+        $classCe = $this->computeClassCe($bySource);
+        $classCa = $this->computeClassCa($byTarget);
+
         return new DependencyGraph(
             $dependencies,
             $bySource,
@@ -77,6 +81,8 @@ final class DependencyGraphBuilder
             array_values($namespaceMap),
             $namespaceCe,
             $namespaceCa,
+            $classCe,
+            $classCa,
         );
     }
 
@@ -100,6 +106,10 @@ final class DependencyGraphBuilder
             $result[$canonicalKey] = new StringSet();
         }
 
+        // Cache for SymbolPath::forNamespace()->toCanonical() calls
+        /** @var array<string, string> $nsCanonicalCache */
+        $nsCanonicalCache = [];
+
         // For each dependency, if source is in namespace and target is outside,
         // add target to namespace's Ce
         foreach ($dependencies as $dep) {
@@ -117,7 +127,7 @@ final class DependencyGraphBuilder
             }
 
             // Add target class to namespace's Ce
-            $nsKey = SymbolPath::forNamespace($sourceNs)->toCanonical();
+            $nsKey = $nsCanonicalCache[$sourceNs] ??= SymbolPath::forNamespace($sourceNs)->toCanonical();
             $result[$nsKey] = $result[$nsKey]->add($dep->target->toCanonical());
         }
 
@@ -144,6 +154,10 @@ final class DependencyGraphBuilder
             $result[$canonicalKey] = new StringSet();
         }
 
+        // Cache for SymbolPath::forNamespace()->toCanonical() calls
+        /** @var array<string, string> $nsCanonicalCache */
+        $nsCanonicalCache = [];
+
         // For each dependency, if target is in namespace and source is outside,
         // add source to namespace's Ca
         foreach ($dependencies as $dep) {
@@ -161,8 +175,56 @@ final class DependencyGraphBuilder
             }
 
             // Add source class to namespace's Ca
-            $nsKey = SymbolPath::forNamespace($targetNs)->toCanonical();
+            $nsKey = $nsCanonicalCache[$targetNs] ??= SymbolPath::forNamespace($targetNs)->toCanonical();
             $result[$nsKey] = $result[$nsKey]->add($dep->source->toCanonical());
+        }
+
+        return $result;
+    }
+
+    /**
+     * Precomputes Efferent Coupling (Ce) for each class.
+     *
+     * Ce = count of unique classes this class depends on.
+     *
+     * @param array<string, array<Dependency>> $bySource Dependencies indexed by source canonical key
+     *
+     * @return array<string, int>
+     */
+    private function computeClassCe(array $bySource): array
+    {
+        $result = [];
+
+        foreach ($bySource as $sourceKey => $deps) {
+            $targets = [];
+            foreach ($deps as $dep) {
+                $targets[$dep->target->toCanonical()] = true;
+            }
+            $result[$sourceKey] = \count($targets);
+        }
+
+        return $result;
+    }
+
+    /**
+     * Precomputes Afferent Coupling (Ca) for each class.
+     *
+     * Ca = count of unique classes that depend on this class.
+     *
+     * @param array<string, array<Dependency>> $byTarget Dependencies indexed by target canonical key
+     *
+     * @return array<string, int>
+     */
+    private function computeClassCa(array $byTarget): array
+    {
+        $result = [];
+
+        foreach ($byTarget as $targetKey => $deps) {
+            $sources = [];
+            foreach ($deps as $dep) {
+                $sources[$dep->source->toCanonical()] = true;
+            }
+            $result[$targetKey] = \count($sources);
         }
 
         return $result;
