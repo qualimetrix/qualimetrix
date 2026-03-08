@@ -20,9 +20,9 @@ use AiMessDetector\Rules\AbstractRule;
  * Hierarchical rule that checks CBO (Coupling Between Objects) at class and namespace levels.
  *
  * CBO = Ca + Ce (afferent + efferent coupling)
- * - Low CBO (<=14): weakly coupled, easy to test
- * - Medium CBO (15-20): acceptable
- * - High CBO (>20): tightly coupled, hard to isolate
+ * - Low CBO (<14): weakly coupled, easy to test
+ * - Medium CBO (14-19): acceptable (warning)
+ * - High CBO (>=20): tightly coupled, hard to isolate (error)
  */
 final class CboRule extends AbstractRule implements HierarchicalRuleInterface
 {
@@ -209,7 +209,7 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
 
         $violationCode = self::NAME . ($level === RuleLevel::Namespace_ ? '.namespace' : '.class');
 
-        if ($cbo > $options->error) {
+        if ($cbo >= $options->error) {
             return new Violation(
                 location: new Location($symbolInfo->file, $symbolInfo->line),
                 symbolPath: $symbolInfo->symbolPath,
@@ -228,7 +228,7 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
             );
         }
 
-        if ($cbo > $options->warning) {
+        if ($cbo >= $options->warning) {
             return new Violation(
                 location: new Location($symbolInfo->file, $symbolInfo->line),
                 symbolPath: $symbolInfo->symbolPath,

@@ -244,6 +244,26 @@ final class GitFileDiscoveryTest extends TestCase
     }
 
     #[Test]
+    public function itDoesNotMatchSimilarPrefixedDirectories(): void
+    {
+        $this->initGitRepo();
+
+        $this->createPhpFile('src/Service.php');
+        $this->createPhpFile('src2/Other.php');
+        $this->exec('git add .');
+
+        $gitClient = new GitClient($this->tempDir);
+        $discovery = new GitFileDiscovery($gitClient, new GitScope('staged'));
+        $files = iterator_to_array($discovery->discover('src'));
+
+        $this->assertCount(1, $files);
+        $key = array_key_first($files);
+        $this->assertIsString($key);
+        $this->assertStringContainsString('src/Service.php', $key);
+        $this->assertStringNotContainsString('src2', $key);
+    }
+
+    #[Test]
     public function itMatchesExactFilePath(): void
     {
         $this->initGitRepo();

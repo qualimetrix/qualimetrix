@@ -366,10 +366,11 @@ final class WmcRuleTest extends TestCase
     public static function thresholdDataProvider(): iterable
     {
         // Higher WMC is worse
-        yield 'below warning threshold' => [30, 30, 50, null];
+        yield 'below warning threshold' => [29, 30, 50, null];
+        yield 'at warning threshold' => [30, 30, 50, Severity::Warning];
         yield 'just above warning threshold' => [31, 30, 50, Severity::Warning];
         yield 'above warning, below error' => [45, 30, 50, Severity::Warning];
-        yield 'at error threshold' => [50, 30, 50, Severity::Warning]; // Still warning at exact error threshold
+        yield 'at error threshold' => [50, 30, 50, Severity::Error];
         yield 'just above error threshold' => [51, 30, 50, Severity::Error];
         yield 'far above error threshold' => [100, 30, 50, Severity::Error];
     }

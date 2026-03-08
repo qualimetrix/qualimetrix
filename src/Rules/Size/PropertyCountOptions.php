@@ -48,11 +48,11 @@ final readonly class PropertyCountOptions implements RuleOptionsInterface
      */
     public function getSeverity(int|float $value): ?Severity
     {
-        if ($value > $this->error) {
+        if ($value >= $this->error) {
             return Severity::Error;
         }
 
-        if ($value > $this->warning) {
+        if ($value >= $this->warning) {
             return Severity::Warning;
         }
 

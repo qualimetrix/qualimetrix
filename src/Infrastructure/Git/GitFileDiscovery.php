@@ -99,13 +99,13 @@ final class GitFileDiscovery implements FileDiscoveryInterface
             // Normalize path (remove leading ./)
             $normalizedPath = ltrim($path, './');
 
-            // Check if file starts with the path
-            if (str_starts_with($file, $normalizedPath)) {
+            // Empty path (e.g., ".") matches all files
+            if ($normalizedPath === '') {
                 return true;
             }
 
-            // Also check exact match (for single files)
-            if ($file === $normalizedPath) {
+            // Check exact match or directory prefix with boundary check
+            if ($file === $normalizedPath || str_starts_with($file, rtrim($normalizedPath, '/') . '/')) {
                 return true;
             }
         }

@@ -25,9 +25,9 @@ final readonly class ClassComplexityOptions implements LevelOptionsInterface
      */
     public static function fromArray(array $config): self
     {
-        // If config is empty, level is disabled
+        // If config is empty, use defaults (all enabled)
         if ($config === []) {
-            return new self(enabled: false);
+            return new self();
         }
 
         return new self(

@@ -11,9 +11,9 @@ use AiMessDetector\Core\Violation\Severity;
  * Options for class-level CBO (Coupling Between Objects) checks.
  *
  * CBO = Ca + Ce
- * - Low CBO (<=14): weakly coupled, easy to test
- * - Medium CBO (15-20): acceptable
- * - High CBO (>20): tightly coupled, hard to isolate
+ * - Low CBO (<14): weakly coupled, easy to test
+ * - Medium CBO (14-19): acceptable (warning)
+ * - High CBO (>=20): tightly coupled, hard to isolate (error)
  */
 final readonly class ClassCboOptions implements LevelOptionsInterface
 {
@@ -28,9 +28,9 @@ final readonly class ClassCboOptions implements LevelOptionsInterface
      */
     public static function fromArray(array $config): self
     {
-        // If config is empty, level is disabled
+        // If config is empty, use defaults (all enabled)
         if ($config === []) {
-            return new self(enabled: false);
+            return new self();
         }
 
         return new self(
@@ -49,11 +49,11 @@ final readonly class ClassCboOptions implements LevelOptionsInterface
     {
         $cbo = (int) $value;
 
-        if ($cbo > $this->error) {
+        if ($cbo >= $this->error) {
             return Severity::Error;
         }
 
-        if ($cbo > $this->warning) {
+        if ($cbo >= $this->warning) {
             return Severity::Warning;
         }
 

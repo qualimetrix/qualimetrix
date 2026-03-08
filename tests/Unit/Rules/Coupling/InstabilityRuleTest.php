@@ -411,7 +411,9 @@ final class InstabilityRuleTest extends TestCase
     {
         $options = ClassInstabilityOptions::fromArray([]);
 
-        self::assertFalse($options->enabled);
+        self::assertTrue($options->enabled);
+        self::assertSame(0.8, $options->maxWarning);
+        self::assertSame(0.95, $options->maxError);
     }
 
     public function testNamespaceOptionsFromArray(): void

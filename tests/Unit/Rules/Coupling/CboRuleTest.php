@@ -446,7 +446,9 @@ final class CboRuleTest extends TestCase
     {
         $options = ClassCboOptions::fromArray([]);
 
-        self::assertFalse($options->enabled);
+        self::assertTrue($options->enabled);
+        self::assertSame(14, $options->warning);
+        self::assertSame(20, $options->error);
     }
 
     public function testNamespaceOptionsFromArray(): void
@@ -682,9 +684,9 @@ final class CboRuleTest extends TestCase
     public static function cboThresholdDataProvider(): iterable
     {
         yield 'below warning threshold' => [13, 14, 20, null];
-        yield 'at warning threshold (not exceeded)' => [14, 14, 20, null];
+        yield 'at warning threshold' => [14, 14, 20, Severity::Warning];
         yield 'above warning, below error' => [18, 14, 20, Severity::Warning];
-        yield 'at error threshold (not exceeded)' => [20, 14, 20, Severity::Warning];
+        yield 'at error threshold' => [20, 14, 20, Severity::Error];
         yield 'above error threshold' => [25, 14, 20, Severity::Error];
     }
 }

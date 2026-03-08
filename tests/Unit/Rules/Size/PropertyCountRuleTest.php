@@ -160,11 +160,23 @@ final class PropertyCountRuleTest extends TestCase
         $context = $this->createContext(propertyCount: 14);
         self::assertCount(0, $rule->analyze($context));
 
+        // At default warning (15) — triggers warning with >= comparison
+        $context = $this->createContext(propertyCount: 15);
+        $violations = $rule->analyze($context);
+        self::assertCount(1, $violations);
+        self::assertSame(Severity::Warning, $violations[0]->severity);
+
         // Above default warning (15)
         $context = $this->createContext(propertyCount: 16);
         $violations = $rule->analyze($context);
         self::assertCount(1, $violations);
         self::assertSame(Severity::Warning, $violations[0]->severity);
+
+        // At default error (20) — triggers error with >= comparison
+        $context = $this->createContext(propertyCount: 20);
+        $violations = $rule->analyze($context);
+        self::assertCount(1, $violations);
+        self::assertSame(Severity::Error, $violations[0]->severity);
 
         // Above default error (20)
         $context = $this->createContext(propertyCount: 21);

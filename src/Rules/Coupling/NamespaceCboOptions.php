@@ -11,9 +11,9 @@ use AiMessDetector\Core\Violation\Severity;
  * Options for namespace-level CBO (Coupling Between Objects) checks.
  *
  * CBO = Ca + Ce
- * - Low CBO (<=14): weakly coupled
- * - Medium CBO (15-20): acceptable
- * - High CBO (>20): tightly coupled
+ * - Low CBO (<14): weakly coupled
+ * - Medium CBO (14-19): acceptable (warning)
+ * - High CBO (>=20): tightly coupled (error)
  */
 final readonly class NamespaceCboOptions implements LevelOptionsInterface
 {
@@ -75,11 +75,11 @@ final readonly class NamespaceCboOptions implements LevelOptionsInterface
     {
         $cbo = (int) $value;
 
-        if ($cbo > $this->error) {
+        if ($cbo >= $this->error) {
             return Severity::Error;
         }
 
-        if ($cbo > $this->warning) {
+        if ($cbo >= $this->warning) {
             return Severity::Warning;
         }
 

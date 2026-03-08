@@ -12,9 +12,9 @@ use AiMessDetector\Core\Violation\Severity;
  *
  * WMC (Weighted Methods per Class) - sum of cyclomatic complexities of all methods.
  * Thresholds based on Chidamber & Kemerer research and industry practice:
- * - WMC <= 50: well-maintained class (no violation)
- * - WMC 51-80: moderate complexity, needs attention (warning)
- * - WMC > 80: complex class, requires refactoring (error)
+ * - WMC < 50: well-maintained class (no violation)
+ * - WMC 50-79: moderate complexity, needs attention (warning)
+ * - WMC >= 80: complex class, requires refactoring (error)
  *
  * @see https://pdepend.org/documentation/software-metrics/weighted-method-count.html
  */
@@ -56,11 +56,11 @@ final readonly class WmcOptions implements RuleOptionsInterface
      */
     public function getSeverity(int|float $value): ?Severity
     {
-        if ($value > $this->error) {
+        if ($value >= $this->error) {
             return Severity::Error;
         }
 
-        if ($value > $this->warning) {
+        if ($value >= $this->warning) {
             return Severity::Warning;
         }
 

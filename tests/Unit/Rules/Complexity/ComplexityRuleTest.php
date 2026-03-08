@@ -284,7 +284,9 @@ final class ComplexityRuleTest extends TestCase
     {
         $options = MethodComplexityOptions::fromArray([]);
 
-        self::assertFalse($options->enabled);
+        self::assertTrue($options->enabled);
+        self::assertSame(10, $options->warning);
+        self::assertSame(20, $options->error);
     }
 
     public function testClassOptionsFromArray(): void

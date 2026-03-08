@@ -18,36 +18,36 @@ Rules are analysis rule implementations for static analysis. Rules are **complet
 
 ## Implemented Rules
 
-| Rule                                 | Category        | Type                            | Description                     | Default Thresholds                |
-| ------------------------------------ | --------------- | ------------------------------- | ------------------------------- | --------------------------------- |
-| **complexity.cyclomatic**            | Complexity      | Hierarchical (Method, Class)    | Cyclomatic Complexity (CCN)     | method: 10/20, class.max: 30/50   |
-| **complexity.cognitive**             | Complexity      | Hierarchical (Method, Class)    | Cognitive Complexity            | method: 15/25, class.max: 30/50   |
-| **complexity.npath**                 | Complexity      | Hierarchical (Method, Class)    | NPATH Complexity                | method: 200/500, class (disabled) |
-| **complexity.wmc**                   | Complexity      | Simple                          | Weighted Methods per Class      | warning: 50, error: 80            |
-| **size.method-count**                | Size            | Simple                          | Method count per class          | warning: 20, error: 30            |
-| **size.class-count**                 | Size            | Simple                          | Class count per namespace       | warning: 15, error: 25            |
-| **size.property-count**              | Size            | Simple                          | Class property count            | warning: 10, error: 15            |
-| **maintainability.index**            | Maintainability | Simple                          | Maintainability Index           | warning: 40, error: 20            |
-| **design.lcom**                      | Design          | Simple                          | Lack of Cohesion (LCOM4)        | warning: 3, error: 5              |
-| **design.noc**                       | Design          | Simple                          | Number of Children              | warning: 10, error: 15            |
-| **design.inheritance**               | Design          | Simple                          | Depth of Inheritance Tree (DIT) | warning: 4, error: 6              |
-| **coupling.instability**             | Coupling        | Hierarchical (Class, Namespace) | Instability (Ca/Ce)             | warning: 0.8, error: 0.95         |
-| **coupling.cbo**                     | Coupling        | Hierarchical (Class, Namespace) | Coupling Between Objects        | warning: ..., error: ...          |
-| **coupling.distance**                | Coupling        | Simple                          | Distance from Main Sequence     | warning: 0.3, error: 0.5          |
-| **architecture.circular-dependency** | Architecture    | Simple                          | Circular dependencies           | enabled: true                     |
-| **code-smell.boolean-argument**      | CodeSmell       | Simple                          | Boolean arguments in signatures | enabled: true                     |
-| **code-smell.count-in-loop**         | CodeSmell       | Simple                          | count() calls in loops          | enabled: true                     |
-| **code-smell.debug-code**            | CodeSmell       | Simple                          | Debug code (var_dump, etc.)     | enabled: true                     |
-| **code-smell.empty-catch**           | CodeSmell       | Simple                          | Empty catch blocks              | enabled: true                     |
-| **code-smell.error-suppression**     | CodeSmell       | Simple                          | Error suppression operator (@)  | enabled: true                     |
-| **code-smell.eval**                  | CodeSmell       | Simple                          | eval() usage                    | enabled: true                     |
-| **code-smell.exit**                  | CodeSmell       | Simple                          | exit/die usage                  | enabled: true                     |
-| **code-smell.goto**                  | CodeSmell       | Simple                          | goto statements                 | enabled: true                     |
-| **code-smell.long-parameter-list**   | CodeSmell       | Simple                          | Long parameter lists            | warning: 4, error: 6              |
-| **code-smell.superglobals**          | CodeSmell       | Simple                          | Direct superglobal access       | enabled: true                     |
-| **code-smell.unreachable-code**      | CodeSmell       | Simple                          | Unreachable code detection      | warning: 1, error: 1              |
-| **design.type-coverage**             | Design          | Simple                          | Type declaration coverage       | param/return/property: 80%/50%    |
-| **security.hardcoded-credentials**   | Security        | Simple                          | Hardcoded credentials           | enabled: true                     |
+| Rule                                 | Category        | Type                            | Description                     | Default Thresholds                 |
+| ------------------------------------ | --------------- | ------------------------------- | ------------------------------- | ---------------------------------- |
+| **complexity.cyclomatic**            | Complexity      | Hierarchical (Method, Class)    | Cyclomatic Complexity (CCN)     | method: 10/20, class.max: 30/50    |
+| **complexity.cognitive**             | Complexity      | Hierarchical (Method, Class)    | Cognitive Complexity            | method: 15/30, class.max: 30/50    |
+| **complexity.npath**                 | Complexity      | Hierarchical (Method, Class)    | NPATH Complexity                | method: 200/1000, class (disabled) |
+| **complexity.wmc**                   | Complexity      | Simple                          | Weighted Methods per Class      | warning: 50, error: 80             |
+| **size.method-count**                | Size            | Simple                          | Method count per class          | warning: 20, error: 30             |
+| **size.class-count**                 | Size            | Simple                          | Class count per namespace       | warning: 15, error: 25             |
+| **size.property-count**              | Size            | Simple                          | Class property count            | warning: 15, error: 20             |
+| **maintainability.index**            | Maintainability | Simple                          | Maintainability Index           | warning: 40, error: 20             |
+| **design.lcom**                      | Design          | Simple                          | Lack of Cohesion (LCOM4)        | warning: 3, error: 5               |
+| **design.noc**                       | Design          | Simple                          | Number of Children              | warning: 10, error: 15             |
+| **design.inheritance**               | Design          | Simple                          | Depth of Inheritance Tree (DIT) | warning: 4, error: 6               |
+| **coupling.instability**             | Coupling        | Hierarchical (Class, Namespace) | Instability (Ca/Ce)             | warning: 0.8, error: 0.95          |
+| **coupling.cbo**                     | Coupling        | Hierarchical (Class, Namespace) | Coupling Between Objects        | warning: ..., error: ...           |
+| **coupling.distance**                | Coupling        | Simple                          | Distance from Main Sequence     | warning: 0.3, error: 0.5           |
+| **architecture.circular-dependency** | Architecture    | Simple                          | Circular dependencies           | enabled: true                      |
+| **code-smell.boolean-argument**      | CodeSmell       | Simple                          | Boolean arguments in signatures | enabled: true                      |
+| **code-smell.count-in-loop**         | CodeSmell       | Simple                          | count() calls in loops          | enabled: true                      |
+| **code-smell.debug-code**            | CodeSmell       | Simple                          | Debug code (var_dump, etc.)     | enabled: true                      |
+| **code-smell.empty-catch**           | CodeSmell       | Simple                          | Empty catch blocks              | enabled: true                      |
+| **code-smell.error-suppression**     | CodeSmell       | Simple                          | Error suppression operator (@)  | enabled: true                      |
+| **code-smell.eval**                  | CodeSmell       | Simple                          | eval() usage                    | enabled: true                      |
+| **code-smell.exit**                  | CodeSmell       | Simple                          | exit/die usage                  | enabled: true                      |
+| **code-smell.goto**                  | CodeSmell       | Simple                          | goto statements                 | enabled: true                      |
+| **code-smell.long-parameter-list**   | CodeSmell       | Simple                          | Long parameter lists            | warning: 4, error: 6               |
+| **code-smell.superglobals**          | CodeSmell       | Simple                          | Direct superglobal access       | enabled: true                      |
+| **code-smell.unreachable-code**      | CodeSmell       | Simple                          | Unreachable code detection      | warning: 1, error: 1               |
+| **design.type-coverage**             | Design          | Simple                          | Type declaration coverage       | param/return/property: 80%/50%     |
+| **security.hardcoded-credentials**   | Security        | Simple                          | Hardcoded credentials           | enabled: true                      |
 
 ---
 
@@ -107,7 +107,7 @@ Checks cognitive complexity of methods and classes. Unlike CCN, it considers:
 - **Logical chains** — `a && b && c` counts as +1 (not +3)
 - **Switch** — +1 for the entire switch (not for each case)
 
-**Method-level:** Checks cognitive complexity of individual methods (default: 15/25)
+**Method-level:** Checks cognitive complexity of individual methods (default: 15/30)
 **Class-level:** Checks the maximum cognitive complexity of class methods (default: 30/50)
 
 **Configuration:**
@@ -116,13 +116,13 @@ rules:
   complexity.cognitive:
     method:
       warning: 15
-      error: 25
+      error: 30
     class:
       max_warning: 30
       max_error: 50
 ```
 
-**CLI:** `--cognitive-warning=15 --cognitive-error=25 --cognitive-class-warning=30 --cognitive-class-error=50`
+**CLI:** `--cognitive-warning=15 --cognitive-error=30 --cognitive-class-warning=30 --cognitive-class-error=50`
 
 **Counting rules:**
 - `if`, `elseif`, `for`, `foreach`, `while`, `catch`, `?:`, `??` -> +1
@@ -138,7 +138,7 @@ rules:
 Checks NPath complexity — the number of acyclic execution paths through a method.
 Unlike Cyclomatic Complexity (additive), NPath is multiplicative and grows exponentially.
 
-**Method-level:** Checks NPath of individual methods (default: 200/500)
+**Method-level:** Checks NPath of individual methods (default: 200/1000)
 **Class-level:** Checks the maximum NPath of class methods (disabled by default)
 
 **Configuration:**
@@ -147,14 +147,14 @@ rules:
   complexity.npath:
     method:
       warning: 200
-      error: 500
+      error: 1000
     class:
       enabled: false
       max_warning: 500
       max_error: 1000
 ```
 
-**CLI:** `--npath-warning=200 --npath-error=500 --npath-class-warning=500 --npath-class-error=1000`
+**CLI:** `--npath-warning=200 --npath-error=1000 --npath-class-warning=500 --npath-class-error=1000`
 
 ---
 
@@ -198,7 +198,7 @@ rules:
 
 **Name:** `size.property-count` | **Category:** Size | **Type:** Simple
 
-Checks the number of properties in a class (default: 10/15).
+Checks the number of properties in a class (default: 15/20).
 
 **Filters (RFC-008):**
 - `excludeReadonly: true` — exclude readonly classes
