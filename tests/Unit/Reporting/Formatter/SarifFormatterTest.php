@@ -356,7 +356,7 @@ final class SarifFormatterTest extends TestCase
 
         // Should have originalUriBaseIds
         self::assertArrayHasKey('originalUriBaseIds', $run);
-        self::assertSame('/home/user/project/', $run['originalUriBaseIds']['%SRCROOT%']['uri']);
+        self::assertSame('file:///home/user/project/', $run['originalUriBaseIds']['%SRCROOT%']['uri']);
     }
 
     public function testAlreadyRelativePathUnchanged(): void

@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace AiMessDetector\Core\Profiler;
 
 /**
- * Value object representing a profiling span (time interval).
+ * Mutable recording object representing a profiling span (time interval).
  *
- * Spans can be nested (parent-child relationship) to create a tree structure
- * representing the call hierarchy.
+ * Lifecycle: created via Profiler::start() with null end time,
+ * then mutated by Profiler::stop() to record end time and memory.
+ * Parent-child relationships form a tree representing the call hierarchy.
  */
 final class Span
 {
