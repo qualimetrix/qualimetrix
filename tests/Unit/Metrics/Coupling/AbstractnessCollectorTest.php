@@ -240,6 +240,8 @@ final class AbstractnessCollectorTest extends TestCase
             [],
             [],
             [],
+            [],
+            [],
         );
     }
 }

@@ -204,6 +204,8 @@ final class CircularDependencyDetectorTest extends TestCase
             namespaces: [],
             namespaceCe: [],
             namespaceCa: [],
+            classCe: [],
+            classCa: [],
         );
     }
 }

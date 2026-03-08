@@ -26,6 +26,8 @@ final class DependencyGraph implements DependencyGraphInterface
      * @param array<SymbolPath> $namespaces All unique namespace SymbolPaths
      * @param array<string, StringSet> $namespaceCe External classes each namespace depends on
      * @param array<string, StringSet> $namespaceCa External classes that depend on each namespace
+     * @param array<string, int> $classCe Precomputed efferent coupling per class (canonical key -> count)
+     * @param array<string, int> $classCa Precomputed afferent coupling per class (canonical key -> count)
      */
     public function __construct(
         private readonly array $dependencies,
@@ -35,6 +37,8 @@ final class DependencyGraph implements DependencyGraphInterface
         private readonly array $namespaces,
         private readonly array $namespaceCe,
         private readonly array $namespaceCa,
+        private readonly array $classCe,
+        private readonly array $classCa,
     ) {}
 
     public function getClassDependencies(SymbolPath $class): array
@@ -49,26 +53,12 @@ final class DependencyGraph implements DependencyGraphInterface
 
     public function getClassCe(SymbolPath $class): int
     {
-        $deps = $this->bySource[$class->toCanonical()] ?? [];
-        $targets = StringSet::fromArray([]);
-
-        foreach ($deps as $dep) {
-            $targets = $targets->add($dep->target->toCanonical());
-        }
-
-        return $targets->count();
+        return $this->classCe[$class->toCanonical()] ?? 0;
     }
 
     public function getClassCa(SymbolPath $class): int
     {
-        $deps = $this->byTarget[$class->toCanonical()] ?? [];
-        $sources = StringSet::fromArray([]);
-
-        foreach ($deps as $dep) {
-            $sources = $sources->add($dep->source->toCanonical());
-        }
-
-        return $sources->count();
+        return $this->classCa[$class->toCanonical()] ?? 0;
     }
 
     public function getNamespaceCe(SymbolPath $namespace): int

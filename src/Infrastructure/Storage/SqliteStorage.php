@@ -12,6 +12,7 @@ use AiMessDetector\Core\Violation\Location;
 use Generator;
 use PDO;
 use RuntimeException;
+use Throwable;
 
 /**
  * SQLite-based storage for metrics with caching and efficient querying.
@@ -310,28 +311,44 @@ final class SqliteStorage implements StorageInterface
 
     public function storeFileDependencies(int $fileId, array $dependencies): void
     {
-        // Remove old dependencies for this file
-        $stmt = $this->pdo->prepare('DELETE FROM file_dependencies WHERE file_id = :file_id');
-        $stmt->execute(['file_id' => $fileId]);
+        $ownTransaction = !$this->pdo->inTransaction();
 
-        if ($dependencies === []) {
-            return;
+        if ($ownTransaction) {
+            $this->pdo->beginTransaction();
         }
 
-        $stmt = $this->pdo->prepare(
-            'INSERT INTO file_dependencies (file_id, source_class, target_class, type, file_path, line)
-             VALUES (:file_id, :source_class, :target_class, :type, :file_path, :line)',
-        );
+        try {
+            // Remove old dependencies for this file
+            $stmt = $this->pdo->prepare('DELETE FROM file_dependencies WHERE file_id = :file_id');
+            $stmt->execute(['file_id' => $fileId]);
 
-        foreach ($dependencies as $dep) {
-            $stmt->execute([
-                'file_id' => $fileId,
-                'source_class' => $dep->source->toString(),
-                'target_class' => $dep->target->toString(),
-                'type' => $dep->type->value,
-                'file_path' => $dep->location->file,
-                'line' => $dep->location->line,
-            ]);
+            if ($dependencies !== []) {
+                $stmt = $this->pdo->prepare(
+                    'INSERT INTO file_dependencies (file_id, source_class, target_class, type, file_path, line)
+                     VALUES (:file_id, :source_class, :target_class, :type, :file_path, :line)',
+                );
+
+                foreach ($dependencies as $dep) {
+                    $stmt->execute([
+                        'file_id' => $fileId,
+                        'source_class' => $dep->source->toString(),
+                        'target_class' => $dep->target->toString(),
+                        'type' => $dep->type->value,
+                        'file_path' => $dep->location->file,
+                        'line' => $dep->location->line,
+                    ]);
+                }
+            }
+
+            if ($ownTransaction) {
+                $this->pdo->commit();
+            }
+        } catch (Throwable $e) {
+            if ($ownTransaction && $this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+
+            throw $e;
         }
     }
 
