@@ -14,6 +14,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Circular dependency detection is now active — `architecture.circular-dependency` rule produces violations
 
 ### Fixed
+- Fixed anonymous class leakage in CCN, NPath, Halstead, ParameterCount, UnreachableCode visitors — methods inside anonymous classes were incorrectly attributed to the enclosing named class
+- Fixed abstractness formula to include interfaces in denominator (namespace with only interfaces now correctly returns 1.0)
+- Fixed cognitive complexity undercounting when consecutive statements use the same logical operator
+- Fixed `@aimd-ignore` suppression system — now fully wired into the analysis pipeline (was previously dead code)
+- Fixed `@aimd-ignore-next-line` to only suppress violations on the specific next line (was suppressing entire file)
+- Fixed `@aimd-ignore-file` regex to work without explicit rule argument (defaults to wildcard)
+- Fixed `exclude_paths` YAML configuration — was rejected as unknown key
+- Fixed YAML key normalization mangling rule identifiers (`size.method-count` was incorrectly converted to `size.methodCount`)
+- Fixed inconsistent threshold comparison operators — all rules now use `>=` (4 rules previously used strict `>`)
+- Fixed `fromArray([])` silently disabling rules instead of applying defaults
+- Fixed `GitFileDiscovery::isInPaths()` prefix matching (`src` no longer incorrectly matches `src2/`)
+- Fixed `RfcVisitor` losing method context when closures or anonymous classes appear inside methods
+- Fixed `ViolationHasher` collision risk by increasing hash from 32-bit to 64-bit (baseline version bumped to 4)
+- Fixed `ProfilerHolder` creating new `NullProfiler` instance on every `get()` call
 - Fixed AST visitors losing class context after anonymous classes, causing incorrect FQN for subsequent methods
 - Fixed derived metric collectors not seeing each other's outputs (e.g., Maintainability Index depending on Halstead)
 - Fixed dependency graph not being passed to analysis rules
