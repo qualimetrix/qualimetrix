@@ -42,7 +42,7 @@ final class SarifFormatter implements FormatterInterface
         if ($context->basePath !== '') {
             $run['originalUriBaseIds'] = [
                 '%SRCROOT%' => [
-                    'uri' => rtrim($context->basePath, '/') . '/',
+                    'uri' => 'file:///' . ltrim(rtrim($context->basePath, '/'), '/') . '/',
                 ],
             ];
         }
