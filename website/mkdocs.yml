@@ -58,6 +58,7 @@ plugins:
             Complexity: Сложность
             Coupling: Связанность
             Size: Размер
+            Changelog: Changelog
             Maintainability: Сопровождаемость
             Design: Проектирование
             Architecture: Архитектура
@@ -110,3 +111,4 @@ nav:
       - Other CI Systems: ci-cd/other-ci.md
   - Reference:
       - Default Thresholds: reference/default-thresholds.md
+  - Changelog: changelog.md
