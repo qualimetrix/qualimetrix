@@ -28,6 +28,8 @@ final class YamlConfigLoader implements ConfigLoaderInterface
         'only_rules',
         'paths',
         'exclude',
+        'excludePaths',
+        'exclude_paths',
     ];
 
     public function load(string $path): array
@@ -69,17 +71,30 @@ final class YamlConfigLoader implements ConfigLoaderInterface
     /**
      * Recursively normalizes snake_case keys to camelCase.
      *
+     * Keys that are rule identifiers (contain `.`) are preserved as-is,
+     * because rule names use `group.rule-name` format and must not be normalized.
+     * Their nested option values are still normalized.
+     *
      * @param array<string, mixed> $config
+     * @param bool $preserveKeys When true, keys at this level are preserved (used for rule name keys)
      *
      * @return array<string, mixed>
      */
-    private function normalizeKeys(array $config): array
+    private function normalizeKeys(array $config, bool $preserveKeys = false): array
     {
         $result = [];
 
         foreach ($config as $key => $value) {
-            $normalizedKey = $this->snakeToCamel((string) $key);
-            $result[$normalizedKey] = \is_array($value) ? $this->normalizeKeys($value) : $value;
+            $stringKey = (string) $key;
+            $normalizedKey = $preserveKeys ? $stringKey : $this->snakeToCamel($stringKey);
+
+            if (\is_array($value)) {
+                // When entering the 'rules' section, preserve rule name keys (next level)
+                $isRulesSection = !$preserveKeys && $stringKey === 'rules';
+                $result[$normalizedKey] = $this->normalizeKeys($value, $isRulesSection);
+            } else {
+                $result[$normalizedKey] = $value;
+            }
         }
 
         return $result;
@@ -152,7 +167,7 @@ final class YamlConfigLoader implements ConfigLoaderInterface
         }
 
         // Validate list fields
-        $listFields = ['disabled_rules', 'disabledRules', 'only_rules', 'onlyRules', 'paths', 'exclude'];
+        $listFields = ['disabled_rules', 'disabledRules', 'only_rules', 'onlyRules', 'paths', 'exclude', 'exclude_paths', 'excludePaths'];
         foreach ($listFields as $field) {
             if (isset($config[$field]) && !\is_array($config[$field])) {
                 throw ConfigLoadException::invalidStructure(
