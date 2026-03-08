@@ -52,6 +52,13 @@ interface GlobalContextCollectorInterface
      * Called once after all per-file metrics have been collected and aggregated.
      * The collector should update the repository with computed metrics.
      *
+     * IMPORTANT: Collectors must only enrich symbols that already exist in the repository.
+     * They must NOT create new symbols (e.g. for vendor/external classes discovered
+     * in the dependency graph). The repository is pre-populated during the collection
+     * phase with project symbols only. Use $repository->has() to verify a symbol exists
+     * before adding metrics for it when iterating external data sources like the
+     * dependency graph.
+     *
      * @param DependencyGraphInterface $graph The dependency graph
      * @param MetricRepositoryInterface $repository Repository with existing metrics
      */

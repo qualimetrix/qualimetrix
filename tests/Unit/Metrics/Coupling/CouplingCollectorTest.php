@@ -9,6 +9,7 @@ use AiMessDetector\Analysis\Repository\InMemoryMetricRepository;
 use AiMessDetector\Core\Dependency\Dependency;
 use AiMessDetector\Core\Dependency\DependencyType;
 use AiMessDetector\Core\Metric\AggregationStrategy;
+use AiMessDetector\Core\Metric\MetricBag;
 use AiMessDetector\Core\Metric\SymbolLevel;
 use AiMessDetector\Core\Violation\Location;
 use AiMessDetector\Core\Violation\SymbolPath;
@@ -110,6 +111,7 @@ final class CouplingCollectorTest extends TestCase
 
         $graph = $this->graphBuilder->build($deps);
         $repository = new InMemoryMetricRepository();
+        $this->registerClass($repository, 'App\\Foo');
 
         $this->collector->calculate($graph, $repository);
 
@@ -124,19 +126,22 @@ final class CouplingCollectorTest extends TestCase
     #[Test]
     public function calculate_computesAfferentCoupling(): void
     {
-        // Both App\Foo and App\Baz depend on Vendor\Bar
-        // Vendor\Bar has Ca = 2
+        // Both App\Foo and App\Baz depend on App\Bar
+        // App\Bar has Ca = 2
         $deps = [
-            $this->dep('App\\Foo', 'Vendor\\Bar'),
-            $this->dep('App\\Baz', 'Vendor\\Bar'),
+            $this->dep('App\\Foo', 'App\\Bar'),
+            $this->dep('App\\Baz', 'App\\Bar'),
         ];
 
         $graph = $this->graphBuilder->build($deps);
         $repository = new InMemoryMetricRepository();
+        $this->registerClass($repository, 'App\\Foo');
+        $this->registerClass($repository, 'App\\Baz');
+        $this->registerClass($repository, 'App\\Bar');
 
         $this->collector->calculate($graph, $repository);
 
-        $barPath = SymbolPath::forClass('Vendor', 'Bar');
+        $barPath = SymbolPath::forClass('App', 'Bar');
         $barMetrics = $repository->get($barPath);
 
         self::assertSame(2, $barMetrics->get('ca'));
@@ -158,6 +163,8 @@ final class CouplingCollectorTest extends TestCase
 
         $graph = $this->graphBuilder->build($deps);
         $repository = new InMemoryMetricRepository();
+        $this->registerClass($repository, 'App\\Controller');
+        $this->registerClass($repository, 'App\\Service');
 
         $this->collector->calculate($graph, $repository);
 
@@ -181,6 +188,9 @@ final class CouplingCollectorTest extends TestCase
 
         $graph = $this->graphBuilder->build($deps);
         $repository = new InMemoryMetricRepository();
+        $this->registerClass($repository, 'App\\Foo');
+        $this->registerClass($repository, 'App\\Baz');
+        $this->registerNamespace($repository, 'App');
 
         $this->collector->calculate($graph, $repository);
 
@@ -203,6 +213,8 @@ final class CouplingCollectorTest extends TestCase
 
         $graph = $this->graphBuilder->build($deps);
         $repository = new InMemoryMetricRepository();
+        $this->registerClass($repository, 'App\\Foo');
+        $this->registerClass($repository, 'App\\Bar');
 
         $this->collector->calculate($graph, $repository);
 
@@ -224,6 +236,7 @@ final class CouplingCollectorTest extends TestCase
 
         $graph = $this->graphBuilder->build($deps);
         $repository = new InMemoryMetricRepository();
+        $this->registerClass($repository, 'GlobalClass');
 
         $this->collector->calculate($graph, $repository);
 
@@ -249,6 +262,8 @@ final class CouplingCollectorTest extends TestCase
 
         $graph = $this->graphBuilder->build($deps);
         $repository = new InMemoryMetricRepository();
+        $this->registerClass($repository, 'App\\Controller');
+        $this->registerClass($repository, 'App\\Service');
 
         $this->collector->calculate($graph, $repository);
 
@@ -270,6 +285,8 @@ final class CouplingCollectorTest extends TestCase
 
         $graph = $this->graphBuilder->build($deps);
         $repository = new InMemoryMetricRepository();
+        $this->registerClass($repository, 'App\\Foo');
+        $this->registerClass($repository, 'App\\Bar');
 
         $this->collector->calculate($graph, $repository);
 
@@ -302,6 +319,10 @@ final class CouplingCollectorTest extends TestCase
 
         $graph = $this->graphBuilder->build($deps);
         $repository = new InMemoryMetricRepository();
+        $this->registerClass($repository, 'App\\A');
+        $this->registerClass($repository, 'App\\B');
+        $this->registerClass($repository, 'App\\C');
+        $this->registerClass($repository, 'App\\Service');
 
         $this->collector->calculate($graph, $repository);
 
@@ -325,6 +346,9 @@ final class CouplingCollectorTest extends TestCase
 
         $graph = $this->graphBuilder->build($deps);
         $repository = new InMemoryMetricRepository();
+        $this->registerClass($repository, 'App\\Foo');
+        $this->registerClass($repository, 'App\\Baz');
+        $this->registerNamespace($repository, 'App');
 
         $this->collector->calculate($graph, $repository);
 
@@ -336,6 +360,50 @@ final class CouplingCollectorTest extends TestCase
         self::assertSame(2, $appNsMetrics->get('cbo'));
     }
 
+    #[Test]
+    public function calculate_doesNotCreateSymbolsForExternalClasses(): void
+    {
+        // App\Foo depends on Vendor\Bar — but only App\Foo is a project class
+        $deps = [
+            $this->dep('App\\Foo', 'Vendor\\Bar'),
+        ];
+
+        $graph = $this->graphBuilder->build($deps);
+        $repository = new InMemoryMetricRepository();
+        $this->registerClass($repository, 'App\\Foo');
+
+        $this->collector->calculate($graph, $repository);
+
+        // Vendor\Bar must NOT be added to the repository
+        $vendorPath = SymbolPath::forClass('Vendor', 'Bar');
+        self::assertFalse(
+            $repository->has($vendorPath),
+            'Global collectors must not create symbols for external classes (see GlobalContextCollectorInterface::calculate() contract)',
+        );
+    }
+
+    #[Test]
+    public function calculate_doesNotCreateSymbolsForExternalNamespaces(): void
+    {
+        $deps = [
+            $this->dep('App\\Foo', 'Vendor\\Bar'),
+        ];
+
+        $graph = $this->graphBuilder->build($deps);
+        $repository = new InMemoryMetricRepository();
+        $this->registerClass($repository, 'App\\Foo');
+        $this->registerNamespace($repository, 'App');
+
+        $this->collector->calculate($graph, $repository);
+
+        // Vendor namespace must NOT be added to the repository
+        $vendorNsPath = SymbolPath::forNamespace('Vendor');
+        self::assertFalse(
+            $repository->has($vendorNsPath),
+            'Global collectors must not create symbols for external namespaces (see GlobalContextCollectorInterface::calculate() contract)',
+        );
+    }
+
     private function dep(string $source, string $target): Dependency
     {
         return new Dependency(
@@ -344,5 +412,23 @@ final class CouplingCollectorTest extends TestCase
             DependencyType::New_,
             new Location('/test.php', 1),
         );
+    }
+
+    private function registerClass(InMemoryMetricRepository $repository, string $fqn): void
+    {
+        $pos = strrpos($fqn, '\\');
+        if ($pos !== false) {
+            $namespace = substr($fqn, 0, $pos);
+            $class = substr($fqn, $pos + 1);
+        } else {
+            $namespace = '';
+            $class = $fqn;
+        }
+        $repository->add(SymbolPath::forClass($namespace, $class), new MetricBag(), '/test.php', 1);
+    }
+
+    private function registerNamespace(InMemoryMetricRepository $repository, string $namespace): void
+    {
+        $repository->add(SymbolPath::forNamespace($namespace), new MetricBag(), '/test.php', null);
     }
 }
