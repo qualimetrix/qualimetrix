@@ -59,6 +59,8 @@ Collection (parallel) -> Aggregation -> RuleExecution -> Reporting
 
 ### 4. SymbolPath — Stable Identifier
 
+Located in `Core\Symbol` namespace. Used across the entire system for stable symbol identification.
+
 ```php
 SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
 SymbolPath::forClass('App\Service', 'UserService');
@@ -70,6 +72,7 @@ Used for:
 - Identifying violations
 - Baseline (ignoring known issues)
 - Accessing metrics via MetricRepository
+- Dependency graph (class and namespace coupling)
 
 ### 5. Automatic Service Registration
 

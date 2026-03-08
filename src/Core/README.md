@@ -9,6 +9,7 @@ Core contains base contracts, Value Objects and Enums used by all other domains.
 ```
 Core/
 ├── Metric/
+│   ├── BaseCollectorInterface.php         # Common contract for all collector types
 │   ├── MetricBag.php
 │   ├── MetricCollectorInterface.php
 │   ├── MetricDefinition.php              # VO for aggregation descriptions
@@ -33,6 +34,7 @@ Core/
 │   └── RuleMatcher.php                    # Prefix matching utility
 ├── Symbol/
 │   ├── SymbolType.php
+│   ├── SymbolPath.php                     # Stable symbol identifier (moved from Violation/)
 │   ├── SymbolInfo.php
 │   ├── MethodInfo.php
 │   ├── ClassInfo.php
@@ -51,7 +53,6 @@ Core/
 ├── Violation/
 │   ├── Violation.php
 │   ├── Severity.php
-│   ├── SymbolPath.php
 │   ├── Location.php
 │   └── Filter/
 │       ├── ViolationFilterInterface.php
@@ -75,9 +76,18 @@ Core/
 
 ## Metric Contracts
 
+### BaseCollectorInterface
+
+Common base interface for all collector types. Defines the shared contract: `getName()`, `provides()`, `getMetricDefinitions()`. Extended by `MetricCollectorInterface`, `DerivedCollectorInterface`, and `GlobalContextCollectorInterface`.
+
+**Methods:**
+- `getName(): string` — unique collector name
+- `provides(): array<string>` — list of provided metric names
+- `getMetricDefinitions(): array<MetricDefinition>` — metric definitions with aggregation strategies
+
 ### MetricCollectorInterface
 
-A metric collector gathers a specific group of metrics from AST.
+Extends `BaseCollectorInterface`. A metric collector gathers a specific group of metrics from AST.
 
 **Methods:**
 - `getName(): string` — unique collector name
@@ -91,7 +101,7 @@ A metric collector gathers a specific group of metrics from AST.
 
 ### DerivedCollectorInterface
 
-Collector that derives metrics from other collectors' results. Executed **after** all regular collectors complete, in a separate phase. Calculates composite metrics from base metrics (e.g., Maintainability Index from Halstead Volume, CCN, and LOC).
+Extends `BaseCollectorInterface`. Collector that derives metrics from other collectors' results. Executed **after** all regular collectors complete, in a separate phase. Calculates composite metrics from base metrics (e.g., Maintainability Index from Halstead Volume, CCN, and LOC).
 
 **Methods:**
 - `getName(): string` — unique collector name
@@ -104,7 +114,7 @@ Collector that derives metrics from other collectors' results. Executed **after*
 
 ### GlobalContextCollectorInterface
 
-Collector that computes metrics from global context (cross-file knowledge). Unlike `MetricCollectorInterface` which operates on individual files via AST, this operates on already-collected metrics and the dependency graph. Used for coupling, distance, and other cross-file metrics.
+Extends `BaseCollectorInterface`. Collector that computes metrics from global context (cross-file knowledge). Unlike `MetricCollectorInterface` which operates on individual files via AST, this operates on already-collected metrics and the dependency graph. Used for coupling, distance, and other cross-file metrics.
 
 **Methods:**
 - `getName(): string` — unique collector name
@@ -390,15 +400,19 @@ Utility for prefix matching of rule names and violation codes.
 Physical location of a violation in the file system.
 
 **Fields:**
-- `file: string` — file path
+- `file: string` — file path (empty string for `none()`)
 - `line: ?int` — line number (null for namespace-level)
 
+**Factory methods:**
+- `none(): self` — creates a location for architectural violations not tied to a specific file
+
 **Methods:**
+- `isNone(): bool` — returns true if this location has no associated file
 - `toString(): string` — `"file.php:42"` or `"file.php"`
 
 ### SymbolPath
 
-Stable symbol identifier for baseline. Does not depend on line number.
+Stable symbol identifier for baseline. Does not depend on line number. Located in `Core\Symbol` namespace.
 
 **Fields:**
 - `namespace: ?string` — `App\Service`
@@ -701,6 +715,7 @@ Determines whether a namespace belongs to the project (not an external dependenc
 ## Edge Cases
 
 - Location with null line — display only file
+- `Location::none()` — architectural violations without a file; formatters must check `isNone()`
 - Global namespace — empty string
 - SymbolPath with null namespace — starts with `::` for global functions
 - MetricBag::get() for non-existent metric — null

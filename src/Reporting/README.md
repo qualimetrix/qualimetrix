@@ -396,7 +396,7 @@ $violation->message       // Violation description
 $violation->ruleName      // Rule name
 $violation->violationCode // Stable violation code for identification
 $violation->symbolPath    // SymbolPath object
-$violation->location      // Location object (file, line)
+$violation->location      // Location object (file, line); check isNone() for architectural violations
 $violation->metricValue   // int|float|null
 
 $report->violations       // list<Violation>

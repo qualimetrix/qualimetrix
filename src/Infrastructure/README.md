@@ -204,6 +204,8 @@ Rules and their Options are made lazy via `->setLazy(true)`:
 - Collects services with tag `aimd.configuration_stage`
 - Injects into `ConfigurationPipeline` in priority order
 
+**Test coverage:** All 8 CompilerPasses have dedicated unit tests (`tests/Unit/Infrastructure/DependencyInjection/CompilerPass/`) covering service registration, tag handling, and edge cases.
+
 ---
 
 ## PHP Parser
