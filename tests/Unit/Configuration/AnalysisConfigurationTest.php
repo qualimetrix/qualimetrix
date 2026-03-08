@@ -135,6 +135,60 @@ final class AnalysisConfigurationTest extends TestCase
         self::assertSame(['src/Generated/*', 'src/Legacy/*'], $merged->excludePaths);
     }
 
+    public function testMergeEmptyOnlyRulesResetsToEmpty(): void
+    {
+        $base = new AnalysisConfiguration(
+            onlyRules: ['complexity', 'size'],
+        );
+
+        $merged = $base->merge([
+            'only_rules' => [],
+        ]);
+
+        self::assertSame([], $merged->onlyRules);
+    }
+
+    public function testMergeEmptyAggregationPrefixesResetsToEmpty(): void
+    {
+        $base = new AnalysisConfiguration(
+            aggregationPrefixes: ['App\\Domain', 'App\\Infrastructure'],
+        );
+
+        $merged = $base->merge([
+            'aggregation' => [
+                'prefixes' => [],
+            ],
+        ]);
+
+        self::assertSame([], $merged->aggregationPrefixes);
+    }
+
+    public function testMergeWithoutOnlyRulesPreservesExisting(): void
+    {
+        $base = new AnalysisConfiguration(
+            onlyRules: ['complexity'],
+        );
+
+        $merged = $base->merge([
+            'format' => 'json',
+        ]);
+
+        self::assertSame(['complexity'], $merged->onlyRules);
+    }
+
+    public function testMergeWithoutAggregationPrefixesPreservesExisting(): void
+    {
+        $base = new AnalysisConfiguration(
+            aggregationPrefixes: ['App\\Domain'],
+        );
+
+        $merged = $base->merge([
+            'format' => 'json',
+        ]);
+
+        self::assertSame(['App\\Domain'], $merged->aggregationPrefixes);
+    }
+
     public function testIsRuleEnabledWithNoRestrictions(): void
     {
         $config = new AnalysisConfiguration();

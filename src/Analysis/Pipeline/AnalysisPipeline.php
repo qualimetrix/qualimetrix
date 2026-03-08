@@ -12,7 +12,8 @@ use AiMessDetector\Analysis\Collection\Dependency\CircularDependencyDetector;
 use AiMessDetector\Analysis\Collection\Dependency\DependencyGraphBuilder;
 use AiMessDetector\Analysis\Collection\Metric\CompositeCollector;
 use AiMessDetector\Analysis\Discovery\FileDiscoveryInterface;
-use AiMessDetector\Analysis\Repository\InMemoryMetricRepository;
+use AiMessDetector\Analysis\Repository\DefaultMetricRepositoryFactory;
+use AiMessDetector\Analysis\Repository\MetricRepositoryFactoryInterface;
 use AiMessDetector\Analysis\RuleExecution\RuleExecutorInterface;
 use AiMessDetector\Configuration\ConfigurationProviderInterface;
 use AiMessDetector\Core\Metric\MetricDefinition;
@@ -49,6 +50,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
         private readonly RuleExecutorInterface $ruleExecutor,
         private readonly ConfigurationProviderInterface $configurationProvider,
         private readonly GlobalCollectorRunner $globalCollectorRunner,
+        private readonly MetricRepositoryFactoryInterface $repositoryFactory = new DefaultMetricRepositoryFactory(),
         ?DependencyGraphBuilder $graphBuilder = null,
         private readonly LoggerInterface $logger = new NullLogger(),
         private readonly ?ProfilerHolder $profilerHolder = null,
@@ -84,7 +86,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
             'paths' => \is_array($paths) ? $paths : [$paths],
         ]);
 
-        $repository = new InMemoryMetricRepository();
+        $repository = $this->repositoryFactory->create();
         $discovery ??= $this->defaultDiscovery;
 
         // Phase 1: Discovery

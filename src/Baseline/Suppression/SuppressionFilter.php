@@ -23,11 +23,11 @@ final class SuppressionFilter implements ViolationFilterInterface
     private array $suppressions = [];
 
     /**
-     * Adds suppressions for a file.
+     * Sets suppressions for a file (replaces any existing).
      *
      * @param list<Suppression> $suppressions
      */
-    public function addSuppressions(string $file, array $suppressions): void
+    public function setSuppressions(string $file, array $suppressions): void
     {
         $this->suppressions[$file] = $suppressions;
     }
@@ -57,7 +57,8 @@ final class SuppressionFilter implements ViolationFilterInterface
 
                 case SuppressionType::Symbol:
                     // Symbol-level: suppress matching violations at or after the suppression line
-                    if ($violationLine === null || $violationLine >= $suppression->line) {
+                    // Do NOT suppress file/namespace-level violations (line=null)
+                    if ($violationLine !== null && $violationLine >= $suppression->line) {
                         return false;
                     }
                     break;
@@ -72,6 +73,16 @@ final class SuppressionFilter implements ViolationFilterInterface
         }
 
         return true;
+    }
+
+    /**
+     * Clears all stored suppressions.
+     *
+     * Prevents accumulation when the singleton is reused across multiple runs.
+     */
+    public function clearSuppressions(): void
+    {
+        $this->suppressions = [];
     }
 
     /**

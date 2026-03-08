@@ -45,6 +45,9 @@ final class RuntimeConfigurator
         InputInterface $input,
         OutputInterface $output,
     ): void {
+        // Reset CLI options from previous run to prevent leaking
+        $this->ruleOptionsFactory->resetCliOptions();
+
         $this->configureLogger($input, $output);
         $this->configureProgressReporter($input, $output);
         $this->configureProfiler($input);

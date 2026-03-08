@@ -179,6 +179,11 @@ final class MethodCountVisitor extends NodeVisitorAbstract implements Resettable
         // Always count in total
         $metrics->methodCountTotal++;
 
+        // Track all public methods (including getters/setters) for WOC
+        if ($method->isPublic()) {
+            $metrics->methodCountPublicAll++;
+        }
+
         // Count by visibility (excluding getters/setters)
         if (!$isGetter && !$isSetter) {
             if ($method->isPublic()) {

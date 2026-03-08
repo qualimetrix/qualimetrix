@@ -13,6 +13,7 @@ use AiMessDetector\Analysis\Collection\Dependency\DependencyGraphBuilder;
 use AiMessDetector\Analysis\Collection\Metric\CompositeCollector;
 use AiMessDetector\Analysis\Discovery\FileDiscoveryInterface;
 use AiMessDetector\Analysis\Pipeline\AnalysisPipeline;
+use AiMessDetector\Analysis\Repository\DefaultMetricRepositoryFactory;
 use AiMessDetector\Analysis\Repository\InMemoryMetricRepository;
 use AiMessDetector\Analysis\RuleExecution\RuleExecutor;
 use AiMessDetector\Configuration\AnalysisConfiguration;
@@ -326,6 +327,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
             ruleExecutor: $ruleExecutor,
             configurationProvider: $this->configurationProvider,
             globalCollectorRunner: new GlobalCollectorRunner([]),
+            repositoryFactory: new DefaultMetricRepositoryFactory(),
         );
     }
 
@@ -369,6 +371,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
             ruleExecutor: $ruleExecutor,
             configurationProvider: $this->configurationProvider,
             globalCollectorRunner: $globalCollectorRunner,
+            repositoryFactory: new DefaultMetricRepositoryFactory(),
         );
     }
 

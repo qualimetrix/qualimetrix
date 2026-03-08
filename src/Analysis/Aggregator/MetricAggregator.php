@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Analysis\Aggregator;
 
-use AiMessDetector\Analysis\Repository\InMemoryMetricRepository;
 use AiMessDetector\Core\Metric\MetricDefinition;
+use AiMessDetector\Core\Metric\MetricRepositoryInterface;
 use AiMessDetector\Core\Profiler\ProfilerHolder;
 
 /**
@@ -24,7 +24,7 @@ final class MetricAggregator
     /**
      * Aggregates metrics and stores results in the repository.
      */
-    public function aggregate(InMemoryMetricRepository $repository): void
+    public function aggregate(MetricRepositoryInterface $repository): void
     {
         if ($this->definitions === []) {
             return;

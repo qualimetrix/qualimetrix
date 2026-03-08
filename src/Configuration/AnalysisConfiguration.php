@@ -85,10 +85,14 @@ final readonly class AnalysisConfiguration
             format: self::getString($overrides, 'format', $this->format),
             namespaceStrategy: self::getString($overrides, 'namespace.strategy', $this->namespaceStrategy),
             composerJsonPath: self::getStringOrNull($overrides, 'namespace.composer_json') ?? $this->composerJsonPath,
-            aggregationPrefixes: self::getStringList($overrides, 'aggregation.prefixes') ?: $this->aggregationPrefixes,
+            aggregationPrefixes: self::hasNestedValue($overrides, 'aggregation.prefixes')
+                ? self::getStringList($overrides, 'aggregation.prefixes')
+                : $this->aggregationPrefixes,
             aggregationAutoDepth: self::getIntOrNull($overrides, 'aggregation.auto_depth') ?? $this->aggregationAutoDepth,
             disabledRules: array_values(array_unique([...$this->disabledRules, ...self::getStringList($overrides, 'disabled_rules')])),
-            onlyRules: self::getStringList($overrides, 'only_rules') ?: $this->onlyRules,
+            onlyRules: self::hasNestedValue($overrides, 'only_rules')
+                ? self::getStringList($overrides, 'only_rules')
+                : $this->onlyRules,
             excludePaths: array_values(array_unique([...$this->excludePaths, ...self::getStringList($overrides, 'exclude_paths')])),
             workers: self::getIntOrNull($overrides, 'parallel.workers') ?? $this->workers,
             projectRoot: self::getString($overrides, 'project_root', $this->projectRoot),
@@ -190,6 +194,32 @@ final readonly class AnalysisConfiguration
         }
 
         return array_values(array_filter($value, is_string(...)));
+    }
+
+    /**
+     * Checks if a value exists in the config array (flat or nested key).
+     *
+     * @param array<string, mixed> $config
+     */
+    private static function hasNestedValue(array $config, string $path): bool
+    {
+        // Check flat key first (e.g., 'only_rules' from CLI stage)
+        if (\array_key_exists($path, $config)) {
+            return true;
+        }
+
+        // Then try nested access (e.g., config['aggregation']['prefixes'] from YAML)
+        $keys = explode('.', $path);
+        $current = $config;
+
+        foreach ($keys as $key) {
+            if (!\is_array($current) || !\array_key_exists($key, $current)) {
+                return false;
+            }
+            $current = $current[$key];
+        }
+
+        return true;
     }
 
     /**

@@ -133,13 +133,14 @@ final class RfcVisitor extends NodeVisitorAbstract implements ResettableVisitorI
             );
 
             // Collect own methods (non-abstract only)
-            if ($node instanceof Class_) {
+            // Class_, Trait_, and Enum_ all extend ClassLike and can have concrete methods
+            if ($node instanceof Class_ || $node instanceof Trait_ || $node instanceof Enum_) {
                 $this->collectOwnMethods($node, $fqn);
             }
         }
     }
 
-    private function collectOwnMethods(Class_ $class, string $fqn): void
+    private function collectOwnMethods(Class_|Trait_|Enum_ $class, string $fqn): void
     {
         foreach ($class->getMethods() as $method) {
             if (!$method->isAbstract()) {

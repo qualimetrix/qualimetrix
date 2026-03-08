@@ -20,7 +20,7 @@ final class SuppressionFilterTest extends TestCase
     public function testFileLevelSuppressesAllMatchingViolationsInFile(): void
     {
         $filter = new SuppressionFilter();
-        $filter->addSuppressions('src/Foo.php', [
+        $filter->setSuppressions('src/Foo.php', [
             new Suppression('complexity', null, 1, SuppressionType::File),
         ]);
 
@@ -36,7 +36,7 @@ final class SuppressionFilterTest extends TestCase
     public function testSymbolLevelSuppressesViolationsAtOrAfterSuppressionLine(): void
     {
         $filter = new SuppressionFilter();
-        $filter->addSuppressions('src/Foo.php', [
+        $filter->setSuppressions('src/Foo.php', [
             new Suppression('complexity', null, 10, SuppressionType::Symbol),
         ]);
 
@@ -52,7 +52,7 @@ final class SuppressionFilterTest extends TestCase
     public function testSymbolLevelDoesNotAffectViolationsBeforeSuppressionLine(): void
     {
         $filter = new SuppressionFilter();
-        $filter->addSuppressions('src/Foo.php', [
+        $filter->setSuppressions('src/Foo.php', [
             new Suppression('complexity', null, 20, SuppressionType::Symbol),
         ]);
 
@@ -64,7 +64,7 @@ final class SuppressionFilterTest extends TestCase
     public function testNextLineSuppressesOnlySpecificNextLine(): void
     {
         $filter = new SuppressionFilter();
-        $filter->addSuppressions('src/Foo.php', [
+        $filter->setSuppressions('src/Foo.php', [
             new Suppression('complexity', null, 10, SuppressionType::NextLine),
         ]);
 
@@ -82,7 +82,7 @@ final class SuppressionFilterTest extends TestCase
     public function testNextLineDoesNotSuppressLinePlus2(): void
     {
         $filter = new SuppressionFilter();
-        $filter->addSuppressions('src/Foo.php', [
+        $filter->setSuppressions('src/Foo.php', [
             new Suppression('complexity', null, 10, SuppressionType::NextLine),
         ]);
 
@@ -94,7 +94,7 @@ final class SuppressionFilterTest extends TestCase
     public function testWildcardFileSuppressesAllRules(): void
     {
         $filter = new SuppressionFilter();
-        $filter->addSuppressions('src/Foo.php', [
+        $filter->setSuppressions('src/Foo.php', [
             new Suppression('*', null, 1, SuppressionType::File),
         ]);
 
@@ -117,7 +117,7 @@ final class SuppressionFilterTest extends TestCase
     public function testPassesThroughWhenDifferentFile(): void
     {
         $filter = new SuppressionFilter();
-        $filter->addSuppressions('src/Foo.php', [
+        $filter->setSuppressions('src/Foo.php', [
             new Suppression('complexity', null, 10, SuppressionType::File),
         ]);
 
@@ -129,7 +129,7 @@ final class SuppressionFilterTest extends TestCase
     public function testGetSuppressedViolations(): void
     {
         $filter = new SuppressionFilter();
-        $filter->addSuppressions('src/Foo.php', [
+        $filter->setSuppressions('src/Foo.php', [
             new Suppression('complexity', null, 10, SuppressionType::Symbol),
         ]);
 
@@ -146,7 +146,7 @@ final class SuppressionFilterTest extends TestCase
     {
         $filter = new SuppressionFilter();
         // Suppress 'complexity' — should match all complexity.* violation codes
-        $filter->addSuppressions('src/Foo.php', [
+        $filter->setSuppressions('src/Foo.php', [
             new Suppression('complexity', null, 10, SuppressionType::Symbol),
         ]);
 
@@ -175,7 +175,7 @@ final class SuppressionFilterTest extends TestCase
     public function testMultipleSuppressionsForSameFile(): void
     {
         $filter = new SuppressionFilter();
-        $filter->addSuppressions('src/Foo.php', [
+        $filter->setSuppressions('src/Foo.php', [
             new Suppression('complexity', null, 10, SuppressionType::Symbol),
             new Suppression('coupling', null, 20, SuppressionType::Symbol),
         ]);
@@ -192,13 +192,73 @@ final class SuppressionFilterTest extends TestCase
     public function testPassesNonSuppressedViolation(): void
     {
         $filter = new SuppressionFilter();
-        $filter->addSuppressions('src/Foo.php', [
+        $filter->setSuppressions('src/Foo.php', [
             new Suppression('complexity', null, 10, SuppressionType::Symbol),
         ]);
 
         $violation = $this->createViolation('src/Foo.php', 42, 'coupling');
 
         self::assertTrue($filter->shouldInclude($violation), 'Non-suppressed violation should pass through');
+    }
+
+    public function testClearSuppressionsResetsState(): void
+    {
+        $filter = new SuppressionFilter();
+        $filter->setSuppressions('src/Foo.php', [
+            new Suppression('complexity', null, 1, SuppressionType::File),
+        ]);
+
+        $violation = $this->createViolation('src/Foo.php', 10, 'complexity');
+        self::assertFalse($filter->shouldInclude($violation), 'Violation should be suppressed before clear');
+
+        $filter->clearSuppressions();
+
+        self::assertTrue($filter->shouldInclude($violation), 'Violation should pass after clearSuppressions');
+    }
+
+    public function testSuppressionsDoNotAccumulateAcrossMultipleLoads(): void
+    {
+        $filter = new SuppressionFilter();
+
+        // First load: suppress complexity in Foo.php
+        $filter->setSuppressions('src/Foo.php', [
+            new Suppression('complexity', null, 1, SuppressionType::File),
+        ]);
+
+        $fooViolation = $this->createViolation('src/Foo.php', 10, 'complexity');
+        self::assertFalse($filter->shouldInclude($fooViolation));
+
+        // Second load: clear and load different suppressions
+        $filter->clearSuppressions();
+        $filter->setSuppressions('src/Bar.php', [
+            new Suppression('coupling', null, 1, SuppressionType::File),
+        ]);
+
+        // Old suppression from Foo.php should no longer apply
+        self::assertTrue($filter->shouldInclude($fooViolation), 'Old suppression for Foo.php should not persist after clear+reload');
+
+        $barViolation = $this->createViolation('src/Bar.php', 10, 'coupling');
+        self::assertFalse($filter->shouldInclude($barViolation), 'New suppression for Bar.php should work');
+    }
+
+    public function testSymbolSuppressionDoesNotSuppressNullLineViolation(): void
+    {
+        $filter = new SuppressionFilter();
+        $filter->setSuppressions('src/Foo.php', [
+            new Suppression('coupling', null, 10, SuppressionType::Symbol),
+        ]);
+
+        // Namespace/file-level violation with line=null should NOT be suppressed by symbol tag
+        $violation = new Violation(
+            location: new Location('src/Foo.php', null),
+            symbolPath: SymbolPath::forNamespace('App'),
+            ruleName: 'coupling',
+            violationCode: 'coupling',
+            message: 'Test',
+            severity: Severity::Warning,
+        );
+
+        self::assertTrue($filter->shouldInclude($violation), 'Symbol-level suppression must not suppress violations with null line');
     }
 
     private function createViolation(string $file, int $line, string $violationCode): Violation

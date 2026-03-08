@@ -71,7 +71,7 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
     /** @var array<string, array{namespace: ?string, class: ?string, method: string, line: int}> FQN => method info */
     private array $methodInfos = [];
 
-    /** @var list<array{fqn: string, depth: int}> Stack of nested methods/functions */
+    /** @var list<array{fqn: string, depth: int, nestingLevel: int}> Stack of nested methods/functions */
     private array $methodStack = [];
 
     /** @var int Current nesting level (0 = top level in method) */
@@ -252,7 +252,12 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
 
     private function startMethod(string $fqn, string $methodName, int $line): void
     {
-        $this->methodStack[] = ['fqn' => $fqn, 'depth' => \count($this->methodStack)];
+        // Save current nesting level before resetting (for closures/arrow functions inside nested scopes)
+        $this->methodStack[] = [
+            'fqn' => $fqn,
+            'depth' => \count($this->methodStack),
+            'nestingLevel' => $this->nestingLevel,
+        ];
         // Initialize with base complexity of 0 (unlike CCN which starts at 1)
         $this->complexities[$fqn] = 0;
         // Store method info for later retrieval
@@ -270,7 +275,12 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
 
     private function endMethod(): void
     {
-        array_pop($this->methodStack);
+        $popped = array_pop($this->methodStack);
+
+        // Restore outer method's nesting level
+        if ($popped !== null) {
+            $this->nestingLevel = $popped['nestingLevel'];
+        }
     }
 
     /**

@@ -406,6 +406,61 @@ PHP,
             ],
         ];
 
+        // Trait with concrete methods should count own methods
+        yield 'trait with concrete methods' => [
+            'code' => <<<'PHP'
+<?php
+namespace App;
+
+trait LoggerTrait
+{
+    public function log(string $message): void
+    {
+        $this->writer->write($message);          // +1 external
+    }
+
+    public function logError(string $message): void
+    {
+        $this->writer->write('ERROR: ' . $message); // same external (write)
+    }
+
+    abstract public function getWriter(): object;
+}
+// M = 2 (only concrete), R = 1, RFC = 3
+PHP,
+            'expected' => [
+                'App\LoggerTrait' => ['rfc' => 3, 'own' => 2, 'external' => 1],
+            ],
+        ];
+
+        // Enum with concrete methods should count own methods
+        yield 'enum with concrete methods' => [
+            'code' => <<<'PHP'
+<?php
+namespace App;
+
+enum Status: string
+{
+    case Active = 'active';
+    case Inactive = 'inactive';
+
+    public function getLabel(): string
+    {
+        return strtoupper($this->value);          // +1 external (strtoupper)
+    }
+
+    public function isActive(): bool
+    {
+        return $this === self::Active;
+    }
+}
+// M = 2, R = 1, RFC = 3
+PHP,
+            'expected' => [
+                'App\Status' => ['rfc' => 3, 'own' => 2, 'external' => 1],
+            ],
+        ];
+
         // Complex real-world example
         yield 'complex order processor' => [
             'code' => <<<'PHP'

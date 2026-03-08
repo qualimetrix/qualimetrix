@@ -18,6 +18,7 @@ use PhpParser\Node\Expr\Closure;
 use PhpParser\Node\Expr\NullsafeMethodCall;
 use PhpParser\Node\Expr\NullsafePropertyFetch;
 use PhpParser\Node\Expr\Ternary;
+use PhpParser\Node\MatchArm;
 use PhpParser\Node\Stmt\Case_;
 use PhpParser\Node\Stmt\Catch_;
 use PhpParser\Node\Stmt\ClassMethod;
@@ -271,6 +272,11 @@ final class CyclomaticComplexityVisitor extends NodeVisitorAbstract implements R
 
         // Case in switch: +1 only if has condition (not default)
         if ($node instanceof Case_ && $node->cond !== null) {
+            return 1;
+        }
+
+        // Match arm: +1 for each non-default arm
+        if ($node instanceof MatchArm && $node->conds !== null && $node->conds !== []) {
             return 1;
         }
 

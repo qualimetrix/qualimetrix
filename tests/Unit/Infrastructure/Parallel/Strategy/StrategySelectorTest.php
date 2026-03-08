@@ -17,6 +17,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
+use ReflectionProperty;
 
 #[CoversClass(StrategySelector::class)]
 final class StrategySelectorTest extends TestCase
@@ -182,6 +183,33 @@ final class StrategySelectorTest extends TestCase
         $strategy = $selector->select();
 
         self::assertInstanceOf(AmphpParallelStrategy::class, $strategy);
+    }
+
+    #[Test]
+    public function itUsesResolvedRootForRelativeCacheDir(): void
+    {
+        // Use a relative project root that gets resolved via realpath()
+        $config = new AnalysisConfiguration(
+            workers: 4,
+            projectRoot: '.', // relative
+            cacheEnabled: true,
+            cacheDir: '.aimd-cache', // relative cache dir
+        );
+        $this->configProvider->method('getConfiguration')->willReturn($config);
+
+        $selector = $this->createSelector();
+        $strategy = $selector->select();
+
+        self::assertInstanceOf(AmphpParallelStrategy::class, $strategy);
+
+        // Verify cache dir via reflection — it must use the resolved root, not '.'
+        $reflection = new ReflectionProperty(AmphpParallelStrategy::class, 'cacheDir');
+        $cacheDir = $reflection->getValue($this->amphpStrategy);
+
+        self::assertIsString($cacheDir);
+        self::assertStringStartsWith('/', $cacheDir);
+        self::assertStringNotContainsString('/./', $cacheDir, 'Cache dir should use resolved root, not relative path');
+        self::assertStringEndsWith('/.aimd-cache', $cacheDir);
     }
 
     #[Test]

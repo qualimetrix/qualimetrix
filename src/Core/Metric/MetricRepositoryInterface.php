@@ -41,4 +41,18 @@ interface MetricRepositoryInterface
      * @param ?int $line The line number (null for aggregated/namespace metrics)
      */
     public function add(SymbolPath $symbol, MetricBag $metrics, string $file, ?int $line): void;
+
+    /**
+     * Returns all namespaces that have metrics.
+     *
+     * @return list<string>
+     */
+    public function getNamespaces(): array;
+
+    /**
+     * Returns all metrics for symbols in a given namespace.
+     *
+     * @return list<SymbolInfo>
+     */
+    public function forNamespace(string $namespace): array;
 }

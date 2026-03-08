@@ -17,7 +17,9 @@ use AiMessDetector\Analysis\Discovery\FileDiscoveryInterface;
 use AiMessDetector\Analysis\Discovery\FinderFileDiscovery;
 use AiMessDetector\Analysis\Pipeline\AnalysisPipeline;
 use AiMessDetector\Analysis\Pipeline\AnalysisPipelineInterface;
+use AiMessDetector\Analysis\Repository\DefaultMetricRepositoryFactory;
 use AiMessDetector\Analysis\Repository\InMemoryMetricRepository;
+use AiMessDetector\Analysis\Repository\MetricRepositoryFactoryInterface;
 use AiMessDetector\Analysis\RuleExecution\RuleExecutor;
 use AiMessDetector\Analysis\RuleExecution\RuleExecutorInterface;
 use AiMessDetector\Configuration\ConfigurationProviderInterface;
@@ -42,6 +44,9 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
 
         $container->register(InMemoryMetricRepository::class);
         $container->setAlias(MetricRepositoryInterface::class, InMemoryMetricRepository::class);
+
+        $container->register(DefaultMetricRepositoryFactory::class);
+        $container->setAlias(MetricRepositoryFactoryInterface::class, DefaultMetricRepositoryFactory::class);
 
         // FileProcessor - processes single files
         $container->register(FileProcessor::class)
@@ -99,6 +104,7 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
                 new Reference(RuleExecutorInterface::class),
                 new Reference(ConfigurationProviderInterface::class),
                 new Reference(GlobalCollectorRunner::class),
+                new Reference(MetricRepositoryFactoryInterface::class),
                 new Reference(DependencyGraphBuilder::class),
                 new Reference(DelegatingLogger::class),
                 new Reference(ProfilerHolder::class),

@@ -301,22 +301,15 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
 
     private function calculateForNpath(For_ $for): int
     {
-        // For has init, cond, loop expressions
-        // NPath = 1 (init) + NPath(cond) + body + exit
-        // Multiple conditions in for(;;cond1, cond2) are each evaluated;
-        // calculate NPath for each and multiply (each is an execution point).
-        $npath = 1; // init
+        // Nejmeh 1988: NPath(for) = NPath(cond) + NPath(body) + 1
+        // Same as while: condition paths + body paths + exit path
         $condNpath = 1;
 
         foreach ($for->cond as $condExpr) {
             $condNpath = $this->safeMultiply($condNpath, $this->calculateExprNpath($condExpr));
         }
 
-        $npath += $condNpath;
-        $npath += $this->calculateSequenceNpath($for->stmts);
-        $npath += 1; // Exit path
-
-        return $npath;
+        return $condNpath + $this->calculateSequenceNpath($for->stmts) + 1;
     }
 
     private function calculateSwitchNpath(Switch_ $switch): int
@@ -334,22 +327,25 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
 
     private function calculateTryCatchNpath(TryCatch $try): int
     {
-        // NPath(try) = NPath(try-block) + Σ NPath(catch) + NPath(finally) + 1
+        // PMD/Checkstyle formula: (NPath(try) + Σ NPath(catch) + 1) * NPath(finally)
+        // The +1 accounts for the path where no exception is thrown
         $npath = $this->calculateSequenceNpath($try->stmts);
 
         foreach ($try->catches as $catch) {
             $npath += $this->calculateSequenceNpath($catch->stmts);
         }
 
+        $npath += 1; // Path where no exception occurs
+
         if ($try->finally !== null) {
-            // Finally always executes, multiplicative
+            // Finally always executes, multiplicative with all paths
             $npath = $this->safeMultiply(
                 $npath,
                 $this->calculateSequenceNpath($try->finally->stmts),
             );
         }
 
-        return $npath + 1; // Path where no exception occurs
+        return $npath;
     }
 
     private function calculateExprNpath(Expr $expr): int

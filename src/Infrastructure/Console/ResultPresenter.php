@@ -105,8 +105,30 @@ final class ResultPresenter
 
         // Atomic write: write to temp file first, then rename
         $tmpFile = $profileOption . '.tmp.' . getmypid();
-        file_put_contents($tmpFile, $profileData);
-        rename($tmpFile, $profileOption);
+        $writeResult = @file_put_contents($tmpFile, $profileData);
+
+        if ($writeResult === false) {
+            $output->writeln(
+                \sprintf('<error>Failed to write profile data to temporary file %s</error>', $tmpFile),
+                OutputInterface::OUTPUT_NORMAL | OutputInterface::VERBOSITY_NORMAL,
+            );
+
+            return;
+        }
+
+        if (!rename($tmpFile, $profileOption)) {
+            $output->writeln(
+                \sprintf('<error>Failed to rename temporary profile file %s to %s</error>', $tmpFile, $profileOption),
+                OutputInterface::OUTPUT_NORMAL | OutputInterface::VERBOSITY_NORMAL,
+            );
+
+            // Clean up temp file on rename failure
+            if (file_exists($tmpFile)) {
+                unlink($tmpFile);
+            }
+
+            return;
+        }
 
         $output->writeln(
             \sprintf('<info>Profile exported to %s</info>', $profileOption),

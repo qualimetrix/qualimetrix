@@ -205,6 +205,32 @@ PHP;
         self::assertSame(3, $metrics->get('ccn:App\ExceptionTest::risky'));
     }
 
+    public function testMethodWithMatchExpression(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class MatchTest
+{
+    public function label(int $status): string
+    {
+        return match ($status) {
+            1 => 'active',
+            2 => 'inactive',
+            default => 'unknown',
+        };
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // CC = 1 (base) + 2 (non-default match arms) = 3
+        self::assertSame(3, $metrics->get('ccn:App\MatchTest::label'));
+    }
+
     public function testMethodWithBooleanOperators(): void
     {
         $code = <<<'PHP'

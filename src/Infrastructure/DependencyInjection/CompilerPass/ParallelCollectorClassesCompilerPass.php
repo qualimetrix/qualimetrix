@@ -29,14 +29,15 @@ final class ParallelCollectorClassesCompilerPass implements CompilerPassInterfac
         // Collect class names for base collectors
         $collectorClasses = [];
         foreach ($container->findTaggedServiceIds(CollectorCompilerPass::TAG) as $id => $tags) {
-            // Service ID is the FQCN when using autoconfiguration
-            $collectorClasses[] = $id;
+            $definition = $container->getDefinition($id);
+            $collectorClasses[] = $definition->getClass() ?? $id;
         }
 
         // Collect class names for derived collectors
         $derivedCollectorClasses = [];
         foreach ($container->findTaggedServiceIds(CollectorCompilerPass::TAG_DERIVED) as $id => $tags) {
-            $derivedCollectorClasses[] = $id;
+            $definition = $container->getDefinition($id);
+            $derivedCollectorClasses[] = $definition->getClass() ?? $id;
         }
 
         // Pass collector classes to StrategySelector

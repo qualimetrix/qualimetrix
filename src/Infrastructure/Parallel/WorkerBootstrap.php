@@ -15,6 +15,7 @@ use AiMessDetector\Infrastructure\Ast\CachedFileParser;
 use AiMessDetector\Infrastructure\Ast\PhpFileParser;
 use AiMessDetector\Infrastructure\Cache\CacheKeyGenerator;
 use AiMessDetector\Infrastructure\Cache\FileCache;
+use ReflectionClass;
 
 /**
  * Bootstrap for worker processes.
@@ -140,6 +141,10 @@ final class WorkerBootstrap
     /**
      * Instantiates collectors from class names.
      *
+     * Validates that each class exists and has no required constructor parameters.
+     * Collectors with required dependencies are skipped with a warning to stderr,
+     * since workers cannot perform dependency injection.
+     *
      * @param list<class-string<MetricCollectorInterface>> $classNames
      *
      * @return list<MetricCollectorInterface>
@@ -149,6 +154,10 @@ final class WorkerBootstrap
         $collectors = [];
 
         foreach ($classNames as $className) {
+            if (!self::canInstantiate($className)) {
+                continue;
+            }
+
             /** @var MetricCollectorInterface $collector */
             $collector = new $className();
             $collectors[] = $collector;
@@ -160,6 +169,10 @@ final class WorkerBootstrap
     /**
      * Instantiates derived collectors from class names.
      *
+     * Validates that each class exists and has no required constructor parameters.
+     * Collectors with required dependencies are skipped with a warning to stderr,
+     * since workers cannot perform dependency injection.
+     *
      * @param list<class-string<DerivedCollectorInterface>> $classNames
      *
      * @return list<DerivedCollectorInterface>
@@ -169,11 +182,51 @@ final class WorkerBootstrap
         $collectors = [];
 
         foreach ($classNames as $className) {
+            if (!self::canInstantiate($className)) {
+                continue;
+            }
+
             /** @var DerivedCollectorInterface $collector */
             $collector = new $className();
             $collectors[] = $collector;
         }
 
         return $collectors;
+    }
+
+    /**
+     * Checks if a class can be safely instantiated without constructor arguments.
+     *
+     * @param class-string $className
+     */
+    private static function canInstantiate(string $className): bool
+    {
+        if (!class_exists($className)) {
+            fwrite(\STDERR, \sprintf(
+                "[WorkerBootstrap] Warning: class '%s' does not exist, skipping.\n",
+                $className,
+            ));
+
+            return false;
+        }
+
+        $reflection = new ReflectionClass($className);
+        $constructor = $reflection->getConstructor();
+
+        if ($constructor !== null) {
+            foreach ($constructor->getParameters() as $param) {
+                if (!$param->isOptional()) {
+                    fwrite(\STDERR, \sprintf(
+                        "[WorkerBootstrap] Warning: class '%s' has required constructor parameter '%s' and cannot be instantiated in a worker without DI. Skipping.\n",
+                        $className,
+                        $param->getName(),
+                    ));
+
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 }

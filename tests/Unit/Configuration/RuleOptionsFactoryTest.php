@@ -770,6 +770,43 @@ final class RuleOptionsFactoryTest extends TestCase
     }
 
     #[Test]
+    public function itResetsCliOptionsWithoutAffectingConfigFileOptions(): void
+    {
+        $this->factory->setConfigFileOptions([
+            'test-rule' => ['warning_threshold' => 15],
+        ]);
+        $this->factory->addCliOption('test-rule', 'errorThreshold', 30);
+        $this->factory->addCliOption('other-rule', 'enabled', false);
+
+        self::assertNotEmpty($this->factory->getCliOptions());
+
+        $this->factory->resetCliOptions();
+
+        self::assertEmpty($this->factory->getCliOptions());
+        // Config file options preserved
+        self::assertSame(['test-rule' => ['warning_threshold' => 15]], $this->factory->getConfigFileOptions());
+    }
+
+    #[Test]
+    public function cliOptionsDoNotLeakBetweenRunsAfterReset(): void
+    {
+        // Simulate first run
+        $this->factory->setCliOptions('test-rule', ['warningThreshold' => 50]);
+
+        /** @var TestRuleOptions $options1 */
+        $options1 = $this->factory->create('test-rule', TestRuleOptions::class);
+        self::assertSame(50, $options1->warningThreshold);
+
+        // Reset between runs
+        $this->factory->resetCliOptions();
+
+        // Second run without CLI options — should use defaults
+        /** @var TestRuleOptions $options2 */
+        $options2 = $this->factory->create('test-rule', TestRuleOptions::class);
+        self::assertSame(10, $options2->warningThreshold, 'CLI options from first run should not leak into second run');
+    }
+
+    #[Test]
     public function itHandlesDeepNestedDotNotationLevels(): void
     {
         // Test very deep nesting: a.b.c.d.e

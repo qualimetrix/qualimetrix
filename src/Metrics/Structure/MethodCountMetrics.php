@@ -18,6 +18,12 @@ final class MethodCountMetrics
     public int $getterCount = 0;
     public int $setterCount = 0;
 
+    /**
+     * Total public methods INCLUDING getters/setters.
+     * Used for WOC (Weight of Class) calculation.
+     */
+    public int $methodCountPublicAll = 0;
+
     // Property count metrics
     public int $propertyCount = 0;
     public int $propertyCountPublic = 0;

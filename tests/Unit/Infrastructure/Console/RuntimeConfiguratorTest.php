@@ -51,6 +51,50 @@ final class RuntimeConfiguratorTest extends TestCase
     }
 
     #[Test]
+    public function itResetsCliOptionsBetweenConfigureCalls(): void
+    {
+        // First configure call: set CLI options
+        $resolved1 = new ResolvedConfiguration(
+            paths: PathsConfiguration::defaults(),
+            analysis: new AnalysisConfiguration(),
+            ruleOptions: [],
+        );
+
+        $input1 = $this->createCliInput([
+            'complexity.cyclomatic:warningThreshold=50',
+        ]);
+
+        $this->configProvider
+            ->expects($this->exactly(2))
+            ->method('setConfiguration');
+        $this->configProvider
+            ->expects($this->exactly(2))
+            ->method('setRuleOptions');
+
+        $this->configurator->configure($resolved1, $input1, $this->createOutput());
+
+        // Verify CLI options were set
+        self::assertArrayHasKey('complexity.cyclomatic', $this->ruleOptionsFactory->getCliOptions());
+
+        // Second configure call: no CLI options
+        $resolved2 = new ResolvedConfiguration(
+            paths: PathsConfiguration::defaults(),
+            analysis: new AnalysisConfiguration(),
+            ruleOptions: [],
+        );
+
+        $input2 = $this->createCliInput([]);
+
+        $this->configurator->configure($resolved2, $input2, $this->createOutput());
+
+        // CLI options from first run should not persist
+        self::assertEmpty(
+            $this->ruleOptionsFactory->getCliOptions(),
+            'CLI options from first configure() call should not leak into second call',
+        );
+    }
+
+    #[Test]
     public function cliOptionOverridesOnlySpecificKeysPreservingYamlOptions(): void
     {
         $resolved = new ResolvedConfiguration(

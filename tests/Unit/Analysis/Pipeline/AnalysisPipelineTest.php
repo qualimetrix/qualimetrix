@@ -10,6 +10,7 @@ use AiMessDetector\Analysis\Collection\CollectionResult;
 use AiMessDetector\Analysis\Collection\Metric\CompositeCollector;
 use AiMessDetector\Analysis\Discovery\FileDiscoveryInterface;
 use AiMessDetector\Analysis\Pipeline\AnalysisPipeline;
+use AiMessDetector\Analysis\Repository\DefaultMetricRepositoryFactory;
 use AiMessDetector\Analysis\RuleExecution\RuleExecutorInterface;
 use AiMessDetector\Configuration\ConfigurationProviderInterface;
 use AiMessDetector\Core\Dependency\Dependency;
@@ -197,6 +198,7 @@ final class AnalysisPipelineTest extends TestCase
             ruleExecutor: $this->ruleExecutor,
             configurationProvider: $this->configurationProvider,
             globalCollectorRunner: $this->globalCollectorRunner,
+            repositoryFactory: new DefaultMetricRepositoryFactory(),
             logger: $this->logger,
         );
     }

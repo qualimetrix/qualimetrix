@@ -240,11 +240,8 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        // NPath = init(1) + cond(1) + body(1) + exit(1) = 4
-        // Actually: init is multiplicative, cond+body+exit is additive
-        // init(1) * (cond(1) + body(1) + exit(1)) = 1 * 3 = 3
-        // But for has special handling: init + cond + body + exit
-        self::assertGreaterThanOrEqual(3, $metrics->get('npath:App\Test::loop'));
+        // Nejmeh 1988: NPath(for) = NPath(cond) + NPath(body) + 1 = 1 + 1 + 1 = 3
+        self::assertSame(3, $metrics->get('npath:App\Test::loop'));
     }
 
     public function testMethodWithForeach(): void
@@ -601,8 +598,8 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        // NPath = init(1) + cond(2: &&) + body(1) + exit(1) = 5
-        self::assertSame(5, $metrics->get('npath:App\Test::loop'));
+        // Nejmeh 1988: NPath(for) = NPath(cond) + NPath(body) + 1 = 2 + 1 + 1 = 4
+        self::assertSame(4, $metrics->get('npath:App\Test::loop'));
     }
 
     public function testForeachHasNoConditionExpression(): void

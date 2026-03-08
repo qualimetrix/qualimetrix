@@ -21,8 +21,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Code smell rules now report violations per occurrence with precise line numbers instead of a single violation per file
 - Global collector metrics (CBO, Instability, NOC, Distance) are now properly aggregated to namespace and project levels
 - Circular dependency detection is now active — `architecture.circular-dependency` rule produces violations
+- `AnalysisPipeline` now accepts `MetricRepositoryFactoryInterface` instead of hardcoding `InMemoryMetricRepository`
+- `MetricAggregator` and all aggregators now depend on `MetricRepositoryInterface` instead of concrete implementation
+- `WorkerBootstrap` validates collector instantiability before creating instances
+
+### Breaking
+- Baseline version 3 is no longer supported — regenerate with `--generate-baseline` (v3 hashes were silently incompatible with v4)
+- NPath complexity formula changes: `for` loop follows Nejmeh 1988 standard, `try-catch-finally` follows PMD/Checkstyle convention — existing NPath values may change
 
 ### Fixed
+- Fixed cognitive complexity nesting level not restored after closures/arrow functions inside nested scopes
+- Fixed cyclomatic complexity not counting `match` expression arms
+- Fixed NPath `for`-loop formula deviation from Nejmeh 1988 standard (extra +1 for init removed)
+- Fixed NPath `try-catch-finally` formula to standard `(try + catches + 1) * finally`
+- Fixed WOC (Weight of Class) formula — numerator now includes public getters/setters for consistency with denominator
+- Fixed RFC visitor not collecting own methods for traits and enums
+- Fixed `@aimd-ignore` symbol-level suppression incorrectly suppressing file/namespace-level violations (line=null)
+- Fixed `SuppressionFilter::addSuppressions()` silently overwriting previous suppressions (renamed to `setSuppressions()`)
+- Fixed `BaselineLoader` leaking `DateMalformedStringException` instead of documented `RuntimeException`
+- Fixed SARIF `pathToFileUri()` breaking UNC paths due to `ltrim('/')`
+- Fixed SARIF emitting empty `physicalLocation` for `Location::none()` (violates SARIF 2.1.0 schema)
+- Fixed Checkstyle and Text formatters using absolute paths instead of relative (now use `relativizePath()`)
+- Fixed `ComposerReader` discarding root PSR-4 mapping (`"App\\": ""`) — now normalizes to `'.'`
+- Fixed `AnalysisConfiguration::merge()` unable to reset `onlyRules`/`aggregationPrefixes` to empty array
+- Fixed runtime state leakage: suppressions, CLI rule options, and parallel strategy now reset between runs
+- Fixed `ResultPresenter` profile export silently succeeding on I/O errors
+- Fixed `StrategySelector` using unresolved path for cache directory
+- Fixed `ParallelCollectorClassesCompilerPass` using service ID instead of actual class name
+- Fixed boolean argument code smell not detecting `?bool` and union types containing `bool`
+- Fixed `MaintainabilityRule` docblock referencing wrong threshold scale
 - Fixed NPath complexity undercounting loop conditions — `while ($a && $b)` now correctly analyzes boolean operators
 - Fixed getter/setter false positives — `isolate()`, `setup()`, `getaway()`, `hasty()` no longer classified as accessors
 - Fixed global PHP namespace collision with project-level metrics — classes without a namespace are now properly included in namespace-level analysis

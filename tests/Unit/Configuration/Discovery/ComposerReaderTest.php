@@ -161,6 +161,40 @@ final class ComposerReaderTest extends TestCase
     }
 
     #[Test]
+    public function handlesRootPsr4Mapping(): void
+    {
+        $composerJson = [
+            'autoload' => [
+                'psr-4' => [
+                    'App\\' => '',
+                ],
+            ],
+        ];
+        $this->writeComposerJson($composerJson);
+
+        $paths = $this->reader->extractAutoloadPaths($this->tempDir . '/composer.json');
+
+        self::assertSame(['.'], $paths);
+    }
+
+    #[Test]
+    public function handlesRootPsr4MappingInArray(): void
+    {
+        $composerJson = [
+            'autoload' => [
+                'psr-4' => [
+                    'App\\' => ['', 'src/'],
+                ],
+            ],
+        ];
+        $this->writeComposerJson($composerJson);
+
+        $paths = $this->reader->extractAutoloadPaths($this->tempDir . '/composer.json');
+
+        self::assertSame(['.', 'src'], $paths);
+    }
+
+    #[Test]
     public function normalizesTrailingSlashes(): void
     {
         $composerJson = [

@@ -72,4 +72,30 @@ final class ParallelCollectorClassesCompilerPassTest extends TestCase
         self::assertSame([], $definition->getArgument('$collectorClasses'));
         self::assertSame([], $definition->getArgument('$derivedCollectorClasses'));
     }
+
+    #[Test]
+    public function extractsClassNameFromDefinitionWhenDifferentFromServiceId(): void
+    {
+        $container = new ContainerBuilder();
+        $container->register(StrategySelector::class);
+
+        // Register with an alias service ID but explicit class name
+        $container->register('app.collector.ccn', CyclomaticComplexityCollector::class)
+            ->addTag(CollectorCompilerPass::TAG);
+        $container->register('app.collector.derived', MaintainabilityIndexCollector::class)
+            ->addTag(CollectorCompilerPass::TAG_DERIVED);
+
+        $pass = new ParallelCollectorClassesCompilerPass();
+        $pass->process($container);
+
+        $definition = $container->getDefinition(StrategySelector::class);
+
+        $collectorClasses = $definition->getArgument('$collectorClasses');
+        self::assertCount(1, $collectorClasses);
+        self::assertSame(CyclomaticComplexityCollector::class, $collectorClasses[0]);
+
+        $derivedClasses = $definition->getArgument('$derivedCollectorClasses');
+        self::assertCount(1, $derivedClasses);
+        self::assertSame(MaintainabilityIndexCollector::class, $derivedClasses[0]);
+    }
 }

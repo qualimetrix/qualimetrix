@@ -570,6 +570,42 @@ function grade($score) {
 PHP,
             'expected' => ['grade' => 4], // +1 for each branch
         ];
+
+        // Closure inside nested scope: nesting level must be restored after closure
+        yield 'closure inside if restores nesting' => [
+            'code' => <<<'PHP'
+<?php
+function foo($a, $b, $c) {
+    if ($a) {                       // +1 (nesting=0)
+        $fn = function() use ($b) { // closure resets nesting to 0
+            if ($b) {}              // +1 (nesting=0) — inside closure
+        };                          // nesting restored to 1
+        if ($c) {}                  // +2 (1 + nesting=1) — back in outer scope
+    }
+}
+PHP,
+            'expected' => [
+                'foo' => 3,             // +1 (if $a) + 2 (if $c at nesting=1) = 3
+                '::{closure#1}' => 1,   // +1 (if $b)
+            ],
+        ];
+
+        // Arrow function inside nested scope: same save/restore behavior
+        yield 'arrow function inside if restores nesting' => [
+            'code' => <<<'PHP'
+<?php
+function bar($a, $c) {
+    if ($a) {                           // +1 (nesting=0)
+        $fn = fn($x) => $x > 0;        // arrow function, nesting reset
+        if ($c) {}                      // +2 (1 + nesting=1)
+    }
+}
+PHP,
+            'expected' => [
+                'bar' => 3,             // +1 + 2
+                '::{closure#1}' => 0,   // arrow function with no control flow
+            ],
+        ];
     }
 
     public function testReset(): void

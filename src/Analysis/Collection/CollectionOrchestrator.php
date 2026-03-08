@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace AiMessDetector\Analysis\Collection;
 
 use AiMessDetector\Analysis\Collection\Metric\DerivedMetricExtractor;
-use AiMessDetector\Analysis\Collection\Strategy\ExecutionStrategyInterface;
 use AiMessDetector\Analysis\Collection\Strategy\StrategySelectorInterface;
 use AiMessDetector\Baseline\Suppression\Suppression;
 use AiMessDetector\Core\Dependency\Dependency;
@@ -26,8 +25,6 @@ use SplFileInfo;
  */
 final class CollectionOrchestrator implements CollectionOrchestratorInterface
 {
-    private ?ExecutionStrategyInterface $resolvedStrategy = null;
-
     public function __construct(
         private readonly FileProcessorInterface $fileProcessor,
         private readonly StrategySelectorInterface $strategySelector,
@@ -35,16 +32,6 @@ final class CollectionOrchestrator implements CollectionOrchestratorInterface
         private readonly ProgressReporter $progress = new NullProgressReporter(),
         private readonly LoggerInterface $logger = new NullLogger(),
     ) {}
-
-    /**
-     * Gets the execution strategy (lazy-resolved on first use).
-     *
-     * Strategy is selected lazily to ensure configuration is fully loaded.
-     */
-    private function getStrategy(): ExecutionStrategyInterface
-    {
-        return $this->resolvedStrategy ??= $this->strategySelector->select();
-    }
 
     public function collect(
         array $files,
@@ -64,7 +51,7 @@ final class CollectionOrchestrator implements CollectionOrchestratorInterface
         ]);
 
         $profiler->start('collection.execute_strategy', 'collection');
-        $results = $this->getStrategy()->execute(
+        $results = $this->strategySelector->select()->execute(
             $files,
             fn(SplFileInfo $file): FileProcessingResult => $this->fileProcessor->process($file),
             true, // Allow parallelization

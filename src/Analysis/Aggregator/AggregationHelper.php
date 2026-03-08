@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Analysis\Aggregator;
 
-use AiMessDetector\Analysis\Repository\InMemoryMetricRepository;
 use AiMessDetector\Core\Metric\AggregationStrategy;
 use AiMessDetector\Core\Metric\MetricBag;
 use AiMessDetector\Core\Metric\MetricCollectorInterface;
 use AiMessDetector\Core\Metric\MetricDefinition;
+use AiMessDetector\Core\Metric\MetricRepositoryInterface;
 use AiMessDetector\Core\Metric\SymbolLevel;
 use AiMessDetector\Core\Symbol\SymbolInfo;
 
@@ -118,7 +118,7 @@ final class AggregationHelper
      * @return array<string, list<int|float>> metric name => values
      */
     public static function collectMetricValues(
-        InMemoryMetricRepository $repository,
+        MetricRepositoryInterface $repository,
         array $symbolInfos,
         array $definitions,
     ): array {
@@ -157,7 +157,7 @@ final class AggregationHelper
      * @return array<string, list<int|float>> metric name => values
      */
     public static function collectNamespaceMetricValues(
-        InMemoryMetricRepository $repository,
+        MetricRepositoryInterface $repository,
         array $symbolInfos,
         array $fileSymbols,
         array $definitions,

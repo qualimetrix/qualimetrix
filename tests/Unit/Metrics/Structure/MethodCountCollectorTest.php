@@ -756,6 +756,68 @@ PHP;
         self::assertSame(2, $metrics->get('promotedPropertyCount:App\MixedProperties'));
     }
 
+    public function testWocIncludesPublicGettersAndSetters(): void
+    {
+        // Class with 3 public getters + 2 public setters + 1 private method = 6 total
+        // All public methods (including getters/setters) = 5, WOC = round(5/6 * 100) = 83
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class EntityWithAccessors
+{
+    public function getName(): string { return ''; }
+    public function getId(): int { return 0; }
+    public function isActive(): bool { return true; }
+    public function setName(string $name): void {}
+    public function setId(int $id): void {}
+    private function validate(): void {}
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(83, $metrics->get('woc:App\EntityWithAccessors'));
+    }
+
+    public function testWocAllPublicGettersSettersGives100(): void
+    {
+        // Class with only public getters/setters: WOC = 100
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class PureDto
+{
+    public function getName(): string { return ''; }
+    public function setName(string $name): void {}
+    public function getId(): int { return 0; }
+    public function setId(int $id): void {}
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(100, $metrics->get('woc:App\PureDto'));
+    }
+
+    public function testWocEmptyClassGivesZero(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class EmptyWoc {}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(0, $metrics->get('woc:App\EmptyWoc'));
+    }
+
     private function collectMetrics(string $code): MetricBag
     {
         $parser = (new ParserFactory())->createForHostVersion();

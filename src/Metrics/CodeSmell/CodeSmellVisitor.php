@@ -250,15 +250,47 @@ final class CodeSmellVisitor extends NodeVisitorAbstract implements ResettableVi
                 continue;
             }
 
-            // Check for simple 'bool' type
-            if ($param->type instanceof Node\Identifier
-                && $param->type->toLowerString() === 'bool'
-            ) {
+            if ($this->isBoolType($param->type)) {
                 $paramName = $param->var instanceof Variable && \is_string($param->var->name)
                     ? $param->var->name
                     : '?';
                 $this->addLocation('boolean_argument', $param, $paramName);
             }
         }
+    }
+
+    /**
+     * Check if a type node contains bool.
+     *
+     * Handles:
+     * - Simple `bool` (Identifier)
+     * - Nullable `?bool` (NullableType wrapping Identifier)
+     * - Union types containing `bool` (UnionType with bool Identifier)
+     */
+    private function isBoolType(Node $type): bool
+    {
+        // Simple 'bool' type
+        if ($type instanceof Node\Identifier && $type->toLowerString() === 'bool') {
+            return true;
+        }
+
+        // Nullable '?bool' type
+        if ($type instanceof Node\NullableType
+            && $type->type instanceof Node\Identifier
+            && $type->type->toLowerString() === 'bool'
+        ) {
+            return true;
+        }
+
+        // Union type containing 'bool' (e.g., bool|null, bool|string)
+        if ($type instanceof Node\UnionType) {
+            foreach ($type->types as $unionMember) {
+                if ($unionMember instanceof Node\Identifier && $unionMember->toLowerString() === 'bool') {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 }

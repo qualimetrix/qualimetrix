@@ -37,8 +37,10 @@ final readonly class ViolationFilterPipeline
      */
     public function loadSuppressions(array $suppressions): void
     {
+        $this->suppressionFilter->clearSuppressions();
+
         foreach ($suppressions as $file => $fileSuppression) {
-            $this->suppressionFilter->addSuppressions($file, $fileSuppression);
+            $this->suppressionFilter->setSuppressions($file, $fileSuppression);
         }
     }
 

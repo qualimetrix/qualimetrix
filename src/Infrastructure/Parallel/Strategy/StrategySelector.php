@@ -124,7 +124,7 @@ final class StrategySelector implements StrategySelectorInterface
         if ($config->cacheEnabled) {
             $cacheDir = $config->cacheDir;
             if (!str_starts_with($cacheDir, '/')) {
-                $cacheDir = $projectRoot . '/' . $cacheDir;
+                $cacheDir = $resolvedRoot . '/' . $cacheDir;
             }
             $this->amphpStrategy->setCacheDir($cacheDir);
         } else {
@@ -135,7 +135,7 @@ final class StrategySelector implements StrategySelectorInterface
             'StrategySelector: using parallel strategy',
             [
                 'workers' => $workerCount,
-                'projectRoot' => $projectRoot,
+                'projectRoot' => $resolvedRoot,
                 'cacheEnabled' => $config->cacheEnabled,
                 'collectors' => \count($this->collectorClasses),
             ],

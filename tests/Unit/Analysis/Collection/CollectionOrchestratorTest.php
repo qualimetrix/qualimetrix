@@ -783,6 +783,39 @@ final class CollectionOrchestratorTest extends TestCase
         self::assertSame(85.5, $methodBag->get('mi'));
     }
 
+    #[Test]
+    public function itSelectsStrategyFreshOnEachCollectCall(): void
+    {
+        $files = [new SplFileInfo('/tmp/test.php')];
+
+        $processingResult = FileProcessingResult::success(
+            filePath: '/tmp/test.php',
+            fileBag: new MetricBag(),
+        );
+
+        // Strategy selector should be called on each collect() call
+        $this->strategySelector = $this->createMock(StrategySelectorInterface::class);
+        $this->strategySelector->expects(self::exactly(2))
+            ->method('select')
+            ->willReturn($this->strategy);
+
+        $this->strategy->method('execute')->willReturn([$processingResult]);
+
+        $orchestrator = new CollectionOrchestrator(
+            fileProcessor: $this->fileProcessor,
+            strategySelector: $this->strategySelector,
+            derivedMetricExtractor: $this->derivedMetricExtractor,
+            progress: $this->progress,
+            logger: $this->logger,
+        );
+
+        $repository1 = new InMemoryMetricRepository();
+        $orchestrator->collect($files, $repository1);
+
+        $repository2 = new InMemoryMetricRepository();
+        $orchestrator->collect($files, $repository2);
+    }
+
     private function createOrchestrator(): CollectionOrchestrator
     {
         return new CollectionOrchestrator(

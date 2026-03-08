@@ -31,7 +31,7 @@ use SplFileInfo;
  * - propertyCountProtected: protected properties
  * - propertyCountPrivate: private properties
  * - promotedPropertyCount: constructor promoted properties (PHP 8+)
- * - woc: Weight of Class (ratio of public methods to total methods, 0-100)
+ * - woc: Weight of Class (ratio of all public methods incl. getters/setters to total methods, 0-100)
  *
  * Anonymous classes are ignored.
  */
@@ -119,10 +119,11 @@ final class MethodCountCollector extends AbstractCollector implements ClassMetri
                 - ($metrics->hasConstructor ? 1 : 0);
             $isDataClass = $nonAccessorMethods === 0;
 
-            // WOC = publicMethods / totalMethods (percentage 0-100)
+            // WOC = allPublicMethods / totalMethods (percentage 0-100)
             // Higher WOC = more public surface, potentially less encapsulation
+            // Uses methodCountPublicAll which includes getters/setters
             $woc = $metrics->methodCountTotal > 0
-                ? (int) round(($metrics->methodCountPublic / $metrics->methodCountTotal) * 100)
+                ? (int) round(($metrics->methodCountPublicAll / $metrics->methodCountTotal) * 100)
                 : 0;
 
             $bag = $bag
@@ -169,9 +170,10 @@ final class MethodCountCollector extends AbstractCollector implements ClassMetri
                 - ($metrics->hasConstructor ? 1 : 0);
             $isDataClass = $nonAccessorMethods === 0;
 
-            // WOC = publicMethods / totalMethods (percentage 0-100)
+            // WOC = allPublicMethods / totalMethods (percentage 0-100)
+            // Uses methodCountPublicAll which includes getters/setters
             $woc = $metrics->methodCountTotal > 0
-                ? (int) round(($metrics->methodCountPublic / $metrics->methodCountTotal) * 100)
+                ? (int) round(($metrics->methodCountPublicAll / $metrics->methodCountTotal) * 100)
                 : 0;
 
             $bag = (new MetricBag())

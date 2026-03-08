@@ -118,6 +118,17 @@ final class RuleOptionsFactory
     }
 
     /**
+     * Resets CLI options only, preserving config file options.
+     *
+     * Must be called between runs to prevent options from a previous run
+     * leaking into the next one.
+     */
+    public function resetCliOptions(): void
+    {
+        $this->cliOptions = [];
+    }
+
+    /**
      * Clears all options (useful for testing).
      */
     public function reset(): void
