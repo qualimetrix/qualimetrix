@@ -58,7 +58,7 @@ Circular dependencies cause real problems:
 ### Configuration example
 
 ```yaml
-# .aimd.yaml
+# aimd.yaml
 rules:
   architecture.circular-dependency:
     maxCycleSize: 5        # ignore very large cycles

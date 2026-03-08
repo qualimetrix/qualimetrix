@@ -31,7 +31,7 @@
 ### Пример конфигурации
 
 ```yaml
-# .aimd.yaml
+# aimd.yaml
 rules:
   size.method-count:
     warning: 20
@@ -112,7 +112,7 @@ class OrderService
 ### Пример конфигурации
 
 ```yaml
-# .aimd.yaml
+# aimd.yaml
 rules:
   size.class-count:
     warning: 15
@@ -178,7 +178,7 @@ App\Service\                  # 28 классов -- слишком много!
 ### Пример конфигурации
 
 ```yaml
-# .aimd.yaml
+# aimd.yaml
 rules:
   size.property-count:
     warning: 15

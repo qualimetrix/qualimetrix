@@ -246,14 +246,14 @@ YAML;
     }
 
     #[Test]
-    public function multipleConfigFileFormats_aimdYmlSupported(): void
+    public function configFile_aimdYamlSupported(): void
     {
-        // Arrange: Create .aimd.yml instead of aimd.yaml
-        $configYml = <<<YAML
+        // Arrange: Create aimd.yaml config file
+        $configYaml = <<<YAML
 paths:
-  - src-yml/
+  - src-custom/
 YAML;
-        file_put_contents($this->tempDir . '/.aimd.yml', $configYml);
+        file_put_contents($this->tempDir . '/aimd.yaml', $configYaml);
 
         $input = $this->createInputWithDefinition([]);
         $context = new ConfigurationContext($input, $this->tempDir);
@@ -264,7 +264,7 @@ YAML;
         $resolved = $pipeline->resolve($context);
 
         // Assert
-        self::assertSame(['src-yml/'], $resolved->paths->paths);
+        self::assertSame(['src-custom/'], $resolved->paths->paths);
     }
 
     #[Test]

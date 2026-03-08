@@ -100,7 +100,7 @@ final class ConfigurationPipelineTest extends TestCase
     {
         $pipeline = new ConfigurationPipeline();
 
-        $configFile = $this->createStage(20, 'config', new ConfigurationLayer('.aimd.yaml', [
+        $configFile = $this->createStage(20, 'config', new ConfigurationLayer('aimd.yaml', [
             'rules' => [
                 'complexity' => ['warning' => 10],
             ],

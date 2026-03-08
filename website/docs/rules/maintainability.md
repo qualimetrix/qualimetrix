@@ -52,7 +52,7 @@ These three factors are combined into a single number. The original formula prod
 ### Configuration example
 
 ```yaml
-# .aimd.yaml
+# aimd.yaml
 rules:
   maintainability.index:
     warning: 40

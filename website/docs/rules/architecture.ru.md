@@ -58,7 +58,7 @@ A зависит от B, B зависит от C, а C зависит обрат
 ### Пример конфигурации
 
 ```yaml
-# .aimd.yaml
+# aimd.yaml
 rules:
   architecture.circular-dependency:
     maxCycleSize: 5        # игнорировать очень большие циклы

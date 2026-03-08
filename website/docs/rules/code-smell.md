@@ -387,7 +387,7 @@ Common request abstractions:
 All code smell rules share the same simple configuration -- just enable or disable:
 
 ```yaml
-# .aimd.yaml
+# aimd.yaml
 rules:
   code-smell.boolean-argument:
     enabled: true

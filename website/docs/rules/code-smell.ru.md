@@ -387,7 +387,7 @@ class UserController
 Все правила запахов кода имеют одинаковую простую конфигурацию -- просто включить или выключить:
 
 ```yaml
-# .aimd.yaml
+# aimd.yaml
 rules:
   code-smell.boolean-argument:
     enabled: true
