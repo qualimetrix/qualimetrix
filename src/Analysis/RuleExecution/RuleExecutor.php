@@ -6,7 +6,6 @@ namespace AiMessDetector\Analysis\RuleExecution;
 
 use AiMessDetector\Configuration\ConfigurationProviderInterface;
 use AiMessDetector\Core\Rule\AnalysisContext;
-use AiMessDetector\Core\Rule\HierarchicalRuleInterface;
 use AiMessDetector\Core\Rule\RuleInterface;
 use Traversable;
 
@@ -39,16 +38,8 @@ final class RuleExecutor implements RuleExecutorInterface
         $config = $this->configurationProvider->getConfiguration();
 
         foreach ($this->getActiveRules() as $rule) {
-            if ($rule instanceof HierarchicalRuleInterface) {
-                // For hierarchical rules, execute all levels
-                foreach ($rule->getSupportedLevels() as $level) {
-                    $levelViolations = $rule->analyzeLevel($level, $context);
-                    $violations = [...$violations, ...$levelViolations];
-                }
-            } else {
-                $ruleViolations = $rule->analyze($context);
-                $violations = [...$violations, ...$ruleViolations];
-            }
+            $ruleViolations = $rule->analyze($context);
+            $violations = [...$violations, ...$ruleViolations];
         }
 
         // Filter violations by violationCode

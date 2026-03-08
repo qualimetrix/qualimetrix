@@ -8,7 +8,6 @@ use AiMessDetector\Analysis\RuleExecution\RuleExecutor;
 use AiMessDetector\Configuration\AnalysisConfiguration;
 use AiMessDetector\Configuration\ConfigurationHolder;
 use AiMessDetector\Core\Rule\AnalysisContext;
-use AiMessDetector\Core\Rule\HierarchicalRuleInterface;
 use AiMessDetector\Core\Rule\RuleCategory;
 use AiMessDetector\Core\Rule\RuleInterface;
 use AiMessDetector\Core\Rule\RuleLevel;
@@ -366,17 +365,12 @@ final class RuleExecutorTest extends TestCase
         array $supportedLevels,
         array $violationsByLevel,
         RuleCategory $category = RuleCategory::Complexity,
-    ): HierarchicalRuleInterface {
-        $rule = $this->createMock(HierarchicalRuleInterface::class);
-        $rule->method('getName')->willReturn($name);
-        $rule->method('getSupportedLevels')->willReturn($supportedLevels);
-        $rule->method('getCategory')->willReturn($category);
+    ): RuleInterface {
+        // RuleExecutor now calls analyze() for all rules uniformly.
+        // Flatten all level violations into a single list for analyze().
+        $allViolations = array_merge(...array_values($violationsByLevel));
 
-        $rule->method('analyzeLevel')->willReturnCallback(
-            static fn(RuleLevel $level): array => $violationsByLevel[$level->value] ?? [],
-        );
-
-        return $rule;
+        return $this->createRule($name, $allViolations, $category);
     }
 
     private function createViolation(string $ruleName, ?string $violationCode = null, ?RuleLevel $level = null): Violation
