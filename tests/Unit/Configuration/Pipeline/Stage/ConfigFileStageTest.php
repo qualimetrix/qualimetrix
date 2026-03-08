@@ -133,6 +133,7 @@ final class ConfigFileStageTest extends TestCase
             ],
             'disabledRules' => ['size'],
             'onlyRules' => ['complexity', 'maintainability'],
+            'excludePaths' => ['src/Entity/*', 'src/DTO/*'],
         ]);
 
         $stage = new ConfigFileStage($loader);
@@ -153,6 +154,26 @@ final class ConfigFileStageTest extends TestCase
         self::assertSame(['complexity' => ['threshold' => 10]], $layer->values['rules']);
         self::assertSame(['size'], $layer->values['disabled_rules']);
         self::assertSame(['complexity', 'maintainability'], $layer->values['only_rules']);
+        self::assertSame(['src/Entity/*', 'src/DTO/*'], $layer->values['exclude_paths']);
+    }
+
+    #[Test]
+    public function normalizesExcludePathsFromConfig(): void
+    {
+        touch($this->tempDir . '/aimd.yaml');
+
+        $loader = $this->createMock(ConfigLoaderInterface::class);
+        $loader->method('load')->willReturn([
+            'excludePaths' => ['vendor/', 'tests/'],
+        ]);
+
+        $stage = new ConfigFileStage($loader);
+        $context = new ConfigurationContext(new ArrayInput([]), $this->tempDir);
+
+        $layer = $stage->apply($context);
+
+        self::assertNotNull($layer);
+        self::assertSame(['vendor/', 'tests/'], $layer->values['exclude_paths']);
     }
 
     private function removeDir(string $dir): void

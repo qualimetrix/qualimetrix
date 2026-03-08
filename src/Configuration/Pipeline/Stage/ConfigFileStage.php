@@ -117,6 +117,11 @@ final class ConfigFileStage implements ConfigurationStageInterface
             $result['only_rules'] = $data['onlyRules'];
         }
 
+        // Exclude paths (violation suppression patterns)
+        if (isset($data['excludePaths'])) {
+            $result['exclude_paths'] = $data['excludePaths'];
+        }
+
         return $result;
     }
 }

@@ -62,10 +62,12 @@ YAML);
         $config = $this->loader->load($path);
 
         self::assertArrayHasKey('rules', $config);
-        self::assertArrayHasKey('cyclomaticComplexity', $config['rules']);
-        self::assertTrue($config['rules']['cyclomaticComplexity']['enabled']);
-        self::assertSame(10, $config['rules']['cyclomaticComplexity']['warningThreshold']);
-        self::assertSame(20, $config['rules']['cyclomaticComplexity']['errorThreshold']);
+        // Rule name keys are preserved as-is (not normalized)
+        self::assertArrayHasKey('cyclomatic-complexity', $config['rules']);
+        self::assertTrue($config['rules']['cyclomatic-complexity']['enabled']);
+        // But option keys within rules ARE normalized
+        self::assertSame(10, $config['rules']['cyclomatic-complexity']['warningThreshold']);
+        self::assertSame(20, $config['rules']['cyclomatic-complexity']['errorThreshold']);
         self::assertTrue($config['cache']['enabled']);
         self::assertSame('.aimd-cache', $config['cache']['dir']);
         self::assertSame('text', $config['format']);
@@ -85,10 +87,12 @@ YAML);
         $config = $this->loader->load($path);
 
         self::assertArrayHasKey('rules', $config);
-        self::assertArrayHasKey('namespaceSize', $config['rules']);
-        self::assertSame(10, $config['rules']['namespaceSize']['warningThreshold']);
-        self::assertTrue($config['rules']['namespaceSize']['countInterfaces']);
-        self::assertFalse($config['rules']['namespaceSize']['countTraits']);
+        // Rule name keys are preserved as-is
+        self::assertArrayHasKey('namespace_size', $config['rules']);
+        // But option keys within rules ARE normalized to camelCase
+        self::assertSame(10, $config['rules']['namespace_size']['warningThreshold']);
+        self::assertTrue($config['rules']['namespace_size']['countInterfaces']);
+        self::assertFalse($config['rules']['namespace_size']['countTraits']);
     }
 
     public function testLoadEmptyFile(): void
@@ -149,6 +153,7 @@ YAML);
 
         $config = $this->loader->load($path);
 
+        // Rule name keys are preserved exactly as written
         self::assertArrayHasKey('cyclomaticComplexity', $config['rules']);
         self::assertSame(15, $config['rules']['cyclomaticComplexity']['warningThreshold']);
     }
@@ -279,6 +284,8 @@ paths:
   - src
 exclude:
   - vendor
+exclude_paths:
+  - src/Entity/*
 YAML);
 
         $config = $this->loader->load($path);
@@ -286,6 +293,99 @@ YAML);
         self::assertArrayHasKey('rules', $config);
         self::assertArrayHasKey('cache', $config);
         self::assertSame('json', $config['format']);
+        self::assertSame(['src/Entity/*'], $config['excludePaths']);
+    }
+
+    public function testLoadRejectsNonListExcludePaths(): void
+    {
+        $path = $this->tempDir . '/config.yaml';
+        file_put_contents($path, 'exclude_paths: not_a_list');
+
+        $this->expectException(ConfigLoadException::class);
+        $this->expectExceptionMessage('"exclude_paths" must be a list');
+
+        $this->loader->load($path);
+    }
+
+    public function testLoadPreservesDottedKebabCaseRuleNames(): void
+    {
+        $path = $this->tempDir . '/config.yaml';
+        file_put_contents($path, <<<'YAML'
+rules:
+  size.method-count:
+    warning_threshold: 15
+    error_threshold: 30
+YAML);
+
+        $config = $this->loader->load($path);
+
+        // Rule name key is preserved exactly as-is
+        self::assertArrayHasKey('size.method-count', $config['rules']);
+        // Option keys within the rule are normalized to camelCase
+        self::assertSame(15, $config['rules']['size.method-count']['warningThreshold']);
+        self::assertSame(30, $config['rules']['size.method-count']['errorThreshold']);
+    }
+
+    public function testLoadPreservesCodeSmellRuleNames(): void
+    {
+        $path = $this->tempDir . '/config.yaml';
+        file_put_contents($path, <<<'YAML'
+rules:
+  code-smell.boolean-argument:
+    enabled: false
+YAML);
+
+        $config = $this->loader->load($path);
+
+        self::assertArrayHasKey('code-smell.boolean-argument', $config['rules']);
+        self::assertFalse($config['rules']['code-smell.boolean-argument']['enabled']);
+    }
+
+    public function testLoadNormalizesNonRuleRootKeys(): void
+    {
+        $path = $this->tempDir . '/config.yaml';
+        file_put_contents($path, <<<'YAML'
+disabled_rules:
+  - size.method-count
+exclude_paths:
+  - vendor
+YAML);
+
+        $config = $this->loader->load($path);
+
+        // Root-level snake_case keys are normalized to camelCase
+        self::assertArrayHasKey('disabledRules', $config);
+        self::assertArrayHasKey('excludePaths', $config);
+        self::assertSame(['size.method-count'], $config['disabledRules']);
+        self::assertSame(['vendor'], $config['excludePaths']);
+    }
+
+    public function testLoadPreservesMultipleRuleNamesWithMixedFormats(): void
+    {
+        $path = $this->tempDir . '/config.yaml';
+        file_put_contents($path, <<<'YAML'
+rules:
+  complexity.cyclomatic:
+    warning_threshold: 10
+  size.method-count:
+    warning_threshold: 15
+  code-smell.boolean-argument:
+    enabled: false
+  simple_rule:
+    enabled: true
+YAML);
+
+        $config = $this->loader->load($path);
+
+        // All rule name keys are preserved exactly as written
+        self::assertArrayHasKey('complexity.cyclomatic', $config['rules']);
+        self::assertArrayHasKey('size.method-count', $config['rules']);
+        self::assertArrayHasKey('code-smell.boolean-argument', $config['rules']);
+        self::assertArrayHasKey('simple_rule', $config['rules']);
+
+        // Option keys are still normalized
+        self::assertSame(10, $config['rules']['complexity.cyclomatic']['warningThreshold']);
+        self::assertSame(15, $config['rules']['size.method-count']['warningThreshold']);
     }
 
     private function removeDirectory(string $dir): void
