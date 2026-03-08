@@ -12,13 +12,8 @@ namespace AiMessDetector\Core\Metric;
  *
  * Example: Maintainability Index combines Halstead Volume, CCN, and LOC.
  */
-interface DerivedCollectorInterface
+interface DerivedCollectorInterface extends BaseCollectorInterface
 {
-    /**
-     * Returns unique collector name.
-     */
-    public function getName(): string;
-
     /**
      * Returns names of collectors this derived collector depends on.
      *
@@ -40,18 +35,4 @@ interface DerivedCollectorInterface
      * @return MetricBag New bag with derived metrics
      */
     public function calculate(MetricBag $sourceBag): MetricBag;
-
-    /**
-     * Returns metric definitions for derived metrics.
-     *
-     * @return list<MetricDefinition>
-     */
-    public function getMetricDefinitions(): array;
-
-    /**
-     * Returns list of metric names this collector provides.
-     *
-     * @return list<string>
-     */
-    public function provides(): array;
 }

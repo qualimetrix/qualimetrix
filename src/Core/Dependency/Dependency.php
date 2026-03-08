@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Core\Dependency;
 
+use AiMessDetector\Core\Symbol\SymbolPath;
 use AiMessDetector\Core\Violation\Location;
-use AiMessDetector\Core\Violation\SymbolPath;
 
 /**
  * Represents a single dependency from one class to another.

@@ -8,8 +8,8 @@ use AiMessDetector\Analysis\Collection\Dependency\CircularDependencyDetector;
 use AiMessDetector\Analysis\Collection\Dependency\DependencyGraph;
 use AiMessDetector\Core\Dependency\Dependency;
 use AiMessDetector\Core\Dependency\DependencyType;
+use AiMessDetector\Core\Symbol\SymbolPath;
 use AiMessDetector\Core\Violation\Location;
-use AiMessDetector\Core\Violation\SymbolPath;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 

@@ -13,7 +13,7 @@ use AiMessDetector\Core\Metric\MetricRepositoryInterface;
 use AiMessDetector\Core\Profiler\ProfilerHolder;
 use AiMessDetector\Core\Progress\NullProgressReporter;
 use AiMessDetector\Core\Progress\ProgressReporter;
-use AiMessDetector\Core\Violation\SymbolPath;
+use AiMessDetector\Core\Symbol\SymbolPath;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use SplFileInfo;

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace AiMessDetector\Infrastructure\Storage;
 
 use AiMessDetector\Core\Dependency\Dependency;
+use AiMessDetector\Core\Symbol\SymbolPath;
 use AiMessDetector\Core\Symbol\SymbolType;
-use AiMessDetector\Core\Violation\SymbolPath;
 
 /**
  * Storage interface for metrics and file metadata.

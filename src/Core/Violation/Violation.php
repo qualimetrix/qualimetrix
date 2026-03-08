@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AiMessDetector\Core\Violation;
 
 use AiMessDetector\Core\Rule\RuleLevel;
+use AiMessDetector\Core\Symbol\SymbolPath;
 
 final readonly class Violation
 {

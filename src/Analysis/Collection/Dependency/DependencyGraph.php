@@ -6,8 +6,8 @@ namespace AiMessDetector\Analysis\Collection\Dependency;
 
 use AiMessDetector\Core\Dependency\Dependency;
 use AiMessDetector\Core\Dependency\DependencyGraphInterface;
+use AiMessDetector\Core\Symbol\SymbolPath;
 use AiMessDetector\Core\Util\StringSet;
-use AiMessDetector\Core\Violation\SymbolPath;
 
 /**
  * In-memory implementation of DependencyGraphInterface.

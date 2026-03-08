@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Core\Violation;
+namespace AiMessDetector\Tests\Unit\Core\Symbol;
 
+use AiMessDetector\Core\Symbol\SymbolPath;
 use AiMessDetector\Core\Symbol\SymbolType;
-use AiMessDetector\Core\Violation\SymbolPath;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;

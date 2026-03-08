@@ -9,7 +9,7 @@ use AiMessDetector\Analysis\Collection\Metric\DerivedMetricExtractor;
 use AiMessDetector\Analysis\Repository\InMemoryMetricRepository;
 use AiMessDetector\Core\Metric\DerivedCollectorInterface;
 use AiMessDetector\Core\Metric\MetricBag;
-use AiMessDetector\Core\Violation\SymbolPath;
+use AiMessDetector\Core\Symbol\SymbolPath;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;

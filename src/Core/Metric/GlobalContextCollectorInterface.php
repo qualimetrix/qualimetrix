@@ -15,13 +15,8 @@ use AiMessDetector\Core\Dependency\DependencyGraphInterface;
  *
  * Collectors declare their dependencies via requires() and are executed in topological order.
  */
-interface GlobalContextCollectorInterface
+interface GlobalContextCollectorInterface extends BaseCollectorInterface
 {
-    /**
-     * Returns unique collector name.
-     */
-    public function getName(): string;
-
     /**
      * Returns list of metric names this collector requires.
      *
@@ -31,20 +26,6 @@ interface GlobalContextCollectorInterface
      * @return list<string>
      */
     public function requires(): array;
-
-    /**
-     * Returns list of metric names this collector provides.
-     *
-     * @return list<string>
-     */
-    public function provides(): array;
-
-    /**
-     * Returns metric definitions with aggregation strategies.
-     *
-     * @return list<MetricDefinition>
-     */
-    public function getMetricDefinitions(): array;
 
     /**
      * Computes metrics based on the dependency graph and existing metrics.

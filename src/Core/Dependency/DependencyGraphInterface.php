@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Core\Dependency;
 
-use AiMessDetector\Core\Violation\SymbolPath;
+use AiMessDetector\Core\Symbol\SymbolPath;
 
 /**
  * Interface for querying dependency relationships between classes and namespaces.

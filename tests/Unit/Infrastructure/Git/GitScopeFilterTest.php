@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Tests\Unit\Infrastructure\Git;
 
+use AiMessDetector\Core\Symbol\SymbolPath;
 use AiMessDetector\Core\Violation\Location;
 use AiMessDetector\Core\Violation\Severity;
-use AiMessDetector\Core\Violation\SymbolPath;
 use AiMessDetector\Core\Violation\Violation;
 use AiMessDetector\Infrastructure\Git\GitClient;
 use AiMessDetector\Infrastructure\Git\GitScope;

@@ -7,8 +7,8 @@ namespace AiMessDetector\Analysis\Collection\Dependency\Handler;
 use AiMessDetector\Analysis\Collection\Dependency\DependencyResolver;
 use AiMessDetector\Core\Dependency\Dependency;
 use AiMessDetector\Core\Dependency\DependencyType;
+use AiMessDetector\Core\Symbol\SymbolPath;
 use AiMessDetector\Core\Violation\Location;
-use AiMessDetector\Core\Violation\SymbolPath;
 
 final class DependencyContext
 {

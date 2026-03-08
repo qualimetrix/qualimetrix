@@ -9,7 +9,7 @@ use AiMessDetector\Analysis\Aggregator\MetricAggregator;
 use AiMessDetector\Analysis\Repository\InMemoryMetricRepository;
 use AiMessDetector\Core\Metric\MetricBag;
 use AiMessDetector\Core\Metric\MetricCollectorInterface;
-use AiMessDetector\Core\Violation\SymbolPath;
+use AiMessDetector\Core\Symbol\SymbolPath;
 use AiMessDetector\Metrics\Complexity\CyclomaticComplexityCollector;
 use AiMessDetector\Metrics\Size\ClassCountCollector;
 use AiMessDetector\Metrics\Size\LocCollector;

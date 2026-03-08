@@ -11,8 +11,8 @@ use AiMessDetector\Core\Metric\GlobalContextCollectorInterface;
 use AiMessDetector\Core\Metric\MetricDefinition;
 use AiMessDetector\Core\Metric\MetricRepositoryInterface;
 use AiMessDetector\Core\Metric\SymbolLevel;
+use AiMessDetector\Core\Symbol\SymbolPath;
 use AiMessDetector\Core\Symbol\SymbolType;
-use AiMessDetector\Core\Violation\SymbolPath;
 
 /**
  * Computes Number of Children (NOC) metric from dependency graph.

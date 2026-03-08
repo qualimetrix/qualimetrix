@@ -12,7 +12,7 @@ use AiMessDetector\Core\Exception\ParseException;
 use AiMessDetector\Core\Metric\ClassMetricsProviderInterface;
 use AiMessDetector\Core\Metric\MethodMetricsProviderInterface;
 use AiMessDetector\Core\Metric\MetricBag;
-use AiMessDetector\Core\Violation\SymbolPath;
+use AiMessDetector\Core\Symbol\SymbolPath;
 use PhpParser\Node;
 use PhpParser\NodeFinder;
 use SplFileInfo;

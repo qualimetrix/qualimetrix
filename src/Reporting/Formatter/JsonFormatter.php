@@ -59,7 +59,7 @@ final class JsonFormatter implements FormatterInterface
      *
      * @param list<Violation> $violations
      *
-     * @return list<array{file: string, violations: list<array{beginLine: int|null, endLine: int|null, rule: string, code: string, symbol: string, priority: int, severity: string, description: string, metricValue: int|float|null}>}>
+     * @return list<array{file: string|null, violations: list<array{beginLine: int|null, endLine: int|null, rule: string, code: string, symbol: string, priority: int, severity: string, description: string, metricValue: int|float|null}>}>
      */
     private function groupViolationsByFile(array $violations): array
     {
@@ -67,7 +67,7 @@ final class JsonFormatter implements FormatterInterface
         $grouped = [];
 
         foreach ($violations as $violation) {
-            $file = $violation->location->file;
+            $file = $violation->location->isNone() ? '' : $violation->location->file;
             $grouped[$file] ??= [];
             $grouped[$file][] = $violation;
         }
@@ -75,7 +75,7 @@ final class JsonFormatter implements FormatterInterface
         $result = [];
         foreach ($grouped as $file => $fileViolations) {
             $result[] = [
-                'file' => $file,
+                'file' => $file !== '' ? $file : null,
                 'violations' => array_map(
                     fn(Violation $v): array => $this->formatViolation($v),
                     $fileViolations,

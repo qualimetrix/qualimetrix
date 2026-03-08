@@ -6,8 +6,8 @@ namespace AiMessDetector\Tests\Unit\Core\Dependency;
 
 use AiMessDetector\Core\Dependency\Dependency;
 use AiMessDetector\Core\Dependency\DependencyType;
+use AiMessDetector\Core\Symbol\SymbolPath;
 use AiMessDetector\Core\Violation\Location;
-use AiMessDetector\Core\Violation\SymbolPath;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;

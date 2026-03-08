@@ -6,7 +6,7 @@ namespace AiMessDetector\Tests\Unit\Analysis\Collection;
 
 use AiMessDetector\Analysis\Collection\FileProcessingResult;
 use AiMessDetector\Core\Metric\MetricBag;
-use AiMessDetector\Core\Violation\SymbolPath;
+use AiMessDetector\Core\Symbol\SymbolPath;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;

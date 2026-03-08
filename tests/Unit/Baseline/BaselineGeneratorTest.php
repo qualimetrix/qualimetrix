@@ -6,9 +6,9 @@ namespace AiMessDetector\Tests\Unit\Baseline;
 
 use AiMessDetector\Baseline\BaselineGenerator;
 use AiMessDetector\Baseline\ViolationHasher;
+use AiMessDetector\Core\Symbol\SymbolPath;
 use AiMessDetector\Core\Violation\Location;
 use AiMessDetector\Core\Violation\Severity;
-use AiMessDetector\Core\Violation\SymbolPath;
 use AiMessDetector\Core\Violation\Violation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;

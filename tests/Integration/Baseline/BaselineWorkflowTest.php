@@ -9,9 +9,9 @@ use AiMessDetector\Baseline\BaselineLoader;
 use AiMessDetector\Baseline\BaselineWriter;
 use AiMessDetector\Baseline\Filter\BaselineFilter;
 use AiMessDetector\Baseline\ViolationHasher;
+use AiMessDetector\Core\Symbol\SymbolPath;
 use AiMessDetector\Core\Violation\Location;
 use AiMessDetector\Core\Violation\Severity;
-use AiMessDetector\Core\Violation\SymbolPath;
 use AiMessDetector\Core\Violation\Violation;
 use PHPUnit\Framework\TestCase;
 

@@ -7,7 +7,7 @@ namespace AiMessDetector\Infrastructure\Collector;
 use AiMessDetector\Analysis\Collection\Metric\CollectionOutput;
 use AiMessDetector\Analysis\Collection\Metric\CompositeCollector;
 use AiMessDetector\Core\Metric\MetricBag;
-use AiMessDetector\Core\Violation\SymbolPath;
+use AiMessDetector\Core\Symbol\SymbolPath;
 use AiMessDetector\Infrastructure\Storage\ChangeDetector;
 use AiMessDetector\Infrastructure\Storage\FileRecord;
 use AiMessDetector\Infrastructure\Storage\StorageInterface;

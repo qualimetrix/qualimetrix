@@ -6,9 +6,9 @@ namespace AiMessDetector\Infrastructure\Storage;
 
 use AiMessDetector\Core\Dependency\Dependency;
 use AiMessDetector\Core\Dependency\DependencyType;
+use AiMessDetector\Core\Symbol\SymbolPath;
 use AiMessDetector\Core\Symbol\SymbolType;
 use AiMessDetector\Core\Violation\Location;
-use AiMessDetector\Core\Violation\SymbolPath;
 use Generator;
 use PDO;
 use RuntimeException;

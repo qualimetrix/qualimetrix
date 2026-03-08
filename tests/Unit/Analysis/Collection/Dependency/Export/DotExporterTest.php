@@ -9,8 +9,8 @@ use AiMessDetector\Analysis\Collection\Dependency\Export\DotExporter;
 use AiMessDetector\Analysis\Collection\Dependency\Export\DotExporterOptions;
 use AiMessDetector\Core\Dependency\Dependency;
 use AiMessDetector\Core\Dependency\DependencyType;
+use AiMessDetector\Core\Symbol\SymbolPath;
 use AiMessDetector\Core\Violation\Location;
-use AiMessDetector\Core\Violation\SymbolPath;
 use PHPUnit\Framework\TestCase;
 
 final class DotExporterTest extends TestCase
