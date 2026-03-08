@@ -13,33 +13,41 @@ Collectors **do not interpret** metrics — they only collect them. Interpretati
 
 ## Metrics Table
 
-| Metric                                                    | Category        | Level     | Description                                                                                                                   |
-| --------------------------------------------------------- | --------------- | --------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| **Complexity**                                            |                 |           |                                                                                                                               |
-| `ccn`                                                     | Complexity      | Method    | Cyclomatic Complexity — number of execution paths                                                                             |
-| `cognitive`                                               | Complexity      | Method    | Cognitive Complexity — difficulty of understanding code                                                                       |
-| `npath`                                                   | Complexity      | Method    | NPath Complexity — number of acyclic paths (exponential growth)                                                               |
-| **Maintainability**                                       |                 |           |                                                                                                                               |
-| `halstead.*`                                              | Maintainability | Method    | Halstead metrics (volume, difficulty, effort, bugs, time)                                                                     |
-| `mi`                                                      | Maintainability | Method    | Maintainability Index (derived from Halstead + CCN)                                                                           |
-| **Size**                                                  |                 |           |                                                                                                                               |
-| `loc`, `lloc`, `cloc`                                     | Size            | File      | Lines of Code (total, logical, comments)                                                                                      |
-| `classCount`, `interfaceCount`, `traitCount`, `enumCount` | Size            | File      | Number of classes/interfaces/traits/enums                                                                                     |
-| `abstractClassCount`                                      | Size            | File      | Number of abstract classes                                                                                                    |
-| `functionCount`                                           | Size            | File      | Number of standalone functions                                                                                                |
-| `propertyCount`                                           | Structure       | Class     | Number of class properties (+ by visibility)                                                                                  |
-| `methodCount`                                             | Structure       | Class     | Number of class methods (+ getters/setters)                                                                                   |
-| **Structure**                                             |                 |           |                                                                                                                               |
-| `lcom`                                                    | Structure       | Class     | LCOM4 — method cohesion (graph components; edges from shared properties and `$this->method()` calls; static methods excluded) |
-| `tcc`, `lcc`                                              | Structure       | Class     | TCC/LCC — Tight/Loose Class Cohesion (0-1)                                                                                    |
-| `rfc`                                                     | Structure       | Class     | Response for Class — testability complexity                                                                                   |
-| `wmc`                                                     | Structure       | Class     | Weighted Methods per Class — sum of method CCN                                                                                |
-| `dit`                                                     | Structure       | Class     | Depth of Inheritance Tree — inheritance depth                                                                                 |
-| `noc`                                                     | Structure       | Class     | Number of Children — number of direct subclasses                                                                              |
-| **Coupling**                                              |                 |           |                                                                                                                               |
-| `ca`, `ce`, `instability`                                 | Coupling        | Class     | Afferent/Efferent Coupling, instability                                                                                       |
-| `abstractness`                                            | Coupling        | Namespace | Proportion of abstract classes/interfaces                                                                                     |
-| `distance`                                                | Coupling        | Namespace | Distance from Main Sequence (derived)                                                                                         |
+| Metric                                                               | Category        | Level     | Description                                                                                                                   |
+| -------------------------------------------------------------------- | --------------- | --------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| **Complexity**                                                       |                 |           |                                                                                                                               |
+| `ccn`                                                                | Complexity      | Method    | Cyclomatic Complexity — number of execution paths                                                                             |
+| `cognitive`                                                          | Complexity      | Method    | Cognitive Complexity — difficulty of understanding code                                                                       |
+| `npath`                                                              | Complexity      | Method    | NPath Complexity — number of acyclic paths (exponential growth)                                                               |
+| **Maintainability**                                                  |                 |           |                                                                                                                               |
+| `halstead.*`                                                         | Maintainability | Method    | Halstead metrics (volume, difficulty, effort, bugs, time)                                                                     |
+| `mi`                                                                 | Maintainability | Method    | Maintainability Index (derived from Halstead + CCN)                                                                           |
+| **Size**                                                             |                 |           |                                                                                                                               |
+| `loc`, `lloc`, `cloc`                                                | Size            | File      | Lines of Code (total, logical, comments)                                                                                      |
+| `classCount`, `interfaceCount`, `traitCount`, `enumCount`            | Size            | File      | Number of classes/interfaces/traits/enums                                                                                     |
+| `abstractClassCount`                                                 | Size            | File      | Number of abstract classes                                                                                                    |
+| `functionCount`                                                      | Size            | File      | Number of standalone functions                                                                                                |
+| `propertyCount`                                                      | Structure       | Class     | Number of class properties (+ by visibility)                                                                                  |
+| `methodCount`                                                        | Structure       | Class     | Number of class methods (+ getters/setters)                                                                                   |
+| **Structure**                                                        |                 |           |                                                                                                                               |
+| `lcom`                                                               | Structure       | Class     | LCOM4 — method cohesion (graph components; edges from shared properties and `$this->method()` calls; static methods excluded) |
+| `tcc`, `lcc`                                                         | Structure       | Class     | TCC/LCC — Tight/Loose Class Cohesion (0-1)                                                                                    |
+| `rfc`                                                                | Structure       | Class     | Response for Class — testability complexity                                                                                   |
+| `wmc`                                                                | Structure       | Class     | Weighted Methods per Class — sum of method CCN                                                                                |
+| `dit`                                                                | Structure       | Class     | Depth of Inheritance Tree — inheritance depth                                                                                 |
+| `noc`                                                                | Structure       | Class     | Number of Children — number of direct subclasses                                                                              |
+| **Coupling**                                                         |                 |           |                                                                                                                               |
+| `ca`, `ce`, `instability`                                            | Coupling        | Class     | Afferent/Efferent Coupling, instability                                                                                       |
+| `abstractness`                                                       | Coupling        | Namespace | Proportion of abstract classes/interfaces                                                                                     |
+| `distance`                                                           | Coupling        | Namespace | Distance from Main Sequence (derived)                                                                                         |
+| **Code Smell**                                                       |                 |           |                                                                                                                               |
+| `parameterCount`                                                     | Code Smell      | Method    | Number of method parameters                                                                                                   |
+| `unreachableCode`, `unreachableCode.firstLine`                       | Code Smell      | Method    | Unreachable code count after terminal statements and first unreachable line                                                   |
+| **Design**                                                           |                 |           |                                                                                                                               |
+| `typeCoverage.param`, `typeCoverage.return`, `typeCoverage.property` | Design          | Class     | Type declaration coverage ratios (0-1) for parameters, return types, properties                                               |
+| `typeCoverage.paramTotal`, `typeCoverage.paramTyped`                 | Design          | Class     | Raw counts: total and typed parameters                                                                                        |
+| `typeCoverage.returnTotal`, `typeCoverage.returnTyped`               | Design          | Class     | Raw counts: total and typed return declarations                                                                               |
+| `typeCoverage.propertyTotal`, `typeCoverage.propertyTyped`           | Design          | Class     | Raw counts: total and typed properties                                                                                        |
 
 ---
 
@@ -50,7 +58,8 @@ Collectors **do not interpret** metrics — they only collect them. Interpretati
 - **[Size/](Size/README.md)** — LOC, Class Count, Property Count, Method Count
 - **[Structure/](Structure/README.md)** — TCC/LCC, LCOM, RFC, WMC, DIT, NOC
 - **[Coupling/](Coupling/README.md)** — Ca/Ce/Instability, Abstractness, Distance
-- **[CodeSmell/](CodeSmell/README.md)** — Code pattern detectors (goto, eval, debug code, etc.)
+- **[CodeSmell/](CodeSmell/README.md)** — Code pattern detectors (goto, eval, debug code, parameter count, unreachable code, etc.)
+- **[Design/](Design/)** — Type coverage metrics
 
 ---
 

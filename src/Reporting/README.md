@@ -41,7 +41,8 @@ Reporting/
     ├── JsonFormatter.php                   # PHPMD-compatible JSON
     ├── CheckstyleFormatter.php             # Checkstyle XML
     ├── SarifFormatter.php                  # SARIF 2.1.0
-    └── GitLabCodeQualityFormatter.php      # GitLab Code Climate JSON
+    ├── GitLabCodeQualityFormatter.php      # GitLab Code Climate JSON
+    └── MetricsJsonFormatter.php            # Raw metrics JSON export
 ```
 
 ## Contracts
@@ -229,6 +230,7 @@ Files: 1 analyzed, 0 skipped | Errors: 1 | Warnings: 1 | Time: 0.23s
 | Checkstyle   | `checkstyle`   | Checkstyle XML for CI systems                 | Jenkins, SonarQube         |
 | SARIF        | `sarif`        | SARIF 2.1.0 for static analysis               | GitHub, VS Code, JetBrains |
 | GitLab       | `gitlab`       | Code Climate JSON for GitLab MR               | GitLab CI                  |
+| Metrics JSON | `metrics-json` | Raw metric values for all symbols             | Dashboards, cross-tool     |
 
 ## JsonFormatter
 
@@ -330,6 +332,52 @@ Results will appear in the **Code Quality** tab with inline comments in the MR.
 
 ---
 
+## MetricsJsonFormatter
+
+**Name:** `metrics-json`
+
+Exports raw metric values for all symbols (methods, classes, namespaces, files) as JSON. Unlike `json` which outputs violations, this formatter outputs the actual metric data collected during analysis — useful for cross-tool comparison, metrics analysis, and custom dashboards.
+
+### Output Structure
+
+```json
+{
+  "version": "1.0.0",
+  "package": "aimd",
+  "timestamp": "2025-01-15T10:30:00+00:00",
+  "symbols": [
+    {
+      "type": "method",
+      "name": "App\\Service\\UserService::calculateDiscount",
+      "file": "src/Service/UserService.php",
+      "line": 42,
+      "metrics": {
+        "ccn": 25,
+        "cognitive_complexity": 18,
+        "npath": 128,
+        "loc": 45
+      }
+    }
+  ],
+  "summary": {
+    "filesAnalyzed": 42,
+    "filesSkipped": 0,
+    "duration": 1.234,
+    "violations": 3,
+    "errors": 2,
+    "warnings": 1
+  }
+}
+```
+
+### Usage
+
+```bash
+bin/aimd check src/ --format=metrics-json > metrics.json
+```
+
+---
+
 ## Adding a New Formatter
 
 ### Steps
@@ -360,16 +408,16 @@ $report->duration         // float (seconds)
 
 ## Formatter Comparison
 
-| Characteristic          | Text   | Text Verbose | JSON    | Checkstyle        | SARIF        | GitLab |
-| ----------------------- | ------ | ------------ | ------- | ----------------- | ------------ | ------ |
-| **ANSI Colors**         | Yes    | Yes          | No      | No                | No           | No     |
-| **Grouping**            | No     | Yes (file)   | No      | No                | No           | No     |
-| **Readability**         | High   | High         | No      | No                | No           | No     |
-| **CI/CD integration**   | No     | No           | Generic | Jenkins/SonarQube | GitHub/Azure | GitLab |
-| **IDE support**         | No     | No           | No      | Limited           | VS Code/JB   | No     |
-| **PHPMD compatibility** | Full   | No           | Full    | Full              | No           | No     |
-| **Fingerprinting**      | No     | No           | No      | No                | No           | Yes    |
-| **Output**              | STDOUT | STDOUT       | STDOUT  | STDOUT            | STDOUT       | STDOUT |
+| Characteristic          | Text   | Text Verbose | JSON    | Checkstyle        | SARIF        | GitLab | Metrics JSON |
+| ----------------------- | ------ | ------------ | ------- | ----------------- | ------------ | ------ | ------------ |
+| **ANSI Colors**         | Yes    | Yes          | No      | No                | No           | No     | No           |
+| **Grouping**            | No     | Yes (file)   | No      | No                | No           | No     | No           |
+| **Readability**         | High   | High         | No      | No                | No           | No     | No           |
+| **CI/CD integration**   | No     | No           | Generic | Jenkins/SonarQube | GitHub/Azure | GitLab | Custom       |
+| **IDE support**         | No     | No           | No      | Limited           | VS Code/JB   | No     | No           |
+| **PHPMD compatibility** | Full   | No           | Full    | Full              | No           | No     | No           |
+| **Fingerprinting**      | No     | No           | No      | No                | No           | Yes    | No           |
+| **Output**              | STDOUT | STDOUT       | STDOUT  | STDOUT            | STDOUT       | STDOUT | STDOUT       |
 
 ### Choosing the Right Format
 
@@ -381,6 +429,7 @@ $report->duration         // float (seconds)
 - **GitLab** -> `gitlab`
 - **VS Code** -> `sarif`
 - **JetBrains IDE** -> `sarif`
+- **Custom dashboards / metrics analysis** -> `metrics-json`
 
 ## Planned Formats
 

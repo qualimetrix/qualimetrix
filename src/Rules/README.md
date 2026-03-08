@@ -43,7 +43,10 @@ Rules are analysis rule implementations for static analysis. Rules are **complet
 | **code-smell.eval**                  | CodeSmell       | Simple                          | eval() usage                    | enabled: true                     |
 | **code-smell.exit**                  | CodeSmell       | Simple                          | exit/die usage                  | enabled: true                     |
 | **code-smell.goto**                  | CodeSmell       | Simple                          | goto statements                 | enabled: true                     |
+| **code-smell.long-parameter-list**   | CodeSmell       | Simple                          | Long parameter lists            | warning: 4, error: 6              |
 | **code-smell.superglobals**          | CodeSmell       | Simple                          | Direct superglobal access       | enabled: true                     |
+| **code-smell.unreachable-code**      | CodeSmell       | Simple                          | Unreachable code detection      | warning: 1, error: 1              |
+| **design.type-coverage**             | Design          | Simple                          | Type declaration coverage       | param/return/property: 80%/50%    |
 
 ---
 
@@ -318,6 +321,35 @@ Distance = |A + I - 1|, where A = abstractness, I = instability.
 
 ---
 
+## Type Coverage Rule
+
+**Name:** `design.type-coverage` | **Category:** Design | **Type:** Simple
+
+Checks type declaration coverage per class. Produces up to 3 violations per class:
+- **Parameter type coverage** — percentage of typed method parameters
+- **Return type coverage** — percentage of methods with return type declarations
+- **Property type coverage** — percentage of typed properties
+
+Lower values are worse (inverted thresholds compared to most rules).
+
+**Default:** param: 80%/50%, return: 80%/50%, property: 80%/50%
+
+**Configuration:**
+```yaml
+rules:
+  design.type-coverage:
+    param_warning: 80
+    param_error: 50
+    return_warning: 80
+    return_error: 50
+    property_warning: 80
+    property_error: 50
+```
+
+**CLI:** `--type-coverage-param-warning=80 --type-coverage-param-error=50 --type-coverage-return-warning=80 --type-coverage-return-error=50 --type-coverage-property-warning=80 --type-coverage-property-error=50`
+
+---
+
 ## Circular Dependency Rule
 
 **Name:** `architecture.circular-dependency` | **Category:** Architecture | **Type:** Simple
@@ -381,6 +413,54 @@ rules:
 --disable-rule=code-smell                  # Disable all code-smell.* rules (prefix match)
 --only-rule=code-smell.debug-code          # Enable only this rule
 ```
+
+---
+
+## Long Parameter List Rule
+
+**Name:** `code-smell.long-parameter-list` | **Category:** CodeSmell | **Type:** Simple
+
+Checks the number of parameters per method/function. Too many parameters indicate
+a method may need a parameter object or is doing too much.
+
+Unlike other code smell rules, this rule uses threshold-based options (`LongParameterListOptions`)
+instead of `CodeSmellOptions`, allowing configurable warning/error thresholds.
+
+**Default:** warning: 4, error: 6
+
+**Configuration:**
+```yaml
+rules:
+  code-smell.long-parameter-list:
+    warning: 4
+    error: 6
+```
+
+**CLI:** `--long-parameter-list-warning=4 --long-parameter-list-error=6`
+
+---
+
+## Unreachable Code Rule
+
+**Name:** `code-smell.unreachable-code` | **Category:** CodeSmell | **Type:** Simple
+
+Detects unreachable code after terminal statements (return, throw, exit/die, continue, break, goto).
+Dead code should always be removed.
+
+Unlike other code smell rules, this rule uses threshold-based options (`UnreachableCodeOptions`)
+instead of `CodeSmellOptions`. By default, any unreachable code is an error (warning=1, error=1).
+
+**Default:** warning: 1, error: 1
+
+**Configuration:**
+```yaml
+rules:
+  code-smell.unreachable-code:
+    warning: 1
+    error: 1
+```
+
+**CLI:** `--unreachable-code-warning=1 --unreachable-code-error=1`
 
 ---
 

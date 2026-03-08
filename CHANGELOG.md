@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- `code-smell.long-parameter-list` rule — detects methods with too many parameters (warning: 4, error: 6)
+- `code-smell.unreachable-code` rule — detects dead code after return/throw/exit statements
+- `design.type-coverage` rule — measures type declaration coverage for parameters, return types, and properties per class
+- `--format=metrics-json` output format — exports raw metric values for all symbols (methods, classes, namespaces, files)
+
 ## [0.3.0] - 2026-03-08
 
 ### Changed
