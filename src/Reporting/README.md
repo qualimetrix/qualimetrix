@@ -8,11 +8,11 @@ Reporting is responsible for formatting analysis results for user output. It sup
 
 **Principle:** output formats should be compatible with PHPMD for a seamless tool replacement.
 
-| Aspect | Compatibility | Comment |
-|--------|---------------|---------|
-| **Output formats** | Partial | text, json, checkstyle — compatible with PHPMD |
-| **Input parameters** | No | Our options are richer; compatibility would limit them |
-| **Configuration** | No | Custom YAML format, different structure |
+| Aspect               | Compatibility | Comment                                                |
+| -------------------- | ------------- | ------------------------------------------------------ |
+| **Output formats**   | Partial       | text, json, checkstyle — compatible with PHPMD         |
+| **Input parameters** | No            | Our options are richer; compatibility would limit them |
+| **Configuration**    | No            | Custom YAML format, different structure                |
 
 ### PHPMD-Compatible Formats
 
@@ -221,14 +221,14 @@ Files: 1 analyzed, 0 skipped | Errors: 1 | Warnings: 1 | Time: 0.23s
 
 ## Implemented Formats
 
-| Format | Name | Description | Integration |
-|--------|------|-------------|-------------|
-| Text | `text` | Compact human-readable text output | CLI |
-| Text Verbose | `text-verbose` | Detailed text output with sorting by severity | CLI |
-| JSON | `json` | PHPMD-compatible JSON for CI/CD | Generic CI/CD |
-| Checkstyle | `checkstyle` | Checkstyle XML for CI systems | Jenkins, SonarQube |
-| SARIF | `sarif` | SARIF 2.1.0 for static analysis | GitHub, VS Code, JetBrains |
-| GitLab | `gitlab` | Code Climate JSON for GitLab MR | GitLab CI |
+| Format       | Name           | Description                                   | Integration                |
+| ------------ | -------------- | --------------------------------------------- | -------------------------- |
+| Text         | `text`         | Compact human-readable text output            | CLI                        |
+| Text Verbose | `text-verbose` | Detailed text output with sorting by severity | CLI                        |
+| JSON         | `json`         | PHPMD-compatible JSON for CI/CD               | Generic CI/CD              |
+| Checkstyle   | `checkstyle`   | Checkstyle XML for CI systems                 | Jenkins, SonarQube         |
+| SARIF        | `sarif`        | SARIF 2.1.0 for static analysis               | GitHub, VS Code, JetBrains |
+| GitLab       | `gitlab`       | Code Climate JSON for GitLab MR               | GitLab CI                  |
 
 ## JsonFormatter
 
@@ -279,10 +279,10 @@ SARIF 2.1.0 for GitHub Security, VS Code, Azure DevOps, JetBrains IDEs.
 ### Level Mapping
 
 | AIMD Severity | SARIF Level |
-|---------------|-------------|
-| Error | `error` |
-| Warning | `warning` |
-| Info | `note` |
+| ------------- | ----------- |
+| Error         | `error`     |
+| Warning       | `warning`   |
+| Info          | `note`      |
 
 ### GitHub Actions Integration
 
@@ -309,10 +309,10 @@ Code Climate JSON for GitLab MR. Uses fingerprinting for tracking fixes.
 ### Severity Mapping
 
 | AIMD Severity | GitLab Severity |
-|---------------|-----------------|
-| Error | `critical` |
-| Warning | `major` |
-| Info | `minor` |
+| ------------- | --------------- |
+| Error         | `critical`      |
+| Warning       | `major`         |
+| Info          | `minor`         |
 
 ### GitLab CI Integration
 
@@ -360,16 +360,16 @@ $report->duration         // float (seconds)
 
 ## Formatter Comparison
 
-| Characteristic | Text | Text Verbose | JSON | Checkstyle | SARIF | GitLab |
-|---|---|---|---|---|---|---|
-| **ANSI Colors** | Yes | Yes | No | No | No | No |
-| **Grouping** | No | Yes (file) | No | No | No | No |
-| **Readability** | High | High | No | No | No | No |
-| **CI/CD integration** | No | No | Generic | Jenkins/SonarQube | GitHub/Azure | GitLab |
-| **IDE support** | No | No | No | Limited | VS Code/JB | No |
-| **PHPMD compatibility** | Full | No | Full | Full | No | No |
-| **Fingerprinting** | No | No | No | No | No | Yes |
-| **Output** | STDOUT | STDOUT | STDOUT | STDOUT | STDOUT | STDOUT |
+| Characteristic          | Text   | Text Verbose | JSON    | Checkstyle        | SARIF        | GitLab |
+| ----------------------- | ------ | ------------ | ------- | ----------------- | ------------ | ------ |
+| **ANSI Colors**         | Yes    | Yes          | No      | No                | No           | No     |
+| **Grouping**            | No     | Yes (file)   | No      | No                | No           | No     |
+| **Readability**         | High   | High         | No      | No                | No           | No     |
+| **CI/CD integration**   | No     | No           | Generic | Jenkins/SonarQube | GitHub/Azure | GitLab |
+| **IDE support**         | No     | No           | No      | Limited           | VS Code/JB   | No     |
+| **PHPMD compatibility** | Full   | No           | Full    | Full              | No           | No     |
+| **Fingerprinting**      | No     | No           | No      | No                | No           | Yes    |
+| **Output**              | STDOUT | STDOUT       | STDOUT  | STDOUT            | STDOUT       | STDOUT |
 
 ### Choosing the Right Format
 

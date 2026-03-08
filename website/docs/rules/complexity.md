@@ -20,17 +20,17 @@ The number roughly tells you the minimum number of test cases you need to fully 
 
 **Method level** (enabled by default):
 
-| Level | Threshold | Severity |
-|-------|-----------|----------|
-| Warning | >= 10 | Warning |
-| Error | >= 20 | Error |
+| Level   | Threshold | Severity |
+| ------- | --------- | -------- |
+| Warning | >= 10     | Warning  |
+| Error   | >= 20     | Error    |
 
 **Class level** (enabled by default) -- checks the maximum CCN among all methods in the class:
 
-| Level | Threshold | Severity |
-|-------|-----------|----------|
-| Warning | >= 30 | Warning |
-| Error | >= 50 | Error |
+| Level   | Threshold | Severity |
+| ------- | --------- | -------- |
+| Warning | >= 30     | Warning  |
+| Error   | >= 50     | Error    |
 
 ### Example
 
@@ -114,17 +114,17 @@ Key differences from cyclomatic complexity:
 
 **Method level** (enabled by default):
 
-| Level | Threshold | Severity |
-|-------|-----------|----------|
-| Warning | >= 15 | Warning |
-| Error | >= 30 | Error |
+| Level   | Threshold | Severity |
+| ------- | --------- | -------- |
+| Warning | >= 15     | Warning  |
+| Error   | >= 30     | Error    |
 
 **Class level** (enabled by default) -- checks the maximum cognitive complexity among all methods:
 
-| Level | Threshold | Severity |
-|-------|-----------|----------|
-| Warning | >= 30 | Warning |
-| Error | >= 50 | Error |
+| Level   | Threshold | Severity |
+| ------- | --------- | -------- |
+| Warning | >= 30     | Warning  |
+| Error   | >= 50     | Error    |
 
 ### Example
 
@@ -190,10 +190,10 @@ This makes NPath grow very fast. It reflects the true testing burden: to fully t
 
 **Method level** (enabled by default):
 
-| Level | Threshold | Severity |
-|-------|-----------|----------|
-| Warning | >= 200 | Warning |
-| Error | >= 1000 | Error |
+| Level   | Threshold | Severity |
+| ------- | --------- | -------- |
+| Warning | >= 200    | Warning  |
+| Error   | >= 1000   | Error    |
 
 **Class level** (disabled by default) -- checks the maximum NPath among methods.
 
@@ -264,10 +264,10 @@ A class with 20 simple getter/setter methods (each with complexity 1) has WMC = 
 
 ### Thresholds
 
-| Level | Threshold | Severity |
-|-------|-----------|----------|
-| Warning | > 50 | Warning |
-| Error | > 80 | Error |
+| Level   | Threshold | Severity |
+| ------- | --------- | -------- |
+| Warning | > 50      | Warning  |
+| Error   | > 80      | Error    |
 
 ### Example
 

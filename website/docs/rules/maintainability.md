@@ -20,24 +20,24 @@ These three factors are combined into a single number. The original formula prod
 
 **How to read the score:**
 
-| Score     | Meaning                                                  |
-|-----------|----------------------------------------------------------|
-| 85--100+  | Excellent -- easy to understand and modify               |
-| 65--84    | Good -- reasonable maintainability                       |
-| 40--64    | Moderate -- could benefit from simplification            |
-| 20--39    | Poor -- difficult to maintain, refactoring recommended   |
-| Below 20  | Critical -- very hard to maintain, refactoring required  |
+| Score    | Meaning                                                 |
+| -------- | ------------------------------------------------------- |
+| 85--100+ | Excellent -- easy to understand and modify              |
+| 65--84   | Good -- reasonable maintainability                      |
+| 40--64   | Moderate -- could benefit from simplification           |
+| 20--39   | Poor -- difficult to maintain, refactoring recommended  |
+| Below 20 | Critical -- very hard to maintain, refactoring required |
 
 !!! warning "Inverted thresholds"
     Unlike most rules where higher values are worse, here **lower values are worse**. The rule triggers when the score drops **below** the threshold.
 
 ### Thresholds
 
-| Score      | Severity | Meaning                              |
-|------------|----------|--------------------------------------|
-| 40+        | OK       | Maintainable code                    |
-| 20--39     | Warning  | Maintainability is deteriorating     |
-| Below 20   | Error    | Code is very hard to maintain        |
+| Score    | Severity | Meaning                          |
+| -------- | -------- | -------------------------------- |
+| 40+      | OK       | Maintainable code                |
+| 20--39   | Warning  | Maintainability is deteriorating |
+| Below 20 | Error    | Code is very hard to maintain    |
 
 ### Example
 
@@ -151,13 +151,13 @@ The raw MI value (0-171 scale) is normalized to a **0-100 scale**: `max(0, MI x 
 
 ### Configuration
 
-| Option         | Default | Description                                       |
-|----------------|---------|---------------------------------------------------|
-| `enabled`      | `true`  | Enable or disable this rule                       |
-| `warning`      | `40.0`  | Score below this triggers a warning               |
-| `error`        | `20.0`  | Score below this triggers an error                |
-| `excludeTests` | `true`  | Skip test files                                   |
-| `minLoc`       | `10`    | Skip methods with fewer lines (avoids noise)      |
+| Option         | Default | Description                                  |
+| -------------- | ------- | -------------------------------------------- |
+| `enabled`      | `true`  | Enable or disable this rule                  |
+| `warning`      | `40.0`  | Score below this triggers a warning          |
+| `error`        | `20.0`  | Score below this triggers an error           |
+| `excludeTests` | `true`  | Skip test files                              |
+| `minLoc`       | `10`    | Skip methods with fewer lines (avoids noise) |
 
 ```yaml
 # aimd.yaml

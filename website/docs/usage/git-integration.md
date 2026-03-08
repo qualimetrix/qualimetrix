@@ -105,10 +105,10 @@ bin/aimd analyze src/ --report=git:main..HEAD
 
 AIMD has two separate scoping mechanisms:
 
-| Option | Controls | What it does |
-|--------|----------|-------------|
-| `--analyze` | **Input** | Which files to parse and collect metrics from |
-| `--report` | **Output** | Which violations to show in the report |
+| Option      | Controls   | What it does                                  |
+| ----------- | ---------- | --------------------------------------------- |
+| `--analyze` | **Input**  | Which files to parse and collect metrics from |
+| `--report`  | **Output** | Which violations to show in the report        |
 
 ### --analyze
 
@@ -143,11 +143,11 @@ bin/aimd analyze src/ --analyze=git:main..HEAD --report=git:main..HEAD
 
 ### Which one to use?
 
-| Scenario | Recommendation |
-|----------|---------------|
-| Pre-commit hook (speed matters) | `--staged` (uses `--analyze`) |
-| PR review (accuracy matters) | `--diff=main` (uses `--report`) |
-| CI pipeline with full analysis | `--report=git:main..HEAD` |
+| Scenario                        | Recommendation                  |
+| ------------------------------- | ------------------------------- |
+| Pre-commit hook (speed matters) | `--staged` (uses `--analyze`)   |
+| PR review (accuracy matters)    | `--diff=main` (uses `--report`) |
+| CI pipeline with full analysis  | `--report=git:main..HEAD`       |
 
 ---
 
@@ -167,12 +167,12 @@ bin/aimd analyze src/ --diff=main --report-strict
 
 Both `--analyze` and `--report` accept scope expressions:
 
-| Expression | Meaning |
-|-----------|---------|
-| `git:staged` | Files staged for commit |
-| `git:main..HEAD` | Files changed between main and HEAD |
+| Expression                 | Meaning                                      |
+| -------------------------- | -------------------------------------------- |
+| `git:staged`               | Files staged for commit                      |
+| `git:main..HEAD`           | Files changed between main and HEAD          |
 | `git:origin/develop..HEAD` | Files changed between remote branch and HEAD |
-| `git:abc1234..HEAD` | Files changed since a specific commit |
+| `git:abc1234..HEAD`        | Files changed since a specific commit        |
 
 ---
 

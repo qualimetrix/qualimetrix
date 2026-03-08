@@ -6,12 +6,12 @@ PSR-3 logger integration for debugging, monitoring, and logging parse errors.
 
 **Log Levels:**
 
-| Level | Usage |
-|-------|-------|
-| DEBUG | Parsing details for each file |
-| INFO | Analysis progress (N files processed) |
-| WARNING | Parse errors, deprecated features |
-| ERROR | Critical failures |
+| Level   | Usage                                 |
+| ------- | ------------------------------------- |
+| DEBUG   | Parsing details for each file         |
+| INFO    | Analysis progress (N files processed) |
+| WARNING | Parse errors, deprecated features     |
+| ERROR   | Critical failures                     |
 
 ## Components
 
@@ -70,12 +70,12 @@ Logger is passed to:
 
 ## CLI Options
 
-| Option | Description |
-|--------|-------------|
-| `--log-file=<path>` | Log file path (JSON Lines) |
+| Option                | Description                                  |
+| --------------------- | -------------------------------------------- |
+| `--log-file=<path>`   | Log file path (JSON Lines)                   |
 | `--log-level=<level>` | Minimum log level (debug/info/warning/error) |
-| `-v` | Enable INFO logs to console |
-| `-vvv` | Enable DEBUG logs to console |
+| `-v`                  | Enable INFO logs to console                  |
+| `-vvv`                | Enable DEBUG logs to console                 |
 
 ## Examples
 

@@ -32,12 +32,12 @@ Where:
 
 ### Differences from LCOM
 
-| Aspect | LCOM | TCC/LCC |
-|--------|------|---------|
-| Range | 0 to infinity | 0 to 1 |
+| Aspect         | LCOM                     | TCC/LCC            |
+| -------------- | ------------------------ | ------------------ |
+| Range          | 0 to infinity            | 0 to 1             |
 | Interpretation | Complex (lower = better) | Simple (1 = ideal) |
-| Methods | All methods | Only public |
-| Transitivity | No | LCC considers it |
+| Methods        | All methods              | Only public        |
+| Transitivity   | No                       | LCC considers it   |
 
 ### Examples
 
@@ -81,13 +81,13 @@ class GodClass
 
 ### Interpretation
 
-| TCC | Quality |
-|-----|---------|
-| 1.0 | Perfect cohesion |
-| 0.5-1.0 | Good cohesion |
-| 0.3-0.5 | Moderate cohesion |
-| < 0.3 | Low cohesion (SRP violated) |
-| 0.0 | Class should be split |
+| TCC     | Quality                     |
+| ------- | --------------------------- |
+| 1.0     | Perfect cohesion            |
+| 0.5-1.0 | Good cohesion               |
+| 0.3-0.5 | Moderate cohesion           |
+| < 0.3   | Low cohesion (SRP violated) |
+| 0.0     | Class should be split       |
 
 ---
 
@@ -108,11 +108,11 @@ LCOM4 = number of connected components in the method graph.
 
 ### Interpretation
 
-| LCOM | Description |
-|------|-------------|
-| 0 | Class with no methods |
-| 1 | Perfectly cohesive class |
-| 2+ | Class can be split into N parts |
+| LCOM | Description                     |
+| ---- | ------------------------------- |
+| 0    | Class with no methods           |
+| 1    | Perfectly cohesive class        |
+| 2+   | Class can be split into N parts |
 
 **Example:**
 
@@ -151,11 +151,11 @@ Where RS (Response Set) includes:
 
 ### Components
 
-| Metric | Description |
-|--------|-------------|
-| `rfc_own` | Class's own methods |
-| `rfc_external` | Unique external calls |
-| `rfc` | `rfc_own + rfc_external` |
+| Metric         | Description              |
+| -------------- | ------------------------ |
+| `rfc_own`      | Class's own methods      |
+| `rfc_external` | Unique external calls    |
+| `rfc`          | `rfc_own + rfc_external` |
 
 ### Example
 
@@ -177,12 +177,12 @@ class OrderProcessor
 
 ### Interpretation
 
-| RFC | Quality |
-|-----|---------|
-| 0-20 | Simple class |
-| 20-50 | Moderate complexity |
-| 50-100 | Many dependencies |
-| 100+ | Very complex, hard to test |
+| RFC    | Quality                    |
+| ------ | -------------------------- |
+| 0-20   | Simple class               |
+| 20-50  | Moderate complexity        |
+| 50-100 | Many dependencies          |
+| 100+   | Very complex, hard to test |
 
 ---
 
@@ -202,12 +202,12 @@ Sum of cyclomatic complexity of all class methods.
 
 ### Interpretation
 
-| WMC | Quality |
-|-----|---------|
-| 0-20 | Simple class |
-| 20-50 | Moderate complexity |
-| 50-100 | Complex class |
-| 100+ | Very complex, refactoring required |
+| WMC    | Quality                            |
+| ------ | ---------------------------------- |
+| 0-20   | Simple class                       |
+| 20-50  | Moderate complexity                |
+| 50-100 | Complex class                      |
+| 100+   | Very complex, refactoring required |
 
 ---
 
@@ -227,11 +227,11 @@ DIT = depth of the class in the inheritance hierarchy.
 
 ### Interpretation
 
-| DIT | Quality |
-|-----|---------|
-| 0-2 | Normal |
-| 3-4 | Attention needed |
-| 5+ | Too deep hierarchy |
+| DIT | Quality            |
+| --- | ------------------ |
+| 0-2 | Normal             |
+| 3-4 | Attention needed   |
+| 5+  | Too deep hierarchy |
 
 ---
 
@@ -263,12 +263,12 @@ class PayPalGateway implements PaymentGateway { }  // +1
 
 ### Interpretation
 
-| NOC | Quality |
-|-----|---------|
-| 0 | Leaf class |
-| 1-5 | Normal |
-| 6-10 | Wide hierarchy |
-| 10+ | Too many subclasses |
+| NOC  | Quality             |
+| ---- | ------------------- |
+| 0    | Leaf class          |
+| 1-5  | Normal              |
+| 6-10 | Wide hierarchy      |
+| 10+  | Too many subclasses |
 
 **High NOC is normal for:**
 - Strategy interfaces
@@ -290,13 +290,13 @@ class PayPalGateway implements PaymentGateway { }  // +1
 
 ### Metrics
 
-| Metric | Description |
-|--------|-------------|
-| `methodCount` | Methods excluding getters/setters |
-| `methodCountTotal` | All methods |
+| Metric              | Description                                |
+| ------------------- | ------------------------------------------ |
+| `methodCount`       | Methods excluding getters/setters          |
+| `methodCountTotal`  | All methods                                |
 | `methodCountPublic` | Public methods (excluding getters/setters) |
-| `getterCount` | Methods `get*`, `is*`, `has*` |
-| `setterCount` | Methods `set*` |
+| `getterCount`       | Methods `get*`, `is*`, `has*`              |
+| `setterCount`       | Methods `set*`                             |
 
 ---
 

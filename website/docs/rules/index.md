@@ -17,12 +17,12 @@ You can customize all thresholds via configuration file or command-line options.
 
 These rules measure how tangled and branching your code is. Complex code is harder to understand, test, and change safely.
 
-| Rule | ID | What it checks | Default Warning | Default Error |
-|------|-----|---------------|----------------|---------------|
-| [Cyclomatic Complexity](complexity.md) | `complexity.cyclomatic` | Number of decision paths in a method | 10 (method) | 20 (method) |
-| [Cognitive Complexity](complexity.md) | `complexity.cognitive` | How hard the code is to understand | 15 (method) | 30 (method) |
-| [NPath Complexity](complexity.md) | `complexity.npath` | Total number of possible execution paths | 200 (method) | 1000 (method) |
-| [WMC](complexity.md) | `complexity.wmc` | Total complexity of all methods in a class | 50 | 80 |
+| Rule                                   | ID                      | What it checks                             | Default Warning | Default Error |
+| -------------------------------------- | ----------------------- | ------------------------------------------ | --------------- | ------------- |
+| [Cyclomatic Complexity](complexity.md) | `complexity.cyclomatic` | Number of decision paths in a method       | 10 (method)     | 20 (method)   |
+| [Cognitive Complexity](complexity.md)  | `complexity.cognitive`  | How hard the code is to understand         | 15 (method)     | 30 (method)   |
+| [NPath Complexity](complexity.md)      | `complexity.npath`      | Total number of possible execution paths   | 200 (method)    | 1000 (method) |
+| [WMC](complexity.md)                   | `complexity.wmc`        | Total complexity of all methods in a class | 50              | 80            |
 
 [Read more about Complexity rules --&gt;](complexity.md)
 
@@ -30,11 +30,11 @@ These rules measure how tangled and branching your code is. Complex code is hard
 
 These rules check whether your classes and namespaces have grown too large. Big classes tend to do too many things at once.
 
-| Rule | ID | What it checks | Default Warning | Default Error |
-|------|-----|---------------|----------------|---------------|
-| [Method Count](size.md) | `size.method-count` | Number of methods in a class | 20 | 30 |
-| [Class Count](size.md) | `size.class-count` | Number of classes in a namespace | 15 | 25 |
-| [Property Count](size.md) | `size.property-count` | Number of properties in a class | 15 | 20 |
+| Rule                      | ID                    | What it checks                   | Default Warning | Default Error |
+| ------------------------- | --------------------- | -------------------------------- | --------------- | ------------- |
+| [Method Count](size.md)   | `size.method-count`   | Number of methods in a class     | 20              | 30            |
+| [Class Count](size.md)    | `size.class-count`    | Number of classes in a namespace | 15              | 25            |
+| [Property Count](size.md) | `size.property-count` | Number of properties in a class  | 15              | 20            |
 
 [Read more about Size rules --&gt;](size.md)
 
@@ -42,11 +42,11 @@ These rules check whether your classes and namespaces have grown too large. Big 
 
 These rules check class cohesion, inheritance depth, and structural problems.
 
-| Rule | ID | What it checks | Default Warning | Default Error |
-|------|-----|---------------|----------------|---------------|
-| [LCOM](design.md) | `design.lcom` | Whether a class does too many unrelated things | 3 | 5 |
-| [Inheritance Depth](design.md) | `design.inheritance` | How deep the inheritance chain is | 4 | 6 |
-| [NOC](design.md) | `design.noc` | Number of classes inheriting from this one | 10 | 15 |
+| Rule                           | ID                   | What it checks                                 | Default Warning | Default Error |
+| ------------------------------ | -------------------- | ---------------------------------------------- | --------------- | ------------- |
+| [LCOM](design.md)              | `design.lcom`        | Whether a class does too many unrelated things | 3               | 5             |
+| [Inheritance Depth](design.md) | `design.inheritance` | How deep the inheritance chain is              | 4               | 6             |
+| [NOC](design.md)               | `design.noc`         | Number of classes inheriting from this one     | 10              | 15            |
 
 [Read more about Design rules --&gt;](design.md)
 
@@ -54,27 +54,27 @@ These rules check class cohesion, inheritance depth, and structural problems.
 
 These rules measure how tightly your classes depend on each other. Tightly coupled code is fragile -- a change in one place can break many others.
 
-| Rule | ID | What it checks | Default Warning | Default Error |
-|------|-----|---------------|----------------|---------------|
-| [CBO](coupling.md) | `coupling.cbo` | Total number of dependencies | 14 | 20 |
-| [Instability](coupling.md) | `coupling.instability` | How much a class depends on others vs others depend on it | 0.8 | 0.95 |
-| [Distance](coupling.md) | `coupling.distance` | Balance between abstractness and stability | 0.3 | 0.5 |
+| Rule                       | ID                     | What it checks                                            | Default Warning | Default Error |
+| -------------------------- | ---------------------- | --------------------------------------------------------- | --------------- | ------------- |
+| [CBO](coupling.md)         | `coupling.cbo`         | Total number of dependencies                              | 14              | 20            |
+| [Instability](coupling.md) | `coupling.instability` | How much a class depends on others vs others depend on it | 0.8             | 0.95          |
+| [Distance](coupling.md)    | `coupling.distance`    | Balance between abstractness and stability                | 0.3             | 0.5           |
 
 [Read more about Coupling rules --&gt;](coupling.md)
 
 ### Maintainability Rules
 
-| Rule | ID | What it checks | Default Warning | Default Error |
-|------|-----|---------------|----------------|---------------|
-| [Maintainability Index](maintainability.md) | `maintainability.index` | Overall code maintainability score | &lt;40 | &lt;20 |
+| Rule                                        | ID                      | What it checks                     | Default Warning | Default Error |
+| ------------------------------------------- | ----------------------- | ---------------------------------- | --------------- | ------------- |
+| [Maintainability Index](maintainability.md) | `maintainability.index` | Overall code maintainability score | &lt;40          | &lt;20        |
 
 [Read more about Maintainability rules --&gt;](maintainability.md)
 
 ### Architecture Rules
 
-| Rule | ID | What it checks | Default Warning | Default Error |
-|------|-----|---------------|----------------|---------------|
-| [Circular Dependencies](architecture.md) | `architecture.circular-dependency` | Classes that depend on each other in a loop | -- | Error |
+| Rule                                     | ID                                 | What it checks                              | Default Warning | Default Error |
+| ---------------------------------------- | ---------------------------------- | ------------------------------------------- | --------------- | ------------- |
+| [Circular Dependencies](architecture.md) | `architecture.circular-dependency` | Classes that depend on each other in a loop | --              | Error         |
 
 [Read more about Architecture rules --&gt;](architecture.md)
 
@@ -82,17 +82,17 @@ These rules measure how tightly your classes depend on each other. Tightly coupl
 
 These rules detect common bad practices that are almost always wrong, regardless of context. Most produce an **Error** severity by default.
 
-| Rule | ID | What it detects |
-|------|-----|----------------|
-| [Boolean Argument](code-smell.md) | `code-smell.boolean-argument` | `bool` parameters in method signatures |
-| [Count in Loop](code-smell.md) | `code-smell.count-in-loop` | Calling `count()` in a loop condition |
-| [Debug Code](code-smell.md) | `code-smell.debug-code` | `var_dump`, `print_r`, `debug_backtrace`, etc. |
-| [Empty Catch](code-smell.md) | `code-smell.empty-catch` | `catch` blocks with no body |
-| [Error Suppression](code-smell.md) | `code-smell.error-suppression` | The `@` error suppression operator |
-| [Eval](code-smell.md) | `code-smell.eval` | Use of `eval()` |
-| [Exit](code-smell.md) | `code-smell.exit` | Use of `exit()` or `die()` |
-| [Goto](code-smell.md) | `code-smell.goto` | Use of `goto` |
-| [Superglobals](code-smell.md) | `code-smell.superglobals` | Direct access to `$_GET`, `$_POST`, etc. |
+| Rule                               | ID                             | What it detects                                |
+| ---------------------------------- | ------------------------------ | ---------------------------------------------- |
+| [Boolean Argument](code-smell.md)  | `code-smell.boolean-argument`  | `bool` parameters in method signatures         |
+| [Count in Loop](code-smell.md)     | `code-smell.count-in-loop`     | Calling `count()` in a loop condition          |
+| [Debug Code](code-smell.md)        | `code-smell.debug-code`        | `var_dump`, `print_r`, `debug_backtrace`, etc. |
+| [Empty Catch](code-smell.md)       | `code-smell.empty-catch`       | `catch` blocks with no body                    |
+| [Error Suppression](code-smell.md) | `code-smell.error-suppression` | The `@` error suppression operator             |
+| [Eval](code-smell.md)              | `code-smell.eval`              | Use of `eval()`                                |
+| [Exit](code-smell.md)              | `code-smell.exit`              | Use of `exit()` or `die()`                     |
+| [Goto](code-smell.md)              | `code-smell.goto`              | Use of `goto`                                  |
+| [Superglobals](code-smell.md)      | `code-smell.superglobals`      | Direct access to `$_GET`, `$_POST`, etc.       |
 
 [Read more about Code Smell rules --&gt;](code-smell.md)
 

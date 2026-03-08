@@ -25,17 +25,17 @@ For example, if `UserService` uses `UserRepository`, `Logger`, `Validator`, and 
 
 **Class level** (enabled by default):
 
-| Level | Threshold | Severity |
-|-------|-----------|----------|
-| Warning | > 14 | Warning |
-| Error | > 20 | Error |
+| Level   | Threshold | Severity |
+| ------- | --------- | -------- |
+| Warning | > 14      | Warning  |
+| Error   | > 20      | Error    |
 
 **Namespace level** (enabled by default, requires at least 3 classes in the namespace):
 
-| Level | Threshold | Severity |
-|-------|-----------|----------|
-| Warning | > 14 | Warning |
-| Error | > 20 | Error |
+| Level   | Threshold | Severity |
+| ------- | --------- | -------- |
+| Warning | > 14      | Warning  |
+| Error   | > 20      | Error    |
 
 ### Example
 
@@ -124,17 +124,17 @@ The result is a number between 0.0 and 1.0:
 
 **Class level** (enabled by default):
 
-| Level | Threshold | Severity |
-|-------|-----------|----------|
-| Warning | >= 0.8 | Warning |
-| Error | >= 0.95 | Error |
+| Level   | Threshold | Severity |
+| ------- | --------- | -------- |
+| Warning | >= 0.8    | Warning  |
+| Error   | >= 0.95   | Error    |
 
 **Namespace level** (enabled by default, requires at least 3 classes):
 
-| Level | Threshold | Severity |
-|-------|-----------|----------|
-| Warning | >= 0.8 | Warning |
-| Error | >= 0.95 | Error |
+| Level   | Threshold | Severity |
+| ------- | --------- | -------- |
+| Warning | >= 0.8    | Warning  |
+| Error   | >= 0.95   | Error    |
 
 ### Example
 
@@ -216,10 +216,10 @@ There are two bad zones:
 
 ### Thresholds
 
-| Level | Threshold | Severity |
-|-------|-----------|----------|
-| Warning | >= 0.3 | Warning |
-| Error | >= 0.5 | Error |
+| Level   | Threshold | Severity |
+| ------- | --------- | -------- |
+| Warning | >= 0.3    | Warning  |
+| Error   | >= 0.5    | Error    |
 
 Only namespaces with at least 3 classes are analyzed (configurable via `minClassCount`).
 

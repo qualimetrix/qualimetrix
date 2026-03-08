@@ -138,11 +138,11 @@ class GeneratedCode
 
 ### Suppression tag syntax
 
-| Tag | Scope | Example |
-|-----|-------|---------|
+| Tag                            | Scope                               | Example                                          |
+| ------------------------------ | ----------------------------------- | ------------------------------------------------ |
 | `@aimd-ignore <rule> [reason]` | The symbol this docblock belongs to | `@aimd-ignore complexity.cyclomatic Legacy code` |
-| `@aimd-ignore * [reason]` | All rules for this symbol | `@aimd-ignore * Generated code` |
-| `@aimd-ignore-file` | Entire file | `@aimd-ignore-file` |
+| `@aimd-ignore * [reason]`      | All rules for this symbol           | `@aimd-ignore * Generated code`                  |
+| `@aimd-ignore-file`            | Entire file                         | `@aimd-ignore-file`                              |
 
 The rule name supports prefix matching: `@aimd-ignore complexity` suppresses all `complexity.*` rules.
 

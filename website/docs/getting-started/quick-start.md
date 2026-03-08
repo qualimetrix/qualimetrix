@@ -214,11 +214,11 @@ CLI patterns are merged with those defined in the config file.
 
 ## Method Comparison
 
-| Method | When to use | Advantages | Disadvantages |
-|--------|-------------|------------|---------------|
-| **Pre-commit Hook** | Local development | Fast feedback, prevents bad commits | Can be bypassed with `--no-verify` |
-| **GitHub Action** | CI/CD pipeline | Automatic for all PRs, cannot be bypassed | Slower than local |
-| **Docker** | Clean environment | No local PHP needed, reproducible | Requires Docker, slower |
+| Method              | When to use       | Advantages                                | Disadvantages                      |
+| ------------------- | ----------------- | ----------------------------------------- | ---------------------------------- |
+| **Pre-commit Hook** | Local development | Fast feedback, prevents bad commits       | Can be bypassed with `--no-verify` |
+| **GitHub Action**   | CI/CD pipeline    | Automatic for all PRs, cannot be bypassed | Slower than local                  |
+| **Docker**          | Clean environment | No local PHP needed, reproducible         | Requires Docker, slower            |
 
 ### Recommended Strategy
 

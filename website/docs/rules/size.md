@@ -14,16 +14,16 @@ Counts the number of methods in a class. A class with too many methods is likely
 
 ### Thresholds
 
-| Value   | Severity | Meaning                                    |
-|---------|----------|--------------------------------------------|
-| 1--19   | OK       | Reasonable class size                      |
-| 20--29  | Warning  | Class is getting large, consider splitting |
-| 30+     | Error    | Class is too large, should be refactored   |
+| Value  | Severity | Meaning                                    |
+| ------ | -------- | ------------------------------------------ |
+| 1--19  | OK       | Reasonable class size                      |
+| 20--29 | Warning  | Class is getting large, consider splitting |
+| 30+    | Error    | Class is too large, should be refactored   |
 
 ### Configuration
 
 | Option    | Default | Description                        |
-|-----------|---------|------------------------------------|
+| --------- | ------- | ---------------------------------- |
 | `enabled` | `true`  | Enable or disable this rule        |
 | `warning` | `20`    | Method count that triggers warning |
 | `error`   | `30`    | Method count that triggers error   |
@@ -98,16 +98,16 @@ Counts the number of classes in a namespace (package). This is measured at the n
 
 ### Thresholds
 
-| Value   | Severity | Meaning                                         |
-|---------|----------|--------------------------------------------------|
-| 1--14   | OK       | Focused namespace                                |
-| 15--24  | Warning  | Namespace is getting crowded                     |
-| 25+     | Error    | Namespace should be split into sub-namespaces    |
+| Value  | Severity | Meaning                                       |
+| ------ | -------- | --------------------------------------------- |
+| 1--14  | OK       | Focused namespace                             |
+| 15--24 | Warning  | Namespace is getting crowded                  |
+| 25+    | Error    | Namespace should be split into sub-namespaces |
 
 ### Configuration
 
 | Option    | Default | Description                       |
-|-----------|---------|-----------------------------------|
+| --------- | ------- | --------------------------------- |
 | `enabled` | `true`  | Enable or disable this rule       |
 | `warning` | `15`    | Class count that triggers warning |
 | `error`   | `25`    | Class count that triggers error   |
@@ -165,21 +165,21 @@ Counts the number of properties (fields) in a class. A class with many propertie
 
 ### Thresholds
 
-| Value   | Severity | Meaning                                           |
-|---------|----------|---------------------------------------------------|
-| 1--15   | OK       | Reasonable number of properties                   |
-| 16--20  | Warning  | Too many properties, consider extracting objects  |
-| 21+     | Error    | Far too many properties, refactor needed          |
+| Value  | Severity | Meaning                                          |
+| ------ | -------- | ------------------------------------------------ |
+| 1--15  | OK       | Reasonable number of properties                  |
+| 16--20 | Warning  | Too many properties, consider extracting objects |
+| 21+    | Error    | Far too many properties, refactor needed         |
 
 ### Configuration
 
-| Option                | Default | Description                                                                |
-|-----------------------|---------|----------------------------------------------------------------------------|
-| `enabled`             | `true`  | Enable or disable this rule                                                |
-| `warning`             | `15`    | Property count above this triggers warning                                 |
-| `error`               | `20`    | Property count above this triggers error                                   |
-| `excludeReadonly`     | `true`  | Skip `readonly` classes (DTOs, value objects)                              |
-| `excludePromotedOnly` | `true` | Skip classes where all properties are promoted constructor parameters      |
+| Option                | Default | Description                                                           |
+| --------------------- | ------- | --------------------------------------------------------------------- |
+| `enabled`             | `true`  | Enable or disable this rule                                           |
+| `warning`             | `15`    | Property count above this triggers warning                            |
+| `error`               | `20`    | Property count above this triggers error                              |
+| `excludeReadonly`     | `true`  | Skip `readonly` classes (DTOs, value objects)                         |
+| `excludePromotedOnly` | `true`  | Skip classes where all properties are promoted constructor parameters |
 
 ```yaml
 # aimd.yaml

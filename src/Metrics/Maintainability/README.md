@@ -12,24 +12,24 @@ Maintainability metrics assess the difficulty of understanding, modifying, and t
 
 ### Base Components
 
-| Component | Description |
-|-----------|-------------|
-| n1 | Unique operators |
-| n2 | Unique operands |
-| N1 | Total operators |
-| N2 | Total operands |
+| Component | Description      |
+| --------- | ---------------- |
+| n1        | Unique operators |
+| n2        | Unique operands  |
+| N1        | Total operators  |
+| N2        | Total operands   |
 
 ### Derived Metrics
 
-| Metric | Formula | Description |
-|--------|---------|-------------|
-| Vocabulary | n1 + n2 | Program vocabulary |
-| Length | N1 + N2 | Program length |
-| Volume | Length x log2(Vocabulary) | Volume (bits) |
-| Difficulty | (n1/2) x (N2/n2) | Comprehension difficulty |
-| Effort | Volume x Difficulty | Effort to understand |
-| Bugs | Volume / 3000 | Estimated number of bugs |
-| Time | Effort / 18 | Time to understand (seconds) |
+| Metric     | Formula                   | Description                  |
+| ---------- | ------------------------- | ---------------------------- |
+| Vocabulary | n1 + n2                   | Program vocabulary           |
+| Length     | N1 + N2                   | Program length               |
+| Volume     | Length x log2(Vocabulary) | Volume (bits)                |
+| Difficulty | (n1/2) x (N2/n2)          | Comprehension difficulty     |
+| Effort     | Volume x Difficulty       | Effort to understand         |
+| Bugs       | Volume / 3000             | Estimated number of bugs     |
+| Time       | Effort / 18               | Time to understand (seconds) |
 
 ### AIMD Methodology
 
@@ -111,12 +111,12 @@ Where:
 
 ### Interpretation
 
-| MI | Quality |
-|----|---------|
+| MI     | Quality                   |
+| ------ | ------------------------- |
 | 85-100 | Excellent maintainability |
-| 65-84 | Good maintainability |
-| 20-64 | Moderate maintainability |
-| 0-19 | Poor maintainability |
+| 65-84  | Good maintainability      |
+| 20-64  | Moderate maintainability  |
+| 0-19   | Poor maintainability      |
 
 ### What Affects MI
 

@@ -30,13 +30,13 @@ bin/aimd hook:install
 
 ## Output Formats
 
-| Format | Use Case |
-|--------|----------|
-| `text` | CLI, human-readable |
-| `json` | CI/CD integration |
-| `checkstyle` | Jenkins, SonarQube |
-| `sarif` | GitHub Security, VS Code |
-| `gitlab` | GitLab Code Quality |
+| Format       | Use Case                 |
+| ------------ | ------------------------ |
+| `text`       | CLI, human-readable      |
+| `json`       | CI/CD integration        |
+| `checkstyle` | Jenkins, SonarQube       |
+| `sarif`      | GitHub Security, VS Code |
+| `gitlab`     | GitLab Code Quality      |
 
 ## Configuration
 

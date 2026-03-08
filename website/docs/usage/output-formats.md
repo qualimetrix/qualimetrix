@@ -239,9 +239,9 @@ GitLab Code Quality JSON format. Shows violations directly in Merge Request diff
 **Severity mapping:**
 
 | AIMD Severity | GitLab Severity |
-|---------------|-----------------|
-| error | critical |
-| warning | major |
+| ------------- | --------------- |
+| error         | critical        |
+| warning       | major           |
 
 **CI usage (GitLab CI):**
 
@@ -261,21 +261,21 @@ Violations appear inline in the **Changes** tab of your Merge Request.
 
 ## Comparison table
 
-| Format | Readable | Machine | Grouping | CI Integration |
-|--------|----------|---------|----------|---------------|
-| `text` | Good | Parseable | `--group-by` | Any (exit code) |
-| `text-verbose` | Best | No | `--group-by` (default: file) | Any (exit code) |
-| `json` | No | Yes | Built-in (by file) | Custom scripts |
-| `checkstyle` | No | Yes | Built-in (by file) | Jenkins, SonarQube |
-| `sarif` | No | Yes | Built-in | GitHub, VS Code, JetBrains |
-| `gitlab` | No | Yes | Flat list | GitLab MR widget |
+| Format         | Readable | Machine   | Grouping                     | CI Integration             |
+| -------------- | -------- | --------- | ---------------------------- | -------------------------- |
+| `text`         | Good     | Parseable | `--group-by`                 | Any (exit code)            |
+| `text-verbose` | Best     | No        | `--group-by` (default: file) | Any (exit code)            |
+| `json`         | No       | Yes       | Built-in (by file)           | Custom scripts             |
+| `checkstyle`   | No       | Yes       | Built-in (by file)           | Jenkins, SonarQube         |
+| `sarif`        | No       | Yes       | Built-in                     | GitHub, VS Code, JetBrains |
+| `gitlab`       | No       | Yes       | Flat list                    | GitLab MR widget           |
 
 ### Exit codes
 
 All formats use the same exit codes:
 
-| Exit code | Meaning |
-|-----------|---------|
-| 0 | No errors (warnings are allowed) |
-| 1 | At least one error-severity violation |
-| 2 | Runtime error (invalid config, file not found, etc.) |
+| Exit code | Meaning                                              |
+| --------- | ---------------------------------------------------- |
+| 0         | No errors (warnings are allowed)                     |
+| 1         | At least one error-severity violation                |
+| 2         | Runtime error (invalid config, file not found, etc.) |

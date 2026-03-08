@@ -6,17 +6,17 @@ Parsing PHP into AST is the most expensive operation. Caching avoids repeated pa
 
 **Performance:**
 
-| Scenario | Time relative to cold cache |
-|----------|-----------------------------|
-| Cold cache | 100% |
-| Warm cache | 10-20% |
+| Scenario   | Time relative to cold cache |
+| ---------- | --------------------------- |
+| Cold cache | 100%                        |
+| Warm cache | 10-20%                      |
 
 ## Cache Levels
 
-| Level | What is cached | Key depends on | When invalidated |
-|-------|---------------|----------------|------------------|
-| **AST** | Parse result | file + mtime + size + php-parser version | File change, php-parser update |
-| **Metrics** | File MetricBag | AST key + collectors | File change, aimd update |
+| Level       | What is cached | Key depends on                           | When invalidated               |
+| ----------- | -------------- | ---------------------------------------- | ------------------------------ |
+| **AST**     | Parse result   | file + mtime + size + php-parser version | File change, php-parser update |
+| **Metrics** | File MetricBag | AST key + collectors                     | File change, aimd update       |
 
 **Priority:** AST caching is primary (80%+ of time). MetricBag caching is an additional optimization for incremental runs.
 
@@ -41,11 +41,11 @@ Generates cache key for a file.
 
 **Key components:**
 
-| Component | Purpose |
-|-----------|---------|
-| `realpath` | Absolute file path |
-| `mtime` | Modification time |
-| `size` | File size |
+| Component      | Purpose                      |
+| -------------- | ---------------------------- |
+| `realpath`     | Absolute file path           |
+| `mtime`        | Modification time            |
+| `size`         | File size                    |
 | `cacheVersion` | php-parser version (for AST) |
 
 **Hashing:** `xxh128` (fast non-cryptographic hash)
@@ -102,11 +102,11 @@ Lazy cache creation based on runtime configuration.
 
 ### Automatic Invalidation
 
-| Event | Result |
-|-------|--------|
-| File changed | New mtime/size -> new key -> cache miss |
-| php-parser updated | New cacheVersion -> all keys are new |
-| PHP updated | New cacheVersion |
+| Event              | Result                                  |
+| ------------------ | --------------------------------------- |
+| File changed       | New mtime/size -> new key -> cache miss |
+| php-parser updated | New cacheVersion -> all keys are new    |
+| PHP updated        | New cacheVersion                        |
 
 ### Manual Invalidation
 
@@ -158,11 +158,11 @@ Factory with runtime configuration awareness.
 
 ## CLI Options
 
-| Option | Description |
-|--------|-------------|
-| `--no-cache` | Disable caching |
-| `--cache-dir` | Cache directory (default: .aimd-cache) |
-| `--clear-cache` | Clear cache before analysis |
+| Option          | Description                            |
+| --------------- | -------------------------------------- |
+| `--no-cache`    | Disable caching                        |
+| `--cache-dir`   | Cache directory (default: .aimd-cache) |
+| `--clear-cache` | Clear cache before analysis            |
 
 ## Examples
 

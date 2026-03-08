@@ -21,12 +21,12 @@ Halstead metrics are part of the Maintainability category and are closely relate
 
 ### Derived Metrics
 
-| Metric | Formula |
-|--------|---------|
-| Volume | Length x log2(Vocabulary) |
-| Difficulty | (n1/2) x (N2/n2) |
-| Effort | Volume x Difficulty |
-| Bugs | Volume / 3000 |
-| Time | Effort / 18 |
+| Metric     | Formula                   |
+| ---------- | ------------------------- |
+| Volume     | Length x log2(Vocabulary) |
+| Difficulty | (n1/2) x (N2/n2)          |
+| Effort     | Volume x Difficulty       |
+| Bugs       | Volume / 3000             |
+| Time       | Effort / 18               |
 
 **Details:** See [Maintainability/README.md](../Maintainability/README.md)

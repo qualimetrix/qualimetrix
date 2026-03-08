@@ -27,12 +27,12 @@ What AIMD should own:              What to leave to others:
 
 ## Categories With Zero Coverage (Gaps)
 
-| Category | What's Missing | Impact | Competitor Coverage |
-|----------|---------------|--------|-------------------|
-| **Security** | No injection detection, no credential detection | Critical for enterprise adoption | SonarQube (full taint), Psalm (taint), PHPMD (none) |
-| **Duplication** | No copy-paste detection | Standard expectation for quality tools | phpcpd, SonarQube, phpmetrics (partial) |
-| **Dead Code** | No unused member detection, no unreachable code | High value, frequently requested | Psalm, PHPStan+extensions, Rector (59 rules) |
-| **Type Coverage** | No typed/untyped ratio metrics | Increasingly important with PHP 8.x adoption | PHPStan+type-coverage extension, Psalm |
+| Category          | What's Missing                                  | Impact                                       | Competitor Coverage                                 |
+| ----------------- | ----------------------------------------------- | -------------------------------------------- | --------------------------------------------------- |
+| **Security**      | No injection detection, no credential detection | Critical for enterprise adoption             | SonarQube (full taint), Psalm (taint), PHPMD (none) |
+| **Duplication**   | No copy-paste detection                         | Standard expectation for quality tools       | phpcpd, SonarQube, phpmetrics (partial)             |
+| **Dead Code**     | No unused member detection, no unreachable code | High value, frequently requested             | Psalm, PHPStan+extensions, Rector (59 rules)        |
+| **Type Coverage** | No typed/untyped ratio metrics                  | Increasingly important with PHP 8.x adoption | PHPStan+type-coverage extension, Psalm              |
 
 ---
 
@@ -193,13 +193,13 @@ These fill the biggest competitive gaps.
 
 ## NOT Recommended
 
-| Item | Reason |
-|------|--------|
-| **Full taint analysis** | Requires inter-procedural data-flow engine. Psalm and SonarQube have years of investment here. Not practical to compete. |
-| **Type checking / null safety** | PHPStan and Psalm own this completely. Would require building a type inference engine. |
-| **Auto-fixing** | Rector's domain. Fundamentally different concern from analysis. |
-| **Naming convention rules** | PHPCS/PHP-CS-Fixer handle this well. Low differentiation value. |
-| **Framework-specific presets** | Adds maintenance burden. AIMD is framework-agnostic by design. |
+| Item                            | Reason                                                                                                                   |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| **Full taint analysis**         | Requires inter-procedural data-flow engine. Psalm and SonarQube have years of investment here. Not practical to compete. |
+| **Type checking / null safety** | PHPStan and Psalm own this completely. Would require building a type inference engine.                                   |
+| **Auto-fixing**                 | Rector's domain. Fundamentally different concern from analysis.                                                          |
+| **Naming convention rules**     | PHPCS/PHP-CS-Fixer handle this well. Low differentiation value.                                                          |
+| **Framework-specific presets**  | Adds maintenance burden. AIMD is framework-agnostic by design.                                                           |
 
 ---
 

@@ -101,11 +101,11 @@ Shared configuration section goes at the bottom of the page.
 
 Use MkDocs Material admonitions sparingly and consistently:
 
-| Type | When to use |
-|------|-------------|
-| `!!! note` | Methodology nuances, scope clarifications, comparison with other tools |
-| `!!! warning` | Inverted logic, counterintuitive behavior |
-| `!!! tip` | Practical advice, common false positive workarounds |
+| Type          | When to use                                                            |
+| ------------- | ---------------------------------------------------------------------- |
+| `!!! note`    | Methodology nuances, scope clarifications, comparison with other tools |
+| `!!! warning` | Inverted logic, counterintuitive behavior                              |
+| `!!! tip`     | Practical advice, common false positive workarounds                    |
 
 Place admonitions immediately after the section they relate to, not grouped at the end.
 
@@ -123,14 +123,14 @@ Place admonitions immediately after the section they relate to, not grouped at t
 
 ## When to Update Documentation
 
-| Change type | Pages to update |
-|---|---|
-| Rule added/changed/removed | `rules/{group}.md` + `reference/default-thresholds.md` |
-| Metric algorithm changed | `rules/{group}.md` (Implementation notes section) |
-| CLI option added/changed | `usage/cli-options.md` |
-| Output format added/changed | `usage/output-formats.md` |
-| Baseline behavior changed | `usage/baseline.md` |
-| Git integration changed | `usage/git-integration.md` |
-| Configuration option added | `getting-started/configuration.md` + `usage/cli-options.md` |
-| CI/CD integration changed | `ci-cd/` |
-| Default thresholds changed | `reference/default-thresholds.md` + `rules/{group}.md` |
+| Change type                 | Pages to update                                             |
+| --------------------------- | ----------------------------------------------------------- |
+| Rule added/changed/removed  | `rules/{group}.md` + `reference/default-thresholds.md`      |
+| Metric algorithm changed    | `rules/{group}.md` (Implementation notes section)           |
+| CLI option added/changed    | `usage/cli-options.md`                                      |
+| Output format added/changed | `usage/output-formats.md`                                   |
+| Baseline behavior changed   | `usage/baseline.md`                                         |
+| Git integration changed     | `usage/git-integration.md`                                  |
+| Configuration option added  | `getting-started/configuration.md` + `usage/cli-options.md` |
+| CI/CD integration changed   | `ci-cd/`                                                    |
+| Default thresholds changed  | `reference/default-thresholds.md` + `rules/{group}.md`      |
