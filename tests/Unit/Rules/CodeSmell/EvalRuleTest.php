@@ -105,8 +105,8 @@ final class EvalRuleTest extends TestCase
         self::assertCount(1, $violations);
         self::assertSame(Severity::Error, $violations[0]->severity);
         self::assertSame(42, $violations[0]->location->line);
-        self::assertSame('Found 1 eval() call(s) - security risk', $violations[0]->message);
+        self::assertSame('eval() usage detected - security risk', $violations[0]->message);
         self::assertSame('code-smell.eval', $violations[0]->ruleName);
-        self::assertSame(1, $violations[0]->metricValue);
+        self::assertSame(1.0, $violations[0]->metricValue);
     }
 }

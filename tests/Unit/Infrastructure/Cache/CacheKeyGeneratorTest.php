@@ -74,13 +74,28 @@ final class CacheKeyGeneratorTest extends TestCase
     }
 
     #[Test]
-    public function itReturnsEmptyKeyForNonExistentFile(): void
+    public function itReturnsValidKeyForNonExistentFile(): void
     {
         $file = new SplFileInfo('/non/existent/file.php');
 
         $key = $this->generator->generate($file);
 
-        self::assertSame('', $key);
+        // Should produce a valid hash, not an empty string
+        self::assertNotEmpty($key);
+        // xxh128 produces 32 hex characters
+        self::assertSame(32, \strlen($key));
+    }
+
+    #[Test]
+    public function itReturnsDifferentKeysForDifferentNonExistentFiles(): void
+    {
+        $file1 = new SplFileInfo('/non/existent/file1.php');
+        $file2 = new SplFileInfo('/non/existent/file2.php');
+
+        $key1 = $this->generator->generate($file1);
+        $key2 = $this->generator->generate($file2);
+
+        self::assertNotSame($key1, $key2);
     }
 
     #[Test]

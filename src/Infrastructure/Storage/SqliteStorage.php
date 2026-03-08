@@ -244,7 +244,7 @@ final class SqliteStorage implements StorageInterface
             return null;
         }
 
-        return unserialize($row['metrics']);
+        return unserialize($row['metrics'], ['allowed_classes' => false]);
     }
 
     public function storeMetrics(SymbolPath $path, array $metrics, int $fileId, int $line = 0): void
@@ -303,7 +303,7 @@ final class SqliteStorage implements StorageInterface
         $stmt->execute();
 
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            yield $row['path'] => unserialize($row['metrics']);
+            yield $row['path'] => unserialize($row['metrics'], ['allowed_classes' => false]);
         }
     }
 
@@ -486,7 +486,7 @@ final class SqliteStorage implements StorageInterface
             return null;
         }
 
-        return unserialize($row['metrics']);
+        return unserialize($row['metrics'], ['allowed_classes' => false]);
     }
 
     // === Transactions ===

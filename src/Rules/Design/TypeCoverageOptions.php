@@ -55,7 +55,10 @@ final readonly class TypeCoverageOptions implements RuleOptionsInterface
     }
 
     /**
-     * Not directly used — the rule uses specific severity methods below.
+     * Returns null by design — this rule has 3 separate dimensions (param/return/property),
+     * each with its own thresholds, so a single getSeverity() is meaningless.
+     * The rule uses getParamSeverity(), getReturnSeverity(), getPropertySeverity() instead.
+     * This method exists only to satisfy RuleOptionsInterface.
      */
     public function getSeverity(int|float $value): ?Severity
     {

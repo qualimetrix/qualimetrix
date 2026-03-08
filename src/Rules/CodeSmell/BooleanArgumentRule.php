@@ -42,7 +42,7 @@ final class BooleanArgumentRule extends AbstractCodeSmellRule
 
     protected function getMessageTemplate(): string
     {
-        return 'Found {count} boolean argument(s) - consider splitting methods or using enums';
+        return 'Boolean argument detected - consider splitting methods or using enums';
     }
 
     /**

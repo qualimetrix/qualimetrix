@@ -38,7 +38,7 @@ final class ExitRule extends AbstractCodeSmellRule
 
     protected function getMessageTemplate(): string
     {
-        return 'Found {count} exit()/die() call(s) - use exceptions instead';
+        return 'exit()/die() usage detected - use exceptions instead';
     }
 
     /**

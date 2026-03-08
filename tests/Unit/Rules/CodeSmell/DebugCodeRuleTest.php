@@ -109,8 +109,8 @@ final class DebugCodeRuleTest extends TestCase
         self::assertSame(5, $violations[0]->location->line);
         self::assertSame(12, $violations[1]->location->line);
         self::assertSame(30, $violations[2]->location->line);
-        self::assertSame('Found 3 debug function call(s) - remove before production', $violations[0]->message);
+        self::assertSame('Debug function call detected - remove before production', $violations[0]->message);
         self::assertSame('code-smell.debug-code', $violations[0]->ruleName);
-        self::assertSame(3, $violations[0]->metricValue);
+        self::assertSame(1.0, $violations[0]->metricValue);
     }
 }

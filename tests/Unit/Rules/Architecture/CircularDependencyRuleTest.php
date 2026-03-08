@@ -181,6 +181,42 @@ final class CircularDependencyRuleTest extends TestCase
         $this->assertSame(3, $violations[0]->metricValue);
     }
 
+    public function testOptionsFromArrayWithSnakeCase(): void
+    {
+        $options = CircularDependencyOptions::fromArray([
+            'enabled' => true,
+            'max_cycle_size' => 5,
+            'direct_as_error' => false,
+        ]);
+
+        self::assertTrue($options->enabled);
+        self::assertSame(5, $options->maxCycleSize);
+        self::assertFalse($options->directAsError);
+    }
+
+    public function testOptionsFromArrayWithCamelCase(): void
+    {
+        $options = CircularDependencyOptions::fromArray([
+            'enabled' => true,
+            'maxCycleSize' => 3,
+            'directAsError' => true,
+        ]);
+
+        self::assertTrue($options->enabled);
+        self::assertSame(3, $options->maxCycleSize);
+        self::assertTrue($options->directAsError);
+    }
+
+    public function testOptionsFromArraySnakeCaseTakesPrecedence(): void
+    {
+        $options = CircularDependencyOptions::fromArray([
+            'max_cycle_size' => 5,
+            'maxCycleSize' => 3,
+        ]);
+
+        self::assertSame(5, $options->maxCycleSize);
+    }
+
     /**
      * @param list<string> $fqns
      *

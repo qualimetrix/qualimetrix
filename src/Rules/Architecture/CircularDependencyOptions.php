@@ -30,8 +30,8 @@ final readonly class CircularDependencyOptions implements RuleOptionsInterface
     {
         return new self(
             enabled: (bool) ($config['enabled'] ?? true),
-            maxCycleSize: (int) ($config['maxCycleSize'] ?? 0),
-            directAsError: (bool) ($config['directAsError'] ?? true),
+            maxCycleSize: (int) ($config['max_cycle_size'] ?? $config['maxCycleSize'] ?? 0),
+            directAsError: (bool) ($config['direct_as_error'] ?? $config['directAsError'] ?? true),
         );
     }
 

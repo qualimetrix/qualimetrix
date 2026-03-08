@@ -38,7 +38,7 @@ final class EmptyCatchRule extends AbstractCodeSmellRule
 
     protected function getMessageTemplate(): string
     {
-        return 'Found {count} empty catch block(s) - exceptions should not be silently ignored';
+        return 'Empty catch block detected - exceptions should not be silently ignored';
     }
 
     /**

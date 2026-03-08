@@ -253,7 +253,7 @@ final class CouplingCollectorTest extends TestCase
     {
         // App\Service has Ca = 1 (App\Controller depends on it)
         // App\Service has Ce = 2 (depends on Vendor\A and Vendor\B)
-        // CBO = Ca + Ce = 1 + 2 = 3
+        // CBO = |{Controller, Vendor\A, Vendor\B}| = 3 (no overlap, union = Ca+Ce)
         $deps = [
             $this->dep('App\\Controller', 'App\\Service'),
             $this->dep('App\\Service', 'Vendor\\A'),
@@ -273,6 +273,40 @@ final class CouplingCollectorTest extends TestCase
         self::assertSame(1, $serviceMetrics->get('ca'));
         self::assertSame(2, $serviceMetrics->get('ce'));
         self::assertSame(3, $serviceMetrics->get('cbo'));
+    }
+
+    #[Test]
+    public function calculate_cboBidirectionalCoupling_countsUnion(): void
+    {
+        // A→B and B→A: bidirectional coupling
+        // For A: Ca=1 (B depends on A), Ce=1 (A depends on B)
+        // CBO(A) = |{B}| = 1 (not Ca+Ce=2, because B appears in both)
+        $deps = [
+            $this->dep('App\\A', 'App\\B'),
+            $this->dep('App\\B', 'App\\A'),
+        ];
+
+        $graph = $this->graphBuilder->build($deps);
+        $repository = new InMemoryMetricRepository();
+        $this->registerClass($repository, 'App\\A');
+        $this->registerClass($repository, 'App\\B');
+
+        $this->collector->calculate($graph, $repository);
+
+        $aPath = SymbolPath::forClass('App', 'A');
+        $aMetrics = $repository->get($aPath);
+
+        self::assertSame(1, $aMetrics->get('ca'));
+        self::assertSame(1, $aMetrics->get('ce'));
+        // CBO should be 1 (union of {B} and {B}), not 2 (Ca+Ce)
+        self::assertSame(1, $aMetrics->get('cbo'));
+
+        $bPath = SymbolPath::forClass('App', 'B');
+        $bMetrics = $repository->get($bPath);
+
+        self::assertSame(1, $bMetrics->get('ca'));
+        self::assertSame(1, $bMetrics->get('ce'));
+        self::assertSame(1, $bMetrics->get('cbo'));
     }
 
     #[Test]
@@ -305,7 +339,7 @@ final class CouplingCollectorTest extends TestCase
         // App\Service has high coupling
         // Ca = 3 (App\A, App\B, App\C depend on it)
         // Ce = 4 (depends on Vendor\W, Vendor\X, Vendor\Y, Vendor\Z)
-        // CBO = 3 + 4 = 7
+        // CBO = |{A, B, C, W, X, Y, Z}| = 7 (no overlap, union = Ca+Ce)
         $deps = [
             $this->dep('App\\A', 'App\\Service'),
             $this->dep('App\\B', 'App\\Service'),

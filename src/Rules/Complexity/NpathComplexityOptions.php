@@ -33,7 +33,7 @@ final readonly class NpathComplexityOptions implements HierarchicalRuleOptionsIn
                 method: new MethodNpathComplexityOptions(
                     enabled: (bool) ($config['enabled'] ?? true),
                     warning: (int) ($config['warningThreshold'] ?? 200),
-                    error: (int) ($config['errorThreshold'] ?? 500),
+                    error: (int) ($config['errorThreshold'] ?? 1000),
                 ),
                 class: new ClassNpathComplexityOptions(enabled: false),
             );

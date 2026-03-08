@@ -105,8 +105,8 @@ final class GotoRuleTest extends TestCase
         self::assertCount(1, $violations);
         self::assertSame(Severity::Error, $violations[0]->severity);
         self::assertSame(50, $violations[0]->location->line);
-        self::assertSame('Found 1 goto statement(s) - avoid using goto', $violations[0]->message);
+        self::assertSame('goto statement detected - avoid using goto', $violations[0]->message);
         self::assertSame('code-smell.goto', $violations[0]->ruleName);
-        self::assertSame(1, $violations[0]->metricValue);
+        self::assertSame(1.0, $violations[0]->metricValue);
     }
 }

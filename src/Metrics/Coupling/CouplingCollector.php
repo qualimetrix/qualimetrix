@@ -18,7 +18,7 @@ use AiMessDetector\Core\Metric\SymbolLevel;
  * Metrics computed:
  * - ca: Afferent Coupling (incoming dependencies)
  * - ce: Efferent Coupling (outgoing dependencies)
- * - cbo: Coupling Between Objects (Ca + Ce)
+ * - cbo: Coupling Between Objects (union of coupled classes, per C&K)
  * - instability: I = Ce / (Ca + Ce), range [0, 1]
  *
  * Computes metrics for both classes and namespaces.
@@ -96,6 +96,10 @@ final class CouplingCollector implements GlobalContextCollectorInterface
 
     /**
      * Computes Ca, Ce, CBO, Instability for each class in the graph.
+     *
+     * CBO (Coupling Between Objects) per Chidamber & Kemerer is the count of
+     * uniquely coupled classes — the union of incoming and outgoing dependencies.
+     * If A→B and B→A, CBO(A) = 1, not 2.
      */
     private function computeClassMetrics(
         DependencyGraphInterface $graph,
@@ -109,7 +113,19 @@ final class CouplingCollector implements GlobalContextCollectorInterface
 
             $ca = $graph->getClassCa($symbolPath);
             $ce = $graph->getClassCe($symbolPath);
-            $cbo = $ca + $ce;
+
+            // CBO = |union of Ce targets and Ca sources| (C&K definition)
+            $coupledClasses = [];
+
+            foreach ($graph->getClassDependencies($symbolPath) as $dep) {
+                $coupledClasses[$dep->target->toCanonical()] = true;
+            }
+
+            foreach ($graph->getClassDependents($symbolPath) as $dep) {
+                $coupledClasses[$dep->source->toCanonical()] = true;
+            }
+
+            $cbo = \count($coupledClasses);
             $instability = $this->computeInstability($ca, $ce);
 
             $metrics = (new MetricBag())

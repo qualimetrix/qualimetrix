@@ -8,6 +8,7 @@ use AiMessDetector\Analysis\Collection\Dependency\DependencyVisitor;
 use AiMessDetector\Core\Metric\DerivedCollectorInterface;
 use AiMessDetector\Core\Metric\MetricBag;
 use AiMessDetector\Core\Metric\MetricCollectorInterface;
+use LogicException;
 use PhpParser\Node;
 use PhpParser\NodeTraverser;
 use SplFileInfo;
@@ -194,15 +195,6 @@ final class CompositeCollector
             $indexByName[$collector->getName()] = $index;
         }
 
-        // Build mapping: provided metric name → collector name
-        $providers = [];
-        foreach ($collectors as $collector) {
-            $name = $collector->getName();
-            foreach ($collector->provides() as $metric) {
-                $providers[$metric] = $name;
-            }
-        }
-
         // Calculate in-degree and build dependency graph
         $inDegree = array_fill(0, \count($collectors), 0);
         $dependents = array_fill(0, \count($collectors), []);
@@ -241,9 +233,21 @@ final class CompositeCollector
             }
         }
 
-        // If not all sorted, fall back to original order (cycle — shouldn't happen)
+        // If not all sorted, there is a cyclic dependency
         if (\count($sorted) !== \count($collectors)) {
-            return $collectors;
+            $unsorted = array_filter(
+                $collectors,
+                static fn(DerivedCollectorInterface $c): bool => !\in_array($c, $sorted, true),
+            );
+            $names = array_map(
+                static fn(DerivedCollectorInterface $c): string => $c->getName(),
+                array_values($unsorted),
+            );
+
+            throw new LogicException(\sprintf(
+                'Cyclic dependency detected between derived collectors: %s',
+                implode(', ', $names),
+            ));
         }
 
         return $sorted;

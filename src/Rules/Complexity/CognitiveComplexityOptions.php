@@ -33,7 +33,7 @@ final readonly class CognitiveComplexityOptions implements HierarchicalRuleOptio
                 method: new MethodCognitiveComplexityOptions(
                     enabled: (bool) ($config['enabled'] ?? true),
                     warning: (int) ($config['warningThreshold'] ?? 15),
-                    error: (int) ($config['errorThreshold'] ?? 25),
+                    error: (int) ($config['errorThreshold'] ?? 30),
                 ),
                 class: new ClassCognitiveComplexityOptions(enabled: false),
             );

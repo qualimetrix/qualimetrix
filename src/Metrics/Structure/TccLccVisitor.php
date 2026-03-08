@@ -74,8 +74,16 @@ final class TccLccVisitor extends NodeVisitorAbstract implements ResettableVisit
             return null;
         }
 
-        // Track class-like types
+        // Track class-like types (skip interfaces — they have no method bodies,
+        // so cohesion metrics are meaningless for them)
         if ($this->isClassLikeNode($node)) {
+            // Skip Interface_ entirely — no method implementations, TCC/LCC not applicable
+            if ($node instanceof Interface_) {
+                $this->classStack[] = null;
+
+                return null;
+            }
+
             $className = $this->extractClassLikeName($node);
             $this->classStack[] = $className;
 

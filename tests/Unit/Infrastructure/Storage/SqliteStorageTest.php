@@ -314,4 +314,40 @@ final class SqliteStorageTest extends TestCase
         $this->assertSame(1, $stats['methods']);
         $this->assertSame(1, $stats['dependencies']);
     }
+
+    public function testMetricsRoundTripWithScalarArrays(): void
+    {
+        $record = new FileRecord(
+            path: '/src/Test.php',
+            contentHash: 'hash123',
+            mtime: 1234567890,
+            size: 500,
+        );
+
+        $fileId = $this->storage->storeFile($record);
+
+        // Metrics are scalar-only arrays (float|int) - should round-trip correctly
+        $metrics = [
+            'ccn' => 5,
+            'loc' => 100,
+            'ratio' => 0.85,
+        ];
+
+        $this->storage->storeMetrics(SymbolPath::forFile('/src/Test.php'), $metrics, $fileId);
+
+        $retrieved = $this->storage->getMetrics(SymbolPath::forFile('/src/Test.php'));
+
+        $this->assertSame($metrics, $retrieved);
+    }
+
+    public function testAggregatedMetricsRoundTripWithScalarArrays(): void
+    {
+        $metrics = ['ccn.avg' => 5.5, 'loc.sum' => 1000];
+
+        $this->storage->storeAggregated('project:global', $metrics);
+
+        $retrieved = $this->storage->getAggregated('project:global');
+
+        $this->assertSame($metrics, $retrieved);
+    }
 }

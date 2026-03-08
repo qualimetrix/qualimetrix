@@ -38,7 +38,7 @@ final class EvalRule extends AbstractCodeSmellRule
 
     protected function getMessageTemplate(): string
     {
-        return 'Found {count} eval() call(s) - security risk';
+        return 'eval() usage detected - security risk';
     }
 
     /**

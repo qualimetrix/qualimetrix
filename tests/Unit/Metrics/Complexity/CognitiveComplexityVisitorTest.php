@@ -272,7 +272,7 @@ class OrderProcessor
             foreach ($order->items as $item) {   // +2 (1 + nesting=1)
                 if ($item->inStock()) {          // +3 (1 + nesting=2)
                     $this->ship($item);
-                } else {                         // +1 (else with nesting=2 -> 1+2=3)
+                } else {                         // +1 (else: no nesting bonus)
                     $this->backorder($item);
                 }
             }
@@ -284,14 +284,14 @@ class OrderProcessor
     }
 }
 PHP,
-            'expected' => ['App\OrderProcessor::processOrder' => 11],
+            'expected' => ['App\OrderProcessor::processOrder' => 9],
             // +1 (if !order)
             // +1 (if isPaid)
             // +2 (foreach at nesting=1)
             // +3 (if inStock at nesting=2)
-            // +3 (else at nesting=2)
+            // +1 (else: no nesting bonus per SonarSource spec)
             // +1 (elseif isPending)
-            // Total: 11
+            // Total: 9
         ];
 
         // Closure
@@ -606,6 +606,172 @@ PHP,
                 '::{closure#1}' => 0,   // arrow function with no control flow
             ],
         ];
+    }
+
+    /**
+     * Fix 1: $other->process() inside process() should NOT be recursion.
+     */
+    public function testOtherObjectMethodCallIsNotRecursion(): void
+    {
+        $code = <<<'PHP'
+<?php
+namespace App;
+
+class Service
+{
+    public function process($other) {
+        if ($other) {              // +1
+            $other->process();     // NOT recursion (different receiver)
+        }
+    }
+}
+PHP;
+
+        $visitor = new CognitiveComplexityVisitor();
+        $parser = (new ParserFactory())->createForHostVersion();
+        $ast = $parser->parse($code) ?? [];
+
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $complexities = $visitor->getComplexities();
+
+        // Only +1 for the if, no recursion bonus
+        self::assertSame(1, $complexities['App\Service::process']);
+    }
+
+    /**
+     * Fix 1: $this->process() inside process() should BE recursion.
+     */
+    public function testThisMethodCallIsRecursion(): void
+    {
+        $code = <<<'PHP'
+<?php
+namespace App;
+
+class Service
+{
+    public function process() {
+        if (true) {                // +1
+            $this->process();      // +1 recursion
+        }
+    }
+}
+PHP;
+
+        $visitor = new CognitiveComplexityVisitor();
+        $parser = (new ParserFactory())->createForHostVersion();
+        $ast = $parser->parse($code) ?? [];
+
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $complexities = $visitor->getComplexities();
+
+        // +1 (if) + 1 (recursion) = 2
+        self::assertSame(2, $complexities['App\Service::process']);
+    }
+
+    /**
+     * Fix 1: self::process() inside process() should BE recursion.
+     */
+    public function testSelfStaticCallIsRecursion(): void
+    {
+        $code = <<<'PHP'
+<?php
+namespace App;
+
+class Service
+{
+    public static function process() {
+        if (true) {                // +1
+            self::process();       // +1 recursion
+        }
+    }
+}
+PHP;
+
+        $visitor = new CognitiveComplexityVisitor();
+        $parser = (new ParserFactory())->createForHostVersion();
+        $ast = $parser->parse($code) ?? [];
+
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $complexities = $visitor->getComplexities();
+
+        // +1 (if) + 1 (recursion) = 2
+        self::assertSame(2, $complexities['App\Service::process']);
+    }
+
+    /**
+     * Fix 1: OtherClass::process() inside process() should NOT be recursion.
+     */
+    public function testOtherClassStaticCallIsNotRecursion(): void
+    {
+        $code = <<<'PHP'
+<?php
+namespace App;
+
+class Service
+{
+    public function process() {
+        if (true) {                    // +1
+            OtherClass::process();     // NOT recursion
+        }
+    }
+}
+PHP;
+
+        $visitor = new CognitiveComplexityVisitor();
+        $parser = (new ParserFactory())->createForHostVersion();
+        $ast = $parser->parse($code) ?? [];
+
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $complexities = $visitor->getComplexities();
+
+        // Only +1 for the if, no recursion bonus
+        self::assertSame(1, $complexities['App\Service::process']);
+    }
+
+    /**
+     * Fix 2: nested else should get +1 regardless of nesting depth.
+     */
+    public function testNestedElseGetsNoNestingBonus(): void
+    {
+        $code = <<<'PHP'
+<?php
+function nestedElse($a, $b, $c) {
+    if ($a) {                   // +1 (nesting=0)
+        if ($b) {               // +2 (1 + nesting=1)
+            if ($c) {           // +3 (1 + nesting=2)
+                echo 'deep';
+            } else {            // +1 (else: no nesting bonus per SonarSource)
+                echo 'else';
+            }
+        }
+    }
+}
+PHP;
+
+        $visitor = new CognitiveComplexityVisitor();
+        $parser = (new ParserFactory())->createForHostVersion();
+        $ast = $parser->parse($code) ?? [];
+
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $complexities = $visitor->getComplexities();
+
+        // +1 + 2 + 3 + 1 = 7
+        self::assertSame(7, $complexities['nestedElse']);
     }
 
     public function testReset(): void

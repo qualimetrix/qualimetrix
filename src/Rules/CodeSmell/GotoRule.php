@@ -38,7 +38,7 @@ final class GotoRule extends AbstractCodeSmellRule
 
     protected function getMessageTemplate(): string
     {
-        return 'Found {count} goto statement(s) - avoid using goto';
+        return 'goto statement detected - avoid using goto';
     }
 
     /**

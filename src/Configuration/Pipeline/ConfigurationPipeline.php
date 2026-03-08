@@ -16,6 +16,11 @@ use AiMessDetector\Configuration\Pipeline\Stage\ConfigurationStageInterface;
  */
 final class ConfigurationPipeline implements ConfigurationPipelineInterface
 {
+    /**
+     * Keys whose values should be merged (union) across stages rather than replaced.
+     */
+    private const array MERGEABLE_LIST_KEYS = ['disabled_rules', 'only_rules', 'exclude_paths'];
+
     /** @var list<ConfigurationStageInterface> */
     private array $stages = [];
 
@@ -34,9 +39,16 @@ final class ConfigurationPipeline implements ConfigurationPipelineInterface
         foreach ($stages as $stage) {
             $layer = $stage->apply($context);
             if ($layer !== null) {
-                // Each value overrides the previous one
+                // Merge list-type keys that accumulate across stages (union semantics),
+                // override everything else
                 foreach ($layer->values as $key => $value) {
-                    $merged[$key] = $value;
+                    if (\is_array($value) && isset($merged[$key]) && \is_array($merged[$key])
+                        && \in_array($key, self::MERGEABLE_LIST_KEYS, true)
+                    ) {
+                        $merged[$key] = array_values(array_unique(array_merge($merged[$key], $value)));
+                    } else {
+                        $merged[$key] = $value;
+                    }
                 }
             }
         }

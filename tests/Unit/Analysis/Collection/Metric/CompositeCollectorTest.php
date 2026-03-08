@@ -10,6 +10,7 @@ use AiMessDetector\Core\Metric\MetricBag;
 use AiMessDetector\Core\Metric\MetricCollectorInterface;
 use ArrayIterator;
 use Generator;
+use LogicException;
 use PhpParser\Node;
 use PhpParser\NodeVisitorAbstract;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -379,6 +380,35 @@ final class CompositeCollectorTest extends TestCase
 
         // Second value should override first (MetricBag::merge behavior)
         self::assertSame(20, $result->metrics->get('duplicate'));
+    }
+
+    #[Test]
+    public function itThrowsOnCyclicDerivedCollectorDependencies(): void
+    {
+        $baseMetrics = (new MetricBag())->with('value:test', 10);
+        $baseCollector = $this->createCollector('base', $baseMetrics);
+
+        // Collector A requires B, Collector B requires A => cycle
+        $derivedA = $this->createMock(DerivedCollectorInterface::class);
+        $derivedA->method('getName')->willReturn('derivedA');
+        $derivedA->method('requires')->willReturn(['derivedB']);
+        $derivedA->method('provides')->willReturn(['metricA']);
+        $derivedA->method('getMetricDefinitions')->willReturn([]);
+        $derivedA->method('calculate')->willReturn(new MetricBag());
+
+        $derivedB = $this->createMock(DerivedCollectorInterface::class);
+        $derivedB->method('getName')->willReturn('derivedB');
+        $derivedB->method('requires')->willReturn(['derivedA']);
+        $derivedB->method('provides')->willReturn(['metricB']);
+        $derivedB->method('getMetricDefinitions')->willReturn([]);
+        $derivedB->method('calculate')->willReturn(new MetricBag());
+
+        $composite = new CompositeCollector([$baseCollector], [$derivedA, $derivedB]);
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessageMatches('/Cyclic dependency.*derivedA.*derivedB|Cyclic dependency.*derivedB.*derivedA/');
+
+        $composite->collect(new SplFileInfo(__FILE__), []);
     }
 
     private function createCollector(string $name, MetricBag $metrics): MetricCollectorInterface

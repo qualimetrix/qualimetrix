@@ -189,6 +189,34 @@ final class AnalysisPipelineTest extends TestCase
         $pipeline->analyze($paths);
     }
 
+    #[Test]
+    public function itDeduplicatesOverlappingFiles(): void
+    {
+        $file1 = new SplFileInfo('/tmp/file1.php');
+        $file2 = new SplFileInfo('/tmp/file2.php');
+
+        // Discovery yields the same file path as key twice (overlapping paths scenario)
+        $discoveryResult = new ArrayIterator([
+            '/tmp/file1.php' => $file1,
+            '/tmp/file2.php' => $file2,
+        ]);
+
+        $this->defaultDiscovery->method('discover')->willReturn($discoveryResult);
+        $this->collectionOrchestrator->expects(self::once())
+            ->method('collect')
+            ->with(
+                self::callback(static function (array $files): bool {
+                    // Should have exactly 2 unique files, not duplicates
+                    return \count($files) === 2;
+                }),
+                self::isInstanceOf(MetricRepositoryInterface::class),
+            )
+            ->willReturn(new CollectionResult(2, 0, []));
+
+        $pipeline = $this->createPipeline();
+        $pipeline->analyze(['/path/to/src', '/path/to/src/sub']);
+    }
+
     private function createPipeline(): AnalysisPipeline
     {
         return new AnalysisPipeline(

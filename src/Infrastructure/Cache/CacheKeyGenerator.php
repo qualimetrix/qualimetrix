@@ -38,7 +38,14 @@ final class CacheKeyGenerator
         $realPath = $file->getRealPath();
 
         if ($realPath === false) {
-            return '';
+            // File doesn't exist: use pathname with prefix and skip stat-dependent fields
+            $data = \sprintf(
+                'unresolved:%s|%s',
+                $file->getPathname(),
+                $this->cacheVersion,
+            );
+
+            return hash('xxh128', $data);
         }
 
         $data = \sprintf(

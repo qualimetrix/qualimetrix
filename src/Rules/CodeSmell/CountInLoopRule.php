@@ -38,7 +38,7 @@ final class CountInLoopRule extends AbstractCodeSmellRule
 
     protected function getMessageTemplate(): string
     {
-        return 'Found {count} count() in loop condition(s) - store in variable before loop';
+        return 'count() in loop condition detected - store in variable before loop';
     }
 
     /**

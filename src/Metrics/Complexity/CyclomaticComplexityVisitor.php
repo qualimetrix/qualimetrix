@@ -9,6 +9,7 @@ use AiMessDetector\Core\Metric\MetricBag;
 use AiMessDetector\Metrics\ResettableVisitorInterface;
 use AiMessDetector\Metrics\VisitorMethodTrackingTrait;
 use PhpParser\Node;
+use PhpParser\Node\Expr\ArrowFunction;
 use PhpParser\Node\Expr\BinaryOp\BooleanAnd;
 use PhpParser\Node\Expr\BinaryOp\BooleanOr;
 use PhpParser\Node\Expr\BinaryOp\Coalesce;
@@ -148,8 +149,8 @@ final class CyclomaticComplexityVisitor extends NodeVisitorAbstract implements R
             return null;
         }
 
-        // Start of a closure
-        if ($node instanceof Closure) {
+        // Start of a closure or arrow function
+        if ($node instanceof Closure || $node instanceof ArrowFunction) {
             ++$this->closureCounter;
             $fqn = $this->buildClosureFqn();
             $closureName = '{closure#' . $this->closureCounter . '}';
@@ -175,7 +176,7 @@ final class CyclomaticComplexityVisitor extends NodeVisitorAbstract implements R
             return null;
         }
 
-        if ($node instanceof Function_ || $node instanceof Closure) {
+        if ($node instanceof Function_ || $node instanceof Closure || $node instanceof ArrowFunction) {
             $this->endMethod();
 
             return null;

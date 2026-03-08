@@ -197,10 +197,31 @@ PHP;
 
         // 3 lines
         self::assertSame(3, $metrics->get('loc'));
-        // Line 3 has code AND a comment - counted as comment line
+        // Line 3 has code AND a comment — it's NOT a pure comment line
+        self::assertSame(0, $metrics->get('cloc'));
+        // LLOC = 3 - 1 empty - 0 pure comments = 2
+        self::assertSame(2, $metrics->get('lloc'));
+    }
+
+    public function testInlineCommentDoesNotReduceLloc(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+$a = 1; // inline comment
+$b = 2; /* block inline */ $c = 3;
+// pure comment line
+$d = 4;
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // 6 lines
+        self::assertSame(6, $metrics->get('loc'));
+        // Only line 5 is a pure comment line (line 3 and 4 have code tokens too)
         self::assertSame(1, $metrics->get('cloc'));
-        // LLOC = 3 - 1 empty - 1 comment = 1
-        self::assertSame(1, $metrics->get('lloc'));
+        // LLOC = 6 - 1 empty - 1 pure comment = 4
+        self::assertSame(4, $metrics->get('lloc'));
     }
 
     public function testMixedCommentStyles(): void

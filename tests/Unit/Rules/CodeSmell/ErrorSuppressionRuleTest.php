@@ -107,8 +107,8 @@ final class ErrorSuppressionRuleTest extends TestCase
         self::assertSame(Severity::Warning, $violations[0]->severity);
         self::assertSame(8, $violations[0]->location->line);
         self::assertSame(22, $violations[1]->location->line);
-        self::assertSame('Found 2 error suppression operator(s) (@) - handle errors explicitly', $violations[0]->message);
+        self::assertSame('Error suppression operator (@) detected - handle errors explicitly', $violations[0]->message);
         self::assertSame('code-smell.error-suppression', $violations[0]->ruleName);
-        self::assertSame(2, $violations[0]->metricValue);
+        self::assertSame(1.0, $violations[0]->metricValue);
     }
 }

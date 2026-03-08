@@ -38,7 +38,7 @@ final class SuperglobalsRule extends AbstractCodeSmellRule
 
     protected function getMessageTemplate(): string
     {
-        return 'Found {count} direct superglobal access(es) - use dependency injection';
+        return 'Direct superglobal access detected - use dependency injection';
     }
 
     /**

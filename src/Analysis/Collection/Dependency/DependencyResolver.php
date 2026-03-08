@@ -116,7 +116,8 @@ final class DependencyResolver
             return $name->toString();
         }
 
-        // Relative name (namespace\Foo)
+        // Relative name (namespace\Foo). php-parser strips the `namespace` keyword
+        // from Name parts, so toString() returns just "Foo" — concatenation is correct.
         if ($name->isRelative()) {
             return $this->namespace !== null
                 ? $this->namespace . '\\' . $name->toString()

@@ -105,8 +105,8 @@ final class CountInLoopRuleTest extends TestCase
         self::assertCount(1, $violations);
         self::assertSame(Severity::Warning, $violations[0]->severity);
         self::assertSame(15, $violations[0]->location->line);
-        self::assertSame('Found 1 count() in loop condition(s) - store in variable before loop', $violations[0]->message);
+        self::assertSame('count() in loop condition detected - store in variable before loop', $violations[0]->message);
         self::assertSame('code-smell.count-in-loop', $violations[0]->ruleName);
-        self::assertSame(1, $violations[0]->metricValue);
+        self::assertSame(1.0, $violations[0]->metricValue);
     }
 }

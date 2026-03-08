@@ -110,8 +110,8 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        // NPath = then(1) + else(1) = 2
-        self::assertSame(2, $metrics->get('npath:App\Test::check'));
+        // NPath = cond(1) + then(1) + skip(1) = 3
+        self::assertSame(3, $metrics->get('npath:App\Test::check'));
     }
 
     public function testMethodWithIfElse(): void
@@ -136,8 +136,8 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        // NPath = then(1) + else(1) = 2
-        self::assertSame(2, $metrics->get('npath:App\Test::check'));
+        // NPath = cond(1) + then(1) + else(1) = 3
+        self::assertSame(3, $metrics->get('npath:App\Test::check'));
     }
 
     public function testMethodWithTwoSequentialIfs(): void
@@ -163,10 +163,10 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        // First if: NPath = 1 + 1 = 2
-        // Second if: NPath = 1 + 1 = 2
-        // Sequence: 2 × 2 = 4
-        self::assertSame(4, $metrics->get('npath:App\Test::check'));
+        // First if: NPath = cond(1) + then(1) + skip(1) = 3
+        // Second if: NPath = cond(1) + then(1) + skip(1) = 3
+        // Sequence: 3 × 3 = 9
+        self::assertSame(9, $metrics->get('npath:App\Test::check'));
     }
 
     public function testMethodWithNestedIf(): void
@@ -191,9 +191,9 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        // Inner if: 1 + 1 = 2
-        // Outer if: 2 + 1 = 3
-        self::assertSame(3, $metrics->get('npath:App\Test::check'));
+        // Inner if: cond(1) + then(1) + skip(1) = 3
+        // Outer if: cond(1) + then(3) + skip(1) = 5
+        self::assertSame(5, $metrics->get('npath:App\Test::check'));
     }
 
     public function testMethodWithWhileLoop(): void
@@ -498,8 +498,8 @@ PHP;
         // factory: NPath = 1 — anonymous class complexity should NOT leak
         self::assertSame(1, $metrics->get('npath:App\Outer::factory'));
 
-        // afterAnonymous: NPath = 2 (if with implicit else)
-        self::assertSame(2, $metrics->get('npath:App\Outer::afterAnonymous'));
+        // afterAnonymous: NPath = cond(1) + then(1) + skip(1) = 3
+        self::assertSame(3, $metrics->get('npath:App\Outer::afterAnonymous'));
 
         // Anonymous class methods should NOT appear in metrics
         self::assertNull($metrics->get('npath:App\Outer::innerComplex'));
@@ -649,6 +649,117 @@ PHP;
         // Ternary condition NPath = cond(1) + true(1) + false(1) = 3
         // NPath = cond(3) + body(1) + exit(1) = 5
         self::assertSame(5, $metrics->get('npath:App\Test::loop'));
+    }
+
+    /**
+     * Fix 3: if ($a && $b) should have NPath reflecting the condition complexity.
+     */
+    public function testIfWithBooleanAndCondition(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Test
+{
+    public function check(bool $a, bool $b): void
+    {
+        if ($a && $b) {
+            // body
+        }
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // NPath(if) = NPath(cond: $a && $b = 2) + NPath(then: 1) + NPath(skip: 1) = 4
+        self::assertSame(4, $metrics->get('npath:App\Test::check'));
+    }
+
+    /**
+     * Fix 3: elseif condition should also be evaluated.
+     */
+    public function testIfElseifWithBooleanConditions(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Test
+{
+    public function check(bool $a, bool $b, bool $c, bool $d): void
+    {
+        if ($a && $b) {
+            // body1
+        } elseif ($c || $d) {
+            // body2
+        }
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // NPath(if) = NPath(cond1: $a && $b = 2) + NPath(then1: 1)
+        //           + NPath(cond2: $c || $d = 2) + NPath(then2: 1)
+        //           + NPath(skip: 1) = 7
+        self::assertSame(7, $metrics->get('npath:App\Test::check'));
+    }
+
+    /**
+     * Fix 5: Arrow function with conditional logic should be handled by NPath.
+     */
+    public function testArrowFunctionWithTernary(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Test
+{
+    public function getMapper(): callable
+    {
+        return fn($x) => $x > 0 ? $x * 2 : 0;
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // Method itself: NPath = 1
+        self::assertSame(1, $metrics->get('npath:App\Test::getMapper'));
+
+        // Arrow function: NPath = ternary cond(1) + true(1) + false(1) = 3
+        self::assertSame(3, $metrics->get('npath:App\Test::{closure#1}'));
+    }
+
+    /**
+     * Fix 5: Arrow function with simple expression.
+     */
+    public function testArrowFunctionSimple(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Test
+{
+    public function getDoubler(): callable
+    {
+        return fn($x) => $x * 2;
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // Arrow function with no branching: NPath = 1
+        self::assertSame(1, $metrics->get('npath:App\Test::{closure#1}'));
     }
 
     private function collectMetrics(string $code): \AiMessDetector\Core\Metric\MetricBag

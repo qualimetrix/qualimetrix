@@ -187,7 +187,7 @@ final class NpathComplexityRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
         $classInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 5);
 
-        $metricBag = (new MetricBag())->with('npath.max', 250); // Above warning (200), below error (1000)
+        $metricBag = (new MetricBag())->with('npath.max', 600); // Above warning (500), below error (1000)
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -202,8 +202,8 @@ final class NpathComplexityRuleTest extends TestCase
 
         self::assertCount(1, $violations);
         self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertStringContainsString('Maximum method NPath complexity is 250, exceeds threshold of 200', $violations[0]->message);
-        self::assertSame(250, $violations[0]->metricValue);
+        self::assertStringContainsString('Maximum method NPath complexity is 600, exceeds threshold of 500', $violations[0]->message);
+        self::assertSame(600, $violations[0]->metricValue);
         self::assertSame(RuleLevel::Class_, $violations[0]->level);
     }
 
@@ -254,7 +254,7 @@ final class NpathComplexityRuleTest extends TestCase
         $classInfo = new SymbolInfo($classPath, 'src/Service/UserService.php', 5);
 
         $methodBag = (new MetricBag())->with('npath', 250); // Warning
-        $classBag = (new MetricBag())->with('npath.max', 300); // Warning
+        $classBag = (new MetricBag())->with('npath.max', 600); // Warning
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -338,8 +338,8 @@ final class NpathComplexityRuleTest extends TestCase
         ]);
 
         self::assertTrue($options->enabled);
-        self::assertSame(400, $options->max_warning);
-        self::assertSame(800, $options->max_error);
+        self::assertSame(400, $options->maxWarning);
+        self::assertSame(800, $options->maxError);
     }
 
     public function testClassOptionsFromEmptyArray(): void
@@ -347,8 +347,8 @@ final class NpathComplexityRuleTest extends TestCase
         $options = ClassNpathComplexityOptions::fromArray([]);
 
         self::assertFalse($options->enabled); // Default is false for class level
-        self::assertSame(200, $options->max_warning);
-        self::assertSame(1000, $options->max_error);
+        self::assertSame(500, $options->maxWarning);
+        self::assertSame(1000, $options->maxError);
     }
 
     public function testNpathComplexityOptionsFromHierarchicalArray(): void
@@ -369,7 +369,7 @@ final class NpathComplexityRuleTest extends TestCase
         self::assertTrue($options->method->isEnabled());
         self::assertSame(150, $options->method->warning);
         self::assertTrue($options->class->isEnabled());
-        self::assertSame(300, $options->class->max_warning);
+        self::assertSame(300, $options->class->maxWarning);
     }
 
     public function testNpathComplexityOptionsFromLegacyArray(): void
@@ -457,5 +457,46 @@ final class NpathComplexityRuleTest extends TestCase
         yield 'above warning, below error' => [350, 200, 500, Severity::Warning];
         yield 'at error threshold' => [500, 200, 500, Severity::Error];
         yield 'above error threshold' => [750, 200, 500, Severity::Error];
+    }
+
+    public function testLegacyDefaultErrorThresholdMatchesMethodDefault(): void
+    {
+        // Legacy format without explicit errorThreshold should use 1000 (same as MethodNpathComplexityOptions)
+        $options = NpathComplexityOptions::fromArray([
+            'warningThreshold' => 200,
+        ]);
+
+        self::assertSame(1000, $options->method->error);
+    }
+
+    public function testLegacyPartialConfigUsesCorrectDefaults(): void
+    {
+        $options = NpathComplexityOptions::fromArray([
+            'errorThreshold' => 800,
+        ]);
+
+        self::assertSame(200, $options->method->warning);
+        self::assertSame(800, $options->method->error);
+    }
+
+    public function testClassOptionsFromArrayWithCamelCase(): void
+    {
+        $options = ClassNpathComplexityOptions::fromArray([
+            'enabled' => true,
+            'maxWarning' => 400,
+            'maxError' => 800,
+        ]);
+
+        self::assertTrue($options->enabled);
+        self::assertSame(400, $options->maxWarning);
+        self::assertSame(800, $options->maxError);
+    }
+
+    public function testClassOptionsDefaultMaxWarningIs500(): void
+    {
+        $options = new ClassNpathComplexityOptions();
+
+        self::assertSame(500, $options->maxWarning);
+        self::assertSame(1000, $options->maxError);
     }
 }

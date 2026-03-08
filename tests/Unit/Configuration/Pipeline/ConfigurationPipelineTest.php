@@ -114,6 +114,85 @@ final class ConfigurationPipelineTest extends TestCase
         self::assertSame(['complexity' => ['warning' => 10]], $resolved->ruleOptions);
     }
 
+    #[Test]
+    public function disabledRulesAreMergedNotOverwritten(): void
+    {
+        $pipeline = new ConfigurationPipeline();
+
+        $yamlStage = $this->createStage(20, 'config', new ConfigurationLayer('aimd.yaml', [
+            'disabled_rules' => ['complexity.cyclomatic', 'size.loc'],
+        ]));
+
+        $cliStage = $this->createStage(30, 'cli', new ConfigurationLayer('cli', [
+            'disabled_rules' => ['coupling.cbo'],
+        ]));
+
+        $pipeline->addStage($yamlStage);
+        $pipeline->addStage($cliStage);
+
+        $context = new ConfigurationContext(new ArrayInput([]), '/tmp');
+        $resolved = $pipeline->resolve($context);
+
+        // Should contain union of both stages, not just CLI values
+        $disabledRules = $resolved->analysis->disabledRules;
+        self::assertContains('complexity.cyclomatic', $disabledRules);
+        self::assertContains('size.loc', $disabledRules);
+        self::assertContains('coupling.cbo', $disabledRules);
+        self::assertCount(3, $disabledRules);
+    }
+
+    #[Test]
+    public function excludePathsAreMergedNotOverwritten(): void
+    {
+        $pipeline = new ConfigurationPipeline();
+
+        $yamlStage = $this->createStage(20, 'config', new ConfigurationLayer('aimd.yaml', [
+            'exclude_paths' => ['tests/', 'vendor/'],
+        ]));
+
+        $cliStage = $this->createStage(30, 'cli', new ConfigurationLayer('cli', [
+            'exclude_paths' => ['generated/'],
+        ]));
+
+        $pipeline->addStage($yamlStage);
+        $pipeline->addStage($cliStage);
+
+        $context = new ConfigurationContext(new ArrayInput([]), '/tmp');
+        $resolved = $pipeline->resolve($context);
+
+        $excludePaths = $resolved->analysis->excludePaths;
+        self::assertContains('tests/', $excludePaths);
+        self::assertContains('vendor/', $excludePaths);
+        self::assertContains('generated/', $excludePaths);
+        self::assertCount(3, $excludePaths);
+    }
+
+    #[Test]
+    public function mergedArraysDeduplicateValues(): void
+    {
+        $pipeline = new ConfigurationPipeline();
+
+        $yamlStage = $this->createStage(20, 'config', new ConfigurationLayer('aimd.yaml', [
+            'disabled_rules' => ['complexity.cyclomatic'],
+        ]));
+
+        $cliStage = $this->createStage(30, 'cli', new ConfigurationLayer('cli', [
+            'disabled_rules' => ['complexity.cyclomatic', 'size.loc'],
+        ]));
+
+        $pipeline->addStage($yamlStage);
+        $pipeline->addStage($cliStage);
+
+        $context = new ConfigurationContext(new ArrayInput([]), '/tmp');
+        $resolved = $pipeline->resolve($context);
+
+        $disabledRules = $resolved->analysis->disabledRules;
+        // Should have no duplicates
+        self::assertCount(2, $disabledRules);
+        self::assertContains('complexity.cyclomatic', $disabledRules);
+        self::assertContains('size.loc', $disabledRules);
+    }
+
     private function createStage(int $priority, string $name, ?ConfigurationLayer $layer): ConfigurationStageInterface
     {
         return new class ($priority, $name, $layer) implements ConfigurationStageInterface {

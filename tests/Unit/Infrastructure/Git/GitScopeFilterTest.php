@@ -449,6 +449,43 @@ PHP;
         $this->assertTrue($filter->shouldInclude($violation));
     }
 
+    #[Test]
+    public function itExtractsBracketedNamespace(): void
+    {
+        $this->initGitRepo();
+
+        $content = <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+namespace App\Bracketed {
+
+class Service
+{
+}
+
+}
+PHP;
+
+        $this->createPhpFileWithContent('src/Bracketed/Service.php', $content);
+        $this->exec('git add src/Bracketed/Service.php');
+
+        $gitClient = new GitClient($this->tempDir);
+        $filter = new GitScopeFilter($gitClient, new GitScope('staged'));
+
+        $violation = new Violation(
+            location: new Location($this->tempDir . '/some/file.php', null),
+            symbolPath: SymbolPath::forNamespace('App\\Bracketed'),
+            ruleName: 'size',
+            violationCode: 'size',
+            message: 'Namespace too large',
+            severity: Severity::Warning,
+        );
+
+        $this->assertTrue($filter->shouldInclude($violation));
+    }
+
     private function initGitRepo(): void
     {
         $this->exec('git init');

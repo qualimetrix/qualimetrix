@@ -675,6 +675,84 @@ PHP;
         self::assertNull($metrics->get('ccn:App\Outer::innerComplex'));
     }
 
+    /**
+     * Fix 5: Arrow function with conditional logic should be handled by CCN.
+     */
+    public function testArrowFunctionWithTernary(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Test
+{
+    public function getMapper(): callable
+    {
+        return fn($x) => $x > 0 ? $x * 2 : 0;
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // Method itself: CC = 1 (base, no decision points)
+        self::assertSame(1, $metrics->get('ccn:App\Test::getMapper'));
+
+        // Arrow function: CC = 1 (base) + 1 (ternary) = 2
+        self::assertSame(2, $metrics->get('ccn:App\Test::{closure#1}'));
+    }
+
+    /**
+     * Fix 5: Arrow function with no branching.
+     */
+    public function testArrowFunctionSimple(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Test
+{
+    public function getDoubler(): callable
+    {
+        return fn($x) => $x * 2;
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // Arrow function with no decision points: CC = 1
+        self::assertSame(1, $metrics->get('ccn:App\Test::{closure#1}'));
+    }
+
+    /**
+     * Fix 5: Arrow function with boolean operator.
+     */
+    public function testArrowFunctionWithBooleanOperator(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Test
+{
+    public function getValidator(): callable
+    {
+        return fn($x) => $x > 0 && $x < 100;
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // Arrow function: CC = 1 (base) + 1 (&&) = 2
+        self::assertSame(2, $metrics->get('ccn:App\Test::{closure#1}'));
+    }
+
     private function collectMetrics(string $code): \AiMessDetector\Core\Metric\MetricBag
     {
         $parser = (new ParserFactory())->createForHostVersion();

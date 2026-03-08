@@ -93,6 +93,9 @@ final class DependencyVisitor extends NodeVisitorAbstract
     public function enterNode(Node $node): ?int
     {
         if ($node instanceof Namespace_) {
+            // Reset imports when entering a new namespace block to prevent
+            // use-imports from one namespace leaking into another
+            $this->resolver->reset();
             $this->resolver->setNamespace($node->name?->toString());
 
             return null;

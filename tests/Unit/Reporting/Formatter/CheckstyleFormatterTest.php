@@ -276,4 +276,29 @@ final class CheckstyleFormatterTest extends TestCase
     {
         self::assertSame(GroupBy::None, $this->formatter->getDefaultGroupBy());
     }
+
+    public function testRelativizesPathsWithBasePath(): void
+    {
+        $report = ReportBuilder::create()
+            ->addViolation(new Violation(
+                location: new Location('/home/user/project/src/Service/UserService.php', 42),
+                symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
+                ruleName: 'cyclomatic-complexity',
+                violationCode: 'cyclomatic-complexity',
+                message: 'Too complex',
+                severity: Severity::Error,
+            ))
+            ->filesAnalyzed(1)
+            ->filesSkipped(0)
+            ->duration(0.1)
+            ->build();
+
+        $context = new FormatterContext(basePath: '/home/user/project');
+        $output = $this->formatter->format($report, $context);
+        $xml = $this->parseXml($output);
+
+        $file = $xml->getElementsByTagName('file')->item(0);
+        self::assertNotNull($file);
+        self::assertSame('src/Service/UserService.php', $file->getAttribute('name'));
+    }
 }

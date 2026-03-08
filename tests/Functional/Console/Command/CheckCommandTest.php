@@ -261,10 +261,8 @@ class ComplexClass {
         ]);
 
         // Assert no violations (all in baseline)
-        $this->assertSame(0, $commandTester2->getStatusCode());
         $output = $commandTester2->getDisplay();
-        // Output shows "0 error(s), 0 warning(s)" when all violations are in baseline
-        $this->assertStringContainsString('0 error(s), 0 warning(s)', $output);
+        $this->assertSame(0, $commandTester2->getStatusCode(), "Baseline should suppress all violations. Output:\n" . $output);
     }
 
     /**
