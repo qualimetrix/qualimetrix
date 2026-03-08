@@ -31,7 +31,7 @@ Counts the number of methods in a class. A class with too many methods is likely
 ### Configuration example
 
 ```yaml
-# .aimd.yaml
+# aimd.yaml
 rules:
   size.method-count:
     warning: 20
@@ -112,7 +112,7 @@ Counts the number of classes in a namespace (package). This is measured at the n
 ### Configuration example
 
 ```yaml
-# .aimd.yaml
+# aimd.yaml
 rules:
   size.class-count:
     warning: 15
@@ -178,7 +178,7 @@ Counts the number of properties (fields) in a class. A class with many propertie
 ### Configuration example
 
 ```yaml
-# .aimd.yaml
+# aimd.yaml
 rules:
   size.property-count:
     warning: 15

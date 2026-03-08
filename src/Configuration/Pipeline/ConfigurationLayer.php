@@ -11,7 +11,7 @@ namespace AiMessDetector\Configuration\Pipeline;
 final readonly class ConfigurationLayer
 {
     /**
-     * @param string $source Source: "defaults", "composer.json", ".aimd.yaml", "cli"
+     * @param string $source Source: "defaults", "composer.json", "aimd.yaml", "cli"
      * @param array<string, mixed> $values Sparse config values
      */
     public function __construct(

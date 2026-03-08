@@ -52,7 +52,7 @@
 ### Пример конфигурации
 
 ```yaml
-# .aimd.yaml
+# aimd.yaml
 rules:
   maintainability.index:
     warning: 40

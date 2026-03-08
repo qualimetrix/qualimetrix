@@ -196,7 +196,7 @@ docker-compose run --rm aimd
 === "YAML-конфигурация"
 
     ```yaml
-    # .aimd.yaml
+    # aimd.yaml
     exclude_paths:
       - src/Entity/*
       - src/DTO/*

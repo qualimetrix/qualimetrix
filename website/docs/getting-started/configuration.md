@@ -6,14 +6,9 @@ AI Mess Detector works out of the box with sensible defaults. A configuration fi
 
 ## Configuration File
 
-Create a YAML file in your project root. AI Mess Detector automatically looks for these file names (in order):
+Create a file named `aimd.yaml` in your project root. AI Mess Detector automatically looks for this file.
 
-1. `aimd.yaml`
-2. `aimd.yml`
-3. `.aimd.yaml`
-4. `.aimd.yml`
-
-The first file found is used. You can also specify a file explicitly:
+You can also specify a file explicitly:
 
 ```bash
 vendor/bin/aimd analyze src/ --config=my-config.yaml

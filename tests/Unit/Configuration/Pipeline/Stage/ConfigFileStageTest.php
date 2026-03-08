@@ -80,24 +80,6 @@ final class ConfigFileStageTest extends TestCase
     }
 
     #[Test]
-    public function prefersAimdYamlOverDotAimdYaml(): void
-    {
-        touch($this->tempDir . '/aimd.yaml');
-        touch($this->tempDir . '/.aimd.yaml');
-
-        $loader = $this->createMock(ConfigLoaderInterface::class);
-        $loader->expects(self::once())
-            ->method('load')
-            ->with($this->tempDir . '/aimd.yaml')
-            ->willReturn([]);
-
-        $stage = new ConfigFileStage($loader);
-        $context = new ConfigurationContext(new ArrayInput([]), $this->tempDir);
-
-        $stage->apply($context);
-    }
-
-    #[Test]
     public function normalizesNestedConfigToDotNotation(): void
     {
         touch($this->tempDir . '/aimd.yaml');
@@ -122,47 +104,6 @@ final class ConfigFileStageTest extends TestCase
         self::assertSame('/custom/cache', $layer->values['cache.dir']);
         self::assertFalse($layer->values['cache.enabled']);
         self::assertSame('psr4', $layer->values['namespace.strategy']);
-    }
-
-    #[Test]
-    public function loadsAimdYmlFormat(): void
-    {
-        touch($this->tempDir . '/aimd.yml');
-
-        $loader = $this->createMock(ConfigLoaderInterface::class);
-        $loader->expects(self::once())
-            ->method('load')
-            ->with($this->tempDir . '/aimd.yml')
-            ->willReturn(['format' => 'json']);
-
-        $stage = new ConfigFileStage($loader);
-        $context = new ConfigurationContext(new ArrayInput([]), $this->tempDir);
-
-        $layer = $stage->apply($context);
-
-        self::assertNotNull($layer);
-        self::assertSame('aimd.yml', $layer->source);
-        self::assertSame('json', $layer->values['format']);
-    }
-
-    #[Test]
-    public function normalizesDotAimdYamlFormat(): void
-    {
-        touch($this->tempDir . '/.aimd.yaml');
-
-        $loader = $this->createMock(ConfigLoaderInterface::class);
-        $loader->expects(self::once())
-            ->method('load')
-            ->with($this->tempDir . '/.aimd.yaml')
-            ->willReturn(['paths' => ['lib']]);
-
-        $stage = new ConfigFileStage($loader);
-        $context = new ConfigurationContext(new ArrayInput([]), $this->tempDir);
-
-        $layer = $stage->apply($context);
-
-        self::assertNotNull($layer);
-        self::assertSame('.aimd.yaml', $layer->source);
     }
 
     #[Test]

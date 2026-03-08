@@ -196,7 +196,7 @@ Suppress violations for files matching glob patterns. Useful for generated code,
 === "YAML Configuration"
 
     ```yaml
-    # .aimd.yaml
+    # aimd.yaml
     exclude_paths:
       - src/Entity/*
       - src/DTO/*
