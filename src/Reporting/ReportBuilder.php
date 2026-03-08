@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Reporting;
 
+use AiMessDetector\Core\Metric\MetricRepositoryInterface;
 use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
 use InvalidArgumentException;
@@ -21,6 +22,7 @@ final class ReportBuilder
     private int $filesAnalyzed = 0;
     private int $filesSkipped = 0;
     private float $duration = 0.0;
+    private ?MetricRepositoryInterface $metrics = null;
 
     /**
      * Creates a new builder instance.
@@ -103,6 +105,16 @@ final class ReportBuilder
     }
 
     /**
+     * Sets the metric repository for raw metric export.
+     */
+    public function metrics(MetricRepositoryInterface $metrics): self
+    {
+        $this->metrics = $metrics;
+
+        return $this;
+    }
+
+    /**
      * Builds the Report instance.
      */
     public function build(): Report
@@ -124,6 +136,7 @@ final class ReportBuilder
             duration: $this->duration,
             errorCount: $errorCount,
             warningCount: $warningCount,
+            metrics: $this->metrics,
         );
     }
 }

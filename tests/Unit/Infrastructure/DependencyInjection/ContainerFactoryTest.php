@@ -36,13 +36,16 @@ use AiMessDetector\Rules\CodeSmell\ErrorSuppressionRule;
 use AiMessDetector\Rules\CodeSmell\EvalRule;
 use AiMessDetector\Rules\CodeSmell\ExitRule;
 use AiMessDetector\Rules\CodeSmell\GotoRule;
+use AiMessDetector\Rules\CodeSmell\LongParameterListRule;
 use AiMessDetector\Rules\CodeSmell\SuperglobalsRule;
+use AiMessDetector\Rules\CodeSmell\UnreachableCodeRule;
 use AiMessDetector\Rules\Complexity\CognitiveComplexityRule;
 use AiMessDetector\Rules\Complexity\ComplexityRule;
 use AiMessDetector\Rules\Complexity\NpathComplexityRule;
 use AiMessDetector\Rules\Coupling\CboRule;
 use AiMessDetector\Rules\Coupling\DistanceRule;
 use AiMessDetector\Rules\Coupling\InstabilityRule;
+use AiMessDetector\Rules\Design\TypeCoverageRule;
 use AiMessDetector\Rules\Maintainability\MaintainabilityRule;
 use AiMessDetector\Rules\Size\ClassCountRule;
 use AiMessDetector\Rules\Size\MethodCountRule;
@@ -226,6 +229,7 @@ final class ContainerFactoryTest extends TestCase
             'checkstyle',
             'sarif',
             'gitlab',
+            'metrics-json',
         ];
 
         foreach ($expectedFormatters as $name) {
@@ -345,6 +349,7 @@ final class ContainerFactoryTest extends TestCase
             CboRule::class,
             DistanceRule::class,
             CircularDependencyRule::class,
+            LongParameterListRule::class,
             BooleanArgumentRule::class,
             CountInLoopRule::class,
             DebugCodeRule::class,
@@ -354,6 +359,8 @@ final class ContainerFactoryTest extends TestCase
             ExitRule::class,
             GotoRule::class,
             SuperglobalsRule::class,
+            UnreachableCodeRule::class,
+            TypeCoverageRule::class,
         ];
 
         $registeredClasses = $registry->getClasses();
