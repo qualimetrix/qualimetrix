@@ -510,6 +510,94 @@ final class InstabilityRuleTest extends TestCase
         self::assertSame(7, $options->minClassCount);
     }
 
+    public function testNamespaceOptionsFromArrayParsesExcludeNamespaces(): void
+    {
+        $options = NamespaceInstabilityOptions::fromArray([
+            'exclude_namespaces' => ['App\Core', 'App\Shared'],
+        ]);
+
+        self::assertSame(['App\Core', 'App\Shared'], $options->excludeNamespaces);
+    }
+
+    public function testNamespaceOptionsFromArrayParsesExcludeNamespacesCamelCase(): void
+    {
+        $options = NamespaceInstabilityOptions::fromArray([
+            'excludeNamespaces' => ['App\Core'],
+        ]);
+
+        self::assertSame(['App\Core'], $options->excludeNamespaces);
+    }
+
+    public function testNamespaceOptionsExcludeNamespacesDefaultsToEmpty(): void
+    {
+        $options = NamespaceInstabilityOptions::fromArray([
+            'enabled' => true,
+        ]);
+
+        self::assertSame([], $options->excludeNamespaces);
+    }
+
+    public function testIsNamespaceExcludedExactMatch(): void
+    {
+        $options = new NamespaceInstabilityOptions(excludeNamespaces: ['App\Core']);
+
+        self::assertTrue($options->isNamespaceExcluded('App\Core'));
+        self::assertFalse($options->isNamespaceExcluded('App\Service'));
+    }
+
+    public function testIsNamespaceExcludedPrefixMatch(): void
+    {
+        $options = new NamespaceInstabilityOptions(excludeNamespaces: ['App\Core']);
+
+        self::assertTrue($options->isNamespaceExcluded('App\Core\Exception'));
+        self::assertTrue($options->isNamespaceExcluded('App\Core\Symbol\Deep'));
+        self::assertFalse($options->isNamespaceExcluded('App\CoreExtra'));
+    }
+
+    public function testIsNamespaceExcludedTrailingBackslash(): void
+    {
+        $options = new NamespaceInstabilityOptions(excludeNamespaces: ['App\Core\\']);
+
+        self::assertTrue($options->isNamespaceExcluded('App\Core'));
+        self::assertTrue($options->isNamespaceExcluded('App\Core\Sub'));
+    }
+
+    public function testAnalyzeNamespaceLevelSkipsExcludedNamespace(): void
+    {
+        $rule = new InstabilityRule(
+            new InstabilityOptions(
+                namespace: new NamespaceInstabilityOptions(
+                    excludeNamespaces: ['App\Core'],
+                ),
+            ),
+        );
+
+        $includedPath = SymbolPath::forNamespace('App\Service');
+        $excludedPath = SymbolPath::forNamespace('App\Core\Symbol');
+
+        $includedInfo = new SymbolInfo($includedPath, 'src/Service', null);
+        $excludedInfo = new SymbolInfo($excludedPath, 'src/Core/Symbol', null);
+
+        $violatingBag = (new MetricBag())
+            ->with('instability', 0.98)
+            ->with('ca', 1)
+            ->with('ce', 49)
+            ->with('classCount.sum', 5);
+
+        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->with(SymbolType::Namespace_)
+            ->willReturn([$includedInfo, $excludedInfo]);
+        $repository->method('get')
+            ->willReturn($violatingBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyzeLevel(RuleLevel::Namespace_, $context);
+
+        self::assertCount(1, $violations);
+        self::assertSame('App\Service', $violations[0]->symbolPath->namespace);
+    }
+
     #[DataProvider('instabilityThresholdDataProvider')]
     public function testInstabilityThresholdBoundaries(
         float $instability,
