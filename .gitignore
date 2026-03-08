@@ -46,6 +46,7 @@ Thumbs.db
 /dist/
 /site/
 /_site/
+website/site/
 
 # Python venv (MkDocs)
 /.venv/
