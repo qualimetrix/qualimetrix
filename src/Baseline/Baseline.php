@@ -12,7 +12,8 @@ use DateTimeImmutable;
  * Baseline contains a snapshot of known violations that should be ignored.
  * This allows introducing the tool into legacy projects without fixing all existing issues first.
  *
- * Version 2: Keys are canonical symbol paths (e.g., "class:App\\Service\\UserService")
+ * Version 2/3: Keys are canonical symbol paths (e.g., "class:App\\Service\\UserService")
+ * Version 4: 16-char violation hashes (was 8-char in version 3)
  */
 final readonly class Baseline
 {
