@@ -37,7 +37,7 @@ final class CheckCommandTest extends TestCase
     {
         // Create a simple PHP file
         $testFile = $this->tempDir . '/SimpleClass.php';
-        file_put_contents($testFile, '<?php class SimpleClass { public function method() { return 42; } }');
+        file_put_contents($testFile, '<?php class SimpleClass { public function method(): int { return 42; } }');
 
         // Create command from DI container
         $commandTester = $this->createCommandTester();
