@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Rules\CodeSmell;
 
-use AiMessDetector\Core\Rule\RuleOptionsInterface;
 use AiMessDetector\Core\Violation\Severity;
-use InvalidArgumentException;
 
 /**
  * Detects count() calls in loop conditions.
@@ -17,16 +15,6 @@ use InvalidArgumentException;
 final class CountInLoopRule extends AbstractCodeSmellRule
 {
     public const string NAME = 'code-smell.count-in-loop';
-
-    public function __construct(RuleOptionsInterface $options)
-    {
-        if (!$options instanceof CodeSmellOptions) {
-            throw new InvalidArgumentException(
-                \sprintf('Expected %s, got %s', CodeSmellOptions::class, $options::class),
-            );
-        }
-        parent::__construct($options);
-    }
 
     public function getName(): string
     {

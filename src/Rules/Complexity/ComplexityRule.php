@@ -8,13 +8,11 @@ use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\HierarchicalRuleInterface;
 use AiMessDetector\Core\Rule\RuleCategory;
 use AiMessDetector\Core\Rule\RuleLevel;
-use AiMessDetector\Core\Rule\RuleOptionsInterface;
 use AiMessDetector\Core\Symbol\SymbolType;
 use AiMessDetector\Core\Violation\Location;
 use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
 use AiMessDetector\Rules\AbstractRule;
-use InvalidArgumentException;
 
 /**
  * Hierarchical rule that checks complexity at method and class levels.
@@ -26,17 +24,6 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
 {
     public const string NAME = 'complexity.cyclomatic';
     private const string METRIC_CCN = 'ccn';
-
-    public function __construct(
-        RuleOptionsInterface $options,
-    ) {
-        if (!$options instanceof ComplexityOptions) {
-            throw new InvalidArgumentException(
-                \sprintf('Expected %s, got %s', ComplexityOptions::class, $options::class),
-            );
-        }
-        parent::__construct($options);
-    }
 
     public function getName(): string
     {
@@ -93,13 +80,10 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
     }
 
     /**
-     * Legacy analyze method for backward compatibility.
-     *
      * @return list<Violation>
      */
     public function analyze(AnalysisContext $context): array
     {
-        // When called directly (not via analyzeLevel), analyze all enabled levels
         $violations = [];
 
         foreach ($this->getSupportedLevels() as $level) {

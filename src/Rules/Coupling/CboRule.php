@@ -9,14 +9,12 @@ use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\HierarchicalRuleInterface;
 use AiMessDetector\Core\Rule\RuleCategory;
 use AiMessDetector\Core\Rule\RuleLevel;
-use AiMessDetector\Core\Rule\RuleOptionsInterface;
 use AiMessDetector\Core\Symbol\SymbolInfo;
 use AiMessDetector\Core\Symbol\SymbolType;
 use AiMessDetector\Core\Violation\Location;
 use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
 use AiMessDetector\Rules\AbstractRule;
-use InvalidArgumentException;
 
 /**
  * Hierarchical rule that checks CBO (Coupling Between Objects) at class and namespace levels.
@@ -32,17 +30,6 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
     private const string METRIC_CBO = 'cbo';
     private const string METRIC_CA = 'ca';
     private const string METRIC_CE = 'ce';
-
-    public function __construct(
-        RuleOptionsInterface $options,
-    ) {
-        if (!$options instanceof CboOptions) {
-            throw new InvalidArgumentException(
-                \sprintf('Expected %s, got %s', CboOptions::class, $options::class),
-            );
-        }
-        parent::__construct($options);
-    }
 
     public function getName(): string
     {
@@ -99,8 +86,6 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
     }
 
     /**
-     * Legacy analyze method for backward compatibility.
-     *
      * @return list<Violation>
      */
     public function analyze(AnalysisContext $context): array

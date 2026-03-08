@@ -6,12 +6,10 @@ namespace AiMessDetector\Rules\Structure;
 
 use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\RuleCategory;
-use AiMessDetector\Core\Rule\RuleOptionsInterface;
 use AiMessDetector\Core\Symbol\SymbolType;
 use AiMessDetector\Core\Violation\Location;
 use AiMessDetector\Core\Violation\Violation;
 use AiMessDetector\Rules\AbstractRule;
-use InvalidArgumentException;
 
 /**
  * Rule that checks WMC (Weighted Methods per Class) at class level.
@@ -27,17 +25,6 @@ final class WmcRule extends AbstractRule
     public const string NAME = 'complexity.wmc';
     private const string METRIC_WMC = 'wmc';
     private const string METRIC_IS_DATA_CLASS = 'isDataClass';
-
-    public function __construct(
-        RuleOptionsInterface $options,
-    ) {
-        if (!$options instanceof WmcOptions) {
-            throw new InvalidArgumentException(
-                \sprintf('Expected %s, got %s', WmcOptions::class, $options::class),
-            );
-        }
-        parent::__construct($options);
-    }
 
     public function getName(): string
     {
