@@ -73,7 +73,7 @@ final readonly class CliOptionsParser
         }
 
         // Parse short aliases
-        $shortAliases = ['cc-warning', 'cc-error', 'ns-warning', 'ns-error'];
+        $shortAliases = ['cyclomatic-warning', 'cyclomatic-error', 'class-count-warning', 'class-count-error'];
         foreach ($shortAliases as $alias) {
             $value = $input->getOption($alias);
             if ($value === null) {

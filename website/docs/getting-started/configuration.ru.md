@@ -11,7 +11,7 @@ AI Mess Detector работает из коробки с разумными на
 Также можно указать файл явно:
 
 ```bash
-vendor/bin/aimd analyze src/ --config=my-config.yaml
+vendor/bin/aimd check src/ --config=my-config.yaml
 ```
 
 ---
@@ -28,7 +28,7 @@ paths:
 ```
 
 !!! note "Примечание"
-    Если вы передаёте пути через аргументы командной строки (например, `vendor/bin/aimd analyze src/ lib/`), они имеют приоритет над конфигурационным файлом.
+    Если вы передаёте пути через аргументы командной строки (например, `vendor/bin/aimd check src/ lib/`), они имеют приоритет над конфигурационным файлом.
 
 ### Исключения (exclude)
 
@@ -114,10 +114,10 @@ rules:
 
 ```bash
 # В конфиге указано paths: [src/], но CLI переопределяет
-vendor/bin/aimd analyze lib/
+vendor/bin/aimd check lib/
 
 # Добавить дополнительные исключения поверх конфига
-vendor/bin/aimd analyze src/ --exclude-path='src/Generated/*'
+vendor/bin/aimd check src/ --exclude-path='src/Generated/*'
 ```
 
 Это позволяет экспериментировать без редактирования файла конфигурации.

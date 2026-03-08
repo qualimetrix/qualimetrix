@@ -6,7 +6,7 @@ declare(strict_types=1);
 namespace AiMessDetector;
 
 use AiMessDetector\Infrastructure\Console\Application;
-use AiMessDetector\Infrastructure\Console\Command\AnalyzeCommand;
+use AiMessDetector\Infrastructure\Console\Command\CheckCommand;
 use AiMessDetector\Infrastructure\Console\Command\BaselineCleanupCommand;
 use AiMessDetector\Infrastructure\Console\Command\GraphExportCommand;
 use AiMessDetector\Infrastructure\Console\Command\HookInstallCommand;
@@ -41,8 +41,8 @@ $containerFactory = new ContainerFactory();
 $container = $containerFactory->create();
 
 // Get commands from container (all dependencies injected)
-/** @var AnalyzeCommand $analyzeCommand */
-$analyzeCommand = $container->get(AnalyzeCommand::class);
+/** @var CheckCommand $analyzeCommand */
+$analyzeCommand = $container->get(CheckCommand::class);
 /** @var BaselineCleanupCommand $baselineCleanupCommand */
 $baselineCleanupCommand = $container->get(BaselineCleanupCommand::class);
 /** @var GraphExportCommand $graphExportCommand */

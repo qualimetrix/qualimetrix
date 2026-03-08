@@ -32,6 +32,9 @@ When starting a session in the web environment, `scripts/init-environment.sh` is
 - Check the Definition of Done at the end of the document
 - Study the related interfaces in `src/Core/README.md`
 
+**Before adding CLI commands or options:**
+- Read [docs/internal/CLI_CONVENTIONS.md](docs/internal/CLI_CONVENTIONS.md) — naming rules
+
 **Before updating website documentation:**
 - Read [website/CONTRIBUTING_DOCS.md](website/CONTRIBUTING_DOCS.md) — structure and style rules
 
@@ -323,23 +326,23 @@ composer test           # PHPUnit
 composer phpstan        # PHPStan level 8
 
 # Basic analysis
-bin/aimd analyze src/
-bin/aimd analyze src/ --format=json --workers=0
+bin/aimd check src/
+bin/aimd check src/ --format=json --workers=0
 
 # Git integration
-bin/aimd analyze src/ --staged
-bin/aimd analyze src/ --diff=main
+bin/aimd check src/ --analyze=git:staged
+bin/aimd check src/ --report=git:main..HEAD
 
 # Baseline
-bin/aimd analyze src/ --baseline=baseline.json
-bin/aimd analyze src/ --generate-baseline=baseline.json
+bin/aimd check src/ --baseline=baseline.json
+bin/aimd check src/ --generate-baseline=baseline.json
 
 # Hooks
 bin/aimd hook:install
 bin/aimd hook:status
 
 # Full list of options
-bin/aimd analyze --help
+bin/aimd check --help
 ```
 
 ---
@@ -385,6 +388,9 @@ Key rules:
 - [src/Reporting/README.md](src/Reporting/README.md) — formatting
 - [src/Configuration/README.md](src/Configuration/README.md) — configuration
 - [src/Infrastructure/README.md](src/Infrastructure/README.md) — CLI, DI, caching
+
+### Internal Documentation (in docs/internal/)
+- [docs/internal/CLI_CONVENTIONS.md](docs/internal/CLI_CONVENTIONS.md) — CLI naming conventions
 
 ### General Documentation (in docs/)
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — overall architecture

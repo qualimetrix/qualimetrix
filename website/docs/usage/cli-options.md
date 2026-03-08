@@ -5,7 +5,7 @@ AI Mess Detector provides the `analyze` command for code analysis and several ut
 ## analyze command
 
 ```bash
-bin/aimd analyze [options] [--] [<paths>...]
+bin/aimd check [options] [--] [<paths>...]
 ```
 
 ### Paths argument
@@ -14,10 +14,10 @@ Specify one or more directories or files to analyze:
 
 ```bash
 # Analyze specific directories
-bin/aimd analyze src/ lib/
+bin/aimd check src/ lib/
 
 # Analyze a single file
-bin/aimd analyze src/Service/UserService.php
+bin/aimd check src/Service/UserService.php
 ```
 
 If you omit paths, AIMD auto-detects them from the `autoload` section of your `composer.json`.
@@ -31,7 +31,7 @@ If you omit paths, AIMD auto-detects them from the `autoload` section of your `c
 Path to a YAML configuration file:
 
 ```bash
-bin/aimd analyze src/ --config=aimd.yaml
+bin/aimd check src/ --config=aimd.yaml
 ```
 
 ### `--exclude`
@@ -39,7 +39,7 @@ bin/aimd analyze src/ --config=aimd.yaml
 Exclude directories from analysis. Can be repeated:
 
 ```bash
-bin/aimd analyze src/ --exclude=src/Generated --exclude=src/Legacy
+bin/aimd check src/ --exclude=src/Generated --exclude=src/Legacy
 ```
 
 ### `--exclude-path`
@@ -47,7 +47,7 @@ bin/aimd analyze src/ --exclude=src/Generated --exclude=src/Legacy
 Suppress violations for files matching a glob pattern. The files are still analyzed (their metrics contribute to namespace-level calculations), but violations are not reported. Can be repeated:
 
 ```bash
-bin/aimd analyze src/ --exclude-path="src/Entity/*" --exclude-path="src/DTO/*"
+bin/aimd check src/ --exclude-path="src/Entity/*" --exclude-path="src/DTO/*"
 ```
 
 ---
@@ -59,8 +59,8 @@ bin/aimd analyze src/ --exclude-path="src/Entity/*" --exclude-path="src/DTO/*"
 Choose the output format. Default: `text`.
 
 ```bash
-bin/aimd analyze src/ --format=json
-bin/aimd analyze src/ --format=sarif
+bin/aimd check src/ --format=json
+bin/aimd check src/ --format=sarif
 ```
 
 Available formats: `text`, `text-verbose`, `json`, `checkstyle`, `sarif`, `gitlab`.
@@ -72,7 +72,7 @@ See [Output Formats](output-formats.md) for details on each format.
 Group violations in the output. Default depends on the formatter.
 
 ```bash
-bin/aimd analyze src/ --format=text-verbose --group-by=rule
+bin/aimd check src/ --format=text-verbose --group-by=rule
 ```
 
 Available values: `none`, `file`, `rule`, `severity`.
@@ -82,7 +82,7 @@ Available values: `none`, `file`, `rule`, `severity`.
 Pass formatter-specific options as key=value pairs. Can be repeated:
 
 ```bash
-bin/aimd analyze src/ --format-opt=key=value
+bin/aimd check src/ --format-opt=key=value
 ```
 
 ---
@@ -96,7 +96,7 @@ AIMD caches parsed ASTs to speed up repeated runs.
 Disable caching entirely:
 
 ```bash
-bin/aimd analyze src/ --no-cache
+bin/aimd check src/ --no-cache
 ```
 
 ### `--cache-dir`
@@ -104,7 +104,7 @@ bin/aimd analyze src/ --no-cache
 Set a custom cache directory. Default: `.aimd-cache`.
 
 ```bash
-bin/aimd analyze src/ --cache-dir=/tmp/aimd-cache
+bin/aimd check src/ --cache-dir=/tmp/aimd-cache
 ```
 
 ### `--clear-cache`
@@ -112,7 +112,7 @@ bin/aimd analyze src/ --cache-dir=/tmp/aimd-cache
 Clear the cache before running analysis:
 
 ```bash
-bin/aimd analyze src/ --clear-cache
+bin/aimd check src/ --clear-cache
 ```
 
 ---
@@ -126,7 +126,7 @@ Baselines let you ignore known violations and focus on new ones. See [Baseline](
 Run analysis and save all current violations to a baseline file:
 
 ```bash
-bin/aimd analyze src/ --generate-baseline=baseline.json
+bin/aimd check src/ --generate-baseline=baseline.json
 ```
 
 ### `--baseline`
@@ -134,7 +134,7 @@ bin/aimd analyze src/ --generate-baseline=baseline.json
 Filter out violations that exist in the baseline file:
 
 ```bash
-bin/aimd analyze src/ --baseline=baseline.json
+bin/aimd check src/ --baseline=baseline.json
 ```
 
 ### `--show-resolved`
@@ -142,7 +142,7 @@ bin/aimd analyze src/ --baseline=baseline.json
 Show how many violations from the baseline have been fixed:
 
 ```bash
-bin/aimd analyze src/ --baseline=baseline.json --show-resolved
+bin/aimd check src/ --baseline=baseline.json --show-resolved
 ```
 
 ### `--baseline-ignore-stale`
@@ -150,7 +150,7 @@ bin/aimd analyze src/ --baseline=baseline.json --show-resolved
 By default, AIMD reports an error if the baseline references files that no longer exist. This flag silently ignores stale entries instead:
 
 ```bash
-bin/aimd analyze src/ --baseline=baseline.json --baseline-ignore-stale
+bin/aimd check src/ --baseline=baseline.json --baseline-ignore-stale
 ```
 
 ---
@@ -162,7 +162,7 @@ bin/aimd analyze src/ --baseline=baseline.json --baseline-ignore-stale
 Show violations that were suppressed by `@aimd-ignore` tags:
 
 ```bash
-bin/aimd analyze src/ --show-suppressed
+bin/aimd check src/ --show-suppressed
 ```
 
 ### `--no-suppression`
@@ -170,7 +170,7 @@ bin/aimd analyze src/ --show-suppressed
 Ignore all `@aimd-ignore` tags and report every violation:
 
 ```bash
-bin/aimd analyze src/ --no-suppression
+bin/aimd check src/ --no-suppression
 ```
 
 ---
@@ -179,38 +179,22 @@ bin/aimd analyze src/ --no-suppression
 
 Analyze or report only changed files. See [Git Integration](git-integration.md) for the full guide.
 
-### `--staged`
-
-Analyze only files staged for commit. Shortcut for `--analyze=git:staged`:
-
-```bash
-bin/aimd analyze src/ --staged
-```
-
-### `--diff=REF`
-
-Report only violations in files changed compared to a git reference. Shortcut for `--report=git:REF..HEAD`:
-
-```bash
-bin/aimd analyze src/ --diff=main
-bin/aimd analyze src/ --diff=origin/develop
-```
-
 ### `--analyze`
 
-Fine-grained control over which files to analyze:
+Control which files to analyze. Accepts a git scope expression:
 
 ```bash
-bin/aimd analyze src/ --analyze=git:staged
-bin/aimd analyze src/ --analyze=git:main..HEAD
+bin/aimd check src/ --analyze=git:staged          # only staged files
+bin/aimd check src/ --analyze=git:main..HEAD       # only files changed since main
 ```
 
 ### `--report`
 
-Fine-grained control over which violations to report:
+Control which violations to report. Analyzes the full project but only shows violations from changed files:
 
 ```bash
-bin/aimd analyze src/ --report=git:main..HEAD
+bin/aimd check src/ --report=git:main..HEAD
+bin/aimd check src/ --report=git:origin/develop..HEAD
 ```
 
 ### `--report-strict`
@@ -218,7 +202,7 @@ bin/aimd analyze src/ --report=git:main..HEAD
 In diff mode, only show violations from the changed files themselves. Without this flag, violations from parent namespaces are also shown:
 
 ```bash
-bin/aimd analyze src/ --diff=main --report-strict
+bin/aimd check src/ --report=git:main..HEAD --report-strict
 ```
 
 ---
@@ -231,10 +215,10 @@ Control parallel processing. Default: auto-detect based on CPU count.
 
 ```bash
 # Disable parallel processing (single-threaded)
-bin/aimd analyze src/ --workers=0
+bin/aimd check src/ --workers=0
 
 # Use exactly 4 workers
-bin/aimd analyze src/ --workers=4
+bin/aimd check src/ --workers=4
 ```
 
 !!! tip
@@ -245,7 +229,7 @@ bin/aimd analyze src/ --workers=4
 Write a debug log to a file:
 
 ```bash
-bin/aimd analyze src/ --log-file=aimd.log
+bin/aimd check src/ --log-file=aimd.log
 ```
 
 ### `--log-level`
@@ -253,7 +237,7 @@ bin/aimd analyze src/ --log-file=aimd.log
 Set the minimum log level. Default: `info`.
 
 ```bash
-bin/aimd analyze src/ --log-file=aimd.log --log-level=debug
+bin/aimd check src/ --log-file=aimd.log --log-level=debug
 ```
 
 Available levels: `debug`, `info`, `warning`, `error`.
@@ -263,7 +247,7 @@ Available levels: `debug`, `info`, `warning`, `error`.
 Disable the progress bar. Useful in CI pipelines:
 
 ```bash
-bin/aimd analyze src/ --no-progress
+bin/aimd check src/ --no-progress
 ```
 
 ---
@@ -276,10 +260,10 @@ Enable the internal profiler. Optionally specify a file to save the profile:
 
 ```bash
 # Show profiling summary on screen
-bin/aimd analyze src/ --profile
+bin/aimd check src/ --profile
 
 # Save profile to file
-bin/aimd analyze src/ --profile=profile.json
+bin/aimd check src/ --profile=profile.json
 ```
 
 ### `--profile-format`
@@ -287,7 +271,7 @@ bin/aimd analyze src/ --profile=profile.json
 Choose the profile export format. Default: `json`.
 
 ```bash
-bin/aimd analyze src/ --profile=profile.json --profile-format=chrome-tracing
+bin/aimd check src/ --profile=profile.json --profile-format=chrome-tracing
 ```
 
 Available formats: `json`, `chrome-tracing`.
@@ -305,13 +289,13 @@ Disable a specific rule or an entire group by prefix. Can be repeated:
 
 ```bash
 # Disable one rule
-bin/aimd analyze src/ --disable-rule=size.class-count
+bin/aimd check src/ --disable-rule=size.class-count
 
 # Disable all complexity rules
-bin/aimd analyze src/ --disable-rule=complexity
+bin/aimd check src/ --disable-rule=complexity
 
 # Disable multiple
-bin/aimd analyze src/ --disable-rule=complexity --disable-rule=design.lcom
+bin/aimd check src/ --disable-rule=complexity --disable-rule=design.lcom
 ```
 
 ### `--only-rule`
@@ -320,10 +304,10 @@ Run only the specified rules or groups. Can be repeated:
 
 ```bash
 # Run only complexity rules
-bin/aimd analyze src/ --only-rule=complexity
+bin/aimd check src/ --only-rule=complexity
 
 # Run two specific rules
-bin/aimd analyze src/ --only-rule=complexity.cyclomatic --only-rule=size.method-count
+bin/aimd check src/ --only-rule=complexity.cyclomatic --only-rule=size.method-count
 ```
 
 ### `--rule-opt`
@@ -331,8 +315,8 @@ bin/aimd analyze src/ --only-rule=complexity.cyclomatic --only-rule=size.method-
 Override rule options from the command line. Format: `rule-name:option=value`. Can be repeated:
 
 ```bash
-bin/aimd analyze src/ --rule-opt=complexity.cyclomatic:method.warning=15
-bin/aimd analyze src/ --rule-opt=complexity.cyclomatic:method.error=30
+bin/aimd check src/ --rule-opt=complexity.cyclomatic:method.warning=15
+bin/aimd check src/ --rule-opt=complexity.cyclomatic:method.error=30
 ```
 
 ### Rule-specific shortcut flags
@@ -341,46 +325,46 @@ Many rules have dedicated CLI flags for quick threshold adjustments:
 
 === "Complexity"
 
-| Flag                          | Rule                  | Option            |
-| ----------------------------- | --------------------- | ----------------- |
-| `--cc-warning=N`              | complexity.cyclomatic | method.warning    |
-| `--cc-error=N`                | complexity.cyclomatic | method.error      |
-| `--cc-class-warning=N`        | complexity.cyclomatic | class.max_warning |
-| `--cc-class-error=N`          | complexity.cyclomatic | class.max_error   |
-| `--cognitive-warning=N`       | complexity.cognitive  | method.warning    |
-| `--cognitive-error=N`         | complexity.cognitive  | method.error      |
-| `--cognitive-class-warning=N` | complexity.cognitive  | class.max_warning |
-| `--cognitive-class-error=N`   | complexity.cognitive  | class.max_error   |
-| `--npath-warning=N`           | complexity.npath      | method.warning    |
-| `--npath-error=N`             | complexity.npath      | method.error      |
-| `--npath-class-warning=N`     | complexity.npath      | class.max_warning |
-| `--npath-class-error=N`       | complexity.npath      | class.max_error   |
-| `--wmc-warning=N`             | complexity.wmc        | warning           |
-| `--wmc-error=N`               | complexity.wmc        | error             |
+| Flag                           | Rule                  | Option            |
+| ------------------------------ | --------------------- | ----------------- |
+| `--cyclomatic-warning=N`       | complexity.cyclomatic | method.warning    |
+| `--cyclomatic-error=N`         | complexity.cyclomatic | method.error      |
+| `--cyclomatic-class-warning=N` | complexity.cyclomatic | class.max_warning |
+| `--cyclomatic-class-error=N`   | complexity.cyclomatic | class.max_error   |
+| `--cognitive-warning=N`        | complexity.cognitive  | method.warning    |
+| `--cognitive-error=N`          | complexity.cognitive  | method.error      |
+| `--cognitive-class-warning=N`  | complexity.cognitive  | class.max_warning |
+| `--cognitive-class-error=N`    | complexity.cognitive  | class.max_error   |
+| `--npath-warning=N`            | complexity.npath      | method.warning    |
+| `--npath-error=N`              | complexity.npath      | method.error      |
+| `--npath-class-warning=N`      | complexity.npath      | class.max_warning |
+| `--npath-class-error=N`        | complexity.npath      | class.max_error   |
+| `--wmc-warning=N`              | complexity.wmc        | warning           |
+| `--wmc-error=N`                | complexity.wmc        | error             |
 
 === "Coupling"
 
-| Flag                         | Rule                 | Option                |
-| ---------------------------- | -------------------- | --------------------- |
-| `--cbo-class-warning=N`      | coupling.cbo         | class.warning         |
-| `--cbo-class-error=N`        | coupling.cbo         | class.error           |
-| `--cbo-ns-warning=N`         | coupling.cbo         | namespace.warning     |
-| `--cbo-ns-error=N`           | coupling.cbo         | namespace.error       |
-| `--distance-warning=N`       | coupling.distance    | max_distance_warning  |
-| `--distance-error=N`         | coupling.distance    | max_distance_error    |
-| `--coupling-class-warning=N` | coupling.instability | class.max_warning     |
-| `--coupling-class-error=N`   | coupling.instability | class.max_error       |
-| `--coupling-ns-warning=N`    | coupling.instability | namespace.max_warning |
-| `--coupling-ns-error=N`      | coupling.instability | namespace.max_error   |
+| Flag                            | Rule                 | Option                |
+| ------------------------------- | -------------------- | --------------------- |
+| `--cbo-warning=N`               | coupling.cbo         | class.warning         |
+| `--cbo-error=N`                 | coupling.cbo         | class.error           |
+| `--cbo-ns-warning=N`            | coupling.cbo         | namespace.warning     |
+| `--cbo-ns-error=N`              | coupling.cbo         | namespace.error       |
+| `--distance-warning=N`          | coupling.distance    | max_distance_warning  |
+| `--distance-error=N`            | coupling.distance    | max_distance_error    |
+| `--instability-class-warning=N` | coupling.instability | class.max_warning     |
+| `--instability-class-error=N`   | coupling.instability | class.max_error       |
+| `--instability-ns-warning=N`    | coupling.instability | namespace.max_warning |
+| `--instability-ns-error=N`      | coupling.instability | namespace.max_error   |
 
 === "Size"
 
-| Flag                     | Rule              | Option  |
-| ------------------------ | ----------------- | ------- |
-| `--ns-warning=N`         | size.class-count  | warning |
-| `--ns-error=N`           | size.class-count  | error   |
-| `--size-class-warning=N` | size.method-count | warning |
-| `--size-class-error=N`   | size.method-count | error   |
+| Flag                       | Rule              | Option  |
+| -------------------------- | ----------------- | ------- |
+| `--class-count-warning=N`  | size.class-count  | warning |
+| `--class-count-error=N`    | size.class-count  | error   |
+| `--method-count-warning=N` | size.method-count | warning |
+| `--method-count-error=N`   | size.method-count | error   |
 
 === "Design"
 

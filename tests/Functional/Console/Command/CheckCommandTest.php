@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Tests\Functional\Console\Command;
 
-use AiMessDetector\Infrastructure\Console\Command\AnalyzeCommand;
+use AiMessDetector\Infrastructure\Console\Command\CheckCommand;
 use AiMessDetector\Infrastructure\DependencyInjection\ContainerFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -12,8 +12,8 @@ use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;
 
-#[CoversClass(AnalyzeCommand::class)]
-final class AnalyzeCommandTest extends TestCase
+#[CoversClass(CheckCommand::class)]
+final class CheckCommandTest extends TestCase
 {
     private string $tempDir;
 
@@ -268,15 +268,15 @@ class ComplexClass {
     }
 
     /**
-     * Creates a CommandTester for AnalyzeCommand from DI container.
+     * Creates a CommandTester for CheckCommand from DI container.
      */
     private function createCommandTester(): CommandTester
     {
         $containerFactory = new ContainerFactory();
         $container = $containerFactory->create();
 
-        /** @var AnalyzeCommand $command */
-        $command = $container->get(AnalyzeCommand::class);
+        /** @var CheckCommand $command */
+        $command = $container->get(CheckCommand::class);
 
         $application = new Application();
         $application->addCommand($command);

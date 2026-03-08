@@ -90,7 +90,7 @@ rules:
       max_error: 50
 ```
 
-**CLI:** `--cc-warning=10 --cc-error=20 --cc-class-warning=30 --cc-class-error=50`
+**CLI:** `--cyclomatic-warning=10 --cyclomatic-error=20 --cyclomatic-class-warning=30 --cyclomatic-class-error=50`
 
 ---
 
@@ -168,7 +168,7 @@ rules:
     error: 25
 ```
 
-**CLI:** `--size-class-warning=15 --size-class-error=25`
+**CLI:** `--method-count-warning=15 --method-count-error=25`
 
 ---
 
@@ -186,7 +186,7 @@ rules:
     error: 15
 ```
 
-**CLI:** `--ns-warning=10 --ns-error=15`
+**CLI:** `--class-count-warning=10 --class-count-error=15`
 
 ---
 
@@ -280,8 +280,8 @@ Checks instability = Ce / (Ca + Ce), where:
 
 **CLI:**
 ```bash
---coupling-class-warning=0.8 --coupling-class-error=0.95
---coupling-ns-warning=0.8 --coupling-ns-error=0.95
+--instability-class-warning=0.8 --instability-class-error=0.95
+--instability-ns-warning=0.8 --instability-ns-error=0.95
 ```
 
 ---
@@ -294,7 +294,7 @@ Checks Coupling Between Objects (CBO) — the number of classes a given class de
 
 **CLI:**
 ```bash
---cbo-class-warning=... --cbo-class-error=...
+--cbo-warning=... --cbo-error=...
 --cbo-ns-warning=... --cbo-ns-error=...
 ```
 
@@ -336,7 +336,7 @@ rules:
     max_cycle_size: 0  # 0 = report all
 ```
 
-**CLI:** `--no-circular-deps --max-cycle-size=0`
+**CLI:** `--circular-deps --max-cycle-size=0`
 
 **How to break a cycle:**
 1. Introduce Interface — depend on an interface

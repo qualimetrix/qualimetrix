@@ -102,10 +102,10 @@ You can disable individual rules or entire groups:
 
 ```bash
 # Disable a single rule
-bin/aimd analyze src/ --disable-rule=complexity.npath
+bin/aimd check src/ --disable-rule=complexity.npath
 
 # Disable an entire group (prefix matching)
-bin/aimd analyze src/ --disable-rule=code-smell
+bin/aimd check src/ --disable-rule=code-smell
 ```
 
 ## Customizing Thresholds
@@ -113,8 +113,8 @@ bin/aimd analyze src/ --disable-rule=code-smell
 Override any threshold via the command line:
 
 ```bash
-bin/aimd analyze src/ --rule-opt="complexity.cyclomatic:method.warning=15"
-bin/aimd analyze src/ --rule-opt="size.method-count:warning=25"
+bin/aimd check src/ --rule-opt="complexity.cyclomatic:method.warning=15"
+bin/aimd check src/ --rule-opt="size.method-count:warning=25"
 ```
 
 Or in your `aimd.yaml` configuration file:

@@ -9,7 +9,7 @@ namespace AiMessDetector\Configuration;
  *
  * Supports:
  * - Unified format: --rule-opt=RULE:OPTION=VALUE
- * - Short aliases defined by rules (e.g., --cc-warning=N)
+ * - Short aliases defined by rules (e.g., --cyclomatic-warning=N)
  */
 final readonly class RuleOptionsParser
 {

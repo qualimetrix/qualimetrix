@@ -124,7 +124,7 @@ rules:
 Then run the analysis with the config file:
 
 ```bash
-vendor/bin/aimd analyze src/ --config=aimd.yaml
+vendor/bin/aimd check src/ --config=aimd.yaml
 ```
 
 ### Disabling Rules
@@ -142,7 +142,7 @@ rules:
 You can disable all rules in a group via the CLI:
 
 ```bash
-vendor/bin/aimd analyze src/ --disable-rule=code-smell
+vendor/bin/aimd check src/ --disable-rule=code-smell
 ```
 
 This disables all rules whose ID starts with `code-smell.`.
@@ -152,7 +152,7 @@ This disables all rules whose ID starts with `code-smell.`.
 Override thresholds from the command line:
 
 ```bash
-vendor/bin/aimd analyze src/ --disable-rule=complexity.npath
+vendor/bin/aimd check src/ --disable-rule=complexity.npath
 ```
 
 ### Suppressing Individual Violations

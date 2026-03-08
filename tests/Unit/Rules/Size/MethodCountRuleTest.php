@@ -59,7 +59,7 @@ final class MethodCountRuleTest extends TestCase
     public function testGetCliAliases(): void
     {
         self::assertSame(
-            ['size-class-warning' => 'warning', 'size-class-error' => 'error'],
+            ['method-count-warning' => 'warning', 'method-count-error' => 'error'],
             MethodCountRule::getCliAliases(),
         );
     }

@@ -38,7 +38,7 @@ vendor/bin/aimd
 Запускайте AI Mess Detector в контейнере без локальной установки PHP:
 
 ```bash
-docker run --rm -v $(pwd):/app aimd analyze src/
+docker run --rm -v $(pwd):/app aimd check src/
 ```
 
 Эта команда монтирует текущую директорию в контейнер и анализирует папку `src/`.
@@ -47,10 +47,10 @@ docker run --rm -v $(pwd):/app aimd analyze src/
 
 ```bash
 # Вывод в формате JSON
-docker run --rm -v $(pwd):/app aimd analyze src/ --format=json
+docker run --rm -v $(pwd):/app aimd check src/ --format=json
 
 # С базовой линией (baseline)
-docker run --rm -v $(pwd):/app aimd analyze src/ --baseline=baseline.json
+docker run --rm -v $(pwd):/app aimd check src/ --baseline=baseline.json
 ```
 
 ---

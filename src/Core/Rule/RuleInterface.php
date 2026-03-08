@@ -48,7 +48,7 @@ interface RuleInterface
      * Returns CLI short aliases for rule options.
      *
      * Format: ['alias' => 'optionName']
-     * Example: ['cc-warning' => 'warningThreshold', 'cc-error' => 'errorThreshold']
+     * Example: ['cyclomatic-warning' => 'warningThreshold', 'cyclomatic-error' => 'errorThreshold']
      *
      * @return array<string, string>
      */

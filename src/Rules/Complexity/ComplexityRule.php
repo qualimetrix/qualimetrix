@@ -125,12 +125,10 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
     public static function getCliAliases(): array
     {
         return [
-            // Legacy aliases for backward compatibility (maps to method level)
-            'cc-warning' => 'method.warning',
-            'cc-error' => 'method.error',
-            // Class-level aliases
-            'cc-class-warning' => 'class.max_warning',
-            'cc-class-error' => 'class.max_error',
+            'cyclomatic-warning' => 'method.warning',
+            'cyclomatic-error' => 'method.error',
+            'cyclomatic-class-warning' => 'class.max_warning',
+            'cyclomatic-class-error' => 'class.max_error',
         ];
     }
 

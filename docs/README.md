@@ -114,8 +114,8 @@ composer cs-fix               # Fix code style
 composer check                # tests + phpstan + deptrac + cs-fix
 
 # Analyze your code
-bin/aimd analyze src/         # Run analysis
-bin/aimd analyze src/ --help  # See all options
+bin/aimd check src/         # Run analysis
+bin/aimd check src/ --help  # See all options
 ```
 
 ---

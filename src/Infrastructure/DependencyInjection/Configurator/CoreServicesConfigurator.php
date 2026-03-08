@@ -51,7 +51,7 @@ final class CoreServicesConfigurator implements ContainerConfiguratorInterface
      *
      * LoggerHolder is a mutable singleton that holds the current logger.
      * It's initialized with NullLogger and can be reconfigured at runtime
-     * in AnalyzeCommand based on CLI options (-v, --log-file, etc.).
+     * in CheckCommand based on CLI options (-v, --log-file, etc.).
      *
      * DelegatingLogger proxies all log calls to LoggerHolder::getLogger(),
      * allowing runtime logger configuration while services are created at compile time.
@@ -79,7 +79,7 @@ final class CoreServicesConfigurator implements ContainerConfiguratorInterface
      *
      * ProgressReporterHolder is a mutable singleton that holds the current progress reporter.
      * It's initialized with NullProgressReporter and can be reconfigured at runtime
-     * in AnalyzeCommand based on CLI options (--no-progress, -q, TTY detection).
+     * in CheckCommand based on CLI options (--no-progress, -q, TTY detection).
      *
      * DelegatingProgressReporter proxies all progress calls to ProgressReporterHolder::getReporter(),
      * allowing runtime progress reporter configuration while services are created at compile time.
@@ -103,7 +103,7 @@ final class CoreServicesConfigurator implements ContainerConfiguratorInterface
      *
      * ProfilerHolder is a mutable singleton that holds the current profiler.
      * It's initialized with NullProfiler (no-op) and can be reconfigured at runtime
-     * in AnalyzeCommand based on CLI options (--profile).
+     * in CheckCommand based on CLI options (--profile).
      */
     private function registerProfiler(ContainerBuilder $container): void
     {

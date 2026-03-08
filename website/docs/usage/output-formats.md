@@ -3,7 +3,7 @@
 AI Mess Detector supports 6 output formats. Choose the one that fits your workflow.
 
 ```bash
-bin/aimd analyze src/ --format=<format>
+bin/aimd check src/ --format=<format>
 ```
 
 ---
@@ -60,8 +60,8 @@ Files: 45 analyzed, 0 skipped | Errors: 2 | Warnings: 1 | Time: 1.23s
 **Grouping:** Default is `--group-by=file`. You can change it:
 
 ```bash
-bin/aimd analyze src/ --format=text-verbose --group-by=rule
-bin/aimd analyze src/ --format=text-verbose --group-by=severity
+bin/aimd check src/ --format=text-verbose --group-by=rule
+bin/aimd check src/ --format=text-verbose --group-by=severity
 ```
 
 ---
@@ -111,7 +111,7 @@ Machine-readable JSON output. Compatible with PHPMD JSON format for tool integra
 **CI usage:**
 
 ```bash
-bin/aimd analyze src/ --format=json --no-progress > report.json
+bin/aimd check src/ --format=json --no-progress > report.json
 ```
 
 ---
@@ -143,7 +143,7 @@ Checkstyle XML format. Widely supported by CI tools.
 **CI usage (Jenkins):**
 
 ```bash
-bin/aimd analyze src/ --format=checkstyle --no-progress > checkstyle.xml
+bin/aimd check src/ --format=checkstyle --no-progress > checkstyle.xml
 ```
 
 ---
@@ -199,7 +199,7 @@ SARIF (Static Analysis Results Interchange Format) 2.1.0. A standard for static 
 
 ```yaml
 - name: Run AIMD
-  run: bin/aimd analyze src/ --format=sarif --no-progress > results.sarif
+  run: bin/aimd check src/ --format=sarif --no-progress > results.sarif
 
 - name: Upload SARIF to GitHub Security
   uses: github/codeql-action/upload-sarif@v3
@@ -249,7 +249,7 @@ GitLab Code Quality JSON format. Shows violations directly in Merge Request diff
 code_quality:
   stage: test
   script:
-    - bin/aimd analyze src/ --format=gitlab --no-progress > gl-code-quality-report.json
+    - bin/aimd check src/ --format=gitlab --no-progress > gl-code-quality-report.json
   artifacts:
     reports:
       codequality: gl-code-quality-report.json

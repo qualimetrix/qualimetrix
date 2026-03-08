@@ -51,17 +51,17 @@ final class RuleRegistryTest extends TestCase
 
         $aliases = $registry->getAllCliAliases();
 
-        // ComplexityRule defines: cc-warning, cc-error (for method level)
-        self::assertArrayHasKey('cc-warning', $aliases);
-        self::assertArrayHasKey('cc-error', $aliases);
-        self::assertSame('complexity.cyclomatic', $aliases['cc-warning']['rule']);
-        self::assertSame('method.warning', $aliases['cc-warning']['option']);
+        // ComplexityRule defines: cyclomatic-warning, cyclomatic-error (for method level)
+        self::assertArrayHasKey('cyclomatic-warning', $aliases);
+        self::assertArrayHasKey('cyclomatic-error', $aliases);
+        self::assertSame('complexity.cyclomatic', $aliases['cyclomatic-warning']['rule']);
+        self::assertSame('method.warning', $aliases['cyclomatic-warning']['option']);
 
-        // ClassCountRule defines: ns-warning, ns-error
-        self::assertArrayHasKey('ns-warning', $aliases);
-        self::assertArrayHasKey('ns-error', $aliases);
-        self::assertSame('size.class-count', $aliases['ns-warning']['rule']);
-        self::assertSame('warning', $aliases['ns-warning']['option']);
+        // ClassCountRule defines: class-count-warning, class-count-error
+        self::assertArrayHasKey('class-count-warning', $aliases);
+        self::assertArrayHasKey('class-count-error', $aliases);
+        self::assertSame('size.class-count', $aliases['class-count-warning']['rule']);
+        self::assertSame('warning', $aliases['class-count-warning']['option']);
     }
 
     #[Test]
@@ -74,7 +74,7 @@ final class RuleRegistryTest extends TestCase
         ]);
 
         $this->expectException(ConflictingCliAliasException::class);
-        $this->expectExceptionMessage('CLI alias "cc-warning" is defined by both "complexity.cyclomatic" and "complexity.cyclomatic" rules');
+        $this->expectExceptionMessage('CLI alias "cyclomatic-warning" is defined by both "complexity.cyclomatic" and "complexity.cyclomatic" rules');
 
         $registry->getAllCliAliases();
     }
@@ -101,6 +101,6 @@ final class RuleRegistryTest extends TestCase
         $aliases = $registry->getAllCliAliases();
 
         // Verify the NAME constant is used correctly
-        self::assertSame(ComplexityRule::NAME, $aliases['cc-warning']['rule']);
+        self::assertSame(ComplexityRule::NAME, $aliases['cyclomatic-warning']['rule']);
     }
 }

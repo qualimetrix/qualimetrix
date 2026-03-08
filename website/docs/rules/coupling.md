@@ -85,10 +85,10 @@ rules:
 ```
 
 ```bash
-bin/aimd analyze src/ --rule-opt="coupling.cbo:class.warning=18"
-bin/aimd analyze src/ --rule-opt="coupling.cbo:class.error=25"
-bin/aimd analyze src/ --rule-opt="coupling.cbo:namespace.min_class_count=5"
-bin/aimd analyze src/ --rule-opt="coupling.cbo:namespace.enabled=false"
+bin/aimd check src/ --rule-opt="coupling.cbo:class.warning=18"
+bin/aimd check src/ --rule-opt="coupling.cbo:class.error=25"
+bin/aimd check src/ --rule-opt="coupling.cbo:namespace.min_class_count=5"
+bin/aimd check src/ --rule-opt="coupling.cbo:namespace.enabled=false"
 ```
 
 ---
@@ -175,9 +175,9 @@ rules:
 ```
 
 ```bash
-bin/aimd analyze src/ --rule-opt="coupling.instability:class.max_warning=0.9"
-bin/aimd analyze src/ --rule-opt="coupling.instability:class.max_error=1.0"
-bin/aimd analyze src/ --rule-opt="coupling.instability:namespace.min_class_count=5"
+bin/aimd check src/ --rule-opt="coupling.instability:class.max_warning=0.9"
+bin/aimd check src/ --rule-opt="coupling.instability:class.max_error=1.0"
+bin/aimd check src/ --rule-opt="coupling.instability:namespace.min_class_count=5"
 ```
 
 ---
@@ -256,9 +256,9 @@ rules:
 ```
 
 ```bash
-bin/aimd analyze src/ --rule-opt="coupling.distance:max_distance_warning=0.4"
-bin/aimd analyze src/ --rule-opt="coupling.distance:max_distance_error=0.6"
-bin/aimd analyze src/ --rule-opt="coupling.distance:min_class_count=5"
+bin/aimd check src/ --rule-opt="coupling.distance:max_distance_warning=0.4"
+bin/aimd check src/ --rule-opt="coupling.distance:max_distance_error=0.6"
+bin/aimd check src/ --rule-opt="coupling.distance:min_class_count=5"
 ```
 
 By default, project namespaces are auto-detected from `composer.json` (`autoload.psr-4`).

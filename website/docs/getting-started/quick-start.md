@@ -63,7 +63,7 @@ If the project already contains legacy code with violations:
 
 ```bash
 # Create a baseline for existing issues
-bin/aimd analyze src/ --generate-baseline=baseline.json
+bin/aimd check src/ --generate-baseline=baseline.json
 
 # Now the hook will ignore issues from the baseline
 git commit -m "Add feature"
@@ -118,16 +118,16 @@ docker build -t aimd .
 
 ```bash
 # Analyze the current directory
-docker run --rm -v $(pwd):/app aimd analyze src/
+docker run --rm -v $(pwd):/app aimd check src/
 
 # With baseline
-docker run --rm -v $(pwd):/app aimd analyze src/ --baseline=baseline.json
+docker run --rm -v $(pwd):/app aimd check src/ --baseline=baseline.json
 
 # With configuration
-docker run --rm -v $(pwd):/app aimd analyze src/ --config=aimd.yaml
+docker run --rm -v $(pwd):/app aimd check src/ --config=aimd.yaml
 
 # JSON output
-docker run --rm -v $(pwd):/app aimd analyze src/ --format=json
+docker run --rm -v $(pwd):/app aimd check src/ --format=json
 ```
 
 ### Docker Compose
@@ -157,7 +157,7 @@ docker-compose run --rm aimd
       stage: test
       image: aimd:latest
       script:
-        - aimd analyze src/ --baseline=baseline.json
+        - aimd check src/ --baseline=baseline.json
       artifacts:
         when: on_failure
         paths:
@@ -175,7 +175,7 @@ docker-compose run --rm aimd
                 steps {
                     script {
                         docker.image('aimd:latest').inside('-v $WORKSPACE:/app') {
-                            sh 'aimd analyze src/ --baseline=baseline.json'
+                            sh 'aimd check src/ --baseline=baseline.json'
                         }
                     }
                 }
@@ -205,7 +205,7 @@ Suppress violations for files matching glob patterns. Useful for generated code,
 === "CLI"
 
     ```bash
-    bin/aimd analyze src/ --exclude-path='src/Entity/*' --exclude-path='*/DTO/*'
+    bin/aimd check src/ --exclude-path='src/Entity/*' --exclude-path='*/DTO/*'
     ```
 
 CLI patterns are merged with those defined in the config file.
@@ -251,5 +251,5 @@ ls -la bin/aimd
 
 ```bash
 # Linux with SELinux: add :z flag
-docker run --rm -v $(pwd):/app:z aimd analyze src/
+docker run --rm -v $(pwd):/app:z aimd check src/
 ```

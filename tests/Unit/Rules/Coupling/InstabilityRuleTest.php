@@ -77,10 +77,10 @@ final class InstabilityRuleTest extends TestCase
     public function testGetCliAliases(): void
     {
         self::assertSame([
-            'coupling-class-warning' => 'class.max_warning',
-            'coupling-class-error' => 'class.max_error',
-            'coupling-ns-warning' => 'namespace.max_warning',
-            'coupling-ns-error' => 'namespace.max_error',
+            'instability-class-warning' => 'class.max_warning',
+            'instability-class-error' => 'class.max_error',
+            'instability-ns-warning' => 'namespace.max_warning',
+            'instability-ns-error' => 'namespace.max_error',
         ], InstabilityRule::getCliAliases());
     }
 

@@ -374,7 +374,7 @@ YAML;
     }
 
     /**
-     * Creates ArrayInput with proper InputDefinition (matching AnalyzeCommand).
+     * Creates ArrayInput with proper InputDefinition (matching CheckCommand).
      *
      * @param array<string, mixed> $parameters
      */

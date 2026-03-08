@@ -7,7 +7,7 @@ namespace AiMessDetector\Reporting;
 /**
  * Context passed to formatters with rendering options.
  *
- * Created by AnalyzeCommand from CLI flags and OutputInterface state.
+ * Created by CheckCommand from CLI flags and OutputInterface state.
  */
 final readonly class FormatterContext
 {

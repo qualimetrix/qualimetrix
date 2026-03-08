@@ -17,10 +17,10 @@ final class RuleOptionsParserTest extends TestCase
     {
         // Create parser with short aliases like rules would provide
         $this->parser = new RuleOptionsParser([
-            'cc-warning' => ['rule' => 'cyclomatic-complexity', 'option' => 'warningThreshold'],
-            'cc-error' => ['rule' => 'cyclomatic-complexity', 'option' => 'errorThreshold'],
-            'ns-warning' => ['rule' => 'namespace-size', 'option' => 'warningThreshold'],
-            'ns-error' => ['rule' => 'namespace-size', 'option' => 'errorThreshold'],
+            'cyclomatic-warning' => ['rule' => 'cyclomatic-complexity', 'option' => 'warningThreshold'],
+            'cyclomatic-error' => ['rule' => 'cyclomatic-complexity', 'option' => 'errorThreshold'],
+            'class-count-warning' => ['rule' => 'namespace-size', 'option' => 'warningThreshold'],
+            'class-count-error' => ['rule' => 'namespace-size', 'option' => 'errorThreshold'],
         ]);
     }
 
@@ -128,7 +128,7 @@ final class RuleOptionsParserTest extends TestCase
 
     public function testParseShortAlias(): void
     {
-        $result = $this->parser->parseShortAlias('cc-warning', 10);
+        $result = $this->parser->parseShortAlias('cyclomatic-warning', 10);
 
         self::assertSame([
             'rule' => 'cyclomatic-complexity',
@@ -172,7 +172,7 @@ final class RuleOptionsParserTest extends TestCase
     {
         $parser = new RuleOptionsParser();
 
-        $result = $parser->parseShortAlias('cc-warning', 10);
+        $result = $parser->parseShortAlias('cyclomatic-warning', 10);
 
         self::assertNull($result);
     }

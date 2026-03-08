@@ -12,9 +12,9 @@ CLI application based on Symfony Console with support for:
 
 ## Commands
 
-### AnalyzeCommand
+### CheckCommand
 
-**Name:** `analyze`
+**Name:** `check` (alias: `analyze` — deprecated)
 
 **Dependencies (via constructor):**
 - `RuleRegistryInterface` — for CLI option discovery
@@ -90,8 +90,6 @@ Export dependency graph to DOT format (Graphviz).
 | ----------------- | ------- | ---------------------------------------------------- |
 | `--analyze`       | —       | File scope for analysis (git:staged, git:main..HEAD) |
 | `--report`        | —       | Violation scope for report                           |
-| `--staged`        | false   | Alias for --analyze=git:staged                       |
-| `--diff`          | —       | Alias for --report=git:<ref>..HEAD                   |
 | `--report-strict` | false   | Show only violations in changed files                |
 
 ### Logging and Progress
@@ -115,15 +113,15 @@ Export dependency graph to DOT format (Graphviz).
 
 ### Rules
 
-| Option           | Description                                         |
-| ---------------- | --------------------------------------------------- |
-| `--cc-warning`   | Cyclomatic complexity warning threshold             |
-| `--cc-error`     | Cyclomatic complexity error threshold               |
-| `--disable-rule` | Disable a rule or group (prefix match)              |
-| `--only-rule`    | Run only the specified rule or group (prefix match) |
-| `--rule-opt`     | Rule option `RULE:OPTION=VALUE`                     |
+| Option                 | Description                                         |
+| ---------------------- | --------------------------------------------------- |
+| `--cyclomatic-warning` | Cyclomatic complexity warning threshold             |
+| `--cyclomatic-error`   | Cyclomatic complexity error threshold               |
+| `--disable-rule`       | Disable a rule or group (prefix match)              |
+| `--only-rule`          | Run only the specified rule or group (prefix match) |
+| `--rule-opt`           | Rule option `RULE:OPTION=VALUE`                     |
 
-Full list of options available via `bin/aimd analyze --help`.
+Full list of options available via `bin/aimd check --help`.
 
 ## Progress Reporter
 
@@ -155,26 +153,26 @@ Analyzing src/...
 
 ```bash
 # Full project analysis
-bin/aimd analyze src/
+bin/aimd check src/
 
 # With config file
-bin/aimd analyze src/ --config=aimd.yaml
+bin/aimd check src/ --config=aimd.yaml
 
 # Different output formats
-bin/aimd analyze src/ --format=json
-bin/aimd analyze src/ --format=checkstyle
+bin/aimd check src/ --format=json
+bin/aimd check src/ --format=checkstyle
 
 # Pre-commit: staged files only
-bin/aimd analyze src/ --staged
+bin/aimd check src/ --analyze=git:staged
 
 # PR review: full analysis, report only for changes
-bin/aimd analyze src/ --diff=main
+bin/aimd check src/ --report=git:main..HEAD
 
 # With baseline
-bin/aimd analyze src/ --baseline=baseline.json
+bin/aimd check src/ --baseline=baseline.json
 
 # Generate baseline
-bin/aimd analyze src/ --generate-baseline=baseline.json
+bin/aimd check src/ --generate-baseline=baseline.json
 
 # Export dependency graph
 bin/aimd graph:export src/ --output=graph.dot
@@ -187,10 +185,10 @@ bin/aimd hook:uninstall
 
 ## Definition of Done
 
-- `AnalyzeCommand` works with all options
+- `CheckCommand` works with all options
 - Exit codes are correct (0/1/2)
 - Progress bar works for large projects
-- Git integration via --staged, --diff options
+- Git integration via --analyze, --report options
 - Baseline management via options
 - GraphExportCommand exports the graph
 - Hook commands manage pre-commit hook

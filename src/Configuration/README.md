@@ -47,7 +47,7 @@ Configuration/
 
 ## Configuration Pipeline (RFC-002)
 
-The pipeline provides a **zero-config experience** — `bin/aimd analyze` works without arguments,
+The pipeline provides a **zero-config experience** — `bin/aimd check` works without arguments,
 automatically detecting paths from `composer.json`.
 
 ### Architecture
@@ -89,7 +89,7 @@ from lowest to highest priority — higher priority overrides values.
 ### Usage
 
 ```php
-// In AnalyzeCommand
+// In CheckCommand
 $context = new ConfigurationContext($input, getcwd());
 $resolved = $this->pipeline->resolve($context);
 
@@ -285,46 +285,46 @@ Order: base < local < ci (alphabetical or explicit priority).
 
 ### Short Aliases
 
-| Option                        | Rule                             | Field                             |
-| ----------------------------- | -------------------------------- | --------------------------------- |
-| `--cc-warning=N`              | complexity.cyclomatic            | method.warning                    |
-| `--cc-error=N`                | complexity.cyclomatic            | method.error                      |
-| `--cc-class-warning=N`        | complexity.cyclomatic            | class.max_warning                 |
-| `--cc-class-error=N`          | complexity.cyclomatic            | class.max_error                   |
-| `--cognitive-warning=N`       | complexity.cognitive             | method.warning                    |
-| `--cognitive-error=N`         | complexity.cognitive             | method.error                      |
-| `--cognitive-class-warning=N` | complexity.cognitive             | class.max_warning                 |
-| `--cognitive-class-error=N`   | complexity.cognitive             | class.max_error                   |
-| `--npath-warning=N`           | complexity.npath                 | method.warning                    |
-| `--npath-error=N`             | complexity.npath                 | method.error                      |
-| `--npath-class-warning=N`     | complexity.npath                 | class.max_warning                 |
-| `--npath-class-error=N`       | complexity.npath                 | class.max_error                   |
-| `--size-class-warning=N`      | size.method-count                | warning                           |
-| `--size-class-error=N`        | size.method-count                | error                             |
-| `--ns-warning=N`              | size.class-count                 | warning                           |
-| `--ns-error=N`                | size.class-count                 | error                             |
-| `--mi-warning=N`              | maintainability.index            | warning                           |
-| `--mi-error=N`                | maintainability.index            | error                             |
-| `--lcom-warning=N`            | design.lcom                      | warning                           |
-| `--lcom-error=N`              | design.lcom                      | error                             |
-| `--wmc-warning=N`             | complexity.wmc                   | warning                           |
-| `--wmc-error=N`               | complexity.wmc                   | error                             |
-| `--dit-warning=N`             | design.inheritance               | warning                           |
-| `--dit-error=N`               | design.inheritance               | error                             |
-| `--noc-warning=N`             | design.noc                       | warning                           |
-| `--noc-error=N`               | design.noc                       | error                             |
-| `--distance-warning=N`        | coupling.distance                | max_distance_warning              |
-| `--distance-error=N`          | coupling.distance                | max_distance_error                |
-| `--coupling-class-warning=N`  | coupling.instability             | class.max_instability_warning     |
-| `--coupling-class-error=N`    | coupling.instability             | class.max_instability_error       |
-| `--coupling-ns-warning=N`     | coupling.instability             | namespace.max_instability_warning |
-| `--coupling-ns-error=N`       | coupling.instability             | namespace.max_instability_error   |
-| `--cbo-class-warning=N`       | coupling.cbo                     | class.cbo_warning_threshold       |
-| `--cbo-class-error=N`         | coupling.cbo                     | class.cbo_error_threshold         |
-| `--cbo-ns-warning=N`          | coupling.cbo                     | namespace.cbo_warning_threshold   |
-| `--cbo-ns-error=N`            | coupling.cbo                     | namespace.cbo_error_threshold     |
-| `--no-circular-deps`          | architecture.circular-dependency | enabled                           |
-| `--max-cycle-size=N`          | architecture.circular-dependency | maxCycleSize                      |
+| Option                          | Rule                             | Field                             |
+| ------------------------------- | -------------------------------- | --------------------------------- |
+| `--cyclomatic-warning=N`        | complexity.cyclomatic            | method.warning                    |
+| `--cyclomatic-error=N`          | complexity.cyclomatic            | method.error                      |
+| `--cyclomatic-class-warning=N`  | complexity.cyclomatic            | class.max_warning                 |
+| `--cyclomatic-class-error=N`    | complexity.cyclomatic            | class.max_error                   |
+| `--cognitive-warning=N`         | complexity.cognitive             | method.warning                    |
+| `--cognitive-error=N`           | complexity.cognitive             | method.error                      |
+| `--cognitive-class-warning=N`   | complexity.cognitive             | class.max_warning                 |
+| `--cognitive-class-error=N`     | complexity.cognitive             | class.max_error                   |
+| `--npath-warning=N`             | complexity.npath                 | method.warning                    |
+| `--npath-error=N`               | complexity.npath                 | method.error                      |
+| `--npath-class-warning=N`       | complexity.npath                 | class.max_warning                 |
+| `--npath-class-error=N`         | complexity.npath                 | class.max_error                   |
+| `--method-count-warning=N`      | size.method-count                | warning                           |
+| `--method-count-error=N`        | size.method-count                | error                             |
+| `--class-count-warning=N`       | size.class-count                 | warning                           |
+| `--class-count-error=N`         | size.class-count                 | error                             |
+| `--mi-warning=N`                | maintainability.index            | warning                           |
+| `--mi-error=N`                  | maintainability.index            | error                             |
+| `--lcom-warning=N`              | design.lcom                      | warning                           |
+| `--lcom-error=N`                | design.lcom                      | error                             |
+| `--wmc-warning=N`               | complexity.wmc                   | warning                           |
+| `--wmc-error=N`                 | complexity.wmc                   | error                             |
+| `--dit-warning=N`               | design.inheritance               | warning                           |
+| `--dit-error=N`                 | design.inheritance               | error                             |
+| `--noc-warning=N`               | design.noc                       | warning                           |
+| `--noc-error=N`                 | design.noc                       | error                             |
+| `--distance-warning=N`          | coupling.distance                | max_distance_warning              |
+| `--distance-error=N`            | coupling.distance                | max_distance_error                |
+| `--instability-class-warning=N` | coupling.instability             | class.max_instability_warning     |
+| `--instability-class-error=N`   | coupling.instability             | class.max_instability_error       |
+| `--instability-ns-warning=N`    | coupling.instability             | namespace.max_instability_warning |
+| `--instability-ns-error=N`      | coupling.instability             | namespace.max_instability_error   |
+| `--cbo-warning=N`               | coupling.cbo                     | class.cbo_warning_threshold       |
+| `--cbo-error=N`                 | coupling.cbo                     | class.cbo_error_threshold         |
+| `--cbo-ns-warning=N`            | coupling.cbo                     | namespace.cbo_warning_threshold   |
+| `--cbo-ns-error=N`              | coupling.cbo                     | namespace.cbo_error_threshold     |
+| `--circular-deps`               | architecture.circular-dependency | enabled                           |
+| `--max-cycle-size=N`            | architecture.circular-dependency | maxCycleSize                      |
 
 ### Unified Format
 
@@ -359,9 +359,9 @@ Rule names use `group.rule-name` format (kebab-case). The `--disable-rule` and `
 options support prefix matching — specifying a group prefix targets all rules in that group:
 
 ```bash
-bin/aimd analyze src/ --disable-rule=code-smell         # Disable all code-smell.* rules
-bin/aimd analyze src/ --only-rule=complexity             # Run only complexity.* rules
-bin/aimd analyze src/ --disable-rule=coupling.instability  # Disable a specific rule
+bin/aimd check src/ --disable-rule=code-smell         # Disable all code-smell.* rules
+bin/aimd check src/ --only-rule=complexity             # Run only complexity.* rules
+bin/aimd check src/ --disable-rule=coupling.instability  # Disable a specific rule
 ```
 
 ```yaml
@@ -432,7 +432,7 @@ Setting structure:
 5. [x] RuleOptionsFactory
 6. [x] CliOptionsParser
 7. [x] DI container integration
-8. [x] AnalyzeCommand integration
+8. [x] CheckCommand integration
 9. [x] Unit tests
 10. [x] Configuration Pipeline (RFC-002)
     - [x] PathsConfiguration VO
@@ -454,6 +454,6 @@ Setting structure:
 - [x] `--rule-opt` works
 - [x] `--disable-rule` disables a rule
 - [x] `--config` loads the specified file
-- [x] **Zero-config**: `bin/aimd analyze` works without arguments
+- [x] **Zero-config**: `bin/aimd check` works without arguments
 - [x] **Auto-discovery**: paths from composer.json PSR-4 autoload
 - [x] **Extensible**: new stages are automatically registered via DI

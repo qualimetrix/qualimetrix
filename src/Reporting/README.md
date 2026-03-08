@@ -178,16 +178,16 @@ Human-readable verbose output with:
 
 ```bash
 # Grouping (overrides formatter default)
-bin/aimd analyze src/ --group-by=file      # group by file
-bin/aimd analyze src/ --group-by=rule      # group by rule name
-bin/aimd analyze src/ --group-by=severity  # group by severity
-bin/aimd analyze src/ --group-by=none      # flat list
+bin/aimd check src/ --group-by=file      # group by file
+bin/aimd check src/ --group-by=rule      # group by rule name
+bin/aimd check src/ --group-by=severity  # group by severity
+bin/aimd check src/ --group-by=none      # flat list
 
 # Formatter-specific options
-bin/aimd analyze src/ --format-opt key=value
+bin/aimd check src/ --format-opt key=value
 
 # Disable colors
-bin/aimd analyze src/ --no-ansi
+bin/aimd check src/ --no-ansi
 ```
 
 ## Output Examples
@@ -288,7 +288,7 @@ SARIF 2.1.0 for GitHub Security, VS Code, Azure DevOps, JetBrains IDEs.
 
 ```yaml
 - name: Run AI Mess Detector
-  run: bin/aimd analyze src/ --format=sarif > results.sarif
+  run: bin/aimd check src/ --format=sarif > results.sarif
 
 - name: Upload SARIF results
   uses: github/codeql-action/upload-sarif@v2
@@ -320,7 +320,7 @@ Code Climate JSON for GitLab MR. Uses fingerprinting for tracking fixes.
 code_quality:
   stage: test
   script:
-    - bin/aimd analyze src/ --format=gitlab > gl-code-quality-report.json
+    - bin/aimd check src/ --format=gitlab > gl-code-quality-report.json
   artifacts:
     reports:
       codequality: gl-code-quality-report.json
@@ -336,7 +336,7 @@ Results will appear in the **Code Quality** tab with inline comments in the MR.
 
 1. Create a `*Formatter.php` class in `src/Reporting/Formatter/`
 2. Implement `FormatterInterface` (methods: `format(Report, FormatterContext)`, `getName()`, `getDefaultGroupBy()`)
-3. Use it: `bin/aimd analyze src/ --format=myformat`
+3. Use it: `bin/aimd check src/ --format=myformat`
 
 **Automatic registration:** the class will be registered via `FormatterCompilerPass` — no need to modify `ContainerFactory`.
 

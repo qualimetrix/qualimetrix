@@ -11,7 +11,7 @@ use Psr\Log\NullLogger;
  * Mutable holder for the current logger instance.
  *
  * This allows runtime configuration of logging (similar to ConfigurationHolder).
- * Initially contains NullLogger, but can be reconfigured in AnalyzeCommand
+ * Initially contains NullLogger, but can be reconfigured in CheckCommand
  * based on CLI options (-v, --log-file, etc.).
  */
 final class LoggerHolder

@@ -20,13 +20,13 @@
 composer require --dev fractalizer/ai-mess-detector
 
 # Анализ кода
-vendor/bin/aimd analyze src/
+vendor/bin/aimd check src/
 
 # Установка git pre-commit хука
 vendor/bin/aimd hook:install
 
 # Анализ только подготовленных файлов
-vendor/bin/aimd analyze src/ --staged
+vendor/bin/aimd check src/ --analyze=git:staged
 ```
 
 ## Доступные метрики

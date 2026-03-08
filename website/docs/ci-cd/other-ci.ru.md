@@ -14,7 +14,7 @@ code_quality:
   before_script:
     - composer install --no-dev
   script:
-    - vendor/bin/aimd analyze src/ --format=gitlab > gl-code-quality-report.json
+    - vendor/bin/aimd check src/ --format=gitlab > gl-code-quality-report.json
   artifacts:
     reports:
       codequality: gl-code-quality-report.json
@@ -33,7 +33,7 @@ code_quality:
   before_script:
     - composer install --no-dev
   script:
-    - vendor/bin/aimd analyze src/ --format=gitlab --baseline=baseline.json > gl-code-quality-report.json
+    - vendor/bin/aimd check src/ --format=gitlab --baseline=baseline.json > gl-code-quality-report.json
   artifacts:
     reports:
       codequality: gl-code-quality-report.json
@@ -49,7 +49,7 @@ pipeline {
     stages {
         stage('Code Quality') {
             steps {
-                sh 'vendor/bin/aimd analyze src/ --format=checkstyle > checkstyle-result.xml'
+                sh 'vendor/bin/aimd check src/ --format=checkstyle > checkstyle-result.xml'
                 recordIssues tools: [checkStyle(pattern: 'checkstyle-result.xml')]
             }
         }
@@ -72,7 +72,7 @@ jobs:
     steps:
       - checkout
       - run: composer install --no-dev
-      - run: vendor/bin/aimd analyze src/
+      - run: vendor/bin/aimd check src/
 ```
 
 ### Сохранение результатов как артефактов
@@ -85,7 +85,7 @@ jobs:
     steps:
       - checkout
       - run: composer install --no-dev
-      - run: vendor/bin/aimd analyze src/ --format=json > aimd-results.json
+      - run: vendor/bin/aimd check src/ --format=json > aimd-results.json
       - store_artifacts:
           path: aimd-results.json
           destination: code-quality
@@ -102,7 +102,7 @@ pipelines:
         image: php:8.4-cli
         script:
           - composer install --no-dev
-          - vendor/bin/aimd analyze src/
+          - vendor/bin/aimd check src/
 ```
 
 ### С кэшированием
@@ -117,7 +117,7 @@ pipelines:
           - composer
         script:
           - composer install --no-dev
-          - vendor/bin/aimd analyze src/
+          - vendor/bin/aimd check src/
 ```
 
 ## Универсальная настройка (любая CI-система)
@@ -133,7 +133,7 @@ composer install --no-dev
 ### 2. Запустите анализ
 
 ```bash
-vendor/bin/aimd analyze src/
+vendor/bin/aimd check src/
 ```
 
 ### 3. Выберите подходящий формат
@@ -160,7 +160,7 @@ AIMD использует стандартные коды возврата:
 Большинство CI-систем считают ненулевой код возврата ошибкой. Если вы хотите, чтобы пайплайн продолжал работу даже при найденных нарушениях, подавите код возврата:
 
 ```bash
-vendor/bin/aimd analyze src/ || true
+vendor/bin/aimd check src/ || true
 ```
 
 ### 5. Используйте Baseline для legacy-проектов
@@ -168,13 +168,13 @@ vendor/bin/aimd analyze src/ || true
 Если вы внедряете AIMD в проект, в котором уже много проблем, сначала сгенерируйте baseline:
 
 ```bash
-vendor/bin/aimd analyze src/ --generate-baseline=baseline.json
+vendor/bin/aimd check src/ --generate-baseline=baseline.json
 ```
 
 Затем используйте его в CI, чтобы получать отчеты только о новых нарушениях:
 
 ```bash
-vendor/bin/aimd analyze src/ --baseline=baseline.json
+vendor/bin/aimd check src/ --baseline=baseline.json
 ```
 
 ### 6. Используйте файл конфигурации
@@ -182,7 +182,7 @@ vendor/bin/aimd analyze src/ --baseline=baseline.json
 Для единообразных настроек в локальном окружении и CI используйте YAML-файл конфигурации:
 
 ```bash
-vendor/bin/aimd analyze src/ --config=aimd.yaml
+vendor/bin/aimd check src/ --config=aimd.yaml
 ```
 
 ## Советы

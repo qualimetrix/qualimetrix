@@ -67,27 +67,25 @@ Parses strings in format `git:staged`, `git:main..HEAD` into a `GitScope` object
 | ------------------- | --------------------------------------------------- |
 | `--analyze=<scope>` | Which files to analyze (git:staged, git:main..HEAD) |
 | `--report=<scope>`  | Which violations to show in the report              |
-| `--staged`          | Alias for --analyze=git:staged                      |
-| `--diff=<ref>`      | Alias for --report=git:<ref>..HEAD                  |
 | `--report-strict`   | Show only violations exactly in changed files       |
 
 ## Examples
 
 ```bash
 # Pre-commit: staged files only
-bin/aimd analyze src/ --staged
+bin/aimd check src/ --analyze=git:staged
 
 # PR review: full analysis, report only for changes
-bin/aimd analyze src/ --diff=main
+bin/aimd check src/ --report=git:main..HEAD
 
 # Quick PR: analyze only changed files
-bin/aimd analyze src/ --analyze=git:main..HEAD
+bin/aimd check src/ --analyze=git:main..HEAD
 
 # Strict mode: only violations in changed files
-bin/aimd analyze src/ --diff=main --report-strict
+bin/aimd check src/ --report=git:main..HEAD --report-strict
 
 # Combined with baseline
-bin/aimd analyze src/ --diff=main --baseline=baseline.json
+bin/aimd check src/ --report=git:main..HEAD --baseline=baseline.json
 ```
 
 ## Pre-commit Hook Integration
@@ -96,7 +94,7 @@ bin/aimd analyze src/ --diff=main --baseline=baseline.json
 #!/bin/bash
 # .git/hooks/pre-commit
 
-bin/aimd analyze --staged --format=text
+bin/aimd check --analyze=git:staged --format=text
 
 if [ $? -ne 0 ]; then
     echo "AI Mess Detector found issues in staged files"
@@ -110,7 +108,7 @@ fi
 - `GitScopeParser` parses git:... syntax
 - `GitFileDiscovery` implements `FileDiscoveryInterface`
 - `GitScopeFilter` filters violations by scope
-- CLI options `--analyze`, `--report`, `--staged`, `--diff` work
+- CLI options `--analyze`, `--report` work
 - `--report-strict` disables parent namespaces
 - Validation: report scope is a subset of analyze scope
 - Warning about unavailable aggregated metrics during partial analyze

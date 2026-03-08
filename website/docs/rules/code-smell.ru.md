@@ -413,8 +413,8 @@ rules:
 
 ```bash
 # Отключить конкретное правило
-bin/aimd analyze src/ --disable-rule=code-smell.exit
+bin/aimd check src/ --disable-rule=code-smell.exit
 
 # Отключить все правила запахов кода сразу (сопоставление по префиксу)
-bin/aimd analyze src/ --disable-rule=code-smell
+bin/aimd check src/ --disable-rule=code-smell
 ```
