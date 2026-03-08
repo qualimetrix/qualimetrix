@@ -10,6 +10,33 @@ CLI application based on Symfony Console with support for:
 - Baseline management
 - Graph export
 
+## Structure
+
+```
+Console/
+├── Application.php
+├── CliOptionsParser.php
+├── ViolationFilterPipeline.php
+├── ViolationFilterOptions.php
+├── ViolationFilterResult.php
+├── GitScopeFilterConfig.php
+├── RuntimeConfigurator.php
+├── ResultPresenter.php
+├── CheckCommandDefinition.php
+├── OutputHelper.php                 # Line-by-line output with flush (avoids PTY truncation)
+├── Progress/
+│   ├── ConsoleProgressBar.php
+│   ├── ProgressReporterHolder.php
+│   └── DelegatingProgressReporter.php
+└── Command/
+    ├── CheckCommand.php             # Main analysis command
+    ├── BaselineCleanupCommand.php   # Cleanup stale baseline entries
+    ├── GraphExportCommand.php       # Export dependency graph to DOT
+    ├── HookInstallCommand.php       # Install pre-commit hook
+    ├── HookStatusCommand.php        # Check hook status
+    └── HookUninstallCommand.php     # Remove pre-commit hook
+```
+
 ## Commands
 
 ### CheckCommand

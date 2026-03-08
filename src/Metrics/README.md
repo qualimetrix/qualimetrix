@@ -25,8 +25,10 @@ Collectors **do not interpret** metrics — they only collect them. Interpretati
 | **Size**                                                  |                 |           |                                                                                                                               |
 | `loc`, `lloc`, `cloc`                                     | Size            | File      | Lines of Code (total, logical, comments)                                                                                      |
 | `classCount`, `interfaceCount`, `traitCount`, `enumCount` | Size            | File      | Number of classes/interfaces/traits/enums                                                                                     |
-| `propertyCount`                                           | Size            | Class     | Number of class properties (+ by visibility)                                                                                  |
-| `methodCount`                                             | Size            | Class     | Number of class methods (+ getters/setters)                                                                                   |
+| `abstractClassCount`                                      | Size            | File      | Number of abstract classes                                                                                                    |
+| `functionCount`                                           | Size            | File      | Number of standalone functions                                                                                                |
+| `propertyCount`                                           | Structure       | Class     | Number of class properties (+ by visibility)                                                                                  |
+| `methodCount`                                             | Structure       | Class     | Number of class methods (+ getters/setters)                                                                                   |
 | **Structure**                                             |                 |           |                                                                                                                               |
 | `lcom`                                                    | Structure       | Class     | LCOM4 — method cohesion (graph components; edges from shared properties and `$this->method()` calls; static methods excluded) |
 | `tcc`, `lcc`                                              | Structure       | Class     | TCC/LCC — Tight/Loose Class Cohesion (0-1)                                                                                    |
@@ -48,6 +50,7 @@ Collectors **do not interpret** metrics — they only collect them. Interpretati
 - **[Size/](Size/README.md)** — LOC, Class Count, Property Count, Method Count
 - **[Structure/](Structure/README.md)** — TCC/LCC, LCOM, RFC, WMC, DIT, NOC
 - **[Coupling/](Coupling/README.md)** — Ca/Ce/Instability, Abstractness, Distance
+- **[CodeSmell/](CodeSmell/README.md)** — Code pattern detectors (goto, eval, debug code, etc.)
 
 ---
 

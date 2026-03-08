@@ -32,6 +32,10 @@ When starting a session in the web environment, `scripts/init-environment.sh` is
 - Check the Definition of Done at the end of the document
 - Study the related interfaces in `src/Core/README.md`
 
+**After implementing a component:**
+- Update README.md in the affected `src/` directory: add new files/classes to the structure diagram, update descriptions
+- If default thresholds changed, update the defaults table in `src/Rules/README.md`
+
 **Before adding CLI commands or options:**
 - Read [docs/internal/CLI_CONVENTIONS.md](docs/internal/CLI_CONVENTIONS.md) — naming rules
 
@@ -44,98 +48,17 @@ When starting a session in the web environment, `scripts/init-environment.sh` is
 
 ```
 src/
-├── Core/                   # Contracts and primitives (README.md)
-│   ├── Metric/             # MetricBag, MetricCollectorInterface, MetricDefinition
-│   ├── Rule/               # RuleInterface, RuleCategory, AnalysisContext
-│   ├── Symbol/             # SymbolType, MethodInfo, ClassInfo
-│   ├── Violation/          # Violation, Severity, SymbolPath
-│   │   └── Filter/         # BaselineFilter, ViolationFilterInterface
-│   ├── Dependency/         # DependencyGraphInterface, Dependency, CycleInterface
-│   ├── Progress/           # ProgressReporter, NullProgressReporter
-│   ├── Util/               # StringSet, utilities
-│   ├── Ast/                # FileParserInterface
-│   ├── Namespace_/         # NamespaceDetectorInterface
-│   └── Exception/
-│
-├── Metrics/                # Metric collectors (README.md)
-│   ├── Complexity/         # CyclomaticComplexity, CognitiveComplexity, NpathComplexity
-│   ├── Size/               # LocCollector, ClassCountCollector
-│   ├── Coupling/           # CouplingCollector, AbstractnessCollector, DistanceCollector
-│   ├── Structure/          # TccLcc, Rfc, Lcom, Noc, InheritanceDepth, MethodCount
-│   ├── Halstead/           # HalsteadCollector
-│   └── Maintainability/    # MaintainabilityIndexCollector
-│
-├── Rules/                  # Analysis rules (README.md)
-│   ├── Complexity/         # ComplexityRule, CognitiveComplexityRule, NpathComplexityRule
-│   ├── Size/               # MethodCountRule, ClassCountRule, PropertyCountRule
-│   ├── Architecture/       # CircularDependencyRule
-│   ├── Coupling/           # InstabilityRule, CboRule, DistanceRule
-│   ├── Structure/          # LcomRule, NocRule, WmcRule, InheritanceRule
-│   ├── Maintainability/    # MaintainabilityRule
-│   ├── CodeSmell/          # BooleanArgumentRule, CountInLoopRule, DebugCodeRule, EmptyCatchRule, ErrorSuppressionRule, EvalRule, ExitRule, GotoRule, SuperglobalsRule
-│   └── Module/             # [PLANNED]
-│
-├── Baseline/               # Baseline Support
-│   ├── Baseline.php        # Value object for baseline
-│   ├── BaselineEntry.php   # Entry in baseline
-│   ├── BaselineLoader.php  # Loading from JSON
-│   ├── BaselineWriter.php  # Writing to JSON (atomic)
-│   ├── BaselineGenerator.php  # Generation from violations
-│   ├── ViolationHasher.php    # Stable hashes
-│   └── Suppression/           # @aimd-ignore tags
-│       ├── Suppression.php
-│       ├── SuppressionExtractor.php
-│       └── SuppressionFilter.php
-│
-├── Analysis/               # Orchestration (README.md)
-│   ├── Pipeline/           # AnalysisPipeline, AnalysisResult
-│   ├── Discovery/          # FileDiscoveryInterface
-│   ├── Collection/         # Data collection phase
-│   │   ├── FileProcessor, CollectionOrchestrator
-│   │   ├── Metric/         # CompositeCollector, GlobalCollectorSorter, DerivedMetricExtractor
-│   │   ├── Dependency/     # DependencyGraph, DependencyVisitor, CircularDependencyDetector
-│   │   │   ├── Handler/    # NodeDependencyHandlerInterface + handlers (ClassLike, TraitUse, etc.)
-│   │   │   └── Export/     # DotExporter for graph visualization
-│   │   └── Strategy/       # ExecutionStrategy (Sequential, AmphpParallel), Serializer
-│   ├── Aggregator/         # Decomposed metric aggregation phases
-│   │   ├── AggregationPhaseInterface.php
-│   │   ├── AggregationHelper.php
-│   │   ├── MethodToClassAggregator.php
-│   │   ├── ClassToNamespaceAggregator.php
-│   │   ├── NamespaceToProjectAggregator.php
-│   │   └── MetricAggregator.php  # Thin orchestrator
-│   ├── Aggregation/        # GlobalCollectorRunner
-│   ├── RuleExecution/      # RuleExecutor
-│   ├── Repository/         # InMemoryMetricRepository
-│   └── Namespace_/         # PSR-4, Tokenizer detectors
-│
-├── Reporting/              # Output (README.md)
-│   └── Formatter/          # Text, JSON, Checkstyle, SARIF, GitLabCodeQuality
-│
-├── Configuration/          # Configuration (README.md)
-│   └── Loader/             # YamlConfigLoader
-│
-└── Infrastructure/         # CLI, DI, cache (README.md)
-    ├── Ast/                # PhpFileParser, CachedFileParser, FileParserFactory
-    ├── Cache/              # FileCache, CacheKeyGenerator
-    ├── Collector/          # CachedCollector
-    ├── Storage/            # SqliteStorage, InMemoryStorage, StorageFactory
-    ├── Git/                # GitClient, GitScopeParser, GitFileDiscovery, GitScopeResolver
-    ├── Logging/            # ConsoleLogger, FileLogger, LoggerFactory
-    ├── Rule/               # RuleRegistry
-    ├── Profiler/           # ProfilerInterface, Profiler, NullProfiler, Span, Export
-    ├── DependencyInjection/
-    │   ├── ContainerFactory.php
-    │   ├── Configurator/   # Decomposed container configurators (Core, Parser, Collector, Rule, etc.)
-    │   └── CompilerPass/
-    └── Console/            # AnalyzeCommand (decomposed), BaselineCleanupCommand, Hook commands
-        ├── Command/        # CLI commands
-        ├── Progress/       # ConsoleProgressBar, ProgressReporterHolder
-        ├── ViolationFilterPipeline.php  # Violation filtering orchestration
-        ├── RuntimeConfigurator.php      # Runtime DI configuration
-        ├── ResultPresenter.php          # Output presentation
-        └── AnalyzeCommandDefinition.php # Command option definitions
+├── Core/              # Contracts and primitives (no dependencies)
+├── Metrics/           # Metric collectors (by category subdirs)
+├── Rules/             # Analysis rules (by category subdirs)
+├── Baseline/          # Baseline support and @aimd-ignore suppression
+├── Analysis/          # Pipeline orchestration, collection, aggregation
+├── Reporting/         # Output formatters
+├── Configuration/     # YAML config loading
+└── Infrastructure/    # CLI, DI, cache, git, profiler
 ```
+
+Each domain has its own `README.md` with detailed structure, classes, and contracts.
 
 ---
 
@@ -355,11 +278,36 @@ bin/aimd check --help
 1. Implement the contract (interface)
 2. Write unit tests
 3. `composer check` — validation
-4. Commit
+4. Update `README.md` in the affected `src/` directory (add new files, fix outdated info)
+5. Commit
 
 **Commit format:** `<type>: short description` (`feat`, `fix`, `refactor`, `test`, `docs`, `chore`)
 
 **Commit granularity:** Split large changes into logical commits when it improves changelog readability. Each commit should represent one coherent change (e.g., separate "rename command" from "update documentation"). Avoid monolithic commits that bundle unrelated changes — they make changelogs harder to generate and git history harder to navigate.
+
+---
+
+## Changelog
+
+The project maintains a `CHANGELOG.md` following the [Keep a Changelog](https://keepachangelog.com/) format.
+
+**When to update:** After completing a user-facing change (`feat`, `fix`, or breaking change), add an entry to the `## [Unreleased]` section of `CHANGELOG.md`. Do NOT add entries for `refactor`, `test`, `docs`, or `chore` commits unless they affect user-facing behavior.
+
+**Categories** (use only when relevant, don't create empty sections):
+- `Changed` — new features and modifications (combines "Added" and "Changed")
+- `Fixed` — bug fixes
+- `Deprecated` / `Removed` — lifecycle changes
+- `Breaking` — backward-incompatible changes
+
+**Style:**
+- Write from the user's perspective: "`exclude_paths` option for violation suppression" not "Implemented ExcludePathFilter class"
+- Aggregate related commits into a single entry
+- Keep entries concise (one line each)
+
+**When releasing** (tagging a new version):
+1. Rename `## [Unreleased]` to `## [X.Y.Z] - YYYY-MM-DD`
+2. Add a fresh empty `## [Unreleased]` section above it
+3. Update the comparison links at the bottom of the file
 
 ---
 

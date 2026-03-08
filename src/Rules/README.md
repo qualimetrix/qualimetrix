@@ -18,32 +18,32 @@ Rules are analysis rule implementations for static analysis. Rules are **complet
 
 ## Implemented Rules
 
-| Rule                                 | Category        | Type                         | Description                     | Default Thresholds                |
-| ------------------------------------ | --------------- | ---------------------------- | ------------------------------- | --------------------------------- |
-| **complexity.cyclomatic**            | Complexity      | Hierarchical (Method, Class) | Cyclomatic Complexity (CCN)     | method: 10/20, class.max: 30/50   |
-| **complexity.cognitive**             | Complexity      | Hierarchical (Method, Class) | Cognitive Complexity            | method: 15/25, class.max: 30/50   |
-| **complexity.npath**                 | Complexity      | Hierarchical (Method, Class) | NPATH Complexity                | method: 200/500, class (disabled) |
-| **complexity.wmc**                   | Complexity      | Simple                       | Weighted Methods per Class      | warning: 35, error: 50            |
-| **size.method-count**                | Size            | Simple                       | Method count per class          | warning: 15, error: 25            |
-| **size.class-count**                 | Size            | Simple                       | Class count per namespace       | warning: 10, error: 15            |
-| **size.property-count**              | Size            | Simple                       | Class property count            | warning: 10, error: 15            |
-| **maintainability.index**            | Maintainability | Simple                       | Maintainability Index           | warning: 65, error: 20            |
-| **design.lcom**                      | Design          | Simple                       | Lack of Cohesion (LCOM4)        | warning: 2, error: 3              |
-| **design.noc**                       | Design          | Simple                       | Number of Children              | warning: 7, error: 15             |
-| **design.inheritance**               | Design          | Simple                       | Depth of Inheritance Tree (DIT) | warning: 4, error: 6              |
-| **coupling.instability**             | Coupling        | Simple                       | Instability (Ca/Ce)             | warning: 0.8, error: 0.95         |
-| **coupling.cbo**                     | Coupling        | Simple                       | Coupling Between Objects        | warning: ..., error: ...          |
-| **coupling.distance**                | Coupling        | Simple                       | Distance from Main Sequence     | warning: 0.3, error: 0.5          |
-| **architecture.circular-dependency** | Architecture    | Simple                       | Circular dependencies           | enabled: true                     |
-| **code-smell.boolean-argument**      | CodeSmell       | Simple                       | Boolean arguments in signatures | enabled: true                     |
-| **code-smell.count-in-loop**         | CodeSmell       | Simple                       | count() calls in loops          | enabled: true                     |
-| **code-smell.debug-code**            | CodeSmell       | Simple                       | Debug code (var_dump, etc.)     | enabled: true                     |
-| **code-smell.empty-catch**           | CodeSmell       | Simple                       | Empty catch blocks              | enabled: true                     |
-| **code-smell.error-suppression**     | CodeSmell       | Simple                       | Error suppression operator (@)  | enabled: true                     |
-| **code-smell.eval**                  | CodeSmell       | Simple                       | eval() usage                    | enabled: true                     |
-| **code-smell.exit**                  | CodeSmell       | Simple                       | exit/die usage                  | enabled: true                     |
-| **code-smell.goto**                  | CodeSmell       | Simple                       | goto statements                 | enabled: true                     |
-| **code-smell.superglobals**          | CodeSmell       | Simple                       | Direct superglobal access       | enabled: true                     |
+| Rule                                 | Category        | Type                            | Description                     | Default Thresholds                |
+| ------------------------------------ | --------------- | ------------------------------- | ------------------------------- | --------------------------------- |
+| **complexity.cyclomatic**            | Complexity      | Hierarchical (Method, Class)    | Cyclomatic Complexity (CCN)     | method: 10/20, class.max: 30/50   |
+| **complexity.cognitive**             | Complexity      | Hierarchical (Method, Class)    | Cognitive Complexity            | method: 15/25, class.max: 30/50   |
+| **complexity.npath**                 | Complexity      | Hierarchical (Method, Class)    | NPATH Complexity                | method: 200/500, class (disabled) |
+| **complexity.wmc**                   | Complexity      | Simple                          | Weighted Methods per Class      | warning: 50, error: 80            |
+| **size.method-count**                | Size            | Simple                          | Method count per class          | warning: 20, error: 30            |
+| **size.class-count**                 | Size            | Simple                          | Class count per namespace       | warning: 15, error: 25            |
+| **size.property-count**              | Size            | Simple                          | Class property count            | warning: 10, error: 15            |
+| **maintainability.index**            | Maintainability | Simple                          | Maintainability Index           | warning: 40, error: 20            |
+| **design.lcom**                      | Design          | Simple                          | Lack of Cohesion (LCOM4)        | warning: 3, error: 5              |
+| **design.noc**                       | Design          | Simple                          | Number of Children              | warning: 10, error: 15            |
+| **design.inheritance**               | Design          | Simple                          | Depth of Inheritance Tree (DIT) | warning: 4, error: 6              |
+| **coupling.instability**             | Coupling        | Hierarchical (Class, Namespace) | Instability (Ca/Ce)             | warning: 0.8, error: 0.95         |
+| **coupling.cbo**                     | Coupling        | Hierarchical (Class, Namespace) | Coupling Between Objects        | warning: ..., error: ...          |
+| **coupling.distance**                | Coupling        | Simple                          | Distance from Main Sequence     | warning: 0.3, error: 0.5          |
+| **architecture.circular-dependency** | Architecture    | Simple                          | Circular dependencies           | enabled: true                     |
+| **code-smell.boolean-argument**      | CodeSmell       | Simple                          | Boolean arguments in signatures | enabled: true                     |
+| **code-smell.count-in-loop**         | CodeSmell       | Simple                          | count() calls in loops          | enabled: true                     |
+| **code-smell.debug-code**            | CodeSmell       | Simple                          | Debug code (var_dump, etc.)     | enabled: true                     |
+| **code-smell.empty-catch**           | CodeSmell       | Simple                          | Empty catch blocks              | enabled: true                     |
+| **code-smell.error-suppression**     | CodeSmell       | Simple                          | Error suppression operator (@)  | enabled: true                     |
+| **code-smell.eval**                  | CodeSmell       | Simple                          | eval() usage                    | enabled: true                     |
+| **code-smell.exit**                  | CodeSmell       | Simple                          | exit/die usage                  | enabled: true                     |
+| **code-smell.goto**                  | CodeSmell       | Simple                          | goto statements                 | enabled: true                     |
+| **code-smell.superglobals**          | CodeSmell       | Simple                          | Direct superglobal access       | enabled: true                     |
 
 ---
 
@@ -158,17 +158,17 @@ rules:
 
 **Name:** `size.method-count` | **Category:** Size | **Type:** Simple
 
-Checks the number of methods in a class (default: 15/25).
+Checks the number of methods in a class (default: 20/30).
 
 **Configuration:**
 ```yaml
 rules:
   size.method-count:
-    warning: 15
-    error: 25
+    warning: 20
+    error: 30
 ```
 
-**CLI:** `--method-count-warning=15 --method-count-error=25`
+**CLI:** `--method-count-warning=20 --method-count-error=30`
 
 ---
 
@@ -176,17 +176,17 @@ rules:
 
 **Name:** `size.class-count` | **Category:** Size | **Type:** Simple
 
-Checks the number of classes in a namespace (default: 10/15).
+Checks the number of classes in a namespace (default: 15/25).
 
 **Configuration:**
 ```yaml
 rules:
   size.class-count:
-    warning: 10
-    error: 15
+    warning: 15
+    error: 25
 ```
 
-**CLI:** `--class-count-warning=10 --class-count-error=15`
+**CLI:** `--class-count-warning=15 --class-count-error=25`
 
 ---
 
@@ -208,14 +208,14 @@ Checks the number of properties in a class (default: 10/15).
 
 **Name:** `maintainability.index` | **Category:** Maintainability | **Type:** Simple
 
-Checks Maintainability Index of methods (default: 65/20).
+Checks Maintainability Index of methods (default: 40/20).
 MI = 171 - 5.2xln(HV) - 0.23xCCN - 16.2xln(LOC)
 
 **Filters (RFC-008):**
 - `excludeTests: true` — exclude test files
 - `minLoc: 10` — minimum LOC for checking
 
-**CLI:** `--mi-warning=65 --mi-error=20 --mi-exclude-tests --mi-min-loc=10`
+**CLI:** `--mi-warning=40 --mi-error=20 --mi-exclude-tests --mi-min-loc=10`
 
 ---
 
@@ -223,14 +223,14 @@ MI = 171 - 5.2xln(HV) - 0.23xCCN - 16.2xln(LOC)
 
 **Name:** `design.lcom` | **Category:** Design | **Type:** Simple
 
-Checks Lack of Cohesion (LCOM4) of classes (default: 2/3).
+Checks Lack of Cohesion (LCOM4) of classes (default: 3/5).
 LCOM4 = number of connected components in the method graph.
 
 **Filters (RFC-008):**
 - `excludeReadonly: true` — exclude readonly classes
 - `minMethods: 3` — minimum methods for checking
 
-**CLI:** `--lcom-warning=2 --lcom-error=3 --lcom-exclude-readonly --lcom-min-methods=3`
+**CLI:** `--lcom-warning=3 --lcom-error=5 --lcom-exclude-readonly --lcom-min-methods=3`
 
 ---
 
@@ -238,13 +238,13 @@ LCOM4 = number of connected components in the method graph.
 
 **Name:** `complexity.wmc` | **Category:** Complexity | **Type:** Simple
 
-Checks Weighted Methods per Class (default: 35/50).
+Checks Weighted Methods per Class (default: 50/80).
 WMC = sum of complexities of all class methods.
 
 **Filters (RFC-008):**
 - `excludeDataClasses: false` — exclude data classes (opt-in)
 
-**CLI:** `--wmc-warning=35 --wmc-error=50 --wmc-exclude-data-classes`
+**CLI:** `--wmc-warning=50 --wmc-error=80 --wmc-exclude-data-classes`
 
 ---
 
@@ -252,9 +252,9 @@ WMC = sum of complexities of all class methods.
 
 **Name:** `design.noc` | **Category:** Design | **Type:** Simple
 
-Checks Number of Children — number of direct subclasses (default: 7/15).
+Checks Number of Children — number of direct subclasses (default: 10/15).
 
-**CLI:** `--noc-warning=7 --noc-error=15`
+**CLI:** `--noc-warning=10 --noc-error=15`
 
 ---
 
@@ -268,9 +268,9 @@ Checks Depth of Inheritance Tree — depth of the inheritance tree (default: 4/6
 
 ---
 
-## Instability Rule
+## Instability Rule (Hierarchical)
 
-**Name:** `coupling.instability` | **Category:** Coupling | **Type:** Simple
+**Name:** `coupling.instability` | **Category:** Coupling | **Levels:** Class, Namespace
 
 Checks instability = Ce / (Ca + Ce), where:
 - **Ce** — efferent coupling (outgoing dependencies)
@@ -286,9 +286,9 @@ Checks instability = Ce / (Ca + Ce), where:
 
 ---
 
-## CBO Rule
+## CBO Rule (Hierarchical)
 
-**Name:** `coupling.cbo` | **Category:** Coupling | **Type:** Simple
+**Name:** `coupling.cbo` | **Category:** Coupling | **Levels:** Class, Namespace
 
 Checks Coupling Between Objects (CBO) — the number of classes a given class depends on.
 

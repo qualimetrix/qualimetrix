@@ -2,56 +2,68 @@
 
 ## Overview
 
-Analysis is the orchestrator of static analysis. It implements a four-phase pipeline:
+Analysis is the orchestrator of static analysis. It implements a five-phase pipeline:
 
-1. **Collection** — gathering metrics AND dependencies in a single AST traversal (parallelizable via amphp/parallel)
-2. **Aggregation** — aggregation by namespace/module, building the dependency graph
-3. **RuleExecution** — generating violations based on metrics and graph
-4. **Reporting** — producing the report (performed in the Reporting module)
+1. **Discovery** — finding PHP files for analysis
+2. **Collection** — gathering metrics AND dependencies in a single AST traversal (parallelizable via amphp/parallel)
+3. **Aggregation** — aggregation by namespace/module, building the dependency graph
+4. **RuleExecution** — generating violations based on metrics and graph
+5. **Reporting** — producing the report (performed in the Reporting module)
 
 ## Structure
 
 ```
 Analysis/
 ├── Pipeline/                            # Orchestration of all phases
+│   ├── AnalysisPipelineInterface.php    # Pipeline contract
 │   ├── AnalysisPipeline.php             # Main orchestrator
 │   └── AnalysisResult.php               # Analysis result
 │
 ├── Discovery/                           # File discovery
+│   ├── FileDiscoveryInterface.php       # Discovery contract
 │   └── FinderFileDiscovery.php
 │
 ├── Collection/                          # Data collection
-│   ├── FileProcessor.php                # Single file processing
+│   ├── CollectionOrchestratorInterface.php # Orchestrator contract
 │   ├── CollectionOrchestrator.php       # Collection coordination
+│   ├── CollectionResult.php             # Collection phase result
+│   ├── FileProcessorInterface.php       # File processor contract
+│   ├── FileProcessor.php                # Single file processing
+│   ├── FileProcessingResult.php         # Single file result
 │   │
 │   ├── Metric/
 │   │   ├── CompositeCollector.php       # Combines visitors (unified AST traversal)
-│   │   └── DerivedMetricExtractor.php   # Extracts derived metrics from collected data
+│   │   ├── CollectionOutput.php         # Output of composite collection
+│   │   ├── DerivedMetricExtractor.php   # Extracts derived metrics from collected data
+│   │   └── GlobalCollectorSorter.php    # Topological sort of global collectors
 │   │
 │   ├── Dependency/
 │   │   ├── DependencyGraph.php          # Dependency graph
 │   │   ├── DependencyGraphBuilder.php
 │   │   ├── DependencyVisitor.php        # AST visitor (delegates to handlers)
-│   │   ├── DependencyResolver.php
+│   │   ├── DependencyResolver.php       # Resolves class dependencies
 │   │   ├── CircularDependencyDetector.php # Tarjan's algorithm
 │   │   ├── Cycle.php
-│   │   └── Handler/                     # Decomposed dependency handlers
-│   │       ├── NodeDependencyHandlerInterface.php
-│   │       ├── DependencyContext.php
-│   │       ├── TypeDependencyHelper.php
-│   │       ├── ClassLikeHandler.php
-│   │       ├── TraitUseHandler.php
-│   │       ├── InstantiationHandler.php
-│   │       ├── StaticAccessHandler.php
-│   │       ├── CatchInstanceofHandler.php
-│   │       ├── PropertyHandler.php
-│   │       └── MethodHandler.php
+│   │   ├── Handler/                     # Decomposed dependency handlers
+│   │   │   ├── NodeDependencyHandlerInterface.php
+│   │   │   ├── DependencyContext.php
+│   │   │   ├── TypeDependencyHelper.php
+│   │   │   ├── ClassLikeHandler.php
+│   │   │   ├── TraitUseHandler.php
+│   │   │   ├── InstantiationHandler.php
+│   │   │   ├── StaticAccessHandler.php
+│   │   │   ├── CatchInstanceofHandler.php
+│   │   │   ├── PropertyHandler.php
+│   │   │   └── MethodHandler.php
+│   │   └── Export/                      # Graph export
+│   │       ├── GraphExporterInterface.php
+│   │       ├── DotExporter.php          # DOT format export
+│   │       └── DotExporterOptions.php
 │   │
-│   └── Strategy/                        # Execution strategies
-│       ├── SequentialStrategy.php
-│       ├── AmphpParallelStrategy.php
-│       ├── StrategySelector.php
-│       └── Serializer/                  # IgbinarySerializer, PhpSerializer
+│   └── Strategy/                        # Execution strategy contracts
+│       ├── ExecutionStrategyInterface.php
+│       ├── ParallelCapableInterface.php
+│       └── StrategySelectorInterface.php
 │
 ├── Aggregator/                          # Decomposed metric aggregation
 │   ├── AggregationPhaseInterface.php    # Phase contract
@@ -65,15 +77,20 @@ Analysis/
 │   └── GlobalCollectorRunner.php
 │
 ├── RuleExecution/
+│   ├── RuleExecutorInterface.php        # Rule executor contract
 │   └── RuleExecutor.php
 │
 ├── Repository/
 │   └── InMemoryMetricRepository.php
 │
-└── Namespace_/                          # Namespace detection
-    ├── ChainNamespaceDetector.php
-    ├── Psr4NamespaceDetector.php
-    └── TokenizerNamespaceDetector.php
+├── Namespace_/                          # Namespace detection
+│   ├── ChainNamespaceDetector.php
+│   ├── Psr4NamespaceDetector.php
+│   ├── TokenizerNamespaceDetector.php
+│   └── ProjectNamespaceResolver.php     # Project-level namespace resolution
+│
+└── Exception/
+    └── CyclicDependencyException.php
 ```
 
 ---
@@ -157,6 +174,10 @@ Fallback — parsing file tokens (reads first 4KB, looks for `T_NAMESPACE`).
 
 Chain of Responsibility — tries detectors in order, returns the first non-empty result.
 
+### ProjectNamespaceResolver
+
+Project-level namespace resolution — determines the root namespaces for the analyzed project.
+
 ---
 
 ## FileProcessor
@@ -189,29 +210,12 @@ Coordinates the Collection phase: execution strategy selection, file processing,
 
 Abstraction for choosing between sequential and parallel execution.
 
-### SequentialStrategy
+The `Collection/Strategy/` directory contains only contracts (`ExecutionStrategyInterface`, `ParallelCapableInterface`, `StrategySelectorInterface`). Concrete implementations live in `Infrastructure/Parallel/`:
 
-Fallback for systems without pcntl — processes files sequentially.
-
-### AmphpParallelStrategy
-
-Implementation via `amphp/parallel`:
-- Automatic transport selection (ext-parallel threads or pcntl fork)
-- Optimized IPC
-- igbinary/PHP serialize support
-- Graceful fallback
-
-### StrategySelector
-
-Automatic strategy selection:
-- amphp/parallel available AND (ext-pcntl OR ext-parallel) -> `AmphpParallelStrategy`
-- Otherwise -> `SequentialStrategy`
-
-### Serializer
-
-**IgbinarySerializer** — uses `ext-igbinary` (2-5x faster, 50% smaller size).
-**PhpSerializer** — built-in fallback.
-**SerializerSelector** — automatic selection of the best serializer.
+- **SequentialStrategy** — fallback for systems without pcntl
+- **AmphpParallelStrategy** — parallel execution via `amphp/parallel`
+- **StrategySelector** — automatic strategy selection based on available extensions
+- **Serializer/** — IgbinarySerializer, PhpSerializer, SerializerSelector
 
 ### Performance
 
@@ -293,6 +297,15 @@ Collects dependencies from AST. Integrated into `CompositeCollector` for unified
 **Shared infrastructure:**
 - `DependencyContext` — context passed to handlers during traversal
 - `TypeDependencyHelper` — extracts class names from type nodes
+
+### DependencyResolver
+
+Resolves class dependencies from collected data.
+
+### Graph Export
+
+**GraphExporterInterface** — contract for graph exporters.
+**DotExporter** — exports dependency graph in DOT format for visualization with Graphviz.
 
 ### CircularDependencyDetector
 

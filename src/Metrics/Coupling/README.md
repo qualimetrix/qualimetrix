@@ -37,7 +37,7 @@ Coupling metrics measure dependencies between components. All collectors in this
 
 **Collector:** `AbstractnessCollector`
 **Type:** `GlobalContextCollectorInterface`
-**Requires:** `classCount.sum`, `abstractClassCount.sum`, `interfaceCount.sum`
+**Requires:** `classCount.sum`, `abstractClassCount.sum`, `interfaceCount.sum`, `enumCount.sum`, `traitCount.sum`
 **Provides:** `abstractness`
 **Level:** Namespace
 

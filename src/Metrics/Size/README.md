@@ -107,25 +107,26 @@ $anon = new class { };  // NOT counted
 
 ## Property Count
 
-**Collector:** `PropertyCountCollector`
-**Provides:** `propertyCount`, `propertyCountPublic`, `propertyCountProtected`, `propertyCountPrivate`, `propertyCountStatic`
+**Collector:** `MethodCountCollector` (in `src/Metrics/Structure/`)
+**Provides:** `propertyCount`, `propertyCountPublic`, `propertyCountProtected`, `propertyCountPrivate`, `promotedPropertyCount`
 **Level:** Class
+
+> **Note:** Property metrics are collected by `MethodCountCollector` in the Structure category, not by a separate collector.
 
 ### Metrics
 
-| Metric                   | Description                        |
-| ------------------------ | ---------------------------------- |
-| `propertyCount`          | Total number of properties         |
-| `propertyCountPublic`    | Public properties                  |
-| `propertyCountProtected` | Protected properties               |
-| `propertyCountPrivate`   | Private properties                 |
-| `propertyCountStatic`    | Static properties (any visibility) |
+| Metric                   | Description                          |
+| ------------------------ | ------------------------------------ |
+| `propertyCount`          | Total number of properties           |
+| `propertyCountPublic`    | Public properties                    |
+| `propertyCountProtected` | Protected properties                 |
+| `propertyCountPrivate`   | Private properties                   |
+| `promotedPropertyCount`  | Constructor promoted properties (8+) |
 
 ### What Is Counted
 
 - Regular properties
 - Promoted properties (PHP 8.0+)
-- Static properties
 - Typed and untyped properties
 
 **What is NOT counted:**
@@ -140,18 +141,17 @@ class User
     public int $id;                              // propertyCountPublic +1
     protected string $name;                      // propertyCountProtected +1
     private string $email;                       // propertyCountPrivate +1
-    private static array $instances = [];       // propertyCountPrivate +1, propertyCountStatic +1
 
     public function __construct(
-        public string $username,                 // propertyCountPublic +1 (promoted)
+        public string $username,                 // propertyCountPublic +1, promotedPropertyCount +1
     ) {}
 }
 
-// propertyCount = 5
+// propertyCount = 4
 // propertyCountPublic = 2
 // propertyCountProtected = 1
-// propertyCountPrivate = 2
-// propertyCountStatic = 1
+// propertyCountPrivate = 1
+// promotedPropertyCount = 1
 ```
 
 ### Interpretation

@@ -10,6 +10,7 @@ Infrastructure contains external adapters and entry points:
 - **Storage**: SQLite metric storage for large projects ([details](Storage/README.md))
 - **Git**: Git integration for analyzing staged/changed files ([details](Git/README.md))
 - **Logging**: PSR-3 logging ([details](Logging/README.md))
+- **Parallel**: Parallel processing strategies and serialization
 - **Profiler**: Span-based performance profiler ([details](Profiler/README.md))
 
 ## Structure
@@ -24,7 +25,8 @@ Infrastructure/
 │   ├── CacheInterface.php
 │   ├── FileCache.php
 │   ├── CacheFactory.php
-│   └── CacheKeyGenerator.php
+│   ├── CacheKeyGenerator.php
+│   └── CacheWriteException.php      # Cache write failure exception
 ├── Storage/                          # -> See Storage/README.md
 │   ├── StorageInterface.php
 │   ├── SqliteStorage.php
@@ -50,11 +52,21 @@ Infrastructure/
 │   ├── DelegatingLogger.php
 │   ├── ConsoleLogger.php
 │   └── FileLogger.php
+├── Parallel/
+│   ├── FileProcessingTask.php       # Task executed in parallel workers
+│   ├── WorkerBootstrap.php          # Worker process bootstrap
+│   ├── Serializer/
+│   │   ├── SerializerInterface.php  # Serializer contract
+│   │   ├── IgbinarySerializer.php   # igbinary-based serializer
+│   │   ├── PhpSerializer.php        # PHP native serializer
+│   │   └── SerializerSelector.php   # Auto-selects best serializer
+│   └── Strategy/
+│       ├── SequentialStrategy.php      # Single-process execution
+│       ├── AmphpParallelStrategy.php   # Multi-worker via amphp
+│       ├── StrategySelector.php        # Strategy selection logic
+│       └── WorkerCountDetector.php     # Detects optimal worker count
 ├── Profiler/                         # -> See Profiler/README.md
-│   ├── ProfilerInterface.php
 │   ├── Profiler.php
-│   ├── NullProfiler.php
-│   ├── Span.php
 │   └── Export/
 ├── DependencyInjection/
 │   ├── ContainerFactory.php           # Thin orchestrator (delegates to configurators)
@@ -74,7 +86,8 @@ Infrastructure/
 │       ├── RuleRegistryCompilerPass.php
 │       ├── RuleOptionsCompilerPass.php
 │       ├── FormatterCompilerPass.php
-│       └── ConfigurationStageCompilerPass.php
+│       ├── ConfigurationStageCompilerPass.php
+│       └── ParallelCollectorClassesCompilerPass.php
 ├── Rule/
 │   ├── RuleRegistryInterface.php
 │   ├── RuleRegistry.php
@@ -83,6 +96,7 @@ Infrastructure/
 └── Console/                          # -> See Console/README.md
     ├── Application.php
     ├── CliOptionsParser.php
+    ├── OutputHelper.php               # Helper for large text output (line-by-line flush)
     ├── ViolationFilterPipeline.php    # Violation filtering orchestration
     ├── ViolationFilterOptions.php     # Filter options VO
     ├── ViolationFilterResult.php      # Filter result VO

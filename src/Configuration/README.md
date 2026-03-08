@@ -18,6 +18,8 @@ Configuration/
 ├── ConfigurationHolder.php        # Runtime configuration holder
 ├── RuleOptionsFactory.php         # Factory for creating rule options
 ├── RuleOptionsParser.php          # CLI options parser for rules
+├── RuleOptionsParserFactory.php   # Factory for creating RuleOptionsParser with CLI aliases
+├── ConfigurationProviderInterface.php  # Interface for runtime config access
 │
 ├── Pipeline/                      # Configuration Pipeline (RFC-002)
 │   ├── ConfigurationPipelineInterface.php  # Pipeline contract

@@ -188,17 +188,10 @@ class OrderProcessor
 
 ## WMC (Weighted Methods per Class)
 
-**Collector:** `WmcCollector`
-**Provides:** `wmc`
+**Source:** Aggregated metric (sum of method CCN values)
 **Level:** Class
 
-### Formula
-
-```
-WMC = sum of CCN(method_i)
-```
-
-Sum of cyclomatic complexity of all class methods.
+WMC is not collected by a dedicated collector. It is computed as `ccn.sum` — the sum of cyclomatic complexity of all class methods, aggregated from method-level CCN metrics.
 
 ### Interpretation
 
@@ -285,18 +278,29 @@ class PayPalGateway implements PaymentGateway { }  // +1
 ## Method Count
 
 **Collector:** `MethodCountCollector`
-**Provides:** `methodCount`, `methodCountTotal`, `methodCountPublic`, `methodCountProtected`, `methodCountPrivate`, `getterCount`, `setterCount`
+**Provides:** `methodCount`, `methodCountTotal`, `methodCountPublic`, `methodCountProtected`, `methodCountPrivate`, `getterCount`, `setterCount`, `propertyCount`, `propertyCountPublic`, `propertyCountProtected`, `propertyCountPrivate`, `promotedPropertyCount`, `woc`, `isReadonly`, `isPromotedPropertiesOnly`, `isDataClass`
 **Level:** Class
 
 ### Metrics
 
-| Metric              | Description                                |
-| ------------------- | ------------------------------------------ |
-| `methodCount`       | Methods excluding getters/setters          |
-| `methodCountTotal`  | All methods                                |
-| `methodCountPublic` | Public methods (excluding getters/setters) |
-| `getterCount`       | Methods `get*`, `is*`, `has*`              |
-| `setterCount`       | Methods `set*`                             |
+| Metric                     | Description                                                   |
+| -------------------------- | ------------------------------------------------------------- |
+| `methodCount`              | Methods excluding getters/setters                             |
+| `methodCountTotal`         | All methods                                                   |
+| `methodCountPublic`        | Public methods (excluding getters/setters)                    |
+| `methodCountProtected`     | Protected methods (excluding getters/setters)                 |
+| `methodCountPrivate`       | Private methods (excluding getters/setters)                   |
+| `getterCount`              | Methods `get*`, `is*`, `has*`                                 |
+| `setterCount`              | Methods `set*`                                                |
+| `propertyCount`            | Total number of properties                                    |
+| `propertyCountPublic`      | Public properties                                             |
+| `propertyCountProtected`   | Protected properties                                          |
+| `propertyCountPrivate`     | Private properties                                            |
+| `promotedPropertyCount`    | Constructor promoted properties (PHP 8+)                      |
+| `woc`                      | Weight of Class — ratio of public methods to total (0-100)    |
+| `isReadonly`               | Boolean flag (0/1) for readonly classes                       |
+| `isPromotedPropertiesOnly` | Boolean flag (0/1) if all properties are constructor-promoted |
+| `isDataClass`              | Boolean flag (0/1) for data classes (only accessors)          |
 
 ---
 
