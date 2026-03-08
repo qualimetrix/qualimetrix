@@ -18,33 +18,27 @@ The two most common scenarios:
 
 ```bash
 # Before committing: check staged files
-bin/aimd analyze src/ --staged
+bin/aimd check src/ --analyze=git:staged
 
 # Before merging: check what changed vs main
-bin/aimd analyze src/ --diff=main
+bin/aimd check src/ --report=git:main..HEAD
 ```
 
 ---
 
-## Pre-commit workflow with --staged
+## Pre-commit workflow with --analyze=git:staged
 
-The `--staged` flag limits analysis to files added to Git's staging area (`git add`):
-
-```bash
-bin/aimd analyze src/ --staged
-```
-
-This is the same as:
+The `--analyze=git:staged` option limits analysis to files added to Git's staging area (`git add`):
 
 ```bash
-bin/aimd analyze src/ --analyze=git:staged
+bin/aimd check src/ --analyze=git:staged
 ```
 
 Only PHP files that are currently staged for commit are analyzed. This is fast and gives you immediate feedback before committing.
 
 ### Automatic pre-commit hook
 
-Instead of running `--staged` manually, install a Git hook:
+Instead of running `--analyze=git:staged` manually, install a Git hook:
 
 ```bash
 bin/aimd hook:install
@@ -75,29 +69,23 @@ bin/aimd hook:uninstall --restore-backup
 
 ---
 
-## PR workflow with --diff
+## PR workflow with --report
 
-The `--diff` flag shows only violations in files that changed compared to a Git reference:
+The `--report` option shows only violations in files that changed compared to a Git reference:
 
 ```bash
 # Compare against main branch
-bin/aimd analyze src/ --diff=main
+bin/aimd check src/ --report=git:main..HEAD
 
 # Compare against a specific branch
-bin/aimd analyze src/ --diff=origin/develop
+bin/aimd check src/ --report=git:origin/develop..HEAD
 
 # Compare against a specific commit
-bin/aimd analyze src/ --diff=abc1234
-```
-
-This is the same as:
-
-```bash
-bin/aimd analyze src/ --report=git:main..HEAD
+bin/aimd check src/ --report=git:abc1234..HEAD
 ```
 
 !!! note
-    With `--diff`, AIMD still analyzes the full codebase (it needs complete metrics for namespace-level rules). It only *filters the output* to show violations from changed files.
+    With `--report`, AIMD still analyzes the full codebase (it needs complete metrics for namespace-level rules). It only *filters the output* to show violations from changed files.
 
 ---
 
@@ -116,7 +104,7 @@ Limits the set of files that AIMD processes:
 
 ```bash
 # Only parse and analyze staged files
-bin/aimd analyze src/ --analyze=git:staged
+bin/aimd check src/ --analyze=git:staged
 ```
 
 This is faster because fewer files are parsed, but namespace-level and coupling metrics may be incomplete since AIMD does not see the full picture.
@@ -127,7 +115,7 @@ Analyzes all files but filters the report to show only violations from changed f
 
 ```bash
 # Analyze everything, report only changed files
-bin/aimd analyze src/ --report=git:main..HEAD
+bin/aimd check src/ --report=git:main..HEAD
 ```
 
 This gives accurate metrics (the full codebase is analyzed) while only showing relevant violations.
@@ -138,16 +126,16 @@ You can combine them for fine-grained control:
 
 ```bash
 # Parse only changed files, report only changed files
-bin/aimd analyze src/ --analyze=git:main..HEAD --report=git:main..HEAD
+bin/aimd check src/ --analyze=git:main..HEAD --report=git:main..HEAD
 ```
 
 ### Which one to use?
 
-| Scenario                        | Recommendation                  |
-| ------------------------------- | ------------------------------- |
-| Pre-commit hook (speed matters) | `--staged` (uses `--analyze`)   |
-| PR review (accuracy matters)    | `--diff=main` (uses `--report`) |
-| CI pipeline with full analysis  | `--report=git:main..HEAD`       |
+| Scenario                        | Recommendation                              |
+| ------------------------------- | ------------------------------------------- |
+| Pre-commit hook (speed matters) | `--analyze=git:staged` (uses `--analyze`)   |
+| PR review (accuracy matters)    | `--report=git:main`..HEAD (uses `--report`) |
+| CI pipeline with full analysis  | `--report=git:main..HEAD`                   |
 
 ---
 
@@ -158,7 +146,7 @@ By default, when using `--diff` or `--report`, AIMD also shows violations from p
 If you want to see only violations from the changed files themselves:
 
 ```bash
-bin/aimd analyze src/ --diff=main --report-strict
+bin/aimd check src/ --report=git:main..HEAD --report-strict
 ```
 
 ---
@@ -186,7 +174,7 @@ Both `--analyze` and `--report` accept scope expressions:
 git add src/Service/UserService.php
 
 # 3. Check before committing
-bin/aimd analyze src/ --staged
+bin/aimd check src/ --analyze=git:staged
 
 # 4. If clean, commit
 git commit -m "refactor: simplify UserService"
@@ -207,20 +195,20 @@ git commit -m "refactor: simplify UserService"
 
 ```bash
 # On your feature branch, check against main
-bin/aimd analyze src/ --diff=main
+bin/aimd check src/ --report=git:main..HEAD
 
 # Strict mode: only violations in your changed files
-bin/aimd analyze src/ --diff=main --report-strict
+bin/aimd check src/ --report=git:main..HEAD --report-strict
 
 # With JSON output for CI
-bin/aimd analyze src/ --diff=main --format=json --no-progress
+bin/aimd check src/ --report=git:main..HEAD --format=json --no-progress
 ```
 
 ### CI pipeline (GitHub Actions)
 
 ```yaml
 - name: Run AIMD
-  run: bin/aimd analyze src/ --diff=origin/main --format=sarif --no-progress > results.sarif
+  run: bin/aimd check src/ --report=git:origin/main..HEAD --format=sarif --no-progress > results.sarif
 
 - name: Upload SARIF
   uses: github/codeql-action/upload-sarif@v3
@@ -233,7 +221,7 @@ bin/aimd analyze src/ --diff=main --format=json --no-progress
 ```yaml
 code_quality:
   script:
-    - bin/aimd analyze src/ --diff=origin/main --format=gitlab --no-progress > gl-code-quality-report.json
+    - bin/aimd check src/ --report=git:origin/main..HEAD --format=gitlab --no-progress > gl-code-quality-report.json
   artifacts:
     reports:
       codequality: gl-code-quality-report.json

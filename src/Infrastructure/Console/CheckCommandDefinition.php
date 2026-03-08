@@ -11,15 +11,15 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
 
 /**
- * Defines all arguments and options for the analyze command.
+ * Defines all arguments and options for the check command.
  *
- * Extracted from AnalyzeCommand::configure() to keep the command class focused
+ * Extracted from CheckCommand::configure() to keep the command class focused
  * on orchestration logic.
  */
-final class AnalyzeCommandDefinition
+final class CheckCommandDefinition
 {
     /**
-     * Adds all arguments and options to the analyze command.
+     * Adds all arguments and options to the check command.
      */
     public static function addOptions(Command $command, RuleRegistryInterface $ruleRegistry): void
     {
@@ -173,18 +173,6 @@ final class AnalyzeCommandDefinition
                 null,
                 InputOption::VALUE_NONE,
                 'Only show violations exactly in changed files (exclude parent namespaces)',
-            )
-            ->addOption(
-                'staged',
-                null,
-                InputOption::VALUE_NONE,
-                'Shortcut for --analyze=git:staged (analyze only staged files)',
-            )
-            ->addOption(
-                'diff',
-                null,
-                InputOption::VALUE_REQUIRED,
-                'Shortcut for --report=git:<ref>..HEAD (show only violations in changed files)',
             );
     }
 

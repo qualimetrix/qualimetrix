@@ -97,10 +97,10 @@ rules:
 ```
 
 ```bash
-bin/aimd analyze src/ --rule-opt="design.lcom:warning=4"
-bin/aimd analyze src/ --rule-opt="design.lcom:error=6"
-bin/aimd analyze src/ --rule-opt="design.lcom:min_methods=5"
-bin/aimd analyze src/ --rule-opt="design.lcom:exclude_readonly=false"
+bin/aimd check src/ --rule-opt="design.lcom:warning=4"
+bin/aimd check src/ --rule-opt="design.lcom:error=6"
+bin/aimd check src/ --rule-opt="design.lcom:min_methods=5"
+bin/aimd check src/ --rule-opt="design.lcom:exclude_readonly=false"
 ```
 
 ---
@@ -169,8 +169,8 @@ rules:
 ```
 
 ```bash
-bin/aimd analyze src/ --rule-opt="design.noc:warning=12"
-bin/aimd analyze src/ --rule-opt="design.noc:error=20"
+bin/aimd check src/ --rule-opt="design.noc:warning=12"
+bin/aimd check src/ --rule-opt="design.noc:error=20"
 ```
 
 ---
@@ -257,6 +257,6 @@ rules:
 ```
 
 ```bash
-bin/aimd analyze src/ --rule-opt="design.inheritance:warning=5"
-bin/aimd analyze src/ --rule-opt="design.inheritance:error=7"
+bin/aimd check src/ --rule-opt="design.inheritance:warning=5"
+bin/aimd check src/ --rule-opt="design.inheritance:error=7"
 ```

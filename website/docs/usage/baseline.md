@@ -17,7 +17,7 @@ When you add AIMD to an existing project, the first run may report hundreds of v
 Run analysis with the `--generate-baseline` flag:
 
 ```bash
-bin/aimd analyze src/ --generate-baseline=baseline.json
+bin/aimd check src/ --generate-baseline=baseline.json
 ```
 
 This runs the full analysis and saves all violations to `baseline.json`. The file is a JSON document with stable hashes for each violation, so it works even when line numbers shift.
@@ -32,7 +32,7 @@ This runs the full analysis and saves all violations to `baseline.json`. The fil
 Pass the `--baseline` flag on subsequent runs:
 
 ```bash
-bin/aimd analyze src/ --baseline=baseline.json
+bin/aimd check src/ --baseline=baseline.json
 ```
 
 AIMD loads the baseline, runs the analysis, and only reports violations that are **not** in the baseline. If you introduced a new violation, you will see it. If you fixed an old one, it silently disappears from the baseline matches.
@@ -57,7 +57,7 @@ When AIMD runs with a baseline, it matches current violations against baseline e
 Want to know how many old violations you have fixed? Use `--show-resolved`:
 
 ```bash
-bin/aimd analyze src/ --baseline=baseline.json --show-resolved
+bin/aimd check src/ --baseline=baseline.json --show-resolved
 ```
 
 This adds a summary line showing the count of resolved violations -- entries that exist in the baseline but no longer appear in the current analysis.
@@ -73,7 +73,7 @@ By default, AIMD reports an error when stale entries are found. You have two opt
 ### Option 1: Ignore stale entries
 
 ```bash
-bin/aimd analyze src/ --baseline=baseline.json --baseline-ignore-stale
+bin/aimd check src/ --baseline=baseline.json --baseline-ignore-stale
 ```
 
 ### Option 2: Clean up the baseline
@@ -151,7 +151,7 @@ The rule name supports prefix matching: `@aimd-ignore complexity` suppresses all
 To see what was suppressed:
 
 ```bash
-bin/aimd analyze src/ --show-suppressed
+bin/aimd check src/ --show-suppressed
 ```
 
 ### Ignoring suppression tags
@@ -159,7 +159,7 @@ bin/aimd analyze src/ --show-suppressed
 To run analysis as if no `@aimd-ignore` tags existed:
 
 ```bash
-bin/aimd analyze src/ --no-suppression
+bin/aimd check src/ --no-suppression
 ```
 
 ---
@@ -180,7 +180,7 @@ This ensures every team member and CI pipeline uses the same baseline.
 After fixing a batch of violations, regenerate the baseline:
 
 ```bash
-bin/aimd analyze src/ --generate-baseline=baseline.json
+bin/aimd check src/ --generate-baseline=baseline.json
 git add baseline.json
 git commit -m "chore: update AIMD baseline (15 violations resolved)"
 ```
@@ -190,7 +190,7 @@ git commit -m "chore: update AIMD baseline (15 violations resolved)"
 Add `--show-resolved` to your CI pipeline to track progress:
 
 ```bash
-bin/aimd analyze src/ --baseline=baseline.json --show-resolved --no-progress
+bin/aimd check src/ --baseline=baseline.json --show-resolved --no-progress
 ```
 
 ### 4. Prefer baseline over inline suppression

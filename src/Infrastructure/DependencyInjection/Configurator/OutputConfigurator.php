@@ -21,8 +21,8 @@ use AiMessDetector\Configuration\RuleOptionsFactory;
 use AiMessDetector\Core\Ast\FileParserInterface;
 use AiMessDetector\Core\Profiler\ProfilerHolder;
 use AiMessDetector\Infrastructure\Cache\CacheFactory;
-use AiMessDetector\Infrastructure\Console\Command\AnalyzeCommand;
 use AiMessDetector\Infrastructure\Console\Command\BaselineCleanupCommand;
+use AiMessDetector\Infrastructure\Console\Command\CheckCommand;
 use AiMessDetector\Infrastructure\Console\Command\GraphExportCommand;
 use AiMessDetector\Infrastructure\Console\Command\HookInstallCommand;
 use AiMessDetector\Infrastructure\Console\Command\HookStatusCommand;
@@ -133,8 +133,8 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(BaselineWriter::class),
             ]);
 
-        // AnalyzeCommand with all dependencies injected
-        $container->register(AnalyzeCommand::class)
+        // CheckCommand with all dependencies injected
+        $container->register(CheckCommand::class)
             ->setArguments([
                 new Reference(RuleRegistryInterface::class),
                 new Reference(AnalysisPipelineInterface::class),

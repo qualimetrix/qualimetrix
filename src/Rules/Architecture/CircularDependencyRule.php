@@ -130,7 +130,7 @@ final class CircularDependencyRule extends AbstractRule
     public static function getCliAliases(): array
     {
         return [
-            'no-circular-deps' => 'enabled',
+            'circular-deps' => 'enabled',
             'max-cycle-size' => 'maxCycleSize',
         ];
     }

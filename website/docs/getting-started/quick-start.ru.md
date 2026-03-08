@@ -63,7 +63,7 @@ git commit --no-verify -m "WIP: work in progress"
 
 ```bash
 # Создать базовую линию для существующих проблем
-bin/aimd analyze src/ --generate-baseline=baseline.json
+bin/aimd check src/ --generate-baseline=baseline.json
 
 # Теперь хук будет игнорировать проблемы из базовой линии
 git commit -m "Add feature"
@@ -118,16 +118,16 @@ docker build -t aimd .
 
 ```bash
 # Анализ текущей директории
-docker run --rm -v $(pwd):/app aimd analyze src/
+docker run --rm -v $(pwd):/app aimd check src/
 
 # С базовой линией
-docker run --rm -v $(pwd):/app aimd analyze src/ --baseline=baseline.json
+docker run --rm -v $(pwd):/app aimd check src/ --baseline=baseline.json
 
 # С конфигурацией
-docker run --rm -v $(pwd):/app aimd analyze src/ --config=aimd.yaml
+docker run --rm -v $(pwd):/app aimd check src/ --config=aimd.yaml
 
 # Вывод в формате JSON
-docker run --rm -v $(pwd):/app aimd analyze src/ --format=json
+docker run --rm -v $(pwd):/app aimd check src/ --format=json
 ```
 
 ### Docker Compose
@@ -157,7 +157,7 @@ docker-compose run --rm aimd
       stage: test
       image: aimd:latest
       script:
-        - aimd analyze src/ --baseline=baseline.json
+        - aimd check src/ --baseline=baseline.json
       artifacts:
         when: on_failure
         paths:
@@ -175,7 +175,7 @@ docker-compose run --rm aimd
                 steps {
                     script {
                         docker.image('aimd:latest').inside('-v $WORKSPACE:/app') {
-                            sh 'aimd analyze src/ --baseline=baseline.json'
+                            sh 'aimd check src/ --baseline=baseline.json'
                         }
                     }
                 }
@@ -205,7 +205,7 @@ docker-compose run --rm aimd
 === "CLI"
 
     ```bash
-    bin/aimd analyze src/ --exclude-path='src/Entity/*' --exclude-path='*/DTO/*'
+    bin/aimd check src/ --exclude-path='src/Entity/*' --exclude-path='*/DTO/*'
     ```
 
 CLI-паттерны объединяются с паттернами из конфигурационного файла.
@@ -251,5 +251,5 @@ ls -la bin/aimd
 
 ```bash
 # Linux с SELinux: добавьте флаг :z
-docker run --rm -v $(pwd):/app:z aimd analyze src/
+docker run --rm -v $(pwd):/app:z aimd check src/
 ```

@@ -72,8 +72,8 @@ final class MethodCountRule extends AbstractRule
     public static function getCliAliases(): array
     {
         return [
-            'size-class-warning' => 'warning',
-            'size-class-error' => 'error',
+            'method-count-warning' => 'warning',
+            'method-count-error' => 'error',
         ];
     }
 

@@ -130,8 +130,8 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
     public static function getCliAliases(): array
     {
         return [
-            'cbo-class-warning' => 'class.warning',
-            'cbo-class-error' => 'class.error',
+            'cbo-warning' => 'class.warning',
+            'cbo-error' => 'class.error',
             'cbo-ns-warning' => 'namespace.warning',
             'cbo-ns-error' => 'namespace.error',
         ];

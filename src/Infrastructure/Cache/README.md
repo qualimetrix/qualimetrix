@@ -168,13 +168,13 @@ Factory with runtime configuration awareness.
 
 ```bash
 # Disable cache
-bin/aimd analyze src/ --no-cache
+bin/aimd check src/ --no-cache
 
 # Clear cache before analysis
-bin/aimd analyze src/ --clear-cache
+bin/aimd check src/ --clear-cache
 
 # Custom cache directory
-bin/aimd analyze src/ --cache-dir=/tmp/aimd-cache
+bin/aimd check src/ --cache-dir=/tmp/aimd-cache
 ```
 
 ## Definition of Done

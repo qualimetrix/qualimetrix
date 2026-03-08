@@ -216,27 +216,27 @@ AIMD WMC is consistently highest due to CCN2+ variant propagation.
 
 ## 4. Feature Comparison
 
-| Feature                           | AIMD     | phpmd                  | phpmetrics | pdepend      |
-| --------------------------------- | :------: | :--------------------: | :--------: | :----------: |
-| Parallel processing               | ✅       | ❌                     | ❌         | ❌           |
-| Baseline (ignore known issues)    | ✅       | ✅                     | ❌         | ❌           |
-| Git integration (--diff/--staged) | ✅       | ❌                     | ✅         | ❌           |
-| Inline suppression (@aimd-ignore) | ✅       | ✅ (@SuppressWarnings) | ❌         | ❌           |
-| SARIF output                      | ✅       | ✅                     | ❌         | ❌           |
-| GitLab Code Quality               | ✅       | ❌                     | ❌         | ❌           |
-| Checkstyle output                 | ✅       | ✅                     | ❌         | ❌           |
-| JSON output                       | ✅       | ✅                     | ✅         | ❌           |
-| HTML reports                      | ❌       | ✅                     | ✅         | ❌           |
-| Graph visualization               | ✅ (DOT) | ❌                     | ✅ (HTML)  | ✅ (SVG)     |
-| AST caching                       | ✅       | ✅                     | ❌         | ❌           |
-| Analysis rules with thresholds    | ✅       | ✅                     | ❌         | ❌           |
-| Custom rules                      | Planned  | ✅                     | ❌         | ❌           |
-| PHP 8.4 support                   | ✅       | ⚠️ (deprecated)        | ✅         | ⚠️ (crashes) |
-| Raw metric export                 | ❌       | ❌                     | ✅ (JSON)  | ✅ (XML)     |
-| Code duplication                  | ❌       | ❌                     | ❌         | ❌           |
-| Security rules                    | Basic*   | ❌                     | ❌         | ❌           |
-| Dead code detection               | ❌       | ✅ (unused params)     | ❌         | ❌           |
-| Type coverage metrics             | ❌       | ❌                     | ❌         | ❌           |
+| Feature                                       | AIMD     | phpmd                  | phpmetrics | pdepend      |
+| --------------------------------------------- | :------: | :--------------------: | :--------: | :----------: |
+| Parallel processing                           | ✅       | ❌                     | ❌         | ❌           |
+| Baseline (ignore known issues)                | ✅       | ✅                     | ❌         | ❌           |
+| Git integration (--diff/--analyze=git:staged) | ✅       | ❌                     | ✅         | ❌           |
+| Inline suppression (@aimd-ignore)             | ✅       | ✅ (@SuppressWarnings) | ❌         | ❌           |
+| SARIF output                                  | ✅       | ✅                     | ❌         | ❌           |
+| GitLab Code Quality                           | ✅       | ❌                     | ❌         | ❌           |
+| Checkstyle output                             | ✅       | ✅                     | ❌         | ❌           |
+| JSON output                                   | ✅       | ✅                     | ✅         | ❌           |
+| HTML reports                                  | ❌       | ✅                     | ✅         | ❌           |
+| Graph visualization                           | ✅ (DOT) | ❌                     | ✅ (HTML)  | ✅ (SVG)     |
+| AST caching                                   | ✅       | ✅                     | ❌         | ❌           |
+| Analysis rules with thresholds                | ✅       | ✅                     | ❌         | ❌           |
+| Custom rules                                  | Planned  | ✅                     | ❌         | ❌           |
+| PHP 8.4 support                               | ✅       | ⚠️ (deprecated)        | ✅         | ⚠️ (crashes) |
+| Raw metric export                             | ❌       | ❌                     | ✅ (JSON)  | ✅ (XML)     |
+| Code duplication                              | ❌       | ❌                     | ❌         | ❌           |
+| Security rules                                | Basic*   | ❌                     | ❌         | ❌           |
+| Dead code detection                           | ❌       | ✅ (unused params)     | ❌         | ❌           |
+| Type coverage metrics                         | ❌       | ❌                     | ❌         | ❌           |
 
 \* AIMD has superglobals, eval, exit, error suppression rules — but no taint analysis or injection detection.
 

@@ -130,10 +130,10 @@ File change detection for cache invalidation.
 
 ```bash
 # Analysis with auto-detect storage
-bin/aimd analyze src/
+bin/aimd check src/
 
 # Explicitly specify SQLite
-bin/aimd analyze src/ --storage=sqlite
+bin/aimd check src/ --storage=sqlite
 
 # Clear cache
 bin/aimd cache:clear

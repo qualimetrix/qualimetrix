@@ -11,7 +11,7 @@ use AiMessDetector\Configuration\ConfigurationHolder;
 use AiMessDetector\Configuration\ConfigurationProviderInterface;
 use AiMessDetector\Configuration\RuleOptionsFactory;
 use AiMessDetector\Infrastructure\Cache\CacheInterface;
-use AiMessDetector\Infrastructure\Console\Command\AnalyzeCommand;
+use AiMessDetector\Infrastructure\Console\Command\CheckCommand;
 use AiMessDetector\Infrastructure\DependencyInjection\ContainerFactory;
 use AiMessDetector\Infrastructure\Rule\RuleRegistryInterface;
 use AiMessDetector\Metrics\Complexity\CognitiveComplexityCollector;
@@ -119,12 +119,12 @@ final class ContainerFactoryTest extends TestCase
         self::assertNotEmpty($classes);
     }
 
-    public function testContainerHasAnalyzeCommand(): void
+    public function testContainerHasCheckCommand(): void
     {
         $container = $this->factory->create();
 
-        self::assertTrue($container->has(AnalyzeCommand::class));
-        self::assertInstanceOf(AnalyzeCommand::class, $container->get(AnalyzeCommand::class));
+        self::assertTrue($container->has(CheckCommand::class));
+        self::assertInstanceOf(CheckCommand::class, $container->get(CheckCommand::class));
     }
 
     public function testCollectorCompilerPassRegistersAllCollectors(): void

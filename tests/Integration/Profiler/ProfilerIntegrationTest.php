@@ -166,7 +166,7 @@ final class ProfilerIntegrationTest extends TestCase
 
         $profileData = $profiler->export('json');
 
-        // Simulate atomic write as in AnalyzeCommand
+        // Simulate atomic write as in CheckCommand
         $tmpFile = $this->profilePath . '.tmp.' . getmypid();
         file_put_contents($tmpFile, $profileData);
         rename($tmpFile, $this->profilePath);

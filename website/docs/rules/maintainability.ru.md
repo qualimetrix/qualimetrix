@@ -170,6 +170,6 @@ rules:
 ```
 
 ```bash
-bin/aimd analyze src/ --rule-opt="maintainability.index:warning=35"
-bin/aimd analyze src/ --rule-opt="maintainability.index:min_loc=15"
+bin/aimd check src/ --rule-opt="maintainability.index:warning=35"
+bin/aimd check src/ --rule-opt="maintainability.index:min_loc=15"
 ```

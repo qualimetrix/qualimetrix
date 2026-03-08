@@ -19,10 +19,10 @@ Static analysis tool for PHP code quality metrics.
 composer require --dev fractalizer/ai-mess-detector
 
 # Analyze
-bin/aimd analyze src/
+bin/aimd check src/
 
 # With specific format
-bin/aimd analyze src/ --format=json
+bin/aimd check src/ --format=json
 
 # Pre-commit hook
 bin/aimd hook:install
@@ -56,27 +56,27 @@ rules:
 Or use CLI options:
 
 ```bash
-bin/aimd analyze src/ --cc-warning=10 --cc-error=20
+bin/aimd check src/ --cyclomatic-warning=10 --cyclomatic-error=20
 ```
 
 ## Git Integration
 
 ```bash
 # Analyze staged files only
-bin/aimd analyze src/ --staged
+bin/aimd check src/ --analyze=git:staged
 
 # Show violations in changed files
-bin/aimd analyze src/ --diff=main
+bin/aimd check src/ --report=git:main..HEAD
 ```
 
 ## Baseline Support
 
 ```bash
 # Generate baseline for existing violations
-bin/aimd analyze src/ --generate-baseline=baseline.json
+bin/aimd check src/ --generate-baseline=baseline.json
 
 # Use baseline
-bin/aimd analyze src/ --baseline=baseline.json
+bin/aimd check src/ --baseline=baseline.json
 ```
 
 ## Documentation

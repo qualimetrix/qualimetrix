@@ -74,7 +74,7 @@ Content: which variant/algorithm is used, how it differs, why the choice was mad
     ```
 
     ```bash
-    bin/aimd analyze src/ --rule-opt="group.rule-name:warning=10"
+    bin/aimd check src/ --rule-opt="group.rule-name:warning=10"
     ```
 ```
 

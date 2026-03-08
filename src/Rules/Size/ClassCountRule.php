@@ -72,8 +72,8 @@ final class ClassCountRule extends AbstractRule
     public static function getCliAliases(): array
     {
         return [
-            'ns-warning' => 'warning',
-            'ns-error' => 'error',
+            'class-count-warning' => 'warning',
+            'class-count-error' => 'error',
         ];
     }
 

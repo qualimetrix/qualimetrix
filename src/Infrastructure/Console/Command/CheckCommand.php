@@ -10,7 +10,7 @@ use AiMessDetector\Configuration\Pipeline\ConfigurationContext;
 use AiMessDetector\Configuration\Pipeline\ConfigurationPipeline;
 use AiMessDetector\Configuration\Pipeline\ResolvedConfiguration;
 use AiMessDetector\Infrastructure\Cache\CacheFactory;
-use AiMessDetector\Infrastructure\Console\AnalyzeCommandDefinition;
+use AiMessDetector\Infrastructure\Console\CheckCommandDefinition;
 use AiMessDetector\Infrastructure\Console\GitScopeFilterConfig;
 use AiMessDetector\Infrastructure\Console\ResultPresenter;
 use AiMessDetector\Infrastructure\Console\RuntimeConfigurator;
@@ -29,10 +29,11 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Throwable;
 
 #[AsCommand(
-    name: 'analyze',
-    description: 'Analyze PHP code for complexity and structural issues',
+    name: 'check',
+    description: 'Check PHP code for complexity and structural issues',
+    aliases: ['analyze'],
 )]
-final class AnalyzeCommand extends Command
+final class CheckCommand extends Command
 {
     public function __construct(
         private readonly RuleRegistryInterface $ruleRegistry,
@@ -48,11 +49,13 @@ final class AnalyzeCommand extends Command
 
     protected function configure(): void
     {
-        AnalyzeCommandDefinition::addOptions($this, $this->ruleRegistry);
+        CheckCommandDefinition::addOptions($this, $this->ruleRegistry);
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        $this->showDeprecationWarningIfNeeded($input, $output);
+
         try {
             return $this->doExecute($input, $output);
         } catch (ConflictingCliAliasException $e) {
@@ -88,6 +91,20 @@ final class AnalyzeCommand extends Command
             }
 
             return self::FAILURE;
+        }
+    }
+
+    /**
+     * Shows a deprecation warning when the command is invoked via the 'analyze' alias.
+     */
+    private function showDeprecationWarningIfNeeded(InputInterface $input, OutputInterface $output): void
+    {
+        $firstArg = $input->getFirstArgument();
+        if ($firstArg === 'analyze') {
+            $output->writeln(
+                '<comment>[DEPRECATED] The \'analyze\' command is deprecated, use \'check\' instead.</comment>',
+            );
+            $output->writeln('');
         }
     }
 
@@ -268,5 +285,4 @@ final class AnalyzeCommand extends Command
 
         throw new InvalidArgumentException('Baseline contains stale entries');
     }
-
 }

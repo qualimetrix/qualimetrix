@@ -413,8 +413,8 @@ You can also disable individual rules via the `--disable-rule` CLI option:
 
 ```bash
 # Disable a specific rule
-bin/aimd analyze src/ --disable-rule=code-smell.exit
+bin/aimd check src/ --disable-rule=code-smell.exit
 
 # Disable all code smell rules at once (prefix matching)
-bin/aimd analyze src/ --disable-rule=code-smell
+bin/aimd check src/ --disable-rule=code-smell
 ```

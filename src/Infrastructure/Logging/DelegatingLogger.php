@@ -10,7 +10,7 @@ use Stringable;
 /**
  * Logger proxy that delegates to LoggerHolder.
  *
- * This allows logger configuration to be set at runtime (in AnalyzeCommand)
+ * This allows logger configuration to be set at runtime (in CheckCommand)
  * while services (Analyzer, PhpFileParser) are created during DI container compilation.
  *
  * Each log call delegates to the current logger in LoggerHolder, which can be

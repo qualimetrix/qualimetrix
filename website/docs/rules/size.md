@@ -37,8 +37,8 @@ rules:
 ```
 
 ```bash
-bin/aimd analyze src/ --rule-opt="size.method-count:warning=25"
-bin/aimd analyze src/ --rule-opt="size.method-count:error=40"
+bin/aimd check src/ --rule-opt="size.method-count:warning=25"
+bin/aimd check src/ --rule-opt="size.method-count:error=40"
 ```
 
 ### Example
@@ -121,8 +121,8 @@ rules:
 ```
 
 ```bash
-bin/aimd analyze src/ --rule-opt="size.class-count:warning=20"
-bin/aimd analyze src/ --rule-opt="size.class-count:error=30"
+bin/aimd check src/ --rule-opt="size.class-count:warning=20"
+bin/aimd check src/ --rule-opt="size.class-count:error=30"
 ```
 
 ### Example
@@ -192,8 +192,8 @@ rules:
 ```
 
 ```bash
-bin/aimd analyze src/ --rule-opt="size.property-count:warning=18"
-bin/aimd analyze src/ --rule-opt="size.property-count:error=25"
+bin/aimd check src/ --rule-opt="size.property-count:warning=18"
+bin/aimd check src/ --rule-opt="size.property-count:error=25"
 ```
 
 ### Example

@@ -77,8 +77,8 @@ final class CboRuleTest extends TestCase
     public function testGetCliAliases(): void
     {
         self::assertSame([
-            'cbo-class-warning' => 'class.warning',
-            'cbo-class-error' => 'class.error',
+            'cbo-warning' => 'class.warning',
+            'cbo-error' => 'class.error',
             'cbo-ns-warning' => 'namespace.warning',
             'cbo-ns-error' => 'namespace.error',
         ], CboRule::getCliAliases());

@@ -34,7 +34,7 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
  * This single container provides all services needed for both CLI and analysis:
  * - RuleRegistry with rule classes (for CLI option discovery)
  * - ConfigLoader for reading configuration files
- * - AnalyzeCommand with injected dependencies
+ * - CheckCommand with injected dependencies
  * - All analysis services (Analyzer, Collectors, Rules, etc.)
  *
  * Runtime configuration is handled through ConfigurationProviderInterface and

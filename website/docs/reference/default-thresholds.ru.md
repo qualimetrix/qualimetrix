@@ -124,7 +124,7 @@ rules:
 Затем запустите анализ с указанием файла конфигурации:
 
 ```bash
-vendor/bin/aimd analyze src/ --config=aimd.yaml
+vendor/bin/aimd check src/ --config=aimd.yaml
 ```
 
 ### Отключение правил
@@ -142,7 +142,7 @@ rules:
 Вы можете отключить все правила в группе через CLI:
 
 ```bash
-vendor/bin/aimd analyze src/ --disable-rule=code-smell
+vendor/bin/aimd check src/ --disable-rule=code-smell
 ```
 
 Это отключит все правила, ID которых начинается с `code-smell.`.
@@ -152,7 +152,7 @@ vendor/bin/aimd analyze src/ --disable-rule=code-smell
 Переопределяйте настройки из командной строки:
 
 ```bash
-vendor/bin/aimd analyze src/ --disable-rule=complexity.npath
+vendor/bin/aimd check src/ --disable-rule=complexity.npath
 ```
 
 ### Подавление отдельных нарушений

@@ -48,7 +48,7 @@ if [ -f "baseline.json" ]; then
 fi
 
 # Run aimd
-if $AIMD_BIN analyze $FILES_ARGS $BASELINE_ARG; then
+if $AIMD_BIN check $FILES_ARGS $BASELINE_ARG; then
     echo ""
     echo "✅ AI Mess Detector passed."
     exit 0
@@ -59,7 +59,7 @@ else
     echo ""
     echo "Options:"
     echo "  - Fix the issues and try again"
-    echo "  - Update baseline: $AIMD_BIN analyze src/ --generate-baseline=baseline.json"
+    echo "  - Update baseline: $AIMD_BIN check src/ --generate-baseline=baseline.json"
     echo "  - Skip this check: git commit --no-verify"
     exit $EXIT_CODE
 fi

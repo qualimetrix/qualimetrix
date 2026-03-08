@@ -38,7 +38,7 @@ vendor/bin/aimd
 Run AI Mess Detector in a container without installing PHP locally:
 
 ```bash
-docker run --rm -v $(pwd):/app aimd analyze src/
+docker run --rm -v $(pwd):/app aimd check src/
 ```
 
 This mounts your current directory into the container and analyzes the `src/` folder.
@@ -47,10 +47,10 @@ You can pass any CLI options after `analyze`:
 
 ```bash
 # JSON output
-docker run --rm -v $(pwd):/app aimd analyze src/ --format=json
+docker run --rm -v $(pwd):/app aimd check src/ --format=json
 
 # With baseline
-docker run --rm -v $(pwd):/app aimd analyze src/ --baseline=baseline.json
+docker run --rm -v $(pwd):/app aimd check src/ --baseline=baseline.json
 ```
 
 ---

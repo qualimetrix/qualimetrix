@@ -88,10 +88,10 @@ rules:
 
 ```bash
 # CLI overrides
-bin/aimd analyze src/ --rule-opt="complexity.cyclomatic:method.warning=15"
-bin/aimd analyze src/ --rule-opt="complexity.cyclomatic:method.error=25"
-bin/aimd analyze src/ --rule-opt="complexity.cyclomatic:class.max_warning=40"
-bin/aimd analyze src/ --rule-opt="complexity.cyclomatic:class.enabled=false"
+bin/aimd check src/ --rule-opt="complexity.cyclomatic:method.warning=15"
+bin/aimd check src/ --rule-opt="complexity.cyclomatic:method.error=25"
+bin/aimd check src/ --rule-opt="complexity.cyclomatic:class.max_warning=40"
+bin/aimd check src/ --rule-opt="complexity.cyclomatic:class.enabled=false"
 ```
 
 ---
@@ -168,8 +168,8 @@ rules:
 ```
 
 ```bash
-bin/aimd analyze src/ --rule-opt="complexity.cognitive:method.warning=20"
-bin/aimd analyze src/ --rule-opt="complexity.cognitive:method.error=40"
+bin/aimd check src/ --rule-opt="complexity.cognitive:method.warning=20"
+bin/aimd check src/ --rule-opt="complexity.cognitive:method.error=40"
 ```
 
 ---
@@ -246,8 +246,8 @@ rules:
 ```
 
 ```bash
-bin/aimd analyze src/ --rule-opt="complexity.npath:method.warning=300"
-bin/aimd analyze src/ --rule-opt="complexity.npath:class.enabled=true"
+bin/aimd check src/ --rule-opt="complexity.npath:method.warning=300"
+bin/aimd check src/ --rule-opt="complexity.npath:class.enabled=true"
 ```
 
 ---
@@ -307,6 +307,6 @@ rules:
 ```
 
 ```bash
-bin/aimd analyze src/ --rule-opt="complexity.wmc:warning=60"
-bin/aimd analyze src/ --rule-opt="complexity.wmc:error=100"
+bin/aimd check src/ --rule-opt="complexity.wmc:warning=60"
+bin/aimd check src/ --rule-opt="complexity.wmc:error=100"
 ```

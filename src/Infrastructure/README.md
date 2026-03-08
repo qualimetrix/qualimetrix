@@ -89,13 +89,13 @@ Infrastructure/
     ├── GitScopeFilterConfig.php       # Git scope filter config VO
     ├── RuntimeConfigurator.php        # Runtime DI configuration
     ├── ResultPresenter.php            # Output presentation
-    ├── AnalyzeCommandDefinition.php   # Command option definitions
+    ├── CheckCommandDefinition.php     # Command option definitions
     ├── Progress/
     │   ├── ConsoleProgressBar.php
     │   ├── ProgressReporterHolder.php
     │   └── DelegatingProgressReporter.php
     └── Command/
-        ├── AnalyzeCommand.php         # Thin orchestrator (delegates to extracted classes)
+        ├── CheckCommand.php           # Thin orchestrator (delegates to extracted classes)
         ├── BaselineCleanupCommand.php
         ├── GraphExportCommand.php
         ├── HookInstallCommand.php
@@ -117,7 +117,7 @@ ContainerFactory.create()
    - Mutable providers (ConfigurationProvider, RuleOptionsFactory)
    - CacheFactory for lazy cache creation
         |
-   AnalyzeCommand receives all dependencies via constructor
+   CheckCommand receives all dependencies via constructor
         |
    In execute():
    1. CLI parsing -> config + ruleOptions
@@ -238,11 +238,11 @@ Factory with runtime configuration awareness.
 **Algorithm:**
 1. Finding autoloader
 2. Creating unified DI container via `ContainerFactory::create()`
-3. Getting `AnalyzeCommand` from container (all dependencies injected)
+3. Getting `CheckCommand` from container (all dependencies injected)
 4. Running Application
 
 **Runtime configuration:**
-- CLI options are parsed in `AnalyzeCommand::execute()`
+- CLI options are parsed in `CheckCommand::execute()`
 - ConfigurationProvider and RuleOptionsFactory are configured before analysis
 - Lazy rules are created with correct options
 
@@ -262,10 +262,10 @@ Factory with runtime configuration awareness.
 ## Definition of Done
 
 ### Core Infrastructure
-- `bin/aimd analyze src/` works
+- `bin/aimd check src/` works
 - Unified DI container assembles all dependencies
 - Lazy Rules are created with correct runtime options
 - FileParserFactory returns the correct implementation
-- All CLI options work (including aliases --cc-warning, --cc-error)
+- All CLI options work (including aliases --cyclomatic-warning, --cyclomatic-error)
 - Exit codes are correct
 - No ServiceLocator (all dependencies via constructor)

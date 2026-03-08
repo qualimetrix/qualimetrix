@@ -51,12 +51,6 @@ final class GitScopeResolver
      */
     private function resolveAnalyzeScope(InputInterface $input): ?GitScope
     {
-        // Check --staged shortcut first
-        if ($input->getOption('staged')) {
-            return new GitScope('staged');
-        }
-
-        // Check --analyze option
         $analyze = $input->getOption('analyze');
         if (\is_string($analyze) && $analyze !== '') {
             $parser = new GitScopeParser();
@@ -82,13 +76,6 @@ final class GitScopeResolver
      */
     private function resolveReportScope(InputInterface $input, ?GitScope $analyzeScope): ?GitScope
     {
-        // Check --diff shortcut first
-        $diff = $input->getOption('diff');
-        if (\is_string($diff) && $diff !== '') {
-            return new GitScope(\sprintf('%s..HEAD', $diff));
-        }
-
-        // Check --report option
         $report = $input->getOption('report');
         if (\is_string($report) && $report !== '') {
             $parser = new GitScopeParser();

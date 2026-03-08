@@ -68,13 +68,13 @@ $profiler->start('collection', 'pipeline');
 
 ```bash
 # Summary output to stderr
-bin/aimd analyze src/ --profile
+bin/aimd check src/ --profile
 
 # Export to JSON file
-bin/aimd analyze src/ --profile=profile.json
+bin/aimd check src/ --profile=profile.json
 
 # Export in Chrome Tracing format
-bin/aimd analyze src/ --profile=trace.json --profile-format=chrome-tracing
+bin/aimd check src/ --profile=trace.json --profile-format=chrome-tracing
 ```
 
 ### Summary Output
@@ -217,4 +217,4 @@ class MyService
 ## Related Components
 
 - [AnalysisPipeline](../../Analysis/Pipeline/) — main profiler consumer
-- [AnalyzeCommand](../Console/Command/) — CLI integration
+- [CheckCommand](../Console/Command/) — CLI integration

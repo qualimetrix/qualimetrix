@@ -40,49 +40,7 @@ What AIMD should own:              What to leave to others:
 
 Must-fix issues that affect trust in AIMD's output.
 
-### 1.1 ~~MI Uses Physical LOC Instead of LLOC~~ [DONE]
-
-Fixed in commit 1048c9f. AIMD now uses LLOC (logical lines -- statement count) instead of physical LOC for the MI formula.
-
-**Classification:** Real accuracy issue
-**Impact:** MI was systematically underestimated by 10-16 points
-**Location:** `src/Metrics/Halstead/HalsteadVisitor.php` (fixed)
-
-MaintainabilityIndexCollector now uses LLOC from the LocCollector instead of physical LOC from HalsteadVisitor.
-
-### 1.2 Document CCN Variant
-
-**Classification:** Design choice (not a bug), but needs documentation
-**Impact:** Users comparing AIMD CCN with other tools see inflated numbers
-
-AIMD's `SIMPLE_DECISION_NODES` explicitly includes:
-- `Coalesce` (`??`) — not in standard CCN2
-- `NullsafeMethodCall` (`?->`) — not in standard CCN2
-- `Ternary` (`?:`) — in standard CCN2
-
-This is a defensible choice (all are decision points semantically), but:
-- It's not documented in `src/Metrics/README.md`
-- The metric is exposed as `ccn` which implies standard CCN
-- Users get confused when values don't match phpmd/pdepend
-
-**Options to consider:**
-1. Document as "CCN2+" and rename metric to clarify
-2. Make `??` / `?->` counting configurable (opt-in/opt-out)
-3. Report both standard CCN and CCN2+ variants
-
-### 1.3 NPath for `match` Expressions
-
-**Classification:** Methodology difference (AIMD is arguably more correct)
-**Impact:** AIMD values are 10-58x lower than pdepend for `match`-heavy methods
-
-AIMD uses **additive** NPath for `match`: `NPath = 1 + Σ NPath(arm_body)`
-This is consistent with Nejmeh's formula for `switch`.
-
-pdepend produces extreme values (e.g., 1,417,176 for a method with ~16 match arms) — likely because it doesn't properly handle `match(true) { X instanceof A => ... }` and treats each `instanceof` as a nested conditional.
-
-**Verdict:** AIMD's approach is more reasonable. pdepend's values are impractical (1.4M NPath is not actionable). No fix needed, but should be documented.
-
-### 1.4 Add Raw Metric Export
+### 1.1 Add Raw Metric Export
 
 **Classification:** Missing feature
 **Impact:** Can't compare metrics without threshold violations, limits use as metrics platform
@@ -160,8 +118,9 @@ These fill the biggest competitive gaps.
   - `security.sql-injection` — direct superglobal concatenation in SQL strings
   - `security.xss` — direct echo/print of superglobals
   - `security.command-injection` — superglobals in exec/system/passthru/shell_exec
+  - `security.sensitive-parameter` — parameters with sensitive names (`$password`, `$secret`, `$token`, `$apiKey`, etc.) missing `#[\SensitiveParameter]` attribute (PHP 8.2+)
 - **Approach:** AST pattern matching (NOT full taint analysis)
-- **Limitation:** Only catches direct flows, not through variables or function calls
+- **Limitation:** Only catches direct flows, not through variables or function calls (except `sensitive-parameter` which is purely signature-based)
 - **Effort:** Medium
 - **Value:** High for positioning
 

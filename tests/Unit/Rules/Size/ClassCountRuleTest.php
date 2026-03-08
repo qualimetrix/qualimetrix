@@ -59,7 +59,7 @@ final class ClassCountRuleTest extends TestCase
     public function testGetCliAliases(): void
     {
         self::assertSame(
-            ['ns-warning' => 'warning', 'ns-error' => 'error'],
+            ['class-count-warning' => 'warning', 'class-count-error' => 'error'],
             ClassCountRule::getCliAliases(),
         );
     }
