@@ -171,7 +171,8 @@ Value Object — a class with collected metrics.
 Value Object — metric container for a single entity (file/class/method).
 
 **Methods:**
-- `set(string $name, int|float $value): void`
+- `with(string $name, int|float $value): self` — returns new MetricBag with the metric set (immutable)
+- `fromArray(array $metrics): self` — static factory method
 - `get(string $name): int|float|null`
 - `has(string $name): bool`
 - `all(): array<string, int|float>`

@@ -116,9 +116,11 @@ Finding PHP files via `FileDiscoveryInterface`.
 **Phase 3: Aggregation**
 - Aggregating metrics by levels (method -> class -> namespace -> project)
 - Running global collectors
+- Re-aggregating metrics after global collectors (so global metrics like CBO, Instability, NOC, Distance are properly aggregated to namespace and project levels)
+- Running circular dependency detection
 
 **Phase 4: RuleExecution**
-- Creating `AnalysisContext` with repository, dependency graph, and rule options
+- Creating `AnalysisContext` with repository, dependency graph, circular dependency results, and rule options
 - Executing all rules via `RuleExecutor`
 - Applying filters (Baseline, Suppression)
 

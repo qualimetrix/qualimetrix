@@ -384,7 +384,7 @@ Code smell rules detect common anti-patterns and bad practices. All code smell r
 - Extend `AbstractCodeSmellRule`
 - Use `CodeSmellOptions` with a single `enabled` option (default: `true`)
 - Produce **Warning** severity violations
-- Operate at file level — report counts per file
+- Report violations per occurrence with precise line numbers
 - Have no CLI aliases (use `--disable-rule=<name>` to disable)
 
 | Rule                             | Description                     | What it detects                                                              |

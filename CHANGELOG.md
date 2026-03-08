@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - `security.hardcoded-credentials` rule for detecting hardcoded passwords, API keys, secrets, and other credentials in PHP code
+- Code smell rules now report violations per occurrence with precise line numbers instead of a single violation per file
+- Global collector metrics (CBO, Instability, NOC, Distance) are now properly aggregated to namespace and project levels
+- Circular dependency detection is now active — `architecture.circular-dependency` rule produces violations
+
+### Fixed
+- Fixed AST visitors losing class context after anonymous classes, causing incorrect FQN for subsequent methods
+- Fixed derived metric collectors not seeing each other's outputs (e.g., Maintainability Index depending on Halstead)
+- Fixed dependency graph not being passed to analysis rules
 - `code-smell.long-parameter-list` rule — detects methods with too many parameters (warning: 4, error: 6)
 - `code-smell.unreachable-code` rule — detects dead code after return/throw/exit statements
 - `design.type-coverage` rule — measures type declaration coverage for parameters, return types, and properties per class
