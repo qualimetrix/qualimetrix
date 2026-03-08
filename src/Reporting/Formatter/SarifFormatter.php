@@ -42,7 +42,7 @@ final class SarifFormatter implements FormatterInterface
         if ($context->basePath !== '') {
             $run['originalUriBaseIds'] = [
                 '%SRCROOT%' => [
-                    'uri' => 'file:///' . ltrim(rtrim($context->basePath, '/'), '/') . '/',
+                    'uri' => self::pathToFileUri($context->basePath),
                 ],
             ];
         }
@@ -192,5 +192,24 @@ final class SarifFormatter implements FormatterInterface
             Severity::Error => 'error',
             Severity::Warning => 'warning',
         };
+    }
+
+    /**
+     * Converts an absolute filesystem path to a file:/// URI (RFC 8089).
+     *
+     * Handles both Unix (/home/user/project) and Windows (C:\Users\project) paths.
+     */
+    private static function pathToFileUri(string $path): string
+    {
+        // Normalize backslashes to forward slashes (Windows)
+        $path = str_replace('\\', '/', $path);
+
+        // Ensure trailing slash
+        $path = rtrim($path, '/') . '/';
+
+        // Ensure exactly one leading slash (Unix paths already have it, Windows paths like C:/ don't)
+        $path = ltrim($path, '/');
+
+        return 'file:///' . $path;
     }
 }

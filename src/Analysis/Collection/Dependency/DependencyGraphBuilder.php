@@ -51,23 +51,27 @@ final class DependencyGraphBuilder
             $classMap[$sourceKey] = $dep->source;
             $classMap[$targetKey] = $dep->target;
 
-            // Collect unique namespaces
+            // Collect unique namespaces (deduplicate via array key)
             $sourceNs = $dep->source->namespace;
             $targetNs = $dep->target->namespace;
 
-            if ($sourceNs !== null) {
-                $nsPath = SymbolPath::forNamespace($sourceNs);
-                $namespaceMap[$nsPath->toCanonical()] = $nsPath;
+            if ($sourceNs !== null && !isset($namespaceMap[$sourceNs])) {
+                $namespaceMap[$sourceNs] = SymbolPath::forNamespace($sourceNs);
             }
-            if ($targetNs !== null) {
-                $nsPath = SymbolPath::forNamespace($targetNs);
-                $namespaceMap[$nsPath->toCanonical()] = $nsPath;
+            if ($targetNs !== null && !isset($namespaceMap[$targetNs])) {
+                $namespaceMap[$targetNs] = SymbolPath::forNamespace($targetNs);
             }
         }
 
+        // Re-key namespaceMap by canonical path for downstream consumers
+        $canonicalNamespaceMap = [];
+        foreach ($namespaceMap as $nsPath) {
+            $canonicalNamespaceMap[$nsPath->toCanonical()] = $nsPath;
+        }
+
         // Precompute namespace Ce/Ca
-        $namespaceCe = $this->computeNamespaceCe($dependencies, $namespaceMap);
-        $namespaceCa = $this->computeNamespaceCa($dependencies, $namespaceMap);
+        $namespaceCe = $this->computeNamespaceCe($dependencies, $canonicalNamespaceMap);
+        $namespaceCa = $this->computeNamespaceCa($dependencies, $canonicalNamespaceMap);
 
         // Precompute class-level Ce/Ca (unique targets/sources per class)
         $classCe = $this->computeClassCe($bySource);
@@ -78,7 +82,7 @@ final class DependencyGraphBuilder
             $bySource,
             $byTarget,
             array_values($classMap),
-            array_values($namespaceMap),
+            array_values($canonicalNamespaceMap),
             $namespaceCe,
             $namespaceCa,
             $classCe,

@@ -359,6 +359,32 @@ final class SarifFormatterTest extends TestCase
         self::assertSame('file:///home/user/project/', $run['originalUriBaseIds']['%SRCROOT%']['uri']);
     }
 
+    public function testWindowsBasePathNormalizedToFileUri(): void
+    {
+        $report = ReportBuilder::create()
+            ->addViolation(new Violation(
+                location: new Location('src/Service/UserService.php', 42),
+                symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
+                ruleName: 'cyclomatic-complexity',
+                violationCode: 'cyclomatic-complexity',
+                message: 'test',
+                severity: Severity::Error,
+            ))
+            ->filesAnalyzed(1)
+            ->filesSkipped(0)
+            ->duration(0.1)
+            ->build();
+
+        $context = new FormatterContext(basePath: 'C:\Users\project');
+        $output = $this->formatter->format($report, $context);
+        $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
+
+        $run = $data['runs'][0];
+
+        self::assertArrayHasKey('originalUriBaseIds', $run);
+        self::assertSame('file:///C:/Users/project/', $run['originalUriBaseIds']['%SRCROOT%']['uri']);
+    }
+
     public function testAlreadyRelativePathUnchanged(): void
     {
         $report = ReportBuilder::create()
