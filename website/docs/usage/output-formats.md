@@ -1,6 +1,6 @@
 # Output Formats
 
-AI Mess Detector supports 6 output formats. Choose the one that fits your workflow.
+AI Mess Detector supports 7 output formats. Choose the one that fits your workflow.
 
 ```bash
 bin/aimd check src/ --format=<format>
@@ -113,6 +113,70 @@ Machine-readable JSON output. Compatible with PHPMD JSON format for tool integra
 ```bash
 bin/aimd check src/ --format=json --no-progress > report.json
 ```
+
+---
+
+## metrics-json
+
+Raw metric values for every symbol (file, class, method, namespace). Unlike `json` which outputs violations, `metrics-json` exports the underlying metric data that rules evaluate.
+
+**When to use:** Custom dashboards, trend analysis, data science pipelines, or building your own quality gates on raw metrics.
+
+**Example output (abbreviated):**
+
+```json
+{
+    "version": "1.0.0",
+    "package": "aimd",
+    "timestamp": "2025-01-15T10:30:00+00:00",
+    "symbols": [
+        {
+            "type": "file",
+            "name": "src/Service/UserService.php",
+            "file": "src/Service/UserService.php",
+            "line": 1,
+            "metrics": {
+                "loc": 150,
+                "lloc": 120,
+                "classCount": 1,
+                "ccn:App\\Service\\UserService::calculate": 15,
+                "cognitive:App\\Service\\UserService::calculate": 22,
+                "halstead.volume:App\\Service\\UserService::calculate": 384.5
+            }
+        },
+        {
+            "type": "class",
+            "name": "App\\Service\\UserService",
+            "file": "src/Service/UserService.php",
+            "line": 10,
+            "metrics": {
+                "methodCount": 8,
+                "propertyCount": 3,
+                "lcom4": 2,
+                "wmc": 35,
+                "ca": 5,
+                "ce": 12,
+                "cbo": 17,
+                "instability": 0.71
+            }
+        }
+    ],
+    "summary": {
+        "filesAnalyzed": 45,
+        "filesSkipped": 0,
+        "duration": 1.234
+    }
+}
+```
+
+**Usage:**
+
+```bash
+bin/aimd check src/ --format=metrics-json --no-progress > metrics.json
+```
+
+!!! note
+    The `metrics-json` format exports **all collected metrics**, not just those that triggered violations. This makes it useful for tracking metric trends over time, even for code that passes all rules.
 
 ---
 
@@ -266,6 +330,7 @@ Violations appear inline in the **Changes** tab of your Merge Request.
 | `text`         | Good     | Parseable | `--group-by`                 | Any (exit code)            |
 | `text-verbose` | Best     | No        | `--group-by` (default: file) | Any (exit code)            |
 | `json`         | No       | Yes       | Built-in (by file)           | Custom scripts             |
+| `metrics-json` | No       | Yes       | Built-in (by symbol)         | Custom scripts, dashboards |
 | `checkstyle`   | No       | Yes       | Built-in (by file)           | Jenkins, SonarQube         |
 | `sarif`        | No       | Yes       | Built-in                     | GitHub, VS Code, JetBrains |
 | `gitlab`       | No       | Yes       | Flat list                    | GitLab MR widget           |

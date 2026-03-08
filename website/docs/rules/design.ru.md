@@ -260,3 +260,93 @@ rules:
 bin/aimd check src/ --rule-opt="design.inheritance:warning=5"
 bin/aimd check src/ --rule-opt="design.inheritance:error=7"
 ```
+
+---
+
+## Покрытие типами (Type Coverage)
+
+**Rule ID:** `design.type-coverage`
+
+### Что измеряет
+
+Проверяет процент объявлений типов в классе. Может создать до трёх нарушений на класс:
+
+- **Покрытие типами параметров** -- процент параметров методов с объявлениями типов
+- **Покрытие типами возвращаемых значений** -- процент методов с объявлениями типов возвращаемых значений
+- **Покрытие типами свойств** -- процент свойств с объявлениями типов
+
+В отличие от большинства правил, это правило использует **инвертированные пороги**: меньшие значения хуже. Предупреждение выдаётся, когда покрытие падает ниже порога warning, а ошибка -- когда падает ниже порога error.
+
+### Пороговые значения
+
+| Аспект    | Warning (ниже) | Error (ниже) |
+| --------- | -------------- | ------------ |
+| Параметры | 80%            | 50%          |
+| Возврат   | 80%            | 50%          |
+| Свойства  | 80%            | 50%          |
+
+### Пример
+
+```php
+class LegacyService
+{
+    private $cache;       // нет типа -> снижает покрытие свойств
+    public $debug = true; // нет типа -> снижает покрытие свойств
+
+    // Нет типа возврата -> снижает покрытие возвратов
+    // $data без типа -> снижает покрытие параметров
+    public function process($data)
+    {
+        // ...
+    }
+
+    public function reset(): void
+    {
+        // есть тип возврата -- хорошо
+    }
+}
+// Покрытие параметров: 0% (0 из 1 типизированы) -> Error
+// Покрытие возвратов: 50% (1 из 2 типизированы) -> Warning
+// Покрытие свойств: 0% (0 из 2 типизированы) -> Error
+```
+
+### Как исправить
+
+Добавьте объявления типов:
+
+```php
+class LegacyService
+{
+    private CacheInterface $cache;
+    public bool $debug = true;
+
+    public function process(array $data): Result
+    {
+        // ...
+    }
+
+    public function reset(): void { /* ... */ }
+}
+```
+
+!!! tip "Совет"
+    Начните с добавления типов в новый код и постепенно добавляйте типы в существующий код при рефакторинге. PHP 8.0+ поддерживает union-типы (`string|int`), а PHP 8.1+ -- intersection-типы (`Countable&Iterator`) для сложных случаев.
+
+### Настройка
+
+```yaml
+# aimd.yaml
+rules:
+  design.type-coverage:
+    param_warning: 80
+    param_error: 50
+    return_warning: 80
+    return_error: 50
+    property_warning: 80
+    property_error: 50
+```
+
+```bash
+bin/aimd check src/ --rule-opt="design.type-coverage:param_warning=90"
+bin/aimd check src/ --rule-opt="design.type-coverage:param_error=60"
+```

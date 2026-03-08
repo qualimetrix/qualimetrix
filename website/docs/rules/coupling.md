@@ -82,6 +82,8 @@ rules:
     namespace:
       enabled: true
       min_class_count: 5
+      exclude_namespaces:
+        - App\Core\ValueObject
 ```
 
 ```bash
@@ -172,6 +174,8 @@ rules:
       max_error: 1.0
     namespace:
       min_class_count: 5
+      exclude_namespaces:
+        - App\Core\ValueObject
 ```
 
 ```bash

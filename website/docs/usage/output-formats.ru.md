@@ -1,6 +1,6 @@
 # Форматы вывода
 
-AI Mess Detector поддерживает 6 форматов вывода. Выбирайте тот, который подходит для вашего рабочего процесса.
+AI Mess Detector поддерживает 7 форматов вывода. Выбирайте тот, который подходит для вашего рабочего процесса.
 
 ```bash
 bin/aimd check src/ --format=<формат>
@@ -113,6 +113,70 @@ bin/aimd check src/ --format=text-verbose --group-by=severity
 ```bash
 bin/aimd check src/ --format=json --no-progress > report.json
 ```
+
+---
+
+## metrics-json
+
+Необработанные значения метрик для каждого символа (файл, класс, метод, пространство имён). В отличие от `json`, который выводит нарушения, `metrics-json` экспортирует исходные данные метрик, которые оценивают правила.
+
+**Когда использовать:** Пользовательские дашборды, анализ трендов, пайплайны data science или создание собственных критериев качества на основе сырых метрик.
+
+**Пример вывода (сокращённо):**
+
+```json
+{
+    "version": "1.0.0",
+    "package": "aimd",
+    "timestamp": "2025-01-15T10:30:00+00:00",
+    "symbols": [
+        {
+            "type": "file",
+            "name": "src/Service/UserService.php",
+            "file": "src/Service/UserService.php",
+            "line": 1,
+            "metrics": {
+                "loc": 150,
+                "lloc": 120,
+                "classCount": 1,
+                "ccn:App\\Service\\UserService::calculate": 15,
+                "cognitive:App\\Service\\UserService::calculate": 22,
+                "halstead.volume:App\\Service\\UserService::calculate": 384.5
+            }
+        },
+        {
+            "type": "class",
+            "name": "App\\Service\\UserService",
+            "file": "src/Service/UserService.php",
+            "line": 10,
+            "metrics": {
+                "methodCount": 8,
+                "propertyCount": 3,
+                "lcom4": 2,
+                "wmc": 35,
+                "ca": 5,
+                "ce": 12,
+                "cbo": 17,
+                "instability": 0.71
+            }
+        }
+    ],
+    "summary": {
+        "filesAnalyzed": 45,
+        "filesSkipped": 0,
+        "duration": 1.234
+    }
+}
+```
+
+**Использование:**
+
+```bash
+bin/aimd check src/ --format=metrics-json --no-progress > metrics.json
+```
+
+!!! note
+    Формат `metrics-json` экспортирует **все собранные метрики**, а не только те, которые вызвали нарушения. Это делает его полезным для отслеживания трендов метрик со временем, даже для кода, который проходит все правила.
 
 ---
 
@@ -266,6 +330,7 @@ code_quality:
 | `text`         | Хорошая    | Парсируемый | `--group-by`                   | Любой (код выхода)         |
 | `text-verbose` | Лучшая     | Нет         | `--group-by` (по умолч.: file) | Любой (код выхода)         |
 | `json`         | Нет        | Да          | Встроенная (по файлам)         | Скрипты                    |
+| `metrics-json` | Нет        | Да          | Встроенная (по символам)       | Скрипты, дашборды          |
 | `checkstyle`   | Нет        | Да          | Встроенная (по файлам)         | Jenkins, SonarQube         |
 | `sarif`        | Нет        | Да          | Встроенная                     | GitHub, VS Code, JetBrains |
 | `gitlab`       | Нет        | Да          | Плоский список                 | GitLab MR виджет           |

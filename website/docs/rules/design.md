@@ -260,3 +260,93 @@ rules:
 bin/aimd check src/ --rule-opt="design.inheritance:warning=5"
 bin/aimd check src/ --rule-opt="design.inheritance:error=7"
 ```
+
+---
+
+## Type Coverage
+
+**Rule ID:** `design.type-coverage`
+
+### What it measures
+
+Checks the percentage of type declarations in a class. Produces up to three violations per class:
+
+- **Parameter type coverage** -- percentage of method parameters with type declarations
+- **Return type coverage** -- percentage of methods with return type declarations
+- **Property type coverage** -- percentage of properties with type declarations
+
+Unlike most rules, this one uses **inverted thresholds**: lower values are worse. A warning is reported when coverage drops below the warning threshold, and an error when it drops below the error threshold.
+
+### Thresholds
+
+| Aspect    | Warning (below) | Error (below) |
+| --------- | --------------- | ------------- |
+| Parameter | 80%             | 50%           |
+| Return    | 80%             | 50%           |
+| Property  | 80%             | 50%           |
+
+### Example
+
+```php
+class LegacyService
+{
+    private $cache;       // no type -> reduces property coverage
+    public $debug = true; // no type -> reduces property coverage
+
+    // No return type -> reduces return coverage
+    // $data has no type -> reduces parameter coverage
+    public function process($data)
+    {
+        // ...
+    }
+
+    public function reset(): void
+    {
+        // has return type -- good
+    }
+}
+// Parameter coverage: 0% (0 of 1 typed) -> Error
+// Return coverage: 50% (1 of 2 typed) -> Warning
+// Property coverage: 0% (0 of 2 typed) -> Error
+```
+
+### How to fix
+
+Add type declarations:
+
+```php
+class LegacyService
+{
+    private CacheInterface $cache;
+    public bool $debug = true;
+
+    public function process(array $data): Result
+    {
+        // ...
+    }
+
+    public function reset(): void { /* ... */ }
+}
+```
+
+!!! tip
+    Start by adding types to new code and gradually add types to existing code during refactoring. PHP 8.0+ supports union types (`string|int`) and PHP 8.1+ supports intersection types (`Countable&Iterator`) for complex cases.
+
+### Configuration
+
+```yaml
+# aimd.yaml
+rules:
+  design.type-coverage:
+    param_warning: 80
+    param_error: 50
+    return_warning: 80
+    return_error: 50
+    property_warning: 80
+    property_error: 50
+```
+
+```bash
+bin/aimd check src/ --rule-opt="design.type-coverage:param_warning=90"
+bin/aimd check src/ --rule-opt="design.type-coverage:param_error=60"
+```

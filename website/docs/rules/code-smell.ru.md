@@ -382,6 +382,134 @@ class UserController
 
 ---
 
+## Длинный список параметров (Long Parameter List)
+
+**Идентификатор правила:** `code-smell.long-parameter-list`
+
+### Что измеряет
+
+Обнаруживает методы и функции со слишком большим количеством параметров. Длинный список параметров затрудняет правильный вызов метода, его тестирование и часто указывает на то, что метод делает слишком много. Рассмотрите использование объекта параметров или разделение метода.
+
+### Пороговые значения
+
+| Значение | Серьёзность | Что означает                                    |
+| -------- | ----------- | ----------------------------------------------- |
+| 4        | Warning     | Стоит сгруппировать параметры                   |
+| 6+       | Error       | Слишком много параметров, необходим рефакторинг |
+
+### Пример
+
+```php
+// Плохо: слишком много параметров, трудно запомнить порядок
+public function createUser(
+    string $name,
+    string $email,
+    string $phone,
+    string $address,
+    string $city,
+    string $country,
+    string $zipCode,
+): User {
+    // ...
+}
+```
+
+### Как исправить
+
+1. **Используйте объект параметров (DTO):**
+
+    ```php
+    final readonly class CreateUserRequest
+    {
+        public function __construct(
+            public string $name,
+            public string $email,
+            public string $phone,
+            public Address $address,
+        ) {}
+    }
+
+    public function createUser(CreateUserRequest $request): User { /* ... */ }
+    ```
+
+2. **Разделите метод,** если параметры относятся к разным ответственностям.
+
+### Конфигурация
+
+```yaml
+# aimd.yaml
+rules:
+  code-smell.long-parameter-list:
+    warning: 4
+    error: 6
+```
+
+```bash
+bin/aimd check src/ --rule-opt="code-smell.long-parameter-list:warning=5"
+bin/aimd check src/ --rule-opt="code-smell.long-parameter-list:error=8"
+```
+
+---
+
+## Недостижимый код (Unreachable Code)
+
+**Идентификатор правила:** `code-smell.unreachable-code`
+
+### Что измеряет
+
+Обнаруживает код, который никогда не может быть выполнен, потому что находится после терминального оператора (`return`, `throw`, `exit`/`die`, `continue`, `break`, `goto`). Мёртвый код добавляет шум, сбивает с толку читателей и может указывать на логическую ошибку.
+
+### Пример
+
+```php
+public function process(Order $order): string
+{
+    if ($order->isPaid()) {
+        return 'processed';
+    }
+
+    return 'pending';
+
+    // Плохо: этот код никогда не выполнится
+    $this->logger->info('Processing complete');
+    $this->notify($order);
+}
+```
+
+### Как исправить
+
+Удалите недостижимый код. Если код должен был выполняться, исправьте поток управления:
+
+```php
+public function process(Order $order): string
+{
+    if ($order->isPaid()) {
+        $this->logger->info('Processing complete');
+        $this->notify($order);
+        return 'processed';
+    }
+
+    return 'pending';
+}
+```
+
+### Конфигурация
+
+```yaml
+# aimd.yaml
+rules:
+  code-smell.unreachable-code:
+    warning: 1
+    error: 1
+```
+
+```bash
+bin/aimd check src/ --rule-opt="code-smell.unreachable-code:warning=1"
+bin/aimd check src/ --rule-opt="code-smell.unreachable-code:error=1"
+```
+
+---
+
 ## Конфигурация
 
 Все правила запахов кода имеют одинаковую простую конфигурацию -- просто включить или выключить:
@@ -407,6 +535,12 @@ rules:
     enabled: true
   code-smell.error-suppression:
     enabled: true
+  code-smell.long-parameter-list:
+    warning: 4
+    error: 6
+  code-smell.unreachable-code:
+    warning: 1
+    error: 1
 ```
 
 Также можно отключить отдельные правила через опцию `--disable-rule` в CLI:

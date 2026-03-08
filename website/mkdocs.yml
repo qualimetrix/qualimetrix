@@ -63,6 +63,7 @@ plugins:
             Design: Проектирование
             Architecture: Архитектура
             Code Smells: Запахи кода
+            Security: Безопасность
             CI/CD Integration: Интеграция с CI/CD
             GitHub Actions: GitHub Actions
             Other CI Systems: Другие CI системы
@@ -106,6 +107,7 @@ nav:
       - Design: rules/design.md
       - Architecture: rules/architecture.md
       - Code Smells: rules/code-smell.md
+      - Security: rules/security.md
   - CI/CD Integration:
       - GitHub Actions: ci-cd/github-actions.md
       - Other CI Systems: ci-cd/other-ci.md

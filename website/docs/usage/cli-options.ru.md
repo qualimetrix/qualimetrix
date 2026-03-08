@@ -63,7 +63,7 @@ bin/aimd check src/ --format=json
 bin/aimd check src/ --format=sarif
 ```
 
-Доступные форматы: `text`, `text-verbose`, `json`, `checkstyle`, `sarif`, `gitlab`.
+Доступные форматы: `text`, `text-verbose`, `json`, `metrics-json`, `checkstyle`, `sarif`, `gitlab`.
 
 Подробности о каждом формате смотрите в разделе [Форматы вывода](output-formats.md).
 
@@ -368,15 +368,21 @@ bin/aimd check src/ --rule-opt=complexity.cyclomatic:method.error=30
 
 === "Проектирование"
 
-| Флаг                   | Правило            | Опция      |
-| ---------------------- | ------------------ | ---------- |
-| `--dit-warning=N`      | design.inheritance | warning    |
-| `--dit-error=N`        | design.inheritance | error      |
-| `--lcom-warning=N`     | design.lcom        | warning    |
-| `--lcom-error=N`       | design.lcom        | error      |
-| `--lcom-min-methods=N` | design.lcom        | minMethods |
-| `--noc-warning=N`      | design.noc         | warning    |
-| `--noc-error=N`        | design.noc         | error      |
+| Флаг                                 | Правило              | Опция            |
+| ------------------------------------ | -------------------- | ---------------- |
+| `--dit-warning=N`                    | design.inheritance   | warning          |
+| `--dit-error=N`                      | design.inheritance   | error            |
+| `--lcom-warning=N`                   | design.lcom          | warning          |
+| `--lcom-error=N`                     | design.lcom          | error            |
+| `--lcom-min-methods=N`               | design.lcom          | minMethods       |
+| `--noc-warning=N`                    | design.noc           | warning          |
+| `--noc-error=N`                      | design.noc           | error            |
+| `--type-coverage-param-warning=N`    | design.type-coverage | param_warning    |
+| `--type-coverage-param-error=N`      | design.type-coverage | param_error      |
+| `--type-coverage-return-warning=N`   | design.type-coverage | return_warning   |
+| `--type-coverage-return-error=N`     | design.type-coverage | return_error     |
+| `--type-coverage-property-warning=N` | design.type-coverage | property_warning |
+| `--type-coverage-property-error=N`   | design.type-coverage | property_error   |
 
 === "Сопровождаемость"
 
@@ -385,6 +391,15 @@ bin/aimd check src/ --rule-opt=complexity.cyclomatic:method.error=30
 | `--mi-warning=N` | maintainability.index | warning |
 | `--mi-error=N`   | maintainability.index | error   |
 | `--mi-min-loc=N` | maintainability.index | minLoc  |
+
+=== "Запахи кода"
+
+| Флаг                              | Правило                        | Опция   |
+| --------------------------------- | ------------------------------ | ------- |
+| `--long-parameter-list-warning=N` | code-smell.long-parameter-list | warning |
+| `--long-parameter-list-error=N`   | code-smell.long-parameter-list | error   |
+| `--unreachable-code-warning=N`    | code-smell.unreachable-code    | warning |
+| `--unreachable-code-error=N`      | code-smell.unreachable-code    | error   |
 
 ---
 

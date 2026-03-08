@@ -38,17 +38,22 @@ Rules that check if classes and namespaces are too large.
 
 Rules that check class design and inheritance structure.
 
-| Rule | ID                   | Warning | Error | Scope |
-| ---- | -------------------- | ------- | ----- | ----- |
-| LCOM | `design.lcom`        | 3       | 5     | Class |
-| NOC  | `design.noc`         | 10      | 15    | Class |
-| DIT  | `design.inheritance` | 4       | 6     | Class |
+| Rule                     | ID                     | Warning    | Error      | Scope |
+| ------------------------ | ---------------------- | ---------- | ---------- | ----- |
+| LCOM                     | `design.lcom`          | 3          | 5          | Class |
+| NOC                      | `design.noc`           | 10         | 15         | Class |
+| DIT                      | `design.inheritance`   | 4          | 6          | Class |
+| Type Coverage (param)    | `design.type-coverage` | 80 (below) | 50 (below) | Class |
+| Type Coverage (return)   | `design.type-coverage` | 80 (below) | 50 (below) | Class |
+| Type Coverage (property) | `design.type-coverage` | 80 (below) | 50 (below) | Class |
 
 **LCOM (Lack of Cohesion of Methods)** measures how well the methods in a class belong together. A high LCOM suggests the class should be split.
 
 **NOC (Number of Children)** counts direct subclasses. Too many children means the parent class may be too general.
 
 **DIT (Depth of Inheritance Tree)** counts how many levels of inheritance a class has. Deep hierarchies are harder to understand and maintain.
+
+**Type Coverage** measures the percentage of typed declarations. Unlike most rules, violations are reported when values fall **below** the threshold.
 
 ## Coupling Rules
 
@@ -80,7 +85,7 @@ These rules are **inverted**: a violation is reported when the metric falls **be
 
 ## Code Smell Rules
 
-These rules detect specific patterns that are usually bad practice. They do not have numeric thresholds -- they either find the pattern or they don't.
+These rules detect specific patterns that are usually bad practice. Most do not have numeric thresholds -- they either find the pattern or they don't. Two rules (Long Parameter List and Unreachable Code) use numeric thresholds.
 
 | Rule              | ID                             | Severity | Default |
 | ----------------- | ------------------------------ | -------- | ------- |
@@ -93,6 +98,18 @@ These rules detect specific patterns that are usually bad practice. They do not 
 | exit()/die()      | `code-smell.exit`              | Warning  | enabled |
 | goto              | `code-smell.goto`              | Error    | enabled |
 | Superglobals      | `code-smell.superglobals`      | Warning  | enabled |
+| Long Parameter List | `code-smell.long-parameter-list` | 4 params | 6 params | enabled |
+| Unreachable Code  | `code-smell.unreachable-code`  | 1        | 1        | enabled |
+
+## Security Rules
+
+Rules that detect potential security vulnerabilities.
+
+| Rule                  | ID                               | Severity | Default |
+| --------------------- | -------------------------------- | -------- | ------- |
+| Hardcoded Credentials | `security.hardcoded-credentials` | Error    | enabled |
+
+**Hardcoded Credentials** detects passwords, API keys, and tokens hardcoded directly in source code.
 
 ## How to Customize Thresholds
 

@@ -382,6 +382,134 @@ Common request abstractions:
 
 ---
 
+## Long Parameter List
+
+**Rule ID:** `code-smell.long-parameter-list`
+
+### What it measures
+
+Detects methods and functions with too many parameters. A long parameter list makes the method hard to call correctly, hard to test, and often indicates the method is doing too many things. Consider using a parameter object or splitting the method.
+
+### Thresholds
+
+| Value | Severity | Meaning                              |
+| ----- | -------- | ------------------------------------ |
+| 4     | Warning  | Consider grouping parameters         |
+| 6+    | Error    | Too many parameters, refactor needed |
+
+### Example
+
+```php
+// Bad: too many parameters, hard to remember the order
+public function createUser(
+    string $name,
+    string $email,
+    string $phone,
+    string $address,
+    string $city,
+    string $country,
+    string $zipCode,
+): User {
+    // ...
+}
+```
+
+### How to fix
+
+1. **Use a parameter object (DTO):**
+
+    ```php
+    final readonly class CreateUserRequest
+    {
+        public function __construct(
+            public string $name,
+            public string $email,
+            public string $phone,
+            public Address $address,
+        ) {}
+    }
+
+    public function createUser(CreateUserRequest $request): User { /* ... */ }
+    ```
+
+2. **Split the method** if parameters belong to different responsibilities.
+
+### Configuration
+
+```yaml
+# aimd.yaml
+rules:
+  code-smell.long-parameter-list:
+    warning: 4
+    error: 6
+```
+
+```bash
+bin/aimd check src/ --rule-opt="code-smell.long-parameter-list:warning=5"
+bin/aimd check src/ --rule-opt="code-smell.long-parameter-list:error=8"
+```
+
+---
+
+## Unreachable Code
+
+**Rule ID:** `code-smell.unreachable-code`
+
+### What it measures
+
+Detects code that can never be executed because it appears after a terminal statement (`return`, `throw`, `exit`/`die`, `continue`, `break`, `goto`). Dead code adds noise, confuses readers, and may indicate a logic error.
+
+### Example
+
+```php
+public function process(Order $order): string
+{
+    if ($order->isPaid()) {
+        return 'processed';
+    }
+
+    return 'pending';
+
+    // Bad: this code can never run
+    $this->logger->info('Processing complete');
+    $this->notify($order);
+}
+```
+
+### How to fix
+
+Remove the unreachable code. If the code was supposed to run, fix the control flow:
+
+```php
+public function process(Order $order): string
+{
+    if ($order->isPaid()) {
+        $this->logger->info('Processing complete');
+        $this->notify($order);
+        return 'processed';
+    }
+
+    return 'pending';
+}
+```
+
+### Configuration
+
+```yaml
+# aimd.yaml
+rules:
+  code-smell.unreachable-code:
+    warning: 1
+    error: 1
+```
+
+```bash
+bin/aimd check src/ --rule-opt="code-smell.unreachable-code:warning=1"
+bin/aimd check src/ --rule-opt="code-smell.unreachable-code:error=1"
+```
+
+---
+
 ## Configuration
 
 All code smell rules share the same simple configuration -- just enable or disable:
@@ -407,6 +535,12 @@ rules:
     enabled: true
   code-smell.error-suppression:
     enabled: true
+  code-smell.long-parameter-list:
+    warning: 4
+    error: 6
+  code-smell.unreachable-code:
+    warning: 1
+    error: 1
 ```
 
 You can also disable individual rules via the `--disable-rule` CLI option:

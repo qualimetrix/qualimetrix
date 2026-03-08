@@ -63,7 +63,7 @@ bin/aimd check src/ --format=json
 bin/aimd check src/ --format=sarif
 ```
 
-Available formats: `text`, `text-verbose`, `json`, `checkstyle`, `sarif`, `gitlab`.
+Available formats: `text`, `text-verbose`, `json`, `metrics-json`, `checkstyle`, `sarif`, `gitlab`.
 
 See [Output Formats](output-formats.md) for details on each format.
 
@@ -368,15 +368,21 @@ Many rules have dedicated CLI flags for quick threshold adjustments:
 
 === "Design"
 
-| Flag                   | Rule               | Option     |
-| ---------------------- | ------------------ | ---------- |
-| `--dit-warning=N`      | design.inheritance | warning    |
-| `--dit-error=N`        | design.inheritance | error      |
-| `--lcom-warning=N`     | design.lcom        | warning    |
-| `--lcom-error=N`       | design.lcom        | error      |
-| `--lcom-min-methods=N` | design.lcom        | minMethods |
-| `--noc-warning=N`      | design.noc         | warning    |
-| `--noc-error=N`        | design.noc         | error      |
+| Flag                                 | Rule                 | Option           |
+| ------------------------------------ | -------------------- | ---------------- |
+| `--dit-warning=N`                    | design.inheritance   | warning          |
+| `--dit-error=N`                      | design.inheritance   | error            |
+| `--lcom-warning=N`                   | design.lcom          | warning          |
+| `--lcom-error=N`                     | design.lcom          | error            |
+| `--lcom-min-methods=N`               | design.lcom          | minMethods       |
+| `--noc-warning=N`                    | design.noc           | warning          |
+| `--noc-error=N`                      | design.noc           | error            |
+| `--type-coverage-param-warning=N`    | design.type-coverage | param_warning    |
+| `--type-coverage-param-error=N`      | design.type-coverage | param_error      |
+| `--type-coverage-return-warning=N`   | design.type-coverage | return_warning   |
+| `--type-coverage-return-error=N`     | design.type-coverage | return_error     |
+| `--type-coverage-property-warning=N` | design.type-coverage | property_warning |
+| `--type-coverage-property-error=N`   | design.type-coverage | property_error   |
 
 === "Maintainability"
 
@@ -385,6 +391,15 @@ Many rules have dedicated CLI flags for quick threshold adjustments:
 | `--mi-warning=N` | maintainability.index | warning |
 | `--mi-error=N`   | maintainability.index | error   |
 | `--mi-min-loc=N` | maintainability.index | minLoc  |
+
+=== "Code Smell"
+
+| Flag                              | Rule                           | Option  |
+| --------------------------------- | ------------------------------ | ------- |
+| `--long-parameter-list-warning=N` | code-smell.long-parameter-list | warning |
+| `--long-parameter-list-error=N`   | code-smell.long-parameter-list | error   |
+| `--unreachable-code-warning=N`    | code-smell.unreachable-code    | warning |
+| `--unreachable-code-error=N`      | code-smell.unreachable-code    | error   |
 
 ---
 
