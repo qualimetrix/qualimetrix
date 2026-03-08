@@ -141,7 +141,9 @@ final class DependencyVisitor extends NodeVisitorAbstract
 
     public function leaveNode(Node $node): ?int
     {
-        if ($this->isClassLikeNode($node)) {
+        // Only reset class scope for named classes (skip anonymous classes —
+        // they don't set currentClass on enter, so leaving them shouldn't clear it)
+        if ($this->isClassLikeNode($node) && $this->extractClassLikeName($node) !== null) {
             if ($this->currentContext !== null) {
                 array_push($this->dependencies, ...$this->currentContext->getDependencies());
             }

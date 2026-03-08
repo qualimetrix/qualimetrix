@@ -210,8 +210,8 @@ final class HalsteadVisitor extends NodeVisitorAbstract implements ResettableVis
             return null;
         }
 
-        // Exit class-like scope
-        if ($this->isClassLikeNode($node)) {
+        // Exit class-like scope (skip anonymous classes — they don't set currentClass on enter)
+        if ($this->isClassLikeNode($node) && $this->extractClassLikeName($node) !== null) {
             $this->currentClass = null;
         }
 
