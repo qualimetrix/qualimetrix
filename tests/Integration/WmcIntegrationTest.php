@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Tests\Integration;
 
+use AiMessDetector\Analysis\Aggregator\AggregationHelper;
 use AiMessDetector\Analysis\Aggregator\MetricAggregator;
 use AiMessDetector\Analysis\Repository\InMemoryMetricRepository;
 use AiMessDetector\Core\Metric\MetricBag;
@@ -39,7 +40,7 @@ final class WmcIntegrationTest extends TestCase
 
         // Create aggregator with CCN collector
         $collector = new CyclomaticComplexityCollector();
-        $aggregator = new MetricAggregator([$collector]);
+        $aggregator = new MetricAggregator(AggregationHelper::collectDefinitions([$collector]));
 
         // Aggregate
         $aggregator->aggregate($repository);
@@ -67,7 +68,7 @@ final class WmcIntegrationTest extends TestCase
 
         // Aggregate
         $collector = new CyclomaticComplexityCollector();
-        $aggregator = new MetricAggregator([$collector]);
+        $aggregator = new MetricAggregator(AggregationHelper::collectDefinitions([$collector]));
         $aggregator->aggregate($repository);
 
         // Verify WMC === ccn.sum
@@ -92,7 +93,7 @@ final class WmcIntegrationTest extends TestCase
 
         // Aggregate
         $collector = new CyclomaticComplexityCollector();
-        $aggregator = new MetricAggregator([$collector]);
+        $aggregator = new MetricAggregator(AggregationHelper::collectDefinitions([$collector]));
         $aggregator->aggregate($repository);
 
         // Verify class has no WMC metric (since no methods)
@@ -131,7 +132,7 @@ final class WmcIntegrationTest extends TestCase
 
         // Aggregate
         $collector = new CyclomaticComplexityCollector();
-        $aggregator = new MetricAggregator([$collector]);
+        $aggregator = new MetricAggregator(AggregationHelper::collectDefinitions([$collector]));
         $aggregator->aggregate($repository);
 
         // Verify both classes have WMC

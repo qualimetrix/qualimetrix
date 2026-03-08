@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Tests\Unit\Analysis\Aggregator;
 
+use AiMessDetector\Analysis\Aggregator\AggregationHelper;
 use AiMessDetector\Analysis\Aggregator\MetricAggregator;
 use AiMessDetector\Analysis\Repository\InMemoryMetricRepository;
 use AiMessDetector\Core\Metric\MetricBag;
@@ -12,7 +13,6 @@ use AiMessDetector\Core\Violation\SymbolPath;
 use AiMessDetector\Metrics\Complexity\CyclomaticComplexityCollector;
 use AiMessDetector\Metrics\Size\ClassCountCollector;
 use AiMessDetector\Metrics\Size\LocCollector;
-use ArrayIterator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -283,7 +283,7 @@ final class MetricAggregatorTest extends TestCase
             10,
         );
 
-        $aggregator = new MetricAggregator([$collectorWithoutDefinitions]);
+        $aggregator = new MetricAggregator(AggregationHelper::collectDefinitions([$collectorWithoutDefinitions]));
         $aggregator->aggregate($repository);
 
         // Should not crash, no class-level metrics should be added
@@ -339,13 +339,13 @@ final class MetricAggregatorTest extends TestCase
     #[Test]
     public function itAcceptsIterableCollectors(): void
     {
-        // Test with ArrayIterator instead of array
-        $collectors = new ArrayIterator([
+        // Test with definitions from multiple collectors
+        $collectors = [
             new CyclomaticComplexityCollector(),
             new LocCollector(),
-        ]);
+        ];
 
-        $aggregator = new MetricAggregator($collectors);
+        $aggregator = new MetricAggregator(AggregationHelper::collectDefinitions($collectors));
         $repository = new InMemoryMetricRepository();
 
         // Add test data
@@ -416,10 +416,10 @@ final class MetricAggregatorTest extends TestCase
 
     private function createAggregator(): MetricAggregator
     {
-        return new MetricAggregator([
+        return new MetricAggregator(AggregationHelper::collectDefinitions([
             new CyclomaticComplexityCollector(),
             new ClassCountCollector(),
             new LocCollector(),
-        ]);
+        ]));
     }
 }

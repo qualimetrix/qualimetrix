@@ -61,4 +61,14 @@ final class GlobalCollectorRunner
     {
         return $this->sortedCollectors !== [];
     }
+
+    /**
+     * Returns all sorted collectors.
+     *
+     * @return list<GlobalContextCollectorInterface>
+     */
+    public function getCollectors(): array
+    {
+        return $this->sortedCollectors;
+    }
 }

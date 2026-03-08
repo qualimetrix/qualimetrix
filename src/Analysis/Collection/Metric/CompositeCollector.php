@@ -135,6 +135,10 @@ final class CompositeCollector
     /**
      * Applies derived collectors to compute derived metrics.
      *
+     * Derived collectors are sorted topologically based on their requires()/provides()
+     * dependencies, and results are accumulated so each collector can see outputs
+     * of previously executed collectors.
+     *
      * Optimized: indexes metrics by FQN in a single pass (O(M)),
      * then applies derived collectors for each FQN (O(N × K)).
      * Total complexity: O(M + N × K) instead of O(N × M × K).
@@ -148,12 +152,19 @@ final class CompositeCollector
             return $baseBag;
         }
 
+        // Sort derived collectors topologically so each can see previous outputs
+        $sortedCollectors = $this->sortDerivedCollectors($this->derivedCollectors);
+
         $result = $baseBag;
 
         // Apply derived collectors for each FQN — O(N × K)
-        foreach ($metricsByFqn as $fqn => $methodMetrics) {
-            foreach ($this->derivedCollectors as $derivedCollector) {
-                $derivedMetrics = $derivedCollector->calculate($methodMetrics);
+        // Accumulate results so each derived collector can see previous outputs
+        foreach ($metricsByFqn as $fqn => $workingMetrics) {
+            foreach ($sortedCollectors as $derivedCollector) {
+                $derivedMetrics = $derivedCollector->calculate($workingMetrics);
+
+                // Accumulate into working metrics so next collector can see these results
+                $workingMetrics = $workingMetrics->merge($derivedMetrics);
 
                 foreach ($derivedMetrics->all() as $name => $value) {
                     $result = $result->with($name . ':' . $fqn, $value);
@@ -162,6 +173,80 @@ final class CompositeCollector
         }
 
         return $result;
+    }
+
+    /**
+     * Sorts derived collectors topologically using Kahn's algorithm.
+     *
+     * @param list<DerivedCollectorInterface> $collectors
+     *
+     * @return list<DerivedCollectorInterface>
+     */
+    private function sortDerivedCollectors(array $collectors): array
+    {
+        if (\count($collectors) <= 1) {
+            return $collectors;
+        }
+
+        // Build mapping: collector name → collector index
+        $indexByName = [];
+        foreach ($collectors as $index => $collector) {
+            $indexByName[$collector->getName()] = $index;
+        }
+
+        // Build mapping: provided metric name → collector name
+        $providers = [];
+        foreach ($collectors as $collector) {
+            $name = $collector->getName();
+            foreach ($collector->provides() as $metric) {
+                $providers[$metric] = $name;
+            }
+        }
+
+        // Calculate in-degree and build dependency graph
+        $inDegree = array_fill(0, \count($collectors), 0);
+        $dependents = array_fill(0, \count($collectors), []);
+
+        foreach ($collectors as $index => $collector) {
+            $seen = [];
+            foreach ($collector->requires() as $required) {
+                // requires() returns collector names, not metric names
+                if (isset($indexByName[$required]) && !isset($seen[$required])) {
+                    $seen[$required] = true;
+                    $providerIndex = $indexByName[$required];
+                    $inDegree[$index]++;
+                    $dependents[$providerIndex][] = $index;
+                }
+            }
+        }
+
+        // Kahn's algorithm
+        $queue = [];
+        foreach ($inDegree as $index => $degree) {
+            if ($degree === 0) {
+                $queue[] = $index;
+            }
+        }
+
+        $sorted = [];
+        while ($queue !== []) {
+            $current = array_shift($queue);
+            $sorted[] = $collectors[$current];
+
+            foreach ($dependents[$current] as $dependentIndex) {
+                $inDegree[$dependentIndex]--;
+                if ($inDegree[$dependentIndex] === 0) {
+                    $queue[] = $dependentIndex;
+                }
+            }
+        }
+
+        // If not all sorted, fall back to original order (cycle — shouldn't happen)
+        if (\count($sorted) !== \count($collectors)) {
+            return $collectors;
+        }
+
+        return $sorted;
     }
 
     /**
