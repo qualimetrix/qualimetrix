@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AiMessDetector\Tests\Unit\Baseline\Suppression;
 
 use AiMessDetector\Baseline\Suppression\SuppressionExtractor;
+use AiMessDetector\Baseline\Suppression\SuppressionType;
 use PhpParser\Comment\Doc;
 use PhpParser\Node\Stmt\Class_;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -41,6 +42,7 @@ final class SuppressionExtractorTest extends TestCase
         self::assertSame('complexity', $suppressions[0]->rule);
         self::assertNull($suppressions[0]->reason);
         self::assertSame(10, $suppressions[0]->line);
+        self::assertSame(SuppressionType::Symbol, $suppressions[0]->type);
     }
 
     public function testExtractsSuppressionWithReason(): void
@@ -63,6 +65,7 @@ final class SuppressionExtractorTest extends TestCase
         self::assertCount(1, $suppressions);
         self::assertSame('complexity', $suppressions[0]->rule);
         self::assertSame('Legacy code, refactoring planned', $suppressions[0]->reason);
+        self::assertSame(SuppressionType::Symbol, $suppressions[0]->type);
     }
 
     public function testExtractsMultipleSuppressions(): void
@@ -85,7 +88,9 @@ final class SuppressionExtractorTest extends TestCase
 
         self::assertCount(2, $suppressions);
         self::assertSame('complexity', $suppressions[0]->rule);
+        self::assertSame(SuppressionType::Symbol, $suppressions[0]->type);
         self::assertSame('coupling', $suppressions[1]->rule);
+        self::assertSame(SuppressionType::Symbol, $suppressions[1]->type);
     }
 
     public function testExtractsWildcardSuppression(): void
@@ -107,6 +112,7 @@ final class SuppressionExtractorTest extends TestCase
 
         self::assertCount(1, $suppressions);
         self::assertSame('*', $suppressions[0]->rule);
+        self::assertSame(SuppressionType::Symbol, $suppressions[0]->type);
     }
 
     public function testExtractsNextLineSuppression(): void
@@ -128,6 +134,7 @@ final class SuppressionExtractorTest extends TestCase
 
         self::assertCount(1, $suppressions);
         self::assertSame('complexity', $suppressions[0]->rule);
+        self::assertSame(SuppressionType::NextLine, $suppressions[0]->type);
     }
 
     public function testExtractsDottedRuleName(): void
@@ -150,6 +157,7 @@ final class SuppressionExtractorTest extends TestCase
         self::assertCount(1, $suppressions);
         self::assertSame('complexity.cyclomatic.method', $suppressions[0]->rule);
         self::assertSame('Complex logic', $suppressions[0]->reason);
+        self::assertSame(SuppressionType::Symbol, $suppressions[0]->type);
     }
 
     public function testExtractsRuleNameWithDashes(): void
@@ -171,6 +179,7 @@ final class SuppressionExtractorTest extends TestCase
 
         self::assertCount(1, $suppressions);
         self::assertSame('code-smell.boolean-argument', $suppressions[0]->rule);
+        self::assertSame(SuppressionType::Symbol, $suppressions[0]->type);
     }
 
     public function testReturnsEmptyWhenNoDocComment(): void
@@ -223,6 +232,7 @@ final class SuppressionExtractorTest extends TestCase
 
         self::assertCount(1, $suppressions);
         self::assertSame('*', $suppressions[0]->rule);
+        self::assertSame(SuppressionType::File, $suppressions[0]->type);
     }
 
     public function testFileLevelSuppressionReturnsEmptyWhenNotPresent(): void
@@ -243,5 +253,81 @@ final class SuppressionExtractorTest extends TestCase
         $suppressions = $this->extractor->extractFileLevelSuppressions($node);
 
         self::assertEmpty($suppressions);
+    }
+
+    public function testFileLevelSuppressionWithoutArgumentDefaultsToWildcard(): void
+    {
+        $docComment = new Doc(
+            <<<'DOC'
+            /**
+             * @aimd-ignore-file
+             */
+            DOC,
+            1,
+            1,
+        );
+
+        $node = new Class_('Foo');
+        $node->setDocComment($docComment);
+
+        $suppressions = $this->extractor->extract($node);
+
+        self::assertCount(1, $suppressions);
+        self::assertSame('*', $suppressions[0]->rule);
+        self::assertSame(SuppressionType::File, $suppressions[0]->type);
+    }
+
+    public function testFileLevelSuppressionWithRule(): void
+    {
+        $docComment = new Doc(
+            <<<'DOC'
+            /**
+             * @aimd-ignore-file complexity
+             */
+            DOC,
+            1,
+            1,
+        );
+
+        $node = new Class_('Foo');
+        $node->setDocComment($docComment);
+
+        $suppressions = $this->extractor->extract($node);
+
+        self::assertCount(1, $suppressions);
+        self::assertSame('complexity', $suppressions[0]->rule);
+        self::assertSame(SuppressionType::File, $suppressions[0]->type);
+    }
+
+    public function testExtractMixedSuppressionTypes(): void
+    {
+        $docComment = new Doc(
+            <<<'DOC'
+            /**
+             * @aimd-ignore complexity
+             * @aimd-ignore-next-line coupling
+             * @aimd-ignore-file size
+             */
+            DOC,
+            10,
+            10,
+        );
+
+        $node = new Class_('Foo');
+        $node->setDocComment($docComment);
+
+        $suppressions = $this->extractor->extract($node);
+
+        self::assertCount(3, $suppressions);
+
+        // Collect by type for easier assertion (order may vary due to separate regex passes)
+        $byType = [];
+        foreach ($suppressions as $s) {
+            $byType[$s->type->value] = $s;
+        }
+
+        self::assertSame('size', $byType['file']->rule);
+        self::assertSame('coupling', $byType['next-line']->rule);
+        self::assertSame('complexity', $byType['symbol']->rule);
     }
 }

@@ -7,6 +7,7 @@ namespace AiMessDetector\Analysis\Collection;
 use AiMessDetector\Analysis\Collection\Metric\DerivedMetricExtractor;
 use AiMessDetector\Analysis\Collection\Strategy\ExecutionStrategyInterface;
 use AiMessDetector\Analysis\Collection\Strategy\StrategySelectorInterface;
+use AiMessDetector\Baseline\Suppression\Suppression;
 use AiMessDetector\Core\Dependency\Dependency;
 use AiMessDetector\Core\Metric\MetricRepositoryInterface;
 use AiMessDetector\Core\Profiler\ProfilerHolder;
@@ -76,6 +77,8 @@ final class CollectionOrchestrator implements CollectionOrchestratorInterface
         $filesSkipped = 0;
         /** @var list<Dependency> $allDependencies */
         $allDependencies = [];
+        /** @var array<string, list<Suppression>> $allSuppressions */
+        $allSuppressions = [];
 
         foreach ($results as $result) {
             $this->progress->setMessage('Registering ' . basename($result->filePath));
@@ -87,6 +90,11 @@ final class CollectionOrchestrator implements CollectionOrchestratorInterface
                 // Collect dependencies from result
                 foreach ($result->dependencies as $dependency) {
                     $allDependencies[] = $dependency;
+                }
+
+                // Collect suppressions from result
+                if ($result->suppressions !== []) {
+                    $allSuppressions[$result->filePath] = $result->suppressions;
                 }
             } else {
                 $this->logger->warning('Failed to process file', [
@@ -102,7 +110,7 @@ final class CollectionOrchestrator implements CollectionOrchestratorInterface
 
         $this->progress->finish();
 
-        return new CollectionResult($filesAnalyzed, $filesSkipped, $allDependencies);
+        return new CollectionResult($filesAnalyzed, $filesSkipped, $allDependencies, $allSuppressions);
     }
 
     /**

@@ -194,6 +194,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
             filesSkipped: $collectionResult->filesSkipped,
             duration: $duration,
             metrics: $repository,
+            suppressions: $collectionResult->suppressions,
         );
     }
 

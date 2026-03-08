@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AiMessDetector\Tests\Unit\Baseline\Suppression;
 
 use AiMessDetector\Baseline\Suppression\Suppression;
+use AiMessDetector\Baseline\Suppression\SuppressionType;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
@@ -17,6 +18,7 @@ final class SuppressionTest extends TestCase
             rule: 'complexity.cyclomatic',
             reason: 'Legacy code',
             line: 10,
+            type: SuppressionType::Symbol,
         );
 
         self::assertTrue($suppression->matches('complexity.cyclomatic'));
@@ -29,6 +31,7 @@ final class SuppressionTest extends TestCase
             rule: 'complexity',
             reason: 'Legacy code',
             line: 10,
+            type: SuppressionType::Symbol,
         );
 
         // Prefix matching: 'complexity' matches all complexity.* violations
@@ -44,6 +47,7 @@ final class SuppressionTest extends TestCase
             rule: '*',
             reason: 'Ignore all',
             line: 10,
+            type: SuppressionType::File,
         );
 
         self::assertTrue($suppression->matches('complexity.cyclomatic'));
@@ -57,11 +61,13 @@ final class SuppressionTest extends TestCase
             rule: 'complexity.cyclomatic',
             reason: 'Complex business logic',
             line: 42,
+            type: SuppressionType::NextLine,
         );
 
         self::assertSame('complexity.cyclomatic', $suppression->rule);
         self::assertSame('Complex business logic', $suppression->reason);
         self::assertSame(42, $suppression->line);
+        self::assertSame(SuppressionType::NextLine, $suppression->type);
     }
 
     public function testConstructorWithNullReason(): void
@@ -70,6 +76,7 @@ final class SuppressionTest extends TestCase
             rule: 'complexity',
             reason: null,
             line: 42,
+            type: SuppressionType::Symbol,
         );
 
         self::assertNull($suppression->reason);
@@ -81,6 +88,7 @@ final class SuppressionTest extends TestCase
             rule: 'complexity.cyclomatic.method',
             reason: null,
             line: 10,
+            type: SuppressionType::Symbol,
         );
 
         // More specific pattern does NOT match less specific subject

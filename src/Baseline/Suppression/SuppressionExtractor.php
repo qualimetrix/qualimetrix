@@ -12,11 +12,13 @@ use PhpParser\Node;
  * Supported tags:
  * - @aimd-ignore <rule> [reason]
  * - @aimd-ignore-next-line <rule> [reason]
- * - @aimd-ignore-file
+ * - @aimd-ignore-file [rule] [reason]
  */
 final readonly class SuppressionExtractor
 {
-    private const PATTERN = '/@aimd-ignore(?:-next-line|-file)?\s+([\w.-]+|\*)(?:\s+([^\n\r*]+))?/';
+    private const PATTERN_SYMBOL = '/@aimd-ignore(?!-next-line|-file)\s+([\w.*-]+)(?:\s+([^\n\r*]+))?/';
+    private const PATTERN_NEXT_LINE = '/@aimd-ignore-next-line\s+([\w.*-]+)(?:\s+([^\n\r*]+))?/';
+    private const PATTERN_FILE = '/@aimd-ignore-file(?:\s+([\w.*-]+)(?:\s+([^\n\r*]+))?)?/';
 
     /**
      * Extracts suppression tags from node's docblock.
@@ -32,14 +34,41 @@ final readonly class SuppressionExtractor
 
         $suppressions = [];
         $text = $docComment->getText();
+        $line = $docComment->getStartLine();
 
-        if (preg_match_all(self::PATTERN, $text, $matches, \PREG_SET_ORDER)) {
+        // Extract file-level suppressions
+        if (preg_match_all(self::PATTERN_FILE, $text, $matches, \PREG_SET_ORDER)) {
             foreach ($matches as $match) {
-                $reason = isset($match[2]) ? trim($match[2]) : null;
+                $rule = ($match[1] ?? '') !== '' ? $match[1] : '*';
+                $suppressions[] = new Suppression(
+                    rule: $rule,
+                    reason: self::extractReason($match[2] ?? null),
+                    line: $line,
+                    type: SuppressionType::File,
+                );
+            }
+        }
+
+        // Extract next-line suppressions (must be checked before symbol pattern)
+        if (preg_match_all(self::PATTERN_NEXT_LINE, $text, $matches, \PREG_SET_ORDER)) {
+            foreach ($matches as $match) {
                 $suppressions[] = new Suppression(
                     rule: $match[1],
-                    reason: $reason !== '' ? $reason : null,
-                    line: $docComment->getStartLine(),
+                    reason: self::extractReason($match[2] ?? null),
+                    line: $line,
+                    type: SuppressionType::NextLine,
+                );
+            }
+        }
+
+        // Extract symbol-level suppressions (plain @aimd-ignore, not -next-line or -file)
+        if (preg_match_all(self::PATTERN_SYMBOL, $text, $matches, \PREG_SET_ORDER)) {
+            foreach ($matches as $match) {
+                $suppressions[] = new Suppression(
+                    rule: $match[1],
+                    reason: self::extractReason($match[2] ?? null),
+                    line: $line,
+                    type: SuppressionType::Symbol,
                 );
             }
         }
@@ -64,13 +93,31 @@ final readonly class SuppressionExtractor
             return [];
         }
 
-        // File-level suppression ignores all rules
-        return [
-            new Suppression(
-                rule: '*',
-                reason: null,
-                line: $docComment->getStartLine(),
-            ),
-        ];
+        $suppressions = [];
+
+        if (preg_match_all(self::PATTERN_FILE, $text, $matches, \PREG_SET_ORDER)) {
+            foreach ($matches as $match) {
+                $rule = ($match[1] ?? '') !== '' ? $match[1] : '*';
+                $suppressions[] = new Suppression(
+                    rule: $rule,
+                    reason: self::extractReason($match[2] ?? null),
+                    line: $docComment->getStartLine(),
+                    type: SuppressionType::File,
+                );
+            }
+        }
+
+        return $suppressions;
+    }
+
+    private static function extractReason(?string $raw): ?string
+    {
+        if ($raw === null) {
+            return null;
+        }
+
+        $trimmed = trim($raw);
+
+        return $trimmed !== '' ? $trimmed : null;
     }
 }

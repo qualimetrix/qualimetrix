@@ -5,12 +5,16 @@ declare(strict_types=1);
 namespace AiMessDetector\Analysis\Collection;
 
 use AiMessDetector\Analysis\Collection\Metric\CompositeCollector;
+use AiMessDetector\Baseline\Suppression\Suppression;
+use AiMessDetector\Baseline\Suppression\SuppressionExtractor;
 use AiMessDetector\Core\Ast\FileParserInterface;
 use AiMessDetector\Core\Exception\ParseException;
 use AiMessDetector\Core\Metric\ClassMetricsProviderInterface;
 use AiMessDetector\Core\Metric\MethodMetricsProviderInterface;
 use AiMessDetector\Core\Metric\MetricBag;
 use AiMessDetector\Core\Violation\SymbolPath;
+use PhpParser\Node;
+use PhpParser\NodeFinder;
 use SplFileInfo;
 
 /**
@@ -27,6 +31,7 @@ final class FileProcessor implements FileProcessorInterface
     public function __construct(
         private readonly FileParserInterface $parser,
         private readonly CompositeCollector $collector,
+        private readonly SuppressionExtractor $suppressionExtractor = new SuppressionExtractor(),
     ) {}
 
     public function process(SplFileInfo $file): FileProcessingResult
@@ -43,7 +48,10 @@ final class FileProcessor implements FileProcessorInterface
             $methodMetrics = $this->extractMethodMetrics();
             $classMetrics = $this->extractClassMetrics();
 
-            // 4. Cleanup AST to free memory
+            // 4. Extract suppression tags from AST nodes
+            $suppressions = $this->extractSuppressions($ast);
+
+            // 5. Cleanup AST to free memory
             unset($ast);
             if (gc_enabled()) {
                 gc_collect_cycles();
@@ -55,6 +63,7 @@ final class FileProcessor implements FileProcessorInterface
                 methodMetrics: $methodMetrics,
                 classMetrics: $classMetrics,
                 dependencies: $output->dependencies,
+                suppressions: $suppressions,
             );
         } catch (ParseException $e) {
             return FileProcessingResult::failure(
@@ -135,6 +144,45 @@ final class FileProcessor implements FileProcessorInterface
         }
 
         return $classMetrics;
+    }
+
+    /**
+     * Extracts suppression tags from all relevant AST nodes.
+     *
+     * Scans nodes that can have docblocks: classes, methods, functions, properties,
+     * enum cases, constants, and file-level comments on the first statement.
+     *
+     * @param array<Node> $ast Top-level AST statements
+     *
+     * @return list<Suppression>
+     */
+    private function extractSuppressions(array $ast): array
+    {
+        $suppressions = [];
+
+        // Extract file-level suppressions from the first statement's comments
+        if ($ast !== []) {
+            foreach ($this->suppressionExtractor->extractFileLevelSuppressions($ast[0]) as $suppression) {
+                $suppressions[] = $suppression;
+            }
+        }
+
+        // Find all nodes that can carry docblock suppressions
+        $nodeFinder = new NodeFinder();
+        $nodesWithDocblocks = $nodeFinder->find($ast, static fn(Node $node): bool => $node instanceof Node\Stmt\ClassLike
+                || $node instanceof Node\Stmt\ClassMethod
+                || $node instanceof Node\Stmt\Function_
+                || $node instanceof Node\Stmt\Property
+                || $node instanceof Node\Stmt\EnumCase
+                || $node instanceof Node\Stmt\ClassConst);
+
+        foreach ($nodesWithDocblocks as $node) {
+            foreach ($this->suppressionExtractor->extract($node) as $suppression) {
+                $suppressions[] = $suppression;
+            }
+        }
+
+        return $suppressions;
     }
 
     /**

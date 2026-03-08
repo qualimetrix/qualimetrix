@@ -127,6 +127,9 @@ final class CheckCommand extends Command
 
         $result = $this->runAnalysis($scopeResolution->paths, $scopeResolution->fileDiscovery);
 
+        // Feed collected suppressions into the filter pipeline before filtering
+        $this->violationFilterPipeline->loadSuppressions($result->suppressions);
+
         $filterResult = $this->filterViolations($result, $input, $output, $scopeResolution);
         $filteredViolations = $filterResult->violations;
 

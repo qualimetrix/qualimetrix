@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Analysis\Collection;
 
+use AiMessDetector\Baseline\Suppression\Suppression;
 use AiMessDetector\Core\Dependency\Dependency;
 use AiMessDetector\Core\Metric\MetricBag;
 use AiMessDetector\Core\Violation\SymbolPath;
@@ -24,6 +25,7 @@ final class FileProcessingResult
      * @param array<string, array{symbolPath: SymbolPath, metrics: MetricBag, line: int}> $classMetrics
      * @param string|null $error Error message (null on success)
      * @param list<Dependency> $dependencies Dependencies collected from the file
+     * @param list<Suppression> $suppressions Suppression tags extracted from the file
      */
     private function __construct(
         public readonly string $filePath,
@@ -33,6 +35,7 @@ final class FileProcessingResult
         public readonly array $classMetrics,
         public readonly ?string $error,
         public readonly array $dependencies = [],
+        public readonly array $suppressions = [],
     ) {}
 
     /**
@@ -43,6 +46,7 @@ final class FileProcessingResult
      * @param array<string, array{symbolPath: SymbolPath, metrics: MetricBag, line: int}> $methodMetrics
      * @param array<string, array{symbolPath: SymbolPath, metrics: MetricBag, line: int}> $classMetrics
      * @param list<Dependency> $dependencies Dependencies collected from the file
+     * @param list<Suppression> $suppressions Suppression tags extracted from the file
      */
     public static function success(
         string $filePath,
@@ -50,6 +54,7 @@ final class FileProcessingResult
         array $methodMetrics = [],
         array $classMetrics = [],
         array $dependencies = [],
+        array $suppressions = [],
     ): self {
         return new self(
             filePath: $filePath,
@@ -59,6 +64,7 @@ final class FileProcessingResult
             classMetrics: $classMetrics,
             error: null,
             dependencies: $dependencies,
+            suppressions: $suppressions,
         );
     }
 

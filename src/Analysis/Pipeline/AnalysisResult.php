@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AiMessDetector\Analysis\Pipeline;
 
 use AiMessDetector\Analysis\Repository\InMemoryMetricRepository;
+use AiMessDetector\Baseline\Suppression\Suppression;
 use AiMessDetector\Core\Metric\MetricRepositoryInterface;
 use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
@@ -13,6 +14,7 @@ final readonly class AnalysisResult
 {
     /**
      * @param list<Violation> $violations
+     * @param array<string, list<Suppression>> $suppressions Per-file suppression tags
      */
     public function __construct(
         public array $violations,
@@ -20,6 +22,7 @@ final readonly class AnalysisResult
         public int $filesSkipped,
         public float $duration,
         public MetricRepositoryInterface $metrics,
+        public array $suppressions = [],
     ) {}
 
     public function hasErrors(): bool
@@ -83,6 +86,7 @@ final readonly class AnalysisResult
             filesSkipped: $this->filesSkipped + $other->filesSkipped,
             duration: max($this->duration, $other->duration),
             metrics: $mergedMetrics,
+            suppressions: array_merge($this->suppressions, $other->suppressions),
         );
     }
 

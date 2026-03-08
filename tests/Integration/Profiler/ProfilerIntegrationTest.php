@@ -60,6 +60,14 @@ final class ProfilerIntegrationTest extends TestCase
         self::assertSame([], $profiler->getSummary());
     }
 
+    public function testProfilerHolderReturnsSameNullProfilerInstance(): void
+    {
+        $profiler1 = ProfilerHolder::get();
+        $profiler2 = ProfilerHolder::get();
+
+        self::assertSame($profiler1, $profiler2, 'get() should return the same NullProfiler instance');
+    }
+
     public function testProfilerHolderUsesSetProfiler(): void
     {
         $profiler = new Profiler();

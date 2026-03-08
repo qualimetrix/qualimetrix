@@ -17,6 +17,7 @@ final readonly class Suppression
         public string $rule,
         public ?string $reason,
         public int $line,
+        public SuppressionType $type,
     ) {}
 
     /**

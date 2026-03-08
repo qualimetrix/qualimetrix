@@ -6,6 +6,7 @@ namespace AiMessDetector\Infrastructure\Console;
 
 use AiMessDetector\Baseline\BaselineLoader;
 use AiMessDetector\Baseline\Filter\BaselineFilter;
+use AiMessDetector\Baseline\Suppression\Suppression;
 use AiMessDetector\Baseline\Suppression\SuppressionFilter;
 use AiMessDetector\Baseline\ViolationHasher;
 use AiMessDetector\Configuration\ConfigurationProviderInterface;
@@ -26,6 +27,20 @@ final readonly class ViolationFilterPipeline
         private SuppressionFilter $suppressionFilter,
         private ConfigurationProviderInterface $configurationProvider,
     ) {}
+
+    /**
+     * Loads per-file suppression tags into the suppression filter.
+     *
+     * Must be called before filter() for @aimd-ignore tags to take effect.
+     *
+     * @param array<string, list<Suppression>> $suppressions Per-file suppression tags
+     */
+    public function loadSuppressions(array $suppressions): void
+    {
+        foreach ($suppressions as $file => $fileSuppression) {
+            $this->suppressionFilter->addSuppressions($file, $fileSuppression);
+        }
+    }
 
     /**
      * Applies all filters to violations and returns result with metadata.

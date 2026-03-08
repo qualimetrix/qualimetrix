@@ -11,9 +11,9 @@ use AiMessDetector\Core\Violation\Violation;
  * Filters violations based on suppression tags in code.
  *
  * Suppressions can be applied at:
- * - File level (@aimd-ignore-file)
- * - Symbol level (@aimd-ignore <rule>)
- * - Line level (@aimd-ignore-next-line <rule>)
+ * - File level (@aimd-ignore-file) — suppresses all matching violations in file
+ * - Symbol level (@aimd-ignore <rule>) — suppresses matching violations at or after suppression line
+ * - Line level (@aimd-ignore-next-line <rule>) — suppresses matching violations on next line only
  */
 final class SuppressionFilter implements ViolationFilterInterface
 {
@@ -44,9 +44,30 @@ final class SuppressionFilter implements ViolationFilterInterface
             return true; // No suppressions — pass through
         }
 
+        $violationLine = $violation->location->line;
+
         foreach ($this->suppressions[$file] as $suppression) {
-            if ($suppression->matches($violation->violationCode)) {
-                return false; // Suppressed — filter out
+            if (!$suppression->matches($violation->violationCode)) {
+                continue;
+            }
+
+            switch ($suppression->type) {
+                case SuppressionType::File:
+                    return false; // File-level: suppress all matching violations
+
+                case SuppressionType::Symbol:
+                    // Symbol-level: suppress matching violations at or after the suppression line
+                    if ($violationLine === null || $violationLine >= $suppression->line) {
+                        return false;
+                    }
+                    break;
+
+                case SuppressionType::NextLine:
+                    // Next-line: suppress only violations on the exact next line
+                    if ($violationLine !== null && $violationLine === $suppression->line + 1) {
+                        return false;
+                    }
+                    break;
             }
         }
 

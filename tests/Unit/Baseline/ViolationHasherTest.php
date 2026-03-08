@@ -33,7 +33,7 @@ final class ViolationHasherTest extends TestCase
         $hash2 = $this->hasher->hash($violation);
 
         self::assertSame($hash1, $hash2, 'Hash should be consistent');
-        self::assertSame(8, \strlen($hash1), 'Hash should be 8 characters long');
+        self::assertSame(16, \strlen($hash1), 'Hash should be 16 characters long');
     }
 
     public function testHashStableAcrossLineChanges(): void
@@ -259,7 +259,7 @@ final class ViolationHasherTest extends TestCase
 
         $hash = $this->hasher->hash($violation);
 
-        self::assertSame(8, \strlen($hash));
+        self::assertSame(16, \strlen($hash));
     }
 
     public function testHashForNamespaceLevelViolation(): void
@@ -275,7 +275,7 @@ final class ViolationHasherTest extends TestCase
 
         $hash = $this->hasher->hash($violation);
 
-        self::assertSame(8, \strlen($hash));
+        self::assertSame(16, \strlen($hash));
     }
 
     public function testHashForFileLevelViolation(): void
@@ -291,7 +291,7 @@ final class ViolationHasherTest extends TestCase
 
         $hash = $this->hasher->hash($violation);
 
-        self::assertSame(8, \strlen($hash));
+        self::assertSame(16, \strlen($hash));
     }
 
     private function createViolation(int $line, string $message): Violation

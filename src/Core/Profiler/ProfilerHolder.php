@@ -36,7 +36,7 @@ final class ProfilerHolder
      */
     public static function get(): ProfilerInterface
     {
-        return self::$profiler ?? new NullProfiler();
+        return self::$profiler ??= new NullProfiler();
     }
 
     /**
