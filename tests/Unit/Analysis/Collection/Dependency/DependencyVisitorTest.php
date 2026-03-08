@@ -41,8 +41,8 @@ PHP;
         $deps = $this->analyze($code);
 
         self::assertCount(1, $deps);
-        self::assertSame('App\\MyClass', $deps[0]->sourceClass);
-        self::assertSame('Vendor\\BaseClass', $deps[0]->targetClass);
+        self::assertSame('App\\MyClass', $deps[0]->source->toString());
+        self::assertSame('Vendor\\BaseClass', $deps[0]->target->toString());
         self::assertSame(DependencyType::Extends, $deps[0]->type);
     }
 
@@ -81,7 +81,7 @@ PHP;
         $deps = $this->analyze($code);
 
         self::assertCount(1, $deps);
-        self::assertSame('Vendor\\SomeTrait', $deps[0]->targetClass);
+        self::assertSame('Vendor\\SomeTrait', $deps[0]->target->toString());
         self::assertSame(DependencyType::TraitUse, $deps[0]->type);
     }
 
@@ -103,7 +103,7 @@ PHP;
         $deps = $this->analyze($code);
 
         self::assertCount(1, $deps);
-        self::assertSame('Vendor\\SomeClass', $deps[0]->targetClass);
+        self::assertSame('Vendor\\SomeClass', $deps[0]->target->toString());
         self::assertSame(DependencyType::New_, $deps[0]->type);
     }
 
@@ -125,7 +125,7 @@ PHP;
         $deps = $this->analyze($code);
 
         self::assertCount(1, $deps);
-        self::assertSame('Vendor\\Utils', $deps[0]->targetClass);
+        self::assertSame('Vendor\\Utils', $deps[0]->target->toString());
         self::assertSame(DependencyType::StaticCall, $deps[0]->type);
     }
 
@@ -147,7 +147,7 @@ PHP;
         $deps = $this->analyze($code);
 
         self::assertCount(1, $deps);
-        self::assertSame('Vendor\\Config', $deps[0]->targetClass);
+        self::assertSame('Vendor\\Config', $deps[0]->target->toString());
         self::assertSame(DependencyType::StaticPropertyFetch, $deps[0]->type);
     }
 
@@ -169,7 +169,7 @@ PHP;
         $deps = $this->analyze($code);
 
         self::assertCount(1, $deps);
-        self::assertSame('Vendor\\Status', $deps[0]->targetClass);
+        self::assertSame('Vendor\\Status', $deps[0]->target->toString());
         self::assertSame(DependencyType::ClassConstFetch, $deps[0]->type);
     }
 
@@ -189,7 +189,7 @@ PHP;
         $deps = $this->analyze($code);
 
         self::assertCount(1, $deps);
-        self::assertSame('Vendor\\Request', $deps[0]->targetClass);
+        self::assertSame('Vendor\\Request', $deps[0]->target->toString());
         self::assertSame(DependencyType::TypeHint, $deps[0]->type);
     }
 
@@ -209,7 +209,7 @@ PHP;
         $deps = $this->analyze($code);
 
         self::assertCount(1, $deps);
-        self::assertSame('Vendor\\Response', $deps[0]->targetClass);
+        self::assertSame('Vendor\\Response', $deps[0]->target->toString());
         self::assertSame(DependencyType::TypeHint, $deps[0]->type);
     }
 
@@ -232,7 +232,7 @@ PHP;
         $deps = $this->analyze($code);
 
         self::assertCount(1, $deps);
-        self::assertSame('Vendor\\CustomException', $deps[0]->targetClass);
+        self::assertSame('Vendor\\CustomException', $deps[0]->target->toString());
         self::assertSame(DependencyType::Catch_, $deps[0]->type);
     }
 
@@ -254,7 +254,7 @@ PHP;
         $deps = $this->analyze($code);
 
         self::assertCount(1, $deps);
-        self::assertSame('Vendor\\SomeClass', $deps[0]->targetClass);
+        self::assertSame('Vendor\\SomeClass', $deps[0]->target->toString());
         self::assertSame(DependencyType::Instanceof_, $deps[0]->type);
     }
 
@@ -273,7 +273,7 @@ PHP;
         $deps = $this->analyze($code);
 
         self::assertCount(1, $deps);
-        self::assertSame('Vendor\\Route', $deps[0]->targetClass);
+        self::assertSame('Vendor\\Route', $deps[0]->target->toString());
         self::assertSame(DependencyType::Attribute, $deps[0]->type);
     }
 
@@ -293,7 +293,7 @@ PHP;
         $deps = $this->analyze($code);
 
         self::assertCount(1, $deps);
-        self::assertSame('Vendor\\Logger', $deps[0]->targetClass);
+        self::assertSame('Vendor\\Logger', $deps[0]->target->toString());
         self::assertSame(DependencyType::PropertyType, $deps[0]->type);
     }
 
@@ -405,7 +405,7 @@ PHP;
         $deps = $this->analyze($code);
 
         self::assertCount(1, $deps);
-        self::assertSame('Vendor\\ParentInterface', $deps[0]->targetClass);
+        self::assertSame('Vendor\\ParentInterface', $deps[0]->target->toString());
         self::assertSame(DependencyType::Extends, $deps[0]->type);
     }
 
@@ -425,7 +425,7 @@ PHP;
         $deps = $this->analyze($code);
 
         self::assertCount(1, $deps);
-        self::assertSame('Vendor\\SomeInterface', $deps[0]->targetClass);
+        self::assertSame('Vendor\\SomeInterface', $deps[0]->target->toString());
         self::assertSame(DependencyType::Implements, $deps[0]->type);
     }
 

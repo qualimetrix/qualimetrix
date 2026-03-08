@@ -9,6 +9,7 @@ use AiMessDetector\Analysis\Repository\InMemoryMetricRepository;
 use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\RuleCategory;
 use AiMessDetector\Core\Violation\Severity;
+use AiMessDetector\Core\Violation\SymbolPath;
 use AiMessDetector\Rules\Architecture\CircularDependencyOptions;
 use AiMessDetector\Rules\Architecture\CircularDependencyRule;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -41,7 +42,7 @@ final class CircularDependencyRuleTest extends TestCase
     public function testGeneratesViolationForCycle(): void
     {
         $cycles = [
-            new Cycle(['A', 'B'], ['A', 'B', 'A']),
+            new Cycle($this->paths(['A', 'B']), $this->paths(['A', 'B', 'A'])),
         ];
 
         $rule = new CircularDependencyRule(
@@ -64,7 +65,7 @@ final class CircularDependencyRuleTest extends TestCase
     public function testErrorSeverityForDirectCycle(): void
     {
         $cycles = [
-            new Cycle(['A', 'B'], ['A', 'B', 'A']), // Size 2
+            new Cycle($this->paths(['A', 'B']), $this->paths(['A', 'B', 'A'])), // Size 2
         ];
 
         $rule = new CircularDependencyRule(
@@ -85,7 +86,7 @@ final class CircularDependencyRuleTest extends TestCase
     public function testWarningSeverityForTransitiveCycle(): void
     {
         $cycles = [
-            new Cycle(['A', 'B', 'C'], ['A', 'B', 'C', 'A']), // Size 3
+            new Cycle($this->paths(['A', 'B', 'C']), $this->paths(['A', 'B', 'C', 'A'])), // Size 3
         ];
 
         $rule = new CircularDependencyRule(
@@ -106,8 +107,8 @@ final class CircularDependencyRuleTest extends TestCase
     public function testRespectsMaxCycleSize(): void
     {
         $cycles = [
-            new Cycle(['A', 'B'], ['A', 'B', 'A']), // Size 2
-            new Cycle(['C', 'D', 'E', 'F', 'G'], ['C', 'D', 'E', 'F', 'G', 'C']), // Size 5
+            new Cycle($this->paths(['A', 'B']), $this->paths(['A', 'B', 'A'])), // Size 2
+            new Cycle($this->paths(['C', 'D', 'E', 'F', 'G']), $this->paths(['C', 'D', 'E', 'F', 'G', 'C'])), // Size 5
         ];
 
         $rule = new CircularDependencyRule(
@@ -128,7 +129,7 @@ final class CircularDependencyRuleTest extends TestCase
     public function testDisabledReturnsEmpty(): void
     {
         $cycles = [
-            new Cycle(['A', 'B'], ['A', 'B', 'A']),
+            new Cycle($this->paths(['A', 'B']), $this->paths(['A', 'B', 'A'])),
         ];
 
         $rule = new CircularDependencyRule(
@@ -162,7 +163,7 @@ final class CircularDependencyRuleTest extends TestCase
     public function testMetricValueIsCycleSize(): void
     {
         $cycles = [
-            new Cycle(['A', 'B', 'C'], ['A', 'B', 'C', 'A']),
+            new Cycle($this->paths(['A', 'B', 'C']), $this->paths(['A', 'B', 'C', 'A'])),
         ];
 
         $rule = new CircularDependencyRule(
@@ -178,5 +179,18 @@ final class CircularDependencyRuleTest extends TestCase
 
         $this->assertCount(1, $violations);
         $this->assertSame(3, $violations[0]->metricValue);
+    }
+
+    /**
+     * @param list<string> $fqns
+     *
+     * @return list<SymbolPath>
+     */
+    private function paths(array $fqns): array
+    {
+        return array_map(
+            static fn(string $fqn): SymbolPath => SymbolPath::fromClassFqn($fqn),
+            $fqns,
+        );
     }
 }

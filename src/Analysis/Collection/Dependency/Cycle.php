@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AiMessDetector\Analysis\Collection\Dependency;
 
 use AiMessDetector\Core\Dependency\CycleInterface;
+use AiMessDetector\Core\Violation\SymbolPath;
 
 /**
  * Represents a circular dependency in the dependency graph.
@@ -15,8 +16,8 @@ use AiMessDetector\Core\Dependency\CycleInterface;
 final readonly class Cycle implements CycleInterface
 {
     /**
-     * @param list<string> $classes All classes involved in the cycle
-     * @param list<string> $path The actual path forming the cycle (includes start class at both ends)
+     * @param list<SymbolPath> $classes All classes involved in the cycle
+     * @param list<SymbolPath> $path The actual path forming the cycle (includes start class at both ends)
      */
     public function __construct(
         private array $classes,
@@ -24,7 +25,7 @@ final readonly class Cycle implements CycleInterface
     ) {}
 
     /**
-     * @return list<string>
+     * @return list<SymbolPath>
      */
     public function getClasses(): array
     {
@@ -32,7 +33,7 @@ final readonly class Cycle implements CycleInterface
     }
 
     /**
-     * @return list<string>
+     * @return list<SymbolPath>
      */
     public function getPath(): array
     {
@@ -46,20 +47,17 @@ final readonly class Cycle implements CycleInterface
 
     public function toString(): string
     {
-        return implode(' → ', $this->path);
+        return implode(' → ', array_map(
+            static fn(SymbolPath $p): string => $p->toString(),
+            $this->path,
+        ));
     }
 
     public function toShortString(): string
     {
-        $short = array_map(
-            function (string $class): string {
-                $pos = strrpos($class, '\\');
-
-                return $pos !== false ? substr($class, $pos + 1) : $class;
-            },
+        return implode(' → ', array_map(
+            static fn(SymbolPath $p): string => $p->type ?? $p->toString(),
             $this->path,
-        );
-
-        return implode(' → ', $short);
+        ));
     }
 }

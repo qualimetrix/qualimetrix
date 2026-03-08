@@ -7,6 +7,7 @@ namespace AiMessDetector\Tests\Unit\Core\Dependency;
 use AiMessDetector\Core\Dependency\Dependency;
 use AiMessDetector\Core\Dependency\DependencyType;
 use AiMessDetector\Core\Violation\Location;
+use AiMessDetector\Core\Violation\SymbolPath;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -17,65 +18,19 @@ final class DependencyTest extends TestCase
     public function testConstructorWithAllProperties(): void
     {
         $location = new Location('src/Service/UserService.php', 42);
+        $source = SymbolPath::fromClassFqn('App\Service\UserService');
+        $target = SymbolPath::fromClassFqn('App\Repository\UserRepository');
         $dependency = new Dependency(
-            sourceClass: 'App\Service\UserService',
-            targetClass: 'App\Repository\UserRepository',
+            source: $source,
+            target: $target,
             type: DependencyType::New_,
             location: $location,
         );
 
-        self::assertSame('App\Service\UserService', $dependency->sourceClass);
-        self::assertSame('App\Repository\UserRepository', $dependency->targetClass);
+        self::assertSame($source, $dependency->source);
+        self::assertSame($target, $dependency->target);
         self::assertSame(DependencyType::New_, $dependency->type);
         self::assertSame($location, $dependency->location);
-    }
-
-    #[DataProvider('namespaceDataProvider')]
-    public function testGetSourceNamespace(string $sourceClass, string $expectedNamespace): void
-    {
-        $dependency = new Dependency(
-            sourceClass: $sourceClass,
-            targetClass: 'Target',
-            type: DependencyType::New_,
-            location: new Location('test.php'),
-        );
-
-        self::assertSame($expectedNamespace, $dependency->getSourceNamespace());
-    }
-
-    /**
-     * @return iterable<string, array{string, string}>
-     */
-    public static function namespaceDataProvider(): iterable
-    {
-        yield 'single level namespace' => ['App\User', 'App'];
-        yield 'multi level namespace' => ['App\Service\UserService', 'App\Service'];
-        yield 'deep namespace' => ['App\Module\Sub\Service\User', 'App\Module\Sub\Service'];
-        yield 'no namespace' => ['GlobalClass', ''];
-        yield 'single backslash' => ['App\\User', 'App'];
-    }
-
-    #[DataProvider('targetNamespaceDataProvider')]
-    public function testGetTargetNamespace(string $targetClass, string $expectedNamespace): void
-    {
-        $dependency = new Dependency(
-            sourceClass: 'Source',
-            targetClass: $targetClass,
-            type: DependencyType::New_,
-            location: new Location('test.php'),
-        );
-
-        self::assertSame($expectedNamespace, $dependency->getTargetNamespace());
-    }
-
-    /**
-     * @return iterable<string, array{string, string}>
-     */
-    public static function targetNamespaceDataProvider(): iterable
-    {
-        yield 'single level namespace' => ['App\User', 'App'];
-        yield 'multi level namespace' => ['App\Repository\UserRepository', 'App\Repository'];
-        yield 'no namespace' => ['GlobalClass', ''];
     }
 
     #[DataProvider('crossNamespaceDataProvider')]
@@ -85,8 +40,8 @@ final class DependencyTest extends TestCase
         bool $expectedIsCrossNamespace,
     ): void {
         $dependency = new Dependency(
-            sourceClass: $sourceClass,
-            targetClass: $targetClass,
+            source: SymbolPath::fromClassFqn($sourceClass),
+            target: SymbolPath::fromClassFqn($targetClass),
             type: DependencyType::New_,
             location: new Location('test.php'),
         );
@@ -140,8 +95,8 @@ final class DependencyTest extends TestCase
     public function testIsStrongCoupling(DependencyType $type, bool $expectedIsStrongCoupling): void
     {
         $dependency = new Dependency(
-            sourceClass: 'App\Service\UserService',
-            targetClass: 'App\Repository\UserRepository',
+            source: SymbolPath::fromClassFqn('App\Service\UserService'),
+            target: SymbolPath::fromClassFqn('App\Repository\UserRepository'),
             type: $type,
             location: new Location('test.php'),
         );
@@ -172,8 +127,8 @@ final class DependencyTest extends TestCase
         string $expected,
     ): void {
         $dependency = new Dependency(
-            sourceClass: $sourceClass,
-            targetClass: $targetClass,
+            source: SymbolPath::fromClassFqn($sourceClass),
+            target: SymbolPath::fromClassFqn($targetClass),
             type: $type,
             location: $location,
         );
@@ -222,8 +177,8 @@ final class DependencyTest extends TestCase
     public function testDependencyIsReadonly(): void
     {
         $dependency = new Dependency(
-            sourceClass: 'Source',
-            targetClass: 'Target',
+            source: SymbolPath::fromClassFqn('Source'),
+            target: SymbolPath::fromClassFqn('Target'),
             type: DependencyType::New_,
             location: new Location('test.php'),
         );

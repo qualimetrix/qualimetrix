@@ -6,6 +6,7 @@ namespace AiMessDetector\Analysis\Collection\Dependency;
 
 use AiMessDetector\Core\Dependency\Dependency;
 use AiMessDetector\Core\Util\StringSet;
+use AiMessDetector\Core\Violation\SymbolPath;
 
 /**
  * Builds a DependencyGraph from a collection of dependencies.
@@ -24,49 +25,56 @@ final class DependencyGraphBuilder
     {
         $bySource = [];
         $byTarget = [];
-        $classes = StringSet::fromArray([]);
-        $namespaces = StringSet::fromArray([]);
+        /** @var array<string, SymbolPath> $classMap */
+        $classMap = [];
+        /** @var array<string, SymbolPath> $namespaceMap */
+        $namespaceMap = [];
 
         // Index dependencies and collect unique classes/namespaces
         foreach ($dependencies as $dep) {
+            $sourceKey = $dep->source->toCanonical();
+            $targetKey = $dep->target->toCanonical();
+
             // Index by source
-            if (!isset($bySource[$dep->sourceClass])) {
-                $bySource[$dep->sourceClass] = [];
+            if (!isset($bySource[$sourceKey])) {
+                $bySource[$sourceKey] = [];
             }
-            $bySource[$dep->sourceClass][] = $dep;
+            $bySource[$sourceKey][] = $dep;
 
             // Index by target
-            if (!isset($byTarget[$dep->targetClass])) {
-                $byTarget[$dep->targetClass] = [];
+            if (!isset($byTarget[$targetKey])) {
+                $byTarget[$targetKey] = [];
             }
-            $byTarget[$dep->targetClass][] = $dep;
+            $byTarget[$targetKey][] = $dep;
 
             // Collect unique classes
-            $classes = $classes->add($dep->sourceClass);
-            $classes = $classes->add($dep->targetClass);
+            $classMap[$sourceKey] = $dep->source;
+            $classMap[$targetKey] = $dep->target;
 
             // Collect unique namespaces
-            $sourceNs = $dep->getSourceNamespace();
-            $targetNs = $dep->getTargetNamespace();
+            $sourceNs = $dep->source->namespace;
+            $targetNs = $dep->target->namespace;
 
-            if ($sourceNs !== '') {
-                $namespaces = $namespaces->add($sourceNs);
+            if ($sourceNs !== null) {
+                $nsPath = SymbolPath::forNamespace($sourceNs);
+                $namespaceMap[$nsPath->toCanonical()] = $nsPath;
             }
-            if ($targetNs !== '') {
-                $namespaces = $namespaces->add($targetNs);
+            if ($targetNs !== null) {
+                $nsPath = SymbolPath::forNamespace($targetNs);
+                $namespaceMap[$nsPath->toCanonical()] = $nsPath;
             }
         }
 
         // Precompute namespace Ce/Ca
-        $namespaceCe = $this->computeNamespaceCe($dependencies, $namespaces->toArray());
-        $namespaceCa = $this->computeNamespaceCa($dependencies, $namespaces->toArray());
+        $namespaceCe = $this->computeNamespaceCe($dependencies, $namespaceMap);
+        $namespaceCa = $this->computeNamespaceCa($dependencies, $namespaceMap);
 
         return new DependencyGraph(
             $dependencies,
             $bySource,
             $byTarget,
-            $classes->toArray(),
-            $namespaces->toArray(),
+            array_values($classMap),
+            array_values($namespaceMap),
             $namespaceCe,
             $namespaceCa,
         );
@@ -78,28 +86,28 @@ final class DependencyGraphBuilder
      * Ce = unique external classes that classes in this namespace depend on.
      *
      * @param array<Dependency> $dependencies
-     * @param array<string> $namespaces
+     * @param array<string, SymbolPath> $namespaceMap
      *
      * @return array<string, StringSet>
      */
-    private function computeNamespaceCe(array $dependencies, array $namespaces): array
+    private function computeNamespaceCe(array $dependencies, array $namespaceMap): array
     {
         /** @var array<string, StringSet> $result */
         $result = [];
 
         // Initialize all namespaces with empty sets
-        foreach ($namespaces as $ns) {
-            $result[$ns] = new StringSet();
+        foreach ($namespaceMap as $canonicalKey => $nsPath) {
+            $result[$canonicalKey] = new StringSet();
         }
 
         // For each dependency, if source is in namespace and target is outside,
         // add target to namespace's Ce
         foreach ($dependencies as $dep) {
-            $sourceNs = $dep->getSourceNamespace();
-            $targetNs = $dep->getTargetNamespace();
+            $sourceNs = $dep->source->namespace;
+            $targetNs = $dep->target->namespace;
 
-            // Skip if source namespace is empty (global namespace)
-            if ($sourceNs === '') {
+            // Skip if source namespace is null (global namespace)
+            if ($sourceNs === null) {
                 continue;
             }
 
@@ -109,7 +117,8 @@ final class DependencyGraphBuilder
             }
 
             // Add target class to namespace's Ce
-            $result[$sourceNs] = $result[$sourceNs]->add($dep->targetClass);
+            $nsKey = SymbolPath::forNamespace($sourceNs)->toCanonical();
+            $result[$nsKey] = $result[$nsKey]->add($dep->target->toCanonical());
         }
 
         return $result;
@@ -121,28 +130,28 @@ final class DependencyGraphBuilder
      * Ca = unique external classes that depend on classes in this namespace.
      *
      * @param array<Dependency> $dependencies
-     * @param array<string> $namespaces
+     * @param array<string, SymbolPath> $namespaceMap
      *
      * @return array<string, StringSet>
      */
-    private function computeNamespaceCa(array $dependencies, array $namespaces): array
+    private function computeNamespaceCa(array $dependencies, array $namespaceMap): array
     {
         /** @var array<string, StringSet> $result */
         $result = [];
 
         // Initialize all namespaces with empty sets
-        foreach ($namespaces as $ns) {
-            $result[$ns] = new StringSet();
+        foreach ($namespaceMap as $canonicalKey => $nsPath) {
+            $result[$canonicalKey] = new StringSet();
         }
 
         // For each dependency, if target is in namespace and source is outside,
         // add source to namespace's Ca
         foreach ($dependencies as $dep) {
-            $sourceNs = $dep->getSourceNamespace();
-            $targetNs = $dep->getTargetNamespace();
+            $sourceNs = $dep->source->namespace;
+            $targetNs = $dep->target->namespace;
 
-            // Skip if target namespace is empty (global namespace)
-            if ($targetNs === '') {
+            // Skip if target namespace is null (global namespace)
+            if ($targetNs === null) {
                 continue;
             }
 
@@ -152,7 +161,8 @@ final class DependencyGraphBuilder
             }
 
             // Add source class to namespace's Ca
-            $result[$targetNs] = $result[$targetNs]->add($dep->sourceClass);
+            $nsKey = SymbolPath::forNamespace($targetNs)->toCanonical();
+            $result[$nsKey] = $result[$nsKey]->add($dep->source->toCanonical());
         }
 
         return $result;

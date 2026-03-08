@@ -33,8 +33,8 @@ final class NocCollectorTest extends TestCase
     private function createExtends(string $childClass, string $parentClass, string $file = '/test.php', int $line = 1): Dependency
     {
         return new Dependency(
-            sourceClass: $childClass,
-            targetClass: $parentClass,
+            source: SymbolPath::fromClassFqn($childClass),
+            target: SymbolPath::fromClassFqn($parentClass),
             type: DependencyType::Extends,
             location: new Location($file, $line),
         );
@@ -83,8 +83,8 @@ final class NocCollectorTest extends TestCase
 
         // Create dependency graph with extends relationship
         $extends = new Dependency(
-            sourceClass: 'App\\ChildClass',
-            targetClass: 'App\\BaseClass',
+            source: SymbolPath::fromClassFqn('App\\ChildClass'),
+            target: SymbolPath::fromClassFqn('App\\BaseClass'),
             type: DependencyType::Extends,
             location: new Location('/child.php', 20),
         );

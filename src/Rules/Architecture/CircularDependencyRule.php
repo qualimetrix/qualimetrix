@@ -8,7 +8,6 @@ use AiMessDetector\Core\Dependency\CycleInterface;
 use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\RuleCategory;
 use AiMessDetector\Core\Violation\Location;
-use AiMessDetector\Core\Violation\SymbolPath;
 use AiMessDetector\Core\Violation\Violation;
 use AiMessDetector\Rules\AbstractRule;
 
@@ -79,15 +78,14 @@ final class CircularDependencyRule extends AbstractRule
 
             // Use the first class in the cycle as the violation location
             $classes = $cycle->getClasses();
-            $firstClass = $classes[0] ?? '';
-            if ($firstClass === '') {
+            $firstClass = $classes[0] ?? null;
+            if ($firstClass === null) {
                 continue; // Empty cycle
             }
-            [$namespace, $className] = $this->splitFqn($firstClass);
 
             $violations[] = new Violation(
                 location: new Location('', 0), // No specific file location for architectural violations
-                symbolPath: SymbolPath::forClass($namespace, $className),
+                symbolPath: $firstClass,
                 ruleName: $this->getName(),
                 violationCode: self::NAME,
                 message: \sprintf(
@@ -119,24 +117,6 @@ final class CircularDependencyRule extends AbstractRule
         return [
             'circular-deps' => 'enabled',
             'max-cycle-size' => 'maxCycleSize',
-        ];
-    }
-
-    /**
-     * Splits a fully-qualified class name into namespace and class name.
-     *
-     * @return array{0: string, 1: string} [namespace, className]
-     */
-    private function splitFqn(string $fqn): array
-    {
-        $pos = strrpos($fqn, '\\');
-        if ($pos === false) {
-            return ['', $fqn];
-        }
-
-        return [
-            substr($fqn, 0, $pos),
-            substr($fqn, $pos + 1),
         ];
     }
 }

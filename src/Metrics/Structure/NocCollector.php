@@ -79,24 +79,22 @@ final class NocCollector implements GlobalContextCollectorInterface
         $childrenMap = $this->buildChildrenMapFromGraph($graph);
 
         // Step 2: Store NOC for each class that has children (only project classes)
-        foreach ($childrenMap as $parentFqn => $children) {
-            // Parse parent FQN to namespace and class name
-            $parts = $this->parseClassName($parentFqn);
-            $symbolPath = SymbolPath::forClass($parts['namespace'] ?? '', $parts['class']);
+        foreach ($childrenMap as $parentKey => $children) {
+            $parentPath = $children['symbolPath'];
 
             // Skip classes not in the repository (e.g. vendor classes)
-            if (!$repository->has($symbolPath)) {
+            if (!$repository->has($parentPath)) {
                 continue;
             }
 
-            $noc = \count($children);
-            $metrics = $repository->get($symbolPath);
+            $noc = $children['count'];
+            $metrics = $repository->get($parentPath);
 
             // Add NOC metric
             $metrics = $metrics->with(self::METRIC_NOC, $noc);
 
             // Update repository
-            $repository->add($symbolPath, $metrics, '', 0);
+            $repository->add($parentPath, $metrics, '', 0);
         }
 
         // Step 3: Ensure all classes have NOC (even if 0)
@@ -116,11 +114,11 @@ final class NocCollector implements GlobalContextCollectorInterface
     }
 
     /**
-     * Builds a map of parent FQN → list of children FQNs from dependency graph.
+     * Builds a map of parent canonical key → {symbolPath, count} from dependency graph.
      *
      * Only counts DependencyType::Extends (not implements or trait use).
      *
-     * @return array<string, list<string>>
+     * @return array<string, array{symbolPath: SymbolPath, count: int}>
      */
     private function buildChildrenMapFromGraph(DependencyGraphInterface $graph): array
     {
@@ -133,34 +131,18 @@ final class NocCollector implements GlobalContextCollectorInterface
                 continue;
             }
 
-            $parentFqn = $dependency->targetClass;
-            $childFqn = $dependency->sourceClass;
+            $parentKey = $dependency->target->toCanonical();
 
             // Add to children map
-            if (!isset($childrenMap[$parentFqn])) {
-                $childrenMap[$parentFqn] = [];
+            if (!isset($childrenMap[$parentKey])) {
+                $childrenMap[$parentKey] = [
+                    'symbolPath' => $dependency->target,
+                    'count' => 0,
+                ];
             }
-            $childrenMap[$parentFqn][] = $childFqn;
+            $childrenMap[$parentKey]['count']++;
         }
 
         return $childrenMap;
-    }
-
-    /**
-     * Parses a fully qualified class name into namespace and class parts.
-     *
-     * @return array{namespace: string|null, class: string}
-     */
-    private function parseClassName(string $className): array
-    {
-        $pos = strrpos($className, '\\');
-        if ($pos === false) {
-            return ['namespace' => null, 'class' => $className];
-        }
-
-        return [
-            'namespace' => substr($className, 0, $pos),
-            'class' => substr($className, $pos + 1),
-        ];
     }
 }

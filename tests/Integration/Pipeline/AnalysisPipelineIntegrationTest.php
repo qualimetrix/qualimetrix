@@ -72,8 +72,8 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         // Arrange: create dependencies between two classes
         $dependencies = [
             new Dependency(
-                'App\Service\OrderService',
-                'App\Repository\OrderRepository',
+                SymbolPath::fromClassFqn('App\Service\OrderService'),
+                SymbolPath::fromClassFqn('App\Repository\OrderRepository'),
                 DependencyType::New_,
                 new Location('/tmp/OrderService.php', 10),
             ),
@@ -125,14 +125,14 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         // Arrange: A circular dependency A -> B -> A
         $dependencies = [
             new Dependency(
-                'Fixtures\CircularDeps\ServiceA',
-                'Fixtures\CircularDeps\ServiceB',
+                SymbolPath::fromClassFqn('Fixtures\CircularDeps\ServiceA'),
+                SymbolPath::fromClassFqn('Fixtures\CircularDeps\ServiceB'),
                 DependencyType::New_,
                 new Location('/tmp/ServiceA.php', 10),
             ),
             new Dependency(
-                'Fixtures\CircularDeps\ServiceB',
-                'Fixtures\CircularDeps\ServiceA',
+                SymbolPath::fromClassFqn('Fixtures\CircularDeps\ServiceB'),
+                SymbolPath::fromClassFqn('Fixtures\CircularDeps\ServiceA'),
                 DependencyType::New_,
                 new Location('/tmp/ServiceB.php', 10),
             ),
@@ -204,14 +204,14 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         // Arrange: two classes in the same namespace with cross-namespace dependencies
         $dependencies = [
             new Dependency(
-                'App\Service\OrderService',
-                'App\Repository\OrderRepository',
+                SymbolPath::fromClassFqn('App\Service\OrderService'),
+                SymbolPath::fromClassFqn('App\Repository\OrderRepository'),
                 DependencyType::New_,
                 new Location('/tmp/OrderService.php', 10),
             ),
             new Dependency(
-                'App\Service\PaymentService',
-                'App\Repository\PaymentRepository',
+                SymbolPath::fromClassFqn('App\Service\PaymentService'),
+                SymbolPath::fromClassFqn('App\Repository\PaymentRepository'),
                 DependencyType::New_,
                 new Location('/tmp/PaymentService.php', 10),
             ),

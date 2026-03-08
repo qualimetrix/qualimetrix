@@ -9,6 +9,7 @@ use AiMessDetector\Analysis\Collection\Dependency\DependencyGraph;
 use AiMessDetector\Core\Dependency\Dependency;
 use AiMessDetector\Core\Dependency\DependencyType;
 use AiMessDetector\Core\Violation\Location;
+use AiMessDetector\Core\Violation\SymbolPath;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
@@ -24,7 +25,7 @@ final class CircularDependencyDetectorTest extends TestCase
 
     public function testDetectsDirectCycle(): void
     {
-        // A → B → A
+        // A -> B -> A
         $graph = $this->buildGraph([
             'A' => ['B'],
             'B' => ['A'],
@@ -34,13 +35,14 @@ final class CircularDependencyDetectorTest extends TestCase
 
         $this->assertCount(1, $cycles);
         $this->assertSame(2, $cycles[0]->getSize());
-        $this->assertContains('A', $cycles[0]->getClasses());
-        $this->assertContains('B', $cycles[0]->getClasses());
+        $classStrings = array_map(fn(SymbolPath $p) => $p->toString(), $cycles[0]->getClasses());
+        $this->assertContains('A', $classStrings);
+        $this->assertContains('B', $classStrings);
     }
 
     public function testDetectsTransitiveCycle(): void
     {
-        // A → B → C → A
+        // A -> B -> C -> A
         $graph = $this->buildGraph([
             'A' => ['B'],
             'B' => ['C'],
@@ -51,14 +53,15 @@ final class CircularDependencyDetectorTest extends TestCase
 
         $this->assertCount(1, $cycles);
         $this->assertSame(3, $cycles[0]->getSize());
-        $this->assertContains('A', $cycles[0]->getClasses());
-        $this->assertContains('B', $cycles[0]->getClasses());
-        $this->assertContains('C', $cycles[0]->getClasses());
+        $classStrings = array_map(fn(SymbolPath $p) => $p->toString(), $cycles[0]->getClasses());
+        $this->assertContains('A', $classStrings);
+        $this->assertContains('B', $classStrings);
+        $this->assertContains('C', $classStrings);
     }
 
     public function testDetectsMultipleCycles(): void
     {
-        // A → B → A  and  C → D → C
+        // A -> B -> A  and  C -> D -> C
         $graph = $this->buildGraph([
             'A' => ['B'],
             'B' => ['A'],
@@ -73,7 +76,7 @@ final class CircularDependencyDetectorTest extends TestCase
 
     public function testNoCyclesInDAG(): void
     {
-        // A → B → C (no cycle)
+        // A -> B -> C (no cycle)
         $graph = $this->buildGraph([
             'A' => ['B'],
             'B' => ['C'],
@@ -87,8 +90,8 @@ final class CircularDependencyDetectorTest extends TestCase
 
     public function testHandlesComplexGraph(): void
     {
-        // UserService → OrderService → UserService (cycle)
-        // NotificationService → (no cycle)
+        // UserService -> OrderService -> UserService (cycle)
+        // NotificationService -> (no cycle)
         $graph = $this->buildGraph([
             'UserService' => ['OrderService', 'NotificationService'],
             'OrderService' => ['UserService'],
@@ -103,7 +106,7 @@ final class CircularDependencyDetectorTest extends TestCase
 
     public function testFindsPathInCycle(): void
     {
-        // A → B → C → A
+        // A -> B -> C -> A
         $graph = $this->buildGraph([
             'A' => ['B'],
             'B' => ['C'],
@@ -116,8 +119,8 @@ final class CircularDependencyDetectorTest extends TestCase
         $path = $cycles[0]->getPath();
 
         // Path should start and end with the same class
-        $this->assertSame($path[0], $path[\count($path) - 1]);
-        // Path should be at least 4 elements (A → B → C → A)
+        $this->assertSame($path[0]->toCanonical(), $path[\count($path) - 1]->toCanonical());
+        // Path should be at least 4 elements (A -> B -> C -> A)
         $this->assertGreaterThanOrEqual(4, \count($path));
     }
 
@@ -144,7 +147,7 @@ final class CircularDependencyDetectorTest extends TestCase
 
     public function testDisconnectedComponents(): void
     {
-        // A → B (no cycle)  and  C → D (no cycle)
+        // A -> B (no cycle)  and  C -> D (no cycle)
         $graph = $this->buildGraph([
             'A' => ['B'],
             'B' => [],
@@ -167,23 +170,29 @@ final class CircularDependencyDetectorTest extends TestCase
         $dependencies = [];
         $bySource = [];
         $byTarget = [];
-        $classes = [];
+        /** @var array<string, SymbolPath> $classMap */
+        $classMap = [];
 
         foreach ($adjacencyList as $source => $targets) {
-            $classes[$source] = true;
+            $sourcePath = SymbolPath::fromClassFqn($source);
+            $sourceKey = $sourcePath->toCanonical();
+            $classMap[$sourceKey] = $sourcePath;
+
             foreach ($targets as $target) {
-                $classes[$target] = true;
+                $targetPath = SymbolPath::fromClassFqn($target);
+                $targetKey = $targetPath->toCanonical();
+                $classMap[$targetKey] = $targetPath;
 
                 $dep = new Dependency(
-                    sourceClass: $source,
-                    targetClass: $target,
+                    source: $sourcePath,
+                    target: $targetPath,
                     type: DependencyType::TypeHint,
                     location: new Location('test.php', 1),
                 );
 
                 $dependencies[] = $dep;
-                $bySource[$source][] = $dep;
-                $byTarget[$target][] = $dep;
+                $bySource[$sourceKey][] = $dep;
+                $byTarget[$targetKey][] = $dep;
             }
         }
 
@@ -191,7 +200,7 @@ final class CircularDependencyDetectorTest extends TestCase
             dependencies: $dependencies,
             bySource: $bySource,
             byTarget: $byTarget,
-            classes: array_keys($classes),
+            classes: array_values($classMap),
             namespaces: [],
             namespaceCe: [],
             namespaceCa: [],
