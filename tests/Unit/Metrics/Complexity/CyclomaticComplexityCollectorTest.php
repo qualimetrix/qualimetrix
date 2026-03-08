@@ -596,6 +596,59 @@ PHP;
         self::assertContains(AggregationStrategy::Max, $projectStrategies);
     }
 
+    public function testAnonymousClassMethodsAreNotAttributedToOuterClass(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Outer
+{
+    public function simple(): void
+    {
+    }
+
+    public function factory(): object
+    {
+        return new class {
+            public function innerComplex(): void
+            {
+                if (true) {
+                    if (false) {
+                        while (true) {
+                            break;
+                        }
+                    }
+                }
+            }
+        };
+    }
+
+    public function afterAnonymous(): void
+    {
+        if (true) {
+            // one decision point
+        }
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // simple: CC = 1 (base)
+        self::assertSame(1, $metrics->get('ccn:App\Outer::simple'));
+
+        // factory: CC = 1 (base) — anonymous class complexity should NOT leak
+        self::assertSame(1, $metrics->get('ccn:App\Outer::factory'));
+
+        // afterAnonymous: CC = 1 (base) + 1 (if) = 2
+        self::assertSame(2, $metrics->get('ccn:App\Outer::afterAnonymous'));
+
+        // Anonymous class methods should NOT appear in metrics
+        self::assertNull($metrics->get('ccn:App\Outer::innerComplex'));
+    }
+
     private function collectMetrics(string $code): \AiMessDetector\Core\Metric\MetricBag
     {
         $parser = (new ParserFactory())->createForHostVersion();

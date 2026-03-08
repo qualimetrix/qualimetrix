@@ -15,7 +15,7 @@ use AiMessDetector\Core\Symbol\SymbolType;
 /**
  * Computes abstractness metric for namespaces.
  *
- * Abstractness = (abstract classes + interfaces) / (classes + enums + traits)
+ * Abstractness = (abstract classes + interfaces) / (classes + enums + traits + interfaces)
  *
  * Range: [0, 1]
  * - 0: completely concrete (no abstractions)
@@ -66,7 +66,7 @@ final class AbstractnessCollector implements GlobalContextCollectorInterface
             $abstractCount = $metrics->get('abstractClassCount.sum') ?? 0;
             $interfaceCount = $metrics->get('interfaceCount.sum') ?? 0;
 
-            $totalTypes = (int) $classCount + (int) $enumCount + (int) $traitCount;
+            $totalTypes = (int) $classCount + (int) $enumCount + (int) $traitCount + (int) $interfaceCount;
             $totalAbstractions = (int) $abstractCount + (int) $interfaceCount;
 
             $abstractness = $this->computeAbstractness($totalTypes, $totalAbstractions);

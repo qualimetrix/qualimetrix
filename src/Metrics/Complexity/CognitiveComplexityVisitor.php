@@ -28,11 +28,13 @@ use PhpParser\Node\Stmt\Continue_;
 use PhpParser\Node\Stmt\Do_;
 use PhpParser\Node\Stmt\Else_;
 use PhpParser\Node\Stmt\ElseIf_;
+use PhpParser\Node\Stmt\Expression;
 use PhpParser\Node\Stmt\For_;
 use PhpParser\Node\Stmt\Foreach_;
 use PhpParser\Node\Stmt\Function_;
 use PhpParser\Node\Stmt\Goto_;
 use PhpParser\Node\Stmt\If_;
+use PhpParser\Node\Stmt\Return_;
 use PhpParser\Node\Stmt\Switch_;
 use PhpParser\Node\Stmt\While_;
 use PhpParser\NodeVisitorAbstract;
@@ -184,6 +186,15 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
             return null;
         }
 
+        // Reset logical operator tracking at statement boundaries.
+        // This ensures that two consecutive "if ($a && $b)" statements
+        // each get their own +1 for the && operator, rather than the second
+        // one being treated as a continuation of the first's operator sequence.
+        if ($this->isStatementBoundary($node) && $this->methodStack !== []) {
+            $currentMethod = $this->methodStack[array_key_last($this->methodStack)];
+            unset($this->lastLogicalOp[$currentMethod['fqn']]);
+        }
+
         // Count complexity BEFORE incrementing nesting
         // This ensures we count the structure at its current nesting level
         $this->countComplexity($node);
@@ -278,6 +289,28 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
             || $node instanceof Catch_
             || $node instanceof Switch_
             || $node instanceof Match_;
+    }
+
+    /**
+     * Checks if node is a statement boundary that resets logical operator tracking.
+     *
+     * Each statement starts a fresh boolean expression context. Without this reset,
+     * consecutive statements like "if ($a && $b) {} if ($c && $d) {}" would treat
+     * the && in the second if as a continuation of the first's operator sequence.
+     */
+    private function isStatementBoundary(Node $node): bool
+    {
+        return $node instanceof If_
+            || $node instanceof While_
+            || $node instanceof For_
+            || $node instanceof Foreach_
+            || $node instanceof Switch_
+            || $node instanceof Match_
+            || $node instanceof Do_
+            || $node instanceof Expression
+            || $node instanceof Return_
+            || $node instanceof ElseIf_
+            || $node instanceof Else_;
     }
 
     private function countComplexity(Node $node): void

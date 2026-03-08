@@ -418,6 +418,9 @@ PHP;
         self::assertSame(1, $metrics->get('unreachableCode:App\Outer::before'));
         self::assertSame(0, $metrics->get('unreachableCode:App\Outer::factory'));
         self::assertSame(1, $metrics->get('unreachableCode:App\Outer::after'));
+
+        // Anonymous class methods should NOT appear in metrics
+        self::assertNull($metrics->get('unreachableCode:App\Outer::inner'));
     }
 
     private function collectMetrics(string $code): \AiMessDetector\Core\Metric\MetricBag

@@ -79,6 +79,9 @@ final class HalsteadVisitor extends NodeVisitorAbstract implements ResettableVis
     private ?string $currentClass = null;
     private int $closureCounter = 0;
 
+    /** @var int Depth of anonymous class nesting (methods inside anonymous classes are skipped) */
+    private int $anonymousClassDepth = 0;
+
     public function reset(): void
     {
         $this->metrics = [];
@@ -87,6 +90,7 @@ final class HalsteadVisitor extends NodeVisitorAbstract implements ResettableVis
         $this->currentNamespace = null;
         $this->currentClass = null;
         $this->closureCounter = 0;
+        $this->anonymousClassDepth = 0;
     }
 
     /**
@@ -143,15 +147,25 @@ final class HalsteadVisitor extends NodeVisitorAbstract implements ResettableVis
         }
 
         // Track class-like types (skip anonymous classes)
-        $className = $this->extractClassLikeName($node);
-        if ($className !== null) {
-            $this->currentClass = $className;
+        if ($node instanceof Stmt\Class_) {
+            if ($node->name === null) {
+                ++$this->anonymousClassDepth;
+            } else {
+                $this->currentClass = $node->name->toString();
+            }
+        } elseif ($this->isClassLikeNode($node)) {
+            $className = $this->extractClassLikeName($node);
+            if ($className !== null) {
+                $this->currentClass = $className;
+            }
         }
 
-        // Start of a method
+        // Start of a method (skip if inside anonymous class)
         if ($node instanceof Stmt\ClassMethod) {
-            $fqn = $this->buildMethodFqn($node->name->toString());
-            $this->startMethod($fqn, $node->name->toString(), $node->getStartLine());
+            if ($this->anonymousClassDepth === 0) {
+                $fqn = $this->buildMethodFqn($node->name->toString());
+                $this->startMethod($fqn, $node->name->toString(), $node->getStartLine());
+            }
 
             return null;
         }
@@ -184,8 +198,8 @@ final class HalsteadVisitor extends NodeVisitorAbstract implements ResettableVis
             return null;
         }
 
-        // Track code lines and count operators/operands
-        if ($this->methodStack !== []) {
+        // Track code lines and count operators/operands (skip anonymous class internals)
+        if ($this->methodStack !== [] && $this->anonymousClassDepth === 0) {
             $idx = array_key_last($this->methodStack);
             if ($idx !== null) {
                 $this->methodStack[$idx]['codeLines'][$node->getStartLine()] = true;
@@ -199,9 +213,17 @@ final class HalsteadVisitor extends NodeVisitorAbstract implements ResettableVis
 
     public function leaveNode(Node $node): ?int
     {
-        // End of method/function/closure
-        if ($node instanceof Stmt\ClassMethod
-            || $node instanceof Stmt\Function_
+        // End of method (skip if inside anonymous class — we didn't start it)
+        if ($node instanceof Stmt\ClassMethod) {
+            if ($this->anonymousClassDepth === 0) {
+                $this->endMethod($node->getEndLine());
+            }
+
+            return null;
+        }
+
+        // End of function/closure/arrow function
+        if ($node instanceof Stmt\Function_
             || $node instanceof Expr\Closure
             || $node instanceof Expr\ArrowFunction
         ) {
@@ -210,8 +232,14 @@ final class HalsteadVisitor extends NodeVisitorAbstract implements ResettableVis
             return null;
         }
 
-        // Exit class-like scope (skip anonymous classes — they don't set currentClass on enter)
-        if ($this->isClassLikeNode($node) && $this->extractClassLikeName($node) !== null) {
+        // Exit class-like scope
+        if ($node instanceof Stmt\Class_) {
+            if ($node->name === null) {
+                --$this->anonymousClassDepth;
+            } else {
+                $this->currentClass = null;
+            }
+        } elseif ($this->isClassLikeNode($node)) {
             $this->currentClass = null;
         }
 

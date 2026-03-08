@@ -38,6 +38,9 @@ final class ParameterCountVisitor extends NodeVisitorAbstract implements Resetta
     /** @var list<string|null> Stack of class names for nested class-like scopes */
     private array $classStack = [];
 
+    /** @var int Depth of anonymous class nesting (methods inside anonymous classes are skipped) */
+    private int $anonymousClassDepth = 0;
+
     public function reset(): void
     {
         $this->parameterCounts = [];
@@ -46,6 +49,7 @@ final class ParameterCountVisitor extends NodeVisitorAbstract implements Resetta
         $this->currentClass = null;
         $this->closureCounter = 0;
         $this->classStack = [];
+        $this->anonymousClassDepth = 0;
     }
 
     /**
@@ -103,18 +107,23 @@ final class ParameterCountVisitor extends NodeVisitorAbstract implements Resetta
         } elseif ($this->isClassLikeNode($node)) {
             // Anonymous class — push null to track scope depth
             $this->classStack[] = null;
+            if ($node instanceof Node\Stmt\Class_ && $node->name === null) {
+                ++$this->anonymousClassDepth;
+            }
         }
 
-        // Class method
+        // Class method (skip if inside anonymous class)
         if ($node instanceof ClassMethod) {
-            $fqn = $this->buildMethodFqn($node->name->toString());
-            $this->parameterCounts[$fqn] = \count($node->params);
-            $this->methodInfos[$fqn] = [
-                'namespace' => $this->currentNamespace,
-                'class' => $this->currentClass,
-                'method' => $node->name->toString(),
-                'line' => $node->getStartLine(),
-            ];
+            if ($this->anonymousClassDepth === 0) {
+                $fqn = $this->buildMethodFqn($node->name->toString());
+                $this->parameterCounts[$fqn] = \count($node->params);
+                $this->methodInfos[$fqn] = [
+                    'namespace' => $this->currentNamespace,
+                    'class' => $this->currentClass,
+                    'method' => $node->name->toString(),
+                    'line' => $node->getStartLine(),
+                ];
+            }
 
             return null;
         }
@@ -140,6 +149,9 @@ final class ParameterCountVisitor extends NodeVisitorAbstract implements Resetta
     {
         // Exit class-like scope — pop stack and restore previous class context
         if ($this->isClassLikeNode($node)) {
+            if ($node instanceof Node\Stmt\Class_ && $node->name === null) {
+                --$this->anonymousClassDepth;
+            }
             array_pop($this->classStack);
             $this->currentClass = $this->classStack !== [] ? $this->classStack[array_key_last($this->classStack)] : null;
         }

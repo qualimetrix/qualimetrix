@@ -477,6 +477,81 @@ PHP,
             // Total: 1 + 1 + 2 + 1 + 2 + 2 = 9
         ];
 
+        // Two consecutive if statements with same logical operator
+        // Each statement should reset lastLogicalOp tracking
+        // First if: +1 (if) + 1 (&&) = 2
+        // Second if: +1 (if) + 1 (&&) = 2
+        // Total: 4
+        yield 'consecutive ifs with same logical operator' => [
+            'code' => <<<'PHP'
+<?php
+function consecutiveIfs($a, $b, $c, $d) {
+    if ($a && $b) {
+        echo 'first';
+    }
+    if ($c && $d) {
+        echo 'second';
+    }
+}
+PHP,
+            'expected' => ['consecutiveIfs' => 4],
+        ];
+
+        // Single if with mixed operators: && then ||
+        // if: +1, &&: +1 (first logical), ||: +1 (operator change) = 3
+        yield 'single if with operator change' => [
+            'code' => <<<'PHP'
+<?php
+function operatorChange($a, $b, $c) {
+    if ($a && $b || $c) {
+        return true;
+    }
+    return false;
+}
+PHP,
+            'expected' => ['operatorChange' => 3],
+        ];
+
+        // Consecutive different statement types with logical operators
+        // Each statement gets fresh logical operator tracking
+        // if ($a && $b): +1 (if) + 1 (&&) = 2
+        // while ($c || $d): +1 (while) + 1 (||) = 2
+        // Total: 4
+        yield 'different statements with logical operators' => [
+            'code' => <<<'PHP'
+<?php
+function differentStatements($a, $b, $c, $d) {
+    if ($a && $b) {
+        echo 'if';
+    }
+    while ($c || $d) {
+        break;
+    }
+}
+PHP,
+            'expected' => ['differentStatements' => 4],
+        ];
+
+        // Three consecutive ifs with && to prove the reset works consistently
+        // Each if: +1 (if) + 1 (&&) = 2, total: 6
+        yield 'three consecutive ifs with logical operators' => [
+            'code' => <<<'PHP'
+<?php
+function threeConsecutiveIfs($a, $b, $c, $d, $e, $f) {
+    if ($a && $b) {
+        echo 'first';
+    }
+    if ($c && $d) {
+        echo 'second';
+    }
+    if ($e && $f) {
+        echo 'third';
+    }
+}
+PHP,
+            'expected' => ['threeConsecutiveIfs' => 6],
+        ];
+
         // elseif chain
         yield 'elseif chain' => [
             'code' => <<<'PHP'

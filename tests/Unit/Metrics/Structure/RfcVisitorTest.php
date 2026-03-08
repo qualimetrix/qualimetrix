@@ -359,6 +359,53 @@ PHP,
             ],
         ];
 
+        // Method containing a closure — external calls after closure should still be tracked
+        yield 'method with closure tracks calls after closure' => [
+            'code' => <<<'PHP'
+<?php
+class WithClosure
+{
+    public function process(): void
+    {
+        $this->logger->info('start');                  // +1 external (info)
+        $fn = function () {
+            $this->helper->doSomething();              // +1 external (doSomething)
+        };
+        $this->logger->debug('end');                   // +1 external (debug)
+    }
+}
+// M = 1, R = 3, RFC = 4
+PHP,
+            'expected' => [
+                'WithClosure' => ['rfc' => 4, 'own' => 1, 'external' => 3],
+            ],
+        ];
+
+        // Method containing an anonymous class — calls after anonymous class should still be tracked
+        yield 'method with anonymous class tracks calls after it' => [
+            'code' => <<<'PHP'
+<?php
+class WithAnonymousClass
+{
+    public function build(): void
+    {
+        $this->factory->prepare();                     // +1 external (prepare)
+        $obj = new class {
+            public function inner(): void
+            {
+                SomeService::run();                    // anonymous class, not tracked
+            }
+        };
+        $this->factory->finalize();                    // +1 external (finalize)
+    }
+}
+// M = 1, R = 2, RFC = 3
+PHP,
+            'expected' => [
+                'WithAnonymousClass' => ['rfc' => 3, 'own' => 1, 'external' => 2],
+            ],
+        ];
+
         // Complex real-world example
         yield 'complex order processor' => [
             'code' => <<<'PHP'
