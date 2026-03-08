@@ -178,7 +178,9 @@ Implementation for `.yaml`/`.yml` files.
 
 **Behavior:**
 - Parses via Symfony Yaml
-- Normalizes snake_case -> camelCase
+- Normalizes snake_case -> camelCase for option names within rule configuration
+
+**Note:** Rule identifiers (keys under the `rules:` section) are preserved as-is and not normalized. Only option names within rule configuration are normalized.
 
 ### RuleOptionsFactory
 

@@ -511,6 +511,12 @@ rules:
 
 ---
 
+## Threshold Semantics
+
+Violations are triggered when a metric value meets or exceeds the threshold (`>=`). For inverted metrics like Maintainability Index and Type Coverage, violations are triggered when the value is at or below the threshold (`<=`).
+
+---
+
 ## Creating a New Rule
 
 ### Simple Rule
@@ -538,7 +544,7 @@ final class ExampleRule extends AbstractRule {
         $violations = [];
         foreach ($context->metrics->all(SymbolType::Method) as $method) {
             $value = $context->metrics->get($method->symbolPath, 'metricName');
-            if ($value > $this->options->threshold) {
+            if ($value >= $this->options->threshold) {
                 $violations[] = Violation::create(/* ... */);
             }
         }

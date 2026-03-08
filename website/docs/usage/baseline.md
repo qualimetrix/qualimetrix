@@ -136,13 +136,33 @@ class GeneratedCode
 }
 ```
 
+### Suppress on the next line only
+
+Use `@aimd-ignore-next-line` in a comment to suppress a violation on the very next line:
+
+```php
+class CliApplication
+{
+    public function run(): void
+    {
+        // process commands...
+
+        /** @aimd-ignore-next-line code-smell.exit CLI entry point */
+        exit(0);
+    }
+}
+```
+
+This is useful for one-off suppressions where a docblock-level tag would be too broad.
+
 ### Suppression tag syntax
 
-| Tag                            | Scope                               | Example                                          |
-| ------------------------------ | ----------------------------------- | ------------------------------------------------ |
-| `@aimd-ignore <rule> [reason]` | The symbol this docblock belongs to | `@aimd-ignore complexity.cyclomatic Legacy code` |
-| `@aimd-ignore * [reason]`      | All rules for this symbol           | `@aimd-ignore * Generated code`                  |
-| `@aimd-ignore-file`            | Entire file                         | `@aimd-ignore-file`                              |
+| Tag                                      | Scope                               | Example                                                  |
+| ---------------------------------------- | ----------------------------------- | -------------------------------------------------------- |
+| `@aimd-ignore <rule> [reason]`           | The symbol this docblock belongs to | `@aimd-ignore complexity.cyclomatic Legacy code`         |
+| `@aimd-ignore * [reason]`                | All rules for this symbol           | `@aimd-ignore * Generated code`                          |
+| `@aimd-ignore-next-line <rule> [reason]` | The next line only                  | `@aimd-ignore-next-line code-smell.exit CLI entry point` |
+| `@aimd-ignore-file`                      | Entire file                         | `@aimd-ignore-file`                                      |
 
 The rule name supports prefix matching: `@aimd-ignore complexity` suppresses all `complexity.*` rules.
 
