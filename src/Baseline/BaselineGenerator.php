@@ -43,7 +43,7 @@ final readonly class BaselineGenerator
         }
 
         return new Baseline(
-            version: 3,
+            version: 4,
             generated: new DateTimeImmutable(),
             entries: $entries,
         );

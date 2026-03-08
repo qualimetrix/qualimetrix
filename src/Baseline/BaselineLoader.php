@@ -112,9 +112,15 @@ final readonly class BaselineLoader
             throw new RuntimeException('Baseline "version" must be an integer');
         }
 
-        if ($data['version'] !== 3) {
+        if ($data['version'] === 3) {
+            trigger_error(
+                'Baseline version 3 is deprecated and will stop working in the next major release. '
+                . 'Please regenerate with --generate-baseline.',
+                \E_USER_DEPRECATED,
+            );
+        } elseif ($data['version'] !== 4) {
             throw new RuntimeException(\sprintf(
-                'Unsupported baseline version: %d. Expected version 3. Please regenerate with --generate-baseline.',
+                'Unsupported baseline version: %d. Expected version 4. Please regenerate with --generate-baseline.',
                 $data['version'],
             ));
         }
