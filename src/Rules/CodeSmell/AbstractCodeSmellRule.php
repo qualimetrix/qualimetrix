@@ -74,18 +74,22 @@ abstract class AbstractCodeSmellRule extends AbstractRule
                 continue;
             }
 
-            // Create one violation per file with the count
+            // Create one violation per occurrence with correct line
             $message = $this->formatMessage($count);
 
-            $violations[] = new Violation(
-                location: new Location($fileInfo->file, 1),
-                symbolPath: $fileInfo->symbolPath,
-                ruleName: $this->getName(),
-                violationCode: $this->getName(),
-                message: $message,
-                severity: $this->getSeverity(),
-                metricValue: $count,
-            );
+            for ($i = 0; $i < $count; $i++) {
+                $line = (int) ($metrics->get("codeSmell.{$type}.line.{$i}") ?? 1);
+
+                $violations[] = new Violation(
+                    location: new Location($fileInfo->file, $line),
+                    symbolPath: $fileInfo->symbolPath,
+                    ruleName: $this->getName(),
+                    violationCode: $this->getName(),
+                    message: $message,
+                    severity: $this->getSeverity(),
+                    metricValue: $count,
+                );
+            }
         }
 
         return $violations;

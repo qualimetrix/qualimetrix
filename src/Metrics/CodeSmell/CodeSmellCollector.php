@@ -54,6 +54,7 @@ final class CodeSmellCollector extends AbstractCollector
 
         foreach (self::SMELL_TYPES as $type) {
             $metrics[] = "codeSmell.{$type}.count";
+            // Line data keys (codeSmell.{type}.line.{i}) are dynamic
         }
 
         return $metrics;
@@ -73,6 +74,10 @@ final class CodeSmellCollector extends AbstractCollector
             $count = \count($locations);
 
             $bag = $bag->with("codeSmell.{$type}.count", $count);
+
+            foreach ($locations as $i => $location) {
+                $bag = $bag->with("codeSmell.{$type}.line.{$i}", $location->line);
+            }
         }
 
         return $bag;
