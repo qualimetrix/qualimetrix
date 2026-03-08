@@ -323,6 +323,9 @@ Key rules:
 - Keep `website/docs/reference/default-thresholds.md` in sync with actual defaults
 - After any documentation changes, verify the site builds without errors or warnings:
   ```bash
+  # If .venv exists (local development):
+  cd website && .venv/bin/mkdocs build --strict
+  # Otherwise (CI / fresh clone):
   cd website && pip install -r requirements.txt && mkdocs build --strict
   ```
 
