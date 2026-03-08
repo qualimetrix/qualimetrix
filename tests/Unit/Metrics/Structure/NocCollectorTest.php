@@ -232,26 +232,29 @@ final class NocCollectorTest extends TestCase
     }
 
     #[Test]
-    public function calculate_childExtendingGlobalParent_works(): void
+    public function calculate_childExtendingGlobalParent_skipsVendorParent(): void
     {
-        // Child in namespace extending parent in global namespace
+        // Child in namespace extending parent not in repository (e.g. built-in Exception).
+        // The parent should NOT get NOC metrics — only project classes get metrics.
         $repository = new InMemoryMetricRepository();
 
-        // Create dependency graph extending built-in Exception
         $graph = (new DependencyGraphBuilder())->build([
             $this->createExtends('App\\Service\\MyException', 'Exception', '/exception.php', 10),
         ]);
 
-        // Add child in namespace
+        // Only the project class is in the repository
         $childPath = SymbolPath::forClass('App\\Service', 'MyException');
         $repository->add($childPath, new MetricBag(), '/exception.php', 10);
 
         $this->collector->calculate($graph, $repository);
 
-        // Exception (parent) should have NOC = 1
+        // Exception (parent) is NOT in the repository, so it should NOT get NOC metric
         $parentPath = SymbolPath::forClass('', 'Exception');
-        $parentMetrics = $repository->get($parentPath);
-        self::assertSame(1, $parentMetrics->get('noc'));
+        self::assertFalse($repository->has($parentPath));
+
+        // Child should have NOC = 0 (no children of its own)
+        $childMetrics = $repository->get($childPath);
+        self::assertSame(0, $childMetrics->get('noc'));
     }
 
     #[Test]

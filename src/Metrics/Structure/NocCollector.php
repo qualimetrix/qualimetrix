@@ -8,7 +8,6 @@ use AiMessDetector\Core\Dependency\DependencyGraphInterface;
 use AiMessDetector\Core\Dependency\DependencyType;
 use AiMessDetector\Core\Metric\AggregationStrategy;
 use AiMessDetector\Core\Metric\GlobalContextCollectorInterface;
-use AiMessDetector\Core\Metric\MetricBag;
 use AiMessDetector\Core\Metric\MetricDefinition;
 use AiMessDetector\Core\Metric\MetricRepositoryInterface;
 use AiMessDetector\Core\Metric\SymbolLevel;
@@ -79,16 +78,19 @@ final class NocCollector implements GlobalContextCollectorInterface
         // Step 1: Build parent → children map from dependency graph
         $childrenMap = $this->buildChildrenMapFromGraph($graph);
 
-        // Step 2: Store NOC for each class that has children
+        // Step 2: Store NOC for each class that has children (only project classes)
         foreach ($childrenMap as $parentFqn => $children) {
-            $noc = \count($children);
-
             // Parse parent FQN to namespace and class name
             $parts = $this->parseClassName($parentFqn);
             $symbolPath = SymbolPath::forClass($parts['namespace'] ?? '', $parts['class']);
 
-            // Get existing metrics or create new bag
-            $metrics = $repository->has($symbolPath) ? $repository->get($symbolPath) : new MetricBag();
+            // Skip classes not in the repository (e.g. vendor classes)
+            if (!$repository->has($symbolPath)) {
+                continue;
+            }
+
+            $noc = \count($children);
+            $metrics = $repository->get($symbolPath);
 
             // Add NOC metric
             $metrics = $metrics->with(self::METRIC_NOC, $noc);

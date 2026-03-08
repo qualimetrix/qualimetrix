@@ -103,6 +103,15 @@ final class CouplingCollector implements GlobalContextCollectorInterface
         MetricRepositoryInterface $repository,
     ): void {
         foreach ($graph->getAllClasses() as $className) {
+            // Parse class name to get namespace and type
+            $parts = $this->parseClassName($className);
+            $symbolPath = SymbolPath::forClass($parts['namespace'] ?? '', $parts['class']);
+
+            // Skip classes not in the repository (e.g. vendor/external classes)
+            if (!$repository->has($symbolPath)) {
+                continue;
+            }
+
             $ca = $graph->getClassCa($className);
             $ce = $graph->getClassCe($className);
             $cbo = $ca + $ce;
@@ -113,10 +122,6 @@ final class CouplingCollector implements GlobalContextCollectorInterface
                 ->with('ce', $ce)
                 ->with('cbo', $cbo)
                 ->with('instability', $instability);
-
-            // Parse class name to get namespace and type
-            $parts = $this->parseClassName($className);
-            $symbolPath = SymbolPath::forClass($parts['namespace'] ?? '', $parts['class']);
 
             $repository->add($symbolPath, $metrics, '', 0);
         }
@@ -130,6 +135,13 @@ final class CouplingCollector implements GlobalContextCollectorInterface
         MetricRepositoryInterface $repository,
     ): void {
         foreach ($graph->getAllNamespaces() as $namespace) {
+            $symbolPath = SymbolPath::forNamespace($namespace);
+
+            // Skip namespaces not in the repository (e.g. vendor namespaces)
+            if (!$repository->has($symbolPath)) {
+                continue;
+            }
+
             $ca = $graph->getNamespaceCa($namespace);
             $ce = $graph->getNamespaceCe($namespace);
             $cbo = $ca + $ce;
@@ -140,8 +152,6 @@ final class CouplingCollector implements GlobalContextCollectorInterface
                 ->with('ce', $ce)
                 ->with('cbo', $cbo)
                 ->with('instability', $instability);
-
-            $symbolPath = SymbolPath::forNamespace($namespace);
 
             $repository->add($symbolPath, $metrics, '', null);
         }
