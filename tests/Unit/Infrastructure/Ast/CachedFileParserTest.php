@@ -83,19 +83,21 @@ final class CachedFileParserTest extends TestCase
     }
 
     #[Test]
-    public function itDelegatesWhenKeyIsEmpty(): void
+    public function itDelegatesForNonExistentFileWithCacheMiss(): void
     {
-        // Use non-existent file to get empty key
+        // Non-existent file now gets a valid cache key (with 'unresolved:' prefix internally)
+        // but cache returns null, so it falls through to inner parser
         $file = new SplFileInfo('/non/existent/file.php');
         $ast = [new Class_('Test')];
         $keyGenerator = new CacheKeyGenerator();
+        $key = $keyGenerator->generate($file);
 
         $inner = $this->createMock(FileParserInterface::class);
         $inner->expects(self::once())->method('parse')->willReturn($ast);
 
         $cache = $this->createMock(CacheInterface::class);
-        $cache->expects(self::never())->method('get');
-        $cache->expects(self::never())->method('set');
+        $cache->expects(self::once())->method('get')->with($key)->willReturn(null);
+        $cache->expects(self::once())->method('set')->with($key, $ast);
 
         $parser = new CachedFileParser($inner, $cache, $keyGenerator);
 

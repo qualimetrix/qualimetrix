@@ -47,6 +47,16 @@ final class GitClientTest extends TestCase
     }
 
     #[Test]
+    public function itReturnsTrueWhenGitIsAFile(): void
+    {
+        // In worktrees, .git is a file pointing to the main repo
+        file_put_contents($this->repoRoot . '/.git', 'gitdir: /some/other/path/.git/worktrees/test');
+        $client = new GitClient($this->repoRoot);
+
+        $this->assertTrue($client->isRepository());
+    }
+
+    #[Test]
     public function itReturnsFalseWhenGitDirectoryDoesNotExist(): void
     {
         $client = new GitClient($this->repoRoot);

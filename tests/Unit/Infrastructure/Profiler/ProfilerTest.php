@@ -189,6 +189,41 @@ final class ProfilerTest extends TestCase
         self::assertFalse($root->children[0]->children[0]->isRunning()); // Second "outer" stopped
     }
 
+    public function testOutOfOrderStopEnforcesLifo(): void
+    {
+        // Start: outer -> inner1 -> inner2
+        // Stop 'inner1' out-of-order (inner2 is on top)
+        $this->profiler->start('outer');
+        $this->profiler->start('inner1');
+        $this->profiler->start('inner2');
+
+        // Stopping 'inner1' should also stop 'inner2' (LIFO enforcement)
+        $this->profiler->stop('inner1');
+
+        $root = $this->profiler->getRootSpan();
+        self::assertNotNull($root);
+        self::assertTrue($root->isRunning()); // outer still running
+
+        // inner1 should be stopped
+        $inner1 = $root->children[0];
+        self::assertSame('inner1', $inner1->name);
+        self::assertFalse($inner1->isRunning());
+
+        // inner2 should also be stopped (LIFO enforcement)
+        $inner2 = $inner1->children[0];
+        self::assertSame('inner2', $inner2->name);
+        self::assertFalse($inner2->isRunning());
+
+        // After the out-of-order stop, new spans should nest under outer
+        $this->profiler->start('inner3');
+        $this->profiler->stop('inner3');
+        $this->profiler->stop('outer');
+
+        self::assertFalse($root->isRunning());
+        self::assertCount(2, $root->children); // inner1 and inner3
+        self::assertSame('inner3', $root->children[1]->name);
+    }
+
     public function testClearResetsProfiler(): void
     {
         $this->profiler->start('test');

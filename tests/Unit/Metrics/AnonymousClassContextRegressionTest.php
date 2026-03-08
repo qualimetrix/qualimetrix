@@ -137,8 +137,8 @@ final class AnonymousClassContextRegressionTest extends TestCase
             'afterAnonymous should have FQN with OuterClass',
         );
 
-        // NPath: if without else = NPath(then) + 1 = 1 + 1 = 2
-        self::assertSame(2, $npath['App\Service\OuterClass::afterAnonymous']);
+        // NPath: NPath(cond) + NPath(then) + 1 (skip-path) = 1 + 1 + 1 = 3
+        self::assertSame(3, $npath['App\Service\OuterClass::afterAnonymous']);
     }
 
     // ──────────────────────────────────────────────────────────────────

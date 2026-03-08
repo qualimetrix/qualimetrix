@@ -360,12 +360,17 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
             return 1 + $this->nestingLevel;
         }
 
-        // ElseIf and Else: +1 with nesting bonus (same level as parent If)
-        // They GET the nesting bonus but don't INCREASE nesting
-        // Since they're processed INSIDE the If_ node (before leaveNode),
+        // ElseIf: +1 with nesting bonus (same level as parent If)
+        // Gets the nesting bonus but doesn't INCREASE nesting
+        // Since it's processed INSIDE the If_ node (before leaveNode),
         // we need to use nestingLevel - 1 to account for parent If's increment
-        if ($node instanceof ElseIf_ || $node instanceof Else_) {
+        if ($node instanceof ElseIf_) {
             return 1 + max(0, $this->nestingLevel - 1);
+        }
+
+        // Else: +1 structural increment only, NO nesting bonus per SonarSource spec (B1 only, not B3)
+        if ($node instanceof Else_) {
+            return 1;
         }
 
         // Ternary and null coalescing: +1 without nesting bonus
@@ -461,8 +466,30 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
 
         $methodName = $info['method'];
 
-        // Check for method call recursion
-        if ($node instanceof MethodCall || $node instanceof StaticCall) {
+        // Check for instance method call recursion: only $this->method()
+        if ($node instanceof MethodCall) {
+            if (!($node->var instanceof Node\Expr\Variable && $node->var->name === 'this')) {
+                return false;
+            }
+
+            $calledMethod = $node->name instanceof Node\Identifier
+                ? $node->name->toString()
+                : null;
+
+            return $calledMethod === $methodName;
+        }
+
+        // Check for static method call recursion: only self::, static::, parent::
+        if ($node instanceof StaticCall) {
+            if (!($node->class instanceof Node\Name)) {
+                return false;
+            }
+
+            $className = $node->class->toString();
+            if ($className !== 'self' && $className !== 'static' && $className !== 'parent') {
+                return false;
+            }
+
             $calledMethod = $node->name instanceof Node\Identifier
                 ? $node->name->toString()
                 : null;

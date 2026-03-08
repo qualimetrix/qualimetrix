@@ -109,8 +109,8 @@ final class SuperglobalsRuleTest extends TestCase
         self::assertSame(5, $violations[0]->location->line);
         self::assertSame(18, $violations[1]->location->line);
         self::assertSame(33, $violations[2]->location->line);
-        self::assertSame('Found 3 direct superglobal access(es) - use dependency injection', $violations[0]->message);
+        self::assertSame('Direct superglobal access detected - use dependency injection', $violations[0]->message);
         self::assertSame('code-smell.superglobals', $violations[0]->ruleName);
-        self::assertSame(3, $violations[0]->metricValue);
+        self::assertSame(1.0, $violations[0]->metricValue);
     }
 }

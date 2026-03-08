@@ -654,4 +654,30 @@ final class InstabilityRuleTest extends TestCase
         yield 'at error threshold' => [0.95, 0.8, 0.95, Severity::Error];
         yield 'above error threshold' => [1.0, 0.8, 0.95, Severity::Error];
     }
+
+    public function testClassOptionsFromArrayWithCamelCase(): void
+    {
+        $options = ClassInstabilityOptions::fromArray([
+            'enabled' => false,
+            'maxWarning' => 0.7,
+            'maxError' => 0.9,
+        ]);
+
+        self::assertFalse($options->enabled);
+        self::assertSame(0.7, $options->maxWarning);
+        self::assertSame(0.9, $options->maxError);
+    }
+
+    public function testNamespaceOptionsFromArrayWithCamelCase(): void
+    {
+        $options = NamespaceInstabilityOptions::fromArray([
+            'enabled' => false,
+            'maxWarning' => 0.75,
+            'maxError' => 0.92,
+        ]);
+
+        self::assertFalse($options->enabled);
+        self::assertSame(0.75, $options->maxWarning);
+        self::assertSame(0.92, $options->maxError);
+    }
 }

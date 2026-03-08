@@ -77,12 +77,25 @@ final class Profiler implements ProfilerInterface
             return;
         }
 
-        $span = $this->stack[$index];
-        $span->endTime = hrtime(true);
-        $span->endMemory = memory_get_usage(true);
+        $now = hrtime(true);
+        $memory = memory_get_usage(true);
 
-        // Remove the span from the stack
-        array_splice($this->stack, $index, 1);
+        // Enforce LIFO: stop all spans above the target span first
+        for ($i = \count($this->stack) - 1; $i > $index; $i--) {
+            $aboveSpan = $this->stack[$i];
+            if ($aboveSpan->endTime === null) {
+                $aboveSpan->endTime = $now;
+                $aboveSpan->endMemory = $memory;
+            }
+        }
+
+        // Stop the target span
+        $span = $this->stack[$index];
+        $span->endTime = $now;
+        $span->endMemory = $memory;
+
+        // Remove the target span and all spans above it from the stack
+        array_splice($this->stack, $index);
     }
 
     public function isEnabled(): bool

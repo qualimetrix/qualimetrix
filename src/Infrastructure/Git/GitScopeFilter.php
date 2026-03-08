@@ -101,7 +101,7 @@ final class GitScopeFilter implements ViolationFilterInterface
             return null;
         }
 
-        if (preg_match('/^namespace\s+([^;]+);/m', $content, $matches)) {
+        if (preg_match('/^namespace\s+([^;{]+)[;{]/m', $content, $matches)) {
             return trim($matches[1]);
         }
 

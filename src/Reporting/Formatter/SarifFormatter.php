@@ -75,22 +75,34 @@ final class SarifFormatter implements FormatterInterface
      */
     private function collectRules(array $violations): array
     {
-        // Collect unique violation codes
+        // Collect unique violation codes with their max severity
+        /** @var array<string, array{ruleName: string, maxSeverity: Severity}> $violationCodes */
         $violationCodes = [];
+
         foreach ($violations as $violation) {
-            $violationCodes[$violation->violationCode] = $violation->ruleName;
+            $code = $violation->violationCode;
+
+            if (!isset($violationCodes[$code])) {
+                $violationCodes[$code] = [
+                    'ruleName' => $violation->ruleName,
+                    'maxSeverity' => $violation->severity,
+                ];
+            } elseif ($violation->severity === Severity::Error) {
+                $violationCodes[$code]['maxSeverity'] = Severity::Error;
+            }
         }
 
         $rules = [];
-        foreach ($violationCodes as $code => $ruleName) {
+
+        foreach ($violationCodes as $code => $info) {
             $rules[] = [
                 'id' => $code,
                 'name' => $this->formatRuleName($code),
                 'shortDescription' => [
-                    'text' => $this->getRuleDescription($ruleName),
+                    'text' => $this->getRuleDescription($info['ruleName']),
                 ],
                 'defaultConfiguration' => [
-                    'level' => 'warning',
+                    'level' => $this->mapLevel($info['maxSeverity']),
                 ],
             ];
         }
@@ -130,7 +142,7 @@ final class SarifFormatter implements FormatterInterface
      *
      * @param list<Violation> $violations
      *
-     * @return list<array{ruleId: string, level: string, message: array{text: string}, locations: list<array{physicalLocation: array<string, mixed>}>}>
+     * @return list<array<string, mixed>>
      */
     private function formatResults(array $violations, FormatterContext $context): array
     {
@@ -143,7 +155,7 @@ final class SarifFormatter implements FormatterInterface
                 ];
 
                 if ($v->location->isNone()) {
-                    $result['locations'] = [['physicalLocation' => []]];
+                    // Omit locations for project-level violations (valid per SARIF 2.1.0)
                 } else {
                     $result['locations'] = [
                         [

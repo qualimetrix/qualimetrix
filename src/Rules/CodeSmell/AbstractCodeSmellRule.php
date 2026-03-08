@@ -36,9 +36,7 @@ abstract class AbstractCodeSmellRule extends AbstractRule
     abstract protected function getSeverity(): Severity;
 
     /**
-     * Returns the violation message template.
-     *
-     * Use {count} placeholder for the count value.
+     * Returns the violation message describing a single occurrence.
      */
     abstract protected function getMessageTemplate(): string;
 
@@ -75,8 +73,6 @@ abstract class AbstractCodeSmellRule extends AbstractRule
             }
 
             // Create one violation per occurrence with correct line
-            $message = $this->formatMessage($count);
-
             for ($i = 0; $i < $count; $i++) {
                 $line = (int) ($metrics->get("codeSmell.{$type}.line.{$i}") ?? 1);
 
@@ -85,18 +81,13 @@ abstract class AbstractCodeSmellRule extends AbstractRule
                     symbolPath: $fileInfo->symbolPath,
                     ruleName: $this->getName(),
                     violationCode: $this->getName(),
-                    message: $message,
+                    message: $this->getMessageTemplate(),
                     severity: $this->getSeverity(),
-                    metricValue: $count,
+                    metricValue: 1.0,
                 );
             }
         }
 
         return $violations;
-    }
-
-    protected function formatMessage(int $count): string
-    {
-        return str_replace('{count}', (string) $count, $this->getMessageTemplate());
     }
 }

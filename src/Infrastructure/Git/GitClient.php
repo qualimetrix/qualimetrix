@@ -24,7 +24,8 @@ final class GitClient
      */
     public function isRepository(): bool
     {
-        return is_dir($this->repoRoot . '/.git');
+        // .git is a directory in regular repos, but a file in worktrees
+        return is_dir($this->repoRoot . '/.git') || is_file($this->repoRoot . '/.git');
     }
 
     /**

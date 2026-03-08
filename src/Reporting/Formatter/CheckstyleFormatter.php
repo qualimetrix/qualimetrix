@@ -32,7 +32,7 @@ final class CheckstyleFormatter implements FormatterInterface
         $xml->startElement('checkstyle');
         $xml->writeAttribute('version', self::VERSION);
 
-        $this->writeFiles($xml, $report->violations);
+        $this->writeFiles($xml, $report->violations, $context);
 
         $xml->endElement(); // checkstyle
         $xml->endDocument();
@@ -55,13 +55,13 @@ final class CheckstyleFormatter implements FormatterInterface
      *
      * @param list<Violation> $violations
      */
-    private function writeFiles(XMLWriter $xml, array $violations): void
+    private function writeFiles(XMLWriter $xml, array $violations, FormatterContext $context): void
     {
         /** @var array<string, list<Violation>> $grouped */
         $grouped = [];
 
         foreach ($violations as $violation) {
-            $file = $violation->location->isNone() ? '[project]' : $violation->location->file;
+            $file = $violation->location->isNone() ? '[project]' : $context->relativizePath($violation->location->file);
             $grouped[$file] ??= [];
             $grouped[$file][] = $violation;
         }

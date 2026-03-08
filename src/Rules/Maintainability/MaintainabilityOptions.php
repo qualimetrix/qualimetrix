@@ -57,7 +57,9 @@ final readonly class MaintainabilityOptions implements RuleOptionsInterface
      */
     public function getSeverity(int|float $value): ?Severity
     {
-        // Lower values are worse
+        // Design decision: strict `<` is intentional (not `<=`).
+        // The threshold is the first "acceptable" value for the better category:
+        // MI=20.0 is a warning (not error), MI=40.0 is good (not warning).
         if ($value < $this->error) {
             return Severity::Error;
         }

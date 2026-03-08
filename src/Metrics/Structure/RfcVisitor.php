@@ -178,7 +178,10 @@ final class RfcVisitor extends NodeVisitorAbstract implements ResettableVisitorI
         $isInternalCall = $node->var instanceof Node\Expr\Variable && $node->var->name === 'this';
 
         if (!$isInternalCall) {
-            $this->classes[$fqn]->addExternalMethod($methodName);
+            // Use receiver identifier + method name as dedup key to distinguish
+            // $repo->save() from $cache->save() (different receiver types).
+            $receiverName = $this->extractReceiverName($node->var);
+            $this->classes[$fqn]->addExternalMethod($receiverName . '->' . $methodName);
         }
     }
 
@@ -260,6 +263,33 @@ final class RfcVisitor extends NodeVisitorAbstract implements ResettableVisitorI
             || $node instanceof Interface_
             || $node instanceof Trait_
             || $node instanceof Enum_;
+    }
+
+    /**
+     * Extracts a stable receiver identifier for deduplication.
+     *
+     * - $var->method(): returns var name (e.g., 'repo')
+     * - $this->prop->method(): returns prop name (e.g., 'userRepo')
+     * - Other expressions: returns '*' (generic, no dedup across receivers)
+     */
+    private function extractReceiverName(Node\Expr $expr): string
+    {
+        // Simple variable: $repo->method()
+        if ($expr instanceof Node\Expr\Variable && \is_string($expr->name)) {
+            return $expr->name;
+        }
+
+        // Property fetch on $this: $this->repo->method()
+        if ($expr instanceof Node\Expr\PropertyFetch
+            && $expr->var instanceof Node\Expr\Variable
+            && $expr->var->name === 'this'
+            && $expr->name instanceof Identifier
+        ) {
+            return $expr->name->toString();
+        }
+
+        // Anything else (method chains, complex expressions)
+        return '*';
     }
 
     private function buildClassFqn(string $className): string

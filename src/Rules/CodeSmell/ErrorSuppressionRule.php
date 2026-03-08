@@ -38,7 +38,7 @@ final class ErrorSuppressionRule extends AbstractCodeSmellRule
 
     protected function getMessageTemplate(): string
     {
-        return 'Found {count} error suppression operator(s) (@) - handle errors explicitly';
+        return 'Error suppression operator (@) detected - handle errors explicitly';
     }
 
     /**

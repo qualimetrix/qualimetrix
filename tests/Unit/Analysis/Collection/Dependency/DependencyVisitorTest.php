@@ -429,6 +429,45 @@ PHP;
         self::assertSame(DependencyType::Implements, $deps[0]->type);
     }
 
+    #[Test]
+    public function imports_do_not_leak_between_namespace_blocks(): void
+    {
+        $code = <<<'PHP'
+<?php
+namespace First {
+    use Vendor\Logger;
+
+    class ServiceA {
+        private Logger $logger;
+    }
+}
+
+namespace Second {
+    class ServiceB {
+        private Logger $logger;
+    }
+}
+PHP;
+        $deps = $this->analyze($code);
+
+        // ServiceA should depend on Vendor\Logger (imported)
+        $serviceADeps = array_filter(
+            $deps,
+            static fn($d) => $d->source->toString() === 'First\\ServiceA',
+        );
+        self::assertCount(1, $serviceADeps);
+        self::assertSame('Vendor\\Logger', array_values($serviceADeps)[0]->target->toString());
+
+        // ServiceB should depend on Second\Logger (resolved in current namespace,
+        // NOT on Vendor\Logger which was imported only in the First namespace block)
+        $serviceBDeps = array_filter(
+            $deps,
+            static fn($d) => $d->source->toString() === 'Second\\ServiceB',
+        );
+        self::assertCount(1, $serviceBDeps);
+        self::assertSame('Second\\Logger', array_values($serviceBDeps)[0]->target->toString());
+    }
+
     /**
      * @return array<\AiMessDetector\Core\Dependency\Dependency>
      */

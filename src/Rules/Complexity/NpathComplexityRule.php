@@ -190,7 +190,7 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
 
             if ($severity !== null) {
                 $displayValue = $maxNpathValue >= self::MAX_DISPLAY ? '> 10^9' : (string) $maxNpathValue;
-                $threshold = $severity === Severity::Error ? $classOptions->max_error : $classOptions->max_warning;
+                $threshold = $severity === Severity::Error ? $classOptions->maxError : $classOptions->maxWarning;
 
                 $violations[] = new Violation(
                     location: new Location($classInfo->file, $classInfo->line),

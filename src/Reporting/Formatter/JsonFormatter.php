@@ -22,7 +22,7 @@ final class JsonFormatter implements FormatterInterface
 
     public function format(Report $report, FormatterContext $context): string
     {
-        $files = $this->groupViolationsByFile($report->violations);
+        $files = $this->groupViolationsByFile($report->violations, $context);
 
         $data = [
             'version' => self::VERSION,
@@ -61,13 +61,13 @@ final class JsonFormatter implements FormatterInterface
      *
      * @return list<array{file: string|null, violations: list<array{beginLine: int|null, endLine: int|null, rule: string, code: string, symbol: string, priority: int, severity: string, description: string, metricValue: int|float|null}>}>
      */
-    private function groupViolationsByFile(array $violations): array
+    private function groupViolationsByFile(array $violations, FormatterContext $context): array
     {
         /** @var array<string, list<Violation>> $grouped */
         $grouped = [];
 
         foreach ($violations as $violation) {
-            $file = $violation->location->isNone() ? '' : $violation->location->file;
+            $file = $violation->location->isNone() ? '' : $context->relativizePath($violation->location->file);
             $grouped[$file] ??= [];
             $grouped[$file][] = $violation;
         }

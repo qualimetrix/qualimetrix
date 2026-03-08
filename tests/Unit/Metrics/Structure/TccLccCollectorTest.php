@@ -326,10 +326,9 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        // Interface methods don't have bodies
-        // TCC = LCC = 0.0 (no property access)
-        self::assertSame(0.0, $metrics->get('tcc:App\MyInterface'));
-        self::assertSame(0.0, $metrics->get('lcc:App\MyInterface'));
+        // Interfaces are skipped entirely — cohesion metrics are not applicable
+        self::assertNull($metrics->get('tcc:App\MyInterface'));
+        self::assertNull($metrics->get('lcc:App\MyInterface'));
     }
 
     public function testAnonymousClassIgnored(): void

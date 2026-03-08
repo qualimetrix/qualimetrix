@@ -461,6 +461,49 @@ PHP,
             ],
         ];
 
+        // Different receivers with same method name should count as separate
+        yield 'different receivers same method name' => [
+            'code' => <<<'PHP'
+<?php
+class MultiRepo
+{
+    public function saveAll(): void
+    {
+        $this->userRepo->save();   // +1 external (userRepo->save)
+        $this->orderRepo->save();  // +1 external (orderRepo->save)
+        $this->cacheRepo->save();  // +1 external (cacheRepo->save)
+    }
+}
+// M = 1, R = 3, RFC = 4
+PHP,
+            'expected' => [
+                'MultiRepo' => ['rfc' => 4, 'own' => 1, 'external' => 3],
+            ],
+        ];
+
+        // Same receiver and method in different methods should still dedup
+        yield 'same receiver same method deduplicates' => [
+            'code' => <<<'PHP'
+<?php
+class CachedService
+{
+    public function getUser(): void
+    {
+        $this->cache->get('user');    // +1 external (cache->get)
+    }
+
+    public function getOrder(): void
+    {
+        $this->cache->get('order');   // same external (cache->get), not counted again
+    }
+}
+// M = 2, R = 1, RFC = 3
+PHP,
+            'expected' => [
+                'CachedService' => ['rfc' => 3, 'own' => 2, 'external' => 1],
+            ],
+        ];
+
         // Complex real-world example
         yield 'complex order processor' => [
             'code' => <<<'PHP'

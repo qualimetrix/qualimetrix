@@ -92,7 +92,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
         // Phase 1: Discovery
         $profiler?->start('discovery', 'pipeline');
         $normalizedPaths = \is_array($paths) ? array_values($paths) : $paths;
-        $files = iterator_to_array($discovery->discover($normalizedPaths), false);
+        $files = array_values(iterator_to_array($discovery->discover($normalizedPaths), true));
         $profiler?->stop('discovery');
 
         $this->logger->info('Discovered files', ['count' => \count($files)]);

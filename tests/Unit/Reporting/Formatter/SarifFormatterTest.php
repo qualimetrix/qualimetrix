@@ -109,7 +109,8 @@ final class SarifFormatterTest extends TestCase
         self::assertSame('cyclomatic-complexity', $rule['id']);
         self::assertSame('Cyclomatic Complexity', $rule['name']);
         self::assertSame('Code complexity exceeds threshold', $rule['shortDescription']['text']);
-        self::assertSame('warning', $rule['defaultConfiguration']['level']);
+        // Max severity is Error, so defaultConfiguration level should be 'error'
+        self::assertSame('error', $rule['defaultConfiguration']['level']);
 
         // Should have 2 results
         self::assertCount(2, $run['results']);
@@ -438,5 +439,77 @@ final class SarifFormatterTest extends TestCase
 
         // No originalUriBaseIds when basePath is empty
         self::assertArrayNotHasKey('originalUriBaseIds', $run);
+    }
+
+    public function testProjectLevelViolationOmitsLocations(): void
+    {
+        $report = ReportBuilder::create()
+            ->addViolation(new Violation(
+                location: Location::none(),
+                symbolPath: SymbolPath::forNamespace('App'),
+                ruleName: 'architecture',
+                violationCode: 'architecture.circular',
+                message: 'Circular dependency detected',
+                severity: Severity::Error,
+            ))
+            ->filesAnalyzed(10)
+            ->filesSkipped(0)
+            ->duration(0.1)
+            ->build();
+
+        $output = $this->formatter->format($report, new FormatterContext());
+        $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
+
+        $result = $data['runs'][0]['results'][0];
+        // Project-level violations should not have locations key at all
+        self::assertArrayNotHasKey('locations', $result);
+    }
+
+    public function testDefaultConfigurationLevelUsesMaxSeverity(): void
+    {
+        $report = ReportBuilder::create()
+            ->addViolation(new Violation(
+                location: new Location('src/A.php', 10),
+                symbolPath: SymbolPath::forClass('App', 'A'),
+                ruleName: 'cyclomatic-complexity',
+                violationCode: 'complexity.cyclomatic',
+                message: 'Warning level',
+                severity: Severity::Warning,
+            ))
+            ->addViolation(new Violation(
+                location: new Location('src/B.php', 20),
+                symbolPath: SymbolPath::forClass('App', 'B'),
+                ruleName: 'cyclomatic-complexity',
+                violationCode: 'complexity.cyclomatic',
+                message: 'Error level',
+                severity: Severity::Error,
+            ))
+            ->addViolation(new Violation(
+                location: new Location('src/C.php', 30),
+                symbolPath: SymbolPath::forClass('App', 'C'),
+                ruleName: 'class-size',
+                violationCode: 'size.class',
+                message: 'Warning only',
+                severity: Severity::Warning,
+            ))
+            ->filesAnalyzed(3)
+            ->filesSkipped(0)
+            ->duration(0.1)
+            ->build();
+
+        $output = $this->formatter->format($report, new FormatterContext());
+        $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
+
+        $rules = $data['runs'][0]['tool']['driver']['rules'];
+        $rulesByCode = [];
+        foreach ($rules as $rule) {
+            $rulesByCode[$rule['id']] = $rule;
+        }
+
+        // complexity.cyclomatic has both Warning and Error violations -> max is Error
+        self::assertSame('error', $rulesByCode['complexity.cyclomatic']['defaultConfiguration']['level']);
+
+        // size.class has only Warning violations -> Warning
+        self::assertSame('warning', $rulesByCode['size.class']['defaultConfiguration']['level']);
     }
 }

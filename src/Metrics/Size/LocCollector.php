@@ -18,10 +18,12 @@ use SplFileInfo;
  *
  * Metrics:
  * - loc:{path} — Total lines of code
- * - lloc:{path} — Logical lines (non-empty, non-comment)
- * - cloc:{path} — Comment lines
+ * - lloc:{path} — Logical lines (lines with at least one code token)
+ * - cloc:{path} — Pure comment lines (no code tokens on the same line)
  *
- * LLOC = LOC - empty lines - CLOC
+ * A line with both code and an inline comment (e.g., `$a = 1; // note`)
+ * counts as LLOC but NOT as CLOC. Only lines where ALL tokens are
+ * comments/whitespace count as CLOC.
  */
 final class LocCollector extends AbstractCollector
 {
@@ -94,12 +96,16 @@ final class LocCollector extends AbstractCollector
         $lines = explode("\n", $content);
         $loc = \count($lines);
 
-        // Track which lines contain comments
-        /** @var array<int, bool> */
+        // Track which lines contain comment tokens
+        /** @var array<int, true> */
         $commentLines = [];
 
+        // Track which lines have non-comment code tokens (array tokens only)
+        /** @var array<int, true> */
+        $codeLines = [];
+
         // Track which lines are empty
-        /** @var array<int, bool> */
+        /** @var array<int, true> */
         $emptyLines = [];
 
         // Identify empty lines
@@ -109,11 +115,14 @@ final class LocCollector extends AbstractCollector
             }
         }
 
-        // Use PHP tokenizer to find comment lines
+        // Use PHP tokenizer to classify lines
         $tokens = @token_get_all($content);
 
         foreach ($tokens as $token) {
             if (!\is_array($token)) {
+                // Single-character tokens ('{', '}', ';', etc.) don't carry line
+                // information in token_get_all. Lines containing only such tokens
+                // are handled below by checking non-empty, non-comment lines.
                 continue;
             }
 
@@ -126,30 +135,39 @@ final class LocCollector extends AbstractCollector
                 for ($i = 0; $i <= $commentLineCount; $i++) {
                     $commentLines[$tokenLine + $i] = true;
                 }
-            }
-        }
+            } elseif ($tokenId !== \T_WHITESPACE
+                && $tokenId !== \T_OPEN_TAG
+                && $tokenId !== \T_CLOSE_TAG
+            ) {
+                // Non-whitespace, non-comment, non-tag array token = code
+                $tokenLineCount = substr_count($tokenContent, "\n");
 
-        $cloc = \count($commentLines);
-        $emptyCount = \count($emptyLines);
-        $lloc = $loc - $emptyCount - $cloc;
-
-        // LLOC can't be negative (in case of overlap between empty and comment lines)
-        if ($lloc < 0) {
-            // Recalculate: some lines might be both empty and comments (shouldn't happen, but be safe)
-            $pureEmptyCount = 0;
-
-            foreach ($emptyLines as $line => $isEmpty) {
-                if (!isset($commentLines[$line])) {
-                    ++$pureEmptyCount;
+                for ($i = 0; $i <= $tokenLineCount; $i++) {
+                    $codeLines[$tokenLine + $i] = true;
                 }
             }
-            $lloc = $loc - $pureEmptyCount - $cloc;
         }
+
+        // A "pure comment line" has comment tokens but NO code tokens.
+        // Lines with both code and comments (inline comments) are code lines, not CLOC.
+        // Lines that are non-empty and not marked as either code or comment must have
+        // single-character code tokens (braces, semicolons, etc.) — they are code lines.
+        $pureCommentLineCount = 0;
+
+        foreach ($commentLines as $line => $_) {
+            if (!isset($codeLines[$line])) {
+                ++$pureCommentLineCount;
+            }
+        }
+
+        // LLOC = LOC - empty lines - pure comment lines
+        $emptyCount = \count($emptyLines);
+        $lloc = $loc - $emptyCount - $pureCommentLineCount;
 
         return [
             'loc' => $loc,
             'lloc' => max(0, $lloc),
-            'cloc' => $cloc,
+            'cloc' => $pureCommentLineCount,
         ];
     }
 

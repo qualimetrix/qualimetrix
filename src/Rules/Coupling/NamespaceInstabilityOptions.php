@@ -45,8 +45,8 @@ final readonly class NamespaceInstabilityOptions implements LevelOptionsInterfac
 
         return new self(
             enabled: (bool) ($config['enabled'] ?? true),
-            maxWarning: (float) ($config['max_warning'] ?? 0.8),
-            maxError: (float) ($config['max_error'] ?? 0.95),
+            maxWarning: (float) ($config['max_warning'] ?? $config['maxWarning'] ?? 0.8),
+            maxError: (float) ($config['max_error'] ?? $config['maxError'] ?? 0.95),
             minClassCount: (int) ($config['min_class_count'] ?? $config['minClassCount'] ?? 3),
             excludeNamespaces: $excludeNamespaces,
         );

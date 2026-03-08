@@ -57,8 +57,17 @@ final class RuntimeConfigurator
         $ruleOptionsParser = $ruleOptionsParserFactory->createFromClasses($this->ruleRegistry->getClasses());
         $cliParser = new CliOptionsParser($ruleOptionsParser);
 
-        // Parse rule options from CLI and merge with config file options
+        // Parse rule options from CLI
         $cliRuleOptions = $cliParser->parseRuleOptions($input);
+
+        // Set config file and CLI options separately in the factory,
+        // preserving the 3-layer merge: defaults → config file → CLI
+        $this->ruleOptionsFactory->setConfigFileOptions($resolved->ruleOptions);
+        foreach ($cliRuleOptions as $ruleName => $options) {
+            $this->ruleOptionsFactory->setCliOptions($ruleName, $options);
+        }
+
+        // For ConfigurationHolder, provide the merged view
         $ruleOptions = array_replace_recursive($resolved->ruleOptions, $cliRuleOptions);
 
         // Configure runtime providers
@@ -162,10 +171,5 @@ final class RuntimeConfigurator
         // Update ConfigurationHolder with merged config
         $this->configurationProvider->setConfiguration($config);
         $this->configurationProvider->setRuleOptions($ruleOptions);
-
-        // Update RuleOptionsFactory with CLI options
-        foreach ($ruleOptions as $ruleName => $options) {
-            $this->ruleOptionsFactory->setCliOptions($ruleName, $options);
-        }
     }
 }

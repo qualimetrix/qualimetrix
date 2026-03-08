@@ -37,7 +37,7 @@ final class DebugCodeRule extends AbstractCodeSmellRule
 
     protected function getMessageTemplate(): string
     {
-        return 'Found {count} debug function call(s) - remove before production';
+        return 'Debug function call detected - remove before production';
     }
 
     /**

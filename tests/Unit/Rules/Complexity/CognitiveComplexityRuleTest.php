@@ -408,4 +408,24 @@ final class CognitiveComplexityRuleTest extends TestCase
         yield 'at error threshold' => [30, 15, 30, Severity::Error];
         yield 'above error threshold' => [40, 15, 30, Severity::Error];
     }
+
+    public function testLegacyDefaultErrorThresholdMatchesMethodDefault(): void
+    {
+        // Legacy format without explicit errorThreshold should use 30 (same as MethodCognitiveComplexityOptions)
+        $options = CognitiveComplexityOptions::fromArray([
+            'warningThreshold' => 15,
+        ]);
+
+        self::assertSame(30, $options->method->error);
+    }
+
+    public function testLegacyPartialConfigUsesCorrectDefaults(): void
+    {
+        $options = CognitiveComplexityOptions::fromArray([
+            'errorThreshold' => 40,
+        ]);
+
+        self::assertSame(15, $options->method->warning);
+        self::assertSame(40, $options->method->error);
+    }
 }

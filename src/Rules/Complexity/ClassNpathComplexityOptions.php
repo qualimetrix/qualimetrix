@@ -14,8 +14,8 @@ final readonly class ClassNpathComplexityOptions implements LevelOptionsInterfac
 {
     public function __construct(
         public bool $enabled = false,
-        public int $max_warning = 200,
-        public int $max_error = 1000,
+        public int $maxWarning = 500,
+        public int $maxError = 1000,
     ) {}
 
     /**
@@ -25,8 +25,8 @@ final readonly class ClassNpathComplexityOptions implements LevelOptionsInterfac
     {
         return new self(
             enabled: (bool) ($config['enabled'] ?? false),
-            max_warning: (int) ($config['max_warning'] ?? 200),
-            max_error: (int) ($config['max_error'] ?? 1000),
+            maxWarning: (int) ($config['max_warning'] ?? $config['maxWarning'] ?? 500),
+            maxError: (int) ($config['max_error'] ?? $config['maxError'] ?? 1000),
         );
     }
 
@@ -37,11 +37,11 @@ final readonly class ClassNpathComplexityOptions implements LevelOptionsInterfac
 
     public function getSeverity(int|float $value): ?Severity
     {
-        if ($value >= $this->max_error) {
+        if ($value >= $this->maxError) {
             return Severity::Error;
         }
 
-        if ($value >= $this->max_warning) {
+        if ($value >= $this->maxWarning) {
             return Severity::Warning;
         }
 

@@ -107,9 +107,9 @@ final class BooleanArgumentRuleTest extends TestCase
         self::assertSame(Severity::Warning, $violations[0]->severity);
         self::assertSame(10, $violations[0]->location->line);
         self::assertSame(25, $violations[1]->location->line);
-        self::assertSame('Found 2 boolean argument(s) - consider splitting methods or using enums', $violations[0]->message);
+        self::assertSame('Boolean argument detected - consider splitting methods or using enums', $violations[0]->message);
         self::assertSame('code-smell.boolean-argument', $violations[0]->ruleName);
         self::assertSame('code-smell.boolean-argument', $violations[0]->violationCode);
-        self::assertSame(2, $violations[0]->metricValue);
+        self::assertSame(1.0, $violations[0]->metricValue);
     }
 }
