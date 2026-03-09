@@ -53,13 +53,17 @@ final readonly class DistanceOptions implements RuleOptionsInterface
             ?? $config['projectNamespaces']
             ?? null;
 
-        if (\is_array($includeKey)) {
+        if (\is_string($includeKey)) {
+            $includeNamespaces = [$includeKey];
+        } elseif (\is_array($includeKey)) {
             $includeNamespaces = array_values($includeKey);
         }
 
         $excludeNamespaces = [];
         $excludeKey = $config['exclude_namespaces'] ?? $config['excludeNamespaces'] ?? null;
-        if (\is_array($excludeKey)) {
+        if (\is_string($excludeKey)) {
+            $excludeNamespaces = [$excludeKey];
+        } elseif (\is_array($excludeKey)) {
             $excludeNamespaces = array_values($excludeKey);
         }
 

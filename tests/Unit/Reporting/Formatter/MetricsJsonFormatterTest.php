@@ -197,9 +197,13 @@ final class MetricsJsonFormatterTest extends TestCase
         $metrics = $data['symbols'][0]['metrics'];
         self::assertSame(42, $metrics['valid']);
         self::assertSame(3.14, $metrics['float']);
-        self::assertArrayNotHasKey('nan', $metrics);
-        self::assertArrayNotHasKey('inf', $metrics);
-        self::assertArrayNotHasKey('neg_inf', $metrics);
+        // Non-finite values should be replaced with null, not dropped
+        self::assertArrayHasKey('nan', $metrics);
+        self::assertNull($metrics['nan']);
+        self::assertArrayHasKey('inf', $metrics);
+        self::assertNull($metrics['inf']);
+        self::assertArrayHasKey('neg_inf', $metrics);
+        self::assertNull($metrics['neg_inf']);
     }
 
     public function testJsonIsValid(): void

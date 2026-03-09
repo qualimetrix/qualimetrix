@@ -87,6 +87,22 @@ final class HardcodedCredentialsVisitorTest extends TestCase
             'expectedPattern' => 'parameter',
         ];
 
+        yield 'backed enum case with sensitive name' => [
+            'code' => '<?php enum Credentials: string { case ApiKey = "sk-abc123def456"; }',
+            'expectedCount' => 1,
+            'expectedPattern' => 'enum_case',
+        ];
+
+        yield 'backed enum case with non-sensitive name' => [
+            'code' => '<?php enum Status: string { case Active = "active_status"; }',
+            'expectedCount' => 0,
+        ];
+
+        yield 'unit enum case (no value) ignored' => [
+            'code' => '<?php enum Tokens { case ApiKey; }',
+            'expectedCount' => 0,
+        ];
+
         yield 'multiple findings in one file' => [
             'code' => '<?php $password = "admin"; $secret = "shhh!"; $apiKey = "key123";',
             'expectedCount' => 3,

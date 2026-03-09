@@ -63,9 +63,7 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
      */
     public function analyzeLevel(RuleLevel $level, AnalysisContext $context): array
     {
-        if (!$this->options instanceof ComplexityOptions) {
-            return [];
-        }
+        \assert($this->options instanceof ComplexityOptions);
 
         $levelOptions = $this->options->forLevel($level);
         if (!$levelOptions->isEnabled()) {
@@ -84,10 +82,12 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
      */
     public function analyze(AnalysisContext $context): array
     {
+        \assert($this->options instanceof ComplexityOptions);
+
         $violations = [];
 
         foreach ($this->getSupportedLevels() as $level) {
-            if ($this->options instanceof ComplexityOptions && $this->options->isLevelEnabled($level)) {
+            if ($this->options->isLevelEnabled($level)) {
                 $violations = [...$violations, ...$this->analyzeLevel($level, $context)];
             }
         }
@@ -121,9 +121,7 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
      */
     private function analyzeMethodLevel(AnalysisContext $context): array
     {
-        if (!$this->options instanceof ComplexityOptions) {
-            return [];
-        }
+        \assert($this->options instanceof ComplexityOptions);
         $methodOptions = $this->options->method;
 
         $violations = [];
@@ -163,9 +161,7 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
      */
     private function analyzeClassLevel(AnalysisContext $context): array
     {
-        if (!$this->options instanceof ComplexityOptions) {
-            return [];
-        }
+        \assert($this->options instanceof ComplexityOptions);
         $classOptions = $this->options->class;
 
         $violations = [];

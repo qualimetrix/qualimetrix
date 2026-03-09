@@ -16,7 +16,7 @@ final class AnalysisContextTest extends TestCase
 {
     public function testConstructorWithMinimalParameters(): void
     {
-        $metrics = $this->createMock(MetricRepositoryInterface::class);
+        $metrics = $this->createStub(MetricRepositoryInterface::class);
         $context = new AnalysisContext($metrics);
 
         self::assertSame($metrics, $context->metrics);
@@ -27,14 +27,14 @@ final class AnalysisContextTest extends TestCase
 
     public function testConstructorWithAllParameters(): void
     {
-        $metrics = $this->createMock(MetricRepositoryInterface::class);
+        $metrics = $this->createStub(MetricRepositoryInterface::class);
         $dependencyGraph = new EmptyDependencyGraph();
         $ruleOptions = [
             'complexity' => ['threshold' => 10],
             'size' => ['max_lines' => 100],
         ];
         $cycles = [
-            $this->createMock(CycleInterface::class),
+            $this->createStub(CycleInterface::class),
         ];
 
         $context = new AnalysisContext(
@@ -52,7 +52,7 @@ final class AnalysisContextTest extends TestCase
 
     public function testGetOptionsForRuleReturnsOptionsWhenExists(): void
     {
-        $metrics = $this->createMock(MetricRepositoryInterface::class);
+        $metrics = $this->createStub(MetricRepositoryInterface::class);
         $ruleOptions = [
             'complexity' => [
                 'threshold' => 10,
@@ -70,7 +70,7 @@ final class AnalysisContextTest extends TestCase
 
     public function testGetOptionsForRuleReturnsEmptyArrayWhenNotExists(): void
     {
-        $metrics = $this->createMock(MetricRepositoryInterface::class);
+        $metrics = $this->createStub(MetricRepositoryInterface::class);
         $ruleOptions = [
             'complexity' => ['threshold' => 10],
         ];
@@ -82,7 +82,7 @@ final class AnalysisContextTest extends TestCase
 
     public function testGetOptionsForRuleReturnsEmptyArrayWhenNoRuleOptions(): void
     {
-        $metrics = $this->createMock(MetricRepositoryInterface::class);
+        $metrics = $this->createStub(MetricRepositoryInterface::class);
         $context = new AnalysisContext($metrics);
 
         self::assertSame([], $context->getOptionsForRule('complexity'));
@@ -90,8 +90,8 @@ final class AnalysisContextTest extends TestCase
 
     public function testCyclesPropertyWithValues(): void
     {
-        $metrics = $this->createMock(MetricRepositoryInterface::class);
-        $cycle = $this->createMock(CycleInterface::class);
+        $metrics = $this->createStub(MetricRepositoryInterface::class);
+        $cycle = $this->createStub(CycleInterface::class);
 
         $context = new AnalysisContext(
             metrics: $metrics,
@@ -104,7 +104,7 @@ final class AnalysisContextTest extends TestCase
 
     public function testCyclesPropertyDefaultsToEmpty(): void
     {
-        $metrics = $this->createMock(MetricRepositoryInterface::class);
+        $metrics = $this->createStub(MetricRepositoryInterface::class);
         $context = new AnalysisContext($metrics);
 
         self::assertSame([], $context->cycles);
@@ -112,7 +112,7 @@ final class AnalysisContextTest extends TestCase
 
     public function testContextIsReadonly(): void
     {
-        $metrics = $this->createMock(MetricRepositoryInterface::class);
+        $metrics = $this->createStub(MetricRepositoryInterface::class);
         $context = new AnalysisContext($metrics);
 
         // This test verifies that AnalysisContext is readonly
@@ -122,7 +122,7 @@ final class AnalysisContextTest extends TestCase
 
     public function testGetOptionsForRuleWithComplexNestedStructure(): void
     {
-        $metrics = $this->createMock(MetricRepositoryInterface::class);
+        $metrics = $this->createStub(MetricRepositoryInterface::class);
         $ruleOptions = [
             'hierarchical-rule' => [
                 'method' => [

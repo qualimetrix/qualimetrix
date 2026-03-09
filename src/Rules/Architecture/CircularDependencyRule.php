@@ -54,9 +54,7 @@ final class CircularDependencyRule extends AbstractRule
             return [];
         }
 
-        if (!$this->options instanceof CircularDependencyOptions) {
-            return [];
-        }
+        \assert($this->options instanceof CircularDependencyOptions);
 
         if ($context->cycles === []) {
             return [];

@@ -202,6 +202,10 @@ final class UnreachableCodeVisitor extends NodeVisitorAbstract implements Resett
         $firstLine = null;
 
         foreach ($stmts as $stmt) {
+            if ($stmt instanceof \PhpParser\Node\Stmt\Nop) {
+                continue;
+            }
+
             if ($foundTerminal) {
                 $unreachableCount++;
                 $firstLine ??= $stmt->getStartLine();

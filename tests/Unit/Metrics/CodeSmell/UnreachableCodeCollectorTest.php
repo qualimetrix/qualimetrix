@@ -423,6 +423,32 @@ PHP;
         self::assertNull($metrics->get('unreachableCode:App\Outer::inner'));
     }
 
+    /**
+     * Comments after return should not be counted as unreachable code.
+     * PHP parser represents standalone comments as Stmt\Nop nodes.
+     */
+    public function testCommentAfterReturnIsNotUnreachable(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Service
+{
+    public function execute(): int
+    {
+        return 42;
+        // This is just a comment
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(0, $metrics->get('unreachableCode:App\Service::execute'));
+    }
+
     private function collectMetrics(string $code): \AiMessDetector\Core\Metric\MetricBag
     {
         $parser = (new ParserFactory())->createForHostVersion();

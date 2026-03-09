@@ -58,6 +58,8 @@ final class PropertyCountRule extends AbstractRule
     public static function getCliAliases(): array
     {
         return [
+            'property-count-warning' => 'warning',
+            'property-count-error' => 'error',
             'property-exclude-readonly' => 'excludeReadonly',
             'property-exclude-promoted-only' => 'excludePromotedOnly',
         ];

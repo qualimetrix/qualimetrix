@@ -102,6 +102,52 @@ final class DotExporterTest extends TestCase
         $this->assertStringContainsString('label="App\\\\UserRepository"', $dot);
     }
 
+    public function testUsesFullLabelsInClusterModeWhenShortLabelsDisabled(): void
+    {
+        $dependencies = [
+            new Dependency(
+                SymbolPath::fromClassFqn('App\\Service\\UserService'),
+                SymbolPath::fromClassFqn('App\\Repository\\UserRepository'),
+                DependencyType::TypeHint,
+                new Location('/test/file.php', 10),
+            ),
+        ];
+
+        $graph = $this->createGraph($dependencies);
+        $exporter = new DotExporter(new DotExporterOptions(
+            groupByNamespace: true,
+            shortLabels: false,
+        ));
+        $dot = $exporter->export($graph);
+
+        // With shortLabels=false and groupByNamespace=true, labels should be full FQN
+        $this->assertStringContainsString('label="App\\\\Service\\\\UserService"', $dot);
+        $this->assertStringContainsString('label="App\\\\Repository\\\\UserRepository"', $dot);
+    }
+
+    public function testUsesShortLabelsInClusterMode(): void
+    {
+        $dependencies = [
+            new Dependency(
+                SymbolPath::fromClassFqn('App\\Service\\UserService'),
+                SymbolPath::fromClassFqn('App\\Repository\\UserRepository'),
+                DependencyType::TypeHint,
+                new Location('/test/file.php', 10),
+            ),
+        ];
+
+        $graph = $this->createGraph($dependencies);
+        $exporter = new DotExporter(new DotExporterOptions(
+            groupByNamespace: true,
+            shortLabels: true,
+        ));
+        $dot = $exporter->export($graph);
+
+        // With shortLabels=true (default) in cluster mode, labels should be class name only
+        $this->assertStringContainsString('label="UserService"', $dot);
+        $this->assertStringContainsString('label="UserRepository"', $dot);
+    }
+
     public function testEscapesSpecialCharacters(): void
     {
         $dependencies = [

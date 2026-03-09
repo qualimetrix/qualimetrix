@@ -132,9 +132,12 @@ final class RfcVisitor extends NodeVisitorAbstract implements ResettableVisitorI
                 line: $node->getStartLine(),
             );
 
-            // Collect own methods (non-abstract only)
-            // Class_, Trait_, and Enum_ all extend ClassLike and can have concrete methods
-            if ($node instanceof Class_ || $node instanceof Trait_ || $node instanceof Enum_) {
+            // Collect own methods
+            if ($node instanceof Interface_) {
+                // Interface methods are always abstract, but they ARE own methods of the interface
+                $this->collectInterfaceMethods($node, $fqn);
+            } elseif ($node instanceof Class_ || $node instanceof Trait_ || $node instanceof Enum_) {
+                // Class_, Trait_, and Enum_: only non-abstract methods
                 $this->collectOwnMethods($node, $fqn);
             }
         }
@@ -146,6 +149,13 @@ final class RfcVisitor extends NodeVisitorAbstract implements ResettableVisitorI
             if (!$method->isAbstract()) {
                 $this->classes[$fqn]->addOwnMethod($method->name->toString());
             }
+        }
+    }
+
+    private function collectInterfaceMethods(Interface_ $interface, string $fqn): void
+    {
+        foreach ($interface->getMethods() as $method) {
+            $this->classes[$fqn]->addOwnMethod($method->name->toString());
         }
     }
 

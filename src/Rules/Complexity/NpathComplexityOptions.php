@@ -27,6 +27,14 @@ final readonly class NpathComplexityOptions implements HierarchicalRuleOptionsIn
      */
     public static function fromArray(array $config): self
     {
+        // Explicit top-level enabled: false disables all levels
+        if (\array_key_exists('enabled', $config) && $config['enabled'] === false) {
+            return new self(
+                method: new MethodNpathComplexityOptions(enabled: false),
+                class: new ClassNpathComplexityOptions(enabled: false),
+            );
+        }
+
         // Handle legacy flat format: {enabled, warningThreshold, errorThreshold}
         if (isset($config['warningThreshold']) || isset($config['errorThreshold'])) {
             return new self(

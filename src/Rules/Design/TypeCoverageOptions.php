@@ -40,12 +40,12 @@ final readonly class TypeCoverageOptions implements RuleOptionsInterface
 
         return new self(
             enabled: (bool) ($config['enabled'] ?? true),
-            paramWarning: (float) ($config['paramWarning'] ?? $config['param_warning'] ?? 80.0),
-            paramError: (float) ($config['paramError'] ?? $config['param_error'] ?? 50.0),
-            returnWarning: (float) ($config['returnWarning'] ?? $config['return_warning'] ?? 80.0),
-            returnError: (float) ($config['returnError'] ?? $config['return_error'] ?? 50.0),
-            propertyWarning: (float) ($config['propertyWarning'] ?? $config['property_warning'] ?? 80.0),
-            propertyError: (float) ($config['propertyError'] ?? $config['property_error'] ?? 50.0),
+            paramWarning: (float) ($config['param_warning'] ?? $config['paramWarning'] ?? 80.0),
+            paramError: (float) ($config['param_error'] ?? $config['paramError'] ?? 50.0),
+            returnWarning: (float) ($config['return_warning'] ?? $config['returnWarning'] ?? 80.0),
+            returnError: (float) ($config['return_error'] ?? $config['returnError'] ?? 50.0),
+            propertyWarning: (float) ($config['property_warning'] ?? $config['propertyWarning'] ?? 80.0),
+            propertyError: (float) ($config['property_error'] ?? $config['propertyError'] ?? 50.0),
         );
     }
 

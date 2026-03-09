@@ -67,6 +67,7 @@ final readonly class SymbolPath
      */
     public static function fromClassFqn(string $fqn): self
     {
+        $fqn = ltrim($fqn, '\\');
         $pos = strrpos($fqn, '\\');
         if ($pos !== false) {
             return self::forClass(substr($fqn, 0, $pos), substr($fqn, $pos + 1));

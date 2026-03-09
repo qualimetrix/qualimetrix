@@ -85,6 +85,8 @@ final class SensitiveNameMatcherTest extends TestCase
         yield 'AUTH_TOKEN' => ['AUTH_TOKEN'];
         yield 'ACCESS_TOKEN' => ['ACCESS_TOKEN'];
         yield 'REFRESH_TOKEN' => ['REFRESH_TOKEN'];
+        yield 'jwtToken' => ['jwtToken'];
+        yield 'JWT_TOKEN' => ['JWT_TOKEN'];
     }
 
     /**

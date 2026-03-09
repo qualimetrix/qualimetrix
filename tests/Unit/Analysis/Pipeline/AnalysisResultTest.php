@@ -6,6 +6,8 @@ namespace AiMessDetector\Tests\Unit\Analysis\Pipeline;
 
 use AiMessDetector\Analysis\Pipeline\AnalysisResult;
 use AiMessDetector\Analysis\Repository\InMemoryMetricRepository;
+use AiMessDetector\Baseline\Suppression\Suppression;
+use AiMessDetector\Baseline\Suppression\SuppressionType;
 use AiMessDetector\Core\Metric\MetricBag;
 use AiMessDetector\Core\Metric\MetricRepositoryInterface;
 use AiMessDetector\Core\Symbol\SymbolPath;
@@ -229,6 +231,43 @@ final class AnalysisResultTest extends TestCase
 
         self::assertSame(2, $counts['errors']);
         self::assertSame(3, $counts['warnings']);
+    }
+
+    #[Test]
+    public function itMergesSuppressionsForOverlappingFiles(): void
+    {
+        $suppression1 = new Suppression('complexity', null, 10, SuppressionType::Symbol);
+        $suppression2 = new Suppression('size', null, 20, SuppressionType::NextLine);
+        $suppression3 = new Suppression('lcom', null, 30, SuppressionType::Symbol);
+
+        $result1 = new AnalysisResult(
+            violations: [],
+            filesAnalyzed: 1,
+            filesSkipped: 0,
+            duration: 0.1,
+            metrics: $this->createStub(MetricRepositoryInterface::class),
+            suppressions: ['shared.php' => [$suppression1], 'only1.php' => [$suppression2]],
+        );
+
+        $result2 = new AnalysisResult(
+            violations: [],
+            filesAnalyzed: 1,
+            filesSkipped: 0,
+            duration: 0.1,
+            metrics: $this->createStub(MetricRepositoryInterface::class),
+            suppressions: ['shared.php' => [$suppression3], 'only2.php' => [$suppression2]],
+        );
+
+        $merged = $result1->merge($result2);
+
+        // shared.php should have both suppressions combined, not overwritten
+        self::assertCount(2, $merged->suppressions['shared.php']);
+        self::assertSame($suppression1, $merged->suppressions['shared.php'][0]);
+        self::assertSame($suppression3, $merged->suppressions['shared.php'][1]);
+
+        // Non-overlapping files preserved
+        self::assertCount(1, $merged->suppressions['only1.php']);
+        self::assertCount(1, $merged->suppressions['only2.php']);
     }
 
     #[Test]

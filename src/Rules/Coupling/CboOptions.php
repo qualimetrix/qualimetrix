@@ -27,6 +27,14 @@ final readonly class CboOptions implements HierarchicalRuleOptionsInterface
      */
     public static function fromArray(array $config): self
     {
+        // Explicit top-level enabled: false disables all levels
+        if (\array_key_exists('enabled', $config) && $config['enabled'] === false) {
+            return new self(
+                class: new ClassCboOptions(enabled: false),
+                namespace: new NamespaceCboOptions(enabled: false),
+            );
+        }
+
         // Handle hierarchical format: {class: {...}, namespace: {...}}
         $classConfig = isset($config['class']) && \is_array($config['class'])
             ? $config['class']

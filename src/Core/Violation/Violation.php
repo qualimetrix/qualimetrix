@@ -24,6 +24,8 @@ final readonly class Violation
      * Returns unique identifier for baseline.
      *
      * Format: ruleName:symbolPath
+     *
+     * @internal Not used in production code. May be removed in a future version.
      */
     public function getFingerprint(): string
     {

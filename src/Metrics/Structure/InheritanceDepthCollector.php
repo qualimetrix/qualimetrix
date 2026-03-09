@@ -99,6 +99,21 @@ final class InheritanceDepthCollector extends AbstractCollector implements Class
         'Random\\Engine' => true,
         'Random\\Randomizer' => true,
         'IntlException' => true,
+        'JsonSerializable' => true,
+        'Stringable' => true,
+        'ArrayAccess' => true,
+        'SplStack' => true,
+        'SplQueue' => true,
+        'SplHeap' => true,
+        'SplMinHeap' => true,
+        'SplMaxHeap' => true,
+        'SplDoublyLinkedList' => true,
+        'SplFixedArray' => true,
+        'SplPriorityQueue' => true,
+        'WeakReference' => true,
+        'Fiber' => true,
+        'UnitEnum' => true,
+        'BackedEnum' => true,
     ];
 
     public function __construct()

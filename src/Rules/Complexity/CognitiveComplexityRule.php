@@ -63,9 +63,7 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
      */
     public function analyzeLevel(RuleLevel $level, AnalysisContext $context): array
     {
-        if (!$this->options instanceof CognitiveComplexityOptions) {
-            return [];
-        }
+        \assert($this->options instanceof CognitiveComplexityOptions);
 
         $levelOptions = $this->options->forLevel($level);
         if (!$levelOptions->isEnabled()) {
@@ -84,10 +82,12 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
      */
     public function analyze(AnalysisContext $context): array
     {
+        \assert($this->options instanceof CognitiveComplexityOptions);
+
         $violations = [];
 
         foreach ($this->getSupportedLevels() as $level) {
-            if ($this->options instanceof CognitiveComplexityOptions && $this->options->isLevelEnabled($level)) {
+            if ($this->options->isLevelEnabled($level)) {
                 $violations = [...$violations, ...$this->analyzeLevel($level, $context)];
             }
         }
@@ -123,9 +123,7 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
      */
     private function analyzeMethodLevel(AnalysisContext $context): array
     {
-        if (!$this->options instanceof CognitiveComplexityOptions) {
-            return [];
-        }
+        \assert($this->options instanceof CognitiveComplexityOptions);
         $methodOptions = $this->options->method;
 
         $violations = [];
@@ -165,9 +163,7 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
      */
     private function analyzeClassLevel(AnalysisContext $context): array
     {
-        if (!$this->options instanceof CognitiveComplexityOptions) {
-            return [];
-        }
+        \assert($this->options instanceof CognitiveComplexityOptions);
         $classOptions = $this->options->class;
 
         $violations = [];

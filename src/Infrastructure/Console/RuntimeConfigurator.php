@@ -11,6 +11,7 @@ use AiMessDetector\Configuration\RuleOptionsFactory;
 use AiMessDetector\Configuration\RuleOptionsParserFactory;
 use AiMessDetector\Core\Profiler\ProfilerHolder;
 use AiMessDetector\Core\Progress\NullProgressReporter;
+use AiMessDetector\Infrastructure\Cache\CacheFactory;
 use AiMessDetector\Infrastructure\Console\Progress\ConsoleProgressBar;
 use AiMessDetector\Infrastructure\Console\Progress\ProgressReporterHolder;
 use AiMessDetector\Infrastructure\Logging\LoggerFactory;
@@ -35,6 +36,7 @@ final class RuntimeConfigurator
         private readonly ConfigurationProviderInterface $configurationProvider,
         private readonly RuleOptionsFactory $ruleOptionsFactory,
         private readonly RuleRegistryInterface $ruleRegistry,
+        private readonly CacheFactory $cacheFactory,
     ) {}
 
     /**
@@ -45,8 +47,9 @@ final class RuntimeConfigurator
         InputInterface $input,
         OutputInterface $output,
     ): void {
-        // Reset CLI options from previous run to prevent leaking
+        // Reset memoized state from previous run to prevent leaking
         $this->ruleOptionsFactory->resetCliOptions();
+        $this->cacheFactory->reset();
 
         $this->configureLogger($input, $output);
         $this->configureProgressReporter($input, $output);

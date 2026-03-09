@@ -80,13 +80,18 @@ final readonly class AnalysisResult
             $mergedMetrics = $this->metrics->mergeWith($other->metrics);
         }
 
+        $mergedSuppressions = $this->suppressions;
+        foreach ($other->suppressions as $file => $list) {
+            $mergedSuppressions[$file] = array_merge($mergedSuppressions[$file] ?? [], $list);
+        }
+
         return new self(
             violations: [...$this->violations, ...$other->violations],
             filesAnalyzed: $this->filesAnalyzed + $other->filesAnalyzed,
             filesSkipped: $this->filesSkipped + $other->filesSkipped,
             duration: max($this->duration, $other->duration),
             metrics: $mergedMetrics,
-            suppressions: array_merge($this->suppressions, $other->suppressions),
+            suppressions: $mergedSuppressions,
         );
     }
 

@@ -122,7 +122,7 @@ final class DotExporter implements GraphExporterInterface
 
             foreach ($namespaceClasses as $classPath) {
                 $fqcn = $classPath->toString();
-                $label = $classPath->type ?? $fqcn;
+                $label = $this->getLabel($fqcn);
                 $color = $this->getNodeColor($classPath, $graph);
                 $lines[] = \sprintf(
                     '        "%s" [label="%s", fillcolor="%s"];',

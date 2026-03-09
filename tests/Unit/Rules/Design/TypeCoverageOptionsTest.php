@@ -53,14 +53,14 @@ final class TypeCoverageOptionsTest extends TestCase
     }
 
     #[Test]
-    public function fromArray_camelCaseKeysTakePrecedenceOverSnakeCase(): void
+    public function fromArray_snakeCaseKeysTakePrecedenceOverCamelCase(): void
     {
         $options = TypeCoverageOptions::fromArray([
             'paramWarning' => 95.0,
-            'param_warning' => 70.0, // should be ignored
+            'param_warning' => 70.0, // snake_case takes precedence
         ]);
 
-        self::assertSame(95.0, $options->paramWarning);
+        self::assertSame(70.0, $options->paramWarning);
     }
 
     #[Test]

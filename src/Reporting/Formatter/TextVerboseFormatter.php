@@ -41,10 +41,10 @@ final class TextVerboseFormatter implements FormatterInterface
             $sorted = ViolationSorter::sort($report->violations, $context->groupBy);
 
             if ($context->groupBy === GroupBy::None) {
-                $this->renderFlat($sorted, $color, $lines);
+                $this->renderFlat($sorted, $color, $context, $lines);
             } else {
                 $groups = ViolationSorter::group($sorted, $context->groupBy);
-                $this->renderGrouped($groups, $context->groupBy, $color, $lines);
+                $this->renderGrouped($groups, $context->groupBy, $color, $context, $lines);
             }
         }
 
@@ -69,10 +69,10 @@ final class TextVerboseFormatter implements FormatterInterface
      * @param list<Violation> $violations
      * @param list<string> $lines
      */
-    private function renderFlat(array $violations, AnsiColor $color, array &$lines): void
+    private function renderFlat(array $violations, AnsiColor $color, FormatterContext $context, array &$lines): void
     {
         foreach ($violations as $violation) {
-            $this->renderViolation($violation, $color, $lines, showFile: true);
+            $this->renderViolation($violation, $color, $context, $lines, showFile: true);
         }
     }
 
@@ -80,12 +80,12 @@ final class TextVerboseFormatter implements FormatterInterface
      * @param array<string, list<Violation>> $groups
      * @param list<string> $lines
      */
-    private function renderGrouped(array $groups, GroupBy $groupBy, AnsiColor $color, array &$lines): void
+    private function renderGrouped(array $groups, GroupBy $groupBy, AnsiColor $color, FormatterContext $context, array &$lines): void
     {
         foreach ($groups as $key => $violations) {
             $count = \count($violations);
             $header = match ($groupBy) {
-                GroupBy::File => \sprintf('%s (%d)', $color->bold($key !== '' ? $key : '<no file>'), $count),
+                GroupBy::File => \sprintf('%s (%d)', $color->bold($key !== '' ? $context->relativizePath($key) : '<no file>'), $count),
                 GroupBy::Rule => \sprintf('%s (%d)', $color->bold($key !== '' ? $key : '<unknown>'), $count),
                 GroupBy::Severity => \sprintf('%s (%d)', $this->formatSeverityLabel($key, $color), $count),
                 GroupBy::None => throw new LogicException('GroupBy::None is handled by renderFlat()'),
@@ -97,7 +97,7 @@ final class TextVerboseFormatter implements FormatterInterface
             $showFile = $groupBy !== GroupBy::File;
 
             foreach ($violations as $violation) {
-                $this->renderViolation($violation, $color, $lines, showFile: $showFile);
+                $this->renderViolation($violation, $color, $context, $lines, showFile: $showFile);
             }
         }
     }
@@ -110,13 +110,14 @@ final class TextVerboseFormatter implements FormatterInterface
     private function renderViolation(
         Violation $violation,
         AnsiColor $color,
+        FormatterContext $context,
         array &$lines,
         bool $showFile,
     ): void {
         // Line 1: severity + location + symbol
         $severity = $this->formatSeverityTag($violation->severity, $color);
         $location = $showFile
-            ? $violation->location->toString()
+            ? $this->formatFullLocation($violation, $context)
             : $this->formatLineOnly($violation);
         $symbol = $violation->symbolPath->toString();
 
@@ -150,6 +151,18 @@ final class TextVerboseFormatter implements FormatterInterface
             'warning' => $color->boldYellow('Warnings'),
             default => $key,
         };
+    }
+
+    private function formatFullLocation(Violation $violation, FormatterContext $context): string
+    {
+        $file = $context->relativizePath($violation->location->file);
+        $line = $violation->location->line;
+
+        if ($line === null) {
+            return $file;
+        }
+
+        return \sprintf('%s:%d', $file, $line);
     }
 
     private function formatLineOnly(Violation $violation): string

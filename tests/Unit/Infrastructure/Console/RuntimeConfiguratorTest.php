@@ -10,6 +10,7 @@ use AiMessDetector\Configuration\PathsConfiguration;
 use AiMessDetector\Configuration\Pipeline\ResolvedConfiguration;
 use AiMessDetector\Configuration\RuleOptionsFactory;
 use AiMessDetector\Core\Profiler\ProfilerHolder;
+use AiMessDetector\Infrastructure\Cache\CacheFactory;
 use AiMessDetector\Infrastructure\Console\Progress\ProgressReporterHolder;
 use AiMessDetector\Infrastructure\Console\RuntimeConfigurator;
 use AiMessDetector\Infrastructure\Logging\LoggerFactory;
@@ -47,6 +48,7 @@ final class RuntimeConfiguratorTest extends TestCase
             $this->configProvider,
             $this->ruleOptionsFactory,
             $ruleRegistry,
+            new CacheFactory($this->configProvider),
         );
     }
 

@@ -6,6 +6,8 @@ namespace AiMessDetector\Metrics\CodeSmell;
 
 use AiMessDetector\Metrics\ResettableVisitorInterface;
 use PhpParser\Node;
+use PhpParser\Node\Expr\ArrowFunction;
+use PhpParser\Node\Expr\Closure;
 use PhpParser\Node\Expr\ErrorSuppress;
 use PhpParser\Node\Expr\Eval_;
 use PhpParser\Node\Expr\Exit_;
@@ -116,7 +118,7 @@ final class CodeSmellVisitor extends NodeVisitorAbstract implements ResettableVi
             return null;
         }
 
-        if ($node instanceof ClassMethod || $node instanceof Function_) {
+        if ($node instanceof ClassMethod || $node instanceof Function_ || $node instanceof Closure || $node instanceof ArrowFunction) {
             $this->checkBooleanArgument($node);
 
             return null;
@@ -243,7 +245,7 @@ final class CodeSmellVisitor extends NodeVisitorAbstract implements ResettableVi
         }
     }
 
-    private function checkBooleanArgument(ClassMethod|Function_ $node): void
+    private function checkBooleanArgument(ClassMethod|Function_|Closure|ArrowFunction $node): void
     {
         foreach ($node->params as $param) {
             if ($param->type === null) {

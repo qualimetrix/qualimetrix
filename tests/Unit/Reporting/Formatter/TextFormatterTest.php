@@ -362,6 +362,29 @@ final class TextFormatterTest extends TestCase
         self::assertStringContainsString("\e[1;31m1 error(s)", $output);
     }
 
+    public function testRelativizesAbsolutePathsWithBasePath(): void
+    {
+        $report = ReportBuilder::create()
+            ->addViolation(new Violation(
+                location: new Location('/home/user/project/src/Service/UserService.php', 42),
+                symbolPath: SymbolPath::forMethod('App\\Service', 'UserService', 'calculate'),
+                ruleName: 'test',
+                violationCode: 'test',
+                message: 'Test',
+                severity: Severity::Error,
+            ))
+            ->filesAnalyzed(1)
+            ->filesSkipped(0)
+            ->duration(0.01)
+            ->build();
+
+        $context = new FormatterContext(useColor: false, basePath: '/home/user/project');
+        $output = $this->formatter->format($report, $context);
+
+        self::assertStringContainsString('src/Service/UserService.php:42:', $output);
+        self::assertStringNotContainsString('/home/user/project/', $output);
+    }
+
     public function testSummaryColoredGreenForNoViolations(): void
     {
         $colorContext = new FormatterContext(useColor: true);

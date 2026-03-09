@@ -174,12 +174,17 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
 
         // Start of a closure or arrow function
         if ($node instanceof Closure || $node instanceof ArrowFunction) {
+            // Add +1 structural increment to parent method (SonarSource spec B1: lambdas)
+            if (!empty($this->methodStack)) {
+                $parentMethod = $this->methodStack[array_key_last($this->methodStack)];
+                $increment = 1 + $this->nestingLevel; // B1 + B3 nesting bonus
+                $this->complexities[$parentMethod['fqn']] = ($this->complexities[$parentMethod['fqn']] ?? 0) + $increment;
+            }
+
             ++$this->closureCounter;
             $fqn = $this->buildClosureFqn();
             $closureName = '{closure#' . $this->closureCounter . '}';
             $this->startMethod($fqn, $closureName, $node->getStartLine());
-
-            // Note: closures start fresh - nesting is already reset in startMethod()
 
             return null;
         }
@@ -348,12 +353,9 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
             return 1 + $this->nestingLevel;
         }
 
-        // ElseIf: +1 with nesting bonus (same level as parent If)
-        // Gets the nesting bonus but doesn't INCREASE nesting
-        // Since it's processed INSIDE the If_ node (before leaveNode),
-        // we need to use nestingLevel - 1 to account for parent If's increment
+        // ElseIf: +1 structural increment only, NO nesting bonus per SonarSource spec (B1 only, not B3)
         if ($node instanceof ElseIf_) {
-            return 1 + max(0, $this->nestingLevel - 1);
+            return 1; // No nesting bonus per SonarSource spec (B1 only, not B3)
         }
 
         // Else: +1 structural increment only, NO nesting bonus per SonarSource spec (B1 only, not B3)

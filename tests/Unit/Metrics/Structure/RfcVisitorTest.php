@@ -260,7 +260,7 @@ PHP,
             ],
         ];
 
-        // Interface should have RFC = 0
+        // Interface methods should be counted as own methods
         yield 'interface' => [
             'code' => <<<'PHP'
 <?php
@@ -269,10 +269,10 @@ interface UserInterface
     public function getName(): string;
     public function getEmail(): string;
 }
-// M = 0 (interfaces don't have implementations), R = 0, RFC = 0
+// M = 2 (interface methods count as own), R = 0, RFC = 2
 PHP,
             'expected' => [
-                'UserInterface' => ['rfc' => 0, 'own' => 0, 'external' => 0],
+                'UserInterface' => ['rfc' => 2, 'own' => 2, 'external' => 0],
             ],
         ];
 

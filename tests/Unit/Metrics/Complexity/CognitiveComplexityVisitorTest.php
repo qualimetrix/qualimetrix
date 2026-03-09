@@ -309,7 +309,7 @@ class ClosureTest
 }
 PHP,
             'expected' => [
-                'App\ClosureTest::withClosure' => 0, // Empty method
+                'App\ClosureTest::withClosure' => 1, // +1 for closure (B1 lambda increment)
                 'App\ClosureTest::{closure#1}' => 1, // +1 (if inside closure)
             ],
         ];
@@ -581,7 +581,7 @@ function foo($a, $b, $c) {
 }
 PHP,
             'expected' => [
-                'foo' => 3,             // +1 (if $a) + 2 (if $c at nesting=1) = 3
+                'foo' => 5,             // +1 (if $a) + 2 (closure at nesting=1: B1+B3) + 2 (if $c at nesting=1) = 5
                 '::{closure#1}' => 1,   // +1 (if $b)
             ],
         ];
@@ -598,7 +598,7 @@ function bar($a, $c) {
 }
 PHP,
             'expected' => [
-                'bar' => 3,             // +1 + 2
+                'bar' => 5,             // +1 (if $a) + 2 (arrow fn at nesting=1: B1+B3) + 2 (if $c at nesting=1) = 5
                 '::{closure#1}' => 0,   // arrow function with no control flow
             ],
         ];
@@ -939,6 +939,72 @@ PHP;
 
         // +1 (if) + 1 (recursion) = 2
         self::assertSame(2, $complexities['myRecursive']);
+    }
+
+    /**
+     * ElseIf at deep nesting should get only +1 (no nesting bonus per SonarSource spec).
+     */
+    public function testElseifAtDeepNesting(): void
+    {
+        $code = '<?php function f($a, $b, $c) { if ($a) { if ($b) {} elseif ($c) {} } }';
+
+        $visitor = new CognitiveComplexityVisitor();
+        $parser = (new ParserFactory())->createForHostVersion();
+        $ast = $parser->parse($code) ?? [];
+
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $complexities = $visitor->getComplexities();
+
+        // if ($a): +1 (nesting=0)
+        // if ($b): +2 (1 + nesting=1)
+        // elseif ($c): +1 (B1 only, no nesting bonus)
+        // Total: 4
+        self::assertSame(4, $complexities['f']);
+    }
+
+    /**
+     * Closure adds +1 structural increment to parent method.
+     */
+    public function testClosureAddsOneToParent(): void
+    {
+        $code = '<?php function f() { $fn = function() { return 1; }; }';
+
+        $visitor = new CognitiveComplexityVisitor();
+        $parser = (new ParserFactory())->createForHostVersion();
+        $ast = $parser->parse($code) ?? [];
+
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $complexities = $visitor->getComplexities();
+
+        // Closure at nesting=0: +1 (B1) + 0 (B3 nesting=0) = +1 to parent
+        self::assertSame(1, $complexities['f']);
+    }
+
+    /**
+     * Arrow function adds +1 structural increment to parent method.
+     */
+    public function testArrowFunctionAddsOneToParent(): void
+    {
+        $code = '<?php function f() { $fn = fn() => 1; }';
+
+        $visitor = new CognitiveComplexityVisitor();
+        $parser = (new ParserFactory())->createForHostVersion();
+        $ast = $parser->parse($code) ?? [];
+
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $complexities = $visitor->getComplexities();
+
+        // Arrow function at nesting=0: +1 (B1) + 0 (B3 nesting=0) = +1 to parent
+        self::assertSame(1, $complexities['f']);
     }
 
     public function testReset(): void

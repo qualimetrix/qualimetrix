@@ -35,7 +35,7 @@ final class TextFormatter implements FormatterInterface
         $lines = [];
 
         foreach ($sorted as $violation) {
-            $lines[] = $this->formatViolation($violation, $color);
+            $lines[] = $this->formatViolation($violation, $color, $context);
         }
 
         // Summary line at the end
@@ -57,9 +57,9 @@ final class TextFormatter implements FormatterInterface
         return GroupBy::None;
     }
 
-    private function formatViolation(Violation $violation, AnsiColor $color): string
+    private function formatViolation(Violation $violation, AnsiColor $color, FormatterContext $context): string
     {
-        $file = $violation->location->isNone() ? '[project]' : $violation->location->file;
+        $file = $violation->location->isNone() ? '[project]' : $context->relativizePath($violation->location->file);
         $line = $violation->location->line;
         $severity = $this->formatSeverity($violation->severity, $color);
         $rule = $color->dim($violation->violationCode);

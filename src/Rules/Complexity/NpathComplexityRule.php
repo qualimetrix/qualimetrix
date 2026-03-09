@@ -67,9 +67,7 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
      */
     public function analyzeLevel(RuleLevel $level, AnalysisContext $context): array
     {
-        if (!$this->options instanceof NpathComplexityOptions) {
-            return [];
-        }
+        \assert($this->options instanceof NpathComplexityOptions);
 
         $levelOptions = $this->options->forLevel($level);
         if (!$levelOptions->isEnabled()) {
@@ -88,10 +86,12 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
      */
     public function analyze(AnalysisContext $context): array
     {
+        \assert($this->options instanceof NpathComplexityOptions);
+
         $violations = [];
 
         foreach ($this->getSupportedLevels() as $level) {
-            if ($this->options instanceof NpathComplexityOptions && $this->options->isLevelEnabled($level)) {
+            if ($this->options->isLevelEnabled($level)) {
                 $violations = [...$violations, ...$this->analyzeLevel($level, $context)];
             }
         }
@@ -127,9 +127,7 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
      */
     private function analyzeMethodLevel(AnalysisContext $context): array
     {
-        if (!$this->options instanceof NpathComplexityOptions) {
-            return [];
-        }
+        \assert($this->options instanceof NpathComplexityOptions);
         $methodOptions = $this->options->method;
 
         $violations = [];
@@ -170,9 +168,7 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
      */
     private function analyzeClassLevel(AnalysisContext $context): array
     {
-        if (!$this->options instanceof NpathComplexityOptions) {
-            return [];
-        }
+        \assert($this->options instanceof NpathComplexityOptions);
         $classOptions = $this->options->class;
 
         $violations = [];

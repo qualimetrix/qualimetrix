@@ -305,8 +305,8 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        // Method itself: Cognitive = 0
-        self::assertSame(0, $metrics->get('cognitive:App\ClosureTest::withClosure'));
+        // Method itself: Cognitive = +1 (closure B1 lambda increment)
+        self::assertSame(1, $metrics->get('cognitive:App\ClosureTest::withClosure'));
 
         // Closure: Cognitive = +1 (if)
         self::assertSame(1, $metrics->get('cognitive:App\ClosureTest::{closure#1}'));

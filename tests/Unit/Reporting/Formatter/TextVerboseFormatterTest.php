@@ -282,6 +282,52 @@ final class TextVerboseFormatterTest extends TestCase
         self::assertStringContainsString('[namespace-size]', $output);
     }
 
+    public function testRelativizesAbsolutePathsWithBasePath(): void
+    {
+        $report = ReportBuilder::create()
+            ->addViolation(new Violation(
+                location: new Location('/home/user/project/src/Service/UserService.php', 42),
+                symbolPath: SymbolPath::forMethod('App\\Service', 'UserService', 'calculate'),
+                ruleName: 'test',
+                violationCode: 'test',
+                message: 'Test',
+                severity: Severity::Error,
+            ))
+            ->filesAnalyzed(1)
+            ->filesSkipped(0)
+            ->duration(0.01)
+            ->build();
+
+        $context = new FormatterContext(useColor: false, groupBy: GroupBy::None, basePath: '/home/user/project');
+        $output = $this->formatter->format($report, $context);
+
+        self::assertStringContainsString('src/Service/UserService.php:42', $output);
+        self::assertStringNotContainsString('/home/user/project/', $output);
+    }
+
+    public function testRelativizesFileGroupHeaders(): void
+    {
+        $report = ReportBuilder::create()
+            ->addViolation(new Violation(
+                location: new Location('/home/user/project/src/Foo.php', 10),
+                symbolPath: SymbolPath::forClass('App', 'Foo'),
+                ruleName: 'test',
+                violationCode: 'test',
+                message: 'Test',
+                severity: Severity::Error,
+            ))
+            ->filesAnalyzed(1)
+            ->filesSkipped(0)
+            ->duration(0.01)
+            ->build();
+
+        $context = new FormatterContext(useColor: false, groupBy: GroupBy::File, basePath: '/home/user/project');
+        $output = $this->formatter->format($report, $context);
+
+        self::assertStringContainsString('src/Foo.php (1)', $output);
+        self::assertStringNotContainsString('/home/user/project/', $output);
+    }
+
     public function testOutputContainsHeader(): void
     {
         $report = new Report([], 0, 0, 0.0, 0, 0);

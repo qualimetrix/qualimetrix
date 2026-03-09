@@ -143,6 +143,24 @@ PHP,
             'description' => 'Function with ?bool should be detected',
         ];
 
+        yield 'closure with bool parameter' => [
+            'code' => <<<'PHP'
+<?php
+$fn = function (bool $flag): void {};
+PHP,
+            'expectedCount' => 1,
+            'description' => 'Closure with bool should be detected',
+        ];
+
+        yield 'arrow function with bool parameter' => [
+            'code' => <<<'PHP'
+<?php
+$fn = fn(bool $flag) => $flag;
+PHP,
+            'expectedCount' => 1,
+            'description' => 'ArrowFunction with bool should be detected',
+        ];
+
         yield 'multiple bool params in one method' => [
             'code' => <<<'PHP'
 <?php

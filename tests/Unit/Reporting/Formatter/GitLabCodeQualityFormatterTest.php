@@ -218,6 +218,38 @@ final class GitLabCodeQualityFormatterTest extends TestCase
         self::assertCount(3, $uniqueFingerprints);
     }
 
+    public function testSameLineViolationsHaveDifferentFingerprints(): void
+    {
+        $report = ReportBuilder::create()
+            ->addViolation(new Violation(
+                location: new Location('src/A.php', 10),
+                symbolPath: SymbolPath::forClass('App', 'A'),
+                ruleName: 'test-rule',
+                violationCode: 'test-rule',
+                message: 'First violation on same line',
+                severity: Severity::Warning,
+            ))
+            ->addViolation(new Violation(
+                location: new Location('src/A.php', 10),
+                symbolPath: SymbolPath::forClass('App', 'A'),
+                ruleName: 'test-rule',
+                violationCode: 'test-rule',
+                message: 'Second violation on same line',
+                severity: Severity::Warning,
+            ))
+            ->filesAnalyzed(1)
+            ->filesSkipped(0)
+            ->duration(0.1)
+            ->build();
+
+        $output = $this->formatter->format($report, new FormatterContext());
+        $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
+
+        // Same rule, same symbol, same line, different messages => different fingerprints
+        self::assertCount(2, $data);
+        self::assertNotSame($data[0]['fingerprint'], $data[1]['fingerprint']);
+    }
+
     public function testFormatNamespaceLevelViolation(): void
     {
         $report = ReportBuilder::create()

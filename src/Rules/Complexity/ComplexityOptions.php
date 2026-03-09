@@ -27,6 +27,14 @@ final readonly class ComplexityOptions implements HierarchicalRuleOptionsInterfa
      */
     public static function fromArray(array $config): self
     {
+        // Explicit top-level enabled: false disables all levels
+        if (\array_key_exists('enabled', $config) && $config['enabled'] === false) {
+            return new self(
+                method: new MethodComplexityOptions(enabled: false),
+                class: new ClassComplexityOptions(enabled: false),
+            );
+        }
+
         // Handle legacy flat format: {enabled, warningThreshold, errorThreshold}
         if (isset($config['warningThreshold']) || isset($config['errorThreshold'])) {
             return new self(

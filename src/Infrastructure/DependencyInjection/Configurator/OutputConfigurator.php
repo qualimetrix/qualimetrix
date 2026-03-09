@@ -123,6 +123,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(ConfigurationProviderInterface::class),
                 new Reference(RuleOptionsFactory::class),
                 new Reference(RuleRegistryInterface::class),
+                new Reference(CacheFactory::class),
             ]);
 
         // ResultPresenter for formatting/output of results and profiler export

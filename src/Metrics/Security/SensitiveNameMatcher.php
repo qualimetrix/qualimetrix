@@ -27,7 +27,7 @@ final class SensitiveNameMatcher
 
     /** @var list<string> "token" matches only when preceded by one of these */
     private const TOKEN_QUALIFYING_PREFIXES = [
-        'auth', 'access', 'bearer', 'api', 'refresh',
+        'auth', 'access', 'bearer', 'api', 'refresh', 'jwt',
     ];
 
     /** @var list<string> Segments AFTER the sensitive word that indicate it's NOT a credential */

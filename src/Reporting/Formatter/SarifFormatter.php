@@ -128,12 +128,18 @@ final class SarifFormatter implements FormatterInterface
     private function getRuleDescription(string $ruleName): string
     {
         return match ($ruleName) {
-            'cyclomatic-complexity', 'cognitive-complexity' => 'Code complexity exceeds threshold',
-            'class-size', 'namespace-size' => 'Code size exceeds threshold',
-            'maintainability-index' => 'Maintainability index below threshold',
-            'lcom' => 'Lack of cohesion of methods exceeds threshold',
-            'inheritance-depth' => 'Inheritance depth exceeds threshold',
-            default => ucfirst(str_replace('-', ' ', $ruleName)),
+            'complexity.cyclomatic', 'complexity.cognitive', 'complexity.npath' => 'Code complexity exceeds threshold',
+            'complexity.wmc' => 'Weighted methods per class exceeds threshold',
+            'size.class-count', 'size.method-count', 'size.property-count', 'size.namespace-size' => 'Code size exceeds threshold',
+            'size.loc' => 'Lines of code exceeds threshold',
+            'size.long-parameter-list' => 'Too many parameters',
+            'maintainability.index' => 'Maintainability index below threshold',
+            'design.lcom' => 'Lack of cohesion of methods',
+            'design.inheritance', 'design.noc' => 'Inheritance structure issue',
+            'design.type-coverage' => 'Type coverage below threshold',
+            'coupling.cbo', 'coupling.instability', 'coupling.distance' => 'Coupling issue',
+            'architecture.circular-dependency' => 'Circular dependency detected',
+            default => ucfirst(str_replace(['.', '-'], ' ', $ruleName)),
         };
     }
 

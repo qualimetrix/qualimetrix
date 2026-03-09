@@ -264,8 +264,8 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        // NPath = cond(1) + body(1) + exit(1) = 3
-        self::assertSame(3, $metrics->get('npath:App\Test::iterate'));
+        // Foreach NPath = NPath(body) + 1 = 1 + 1 = 2
+        self::assertSame(2, $metrics->get('npath:App\Test::iterate'));
     }
 
     public function testMethodWithSwitch(): void
@@ -622,8 +622,8 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        // Foreach has no condition, so cond=1: NPath = 1 + 1 + 1 = 3
-        self::assertSame(3, $metrics->get('npath:App\Test::iterate'));
+        // Foreach NPath = NPath(body) + 1 = 1 + 1 = 2
+        self::assertSame(2, $metrics->get('npath:App\Test::iterate'));
     }
 
     public function testWhileWithTernaryCondition(): void
@@ -760,6 +760,58 @@ PHP;
 
         // Arrow function with no branching: NPath = 1
         self::assertSame(1, $metrics->get('npath:App\Test::{closure#1}'));
+    }
+
+    /**
+     * Ternary inside an assignment should be detected via Assign recursion.
+     */
+    public function testTernaryInAssignment(): void
+    {
+        $code = <<<'PHP'
+<?php
+function f($x) { $r = $x ? "a" : "b"; }
+PHP;
+
+        $metrics = $this->collectFunctionMetrics($code);
+
+        // $r = $x ? "a" : "b" -> Assign recurses into Ternary
+        // Ternary NPath = cond(1) + true(1) + false(1) = 3
+        self::assertSame(3, $metrics->get('npath:f'));
+    }
+
+    /**
+     * Null coalesce inside an assignment should be detected via Assign recursion.
+     */
+    public function testCoalesceInAssignment(): void
+    {
+        $code = <<<'PHP'
+<?php
+function f($x) { $r = $x ?? "b"; }
+PHP;
+
+        $metrics = $this->collectFunctionMetrics($code);
+
+        // $r = $x ?? "b" -> Assign recurses into Coalesce
+        // Coalesce NPath = left(1) + right(1) = 2
+        self::assertSame(2, $metrics->get('npath:f'));
+    }
+
+    /**
+     * Collect metrics for a standalone function (no class wrapper).
+     */
+    private function collectFunctionMetrics(string $code): \AiMessDetector\Core\Metric\MetricBag
+    {
+        $parser = (new ParserFactory())->createForHostVersion();
+        $ast = $parser->parse($code);
+
+        $collector = new NpathComplexityCollector();
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor($collector->getVisitor());
+        $traverser->traverse($ast ?? []);
+
+        $file = new SplFileInfo(__FILE__);
+
+        return $collector->collect($file, $ast ?? []);
     }
 
     private function collectMetrics(string $code): \AiMessDetector\Core\Metric\MetricBag

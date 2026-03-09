@@ -388,6 +388,24 @@ PHP;
         self::assertSame(1, $metrics->get('dit:App\MyIterator'));
     }
 
+    public function testClassExtendsSplStack(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class MyStack extends \SplStack
+{
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // SplStack is a standard PHP class = DIT 1
+        self::assertSame(1, $metrics->get('dit:App\MyStack'));
+    }
+
     public function testReflectionDitCountsStandardPhpClassInChain(): void
     {
         // DitTestCustomException is defined at the bottom of this file.

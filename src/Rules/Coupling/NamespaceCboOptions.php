@@ -40,7 +40,9 @@ final readonly class NamespaceCboOptions implements LevelOptionsInterface
 
         $excludeNamespaces = [];
         $excludeKey = $config['exclude_namespaces'] ?? $config['excludeNamespaces'] ?? null;
-        if (\is_array($excludeKey)) {
+        if (\is_string($excludeKey)) {
+            $excludeNamespaces = [$excludeKey];
+        } elseif (\is_array($excludeKey)) {
             $excludeNamespaces = array_values($excludeKey);
         }
 

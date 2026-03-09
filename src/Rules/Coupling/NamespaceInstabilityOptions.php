@@ -32,14 +32,16 @@ final readonly class NamespaceInstabilityOptions implements LevelOptionsInterfac
      */
     public static function fromArray(array $config): self
     {
-        // If config is empty, use defaults (all enabled)
+        // If config is empty, level is disabled (consistent with NamespaceCboOptions)
         if ($config === []) {
-            return new self();
+            return new self(enabled: false);
         }
 
         $excludeNamespaces = [];
         $excludeKey = $config['exclude_namespaces'] ?? $config['excludeNamespaces'] ?? null;
-        if (\is_array($excludeKey)) {
+        if (\is_string($excludeKey)) {
+            $excludeNamespaces = [$excludeKey];
+        } elseif (\is_array($excludeKey)) {
             $excludeNamespaces = array_values($excludeKey);
         }
 

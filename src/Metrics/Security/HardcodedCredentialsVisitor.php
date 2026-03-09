@@ -13,6 +13,7 @@ use PhpParser\Node\Name;
 use PhpParser\Node\Param;
 use PhpParser\Node\Scalar\String_;
 use PhpParser\Node\Stmt\ClassConst;
+use PhpParser\Node\Stmt\EnumCase;
 use PhpParser\Node\Stmt\Property;
 use PhpParser\NodeVisitorAbstract;
 
@@ -76,6 +77,12 @@ final class HardcodedCredentialsVisitor extends NodeVisitorAbstract implements R
 
         if ($node instanceof Param) {
             $this->checkParameterDefault($node);
+
+            return null;
+        }
+
+        if ($node instanceof EnumCase) {
+            $this->checkEnumCase($node);
 
             return null;
         }
@@ -197,6 +204,20 @@ final class HardcodedCredentialsVisitor extends NodeVisitorAbstract implements R
             $this->locations[] = new CredentialLocation(
                 line: $node->getStartLine(),
                 pattern: 'parameter',
+            );
+        }
+    }
+
+    private function checkEnumCase(EnumCase $node): void
+    {
+        if ($node->expr === null || !$node->expr instanceof String_) {
+            return;
+        }
+
+        if ($this->matcher->isSensitive($node->name->toString()) && $this->isCredentialValue($node->expr->value)) {
+            $this->locations[] = new CredentialLocation(
+                line: $node->getStartLine(),
+                pattern: 'enum_case',
             );
         }
     }

@@ -78,8 +78,8 @@ final class SarifFormatterTest extends TestCase
             ->addViolation(new Violation(
                 location: new Location('src/Service/UserService.php', 42),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculateDiscount'),
-                ruleName: 'cyclomatic-complexity',
-                violationCode: 'cyclomatic-complexity',
+                ruleName: 'complexity.cyclomatic',
+                violationCode: 'complexity.cyclomatic',
                 message: 'Cyclomatic complexity of 25 exceeds threshold',
                 severity: Severity::Error,
                 metricValue: 25,
@@ -87,8 +87,8 @@ final class SarifFormatterTest extends TestCase
             ->addViolation(new Violation(
                 location: new Location('src/Service/UserService.php', 120),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'processOrder'),
-                ruleName: 'cyclomatic-complexity',
-                violationCode: 'cyclomatic-complexity',
+                ruleName: 'complexity.cyclomatic',
+                violationCode: 'complexity.cyclomatic',
                 message: 'Cyclomatic complexity of 12 exceeds threshold',
                 severity: Severity::Warning,
                 metricValue: 12,
@@ -106,8 +106,8 @@ final class SarifFormatterTest extends TestCase
         // Should have 1 unique rule (both violations use same rule)
         self::assertCount(1, $run['tool']['driver']['rules']);
         $rule = $run['tool']['driver']['rules'][0];
-        self::assertSame('cyclomatic-complexity', $rule['id']);
-        self::assertSame('Cyclomatic Complexity', $rule['name']);
+        self::assertSame('complexity.cyclomatic', $rule['id']);
+        self::assertSame('Complexity Cyclomatic', $rule['name']);
         self::assertSame('Code complexity exceeds threshold', $rule['shortDescription']['text']);
         // Max severity is Error, so defaultConfiguration level should be 'error'
         self::assertSame('error', $rule['defaultConfiguration']['level']);
@@ -117,7 +117,7 @@ final class SarifFormatterTest extends TestCase
 
         // First violation
         $result1 = $run['results'][0];
-        self::assertSame('cyclomatic-complexity', $result1['ruleId']);
+        self::assertSame('complexity.cyclomatic', $result1['ruleId']);
         self::assertSame('error', $result1['level']);
         self::assertSame('Cyclomatic complexity of 25 exceeds threshold', $result1['message']['text']);
         self::assertSame('src/Service/UserService.php', $result1['locations'][0]['physicalLocation']['artifactLocation']['uri']);
@@ -127,7 +127,7 @@ final class SarifFormatterTest extends TestCase
 
         // Second violation
         $result2 = $run['results'][1];
-        self::assertSame('cyclomatic-complexity', $result2['ruleId']);
+        self::assertSame('complexity.cyclomatic', $result2['ruleId']);
         self::assertSame('warning', $result2['level']);
         self::assertSame('Cyclomatic complexity of 12 exceeds threshold', $result2['message']['text']);
         self::assertSame(120, $result2['locations'][0]['physicalLocation']['region']['startLine']);
@@ -139,8 +139,8 @@ final class SarifFormatterTest extends TestCase
             ->addViolation(new Violation(
                 location: new Location('src/A.php', 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
-                ruleName: 'cyclomatic-complexity',
-                violationCode: 'cyclomatic-complexity',
+                ruleName: 'complexity.cyclomatic',
+                violationCode: 'complexity.cyclomatic',
                 message: 'Complexity too high',
                 severity: Severity::Error,
             ))
@@ -174,13 +174,13 @@ final class SarifFormatterTest extends TestCase
         self::assertCount(3, $run['tool']['driver']['rules']);
 
         $ruleIds = array_map(fn(array $r): string => $r['id'], $run['tool']['driver']['rules']);
-        self::assertContains('cyclomatic-complexity', $ruleIds);
+        self::assertContains('complexity.cyclomatic', $ruleIds);
         self::assertContains('class-size', $ruleIds);
         self::assertContains('maintainability-index', $ruleIds);
 
         // Check rule names are formatted correctly
         $ruleNames = array_map(fn(array $r): string => $r['name'], $run['tool']['driver']['rules']);
-        self::assertContains('Cyclomatic Complexity', $ruleNames);
+        self::assertContains('Complexity Cyclomatic', $ruleNames);
         self::assertContains('Class Size', $ruleNames);
         self::assertContains('Maintainability Index', $ruleNames);
 
@@ -253,16 +253,16 @@ final class SarifFormatterTest extends TestCase
             ->addViolation(new Violation(
                 location: new Location('src/A.php', 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
-                ruleName: 'lcom',
-                violationCode: 'lcom',
+                ruleName: 'design.lcom',
+                violationCode: 'design.lcom',
                 message: 'LCOM too high',
                 severity: Severity::Warning,
             ))
             ->addViolation(new Violation(
                 location: new Location('src/B.php', 20),
                 symbolPath: SymbolPath::forClass('App', 'B'),
-                ruleName: 'inheritance-depth',
-                violationCode: 'inheritance-depth',
+                ruleName: 'design.inheritance',
+                violationCode: 'design.inheritance',
                 message: 'Inheritance too deep',
                 severity: Severity::Warning,
             ))
@@ -280,18 +280,18 @@ final class SarifFormatterTest extends TestCase
         $lcomRule = null;
         $inheritanceRule = null;
         foreach ($rules as $rule) {
-            if ($rule['id'] === 'lcom') {
+            if ($rule['id'] === 'design.lcom') {
                 $lcomRule = $rule;
             }
-            if ($rule['id'] === 'inheritance-depth') {
+            if ($rule['id'] === 'design.inheritance') {
                 $inheritanceRule = $rule;
             }
         }
 
         self::assertNotNull($lcomRule);
         self::assertNotNull($inheritanceRule);
-        self::assertSame('Lack of cohesion of methods exceeds threshold', $lcomRule['shortDescription']['text']);
-        self::assertSame('Inheritance depth exceeds threshold', $inheritanceRule['shortDescription']['text']);
+        self::assertSame('Lack of cohesion of methods', $lcomRule['shortDescription']['text']);
+        self::assertSame('Inheritance structure issue', $inheritanceRule['shortDescription']['text']);
     }
 
     public function testRuleIdUsesViolationCode(): void
@@ -335,8 +335,8 @@ final class SarifFormatterTest extends TestCase
             ->addViolation(new Violation(
                 location: new Location('/home/user/project/src/Service/UserService.php', 42),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
-                ruleName: 'cyclomatic-complexity',
-                violationCode: 'cyclomatic-complexity',
+                ruleName: 'complexity.cyclomatic',
+                violationCode: 'complexity.cyclomatic',
                 message: 'Too complex',
                 severity: Severity::Error,
             ))
@@ -366,8 +366,8 @@ final class SarifFormatterTest extends TestCase
             ->addViolation(new Violation(
                 location: new Location('src/Service/UserService.php', 42),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
-                ruleName: 'cyclomatic-complexity',
-                violationCode: 'cyclomatic-complexity',
+                ruleName: 'complexity.cyclomatic',
+                violationCode: 'complexity.cyclomatic',
                 message: 'test',
                 severity: Severity::Error,
             ))
@@ -392,8 +392,8 @@ final class SarifFormatterTest extends TestCase
             ->addViolation(new Violation(
                 location: new Location('src/Service/UserService.php', 42),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
-                ruleName: 'cyclomatic-complexity',
-                violationCode: 'cyclomatic-complexity',
+                ruleName: 'complexity.cyclomatic',
+                violationCode: 'complexity.cyclomatic',
                 message: 'Too complex',
                 severity: Severity::Error,
             ))
@@ -417,8 +417,8 @@ final class SarifFormatterTest extends TestCase
             ->addViolation(new Violation(
                 location: new Location('/home/user/project/src/Service/UserService.php', 42),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
-                ruleName: 'cyclomatic-complexity',
-                violationCode: 'cyclomatic-complexity',
+                ruleName: 'complexity.cyclomatic',
+                violationCode: 'complexity.cyclomatic',
                 message: 'Too complex',
                 severity: Severity::Error,
             ))
@@ -471,8 +471,8 @@ final class SarifFormatterTest extends TestCase
             ->addViolation(new Violation(
                 location: new Location('/home/user/project/src/Service/UserService.php', 42),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
-                ruleName: 'cyclomatic-complexity',
-                violationCode: 'cyclomatic-complexity',
+                ruleName: 'complexity.cyclomatic',
+                violationCode: 'complexity.cyclomatic',
                 message: 'Too complex',
                 severity: Severity::Error,
             ))

@@ -217,7 +217,9 @@ final class WorkerBootstrap
             foreach ($constructor->getParameters() as $param) {
                 if (!$param->isOptional()) {
                     fwrite(\STDERR, \sprintf(
-                        "[WorkerBootstrap] Warning: class '%s' has required constructor parameter '%s' and cannot be instantiated in a worker without DI. Skipping.\n",
+                        "[WorkerBootstrap] WARNING: collector '%s' has required constructor parameter '%s' and cannot be instantiated in a worker without DI. "
+                        . "This collector will be SKIPPED in parallel mode, which may produce different results than --workers=1. "
+                        . "Run with --workers=1 for complete results, or refactor the collector to be serializable.\n",
                         $className,
                         $param->getName(),
                     ));

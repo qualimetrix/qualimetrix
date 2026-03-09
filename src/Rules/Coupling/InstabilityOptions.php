@@ -27,6 +27,14 @@ final readonly class InstabilityOptions implements HierarchicalRuleOptionsInterf
      */
     public static function fromArray(array $config): self
     {
+        // Explicit top-level enabled: false disables all levels
+        if (\array_key_exists('enabled', $config) && $config['enabled'] === false) {
+            return new self(
+                class: new ClassInstabilityOptions(enabled: false),
+                namespace: new NamespaceInstabilityOptions(enabled: false),
+            );
+        }
+
         // Handle hierarchical format: {class: {...}, namespace: {...}}
         $classConfig = isset($config['class']) && \is_array($config['class'])
             ? $config['class']

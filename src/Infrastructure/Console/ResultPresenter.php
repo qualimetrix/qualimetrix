@@ -253,7 +253,10 @@ final class ResultPresenter
             return '<comment>No profiling data available</comment>';
         }
 
-        // Calculate total time
+        // Calculate total time by summing all span durations.
+        // Note: percentages may sum to >100% due to overlapping/nested spans.
+        // This is expected — each span's percentage shows its share of total measured work,
+        // not of wall-clock time.
         $totalTime = 0.0;
         foreach ($summary as $stat) {
             $totalTime += $stat['total'];

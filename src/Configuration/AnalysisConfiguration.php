@@ -16,9 +16,10 @@ final readonly class AnalysisConfiguration
     public const string DEFAULT_NAMESPACE_STRATEGY = 'chain';
 
     /**
-     * Special value for workers: auto-detect CPU cores.
+     * Special value for workers: sequential processing (no parallelism).
+     * Auto-detect CPU cores is represented by null.
      */
-    public const int WORKERS_AUTO = 0;
+    public const int WORKERS_SEQUENTIAL = 0;
 
     /**
      * @param string $cacheDir Directory for cache files

@@ -263,7 +263,7 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
             $stmt instanceof If_ => $this->calculateIfNpath($stmt),
             $stmt instanceof While_ => $this->calculateLoopNpath($stmt->cond, $stmt->stmts),
             $stmt instanceof For_ => $this->calculateForNpath($stmt),
-            $stmt instanceof Foreach_ => $this->calculateLoopNpath(null, $stmt->stmts),
+            $stmt instanceof Foreach_ => $this->calculateSequenceNpath($stmt->stmts) + 1,
             $stmt instanceof Do_ => $this->calculateLoopNpath($stmt->cond, $stmt->stmts),
             $stmt instanceof Switch_ => $this->calculateSwitchNpath($stmt),
             $stmt instanceof TryCatch => $this->calculateTryCatchNpath($stmt),
@@ -375,6 +375,9 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
             $expr instanceof BinaryOp\LogicalOr => $this->calculateBinaryNpath($expr),
             $expr instanceof BinaryOp\Coalesce => $this->calculateCoalesceNpath($expr),
             $expr instanceof Match_ => $this->calculateMatchNpath($expr),
+            $expr instanceof Expr\Assign => $this->calculateExprNpath($expr->expr),
+            $expr instanceof Expr\AssignOp => $this->calculateExprNpath($expr->expr),
+            $expr instanceof Expr\BooleanNot => $this->calculateExprNpath($expr->expr),
             default => 1,
         };
     }

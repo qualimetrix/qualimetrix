@@ -204,6 +204,16 @@ final class UnreachableCodeRuleTest extends TestCase
 
         self::assertTrue($options->isEnabled());
         self::assertSame(1, $options->warning);
-        self::assertSame(1, $options->error);
+        self::assertSame(2, $options->error);
+    }
+
+    public function testDefaultThresholdsWarningSingleUnreachable(): void
+    {
+        $options = new UnreachableCodeOptions();
+
+        // 1 unreachable: warning (not error, unlike before)
+        self::assertSame(Severity::Warning, $options->getSeverity(1));
+        // 2+ unreachable: error
+        self::assertSame(Severity::Error, $options->getSeverity(2));
     }
 }
