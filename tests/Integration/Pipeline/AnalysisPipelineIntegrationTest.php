@@ -7,6 +7,7 @@ namespace AiMessDetector\Tests\Integration\Pipeline;
 use AiMessDetector\Analysis\Aggregation\GlobalCollectorRunner;
 use AiMessDetector\Analysis\Aggregator\MetricAggregator;
 use AiMessDetector\Analysis\Collection\CollectionOrchestratorInterface;
+use AiMessDetector\Analysis\Collection\CollectionPhaseOutput;
 use AiMessDetector\Analysis\Collection\CollectionResult;
 use AiMessDetector\Analysis\Collection\Dependency\CircularDependencyDetector;
 use AiMessDetector\Analysis\Collection\Dependency\DependencyGraphBuilder;
@@ -307,7 +308,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
 
         $orchestrator = $this->createMock(CollectionOrchestratorInterface::class);
         $orchestrator->method('collect')->willReturnCallback(
-            function (array $files, $repository) use ($dependencies, $existingRepository): CollectionResult {
+            function (array $files, $repository) use ($dependencies, $existingRepository): CollectionPhaseOutput {
                 // If we have a pre-populated repository, copy its data
                 if ($existingRepository !== null) {
                     foreach ($existingRepository->all(SymbolType::Class_) as $info) {
@@ -316,7 +317,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
                     }
                 }
 
-                return new CollectionResult(1, 0, $dependencies);
+                return new CollectionPhaseOutput(new CollectionResult(1, 0), $dependencies);
             },
         );
 
@@ -351,7 +352,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
 
         $orchestrator = $this->createMock(CollectionOrchestratorInterface::class);
         $orchestrator->method('collect')->willReturnCallback(
-            function (array $files, $repository) use ($dependencies, $existingRepository): CollectionResult {
+            function (array $files, $repository) use ($dependencies, $existingRepository): CollectionPhaseOutput {
                 // Copy pre-populated symbols into the pipeline's repository
                 foreach ([SymbolType::Class_, SymbolType::Namespace_] as $type) {
                     foreach ($existingRepository->all($type) as $info) {
@@ -360,7 +361,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
                     }
                 }
 
-                return new CollectionResult(1, 0, $dependencies);
+                return new CollectionPhaseOutput(new CollectionResult(1, 0), $dependencies);
             },
         );
 

@@ -55,8 +55,8 @@ final class CollectionOrchestratorTest extends TestCase
 
         $result = $orchestrator->collect([], $repository);
 
-        self::assertSame(0, $result->filesAnalyzed);
-        self::assertSame(0, $result->filesSkipped);
+        self::assertSame(0, $result->result->filesAnalyzed);
+        self::assertSame(0, $result->result->filesSkipped);
         self::assertSame([], $result->dependencies);
     }
 
@@ -89,8 +89,8 @@ final class CollectionOrchestratorTest extends TestCase
 
         $result = $orchestrator->collect($files, $repository);
 
-        self::assertSame(2, $result->filesAnalyzed);
-        self::assertSame(0, $result->filesSkipped);
+        self::assertSame(2, $result->result->filesAnalyzed);
+        self::assertSame(0, $result->result->filesSkipped);
 
         // Check that file metrics were registered
         $fileSymbol1 = SymbolPath::forFile('/tmp/file1.php');
@@ -129,8 +129,8 @@ final class CollectionOrchestratorTest extends TestCase
 
         $result = $orchestrator->collect($files, $repository);
 
-        self::assertSame(1, $result->filesAnalyzed);
-        self::assertSame(1, $result->filesSkipped);
+        self::assertSame(1, $result->result->filesAnalyzed);
+        self::assertSame(1, $result->result->filesSkipped);
     }
 
     #[Test]
@@ -258,7 +258,7 @@ final class CollectionOrchestratorTest extends TestCase
 
         $result = $orchestrator->collect($files, $repository);
 
-        self::assertSame(2, $result->filesAnalyzed);
+        self::assertSame(2, $result->result->filesAnalyzed);
         self::assertCount(2, $result->dependencies);
     }
 
@@ -283,8 +283,8 @@ final class CollectionOrchestratorTest extends TestCase
 
         $result = $orchestrator->collect($files, $repository);
 
-        self::assertSame(0, $result->filesAnalyzed);
-        self::assertSame(2, $result->filesSkipped);
+        self::assertSame(0, $result->result->filesAnalyzed);
+        self::assertSame(2, $result->result->filesSkipped);
         self::assertSame([], $result->dependencies);
     }
 
@@ -325,8 +325,8 @@ final class CollectionOrchestratorTest extends TestCase
 
         $result = $orchestrator->collect($files, $repository);
 
-        self::assertSame(2, $result->filesAnalyzed);
-        self::assertSame(2, $result->filesSkipped);
+        self::assertSame(2, $result->result->filesAnalyzed);
+        self::assertSame(2, $result->result->filesSkipped);
     }
 
     #[Test]
@@ -528,7 +528,7 @@ final class CollectionOrchestratorTest extends TestCase
         // Should not throw exceptions
         $result = $orchestrator->collect($files, $repository);
 
-        self::assertSame(1, $result->filesAnalyzed);
+        self::assertSame(1, $result->result->filesAnalyzed);
     }
 
     #[Test]
@@ -676,7 +676,7 @@ final class CollectionOrchestratorTest extends TestCase
         // Should not throw exceptions
         $result = $orchestrator->collect($files, $repository);
 
-        self::assertSame(1, $result->filesAnalyzed);
+        self::assertSame(1, $result->result->filesAnalyzed);
 
         // Verify file metrics were registered
         $fileSymbol = SymbolPath::forFile('/tmp/test.php');

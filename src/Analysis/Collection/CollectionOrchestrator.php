@@ -36,9 +36,9 @@ final class CollectionOrchestrator implements CollectionOrchestratorInterface
     public function collect(
         array $files,
         MetricRepositoryInterface $repository,
-    ): CollectionResult {
+    ): CollectionPhaseOutput {
         if ($files === []) {
-            return new CollectionResult(0, 0, []);
+            return new CollectionPhaseOutput(new CollectionResult(0, 0), []);
         }
 
         $profiler = ProfilerHolder::get();
@@ -97,7 +97,10 @@ final class CollectionOrchestrator implements CollectionOrchestratorInterface
 
         $this->progress->finish();
 
-        return new CollectionResult($filesAnalyzed, $filesSkipped, $allDependencies, $allSuppressions);
+        return new CollectionPhaseOutput(
+            new CollectionResult($filesAnalyzed, $filesSkipped, $allSuppressions),
+            $allDependencies,
+        );
     }
 
     /**

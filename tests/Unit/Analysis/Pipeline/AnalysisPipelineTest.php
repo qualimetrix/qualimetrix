@@ -6,6 +6,7 @@ namespace AiMessDetector\Tests\Unit\Analysis\Pipeline;
 
 use AiMessDetector\Analysis\Aggregation\GlobalCollectorRunner;
 use AiMessDetector\Analysis\Collection\CollectionOrchestratorInterface;
+use AiMessDetector\Analysis\Collection\CollectionPhaseOutput;
 use AiMessDetector\Analysis\Collection\CollectionResult;
 use AiMessDetector\Analysis\Collection\Metric\CompositeCollector;
 use AiMessDetector\Analysis\Discovery\FileDiscoveryInterface;
@@ -55,7 +56,7 @@ final class AnalysisPipelineTest extends TestCase
     public function itHandlesEmptyFileList(): void
     {
         $this->defaultDiscovery->method('discover')->willReturn(new ArrayIterator([]));
-        $this->collectionOrchestrator->method('collect')->willReturn(new CollectionResult(0, 0, []));
+        $this->collectionOrchestrator->method('collect')->willReturn(new CollectionPhaseOutput(new CollectionResult(0, 0), []));
 
         $pipeline = $this->createPipeline();
 
@@ -81,7 +82,7 @@ final class AnalysisPipelineTest extends TestCase
                 $files,
                 self::isInstanceOf(MetricRepositoryInterface::class),
             )
-            ->willReturn(new CollectionResult(2, 0, []));
+            ->willReturn(new CollectionPhaseOutput(new CollectionResult(2, 0), []));
 
         $pipeline = $this->createPipeline();
 
@@ -98,7 +99,7 @@ final class AnalysisPipelineTest extends TestCase
         $customDiscovery->method('discover')->willReturn(new ArrayIterator([]));
 
         $this->defaultDiscovery->expects(self::never())->method('discover');
-        $this->collectionOrchestrator->method('collect')->willReturn(new CollectionResult(0, 0, []));
+        $this->collectionOrchestrator->method('collect')->willReturn(new CollectionPhaseOutput(new CollectionResult(0, 0), []));
 
         $pipeline = $this->createPipeline();
 
@@ -120,7 +121,7 @@ final class AnalysisPipelineTest extends TestCase
                 $files,
                 self::isInstanceOf(MetricRepositoryInterface::class),
             )
-            ->willReturn(new CollectionResult(1, 0, $dependencies));
+            ->willReturn(new CollectionPhaseOutput(new CollectionResult(1, 0), $dependencies));
 
         $pipeline = $this->createPipeline();
 
@@ -133,7 +134,7 @@ final class AnalysisPipelineTest extends TestCase
     public function itReturnsResultWithCorrectMetadata(): void
     {
         $this->defaultDiscovery->method('discover')->willReturn(new ArrayIterator([]));
-        $this->collectionOrchestrator->method('collect')->willReturn(new CollectionResult(5, 2, []));
+        $this->collectionOrchestrator->method('collect')->willReturn(new CollectionPhaseOutput(new CollectionResult(5, 2), []));
 
         $pipeline = $this->createPipeline();
 
@@ -149,7 +150,7 @@ final class AnalysisPipelineTest extends TestCase
     public function itExecutesRulesAfterCollection(): void
     {
         $this->defaultDiscovery->method('discover')->willReturn(new ArrayIterator([]));
-        $this->collectionOrchestrator->method('collect')->willReturn(new CollectionResult(0, 0, []));
+        $this->collectionOrchestrator->method('collect')->willReturn(new CollectionPhaseOutput(new CollectionResult(0, 0), []));
 
         $this->ruleExecutor->expects(self::once())->method('execute');
 
@@ -162,7 +163,7 @@ final class AnalysisPipelineTest extends TestCase
     public function itLogsAnalysisPhases(): void
     {
         $this->defaultDiscovery->method('discover')->willReturn(new ArrayIterator([]));
-        $this->collectionOrchestrator->method('collect')->willReturn(new CollectionResult(0, 0, []));
+        $this->collectionOrchestrator->method('collect')->willReturn(new CollectionPhaseOutput(new CollectionResult(0, 0), []));
 
         // Expect multiple log calls for different phases
         $this->logger->expects(self::atLeast(3))->method('info');
@@ -182,7 +183,7 @@ final class AnalysisPipelineTest extends TestCase
             ->method('discover')
             ->with($paths)
             ->willReturn(new ArrayIterator([]));
-        $this->collectionOrchestrator->method('collect')->willReturn(new CollectionResult(0, 0, []));
+        $this->collectionOrchestrator->method('collect')->willReturn(new CollectionPhaseOutput(new CollectionResult(0, 0), []));
 
         $pipeline = $this->createPipeline();
 
@@ -211,7 +212,7 @@ final class AnalysisPipelineTest extends TestCase
                 }),
                 self::isInstanceOf(MetricRepositoryInterface::class),
             )
-            ->willReturn(new CollectionResult(2, 0, []));
+            ->willReturn(new CollectionPhaseOutput(new CollectionResult(2, 0), []));
 
         $pipeline = $this->createPipeline();
         $pipeline->analyze(['/path/to/src', '/path/to/src/sub']);

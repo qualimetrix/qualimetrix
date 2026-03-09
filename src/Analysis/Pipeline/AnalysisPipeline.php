@@ -104,23 +104,26 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
         $this->logger->debug('Starting collection phase', ['files' => \count($files)]);
 
         $profiler?->start('collection', 'pipeline');
-        $collectionResult = $this->collectionOrchestrator->collect($files, $repository);
+        $collectionOutput = $this->collectionOrchestrator->collect($files, $repository);
+        $collectionResult = $collectionOutput->result;
         $profiler?->stop('collection');
 
         $collectionTime = microtime(true) - $phaseStartTime;
         $this->logger->info('Collection completed', [
             'processed' => $collectionResult->filesAnalyzed,
             'errors' => $collectionResult->filesSkipped,
-            'dependencies' => \count($collectionResult->dependencies),
+            'dependencies' => \count($collectionOutput->dependencies),
             'duration' => \sprintf('%.2fs', $collectionTime),
         ]);
 
         // Phase 2.5: Build dependency graph from collected dependencies
+        // Dependencies are consumed here and freed immediately after graph is built
         $this->logger->debug('Building dependency graph', [
-            'dependencies' => \count($collectionResult->dependencies),
+            'dependencies' => \count($collectionOutput->dependencies),
         ]);
         $profiler?->start('dependency', 'pipeline');
-        $graph = $this->graphBuilder->build($collectionResult->dependencies);
+        $graph = $this->graphBuilder->build($collectionOutput->dependencies);
+        unset($collectionOutput); // Free raw dependencies — no longer needed
         $profiler?->stop('dependency');
 
         // Phase 3: Aggregation (regular + derived collector definitions)

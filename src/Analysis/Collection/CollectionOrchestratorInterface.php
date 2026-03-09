@@ -24,10 +24,10 @@ interface CollectionOrchestratorInterface
      * @param list<SplFileInfo> $files Files to process
      * @param MetricRepositoryInterface $repository Repository to store metrics
      *
-     * @return CollectionResult Summary of collection phase (includes dependencies)
+     * @return CollectionPhaseOutput Result summary + dependencies (separated by lifecycle)
      */
     public function collect(
         array $files,
         MetricRepositoryInterface $repository,
-    ): CollectionResult;
+    ): CollectionPhaseOutput;
 }
