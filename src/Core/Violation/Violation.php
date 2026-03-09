@@ -9,6 +9,9 @@ use AiMessDetector\Core\Symbol\SymbolPath;
 
 final readonly class Violation
 {
+    /**
+     * @param list<Location> $relatedLocations Additional locations (e.g., other copies of duplicated code)
+     */
     public function __construct(
         public Location $location,
         public SymbolPath $symbolPath,
@@ -18,6 +21,7 @@ final readonly class Violation
         public Severity $severity,
         public int|float|null $metricValue = null,
         public ?RuleLevel $level = null,
+        public array $relatedLocations = [],
     ) {}
 
     /**

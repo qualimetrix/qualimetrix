@@ -12,6 +12,7 @@ use AiMessDetector\Analysis\Collection\Dependency\CircularDependencyDetector;
 use AiMessDetector\Analysis\Collection\Dependency\DependencyGraphBuilder;
 use AiMessDetector\Analysis\Collection\Metric\CompositeCollector;
 use AiMessDetector\Analysis\Discovery\FileDiscoveryInterface;
+use AiMessDetector\Analysis\Duplication;
 use AiMessDetector\Analysis\Repository\DefaultMetricRepositoryFactory;
 use AiMessDetector\Analysis\Repository\MetricRepositoryFactoryInterface;
 use AiMessDetector\Analysis\RuleExecution\RuleExecutorInterface;
@@ -54,6 +55,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
         ?DependencyGraphBuilder $graphBuilder = null,
         private readonly LoggerInterface $logger = new NullLogger(),
         private readonly ?ProfilerHolder $profilerHolder = null,
+        private readonly ?Duplication\DuplicationDetector $duplicationDetector = null,
     ) {
         $this->graphBuilder = $graphBuilder ?? new DependencyGraphBuilder();
 
@@ -158,6 +160,25 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
         $cycles = (new CircularDependencyDetector())->detect($graph);
         $profiler?->stop('cycles');
 
+        // Phase 3.8: Detect code duplication
+        $duplicateBlocks = [];
+        if ($this->duplicationDetector !== null) {
+            $profiler?->start('duplication', 'pipeline');
+
+            // Read duplication options from rule configuration
+            $ruleOptions = $this->configurationProvider->getRuleOptions();
+            $dupOptions = $ruleOptions['duplication.code-duplication'] ?? [];
+            $minTokens = (int) ($dupOptions['min_tokens'] ?? $dupOptions['minTokens'] ?? 70);
+            $minLines = (int) ($dupOptions['min_lines'] ?? $dupOptions['minLines'] ?? 5);
+
+            $duplicateBlocks = $this->duplicationDetector->detect($files, $minTokens, $minLines);
+            $profiler?->stop('duplication');
+
+            $this->logger->info('Duplication detection completed', [
+                'blocks' => \count($duplicateBlocks),
+            ]);
+        }
+
         // Phase 4: Rule execution
         $phaseStartTime = microtime(true);
         $this->logger->debug('Starting analysis phase');
@@ -168,6 +189,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
             $this->configurationProvider->getRuleOptions(),
             $graph,
             $cycles,
+            $duplicateBlocks,
         );
         $violations = $this->ruleExecutor->execute($context);
         $profiler?->stop('rules');

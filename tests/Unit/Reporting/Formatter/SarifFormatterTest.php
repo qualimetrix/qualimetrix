@@ -547,6 +547,77 @@ final class SarifFormatterTest extends TestCase
         self::assertSame('Code complexity exceeds threshold', $rule['shortDescription']['text']);
     }
 
+    public function testRelatedLocationsIncludedInResult(): void
+    {
+        $report = ReportBuilder::create()
+            ->addViolation(new Violation(
+                location: new Location('src/Service/UserService.php', 10),
+                symbolPath: SymbolPath::forFile('src/Service/UserService.php'),
+                ruleName: 'duplication.code-duplication',
+                violationCode: 'duplication.code-duplication',
+                message: 'Duplicated code block (20 lines, 3 occurrences)',
+                severity: Severity::Warning,
+                metricValue: 20,
+                relatedLocations: [
+                    new Location('src/Service/OrderService.php', 42),
+                    new Location('src/Service/PaymentService.php', 88),
+                ],
+            ))
+            ->filesAnalyzed(3)
+            ->filesSkipped(0)
+            ->duration(0.1)
+            ->build();
+
+        $context = new FormatterContext(basePath: '/home/user/project');
+        $output = $this->formatter->format($report, $context);
+        $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
+
+        $result = $data['runs'][0]['results'][0];
+
+        // Should have relatedLocations
+        self::assertArrayHasKey('relatedLocations', $result);
+        self::assertCount(2, $result['relatedLocations']);
+
+        // First related location
+        $rel0 = $result['relatedLocations'][0];
+        self::assertSame(0, $rel0['id']);
+        self::assertSame('src/Service/OrderService.php', $rel0['physicalLocation']['artifactLocation']['uri']);
+        self::assertSame('%SRCROOT%', $rel0['physicalLocation']['artifactLocation']['uriBaseId']);
+        self::assertSame(42, $rel0['physicalLocation']['region']['startLine']);
+        self::assertSame('Related location', $rel0['message']['text']);
+
+        // Second related location
+        $rel1 = $result['relatedLocations'][1];
+        self::assertSame(1, $rel1['id']);
+        self::assertSame('src/Service/PaymentService.php', $rel1['physicalLocation']['artifactLocation']['uri']);
+        self::assertSame(88, $rel1['physicalLocation']['region']['startLine']);
+    }
+
+    public function testNoRelatedLocationsOmitsField(): void
+    {
+        $report = ReportBuilder::create()
+            ->addViolation(new Violation(
+                location: new Location('src/A.php', 10),
+                symbolPath: SymbolPath::forClass('App', 'A'),
+                ruleName: 'complexity.cyclomatic',
+                violationCode: 'complexity.cyclomatic',
+                message: 'Too complex',
+                severity: Severity::Error,
+            ))
+            ->filesAnalyzed(1)
+            ->filesSkipped(0)
+            ->duration(0.1)
+            ->build();
+
+        $output = $this->formatter->format($report, new FormatterContext());
+        $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
+
+        $result = $data['runs'][0]['results'][0];
+
+        // Should NOT have relatedLocations when empty
+        self::assertArrayNotHasKey('relatedLocations', $result);
+    }
+
     public function testDefaultConfigurationLevelUsesMaxSeverity(): void
     {
         $report = ReportBuilder::create()

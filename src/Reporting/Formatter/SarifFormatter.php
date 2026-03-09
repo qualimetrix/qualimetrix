@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Reporting\Formatter;
 
+use AiMessDetector\Core\Violation\Location;
 use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
 use AiMessDetector\Reporting\FormatterContext;
@@ -139,6 +140,8 @@ final class SarifFormatter implements FormatterInterface
             'design.type-coverage' => 'Type coverage below threshold',
             'coupling.cbo', 'coupling.instability', 'coupling.distance' => 'Coupling issue',
             'architecture.circular-dependency' => 'Circular dependency detected',
+            'duplication.code-duplication' => 'Duplicated code block detected',
+            'code-smell.unused-private' => 'Unused private member detected',
             default => ucfirst(str_replace(['.', '-'], ' ', $ruleName)),
         };
     }
@@ -177,6 +180,27 @@ final class SarifFormatter implements FormatterInterface
                             ],
                         ],
                     ];
+                }
+
+                if ($v->relatedLocations !== []) {
+                    $result['relatedLocations'] = array_values(array_map(
+                        fn(int $index, Location $loc): array => [
+                            'id' => $index,
+                            'physicalLocation' => [
+                                'artifactLocation' => $this->buildArtifactLocation(
+                                    $context->relativizePath($loc->file),
+                                    $context->basePath !== '',
+                                ),
+                                'region' => [
+                                    'startLine' => $loc->line ?? 1,
+                                    'startColumn' => 1,
+                                ],
+                            ],
+                            'message' => ['text' => 'Related location'],
+                        ],
+                        array_keys($v->relatedLocations),
+                        $v->relatedLocations,
+                    ));
                 }
 
                 return $result;

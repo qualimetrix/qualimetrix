@@ -6,6 +6,7 @@ namespace AiMessDetector\Core\Rule;
 
 use AiMessDetector\Core\Dependency\CycleInterface;
 use AiMessDetector\Core\Dependency\DependencyGraphInterface;
+use AiMessDetector\Core\Duplication\DuplicateBlock;
 use AiMessDetector\Core\Metric\MetricRepositoryInterface;
 
 final readonly class AnalysisContext
@@ -13,12 +14,14 @@ final readonly class AnalysisContext
     /**
      * @param array<string, mixed> $ruleOptions
      * @param list<CycleInterface> $cycles Detected circular dependency cycles
+     * @param list<DuplicateBlock> $duplicateBlocks Detected code duplication blocks
      */
     public function __construct(
         public MetricRepositoryInterface $metrics,
         public array $ruleOptions = [],
         public ?DependencyGraphInterface $dependencyGraph = null,
         public array $cycles = [],
+        public array $duplicateBlocks = [],
     ) {}
 
     /**

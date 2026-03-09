@@ -15,6 +15,7 @@ use AiMessDetector\Analysis\Collection\Metric\DerivedMetricExtractor;
 use AiMessDetector\Analysis\Collection\Strategy\StrategySelectorInterface;
 use AiMessDetector\Analysis\Discovery\FileDiscoveryInterface;
 use AiMessDetector\Analysis\Discovery\FinderFileDiscovery;
+use AiMessDetector\Analysis\Duplication\DuplicationDetector;
 use AiMessDetector\Analysis\Namespace_\ProjectNamespaceResolver;
 use AiMessDetector\Analysis\Pipeline\AnalysisPipeline;
 use AiMessDetector\Analysis\Pipeline\AnalysisPipelineInterface;
@@ -103,6 +104,9 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
         // DependencyGraphBuilder for dependency analysis
         $container->register(DependencyGraphBuilder::class);
 
+        // DuplicationDetector for copy-paste detection
+        $container->register(DuplicationDetector::class);
+
         // AnalysisPipeline - main orchestrator
         $container->register(AnalysisPipeline::class)
             ->setArguments([
@@ -116,6 +120,7 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
                 new Reference(DependencyGraphBuilder::class),
                 new Reference(DelegatingLogger::class),
                 new Reference(ProfilerHolder::class),
+                new Reference(DuplicationDetector::class),
             ])
             ->setPublic(true);
         $container->setAlias(AnalysisPipelineInterface::class, AnalysisPipeline::class)
