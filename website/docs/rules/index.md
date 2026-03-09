@@ -51,6 +51,17 @@ These rules check class cohesion, inheritance depth, and structural problems.
 
 [Read more about Design rules --&gt;](design.md)
 
+### Cohesion Rules
+
+These rules measure how well the methods inside a class work together. Low cohesion indicates a class is doing too many unrelated things.
+
+| Metric             | ID    | What it checks                                     | Recommended |
+| ------------------ | ----- | -------------------------------------------------- | ----------- |
+| [TCC](cohesion.md) | `tcc` | Fraction of public method pairs sharing properties | >= 0.5      |
+| [LCC](cohesion.md) | `lcc` | Fraction including transitive connections          | >= 0.5      |
+
+[Read more about Cohesion rules --&gt;](cohesion.md)
+
 ### Coupling Rules
 
 These rules measure how tightly your classes depend on each other. Tightly coupled code is fragile -- a change in one place can break many others.

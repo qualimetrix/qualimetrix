@@ -60,6 +60,7 @@ plugins:
             Size: Размер
             Changelog: Changelog
             Maintainability: Сопровождаемость
+            Cohesion: Связность (Cohesion)
             Design: Проектирование
             Architecture: Архитектура
             Code Smells: Запахи кода
@@ -104,6 +105,7 @@ nav:
       - Coupling: rules/coupling.md
       - Size: rules/size.md
       - Maintainability: rules/maintainability.md
+      - Cohesion: rules/cohesion.md
       - Design: rules/design.md
       - Architecture: rules/architecture.md
       - Code Smells: rules/code-smell.md
