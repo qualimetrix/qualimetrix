@@ -16,6 +16,8 @@ use AiMessDetector\Core\Violation\Severity;
  */
 final readonly class NamespaceInstabilityOptions implements LevelOptionsInterface
 {
+    use ExcludesNamespaces;
+
     /**
      * @param list<string> $excludeNamespaces Namespaces to exclude from analysis (prefix matching)
      */
@@ -36,39 +38,18 @@ final readonly class NamespaceInstabilityOptions implements LevelOptionsInterfac
             return new self();
         }
 
-        $excludeNamespaces = [];
-        $excludeKey = $config['exclude_namespaces'] ?? $config['excludeNamespaces'] ?? null;
-        if (\is_string($excludeKey)) {
-            $excludeNamespaces = [$excludeKey];
-        } elseif (\is_array($excludeKey)) {
-            $excludeNamespaces = array_values($excludeKey);
-        }
-
         return new self(
             enabled: (bool) ($config['enabled'] ?? true),
             maxWarning: (float) ($config['max_warning'] ?? $config['maxWarning'] ?? 0.8),
             maxError: (float) ($config['max_error'] ?? $config['maxError'] ?? 0.95),
             minClassCount: (int) ($config['min_class_count'] ?? $config['minClassCount'] ?? 3),
-            excludeNamespaces: $excludeNamespaces,
+            excludeNamespaces: self::parseExcludeNamespaces($config),
         );
     }
 
     public function isEnabled(): bool
     {
         return $this->enabled;
-    }
-
-    public function isNamespaceExcluded(string $namespace): bool
-    {
-        foreach ($this->excludeNamespaces as $prefix) {
-            $prefix = rtrim($prefix, '\\');
-
-            if ($namespace === $prefix || str_starts_with($namespace, $prefix . '\\')) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     public function getSeverity(int|float $value): ?Severity

@@ -23,6 +23,8 @@ use AiMessDetector\Core\Violation\Severity;
  */
 final readonly class DistanceOptions implements RuleOptionsInterface
 {
+    use ExcludesNamespaces;
+
     /**
      * @param bool $enabled Enable distance rule
      * @param float $maxDistanceWarning Warning threshold for distance
@@ -59,20 +61,12 @@ final readonly class DistanceOptions implements RuleOptionsInterface
             $includeNamespaces = array_values($includeKey);
         }
 
-        $excludeNamespaces = [];
-        $excludeKey = $config['exclude_namespaces'] ?? $config['excludeNamespaces'] ?? null;
-        if (\is_string($excludeKey)) {
-            $excludeNamespaces = [$excludeKey];
-        } elseif (\is_array($excludeKey)) {
-            $excludeNamespaces = array_values($excludeKey);
-        }
-
         return new self(
             enabled: (bool) ($config['enabled'] ?? true),
             maxDistanceWarning: (float) ($config['max_distance_warning'] ?? $config['maxDistanceWarning'] ?? 0.3),
             maxDistanceError: (float) ($config['max_distance_error'] ?? $config['maxDistanceError'] ?? 0.5),
             includeNamespaces: $includeNamespaces,
-            excludeNamespaces: $excludeNamespaces,
+            excludeNamespaces: self::parseExcludeNamespaces($config),
             minClassCount: (int) ($config['min_class_count'] ?? $config['minClassCount'] ?? 3),
         );
     }
