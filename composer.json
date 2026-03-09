@@ -2,7 +2,7 @@
     "name": "fractalizer/ai-mess-detector",
     "description": "CLI tool for static analysis of PHP code - detects architectural mess and complexity issues",
     "type": "library",
-    "license": "MIT",
+    "license": "LicenseRef-Polyform-Shield-1.0.0",
     "keywords": [
         "static-analysis",
         "php",
