@@ -227,15 +227,10 @@ After Phase 3, AIMD replaces: **phpmd + phpmetrics + phpcpd + deptrac** and offe
 
 ---
 
-## Technical Debt (see also [docs/PRODUCT_ROADMAP.md](../PRODUCT_ROADMAP.md))
+## Technical Debt
 
 Items that improve developer experience and code health but are not user-facing:
 
-| Item                              | Priority | Effort | Description                                                                    |
-| --------------------------------- | -------- | ------ | ------------------------------------------------------------------------------ |
-| MetricBag non-numeric data        | Medium   | Large  | Replace indexed keys hack with `DataBag` or typed DTOs                         |
-| Collector runtime configuration   | Medium   | Medium | Inject config into collectors to avoid duplicate `exclude_namespaces` in rules |
-| Metric name constants             | Low      | Medium | Compile-time safety for metric name references                                 |
-| Global function aggregation       | Low      | Small  | Aggregate function-level metrics to namespace level                            |
-| InheritanceDepth alias resolution | Low      | Small  | Track `use ... as` for correct DIT                                             |
-| Formatter LCOM/SRP                | Low      | Medium | Extract shared helpers, move `AnsiColor` to Infrastructure                     |
+| Item                        | Priority | Effort | Description                                         |
+| --------------------------- | -------- | ------ | --------------------------------------------------- |
+| Global function aggregation | Low      | Small  | Aggregate function-level metrics to namespace level |
