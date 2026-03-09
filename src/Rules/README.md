@@ -18,43 +18,44 @@ Rules are analysis rule implementations for static analysis. Rules are **complet
 
 ## Implemented Rules
 
-| Rule                                 | Category        | Type                            | Description                     | Default Thresholds                 |
-| ------------------------------------ | --------------- | ------------------------------- | ------------------------------- | ---------------------------------- |
-| **complexity.cyclomatic**            | Complexity      | Hierarchical (Method, Class)    | Cyclomatic Complexity (CCN)     | method: 10/20, class.max: 30/50    |
-| **complexity.cognitive**             | Complexity      | Hierarchical (Method, Class)    | Cognitive Complexity            | method: 15/30, class.max: 30/50    |
-| **complexity.npath**                 | Complexity      | Hierarchical (Method, Class)    | NPATH Complexity                | method: 200/1000, class (disabled) |
-| **complexity.wmc**                   | Complexity      | Simple                          | Weighted Methods per Class      | warning: 50, error: 80             |
-| **size.method-count**                | Size            | Simple                          | Method count per class          | warning: 20, error: 30             |
-| **size.class-count**                 | Size            | Simple                          | Class count per namespace       | warning: 15, error: 25             |
-| **size.property-count**              | Size            | Simple                          | Class property count            | warning: 15, error: 20             |
-| **maintainability.index**            | Maintainability | Simple                          | Maintainability Index           | warning: 40, error: 20             |
-| **design.lcom**                      | Design          | Simple                          | Lack of Cohesion (LCOM4)        | warning: 3, error: 5               |
-| **design.noc**                       | Design          | Simple                          | Number of Children              | warning: 10, error: 15             |
-| **design.inheritance**               | Design          | Simple                          | Depth of Inheritance Tree (DIT) | warning: 4, error: 6               |
-| **coupling.instability**             | Coupling        | Hierarchical (Class, Namespace) | Instability (Ca/Ce)             | warning: 0.8, error: 0.95          |
-| **coupling.cbo**                     | Coupling        | Hierarchical (Class, Namespace) | Coupling Between Objects        | warning: ..., error: ...           |
-| **coupling.distance**                | Coupling        | Simple                          | Distance from Main Sequence     | warning: 0.3, error: 0.5           |
-| **coupling.class-rank**              | Coupling        | Simple                          | ClassRank (PageRank on deps)    | warning: 0.02, error: 0.05         |
-| **architecture.circular-dependency** | Architecture    | Simple                          | Circular dependencies           | enabled: true                      |
-| **code-smell.boolean-argument**      | CodeSmell       | Simple                          | Boolean arguments in signatures | enabled: true                      |
-| **code-smell.count-in-loop**         | CodeSmell       | Simple                          | count() calls in loops          | enabled: true                      |
-| **code-smell.debug-code**            | CodeSmell       | Simple                          | Debug code (var_dump, etc.)     | enabled: true                      |
-| **code-smell.empty-catch**           | CodeSmell       | Simple                          | Empty catch blocks              | enabled: true                      |
-| **code-smell.error-suppression**     | CodeSmell       | Simple                          | Error suppression operator (@)  | enabled: true                      |
-| **code-smell.eval**                  | CodeSmell       | Simple                          | eval() usage                    | enabled: true                      |
-| **code-smell.exit**                  | CodeSmell       | Simple                          | exit/die usage                  | enabled: true                      |
-| **code-smell.goto**                  | CodeSmell       | Simple                          | goto statements                 | enabled: true                      |
-| **code-smell.long-parameter-list**   | CodeSmell       | Simple                          | Long parameter lists            | warning: 4, error: 6               |
-| **code-smell.superglobals**          | CodeSmell       | Simple                          | Direct superglobal access       | enabled: true                      |
-| **code-smell.unreachable-code**      | CodeSmell       | Simple                          | Unreachable code detection      | warning: 1, error: 2               |
-| **design.type-coverage**             | Design          | Simple                          | Type declaration coverage       | param/return/property: 80%/50%     |
-| **security.hardcoded-credentials**   | Security        | Simple                          | Hardcoded credentials           | enabled: true                      |
-| **security.sql-injection**           | Security        | Simple                          | SQL injection patterns          | enabled: true                      |
-| **security.xss**                     | Security        | Simple                          | XSS patterns                    | enabled: true                      |
-| **security.command-injection**       | Security        | Simple                          | Command injection patterns      | enabled: true                      |
-| **security.sensitive-parameter**     | Security        | Simple                          | Missing #[\SensitiveParameter]  | enabled: true                      |
-| **code-smell.unused-private**        | CodeSmell       | Simple                          | Unused private methods/props    | enabled: true                      |
-| **duplication.code-duplication**     | Duplication     | Simple                          | Duplicate code blocks           | min_lines: 5, min_tokens: 70, W/E  |
+| Rule                                   | Category        | Type                            | Description                     | Default Thresholds                 |
+| -------------------------------------- | --------------- | ------------------------------- | ------------------------------- | ---------------------------------- |
+| **complexity.cyclomatic**              | Complexity      | Hierarchical (Method, Class)    | Cyclomatic Complexity (CCN)     | method: 10/20, class.max: 30/50    |
+| **complexity.cognitive**               | Complexity      | Hierarchical (Method, Class)    | Cognitive Complexity            | method: 15/30, class.max: 30/50    |
+| **complexity.npath**                   | Complexity      | Hierarchical (Method, Class)    | NPATH Complexity                | method: 200/1000, class (disabled) |
+| **complexity.wmc**                     | Complexity      | Simple                          | Weighted Methods per Class      | warning: 50, error: 80             |
+| **size.method-count**                  | Size            | Simple                          | Method count per class          | warning: 20, error: 30             |
+| **size.class-count**                   | Size            | Simple                          | Class count per namespace       | warning: 15, error: 25             |
+| **size.property-count**                | Size            | Simple                          | Class property count            | warning: 15, error: 20             |
+| **maintainability.index**              | Maintainability | Simple                          | Maintainability Index           | warning: 40, error: 20             |
+| **design.lcom**                        | Design          | Simple                          | Lack of Cohesion (LCOM4)        | warning: 3, error: 5               |
+| **design.noc**                         | Design          | Simple                          | Number of Children              | warning: 10, error: 15             |
+| **design.inheritance**                 | Design          | Simple                          | Depth of Inheritance Tree (DIT) | warning: 4, error: 6               |
+| **coupling.instability**               | Coupling        | Hierarchical (Class, Namespace) | Instability (Ca/Ce)             | warning: 0.8, error: 0.95          |
+| **coupling.cbo**                       | Coupling        | Hierarchical (Class, Namespace) | Coupling Between Objects        | warning: ..., error: ...           |
+| **coupling.distance**                  | Coupling        | Simple                          | Distance from Main Sequence     | warning: 0.3, error: 0.5           |
+| **coupling.class-rank**                | Coupling        | Simple                          | ClassRank (PageRank on deps)    | warning: 0.02, error: 0.05         |
+| **architecture.circular-dependency**   | Architecture    | Simple                          | Circular dependencies           | enabled: true                      |
+| **code-smell.boolean-argument**        | CodeSmell       | Simple                          | Boolean arguments in signatures | enabled: true                      |
+| **code-smell.count-in-loop**           | CodeSmell       | Simple                          | count() calls in loops          | enabled: true                      |
+| **code-smell.debug-code**              | CodeSmell       | Simple                          | Debug code (var_dump, etc.)     | enabled: true                      |
+| **code-smell.empty-catch**             | CodeSmell       | Simple                          | Empty catch blocks              | enabled: true                      |
+| **code-smell.error-suppression**       | CodeSmell       | Simple                          | Error suppression operator (@)  | enabled: true                      |
+| **code-smell.eval**                    | CodeSmell       | Simple                          | eval() usage                    | enabled: true                      |
+| **code-smell.exit**                    | CodeSmell       | Simple                          | exit/die usage                  | enabled: true                      |
+| **code-smell.goto**                    | CodeSmell       | Simple                          | goto statements                 | enabled: true                      |
+| **code-smell.long-parameter-list**     | CodeSmell       | Simple                          | Long parameter lists            | warning: 4, error: 6               |
+| **code-smell.superglobals**            | CodeSmell       | Simple                          | Direct superglobal access       | enabled: true                      |
+| **code-smell.unreachable-code**        | CodeSmell       | Simple                          | Unreachable code detection      | warning: 1, error: 2               |
+| **design.type-coverage**               | Design          | Simple                          | Type declaration coverage       | param/return/property: 80%/50%     |
+| **security.hardcoded-credentials**     | Security        | Simple                          | Hardcoded credentials           | enabled: true                      |
+| **security.sql-injection**             | Security        | Simple                          | SQL injection patterns          | enabled: true                      |
+| **security.xss**                       | Security        | Simple                          | XSS patterns                    | enabled: true                      |
+| **security.command-injection**         | Security        | Simple                          | Command injection patterns      | enabled: true                      |
+| **security.sensitive-parameter**       | Security        | Simple                          | Missing #[\SensitiveParameter]  | enabled: true                      |
+| **code-smell.unused-private**          | CodeSmell       | Simple                          | Unused private methods/props    | enabled: true                      |
+| **code-smell.identical-subexpression** | CodeSmell       | Simple                          | Identical sub-expressions       | enabled: true                      |
+| **duplication.code-duplication**       | Duplication     | Simple                          | Duplicate code blocks           | min_lines: 5, min_tokens: 70, W/E  |
 
 ---
 
@@ -395,17 +396,18 @@ Code smell rules detect common anti-patterns and bad practices. All code smell r
 
 **Severity:** Most code smell rules produce **Warning** severity violations. Exceptions: `DebugCodeRule`, `EmptyCatchRule`, `EvalRule`, and `GotoRule` produce **Error** severity.
 
-| Rule                             | Description                     | What it detects                                                              |
-| -------------------------------- | ------------------------------- | ---------------------------------------------------------------------------- |
-| **code-smell.boolean-argument**  | Boolean arguments in signatures | `function save(bool $overwrite)` — suggests splitting methods or using enums |
-| **code-smell.count-in-loop**     | count() calls in loops          | `for ($i = 0; $i < count($arr); $i++)` — should be extracted to a variable   |
-| **code-smell.debug-code**        | Debug code                      | `var_dump()`, `print_r()`, `dd()`, `dump()`, etc.                            |
-| **code-smell.empty-catch**       | Empty catch blocks              | `catch (Exception $e) {}` — should at least log the error                    |
-| **code-smell.error-suppression** | Error suppression operator      | `@fopen()` — hides errors, use proper error handling                         |
-| **code-smell.eval**              | eval() usage                    | `eval($code)` — security risk, usually avoidable                             |
-| **code-smell.exit**              | exit/die usage                  | `exit(1)`, `die()` — should not be used in library/application code          |
-| **code-smell.goto**              | goto statements                 | `goto label;` — makes control flow hard to follow                            |
-| **code-smell.superglobals**      | Direct superglobal access       | `$_GET`, `$_POST`, `$_SERVER` — use request abstraction                      |
+| Rule                                   | Description                     | What it detects                                                                            |
+| -------------------------------------- | ------------------------------- | ------------------------------------------------------------------------------------------ |
+| **code-smell.boolean-argument**        | Boolean arguments in signatures | `function save(bool $overwrite)` — suggests splitting methods or using enums               |
+| **code-smell.count-in-loop**           | count() calls in loops          | `for ($i = 0; $i < count($arr); $i++)` — should be extracted to a variable                 |
+| **code-smell.debug-code**              | Debug code                      | `var_dump()`, `print_r()`, `dd()`, `dump()`, etc.                                          |
+| **code-smell.empty-catch**             | Empty catch blocks              | `catch (Exception $e) {}` — should at least log the error                                  |
+| **code-smell.error-suppression**       | Error suppression operator      | `@fopen()` — hides errors, use proper error handling                                       |
+| **code-smell.eval**                    | eval() usage                    | `eval($code)` — security risk, usually avoidable                                           |
+| **code-smell.exit**                    | exit/die usage                  | `exit(1)`, `die()` — should not be used in library/application code                        |
+| **code-smell.goto**                    | goto statements                 | `goto label;` — makes control flow hard to follow                                          |
+| **code-smell.superglobals**            | Direct superglobal access       | `$_GET`, `$_POST`, `$_SERVER` — use request abstraction                                    |
+| **code-smell.identical-subexpression** | Identical sub-expressions       | Identical operands, duplicate conditions, identical ternary branches, duplicate match arms |
 
 **Configuration:**
 ```yaml
@@ -630,6 +632,42 @@ rules:
 ```
 
 **CLI:** `--disable-rule=code-smell.unused-private`
+
+---
+
+## Identical Sub-Expression Rule
+
+**Name:** `code-smell.identical-subexpression` | **Category:** CodeSmell | **Type:** Simple
+
+Detects identical sub-expressions that indicate copy-paste errors or logic bugs. Four detection types:
+
+| Detection Type                 | Example                            | What it catches                              |
+| ------------------------------ | ---------------------------------- | -------------------------------------------- |
+| Identical binary operands      | `$a === $a`, `$a - $a`             | Same expression on both sides of an operator |
+| Duplicate if/elseif conditions | `if ($a) {} elseif ($a) {}`        | Repeated conditions in if/elseif chains      |
+| Identical ternary branches     | `$cond ? $x : $x`                  | Same expression in both ternary branches     |
+| Duplicate match arm conditions | `match($x) { 1 => ..., 1 => ... }` | Repeated conditions in match arms            |
+
+Side-effect expressions (function calls, method calls, etc.) are excluded to avoid false positives.
+
+**Severity:** Warning
+
+**Configuration:**
+```yaml
+rules:
+  code-smell.identical-subexpression:
+    enabled: true  # or false to disable
+```
+
+**CLI:**
+```bash
+--disable-rule=code-smell.identical-subexpression  # Disable this rule
+--disable-rule=code-smell                          # Disable all code-smell.* rules
+```
+
+**Files:**
+- `src/Rules/CodeSmell/IdenticalSubExpressionRule.php` — rule implementation
+- `src/Rules/CodeSmell/IdenticalSubExpressionOptions.php` — rule options (simple enabled/disabled)
 
 ---
 

@@ -41,3 +41,31 @@ The following are detected:
 ## Usage
 
 The collector is registered automatically. Rules in `src/Rules/CodeSmell/` use its metrics to generate violations.
+
+---
+
+## Identical Sub-Expression Collector
+
+A separate collector that detects identical sub-expressions indicating copy-paste errors or logic bugs.
+
+### Detected Patterns
+
+| Type                  | Description                      | Example                            |
+| --------------------- | -------------------------------- | ---------------------------------- |
+| `identical_operands`  | Same operand on both sides       | `$a === $a`, `$x - $x`             |
+| `duplicate_condition` | Repeated if/elseif conditions    | `if ($a) {} elseif ($a) {}`        |
+| `identical_ternary`   | Same expression in both branches | `$cond ? $value : $value`          |
+| `duplicate_match_arm` | Repeated match arm conditions    | `match($x) { 1 => 'a', 1 => 'b' }` |
+
+Side-effect expressions (function calls, method calls, etc.) are excluded to avoid false positives.
+
+### Metrics
+
+- `identicalSubExpression.{type}.count` — number of findings per type
+- `identicalSubExpression.{type}.line.{i}` — line number of each finding
+
+### Files
+
+- `IdenticalSubExpressionCollector.php` — collector implementation
+- `IdenticalSubExpressionVisitor.php` — AST visitor
+- `IdenticalSubExpressionFinding.php` — finding value object

@@ -451,6 +451,93 @@ bin/aimd check src/ --rule-opt="code-smell.long-parameter-list:error=8"
 
 ---
 
+## Identical Sub-expression
+
+**Rule ID:** `code-smell.identical-subexpression`
+**Severity:** Warning
+
+### What it measures
+
+Detects identical sub-expressions that indicate copy-paste errors or logic bugs. The rule catches four patterns:
+
+1. **Identical operands in binary operations** -- the same expression on both sides of an operator (e.g., `$a === $a`, `$a - $a`, `$a && $a`).
+2. **Duplicate conditions in if/elseif chains** -- the same condition checked more than once, meaning the second branch is dead code.
+3. **Identical ternary branches** -- a ternary where the "true" and "false" branches are the same, making the condition pointless.
+4. **Duplicate match arm conditions** -- repeated conditions in a `match` expression, where only the first arm will ever execute.
+
+Operators with legitimate identical-operand use cases are not flagged: `+`, `*`, `.`, `&`, `|`, `<<`, `>>`.
+
+Expressions with side effects (function calls, method calls, etc.) are excluded since consecutive calls may return different results.
+
+### Example
+
+```php
+class OrderService
+{
+    public function validate(Order $order): bool
+    {
+        // Bad: identical operands -- always true, likely a typo
+        if ($order->total === $order->total) {
+            // ...
+        }
+
+        // Bad: subtracting a value from itself -- always 0
+        $diff = $order->price - $order->price;
+
+        // Bad: duplicate condition -- second branch is dead code
+        if ($order->isPaid()) {
+            return true;
+        } elseif ($order->isPaid()) {
+            return false;
+        }
+
+        // Bad: identical ternary branches -- condition is pointless
+        $status = $order->isActive() ? 'pending' : 'pending';
+
+        // Bad: duplicate match arm condition
+        return match ($order->type) {
+            'retail' => $this->handleRetail($order),
+            'wholesale' => $this->handleWholesale($order),
+            'retail' => $this->handleSpecial($order),  // never reached
+        };
+    }
+}
+```
+
+### How to fix
+
+These are almost always bugs -- inspect each occurrence and fix the intended logic:
+
+1. **Identical operands:** One side is usually a typo. Replace it with the correct variable:
+
+    ```php
+    // Was: $order->total === $order->total (always true)
+    // Fix: compare with the expected value
+    if ($order->total === $order->expectedTotal) {
+        // ...
+    }
+    ```
+
+2. **Duplicate conditions:** Remove the duplicate branch or fix the condition:
+
+    ```php
+    if ($order->isPaid()) {
+        return true;
+    } elseif ($order->isRefunded()) {
+        return false;
+    }
+    ```
+
+3. **Identical ternary branches:** Either the condition is unnecessary, or one branch has a wrong value:
+
+    ```php
+    $status = $order->isActive() ? 'active' : 'pending';
+    ```
+
+4. **Duplicate match arms:** Remove the duplicate or fix the condition value.
+
+---
+
 ## Unused Private Members
 
 **Rule ID:** `code-smell.unused-private`
@@ -588,6 +675,8 @@ rules:
     warning: 1
     error: 1
   code-smell.unused-private:
+    enabled: true
+  code-smell.identical-subexpression:
     enabled: true
 ```
 

@@ -72,7 +72,7 @@ Each domain has its own `README.md` with detailed structure, classes, and contra
 - **Size**: LOC, Class Count, Namespace Size, Property Count, Method Count
 - **Design**: DIT (Depth of Inheritance Tree), NOC (Number of Children), Type Coverage
 - **Architecture**: Circular Dependency Detection, Dependency Graph Export (DOT)
-- **Code Smell**: Boolean Argument, Debug Code, Empty Catch, eval, exit/die, goto, Superglobals, Error Suppression, Count in Loop, Long Parameter List, Unreachable Code
+- **Code Smell**: Boolean Argument, Debug Code, Empty Catch, eval, exit/die, goto, Superglobals, Error Suppression, Count in Loop, Long Parameter List, Unreachable Code, Identical Sub-expression
 - **Security**: Hardcoded Credentials, SQL Injection, XSS, Command Injection, Sensitive Parameter Detection
 
 ### Infrastructure

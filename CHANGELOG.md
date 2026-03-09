@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Identical sub-expression detection — catches copy-paste errors and logic bugs: identical operands (`$a === $a`), duplicate if/elseif conditions, identical ternary branches, duplicate match arms (`code-smell.identical-subexpression` rule)
 - Code duplication detection — token-stream hashing (Rabin-Karp) detects copy-paste across files (`duplication.code-duplication` rule, configurable `min_lines`/`min_tokens`)
 - Unused private members detection — flags private methods, properties, and constants never referenced within the class (`code-smell.unused-private` rule)
 - SARIF `relatedLocations` support — duplication violations include clickable cross-references to all copies in IDE SARIF viewers
