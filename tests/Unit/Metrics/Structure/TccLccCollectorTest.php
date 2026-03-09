@@ -758,6 +758,244 @@ PHP;
         self::assertSame(1.0, $metrics->get('lcc:App\OuterClass'));
     }
 
+    public function testConstructorExcludedFromTccLcc(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class WithConstructor
+{
+    private $a;
+    private $b;
+
+    public function __construct($a, $b)
+    {
+        $this->a = $a;
+        $this->b = $b;
+    }
+
+    public function getA()
+    {
+        return $this->a;
+    }
+
+    public function getB()
+    {
+        return $this->b;
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // Per Bieman & Kang (1995): constructors are excluded because they
+        // typically access all instance variables, creating artificial connections.
+        // Without __construct: getA uses $a, getB uses $b — no shared properties.
+        // TCC = 0/1 = 0.0, LCC = 0/1 = 0.0
+        self::assertSame(0.0, $metrics->get('tcc:App\WithConstructor'));
+        self::assertSame(0.0, $metrics->get('lcc:App\WithConstructor'));
+    }
+
+    public function testDestructorExcludedFromTccLcc(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class WithDestructor
+{
+    private $resource;
+
+    public function __destruct()
+    {
+        $this->resource = null;
+    }
+
+    public function getResource()
+    {
+        return $this->resource;
+    }
+
+    public function setResource($value): void
+    {
+        $this->resource = $value;
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // __destruct is excluded. Only getResource and setResource counted.
+        // Both share $resource => TCC/LCC = 1.0
+        self::assertSame(1.0, $metrics->get('tcc:App\WithDestructor'));
+        self::assertSame(1.0, $metrics->get('lcc:App\WithDestructor'));
+    }
+
+    public function testConstructorInflationPrevented(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class InflationCheck
+{
+    private $x;
+    private $y;
+    private $z;
+
+    public function __construct($x, $y, $z)
+    {
+        $this->x = $x;
+        $this->y = $y;
+        $this->z = $z;
+    }
+
+    public function methodX()
+    {
+        return $this->x;
+    }
+
+    public function methodY()
+    {
+        return $this->y;
+    }
+
+    public function methodZ()
+    {
+        return $this->z;
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // Without constructor exclusion, __construct would share properties
+        // with all methods, giving TCC = 1.0 — a false picture of cohesion.
+        // With exclusion: 3 methods, each using a different property => TCC = 0.0
+        self::assertSame(0.0, $metrics->get('tcc:App\InflationCheck'));
+        self::assertSame(0.0, $metrics->get('lcc:App\InflationCheck'));
+    }
+
+    public function testEnumExcludedFromTccLcc(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+enum Status: string
+{
+    case Active = 'active';
+    case Inactive = 'inactive';
+
+    public function label(): string
+    {
+        return match($this) {
+            self::Active => 'Active',
+            self::Inactive => 'Inactive',
+        };
+    }
+
+    public function isActive(): bool
+    {
+        return $this === self::Active;
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // Enums cannot have instance properties, so TCC is always 0.0 — misleading.
+        // They should be excluded entirely, just like interfaces.
+        self::assertNull($metrics->get('tcc:App\Status'));
+        self::assertNull($metrics->get('lcc:App\Status'));
+    }
+
+    public function testEnumWithMethodsNotTracked(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+enum Color
+{
+    case Red;
+    case Green;
+    case Blue;
+
+    public function hex(): string
+    {
+        return match($this) {
+            self::Red => '#ff0000',
+            self::Green => '#00ff00',
+            self::Blue => '#0000ff',
+        };
+    }
+}
+
+class Palette
+{
+    private $primary;
+
+    public function getPrimary()
+    {
+        return $this->primary;
+    }
+
+    public function setPrimary($color): void
+    {
+        $this->primary = $color;
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // Enum should not produce metrics
+        self::assertNull($metrics->get('tcc:App\Color'));
+        self::assertNull($metrics->get('lcc:App\Color'));
+
+        // Class after enum should still work correctly
+        self::assertSame(1.0, $metrics->get('tcc:App\Palette'));
+        self::assertSame(1.0, $metrics->get('lcc:App\Palette'));
+    }
+
+    public function testClassWithOnlyConstructorAndDestructor(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class OnlyLifecycle
+{
+    private string $name;
+
+    public function __construct(string $name)
+    {
+        $this->name = $name;
+    }
+
+    public function __destruct()
+    {
+        $this->name = '';
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // Both __construct and __destruct are excluded from TCC/LCC tracking.
+        // 0 tracked methods => N < 2 => returns 1.0
+        self::assertSame(1.0, $metrics->get('tcc:App\OnlyLifecycle'));
+        self::assertSame(1.0, $metrics->get('lcc:App\OnlyLifecycle'));
+    }
+
     private function collectMetrics(string $code): MetricBag
     {
         $parser = (new ParserFactory())->createForHostVersion();

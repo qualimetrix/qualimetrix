@@ -752,6 +752,176 @@ PHP;
         self::assertLessThan(30, $outerVolume);
     }
 
+    /**
+     * Echo statement should be counted as an operator, symmetrically with print.
+     */
+    public function testEchoIsCountedAsOperator(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class EchoTest
+{
+    public function sayHello(): void
+    {
+        echo "hello";
+    }
+}
+PHP;
+
+        $halstead = $this->collectHalsteadMetrics($code, 'App\EchoTest::sayHello');
+
+        // Operators: echo (1 unique, 1 total)
+        // Operands: str:... (1 unique, 1 total)
+        self::assertSame(1, $halstead->n1, 'Expected 1 unique operator (echo)');
+        self::assertSame(1, $halstead->N1, 'Expected 1 total operator (echo)');
+        self::assertSame(1, $halstead->n2, 'Expected 1 unique operand (string literal)');
+    }
+
+    /**
+     * Echo and print should be counted as separate operators.
+     */
+    public function testEchoAndPrintAreSeparateOperators(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class EchoPrintTest
+{
+    public function output(): void
+    {
+        echo "hello";
+        print "world";
+    }
+}
+PHP;
+
+        $halstead = $this->collectHalsteadMetrics($code, 'App\EchoPrintTest::output');
+
+        // Operators: echo, print (2 unique, 2 total)
+        self::assertSame(2, $halstead->n1, 'Expected 2 unique operators (echo, print)');
+        self::assertSame(2, $halstead->N1, 'Expected 2 total operators');
+    }
+
+    /**
+     * Match arms should be counted as operators, symmetrically with case in switch.
+     */
+    public function testMatchArmIsCountedAsOperator(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class MatchTest
+{
+    public function classify(int $x): string
+    {
+        return match($x) {
+            1 => 'a',
+            2 => 'b',
+        };
+    }
+}
+PHP;
+
+        $halstead = $this->collectHalsteadMetrics($code, 'App\MatchTest::classify');
+
+        // Operators: return, match, match_arm, match_arm (3 unique, 4 total)
+        // Operands: $x, num:1, str:...(a), num:2, str:...(b) (5 unique, 5 total)
+        self::assertSame(3, $halstead->n1, 'Expected 3 unique operators (return, match, match_arm)');
+        self::assertSame(4, $halstead->N1, 'Expected 4 total operators (return + match + 2x match_arm)');
+    }
+
+    /**
+     * Match with default arm should also count the default arm as operator.
+     */
+    public function testMatchWithDefaultArmCountsAllArms(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class MatchDefaultTest
+{
+    public function label(int $x): string
+    {
+        return match($x) {
+            1 => 'one',
+            2 => 'two',
+            default => 'other',
+        };
+    }
+}
+PHP;
+
+        $halstead = $this->collectHalsteadMetrics($code, 'App\MatchDefaultTest::label');
+
+        // Operators: return, match, match_arm x3 (3 unique, 5 total)
+        self::assertSame(3, $halstead->n1, 'Expected 3 unique operators (return, match, match_arm)');
+        self::assertSame(5, $halstead->N1, 'Expected 5 total operators (return + match + 3x match_arm)');
+    }
+
+    /**
+     * Symmetry: switch/case and match should count branch operators similarly.
+     */
+    public function testMatchAndSwitchOperatorSymmetry(): void
+    {
+        $switchCode = <<<'PHP'
+<?php
+
+namespace App;
+
+class SwitchSymmetry
+{
+    public function classify(int $x): string
+    {
+        switch ($x) {
+            case 1:
+                return 'a';
+            case 2:
+                return 'b';
+        }
+        return 'c';
+    }
+}
+PHP;
+
+        $matchCode = <<<'PHP'
+<?php
+
+namespace App;
+
+class MatchSymmetry
+{
+    public function classify(int $x): string
+    {
+        return match($x) {
+            1 => 'a',
+            2 => 'b',
+        };
+    }
+}
+PHP;
+
+        $switchMetrics = $this->collectHalsteadMetrics($switchCode, 'App\SwitchSymmetry::classify');
+        $matchMetrics = $this->collectHalsteadMetrics($matchCode, 'App\MatchSymmetry::classify');
+
+        // switch: switch + 2x case + 3x return = 3 unique, 6 total operators
+        // match:  return + match + 2x match_arm = 3 unique, 4 total operators
+        // Both should have branch operators counted (case/match_arm), not just the keyword
+        self::assertSame(3, $switchMetrics->n1, 'Switch: 3 unique operators (switch, case, return)');
+        self::assertSame(3, $matchMetrics->n1, 'Match: 3 unique operators (return, match, match_arm)');
+
+        // Total operators differ due to structural differences, but arms/cases ARE counted
+        self::assertGreaterThanOrEqual(4, $matchMetrics->N1, 'Match arms should be counted as operators');
+    }
+
     private function collectMetrics(string $code): MetricBag
     {
         $parser = (new ParserFactory())->createForHostVersion();
@@ -762,5 +932,24 @@ PHP;
         $traverser->traverse($ast);
 
         return $this->collector->collect(new SplFileInfo(__FILE__), $ast);
+    }
+
+    /**
+     * Helper to get raw HalsteadMetrics for a specific method FQN.
+     */
+    private function collectHalsteadMetrics(string $code, string $methodFqn): HalsteadMetrics
+    {
+        $parser = (new ParserFactory())->createForHostVersion();
+        $ast = $parser->parse($code) ?? [];
+
+        $visitor = new HalsteadVisitor();
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $metrics = $visitor->getMetrics();
+        self::assertArrayHasKey($methodFqn, $metrics, "Method {$methodFqn} not found in Halstead metrics");
+
+        return $metrics[$methodFqn];
     }
 }

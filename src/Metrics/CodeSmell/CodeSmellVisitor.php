@@ -166,8 +166,10 @@ final class CodeSmellVisitor extends NodeVisitorAbstract implements ResettableVi
 
     private function checkEmptyCatch(Catch_ $node): void
     {
-        // Empty catch block = no statements
-        if ($node->stmts === []) {
+        // Empty catch block = no statements (Nop nodes are comment-only placeholders)
+        $realStmts = array_filter($node->stmts, static fn(Node $s): bool => !$s instanceof Node\Stmt\Nop);
+
+        if ($realStmts === []) {
             $this->addLocation('empty_catch', $node);
         }
     }

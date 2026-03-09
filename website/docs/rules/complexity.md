@@ -66,8 +66,13 @@ AIMD uses an extended variant of Cyclomatic Complexity, sometimes called **CCN2+
 - `??` (null coalescing operator) — +1
 - `?->` (nullsafe method call) — +1
 - `?->` (nullsafe property fetch) — +1
+- `xor` (logical XOR operator) — +1
 
 This is a deliberate choice: all these constructs represent hidden branching. For example, `$a ?? $b` is equivalent to `$a !== null ? $a : $b` — a decision point that is easy to overlook.
+
+**`match` arms:** Each condition in a multi-value match arm is counted separately. For example, `1, 2, 3 => ...` counts as 3 decision points, analogous to switch case fall-through.
+
+**Closures and arrow functions:** Closures and arrow functions are measured as **separate units** — they do not add to the enclosing method's CCN. This matches how they are used in practice: as self-contained callable objects.
 
 !!! note "Comparing with other tools"
     Because of these additional decision points, AIMD will report **higher CCN values** than phpmd or pdepend for code that uses null coalescing or nullsafe operators. This is not a bug — it reflects a stricter definition of complexity. The difference is most noticeable in code with chained `??` expressions.
@@ -224,7 +229,14 @@ Just 8 independent `if` statements already produce 256 paths.
 
 ### Implementation notes
 
-AIMD handles PHP 8.0+ `match` expressions using an **additive** approach, consistent with Nejmeh's original NPath formula for `switch` statements:
+AIMD follows Nejmeh (1988) with PHP-specific extensions:
+
+- **Boolean operators in conditions:** Each `&&`/`||` in a condition adds 1 to that condition's path count. For example, `if ($a && $b || $c)` contributes 4 paths (base 2 + 2 operators).
+- **Ternary:** Contributes 2 base paths plus any complexity in sub-expressions.
+- **`??` (null coalescing):** Treated as +1 additional path, similar to a ternary.
+- **PHP-specific extensions:** `match`, `foreach`, `??`, and `?->` are all handled as path-generating constructs.
+
+**`match` expressions:** AIMD uses an **additive** approach, consistent with Nejmeh's original formula for `switch`:
 
 ```
 NPath(match) = 1 + sum of NPath(each arm body)

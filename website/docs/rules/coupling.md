@@ -70,6 +70,14 @@ class ReportGenerator
 - **Apply dependency injection.** Avoid creating dependencies inside the class with `new`. Inject them through the constructor so they can be replaced.
 - **Consider the Facade pattern.** Wrap groups of related services behind a single interface.
 
+### Implementation notes
+
+AIMD implements **bidirectional coupling** consistent with Chidamber & Kemerer (1994): CBO = Ca + Ce, counting both incoming and outgoing dependencies.
+
+- **Extended coupling types:** AIMD detects 14 types of coupling, going beyond C&K's original "methods or instance variables" definition. These include: class instantiation, static method calls, type hints (parameters, return types, properties), `catch` clauses, `instanceof` checks, class constants, attributes, `extends`/`implements`, and trait `use`.
+- **Union and intersection types:** Each type in a union (`A|B`) or intersection (`A&B`) type hint is counted as a separate coupling.
+- **Self-references excluded:** References to `self`, `static`, and `parent` within the same class are not counted as coupling.
+
 ### Configuration
 
 ```yaml

@@ -138,6 +138,63 @@ PHP;
         self::assertCount(1, $locations);
     }
 
+    #[Test]
+    public function emptyCatchWithOnlyCommentIsDetected(): void
+    {
+        $code = <<<'PHP'
+<?php
+function test() {
+    try {
+        doSomething();
+    } catch (\Exception $e) {
+        // intentionally empty
+    }
+}
+PHP;
+        $visitor = $this->analyze($code);
+
+        $locations = $visitor->getLocationsByType('empty_catch');
+        self::assertCount(1, $locations);
+    }
+
+    #[Test]
+    public function emptyCatchWithNoStatementsIsDetected(): void
+    {
+        $code = <<<'PHP'
+<?php
+function test() {
+    try {
+        doSomething();
+    } catch (\Exception $e) {
+    }
+}
+PHP;
+        $visitor = $this->analyze($code);
+
+        $locations = $visitor->getLocationsByType('empty_catch');
+        self::assertCount(1, $locations);
+    }
+
+    #[Test]
+    public function catchWithRealStatementIsNotFlagged(): void
+    {
+        $code = <<<'PHP'
+<?php
+function test() {
+    try {
+        doSomething();
+    } catch (\Exception $e) {
+        // log and continue
+        log($e->getMessage());
+    }
+}
+PHP;
+        $visitor = $this->analyze($code);
+
+        $locations = $visitor->getLocationsByType('empty_catch');
+        self::assertCount(0, $locations);
+    }
+
     private function analyze(string $code): CodeSmellVisitor
     {
         $visitor = new CodeSmellVisitor();

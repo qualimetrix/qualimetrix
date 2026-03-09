@@ -30,12 +30,12 @@ use PhpParser\NodeVisitorAbstract;
  * - Comparison: ==, ===, !=, !==, <, >, <=, >=, <=>
  * - Assignment: =, +=, -=, *=, /=, .=, ??=
  * - Bitwise: &, |, ^, ~, <<, >>
- * - Control flow: if, else, elseif, switch, case, for, foreach, while, do,
+ * - Control flow: if, else, elseif, switch, case, match_arm, for, foreach, while, do,
  *                 try, catch, throw, return, yield, break, continue
  * - Calls: ->, ::, ?->, new, clone, instanceof, call
  * - Arrays: [], array
  * - Type casts: (int), (string), (bool), (array), (object)
- * - Other: ?:, ??, @, print, empty, isset, eval, include, exit, list, match
+ * - Other: ?:, ??, @, echo, print, empty, isset, eval, include, exit, list, match
  *
  * ### Operands (data):
  * - Variables: $var, $this
@@ -410,6 +410,7 @@ final class HalsteadVisitor extends NodeVisitorAbstract implements ResettableVis
             $node instanceof Stmt\Break_ => 'break',
             $node instanceof Stmt\Continue_ => 'continue',
             $node instanceof Stmt\Goto_ => 'goto',
+            $node instanceof Node\MatchArm => 'match_arm',
             default => null,
         };
     }
@@ -453,6 +454,7 @@ final class HalsteadVisitor extends NodeVisitorAbstract implements ResettableVis
     private function getOtherOpName(Node $node): ?string
     {
         return match (true) {
+            $node instanceof Stmt\Echo_ => 'echo',
             $node instanceof Expr\Print_ => 'print',
             $node instanceof Expr\Empty_ => 'empty',
             $node instanceof Expr\Isset_ => 'isset',

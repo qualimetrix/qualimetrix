@@ -815,6 +815,59 @@ PHP;
         self::assertSame(6, $metrics->get('ccn:App\Test::categorize'));
     }
 
+    /**
+     * LogicalXor (xor) should add +1 to cyclomatic complexity (CCN2+).
+     */
+    public function testLogicalXorCountsAsDecisionPoint(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Test
+{
+    public function check(bool $a, bool $b): bool
+    {
+        if ($a xor $b) {
+            return true;
+        }
+        return false;
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // CC = 1 (base) + 1 (if) + 1 (xor) = 3
+        self::assertSame(3, $metrics->get('ccn:App\Test::check'));
+    }
+
+    /**
+     * Standalone xor (without wrapping if) should still add +1 to complexity.
+     */
+    public function testStandaloneXorWithoutIf(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Foo
+{
+    public function bar(bool $a, bool $b): bool
+    {
+        return $a xor $b;
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // CC = 1 (base) + 1 (xor) = 2
+        self::assertSame(2, $metrics->get('ccn:App\Foo::bar'));
+    }
+
     private function collectMetrics(string $code): \AiMessDetector\Core\Metric\MetricBag
     {
         $parser = (new ParserFactory())->createForHostVersion();

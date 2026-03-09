@@ -22,13 +22,15 @@ use PhpParser\NodeVisitorAbstract;
  * - List of public methods
  * - For each method: set of properties accessed via $this->property
  *
- * Design decision: connectivity is measured through shared property access only,
- * NOT through method-to-method calls ($this->method()). This follows the canonical
- * Bieman & Kang (1995) definition. Method-call connectivity would make the metric
- * non-standard and incomparable with other tools (PHPMD, PHPMetrics, JHawk).
- * Classes that delegate via methods may show lower cohesion than expected.
+ * Simplified variant of Bieman & Kang (1995): measures cohesion through direct
+ * property access in public methods only. Does NOT follow invocation trees
+ * (a public method delegating to a private helper that accesses a property
+ * is NOT counted as using that property). This is consistent with most
+ * industry tools (PHPMD, PHPMetrics) but may underestimate cohesion for
+ * classes that heavily use delegation patterns.
  *
- * Anonymous classes are ignored.
+ * Constructors and destructors are excluded per the B&K specification.
+ * Anonymous classes and enums are ignored.
  */
 final class TccLccVisitor extends NodeVisitorAbstract implements ResettableVisitorInterface
 {
@@ -83,8 +85,10 @@ final class TccLccVisitor extends NodeVisitorAbstract implements ResettableVisit
         // Track class-like types (skip interfaces — they have no method bodies,
         // so cohesion metrics are meaningless for them)
         if ($this->isClassLikeNode($node)) {
-            // Skip Interface_ entirely — no method implementations, TCC/LCC not applicable
-            if ($node instanceof Interface_) {
+            // Skip Interface_ entirely — no method implementations, TCC/LCC not applicable.
+            // Skip Enum_ — enums cannot have instance properties, so TCC will always
+            // be 0.0, which is misleading. Consistent with LCOM exclusion.
+            if ($node instanceof Interface_ || $node instanceof Enum_) {
                 $this->classStack[] = null;
 
                 return null;
@@ -112,7 +116,12 @@ final class TccLccVisitor extends NodeVisitorAbstract implements ResettableVisit
         if ($node instanceof ClassMethod) {
             // TCC/LCC only considers public, non-abstract methods of named classes.
             // Non-tracked methods push null to keep the stack balanced.
-            if ($currentClass !== null && $node->isPublic() && !$node->isAbstract() && !$node->isStatic()) {
+            if ($currentClass !== null
+                && $node->isPublic()
+                && !$node->isAbstract()
+                && !$node->isStatic()
+                && !\in_array($node->name->toString(), ['__construct', '__destruct'], true)
+            ) {
                 $methodName = $node->name->toString();
                 $this->methodStack[] = $methodName;
 
@@ -210,15 +219,15 @@ final class TccLccVisitor extends NodeVisitorAbstract implements ResettableVisit
     }
 
     /**
-     * Extracts class name from class-like nodes (class, interface, enum).
+     * Extracts class name from class-like nodes.
      * Returns null for anonymous classes or non-class-like nodes.
+     *
+     * Note: Interface_ and Enum_ are filtered out before this method is called.
      */
     private function extractClassLikeName(Node $node): ?string
     {
         return match (true) {
             $node instanceof Class_ && $node->name !== null => $node->name->toString(),
-            $node instanceof Interface_ && $node->name !== null => $node->name->toString(),
-            $node instanceof Enum_ && $node->name !== null => $node->name->toString(),
             default => null,
         };
     }

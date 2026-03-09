@@ -110,8 +110,8 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        // NPath = cond(1) + then(1) + skip(1) = 3
-        self::assertSame(3, $metrics->get('npath:App\Test::check'));
+        // NPath = cond(0) + then(1) + skip(1) = 2, then * return(1) = 2
+        self::assertSame(2, $metrics->get('npath:App\Test::check'));
     }
 
     public function testMethodWithIfElse(): void
@@ -136,8 +136,8 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        // NPath = cond(1) + then(1) + else(1) = 3
-        self::assertSame(3, $metrics->get('npath:App\Test::check'));
+        // NPath = cond(0) + then(1) + else(1) = 2
+        self::assertSame(2, $metrics->get('npath:App\Test::check'));
     }
 
     public function testMethodWithTwoSequentialIfs(): void
@@ -163,10 +163,10 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        // First if: NPath = cond(1) + then(1) + skip(1) = 3
-        // Second if: NPath = cond(1) + then(1) + skip(1) = 3
-        // Sequence: 3 × 3 = 9
-        self::assertSame(9, $metrics->get('npath:App\Test::check'));
+        // First if: NPath = cond(0) + then(1) + skip(1) = 2
+        // Second if: NPath = cond(0) + then(1) + skip(1) = 2
+        // Sequence: 2 × 2 = 4
+        self::assertSame(4, $metrics->get('npath:App\Test::check'));
     }
 
     public function testMethodWithNestedIf(): void
@@ -191,9 +191,9 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        // Inner if: cond(1) + then(1) + skip(1) = 3
-        // Outer if: cond(1) + then(3) + skip(1) = 5
-        self::assertSame(5, $metrics->get('npath:App\Test::check'));
+        // Inner if: cond(0) + then(1) + skip(1) = 2
+        // Outer if: cond(0) + then(2) + skip(1) = 3
+        self::assertSame(3, $metrics->get('npath:App\Test::check'));
     }
 
     public function testMethodWithWhileLoop(): void
@@ -216,8 +216,8 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        // NPath = cond(1) + body(1) + exit(1) = 3
-        self::assertSame(3, $metrics->get('npath:App\Test::loop'));
+        // NPath = cond(0) + body(1) + exit(1) = 2
+        self::assertSame(2, $metrics->get('npath:App\Test::loop'));
     }
 
     public function testMethodWithForLoop(): void
@@ -240,8 +240,8 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        // Nejmeh 1988: NPath(for) = NPath(cond) + NPath(body) + 1 = 1 + 1 + 1 = 3
-        self::assertSame(3, $metrics->get('npath:App\Test::loop'));
+        // Nejmeh 1988: NPath(for) = NPath(cond) + NPath(body) + 1 = 0 + 1 + 1 = 2
+        self::assertSame(2, $metrics->get('npath:App\Test::loop'));
     }
 
     public function testMethodWithForeach(): void
@@ -293,9 +293,8 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        // NPath = cond(1) + case1(1+1) + case2(1+1) + default(1) = 1 + 2 + 2 + 1 = 6
-        // Actually: cond(1) + case1_cond(1) + case1_body(1) + case2_cond(1) + case2_body(1) + default(1)
-        self::assertGreaterThanOrEqual(4, $metrics->get('npath:App\Test::grade'));
+        // NPath = cond(0) + case1_body(1) + case2_body(1) + default_body(1) = 3
+        self::assertSame(3, $metrics->get('npath:App\Test::grade'));
     }
 
     public function testMethodWithTryCatch(): void
@@ -342,8 +341,8 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        // NPath = cond(1) + true(1) + false(1) = 3
-        self::assertSame(3, $metrics->get('npath:App\Test::conditional'));
+        // Nejmeh: NPath = cond(0) + true(0) + false(0) + 2 = 2
+        self::assertSame(2, $metrics->get('npath:App\Test::conditional'));
     }
 
     public function testMethodWithBooleanAnd(): void
@@ -364,8 +363,8 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        // NPath = left(1) + right(1) = 2
-        self::assertSame(2, $metrics->get('npath:App\Test::check'));
+        // Nejmeh: NPath = left(0) + right(0) + 1 = 1; return max(1, 1) = 1
+        self::assertSame(1, $metrics->get('npath:App\Test::check'));
     }
 
     public function testMethodWithBooleanOr(): void
@@ -386,8 +385,8 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        // NPath = left(1) + right(1) = 2
-        self::assertSame(2, $metrics->get('npath:App\Test::check'));
+        // Nejmeh: NPath = left(0) + right(0) + 1 = 1; return max(1, 1) = 1
+        self::assertSame(1, $metrics->get('npath:App\Test::check'));
     }
 
     public function testMethodWithNullCoalesce(): void
@@ -408,8 +407,8 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        // NPath = left(1) + right(1) = 2
-        self::assertSame(2, $metrics->get('npath:App\Test::check'));
+        // Nejmeh: NPath = left(0) + right(0) + 1 = 1; return max(1, 1) = 1
+        self::assertSame(1, $metrics->get('npath:App\Test::check'));
     }
 
     public function testMethodWithMatch(): void
@@ -434,14 +433,15 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        // NPath = cond(1) + arm1(1+1) + arm2(1+1) + default(1) = 6
-        self::assertGreaterThanOrEqual(3, $metrics->get('npath:App\Test::grade'));
+        // NPath = cond(0) + arm1(0) + arm2(0) + default(0) = 0; max(1, 0) = 1
+        // return max(1, 1) = 1
+        self::assertSame(1, $metrics->get('npath:App\Test::grade'));
     }
 
     public function testMaxValueCap(): void
     {
         // Create many sequential ifs to exceed MAX_NPATH
-        // Each if has NPath = 2, so 30 sequential ifs give 2^30 = 1,073,741,824 > 10^9
+        // Each if has NPath = cond(0)+then(1)+skip(1) = 2, so 30 sequential ifs give 2^30 > 10^9
         $code = '<?php class Test { public function deep() {';
         for ($i = 0; $i < 30; $i++) {
             $code .= ' if ($x' . $i . ') { $a = 1; } ';
@@ -498,8 +498,8 @@ PHP;
         // factory: NPath = 1 — anonymous class complexity should NOT leak
         self::assertSame(1, $metrics->get('npath:App\Outer::factory'));
 
-        // afterAnonymous: NPath = cond(1) + then(1) + skip(1) = 3
-        self::assertSame(3, $metrics->get('npath:App\Outer::afterAnonymous'));
+        // afterAnonymous: NPath = cond(0) + then(1) + skip(1) = 2
+        self::assertSame(2, $metrics->get('npath:App\Outer::afterAnonymous'));
 
         // Anonymous class methods should NOT appear in metrics
         self::assertNull($metrics->get('npath:App\Outer::innerComplex'));
@@ -525,8 +525,8 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        // NPath = cond(2: left(1)+right(1)) + body(1) + exit(1) = 4
-        self::assertSame(4, $metrics->get('npath:App\Test::loop'));
+        // NPath = cond(0+0+1=1) + body(1) + exit(1) = 3
+        self::assertSame(3, $metrics->get('npath:App\Test::loop'));
     }
 
     public function testWhileWithTripleBooleanOrCondition(): void
@@ -549,9 +549,9 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        // ($a || $b) has NPath=2, then (($a || $b) || $c) has NPath=2+1=3
-        // NPath = cond(3) + body(1) + exit(1) = 5
-        self::assertSame(5, $metrics->get('npath:App\Test::loop'));
+        // ($a || $b) has NPath=0+0+1=1, then (($a || $b) || $c) has NPath=1+0+1=2
+        // NPath = cond(2) + body(1) + exit(1) = 4
+        self::assertSame(4, $metrics->get('npath:App\Test::loop'));
     }
 
     public function testDoWhileWithBooleanAndCondition(): void
@@ -574,8 +574,8 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        // NPath = cond(2) + body(1) + exit(1) = 4
-        self::assertSame(4, $metrics->get('npath:App\Test::loop'));
+        // NPath = cond(0+0+1=1) + body(1) + exit(1) = 3
+        self::assertSame(3, $metrics->get('npath:App\Test::loop'));
     }
 
     public function testForWithBooleanAndCondition(): void
@@ -598,8 +598,8 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        // Nejmeh 1988: NPath(for) = NPath(cond) + NPath(body) + 1 = 2 + 1 + 1 = 4
-        self::assertSame(4, $metrics->get('npath:App\Test::loop'));
+        // Nejmeh 1988: NPath(for) = NPath(cond: 0+0+1=1) + NPath(body: 1) + 1 = 3
+        self::assertSame(3, $metrics->get('npath:App\Test::loop'));
     }
 
     public function testForeachHasNoConditionExpression(): void
@@ -646,9 +646,9 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        // Ternary condition NPath = cond(1) + true(1) + false(1) = 3
-        // NPath = cond(3) + body(1) + exit(1) = 5
-        self::assertSame(5, $metrics->get('npath:App\Test::loop'));
+        // Ternary condition NPath = cond(0) + true(0) + false(0) + 2 = 2
+        // NPath = cond(2) + body(1) + exit(1) = 4
+        self::assertSame(4, $metrics->get('npath:App\Test::loop'));
     }
 
     /**
@@ -674,8 +674,8 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        // NPath(if) = NPath(cond: $a && $b = 2) + NPath(then: 1) + NPath(skip: 1) = 4
-        self::assertSame(4, $metrics->get('npath:App\Test::check'));
+        // NPath(if) = NPath(cond: $a && $b = 0+0+1=1) + NPath(then: 1) + NPath(skip: 1) = 3
+        self::assertSame(3, $metrics->get('npath:App\Test::check'));
     }
 
     /**
@@ -703,10 +703,10 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        // NPath(if) = NPath(cond1: $a && $b = 2) + NPath(then1: 1)
-        //           + NPath(cond2: $c || $d = 2) + NPath(then2: 1)
-        //           + NPath(skip: 1) = 7
-        self::assertSame(7, $metrics->get('npath:App\Test::check'));
+        // NPath(if) = NPath(cond1: $a && $b = 1) + NPath(then1: 1)
+        //           + NPath(cond2: $c || $d = 1) + NPath(then2: 1)
+        //           + NPath(skip: 1) = 5
+        self::assertSame(5, $metrics->get('npath:App\Test::check'));
     }
 
     /**
@@ -733,8 +733,8 @@ PHP;
         // Method itself: NPath = 1
         self::assertSame(1, $metrics->get('npath:App\Test::getMapper'));
 
-        // Arrow function: NPath = ternary cond(1) + true(1) + false(1) = 3
-        self::assertSame(3, $metrics->get('npath:App\Test::{closure#1}'));
+        // Arrow function: NPath = ternary cond(0) + true(0) + false(0) + 2 = 2
+        self::assertSame(2, $metrics->get('npath:App\Test::{closure#1}'));
     }
 
     /**
@@ -775,8 +775,8 @@ PHP;
         $metrics = $this->collectFunctionMetrics($code);
 
         // $r = $x ? "a" : "b" -> Assign recurses into Ternary
-        // Ternary NPath = cond(1) + true(1) + false(1) = 3
-        self::assertSame(3, $metrics->get('npath:f'));
+        // Ternary NPath = cond(0) + true(0) + false(0) + 2 = 2; stmt max(1, 2) = 2
+        self::assertSame(2, $metrics->get('npath:f'));
     }
 
     /**
@@ -792,8 +792,8 @@ PHP;
         $metrics = $this->collectFunctionMetrics($code);
 
         // $r = $x ?? "b" -> Assign recurses into Coalesce
-        // Coalesce NPath = left(1) + right(1) = 2
-        self::assertSame(2, $metrics->get('npath:f'));
+        // Coalesce NPath = left(0) + right(0) + 1 = 1; stmt max(1, 1) = 1
+        self::assertSame(1, $metrics->get('npath:f'));
     }
 
     /**
@@ -857,6 +857,73 @@ PHP;
 
         // outerMethod: NPath = 1 — arrow function inside anonymous class is ignored
         self::assertSame(1, $metrics->get('npath:App\Outer::outerMethod'));
+    }
+
+    /**
+     * BooleanNot should recurse into its operand for NPath calculation.
+     */
+    public function testBooleanNotRecursion(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Foo
+{
+    public function bar(bool $a, bool $b): int
+    {
+        if (!($a && $b)) { return 1; }
+        return 0;
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // NPath(if) = NPath(cond: !($a && $b)) + NPath(then: 1) + NPath(skip: 1)
+        // NPath(!expr) = NPath(expr) = NPath($a && $b) = 0+0+1 = 1
+        // NPath(if) = 1 + 1 + 1 = 3, then * NPath(return 0) = 1 => total = 3
+        self::assertSame(3, $metrics->get('npath:App\Foo::bar'));
+    }
+
+    /**
+     * Try-catch-finally: NPath should multiply try-catch by finally.
+     */
+    public function testTryCatchFinallyMultiplication(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Foo
+{
+    public function bar(bool $a, bool $b): void
+    {
+        try {
+            if ($a) { $this->f(); }
+        } catch (\Exception $e) {
+            $this->g();
+        } finally {
+            if ($b) { $this->h(); }
+        }
+    }
+
+    private function f(): void {}
+    private function g(): void {}
+    private function h(): void {}
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // NP(try body) = cond(0) + then(1) + skip(1) = 2
+        // NP(catch body) = 1
+        // NP(try-catch) = NP(try) + NP(catch) + 1 = 2 + 1 + 1 = 4
+        // NP(finally body) = cond(0) + then(1) + skip(1) = 2
+        // Total = NP(try-catch) * NP(finally) = 4 * 2 = 8
+        self::assertSame(8, $metrics->get('npath:App\Foo::bar'));
     }
 
     /**

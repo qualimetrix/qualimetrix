@@ -15,6 +15,7 @@ use PhpParser\Node\Expr\BinaryOp\BooleanOr;
 use PhpParser\Node\Expr\BinaryOp\Coalesce;
 use PhpParser\Node\Expr\BinaryOp\LogicalAnd;
 use PhpParser\Node\Expr\BinaryOp\LogicalOr;
+use PhpParser\Node\Expr\BinaryOp\LogicalXor;
 use PhpParser\Node\Expr\Closure;
 use PhpParser\Node\Expr\NullsafeMethodCall;
 use PhpParser\Node\Expr\NullsafePropertyFetch;
@@ -43,6 +44,7 @@ use PhpParser\NodeVisitorAbstract;
  * - catch: +1
  * - && (BooleanAnd), and (LogicalAnd): +1
  * - || (BooleanOr), or (LogicalOr): +1
+ * - xor (LogicalXor): +1
  * - ?: (ternary): +1
  * - ?? (null coalescing): +1
  * - ?-> (nullsafe): +1
@@ -268,6 +270,7 @@ final class CyclomaticComplexityVisitor extends NodeVisitorAbstract implements R
         LogicalAnd::class,
         BooleanOr::class,
         LogicalOr::class,
+        LogicalXor::class,
         Ternary::class,
         Coalesce::class,
         NullsafeMethodCall::class,

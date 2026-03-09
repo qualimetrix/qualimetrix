@@ -35,15 +35,23 @@ use PhpParser\NodeVisitorAbstract;
  *
  * Algorithm (per Nejmeh, 1988):
  * - Sequence: NPath(S1) × NPath(S2)
- * - if-then: NPath(then) + 1 (1 = skip-path)
- * - if-else: NPath(then) + NPath(else)
+ * - if-then: NPath(cond) + NPath(then) + 1 (1 = skip-path)
+ * - if-else: NPath(cond) + NPath(then) + NPath(else)
  * - while/for/foreach: NPath(cond) + NPath(body) + 1
- * - switch: Σ NPath(case_i)
+ * - switch: NPath(cond) + Σ NPath(case_i)
  * - try-catch: NPath(try) + Σ NPath(catch_i) + 1
- * - ternary: NPath(cond) + NPath(true) + NPath(false)
- * - &&/||: NPath(left) + NPath(right)
- * - ??: NPath(left) + NPath(right)
- * - match: Σ NPath(arm_i)
+ * - ternary: NPath(cond) + NPath(true) + NPath(false) + 2
+ * - &&/||: NPath(left) + NPath(right) + 1
+ * - ??: NPath(left) + NPath(right) + 1
+ * - match: NPath(cond) + Σ NPath(arm_i)
+ *
+ * Expression NPath (calculateExprNpath) uses 0-based semantics per Nejmeh:
+ * - Leaf expression: 0 (no additional paths from boolean short-circuit)
+ * - Each &&/||/?? operator: +1 (one additional short-circuit path)
+ * - Ternary: +2 (two base branch paths)
+ *
+ * Statement NPath uses max(1, exprNpath) to ensure simple statements
+ * contribute at least 1 path in multiplicative sequences.
  */
 final class NpathComplexityVisitor extends NodeVisitorAbstract implements ResettableVisitorInterface
 {
@@ -178,7 +186,7 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
             ++$this->closureCounter;
             $fqn = $this->buildClosureFqn();
             $closureName = '{closure#' . $this->closureCounter . '}';
-            $npath = $this->calculateExprNpath($node->expr);
+            $npath = max(1, $this->calculateExprNpath($node->expr));
             $this->startMethod($fqn, $closureName, $node->getStartLine(), $npath);
 
             return null;
@@ -283,9 +291,9 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
             $stmt instanceof Do_ => $this->calculateLoopNpath($stmt->cond, $stmt->stmts),
             $stmt instanceof Switch_ => $this->calculateSwitchNpath($stmt),
             $stmt instanceof TryCatch => $this->calculateTryCatchNpath($stmt),
-            $stmt instanceof Stmt\Expression => $this->calculateExprNpath($stmt->expr),
+            $stmt instanceof Stmt\Expression => max(1, $this->calculateExprNpath($stmt->expr)),
             $stmt instanceof Stmt\Return_ => $stmt->expr !== null
-                ? $this->calculateExprNpath($stmt->expr)
+                ? max(1, $this->calculateExprNpath($stmt->expr))
                 : 1,
             default => 1,
         };
@@ -322,7 +330,7 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
     private function calculateLoopNpath(?Expr $cond, array $stmts): int
     {
         // NPath(loop) = NPath(cond) + NPath(body) + 1 (exit path)
-        $condNpath = $cond !== null ? $this->calculateExprNpath($cond) : 1;
+        $condNpath = $cond !== null ? $this->calculateExprNpath($cond) : 0;
         $npath = $condNpath;
         $npath += $this->calculateSequenceNpath($stmts);
         $npath += 1; // Exit without entering
@@ -334,10 +342,10 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
     {
         // Nejmeh 1988: NPath(for) = NPath(cond) + NPath(body) + 1
         // Same as while: condition paths + body paths + exit path
-        $condNpath = 1;
+        $condNpath = 0;
 
         foreach ($for->cond as $condExpr) {
-            $condNpath = $this->safeMultiply($condNpath, $this->calculateExprNpath($condExpr));
+            $condNpath += $this->calculateExprNpath($condExpr);
         }
 
         return $condNpath + $this->calculateSequenceNpath($for->stmts) + 1;
@@ -394,38 +402,47 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
             $expr instanceof Expr\Assign => $this->calculateExprNpath($expr->expr),
             $expr instanceof Expr\AssignOp => $this->calculateExprNpath($expr->expr),
             $expr instanceof Expr\BooleanNot => $this->calculateExprNpath($expr->expr),
-            default => 1,
+            default => 0,
         };
     }
 
     private function calculateTernaryNpath(Ternary $ternary): int
     {
-        // NPath(a ? b : c) = NPath(a) + NPath(b) + NPath(c)
+        // Nejmeh 1988: NPath(a ? b : c) = NPath(a) + NPath(b) + NPath(c) + 2
+        // The +2 represents the two base branch paths (true-branch and false-branch).
         $npath = $this->calculateExprNpath($ternary->cond);
 
         if ($ternary->if !== null) {
             $npath += $this->calculateExprNpath($ternary->if);
         } else {
-            $npath += 1; // Elvis operator ?: uses cond as result
+            // Elvis operator (?:): true-branch reuses cond, no additional expr paths
+            $npath += 0;
         }
 
         $npath += $this->calculateExprNpath($ternary->else);
+
+        // +2 for the two base branch paths
+        $npath += 2;
 
         return $npath;
     }
 
     private function calculateBinaryNpath(BinaryOp $binary): int
     {
-        // NPath(a && b) = NPath(a) + NPath(b) (short-circuit)
+        // Nejmeh 1988: each &&/|| operator adds one additional short-circuit path.
+        // NPath(a && b) = NPath(a) + NPath(b) + 1
         return $this->calculateExprNpath($binary->left)
-            + $this->calculateExprNpath($binary->right);
+            + $this->calculateExprNpath($binary->right)
+            + 1;
     }
 
     private function calculateCoalesceNpath(BinaryOp\Coalesce $coalesce): int
     {
-        // NPath(a ?? b) = NPath(a) + NPath(b)
+        // Null-coalesce acts like a boolean short-circuit: +1 for the null-check path
+        // NPath(a ?? b) = NPath(a) + NPath(b) + 1
         return $this->calculateExprNpath($coalesce->left)
-            + $this->calculateExprNpath($coalesce->right);
+            + $this->calculateExprNpath($coalesce->right)
+            + 1;
     }
 
     private function calculateMatchNpath(Match_ $match): int
