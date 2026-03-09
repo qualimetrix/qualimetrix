@@ -66,12 +66,15 @@ Rules that check how tightly classes and namespaces are connected to each other.
 | Instability | `coupling.instability` | 0.8     | 0.95  | Class     |
 | Instability | `coupling.instability` | 0.8     | 0.95  | Namespace |
 | Distance    | `coupling.distance`    | 0.3     | 0.5   | Namespace |
+| ClassRank   | `coupling.class-rank`  | 0.02    | 0.05  | Class     |
 
 **CBO (Coupling Between Objects)** counts the number of other classes a class depends on. High coupling makes code harder to change.
 
 **Instability** is a ratio from 0 (fully stable) to 1 (fully unstable). A class that depends on many others but is not depended upon is unstable.
 
 **Distance from the Main Sequence** measures how well a namespace balances abstractness and stability. A distance close to 0 is ideal.
+
+**ClassRank** uses the PageRank algorithm on the dependency graph to identify the most critical classes. Ranks sum to 1.0 across the project; a high rank means many (or important) classes depend on it.
 
 ## Maintainability Rules
 
@@ -108,8 +111,20 @@ Rules that detect potential security vulnerabilities.
 | Rule                  | ID                               | Severity | Default |
 | --------------------- | -------------------------------- | -------- | ------- |
 | Hardcoded Credentials | `security.hardcoded-credentials` | Error    | enabled |
+| SQL Injection         | `security.sql-injection`         | Error    | enabled |
+| XSS                   | `security.xss`                   | Error    | enabled |
+| Command Injection     | `security.command-injection`     | Error    | enabled |
+| Sensitive Parameter   | `security.sensitive-parameter`   | Warning  | enabled |
 
 **Hardcoded Credentials** detects passwords, API keys, and tokens hardcoded directly in source code.
+
+**SQL Injection** detects superglobals used in SQL contexts without parameterized queries.
+
+**XSS** detects unsanitized superglobals in `echo`/`print` statements.
+
+**Command Injection** detects superglobals passed to shell execution functions without escaping.
+
+**Sensitive Parameter** detects parameters with sensitive names missing the `#[\SensitiveParameter]` attribute.
 
 ## How to Customize Thresholds
 

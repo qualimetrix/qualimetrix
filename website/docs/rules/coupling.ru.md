@@ -274,3 +274,81 @@ bin/aimd check src/ --rule-opt="coupling.distance:min_class_count=5"
 ```
 
 По умолчанию пространства имён проекта автоматически определяются из `composer.json` (`autoload.psr-4`).
+
+---
+
+## ClassRank
+
+**Rule ID:** `coupling.class-rank`
+
+### Что измеряет
+
+ClassRank использует алгоритм **PageRank на графе зависимостей** для определения наиболее "важных" классов в кодовой базе. Принцип работы: если A зависит от B, это означает, что A "голосует" за B. Классы с большим количеством зависящих от них (или с важными зависимыми) получают более высокий ранг.
+
+Высокий ClassRank означает, что класс является критическим узлом -- изменения в нём имеют широкое влияние на всю систему.
+
+### Пороговые значения
+
+| Уровень | Порог   | Серьёзность |
+| ------- | ------- | ----------- |
+| Warning | >= 0.02 | Warning     |
+| Error   | >= 0.05 | Error       |
+
+### Пример
+
+```php
+// Класс, от которого зависят многие другие (высокий ClassRank)
+class EventDispatcher
+{
+    public function dispatch(Event $event): void { /* ... */ }
+}
+
+// UserService зависит от EventDispatcher -> "голосует" за него
+class UserService
+{
+    public function __construct(private EventDispatcher $dispatcher) {}
+}
+
+// OrderService тоже зависит от EventDispatcher -> ещё один "голос"
+class OrderService
+{
+    public function __construct(private EventDispatcher $dispatcher) {}
+}
+
+// PaymentService тоже -> и ещё один
+class PaymentService
+{
+    public function __construct(private EventDispatcher $dispatcher) {}
+}
+
+// EventDispatcher получает высокий ClassRank, т.к. от него зависят
+// многие важные классы. Если его ClassRank >= 0.02 -> WARNING
+```
+
+### Как исправить
+
+- **Извлеките интерфейс.** Выделите `EventDispatcherInterface`, чтобы зависимости шли на абстракцию, а не на конкретный класс. Это упрощает замену реализации и снижает влияние изменений.
+- **Примените инверсию зависимостей (DIP).** Убедитесь, что модули высокого уровня зависят от абстракций, а не от деталей реализации.
+- **Разделите ответственности god-класса.** Если класс имеет высокий ClassRank из-за того, что совмещает множество обязанностей, разбейте его на несколько более узкоспециализированных классов.
+
+### Особенности реализации
+
+- **Алгоритм PageRank** с коэффициентом демпфирования 0.85 и максимумом 100 итераций. Сходимость определяется порогом epsilon = 1e-6.
+- **Ранги суммируются до 1.0** -- каждый ранг представляет долю "важности" класса в общем графе.
+- **Vendor-классы исключены** -- анализируются только классы проекта (присутствующие в репозитории метрик).
+- **Dangling-узлы** (классы без исходящих зависимостей) распределяют свой вес равномерно между всеми узлами.
+
+### Настройка
+
+```yaml
+# aimd.yaml
+rules:
+  coupling.class-rank:
+    warning: 0.03
+    error: 0.08
+```
+
+```bash
+bin/aimd check src/ --rule-opt="coupling.class-rank:warning=0.03"
+bin/aimd check src/ --rule-opt="coupling.class-rank:error=0.08"
+```

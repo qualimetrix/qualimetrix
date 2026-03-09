@@ -274,3 +274,78 @@ bin/aimd check src/ --rule-opt="coupling.distance:min_class_count=5"
 ```
 
 By default, project namespaces are auto-detected from `composer.json` (`autoload.psr-4`).
+
+---
+
+## ClassRank
+
+**Rule ID:** `coupling.class-rank`
+
+### What it measures
+
+ClassRank applies the **PageRank algorithm** to your project's dependency graph to identify the most "important" classes. The idea comes from how Google ranks web pages: if class A depends on class B, A "votes" for B. Classes that receive many votes -- or receive votes from classes that are themselves highly ranked -- get a higher ClassRank score.
+
+A high ClassRank means the class is a critical hub in your codebase. If that class breaks or changes its API, the impact ripples across many dependents (directly and transitively). Think of it like a highway interchange: the more roads that pass through it, the bigger the traffic jam when it is closed.
+
+The result is a value between 0.0 and 1.0, where all class ranks in the project sum to 1.0.
+
+### Thresholds
+
+| Level   | Threshold | Severity |
+| ------- | --------- | -------- |
+| Warning | >= 0.02   | Warning  |
+| Error   | >= 0.05   | Error    |
+
+### Example
+
+```php
+// This class is used (directly or indirectly) by most of the project
+class DatabaseConnection
+{
+    public function query(string $sql, array $params = []): Result { /* ... */ }
+    public function beginTransaction(): void { /* ... */ }
+    public function commit(): void { /* ... */ }
+    public function rollback(): void { /* ... */ }
+}
+
+// UserRepository depends on DatabaseConnection -> votes for it
+// OrderRepository depends on DatabaseConnection -> votes for it
+// PaymentService depends on DatabaseConnection -> votes for it
+// ReportGenerator depends on DatabaseConnection -> votes for it
+// AuditLogger depends on DatabaseConnection -> votes for it
+//
+// If these dependents are themselves important (high rank),
+// DatabaseConnection's ClassRank grows even further.
+// ClassRank = 0.06 -> ERROR
+```
+
+### How to fix
+
+- **Extract an interface.** Create `DatabaseConnectionInterface` and depend on that. This applies the Dependency Inversion Principle: high-level modules depend on abstractions, not concrete classes.
+- **Split god-class responsibilities.** If the class does too many things, break it apart. For example, split `DatabaseConnection` into `QueryExecutor`, `TransactionManager`, etc.
+- **Reduce transitive importance.** If the dependents of this class are themselves hubs, refactoring them to depend on abstractions will lower the ClassRank of this class too.
+
+### Implementation notes
+
+AIMD uses the standard PageRank algorithm with the following parameters:
+
+- **Damping factor:** 0.85
+- **Max iterations:** 100
+- **Convergence epsilon:** 1e-6
+
+Ranks are normalized so they sum to 1.0 across all project classes. Vendor classes are excluded from the graph. Isolated classes (no incoming or outgoing dependencies) receive the base rank of `(1 - d) / N`, where `d` is the damping factor and `N` is the total number of classes.
+
+### Configuration
+
+```yaml
+# aimd.yaml
+rules:
+  coupling.class-rank:
+    warning: 0.03
+    error: 0.08
+```
+
+```bash
+bin/aimd check src/ --rule-opt="coupling.class-rank:warning=0.03"
+bin/aimd check src/ --rule-opt="coupling.class-rank:error=0.08"
+```
