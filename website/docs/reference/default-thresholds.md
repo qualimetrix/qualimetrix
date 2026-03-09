@@ -103,6 +103,17 @@ These rules detect specific patterns that are usually bad practice. Most do not 
 | Superglobals      | `code-smell.superglobals`      | Warning  | enabled |
 | Long Parameter List | `code-smell.long-parameter-list` | 4 params | 6 params | enabled |
 | Unreachable Code  | `code-smell.unreachable-code`  | 1        | 2        | enabled |
+| Unused Private    | `code-smell.unused-private`    | Warning  | -        | enabled |
+
+## Duplication Rules
+
+Rules that detect duplicated code.
+
+| Rule             | ID                             | Warning   | Error      | Scope  |
+| ---------------- | ------------------------------ | --------- | ---------- | ------ |
+| Code Duplication | `duplication.code-duplication` | <50 lines | >=50 lines | Method |
+
+**Code Duplication** detects duplicate code blocks. Configured with `min_lines: 5` and `min_tokens: 70` -- blocks shorter than these thresholds are ignored. Duplicates under 50 lines produce a warning; 50 lines or more produce an error.
 
 ## Security Rules
 

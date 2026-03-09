@@ -27,12 +27,12 @@ What AIMD should own:              What to leave to others:
 
 ## Categories With Zero Coverage (Gaps)
 
-| Category              | What's Missing                                                                                                                                                        | Impact                                       | Competitor Coverage                                 |
-| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- | --------------------------------------------------- |
-| ~~**Security**~~      | ~~No injection detection, no credential detection~~ ✅ Basic patterns implemented (SQL injection, XSS, command injection, sensitive parameter, hardcoded credentials) | Critical for enterprise adoption             | SonarQube (full taint), Psalm (taint), PHPMD (none) |
-| **Duplication**       | No copy-paste detection                                                                                                                                               | Standard expectation for quality tools       | phpcpd, SonarQube, phpmetrics (partial)             |
-| **Dead Code**         | No unused member detection, no unreachable code                                                                                                                       | High value, frequently requested             | Psalm, PHPStan+extensions, Rector (59 rules)        |
-| ~~**Type Coverage**~~ | ~~No typed/untyped ratio metrics~~ ✅ Implemented (`design.type-coverage` rule)                                                                                       | Increasingly important with PHP 8.x adoption | PHPStan+type-coverage extension, Psalm              |
+| Category              | What's Missing                                                                                                                                                         | Impact                                       | Competitor Coverage                                 |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- | --------------------------------------------------- |
+| ~~**Security**~~      | ~~No injection detection, no credential detection~~ ✅ Basic patterns implemented (SQL injection, XSS, command injection, sensitive parameter, hardcoded credentials)  | Critical for enterprise adoption             | SonarQube (full taint), Psalm (taint), PHPMD (none) |
+| ~~**Duplication**~~   | ~~No copy-paste detection~~ ✅ Token-stream duplication detection implemented (`duplication.code-duplication` rule)                                                    | Standard expectation for quality tools       | phpcpd, SonarQube, phpmetrics (partial)             |
+| **Dead Code**         | ~~No unused member detection~~, ~~no unreachable code~~ ✅ Unused private members (`code-smell.unused-private`) and unreachable code implemented. Unused variables TBD | High value, frequently requested             | Psalm, PHPStan+extensions, Rector (59 rules)        |
+| ~~**Type Coverage**~~ | ~~No typed/untyped ratio metrics~~ ✅ Implemented (`design.type-coverage` rule)                                                                                        | Increasingly important with PHP 8.x adoption | PHPStan+type-coverage extension, Psalm              |
 
 ---
 
@@ -56,19 +56,21 @@ Implemented as `--format=metrics-json`.
 
 These fill the biggest competitive gaps.
 
-### 3.1 Code Duplication Detection
+### 3.1 Code Duplication Detection ✅ DONE
 
 - **Approach:** Token-stream hashing (Rabin-Karp), similar to phpcpd
-- **Metrics:** `duplication.ratio`, `duplication.blocks`, `duplication.lines`
-- **Architecture:** Separate pipeline stage (runs on token stream, not AST)
+- **Rule:** `duplication.code-duplication` with configurable `min_lines` (5) and `min_tokens` (70)
+- **Architecture:** Separate pipeline phase (Phase 3.8), results passed via `AnalysisContext::$duplicateBlocks`
+- **SARIF:** `relatedLocations` support for clickable cross-references in IDE
 - **Effort:** Medium
 - **Value:** Very High — standard expectation, replaces need for phpcpd
 
-### 3.2 Unused Private Members Rule
+### 3.2 Unused Private Members Rule ✅ DONE
 
 - **Rule:** `code-smell.unused-private`
 - **Scope:** Detect private methods, properties, constants never referenced within the class
 - **Approach:** Two-pass AST: collect declarations, collect references, diff
+- **Features:** Magic method awareness, constructor promotion, anonymous class isolation, enum/interface/trait exclusion
 - **Effort:** Medium
 - **Value:** High
 

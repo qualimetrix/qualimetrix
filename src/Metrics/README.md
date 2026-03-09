@@ -36,6 +36,7 @@ Collectors **do not interpret** metrics — they only collect them. Interpretati
 | `wmc`                                                                                  | Structure       | Class     | Weighted Methods per Class — sum of method CCN                                                                                |
 | `dit`                                                                                  | Structure       | Class     | Depth of Inheritance Tree — inheritance depth                                                                                 |
 | `noc`                                                                                  | Structure       | Class     | Number of Children — number of direct subclasses                                                                              |
+| `unusedPrivateMethods`, `unusedPrivateProperties`                                      | Structure       | Class     | Count of unused private methods and properties                                                                                |
 | **Coupling**                                                                           |                 |           |                                                                                                                               |
 | `ca`, `ce`, `instability`                                                              | Coupling        | Class     | Afferent/Efferent Coupling, instability                                                                                       |
 | `abstractness`                                                                         | Coupling        | Namespace | Proportion of abstract classes/interfaces                                                                                     |
@@ -61,7 +62,7 @@ Collectors **do not interpret** metrics — they only collect them. Interpretati
 - **[Complexity/](Complexity/README.md)** — Cyclomatic, Cognitive, NPath Complexity
 - **[Maintainability/](Maintainability/README.md)** — Halstead, Maintainability Index
 - **[Size/](Size/README.md)** — LOC, Class Count, Property Count, Method Count
-- **[Structure/](Structure/README.md)** — TCC/LCC, LCOM, RFC, WMC, DIT, NOC
+- **[Structure/](Structure/README.md)** — TCC/LCC, LCOM, RFC, WMC, DIT, NOC, Unused Private
 - **[Coupling/](Coupling/README.md)** — Ca/Ce/Instability, Abstractness, Distance, ClassRank
 - **[CodeSmell/](CodeSmell/README.md)** — Code pattern detectors (goto, eval, debug code, parameter count, unreachable code, etc.)
 - **[Design/](Design/)** — Type coverage metrics

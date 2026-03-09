@@ -451,6 +451,52 @@ bin/aimd check src/ --rule-opt="code-smell.long-parameter-list:error=8"
 
 ---
 
+## Unused Private Members
+
+**Rule ID:** `code-smell.unused-private`
+**Severity:** Warning
+
+### What it measures
+
+Detects private methods, properties, and constants that are declared but never referenced within the class. Unused private members are dead code -- they add noise, increase cognitive load, and may indicate incomplete refactoring.
+
+The rule is smart about edge cases:
+
+- **Magic method awareness:** classes with `__call`/`__callStatic` skip method checks; classes with `__get`/`__set` skip property checks
+- **Constructor promotion:** promoted properties are tracked correctly
+- **Anonymous classes:** private members in anonymous classes are isolated and don't leak to the parent class
+- **Excluded types:** interfaces, traits, and enums are not analyzed
+- **Access patterns:** recognizes `$this->method()`, `self::method()`, `static::method()`, property access, and constant access
+
+### Example
+
+```php
+class OrderService
+{
+    private string $unusedField = '';  // never read or written
+
+    private const LEGACY_LIMIT = 100;  // never referenced
+
+    public function process(Order $order): void
+    {
+        // ... uses $order but never touches $unusedField or LEGACY_LIMIT
+    }
+
+    private function oldHelper(): void  // never called
+    {
+        // leftover from a previous implementation
+    }
+}
+```
+
+### How to fix
+
+- **Remove** the unused member if it is truly dead code.
+- **Change visibility** to `protected` or `public` if the member is used by subclasses or external code.
+- If the member is intentionally kept for future use, suppress the warning with `@aimd-ignore code-smell.unused-private`.
+
+---
+
 ## Unreachable Code
 
 **Rule ID:** `code-smell.unreachable-code`
@@ -541,6 +587,8 @@ rules:
   code-smell.unreachable-code:
     warning: 1
     error: 1
+  code-smell.unused-private:
+    enabled: true
 ```
 
 You can also disable individual rules via the `--disable-rule` CLI option:

@@ -103,6 +103,17 @@
 | Superglobals      | `code-smell.superglobals`      | Warning     | включено     |
 | Long Parameter List | `code-smell.long-parameter-list` | 4 params | 6 params | включено |
 | Unreachable Code  | `code-smell.unreachable-code`  | 1        | 2        | включено     |
+| Unused Private    | `code-smell.unused-private`    | Warning  | -        | включено     |
+
+## Правила дупликации (Duplication)
+
+Правила, которые обнаруживают дублированный код.
+
+| Правило          | ID                             | Warning   | Error      | Область |
+| ---------------- | ------------------------------ | --------- | ---------- | ------- |
+| Code Duplication | `duplication.code-duplication` | <50 строк | >=50 строк | Метод   |
+
+**Code Duplication** обнаруживает дублированные блоки кода. Настраивается через `min_lines: 5` и `min_tokens: 70` -- блоки, не достигающие этих порогов, игнорируются. Дубликаты менее 50 строк выдают предупреждение; 50 строк и более -- ошибку.
 
 ## Правила безопасности (Security)
 

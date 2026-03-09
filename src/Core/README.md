@@ -26,7 +26,7 @@ Core/
 │   ├── RuleInterface.php
 │   ├── RuleCategory.php
 │   ├── RuleOptionsInterface.php           # Base options interface
-│   ├── AnalysisContext.php
+│   ├── AnalysisContext.php                # Context for rule analysis (metrics, graph, duplicates)
 │   ├── HierarchicalRuleInterface.php      # Multi-level rules
 │   ├── HierarchicalRuleOptionsInterface.php
 │   ├── LevelOptionsInterface.php          # Level-specific options
@@ -50,6 +50,9 @@ Core/
 │   ├── CycleInterface.php
 │   ├── DependencyType.php                 # Dependency type enum
 │   └── EmptyDependencyGraph.php           # No-op graph implementation
+├── Duplication/
+│   ├── DuplicateBlock.php                 # VO: a group of duplicate code locations
+│   └── DuplicateLocation.php              # VO: a single location within a duplicate block
 ├── Violation/
 │   ├── Violation.php
 │   ├── Severity.php
@@ -450,6 +453,7 @@ A rule violation.
 - `severity: Severity`
 - `metricValue: int|float|null` — metric value (for reports)
 - `level: ?RuleLevel` — rule level that produced this violation (null for non-hierarchical rules)
+- `relatedLocations: list<Location>` — additional locations related to this violation (e.g., other occurrences of duplicated code)
 
 **Methods:**
 - `getFingerprint(): string` — unique identifier for baseline (`ruleName:symbolPath`)

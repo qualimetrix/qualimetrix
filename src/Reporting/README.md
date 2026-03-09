@@ -290,6 +290,10 @@ SARIF 2.1.0 for GitHub Security, VS Code, Azure DevOps, JetBrains IDEs.
 | Warning       | `warning`   |
 | Info          | `note`      |
 
+### Related Locations
+
+Violations with `relatedLocations` (e.g., code duplication violations pointing to other occurrences) are rendered as SARIF `relatedLocations` entries. This provides clickable cross-references in GitHub Code Scanning, VS Code, and JetBrains IDEs.
+
 ### GitHub Actions Integration
 
 ```yaml

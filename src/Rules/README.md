@@ -53,6 +53,8 @@ Rules are analysis rule implementations for static analysis. Rules are **complet
 | **security.xss**                     | Security        | Simple                          | XSS patterns                    | enabled: true                      |
 | **security.command-injection**       | Security        | Simple                          | Command injection patterns      | enabled: true                      |
 | **security.sensitive-parameter**     | Security        | Simple                          | Missing #[\SensitiveParameter]  | enabled: true                      |
+| **code-smell.unused-private**        | CodeSmell       | Simple                          | Unused private methods/props    | enabled: true                      |
+| **duplication.code-duplication**     | Duplication     | Simple                          | Duplicate code blocks           | min_lines: 5, min_tokens: 70, W/E  |
 
 ---
 
@@ -587,6 +589,47 @@ rules:
 ```
 
 **CLI:** `--unreachable-code-warning=1 --unreachable-code-error=2`
+
+---
+
+## Code Duplication Rule
+
+**Name:** `duplication.code-duplication` | **Category:** Duplication | **Type:** Simple
+
+Detects duplicate code blocks across analyzed files using token-based comparison. Violations include `relatedLocations` pointing to all other occurrences of the same block.
+
+**Default:** min_lines: 5, min_tokens: 70, severity: Warning (Error for large blocks)
+
+**Configuration:**
+```yaml
+rules:
+  duplication.code-duplication:
+    min_lines: 5
+    min_tokens: 70
+```
+
+**CLI:** `--duplication-min-lines=5 --duplication-min-tokens=70`
+
+**Files:**
+- `src/Rules/Duplication/CodeDuplicationRule.php` — rule implementation
+- `src/Rules/Duplication/CodeDuplicationOptions.php` — rule options
+
+---
+
+## Unused Private Rule
+
+**Name:** `code-smell.unused-private` | **Category:** CodeSmell | **Type:** Simple
+
+Detects unused private methods and properties in classes.
+
+**Configuration:**
+```yaml
+rules:
+  code-smell.unused-private:
+    enabled: true
+```
+
+**CLI:** `--disable-rule=code-smell.unused-private`
 
 ---
 

@@ -90,6 +90,16 @@ These rules measure how tightly your classes depend on each other. Tightly coupl
 
 [Read more about Architecture rules --&gt;](architecture.md)
 
+### Duplication Rules
+
+These rules detect duplicated code blocks across your codebase using token-stream analysis.
+
+| Rule                               | ID                             | What it detects                                 | Default Warning | Default Error |
+| ---------------------------------- | ------------------------------ | ----------------------------------------------- | --------------- | ------------- |
+| [Code Duplication](duplication.md) | `duplication.code-duplication` | Structurally identical code blocks across files | < 50 lines      | >= 50 lines   |
+
+[Read more about Duplication rules --&gt;](duplication.md)
+
 ### Code Smell Rules
 
 These rules detect common bad practices that are almost always wrong, regardless of context. Most produce an **Error** severity by default.

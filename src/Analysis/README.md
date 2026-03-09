@@ -76,6 +76,11 @@ Analysis/
 ├── Aggregation/
 │   └── GlobalCollectorRunner.php
 │
+├── Duplication/
+│   ├── NormalizedToken.php              # VO: normalized token for comparison
+│   ├── TokenNormalizer.php              # Normalizes PHP tokens for duplicate detection
+│   └── DuplicationDetector.php          # Detects duplicate code blocks across files
+│
 ├── RuleExecution/
 │   ├── RuleExecutorInterface.php        # Rule executor contract
 │   └── RuleExecutor.php
@@ -118,9 +123,10 @@ Finding PHP files via `FileDiscoveryInterface`.
 - Running global collectors
 - Re-aggregating metrics after global collectors (so global metrics like CBO, Instability, NOC, Distance are properly aggregated to namespace and project levels)
 - Running circular dependency detection
+- Running duplication detection (token-based duplicate code block detection across analyzed files)
 
 **Phase 4: RuleExecution**
-- Creating `AnalysisContext` with repository, dependency graph, circular dependency results, and rule options
+- Creating `AnalysisContext` with repository, dependency graph, circular dependency results, duplicate blocks, and rule options
 - Executing all rules via `RuleExecutor`
 - Applying filters (Baseline, Suppression)
 

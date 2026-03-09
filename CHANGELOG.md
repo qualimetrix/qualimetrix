@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Code duplication detection — token-stream hashing (Rabin-Karp) detects copy-paste across files (`duplication.code-duplication` rule, configurable `min_lines`/`min_tokens`)
+- Unused private members detection — flags private methods, properties, and constants never referenced within the class (`code-smell.unused-private` rule)
+- SARIF `relatedLocations` support — duplication violations include clickable cross-references to all copies in IDE SARIF viewers
 - ClassRank metric — PageRank-based class importance ranking via dependency graph (`coupling.class-rank` rule)
 - Security pattern rules: `security.sql-injection`, `security.xss`, `security.command-injection` — AST-based detection of direct superglobal flows
 - `security.sensitive-parameter` rule — detects parameters with sensitive names missing `#[\SensitiveParameter]` attribute
