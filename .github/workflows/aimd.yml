@@ -83,9 +83,9 @@ jobs:
       - name: Run AI Mess Detector
         run: |
           if [ -f "baseline.json" ]; then
-            bin/aimd analyze src/ --baseline=baseline.json
+            bin/aimd check src/ --baseline=baseline.json
           else
-            bin/aimd analyze src/
+            bin/aimd check src/
           fi
 
       - name: Upload results (if failed)

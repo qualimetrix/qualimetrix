@@ -111,19 +111,19 @@ runs:
             ;;
         esac
 
-        echo "Running: $AIMD_BIN analyze $ARGS"
+        echo "Running: $AIMD_BIN check $ARGS"
 
         # Run analysis and capture exit code
         set +e
         if [ -n "$OUTPUT_FILE" ]; then
           # For structured formats, write to file
-          $AIMD_BIN analyze $ARGS > "$OUTPUT_FILE" 2>&1
+          $AIMD_BIN check $ARGS > "$OUTPUT_FILE" 2>&1
           EXIT_CODE=$?
           OUTPUT=$(cat "$OUTPUT_FILE")
           echo "Output written to: $OUTPUT_FILE"
         else
           # For text format, capture output
-          OUTPUT=$($AIMD_BIN analyze $ARGS 2>&1)
+          OUTPUT=$($AIMD_BIN check $ARGS 2>&1)
           EXIT_CODE=$?
           echo "$OUTPUT"
         fi
