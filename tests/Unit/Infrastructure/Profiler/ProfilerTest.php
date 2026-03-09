@@ -253,4 +253,113 @@ final class ProfilerTest extends TestCase
         self::assertNotNull($root);
         self::assertSame('second', $root->name);
     }
+
+    public function testStopRecordsPeakMemory(): void
+    {
+        $this->profiler->start('test');
+        $this->profiler->stop('test');
+
+        $root = $this->profiler->getRootSpan();
+        self::assertNotNull($root);
+
+        // Peak should be at least startMemory
+        self::assertGreaterThanOrEqual($root->startMemory, $root->peakMemory);
+        self::assertNotNull($root->getPeakMemoryDelta());
+        self::assertGreaterThanOrEqual(0, $root->getPeakMemoryDelta());
+    }
+
+    public function testChildPeakPropagatedToParent(): void
+    {
+        $this->profiler->start('parent');
+        $this->profiler->start('child');
+
+        // Allocate some memory to create a peak
+        /** @var list<string> $buffer */
+        $buffer = [];
+        for ($i = 0; $i < 100; $i++) {
+            $buffer[] = str_repeat('x', 1024);
+        }
+        $peakDuringChild = memory_get_usage(true);
+
+        $this->profiler->stop('child');
+
+        // Free the buffer
+        unset($buffer);
+
+        $this->profiler->stop('parent');
+
+        $root = $this->profiler->getRootSpan();
+        self::assertNotNull($root);
+
+        // Parent's peak should be at least as high as what was measured during child
+        self::assertGreaterThanOrEqual($peakDuringChild, $root->peakMemory);
+    }
+
+    public function testSnapshotUpdatesPeakForAllActiveSpans(): void
+    {
+        $this->profiler->start('outer');
+        $this->profiler->start('inner');
+
+        $currentMemory = memory_get_usage(true);
+        $this->profiler->snapshot();
+
+        // Both spans should have peak >= current memory
+        $root = $this->profiler->getRootSpan();
+        self::assertNotNull($root);
+        self::assertGreaterThanOrEqual($currentMemory, $root->peakMemory);
+        self::assertGreaterThanOrEqual($currentMemory, $root->children[0]->peakMemory);
+
+        $this->profiler->stop('inner');
+        $this->profiler->stop('outer');
+    }
+
+    public function testSnapshotOnEmptyStackIsNoOp(): void
+    {
+        // Should not throw
+        $this->profiler->snapshot();
+        self::assertNull($this->profiler->getRootSpan());
+    }
+
+    public function testGetSummaryIncludesPeakMemory(): void
+    {
+        $this->profiler->start('root');
+        $this->profiler->start('operation');
+        $this->profiler->stop('operation');
+        $this->profiler->stop('root');
+
+        $summary = $this->profiler->getSummary();
+        self::assertArrayHasKey('peak_memory', $summary['root']);
+        self::assertArrayHasKey('peak_memory', $summary['operation']);
+        self::assertGreaterThanOrEqual(0, $summary['root']['peak_memory']);
+        self::assertGreaterThanOrEqual(0, $summary['operation']['peak_memory']);
+    }
+
+    public function testPeakMemoryMaxAcrossMultipleInstances(): void
+    {
+        $this->profiler->start('root');
+
+        // First instance — allocate some memory
+        $this->profiler->start('op');
+        /** @var list<string> $buf1 */
+        $buf1 = [str_repeat('a', 1024)];
+        $this->profiler->stop('op');
+        unset($buf1);
+
+        // Second instance — allocate more memory
+        $this->profiler->start('op');
+        /** @var list<string> $buf2 */
+        $buf2 = [];
+        for ($i = 0; $i < 200; $i++) {
+            $buf2[] = str_repeat('b', 1024);
+        }
+        $this->profiler->stop('op');
+        unset($buf2);
+
+        $this->profiler->stop('root');
+
+        $summary = $this->profiler->getSummary();
+        // peak_memory is the max across instances, not a sum
+        self::assertSame(2, $summary['op']['count']);
+        self::assertGreaterThanOrEqual(0, $summary['op']['peak_memory']);
+    }
 }

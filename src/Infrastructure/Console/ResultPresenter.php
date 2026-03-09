@@ -245,7 +245,7 @@ final class ResultPresenter
     /**
      * Formats profiling summary for console output.
      *
-     * @param array<string, array{total: float, count: int, avg: float, memory: int}> $summary
+     * @param array<string, array{total: float, count: int, avg: float, memory: int, peak_memory: int}> $summary
      */
     private function formatProfileSummary(array $summary): string
     {
@@ -269,14 +269,16 @@ final class ResultPresenter
 
         foreach ($summary as $name => $stat) {
             $percentage = $totalTime > 0 ? ($stat['total'] / $totalTime) * 100 : 0;
-            $memory = $this->formatBytes($stat['memory']);
+            $memoryDelta = $this->formatBytes($stat['memory']);
+            $peakMemory = $this->formatBytes($stat['peak_memory']);
 
             $lines[] = \sprintf(
-                '  <info>%s</info>: %.3fs (%3.0f%%) | %s | %dx',
+                '  <info>%s</info>: %.3fs (%3.0f%%) | Δ%s | ↑%s | %dx',
                 str_pad($name, 15),
                 $stat['total'] / 1000, // ms to s
                 $percentage,
-                str_pad($memory, 8),
+                str_pad($memoryDelta, 8),
+                str_pad($peakMemory, 8),
                 $stat['count'],
             );
         }

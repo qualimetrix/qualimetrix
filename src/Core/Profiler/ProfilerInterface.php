@@ -34,6 +34,15 @@ interface ProfilerInterface
     public function stop(string $name): void;
 
     /**
+     * Record a memory checkpoint for all active spans.
+     *
+     * Updates the peak memory of every span currently on the stack
+     * with the current memory_get_usage(true). Cost: ~100ns per call.
+     * Useful inside long operations that don't have their own sub-spans.
+     */
+    public function snapshot(): void;
+
+    /**
      * Check if profiling is enabled.
      *
      * @return bool True if profiling is active
@@ -55,8 +64,9 @@ interface ProfilerInterface
      * - count: Number of times the span was executed
      * - avg: Average time per execution in milliseconds
      * - memory: Total memory delta in bytes
+     * - peak_memory: Maximum peak memory delta across all instances (bytes above span start)
      *
-     * @return array<string, array{total: float, count: int, avg: float, memory: int}>
+     * @return array<string, array{total: float, count: int, avg: float, memory: int, peak_memory: int}>
      */
     public function getSummary(): array;
 

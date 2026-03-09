@@ -40,6 +40,13 @@ final class NullProfilerTest extends TestCase
         self::assertNull($this->profiler->getRootSpan());
     }
 
+    public function testSnapshotIsNoOp(): void
+    {
+        $this->profiler->snapshot();
+
+        self::assertNull($this->profiler->getRootSpan());
+    }
+
     public function testGetSummaryReturnsEmptyArray(): void
     {
         $this->profiler->start('test');

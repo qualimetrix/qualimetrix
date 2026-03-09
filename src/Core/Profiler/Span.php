@@ -14,6 +14,13 @@ namespace AiMessDetector\Core\Profiler;
 final class Span
 {
     /**
+     * Highest memory_get_usage(true) observed during this span's lifetime.
+     * Initialized to startMemory, updated on stop() and snapshot().
+     * For parent spans, this includes peaks propagated from children.
+     */
+    public int $peakMemory;
+
+    /**
      * @param string $name Span name (e.g., "FileProcessor::process")
      * @param string|null $category Optional category (e.g., "collection", "analysis")
      * @param float $startTime Start timestamp in nanoseconds (from hrtime(true))
@@ -32,7 +39,9 @@ final class Span
         public ?int $endMemory = null,
         public ?Span $parent = null,
         public array $children = [],
-    ) {}
+    ) {
+        $this->peakMemory = $startMemory;
+    }
 
     /**
      * Get span duration in milliseconds.
@@ -60,6 +69,30 @@ final class Span
         }
 
         return $this->endMemory - $this->startMemory;
+    }
+
+    /**
+     * Get peak memory above span start in bytes.
+     *
+     * @return int|null Peak memory delta, or null if span is still running
+     */
+    public function getPeakMemoryDelta(): ?int
+    {
+        if ($this->endTime === null) {
+            return null;
+        }
+
+        return $this->peakMemory - $this->startMemory;
+    }
+
+    /**
+     * Update peak memory if the given value is higher.
+     */
+    public function updatePeak(int $currentMemory): void
+    {
+        if ($currentMemory > $this->peakMemory) {
+            $this->peakMemory = $currentMemory;
+        }
     }
 
     /**

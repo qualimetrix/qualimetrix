@@ -32,6 +32,7 @@ final class JsonExporter implements ProfileExporterInterface
      *     category: string|null,
      *     duration_ms: float|null,
      *     memory_delta_bytes: int|null,
+     *     peak_memory_delta_bytes: int|null,
      *     children: list<array>
      * }
      */
@@ -42,6 +43,7 @@ final class JsonExporter implements ProfileExporterInterface
             'category' => $span->category,
             'duration_ms' => $span->getDuration(),
             'memory_delta_bytes' => $span->getMemoryDelta(),
+            'peak_memory_delta_bytes' => $span->getPeakMemoryDelta(),
             'children' => array_map(
                 fn(Span $child) => $this->spanToArray($child),
                 $span->children,

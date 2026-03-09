@@ -136,6 +136,7 @@ final class ProfilerIntegrationTest extends TestCase
         self::assertSame('category', $data['category']);
         self::assertArrayHasKey('duration_ms', $data);
         self::assertArrayHasKey('memory_delta_bytes', $data);
+        self::assertArrayHasKey('peak_memory_delta_bytes', $data);
         self::assertArrayHasKey('children', $data);
         self::assertCount(1, $data['children']);
         self::assertSame('child', $data['children'][0]['name']);

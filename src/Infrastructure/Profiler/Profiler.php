@@ -86,6 +86,8 @@ final class Profiler implements ProfilerInterface
             if ($aboveSpan->endTime === null) {
                 $aboveSpan->endTime = $now;
                 $aboveSpan->endMemory = $memory;
+                $aboveSpan->updatePeak($memory);
+                $this->propagatePeakToParent($aboveSpan);
             }
         }
 
@@ -93,9 +95,24 @@ final class Profiler implements ProfilerInterface
         $span = $this->stack[$index];
         $span->endTime = $now;
         $span->endMemory = $memory;
+        $span->updatePeak($memory);
+        $this->propagatePeakToParent($span);
 
         // Remove the target span and all spans above it from the stack
         array_splice($this->stack, $index);
+    }
+
+    public function snapshot(): void
+    {
+        if ($this->stack === []) {
+            return;
+        }
+
+        $memory = memory_get_usage(true);
+
+        foreach ($this->stack as $span) {
+            $span->updatePeak($memory);
+        }
     }
 
     public function isEnabled(): bool
@@ -126,29 +143,45 @@ final class Profiler implements ProfilerInterface
     }
 
     /**
+     * Propagate a span's peak memory to its parent.
+     */
+    private function propagatePeakToParent(Span $span): void
+    {
+        if ($span->parent !== null) {
+            $span->parent->updatePeak($span->peakMemory);
+        }
+    }
+
+    /**
      * Recursively collect statistics from span tree.
      *
      * @param Span $span Current span
-     * @param array<string, array{total: float, count: int, avg: float, memory: int}> &$stats Statistics array
+     * @param array<string, array{total: float, count: int, avg: float, memory: int, peak_memory: int}> &$stats Statistics array
      */
     private function collectStats(Span $span, array &$stats): void
     {
         $duration = $span->getDuration();
         $memory = $span->getMemoryDelta();
+        $peakMemory = $span->getPeakMemoryDelta();
 
-        if ($duration !== null && $memory !== null) {
+        if ($duration !== null && $memory !== null && $peakMemory !== null) {
             if (!isset($stats[$span->name])) {
                 $stats[$span->name] = [
                     'total' => 0.0,
                     'count' => 0,
                     'avg' => 0.0,
                     'memory' => 0,
+                    'peak_memory' => 0,
                 ];
             }
 
             $stats[$span->name]['total'] += $duration;
             $stats[$span->name]['count']++;
             $stats[$span->name]['memory'] += $memory;
+            $stats[$span->name]['peak_memory'] = max(
+                $stats[$span->name]['peak_memory'],
+                $peakMemory,
+            );
         }
 
         foreach ($span->children as $child) {

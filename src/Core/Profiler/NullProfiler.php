@@ -21,6 +21,11 @@ final class NullProfiler implements ProfilerInterface
         // No-op
     }
 
+    public function snapshot(): void
+    {
+        // No-op
+    }
+
     public function isEnabled(): bool
     {
         return false;
@@ -32,7 +37,7 @@ final class NullProfiler implements ProfilerInterface
     }
 
     /**
-     * @return array<string, array{total: float, count: int, avg: float, memory: int}>
+     * @return array<string, array{total: float, count: int, avg: float, memory: int, peak_memory: int}>
      */
     public function getSummary(): array
     {
