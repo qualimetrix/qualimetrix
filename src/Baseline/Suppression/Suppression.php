@@ -18,6 +18,7 @@ final readonly class Suppression
         public ?string $reason,
         public int $line,
         public SuppressionType $type,
+        public ?int $endLine = null,
     ) {}
 
     /**

@@ -44,6 +44,13 @@ final class InMemoryStorage implements StorageInterface
 
     // === File operations ===
 
+    public function getFileId(string $path): ?int
+    {
+        $fileId = array_search($path, $this->fileIds, true);
+
+        return $fileId !== false ? $fileId : null;
+    }
+
     public function getFile(string $path): ?FileRecord
     {
         return $this->files[$path] ?? null;

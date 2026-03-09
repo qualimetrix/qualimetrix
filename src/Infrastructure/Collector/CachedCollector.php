@@ -48,9 +48,8 @@ final class CachedCollector
             $cached = $this->storage->getMetrics(SymbolPath::forFile($path));
             if ($cached !== null) {
                 // Try to get cached dependencies too
-                $fileRecord = $this->storage->getFile($path);
-                if ($fileRecord !== null) {
-                    $fileId = $this->storage->storeFile($fileRecord);
+                $fileId = $this->storage->getFileId($path);
+                if ($fileId !== null) {
                     $cachedDeps = $this->storage->getFileDependencies($fileId);
 
                     if ($cachedDeps !== null) {

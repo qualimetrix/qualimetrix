@@ -299,6 +299,99 @@ final class SuppressionExtractorTest extends TestCase
         self::assertSame(SuppressionType::File, $suppressions[0]->type);
     }
 
+    public function testNextLineSuppressionInMultiLineDocblockUsesEndLine(): void
+    {
+        // Multi-line docblock: starts at line 10, ends at line 14
+        $docComment = new Doc(
+            <<<'DOC'
+            /**
+             * Some description.
+             *
+             * @aimd-ignore-next-line complexity
+             */
+            DOC,
+            startLine: 10,
+            endLine: 14,
+        );
+
+        $node = new Class_('Foo');
+        $node->setDocComment($docComment);
+
+        $suppressions = $this->extractor->extract($node);
+
+        self::assertCount(1, $suppressions);
+        self::assertSame(SuppressionType::NextLine, $suppressions[0]->type);
+        // Suppression line should be endLine (14), not startLine (10)
+        // so that SuppressionFilter targets endLine + 1 = line 15 (the actual next line after the docblock)
+        self::assertSame(14, $suppressions[0]->line);
+    }
+
+    public function testSymbolSuppressionHasEndLineFromNode(): void
+    {
+        $docComment = new Doc(
+            <<<'DOC'
+            /**
+             * @aimd-ignore complexity
+             */
+            DOC,
+            10,
+            12,
+        );
+
+        $node = new Class_('Foo', [], ['startLine' => 13, 'endLine' => 50]);
+        $node->setDocComment($docComment);
+
+        $suppressions = $this->extractor->extract($node);
+
+        self::assertCount(1, $suppressions);
+        self::assertSame(SuppressionType::Symbol, $suppressions[0]->type);
+        self::assertSame(50, $suppressions[0]->endLine);
+    }
+
+    public function testNextLineSuppressionHasNoEndLine(): void
+    {
+        $docComment = new Doc(
+            <<<'DOC'
+            /**
+             * @aimd-ignore-next-line complexity
+             */
+            DOC,
+            10,
+            12,
+        );
+
+        $node = new Class_('Foo', [], ['startLine' => 13, 'endLine' => 50]);
+        $node->setDocComment($docComment);
+
+        $suppressions = $this->extractor->extract($node);
+
+        self::assertCount(1, $suppressions);
+        self::assertSame(SuppressionType::NextLine, $suppressions[0]->type);
+        self::assertNull($suppressions[0]->endLine);
+    }
+
+    public function testFileSuppressionHasNoEndLine(): void
+    {
+        $docComment = new Doc(
+            <<<'DOC'
+            /**
+             * @aimd-ignore-file complexity
+             */
+            DOC,
+            1,
+            3,
+        );
+
+        $node = new Class_('Foo', [], ['startLine' => 4, 'endLine' => 50]);
+        $node->setDocComment($docComment);
+
+        $suppressions = $this->extractor->extract($node);
+
+        self::assertCount(1, $suppressions);
+        self::assertSame(SuppressionType::File, $suppressions[0]->type);
+        self::assertNull($suppressions[0]->endLine);
+    }
+
     public function testExtractMixedSuppressionTypes(): void
     {
         $docComment = new Doc(

@@ -12,7 +12,7 @@ use AiMessDetector\Core\Violation\Violation;
  *
  * Suppressions can be applied at:
  * - File level (@aimd-ignore-file) — suppresses all matching violations in file
- * - Symbol level (@aimd-ignore <rule>) — suppresses matching violations at or after suppression line
+ * - Symbol level (@aimd-ignore <rule>) — suppresses matching violations within the symbol's line range
  * - Line level (@aimd-ignore-next-line <rule>) — suppresses matching violations on next line only
  */
 final class SuppressionFilter implements ViolationFilterInterface
@@ -56,9 +56,13 @@ final class SuppressionFilter implements ViolationFilterInterface
                     return false; // File-level: suppress all matching violations
 
                 case SuppressionType::Symbol:
-                    // Symbol-level: suppress matching violations at or after the suppression line
+                    // Symbol-level: suppress matching violations at or after the suppression line,
+                    // but only up to the symbol's end line (if known)
                     // Do NOT suppress file/namespace-level violations (line=null)
-                    if ($violationLine !== null && $violationLine >= $suppression->line) {
+                    if ($violationLine !== null
+                        && $violationLine >= $suppression->line
+                        && ($suppression->endLine === null || $violationLine <= $suppression->endLine)
+                    ) {
                         return false;
                     }
                     break;

@@ -78,7 +78,7 @@ final class LongParameterListRule extends AbstractRule
 
         foreach ([SymbolType::Method, SymbolType::Function_] as $type) {
             foreach ($context->metrics->all($type) as $symbolInfo) {
-                $violation = $this->checkSymbol($symbolInfo, $context);
+                $violation = $this->checkSymbol($symbolInfo, $type, $context);
 
                 if ($violation !== null) {
                     $violations[] = $violation;
@@ -89,7 +89,7 @@ final class LongParameterListRule extends AbstractRule
         return $violations;
     }
 
-    private function checkSymbol(SymbolInfo $symbolInfo, AnalysisContext $context): ?Violation
+    private function checkSymbol(SymbolInfo $symbolInfo, SymbolType $symbolType, AnalysisContext $context): ?Violation
     {
         /** @var LongParameterListOptions $options */
         $options = $this->options;
@@ -109,13 +109,14 @@ final class LongParameterListRule extends AbstractRule
         }
 
         $threshold = $severity === Severity::Error ? $options->error : $options->warning;
+        $kind = $symbolType === SymbolType::Function_ ? 'Function' : 'Method';
 
         return new Violation(
             location: new Location($symbolInfo->file, $symbolInfo->line),
             symbolPath: $symbolInfo->symbolPath,
             ruleName: $this->getName(),
             violationCode: self::NAME,
-            message: \sprintf('Method has %d parameters, exceeds threshold of %d. Consider introducing a parameter object', $parameterCountValue, $threshold),
+            message: \sprintf('%s has %d parameters, exceeds threshold of %d. Consider introducing a parameter object', $kind, $parameterCountValue, $threshold),
             severity: $severity,
             metricValue: $parameterCountValue,
         );

@@ -513,7 +513,7 @@ rules:
 
 ## Threshold Semantics
 
-Violations are triggered when a metric value meets or exceeds the threshold (`>=`). For inverted metrics like Maintainability Index and Type Coverage, violations are triggered when the value is at or below the threshold (`<=`).
+Violations are triggered when a metric value meets or exceeds the threshold (`>=`). For inverted metrics like Maintainability Index and Type Coverage, violations are triggered when the value is below the threshold (`<`).
 
 ---
 

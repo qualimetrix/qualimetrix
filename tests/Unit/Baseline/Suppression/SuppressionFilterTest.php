@@ -261,6 +261,36 @@ final class SuppressionFilterTest extends TestCase
         self::assertTrue($filter->shouldInclude($violation), 'Symbol-level suppression must not suppress violations with null line');
     }
 
+    public function testSymbolSuppressionDoesNotAffectViolationsAfterSymbolEndLine(): void
+    {
+        $filter = new SuppressionFilter();
+        // Suppression on first class (lines 10-50), should NOT suppress second class (line 60)
+        $filter->setSuppressions('src/Foo.php', [
+            new Suppression('complexity', null, 10, SuppressionType::Symbol, endLine: 50),
+        ]);
+
+        $violationInFirstClass = $this->createViolation('src/Foo.php', 30, 'complexity');
+        $violationInSecondClass = $this->createViolation('src/Foo.php', 60, 'complexity');
+        $violationAtEndLine = $this->createViolation('src/Foo.php', 50, 'complexity');
+
+        self::assertFalse($filter->shouldInclude($violationInFirstClass), 'Violation inside suppressed symbol should be suppressed');
+        self::assertFalse($filter->shouldInclude($violationAtEndLine), 'Violation at symbol end line should be suppressed');
+        self::assertTrue($filter->shouldInclude($violationInSecondClass), 'Violation after symbol end line should NOT be suppressed');
+    }
+
+    public function testSymbolSuppressionWithoutEndLineActsUntilEndOfFile(): void
+    {
+        $filter = new SuppressionFilter();
+        // Legacy behavior: no endLine means suppress until EOF
+        $filter->setSuppressions('src/Foo.php', [
+            new Suppression('complexity', null, 10, SuppressionType::Symbol, endLine: null),
+        ]);
+
+        $violation = $this->createViolation('src/Foo.php', 999, 'complexity');
+
+        self::assertFalse($filter->shouldInclude($violation), 'Suppression without endLine should suppress until end of file');
+    }
+
     private function createViolation(string $file, int $line, string $violationCode): Violation
     {
         return new Violation(

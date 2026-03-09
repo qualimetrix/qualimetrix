@@ -28,7 +28,7 @@ final class GitScopeResolver
 
         $gitClient = null;
         if ($analyzeScope !== null || $reportScope !== null) {
-            $gitClient = new GitClient(getcwd() ?: '.');
+            $gitClient = new GitClient($resolved->analysis->projectRoot);
         }
 
         $fileDiscovery = $analyzeScope !== null && $gitClient !== null

@@ -19,7 +19,7 @@ final class ConfigurationPipeline implements ConfigurationPipelineInterface
     /**
      * Keys whose values should be merged (union) across stages rather than replaced.
      */
-    private const array MERGEABLE_LIST_KEYS = ['disabled_rules', 'only_rules', 'exclude_paths'];
+    private const array MERGEABLE_LIST_KEYS = ['disabled_rules', 'exclude_paths'];
 
     /** @var list<ConfigurationStageInterface> */
     private array $stages = [];

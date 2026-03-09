@@ -134,16 +134,12 @@ PHP,
             'expected' => ['andChain' => 2], // +1 (if) + 1 (logical chain)
         ];
 
-        // Mixed logical operators: && changes to ||
-        // if +1, first && +1, || +1 (change of operator), second && +0 (continuing new chain)
-        // Actually: if +1, first logical (&&) +1, change to || +1, then back to && +1 = 4
-        // Wait, let me reconsider: a && b || c && d
-        // We enter: a && -> first 'and', +1
-        // Then: b (still and context)
-        // Then: || -> change to 'or', +1
-        // Then: c (still or context)
-        // Then: && -> change to 'and', +1
-        // Total logical: +3, plus if +1 = 4
+        // Mixed logical operators: $a && $b || $c && $d
+        // AST: BooleanOr(BooleanAnd($a, $b), BooleanAnd($c, $d))
+        // BooleanOr: no boolean ancestor -> +1
+        // BooleanAnd($a,$b): parent BooleanOr (different) -> +1
+        // BooleanAnd($c,$d): parent BooleanOr (different) -> +1
+        // Total: +1 (if) + 3 (logical) = 4
         yield 'mixed operators' => [
             'code' => <<<'PHP'
 <?php
@@ -154,7 +150,7 @@ function mixedOps($a, $b, $c, $d) {
     return false;
 }
 PHP,
-            'expected' => ['mixedOps' => 3], // +1 (if) + 2 (logical in AST order: || then &&)
+            'expected' => ['mixedOps' => 4], // +1 (if) + 3 (logical: ||, left &&, right &&)
         ];
 
         // Switch: only +1, not for each case
@@ -606,6 +602,63 @@ PHP,
                 '::{closure#1}' => 0,   // arrow function with no control flow
             ],
         ];
+
+        // Tree-aware logical operator tracking: $a || $b || $c && $d
+        // AST: BooleanOr(BooleanOr($a, $b), BooleanAnd($c, $d))
+        // Inner BooleanOr($a,$b): no boolean ancestor -> +1
+        // Outer BooleanOr: parent BooleanOr (same) -> +0
+        // BooleanAnd($c,$d): parent BooleanOr (different) -> +1
+        // Total: +1 (if) + 2 (logical) = 3
+        yield 'or chain then and' => [
+            'code' => <<<'PHP'
+<?php
+function orThenAnd($a, $b, $c, $d) {
+    if ($a || $b || $c && $d) {
+        return true;
+    }
+    return false;
+}
+PHP,
+            'expected' => ['orThenAnd' => 3],
+        ];
+
+        // Nested parenthesized boolean expressions: ($a && $b) || ($c && ($d || $e))
+        // AST: BooleanOr(BooleanAnd($a,$b), BooleanAnd($c, BooleanOr($d,$e)))
+        // BooleanOr: no boolean ancestor -> +1
+        // BooleanAnd($a,$b): parent BooleanOr (different) -> +1
+        // BooleanAnd($c,...): parent BooleanOr (different) -> +1
+        // BooleanOr($d,$e): parent BooleanAnd (different) -> +1
+        // Total: +1 (if) + 4 (logical) = 5
+        yield 'nested parenthesized boolean' => [
+            'code' => <<<'PHP'
+<?php
+function nestedBool($a, $b, $c, $d, $e) {
+    if (($a && $b) || ($c && ($d || $e))) {
+        return true;
+    }
+    return false;
+}
+PHP,
+            'expected' => ['nestedBool' => 5],
+        ];
+
+        // Deep same-type chain: $a && $b && $c && $d && $e
+        // AST: BooleanAnd(BooleanAnd(BooleanAnd(BooleanAnd($a,$b), $c), $d), $e)
+        // Innermost BooleanAnd: no boolean ancestor -> +1
+        // All outer BooleanAnd: parent BooleanAnd (same) -> +0 each
+        // Total: +1 (if) + 1 (logical) = 2
+        yield 'long same-type chain' => [
+            'code' => <<<'PHP'
+<?php
+function longChain($a, $b, $c, $d, $e) {
+    if ($a && $b && $c && $d && $e) {
+        return true;
+    }
+    return false;
+}
+PHP,
+            'expected' => ['longChain' => 2],
+        ];
     }
 
     /**
@@ -772,6 +825,120 @@ PHP;
 
         // +1 + 2 + 3 + 1 = 7
         self::assertSame(7, $complexities['nestedElse']);
+    }
+
+    /**
+     * Problem #3: leaveNode for ClassMethod inside anonymous class must not call endMethod().
+     * The method inside the anonymous class should not affect the outer method's complexity.
+     */
+    public function testAnonymousClassMethodDoesNotLeakToOuterMethod(): void
+    {
+        $code = <<<'PHP'
+<?php
+namespace App;
+
+class Outer
+{
+    public function outerMethod($x) {
+        if ($x) {                           // +1
+            $obj = new class {
+                public function innerMethod($a, $b) {
+                    // Complex logic inside anonymous class — must NOT affect outerMethod
+                    if ($a) {
+                        foreach ($b as $item) {
+                            if ($item > 0) {
+                                echo $item;
+                            }
+                        }
+                    }
+                }
+            };
+        }
+        if ($x > 1) {                      // +1
+            return true;
+        }
+        return false;
+    }
+}
+PHP;
+
+        $visitor = new CognitiveComplexityVisitor();
+        $parser = (new ParserFactory())->createForHostVersion();
+        $ast = $parser->parse($code) ?? [];
+
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $complexities = $visitor->getComplexities();
+
+        // outerMethod should only have +1 (first if) + 1 (second if) = 2
+        // The anonymous class method must NOT contribute to outerMethod's complexity
+        self::assertSame(2, $complexities['App\Outer::outerMethod']);
+    }
+
+    /**
+     * Problem #11: FuncCall inside ClassMethod must NOT be treated as recursion.
+     * A method named count() calling built-in count($arr) is not recursive.
+     */
+    public function testFuncCallInClassMethodIsNotRecursion(): void
+    {
+        $code = <<<'PHP'
+<?php
+namespace App;
+
+class MyClass
+{
+    public function count(array $items): int {
+        if (empty($items)) {                // +1
+            return 0;
+        }
+        return \count($items);              // NOT recursion — this is a global function call
+    }
+}
+PHP;
+
+        $visitor = new CognitiveComplexityVisitor();
+        $parser = (new ParserFactory())->createForHostVersion();
+        $ast = $parser->parse($code) ?? [];
+
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $complexities = $visitor->getComplexities();
+
+        // Only +1 for the if, NO recursion penalty
+        self::assertSame(1, $complexities['App\MyClass::count']);
+    }
+
+    /**
+     * Standalone function calling itself IS recursion (FuncCall recursion still works).
+     */
+    public function testFuncCallInStandaloneFunctionIsRecursion(): void
+    {
+        $code = <<<'PHP'
+<?php
+function myRecursive($n) {
+    if ($n <= 0) {              // +1
+        return 0;
+    }
+    return myRecursive($n - 1); // +1 recursion
+}
+PHP;
+
+        $visitor = new CognitiveComplexityVisitor();
+        $parser = (new ParserFactory())->createForHostVersion();
+        $ast = $parser->parse($code) ?? [];
+
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $complexities = $visitor->getComplexities();
+
+        // +1 (if) + 1 (recursion) = 2
+        self::assertSame(2, $complexities['myRecursive']);
     }
 
     public function testReset(): void

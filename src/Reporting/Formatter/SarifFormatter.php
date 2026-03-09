@@ -219,9 +219,9 @@ final class SarifFormatter implements FormatterInterface
         // Ensure trailing slash
         $path = rtrim($path, '/') . '/';
 
-        // Ensure exactly one leading slash (Unix paths already have it, Windows paths like C:/ don't)
-        $path = ltrim($path, '/');
-
-        return 'file:///' . $path;
+        // RFC 8089: file:///path on Unix, file:///C:/path on Windows
+        // Unix paths start with '/', so 'file://' + '/path' = 'file:///path' (correct)
+        // Windows paths start with 'C:/', so 'file:///' + 'C:/path' = 'file:///C:/path' (correct)
+        return 'file://' . ($path[0] === '/' ? '' : '/') . $path;
     }
 }

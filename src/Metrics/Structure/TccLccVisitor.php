@@ -47,14 +47,20 @@ final class TccLccVisitor extends NodeVisitorAbstract implements ResettableVisit
      */
     private array $classStack = [];
 
-    private ?string $currentMethod = null;
+    /**
+     * Stack of method contexts (to handle methods inside anonymous classes).
+     * Null entries represent non-tracked methods (private, protected, abstract).
+     *
+     * @var list<string|null>
+     */
+    private array $methodStack = [];
 
     public function reset(): void
     {
         $this->classData = [];
         $this->currentNamespace = null;
         $this->classStack = [];
-        $this->currentMethod = null;
+        $this->methodStack = [];
     }
 
     /**
@@ -100,25 +106,30 @@ final class TccLccVisitor extends NodeVisitorAbstract implements ResettableVisit
             return null;
         }
 
-        // Track method - ONLY PUBLIC methods for TCC/LCC
+        // Track method — always push to methodStack (even inside anonymous classes)
+        // to keep push/pop balanced with leaveNode.
         $currentClass = $this->getCurrentClass();
-        if ($node instanceof ClassMethod && $currentClass !== null) {
-            // TCC/LCC only considers public, non-abstract methods
-            if ($node->isPublic() && !$node->isAbstract()) {
+        if ($node instanceof ClassMethod) {
+            // TCC/LCC only considers public, non-abstract methods of named classes.
+            // Non-tracked methods push null to keep the stack balanced.
+            if ($currentClass !== null && $node->isPublic() && !$node->isAbstract()) {
                 $methodName = $node->name->toString();
-                $this->currentMethod = $methodName;
+                $this->methodStack[] = $methodName;
 
                 $fqn = $this->buildClassFqn($currentClass);
                 if (isset($this->classData[$fqn])) {
                     $this->classData[$fqn]->addMethod($methodName);
                 }
+            } else {
+                $this->methodStack[] = null;
             }
 
             return null;
         }
 
         // Track property access via $this->property
-        if ($node instanceof PropertyFetch && $this->currentMethod !== null) {
+        $currentMethod = $this->getCurrentMethod();
+        if ($node instanceof PropertyFetch && $currentMethod !== null) {
             $currentClass = $this->getCurrentClass();
             if ($currentClass === null) {
                 return null;
@@ -130,7 +141,7 @@ final class TccLccVisitor extends NodeVisitorAbstract implements ResettableVisit
                 if ($propertyName !== null) {
                     $fqn = $this->buildClassFqn($currentClass);
                     if (isset($this->classData[$fqn])) {
-                        $this->classData[$fqn]->addPropertyAccess($this->currentMethod, $propertyName);
+                        $this->classData[$fqn]->addPropertyAccess($currentMethod, $propertyName);
                     }
                 }
             }
@@ -145,7 +156,7 @@ final class TccLccVisitor extends NodeVisitorAbstract implements ResettableVisit
     {
         // Exit method scope
         if ($node instanceof ClassMethod) {
-            $this->currentMethod = null;
+            array_pop($this->methodStack);
         }
 
         // Exit class-like scope
@@ -159,6 +170,18 @@ final class TccLccVisitor extends NodeVisitorAbstract implements ResettableVisit
         }
 
         return null;
+    }
+
+    /**
+     * Returns current method name or null if not inside a tracked method.
+     */
+    private function getCurrentMethod(): ?string
+    {
+        if ($this->methodStack === []) {
+            return null;
+        }
+
+        return $this->methodStack[array_key_last($this->methodStack)];
     }
 
     /**

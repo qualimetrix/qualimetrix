@@ -4,13 +4,20 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Tests\Unit\Infrastructure\Console;
 
+use AiMessDetector\Analysis\Pipeline\AnalysisResult;
+use AiMessDetector\Analysis\Repository\InMemoryMetricRepository;
 use AiMessDetector\Baseline\BaselineGenerator;
 use AiMessDetector\Baseline\BaselineWriter;
 use AiMessDetector\Baseline\ViolationHasher;
+use AiMessDetector\Configuration\AnalysisConfiguration;
+use AiMessDetector\Configuration\ConfigurationHolder;
+use AiMessDetector\Configuration\ConfigurationProviderInterface;
 use AiMessDetector\Core\Profiler\ProfilerHolder;
 use AiMessDetector\Core\Profiler\ProfilerInterface;
 use AiMessDetector\Infrastructure\Console\ResultPresenter;
+use AiMessDetector\Reporting\Formatter\FormatterInterface;
 use AiMessDetector\Reporting\Formatter\FormatterRegistryInterface;
+use AiMessDetector\Reporting\GroupBy;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -29,12 +36,65 @@ final class ResultPresenterTest extends TestCase
             profilerHolder: new ProfilerHolder(),
             baselineGenerator: new BaselineGenerator(new ViolationHasher()),
             baselineWriter: new BaselineWriter(),
+            configurationProvider: $this->createMock(ConfigurationProviderInterface::class),
         );
     }
 
     protected function tearDown(): void
     {
         ProfilerHolder::reset();
+    }
+
+    #[Test]
+    public function presentResultsUsesFormatFromConfigNotCliDirectly(): void
+    {
+        // Set up ConfigurationHolder with format 'json'
+        $configHolder = new ConfigurationHolder();
+        $configHolder->setConfiguration(new AnalysisConfiguration(format: 'json'));
+
+        // Create a mock formatter that records it was called
+        $mockFormatter = $this->createMock(FormatterInterface::class);
+        $mockFormatter->method('format')->willReturn('[]');
+        $mockFormatter->method('getDefaultGroupBy')->willReturn(GroupBy::None);
+
+        // FormatterRegistry should be asked for 'json' (from config), not 'text' (from CLI default)
+        $registry = $this->createMock(FormatterRegistryInterface::class);
+        $registry->expects(self::once())
+            ->method('get')
+            ->with('json')
+            ->willReturn($mockFormatter);
+
+        $presenter = new ResultPresenter(
+            formatterRegistry: $registry,
+            profilerHolder: new ProfilerHolder(),
+            baselineGenerator: new BaselineGenerator(new ViolationHasher()),
+            baselineWriter: new BaselineWriter(),
+            configurationProvider: $configHolder,
+        );
+
+        $input = $this->createStub(InputInterface::class);
+        $input->method('getOption')->willReturnCallback(
+            static fn(string $name): mixed => match ($name) {
+                'format' => null, // CLI did not specify format
+                'group-by' => null,
+                'format-opt' => [],
+                default => null,
+            },
+        );
+
+        $output = $this->createStub(OutputInterface::class);
+        $output->method('isDecorated')->willReturn(false);
+
+        $analysisResult = new AnalysisResult(
+            violations: [],
+            filesAnalyzed: 0,
+            filesSkipped: 0,
+            duration: 0.0,
+            metrics: new InMemoryMetricRepository(),
+            suppressions: [],
+        );
+
+        $presenter->presentResults([], $analysisResult, $input, $output);
     }
 
     #[Test]

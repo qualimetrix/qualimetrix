@@ -13,7 +13,7 @@ Rules that measure how hard code is to understand and test.
 | Cognitive Complexity  | `complexity.cognitive`  | Method      | 15      | 30    | Method           |
 | Cognitive Complexity  | `complexity.cognitive`  | Class (max) | 30      | 50    | Class            |
 | NPath Complexity      | `complexity.npath`      | Method      | 200     | 1000  | Method           |
-| NPath Complexity      | `complexity.npath`      | Class (max) | 200     | 1000  | Class (disabled) |
+| NPath Complexity      | `complexity.npath`      | Class (max) | 500     | 1000  | Class (disabled) |
 | WMC                   | `complexity.wmc`        | -           | 50      | 80    | Class            |
 
 **Cyclomatic Complexity** counts the number of independent paths through a method. A method with CCN of 10 has 10 different paths to test.

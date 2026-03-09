@@ -16,9 +16,9 @@ use AiMessDetector\Rules\AbstractRule;
  * Rule that checks Maintainability Index at method level.
  *
  * MI thresholds (lower is worse):
- * - MI > 85: good
- * - MI 65-85: warning
- * - MI < 65: error
+ * - MI >= 40: good (no violation)
+ * - MI 20-39: warning
+ * - MI < 20: error
  */
 final class MaintainabilityRule extends AbstractRule
 {

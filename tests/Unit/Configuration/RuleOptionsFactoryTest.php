@@ -807,6 +807,55 @@ final class RuleOptionsFactoryTest extends TestCase
     }
 
     #[Test]
+    public function itNormalizesScalarFalseRuleConfig(): void
+    {
+        // YAML: `rules: { test-rule: false }` arrives as scalar false
+        $this->factory->setConfigFileOptions([
+            'test-rule' => false,
+        ]);
+
+        /** @var TestRuleOptions $options */
+        $options = $this->factory->create('test-rule', TestRuleOptions::class);
+
+        self::assertFalse($options->enabled);
+        // Other values should be defaults
+        self::assertSame(10, $options->warningThreshold);
+        self::assertSame(20, $options->errorThreshold);
+    }
+
+    #[Test]
+    public function itNormalizesScalarTrueRuleConfig(): void
+    {
+        // YAML: `rules: { test-rule: true }` arrives as scalar true
+        $this->factory->setConfigFileOptions([
+            'test-rule' => true,
+        ]);
+
+        /** @var TestRuleOptions $options */
+        $options = $this->factory->create('test-rule', TestRuleOptions::class);
+
+        self::assertTrue($options->enabled);
+        self::assertSame(10, $options->warningThreshold);
+    }
+
+    #[Test]
+    public function itNormalizesScalarNullRuleConfig(): void
+    {
+        // YAML: `rules: { test-rule: ~ }` arrives as null
+        $this->factory->setConfigFileOptions([
+            'test-rule' => null,
+        ]);
+
+        /** @var TestRuleOptions $options */
+        $options = $this->factory->create('test-rule', TestRuleOptions::class);
+
+        // Null should use all defaults
+        self::assertTrue($options->enabled);
+        self::assertSame(10, $options->warningThreshold);
+        self::assertSame(20, $options->errorThreshold);
+    }
+
+    #[Test]
     public function itHandlesDeepNestedDotNotationLevels(): void
     {
         // Test very deep nesting: a.b.c.d.e

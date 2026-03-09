@@ -465,6 +465,34 @@ final class SarifFormatterTest extends TestCase
         self::assertArrayNotHasKey('locations', $result);
     }
 
+    public function testUnixPathToFileUriProducesThreeSlashes(): void
+    {
+        $report = ReportBuilder::create()
+            ->addViolation(new Violation(
+                location: new Location('/home/user/project/src/Service/UserService.php', 42),
+                symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
+                ruleName: 'cyclomatic-complexity',
+                violationCode: 'cyclomatic-complexity',
+                message: 'Too complex',
+                severity: Severity::Error,
+            ))
+            ->filesAnalyzed(1)
+            ->filesSkipped(0)
+            ->duration(0.1)
+            ->build();
+
+        $context = new FormatterContext(basePath: '/home/user/project');
+        $output = $this->formatter->format($report, $context);
+        $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
+
+        $run = $data['runs'][0];
+        $uri = $run['originalUriBaseIds']['%SRCROOT%']['uri'];
+
+        // Must be file:///home/user/project/ (3 slashes), NOT file:////home/user/project/ (4 slashes)
+        self::assertSame('file:///home/user/project/', $uri);
+        self::assertStringNotContainsString('file:////', $uri);
+    }
+
     public function testDefaultConfigurationLevelUsesMaxSeverity(): void
     {
         $report = ReportBuilder::create()

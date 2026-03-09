@@ -50,6 +50,16 @@ final readonly class RuleOptionsParser
     }
 
     /**
+     * Returns list of all registered short alias names.
+     *
+     * @return list<string>
+     */
+    public function getAliasNames(): array
+    {
+        return array_keys($this->shortAliases);
+    }
+
+    /**
      * Parses a short alias option.
      *
      * @return array{rule: string, option: string, value: mixed}|null

@@ -24,6 +24,25 @@ final class SqliteStorageTest extends TestCase
         $this->storage = new SqliteStorage(':memory:');
     }
 
+    public function testGetFileIdReturnsIdForExistingFile(): void
+    {
+        $record = new FileRecord(
+            path: '/src/Foo.php',
+            contentHash: 'abc123',
+            mtime: 1234567890,
+            size: 1000,
+        );
+
+        $storedId = $this->storage->storeFile($record);
+
+        $this->assertSame($storedId, $this->storage->getFileId('/src/Foo.php'));
+    }
+
+    public function testGetFileIdReturnsNullForNonExistentFile(): void
+    {
+        $this->assertNull($this->storage->getFileId('/src/NonExistent.php'));
+    }
+
     public function testStoreAndRetrieveFile(): void
     {
         $record = new FileRecord(

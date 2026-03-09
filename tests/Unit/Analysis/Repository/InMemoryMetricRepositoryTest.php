@@ -287,4 +287,62 @@ final class InMemoryMetricRepositoryTest extends TestCase
         self::assertTrue($merged->has(SymbolPath::forMethod('App', 'Service', 'method')));
         self::assertSame(5, $merged->get(SymbolPath::forMethod('App', 'Service', 'method'))->get('ccn'));
     }
+
+    #[Test]
+    public function itUpdatesLineFromZeroToPositiveOnSubsequentAdd(): void
+    {
+        $repository = new InMemoryMetricRepository();
+        $symbol = SymbolPath::forClass('App\\Service', 'UserService');
+
+        // First add with line=0 (e.g., from aggregator)
+        $repository->add($symbol, (new MetricBag())->with('wmc', 10), 'src/Service/UserService.php', 0);
+
+        // Second add with real line number
+        $repository->add($symbol, (new MetricBag())->with('loc', 100), 'src/Service/UserService.php', 42);
+
+        $infos = iterator_to_array($repository->all(SymbolType::Class_), false);
+        $info = $infos[0];
+
+        self::assertSame(42, $info->line);
+    }
+
+    #[Test]
+    public function itKeepsPositiveLineWhenSubsequentAddHasZero(): void
+    {
+        $repository = new InMemoryMetricRepository();
+        $symbol = SymbolPath::forClass('App\\Service', 'UserService');
+
+        // First add with real line number
+        $repository->add($symbol, (new MetricBag())->with('loc', 100), 'src/Service/UserService.php', 42);
+
+        // Second add with line=0 should NOT overwrite
+        $repository->add($symbol, (new MetricBag())->with('wmc', 10), 'src/Service/UserService.php', 0);
+
+        $infos = iterator_to_array($repository->all(SymbolType::Class_), false);
+        $info = $infos[0];
+
+        self::assertSame(42, $info->line);
+    }
+
+    #[Test]
+    public function mergeWithUpdatesLineFromZeroToPositive(): void
+    {
+        $repo1 = new InMemoryMetricRepository();
+        $repo2 = new InMemoryMetricRepository();
+
+        $symbol = SymbolPath::forClass('App', 'Service');
+
+        // repo1 has line=0
+        $repo1->add($symbol, (new MetricBag())->with('wmc', 10), 'Service.php', 0);
+
+        // repo2 has line=42
+        $repo2->add($symbol, (new MetricBag())->with('loc', 100), 'Service.php', 42);
+
+        $merged = $repo1->mergeWith($repo2);
+
+        $infos = iterator_to_array($merged->all(SymbolType::Class_), false);
+        $info = $infos[0];
+
+        self::assertSame(42, $info->line);
+    }
 }

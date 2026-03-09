@@ -28,13 +28,11 @@ use PhpParser\Node\Stmt\Continue_;
 use PhpParser\Node\Stmt\Do_;
 use PhpParser\Node\Stmt\Else_;
 use PhpParser\Node\Stmt\ElseIf_;
-use PhpParser\Node\Stmt\Expression;
 use PhpParser\Node\Stmt\For_;
 use PhpParser\Node\Stmt\Foreach_;
 use PhpParser\Node\Stmt\Function_;
 use PhpParser\Node\Stmt\Goto_;
 use PhpParser\Node\Stmt\If_;
-use PhpParser\Node\Stmt\Return_;
 use PhpParser\Node\Stmt\Switch_;
 use PhpParser\Node\Stmt\While_;
 use PhpParser\NodeVisitorAbstract;
@@ -84,8 +82,8 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
     /** @var int Depth of anonymous class nesting (methods inside anonymous classes are skipped) */
     private int $anonymousClassDepth = 0;
 
-    /** @var array<string, string> Track last logical operator per context for sequence detection */
-    private array $lastLogicalOp = [];
+    /** @var list<Node> Stack of ancestor nodes for tree-aware logical operator detection */
+    private array $nodeStack = [];
 
     public function reset(): void
     {
@@ -97,7 +95,7 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
         $this->currentClass = null;
         $this->closureCounter = 0;
         $this->anonymousClassDepth = 0;
-        $this->lastLogicalOp = [];
+        $this->nodeStack = [];
     }
 
     /**
@@ -186,18 +184,13 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
             return null;
         }
 
-        // Reset logical operator tracking at statement boundaries.
-        // This ensures that two consecutive "if ($a && $b)" statements
-        // each get their own +1 for the && operator, rather than the second
-        // one being treated as a continuation of the first's operator sequence.
-        if ($this->isStatementBoundary($node) && $this->methodStack !== []) {
-            $currentMethod = $this->methodStack[array_key_last($this->methodStack)];
-            unset($this->lastLogicalOp[$currentMethod['fqn']]);
-        }
-
         // Count complexity BEFORE incrementing nesting
         // This ensures we count the structure at its current nesting level
         $this->countComplexity($node);
+
+        // Track node stack for tree-aware logical operator detection.
+        // Push AFTER counting complexity so the current node is not in its own ancestor stack.
+        $this->nodeStack[] = $node;
 
         // Increment nesting for nesting structures AFTER counting
         if ($this->isNestingStructure($node)) {
@@ -209,13 +202,32 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
 
     public function leaveNode(Node $node): ?int
     {
+        // Pop node stack only for nodes that were pushed (methods/functions/closures return
+        // early in enterNode before the push, so they must not be popped here)
+        if (!($node instanceof ClassMethod)
+            && !($node instanceof Function_)
+            && !($node instanceof Closure)
+            && !($node instanceof ArrowFunction)
+        ) {
+            array_pop($this->nodeStack);
+        }
+
         // Decrement nesting for nesting structures
         if ($this->isNestingStructure($node)) {
             --$this->nestingLevel;
         }
 
         // End of method/function
-        if ($node instanceof ClassMethod || $node instanceof Function_) {
+        if ($node instanceof ClassMethod) {
+            // Only end method if we started it (skip if inside anonymous class)
+            if ($this->anonymousClassDepth === 0) {
+                $this->endMethod();
+            }
+
+            return null;
+        }
+
+        if ($node instanceof Function_) {
             $this->endMethod();
 
             return null;
@@ -269,8 +281,6 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
         ];
         // Reset nesting level for new method
         $this->nestingLevel = 0;
-        // Reset logical operator tracking for new method
-        unset($this->lastLogicalOp[$fqn]);
     }
 
     private function endMethod(): void
@@ -299,28 +309,6 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
             || $node instanceof Catch_
             || $node instanceof Switch_
             || $node instanceof Match_;
-    }
-
-    /**
-     * Checks if node is a statement boundary that resets logical operator tracking.
-     *
-     * Each statement starts a fresh boolean expression context. Without this reset,
-     * consecutive statements like "if ($a && $b) {} if ($c && $d) {}" would treat
-     * the && in the second if as a continuation of the first's operator sequence.
-     */
-    private function isStatementBoundary(Node $node): bool
-    {
-        return $node instanceof If_
-            || $node instanceof While_
-            || $node instanceof For_
-            || $node instanceof Foreach_
-            || $node instanceof Switch_
-            || $node instanceof Match_
-            || $node instanceof Do_
-            || $node instanceof Expression
-            || $node instanceof Return_
-            || $node instanceof ElseIf_
-            || $node instanceof Else_;
     }
 
     private function countComplexity(Node $node): void
@@ -391,7 +379,7 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
             return 1 + $this->nestingLevel;
         }
 
-        // Logical operators: count sequences
+        // Logical operators: count sequences using tree-aware parent detection
         if ($this->isLogicalOperator($node)) {
             return $this->getLogicalOperatorIncrement($node);
         }
@@ -413,38 +401,48 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
     }
 
     /**
-     * Calculates increment for logical operators.
+     * Calculates increment for logical operators using tree-aware parent detection.
      *
-     * Sequences of same operator count as 1, changing operator adds 1.
-     * Example: "a && b && c" = +1, "a && b || c" = +2
+     * A boolean operator gets +1 if its nearest boolean ancestor in the AST is NOT
+     * the same operator type (i.e., it starts a new sequence). If the nearest boolean
+     * ancestor IS the same type, it's a continuation of a chain and gets +0.
+     *
+     * This correctly handles expressions like `$a && $b || $c && $d` where the AST is:
+     *   BooleanOr(BooleanAnd($a, $b), BooleanAnd($c, $d))
+     * Each BooleanAnd has a BooleanOr parent (different type) -> +1 each.
+     * Total logical: +1 (Or) + 1 (left And) + 1 (right And) = +3.
+     *
+     * For `$a && $b && $c`, the AST is:
+     *   BooleanAnd(BooleanAnd($a, $b), $c)
+     * Inner BooleanAnd has no boolean ancestor yet -> +1.
+     * Outer BooleanAnd has BooleanAnd ancestor (same type) -> +0.
+     * Total logical: +1.
      */
     private function getLogicalOperatorIncrement(Node $node): int
     {
-        if ($this->methodStack === []) {
-            return 0;
+        // Walk up the node stack to find the nearest boolean operator ancestor
+        for ($i = \count($this->nodeStack) - 1; $i >= 0; $i--) {
+            $ancestor = $this->nodeStack[$i];
+            if ($this->isLogicalOperator($ancestor)) {
+                // Parent is a logical operator - same type means continuation (+0),
+                // different type means new sequence (+1)
+                return $this->isSameLogicalOperatorType($node, $ancestor) ? 0 : 1;
+            }
         }
 
-        $currentMethod = $this->methodStack[array_key_last($this->methodStack)];
-        $contextKey = $currentMethod['fqn'] . ':' . spl_object_id($node);
+        // No logical operator ancestor - this is the root of a new boolean expression
+        return 1;
+    }
 
-        $opType = match (true) {
-            $node instanceof BooleanAnd, $node instanceof LogicalAnd => 'and',
-            $node instanceof BooleanOr, $node instanceof LogicalOr => 'or',
-            default => 'unknown',
-        };
+    /**
+     * Checks if two nodes represent the same logical operator category (and/or).
+     */
+    private function isSameLogicalOperatorType(Node $a, Node $b): bool
+    {
+        $isAndA = $a instanceof BooleanAnd || $a instanceof LogicalAnd;
+        $isAndB = $b instanceof BooleanAnd || $b instanceof LogicalAnd;
 
-        // Check if we're in a sequence of same operator
-        $lastOp = $this->lastLogicalOp[$currentMethod['fqn']] ?? null;
-
-        $this->lastLogicalOp[$currentMethod['fqn']] = $opType;
-
-        // First logical operator in sequence: +1
-        if ($lastOp === null || $lastOp !== $opType) {
-            return 1;
-        }
-
-        // Same operator in sequence: +0 (already counted)
-        return 0;
+        return $isAndA === $isAndB;
     }
 
     /**
@@ -497,8 +495,15 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
             return $calledMethod === $methodName;
         }
 
-        // Check for function call recursion
+        // Check for function call recursion (only inside standalone functions, not class methods).
+        // A FuncCall inside a ClassMethod is a call to a global/imported function, NOT recursion.
+        // For example, a method named count() calling \count($arr) is not recursive.
         if ($node instanceof FuncCall && $node->name instanceof Node\Name) {
+            // Only consider it recursion if we're inside a standalone function (no class context)
+            if ($info['class'] !== null) {
+                return false;
+            }
+
             $calledFunction = $node->name->toString();
 
             // For namespaced functions, compare short name
@@ -511,5 +516,4 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
 
         return false;
     }
-
 }

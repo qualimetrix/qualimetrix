@@ -390,7 +390,46 @@ final class CouplingCollectorTest extends TestCase
 
         self::assertSame(0, $appNsMetrics->get('ca'));
         self::assertSame(2, $appNsMetrics->get('ce'));
-        self::assertSame(2, $appNsMetrics->get('cbo'));
+        // CBO counts uniquely coupled namespaces (not classes): only Vendor
+        self::assertSame(1, $appNsMetrics->get('cbo'));
+    }
+
+    #[Test]
+    public function calculate_namespaceCboBidirectional_countsUnion(): void
+    {
+        // Namespace A depends on Namespace B (A\Foo -> B\Bar)
+        // Namespace B depends on Namespace A (B\Baz -> A\Qux)
+        // CBO(A) should be 1 (only namespace B), not 2 (ca + ce)
+        $deps = [
+            $this->dep('A\\Foo', 'B\\Bar'),
+            $this->dep('B\\Baz', 'A\\Qux'),
+        ];
+
+        $graph = $this->graphBuilder->build($deps);
+        $repository = new InMemoryMetricRepository();
+        $this->registerClass($repository, 'A\\Foo');
+        $this->registerClass($repository, 'A\\Qux');
+        $this->registerClass($repository, 'B\\Bar');
+        $this->registerClass($repository, 'B\\Baz');
+        $this->registerNamespace($repository, 'A');
+        $this->registerNamespace($repository, 'B');
+
+        $this->collector->calculate($graph, $repository);
+
+        $aNsPath = SymbolPath::forNamespace('A');
+        $aNsMetrics = $repository->get($aNsPath);
+
+        self::assertSame(1, $aNsMetrics->get('ca'));
+        self::assertSame(1, $aNsMetrics->get('ce'));
+        // CBO should be 1 (union of {B} and {B}), not 2 (ca + ce)
+        self::assertSame(1, $aNsMetrics->get('cbo'));
+
+        $bNsPath = SymbolPath::forNamespace('B');
+        $bNsMetrics = $repository->get($bNsPath);
+
+        self::assertSame(1, $bNsMetrics->get('ca'));
+        self::assertSame(1, $bNsMetrics->get('ce'));
+        self::assertSame(1, $bNsMetrics->get('cbo'));
     }
 
     #[Test]

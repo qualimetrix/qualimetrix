@@ -87,6 +87,14 @@ final class ClassToNamespaceAggregator implements AggregationPhaseInterface
             }
         }
 
+        foreach ($repository->all(SymbolType::Function_) as $funcInfo) {
+            $namespace = $funcInfo->symbolPath->namespace;
+
+            if ($namespace !== null && !isset($map[$funcInfo->file])) {
+                $map[$funcInfo->file] = $namespace;
+            }
+        }
+
         return $map;
     }
 

@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Infrastructure\DependencyInjection\Configurator;
 
-use AiMessDetector\Analysis\Namespace_\ChainNamespaceDetector;
-use AiMessDetector\Analysis\Namespace_\Psr4NamespaceDetector;
-use AiMessDetector\Analysis\Namespace_\TokenizerNamespaceDetector;
+use AiMessDetector\Analysis\Namespace_\NamespaceDetectorFactory;
 use AiMessDetector\Configuration\ConfigurationProviderInterface;
 use AiMessDetector\Core\Ast\FileParserInterface;
 use AiMessDetector\Core\Namespace_\NamespaceDetectorInterface;
@@ -78,19 +76,13 @@ final class ParserConfigurator implements ContainerConfiguratorInterface
 
     private function registerNamespaceDetection(ContainerBuilder $container): void
     {
-        $container->register(TokenizerNamespaceDetector::class);
+        // Factory reads namespace.composer_json from runtime config
+        // Note: namespace.strategy config is accepted but only 'chain' is implemented.
+        // To support strategy selection, extend NamespaceDetectorFactory.
+        $container->register(NamespaceDetectorFactory::class)
+            ->setArguments([new Reference(ConfigurationProviderInterface::class)]);
 
-        // Use default composer.json path; runtime config can override PSR-4 mappings
-        $container->register(Psr4NamespaceDetector::class)
-            ->setArguments(['composer.json']);
-
-        // Chain detector with PSR-4 first, then tokenizer as fallback
-        $container->register(ChainNamespaceDetector::class)
-            ->setArguments([[
-                new Reference(Psr4NamespaceDetector::class),
-                new Reference(TokenizerNamespaceDetector::class),
-            ]]);
-
-        $container->setAlias(NamespaceDetectorInterface::class, ChainNamespaceDetector::class);
+        $container->register(NamespaceDetectorInterface::class)
+            ->setFactory([new Reference(NamespaceDetectorFactory::class), 'create']);
     }
 }

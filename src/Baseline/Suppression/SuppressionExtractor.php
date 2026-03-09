@@ -50,12 +50,14 @@ final readonly class SuppressionExtractor
         }
 
         // Extract next-line suppressions (must be checked before symbol pattern)
+        // Use endLine so that multi-line docblocks target the line after the closing */
         if (preg_match_all(self::PATTERN_NEXT_LINE, $text, $matches, \PREG_SET_ORDER)) {
+            $endLine = $docComment->getEndLine();
             foreach ($matches as $match) {
                 $suppressions[] = new Suppression(
                     rule: $match[1],
                     reason: self::extractReason($match[2] ?? null),
-                    line: $line,
+                    line: $endLine,
                     type: SuppressionType::NextLine,
                 );
             }
@@ -69,6 +71,7 @@ final readonly class SuppressionExtractor
                     reason: self::extractReason($match[2] ?? null),
                     line: $line,
                     type: SuppressionType::Symbol,
+                    endLine: $node->getEndLine() > 0 ? $node->getEndLine() : null,
                 );
             }
         }

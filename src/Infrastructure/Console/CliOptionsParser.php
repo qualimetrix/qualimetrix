@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Infrastructure\Console;
 
-use AiMessDetector\Configuration\AnalysisConfiguration;
 use AiMessDetector\Configuration\RuleOptionsParser;
 use Symfony\Component\Console\Input\InputInterface;
 
@@ -16,45 +15,6 @@ final readonly class CliOptionsParser
     public function __construct(
         private RuleOptionsParser $ruleOptionsParser,
     ) {}
-
-    /**
-     * Parse CLI input into AnalysisConfiguration overrides.
-     *
-     * @return array<string, mixed>
-     */
-    public function parseConfigOverrides(InputInterface $input): array
-    {
-        $overrides = [];
-
-        // Cache options
-        if ($input->getOption('no-cache')) {
-            $overrides['cache']['enabled'] = false;
-        }
-
-        $cacheDir = $input->getOption('cache-dir');
-        if ($cacheDir !== null && $cacheDir !== AnalysisConfiguration::DEFAULT_CACHE_DIR) {
-            $overrides['cache']['dir'] = $cacheDir;
-        }
-
-        // Format option
-        $format = $input->getOption('format');
-        if ($format !== null && $format !== AnalysisConfiguration::DEFAULT_FORMAT) {
-            $overrides['format'] = $format;
-        }
-
-        // Rule filtering
-        $disableRule = $input->getOption('disable-rule');
-        if ($disableRule !== null && $disableRule !== []) {
-            $overrides['disabled_rules'] = $disableRule;
-        }
-
-        $onlyRule = $input->getOption('only-rule');
-        if ($onlyRule !== null && $onlyRule !== []) {
-            $overrides['only_rules'] = $onlyRule;
-        }
-
-        return $overrides;
-    }
 
     /**
      * Parse CLI input into rule options.
@@ -72,15 +32,14 @@ final readonly class CliOptionsParser
             $ruleOptions = $this->ruleOptionsParser->parseRuleOptions($genericOptions);
         }
 
-        // Parse short aliases
-        $shortAliases = ['cyclomatic-warning', 'cyclomatic-error', 'class-count-warning', 'class-count-error'];
-        foreach ($shortAliases as $alias) {
+        // Parse all registered short aliases (from rule definitions)
+        foreach ($this->ruleOptionsParser->getAliasNames() as $alias) {
             $value = $input->getOption($alias);
             if ($value === null) {
                 continue;
             }
 
-            $parsed = $this->ruleOptionsParser->parseShortAlias($alias, (int) $value);
+            $parsed = $this->ruleOptionsParser->parseShortAlias($alias, $this->normalizeValue($value));
             if ($parsed === null) {
                 continue;
             }
@@ -99,5 +58,32 @@ final readonly class CliOptionsParser
         }
 
         return $ruleOptions;
+    }
+
+    /**
+     * Normalizes a CLI option value to the appropriate PHP type.
+     *
+     * Handles boolean strings ('true'/'false'), floats, and integers.
+     */
+    private function normalizeValue(mixed $value): mixed
+    {
+        if (!\is_string($value)) {
+            return $value;
+        }
+
+        // Boolean strings
+        if ($value === 'true') {
+            return true;
+        }
+        if ($value === 'false') {
+            return false;
+        }
+
+        // Numeric: float (contains dot) vs int
+        if (is_numeric($value)) {
+            return str_contains($value, '.') ? (float) $value : (int) $value;
+        }
+
+        return $value;
     }
 }

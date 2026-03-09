@@ -21,6 +21,11 @@ interface StorageInterface
     public function getFile(string $path): ?FileRecord;
 
     /**
+     * Returns file ID by path, or null if not found.
+     */
+    public function getFileId(string $path): ?int;
+
+    /**
      * Stores file record and returns the file ID.
      */
     public function storeFile(FileRecord $record): int;

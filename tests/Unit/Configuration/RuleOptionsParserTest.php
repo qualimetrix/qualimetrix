@@ -177,6 +177,25 @@ final class RuleOptionsParserTest extends TestCase
         self::assertNull($result);
     }
 
+    public function testGetAliasNamesReturnsAllRegisteredAliases(): void
+    {
+        $aliases = $this->parser->getAliasNames();
+
+        self::assertSame([
+            'cyclomatic-warning',
+            'cyclomatic-error',
+            'class-count-warning',
+            'class-count-error',
+        ], $aliases);
+    }
+
+    public function testGetAliasNamesReturnsEmptyForParserWithoutAliases(): void
+    {
+        $parser = new RuleOptionsParser();
+
+        self::assertSame([], $parser->getAliasNames());
+    }
+
     public function testParseDisabledRulesWithDotNotation(): void
     {
         $result = $this->parser->parseDisabledRules([

@@ -10,6 +10,7 @@ use AiMessDetector\Configuration\AnalysisConfiguration;
 use AiMessDetector\Configuration\ConfigurationHolder;
 use AiMessDetector\Configuration\ConfigurationProviderInterface;
 use AiMessDetector\Configuration\RuleOptionsFactory;
+use AiMessDetector\Core\Namespace_\ProjectNamespaceResolverInterface;
 use AiMessDetector\Infrastructure\Cache\CacheInterface;
 use AiMessDetector\Infrastructure\Console\Command\CheckCommand;
 use AiMessDetector\Infrastructure\DependencyInjection\ContainerFactory;
@@ -379,6 +380,18 @@ final class ContainerFactoryTest extends TestCase
             \count($expectedRuleClasses),
             $registeredClasses,
             'RuleRegistry should contain exactly ' . \count($expectedRuleClasses) . ' rules',
+        );
+    }
+
+    public function testDistanceRuleHasProjectNamespaceResolverInjected(): void
+    {
+        $container = $this->factory->create();
+
+        // Verify ProjectNamespaceResolverInterface is registered
+        self::assertTrue($container->has(ProjectNamespaceResolverInterface::class));
+        self::assertInstanceOf(
+            ProjectNamespaceResolverInterface::class,
+            $container->get(ProjectNamespaceResolverInterface::class),
         );
     }
 

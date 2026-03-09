@@ -304,6 +304,32 @@ final class GitLabCodeQualityFormatterTest extends TestCase
         self::assertSame('complexity.method', $issue['check_name']);
     }
 
+    public function testProjectLevelViolationUsesDotAsPath(): void
+    {
+        $report = ReportBuilder::create()
+            ->addViolation(new Violation(
+                location: Location::none(),
+                symbolPath: SymbolPath::forNamespace('App'),
+                ruleName: 'architecture',
+                violationCode: 'architecture.circular',
+                message: 'Circular dependency detected',
+                severity: Severity::Error,
+            ))
+            ->filesAnalyzed(10)
+            ->filesSkipped(0)
+            ->duration(0.1)
+            ->build();
+
+        $output = $this->formatter->format($report, new FormatterContext());
+        $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
+
+        $issue = $data[0];
+        // Project-level violations must use '.' as path, not empty string
+        // (empty path violates GitLab Code Quality spec)
+        self::assertSame('.', $issue['location']['path']);
+        self::assertNotSame('', $issue['location']['path']);
+    }
+
     public function testGetDefaultGroupBy(): void
     {
         self::assertSame(GroupBy::None, $this->formatter->getDefaultGroupBy());

@@ -33,11 +33,9 @@ final readonly class ViolationHasher
         ]);
 
         // Use xxh3 if available (faster), otherwise sha256
-        if (\function_exists('hash')) {
-            $algorithms = hash_algos();
-            if (\in_array('xxh3', $algorithms, true)) {
-                return substr(hash('xxh3', $data), 0, 16);
-            }
+        $algorithms = hash_algos();
+        if (\in_array('xxh3', $algorithms, true)) {
+            return substr(hash('xxh3', $data), 0, 16);
         }
 
         return substr(hash('sha256', $data), 0, 16);

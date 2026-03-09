@@ -6,7 +6,6 @@ namespace AiMessDetector\Rules\Security;
 
 use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\RuleCategory;
-use AiMessDetector\Core\Rule\RuleInterface;
 use AiMessDetector\Core\Symbol\SymbolType;
 use AiMessDetector\Core\Violation\Location;
 use AiMessDetector\Core\Violation\Violation;
@@ -18,7 +17,7 @@ use AiMessDetector\Rules\AbstractRule;
  * Checks for string literal values assigned to variables, properties, constants,
  * array keys, and parameters with credential-related names.
  */
-final class HardcodedCredentialsRule extends AbstractRule implements RuleInterface
+final class HardcodedCredentialsRule extends AbstractRule
 {
     public const string NAME = 'security.hardcoded-credentials';
 
@@ -98,7 +97,7 @@ final class HardcodedCredentialsRule extends AbstractRule implements RuleInterfa
                     violationCode: self::NAME,
                     message: $message,
                     severity: $severity,
-                    metricValue: $count,
+                    metricValue: 1.0,
                 );
             }
         }

@@ -15,6 +15,7 @@ use AiMessDetector\Analysis\Collection\Metric\DerivedMetricExtractor;
 use AiMessDetector\Analysis\Collection\Strategy\StrategySelectorInterface;
 use AiMessDetector\Analysis\Discovery\FileDiscoveryInterface;
 use AiMessDetector\Analysis\Discovery\FinderFileDiscovery;
+use AiMessDetector\Analysis\Namespace_\ProjectNamespaceResolver;
 use AiMessDetector\Analysis\Pipeline\AnalysisPipeline;
 use AiMessDetector\Analysis\Pipeline\AnalysisPipelineInterface;
 use AiMessDetector\Analysis\Repository\DefaultMetricRepositoryFactory;
@@ -25,6 +26,7 @@ use AiMessDetector\Analysis\RuleExecution\RuleExecutorInterface;
 use AiMessDetector\Configuration\ConfigurationProviderInterface;
 use AiMessDetector\Core\Ast\FileParserInterface;
 use AiMessDetector\Core\Metric\MetricRepositoryInterface;
+use AiMessDetector\Core\Namespace_\ProjectNamespaceResolverInterface;
 use AiMessDetector\Core\Profiler\ProfilerHolder;
 use AiMessDetector\Infrastructure\Console\Progress\DelegatingProgressReporter;
 use AiMessDetector\Infrastructure\Logging\DelegatingLogger;
@@ -41,6 +43,12 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
     {
         $container->register(FinderFileDiscovery::class);
         $container->setAlias(FileDiscoveryInterface::class, FinderFileDiscovery::class);
+
+        // ProjectNamespaceResolver — used by DistanceRule for namespace filtering
+        $container->register(ProjectNamespaceResolver::class)
+            ->setPublic(true);
+        $container->setAlias(ProjectNamespaceResolverInterface::class, ProjectNamespaceResolver::class)
+            ->setPublic(true);
 
         $container->register(InMemoryMetricRepository::class);
         $container->setAlias(MetricRepositoryInterface::class, InMemoryMetricRepository::class);

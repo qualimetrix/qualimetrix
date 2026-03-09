@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AiMessDetector\Baseline;
 
 use DateTimeImmutable;
+use Exception;
 use JsonException;
 use RuntimeException;
 
@@ -74,9 +75,19 @@ final readonly class BaselineLoader
             }
         }
 
+        try {
+            $generated = new DateTimeImmutable($data['generated']);
+        } catch (Exception $e) {
+            throw new RuntimeException(
+                "Invalid date in baseline \"generated\" field: {$data['generated']}",
+                0,
+                $e,
+            );
+        }
+
         return new Baseline(
             version: $data['version'],
-            generated: new DateTimeImmutable($data['generated']),
+            generated: $generated,
             entries: $entries,
         );
     }

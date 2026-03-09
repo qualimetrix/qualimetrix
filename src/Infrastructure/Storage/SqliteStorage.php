@@ -156,6 +156,19 @@ final class SqliteStorage implements StorageInterface
 
     // === File operations ===
 
+    public function getFileId(string $path): ?int
+    {
+        $stmt = $this->pdo->prepare('SELECT id FROM files WHERE path = :path');
+        $stmt->execute(['path' => $path]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($row === false) {
+            return null;
+        }
+
+        return (int) $row['id'];
+    }
+
     public function getFile(string $path): ?FileRecord
     {
         $stmt = $this->pdo->prepare(

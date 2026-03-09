@@ -8,6 +8,7 @@ use AiMessDetector\Analysis\Pipeline\AnalysisResult;
 use AiMessDetector\Baseline\BaselineGenerator;
 use AiMessDetector\Baseline\BaselineWriter;
 use AiMessDetector\Configuration\AnalysisConfiguration;
+use AiMessDetector\Configuration\ConfigurationProviderInterface;
 use AiMessDetector\Core\Profiler\ProfilerHolder;
 use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
@@ -31,6 +32,7 @@ final class ResultPresenter
         private readonly ProfilerHolder $profilerHolder,
         private readonly BaselineGenerator $baselineGenerator,
         private readonly BaselineWriter $baselineWriter,
+        private readonly ConfigurationProviderInterface $configurationProvider,
     ) {}
 
     /**
@@ -44,8 +46,12 @@ final class ResultPresenter
         InputInterface $input,
         OutputInterface $output,
     ): int {
+        // Use resolved config format (already merged: defaults → config file → CLI)
+        // Fall back to CLI option only if config is not yet available
+        $format = $this->configurationProvider->hasConfiguration()
+            ? $this->configurationProvider->getConfiguration()->format
+            : ($input->getOption('format') ?? AnalysisConfiguration::DEFAULT_FORMAT);
         /** @var string $format */
-        $format = $input->getOption('format') ?? AnalysisConfiguration::DEFAULT_FORMAT;
         $formatter = $this->formatterRegistry->get($format);
         $context = $this->buildFormatterContext($input, $output, $formatter);
 

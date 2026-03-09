@@ -621,6 +621,42 @@ PHP;
         self::assertSame(1.0, $class->metrics->get('lcc'));
     }
 
+    public function testAnonymousClassDoesNotCorruptMethodTracking(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class OuterClass
+{
+    private $sharedProp;
+
+    public function methodA(): object
+    {
+        $obj = new class {
+            private $innerProp;
+            public function innerMethod() { return $this->innerProp; }
+        };
+
+        // This access must be tracked for methodA, not lost
+        return $this->sharedProp;
+    }
+
+    public function methodB()
+    {
+        return $this->sharedProp;
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // Both methodA and methodB access $sharedProp => connected => TCC/LCC = 1.0
+        self::assertSame(1.0, $metrics->get('tcc:App\OuterClass'));
+        self::assertSame(1.0, $metrics->get('lcc:App\OuterClass'));
+    }
+
     private function collectMetrics(string $code): MetricBag
     {
         $parser = (new ParserFactory())->createForHostVersion();

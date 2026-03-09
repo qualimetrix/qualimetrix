@@ -13,6 +13,7 @@ use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 use SplFileInfo;
 
 #[CoversClass(InheritanceDepthCollector::class)]
@@ -387,6 +388,41 @@ PHP;
         self::assertSame(1, $metrics->get('dit:App\MyIterator'));
     }
 
+    public function testReflectionDitCountsStandardPhpClassInChain(): void
+    {
+        // DitTestCustomException is defined at the bottom of this file.
+        // It extends \RuntimeException (a standard PHP class).
+        // When a class in the analyzed code extends DitTestCustomException,
+        // the collector resolves it via reflection and should count:
+        //   DitTestCustomException -> RuntimeException (standard, +1) -> Exception (standard, +1) = depth 2
+        //   Plus 1 for the analyzed class itself extending DitTestCustomException = DIT 3
+        //
+        // Before the fix, calculateReflectionDit would break BEFORE incrementing depth
+        // when hitting a standard class, producing DIT 1 instead of the correct value.
+        $fqn = '\\' . DitTestCustomException::class;
+        $code = <<<PHP
+<?php
+
+namespace App;
+
+class MyException extends {$fqn}
+{
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        $dit = $metrics->get('dit:App\MyException');
+        self::assertIsInt($dit);
+        // DitTestCustomException extends RuntimeException extends Exception
+        // So: 1 (for extending DitTestCustomException) + reflectionDit(DitTestCustomException)
+        // reflectionDit: RuntimeException(+1, standard->break) = 1
+        // Total: 1 + 1 = 2
+        // Note: Exception is parent of RuntimeException but RuntimeException is already standard,
+        // so we stop there.
+        self::assertSame(2, $dit, 'DIT should count standard PHP class in external chain');
+    }
+
     private function collectMetrics(string $code): MetricBag
     {
         $parser = (new ParserFactory())->createForHostVersion();
@@ -399,3 +435,11 @@ PHP;
         return $this->collector->collect(new SplFileInfo(__FILE__), $ast);
     }
 }
+
+/**
+ * Test fixture: a non-standard class extending a standard PHP class.
+ * Used by testReflectionDitCountsStandardPhpClassInChain to verify
+ * that calculateReflectionDit correctly increments depth before breaking
+ * on standard classes.
+ */
+class DitTestCustomException extends RuntimeException {}

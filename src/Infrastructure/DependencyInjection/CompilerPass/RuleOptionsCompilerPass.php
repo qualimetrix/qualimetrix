@@ -6,6 +6,9 @@ namespace AiMessDetector\Infrastructure\DependencyInjection\CompilerPass;
 
 use AiMessDetector\Configuration\RuleOptionsFactory;
 use AiMessDetector\Core\Rule\RuleInterface;
+use AiMessDetector\Core\Rule\RuleOptionsInterface;
+use ReflectionClass;
+use ReflectionNamedType;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
@@ -62,6 +65,64 @@ final class RuleOptionsCompilerPass implements CompilerPassInterface
 
             // Bind Options to Rule
             $ruleDefinition->setArgument('$options', new Reference($optionsClass));
+
+            // Resolve additional constructor dependencies (rules have autowiring disabled,
+            // so we must manually bind typed parameters beyond $options)
+            $this->resolveExtraDependencies($container, $ruleDefinition, $ruleClass);
+        }
+    }
+
+    /**
+     * Resolves additional typed constructor parameters for rules.
+     *
+     * Since rules have autowiring disabled (due to RuleOptionsInterface injection),
+     * any extra constructor dependencies must be explicitly bound.
+     *
+     * @param class-string<RuleInterface> $ruleClass
+     */
+    private function resolveExtraDependencies(
+        ContainerBuilder $container,
+        \Symfony\Component\DependencyInjection\Definition $ruleDefinition,
+        string $ruleClass,
+    ): void {
+        $reflection = new ReflectionClass($ruleClass);
+        $constructor = $reflection->getConstructor();
+
+        if ($constructor === null) {
+            return;
+        }
+
+        foreach ($constructor->getParameters() as $param) {
+            $paramName = '$' . $param->getName();
+
+            // Skip $options — already bound above
+            if ($paramName === '$options') {
+                continue;
+            }
+
+            // Skip parameters already explicitly set
+            if (\array_key_exists($paramName, $ruleDefinition->getArguments())) {
+                continue;
+            }
+
+            $type = $param->getType();
+            if (!$type instanceof ReflectionNamedType || $type->isBuiltin()) {
+                continue;
+            }
+
+            $typeClass = $type->getName();
+
+            // Skip RuleOptionsInterface — handled above
+            if (is_a($typeClass, RuleOptionsInterface::class, true)) {
+                continue;
+            }
+
+            // If the container has this service, bind it
+            if ($container->has($typeClass)) {
+                $ruleDefinition->setArgument($paramName, new Reference($typeClass));
+            } elseif ($type->allowsNull() || $param->isDefaultValueAvailable()) {
+                // Nullable or has default — skip (will use null/default)
+            }
         }
     }
 }

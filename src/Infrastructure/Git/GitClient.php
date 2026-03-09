@@ -131,11 +131,17 @@ final class GitClient
         $lines = array_filter(explode("\n", trim($output)));
 
         foreach ($lines as $line) {
-            // Standard: A/M/D/C\tpath
-            if (preg_match('/^([AMDC])\t(.+)$/', $line, $matches)) {
+            // Standard: single-letter status\tpath (A/M/D/C and others like T/U/X)
+            if (preg_match('/^([A-Z])\t(.+)$/', $line, $matches)) {
+                $status = ChangeStatus::tryFrom($matches[1]);
+                // Skip unknown statuses (T=type change, U=unmerged, X=unknown, etc.)
+                if ($status === null) {
+                    continue;
+                }
+
                 $files[] = new ChangedFile(
                     path: $matches[2],
-                    status: ChangeStatus::from($matches[1]),
+                    status: $status,
                 );
 
                 continue;

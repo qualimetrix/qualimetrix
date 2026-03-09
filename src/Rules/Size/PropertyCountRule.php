@@ -6,7 +6,6 @@ namespace AiMessDetector\Rules\Size;
 
 use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\RuleCategory;
-use AiMessDetector\Core\Rule\RuleInterface;
 use AiMessDetector\Core\Symbol\SymbolType;
 use AiMessDetector\Core\Violation\Location;
 use AiMessDetector\Core\Violation\Severity;
@@ -18,7 +17,7 @@ use AiMessDetector\Rules\AbstractRule;
  *
  * Too many properties may indicate a God Class that violates the Single Responsibility Principle.
  */
-final class PropertyCountRule extends AbstractRule implements RuleInterface
+final class PropertyCountRule extends AbstractRule
 {
     public const string NAME = 'size.property-count';
 

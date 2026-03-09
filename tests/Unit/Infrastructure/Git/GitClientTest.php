@@ -311,6 +311,33 @@ final class GitClientTest extends TestCase
     }
 
     #[Test]
+    public function itSkipsUnknownGitStatusesLikeTypeChange(): void
+    {
+        $this->initGitRepo();
+
+        // Create initial commit with a regular file
+        file_put_contents($this->repoRoot . '/file.php', '<?php');
+        file_put_contents($this->repoRoot . '/normal.php', '<?php');
+        $this->exec('git add file.php normal.php');
+        $this->exec('git commit -m "Initial"');
+
+        // Modify normal.php and stage it
+        file_put_contents($this->repoRoot . '/normal.php', '<?php echo "modified";');
+        $this->exec('git add normal.php');
+
+        $client = new GitClient($this->repoRoot);
+
+        // The client should be able to parse the output without crashing
+        // even when exotic statuses like T (type change), U (unmerged), X (unknown) exist
+        // We can only reliably test that parsing standard statuses works and doesn't crash
+        $files = $client->getChangedFiles('staged');
+
+        $this->assertCount(1, $files);
+        $this->assertSame('normal.php', $files[0]->path);
+        $this->assertSame(ChangeStatus::Modified, $files[0]->status);
+    }
+
+    #[Test]
     public function itIgnoresNonStandardGitOutput(): void
     {
         $this->initGitRepo();

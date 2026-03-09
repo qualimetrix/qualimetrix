@@ -18,7 +18,7 @@ use ReflectionParameter;
 final class RuleOptionsFactory
 {
     /**
-     * @var array<string, array<string, mixed>> Rule options from config file
+     * @var array<string, mixed> Rule options from config file (values may be arrays or scalars)
      */
     private array $configFileOptions = [];
 
@@ -52,8 +52,8 @@ final class RuleOptionsFactory
         // 1. Get defaults from constructor parameters
         $defaults = $this->extractDefaults($reflection);
 
-        // 2. Merge with config file options
-        $fileOptions = $this->configFileOptions[$ruleName] ?? [];
+        // 2. Merge with config file options (normalize scalars to arrays)
+        $fileOptions = $this->normalizeScalarConfig($this->configFileOptions[$ruleName] ?? []);
         $merged = $this->deepMerge($defaults, $this->normalizeKeys($fileOptions));
 
         // 3. Merge with CLI options (highest priority)
@@ -68,7 +68,10 @@ final class RuleOptionsFactory
     /**
      * Sets rule options from config file.
      *
-     * @param array<string, array<string, mixed>> $options
+     * Values may be arrays (normal config), or scalars (e.g. `false` to disable a rule).
+     * Scalar values are normalized to arrays in create().
+     *
+     * @param array<string, mixed> $options
      */
     public function setConfigFileOptions(array $options): void
     {
@@ -78,7 +81,7 @@ final class RuleOptionsFactory
     /**
      * Gets rule options from config file.
      *
-     * @return array<string, array<string, mixed>>
+     * @return array<string, mixed>
      */
     public function getConfigFileOptions(): array
     {
@@ -187,6 +190,32 @@ final class RuleOptionsFactory
             'array' => [],
             default => null,
         };
+    }
+
+    /**
+     * Normalizes scalar rule config values to arrays.
+     *
+     * In YAML, a rule can be set to `false`, `true`, or `null` instead of an array.
+     * This normalizes those scalars to proper config arrays.
+     *
+     * @return array<string, mixed>
+     */
+    private function normalizeScalarConfig(mixed $config): array
+    {
+        if (\is_array($config)) {
+            return $config;
+        }
+
+        if ($config === false) {
+            return ['enabled' => false];
+        }
+
+        if ($config === true) {
+            return ['enabled' => true];
+        }
+
+        // null or any other scalar — treat as empty config (use defaults)
+        return [];
     }
 
     /**

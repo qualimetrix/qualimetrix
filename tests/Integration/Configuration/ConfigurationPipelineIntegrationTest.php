@@ -312,6 +312,35 @@ YAML;
     }
 
     #[Test]
+    public function onlyRulesFromCli_replacesConfigFileOnlyRules(): void
+    {
+        // Arrange: config file sets only_rules, CLI overrides with different set
+        $configYaml = <<<YAML
+onlyRules:
+  - complexity.cyclomatic
+  - size.loc
+YAML;
+        file_put_contents($this->tempDir . '/aimd.yaml', $configYaml);
+
+        $input = $this->createInputWithDefinition([
+            '--only-rule' => ['coupling.cbo'],
+        ]);
+        $context = new ConfigurationContext($input, $this->tempDir);
+
+        $pipeline = $this->createPipeline();
+
+        // Act
+        $resolved = $pipeline->resolve($context);
+
+        // Assert: CLI only_rules should REPLACE config file only_rules (not merge)
+        self::assertSame(
+            ['coupling.cbo'],
+            $resolved->analysis->onlyRules,
+            'CLI only_rules should replace config file only_rules, not merge with them',
+        );
+    }
+
+    #[Test]
     public function stagesReturnsOrderedList(): void
     {
         // Arrange
@@ -358,6 +387,92 @@ YAML;
         self::assertSame(15, $resolved->ruleOptions['complexity']['method']['warning']);
         self::assertSame(25, $resolved->ruleOptions['complexity']['method']['error']);
         self::assertSame(20, $resolved->ruleOptions['cognitive']['method']['warning']);
+    }
+
+    #[Test]
+    public function configFileFormat_notOverriddenByCliDefault(): void
+    {
+        // Arrange: Config file sets format to json, CLI does not pass --format
+        $configYaml = <<<YAML
+format: json
+YAML;
+        file_put_contents($this->tempDir . '/aimd.yaml', $configYaml);
+
+        $input = $this->createInputWithDefinition([]);
+        $context = new ConfigurationContext($input, $this->tempDir);
+
+        $pipeline = $this->createPipeline();
+
+        // Act
+        $resolved = $pipeline->resolve($context);
+
+        // Assert: Config file format should be used (not overridden by CLI default)
+        self::assertSame('json', $resolved->analysis->format);
+    }
+
+    #[Test]
+    public function configFileFormat_overriddenByExplicitCliOption(): void
+    {
+        // Arrange: Config file sets format to json, CLI explicitly passes --format=text
+        $configYaml = <<<YAML
+format: json
+YAML;
+        file_put_contents($this->tempDir . '/aimd.yaml', $configYaml);
+
+        $input = $this->createInputWithDefinition(['--format' => 'text']);
+        $context = new ConfigurationContext($input, $this->tempDir);
+
+        $pipeline = $this->createPipeline();
+
+        // Act
+        $resolved = $pipeline->resolve($context);
+
+        // Assert: CLI explicit format should override config file
+        self::assertSame('text', $resolved->analysis->format);
+    }
+
+    #[Test]
+    public function configFileCacheDir_notOverriddenByCliDefault(): void
+    {
+        // Arrange: Config file sets cache dir, CLI does not pass --cache-dir
+        $configYaml = <<<YAML
+cache:
+  dir: custom-cache
+YAML;
+        file_put_contents($this->tempDir . '/aimd.yaml', $configYaml);
+
+        $input = $this->createInputWithDefinition([]);
+        $context = new ConfigurationContext($input, $this->tempDir);
+
+        $pipeline = $this->createPipeline();
+
+        // Act
+        $resolved = $pipeline->resolve($context);
+
+        // Assert: Config file cache dir should be used (not overridden by CLI default)
+        self::assertSame('custom-cache', $resolved->analysis->cacheDir);
+    }
+
+    #[Test]
+    public function configFileCacheDir_overriddenByExplicitCliOption(): void
+    {
+        // Arrange: Config file sets cache dir, CLI explicitly passes --cache-dir
+        $configYaml = <<<YAML
+cache:
+  dir: custom-cache
+YAML;
+        file_put_contents($this->tempDir . '/aimd.yaml', $configYaml);
+
+        $input = $this->createInputWithDefinition(['--cache-dir' => '/explicit/cache']);
+        $context = new ConfigurationContext($input, $this->tempDir);
+
+        $pipeline = $this->createPipeline();
+
+        // Act
+        $resolved = $pipeline->resolve($context);
+
+        // Assert: CLI explicit cache-dir should override config file
+        self::assertSame('/explicit/cache', $resolved->analysis->cacheDir);
     }
 
     private function createPipeline(): ConfigurationPipeline

@@ -169,6 +169,30 @@ final class Psr4NamespaceDetectorTest extends TestCase
     }
 
     #[Test]
+    public function itHandlesArrayValuedPsr4Mapping(): void
+    {
+        $this->createStructure([
+            'composer.json' => json_encode([
+                'autoload' => [
+                    'psr-4' => [
+                        'App\\' => ['src/', 'lib/'],
+                    ],
+                ],
+            ], \JSON_THROW_ON_ERROR),
+            'src/Service/FooService.php' => '<?php namespace App\\Service; class FooService {}',
+            'lib/Service/BarService.php' => '<?php namespace App\\Service; class BarService {}',
+        ]);
+
+        $detector = new Psr4NamespaceDetector($this->fixturesDir . '/composer.json');
+
+        $srcFile = new SplFileInfo($this->fixturesDir . '/src/Service/FooService.php');
+        self::assertSame('App\\Service', $detector->detect($srcFile));
+
+        $libFile = new SplFileInfo($this->fixturesDir . '/lib/Service/BarService.php');
+        self::assertSame('App\\Service', $detector->detect($libFile));
+    }
+
+    #[Test]
     public function itReturnsEmptyStringForFileWithInvalidPath(): void
     {
         $this->createStructure([

@@ -179,7 +179,9 @@ final class AggregationHelper
                     continue;
                 }
 
-                // For Method-collected metrics, read aggregated sum from class
+                // By design: Sum aggregates method-level metrics to class level
+                // (e.g., total CCN per class). This is the correct strategy for
+                // namespace-level aggregation of method-collected metrics.
                 if ($definition->collectedAt === SymbolLevel::Method) {
                     $sumValue = $bag->get($definition->aggregatedName(AggregationStrategy::Sum));
 

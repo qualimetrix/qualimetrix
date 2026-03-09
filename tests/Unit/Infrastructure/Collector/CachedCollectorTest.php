@@ -15,6 +15,7 @@ use AiMessDetector\Infrastructure\Collector\CachedCollector;
 use AiMessDetector\Infrastructure\Storage\ChangeDetector;
 use AiMessDetector\Infrastructure\Storage\FileRecord;
 use AiMessDetector\Infrastructure\Storage\InMemoryStorage;
+use AiMessDetector\Infrastructure\Storage\StorageInterface;
 use PHPUnit\Framework\TestCase;
 use SplFileInfo;
 
@@ -56,9 +57,8 @@ final class CachedCollectorTest extends TestCase
         $this->assertNotNull($cached);
 
         // Verify dependencies were cached
-        $fileRecord = $this->storage->getFile($file->getRealPath());
-        $this->assertNotNull($fileRecord);
-        $fileId = $this->storage->storeFile($fileRecord);
+        $fileId = $this->storage->getFileId($file->getRealPath());
+        $this->assertNotNull($fileId);
         $cachedDeps = $this->storage->getFileDependencies($fileId);
         $this->assertNotNull($cachedDeps);
         $this->assertSame([], $cachedDeps);
@@ -234,6 +234,85 @@ final class CachedCollectorTest extends TestCase
         // Verify dependencies are now cached (stored on the fresh collection)
         $cachedDeps = $this->storage->getFileDependencies($fileId);
         $this->assertNotNull($cachedDeps);
+    }
+
+    public function testCacheHitDoesNotCallStoreFile(): void
+    {
+        $file = new SplFileInfo(__FILE__);
+        $path = $file->getRealPath();
+        $contentHash = $this->changeDetector->getContentHash($file);
+
+        // Create a mock storage that tracks storeFile calls
+        $storage = $this->createMock(StorageInterface::class);
+
+        $fileId = 42;
+
+        $storage->method('hasFileChanged')
+            ->with($path, $contentHash)
+            ->willReturn(false);
+
+        $storage->method('getMetrics')
+            ->willReturn(['test_metric' => 99]);
+
+        $storage->method('getFileId')
+            ->with($path)
+            ->willReturn($fileId);
+
+        $storage->method('getFileDependencies')
+            ->with($fileId)
+            ->willReturn([]);
+
+        // storeFile must NOT be called on cache hit
+        $storage->expects($this->never())
+            ->method('storeFile');
+
+        $collector = new CachedCollector(
+            $this->innerCollector,
+            $storage,
+            $this->changeDetector,
+        );
+
+        $result = $collector->collect($file, []);
+
+        $this->assertSame(99, $result->metrics->get('test_metric'));
+        $this->assertSame([], $result->dependencies);
+    }
+
+    public function testCacheHitPreservesMetricsOnRepeatedCollect(): void
+    {
+        $file = new SplFileInfo(__FILE__);
+        $path = $file->getRealPath();
+        $contentHash = $this->changeDetector->getContentHash($file);
+
+        // Pre-populate cache with file, metrics, and dependencies
+        $fileId = $this->storage->storeFile(new FileRecord(
+            path: $path,
+            contentHash: $contentHash,
+            mtime: $file->getMTime(),
+            size: $file->getSize(),
+        ));
+
+        // Store class-level metrics associated with this file
+        $classPath = SymbolPath::forClass('App', 'Foo');
+        $this->storage->storeMetrics($classPath, ['loc' => 200, 'ccn' => 10], $fileId);
+
+        // Store file-level metrics
+        $this->storage->storeMetrics(
+            SymbolPath::forFile($path),
+            ['file_metric' => 42],
+            $fileId,
+        );
+
+        $this->storage->storeFileDependencies($fileId, []);
+
+        // Collect (cache hit) — should NOT destroy class metrics
+        $this->collector->collect($file, []);
+
+        // Verify class-level metrics are still intact
+        $classMetrics = $this->storage->getMetrics($classPath);
+        $this->assertNotNull($classMetrics, 'Class metrics should be preserved on cache hit');
+        $this->assertSame(200, $classMetrics['loc']);
+        $this->assertSame(10, $classMetrics['ccn']);
     }
 
     public function testResetCallsInnerCollectorReset(): void

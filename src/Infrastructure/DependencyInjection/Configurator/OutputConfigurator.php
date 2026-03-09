@@ -132,6 +132,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(ProfilerHolder::class),
                 new Reference(BaselineGenerator::class),
                 new Reference(BaselineWriter::class),
+                new Reference(ConfigurationProviderInterface::class),
             ]);
 
         // CheckCommand with all dependencies injected

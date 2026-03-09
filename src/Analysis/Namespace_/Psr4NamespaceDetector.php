@@ -9,7 +9,7 @@ use SplFileInfo;
 
 final class Psr4NamespaceDetector implements NamespaceDetectorInterface
 {
-    /** @var array<string, string> prefix => directory (sorted by path length descending) */
+    /** @var array<string, list<string>> prefix => directories (sorted by path length descending) */
     private array $mapping = [];
 
     private string $baseDir;
@@ -27,30 +27,32 @@ final class Psr4NamespaceDetector implements NamespaceDetectorInterface
             return '';
         }
 
-        foreach ($this->mapping as $prefix => $directory) {
-            if (str_starts_with($realPath, $directory . '/')) {
-                $relativePath = substr($realPath, \strlen($directory) + 1);
+        foreach ($this->mapping as $prefix => $directories) {
+            foreach ($directories as $directory) {
+                if (str_starts_with($realPath, $directory . '/')) {
+                    $relativePath = substr($realPath, \strlen($directory) + 1);
 
-                // Remove .php extension
-                $relativePath = preg_replace('/\.php$/i', '', $relativePath);
+                    // Remove .php extension
+                    $relativePath = preg_replace('/\.php$/i', '', $relativePath);
 
-                if ($relativePath === null || $relativePath === '') {
-                    return rtrim($prefix, '\\');
+                    if ($relativePath === null || $relativePath === '') {
+                        return rtrim($prefix, '\\');
+                    }
+
+                    // Convert path to namespace
+                    $namespace = str_replace('/', '\\', $relativePath);
+
+                    // Remove class name (last segment) to get just namespace
+                    $lastBackslash = strrpos($namespace, '\\');
+                    if ($lastBackslash !== false) {
+                        $namespace = substr($namespace, 0, $lastBackslash);
+                    } else {
+                        // File directly in namespace root
+                        return rtrim($prefix, '\\');
+                    }
+
+                    return rtrim($prefix, '\\') . '\\' . $namespace;
                 }
-
-                // Convert path to namespace
-                $namespace = str_replace('/', '\\', $relativePath);
-
-                // Remove class name (last segment) to get just namespace
-                $lastBackslash = strrpos($namespace, '\\');
-                if ($lastBackslash !== false) {
-                    $namespace = substr($namespace, 0, $lastBackslash);
-                } else {
-                    // File directly in namespace root
-                    return rtrim($prefix, '\\');
-                }
-
-                return rtrim($prefix, '\\') . '\\' . $namespace;
             }
         }
 
@@ -96,12 +98,19 @@ final class Psr4NamespaceDetector implements NamespaceDetectorInterface
                 $realPath = realpath($absolutePath);
 
                 if ($realPath !== false) {
-                    $this->mapping[$prefix] = $realPath;
+                    $this->mapping[$prefix][] = $realPath;
                 }
             }
         }
 
-        // Sort by path length descending (more specific paths first)
-        uasort($this->mapping, static fn(string $a, string $b): int => \strlen($b) <=> \strlen($a));
+        // Sort prefixes by longest directory path first (more specific paths first)
+        uasort($this->mapping, static function (array $a, array $b): int {
+            $lengthsA = array_map(\strlen(...), $a);
+            $lengthsB = array_map(\strlen(...), $b);
+            $maxA = $lengthsA !== [] ? max($lengthsA) : 0;
+            $maxB = $lengthsB !== [] ? max($lengthsB) : 0;
+
+            return $maxB <=> $maxA;
+        });
     }
 }

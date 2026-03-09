@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Infrastructure\Console;
 
-use AiMessDetector\Configuration\AnalysisConfiguration;
 use AiMessDetector\Infrastructure\Rule\RuleRegistryInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -78,8 +77,7 @@ final class CheckCommandDefinition
             'format',
             'f',
             InputOption::VALUE_REQUIRED,
-            'Output format (text)',
-            AnalysisConfiguration::DEFAULT_FORMAT,
+            'Output format (text, json, checkstyle, sarif, gitlab, metrics-json)',
         );
     }
 
@@ -97,7 +95,6 @@ final class CheckCommandDefinition
                 null,
                 InputOption::VALUE_REQUIRED,
                 'Cache directory',
-                AnalysisConfiguration::DEFAULT_CACHE_DIR,
             )
             ->addOption(
                 'clear-cache',

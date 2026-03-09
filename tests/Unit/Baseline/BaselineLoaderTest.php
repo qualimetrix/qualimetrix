@@ -209,6 +209,26 @@ final class BaselineLoaderTest extends TestCase
         $this->loader->load($path);
     }
 
+    public function testThrowsOnMalformedGeneratedDate(): void
+    {
+        $json = <<<'JSON'
+        {
+            "version": 4,
+            "generated": "not-a-date",
+            "count": 0,
+            "violations": {}
+        }
+        JSON;
+
+        $path = $this->tempDir . '/baseline.json';
+        file_put_contents($path, $json);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Invalid date in baseline "generated" field');
+
+        $this->loader->load($path);
+    }
+
     public function testLoadsEmptyBaseline(): void
     {
         $json = <<<'JSON'

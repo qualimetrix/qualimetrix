@@ -8,6 +8,7 @@ use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\RuleCategory;
 use AiMessDetector\Core\Symbol\SymbolType;
 use AiMessDetector\Core\Violation\Location;
+use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
 use AiMessDetector\Rules\AbstractRule;
 
@@ -86,7 +87,7 @@ final class WmcRule extends AbstractRule
                     message: \sprintf(
                         'WMC (Weighted Methods per Class) is %d, exceeds threshold of %d. Simplify methods or split the class',
                         $wmcValue,
-                        $severity === \AiMessDetector\Core\Violation\Severity::Error
+                        $severity === Severity::Error
                             ? $this->options->error
                             : $this->options->warning,
                     ),

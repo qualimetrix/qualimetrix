@@ -21,7 +21,7 @@ use SplFileInfo;
  * Collects Depth of Inheritance Tree (DIT) metric for classes.
  *
  * DIT measures how deep a class is in the inheritance hierarchy:
- * - DIT = 0: class has no parent (or parent is a standard PHP class)
+ * - DIT = 0: class has no parent
  * - DIT = N: class is N levels deep in the inheritance tree
  *
  * Standard PHP classes (stdClass, Exception, etc.) are considered root.
@@ -265,12 +265,13 @@ final class InheritanceDepthCollector extends AbstractCollector implements Class
         $current = $class;
 
         while (($parent = $current->getParentClass()) !== false) {
-            // Stop at standard PHP classes
+            ++$depth;
+
+            // Stop at standard PHP classes (depth already incremented for extending them)
             if ($this->isStandardPhpClass($parent->getName())) {
                 break;
             }
 
-            ++$depth;
             $current = $parent;
         }
 

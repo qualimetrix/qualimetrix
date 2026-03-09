@@ -59,6 +59,12 @@ final class InMemoryMetricRepository implements MetricRepositoryInterface
         if (isset($this->metrics[$canonical])) {
             // Merge with existing metrics
             $this->metrics[$canonical] = $this->metrics[$canonical]->merge($metrics);
+
+            // Update line if existing SymbolInfo has line=0 and new line is positive
+            if ($line !== null && $line > 0 && $this->symbolInfos[$canonical]->line === 0) {
+                $oldInfo = $this->symbolInfos[$canonical];
+                $this->symbolInfos[$canonical] = new SymbolInfo($oldInfo->symbolPath, $oldInfo->file, $line);
+            }
         } else {
             $this->metrics[$canonical] = $metrics;
             $info = new SymbolInfo($symbol, $file, $line);
@@ -122,6 +128,15 @@ final class InMemoryMetricRepository implements MetricRepositoryInterface
             if (isset($merged->metrics[$canonical])) {
                 // Merge metrics for same symbol
                 $merged->metrics[$canonical] = $merged->metrics[$canonical]->merge($other->metrics[$canonical]);
+
+                // Update line if existing SymbolInfo has line=0 and other has positive line
+                if ($info->line !== null && $info->line > 0 && $merged->symbolInfos[$canonical]->line === 0) {
+                    $merged->symbolInfos[$canonical] = new SymbolInfo(
+                        $merged->symbolInfos[$canonical]->symbolPath,
+                        $merged->symbolInfos[$canonical]->file,
+                        $info->line,
+                    );
+                }
             } else {
                 $merged->metrics[$canonical] = $other->metrics[$canonical];
                 $merged->symbolInfos[$canonical] = $info;

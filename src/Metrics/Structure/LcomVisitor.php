@@ -43,14 +43,19 @@ final class LcomVisitor extends NodeVisitorAbstract implements ResettableVisitor
      */
     private array $classStack = [];
 
-    private ?string $currentMethod = null;
+    /**
+     * Stack of method contexts (to handle methods inside anonymous classes).
+     *
+     * @var list<string>
+     */
+    private array $methodStack = [];
 
     public function reset(): void
     {
         $this->classData = [];
         $this->currentNamespace = null;
         $this->classStack = [];
-        $this->currentMethod = null;
+        $this->methodStack = [];
     }
 
     /**
@@ -88,26 +93,31 @@ final class LcomVisitor extends NodeVisitorAbstract implements ResettableVisitor
             return null;
         }
 
-        // Track method
+        // Track method — always push to methodStack (even inside anonymous classes)
+        // to keep push/pop balanced with leaveNode.
         $currentClass = $this->getCurrentClass();
 
-        if ($node instanceof ClassMethod && $currentClass !== null) {
+        if ($node instanceof ClassMethod) {
             $methodName = $node->name->toString();
-            $this->currentMethod = $methodName;
+            $this->methodStack[] = $methodName;
 
-            $fqn = $this->buildClassFqn($currentClass);
-            if (isset($this->classData[$fqn])) {
-                $this->classData[$fqn]->addMethod($methodName);
+            // Only register with classData for named classes
+            if ($currentClass !== null) {
+                $fqn = $this->buildClassFqn($currentClass);
+                if (isset($this->classData[$fqn])) {
+                    $this->classData[$fqn]->addMethod($methodName);
 
-                if ($node->isStatic()) {
-                    $this->classData[$fqn]->markStatic($methodName);
+                    if ($node->isStatic()) {
+                        $this->classData[$fqn]->markStatic($methodName);
+                    }
                 }
             }
 
             return null;
         }
 
-        if ($this->currentMethod === null || $currentClass === null) {
+        $currentMethod = $this->getCurrentMethod();
+        if ($currentMethod === null || $currentClass === null) {
             return null;
         }
 
@@ -123,7 +133,7 @@ final class LcomVisitor extends NodeVisitorAbstract implements ResettableVisitor
         ) {
             $propertyName = $this->extractPropertyName($node);
             if ($propertyName !== null) {
-                $this->classData[$fqn]->addPropertyAccess($this->currentMethod, $propertyName);
+                $this->classData[$fqn]->addPropertyAccess($currentMethod, $propertyName);
             }
 
             return null;
@@ -135,7 +145,7 @@ final class LcomVisitor extends NodeVisitorAbstract implements ResettableVisitor
             && $node->var->name === 'this'
             && $node->name instanceof Identifier
         ) {
-            $this->classData[$fqn]->addMethodCall($this->currentMethod, $node->name->toString());
+            $this->classData[$fqn]->addMethodCall($currentMethod, $node->name->toString());
 
             return null;
         }
@@ -147,7 +157,7 @@ final class LcomVisitor extends NodeVisitorAbstract implements ResettableVisitor
     {
         // Exit method scope
         if ($node instanceof ClassMethod) {
-            $this->currentMethod = null;
+            array_pop($this->methodStack);
         }
 
         // Exit class-like scope
@@ -161,6 +171,18 @@ final class LcomVisitor extends NodeVisitorAbstract implements ResettableVisitor
         }
 
         return null;
+    }
+
+    /**
+     * Returns current method name or null if not inside a method.
+     */
+    private function getCurrentMethod(): ?string
+    {
+        if ($this->methodStack === []) {
+            return null;
+        }
+
+        return $this->methodStack[array_key_last($this->methodStack)];
     }
 
     /**
