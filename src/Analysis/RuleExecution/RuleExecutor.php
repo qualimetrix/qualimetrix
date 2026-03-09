@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AiMessDetector\Analysis\RuleExecution;
 
 use AiMessDetector\Configuration\ConfigurationProviderInterface;
+use AiMessDetector\Core\Profiler\ProfilerHolder;
 use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\RuleInterface;
 use Traversable;
@@ -36,9 +37,13 @@ final class RuleExecutor implements RuleExecutorInterface
     {
         $violations = [];
         $config = $this->configurationProvider->getConfiguration();
+        $profiler = ProfilerHolder::get();
 
         foreach ($this->getActiveRules() as $rule) {
+            $spanName = 'rule.' . $rule->getName();
+            $profiler->start($spanName, 'rules');
             $ruleViolations = $rule->analyze($context);
+            $profiler->stop($spanName);
             $violations = [...$violations, ...$ruleViolations];
         }
 

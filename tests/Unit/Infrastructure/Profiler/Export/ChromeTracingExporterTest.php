@@ -19,7 +19,7 @@ final class ChromeTracingExporterTest extends TestCase
 
     public function testExportNullSpanReturnsEmptyEvents(): void
     {
-        $result = $this->exporter->export(null);
+        $result = $this->exporter->export([]);
         $data = json_decode($result, true);
 
         self::assertIsArray($data);
@@ -38,7 +38,7 @@ final class ChromeTracingExporterTest extends TestCase
             endMemory: 250,
         );
 
-        $result = $this->exporter->export($span);
+        $result = $this->exporter->export([$span]);
         $data = json_decode($result, true);
 
         self::assertArrayHasKey('traceEvents', $data);
@@ -74,7 +74,7 @@ final class ChromeTracingExporterTest extends TestCase
             endMemory: 250,
         );
 
-        $result = $this->exporter->export($span);
+        $result = $this->exporter->export([$span]);
         $data = json_decode($result, true);
 
         self::assertArrayNotHasKey('cat', $data['traceEvents'][0]);
@@ -90,7 +90,7 @@ final class ChromeTracingExporterTest extends TestCase
             startMemory: 100,
         );
 
-        $result = $this->exporter->export($span);
+        $result = $this->exporter->export([$span]);
         $data = json_decode($result, true);
 
         // Only begin event, no end event
@@ -121,7 +121,7 @@ final class ChromeTracingExporterTest extends TestCase
 
         $parent->children[] = $child;
 
-        $result = $this->exporter->export($parent);
+        $result = $this->exporter->export([$parent]);
         $data = json_decode($result, true);
 
         self::assertCount(4, $data['traceEvents']);
@@ -181,7 +181,7 @@ final class ChromeTracingExporterTest extends TestCase
         $level1->children[] = $level2;
         $level2->children[] = $level3;
 
-        $result = $this->exporter->export($level1);
+        $result = $this->exporter->export([$level1]);
         $data = json_decode($result, true);
 
         self::assertCount(6, $data['traceEvents']);
@@ -205,7 +205,7 @@ final class ChromeTracingExporterTest extends TestCase
             endMemory: 250,
         );
 
-        $result = $this->exporter->export($span);
+        $result = $this->exporter->export([$span]);
 
         // Should not throw
         $decoded = json_decode($result, true, 512, \JSON_THROW_ON_ERROR);

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AiMessDetector\Infrastructure\Parallel\Strategy;
 
 use AiMessDetector\Analysis\Collection\Strategy\ExecutionStrategyInterface;
+use AiMessDetector\Core\Profiler\ProfilerHolder;
 use SplFileInfo;
 
 /**
@@ -36,9 +37,12 @@ final class SequentialStrategy implements ExecutionStrategyInterface
     public function execute(array $files, callable $processor, bool $canParallelize = true): array
     {
         $results = [];
+        $profiler = ProfilerHolder::get();
 
         foreach ($files as $file) {
+            $profiler->start('collection.file', 'collection');
             $results[] = $processor($file);
+            $profiler->stop('collection.file');
         }
 
         return $results;

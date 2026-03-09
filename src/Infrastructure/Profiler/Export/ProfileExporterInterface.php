@@ -12,11 +12,11 @@ use AiMessDetector\Core\Profiler\Span;
 interface ProfileExporterInterface
 {
     /**
-     * Export profiling data for the given root span.
+     * Export profiling data for the given root spans.
      *
-     * @param Span|null $rootSpan Root span of the profiling tree
+     * @param list<Span> $rootSpans Root spans of the profiling tree
      *
      * @return string Formatted profiling data
      */
-    public function export(?Span $rootSpan): string;
+    public function export(array $rootSpans): string;
 }

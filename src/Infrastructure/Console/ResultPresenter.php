@@ -46,6 +46,9 @@ final class ResultPresenter
         InputInterface $input,
         OutputInterface $output,
     ): int {
+        $profiler = $this->profilerHolder->get();
+        $profiler->start('reporting', 'pipeline');
+
         // Use resolved config format (already merged: defaults → config file → CLI)
         // Fall back to CLI option only if config is not yet available
         $format = $this->configurationProvider->hasConfiguration()
@@ -64,6 +67,8 @@ final class ResultPresenter
             ->metrics($analysisResult->metrics)
             ->build();
         OutputHelper::write($output, $formatter->format($report, $context));
+
+        $profiler->stop('reporting');
 
         return $this->determineExitCode($violations);
     }
@@ -265,9 +270,17 @@ final class ResultPresenter
         // Sort by total time descending
         uasort($summary, fn($a, $b) => $b['total'] <=> $a['total']);
 
+        // Filter out spans contributing less than 1% of the longest span's duration.
+        // Using max span (≈ wall-clock) instead of totalTime (sum of all including nested)
+        // to avoid hiding meaningful phases.
+        $maxTime = max(array_column($summary, 'total'));
+        $threshold = $maxTime * 0.01;
+        $filtered = array_filter($summary, static fn($stat) => $stat['total'] >= $threshold);
+        $hiddenCount = \count($summary) - \count($filtered);
+
         $lines = ['<comment>Profile summary:</comment>'];
 
-        foreach ($summary as $name => $stat) {
+        foreach ($filtered as $name => $stat) {
             $percentage = $totalTime > 0 ? ($stat['total'] / $totalTime) * 100 : 0;
             $memoryDelta = $this->formatBytes($stat['memory']);
             $peakMemory = $this->formatBytes($stat['peak_memory']);
@@ -281,6 +294,10 @@ final class ResultPresenter
                 str_pad($peakMemory, 8),
                 $stat['count'],
             );
+        }
+
+        if ($hiddenCount > 0) {
+            $lines[] = \sprintf('  <comment>... and %d more spans below 1%%</comment>', $hiddenCount);
         }
 
         // Add peak memory
