@@ -36,7 +36,7 @@ final class DebugCodeRuleTest extends TestCase
     {
         $rule = new DebugCodeRule(new CodeSmellOptions());
 
-        self::assertSame(['codeSmell.debug_code.count'], $rule->requires());
+        self::assertSame(['codeSmell.debug_code'], $rule->requires());
     }
 
     #[Test]
@@ -66,7 +66,7 @@ final class DebugCodeRuleTest extends TestCase
         $symbolPath = SymbolPath::forFile('src/Clean.php');
         $fileInfo = new SymbolInfo($symbolPath, 'src/Clean.php', null);
 
-        $metricBag = (new MetricBag())->with('codeSmell.debug_code.count', 0);
+        $metricBag = new MetricBag();
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -89,10 +89,9 @@ final class DebugCodeRuleTest extends TestCase
         $fileInfo = new SymbolInfo($symbolPath, 'src/Smelly.php', null);
 
         $metricBag = (new MetricBag())
-            ->with('codeSmell.debug_code.count', 3)
-            ->with('codeSmell.debug_code.line.0', 5)
-            ->with('codeSmell.debug_code.line.1', 12)
-            ->with('codeSmell.debug_code.line.2', 30);
+            ->withEntry('codeSmell.debug_code', ['line' => 5])
+            ->withEntry('codeSmell.debug_code', ['line' => 12])
+            ->withEntry('codeSmell.debug_code', ['line' => 30]);
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
         $repository->method('all')

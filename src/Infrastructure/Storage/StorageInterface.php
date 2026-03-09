@@ -46,15 +46,16 @@ interface StorageInterface
     /**
      * Retrieves metrics for a given symbol.
      * Returns associative array of metric_name => value, or null if not found.
+     * May include a '__entries' key with structured data (DataBag) for file-level metrics.
      *
-     * @return array<string, int|float>|null
+     * @return array<string, mixed>|null
      */
     public function getMetrics(SymbolPath $path): ?array;
 
     /**
      * Stores metrics for a given symbol.
      *
-     * @param array<string, int|float> $metrics
+     * @param array<string, mixed> $metrics
      */
     public function storeMetrics(SymbolPath $path, array $metrics, int $fileId, int $line = 0): void;
 

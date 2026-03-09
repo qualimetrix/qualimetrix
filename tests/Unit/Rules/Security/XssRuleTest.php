@@ -35,7 +35,7 @@ final class XssRuleTest extends TestCase
     {
         $rule = new XssRule(new SecurityPatternOptions());
 
-        self::assertSame(['security.xss.count'], $rule->requires());
+        self::assertSame(['security.xss'], $rule->requires());
     }
 
     public function testDisabledReturnsNoViolations(): void
@@ -43,7 +43,7 @@ final class XssRuleTest extends TestCase
         $rule = new XssRule(new SecurityPatternOptions(enabled: false));
 
         $context = $this->createContext(
-            MetricBag::fromArray(['security.xss.count' => 1]),
+            (new MetricBag())->withEntry('security.xss', ['line' => 1, 'superglobal' => '']),
         );
 
         self::assertCount(0, $rule->analyze($context));
@@ -53,9 +53,7 @@ final class XssRuleTest extends TestCase
     {
         $rule = new XssRule(new SecurityPatternOptions());
 
-        $context = $this->createContext(
-            MetricBag::fromArray(['security.xss.count' => 0]),
-        );
+        $context = $this->createContext(new MetricBag());
 
         self::assertCount(0, $rule->analyze($context));
     }
@@ -65,10 +63,8 @@ final class XssRuleTest extends TestCase
         $rule = new XssRule(new SecurityPatternOptions());
 
         $context = $this->createContext(
-            MetricBag::fromArray([
-                'security.xss.count' => 1,
-                'security.xss.line.0' => 8,
-            ]),
+            (new MetricBag())
+                ->withEntry('security.xss', ['line' => 8, 'superglobal' => '']),
         );
 
         $violations = $rule->analyze($context);
@@ -85,11 +81,9 @@ final class XssRuleTest extends TestCase
         $rule = new XssRule(new SecurityPatternOptions());
 
         $context = $this->createContext(
-            MetricBag::fromArray([
-                'security.xss.count' => 2,
-                'security.xss.line.0' => 5,
-                'security.xss.line.1' => 12,
-            ]),
+            (new MetricBag())
+                ->withEntry('security.xss', ['line' => 5, 'superglobal' => ''])
+                ->withEntry('security.xss', ['line' => 12, 'superglobal' => '']),
         );
 
         $violations = $rule->analyze($context);

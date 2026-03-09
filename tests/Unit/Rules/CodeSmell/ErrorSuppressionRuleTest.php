@@ -36,7 +36,7 @@ final class ErrorSuppressionRuleTest extends TestCase
     {
         $rule = new ErrorSuppressionRule(new CodeSmellOptions());
 
-        self::assertSame(['codeSmell.error_suppression.count'], $rule->requires());
+        self::assertSame(['codeSmell.error_suppression'], $rule->requires());
     }
 
     #[Test]
@@ -66,7 +66,7 @@ final class ErrorSuppressionRuleTest extends TestCase
         $symbolPath = SymbolPath::forFile('src/Clean.php');
         $fileInfo = new SymbolInfo($symbolPath, 'src/Clean.php', null);
 
-        $metricBag = (new MetricBag())->with('codeSmell.error_suppression.count', 0);
+        $metricBag = new MetricBag();
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -89,9 +89,8 @@ final class ErrorSuppressionRuleTest extends TestCase
         $fileInfo = new SymbolInfo($symbolPath, 'src/Smelly.php', null);
 
         $metricBag = (new MetricBag())
-            ->with('codeSmell.error_suppression.count', 2)
-            ->with('codeSmell.error_suppression.line.0', 8)
-            ->with('codeSmell.error_suppression.line.1', 22);
+            ->withEntry('codeSmell.error_suppression', ['line' => 8])
+            ->withEntry('codeSmell.error_suppression', ['line' => 22]);
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
         $repository->method('all')

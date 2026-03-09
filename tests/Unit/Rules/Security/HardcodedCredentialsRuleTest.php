@@ -35,7 +35,7 @@ final class HardcodedCredentialsRuleTest extends TestCase
     {
         $rule = new HardcodedCredentialsRule(new HardcodedCredentialsOptions());
 
-        self::assertSame(['security.hardcodedCredentials.count'], $rule->requires());
+        self::assertSame(['security.hardcodedCredentials'], $rule->requires());
     }
 
     public function testDisabledReturnsNoViolations(): void
@@ -43,7 +43,9 @@ final class HardcodedCredentialsRuleTest extends TestCase
         $rule = new HardcodedCredentialsRule(new HardcodedCredentialsOptions(enabled: false));
 
         $context = $this->createContext(
-            MetricBag::fromArray(['security.hardcodedCredentials.count' => 2]),
+            (new MetricBag())
+                ->withEntry('security.hardcodedCredentials', ['line' => 1, 'pattern' => 'variable'])
+                ->withEntry('security.hardcodedCredentials', ['line' => 2, 'pattern' => 'variable']),
         );
 
         $violations = $rule->analyze($context);
@@ -55,9 +57,7 @@ final class HardcodedCredentialsRuleTest extends TestCase
     {
         $rule = new HardcodedCredentialsRule(new HardcodedCredentialsOptions());
 
-        $context = $this->createContext(
-            MetricBag::fromArray(['security.hardcodedCredentials.count' => 0]),
-        );
+        $context = $this->createContext(new MetricBag());
 
         $violations = $rule->analyze($context);
 
@@ -69,11 +69,8 @@ final class HardcodedCredentialsRuleTest extends TestCase
         $rule = new HardcodedCredentialsRule(new HardcodedCredentialsOptions());
 
         $context = $this->createContext(
-            MetricBag::fromArray([
-                'security.hardcodedCredentials.count' => 1,
-                'security.hardcodedCredentials.line.0' => 15,
-                'security.hardcodedCredentials.pattern.0' => 1,
-            ]),
+            (new MetricBag())
+                ->withEntry('security.hardcodedCredentials', ['line' => 15, 'pattern' => 'variable']),
         );
 
         $violations = $rule->analyze($context);
@@ -90,12 +87,10 @@ final class HardcodedCredentialsRuleTest extends TestCase
         $rule = new HardcodedCredentialsRule(new HardcodedCredentialsOptions());
 
         $context = $this->createContext(
-            MetricBag::fromArray([
-                'security.hardcodedCredentials.count' => 3,
-                'security.hardcodedCredentials.line.0' => 10,
-                'security.hardcodedCredentials.line.1' => 25,
-                'security.hardcodedCredentials.line.2' => 42,
-            ]),
+            (new MetricBag())
+                ->withEntry('security.hardcodedCredentials', ['line' => 10, 'pattern' => 'variable'])
+                ->withEntry('security.hardcodedCredentials', ['line' => 25, 'pattern' => 'array_key'])
+                ->withEntry('security.hardcodedCredentials', ['line' => 42, 'pattern' => 'define']),
         );
 
         $violations = $rule->analyze($context);
@@ -106,16 +101,13 @@ final class HardcodedCredentialsRuleTest extends TestCase
         self::assertSame(42, $violations[2]->location->line);
     }
 
-    public function testEnumCasePatternCodeProducesCorrectMessage(): void
+    public function testEnumCasePatternProducesCorrectMessage(): void
     {
         $rule = new HardcodedCredentialsRule(new HardcodedCredentialsOptions());
 
         $context = $this->createContext(
-            MetricBag::fromArray([
-                'security.hardcodedCredentials.count' => 1,
-                'security.hardcodedCredentials.line.0' => 10,
-                'security.hardcodedCredentials.pattern.0' => 7, // enum_case pattern code
-            ]),
+            (new MetricBag())
+                ->withEntry('security.hardcodedCredentials', ['line' => 10, 'pattern' => 'enum_case']),
         );
 
         $violations = $rule->analyze($context);

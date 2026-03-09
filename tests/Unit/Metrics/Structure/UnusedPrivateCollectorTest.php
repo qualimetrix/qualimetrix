@@ -35,9 +35,9 @@ final class UnusedPrivateCollectorTest extends TestCase
     {
         $provides = $this->collector->provides();
 
-        self::assertContains('unusedPrivate.method.count', $provides);
-        self::assertContains('unusedPrivate.property.count', $provides);
-        self::assertContains('unusedPrivate.constant.count', $provides);
+        self::assertContains('unusedPrivate.method', $provides);
+        self::assertContains('unusedPrivate.property', $provides);
+        self::assertContains('unusedPrivate.constant', $provides);
         self::assertContains('unusedPrivate.total', $provides);
     }
 
@@ -76,9 +76,9 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(0, $metrics->get('unusedPrivate.method.count:App\FullyUsed'));
-        self::assertSame(0, $metrics->get('unusedPrivate.property.count:App\FullyUsed'));
-        self::assertSame(0, $metrics->get('unusedPrivate.constant.count:App\FullyUsed'));
+        self::assertSame(0, $metrics->entryCount('unusedPrivate.method:App\FullyUsed'));
+        self::assertSame(0, $metrics->entryCount('unusedPrivate.property:App\FullyUsed'));
+        self::assertSame(0, $metrics->entryCount('unusedPrivate.constant:App\FullyUsed'));
         self::assertSame(0, $metrics->get('unusedPrivate.total:App\FullyUsed'));
     }
 
@@ -103,8 +103,9 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(1, $metrics->get('unusedPrivate.method.count:App\WithUnusedMethod'));
-        self::assertSame(7, $metrics->get('unusedPrivate.method.line.0:App\WithUnusedMethod'));
+        self::assertSame(1, $metrics->entryCount('unusedPrivate.method:App\WithUnusedMethod'));
+        $entries = $metrics->entries('unusedPrivate.method:App\WithUnusedMethod');
+        self::assertSame(7, $entries[0]['line']);
         self::assertSame(1, $metrics->get('unusedPrivate.total:App\WithUnusedMethod'));
     }
 
@@ -129,8 +130,9 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(1, $metrics->get('unusedPrivate.property.count:App\WithUnusedProperty'));
-        self::assertSame(7, $metrics->get('unusedPrivate.property.line.0:App\WithUnusedProperty'));
+        self::assertSame(1, $metrics->entryCount('unusedPrivate.property:App\WithUnusedProperty'));
+        $entries = $metrics->entries('unusedPrivate.property:App\WithUnusedProperty');
+        self::assertSame(7, $entries[0]['line']);
     }
 
     public function testUnusedPrivateConstant(): void
@@ -154,8 +156,9 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(1, $metrics->get('unusedPrivate.constant.count:App\WithUnusedConstant'));
-        self::assertSame(7, $metrics->get('unusedPrivate.constant.line.0:App\WithUnusedConstant'));
+        self::assertSame(1, $metrics->entryCount('unusedPrivate.constant:App\WithUnusedConstant'));
+        $entries = $metrics->entries('unusedPrivate.constant:App\WithUnusedConstant');
+        self::assertSame(7, $entries[0]['line']);
     }
 
     public function testMultipleUnusedMembers(): void
@@ -180,9 +183,9 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(2, $metrics->get('unusedPrivate.method.count:App\ManyUnused'));
-        self::assertSame(2, $metrics->get('unusedPrivate.property.count:App\ManyUnused'));
-        self::assertSame(1, $metrics->get('unusedPrivate.constant.count:App\ManyUnused'));
+        self::assertSame(2, $metrics->entryCount('unusedPrivate.method:App\ManyUnused'));
+        self::assertSame(2, $metrics->entryCount('unusedPrivate.property:App\ManyUnused'));
+        self::assertSame(1, $metrics->entryCount('unusedPrivate.constant:App\ManyUnused'));
         self::assertSame(5, $metrics->get('unusedPrivate.total:App\ManyUnused'));
     }
 
@@ -206,7 +209,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(0, $metrics->get('unusedPrivate.method.count:App\StaticUsage'));
+        self::assertSame(0, $metrics->entryCount('unusedPrivate.method:App\StaticUsage'));
     }
 
     public function testStaticMethodUsageViaStatic(): void
@@ -229,7 +232,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(0, $metrics->get('unusedPrivate.method.count:App\StaticUsage2'));
+        self::assertSame(0, $metrics->entryCount('unusedPrivate.method:App\StaticUsage2'));
     }
 
     public function testStaticPropertyUsage(): void
@@ -252,7 +255,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(0, $metrics->get('unusedPrivate.property.count:App\StaticPropUsage'));
+        self::assertSame(0, $metrics->entryCount('unusedPrivate.property:App\StaticPropUsage'));
     }
 
     public function testConstantUsageViaStatic(): void
@@ -275,7 +278,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(0, $metrics->get('unusedPrivate.constant.count:App\ConstUsageViaStatic'));
+        self::assertSame(0, $metrics->entryCount('unusedPrivate.constant:App\ConstUsageViaStatic'));
     }
 
     public function testMagicMethodsNotFlaggedAsUnused(): void
@@ -297,7 +300,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Magic methods should NOT be flagged as unused
-        self::assertSame(0, $metrics->get('unusedPrivate.method.count:App\WithMagicMethods'));
+        self::assertSame(0, $metrics->entryCount('unusedPrivate.method:App\WithMagicMethods'));
     }
 
     public function testMagicCallSkipsMethodDetection(): void
@@ -319,7 +322,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // __call means any method can be called dynamically, so skip method detection
-        self::assertSame(0, $metrics->get('unusedPrivate.method.count:App\WithMagicCall'));
+        self::assertSame(0, $metrics->entryCount('unusedPrivate.method:App\WithMagicCall'));
     }
 
     public function testMagicCallStaticSkipsMethodDetection(): void
@@ -340,7 +343,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(0, $metrics->get('unusedPrivate.method.count:App\WithMagicCallStatic'));
+        self::assertSame(0, $metrics->entryCount('unusedPrivate.method:App\WithMagicCallStatic'));
     }
 
     public function testMagicGetSkipsPropertyDetection(): void
@@ -362,9 +365,9 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // __get means properties can be accessed dynamically
-        self::assertSame(0, $metrics->get('unusedPrivate.property.count:App\WithMagicGet'));
+        self::assertSame(0, $metrics->entryCount('unusedPrivate.property:App\WithMagicGet'));
         // But method detection still works
-        self::assertSame(0, $metrics->get('unusedPrivate.method.count:App\WithMagicGet'));
+        self::assertSame(0, $metrics->entryCount('unusedPrivate.method:App\WithMagicGet'));
     }
 
     public function testMagicSetSkipsPropertyDetection(): void
@@ -385,7 +388,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(0, $metrics->get('unusedPrivate.property.count:App\WithMagicSet'));
+        self::assertSame(0, $metrics->entryCount('unusedPrivate.property:App\WithMagicSet'));
     }
 
     public function testMagicMethodDoesNotAffectConstants(): void
@@ -408,10 +411,10 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Magic methods do NOT affect constant detection
-        self::assertSame(1, $metrics->get('unusedPrivate.constant.count:App\MagicButConstantsStillChecked'));
+        self::assertSame(1, $metrics->entryCount('unusedPrivate.constant:App\MagicButConstantsStillChecked'));
         // But methods and properties are skipped
-        self::assertSame(0, $metrics->get('unusedPrivate.method.count:App\MagicButConstantsStillChecked'));
-        self::assertSame(0, $metrics->get('unusedPrivate.property.count:App\MagicButConstantsStillChecked'));
+        self::assertSame(0, $metrics->entryCount('unusedPrivate.method:App\MagicButConstantsStillChecked'));
+        self::assertSame(0, $metrics->entryCount('unusedPrivate.property:App\MagicButConstantsStillChecked'));
     }
 
     public function testConstructorPromotedPropertyUnused(): void
@@ -438,7 +441,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // $unused is promoted but never read anywhere
-        self::assertSame(1, $metrics->get('unusedPrivate.property.count:App\WithPromotion'));
+        self::assertSame(1, $metrics->entryCount('unusedPrivate.property:App\WithPromotion'));
     }
 
     public function testConstructorPromotedPropertyUsed(): void
@@ -463,7 +466,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(0, $metrics->get('unusedPrivate.property.count:App\PromotedUsed'));
+        self::assertSame(0, $metrics->entryCount('unusedPrivate.property:App\PromotedUsed'));
     }
 
     public function testAnonymousClassIsolation(): void
@@ -493,7 +496,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Outer: outerHelper is used -> no unused
-        self::assertSame(0, $metrics->get('unusedPrivate.method.count:App\Outer'));
+        self::assertSame(0, $metrics->entryCount('unusedPrivate.method:App\Outer'));
         // Anonymous class should NOT be tracked
         self::assertNull($metrics->get('unusedPrivate.total:'));
     }
@@ -527,7 +530,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // outerHelper is never called from Outer2's own scope
-        self::assertSame(1, $metrics->get('unusedPrivate.method.count:App\Outer2'));
+        self::assertSame(1, $metrics->entryCount('unusedPrivate.method:App\Outer2'));
     }
 
     public function testInterfaceIgnored(): void
@@ -593,7 +596,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(1, $metrics->get('unusedPrivate.method.count:App\Status'));
+        self::assertSame(1, $metrics->entryCount('unusedPrivate.method:App\Status'));
     }
 
     public function testEnumPrivateMethodUsed(): void
@@ -622,7 +625,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(0, $metrics->get('unusedPrivate.method.count:App\Color'));
+        self::assertSame(0, $metrics->entryCount('unusedPrivate.method:App\Color'));
     }
 
     public function testPublicAndProtectedNotFlagged(): void
@@ -647,8 +650,8 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Only private members should be flagged
-        self::assertSame(1, $metrics->get('unusedPrivate.method.count:App\VisibilityTest'));
-        self::assertSame(1, $metrics->get('unusedPrivate.property.count:App\VisibilityTest'));
+        self::assertSame(1, $metrics->entryCount('unusedPrivate.method:App\VisibilityTest'));
+        self::assertSame(1, $metrics->entryCount('unusedPrivate.property:App\VisibilityTest'));
     }
 
     public function testSelfConstClassNotFlagged(): void
@@ -673,7 +676,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // VALUE is unused (self::class is not a constant reference)
-        self::assertSame(1, $metrics->get('unusedPrivate.constant.count:App\WithClassConst'));
+        self::assertSame(1, $metrics->entryCount('unusedPrivate.constant:App\WithClassConst'));
     }
 
     public function testMultipleClassesInOneFile(): void
@@ -702,7 +705,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(1, $metrics->get('unusedPrivate.method.count:App\First'));
+        self::assertSame(1, $metrics->entryCount('unusedPrivate.method:App\First'));
         self::assertSame(0, $metrics->get('unusedPrivate.total:App\Second'));
     }
 
@@ -720,7 +723,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(1, $metrics->get('unusedPrivate.method.count:GlobalClass'));
+        self::assertSame(1, $metrics->entryCount('unusedPrivate.method:GlobalClass'));
     }
 
     public function testMultiplePropertiesOnOneLine(): void
@@ -744,7 +747,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // $b is unused, $a is used
-        self::assertSame(1, $metrics->get('unusedPrivate.property.count:App\MultiProp'));
+        self::assertSame(1, $metrics->entryCount('unusedPrivate.property:App\MultiProp'));
     }
 
     public function testMultipleConstantsOnOneLine(): void
@@ -767,7 +770,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(1, $metrics->get('unusedPrivate.constant.count:App\MultiConst'));
+        self::assertSame(1, $metrics->entryCount('unusedPrivate.constant:App\MultiConst'));
     }
 
     public function testReset(): void
@@ -829,9 +832,9 @@ PHP;
         self::assertSame('MyClass', $class->class);
 
         // Metrics without FQN prefix (ClassWithMetrics pattern)
-        self::assertSame(1, $class->metrics->get('unusedPrivate.method.count'));
-        self::assertSame(1, $class->metrics->get('unusedPrivate.property.count'));
-        self::assertSame(0, $class->metrics->get('unusedPrivate.constant.count'));
+        self::assertSame(1, $class->metrics->entryCount('unusedPrivate.method'));
+        self::assertSame(1, $class->metrics->entryCount('unusedPrivate.property'));
+        self::assertSame(0, $class->metrics->entryCount('unusedPrivate.constant'));
         self::assertSame(2, $class->metrics->get('unusedPrivate.total'));
     }
 
@@ -872,7 +875,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(0, $metrics->get('unusedPrivate.property.count:App\StaticPropAccess'));
+        self::assertSame(0, $metrics->entryCount('unusedPrivate.property:App\StaticPropAccess'));
     }
 
     private function collectMetrics(string $code): MetricBag

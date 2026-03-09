@@ -10,7 +10,9 @@ Core contains base contracts, Value Objects and Enums used by all other domains.
 Core/
 ├── Metric/
 │   ├── BaseCollectorInterface.php         # Common contract for all collector types
-│   ├── MetricBag.php
+│   ├── DataBag.php                        # Immutable container for structured non-numeric data
+│   ├── MetricBag.php                      # Immutable container for scalar metrics + DataBag
+│   ├── MetricName.php                     # Canonical metric name constants
 │   ├── MetricCollectorInterface.php
 │   ├── MetricDefinition.php              # VO for aggregation descriptions
 │   ├── MetricRepositoryInterface.php

@@ -20,13 +20,6 @@ use AiMessDetector\Rules\AbstractRule;
  */
 abstract class AbstractSecurityPatternRule extends AbstractRule
 {
-    /** @var array<int, string> Maps superglobal indices (from MetricBag) back to names */
-    private const array SUPERGLOBAL_NAMES = [
-        0 => '_GET',
-        1 => '_POST',
-        2 => '_REQUEST',
-        3 => '_COOKIE',
-    ];
     public function getCategory(): RuleCategory
     {
         return RuleCategory::Security;
@@ -55,7 +48,7 @@ abstract class AbstractSecurityPatternRule extends AbstractRule
         $type = $this->getPatternType();
 
         return [
-            "security.{$type}.count",
+            "security.{$type}",
         ];
     }
 
@@ -76,26 +69,23 @@ abstract class AbstractSecurityPatternRule extends AbstractRule
             return [];
         }
 
-        $superglobalNames = self::SUPERGLOBAL_NAMES;
-
         $violations = [];
         $type = $this->getPatternType();
 
         foreach ($context->metrics->all(SymbolType::File) as $fileInfo) {
             $metrics = $context->metrics->get($fileInfo->symbolPath);
-            $count = (int) ($metrics->get("security.{$type}.count") ?? 0);
+            $entries = $metrics->entries("security.{$type}");
 
-            if ($count === 0) {
+            if ($entries === []) {
                 continue;
             }
 
-            for ($i = 0; $i < $count; $i++) {
-                $line = (int) ($metrics->get("security.{$type}.line.{$i}") ?? 1);
-                $superglobalIndex = (int) ($metrics->get("security.{$type}.superglobal.{$i}") ?? -1);
-                $superglobalName = $superglobalNames[$superglobalIndex] ?? null;
+            foreach ($entries as $entry) {
+                $line = (int) $entry['line'];
+                $superglobal = (string) ($entry['superglobal'] ?? '');
 
-                $message = $superglobalName !== null
-                    ? \sprintf('%s ($%s)', $this->getMessageTemplate(), $superglobalName)
+                $message = $superglobal !== ''
+                    ? \sprintf('%s ($%s)', $this->getMessageTemplate(), $superglobal)
                     : $this->getMessageTemplate();
 
                 $violations[] = new Violation(

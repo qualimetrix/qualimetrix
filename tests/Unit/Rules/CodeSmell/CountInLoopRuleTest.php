@@ -36,7 +36,7 @@ final class CountInLoopRuleTest extends TestCase
     {
         $rule = new CountInLoopRule(new CodeSmellOptions());
 
-        self::assertSame(['codeSmell.count_in_loop.count'], $rule->requires());
+        self::assertSame(['codeSmell.count_in_loop'], $rule->requires());
     }
 
     #[Test]
@@ -66,7 +66,7 @@ final class CountInLoopRuleTest extends TestCase
         $symbolPath = SymbolPath::forFile('src/Clean.php');
         $fileInfo = new SymbolInfo($symbolPath, 'src/Clean.php', null);
 
-        $metricBag = (new MetricBag())->with('codeSmell.count_in_loop.count', 0);
+        $metricBag = new MetricBag();
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -89,8 +89,7 @@ final class CountInLoopRuleTest extends TestCase
         $fileInfo = new SymbolInfo($symbolPath, 'src/Smelly.php', null);
 
         $metricBag = (new MetricBag())
-            ->with('codeSmell.count_in_loop.count', 1)
-            ->with('codeSmell.count_in_loop.line.0', 15);
+            ->withEntry('codeSmell.count_in_loop', ['line' => 15]);
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
         $repository->method('all')

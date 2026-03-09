@@ -36,7 +36,7 @@ final class ExitRuleTest extends TestCase
     {
         $rule = new ExitRule(new CodeSmellOptions());
 
-        self::assertSame(['codeSmell.exit.count'], $rule->requires());
+        self::assertSame(['codeSmell.exit'], $rule->requires());
     }
 
     #[Test]
@@ -66,7 +66,7 @@ final class ExitRuleTest extends TestCase
         $symbolPath = SymbolPath::forFile('src/Clean.php');
         $fileInfo = new SymbolInfo($symbolPath, 'src/Clean.php', null);
 
-        $metricBag = (new MetricBag())->with('codeSmell.exit.count', 0);
+        $metricBag = new MetricBag();
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -89,9 +89,8 @@ final class ExitRuleTest extends TestCase
         $fileInfo = new SymbolInfo($symbolPath, 'src/Smelly.php', null);
 
         $metricBag = (new MetricBag())
-            ->with('codeSmell.exit.count', 2)
-            ->with('codeSmell.exit.line.0', 10)
-            ->with('codeSmell.exit.line.1', 35);
+            ->withEntry('codeSmell.exit', ['line' => 10])
+            ->withEntry('codeSmell.exit', ['line' => 35]);
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
         $repository->method('all')

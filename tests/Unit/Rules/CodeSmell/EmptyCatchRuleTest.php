@@ -36,7 +36,7 @@ final class EmptyCatchRuleTest extends TestCase
     {
         $rule = new EmptyCatchRule(new CodeSmellOptions());
 
-        self::assertSame(['codeSmell.empty_catch.count'], $rule->requires());
+        self::assertSame(['codeSmell.empty_catch'], $rule->requires());
     }
 
     #[Test]
@@ -66,7 +66,7 @@ final class EmptyCatchRuleTest extends TestCase
         $symbolPath = SymbolPath::forFile('src/Clean.php');
         $fileInfo = new SymbolInfo($symbolPath, 'src/Clean.php', null);
 
-        $metricBag = (new MetricBag())->with('codeSmell.empty_catch.count', 0);
+        $metricBag = new MetricBag();
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -89,8 +89,7 @@ final class EmptyCatchRuleTest extends TestCase
         $fileInfo = new SymbolInfo($symbolPath, 'src/Smelly.php', null);
 
         $metricBag = (new MetricBag())
-            ->with('codeSmell.empty_catch.count', 1)
-            ->with('codeSmell.empty_catch.line.0', 20);
+            ->withEntry('codeSmell.empty_catch', ['line' => 20]);
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
         $repository->method('all')

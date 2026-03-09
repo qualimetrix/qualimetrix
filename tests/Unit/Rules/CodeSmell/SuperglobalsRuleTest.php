@@ -36,7 +36,7 @@ final class SuperglobalsRuleTest extends TestCase
     {
         $rule = new SuperglobalsRule(new CodeSmellOptions());
 
-        self::assertSame(['codeSmell.superglobals.count'], $rule->requires());
+        self::assertSame(['codeSmell.superglobals'], $rule->requires());
     }
 
     #[Test]
@@ -66,7 +66,7 @@ final class SuperglobalsRuleTest extends TestCase
         $symbolPath = SymbolPath::forFile('src/Clean.php');
         $fileInfo = new SymbolInfo($symbolPath, 'src/Clean.php', null);
 
-        $metricBag = (new MetricBag())->with('codeSmell.superglobals.count', 0);
+        $metricBag = new MetricBag();
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -89,10 +89,9 @@ final class SuperglobalsRuleTest extends TestCase
         $fileInfo = new SymbolInfo($symbolPath, 'src/Smelly.php', null);
 
         $metricBag = (new MetricBag())
-            ->with('codeSmell.superglobals.count', 3)
-            ->with('codeSmell.superglobals.line.0', 5)
-            ->with('codeSmell.superglobals.line.1', 18)
-            ->with('codeSmell.superglobals.line.2', 33);
+            ->withEntry('codeSmell.superglobals', ['line' => 5])
+            ->withEntry('codeSmell.superglobals', ['line' => 18])
+            ->withEntry('codeSmell.superglobals', ['line' => 33]);
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
         $repository->method('all')

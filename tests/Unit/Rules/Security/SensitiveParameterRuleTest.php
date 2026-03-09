@@ -35,7 +35,7 @@ final class SensitiveParameterRuleTest extends TestCase
     {
         $rule = new SensitiveParameterRule(new SensitiveParameterOptions());
 
-        self::assertSame(['security.sensitiveParameter.count'], $rule->requires());
+        self::assertSame(['security.sensitiveParameter'], $rule->requires());
     }
 
     public function testDisabledReturnsNoViolations(): void
@@ -43,7 +43,9 @@ final class SensitiveParameterRuleTest extends TestCase
         $rule = new SensitiveParameterRule(new SensitiveParameterOptions(enabled: false));
 
         $context = $this->createContext(
-            MetricBag::fromArray(['security.sensitiveParameter.count' => 2]),
+            (new MetricBag())
+                ->withEntry('security.sensitiveParameter', ['line' => 1])
+                ->withEntry('security.sensitiveParameter', ['line' => 2]),
         );
 
         self::assertCount(0, $rule->analyze($context));
@@ -53,9 +55,7 @@ final class SensitiveParameterRuleTest extends TestCase
     {
         $rule = new SensitiveParameterRule(new SensitiveParameterOptions());
 
-        $context = $this->createContext(
-            MetricBag::fromArray(['security.sensitiveParameter.count' => 0]),
-        );
+        $context = $this->createContext(new MetricBag());
 
         self::assertCount(0, $rule->analyze($context));
     }
@@ -65,10 +65,8 @@ final class SensitiveParameterRuleTest extends TestCase
         $rule = new SensitiveParameterRule(new SensitiveParameterOptions());
 
         $context = $this->createContext(
-            MetricBag::fromArray([
-                'security.sensitiveParameter.count' => 1,
-                'security.sensitiveParameter.line.0' => 12,
-            ]),
+            (new MetricBag())
+                ->withEntry('security.sensitiveParameter', ['line' => 12]),
         );
 
         $violations = $rule->analyze($context);
@@ -85,12 +83,10 @@ final class SensitiveParameterRuleTest extends TestCase
         $rule = new SensitiveParameterRule(new SensitiveParameterOptions());
 
         $context = $this->createContext(
-            MetricBag::fromArray([
-                'security.sensitiveParameter.count' => 3,
-                'security.sensitiveParameter.line.0' => 5,
-                'security.sensitiveParameter.line.1' => 10,
-                'security.sensitiveParameter.line.2' => 22,
-            ]),
+            (new MetricBag())
+                ->withEntry('security.sensitiveParameter', ['line' => 5])
+                ->withEntry('security.sensitiveParameter', ['line' => 10])
+                ->withEntry('security.sensitiveParameter', ['line' => 22]),
         );
 
         $violations = $rule->analyze($context);

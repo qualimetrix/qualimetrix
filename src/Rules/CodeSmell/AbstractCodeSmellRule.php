@@ -48,7 +48,7 @@ abstract class AbstractCodeSmellRule extends AbstractRule
         $type = $this->getSmellType();
 
         return [
-            "codeSmell.{$type}.count",
+            "codeSmell.{$type}",
         ];
     }
 
@@ -66,15 +66,10 @@ abstract class AbstractCodeSmellRule extends AbstractRule
 
         foreach ($context->metrics->all(SymbolType::File) as $fileInfo) {
             $metrics = $context->metrics->get($fileInfo->symbolPath);
-            $count = (int) ($metrics->get("codeSmell.{$type}.count") ?? 0);
+            $entries = $metrics->entries("codeSmell.{$type}");
 
-            if ($count === 0) {
-                continue;
-            }
-
-            // Create one violation per occurrence with correct line
-            for ($i = 0; $i < $count; $i++) {
-                $line = (int) ($metrics->get("codeSmell.{$type}.line.{$i}") ?? 1);
+            foreach ($entries as $entry) {
+                $line = (int) $entry['line'];
 
                 $violations[] = new Violation(
                     location: new Location($fileInfo->file, $line),

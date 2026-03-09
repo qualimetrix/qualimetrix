@@ -672,12 +672,12 @@ PHP;
 
         $bag = $collector->collect(new SplFileInfo(__FILE__), $ast);
 
-        self::assertSame(1, $bag->get('identicalSubExpression.identical_operands.count'));
-        self::assertSame(2, $bag->get('identicalSubExpression.identical_operands.line.0'));
-        self::assertSame(1, $bag->get('identicalSubExpression.duplicate_condition.count'));
-        self::assertSame(3, $bag->get('identicalSubExpression.duplicate_condition.line.0'));
-        self::assertSame(0, $bag->get('identicalSubExpression.identical_ternary.count'));
-        self::assertSame(0, $bag->get('identicalSubExpression.duplicate_match_arm.count'));
+        self::assertSame(1, $bag->entryCount('identicalSubExpression.identical_operands'));
+        self::assertSame(2, $bag->entries('identicalSubExpression.identical_operands')[0]['line']);
+        self::assertSame(1, $bag->entryCount('identicalSubExpression.duplicate_condition'));
+        self::assertSame(3, $bag->entries('identicalSubExpression.duplicate_condition')[0]['line']);
+        self::assertSame(0, $bag->entryCount('identicalSubExpression.identical_ternary'));
+        self::assertSame(0, $bag->entryCount('identicalSubExpression.duplicate_match_arm'));
     }
 
     public function testCollectorNoFindings(): void
@@ -696,7 +696,7 @@ PHP;
         $bag = $collector->collect(new SplFileInfo(__FILE__), $ast);
 
         foreach (IdenticalSubExpressionCollector::FINDING_TYPES as $type) {
-            self::assertSame(0, $bag->get("identicalSubExpression.{$type}.count"));
+            self::assertSame(0, $bag->entryCount("identicalSubExpression.{$type}"));
         }
     }
 
@@ -711,11 +711,11 @@ PHP;
         $collector = new IdenticalSubExpressionCollector();
         $provides = $collector->provides();
 
-        self::assertContains('identicalSubExpression.identical_operands.count', $provides);
-        self::assertContains('identicalSubExpression.duplicate_condition.count', $provides);
-        self::assertContains('identicalSubExpression.identical_ternary.count', $provides);
-        self::assertContains('identicalSubExpression.duplicate_match_arm.count', $provides);
-        self::assertContains('identicalSubExpression.duplicate_switch_case.count', $provides);
+        self::assertContains('identicalSubExpression.identical_operands', $provides);
+        self::assertContains('identicalSubExpression.duplicate_condition', $provides);
+        self::assertContains('identicalSubExpression.identical_ternary', $provides);
+        self::assertContains('identicalSubExpression.duplicate_match_arm', $provides);
+        self::assertContains('identicalSubExpression.duplicate_switch_case', $provides);
     }
 
     // ── Helpers ─────────────────────────────────────────────────────

@@ -35,7 +35,7 @@ final class CommandInjectionRuleTest extends TestCase
     {
         $rule = new CommandInjectionRule(new SecurityPatternOptions());
 
-        self::assertSame(['security.command_injection.count'], $rule->requires());
+        self::assertSame(['security.command_injection'], $rule->requires());
     }
 
     public function testDisabledReturnsNoViolations(): void
@@ -43,7 +43,7 @@ final class CommandInjectionRuleTest extends TestCase
         $rule = new CommandInjectionRule(new SecurityPatternOptions(enabled: false));
 
         $context = $this->createContext(
-            MetricBag::fromArray(['security.command_injection.count' => 1]),
+            (new MetricBag())->withEntry('security.command_injection', ['line' => 1, 'superglobal' => '']),
         );
 
         self::assertCount(0, $rule->analyze($context));
@@ -53,9 +53,7 @@ final class CommandInjectionRuleTest extends TestCase
     {
         $rule = new CommandInjectionRule(new SecurityPatternOptions());
 
-        $context = $this->createContext(
-            MetricBag::fromArray(['security.command_injection.count' => 0]),
-        );
+        $context = $this->createContext(new MetricBag());
 
         self::assertCount(0, $rule->analyze($context));
     }
@@ -65,10 +63,8 @@ final class CommandInjectionRuleTest extends TestCase
         $rule = new CommandInjectionRule(new SecurityPatternOptions());
 
         $context = $this->createContext(
-            MetricBag::fromArray([
-                'security.command_injection.count' => 1,
-                'security.command_injection.line.0' => 20,
-            ]),
+            (new MetricBag())
+                ->withEntry('security.command_injection', ['line' => 20, 'superglobal' => '']),
         );
 
         $violations = $rule->analyze($context);
@@ -85,11 +81,9 @@ final class CommandInjectionRuleTest extends TestCase
         $rule = new CommandInjectionRule(new SecurityPatternOptions());
 
         $context = $this->createContext(
-            MetricBag::fromArray([
-                'security.command_injection.count' => 2,
-                'security.command_injection.line.0' => 10,
-                'security.command_injection.line.1' => 30,
-            ]),
+            (new MetricBag())
+                ->withEntry('security.command_injection', ['line' => 10, 'superglobal' => ''])
+                ->withEntry('security.command_injection', ['line' => 30, 'superglobal' => '']),
         );
 
         $violations = $rule->analyze($context);

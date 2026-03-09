@@ -31,9 +31,9 @@ final class SecurityPatternCollectorTest extends TestCase
     {
         $provides = $this->collector->provides();
 
-        self::assertContains('security.sql_injection.count', $provides);
-        self::assertContains('security.xss.count', $provides);
-        self::assertContains('security.command_injection.count', $provides);
+        self::assertContains('security.sql_injection', $provides);
+        self::assertContains('security.xss', $provides);
+        self::assertContains('security.command_injection', $provides);
     }
 
     public function testCollectWithMultiplePatterns(): void
@@ -47,14 +47,19 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(1, $metrics->get('security.xss.count'));
-        self::assertSame(1, $metrics->get('security.command_injection.count'));
-        self::assertSame(1, $metrics->get('security.sql_injection.count'));
+        self::assertSame(1, $metrics->entryCount('security.xss'));
+        self::assertSame(1, $metrics->entryCount('security.command_injection'));
+        self::assertSame(1, $metrics->entryCount('security.sql_injection'));
 
         // Check line numbers
-        self::assertSame(2, $metrics->get('security.xss.line.0'));
-        self::assertSame(3, $metrics->get('security.command_injection.line.0'));
-        self::assertSame(4, $metrics->get('security.sql_injection.line.0'));
+        $xssEntries = $metrics->entries('security.xss');
+        self::assertSame(2, $xssEntries[0]['line']);
+
+        $cmdEntries = $metrics->entries('security.command_injection');
+        self::assertSame(3, $cmdEntries[0]['line']);
+
+        $sqlEntries = $metrics->entries('security.sql_injection');
+        self::assertSame(4, $sqlEntries[0]['line']);
     }
 
     public function testCollectWithNoFindings(): void
@@ -67,9 +72,9 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(0, $metrics->get('security.xss.count'));
-        self::assertSame(0, $metrics->get('security.command_injection.count'));
-        self::assertSame(0, $metrics->get('security.sql_injection.count'));
+        self::assertSame(0, $metrics->entryCount('security.xss'));
+        self::assertSame(0, $metrics->entryCount('security.command_injection'));
+        self::assertSame(0, $metrics->entryCount('security.sql_injection'));
     }
 
     public function testReset(): void
@@ -82,7 +87,7 @@ PHP;
         $code2 = '<?php echo "safe";';
         $metrics = $this->collectMetrics($code2);
 
-        self::assertSame(0, $metrics->get('security.xss.count'));
+        self::assertSame(0, $metrics->entryCount('security.xss'));
     }
 
     private function collectMetrics(string $code): MetricBag

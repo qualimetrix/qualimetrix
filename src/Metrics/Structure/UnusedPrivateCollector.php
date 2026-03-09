@@ -7,6 +7,7 @@ namespace AiMessDetector\Metrics\Structure;
 use AiMessDetector\Core\Metric\ClassMetricsProviderInterface;
 use AiMessDetector\Core\Metric\ClassWithMetrics;
 use AiMessDetector\Core\Metric\MetricBag;
+use AiMessDetector\Core\Metric\MetricName;
 use AiMessDetector\Metrics\AbstractCollector;
 use Override;
 use SplFileInfo;
@@ -17,23 +18,21 @@ use SplFileInfo;
  * Detects private methods, properties, and constants that are declared
  * but never referenced within the same class.
  *
- * Metrics per class:
- * - unusedPrivate.method.count: number of unused private methods
- * - unusedPrivate.method.line.{i}: line number of each unused method
- * - unusedPrivate.property.count: number of unused private properties
- * - unusedPrivate.property.line.{i}: line number of each unused property
- * - unusedPrivate.constant.count: number of unused private constants
- * - unusedPrivate.constant.line.{i}: line number of each unused constant
+ * DataBag entries per class (keyed by class FQN suffix):
+ * - unusedPrivate.method: entries with ['line' => int]
+ * - unusedPrivate.property: entries with ['line' => int]
+ * - unusedPrivate.constant: entries with ['line' => int]
+ *
+ * Scalar metrics per class:
  * - unusedPrivate.total: total count of all unused private members
  */
 final class UnusedPrivateCollector extends AbstractCollector implements ClassMetricsProviderInterface
 {
     private const NAME = 'unused-private';
 
-    public const string METRIC_METHOD_COUNT = 'unusedPrivate.method.count';
-    public const string METRIC_PROPERTY_COUNT = 'unusedPrivate.property.count';
-    public const string METRIC_CONSTANT_COUNT = 'unusedPrivate.constant.count';
-    public const string METRIC_TOTAL = 'unusedPrivate.total';
+    public const string ENTRY_METHOD = MetricName::STRUCTURE_UNUSED_PRIVATE_METHOD;
+    public const string ENTRY_PROPERTY = MetricName::STRUCTURE_UNUSED_PRIVATE_PROPERTY;
+    public const string ENTRY_CONSTANT = MetricName::STRUCTURE_UNUSED_PRIVATE_CONSTANT;
 
     public function __construct()
     {
@@ -51,10 +50,10 @@ final class UnusedPrivateCollector extends AbstractCollector implements ClassMet
     public function provides(): array
     {
         return [
-            self::METRIC_METHOD_COUNT,
-            self::METRIC_PROPERTY_COUNT,
-            self::METRIC_CONSTANT_COUNT,
-            self::METRIC_TOTAL,
+            self::ENTRY_METHOD,
+            self::ENTRY_PROPERTY,
+            self::ENTRY_CONSTANT,
+            MetricName::STRUCTURE_UNUSED_PRIVATE_TOTAL,
         ];
     }
 
@@ -106,18 +105,14 @@ final class UnusedPrivateCollector extends AbstractCollector implements ClassMet
         $unusedProperties = $data->getUnusedProperties();
         $unusedConstants = $data->getUnusedConstants();
 
-        $bag = $bag
-            ->with(self::METRIC_METHOD_COUNT . ':' . $classFqn, \count($unusedMethods))
-            ->with(self::METRIC_PROPERTY_COUNT . ':' . $classFqn, \count($unusedProperties))
-            ->with(self::METRIC_CONSTANT_COUNT . ':' . $classFqn, \count($unusedConstants))
-            ->with(
-                self::METRIC_TOTAL . ':' . $classFqn,
-                \count($unusedMethods) + \count($unusedProperties) + \count($unusedConstants),
-            );
+        $bag = $bag->with(
+            MetricName::STRUCTURE_UNUSED_PRIVATE_TOTAL . ':' . $classFqn,
+            \count($unusedMethods) + \count($unusedProperties) + \count($unusedConstants),
+        );
 
-        $bag = $this->addLineMetrics($bag, $classFqn, 'method', $unusedMethods);
-        $bag = $this->addLineMetrics($bag, $classFqn, 'property', $unusedProperties);
-        $bag = $this->addLineMetrics($bag, $classFqn, 'constant', $unusedConstants);
+        $bag = $this->addEntries($bag, $classFqn, self::ENTRY_METHOD, $unusedMethods);
+        $bag = $this->addEntries($bag, $classFqn, self::ENTRY_PROPERTY, $unusedProperties);
+        $bag = $this->addEntries($bag, $classFqn, self::ENTRY_CONSTANT, $unusedConstants);
 
         return $bag;
     }
@@ -128,18 +123,14 @@ final class UnusedPrivateCollector extends AbstractCollector implements ClassMet
         $unusedProperties = $data->getUnusedProperties();
         $unusedConstants = $data->getUnusedConstants();
 
-        $bag = (new MetricBag())
-            ->with(self::METRIC_METHOD_COUNT, \count($unusedMethods))
-            ->with(self::METRIC_PROPERTY_COUNT, \count($unusedProperties))
-            ->with(self::METRIC_CONSTANT_COUNT, \count($unusedConstants))
-            ->with(
-                self::METRIC_TOTAL,
-                \count($unusedMethods) + \count($unusedProperties) + \count($unusedConstants),
-            );
+        $bag = (new MetricBag())->with(
+            MetricName::STRUCTURE_UNUSED_PRIVATE_TOTAL,
+            \count($unusedMethods) + \count($unusedProperties) + \count($unusedConstants),
+        );
 
-        $bag = $this->addLineMetrics($bag, null, 'method', $unusedMethods);
-        $bag = $this->addLineMetrics($bag, null, 'property', $unusedProperties);
-        $bag = $this->addLineMetrics($bag, null, 'constant', $unusedConstants);
+        $bag = $this->addEntries($bag, null, self::ENTRY_METHOD, $unusedMethods);
+        $bag = $this->addEntries($bag, null, self::ENTRY_PROPERTY, $unusedProperties);
+        $bag = $this->addEntries($bag, null, self::ENTRY_CONSTANT, $unusedConstants);
 
         return $bag;
     }
@@ -147,14 +138,12 @@ final class UnusedPrivateCollector extends AbstractCollector implements ClassMet
     /**
      * @param array<string, int> $unusedMembers name => line
      */
-    private function addLineMetrics(MetricBag $bag, ?string $classFqn, string $type, array $unusedMembers): MetricBag
+    private function addEntries(MetricBag $bag, ?string $classFqn, string $entryKey, array $unusedMembers): MetricBag
     {
         $suffix = $classFqn !== null ? ':' . $classFqn : '';
-        $i = 0;
 
         foreach ($unusedMembers as $line) {
-            $bag = $bag->with("unusedPrivate.{$type}.line.{$i}{$suffix}", $line);
-            $i++;
+            $bag = $bag->withEntry("{$entryKey}{$suffix}", ['line' => $line]);
         }
 
         return $bag;

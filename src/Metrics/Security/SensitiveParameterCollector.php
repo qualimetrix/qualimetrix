@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AiMessDetector\Metrics\Security;
 
 use AiMessDetector\Core\Metric\MetricBag;
+use AiMessDetector\Core\Metric\MetricName;
 use AiMessDetector\Metrics\AbstractCollector;
 use PhpParser\Node;
 use SplFileInfo;
@@ -15,9 +16,8 @@ use SplFileInfo;
  * Detects parameters with sensitive names (password, secret, etc.)
  * that are missing the #[\SensitiveParameter] attribute.
  *
- * Metrics:
- * - security.sensitiveParameter.count - total number of findings
- * - security.sensitiveParameter.line.{i} - line number for each finding
+ * Entries (security.sensitiveParameter):
+ * - line: int — line number of the finding
  */
 final class SensitiveParameterCollector extends AbstractCollector
 {
@@ -39,7 +39,7 @@ final class SensitiveParameterCollector extends AbstractCollector
      */
     public function provides(): array
     {
-        return ['security.sensitiveParameter.count'];
+        return [MetricName::SECURITY_SENSITIVE_PARAMETER];
     }
 
     /**
@@ -51,10 +51,11 @@ final class SensitiveParameterCollector extends AbstractCollector
 
         $locations = $this->visitor->getLocations();
         $bag = new MetricBag();
-        $bag = $bag->with('security.sensitiveParameter.count', \count($locations));
 
-        foreach ($locations as $i => $location) {
-            $bag = $bag->with("security.sensitiveParameter.line.{$i}", $location->line);
+        foreach ($locations as $location) {
+            $bag = $bag->withEntry(MetricName::SECURITY_SENSITIVE_PARAMETER, [
+                'line' => $location->line,
+            ]);
         }
 
         return $bag;

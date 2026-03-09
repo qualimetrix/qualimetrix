@@ -60,10 +60,7 @@ final class UnusedPrivateRuleTest extends TestCase
         $classInfo = new SymbolInfo($symbolPath, 'src/Clean.php', 5);
 
         $metricBag = (new MetricBag())
-            ->with('unusedPrivate.total', 0)
-            ->with('unusedPrivate.method.count', 0)
-            ->with('unusedPrivate.property.count', 0)
-            ->with('unusedPrivate.constant.count', 0);
+            ->with('unusedPrivate.total', 0);
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -87,10 +84,7 @@ final class UnusedPrivateRuleTest extends TestCase
 
         $metricBag = (new MetricBag())
             ->with('unusedPrivate.total', 1)
-            ->with('unusedPrivate.method.count', 1)
-            ->with('unusedPrivate.method.line.0', 15)
-            ->with('unusedPrivate.property.count', 0)
-            ->with('unusedPrivate.constant.count', 0);
+            ->withEntry('unusedPrivate.method', ['line' => 15]);
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -120,10 +114,7 @@ final class UnusedPrivateRuleTest extends TestCase
 
         $metricBag = (new MetricBag())
             ->with('unusedPrivate.total', 1)
-            ->with('unusedPrivate.method.count', 0)
-            ->with('unusedPrivate.property.count', 1)
-            ->with('unusedPrivate.property.line.0', 10)
-            ->with('unusedPrivate.constant.count', 0);
+            ->withEntry('unusedPrivate.property', ['line' => 10]);
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -149,10 +140,7 @@ final class UnusedPrivateRuleTest extends TestCase
 
         $metricBag = (new MetricBag())
             ->with('unusedPrivate.total', 1)
-            ->with('unusedPrivate.method.count', 0)
-            ->with('unusedPrivate.property.count', 0)
-            ->with('unusedPrivate.constant.count', 1)
-            ->with('unusedPrivate.constant.line.0', 8);
+            ->withEntry('unusedPrivate.constant', ['line' => 8]);
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -179,13 +167,10 @@ final class UnusedPrivateRuleTest extends TestCase
 
         $metricBag = (new MetricBag())
             ->with('unusedPrivate.total', 4)
-            ->with('unusedPrivate.method.count', 2)
-            ->with('unusedPrivate.method.line.0', 10)
-            ->with('unusedPrivate.method.line.1', 15)
-            ->with('unusedPrivate.property.count', 1)
-            ->with('unusedPrivate.property.line.0', 7)
-            ->with('unusedPrivate.constant.count', 1)
-            ->with('unusedPrivate.constant.line.0', 8);
+            ->withEntry('unusedPrivate.method', ['line' => 10])
+            ->withEntry('unusedPrivate.method', ['line' => 15])
+            ->withEntry('unusedPrivate.property', ['line' => 7])
+            ->withEntry('unusedPrivate.constant', ['line' => 8]);
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
         $repository->method('all')

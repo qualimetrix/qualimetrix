@@ -36,7 +36,7 @@ final class GotoRuleTest extends TestCase
     {
         $rule = new GotoRule(new CodeSmellOptions());
 
-        self::assertSame(['codeSmell.goto.count'], $rule->requires());
+        self::assertSame(['codeSmell.goto'], $rule->requires());
     }
 
     #[Test]
@@ -66,7 +66,7 @@ final class GotoRuleTest extends TestCase
         $symbolPath = SymbolPath::forFile('src/Clean.php');
         $fileInfo = new SymbolInfo($symbolPath, 'src/Clean.php', null);
 
-        $metricBag = (new MetricBag())->with('codeSmell.goto.count', 0);
+        $metricBag = new MetricBag();
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -89,8 +89,7 @@ final class GotoRuleTest extends TestCase
         $fileInfo = new SymbolInfo($symbolPath, 'src/Smelly.php', null);
 
         $metricBag = (new MetricBag())
-            ->with('codeSmell.goto.count', 1)
-            ->with('codeSmell.goto.line.0', 50);
+            ->withEntry('codeSmell.goto', ['line' => 50]);
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
         $repository->method('all')
