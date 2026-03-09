@@ -1,13 +1,13 @@
 # AIMD vs Competitors: Deep Comparison
 
-**Analysis date:** 2026-03-07 (update of 2025-12-23 analysis)
+**Analysis date:** 2026-03-09 (update of 2026-03-07 analysis)
 **Tools:** AIMD (dev), phpmd 2.15.0, phpmetrics 2.9.1, pdepend 2.16.2
 
 ---
 
 ## Executive Summary
 
-AIMD is **9-39x faster** than competitors on large codebases (sequential and parallel respectively) and has the deepest set of OOP metrics. However, there are accuracy issues in MI calculation (systematic 10-16 point underestimation) and undocumented CCN variant differences. The biggest product gaps are in security analysis, code duplication, dead code detection, and type coverage metrics.
+AIMD is **9-39x faster** than competitors on large codebases (sequential and parallel respectively) and has the deepest set of OOP metrics. MI accuracy issue has been fixed (now uses LLOC). CCN variant is CCN2+ (includes `??` counting — stricter than standard, documented as intentional). Previous product gaps (security, duplication, dead code, type coverage) have been filled. Remaining gaps: unused variables, architecture rules (deptrac-style), trend analysis, HTML reports.
 
 ---
 
@@ -196,49 +196,51 @@ AIMD WMC is consistently highest due to CCN2+ variant propagation.
 | **Inheritance**                  |        |          |            |       |
 | DIT / NOC                        | ✅     | ✅       | ✅/❌      | ✅    |
 | **Graph-based**                  |        |          |            |       |
-| ClassRank / PageRank             | ❌     | CodeRank | PageRank   | ❌    |
+| ClassRank / PageRank             | ✅     | CodeRank | PageRank   | ❌    |
 | Kan Defects                      | ❌     | ❌       | ✅         | ❌    |
 | System Complexity                | ❌     | ❌       | ✅         | ❌    |
 
 \* AIMD CCN = CCN2 + null coalescing `??` counting (stricter than standard)
 \** AIMD MI previously used physical LOC; fixed to use LLOC in commit 1048c9f
 
-### 3.2 Unique AIMD Metrics
+### 3.2 Unique AIMD Metrics (not available in any PHP competitor)
 
-1. **Cognitive Complexity** — not available in any competitor
-2. **TCC/LCC** (Tight/Loose Class Cohesion) — not available in any competitor
-3. **RFC** (Response for Class) — not available in any competitor
-4. **WOC** (Weight of Class) — not available in any competitor
-5. **Distance from Main Sequence** — not available in any competitor
+1. **Cognitive Complexity** — SonarSource spec, no PHP competitor implements it
+2. **TCC/LCC** (Tight/Loose Class Cohesion) — Bieman & Kang, unique in PHP
+3. **RFC** (Response for Class) — Chidamber & Kemerer, unique in PHP
+4. **WOC** (Weight of Class) — unique in PHP
+5. **Distance from Main Sequence** — Robert C. Martin, unique in PHP
 6. **Abstractness** (per namespace) — not available in phpmd/pdepend at namespace level
+7. **ClassRank** — PageRank on dependency graph, unique in PHP (phpmetrics has PageRank but AIMD's dependency graph is deeper)
 
 ---
 
 ## 4. Feature Comparison
 
-| Feature                                       | AIMD     | phpmd                  | phpmetrics | pdepend      |
-| --------------------------------------------- | :------: | :--------------------: | :--------: | :----------: |
-| Parallel processing                           | ✅       | ❌                     | ❌         | ❌           |
-| Baseline (ignore known issues)                | ✅       | ✅                     | ❌         | ❌           |
-| Git integration (--diff/--analyze=git:staged) | ✅       | ❌                     | ✅         | ❌           |
-| Inline suppression (@aimd-ignore)             | ✅       | ✅ (@SuppressWarnings) | ❌         | ❌           |
-| SARIF output                                  | ✅       | ✅                     | ❌         | ❌           |
-| GitLab Code Quality                           | ✅       | ❌                     | ❌         | ❌           |
-| Checkstyle output                             | ✅       | ✅                     | ❌         | ❌           |
-| JSON output                                   | ✅       | ✅                     | ✅         | ❌           |
-| HTML reports                                  | ❌       | ✅                     | ✅         | ❌           |
-| Graph visualization                           | ✅ (DOT) | ❌                     | ✅ (HTML)  | ✅ (SVG)     |
-| AST caching                                   | ✅       | ✅                     | ❌         | ❌           |
-| Analysis rules with thresholds                | ✅       | ✅                     | ❌         | ❌           |
-| Custom rules                                  | Planned  | ✅                     | ❌         | ❌           |
-| PHP 8.4 support                               | ✅       | ⚠️ (deprecated)        | ✅         | ⚠️ (crashes) |
-| Raw metric export                             | ❌       | ❌                     | ✅ (JSON)  | ✅ (XML)     |
-| Code duplication                              | ❌       | ❌                     | ❌         | ❌           |
-| Security rules                                | Basic*   | ❌                     | ❌         | ❌           |
-| Dead code detection                           | ❌       | ✅ (unused params)     | ❌         | ❌           |
-| Type coverage metrics                         | ❌       | ❌                     | ❌         | ❌           |
+| Feature                                       | AIMD      | phpmd                  | phpmetrics | pdepend      |
+| --------------------------------------------- | :-------: | :--------------------: | :--------: | :----------: |
+| Parallel processing                           | ✅        | ❌                     | ❌         | ❌           |
+| Baseline (ignore known issues)                | ✅        | ✅                     | ❌         | ❌           |
+| Git integration (--diff/--analyze=git:staged) | ✅        | ❌                     | ✅         | ❌           |
+| Inline suppression (@aimd-ignore)             | ✅        | ✅ (@SuppressWarnings) | ❌         | ❌           |
+| SARIF output                                  | ✅        | ✅                     | ❌         | ❌           |
+| GitLab Code Quality                           | ✅        | ❌                     | ❌         | ❌           |
+| Checkstyle output                             | ✅        | ✅                     | ❌         | ❌           |
+| JSON output                                   | ✅        | ✅                     | ✅         | ❌           |
+| HTML reports                                  | ❌        | ✅                     | ✅         | ❌           |
+| Graph visualization                           | ✅ (DOT)  | ❌                     | ✅ (HTML)  | ✅ (SVG)     |
+| AST caching                                   | ✅        | ✅                     | ❌         | ❌           |
+| Analysis rules with thresholds                | ✅        | ✅                     | ❌         | ❌           |
+| Custom rules                                  | Planned   | ✅                     | ❌         | ❌           |
+| PHP 8.4 support                               | ✅        | ⚠️ (deprecated)        | ✅         | ⚠️ (crashes) |
+| Raw metric export                             | ✅ (JSON) | ❌                     | ✅ (JSON)  | ✅ (XML)     |
+| Code duplication                              | ✅        | ❌                     | ❌         | ❌           |
+| Security rules                                | ✅*       | ❌                     | ❌         | ❌           |
+| Dead code detection                           | ✅**      | ✅ (unused params)     | ❌         | ❌           |
+| Type coverage metrics                         | ✅        | ❌                     | ❌         | ❌           |
 
-\* AIMD has superglobals, eval, exit, error suppression rules — but no taint analysis or injection detection.
+\* AIMD has pattern-based security rules: SQL injection, XSS, command injection, hardcoded credentials, sensitive parameter detection. No taint analysis (leave to Psalm/SonarQube).
+\** Unreachable code detection and unused private members (methods, properties, constants). Unused variables TBD.
 
 ---
 

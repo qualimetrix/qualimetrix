@@ -1,7 +1,7 @@
 # AIMD Product Roadmap
 
-**Date:** 2026-03-07
-**Based on:** [Competitive analysis](COMPETITOR_COMPARISON.md)
+**Updated:** 2026-03-09
+**Based on:** [Competitive analysis](COMPETITOR_COMPARISON.md), cross-ecosystem research (SonarQube, ESLint, Semgrep, NDepend, CodeScene, RuboCop, Ruff, ArchUnit)
 
 ---
 
@@ -9,142 +9,233 @@
 
 **Current niche:** Deep OOP metrics + actionable thresholds + fast CI integration.
 
-**Goal:** Become the single quality gate tool that replaces phpmd + phpmetrics + phpcpd, while recommending PHPStan/Psalm as complementary tools for type safety.
+**Goal:** Become the single quality gate tool that replaces phpmd + phpmetrics + phpcpd + deptrac, while recommending PHPStan/Psalm as complementary tools for type safety.
 
-**Core advantage:** 9x faster in sequential mode, 39x with parallelization (vs phpmd on 10k files). Unique metrics (Cognitive Complexity, TCC/LCC, RFC). Modern PHP 8.4 support while competitors degrade (pdepend crashes, phpmd throws deprecation warnings).
+**Core advantage:** 9–39x faster than competitors (sequential/parallel). Unique metrics (Cognitive Complexity, TCC/LCC, RFC, ClassRank). Modern PHP 8.4 support while competitors degrade (pdepend crashes, phpmd deprecation warnings). Only PHP tool with parallel processing.
 
 ```
 What AIMD should own:              What to leave to others:
+─────────────────────────────────  ──────────────────────────────────────
 - OOP metrics (depth)              - Type inference (PHPStan/Psalm)
 - Code smells (breadth)            - Taint analysis (Psalm/SonarQube)
 - Basic security patterns          - Auto-fixing (Rector)
 - Duplication detection            - Style/formatting (PHPCS/PHP-CS-Fixer)
 - Type coverage metrics            - Naming conventions (PHPCS)
+- Architecture rules (deptrac)
+- Trend analysis / quality gates
 - CI integration (speed)
 ```
 
 ---
 
-## Categories With Zero Coverage (Gaps)
+## Completed Work
 
-| Category              | What's Missing                                                                                                                                                         | Impact                                       | Competitor Coverage                                 |
-| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- | --------------------------------------------------- |
-| ~~**Security**~~      | ~~No injection detection, no credential detection~~ ✅ Basic patterns implemented (SQL injection, XSS, command injection, sensitive parameter, hardcoded credentials)  | Critical for enterprise adoption             | SonarQube (full taint), Psalm (taint), PHPMD (none) |
-| ~~**Duplication**~~   | ~~No copy-paste detection~~ ✅ Token-stream duplication detection implemented (`duplication.code-duplication` rule)                                                    | Standard expectation for quality tools       | phpcpd, SonarQube, phpmetrics (partial)             |
-| **Dead Code**         | ~~No unused member detection~~, ~~no unreachable code~~ ✅ Unused private members (`code-smell.unused-private`) and unreachable code implemented. Unused variables TBD | High value, frequently requested             | Psalm, PHPStan+extensions, Rector (59 rules)        |
-| ~~**Type Coverage**~~ | ~~No typed/untyped ratio metrics~~ ✅ Implemented (`design.type-coverage` rule)                                                                                        | Increasingly important with PHP 8.x adoption | PHPStan+type-coverage extension, Psalm              |
+<details>
+<summary><strong>Tier 1–3: All Done</strong> (click to expand)</summary>
+
+### Tier 1: Accuracy Fixes
+- Raw metric export (`--format=metrics-json`)
+- MI formula fix (LLOC instead of physical LOC)
+
+### Tier 2: Quick Wins
+- Type Coverage collector + rule (`design.type-coverage`)
+- Long Parameter List rule (`code-smell.long-parameter-list`)
+- Unreachable Code rule (`code-smell.unreachable-code`)
+- Hardcoded Credentials rule (`security.hardcoded-credentials`)
+
+### Tier 3: Critical Gap Filling
+- Code Duplication detection (`duplication.code-duplication`) — token-stream Rabin-Karp
+- Unused Private Members (`code-smell.unused-private`) — methods, properties, constants
+- ClassRank / PageRank metric — `GlobalContextCollectorInterface`
+- Security patterns — `security.sql-injection`, `security.xss`, `security.command-injection`, `security.sensitive-parameter`
+- Identical Sub-expression (`code-smell.identical-subexpression`)
+- Technical Debt estimation — remediation time per rule, debt summary in reports
+
+</details>
+
+### Remaining Gap: Dead Code
+
+Unused private members and unreachable code are done. **Unused variables** is the remaining gap — see Phase 2 below.
 
 ---
 
-## Tier 1: Accuracy Fixes ✅ DONE
+## Phase 1: Composite Rules & Quick Wins
 
-### 1.1 Add Raw Metric Export ✅ DONE
-Implemented as `--format=metrics-json`.
+Low effort — all data already collected, only need rule logic on top.
+
+### 1.1 God Class Detection
+
+- **Rule:** `code-smell.god-class`
+- **Logic:** Composite threshold on WMC + LCOM4 + TCC + class LOC. A class is a God Class when it has high WMC, low cohesion (high LCOM or low TCC), and is large
+- **Thresholds (draft):** WMC ≥ 47, LCOM4 ≥ 3, TCC < 0.33, classLoc ≥ 300 (any 3 of 4)
+- **Reference:** Lanza & Marinescu "Object-Oriented Metrics in Practice", SonarQube S1820
+- **Effort:** Low
+- **Value:** High — the most requested OOP smell, phpmd has it, SonarQube has it
+
+### 1.2 Data Class Detection
+
+- **Rule:** `code-smell.data-class`
+- **Logic:** High WOC (≥ 0.8 = mostly public accessors), low WMC, no business logic methods
+- **Reference:** Fowler's "Refactoring", Lanza & Marinescu
+- **Effort:** Low
+- **Value:** Medium — encourages moving behavior closer to data
+
+### 1.3 Feature Envy Detection
+
+- **Rule:** `code-smell.feature-envy`
+- **Logic:** Method uses more symbols from another class than from its own class. Requires method-level coupling data (already available via RFC/CBO collectors)
+- **Note:** May need additional method-level coupling metric (external accesses per method). Evaluate feasibility before committing
+- **Effort:** Medium (may need new per-method metric)
+- **Value:** Medium — classic Fowler smell
+
+### 1.4 Constructor Over-injection
+
+- **Rule:** `code-smell.constructor-overinjection`
+- **Logic:** `__construct` parameter count ≥ threshold (default: 10). Already have parameter count per method; need to filter for constructors specifically
+- **Effort:** Low
+- **Value:** Medium — direct signal of SRP violation in DI-heavy codebases
+
+### 1.5 Cyclomatic Density
+
+- **Metric:** `cyclomaticDensity` = CCN / LLOC
+- **Rule:** `complexity.cyclomatic-density`
+- **Logic:** Normalized complexity — high CCN in a short method is worse than the same CCN spread over many lines
+- **Reference:** Gill & Kemerer, NDepend "IL Cyclomatic Complexity / IL LOC"
+- **Effort:** Low (derived metric from existing CCN + LLOC)
+- **Value:** Low-Medium — useful for prioritization
+
+### 1.6 Effort-Aware Prioritization
+
+- **Feature:** Prioritized violation output combining ClassRank × severity × remediation_time
+- **Output:** "Top N highest-impact issues" section in text/JSON reports
+- **Reference:** CodeScene hotspot analysis, SonarQube debt ratio
+- **All data already exists:** ClassRank, severity, remediation time
+- **Effort:** Low-Medium (reporting layer change)
+- **Value:** High — answers "what should I fix first?"
 
 ---
 
-## Tier 2: Quick Wins ✅ DONE
+## Phase 2: Dead Code & Complexity Insights
 
-### 2.1 Type Coverage Collector + Rule ✅ DONE
-### 2.2 Long Parameter List Rule ✅ DONE
-### 2.3 Unreachable Code Rule ✅ DONE
-### 2.4 Hardcoded Credentials Rule ✅ DONE
+### 2.1 Unused Variables Detection
 
----
+- **Rule:** `code-smell.unused-variable`
+- **Scope:** Variables assigned but never read within a function/method scope
+- **Challenges:** Compact assignments (`list()`, `[...]`), `extract()`, variable variables (`$$x`), closures with `use`
+- **Approach:** Scope-aware single-pass AST visitor tracking writes/reads
+- **Reference:** ESLint no-unused-vars, Pylint W0612, PHPStan (via extension)
+- **Effort:** High
+- **Value:** High — universally expected
 
-## Tier 3: Critical Gap Filling (3-6 Months)
+### 2.2 Cognitive Complexity Breakdown
 
-These fill the biggest competitive gaps.
+- **Feature:** Per-element contribution to total Cognitive Complexity in violation messages
+- **Output:** `"Cognitive complexity is 35 (if+3 at line 12, nested for+4 at line 15, ...)"` — top N contributors
+- **Reference:** SonarQube's inline annotation display
+- **Effort:** Medium (refactor CognitiveComplexityVisitor to track per-increment source)
+- **Value:** High — unique in PHP ecosystem, dramatically improves actionability
 
-### 3.1 Code Duplication Detection ✅ DONE
+### 2.3 CRAP Index (Change Risk Anti-Patterns)
 
-- **Approach:** Token-stream hashing (Rabin-Karp), similar to phpcpd
-- **Rule:** `duplication.code-duplication` with configurable `min_lines` (5) and `min_tokens` (70)
-- **Architecture:** Separate pipeline phase (Phase 3.8), results passed via `AnalysisContext::$duplicateBlocks`
-- **SARIF:** `relatedLocations` support for clickable cross-references in IDE
+- **Metric:** `crap` = CCN² × (1 − coverage)². Without coverage data: CRAP = CCN²
+- **Input:** Optional Clover XML coverage file (`--coverage=clover.xml`)
+- **Rule:** `complexity.crap`
+- **Reference:** Alberto Savoia, crap4j; phpunit `--log-crap4j`
+- **Note:** Value is limited without coverage data. Consider whether the optional dependency is worth the complexity
 - **Effort:** Medium
-- **Value:** Very High — standard expectation, replaces need for phpcpd
-
-### 3.2 Unused Private Members Rule ✅ DONE
-
-- **Rule:** `code-smell.unused-private`
-- **Scope:** Detect private methods, properties, constants never referenced within the class
-- **Approach:** Two-pass AST: collect declarations, collect references, diff
-- **Features:** Magic method awareness, constructor promotion, anonymous class isolation, enum/interface/trait exclusion
-- **Effort:** Medium
-- **Value:** High
-
-### 3.3 ClassRank (PageRank) Metric ✅ DONE
-
-- **Metric:** `classRank` — applies Google's PageRank algorithm to the dependency graph
-- **Implementation:** AIMD already has the dependency graph; PageRank is a simple iterative algorithm
-- **Value:** Enables "prioritized violations" — high ClassRank + low quality = high-risk refactoring target
-- **Type:** `GlobalContextCollectorInterface` collector
-- **Effort:** Low-Medium
-
-### 3.4 Basic Security Pattern Detection ✅ DONE
-
-- **Rule group:** `security.*`
-- **Rules:**
-  - `security.sql-injection` — direct superglobal concatenation in SQL strings
-  - `security.xss` — direct echo/print of superglobals
-  - `security.command-injection` — superglobals in exec/system/passthru/shell_exec
-  - `security.sensitive-parameter` — parameters with sensitive names (`$password`, `$secret`, `$token`, `$apiKey`, etc.) missing `#[\SensitiveParameter]` attribute (PHP 8.2+)
-- **Approach:** AST pattern matching (NOT full taint analysis)
-- **Limitation:** Only catches direct flows, not through variables or function calls (except `sensitive-parameter` which is purely signature-based)
-- **Effort:** Medium
-- **Value:** High for positioning
+- **Value:** Medium (high if coverage data available, low otherwise)
 
 ---
 
-## Tier 4: Differentiation (6-12 Months)
+## Phase 3: Architecture & Ecosystem
 
-### 4.1 Unused Variables Detection
-- Scope-aware analysis within functions (assigned but never read)
-- Requires new analysis pass type
-- High effort, high value
+### 3.1 Architecture Rules (deptrac-killer)
 
-### 4.2 Identical Sub-expression Detection ✅ DONE
+- **Feature:** Declarative dependency constraints in `aimd.yml`
+- **Syntax (draft):**
+  ```yaml
+  architecture:
+    layers:
+      Controller: App\Controller\**
+      Service: App\Service\**
+      Repository: App\Repository\**
+    rules:
+      - Controller must not depend on Repository
+      - Repository must not depend on Controller
+  ```
+- **Implementation:** AIMD already has the full dependency graph. Need: layer DSL parser, constraint evaluator, new rule `architecture.layer-violation`
+- **Reference:** deptrac (PHP), ArchUnit (Java), NetArchTest (.NET), Dependency Cruiser (JS)
+- **Effort:** Medium-High
+- **Value:** Very High — replaces deptrac, reduces tool count. "One tool instead of five"
 
-- **Rule:** `code-smell.identical-subexpression`
-- **Detection types:**
-  - Identical operands in binary operations (`$a === $a`, `$a - $a`, `$a && $a`)
-  - Duplicate conditions in if/elseif chains
-  - Identical ternary branches (`$cond ? $x : $x`)
-  - Duplicate match arm conditions
-- **Approach:** Recursive structural AST comparison with side-effect exclusion
-- **Effort:** Medium
-- **Value:** Medium — catches copy-paste errors and logic bugs
+### 3.2 Custom Rules API
 
-### 4.3 Technical Debt Estimation ✅ DONE
-- Assign remediation time metadata to each rule (e.g., "15 min to fix")
-- Aggregate and report total "debt" per file/namespace/project
-- Low effort (metadata on rules), medium value
+- **Feature:** User-defined rules without forking AIMD
+- **Options:**
+  - **YAML pattern rules** (like Semgrep) — low-code, pattern-based, limited power
+  - **PHP plugin interface** — `implements RuleInterface`, autoloaded from a configured path
+  - **Both** — YAML for simple patterns, PHP for complex logic
+- **Reference:** ESLint plugins, PHPStan extensions, Semgrep custom rules
+- **Effort:** Medium (PHP plugins) to High (YAML DSL)
+- **Value:** High — critical for enterprise adoption
 
-### 4.4 HTML Reports
-- Interactive visualization (bubble chart: complexity vs coupling, colored by MI)
-- A la phpmetrics, but generated from AIMD data
-- High effort, medium value (nice-to-have, not essential for CI)
+### 3.3 Trend Analysis & Quality Gates
+
+- **Feature:** Store metric snapshots between runs, detect regressions
+- **Approach:** SQLite database (`~/.aimd/history.db` or project-local) storing per-run aggregates
+- **Commands:**
+  - `aimd trend` — show metric trends over time
+  - `aimd check --quality-gate=no-regression` — fail if any metric worsened vs previous run
+- **Output:** Sparkline-style trend indicators in text report, JSON timeseries
+- **Reference:** SonarQube quality gates (the killer feature), CodeScene trend analysis
+- **Effort:** High
+- **Value:** Very High — no PHP CLI tool does this. Unique selling point
+
+### 3.4 Interactive HTML Reports
+
+- **Feature:** Self-contained HTML file with interactive visualizations
+- **Visualizations:**
+  - Treemap (file size × complexity, colored by MI)
+  - Bubble chart (coupling × cohesion × size)
+  - Dependency graph (interactive, zoomable)
+  - Hotspot table (sortable, filterable)
+- **Reference:** phpmetrics HTML reports, NDepend dashboards, CodeScene visualizations
+- **Effort:** High (standalone — needs JS charting library embedded)
+- **Value:** Medium — impressive for presentations/reviews, not essential for CI
 
 ---
 
-## NOT Recommended
+## Not Recommended
 
-| Item                            | Reason                                                                                                                   |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| **Full taint analysis**         | Requires inter-procedural data-flow engine. Psalm and SonarQube have years of investment here. Not practical to compete. |
-| **Type checking / null safety** | PHPStan and Psalm own this completely. Would require building a type inference engine.                                   |
-| **Auto-fixing**                 | Rector's domain. Fundamentally different concern from analysis.                                                          |
-| **Naming convention rules**     | PHPCS/PHP-CS-Fixer handle this well. Low differentiation value.                                                          |
-| **Framework-specific presets**  | Adds maintenance burden. AIMD is framework-agnostic by design.                                                           |
+| Item                            | Reason                                                                                                                                                 |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Full taint analysis**         | Requires inter-procedural data-flow engine. Psalm and SonarQube have years of investment here. Not practical to compete.                               |
+| **Type checking / null safety** | PHPStan and Psalm own this completely. Would require building a type inference engine.                                                                 |
+| **Auto-fixing**                 | Rector's domain. Fundamentally different concern from analysis.                                                                                        |
+| **Naming convention rules**     | PHPCS/PHP-CS-Fixer handle this well. Low differentiation value.                                                                                        |
+| **Framework-specific rules**    | Adds maintenance burden. AIMD is framework-agnostic by design. Configuration presets (strict/relaxed) are acceptable, but not framework-coupled rules. |
 
 ---
 
 ## Success Metrics
 
-After implementing Tier 2 + Tier 3, AIMD should be able to replace:
-- **phpmd** — AIMD already has all phpmd metrics + more; adding code smells closes the gap
-- **phpmetrics** — AIMD has deeper metrics; adding ClassRank and HTML reports matches feature parity
-- **phpcpd** — duplication detection makes phpcpd redundant
+After Phase 1–2, AIMD replaces: **phpmd + phpmetrics + phpcpd** (already largely achieved).
 
-**Target value proposition:** "Run one tool instead of four. 100x faster. Better metrics."
+After Phase 3, AIMD replaces: **phpmd + phpmetrics + phpcpd + deptrac** and offers capabilities no PHP tool has (trend analysis, quality gates).
+
+**Target value proposition:** "One tool. 40x faster. Deeper metrics. Quality gates. Replaces five tools."
+
+---
+
+## Technical Debt (see also [docs/PRODUCT_ROADMAP.md](../PRODUCT_ROADMAP.md))
+
+Items that improve developer experience and code health but are not user-facing:
+
+| Item                              | Priority | Effort | Description                                                                    |
+| --------------------------------- | -------- | ------ | ------------------------------------------------------------------------------ |
+| MetricBag non-numeric data        | Medium   | Large  | Replace indexed keys hack with `DataBag` or typed DTOs                         |
+| Collector runtime configuration   | Medium   | Medium | Inject config into collectors to avoid duplicate `exclude_namespaces` in rules |
+| Metric name constants             | Low      | Medium | Compile-time safety for metric name references                                 |
+| Global function aggregation       | Low      | Small  | Aggregate function-level metrics to namespace level                            |
+| InheritanceDepth alias resolution | Low      | Small  | Track `use ... as` for correct DIT                                             |
+| Formatter LCOM/SRP                | Low      | Medium | Extract shared helpers, move `AnsiColor` to Infrastructure                     |

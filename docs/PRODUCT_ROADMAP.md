@@ -1,4 +1,6 @@
-# Product Roadmap
+# Technical Debt & Known Limitations
+
+For the strategic product roadmap (features, rules, competitive positioning), see [docs/internal/PRODUCT_ROADMAP.md](internal/PRODUCT_ROADMAP.md).
 
 ## Known Limitations & Future Improvements
 
