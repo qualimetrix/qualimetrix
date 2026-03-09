@@ -11,13 +11,16 @@ use SplFileInfo;
 /**
  * Detects code duplication across PHP files using token-stream hashing (Rabin-Karp).
  *
- * Algorithm:
- * 1. Tokenize and normalize each file (strip whitespace/comments, replace identifiers)
- * 2. Compute rolling hashes for sliding windows of minTokens size
- * 3. Group matching hashes into candidate duplicate pairs
- * 4. Extend matches forward to find the maximum duplicated block
- * 5. Filter out blocks shorter than minLines
- * 6. Deduplicate overlapping/nested blocks
+ * Algorithm (memory-optimized two-pass):
+ * 1. Stream files one-by-one: tokenize, compute rolling hashes, discard tokens immediately
+ * 2. Prune hash index — remove hashes with only one occurrence (typically ~75%)
+ * 3. Re-tokenize only files that participate in hash matches
+ * 4. Verify token matches, extend blocks, compute line ranges
+ * 5. Filter out blocks shorter than minLines, deduplicate overlapping blocks
+ *
+ * This two-pass approach avoids holding all tokens + full hash index simultaneously,
+ * reducing peak memory from O(total_tokens + total_positions) to
+ * O(total_positions) during pass 1 and O(matching_tokens + matching_positions) during pass 2.
  */
 final class DuplicationDetector
 {
@@ -46,31 +49,12 @@ final class DuplicationDetector
         $this->minTokens = $minTokens;
         $this->minLines = $minLines;
 
-        // Phase 1: Tokenize and normalize all files
-        $fileTokens = $this->tokenizeFiles($files);
-
-        if ($fileTokens === []) {
-            return [];
-        }
-
-        // Phase 2: Build hash index (hash => list of positions across all files)
-        $hashIndex = $this->buildHashIndex($fileTokens);
-
-        // Phase 3: Find and extend duplicate blocks
-        $rawBlocks = $this->findDuplicateBlocks($hashIndex, $fileTokens);
-
-        // Phase 4: Filter and deduplicate
-        return $this->filterAndDeduplicate($rawBlocks);
-    }
-
-    /**
-     * @param list<SplFileInfo> $files
-     *
-     * @return array<string, list<NormalizedToken>> filepath => tokens
-     */
-    private function tokenizeFiles(array $files): array
-    {
-        $result = [];
+        // Pass 1: Build hash index streaming (tokenize → hash → discard tokens)
+        // Uses integer file indices for compact position storage
+        /** @var list<string> $filePaths maps fileIdx → realPath */
+        $filePaths = [];
+        /** @var array<int, list<array{int, int}>> $hashIndex maps hash → list of [fileIdx, offset] */
+        $hashIndex = [];
 
         foreach ($files as $file) {
             $path = $file->getRealPath();
@@ -84,113 +68,154 @@ final class DuplicationDetector
             }
 
             $tokens = $this->normalizer->normalize($source);
-
-            if (\count($tokens) >= $this->minTokens) {
-                $result[$path] = $tokens;
-            }
-        }
-
-        return $result;
-    }
-
-    /**
-     * Builds a hash index using Rabin-Karp rolling hash.
-     *
-     * @param array<string, list<NormalizedToken>> $fileTokens
-     *
-     * @return array<int, list<array{file: string, offset: int}>>
-     */
-    private function buildHashIndex(array $fileTokens): array
-    {
-        $index = [];
-
-        foreach ($fileTokens as $file => $tokens) {
-            $tokenCount = \count($tokens);
-            if ($tokenCount < $this->minTokens) {
+            if (\count($tokens) < $this->minTokens) {
                 continue;
             }
 
-            // Compute initial hash for the first window
-            $hash = 0;
-            $highPow = 1;
+            $fileIdx = \count($filePaths);
+            $filePaths[] = $path;
 
-            for ($i = 0; $i < $this->minTokens; $i++) {
-                $hash = ($hash * self::HASH_BASE + $this->tokenHash($tokens[$i])) % self::HASH_MOD;
-                if ($i < $this->minTokens - 1) {
-                    $highPow = ($highPow * self::HASH_BASE) % self::HASH_MOD;
-                }
-            }
+            // Compute rolling hashes and add to index, then discard tokens
+            $this->addFileHashesToIndex($tokens, $fileIdx, $hashIndex);
+            // $tokens freed here — not stored
+        }
 
-            $index[$hash][] = ['file' => $file, 'offset' => 0];
+        if ($hashIndex === []) {
+            return [];
+        }
 
-            // Roll the hash forward
-            for ($i = 1; $i <= $tokenCount - $this->minTokens; $i++) {
-                $outToken = $this->tokenHash($tokens[$i - 1]);
-                $inToken = $this->tokenHash($tokens[$i + $this->minTokens - 1]);
-
-                $hash = (($hash - (($outToken * $highPow) % self::HASH_MOD) + self::HASH_MOD) * self::HASH_BASE + $inToken) % self::HASH_MOD;
-
-                $index[$hash][] = ['file' => $file, 'offset' => $i];
+        // Prune unique hashes — typically removes ~75% of entries
+        foreach ($hashIndex as $hash => $positions) {
+            if (\count($positions) < 2) {
+                unset($hashIndex[$hash]);
             }
         }
 
-        return $index;
+        if ($hashIndex === []) {
+            return [];
+        }
+
+        // Determine which files need re-tokenization
+        $neededFileIndices = [];
+        foreach ($hashIndex as $positions) {
+            foreach ($positions as [$fileIdx]) {
+                $neededFileIndices[$fileIdx] = true;
+            }
+        }
+
+        // Pass 2: Re-tokenize only files with matching hashes
+        /** @var array<int, list<NormalizedToken>> $fileTokens fileIdx → tokens */
+        $fileTokens = [];
+        foreach ($neededFileIndices as $fileIdx => $_) {
+            $source = @file_get_contents($filePaths[$fileIdx]);
+            if ($source === false) {
+                continue;
+            }
+            $fileTokens[$fileIdx] = $this->normalizer->normalize($source);
+        }
+
+        // Find and extend duplicate blocks
+        $rawBlocks = $this->findDuplicateBlocks($hashIndex, $fileTokens, $filePaths);
+
+        // Free large structures before dedup sort
+        unset($hashIndex, $fileTokens);
+
+        // Filter and deduplicate
+        return $this->filterAndDeduplicate($rawBlocks);
+    }
+
+    /**
+     * Computes rolling hashes for a single file's tokens and adds them to the index.
+     *
+     * @param list<NormalizedToken> $tokens
+     * @param array<int, list<array{int, int}>> $index modified by reference
+     */
+    private function addFileHashesToIndex(array $tokens, int $fileIdx, array &$index): void
+    {
+        $tokenCount = \count($tokens);
+        if ($tokenCount < $this->minTokens) {
+            return;
+        }
+
+        // Compute initial hash for the first window
+        $hash = 0;
+        $highPow = 1;
+
+        for ($i = 0; $i < $this->minTokens; $i++) {
+            $hash = ($hash * self::HASH_BASE + $this->tokenHash($tokens[$i])) % self::HASH_MOD;
+            if ($i < $this->minTokens - 1) {
+                $highPow = ($highPow * self::HASH_BASE) % self::HASH_MOD;
+            }
+        }
+
+        $index[$hash][] = [$fileIdx, 0];
+
+        // Roll the hash forward
+        for ($i = 1; $i <= $tokenCount - $this->minTokens; $i++) {
+            $outToken = $this->tokenHash($tokens[$i - 1]);
+            $inToken = $this->tokenHash($tokens[$i + $this->minTokens - 1]);
+
+            $hash = (($hash - (($outToken * $highPow) % self::HASH_MOD) + self::HASH_MOD) * self::HASH_BASE + $inToken) % self::HASH_MOD;
+
+            $index[$hash][] = [$fileIdx, $i];
+        }
     }
 
     /**
      * Finds duplicate blocks by verifying hash matches and extending them.
      *
-     * @param array<int, list<array{file: string, offset: int}>> $hashIndex
-     * @param array<string, list<NormalizedToken>> $fileTokens
+     * @param array<int, list<array{int, int}>> $hashIndex hash → list of [fileIdx, offset]
+     * @param array<int, list<NormalizedToken>> $fileTokens fileIdx → tokens
+     * @param list<string> $filePaths fileIdx → realPath
      *
      * @return list<DuplicateBlock>
      */
-    private function findDuplicateBlocks(array $hashIndex, array $fileTokens): array
+    private function findDuplicateBlocks(array $hashIndex, array $fileTokens, array $filePaths): array
     {
         $blocks = [];
         /** @var array<string, true> $seen Track processed pairs to avoid duplicates */
         $seen = [];
 
         foreach ($hashIndex as $positions) {
-            if (\count($positions) < 2) {
-                continue;
-            }
-
             // Compare all pairs in this hash bucket
             $count = \count($positions);
             for ($i = 0; $i < $count - 1; $i++) {
                 for ($j = $i + 1; $j < $count; $j++) {
-                    $a = $positions[$i];
-                    $b = $positions[$j];
+                    [$fileIdxA, $offsetA] = $positions[$i];
+                    [$fileIdxB, $offsetB] = $positions[$j];
 
                     // Skip same-file same-offset (trivial self-match)
-                    if ($a['file'] === $b['file'] && $a['offset'] === $b['offset']) {
+                    if ($fileIdxA === $fileIdxB && $offsetA === $offsetB) {
                         continue;
                     }
 
-                    // Create a canonical pair key to avoid processing the same pair twice
-                    $pairKey = $this->pairKey($a['file'], $a['offset'], $b['file'], $b['offset']);
+                    // Canonical pair key using compact integer indices
+                    $pairKey = $this->pairKey($fileIdxA, $offsetA, $fileIdxB, $offsetB);
                     if (isset($seen[$pairKey])) {
                         continue;
                     }
                     $seen[$pairKey] = true;
 
                     // Verify the tokens actually match (hash collision protection)
-                    $tokensA = $fileTokens[$a['file']];
-                    $tokensB = $fileTokens[$b['file']];
+                    if (!isset($fileTokens[$fileIdxA], $fileTokens[$fileIdxB])) {
+                        continue;
+                    }
 
-                    if (!$this->tokensMatch($tokensA, $a['offset'], $tokensB, $b['offset'], $this->minTokens)) {
+                    $tokensA = $fileTokens[$fileIdxA];
+                    $tokensB = $fileTokens[$fileIdxB];
+
+                    if (!$this->tokensMatch($tokensA, $offsetA, $tokensB, $offsetB, $this->minTokens)) {
                         continue;
                     }
 
                     // Extend the match forward
-                    $matchLength = $this->extendMatch($tokensA, $a['offset'], $tokensB, $b['offset']);
+                    $matchLength = $this->extendMatch($tokensA, $offsetA, $tokensB, $offsetB);
 
                     // Compute line range
-                    $startLineA = $tokensA[$a['offset']]->line;
-                    $endLineA = $tokensA[$a['offset'] + $matchLength - 1]->line;
-                    $startLineB = $tokensB[$b['offset']]->line;
-                    $endLineB = $tokensB[$b['offset'] + $matchLength - 1]->line;
+                    $startLineA = $tokensA[$offsetA]->line;
+                    $endLineA = $tokensA[$offsetA + $matchLength - 1]->line;
+                    $startLineB = $tokensB[$offsetB]->line;
+                    $endLineB = $tokensB[$offsetB + $matchLength - 1]->line;
 
                     $lineCount = max($endLineA - $startLineA + 1, $endLineB - $startLineB + 1);
 
@@ -200,8 +225,8 @@ final class DuplicationDetector
 
                     $blocks[] = new DuplicateBlock(
                         locations: [
-                            new DuplicateLocation($a['file'], $startLineA, $endLineA),
-                            new DuplicateLocation($b['file'], $startLineB, $endLineB),
+                            new DuplicateLocation($filePaths[$fileIdxA], $startLineA, $endLineA),
+                            new DuplicateLocation($filePaths[$fileIdxB], $startLineB, $endLineB),
                         ],
                         lines: $lineCount,
                         tokens: $matchLength,
@@ -326,13 +351,13 @@ final class DuplicationDetector
         return $hash;
     }
 
-    private function pairKey(string $fileA, int $offsetA, string $fileB, int $offsetB): string
+    private function pairKey(int $fileIdxA, int $offsetA, int $fileIdxB, int $offsetB): string
     {
         // Canonical order for the pair
-        if ($fileA > $fileB || ($fileA === $fileB && $offsetA > $offsetB)) {
-            return "{$fileB}:{$offsetB}-{$fileA}:{$offsetA}";
+        if ($fileIdxA > $fileIdxB || ($fileIdxA === $fileIdxB && $offsetA > $offsetB)) {
+            return "{$fileIdxB}:{$offsetB}-{$fileIdxA}:{$offsetA}";
         }
 
-        return "{$fileA}:{$offsetA}-{$fileB}:{$offsetB}";
+        return "{$fileIdxA}:{$offsetA}-{$fileIdxB}:{$offsetB}";
     }
 }
