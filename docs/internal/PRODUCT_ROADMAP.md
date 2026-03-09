@@ -27,59 +27,28 @@ What AIMD should own:              What to leave to others:
 
 ## Categories With Zero Coverage (Gaps)
 
-| Category          | What's Missing                                  | Impact                                       | Competitor Coverage                                 |
-| ----------------- | ----------------------------------------------- | -------------------------------------------- | --------------------------------------------------- |
-| **Security**      | No injection detection, no credential detection | Critical for enterprise adoption             | SonarQube (full taint), Psalm (taint), PHPMD (none) |
-| **Duplication**   | No copy-paste detection                         | Standard expectation for quality tools       | phpcpd, SonarQube, phpmetrics (partial)             |
-| **Dead Code**     | No unused member detection, no unreachable code | High value, frequently requested             | Psalm, PHPStan+extensions, Rector (59 rules)        |
-| **Type Coverage** | No typed/untyped ratio metrics                  | Increasingly important with PHP 8.x adoption | PHPStan+type-coverage extension, Psalm              |
+| Category              | What's Missing                                                                                                                                                        | Impact                                       | Competitor Coverage                                 |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- | --------------------------------------------------- |
+| ~~**Security**~~      | ~~No injection detection, no credential detection~~ ✅ Basic patterns implemented (SQL injection, XSS, command injection, sensitive parameter, hardcoded credentials) | Critical for enterprise adoption             | SonarQube (full taint), Psalm (taint), PHPMD (none) |
+| **Duplication**       | No copy-paste detection                                                                                                                                               | Standard expectation for quality tools       | phpcpd, SonarQube, phpmetrics (partial)             |
+| **Dead Code**         | No unused member detection, no unreachable code                                                                                                                       | High value, frequently requested             | Psalm, PHPStan+extensions, Rector (59 rules)        |
+| ~~**Type Coverage**~~ | ~~No typed/untyped ratio metrics~~ ✅ Implemented (`design.type-coverage` rule)                                                                                       | Increasingly important with PHP 8.x adoption | PHPStan+type-coverage extension, Psalm              |
 
 ---
 
-## Tier 1: Accuracy Fixes (Next Release)
+## Tier 1: Accuracy Fixes ✅ DONE
 
-Must-fix issues that affect trust in AIMD's output.
-
-### 1.1 Add Raw Metric Export
-
-**Classification:** Missing feature
-**Impact:** Can't compare metrics without threshold violations, limits use as metrics platform
-
-Currently metrics are only visible when they exceed thresholds (as violations). There's no way to export raw metric values for analysis or cross-tool comparison.
-
-**Proposal:** Add `--format=metrics-json` or `--dump-metrics` option.
+### 1.1 Add Raw Metric Export ✅ DONE
+Implemented as `--format=metrics-json`.
 
 ---
 
-## Tier 2: Quick Wins (1-2 Releases)
+## Tier 2: Quick Wins ✅ DONE
 
-Low-effort, high-value additions.
-
-### 2.1 Type Coverage Collector + Rule
-
-- **Metrics:** `typeCoverage.param`, `typeCoverage.return`, `typeCoverage.property`
-- **Rule:** `design.type-coverage` with configurable minimum thresholds
-- **Effort:** Low (count nodes with/without type declarations in AST)
-- **Value:** High — tracks PHP modernization progress, unique vs phpmd/phpmetrics
-
-### 2.2 Long Parameter List Rule
-
-- **Rule:** `code-smell.long-parameter-list`
-- **Implementation:** Count `$node->params` on ClassMethod/Function_ nodes
-- **Default:** warning at 4, error at 6
-- **Effort:** Very low (trivial AST check)
-
-### 2.3 Unreachable Code Rule
-
-- **Rule:** `code-smell.unreachable-code`
-- **Implementation:** Detect statements after `return`, `throw`, `exit`, `continue`, `break` in statement lists
-- **Effort:** Low (check for terminal nodes in statement sequences)
-
-### 2.4 Hardcoded Credentials Rule
-
-- **Rule:** `code-smell.hardcoded-credentials`
-- **Implementation:** Regex on variable names (`$password`, `$apiKey`, `$secret`, etc.) + string literal assignments
-- **Effort:** Low-Medium
+### 2.1 Type Coverage Collector + Rule ✅ DONE
+### 2.2 Long Parameter List Rule ✅ DONE
+### 2.3 Unreachable Code Rule ✅ DONE
+### 2.4 Hardcoded Credentials Rule ✅ DONE
 
 ---
 
