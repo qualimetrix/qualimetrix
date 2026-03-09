@@ -307,6 +307,80 @@ final class GitFileDiscoveryTest extends TestCase
     }
 
     #[Test]
+    public function itExcludesFilesInExcludedDirectories(): void
+    {
+        $this->initGitRepo();
+
+        $this->createPhpFile('src/Service.php');
+        $this->createPhpFile('vendor/autoload.php');
+        $this->createPhpFile('tests/Unit/ServiceTest.php');
+        $this->exec('git add .');
+
+        $gitClient = new GitClient($this->tempDir);
+        $discovery = new GitFileDiscovery($gitClient, new GitScope('staged'), ['vendor', 'tests']);
+        $files = iterator_to_array($discovery->discover('.'));
+
+        $this->assertCount(1, $files);
+        $key = array_key_first($files);
+        $this->assertIsString($key);
+        $this->assertStringContainsString('src/Service.php', $key);
+    }
+
+    #[Test]
+    public function itExcludesNestedDirectories(): void
+    {
+        $this->initGitRepo();
+
+        $this->createPhpFile('src/Service.php');
+        $this->createPhpFile('src/Generated/Model.php');
+        $this->exec('git add .');
+
+        $gitClient = new GitClient($this->tempDir);
+        $discovery = new GitFileDiscovery($gitClient, new GitScope('staged'), ['src/Generated']);
+        $files = iterator_to_array($discovery->discover('.'));
+
+        $this->assertCount(1, $files);
+        $key = array_key_first($files);
+        $this->assertIsString($key);
+        $this->assertStringContainsString('src/Service.php', $key);
+    }
+
+    #[Test]
+    public function itDoesNotExcludeSimilarPrefixedDirectories(): void
+    {
+        $this->initGitRepo();
+
+        $this->createPhpFile('src/Service.php');
+        $this->createPhpFile('src2/Other.php');
+        $this->exec('git add .');
+
+        $gitClient = new GitClient($this->tempDir);
+        $discovery = new GitFileDiscovery($gitClient, new GitScope('staged'), ['src']);
+        $files = iterator_to_array($discovery->discover('.'));
+
+        $this->assertCount(1, $files);
+        $key = array_key_first($files);
+        $this->assertIsString($key);
+        $this->assertStringContainsString('src2/Other.php', $key);
+    }
+
+    #[Test]
+    public function itDoesNotExcludeWhenExcludedDirsEmpty(): void
+    {
+        $this->initGitRepo();
+
+        $this->createPhpFile('src/Service.php');
+        $this->createPhpFile('vendor/autoload.php');
+        $this->exec('git add .');
+
+        $gitClient = new GitClient($this->tempDir);
+        $discovery = new GitFileDiscovery($gitClient, new GitScope('staged'), []);
+        $files = iterator_to_array($discovery->discover('.'));
+
+        $this->assertCount(2, $files);
+    }
+
+    #[Test]
     public function itYieldsFilesAsGenerator(): void
     {
         $this->initGitRepo();

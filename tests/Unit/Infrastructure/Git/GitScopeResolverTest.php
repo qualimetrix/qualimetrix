@@ -7,6 +7,7 @@ namespace AiMessDetector\Tests\Unit\Infrastructure\Git;
 use AiMessDetector\Configuration\AnalysisConfiguration;
 use AiMessDetector\Configuration\PathsConfiguration;
 use AiMessDetector\Configuration\Pipeline\ResolvedConfiguration;
+use AiMessDetector\Infrastructure\Git\GitFileDiscovery;
 use AiMessDetector\Infrastructure\Git\GitScopeResolver;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -67,5 +68,32 @@ final class GitScopeResolverTest extends TestCase
         $result = $resolver->resolve($input, $resolved);
 
         self::assertNull($result->gitClient);
+    }
+
+    #[Test]
+    public function itPassesExcludesToGitFileDiscovery(): void
+    {
+        $projectRoot = \dirname(__DIR__, 4); // repo root
+
+        $resolved = new ResolvedConfiguration(
+            paths: new PathsConfiguration(['src'], ['vendor', 'tests']),
+            analysis: new AnalysisConfiguration(projectRoot: $projectRoot),
+            ruleOptions: [],
+        );
+
+        $definition = new InputDefinition([
+            new InputOption('analyze', null, InputOption::VALUE_REQUIRED),
+            new InputOption('report', null, InputOption::VALUE_REQUIRED),
+        ]);
+
+        $input = new ArrayInput(['--analyze' => 'git:staged'], $definition);
+
+        $resolver = new GitScopeResolver();
+        $result = $resolver->resolve($input, $resolved);
+
+        self::assertInstanceOf(GitFileDiscovery::class, $result->fileDiscovery);
+
+        $excludedDirsProperty = new ReflectionProperty($result->fileDiscovery, 'excludedDirs');
+        self::assertSame(['vendor', 'tests'], $excludedDirsProperty->getValue($result->fileDiscovery));
     }
 }

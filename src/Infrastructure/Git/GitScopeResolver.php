@@ -32,7 +32,7 @@ final class GitScopeResolver
         }
 
         $fileDiscovery = $analyzeScope !== null && $gitClient !== null
-            ? new GitFileDiscovery($gitClient, $analyzeScope)
+            ? new GitFileDiscovery($gitClient, $analyzeScope, $resolved->paths->excludes)
             : new FinderFileDiscovery($resolved->paths->excludes);
 
         return new GitScopeResolution(

@@ -17,9 +17,13 @@ use SplFileInfo;
  */
 final class GitFileDiscovery implements FileDiscoveryInterface
 {
+    /**
+     * @param list<string> $excludedDirs Directories to exclude from discovery
+     */
     public function __construct(
         private readonly GitClient $git,
         private readonly GitScope $scope,
+        private readonly array $excludedDirs = [],
     ) {}
 
     public function discover(string|array $paths): iterable
@@ -65,6 +69,11 @@ final class GitFileDiscovery implements FileDiscoveryInterface
                 continue;
             }
 
+            // Skip files in excluded directories
+            if ($this->isInExcludedDir($changed->path)) {
+                continue;
+            }
+
             $fullPath = $repoRoot . '/' . $changed->path;
 
             // Verify file exists (could be deleted locally but not committed)
@@ -106,6 +115,22 @@ final class GitFileDiscovery implements FileDiscoveryInterface
 
             // Check exact match or directory prefix with boundary check
             if ($file === $normalizedPath || str_starts_with($file, rtrim($normalizedPath, '/') . '/')) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Checks if a file path is inside any of the excluded directories.
+     */
+    private function isInExcludedDir(string $file): bool
+    {
+        foreach ($this->excludedDirs as $dir) {
+            $normalizedDir = rtrim($dir, '/') . '/';
+
+            if (str_starts_with($file, $normalizedDir)) {
                 return true;
             }
         }
