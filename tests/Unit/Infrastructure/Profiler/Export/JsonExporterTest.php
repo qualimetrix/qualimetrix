@@ -19,7 +19,7 @@ final class JsonExporterTest extends TestCase
 
     public function testExportNullSpanReturnsEmptyArray(): void
     {
-        $result = $this->exporter->export(null);
+        $result = $this->exporter->export([]);
 
         self::assertSame('[]', $result);
     }
@@ -35,7 +35,7 @@ final class JsonExporterTest extends TestCase
             endMemory: 250,
         );
 
-        $result = $this->exporter->export($span);
+        $result = $this->exporter->export([$span]);
         $data = json_decode($result, true);
 
         self::assertIsArray($data);
@@ -57,7 +57,7 @@ final class JsonExporterTest extends TestCase
             endMemory: 250,
         );
 
-        $result = $this->exporter->export($span);
+        $result = $this->exporter->export([$span]);
         $data = json_decode($result, true);
 
         self::assertNull($data['category']);
@@ -72,7 +72,7 @@ final class JsonExporterTest extends TestCase
             startMemory: 100,
         );
 
-        $result = $this->exporter->export($span);
+        $result = $this->exporter->export([$span]);
         $data = json_decode($result, true);
 
         self::assertNull($data['duration_ms']);
@@ -102,7 +102,7 @@ final class JsonExporterTest extends TestCase
 
         $parent->children[] = $child;
 
-        $result = $this->exporter->export($parent);
+        $result = $this->exporter->export([$parent]);
         $data = json_decode($result, true);
 
         self::assertSame('parent', $data['name']);
@@ -146,7 +146,7 @@ final class JsonExporterTest extends TestCase
         $level1->children[] = $level2;
         $level2->children[] = $level3;
 
-        $result = $this->exporter->export($level1);
+        $result = $this->exporter->export([$level1]);
         $data = json_decode($result, true);
 
         self::assertSame('level1', $data['name']);
@@ -167,7 +167,7 @@ final class JsonExporterTest extends TestCase
             endMemory: 250,
         );
 
-        $result = $this->exporter->export($span);
+        $result = $this->exporter->export([$span]);
 
         // Should not throw
         $decoded = json_decode($result, true, 512, \JSON_THROW_ON_ERROR);

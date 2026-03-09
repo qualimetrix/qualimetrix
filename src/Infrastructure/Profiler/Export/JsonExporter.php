@@ -13,13 +13,17 @@ use AiMessDetector\Core\Profiler\Span;
  */
 final class JsonExporter implements ProfileExporterInterface
 {
-    public function export(?Span $rootSpan): string
+    public function export(array $rootSpans): string
     {
-        if ($rootSpan === null) {
+        if ($rootSpans === []) {
             return json_encode([], \JSON_PRETTY_PRINT | \JSON_THROW_ON_ERROR);
         }
 
-        $data = $this->spanToArray($rootSpan);
+        if (\count($rootSpans) === 1) {
+            return json_encode($this->spanToArray($rootSpans[0]), \JSON_PRETTY_PRINT | \JSON_THROW_ON_ERROR);
+        }
+
+        $data = array_map(fn(Span $span) => $this->spanToArray($span), $rootSpans);
 
         return json_encode($data, \JSON_PRETTY_PRINT | \JSON_THROW_ON_ERROR);
     }

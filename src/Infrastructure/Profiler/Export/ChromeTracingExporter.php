@@ -15,14 +15,16 @@ use AiMessDetector\Core\Profiler\Span;
  */
 final class ChromeTracingExporter implements ProfileExporterInterface
 {
-    public function export(?Span $rootSpan): string
+    public function export(array $rootSpans): string
     {
-        if ($rootSpan === null) {
+        if ($rootSpans === []) {
             return json_encode(['traceEvents' => []], \JSON_THROW_ON_ERROR);
         }
 
         $events = [];
-        $this->collectEvents($rootSpan, $events);
+        foreach ($rootSpans as $root) {
+            $this->collectEvents($root, $events);
+        }
 
         return json_encode(['traceEvents' => $events], \JSON_THROW_ON_ERROR);
     }

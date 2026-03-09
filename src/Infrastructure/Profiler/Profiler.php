@@ -24,7 +24,8 @@ final class Profiler implements ProfilerInterface
      */
     private array $stack = [];
 
-    private ?Span $rootSpan = null;
+    /** @var list<Span> Top-level spans (multiple roots supported) */
+    private array $rootSpans = [];
 
     /**
      * @var array<string, ProfileExporterInterface>
@@ -55,7 +56,7 @@ final class Profiler implements ProfilerInterface
             $parent->children[] = $span;
         } else {
             // This is a root span
-            $this->rootSpan = $span;
+            $this->rootSpans[] = $span;
         }
 
         $this->stack[] = $span;
@@ -122,17 +123,27 @@ final class Profiler implements ProfilerInterface
 
     public function getRootSpan(): ?Span
     {
-        return $this->rootSpan;
+        return $this->rootSpans[0] ?? null;
+    }
+
+    /**
+     * @return list<Span>
+     */
+    public function getRootSpans(): array
+    {
+        return $this->rootSpans;
     }
 
     public function getSummary(): array
     {
-        if ($this->rootSpan === null) {
+        if ($this->rootSpans === []) {
             return [];
         }
 
         $stats = [];
-        $this->collectStats($this->rootSpan, $stats);
+        foreach ($this->rootSpans as $root) {
+            $this->collectStats($root, $stats);
+        }
 
         // Calculate averages
         foreach ($stats as $name => &$stat) {
@@ -195,12 +206,12 @@ final class Profiler implements ProfilerInterface
             throw new InvalidArgumentException("Unsupported export format: {$format}");
         }
 
-        return $this->exporters[$format]->export($this->rootSpan);
+        return $this->exporters[$format]->export($this->rootSpans);
     }
 
     public function clear(): void
     {
         $this->stack = [];
-        $this->rootSpan = null;
+        $this->rootSpans = [];
     }
 }
