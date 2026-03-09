@@ -83,7 +83,7 @@ final readonly class CliOptionsParser
 
         // Numeric: float (contains dot) vs int
         if (is_numeric($value)) {
-            return str_contains($value, '.') ? (float) $value : (int) $value;
+            return str_contains($value, '.') || stripos($value, 'e') !== false ? (float) $value : (int) $value;
         }
 
         return $value;

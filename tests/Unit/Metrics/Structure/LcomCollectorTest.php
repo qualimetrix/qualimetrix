@@ -697,6 +697,137 @@ PHP;
         self::assertSame(0, $metrics->get('lcom:App\AllStatic'));
     }
 
+    public function testAbstractMethodsExcludedFromLcom(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+abstract class AbstractClass
+{
+    private $data;
+
+    public function getData()
+    {
+        return $this->data;
+    }
+
+    public function setData($value): void
+    {
+        $this->data = $value;
+    }
+
+    abstract public function process(): void;
+    abstract public function validate(): bool;
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // Abstract methods have no body and no property access — they should NOT
+        // be added to the LCOM graph. Only getData and setData counted, both share $data => LCOM 1.
+        // Without fix: abstract methods would be disconnected nodes => LCOM 3.
+        self::assertSame(1, $metrics->get('lcom:App\AbstractClass'));
+    }
+
+    public function testAbstractMethodsDoNotInflateLcom(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+abstract class ManyAbstract
+{
+    private $value;
+
+    public function getValue()
+    {
+        return $this->value;
+    }
+
+    abstract public function a(): void;
+    abstract public function b(): void;
+    abstract public function c(): void;
+    abstract public function d(): void;
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // Only 1 concrete method (getValue) => LCOM 1
+        // Without fix: 5 methods, 4 abstract disconnected => LCOM 5
+        self::assertSame(1, $metrics->get('lcom:App\ManyAbstract'));
+    }
+
+    public function testEnumIsIgnored(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+enum Status: string
+{
+    case Active = 'active';
+    case Inactive = 'inactive';
+
+    public function label(): string
+    {
+        return match($this) {
+            self::Active => 'Active',
+            self::Inactive => 'Inactive',
+        };
+    }
+
+    public function isActive(): bool
+    {
+        return $this === self::Active;
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // Enums cannot have instance properties, so LCOM (method-property cohesion)
+        // is meaningless for them. They should be completely ignored.
+        self::assertNull($metrics->get('lcom:App\Status'));
+    }
+
+    public function testEnumDoesNotAppearInMetrics(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class RealClass
+{
+    private $data;
+    public function method() { return $this->data; }
+}
+
+enum Color
+{
+    case Red;
+    case Blue;
+
+    public function label(): string
+    {
+        return $this->name;
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // Class metrics should be present
+        self::assertSame(1, $metrics->get('lcom:App\RealClass'));
+        // Enum should not produce LCOM metrics
+        self::assertNull($metrics->get('lcom:App\Color'));
+    }
+
     public function testDynamicPropertyAccessIgnored(): void
     {
         $code = <<<'PHP'

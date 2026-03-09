@@ -69,7 +69,7 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
     /** @var array<string, array{namespace: ?string, class: ?string, method: string, line: int}> FQN => method info */
     private array $methodInfos = [];
 
-    /** @var list<array{fqn: string, depth: int, nestingLevel: int}> Stack of nested methods/functions */
+    /** @var list<array{fqn: string, depth: int, nestingLevel: int, nodeStack: list<Node>}> Stack of nested methods/functions */
     private array $methodStack = [];
 
     /** @var int Current nesting level (0 = top level in method) */
@@ -275,11 +275,12 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
 
     private function startMethod(string $fqn, string $methodName, int $line): void
     {
-        // Save current nesting level before resetting (for closures/arrow functions inside nested scopes)
+        // Save current nesting level and node stack before resetting (for closures/arrow functions inside nested scopes)
         $this->methodStack[] = [
             'fqn' => $fqn,
             'depth' => \count($this->methodStack),
             'nestingLevel' => $this->nestingLevel,
+            'nodeStack' => $this->nodeStack,
         ];
         // Initialize with base complexity of 0 (unlike CCN which starts at 1)
         $this->complexities[$fqn] = 0;
@@ -290,17 +291,19 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
             'method' => $methodName,
             'line' => $line,
         ];
-        // Reset nesting level for new method
+        // Reset nesting level and node stack for new method
         $this->nestingLevel = 0;
+        $this->nodeStack = [];
     }
 
     private function endMethod(): void
     {
         $popped = array_pop($this->methodStack);
 
-        // Restore outer method's nesting level
+        // Restore outer method's nesting level and node stack
         if ($popped !== null) {
             $this->nestingLevel = $popped['nestingLevel'];
+            $this->nodeStack = $popped['nodeStack'];
         }
     }
 
@@ -485,14 +488,15 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
             return $calledMethod === $methodName;
         }
 
-        // Check for static method call recursion: only self::, static::, parent::
+        // Check for static method call recursion: only self:: and static::
+        // parent:: calls the PARENT's method, not the current class — it's not recursion
         if ($node instanceof StaticCall) {
             if (!($node->class instanceof Node\Name)) {
                 return false;
             }
 
             $className = $node->class->toString();
-            if ($className !== 'self' && $className !== 'static' && $className !== 'parent') {
+            if ($className !== 'self' && $className !== 'static') {
                 return false;
             }
 
@@ -514,9 +518,15 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
 
             $calledFunction = $node->name->toString();
 
-            // For namespaced functions, compare short name
+            // Strip leading backslash (fully-qualified marker) but keep namespace
+            if (str_starts_with($calledFunction, '\\')) {
+                $calledFunction = substr($calledFunction, 1);
+            }
+
+            // If the called function has a namespace (contains \), it cannot match
+            // a simple function name — e.g. \Other\Namespace\foo() is not foo()
             if (str_contains($calledFunction, '\\')) {
-                $calledFunction = substr($calledFunction, strrpos($calledFunction, '\\') + 1);
+                return false;
             }
 
             return $calledFunction === $methodName;

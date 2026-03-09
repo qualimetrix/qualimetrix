@@ -65,6 +65,30 @@ final class RuleOptionsParserTest extends TestCase
         ], $result);
     }
 
+    public function testParseRuleOptionsNormalizesSnakeCase(): void
+    {
+        $result = $this->parser->parseRuleOptions([
+            'cyclomatic-complexity:warning_threshold=15',
+            'namespace-size:count_interfaces=true',
+        ]);
+
+        self::assertSame([
+            'cyclomatic-complexity' => ['warningThreshold' => 15],
+            'namespace-size' => ['countInterfaces' => true],
+        ], $result);
+    }
+
+    public function testParseRuleOptionsNormalizesMixedKebabAndSnakeCase(): void
+    {
+        $result = $this->parser->parseRuleOptions([
+            'test-rule:my_option-name=value',
+        ]);
+
+        self::assertSame([
+            'test-rule' => ['myOptionName' => 'value'],
+        ], $result);
+    }
+
     public function testParseRuleOptionsBooleanValues(): void
     {
         $result = $this->parser->parseRuleOptions([

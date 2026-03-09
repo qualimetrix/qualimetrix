@@ -49,7 +49,7 @@ final class TccLccVisitor extends NodeVisitorAbstract implements ResettableVisit
 
     /**
      * Stack of method contexts (to handle methods inside anonymous classes).
-     * Null entries represent non-tracked methods (private, protected, abstract).
+     * Null entries represent non-tracked methods (private, protected, abstract, static).
      *
      * @var list<string|null>
      */
@@ -112,7 +112,7 @@ final class TccLccVisitor extends NodeVisitorAbstract implements ResettableVisit
         if ($node instanceof ClassMethod) {
             // TCC/LCC only considers public, non-abstract methods of named classes.
             // Non-tracked methods push null to keep the stack balanced.
-            if ($currentClass !== null && $node->isPublic() && !$node->isAbstract()) {
+            if ($currentClass !== null && $node->isPublic() && !$node->isAbstract() && !$node->isStatic()) {
                 $methodName = $node->name->toString();
                 $this->methodStack[] = $methodName;
 

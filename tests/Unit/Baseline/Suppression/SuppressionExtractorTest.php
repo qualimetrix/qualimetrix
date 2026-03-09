@@ -453,6 +453,47 @@ final class SuppressionExtractorTest extends TestCase
         self::assertEmpty($suppressions);
     }
 
+    public function testReasonContainingAsteriskIsNotTruncated(): void
+    {
+        $docComment = new Doc(
+            <<<'DOC'
+            /**
+             * @aimd-ignore complexity Legacy code * needs refactoring
+             */
+            DOC,
+            10,
+            10,
+        );
+
+        $node = new Class_('Foo');
+        $node->setDocComment($docComment);
+
+        $suppressions = $this->extractor->extract($node);
+
+        self::assertCount(1, $suppressions);
+        self::assertSame('complexity', $suppressions[0]->rule);
+        self::assertSame('Legacy code * needs refactoring', $suppressions[0]->reason);
+    }
+
+    public function testReasonTrailingDocblockClosingIsStripped(): void
+    {
+        // Single-line docblock where reason runs into closing */
+        $docComment = new Doc(
+            '/** @aimd-ignore complexity Some reason */',
+            10,
+            10,
+        );
+
+        $node = new Class_('Foo');
+        $node->setDocComment($docComment);
+
+        $suppressions = $this->extractor->extract($node);
+
+        self::assertCount(1, $suppressions);
+        self::assertSame('complexity', $suppressions[0]->rule);
+        self::assertSame('Some reason', $suppressions[0]->reason);
+    }
+
     public function testExtractMixedSuppressionTypes(): void
     {
         $docComment = new Doc(

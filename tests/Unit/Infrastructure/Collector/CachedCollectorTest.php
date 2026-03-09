@@ -315,6 +315,28 @@ final class CachedCollectorTest extends TestCase
         $this->assertSame(10, $classMetrics['ccn']);
     }
 
+    public function testFallsBackToInnerWhenGetRealPathReturnsFalse(): void
+    {
+        // Create a mock SplFileInfo that returns false for getRealPath()
+        $file = $this->createMock(SplFileInfo::class);
+        $file->method('getRealPath')->willReturn(false);
+
+        // Storage should NOT be consulted at all
+        $storage = $this->createMock(StorageInterface::class);
+        $storage->expects($this->never())->method('hasFileChanged');
+        $storage->expects($this->never())->method('storeFile');
+
+        $collector = new CachedCollector(
+            $this->innerCollector,
+            $storage,
+            $this->changeDetector,
+        );
+
+        $result = $collector->collect($file, []);
+
+        $this->assertInstanceOf(CollectionOutput::class, $result);
+    }
+
     public function testResetCallsInnerCollectorReset(): void
     {
         $this->collector->reset();

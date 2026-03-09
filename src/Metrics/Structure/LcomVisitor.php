@@ -12,7 +12,6 @@ use PhpParser\Node\Expr\Variable;
 use PhpParser\Node\Identifier;
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\ClassMethod;
-use PhpParser\Node\Stmt\Enum_;
 use PhpParser\NodeVisitorAbstract;
 
 /**
@@ -100,6 +99,12 @@ final class LcomVisitor extends NodeVisitorAbstract implements ResettableVisitor
         if ($node instanceof ClassMethod) {
             $methodName = $node->name->toString();
             $this->methodStack[] = $methodName;
+
+            // Abstract methods have no body and no property access, creating
+            // disconnected nodes that inflate LCOM. Skip them from the graph.
+            if ($node->isAbstract()) {
+                return null;
+            }
 
             // Only register with classData for named classes
             if ($currentClass !== null) {
@@ -211,31 +216,31 @@ final class LcomVisitor extends NodeVisitorAbstract implements ResettableVisitor
     }
 
     /**
-     * Extracts class name from class-like nodes (class, enum).
-     * Returns null for anonymous classes, traits, interfaces, or non-class-like nodes.
+     * Extracts class name from class-like nodes (class only).
+     * Returns null for anonymous classes, traits, interfaces, enums, or non-class-like nodes.
      *
-     * Note: Traits and interfaces are intentionally excluded - LCOM is not meaningful for them:
+     * Note: Traits, interfaces, and enums are intentionally excluded - LCOM is not meaningful for them:
      * - Traits are not standalone classes and their cohesion depends on the using class
      * - Interfaces have no properties or method implementations to measure cohesion
+     * - Enums cannot have instance properties (only constants and methods), so LCOM
+     *   (which measures method-property cohesion) is meaningless for them
      */
     private function extractClassLikeName(Node $node): ?string
     {
         return match (true) {
             $node instanceof Class_ && $node->name !== null => $node->name->toString(),
-            $node instanceof Enum_ && $node->name !== null => $node->name->toString(),
             default => null,
         };
     }
 
     /**
-     * Checks if node is a class-like type for LCOM calculation (class, enum).
+     * Checks if node is a class-like type for LCOM calculation (class only).
      *
-     * Note: Traits and interfaces are intentionally excluded - LCOM is not meaningful for them.
+     * Note: Traits, interfaces, and enums are intentionally excluded - LCOM is not meaningful for them.
      */
     private function isClassLikeNode(Node $node): bool
     {
-        return $node instanceof Class_
-            || $node instanceof Enum_;
+        return $node instanceof Class_;
     }
 
     private function buildClassFqn(string $className): string

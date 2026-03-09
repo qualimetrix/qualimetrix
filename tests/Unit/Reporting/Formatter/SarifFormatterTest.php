@@ -521,6 +521,32 @@ final class SarifFormatterTest extends TestCase
         self::assertStringNotContainsString(' ', $uri);
     }
 
+    public function testRuleDescriptionUsesViolationCodeNotRuleName(): void
+    {
+        // When ruleName differs from violationCode, the description should
+        // be looked up by violationCode (which matches the match arms).
+        $report = ReportBuilder::create()
+            ->addViolation(new Violation(
+                location: new Location('src/Foo.php', 10),
+                symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
+                ruleName: 'cyclomatic-complexity',
+                violationCode: 'complexity.cyclomatic',
+                message: 'Too complex',
+                severity: Severity::Error,
+            ))
+            ->filesAnalyzed(1)
+            ->filesSkipped(0)
+            ->duration(0.01)
+            ->build();
+
+        $output = $this->formatter->format($report, new FormatterContext());
+        $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
+
+        $rule = $data['runs'][0]['tool']['driver']['rules'][0];
+        // Should use the description matching 'complexity.cyclomatic', not 'cyclomatic-complexity'
+        self::assertSame('Code complexity exceeds threshold', $rule['shortDescription']['text']);
+    }
+
     public function testDefaultConfigurationLevelUsesMaxSeverity(): void
     {
         $report = ReportBuilder::create()

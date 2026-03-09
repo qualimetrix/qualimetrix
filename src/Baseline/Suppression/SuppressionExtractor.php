@@ -16,9 +16,9 @@ use PhpParser\Node;
  */
 final readonly class SuppressionExtractor
 {
-    private const PATTERN_SYMBOL = '/@aimd-ignore(?!-next-line|-file)(?![\w-])\s+([\w.*-]+)(?:\s+([^\n\r*]+))?/';
-    private const PATTERN_NEXT_LINE = '/@aimd-ignore-next-line(?![\w-])\s+([\w.*-]+)(?:\s+([^\n\r*]+))?/';
-    private const PATTERN_FILE = '/@aimd-ignore-file(?![\w-])(?:\s+([\w.*-]+)(?:\s+([^\n\r*]+))?)?/';
+    private const PATTERN_SYMBOL = '/@aimd-ignore(?!-next-line|-file)(?![\w-])\s+([\w.*-]+)(?:[^\S\n\r]+([^\n\r]+))?/';
+    private const PATTERN_NEXT_LINE = '/@aimd-ignore-next-line(?![\w-])\s+([\w.*-]+)(?:[^\S\n\r]+([^\n\r]+))?/';
+    private const PATTERN_FILE = '/@aimd-ignore-file(?![\w-])(?:\s+([\w.*-]+)(?:[^\S\n\r]+([^\n\r]+))?)?/';
 
     /**
      * Extracts suppression tags from node's docblock.
@@ -119,7 +119,8 @@ final readonly class SuppressionExtractor
             return null;
         }
 
-        $trimmed = trim($raw);
+        // Strip trailing docblock closing characters (e.g., "*/") and whitespace
+        $trimmed = rtrim($raw, " \t*/");
 
         return $trimmed !== '' ? $trimmed : null;
     }

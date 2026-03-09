@@ -206,7 +206,7 @@ final class RfcVisitor extends NodeVisitorAbstract implements ResettableVisitorI
 
         // Nullsafe calls are always external (cannot be $this?->method())
         $receiverName = $this->extractReceiverName($node->var);
-        $this->classes[$fqn]->addExternalMethod($receiverName . '?->' . $methodName);
+        $this->classes[$fqn]->addExternalMethod($receiverName . '->' . $methodName);
     }
 
     private function handleStaticCall(StaticCall $node, string $fqn): void
@@ -241,6 +241,12 @@ final class RfcVisitor extends NodeVisitorAbstract implements ResettableVisitorI
         }
 
         $className = $node->class->toString();
+
+        // Ignore internal constructor calls (new self(), new static(), new parent())
+        if (\in_array($className, ['self', 'static', 'parent'], true)) {
+            return;
+        }
+
         $this->classes[$fqn]->addExternalMethod($className . '::__construct');
     }
 
@@ -313,7 +319,8 @@ final class RfcVisitor extends NodeVisitorAbstract implements ResettableVisitorI
         }
 
         // Anything else (method chains, complex expressions)
-        return '*';
+        // Use unique identifier per AST node to avoid false deduplication
+        return '*@' . spl_object_id($expr);
     }
 
     private function buildClassFqn(string $className): string

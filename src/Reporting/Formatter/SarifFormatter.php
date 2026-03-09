@@ -99,7 +99,7 @@ final class SarifFormatter implements FormatterInterface
                 'id' => $code,
                 'name' => $this->formatRuleName($code),
                 'shortDescription' => [
-                    'text' => $this->getRuleDescription($info['ruleName']),
+                    'text' => $this->getRuleDescription($code),
                 ],
                 'defaultConfiguration' => [
                     'level' => $this->mapLevel($info['maxSeverity']),

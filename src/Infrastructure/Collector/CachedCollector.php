@@ -41,6 +41,10 @@ final class CachedCollector
     public function collect(SplFileInfo $file, array $ast): CollectionOutput
     {
         $path = $file->getRealPath();
+        if ($path === false) {
+            return $this->inner->collect($file, $ast);
+        }
+
         $contentHash = $this->changeDetector->getContentHash($file);
 
         // Cache hit for metrics?

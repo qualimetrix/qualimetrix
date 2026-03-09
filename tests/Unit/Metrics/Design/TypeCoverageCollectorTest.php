@@ -567,6 +567,64 @@ PHP;
         self::assertSame(75.0, $metrics->get('typeCoverage.property:App\MultiProp'));
     }
 
+    public function testReadonlyPromotedPropertyWithoutVisibilityDetected(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class ReadonlyVO
+{
+    public function __construct(
+        readonly string $name,
+        readonly int $age,
+    ) {}
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // 2 params, both typed
+        self::assertSame(2, $metrics->get('typeCoverage.paramTotal:App\ReadonlyVO'));
+        self::assertSame(2, $metrics->get('typeCoverage.paramTyped:App\ReadonlyVO'));
+        self::assertSame(100.0, $metrics->get('typeCoverage.param:App\ReadonlyVO'));
+
+        // 2 promoted properties (readonly without visibility), both typed
+        self::assertSame(2, $metrics->get('typeCoverage.propertyTotal:App\ReadonlyVO'));
+        self::assertSame(2, $metrics->get('typeCoverage.propertyTyped:App\ReadonlyVO'));
+        self::assertSame(100.0, $metrics->get('typeCoverage.property:App\ReadonlyVO'));
+    }
+
+    public function testReadonlyPromotedPropertyWithoutTypeDetected(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class ReadonlyMixed
+{
+    public function __construct(
+        public readonly string $typed,
+        readonly string $readonlyOnly,
+        private $notPromotedButVisible,
+    ) {}
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // 3 params: 2 typed (typed + readonlyOnly), 1 untyped
+        self::assertSame(3, $metrics->get('typeCoverage.paramTotal:App\ReadonlyMixed'));
+        self::assertSame(2, $metrics->get('typeCoverage.paramTyped:App\ReadonlyMixed'));
+
+        // 3 promoted properties: typed (public readonly), readonlyOnly (readonly), notPromotedButVisible (private)
+        self::assertSame(3, $metrics->get('typeCoverage.propertyTotal:App\ReadonlyMixed'));
+        // 2 typed properties
+        self::assertSame(2, $metrics->get('typeCoverage.propertyTyped:App\ReadonlyMixed'));
+    }
+
     private function collectMetrics(string $code): MetricBag
     {
         $parser = (new ParserFactory())->createForHostVersion();

@@ -1152,6 +1152,199 @@ PHP;
         self::assertSame(4, $complexities['f']);
     }
 
+    /**
+     * Bug fix: nodeStack must be saved/restored for closures inside methods.
+     * Without this fix, the nodeStack from the outer method leaks into the closure,
+     * causing incorrect logical operator chain detection.
+     */
+    public function testNodeStackDoesNotLeakIntoClosure(): void
+    {
+        $code = <<<'PHP'
+<?php
+function outer($a, $b) {
+    if ($a || $b) {                         // +1 (if) + 1 (||) = 2
+        $fn = function($c, $d) {            // closure at nesting=1: +2 to outer
+            if ($c || $d) {                 // +1 (if) + 1 (||) = 2 in closure
+                return true;
+            }
+            return false;
+        };
+    }
+}
+PHP;
+
+        $visitor = new CognitiveComplexityVisitor();
+        $parser = (new ParserFactory())->createForHostVersion();
+        $ast = $parser->parse($code) ?? [];
+
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $complexities = $visitor->getComplexities();
+
+        // outer: +1 (if) + 1 (||) + 2 (closure at nesting=1) = 4
+        self::assertSame(4, $complexities['outer']);
+        // closure: +1 (if) + 1 (||) = 2 — nodeStack must be clean, so || starts fresh
+        self::assertSame(2, $complexities['::{closure#1}']);
+    }
+
+    /**
+     * Bug fix: nodeStack must be restored after closure ends.
+     * Logical operators after a closure should use the outer nodeStack, not an empty one.
+     */
+    public function testNodeStackRestoredAfterClosure(): void
+    {
+        $code = <<<'PHP'
+<?php
+function outer($a, $b, $c) {
+    if ($a || $b) {                         // +1 (if) + 1 (||) = 2
+        $fn = function() { return 1; };     // closure at nesting=1: +2
+        if ($c || $a) {                     // +2 (if at nesting=1) + 1 (||) = 3
+            return true;
+        }
+    }
+}
+PHP;
+
+        $visitor = new CognitiveComplexityVisitor();
+        $parser = (new ParserFactory())->createForHostVersion();
+        $ast = $parser->parse($code) ?? [];
+
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $complexities = $visitor->getComplexities();
+
+        // outer: +1 (if) + 1 (||) + 2 (closure) + 2 (if at nesting=1) + 1 (||) = 7
+        self::assertSame(7, $complexities['outer']);
+    }
+
+    /**
+     * Bug fix: \Other\Namespace\foo() called inside function foo() must NOT be detected as recursion.
+     */
+    public function testNamespacedFunctionCallIsNotFalseRecursion(): void
+    {
+        $code = <<<'PHP'
+<?php
+function foo($n) {
+    if ($n > 0) {                           // +1
+        return \Other\Namespace\foo($n);    // NOT recursion — different namespace
+    }
+    return 0;
+}
+PHP;
+
+        $visitor = new CognitiveComplexityVisitor();
+        $parser = (new ParserFactory())->createForHostVersion();
+        $ast = $parser->parse($code) ?? [];
+
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $complexities = $visitor->getComplexities();
+
+        // Only +1 for the if, no false recursion
+        self::assertSame(1, $complexities['foo']);
+    }
+
+    /**
+     * Bug fix: Fully-qualified call to same function IS still recursion.
+     */
+    public function testFullyQualifiedSameFunctionIsRecursion(): void
+    {
+        $code = <<<'PHP'
+<?php
+function factorial($n) {
+    if ($n <= 1) {                  // +1
+        return 1;
+    }
+    return $n * \factorial($n - 1); // +1 recursion (leading \ stripped, no namespace)
+}
+PHP;
+
+        $visitor = new CognitiveComplexityVisitor();
+        $parser = (new ParserFactory())->createForHostVersion();
+        $ast = $parser->parse($code) ?? [];
+
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $complexities = $visitor->getComplexities();
+
+        // +1 (if) + 1 (recursion) = 2
+        self::assertSame(2, $complexities['factorial']);
+    }
+
+    /**
+     * Bug fix: parent::method() is NOT recursion — it calls the parent class method.
+     */
+    public function testParentStaticCallIsNotRecursion(): void
+    {
+        $code = <<<'PHP'
+<?php
+namespace App;
+
+class Child
+{
+    public function process() {
+        if (true) {                // +1
+            parent::process();     // NOT recursion — calls parent's method
+        }
+    }
+}
+PHP;
+
+        $visitor = new CognitiveComplexityVisitor();
+        $parser = (new ParserFactory())->createForHostVersion();
+        $ast = $parser->parse($code) ?? [];
+
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $complexities = $visitor->getComplexities();
+
+        // Only +1 for the if, no recursion
+        self::assertSame(1, $complexities['App\Child::process']);
+    }
+
+    /**
+     * Ensure static::method() IS still detected as recursion (late static binding calls self).
+     */
+    public function testStaticCallIsStillRecursion(): void
+    {
+        $code = <<<'PHP'
+<?php
+namespace App;
+
+class Service
+{
+    public static function process() {
+        if (true) {                // +1
+            static::process();     // +1 recursion (late static binding)
+        }
+    }
+}
+PHP;
+
+        $visitor = new CognitiveComplexityVisitor();
+        $parser = (new ParserFactory())->createForHostVersion();
+        $ast = $parser->parse($code) ?? [];
+
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $complexities = $visitor->getComplexities();
+
+        // +1 (if) + 1 (recursion) = 2
+        self::assertSame(2, $complexities['App\Service::process']);
+    }
+
     public function testReset(): void
     {
         $visitor = new CognitiveComplexityVisitor();

@@ -27,6 +27,11 @@ final class TypeDependencyHelper
     public static function processType(Node $type, DependencyType $dependencyType, DependencyContext $context): void
     {
         if ($type instanceof Name) {
+            // self, static, parent are special class names that should not be resolved as dependencies
+            if ($type->isSpecialClassName()) {
+                return;
+            }
+
             $resolved = $context->getResolver()->resolve($type);
             if (!self::isBuiltinType($resolved)) {
                 $context->addDependency($resolved, $dependencyType, $type->getStartLine());

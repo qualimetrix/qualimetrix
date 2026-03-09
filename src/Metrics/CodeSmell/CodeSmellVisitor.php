@@ -58,6 +58,7 @@ final class CodeSmellVisitor extends NodeVisitorAbstract implements ResettableVi
         '_SERVER',
         '_FILES',
         '_ENV',
+        'GLOBALS',
     ];
 
     /** @var list<CodeSmellLocation> */
@@ -218,12 +219,22 @@ final class CodeSmellVisitor extends NodeVisitorAbstract implements ResettableVi
         foreach ($node->getSubNodeNames() as $name) {
             $subNode = $node->{$name};
 
+            // Skip closures and arrow functions — count() inside them is not in the loop condition
+            if ($subNode instanceof Closure || $subNode instanceof ArrowFunction) {
+                continue;
+            }
+
             if ($subNode instanceof Node && $this->containsCountCall($subNode)) {
                 return true;
             }
 
             if (\is_array($subNode)) {
                 foreach ($subNode as $item) {
+                    // Skip closures and arrow functions
+                    if ($item instanceof Closure || $item instanceof ArrowFunction) {
+                        continue;
+                    }
+
                     if ($item instanceof Node && $this->containsCountCall($item)) {
                         return true;
                     }

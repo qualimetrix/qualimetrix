@@ -35,7 +35,7 @@ final readonly class CatchInstanceofHandler implements NodeDependencyHandlerInte
         }
 
         if ($node instanceof Instanceof_) {
-            if ($node->class instanceof Name) {
+            if ($node->class instanceof Name && !$node->class->isSpecialClassName()) {
                 $context->addDependency(
                     $context->getResolver()->resolve($node->class),
                     DependencyType::Instanceof_,

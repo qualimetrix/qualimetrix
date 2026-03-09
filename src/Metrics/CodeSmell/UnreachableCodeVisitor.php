@@ -207,6 +207,13 @@ final class UnreachableCodeVisitor extends NodeVisitorAbstract implements Resett
             }
 
             if ($foundTerminal) {
+                // A goto label is a valid jump target — it resets reachability
+                if ($stmt instanceof Stmt\Label) {
+                    $foundTerminal = false;
+
+                    continue;
+                }
+
                 $unreachableCount++;
                 $firstLine ??= $stmt->getStartLine();
 

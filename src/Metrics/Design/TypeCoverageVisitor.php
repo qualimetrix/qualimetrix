@@ -250,10 +250,10 @@ final class TypeCoverageVisitor extends NodeVisitorAbstract implements Resettabl
 
     private function isPromotedProperty(Param $param): bool
     {
-        // In php-parser v5, promoted properties have visibility flags
-        return ($param->flags & Class_::MODIFIER_PUBLIC) !== 0
-            || ($param->flags & Class_::MODIFIER_PROTECTED) !== 0
-            || ($param->flags & Class_::MODIFIER_PRIVATE) !== 0;
+        // In php-parser v5, promoted properties have visibility flags.
+        // MODIFIER_READONLY is included for completeness (readonly alone requires
+        // visibility in PHP, but php-parser may set it independently).
+        return ($param->flags & (Class_::MODIFIER_PUBLIC | Class_::MODIFIER_PROTECTED | Class_::MODIFIER_PRIVATE | Class_::MODIFIER_READONLY)) !== 0;
     }
 
     private function buildClassFqn(string $className): string

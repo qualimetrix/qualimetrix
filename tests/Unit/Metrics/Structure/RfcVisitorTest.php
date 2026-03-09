@@ -602,6 +602,124 @@ PHP;
         self::assertSame(2, $data->getExternalMethodsCount());
     }
 
+    /**
+     * new self()/new static()/new parent() should NOT count as external constructor calls.
+     */
+    public function testNewSelfStaticParentAreNotExternal(): void
+    {
+        $code = <<<'PHP'
+<?php
+class SelfFactory
+{
+    public function createSelf(): self
+    {
+        return new self();
+    }
+
+    public function createStatic(): static
+    {
+        return new static();
+    }
+
+    public function createParent(): void
+    {
+        new parent();
+    }
+
+    public function createExternal(): void
+    {
+        new SomeOther();
+    }
+}
+PHP;
+
+        $visitor = new RfcVisitor();
+        $parser = (new ParserFactory())->createForHostVersion();
+        $ast = $parser->parse($code) ?? [];
+
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $classesData = $visitor->getClassesData();
+
+        self::assertArrayHasKey('SelfFactory', $classesData);
+        $data = $classesData['SelfFactory'];
+        // M = 4, R = 1 (only new SomeOther()), RFC = 5
+        self::assertSame(5, $data->getRfc());
+        self::assertSame(4, $data->getOwnMethodsCount());
+        self::assertSame(1, $data->getExternalMethodsCount());
+    }
+
+    /**
+     * Method chains on different receivers should each count as unique external calls.
+     */
+    public function testMethodChainsOnDifferentReceiversCountSeparately(): void
+    {
+        $code = <<<'PHP'
+<?php
+class ChainService
+{
+    public function process(): void
+    {
+        $this->a->getB()->save();   // method chain: save() on complex receiver
+        $this->c->getD()->save();   // different chain: save() on different complex receiver
+    }
+}
+PHP;
+
+        $visitor = new RfcVisitor();
+        $parser = (new ParserFactory())->createForHostVersion();
+        $ast = $parser->parse($code) ?? [];
+
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $classesData = $visitor->getClassesData();
+
+        self::assertArrayHasKey('ChainService', $classesData);
+        $data = $classesData['ChainService'];
+        // M = 1, R should be >= 4 (getB, save, getD, save — the two save() calls
+        // should NOT dedup because they have different complex receivers)
+        self::assertGreaterThanOrEqual(4, $data->getExternalMethodsCount());
+    }
+
+    /**
+     * Nullsafe and regular method calls on the same receiver+method should dedup.
+     */
+    public function testNullsafeAndRegularCallsDedup(): void
+    {
+        $code = <<<'PHP'
+<?php
+class NullsafeDedup
+{
+    public function process(): void
+    {
+        $this->repo->save();    // regular call
+        $this->repo?->save();   // nullsafe call — same semantic method
+    }
+}
+PHP;
+
+        $visitor = new RfcVisitor();
+        $parser = (new ParserFactory())->createForHostVersion();
+        $ast = $parser->parse($code) ?? [];
+
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $classesData = $visitor->getClassesData();
+
+        self::assertArrayHasKey('NullsafeDedup', $classesData);
+        $data = $classesData['NullsafeDedup'];
+        // M = 1, R = 1 (repo->save deduplicates), RFC = 2
+        self::assertSame(2, $data->getRfc());
+        self::assertSame(1, $data->getOwnMethodsCount());
+        self::assertSame(1, $data->getExternalMethodsCount());
+    }
+
     public function testReset(): void
     {
         $visitor = new RfcVisitor();

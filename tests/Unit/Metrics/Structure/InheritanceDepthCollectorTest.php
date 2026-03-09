@@ -441,6 +441,70 @@ PHP;
         self::assertSame(2, $dit, 'DIT should count standard PHP class in external chain');
     }
 
+    public function testNamespacedExceptionIsNotStandardPhpClass(): void
+    {
+        // Bug 9: App\Exception should NOT match standard Exception
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Exception
+{
+}
+
+class MyException extends Exception
+{
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // App\Exception is NOT standard — it's a user class with DIT 0
+        self::assertSame(0, $metrics->get('dit:App\Exception'));
+        // MyException extends App\Exception (not standard) — DIT 1
+        self::assertSame(1, $metrics->get('dit:App\MyException'));
+    }
+
+    public function testNamespacedErrorIsNotStandardPhpClass(): void
+    {
+        // App\Error should NOT match standard Error
+        $code = <<<'PHP'
+<?php
+
+namespace App\Domain;
+
+class Error
+{
+}
+
+class MyError extends Error
+{
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(0, $metrics->get('dit:App\Domain\Error'));
+        self::assertSame(1, $metrics->get('dit:App\Domain\MyError'));
+    }
+
+    public function testUnqualifiedExceptionIsStandardPhpClass(): void
+    {
+        // Unqualified "Exception" (no namespace) IS a standard PHP class
+        $code = <<<'PHP'
+<?php
+
+class MyException extends Exception
+{
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(1, $metrics->get('dit:MyException'));
+    }
+
     private function collectMetrics(string $code): MetricBag
     {
         $parser = (new ParserFactory())->createForHostVersion();

@@ -24,6 +24,11 @@ final readonly class InstantiationHandler implements NodeDependencyHandlerInterf
         \assert($node instanceof New_);
 
         if ($node->class instanceof Name) {
+            // self, static, parent are special class names — not real dependencies
+            if ($node->class->isSpecialClassName()) {
+                return;
+            }
+
             $context->addDependency(
                 $context->getResolver()->resolve($node->class),
                 DependencyType::New_,

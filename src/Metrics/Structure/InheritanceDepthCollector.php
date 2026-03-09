@@ -231,16 +231,10 @@ final class InheritanceDepthCollector extends AbstractCollector implements Class
         // Remove leading backslash if present
         $normalized = ltrim($fqn, '\\');
 
-        // Check direct match
-        if (isset(self::STANDARD_PHP_CLASSES[$normalized])) {
-            return true;
-        }
-
-        // Check just the class name (for FQN like \Exception)
-        $parts = explode('\\', $normalized);
-        $className = end($parts);
-
-        return isset(self::STANDARD_PHP_CLASSES[$className]);
+        // Direct match covers both unqualified names (e.g. "Exception")
+        // and FQNs (e.g. "RuntimeException"). Namespaced names like
+        // "App\Exception" won't match, preventing false positives.
+        return isset(self::STANDARD_PHP_CLASSES[$normalized]);
     }
 
     /**

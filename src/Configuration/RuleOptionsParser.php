@@ -154,7 +154,7 @@ final readonly class RuleOptionsParser
     {
         $name = trim($name);
 
-        return lcfirst(str_replace('-', '', ucwords($name, '-')));
+        return lcfirst(str_replace(['-', '_'], '', ucwords($name, '-_')));
     }
 
     /**

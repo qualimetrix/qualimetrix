@@ -202,6 +202,55 @@ final class CliOptionsParserTest extends TestCase
     }
 
     #[Test]
+    public function parseRuleOptions_normalizesScientificNotation(): void
+    {
+        $ruleOptionsParser = new RuleOptionsParser([
+            'threshold' => ['rule' => 'test.rule', 'option' => 'threshold'],
+        ]);
+
+        $cliParser = new CliOptionsParser($ruleOptionsParser);
+
+        $definition = new InputDefinition([
+            new InputOption('rule-opt', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY),
+            new InputOption('threshold', null, InputOption::VALUE_REQUIRED),
+        ]);
+
+        $input = new ArrayInput([
+            '--threshold' => '1e3',
+        ], $definition);
+
+        $result = $cliParser->parseRuleOptions($input);
+
+        self::assertArrayHasKey('test.rule', $result);
+        // 1e3 should be parsed as float 1000.0, not int 1
+        self::assertSame(1000.0, $result['test.rule']['threshold']);
+    }
+
+    #[Test]
+    public function parseRuleOptions_normalizesScientificNotationWithDot(): void
+    {
+        $ruleOptionsParser = new RuleOptionsParser([
+            'threshold' => ['rule' => 'test.rule', 'option' => 'threshold'],
+        ]);
+
+        $cliParser = new CliOptionsParser($ruleOptionsParser);
+
+        $definition = new InputDefinition([
+            new InputOption('rule-opt', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY),
+            new InputOption('threshold', null, InputOption::VALUE_REQUIRED),
+        ]);
+
+        $input = new ArrayInput([
+            '--threshold' => '1.5e2',
+        ], $definition);
+
+        $result = $cliParser->parseRuleOptions($input);
+
+        self::assertArrayHasKey('test.rule', $result);
+        self::assertSame(150.0, $result['test.rule']['threshold']);
+    }
+
+    #[Test]
     public function parseRuleOptions_skipsNullAliases(): void
     {
         // Arrange: alias registered but not passed via CLI

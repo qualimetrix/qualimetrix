@@ -379,9 +379,9 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // goto IS terminal — code after goto is unreachable in sequential flow.
-        // Note: the label destination IS reachable via goto, but our sequential scanner
-        // counts statements after the terminal. Here: $x = 1, end: (Label_), return are 3.
-        self::assertSame(3, $metrics->get('unreachableCode:App\Navigator::navigate'));
+        // The label resets reachability (it's a valid jump target), so only $x = 1 is unreachable.
+        // After the label, return is reachable via the goto jump.
+        self::assertSame(1, $metrics->get('unreachableCode:App\Navigator::navigate'));
     }
 
     public function testGotoAsTerminalSimple(): void
@@ -404,8 +404,8 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        // goto is terminal: $unreachable = 1 and skip: label are after it
-        self::assertSame(2, $metrics->get('unreachableCode:App\GotoTest::test'));
+        // goto is terminal: $unreachable = 1 is after it, but skip: label resets reachability
+        self::assertSame(1, $metrics->get('unreachableCode:App\GotoTest::test'));
         self::assertSame(10, $metrics->get('unreachableCode.firstLine:App\GotoTest::test'));
     }
 
@@ -474,6 +474,97 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         self::assertSame(0, $metrics->get('unreachableCode:App\Service::execute'));
+    }
+
+    /**
+     * A goto label resets reachability — code after the label is reachable via the goto jump.
+     */
+    public function testGotoLabelResetsReachability(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class GotoLabel
+{
+    public function test(): void
+    {
+        goto done;
+        $unreachable1 = 1;
+        $unreachable2 = 2;
+        done:
+        $reachable = 3;
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // Only $unreachable1 and $unreachable2 are unreachable.
+        // The label resets reachability, so $reachable = 3 is reachable.
+        self::assertSame(2, $metrics->get('unreachableCode:App\GotoLabel::test'));
+        self::assertSame(10, $metrics->get('unreachableCode.firstLine:App\GotoLabel::test'));
+    }
+
+    /**
+     * Multiple goto labels: each label resets reachability independently.
+     */
+    public function testMultipleGotoLabelsResetReachability(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class MultiLabel
+{
+    public function test(): void
+    {
+        goto first;
+        $dead1 = 1;
+        first:
+        $alive1 = 2;
+        goto second;
+        $dead2 = 3;
+        second:
+        $alive2 = 4;
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // $dead1 and $dead2 are unreachable, labels reset reachability
+        self::assertSame(2, $metrics->get('unreachableCode:App\MultiLabel::test'));
+    }
+
+    /**
+     * Code after goto with no subsequent label remains unreachable.
+     */
+    public function testGotoWithoutSubsequentLabel(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class GotoNoLabel
+{
+    public function test(): void
+    {
+        label:
+        $x = 1;
+        goto label;
+        $dead = 2;
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // $dead = 2 is unreachable (no label after it to reset)
+        self::assertSame(1, $metrics->get('unreachableCode:App\GotoNoLabel::test'));
     }
 
     private function collectMetrics(string $code): \AiMessDetector\Core\Metric\MetricBag
