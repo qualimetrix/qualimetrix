@@ -374,6 +374,7 @@ final class ContainerFactoryTest extends TestCase
             CommandInjectionRule::class,
             SensitiveParameterRule::class,
             \AiMessDetector\Rules\CodeSmell\UnusedPrivateRule::class,
+            \AiMessDetector\Rules\CodeSmell\IdenticalSubExpressionRule::class,
             \AiMessDetector\Rules\Duplication\CodeDuplicationRule::class,
         ];
 

@@ -104,10 +104,17 @@ These fill the biggest competitive gaps.
 - Requires new analysis pass type
 - High effort, high value
 
-### 4.2 Identical Sub-expression Detection
-- `$a === $a`, duplicate conditions in if/elseif chains
-- AST comparison within expressions
-- Medium effort, medium value
+### 4.2 Identical Sub-expression Detection ✅ DONE
+
+- **Rule:** `code-smell.identical-subexpression`
+- **Detection types:**
+  - Identical operands in binary operations (`$a === $a`, `$a - $a`, `$a && $a`)
+  - Duplicate conditions in if/elseif chains
+  - Identical ternary branches (`$cond ? $x : $x`)
+  - Duplicate match arm conditions
+- **Approach:** Recursive structural AST comparison with side-effect exclusion
+- **Effort:** Medium
+- **Value:** Medium — catches copy-paste errors and logic bugs
 
 ### 4.3 Technical Debt Estimation ✅ DONE
 - Assign remediation time metadata to each rule (e.g., "15 min to fix")

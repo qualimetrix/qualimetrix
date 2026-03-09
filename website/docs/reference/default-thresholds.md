@@ -104,6 +104,7 @@ These rules detect specific patterns that are usually bad practice. Most do not 
 | Long Parameter List | `code-smell.long-parameter-list` | 4 params | 6 params | enabled |
 | Unreachable Code  | `code-smell.unreachable-code`  | 1        | 2        | enabled |
 | Unused Private    | `code-smell.unused-private`    | Warning  | -        | enabled |
+| Identical Sub-expression | `code-smell.identical-subexpression` | Warning | - | enabled |
 
 ## Duplication Rules
 

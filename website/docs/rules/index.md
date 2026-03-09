@@ -104,19 +104,20 @@ These rules detect duplicated code blocks across your codebase using token-strea
 
 These rules detect common bad practices that are almost always wrong, regardless of context. Most produce an **Error** severity by default.
 
-| Rule                                 | ID                               | What it detects                                |
-| ------------------------------------ | -------------------------------- | ---------------------------------------------- |
-| [Boolean Argument](code-smell.md)    | `code-smell.boolean-argument`    | `bool` parameters in method signatures         |
-| [Count in Loop](code-smell.md)       | `code-smell.count-in-loop`       | Calling `count()` in a loop condition          |
-| [Debug Code](code-smell.md)          | `code-smell.debug-code`          | `var_dump`, `print_r`, `debug_backtrace`, etc. |
-| [Empty Catch](code-smell.md)         | `code-smell.empty-catch`         | `catch` blocks with no body                    |
-| [Error Suppression](code-smell.md)   | `code-smell.error-suppression`   | The `@` error suppression operator             |
-| [Eval](code-smell.md)                | `code-smell.eval`                | Use of `eval()`                                |
-| [Exit](code-smell.md)                | `code-smell.exit`                | Use of `exit()` or `die()`                     |
-| [Goto](code-smell.md)                | `code-smell.goto`                | Use of `goto`                                  |
-| [Superglobals](code-smell.md)        | `code-smell.superglobals`        | Direct access to `$_GET`, `$_POST`, etc.       |
-| [Long Parameter List](code-smell.md) | `code-smell.long-parameter-list` | Methods with too many parameters               |
-| [Unreachable Code](code-smell.md)    | `code-smell.unreachable-code`    | Code after return/throw/exit statements        |
+| Rule                                      | ID                                   | What it detects                                                 |
+| ----------------------------------------- | ------------------------------------ | --------------------------------------------------------------- |
+| [Boolean Argument](code-smell.md)         | `code-smell.boolean-argument`        | `bool` parameters in method signatures                          |
+| [Count in Loop](code-smell.md)            | `code-smell.count-in-loop`           | Calling `count()` in a loop condition                           |
+| [Debug Code](code-smell.md)               | `code-smell.debug-code`              | `var_dump`, `print_r`, `debug_backtrace`, etc.                  |
+| [Empty Catch](code-smell.md)              | `code-smell.empty-catch`             | `catch` blocks with no body                                     |
+| [Error Suppression](code-smell.md)        | `code-smell.error-suppression`       | The `@` error suppression operator                              |
+| [Eval](code-smell.md)                     | `code-smell.eval`                    | Use of `eval()`                                                 |
+| [Exit](code-smell.md)                     | `code-smell.exit`                    | Use of `exit()` or `die()`                                      |
+| [Goto](code-smell.md)                     | `code-smell.goto`                    | Use of `goto`                                                   |
+| [Superglobals](code-smell.md)             | `code-smell.superglobals`            | Direct access to `$_GET`, `$_POST`, etc.                        |
+| [Long Parameter List](code-smell.md)      | `code-smell.long-parameter-list`     | Methods with too many parameters                                |
+| [Unreachable Code](code-smell.md)         | `code-smell.unreachable-code`        | Code after return/throw/exit statements                         |
+| [Identical Sub-expression](code-smell.md) | `code-smell.identical-subexpression` | Identical operands, duplicate conditions, same ternary branches |
 
 [Read more about Code Smell rules --&gt;](code-smell.md)
 

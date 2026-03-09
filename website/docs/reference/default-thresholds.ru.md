@@ -104,6 +104,7 @@
 | Long Parameter List | `code-smell.long-parameter-list` | 4 params | 6 params | включено |
 | Unreachable Code  | `code-smell.unreachable-code`  | 1        | 2        | включено     |
 | Unused Private    | `code-smell.unused-private`    | Warning  | -        | включено     |
+| Identical Sub-expression | `code-smell.identical-subexpression` | Warning | - | включено |
 
 ## Правила дупликации (Duplication)
 
