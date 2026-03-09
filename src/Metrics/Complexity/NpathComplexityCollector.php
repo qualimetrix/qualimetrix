@@ -9,6 +9,7 @@ use AiMessDetector\Core\Metric\MethodMetricsProviderInterface;
 use AiMessDetector\Core\Metric\MethodWithMetrics;
 use AiMessDetector\Core\Metric\MetricBag;
 use AiMessDetector\Core\Metric\MetricDefinition;
+use AiMessDetector\Core\Metric\MetricName;
 use AiMessDetector\Core\Metric\SymbolLevel;
 use AiMessDetector\Metrics\AbstractCollector;
 use Override;
@@ -27,7 +28,6 @@ use SplFileInfo;
 final class NpathComplexityCollector extends AbstractCollector implements MethodMetricsProviderInterface
 {
     private const NAME = 'npath-complexity';
-    private const METRIC_NPATH = 'npath';
 
     public function __construct()
     {
@@ -44,7 +44,7 @@ final class NpathComplexityCollector extends AbstractCollector implements Method
      */
     public function provides(): array
     {
-        return [self::METRIC_NPATH];
+        return [MetricName::COMPLEXITY_NPATH];
     }
 
     /**
@@ -57,7 +57,7 @@ final class NpathComplexityCollector extends AbstractCollector implements Method
         \assert($this->visitor instanceof NpathComplexityVisitor);
 
         foreach ($this->visitor->getNpath() as $fqn => $npath) {
-            $bag = $bag->with(self::METRIC_NPATH . ':' . $fqn, $npath);
+            $bag = $bag->with(MetricName::COMPLEXITY_NPATH . ':' . $fqn, $npath);
         }
 
         return $bag;
@@ -81,7 +81,7 @@ final class NpathComplexityCollector extends AbstractCollector implements Method
     {
         return [
             new MetricDefinition(
-                name: self::METRIC_NPATH,
+                name: MetricName::COMPLEXITY_NPATH,
                 collectedAt: SymbolLevel::Method,
                 aggregations: [
                     SymbolLevel::Class_->value => [

@@ -8,6 +8,7 @@ use AiMessDetector\Core\Metric\AggregationStrategy;
 use AiMessDetector\Core\Metric\DerivedCollectorInterface;
 use AiMessDetector\Core\Metric\MetricBag;
 use AiMessDetector\Core\Metric\MetricDefinition;
+use AiMessDetector\Core\Metric\MetricName;
 use AiMessDetector\Core\Metric\SymbolLevel;
 
 /**
@@ -24,7 +25,6 @@ use AiMessDetector\Core\Metric\SymbolLevel;
 final class MaintainabilityIndexCollector implements DerivedCollectorInterface
 {
     private const NAME = 'maintainability-index';
-    private const METRIC_MI = 'mi';
 
     private MaintainabilityIndexCalculator $calculator;
 
@@ -51,17 +51,17 @@ final class MaintainabilityIndexCollector implements DerivedCollectorInterface
      */
     public function provides(): array
     {
-        return [self::METRIC_MI];
+        return [MetricName::MAINTAINABILITY_MI];
     }
 
     public function calculate(MetricBag $sourceBag): MetricBag
     {
         // Get required metrics
-        $volume = $sourceBag->get('halstead.volume') ?? 0.0;
-        $ccn = $sourceBag->get('ccn') ?? 1;
+        $volume = $sourceBag->get(MetricName::HALSTEAD_VOLUME) ?? 0.0;
+        $ccn = $sourceBag->get(MetricName::COMPLEXITY_CCN) ?? 1;
 
         // Get method LOC - use real value from HalsteadVisitor if available
-        $methodLoc = $sourceBag->get('methodLoc');
+        $methodLoc = $sourceBag->get(MetricName::HALSTEAD_METHOD_LOC);
         if ($methodLoc !== null && $methodLoc > 0) {
             $loc = (float) $methodLoc;
         } else {
@@ -75,7 +75,7 @@ final class MaintainabilityIndexCollector implements DerivedCollectorInterface
             linesOfCode: $loc,
         );
 
-        return (new MetricBag())->with(self::METRIC_MI, $mi);
+        return (new MetricBag())->with(MetricName::MAINTAINABILITY_MI, $mi);
     }
 
     /**
@@ -85,7 +85,7 @@ final class MaintainabilityIndexCollector implements DerivedCollectorInterface
     {
         return [
             new MetricDefinition(
-                name: self::METRIC_MI,
+                name: MetricName::MAINTAINABILITY_MI,
                 collectedAt: SymbolLevel::Method,
                 aggregations: [
                     SymbolLevel::Class_->value => [

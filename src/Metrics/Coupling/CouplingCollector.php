@@ -9,6 +9,7 @@ use AiMessDetector\Core\Metric\AggregationStrategy;
 use AiMessDetector\Core\Metric\GlobalContextCollectorInterface;
 use AiMessDetector\Core\Metric\MetricBag;
 use AiMessDetector\Core\Metric\MetricDefinition;
+use AiMessDetector\Core\Metric\MetricName;
 use AiMessDetector\Core\Metric\MetricRepositoryInterface;
 use AiMessDetector\Core\Metric\SymbolLevel;
 
@@ -37,28 +38,28 @@ final class CouplingCollector implements GlobalContextCollectorInterface
 
     public function provides(): array
     {
-        return ['ca', 'ce', 'cbo', 'instability'];
+        return [MetricName::COUPLING_CA, MetricName::COUPLING_CE, MetricName::COUPLING_CBO, MetricName::COUPLING_INSTABILITY];
     }
 
     public function getMetricDefinitions(): array
     {
         return [
             new MetricDefinition(
-                name: 'ca',
+                name: MetricName::COUPLING_CA,
                 collectedAt: SymbolLevel::Class_,
                 aggregations: [
                     SymbolLevel::Namespace_->value => [AggregationStrategy::Sum],
                 ],
             ),
             new MetricDefinition(
-                name: 'ce',
+                name: MetricName::COUPLING_CE,
                 collectedAt: SymbolLevel::Class_,
                 aggregations: [
                     SymbolLevel::Namespace_->value => [AggregationStrategy::Sum],
                 ],
             ),
             new MetricDefinition(
-                name: 'cbo',
+                name: MetricName::COUPLING_CBO,
                 collectedAt: SymbolLevel::Class_,
                 aggregations: [
                     SymbolLevel::Namespace_->value => [
@@ -74,7 +75,7 @@ final class CouplingCollector implements GlobalContextCollectorInterface
                 ],
             ),
             new MetricDefinition(
-                name: 'instability',
+                name: MetricName::COUPLING_INSTABILITY,
                 collectedAt: SymbolLevel::Class_,
                 aggregations: [
                     SymbolLevel::Namespace_->value => [AggregationStrategy::Average],
@@ -129,10 +130,10 @@ final class CouplingCollector implements GlobalContextCollectorInterface
             $instability = $this->computeInstability($ca, $ce);
 
             $metrics = (new MetricBag())
-                ->with('ca', $ca)
-                ->with('ce', $ce)
-                ->with('cbo', $cbo)
-                ->with('instability', $instability);
+                ->with(MetricName::COUPLING_CA, $ca)
+                ->with(MetricName::COUPLING_CE, $ce)
+                ->with(MetricName::COUPLING_CBO, $cbo)
+                ->with(MetricName::COUPLING_INSTABILITY, $instability);
 
             $repository->add($symbolPath, $metrics, '', 0);
         }
@@ -165,10 +166,10 @@ final class CouplingCollector implements GlobalContextCollectorInterface
             $instability = $this->computeInstability($ca, $ce);
 
             $metrics = (new MetricBag())
-                ->with('ca', $ca)
-                ->with('ce', $ce)
-                ->with('cbo', $cbo)
-                ->with('instability', $instability);
+                ->with(MetricName::COUPLING_CA, $ca)
+                ->with(MetricName::COUPLING_CE, $ce)
+                ->with(MetricName::COUPLING_CBO, $cbo)
+                ->with(MetricName::COUPLING_INSTABILITY, $instability);
 
             $repository->add($symbolPath, $metrics, '', null);
         }

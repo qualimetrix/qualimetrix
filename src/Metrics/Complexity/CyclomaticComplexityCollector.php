@@ -9,6 +9,7 @@ use AiMessDetector\Core\Metric\MethodMetricsProviderInterface;
 use AiMessDetector\Core\Metric\MethodWithMetrics;
 use AiMessDetector\Core\Metric\MetricBag;
 use AiMessDetector\Core\Metric\MetricDefinition;
+use AiMessDetector\Core\Metric\MetricName;
 use AiMessDetector\Core\Metric\SymbolLevel;
 use AiMessDetector\Metrics\AbstractCollector;
 use Override;
@@ -24,7 +25,6 @@ use SplFileInfo;
 final class CyclomaticComplexityCollector extends AbstractCollector implements MethodMetricsProviderInterface
 {
     private const NAME = 'cyclomatic-complexity';
-    private const METRIC_CCN = 'ccn';
 
     public function __construct()
     {
@@ -41,7 +41,7 @@ final class CyclomaticComplexityCollector extends AbstractCollector implements M
      */
     public function provides(): array
     {
-        return [self::METRIC_CCN];
+        return [MetricName::COMPLEXITY_CCN];
     }
 
     /**
@@ -54,7 +54,7 @@ final class CyclomaticComplexityCollector extends AbstractCollector implements M
         \assert($this->visitor instanceof CyclomaticComplexityVisitor);
 
         foreach ($this->visitor->getComplexities() as $fqn => $complexity) {
-            $bag = $bag->with(self::METRIC_CCN . ':' . $fqn, $complexity);
+            $bag = $bag->with(MetricName::COMPLEXITY_CCN . ':' . $fqn, $complexity);
         }
 
         return $bag;
@@ -78,7 +78,7 @@ final class CyclomaticComplexityCollector extends AbstractCollector implements M
     {
         return [
             new MetricDefinition(
-                name: self::METRIC_CCN,
+                name: MetricName::COMPLEXITY_CCN,
                 collectedAt: SymbolLevel::Method,
                 aggregations: [
                     SymbolLevel::Class_->value => [

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Rules\Maintainability;
 
+use AiMessDetector\Core\Metric\MetricName;
 use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\RuleCategory;
 use AiMessDetector\Core\Symbol\SymbolType;
@@ -23,7 +24,6 @@ use AiMessDetector\Rules\AbstractRule;
 final class MaintainabilityRule extends AbstractRule
 {
     public const string NAME = 'maintainability.index';
-    private const string METRIC_MI = 'mi';
 
     public function getName(): string
     {
@@ -45,7 +45,7 @@ final class MaintainabilityRule extends AbstractRule
      */
     public function requires(): array
     {
-        return [self::METRIC_MI, 'methodLoc'];
+        return [MetricName::MAINTAINABILITY_MI, MetricName::HALSTEAD_METHOD_LOC];
     }
 
     /**
@@ -68,12 +68,12 @@ final class MaintainabilityRule extends AbstractRule
             $metrics = $context->metrics->get($methodInfo->symbolPath);
 
             // Skip methods with too few LOC
-            $methodLoc = (int) ($metrics->get('methodLoc') ?? 0);
+            $methodLoc = (int) ($metrics->get(MetricName::HALSTEAD_METHOD_LOC) ?? 0);
             if ($methodLoc < $this->options->minLoc) {
                 continue;
             }
 
-            $mi = $metrics->get(self::METRIC_MI);
+            $mi = $metrics->get(MetricName::MAINTAINABILITY_MI);
 
             if ($mi === null) {
                 continue;

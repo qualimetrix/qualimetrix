@@ -9,6 +9,7 @@ use AiMessDetector\Core\Metric\ClassMetricsProviderInterface;
 use AiMessDetector\Core\Metric\ClassWithMetrics;
 use AiMessDetector\Core\Metric\MetricBag;
 use AiMessDetector\Core\Metric\MetricDefinition;
+use AiMessDetector\Core\Metric\MetricName;
 use AiMessDetector\Core\Metric\SymbolLevel;
 use AiMessDetector\Metrics\AbstractCollector;
 use Override;
@@ -32,7 +33,6 @@ use SplFileInfo;
 final class LcomCollector extends AbstractCollector implements ClassMetricsProviderInterface
 {
     private const NAME = 'lcom';
-    private const METRIC_LCOM = 'lcom';
 
     public function __construct()
     {
@@ -49,7 +49,7 @@ final class LcomCollector extends AbstractCollector implements ClassMetricsProvi
      */
     public function provides(): array
     {
-        return [self::METRIC_LCOM];
+        return [MetricName::STRUCTURE_LCOM];
     }
 
     /**
@@ -63,7 +63,7 @@ final class LcomCollector extends AbstractCollector implements ClassMetricsProvi
 
         foreach ($this->visitor->getClassData() as $classFqn => $classData) {
             $lcom = $classData->calculateLcom();
-            $bag = $bag->with(self::METRIC_LCOM . ':' . $classFqn, $lcom);
+            $bag = $bag->with(MetricName::STRUCTURE_LCOM . ':' . $classFqn, $lcom);
         }
 
         return $bag;
@@ -79,7 +79,7 @@ final class LcomCollector extends AbstractCollector implements ClassMetricsProvi
         $result = [];
 
         foreach ($this->visitor->getClassData() as $classData) {
-            $bag = (new MetricBag())->with(self::METRIC_LCOM, $classData->calculateLcom());
+            $bag = (new MetricBag())->with(MetricName::STRUCTURE_LCOM, $classData->calculateLcom());
 
             $result[] = new ClassWithMetrics(
                 namespace: $classData->namespace,
@@ -100,7 +100,7 @@ final class LcomCollector extends AbstractCollector implements ClassMetricsProvi
     {
         return [
             new MetricDefinition(
-                name: self::METRIC_LCOM,
+                name: MetricName::STRUCTURE_LCOM,
                 collectedAt: SymbolLevel::Class_,
                 aggregations: [
                     SymbolLevel::Namespace_->value => [

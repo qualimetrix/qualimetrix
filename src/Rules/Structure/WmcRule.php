@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Rules\Structure;
 
+use AiMessDetector\Core\Metric\MetricName;
 use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\RuleCategory;
 use AiMessDetector\Core\Symbol\SymbolType;
@@ -24,8 +25,6 @@ use AiMessDetector\Rules\AbstractRule;
 final class WmcRule extends AbstractRule
 {
     public const string NAME = 'complexity.wmc';
-    private const string METRIC_WMC = 'wmc';
-    private const string METRIC_IS_DATA_CLASS = 'isDataClass';
 
     public function getName(): string
     {
@@ -47,7 +46,7 @@ final class WmcRule extends AbstractRule
      */
     public function requires(): array
     {
-        return [self::METRIC_WMC, self::METRIC_IS_DATA_CLASS];
+        return [MetricName::STRUCTURE_WMC, MetricName::STRUCTURE_IS_DATA_CLASS];
     }
 
     /**
@@ -65,11 +64,11 @@ final class WmcRule extends AbstractRule
             $metrics = $context->metrics->get($classInfo->symbolPath);
 
             // Skip data classes if configured
-            if ($this->options->excludeDataClasses && $metrics->get(self::METRIC_IS_DATA_CLASS) === 1) {
+            if ($this->options->excludeDataClasses && $metrics->get(MetricName::STRUCTURE_IS_DATA_CLASS) === 1) {
                 continue;
             }
 
-            $wmc = $metrics->get(self::METRIC_WMC);
+            $wmc = $metrics->get(MetricName::STRUCTURE_WMC);
 
             if ($wmc === null) {
                 continue;

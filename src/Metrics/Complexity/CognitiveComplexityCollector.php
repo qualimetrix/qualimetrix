@@ -9,6 +9,7 @@ use AiMessDetector\Core\Metric\MethodMetricsProviderInterface;
 use AiMessDetector\Core\Metric\MethodWithMetrics;
 use AiMessDetector\Core\Metric\MetricBag;
 use AiMessDetector\Core\Metric\MetricDefinition;
+use AiMessDetector\Core\Metric\MetricName;
 use AiMessDetector\Core\Metric\SymbolLevel;
 use AiMessDetector\Metrics\AbstractCollector;
 use Override;
@@ -29,7 +30,6 @@ use SplFileInfo;
 final class CognitiveComplexityCollector extends AbstractCollector implements MethodMetricsProviderInterface
 {
     private const NAME = 'cognitive-complexity';
-    private const METRIC_COGNITIVE = 'cognitive';
 
     public function __construct()
     {
@@ -46,7 +46,7 @@ final class CognitiveComplexityCollector extends AbstractCollector implements Me
      */
     public function provides(): array
     {
-        return [self::METRIC_COGNITIVE];
+        return [MetricName::COMPLEXITY_COGNITIVE];
     }
 
     /**
@@ -59,7 +59,7 @@ final class CognitiveComplexityCollector extends AbstractCollector implements Me
         \assert($this->visitor instanceof CognitiveComplexityVisitor);
 
         foreach ($this->visitor->getComplexities() as $fqn => $complexity) {
-            $bag = $bag->with(self::METRIC_COGNITIVE . ':' . $fqn, $complexity);
+            $bag = $bag->with(MetricName::COMPLEXITY_COGNITIVE . ':' . $fqn, $complexity);
         }
 
         return $bag;
@@ -83,7 +83,7 @@ final class CognitiveComplexityCollector extends AbstractCollector implements Me
     {
         return [
             new MetricDefinition(
-                name: self::METRIC_COGNITIVE,
+                name: MetricName::COMPLEXITY_COGNITIVE,
                 collectedAt: SymbolLevel::Method,
                 aggregations: [
                     SymbolLevel::Class_->value => [

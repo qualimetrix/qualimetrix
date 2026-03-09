@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Rules\Structure;
 
+use AiMessDetector\Core\Metric\MetricName;
 use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\RuleCategory;
 use AiMessDetector\Core\Symbol\SymbolType;
@@ -22,7 +23,6 @@ use AiMessDetector\Rules\AbstractRule;
 final class InheritanceRule extends AbstractRule
 {
     public const string NAME = 'design.inheritance';
-    private const string METRIC_DIT = 'dit';
 
     public function getName(): string
     {
@@ -44,7 +44,7 @@ final class InheritanceRule extends AbstractRule
      */
     public function requires(): array
     {
-        return [self::METRIC_DIT];
+        return [MetricName::STRUCTURE_DIT];
     }
 
     /**
@@ -60,7 +60,7 @@ final class InheritanceRule extends AbstractRule
 
         foreach ($context->metrics->all(SymbolType::Class_) as $classInfo) {
             $metrics = $context->metrics->get($classInfo->symbolPath);
-            $dit = $metrics->get(self::METRIC_DIT);
+            $dit = $metrics->get(MetricName::STRUCTURE_DIT);
 
             if ($dit === null) {
                 continue;

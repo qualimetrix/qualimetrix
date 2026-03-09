@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Rules\Coupling;
 
+use AiMessDetector\Core\Metric\MetricName;
 use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\HierarchicalRuleInterface;
 use AiMessDetector\Core\Rule\RuleCategory;
@@ -27,9 +28,6 @@ use AiMessDetector\Rules\AbstractRule;
 final class InstabilityRule extends AbstractRule implements HierarchicalRuleInterface
 {
     public const string NAME = 'coupling.instability';
-    private const string METRIC_INSTABILITY = 'instability';
-    private const string METRIC_CA = 'ca';
-    private const string METRIC_CE = 'ce';
 
     public function getName(): string
     {
@@ -51,7 +49,7 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
      */
     public function requires(): array
     {
-        return [self::METRIC_INSTABILITY, self::METRIC_CA, self::METRIC_CE];
+        return [MetricName::COUPLING_INSTABILITY, MetricName::COUPLING_CA, MetricName::COUPLING_CE];
     }
 
     /**
@@ -137,7 +135,7 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
         foreach ($context->metrics->all(SymbolType::Class_) as $classInfo) {
             $metrics = $context->metrics->get($classInfo->symbolPath);
 
-            $instability = $metrics->get(self::METRIC_INSTABILITY);
+            $instability = $metrics->get(MetricName::COUPLING_INSTABILITY);
 
             if ($instability === null) {
                 continue;
@@ -147,8 +145,8 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
             $severity = $classOptions->getSeverity($instabilityValue);
 
             if ($severity !== null) {
-                $ca = (int) ($metrics->get(self::METRIC_CA) ?? 0);
-                $ce = (int) ($metrics->get(self::METRIC_CE) ?? 0);
+                $ca = (int) ($metrics->get(MetricName::COUPLING_CA) ?? 0);
+                $ce = (int) ($metrics->get(MetricName::COUPLING_CE) ?? 0);
 
                 $violations[] = new Violation(
                     location: new Location($classInfo->file, $classInfo->line),
@@ -194,12 +192,12 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
             $metrics = $context->metrics->get($nsInfo->symbolPath);
 
             // Skip namespaces with too few classes
-            $classCount = (int) ($metrics->get('classCount.sum') ?? 0);
+            $classCount = (int) ($metrics->get(MetricName::SIZE_CLASS_COUNT . '.sum') ?? 0);
             if ($classCount < $namespaceOptions->minClassCount) {
                 continue;
             }
 
-            $instability = $metrics->get(self::METRIC_INSTABILITY);
+            $instability = $metrics->get(MetricName::COUPLING_INSTABILITY);
 
             if ($instability === null) {
                 continue;
@@ -209,8 +207,8 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
             $severity = $namespaceOptions->getSeverity($instabilityValue);
 
             if ($severity !== null) {
-                $ca = (int) ($metrics->get(self::METRIC_CA) ?? 0);
-                $ce = (int) ($metrics->get(self::METRIC_CE) ?? 0);
+                $ca = (int) ($metrics->get(MetricName::COUPLING_CA) ?? 0);
+                $ce = (int) ($metrics->get(MetricName::COUPLING_CE) ?? 0);
 
                 $violations[] = new Violation(
                     location: new Location($nsInfo->file, $nsInfo->line),

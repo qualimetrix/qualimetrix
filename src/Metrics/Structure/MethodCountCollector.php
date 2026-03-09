@@ -9,6 +9,7 @@ use AiMessDetector\Core\Metric\ClassMetricsProviderInterface;
 use AiMessDetector\Core\Metric\ClassWithMetrics;
 use AiMessDetector\Core\Metric\MetricBag;
 use AiMessDetector\Core\Metric\MetricDefinition;
+use AiMessDetector\Core\Metric\MetricName;
 use AiMessDetector\Core\Metric\SymbolLevel;
 use AiMessDetector\Metrics\AbstractCollector;
 use Override;
@@ -39,23 +40,18 @@ final class MethodCountCollector extends AbstractCollector implements ClassMetri
 {
     private const NAME = 'method-count';
 
-    private const METRIC_METHOD_COUNT = 'methodCount';
-    private const METRIC_METHOD_COUNT_TOTAL = 'methodCountTotal';
-    private const METRIC_METHOD_COUNT_PUBLIC = 'methodCountPublic';
-    private const METRIC_METHOD_COUNT_PROTECTED = 'methodCountProtected';
-    private const METRIC_METHOD_COUNT_PRIVATE = 'methodCountPrivate';
-    private const METRIC_GETTER_COUNT = 'getterCount';
-    private const METRIC_SETTER_COUNT = 'setterCount';
-    private const METRIC_PROPERTY_COUNT = 'propertyCount';
-    private const METRIC_PROPERTY_COUNT_PUBLIC = 'propertyCountPublic';
-    private const METRIC_PROPERTY_COUNT_PROTECTED = 'propertyCountProtected';
-    private const METRIC_PROPERTY_COUNT_PRIVATE = 'propertyCountPrivate';
-    private const METRIC_PROMOTED_PROPERTY_COUNT = 'promotedPropertyCount';
+    public const string METRIC_METHOD_COUNT_TOTAL = 'methodCountTotal';
+    public const string METRIC_METHOD_COUNT_PUBLIC = 'methodCountPublic';
+    public const string METRIC_METHOD_COUNT_PROTECTED = 'methodCountProtected';
+    public const string METRIC_METHOD_COUNT_PRIVATE = 'methodCountPrivate';
+    public const string METRIC_GETTER_COUNT = 'getterCount';
+    public const string METRIC_SETTER_COUNT = 'setterCount';
+    public const string METRIC_PROPERTY_COUNT_PUBLIC = 'propertyCountPublic';
+    public const string METRIC_PROPERTY_COUNT_PROTECTED = 'propertyCountProtected';
+    public const string METRIC_PROPERTY_COUNT_PRIVATE = 'propertyCountPrivate';
+    public const string METRIC_PROMOTED_PROPERTY_COUNT = 'promotedPropertyCount';
 
     // RFC-008: Class characteristics for false positive reduction
-    private const METRIC_IS_READONLY = 'isReadonly';
-    private const METRIC_IS_PROMOTED_PROPERTIES_ONLY = 'isPromotedPropertiesOnly';
-    private const METRIC_IS_DATA_CLASS = 'isDataClass';
 
     // PDepend WOC metric
     private const METRIC_WOC = 'woc';
@@ -76,22 +72,22 @@ final class MethodCountCollector extends AbstractCollector implements ClassMetri
     public function provides(): array
     {
         return [
-            self::METRIC_METHOD_COUNT,
+            MetricName::STRUCTURE_METHOD_COUNT,
             self::METRIC_METHOD_COUNT_TOTAL,
             self::METRIC_METHOD_COUNT_PUBLIC,
             self::METRIC_METHOD_COUNT_PROTECTED,
             self::METRIC_METHOD_COUNT_PRIVATE,
             self::METRIC_GETTER_COUNT,
             self::METRIC_SETTER_COUNT,
-            self::METRIC_PROPERTY_COUNT,
+            MetricName::STRUCTURE_PROPERTY_COUNT,
             self::METRIC_PROPERTY_COUNT_PUBLIC,
             self::METRIC_PROPERTY_COUNT_PROTECTED,
             self::METRIC_PROPERTY_COUNT_PRIVATE,
             self::METRIC_PROMOTED_PROPERTY_COUNT,
             // RFC-008: Class characteristics for false positive reduction
-            self::METRIC_IS_READONLY,
-            self::METRIC_IS_PROMOTED_PROPERTIES_ONLY,
-            self::METRIC_IS_DATA_CLASS,
+            MetricName::STRUCTURE_IS_READONLY,
+            MetricName::STRUCTURE_IS_PROMOTED_PROPERTIES_ONLY,
+            MetricName::STRUCTURE_IS_DATA_CLASS,
             // PDepend WOC metric
             self::METRIC_WOC,
         ];
@@ -127,22 +123,22 @@ final class MethodCountCollector extends AbstractCollector implements ClassMetri
                 : 0;
 
             $bag = $bag
-                ->with(self::METRIC_METHOD_COUNT . ':' . $classFqn, $metrics->methodCount())
+                ->with(MetricName::STRUCTURE_METHOD_COUNT . ':' . $classFqn, $metrics->methodCount())
                 ->with(self::METRIC_METHOD_COUNT_TOTAL . ':' . $classFqn, $metrics->methodCountTotal)
                 ->with(self::METRIC_METHOD_COUNT_PUBLIC . ':' . $classFqn, $metrics->methodCountPublic)
                 ->with(self::METRIC_METHOD_COUNT_PROTECTED . ':' . $classFqn, $metrics->methodCountProtected)
                 ->with(self::METRIC_METHOD_COUNT_PRIVATE . ':' . $classFqn, $metrics->methodCountPrivate)
                 ->with(self::METRIC_GETTER_COUNT . ':' . $classFqn, $metrics->getterCount)
                 ->with(self::METRIC_SETTER_COUNT . ':' . $classFqn, $metrics->setterCount)
-                ->with(self::METRIC_PROPERTY_COUNT . ':' . $classFqn, $metrics->propertyCount)
+                ->with(MetricName::STRUCTURE_PROPERTY_COUNT . ':' . $classFqn, $metrics->propertyCount)
                 ->with(self::METRIC_PROPERTY_COUNT_PUBLIC . ':' . $classFqn, $metrics->propertyCountPublic)
                 ->with(self::METRIC_PROPERTY_COUNT_PROTECTED . ':' . $classFqn, $metrics->propertyCountProtected)
                 ->with(self::METRIC_PROPERTY_COUNT_PRIVATE . ':' . $classFqn, $metrics->propertyCountPrivate)
                 ->with(self::METRIC_PROMOTED_PROPERTY_COUNT . ':' . $classFqn, $metrics->promotedPropertyCount)
                 // RFC-008: Class characteristics for false positive reduction
-                ->with(self::METRIC_IS_READONLY . ':' . $classFqn, $metrics->isReadonly ? 1 : 0)
-                ->with(self::METRIC_IS_PROMOTED_PROPERTIES_ONLY . ':' . $classFqn, $isPromotedOnly ? 1 : 0)
-                ->with(self::METRIC_IS_DATA_CLASS . ':' . $classFqn, $isDataClass ? 1 : 0)
+                ->with(MetricName::STRUCTURE_IS_READONLY . ':' . $classFqn, $metrics->isReadonly ? 1 : 0)
+                ->with(MetricName::STRUCTURE_IS_PROMOTED_PROPERTIES_ONLY . ':' . $classFqn, $isPromotedOnly ? 1 : 0)
+                ->with(MetricName::STRUCTURE_IS_DATA_CLASS . ':' . $classFqn, $isDataClass ? 1 : 0)
                 // PDepend WOC metric
                 ->with(self::METRIC_WOC . ':' . $classFqn, $woc);
         }
@@ -177,22 +173,22 @@ final class MethodCountCollector extends AbstractCollector implements ClassMetri
                 : 0;
 
             $bag = (new MetricBag())
-                ->with(self::METRIC_METHOD_COUNT, $metrics->methodCount())
+                ->with(MetricName::STRUCTURE_METHOD_COUNT, $metrics->methodCount())
                 ->with(self::METRIC_METHOD_COUNT_TOTAL, $metrics->methodCountTotal)
                 ->with(self::METRIC_METHOD_COUNT_PUBLIC, $metrics->methodCountPublic)
                 ->with(self::METRIC_METHOD_COUNT_PROTECTED, $metrics->methodCountProtected)
                 ->with(self::METRIC_METHOD_COUNT_PRIVATE, $metrics->methodCountPrivate)
                 ->with(self::METRIC_GETTER_COUNT, $metrics->getterCount)
                 ->with(self::METRIC_SETTER_COUNT, $metrics->setterCount)
-                ->with(self::METRIC_PROPERTY_COUNT, $metrics->propertyCount)
+                ->with(MetricName::STRUCTURE_PROPERTY_COUNT, $metrics->propertyCount)
                 ->with(self::METRIC_PROPERTY_COUNT_PUBLIC, $metrics->propertyCountPublic)
                 ->with(self::METRIC_PROPERTY_COUNT_PROTECTED, $metrics->propertyCountProtected)
                 ->with(self::METRIC_PROPERTY_COUNT_PRIVATE, $metrics->propertyCountPrivate)
                 ->with(self::METRIC_PROMOTED_PROPERTY_COUNT, $metrics->promotedPropertyCount)
                 // RFC-008: Class characteristics for false positive reduction
-                ->with(self::METRIC_IS_READONLY, $metrics->isReadonly ? 1 : 0)
-                ->with(self::METRIC_IS_PROMOTED_PROPERTIES_ONLY, $isPromotedOnly ? 1 : 0)
-                ->with(self::METRIC_IS_DATA_CLASS, $isDataClass ? 1 : 0)
+                ->with(MetricName::STRUCTURE_IS_READONLY, $metrics->isReadonly ? 1 : 0)
+                ->with(MetricName::STRUCTURE_IS_PROMOTED_PROPERTIES_ONLY, $isPromotedOnly ? 1 : 0)
+                ->with(MetricName::STRUCTURE_IS_DATA_CLASS, $isDataClass ? 1 : 0)
                 // PDepend WOC metric
                 ->with(self::METRIC_WOC, $woc);
 
@@ -228,7 +224,7 @@ final class MethodCountCollector extends AbstractCollector implements ClassMetri
 
         return [
             new MetricDefinition(
-                name: self::METRIC_METHOD_COUNT,
+                name: MetricName::STRUCTURE_METHOD_COUNT,
                 collectedAt: SymbolLevel::Class_,
                 aggregations: $aggregations,
             ),
@@ -263,7 +259,7 @@ final class MethodCountCollector extends AbstractCollector implements ClassMetri
                 aggregations: $aggregations,
             ),
             new MetricDefinition(
-                name: self::METRIC_PROPERTY_COUNT,
+                name: MetricName::STRUCTURE_PROPERTY_COUNT,
                 collectedAt: SymbolLevel::Class_,
                 aggregations: $aggregations,
             ),
@@ -290,7 +286,7 @@ final class MethodCountCollector extends AbstractCollector implements ClassMetri
             // RFC-008: Class characteristics for false positive reduction
             // These are boolean flags (0/1), so Sum gives count of matching classes
             new MetricDefinition(
-                name: self::METRIC_IS_READONLY,
+                name: MetricName::STRUCTURE_IS_READONLY,
                 collectedAt: SymbolLevel::Class_,
                 aggregations: [
                     SymbolLevel::Namespace_->value => [AggregationStrategy::Sum],
@@ -298,7 +294,7 @@ final class MethodCountCollector extends AbstractCollector implements ClassMetri
                 ],
             ),
             new MetricDefinition(
-                name: self::METRIC_IS_PROMOTED_PROPERTIES_ONLY,
+                name: MetricName::STRUCTURE_IS_PROMOTED_PROPERTIES_ONLY,
                 collectedAt: SymbolLevel::Class_,
                 aggregations: [
                     SymbolLevel::Namespace_->value => [AggregationStrategy::Sum],
@@ -306,7 +302,7 @@ final class MethodCountCollector extends AbstractCollector implements ClassMetri
                 ],
             ),
             new MetricDefinition(
-                name: self::METRIC_IS_DATA_CLASS,
+                name: MetricName::STRUCTURE_IS_DATA_CLASS,
                 collectedAt: SymbolLevel::Class_,
                 aggregations: [
                     SymbolLevel::Namespace_->value => [AggregationStrategy::Sum],

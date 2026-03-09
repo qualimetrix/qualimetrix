@@ -7,6 +7,7 @@ namespace AiMessDetector\Metrics\Size;
 use AiMessDetector\Core\Metric\AggregationStrategy;
 use AiMessDetector\Core\Metric\MetricBag;
 use AiMessDetector\Core\Metric\MetricDefinition;
+use AiMessDetector\Core\Metric\MetricName;
 use AiMessDetector\Core\Metric\SymbolLevel;
 use AiMessDetector\Metrics\AbstractCollector;
 use Override;
@@ -28,9 +29,6 @@ use SplFileInfo;
 final class LocCollector extends AbstractCollector
 {
     private const NAME = 'loc';
-    private const METRIC_LOC = 'loc';
-    private const METRIC_LLOC = 'lloc';
-    private const METRIC_CLOC = 'cloc';
 
     public function __construct()
     {
@@ -48,9 +46,9 @@ final class LocCollector extends AbstractCollector
     public function provides(): array
     {
         return [
-            self::METRIC_LOC,
-            self::METRIC_LLOC,
-            self::METRIC_CLOC,
+            MetricName::SIZE_LOC,
+            MetricName::SIZE_LLOC,
+            MetricName::SIZE_CLOC,
         ];
     }
 
@@ -61,26 +59,26 @@ final class LocCollector extends AbstractCollector
     {
         if (!$file->isFile() || !$file->isReadable()) {
             return (new MetricBag())
-                ->with(self::METRIC_LOC, 0)
-                ->with(self::METRIC_LLOC, 0)
-                ->with(self::METRIC_CLOC, 0);
+                ->with(MetricName::SIZE_LOC, 0)
+                ->with(MetricName::SIZE_LLOC, 0)
+                ->with(MetricName::SIZE_CLOC, 0);
         }
 
         $content = file_get_contents($file->getPathname());
 
         if ($content === false) {
             return (new MetricBag())
-                ->with(self::METRIC_LOC, 0)
-                ->with(self::METRIC_LLOC, 0)
-                ->with(self::METRIC_CLOC, 0);
+                ->with(MetricName::SIZE_LOC, 0)
+                ->with(MetricName::SIZE_LLOC, 0)
+                ->with(MetricName::SIZE_CLOC, 0);
         }
 
         $metrics = $this->calculateMetrics($content);
 
         return (new MetricBag())
-            ->with(self::METRIC_LOC, $metrics['loc'])
-            ->with(self::METRIC_LLOC, $metrics['lloc'])
-            ->with(self::METRIC_CLOC, $metrics['cloc']);
+            ->with(MetricName::SIZE_LOC, $metrics['loc'])
+            ->with(MetricName::SIZE_LLOC, $metrics['lloc'])
+            ->with(MetricName::SIZE_CLOC, $metrics['cloc']);
     }
 
     /**
@@ -190,17 +188,17 @@ final class LocCollector extends AbstractCollector
 
         return [
             new MetricDefinition(
-                name: self::METRIC_LOC,
+                name: MetricName::SIZE_LOC,
                 collectedAt: SymbolLevel::File,
                 aggregations: $aggregations,
             ),
             new MetricDefinition(
-                name: self::METRIC_LLOC,
+                name: MetricName::SIZE_LLOC,
                 collectedAt: SymbolLevel::File,
                 aggregations: $aggregations,
             ),
             new MetricDefinition(
-                name: self::METRIC_CLOC,
+                name: MetricName::SIZE_CLOC,
                 collectedAt: SymbolLevel::File,
                 aggregations: $aggregations,
             ),

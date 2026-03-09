@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Rules\Size;
 
+use AiMessDetector\Core\Metric\MetricName;
 use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\RuleCategory;
 use AiMessDetector\Core\Symbol\SymbolType;
@@ -42,7 +43,7 @@ final class MethodCountRule extends AbstractRule
      */
     public function requires(): array
     {
-        return ['methodCount'];
+        return [MetricName::STRUCTURE_METHOD_COUNT];
     }
 
     /**
@@ -77,7 +78,7 @@ final class MethodCountRule extends AbstractRule
 
         foreach ($context->metrics->all(SymbolType::Class_) as $classInfo) {
             $metrics = $context->metrics->get($classInfo->symbolPath);
-            $methodCount = $metrics->get('methodCount');
+            $methodCount = $metrics->get(MetricName::STRUCTURE_METHOD_COUNT);
 
             if ($methodCount === null) {
                 continue;

@@ -50,7 +50,7 @@ final class TypeCoverageRuleTest extends TestCase
     {
         $rule = new TypeCoverageRule(new TypeCoverageOptions());
 
-        self::assertSame(['typeCoverage'], $rule->requires());
+        self::assertSame(['typeCoverage.param'], $rule->requires());
     }
 
     public function testGetOptionsClass(): void

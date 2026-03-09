@@ -9,6 +9,7 @@ use AiMessDetector\Core\Metric\AggregationStrategy;
 use AiMessDetector\Core\Metric\GlobalContextCollectorInterface;
 use AiMessDetector\Core\Metric\MetricBag;
 use AiMessDetector\Core\Metric\MetricDefinition;
+use AiMessDetector\Core\Metric\MetricName;
 use AiMessDetector\Core\Metric\MetricRepositoryInterface;
 use AiMessDetector\Core\Metric\SymbolLevel;
 
@@ -39,19 +40,19 @@ final class ClassRankCollector implements GlobalContextCollectorInterface
 
     public function requires(): array
     {
-        return ['ca', 'ce'];
+        return [MetricName::COUPLING_CA, MetricName::COUPLING_CE];
     }
 
     public function provides(): array
     {
-        return ['classRank'];
+        return [MetricName::COUPLING_CLASS_RANK];
     }
 
     public function getMetricDefinitions(): array
     {
         return [
             new MetricDefinition(
-                name: 'classRank',
+                name: MetricName::COUPLING_CLASS_RANK,
                 collectedAt: SymbolLevel::Class_,
                 aggregations: [
                     SymbolLevel::Namespace_->value => [
@@ -93,7 +94,7 @@ final class ClassRankCollector implements GlobalContextCollectorInterface
         if ($n === 1) {
             $repository->add(
                 $projectClasses[0],
-                (new MetricBag())->with('classRank', 1.0),
+                (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 1.0),
                 '',
                 0,
             );
@@ -145,7 +146,7 @@ final class ClassRankCollector implements GlobalContextCollectorInterface
         foreach ($projectClasses as $i => $symbolPath) {
             $repository->add(
                 $symbolPath,
-                (new MetricBag())->with('classRank', $ranks[$i]),
+                (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, $ranks[$i]),
                 '',
                 0,
             );

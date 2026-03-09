@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Rules\Size;
 
+use AiMessDetector\Core\Metric\MetricName;
 use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\RuleCategory;
 use AiMessDetector\Core\Symbol\SymbolType;
@@ -41,7 +42,7 @@ final class PropertyCountRule extends AbstractRule
      */
     public function requires(): array
     {
-        return ['propertyCount', 'isReadonly', 'isPromotedPropertiesOnly'];
+        return [MetricName::STRUCTURE_PROPERTY_COUNT, MetricName::STRUCTURE_IS_READONLY, MetricName::STRUCTURE_IS_PROMOTED_PROPERTIES_ONLY];
     }
 
     /**
@@ -75,19 +76,19 @@ final class PropertyCountRule extends AbstractRule
 
         foreach ($context->metrics->all(SymbolType::Class_) as $classInfo) {
             $metrics = $context->metrics->get($classInfo->symbolPath);
-            $propertyCount = $metrics->get('propertyCount');
+            $propertyCount = $metrics->get(MetricName::STRUCTURE_PROPERTY_COUNT);
 
             if ($propertyCount === null) {
                 continue;
             }
 
             // Skip readonly classes if configured
-            if ($this->options->excludeReadonly && $metrics->get('isReadonly') === 1) {
+            if ($this->options->excludeReadonly && $metrics->get(MetricName::STRUCTURE_IS_READONLY) === 1) {
                 continue;
             }
 
             // Skip classes with only promoted properties if configured
-            if ($this->options->excludePromotedOnly && $metrics->get('isPromotedPropertiesOnly') === 1) {
+            if ($this->options->excludePromotedOnly && $metrics->get(MetricName::STRUCTURE_IS_PROMOTED_PROPERTIES_ONLY) === 1) {
                 continue;
             }
 

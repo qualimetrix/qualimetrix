@@ -9,6 +9,7 @@ use AiMessDetector\Core\Metric\MethodMetricsProviderInterface;
 use AiMessDetector\Core\Metric\MethodWithMetrics;
 use AiMessDetector\Core\Metric\MetricBag;
 use AiMessDetector\Core\Metric\MetricDefinition;
+use AiMessDetector\Core\Metric\MetricName;
 use AiMessDetector\Core\Metric\SymbolLevel;
 use AiMessDetector\Metrics\AbstractCollector;
 use Override;
@@ -24,7 +25,6 @@ use SplFileInfo;
 final class ParameterCountCollector extends AbstractCollector implements MethodMetricsProviderInterface
 {
     private const NAME = 'parameter-count';
-    private const METRIC = 'parameterCount';
 
     public function __construct()
     {
@@ -41,7 +41,7 @@ final class ParameterCountCollector extends AbstractCollector implements MethodM
      */
     public function provides(): array
     {
-        return [self::METRIC];
+        return [MetricName::CODE_SMELL_PARAMETER_COUNT];
     }
 
     /**
@@ -54,7 +54,7 @@ final class ParameterCountCollector extends AbstractCollector implements MethodM
         \assert($this->visitor instanceof ParameterCountVisitor);
 
         foreach ($this->visitor->getParameterCounts() as $fqn => $count) {
-            $bag = $bag->with(self::METRIC . ':' . $fqn, $count);
+            $bag = $bag->with(MetricName::CODE_SMELL_PARAMETER_COUNT . ':' . $fqn, $count);
         }
 
         return $bag;
@@ -78,7 +78,7 @@ final class ParameterCountCollector extends AbstractCollector implements MethodM
     {
         return [
             new MetricDefinition(
-                name: self::METRIC,
+                name: MetricName::CODE_SMELL_PARAMETER_COUNT,
                 collectedAt: SymbolLevel::Method,
                 aggregations: [
                     SymbolLevel::Class_->value => [

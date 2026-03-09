@@ -9,6 +9,7 @@ use AiMessDetector\Core\Metric\ClassMetricsProviderInterface;
 use AiMessDetector\Core\Metric\ClassWithMetrics;
 use AiMessDetector\Core\Metric\MetricBag;
 use AiMessDetector\Core\Metric\MetricDefinition;
+use AiMessDetector\Core\Metric\MetricName;
 use AiMessDetector\Core\Metric\SymbolLevel;
 use AiMessDetector\Metrics\AbstractCollector;
 use Override;
@@ -33,7 +34,6 @@ use SplFileInfo;
 final class InheritanceDepthCollector extends AbstractCollector implements ClassMetricsProviderInterface
 {
     private const NAME = 'inheritance-depth';
-    private const METRIC_DIT = 'dit';
 
     /**
      * Standard PHP classes that are considered root (DIT = 0 when extending them).
@@ -131,7 +131,7 @@ final class InheritanceDepthCollector extends AbstractCollector implements Class
      */
     public function provides(): array
     {
-        return [self::METRIC_DIT];
+        return [MetricName::STRUCTURE_DIT];
     }
 
     /**
@@ -147,7 +147,7 @@ final class InheritanceDepthCollector extends AbstractCollector implements Class
 
         foreach ($classParents as $classFqn => $parentFqn) {
             $dit = $this->calculateDit($classFqn, $classParents);
-            $bag = $bag->with(self::METRIC_DIT . ':' . $classFqn, $dit);
+            $bag = $bag->with(MetricName::STRUCTURE_DIT . ':' . $classFqn, $dit);
 
             // Note: Parent information is stored in dependency graph as DependencyType::Extends
             // NocCollector will use that information for NOC calculation
@@ -169,7 +169,7 @@ final class InheritanceDepthCollector extends AbstractCollector implements Class
         foreach ($this->visitor->getClassInfo() as $classFqn => $info) {
             $dit = $this->calculateDit($classFqn, $classParents);
 
-            $bag = (new MetricBag())->with(self::METRIC_DIT, $dit);
+            $bag = (new MetricBag())->with(MetricName::STRUCTURE_DIT, $dit);
 
             // Note: Parent information is stored in dependency graph as DependencyType::Extends
             // NocCollector will use that information for NOC calculation
@@ -295,7 +295,7 @@ final class InheritanceDepthCollector extends AbstractCollector implements Class
     {
         return [
             new MetricDefinition(
-                name: self::METRIC_DIT,
+                name: MetricName::STRUCTURE_DIT,
                 collectedAt: SymbolLevel::Class_,
                 aggregations: [
                     SymbolLevel::Namespace_->value => [

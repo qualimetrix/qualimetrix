@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Rules\CodeSmell;
 
+use AiMessDetector\Core\Metric\MetricName;
 use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\RuleCategory;
 use AiMessDetector\Core\Symbol\SymbolInfo;
@@ -42,7 +43,7 @@ final class UnreachableCodeRule extends AbstractRule
      */
     public function requires(): array
     {
-        return ['unreachableCode'];
+        return [MetricName::CODE_SMELL_UNREACHABLE_CODE];
     }
 
     /**
@@ -94,7 +95,7 @@ final class UnreachableCodeRule extends AbstractRule
         $options = $this->options;
 
         $metrics = $context->metrics->get($symbolInfo->symbolPath);
-        $unreachableCount = $metrics->get('unreachableCode');
+        $unreachableCount = $metrics->get(MetricName::CODE_SMELL_UNREACHABLE_CODE);
 
         if ($unreachableCount === null) {
             return null;
@@ -107,7 +108,7 @@ final class UnreachableCodeRule extends AbstractRule
             return null;
         }
 
-        $firstLine = $metrics->get('unreachableCode.firstLine');
+        $firstLine = $metrics->get(MetricName::CODE_SMELL_UNREACHABLE_CODE_FIRST_LINE);
         $line = $firstLine !== null ? (int) $firstLine : $symbolInfo->line;
 
         return new Violation(

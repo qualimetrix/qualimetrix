@@ -9,6 +9,7 @@ use AiMessDetector\Core\Metric\ClassMetricsProviderInterface;
 use AiMessDetector\Core\Metric\ClassWithMetrics;
 use AiMessDetector\Core\Metric\MetricBag;
 use AiMessDetector\Core\Metric\MetricDefinition;
+use AiMessDetector\Core\Metric\MetricName;
 use AiMessDetector\Core\Metric\SymbolLevel;
 use AiMessDetector\Metrics\AbstractCollector;
 use Override;
@@ -35,16 +36,6 @@ final class TypeCoverageCollector extends AbstractCollector implements ClassMetr
 {
     private const NAME = 'type-coverage';
 
-    private const METRIC_PARAM_TOTAL = 'typeCoverage.paramTotal';
-    private const METRIC_PARAM_TYPED = 'typeCoverage.paramTyped';
-    private const METRIC_PARAM = 'typeCoverage.param';
-    private const METRIC_RETURN_TOTAL = 'typeCoverage.returnTotal';
-    private const METRIC_RETURN_TYPED = 'typeCoverage.returnTyped';
-    private const METRIC_RETURN = 'typeCoverage.return';
-    private const METRIC_PROPERTY_TOTAL = 'typeCoverage.propertyTotal';
-    private const METRIC_PROPERTY_TYPED = 'typeCoverage.propertyTyped';
-    private const METRIC_PROPERTY = 'typeCoverage.property';
-
     public function __construct()
     {
         $this->visitor = new TypeCoverageVisitor();
@@ -61,15 +52,15 @@ final class TypeCoverageCollector extends AbstractCollector implements ClassMetr
     public function provides(): array
     {
         return [
-            self::METRIC_PARAM_TOTAL,
-            self::METRIC_PARAM_TYPED,
-            self::METRIC_PARAM,
-            self::METRIC_RETURN_TOTAL,
-            self::METRIC_RETURN_TYPED,
-            self::METRIC_RETURN,
-            self::METRIC_PROPERTY_TOTAL,
-            self::METRIC_PROPERTY_TYPED,
-            self::METRIC_PROPERTY,
+            MetricName::TYPE_COVERAGE_PARAM_TOTAL,
+            MetricName::TYPE_COVERAGE_PARAM_TYPED,
+            MetricName::TYPE_COVERAGE_PARAM,
+            MetricName::TYPE_COVERAGE_RETURN_TOTAL,
+            MetricName::TYPE_COVERAGE_RETURN_TYPED,
+            MetricName::TYPE_COVERAGE_RETURN,
+            MetricName::TYPE_COVERAGE_PROPERTY_TOTAL,
+            MetricName::TYPE_COVERAGE_PROPERTY_TYPED,
+            MetricName::TYPE_COVERAGE_PROPERTY,
         ];
     }
 
@@ -84,31 +75,31 @@ final class TypeCoverageCollector extends AbstractCollector implements ClassMetr
 
         foreach ($this->visitor->getClassTypeInfo() as $fqn => $info) {
             $bag = $bag
-                ->with(self::METRIC_PARAM_TOTAL . ':' . $fqn, $info['paramTotal'])
-                ->with(self::METRIC_PARAM_TYPED . ':' . $fqn, $info['paramTyped'])
-                ->with(self::METRIC_RETURN_TOTAL . ':' . $fqn, $info['returnTotal'])
-                ->with(self::METRIC_RETURN_TYPED . ':' . $fqn, $info['returnTyped'])
-                ->with(self::METRIC_PROPERTY_TOTAL . ':' . $fqn, $info['propertyTotal'])
-                ->with(self::METRIC_PROPERTY_TYPED . ':' . $fqn, $info['propertyTyped']);
+                ->with(MetricName::TYPE_COVERAGE_PARAM_TOTAL . ':' . $fqn, $info['paramTotal'])
+                ->with(MetricName::TYPE_COVERAGE_PARAM_TYPED . ':' . $fqn, $info['paramTyped'])
+                ->with(MetricName::TYPE_COVERAGE_RETURN_TOTAL . ':' . $fqn, $info['returnTotal'])
+                ->with(MetricName::TYPE_COVERAGE_RETURN_TYPED . ':' . $fqn, $info['returnTyped'])
+                ->with(MetricName::TYPE_COVERAGE_PROPERTY_TOTAL . ':' . $fqn, $info['propertyTotal'])
+                ->with(MetricName::TYPE_COVERAGE_PROPERTY_TYPED . ':' . $fqn, $info['propertyTyped']);
 
             // Only store percentages when total > 0
             if ($info['paramTotal'] > 0) {
                 $bag = $bag->with(
-                    self::METRIC_PARAM . ':' . $fqn,
+                    MetricName::TYPE_COVERAGE_PARAM . ':' . $fqn,
                     round($info['paramTyped'] / $info['paramTotal'] * 100, 2),
                 );
             }
 
             if ($info['returnTotal'] > 0) {
                 $bag = $bag->with(
-                    self::METRIC_RETURN . ':' . $fqn,
+                    MetricName::TYPE_COVERAGE_RETURN . ':' . $fqn,
                     round($info['returnTyped'] / $info['returnTotal'] * 100, 2),
                 );
             }
 
             if ($info['propertyTotal'] > 0) {
                 $bag = $bag->with(
-                    self::METRIC_PROPERTY . ':' . $fqn,
+                    MetricName::TYPE_COVERAGE_PROPERTY . ':' . $fqn,
                     round($info['propertyTyped'] / $info['propertyTotal'] * 100, 2),
                 );
             }
@@ -144,47 +135,47 @@ final class TypeCoverageCollector extends AbstractCollector implements ClassMetr
 
         return [
             new MetricDefinition(
-                name: self::METRIC_PARAM_TOTAL,
+                name: MetricName::TYPE_COVERAGE_PARAM_TOTAL,
                 collectedAt: SymbolLevel::Class_,
                 aggregations: $totalAggregations,
             ),
             new MetricDefinition(
-                name: self::METRIC_PARAM_TYPED,
+                name: MetricName::TYPE_COVERAGE_PARAM_TYPED,
                 collectedAt: SymbolLevel::Class_,
                 aggregations: $totalAggregations,
             ),
             new MetricDefinition(
-                name: self::METRIC_PARAM,
+                name: MetricName::TYPE_COVERAGE_PARAM,
                 collectedAt: SymbolLevel::Class_,
                 aggregations: [],
             ),
             new MetricDefinition(
-                name: self::METRIC_RETURN_TOTAL,
+                name: MetricName::TYPE_COVERAGE_RETURN_TOTAL,
                 collectedAt: SymbolLevel::Class_,
                 aggregations: $totalAggregations,
             ),
             new MetricDefinition(
-                name: self::METRIC_RETURN_TYPED,
+                name: MetricName::TYPE_COVERAGE_RETURN_TYPED,
                 collectedAt: SymbolLevel::Class_,
                 aggregations: $totalAggregations,
             ),
             new MetricDefinition(
-                name: self::METRIC_RETURN,
+                name: MetricName::TYPE_COVERAGE_RETURN,
                 collectedAt: SymbolLevel::Class_,
                 aggregations: [],
             ),
             new MetricDefinition(
-                name: self::METRIC_PROPERTY_TOTAL,
+                name: MetricName::TYPE_COVERAGE_PROPERTY_TOTAL,
                 collectedAt: SymbolLevel::Class_,
                 aggregations: $totalAggregations,
             ),
             new MetricDefinition(
-                name: self::METRIC_PROPERTY_TYPED,
+                name: MetricName::TYPE_COVERAGE_PROPERTY_TYPED,
                 collectedAt: SymbolLevel::Class_,
                 aggregations: $totalAggregations,
             ),
             new MetricDefinition(
-                name: self::METRIC_PROPERTY,
+                name: MetricName::TYPE_COVERAGE_PROPERTY,
                 collectedAt: SymbolLevel::Class_,
                 aggregations: [],
             ),

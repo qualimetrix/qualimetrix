@@ -6,6 +6,7 @@ namespace AiMessDetector\Metrics\Halstead;
 
 use AiMessDetector\Core\Metric\MethodWithMetrics;
 use AiMessDetector\Core\Metric\MetricBag;
+use AiMessDetector\Core\Metric\MetricName;
 use AiMessDetector\Metrics\ResettableVisitorInterface;
 use AiMessDetector\Metrics\VisitorMethodTrackingTrait;
 use PhpParser\Node;
@@ -120,12 +121,12 @@ final class HalsteadVisitor extends NodeVisitorAbstract implements ResettableVis
                 : max(1, $info['endLine'] - $info['line'] + 1);
 
             $bag = (new MetricBag())
-                ->with('halstead.volume', $halstead->volume())
-                ->with('halstead.difficulty', $halstead->difficulty())
-                ->with('halstead.effort', $halstead->effort())
-                ->with('halstead.bugs', $halstead->bugs())
-                ->with('halstead.time', $halstead->time())
-                ->with('methodLoc', $methodLoc);
+                ->with(MetricName::HALSTEAD_VOLUME, $halstead->volume())
+                ->with(MetricName::HALSTEAD_DIFFICULTY, $halstead->difficulty())
+                ->with(MetricName::HALSTEAD_EFFORT, $halstead->effort())
+                ->with(MetricName::HALSTEAD_BUGS, $halstead->bugs())
+                ->with(MetricName::HALSTEAD_TIME, $halstead->time())
+                ->with(MetricName::HALSTEAD_METHOD_LOC, $methodLoc);
 
             $result[] = new MethodWithMetrics(
                 namespace: $info['namespace'],
