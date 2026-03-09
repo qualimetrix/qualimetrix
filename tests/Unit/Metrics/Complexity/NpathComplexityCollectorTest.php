@@ -797,6 +797,69 @@ PHP;
     }
 
     /**
+     * Closure inside anonymous class method should NOT appear in NPath metrics of outer class.
+     */
+    public function testClosureInsideAnonymousClassNotInOuterMetrics(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Outer
+{
+    public function outerMethod(): void
+    {
+        $obj = new class {
+            public function innerMethod(): void
+            {
+                $fn = function() {
+                    if (true) { return 1; }
+                    return 0;
+                };
+            }
+        };
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // outerMethod: NPath = 1 — closure inside anonymous class is ignored
+        self::assertSame(1, $metrics->get('npath:App\Outer::outerMethod'));
+    }
+
+    /**
+     * ArrowFunction inside anonymous class method should NOT appear in NPath metrics of outer class.
+     */
+    public function testArrowFunctionInsideAnonymousClassNotInOuterMetrics(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Outer
+{
+    public function outerMethod(): void
+    {
+        $obj = new class {
+            public function innerMethod(): void
+            {
+                $fn = fn() => true;
+            }
+        };
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // outerMethod: NPath = 1 — arrow function inside anonymous class is ignored
+        self::assertSame(1, $metrics->get('npath:App\Outer::outerMethod'));
+    }
+
+    /**
      * Collect metrics for a standalone function (no class wrapper).
      */
     private function collectFunctionMetrics(string $code): \AiMessDetector\Core\Metric\MetricBag

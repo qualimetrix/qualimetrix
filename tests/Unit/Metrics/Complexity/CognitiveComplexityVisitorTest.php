@@ -1007,6 +1007,151 @@ PHP;
         self::assertSame(1, $complexities['f']);
     }
 
+    /**
+     * Closure inside anonymous class method should NOT appear in metrics of outer class.
+     */
+    public function testClosureInsideAnonymousClassNotInOuterMetrics(): void
+    {
+        $code = <<<'PHP'
+<?php
+namespace App;
+
+class Outer
+{
+    public function outerMethod(): void
+    {
+        $obj = new class {
+            public function innerMethod(): void
+            {
+                $fn = function() {
+                    if (true) { return 1; }
+                    return 0;
+                };
+            }
+        };
+    }
+}
+PHP;
+
+        $visitor = new CognitiveComplexityVisitor();
+        $parser = (new ParserFactory())->createForHostVersion();
+        $ast = $parser->parse($code) ?? [];
+
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $complexities = $visitor->getComplexities();
+
+        // outerMethod should have complexity 0 — the closure inside anonymous class is ignored
+        self::assertSame(0, $complexities['App\Outer::outerMethod']);
+    }
+
+    /**
+     * ArrowFunction inside anonymous class method should NOT appear in metrics of outer class.
+     */
+    public function testArrowFunctionInsideAnonymousClassNotInOuterMetrics(): void
+    {
+        $code = <<<'PHP'
+<?php
+namespace App;
+
+class Outer
+{
+    public function outerMethod(): void
+    {
+        $obj = new class {
+            public function innerMethod(): void
+            {
+                $fn = fn() => true;
+            }
+        };
+    }
+}
+PHP;
+
+        $visitor = new CognitiveComplexityVisitor();
+        $parser = (new ParserFactory())->createForHostVersion();
+        $ast = $parser->parse($code) ?? [];
+
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $complexities = $visitor->getComplexities();
+
+        // outerMethod should have complexity 0
+        self::assertSame(0, $complexities['App\Outer::outerMethod']);
+    }
+
+    /**
+     * Goto inside nested if should be +1 regardless of nesting depth (B1 only, no nesting bonus).
+     */
+    public function testGotoNoNestingBonus(): void
+    {
+        $code = <<<'PHP'
+<?php
+function f($a, $b) {
+    if ($a) {
+        if ($b) {
+            goto end;
+        }
+    }
+    end:
+    return;
+}
+PHP;
+
+        $visitor = new CognitiveComplexityVisitor();
+        $parser = (new ParserFactory())->createForHostVersion();
+        $ast = $parser->parse($code) ?? [];
+
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $complexities = $visitor->getComplexities();
+
+        // if ($a): +1 (nesting=0)
+        // if ($b): +2 (1 + nesting=1)
+        // goto: +1 (B1 only, NO nesting bonus)
+        // Total: 4
+        self::assertSame(4, $complexities['f']);
+    }
+
+    /**
+     * Labeled break inside nested loop should be +1 regardless of nesting depth.
+     */
+    public function testLabeledBreakNoNestingBonus(): void
+    {
+        $code = <<<'PHP'
+<?php
+function f() {
+    for ($i = 0; $i < 10; $i++) {
+        for ($j = 0; $j < 10; $j++) {
+            break 2;
+        }
+    }
+}
+PHP;
+
+        $visitor = new CognitiveComplexityVisitor();
+        $parser = (new ParserFactory())->createForHostVersion();
+        $ast = $parser->parse($code) ?? [];
+
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $complexities = $visitor->getComplexities();
+
+        // for: +1 (nesting=0)
+        // for: +2 (1 + nesting=1)
+        // break 2: +1 (B1 only, NO nesting bonus)
+        // Total: 4
+        self::assertSame(4, $complexities['f']);
+    }
+
     public function testReset(): void
     {
         $visitor = new CognitiveComplexityVisitor();

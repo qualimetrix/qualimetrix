@@ -23,10 +23,10 @@ final class NamespaceCboOptionsTest extends TestCase
     }
 
     #[Test]
-    public function fromArrayEmptyReturnsDisabled(): void
+    public function fromArrayEmptyReturnsEnabled(): void
     {
         $options = NamespaceCboOptions::fromArray([]);
 
-        self::assertFalse($options->isEnabled());
+        self::assertTrue($options->isEnabled());
     }
 }

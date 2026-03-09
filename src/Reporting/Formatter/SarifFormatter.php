@@ -225,9 +225,18 @@ final class SarifFormatter implements FormatterInterface
         // Ensure trailing slash
         $path = rtrim($path, '/') . '/';
 
+        // Percent-encode path segments per RFC 3986 (handles spaces, #, % etc.)
+        $segments = explode('/', $path);
+        $encoded = implode('/', array_map('rawurlencode', $segments));
+
+        // Restore Windows drive letter colon (e.g., don't encode C:)
+        if (preg_match('/^([A-Za-z])%3A/', $encoded, $m)) {
+            $encoded = $m[1] . ':' . substr($encoded, \strlen($m[0]));
+        }
+
         // RFC 8089: file:///path on Unix, file:///C:/path on Windows
         // Unix paths start with '/', so 'file://' + '/path' = 'file:///path' (correct)
         // Windows paths start with 'C:/', so 'file:///' + 'C:/path' = 'file:///C:/path' (correct)
-        return 'file://' . ($path[0] === '/' ? '' : '/') . $path;
+        return 'file://' . ($path[0] === '/' ? '' : '/') . $encoded;
     }
 }

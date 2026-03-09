@@ -238,6 +238,11 @@ final class UnreachableCodeVisitor extends NodeVisitorAbstract implements Resett
             return true;
         }
 
+        // goto
+        if ($stmt instanceof Stmt\Goto_) {
+            return true;
+        }
+
         // throw (Stmt\Expression wrapping Expr\Throw_)
         // exit/die (Stmt\Expression wrapping Expr\Exit_)
         if ($stmt instanceof Stmt\Expression) {

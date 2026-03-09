@@ -98,7 +98,7 @@ final class MaintainabilityRule extends AbstractRule
                         $threshold,
                     ),
                     severity: $severity,
-                    metricValue: (int) round($miValue),
+                    metricValue: round($miValue, 1),
                 );
             }
         }

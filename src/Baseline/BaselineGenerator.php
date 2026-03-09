@@ -24,10 +24,17 @@ final readonly class BaselineGenerator
     public function generate(array $violations): Baseline
     {
         $entries = [];
+        $seen = [];
 
         foreach ($violations as $violation) {
             $canonical = $violation->symbolPath->toCanonical();
             $hash = $this->hasher->hash($violation);
+            $key = $canonical . ':' . $hash;
+
+            if (isset($seen[$key])) {
+                continue;
+            }
+            $seen[$key] = true;
 
             $entries[$canonical] ??= [];
             $entries[$canonical][] = new BaselineEntry(

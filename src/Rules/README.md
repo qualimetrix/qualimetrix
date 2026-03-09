@@ -45,7 +45,7 @@ Rules are analysis rule implementations for static analysis. Rules are **complet
 | **code-smell.goto**                  | CodeSmell       | Simple                          | goto statements                 | enabled: true                      |
 | **code-smell.long-parameter-list**   | CodeSmell       | Simple                          | Long parameter lists            | warning: 4, error: 6               |
 | **code-smell.superglobals**          | CodeSmell       | Simple                          | Direct superglobal access       | enabled: true                      |
-| **code-smell.unreachable-code**      | CodeSmell       | Simple                          | Unreachable code detection      | warning: 1, error: 1               |
+| **code-smell.unreachable-code**      | CodeSmell       | Simple                          | Unreachable code detection      | warning: 1, error: 2               |
 | **design.type-coverage**             | Design          | Simple                          | Type declaration coverage       | param/return/property: 80%/50%     |
 | **security.hardcoded-credentials**   | Security        | Simple                          | Hardcoded credentials           | enabled: true                      |
 
@@ -383,9 +383,10 @@ rules:
 Code smell rules detect common anti-patterns and bad practices. All code smell rules:
 - Extend `AbstractCodeSmellRule`
 - Use `CodeSmellOptions` with a single `enabled` option (default: `true`)
-- Produce **Warning** severity violations
 - Report violations per occurrence with precise line numbers
 - Have no CLI aliases (use `--disable-rule=<name>` to disable)
+
+**Severity:** Most code smell rules produce **Warning** severity violations. Exceptions: `DebugCodeRule`, `EmptyCatchRule`, `EvalRule`, and `GotoRule` produce **Error** severity.
 
 | Rule                             | Description                     | What it detects                                                              |
 | -------------------------------- | ------------------------------- | ---------------------------------------------------------------------------- |
@@ -495,19 +496,19 @@ Detects unreachable code after terminal statements (return, throw, exit/die, con
 Dead code should always be removed.
 
 Unlike other code smell rules, this rule uses threshold-based options (`UnreachableCodeOptions`)
-instead of `CodeSmellOptions`. By default, any unreachable code is an error (warning=1, error=1).
+instead of `CodeSmellOptions`. By default, any unreachable code produces a warning (warning=1, error=2).
 
-**Default:** warning: 1, error: 1
+**Default:** warning: 1, error: 2
 
 **Configuration:**
 ```yaml
 rules:
   code-smell.unreachable-code:
     warning: 1
-    error: 1
+    error: 2
 ```
 
-**CLI:** `--unreachable-code-warning=1 --unreachable-code-error=1`
+**CLI:** `--unreachable-code-warning=1 --unreachable-code-error=2`
 
 ---
 

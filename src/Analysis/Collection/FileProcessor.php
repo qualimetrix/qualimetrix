@@ -174,7 +174,8 @@ final class FileProcessor implements FileProcessorInterface
                 || $node instanceof Node\Stmt\Function_
                 || $node instanceof Node\Stmt\Property
                 || $node instanceof Node\Stmt\EnumCase
-                || $node instanceof Node\Stmt\ClassConst);
+                || $node instanceof Node\Stmt\ClassConst
+                || $node instanceof Node\Stmt\Expression);
 
         foreach ($nodesWithDocblocks as $node) {
             foreach ($this->suppressionExtractor->extract($node) as $suppression) {

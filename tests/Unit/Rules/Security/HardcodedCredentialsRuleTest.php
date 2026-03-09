@@ -106,6 +106,25 @@ final class HardcodedCredentialsRuleTest extends TestCase
         self::assertSame(42, $violations[2]->location->line);
     }
 
+    public function testEnumCasePatternCodeProducesCorrectMessage(): void
+    {
+        $rule = new HardcodedCredentialsRule(new HardcodedCredentialsOptions());
+
+        $context = $this->createContext(
+            MetricBag::fromArray([
+                'security.hardcodedCredentials.count' => 1,
+                'security.hardcodedCredentials.line.0' => 10,
+                'security.hardcodedCredentials.pattern.0' => 7, // enum_case pattern code
+            ]),
+        );
+
+        $violations = $rule->analyze($context);
+
+        self::assertCount(1, $violations);
+        self::assertStringContainsString('enum case', $violations[0]->message);
+        self::assertSame('security.hardcoded-credentials', $violations[0]->violationCode);
+    }
+
     public function testOptionsFromArray(): void
     {
         $options = HardcodedCredentialsOptions::fromArray(['enabled' => false]);

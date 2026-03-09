@@ -343,6 +343,15 @@ final class SymbolPathTest extends TestCase
         self::assertSame($forClass->toString(), $fromFqn->toString());
     }
 
+    public function testFromNamespaceFqnNormalizesLeadingBackslash(): void
+    {
+        $withBackslash = SymbolPath::fromNamespaceFqn('\\App\\Service');
+        $withoutBackslash = SymbolPath::fromNamespaceFqn('App\\Service');
+
+        self::assertSame($withoutBackslash->toCanonical(), $withBackslash->toCanonical());
+        self::assertSame('App\\Service', $withBackslash->namespace);
+    }
+
     public function testFromClassFqnGlobalEquivalentToForClass(): void
     {
         $fromFqn = SymbolPath::fromClassFqn('GlobalClass');

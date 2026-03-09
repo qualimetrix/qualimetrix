@@ -493,6 +493,34 @@ final class SarifFormatterTest extends TestCase
         self::assertStringNotContainsString('file:////', $uri);
     }
 
+    public function testPathWithSpacesIsPercentEncoded(): void
+    {
+        $report = ReportBuilder::create()
+            ->addViolation(new Violation(
+                location: new Location('src/Foo.php', 10),
+                symbolPath: SymbolPath::forClass('App', 'Foo'),
+                ruleName: 'test',
+                violationCode: 'test',
+                message: 'Test',
+                severity: Severity::Error,
+            ))
+            ->filesAnalyzed(1)
+            ->filesSkipped(0)
+            ->duration(0.1)
+            ->build();
+
+        $context = new FormatterContext(basePath: '/Users/dev/My Project');
+        $output = $this->formatter->format($report, $context);
+        $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
+
+        $run = $data['runs'][0];
+        $uri = $run['originalUriBaseIds']['%SRCROOT%']['uri'];
+
+        // Space should be percent-encoded as %20
+        self::assertSame('file:///Users/dev/My%20Project/', $uri);
+        self::assertStringNotContainsString(' ', $uri);
+    }
+
     public function testDefaultConfigurationLevelUsesMaxSeverity(): void
     {
         $report = ReportBuilder::create()

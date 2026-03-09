@@ -9,6 +9,7 @@ use PhpParser\Node;
 use PhpParser\Node\Expr\FuncCall;
 use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Expr\New_;
+use PhpParser\Node\Expr\NullsafeMethodCall;
 use PhpParser\Node\Expr\StaticCall;
 use PhpParser\Node\Identifier;
 use PhpParser\Node\Name;
@@ -170,6 +171,7 @@ final class RfcVisitor extends NodeVisitorAbstract implements ResettableVisitorI
 
         match (true) {
             $node instanceof MethodCall => $this->handleMethodCall($node, $fqn),
+            $node instanceof NullsafeMethodCall => $this->handleNullsafeMethodCall($node, $fqn),
             $node instanceof StaticCall => $this->handleStaticCall($node, $fqn),
             $node instanceof FuncCall => $this->handleFunctionCall($node, $fqn),
             $node instanceof New_ => $this->handleConstructorCall($node, $fqn),
@@ -193,6 +195,18 @@ final class RfcVisitor extends NodeVisitorAbstract implements ResettableVisitorI
             $receiverName = $this->extractReceiverName($node->var);
             $this->classes[$fqn]->addExternalMethod($receiverName . '->' . $methodName);
         }
+    }
+
+    private function handleNullsafeMethodCall(NullsafeMethodCall $node, string $fqn): void
+    {
+        $methodName = $node->name instanceof Identifier ? $node->name->toString() : null;
+        if ($methodName === null) {
+            return;
+        }
+
+        // Nullsafe calls are always external (cannot be $this?->method())
+        $receiverName = $this->extractReceiverName($node->var);
+        $this->classes[$fqn]->addExternalMethod($receiverName . '?->' . $methodName);
     }
 
     private function handleStaticCall(StaticCall $node, string $fqn): void

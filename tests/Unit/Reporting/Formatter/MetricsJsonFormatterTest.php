@@ -206,6 +206,54 @@ final class MetricsJsonFormatterTest extends TestCase
         self::assertNull($metrics['neg_inf']);
     }
 
+    public function testFormatFiltersInternalDerivedMetricKeys(): void
+    {
+        $filePath = SymbolPath::forFile('src/Service/UserService.php');
+
+        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturnCallback(static function (SymbolType $type) use ($filePath): array {
+                if ($type === SymbolType::File) {
+                    return [new SymbolInfo($filePath, 'src/Service/UserService.php', 1)];
+                }
+
+                return [];
+            });
+
+        $repository->method('get')
+            ->willReturn(MetricBag::fromArray([
+                'loc' => 100,
+                'ccn' => 5,
+                'ccn:App\Service\UserService::calculate' => 12,
+                'npath:App\Service\UserService::process' => 42,
+            ]));
+
+        $report = new Report(
+            violations: [],
+            filesAnalyzed: 1,
+            filesSkipped: 0,
+            duration: 0.1,
+            errorCount: 0,
+            warningCount: 0,
+            metrics: $repository,
+        );
+
+        $output = $this->formatter->format($report, new FormatterContext());
+        $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
+
+        self::assertCount(1, $data['symbols']);
+        $metrics = $data['symbols'][0]['metrics'];
+
+        // Public metrics should be present
+        self::assertArrayHasKey('loc', $metrics);
+        self::assertArrayHasKey('ccn', $metrics);
+
+        // Internal derived-metric keys containing ':' should be filtered out
+        foreach (array_keys($metrics) as $key) {
+            self::assertStringNotContainsString(':', (string) $key, "Internal key '{$key}' should not appear in output");
+        }
+    }
+
     public function testJsonIsValid(): void
     {
         $report = new Report(

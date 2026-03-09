@@ -223,6 +223,7 @@ final class InMemoryStorage implements StorageInterface
             $this->files = $this->transactionBackup->files;
             $this->fileIds = $this->transactionBackup->fileIds;
             $this->metrics = $this->transactionBackup->metrics;
+            $this->fileSymbols = $this->transactionBackup->fileSymbols;
             $this->aggregated = $this->transactionBackup->aggregated;
             $this->fileDependencies = $this->transactionBackup->fileDependencies;
             $this->dependencies = $this->transactionBackup->dependencies;

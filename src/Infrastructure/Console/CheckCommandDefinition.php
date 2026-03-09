@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace AiMessDetector\Infrastructure\Console;
 
 use AiMessDetector\Infrastructure\Rule\RuleRegistryInterface;
+use ReflectionClass;
+use ReflectionNamedType;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
@@ -242,14 +244,63 @@ final class CheckCommandDefinition
 
     private static function addDynamicRuleOptions(Command $command, RuleRegistryInterface $ruleRegistry): void
     {
+        $booleanAliases = self::detectBooleanAliases($ruleRegistry);
+
         foreach ($ruleRegistry->getAllCliAliases() as $alias => $info) {
-            $command->addOption(
-                $alias,
-                null,
-                InputOption::VALUE_REQUIRED,
-                \sprintf('[%s] %s', $info['rule'], $info['option']),
-            );
+            if (\in_array($alias, $booleanAliases, true)) {
+                $command->addOption(
+                    $alias,
+                    null,
+                    InputOption::VALUE_NONE,
+                    \sprintf('[%s] %s', $info['rule'], $info['option']),
+                );
+            } else {
+                $command->addOption(
+                    $alias,
+                    null,
+                    InputOption::VALUE_REQUIRED,
+                    \sprintf('[%s] %s', $info['rule'], $info['option']),
+                );
+            }
         }
+    }
+
+    /**
+     * Detects CLI aliases that map to boolean options.
+     *
+     * Uses reflection on rule Options classes to find boolean constructor parameters.
+     *
+     * @return list<string>
+     */
+    private static function detectBooleanAliases(RuleRegistryInterface $ruleRegistry): array
+    {
+        $booleanAliases = [];
+
+        foreach ($ruleRegistry->getClasses() as $ruleClass) {
+            $aliases = $ruleClass::getCliAliases();
+            if ($aliases === []) {
+                continue;
+            }
+
+            $optionsClass = $ruleClass::getOptionsClass();
+            $reflection = new ReflectionClass($optionsClass);
+
+            foreach ($aliases as $alias => $optionName) {
+                // Option name may be nested (e.g., 'method.warning'), use the leaf
+                $leafName = str_contains($optionName, '.') ? substr($optionName, (int) strrpos($optionName, '.') + 1) : $optionName;
+
+                if ($reflection->hasProperty($leafName)) {
+                    $property = $reflection->getProperty($leafName);
+                    $type = $property->getType();
+
+                    if ($type instanceof ReflectionNamedType && $type->getName() === 'bool') {
+                        $booleanAliases[] = $alias;
+                    }
+                }
+            }
+        }
+
+        return $booleanAliases;
     }
 
     private static function addGenericRuleOptions(Command $command): void

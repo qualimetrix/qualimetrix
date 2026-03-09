@@ -33,9 +33,8 @@ final readonly class NamespaceCboOptions implements LevelOptionsInterface
      */
     public static function fromArray(array $config): self
     {
-        // If config is empty, level is disabled
         if ($config === []) {
-            return new self(enabled: false);
+            return new self();
         }
 
         $excludeNamespaces = [];

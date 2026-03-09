@@ -86,6 +86,7 @@ final class HardcodedCredentialsRule extends AbstractRule
                     4 => 'Hardcoded credential in define() call',
                     5 => 'Hardcoded credential in property default',
                     6 => 'Hardcoded credential in parameter default',
+                    7 => 'Hardcoded credential in enum case',
                     default => 'Hardcoded credential found',
                 };
                 $message .= ' — use environment variables or a secrets manager';

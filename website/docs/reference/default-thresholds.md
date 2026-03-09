@@ -99,7 +99,7 @@ These rules detect specific patterns that are usually bad practice. Most do not 
 | goto              | `code-smell.goto`              | Error    | enabled |
 | Superglobals      | `code-smell.superglobals`      | Warning  | enabled |
 | Long Parameter List | `code-smell.long-parameter-list` | 4 params | 6 params | enabled |
-| Unreachable Code  | `code-smell.unreachable-code`  | 1        | 1        | enabled |
+| Unreachable Code  | `code-smell.unreachable-code`  | 1        | 2        | enabled |
 
 ## Security Rules
 
@@ -120,10 +120,12 @@ Create an `aimd.yaml` file in your project root:
 ```yaml
 rules:
   complexity.cyclomatic:
-    method_warning: 15
-    method_error: 30
-    class_warning: 40
-    class_error: 60
+    method:
+      warning: 15
+      error: 30
+    class:
+      max_warning: 40
+      max_error: 60
 
   size.method-count:
     warning: 25

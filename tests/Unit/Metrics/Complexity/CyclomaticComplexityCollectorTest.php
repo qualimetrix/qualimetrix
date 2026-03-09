@@ -753,6 +753,68 @@ PHP;
         self::assertSame(2, $metrics->get('ccn:App\Test::{closure#1}'));
     }
 
+    /**
+     * Closure inside anonymous class method should NOT appear in CCN metrics of outer class.
+     */
+    public function testClosureInsideAnonymousClassNotInOuterMetrics(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Outer
+{
+    public function outerMethod(): void
+    {
+        $obj = new class {
+            public function innerMethod(): void
+            {
+                $fn = function() {
+                    if (true) { return 1; }
+                    return 0;
+                };
+            }
+        };
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // outerMethod: CC = 1 (base) — closure inside anonymous class is ignored
+        self::assertSame(1, $metrics->get('ccn:App\Outer::outerMethod'));
+    }
+
+    /**
+     * MatchArm with multiple conditions should add +N (one per condition value).
+     */
+    public function testMatchArmMultipleConditionsCountsEach(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Test
+{
+    public function categorize(int $x): string
+    {
+        return match($x) {
+            1, 2, 3 => 'low',
+            4, 5 => 'mid',
+            default => 'high',
+        };
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // CC = 1 (base) + 3 (arm 1: 3 conditions) + 2 (arm 2: 2 conditions) + 0 (default) = 6
+        self::assertSame(6, $metrics->get('ccn:App\Test::categorize'));
+    }
+
     private function collectMetrics(string $code): \AiMessDetector\Core\Metric\MetricBag
     {
         $parser = (new ParserFactory())->createForHostVersion();

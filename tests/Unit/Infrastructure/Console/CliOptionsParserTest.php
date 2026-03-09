@@ -155,6 +155,53 @@ final class CliOptionsParserTest extends TestCase
     }
 
     #[Test]
+    public function parseRuleOptions_booleanAliasPresentIsTreatedAsTrue(): void
+    {
+        $ruleOptionsParser = new RuleOptionsParser([
+            'circular-deps' => ['rule' => 'architecture.circular-dependency', 'option' => 'enabled'],
+        ]);
+
+        $cliParser = new CliOptionsParser($ruleOptionsParser);
+
+        $definition = new InputDefinition([
+            new InputOption('rule-opt', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY),
+            new InputOption('circular-deps', null, InputOption::VALUE_NONE),
+        ]);
+
+        // Simulate --circular-deps: VALUE_NONE returns true when present
+        $input = new ArrayInput([
+            '--circular-deps' => true,
+        ], $definition);
+
+        $result = $cliParser->parseRuleOptions($input);
+
+        self::assertArrayHasKey('architecture.circular-dependency', $result);
+        self::assertTrue($result['architecture.circular-dependency']['enabled']);
+    }
+
+    #[Test]
+    public function parseRuleOptions_booleanAliasNotPresentIsSkipped(): void
+    {
+        $ruleOptionsParser = new RuleOptionsParser([
+            'circular-deps' => ['rule' => 'architecture.circular-dependency', 'option' => 'enabled'],
+        ]);
+
+        $cliParser = new CliOptionsParser($ruleOptionsParser);
+
+        $definition = new InputDefinition([
+            new InputOption('rule-opt', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY),
+            new InputOption('circular-deps', null, InputOption::VALUE_NONE),
+        ]);
+
+        // Not passing the option — VALUE_NONE default is false
+        $input = new ArrayInput([], $definition);
+
+        $result = $cliParser->parseRuleOptions($input);
+
+        self::assertArrayNotHasKey('architecture.circular-dependency', $result);
+    }
+
+    #[Test]
     public function parseRuleOptions_skipsNullAliases(): void
     {
         // Arrange: alias registered but not passed via CLI

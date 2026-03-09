@@ -13,11 +13,11 @@ use PHPUnit\Framework\TestCase;
 final class NamespaceInstabilityOptionsTest extends TestCase
 {
     #[Test]
-    public function fromArrayEmptyReturnsDisabled(): void
+    public function fromArrayEmptyReturnsEnabled(): void
     {
         $options = NamespaceInstabilityOptions::fromArray([]);
 
-        self::assertFalse($options->isEnabled());
+        self::assertTrue($options->isEnabled());
     }
 
     #[Test]

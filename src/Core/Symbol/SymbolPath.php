@@ -81,7 +81,7 @@ final readonly class SymbolPath
      */
     public static function fromNamespaceFqn(string $fqn): self
     {
-        return self::forNamespace($fqn);
+        return self::forNamespace(ltrim($fqn, '\\'));
     }
 
     public static function forFile(string $path): self

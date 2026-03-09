@@ -193,6 +193,34 @@ final class ConfigurationPipelineTest extends TestCase
         self::assertContains('size.loc', $disabledRules);
     }
 
+    #[Test]
+    public function excludesAreMergedNotOverwritten(): void
+    {
+        $pipeline = new ConfigurationPipeline();
+
+        $yamlStage = $this->createStage(20, 'config', new ConfigurationLayer('aimd.yaml', [
+            'excludes' => ['vendor', 'tests'],
+        ]));
+
+        $cliStage = $this->createStage(30, 'cli', new ConfigurationLayer('cli', [
+            'excludes' => ['generated', 'cache'],
+        ]));
+
+        $pipeline->addStage($yamlStage);
+        $pipeline->addStage($cliStage);
+
+        $context = new ConfigurationContext(new ArrayInput([]), '/tmp');
+        $resolved = $pipeline->resolve($context);
+
+        // CLI excludes should be merged with config file excludes, not replace them
+        $excludes = $resolved->paths->excludes;
+        self::assertContains('vendor', $excludes);
+        self::assertContains('tests', $excludes);
+        self::assertContains('generated', $excludes);
+        self::assertContains('cache', $excludes);
+        self::assertCount(4, $excludes);
+    }
+
     private function createStage(int $priority, string $name, ?ConfigurationLayer $layer): ConfigurationStageInterface
     {
         return new class ($priority, $name, $layer) implements ConfigurationStageInterface {

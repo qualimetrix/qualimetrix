@@ -130,6 +130,13 @@ final class DependencyVisitor extends NodeVisitorAbstract
             return null;
         }
 
+        // Anonymous class: extract extends/implements dependencies into the enclosing class context
+        if ($node instanceof Class_ && $node->name === null && $this->currentContext !== null) {
+            $this->classLikeHandler->handle($node, $this->currentContext);
+
+            return null;
+        }
+
         if ($this->currentClass === null || $this->currentContext === null) {
             return null;
         }

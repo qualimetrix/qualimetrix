@@ -30,6 +30,7 @@ final class HardcodedCredentialsCollector extends AbstractCollector
         'define' => 4,
         'property' => 5,
         'parameter' => 6,
+        'enum_case' => 7,
     ];
 
     public function __construct(

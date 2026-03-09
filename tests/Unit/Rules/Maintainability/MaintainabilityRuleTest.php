@@ -124,7 +124,7 @@ final class MaintainabilityRuleTest extends TestCase
         self::assertCount(1, $violations);
         self::assertSame(Severity::Warning, $violations[0]->severity);
         self::assertStringContainsString('Maintainability Index is 30.0', $violations[0]->message);
-        self::assertSame(30, $violations[0]->metricValue);
+        self::assertSame(30.0, $violations[0]->metricValue);
         self::assertSame('maintainability.index', $violations[0]->ruleName);
     }
 
@@ -153,7 +153,7 @@ final class MaintainabilityRuleTest extends TestCase
 
         self::assertCount(1, $violations);
         self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertSame(15, $violations[0]->metricValue);
+        self::assertSame(15.0, $violations[0]->metricValue);
     }
 
     public function testAnalyzeNoViolationForHighMi(): void
@@ -180,6 +180,33 @@ final class MaintainabilityRuleTest extends TestCase
         $violations = $rule->analyze($context);
 
         self::assertCount(0, $violations);
+    }
+
+    public function testMetricValueIsFloatWithOneDecimal(): void
+    {
+        $rule = new MaintainabilityRule(new MaintainabilityOptions());
+
+        $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
+        $methodInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+
+        $metricBag = (new MetricBag())
+            ->with('mi', 25.67)
+            ->with('methodLoc', 15);
+
+        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->with(SymbolType::Method)
+            ->willReturn([$methodInfo]);
+        $repository->method('get')
+            ->with($symbolPath)
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyze($context);
+
+        self::assertCount(1, $violations);
+        self::assertSame(25.7, $violations[0]->metricValue);
+        self::assertIsFloat($violations[0]->metricValue);
     }
 
     public function testAnalyzeSkipsMethodWithoutMiMetric(): void

@@ -51,7 +51,12 @@ final class Psr4NamespaceDetector implements NamespaceDetectorInterface
                         return rtrim($prefix, '\\');
                     }
 
-                    return rtrim($prefix, '\\') . '\\' . $namespace;
+                    $trimmedPrefix = rtrim($prefix, '\\');
+                    if ($trimmedPrefix === '') {
+                        return $namespace;
+                    }
+
+                    return $trimmedPrefix . '\\' . $namespace;
                 }
             }
         }
@@ -84,9 +89,17 @@ final class Psr4NamespaceDetector implements NamespaceDetectorInterface
             $psr4 = array_merge($psr4, $composer['autoload']['psr-4']);
         }
 
-        // Load autoload-dev mappings
+        // Load autoload-dev mappings (merge paths for same prefix instead of overwriting)
         if (isset($composer['autoload-dev']['psr-4']) && \is_array($composer['autoload-dev']['psr-4'])) {
-            $psr4 = array_merge($psr4, $composer['autoload-dev']['psr-4']);
+            foreach ($composer['autoload-dev']['psr-4'] as $devPrefix => $devPath) {
+                if (isset($psr4[$devPrefix])) {
+                    $existing = (array) $psr4[$devPrefix];
+                    $new = (array) $devPath;
+                    $psr4[$devPrefix] = array_merge($existing, $new);
+                } else {
+                    $psr4[$devPrefix] = $devPath;
+                }
+            }
         }
 
         // Normalize and sort mappings

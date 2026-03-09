@@ -132,9 +132,13 @@ YAML;
         // Act
         $resolved = $pipeline->resolve($context);
 
-        // Assert: CLI should override everything
+        // Assert: CLI should override everything for non-mergeable keys
         self::assertSame(['custom/'], $resolved->paths->paths, 'CLI paths should override config file and composer.json');
-        self::assertSame(['temp/'], $resolved->paths->excludes, 'CLI excludes should override config file defaults');
+        // Excludes merge across all stages: defaults + config file + CLI
+        $excludes = $resolved->paths->excludes;
+        self::assertContains('vendor', $excludes, 'excludes from defaults');
+        self::assertContains('cache/', $excludes, 'excludes from config file');
+        self::assertContains('temp/', $excludes, 'excludes from CLI');
     }
 
     #[Test]
@@ -197,7 +201,7 @@ YAML;
     }
 
     #[Test]
-    public function excludesAccumulation_cliExcludesReplaceDefaults(): void
+    public function excludesAccumulation_cliExcludesMergeWithDefaults(): void
     {
         // Arrange: Only CLI excludes (without config file)
         $input = $this->createInputWithDefinition([
@@ -210,16 +214,17 @@ YAML;
         // Act
         $resolved = $pipeline->resolve($context);
 
-        // Assert: CLI excludes completely replace defaults
-        self::assertSame(
-            ['custom-exclude/', 'another-exclude/'],
-            $resolved->paths->excludes,
-            'CLI excludes should replace default excludes (not accumulate)',
-        );
+        // Assert: CLI excludes should be merged with default excludes
+        $excludes = $resolved->paths->excludes;
+        self::assertContains('vendor', $excludes);
+        self::assertContains('node_modules', $excludes);
+        self::assertContains('.git', $excludes);
+        self::assertContains('custom-exclude/', $excludes);
+        self::assertContains('another-exclude/', $excludes);
     }
 
     #[Test]
-    public function excludesAccumulation_configFileExcludesReplaceDefaults(): void
+    public function excludesAccumulation_configFileExcludesMergeWithDefaults(): void
     {
         // Arrange: Config file with excludes
         $configYaml = <<<YAML
@@ -237,12 +242,13 @@ YAML;
         // Act
         $resolved = $pipeline->resolve($context);
 
-        // Assert: Config file excludes replace defaults
-        self::assertSame(
-            ['build/', 'dist/'],
-            $resolved->paths->excludes,
-            'Config file excludes should replace default excludes',
-        );
+        // Assert: Config file excludes merge with defaults
+        $excludes = $resolved->paths->excludes;
+        self::assertContains('vendor', $excludes);
+        self::assertContains('node_modules', $excludes);
+        self::assertContains('.git', $excludes);
+        self::assertContains('build/', $excludes);
+        self::assertContains('dist/', $excludes);
     }
 
     #[Test]
@@ -305,7 +311,11 @@ YAML;
 
         // Assert: Each option is taken from the highest priority source where it is defined
         self::assertSame(['lib/'], $resolved->paths->paths, 'paths from config file (overrides composer)');
-        self::assertSame(['temp/'], $resolved->paths->excludes, 'excludes from CLI (highest priority)');
+        // Excludes merge across all stages: defaults + config file + CLI
+        $excludes = $resolved->paths->excludes;
+        self::assertContains('vendor', $excludes, 'excludes from defaults');
+        self::assertContains('cache/', $excludes, 'excludes from config file');
+        self::assertContains('temp/', $excludes, 'excludes from CLI');
         self::assertSame('json', $resolved->analysis->format, 'format from config file (overrides defaults)');
         self::assertSame('.aimd-cache', $resolved->analysis->cacheDir, 'cache.dir defaults to .aimd-cache');
         self::assertTrue($resolved->analysis->cacheEnabled, 'cache.enabled defaults to true');

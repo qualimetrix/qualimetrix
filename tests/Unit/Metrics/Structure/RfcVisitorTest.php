@@ -533,6 +533,75 @@ PHP,
         ];
     }
 
+    /**
+     * NullsafeMethodCall should count in RFC response set.
+     */
+    public function testNullsafeMethodCallCountsInRfc(): void
+    {
+        $code = <<<'PHP'
+<?php
+class NullsafeService
+{
+    public function process(?object $obj): void
+    {
+        $obj?->method();
+    }
+}
+PHP;
+
+        $visitor = new RfcVisitor();
+        $parser = (new ParserFactory())->createForHostVersion();
+        $ast = $parser->parse($code) ?? [];
+
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $classesData = $visitor->getClassesData();
+
+        self::assertArrayHasKey('NullsafeService', $classesData);
+        $data = $classesData['NullsafeService'];
+        // M = 1, R = 1 (nullsafe method call), RFC = 2
+        self::assertSame(2, $data->getRfc());
+        self::assertSame(1, $data->getOwnMethodsCount());
+        self::assertSame(1, $data->getExternalMethodsCount());
+    }
+
+    /**
+     * Multiple nullsafe method calls with different names should count separately.
+     */
+    public function testMultipleNullsafeMethodCalls(): void
+    {
+        $code = <<<'PHP'
+<?php
+class NullsafeMulti
+{
+    public function process(?object $obj): void
+    {
+        $obj?->first();
+        $obj?->second();
+    }
+}
+PHP;
+
+        $visitor = new RfcVisitor();
+        $parser = (new ParserFactory())->createForHostVersion();
+        $ast = $parser->parse($code) ?? [];
+
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $classesData = $visitor->getClassesData();
+
+        self::assertArrayHasKey('NullsafeMulti', $classesData);
+        $data = $classesData['NullsafeMulti'];
+        // M = 1, R = 2 (two different nullsafe calls), RFC = 3
+        self::assertSame(3, $data->getRfc());
+        self::assertSame(1, $data->getOwnMethodsCount());
+        self::assertSame(2, $data->getExternalMethodsCount());
+    }
+
     public function testReset(): void
     {
         $visitor = new RfcVisitor();

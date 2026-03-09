@@ -8,6 +8,7 @@ use AiMessDetector\Analysis\Collection\Dependency\DependencyResolver;
 use AiMessDetector\Analysis\Collection\Dependency\DependencyVisitor;
 use AiMessDetector\Analysis\Collection\FileProcessor;
 use AiMessDetector\Analysis\Collection\Metric\CompositeCollector;
+use AiMessDetector\Baseline\Suppression\SuppressionType;
 use AiMessDetector\Core\Ast\FileParserInterface;
 use AiMessDetector\Core\Exception\ParseException;
 use AiMessDetector\Core\Metric\ClassMetricsProviderInterface;
@@ -17,6 +18,8 @@ use AiMessDetector\Core\Metric\MethodWithMetrics;
 use AiMessDetector\Core\Metric\MetricBag;
 use AiMessDetector\Core\Metric\MetricCollectorInterface;
 use AiMessDetector\Core\Symbol\SymbolPath;
+use PhpParser\Comment\Doc;
+use PhpParser\Node;
 use PhpParser\NodeVisitorAbstract;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -191,6 +194,44 @@ final class FileProcessorTest extends TestCase
 
         self::assertTrue($result->success);
         self::assertCount(0, $result->methodMetrics); // Closures skipped
+    }
+
+    #[Test]
+    public function itExtractsSuppressionsFromExpressionNodes(): void
+    {
+        $file = new SplFileInfo('/tmp/test.php');
+
+        // Build AST: a class with a method containing an Expression with a docblock
+        $docComment = new Doc(
+            "/** @aimd-ignore-next-line code-smell.exit */",
+            startLine: 10,
+            endLine: 10,
+        );
+
+        // Create an Expression node (e.g., exit(0);) with docblock
+        $exitCall = new Node\Expr\FuncCall(new Node\Name('exit'), [new Node\Arg(new Node\Scalar\Int_(0))]);
+        $expression = new Node\Stmt\Expression($exitCall, ['startLine' => 11, 'endLine' => 11]);
+        $expression->setDocComment($docComment);
+
+        $method = new Node\Stmt\ClassMethod('run', ['stmts' => [$expression]], ['startLine' => 8, 'endLine' => 12]);
+        $class = new Node\Stmt\Class_('MyClass', ['stmts' => [$method]], ['startLine' => 5, 'endLine' => 13]);
+        $namespace = new Node\Stmt\Namespace_(new Node\Name('App'), [$class], ['startLine' => 1, 'endLine' => 14]);
+
+        $this->parser->method('parse')->willReturn([$namespace]);
+
+        $compositeCollector = new CompositeCollector([]);
+
+        $processor = new FileProcessor($this->parser, $compositeCollector);
+        $result = $processor->process($file);
+
+        self::assertTrue($result->success);
+        self::assertNotEmpty($result->suppressions);
+
+        $nextLineSuppressions = array_filter(
+            $result->suppressions,
+            static fn($s) => $s->type === SuppressionType::NextLine && $s->rule === 'code-smell.exit',
+        );
+        self::assertCount(1, $nextLineSuppressions);
     }
 
     /**

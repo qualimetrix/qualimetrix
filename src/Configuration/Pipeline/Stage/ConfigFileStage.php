@@ -12,13 +12,14 @@ use AiMessDetector\Configuration\Pipeline\ConfigurationLayer;
 /**
  * Loads configuration from config file (priority: 20).
  *
- * Searches for aimd.yaml in working directory.
+ * Searches for aimd.yaml or aimd.yml in working directory.
  */
 final class ConfigFileStage implements ConfigurationStageInterface
 {
     private const int PRIORITY = 20;
 
-    private const string CONFIG_FILE_NAME = 'aimd.yaml';
+    /** @var list<string> */
+    private const array CONFIG_FILE_NAMES = ['aimd.yaml', 'aimd.yml'];
 
     public function __construct(
         private readonly ConfigLoaderInterface $loader,
@@ -54,7 +55,7 @@ final class ConfigFileStage implements ConfigurationStageInterface
      * Resolves the config file path.
      *
      * If an explicit path was provided via --config, uses that (throws on missing file).
-     * Otherwise, auto-detects aimd.yaml in the working directory.
+     * Otherwise, auto-detects aimd.yaml or aimd.yml in the working directory.
      */
     private function resolveConfigPath(ConfigurationContext $context): ?string
     {
@@ -71,9 +72,14 @@ final class ConfigFileStage implements ConfigurationStageInterface
 
     private function findConfigFile(string $dir): ?string
     {
-        $path = $dir . '/' . self::CONFIG_FILE_NAME;
+        foreach (self::CONFIG_FILE_NAMES as $fileName) {
+            $path = $dir . '/' . $fileName;
+            if (file_exists($path)) {
+                return $path;
+            }
+        }
 
-        return file_exists($path) ? $path : null;
+        return null;
     }
 
     /**

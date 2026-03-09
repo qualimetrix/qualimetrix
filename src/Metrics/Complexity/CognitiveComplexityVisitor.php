@@ -53,7 +53,7 @@ use PhpParser\NodeVisitorAbstract;
  * - Logical operators: +1 for each sequence of same operator
  * - Switch/Match: +1 + nesting level
  * - Catch blocks: +1 + nesting level
- * - Goto, labeled break/continue: +1 + nesting level
+ * - Goto, labeled break/continue: +1 (no nesting bonus, per SonarSource B1)
  * - Ternary, null coalescing: +1 (no nesting bonus)
  * - Recursion: +1
  *
@@ -172,8 +172,12 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
             return null;
         }
 
-        // Start of a closure or arrow function
+        // Start of a closure or arrow function (skip if inside anonymous class)
         if ($node instanceof Closure || $node instanceof ArrowFunction) {
+            if ($this->anonymousClassDepth > 0) {
+                return null;
+            }
+
             // Add +1 structural increment to parent method (SonarSource spec B1: lambdas)
             if (!empty($this->methodStack)) {
                 $parentMethod = $this->methodStack[array_key_last($this->methodStack)];
@@ -238,9 +242,11 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
             return null;
         }
 
-        // End of closure/arrow function
+        // End of closure/arrow function (skip if inside anonymous class — we didn't start it)
         if ($node instanceof Closure || $node instanceof ArrowFunction) {
-            $this->endMethod();
+            if ($this->anonymousClassDepth === 0) {
+                $this->endMethod();
+            }
 
             return null;
         }
@@ -368,17 +374,17 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
             return 1;
         }
 
-        // Labeled jumps: +1 + nesting
+        // Labeled jumps: +1 only (B1 fundamental increment, no nesting bonus per SonarSource spec)
         if ($node instanceof Goto_) {
-            return 1 + $this->nestingLevel;
+            return 1;
         }
 
         if ($node instanceof Break_ && $node->num !== null) {
-            return 1 + $this->nestingLevel;
+            return 1;
         }
 
         if ($node instanceof Continue_ && $node->num !== null) {
-            return 1 + $this->nestingLevel;
+            return 1;
         }
 
         // Logical operators: count sequences using tree-aware parent detection

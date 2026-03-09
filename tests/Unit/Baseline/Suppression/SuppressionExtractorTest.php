@@ -392,6 +392,67 @@ final class SuppressionExtractorTest extends TestCase
         self::assertNull($suppressions[0]->endLine);
     }
 
+    public function testIgnoreFileSectionDoesNotMatchAsFileLevel(): void
+    {
+        $docComment = new Doc(
+            <<<'DOC'
+            /**
+             * @aimd-ignore-file-section complexity
+             */
+            DOC,
+            1,
+            1,
+        );
+
+        $node = new Class_('Foo');
+        $node->setDocComment($docComment);
+
+        $suppressions = $this->extractor->extractFileLevelSuppressions($node);
+
+        self::assertEmpty($suppressions);
+    }
+
+    public function testIgnoreFileSectionDoesNotMatchAsFileLevelViaExtract(): void
+    {
+        $docComment = new Doc(
+            <<<'DOC'
+            /**
+             * @aimd-ignore-file-section complexity
+             */
+            DOC,
+            1,
+            1,
+        );
+
+        $node = new Class_('Foo');
+        $node->setDocComment($docComment);
+
+        $suppressions = $this->extractor->extract($node);
+
+        // Should not match as file-level, nor as symbol or next-line
+        self::assertEmpty($suppressions);
+    }
+
+    public function testIgnoreNextLineExtraWordDoesNotMatch(): void
+    {
+        $docComment = new Doc(
+            <<<'DOC'
+            /**
+             * @aimd-ignore-next-liner complexity
+             */
+            DOC,
+            10,
+            10,
+        );
+
+        $node = new Class_('Foo');
+        $node->setDocComment($docComment);
+
+        $suppressions = $this->extractor->extract($node);
+
+        self::assertEmpty($suppressions);
+    }
+
     public function testExtractMixedSuppressionTypes(): void
     {
         $docComment = new Doc(

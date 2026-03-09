@@ -157,6 +157,17 @@ final class GitClient
 
                 continue;
             }
+
+            // Copy: C<similarity>\told\tnew
+            if (preg_match('/^C\d*\t(.+)\t(.+)$/', $line, $matches)) {
+                $files[] = new ChangedFile(
+                    path: $matches[2],
+                    status: ChangeStatus::Copied,
+                    oldPath: $matches[1],
+                );
+
+                continue;
+            }
         }
 
         return array_values(array_unique($files, \SORT_REGULAR));

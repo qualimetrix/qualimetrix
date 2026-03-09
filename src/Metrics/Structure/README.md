@@ -238,18 +238,18 @@ DIT = depth of the class in the inheritance hierarchy.
 ### Formula
 
 ```
-NOC = number of direct subclasses (extends/implements)
+NOC = number of direct subclasses via `extends`, following C&K (1994)
 ```
 
-**Important:** Only direct subclasses, not transitive (grandchildren are not counted).
+**Important:** Only direct subclasses via `extends` are counted. `implements` and trait `use` do not count toward NOC. Transitive descendants (grandchildren) are also not counted.
 
 ### Example
 
 ```php
-interface PaymentGateway { }
+abstract class PaymentGateway { }
 
-class StripeGateway implements PaymentGateway { }  // +1
-class PayPalGateway implements PaymentGateway { }  // +1
+class StripeGateway extends PaymentGateway { }  // +1
+class PayPalGateway extends PaymentGateway { }  // +1
 
 // NOC(PaymentGateway) = 2
 ```

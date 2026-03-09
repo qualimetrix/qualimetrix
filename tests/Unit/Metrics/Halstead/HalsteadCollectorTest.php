@@ -713,6 +713,45 @@ PHP;
         self::assertNull($metrics->get('halstead.volume:App\Outer::innerComplex'));
     }
 
+    /**
+     * Closure inside anonymous class method should NOT appear in Halstead metrics of outer class.
+     */
+    public function testClosureInsideAnonymousClassNotInOuterMetrics(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Outer
+{
+    public function outerMethod(): int
+    {
+        $obj = new class {
+            public function innerMethod(): int
+            {
+                $fn = function() {
+                    $a = 1 + 2 + 3;
+                    $b = $a * 4;
+                    return $a + $b;
+                };
+                return $fn();
+            }
+        };
+        return 1;
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // outerMethod should have low volume — closure inside anonymous class is ignored
+        $outerVolume = $metrics->get('halstead.volume:App\Outer::outerMethod');
+        self::assertIsFloat($outerVolume);
+        // Should be small (just 'return', 'new', num:1)
+        self::assertLessThan(30, $outerVolume);
+    }
+
     private function collectMetrics(string $code): MetricBag
     {
         $parser = (new ParserFactory())->createForHostVersion();

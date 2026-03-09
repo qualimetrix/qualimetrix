@@ -128,6 +128,23 @@ final class BaselineGeneratorTest extends TestCase
         self::assertEmpty($baseline->entries);
     }
 
+    public function testDeduplicatesIdenticalViolations(): void
+    {
+        $violation = new Violation(
+            location: new Location('src/Foo.php', 45),
+            symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
+            ruleName: 'complexity',
+            violationCode: 'complexity',
+            message: 'Complexity 15 exceeds 10',
+            severity: Severity::Warning,
+        );
+
+        $baseline = $this->generator->generate([$violation, $violation]);
+
+        self::assertCount(1, $baseline->entries);
+        self::assertCount(1, $baseline->entries['method:App\Foo::bar']);
+    }
+
     public function testHandlesViolationsWithoutLineNumber(): void
     {
         $violations = [

@@ -35,7 +35,9 @@ final readonly class CliOptionsParser
         // Parse all registered short aliases (from rule definitions)
         foreach ($this->ruleOptionsParser->getAliasNames() as $alias) {
             $value = $input->getOption($alias);
-            if ($value === null) {
+
+            // VALUE_REQUIRED: null when not provided; VALUE_NONE: false when not provided
+            if ($value === null || $value === false) {
                 continue;
             }
 

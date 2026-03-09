@@ -378,8 +378,35 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        // goto is NOT terminal — it transfers control but the label IS reachable
-        self::assertSame(0, $metrics->get('unreachableCode:App\Navigator::navigate'));
+        // goto IS terminal — code after goto is unreachable in sequential flow.
+        // Note: the label destination IS reachable via goto, but our sequential scanner
+        // counts statements after the terminal. Here: $x = 1, end: (Label_), return are 3.
+        self::assertSame(3, $metrics->get('unreachableCode:App\Navigator::navigate'));
+    }
+
+    public function testGotoAsTerminalSimple(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class GotoTest
+{
+    public function test(): void
+    {
+        goto skip;
+        $unreachable = 1;
+        skip:
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // goto is terminal: $unreachable = 1 and skip: label are after it
+        self::assertSame(2, $metrics->get('unreachableCode:App\GotoTest::test'));
+        self::assertSame(10, $metrics->get('unreachableCode.firstLine:App\GotoTest::test'));
     }
 
     public function testAnonymousClassInsideNamedClass(): void

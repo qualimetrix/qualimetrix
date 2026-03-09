@@ -102,7 +102,7 @@ final class JsonFormatter implements FormatterInterface
             'priority' => $this->severityToPriority($violation->severity),
             'severity' => $this->severityToString($violation->severity),
             'description' => $violation->message,
-            'metricValue' => $violation->metricValue,
+            'metricValue' => \is_float($violation->metricValue) && !is_finite($violation->metricValue) ? null : $violation->metricValue,
         ];
     }
 

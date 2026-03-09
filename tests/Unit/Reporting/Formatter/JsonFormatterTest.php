@@ -267,6 +267,44 @@ final class JsonFormatterTest extends TestCase
         self::assertSame('complexity.method', $violation['code']);
     }
 
+    public function testNanMetricValueProducesNullInJson(): void
+    {
+        $report = ReportBuilder::create()
+            ->addViolation(new Violation(
+                location: new Location('src/A.php', 10),
+                symbolPath: SymbolPath::forClass('App', 'A'),
+                ruleName: 'maintainability.index',
+                violationCode: 'maintainability.index',
+                message: 'Maintainability index is NaN',
+                severity: Severity::Warning,
+                metricValue: \NAN,
+            ))
+            ->addViolation(new Violation(
+                location: new Location('src/B.php', 20),
+                symbolPath: SymbolPath::forClass('App', 'B'),
+                ruleName: 'maintainability.index',
+                violationCode: 'maintainability.index',
+                message: 'Maintainability index is INF',
+                severity: Severity::Warning,
+                metricValue: \INF,
+            ))
+            ->filesAnalyzed(2)
+            ->filesSkipped(0)
+            ->duration(0.1)
+            ->build();
+
+        $output = $this->formatter->format($report, new FormatterContext());
+
+        // Should produce valid JSON (NaN/INF would break json_encode)
+        $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
+
+        $vA = $data['files'][0]['violations'][0];
+        self::assertNull($vA['metricValue'], 'NaN metric value should be null in JSON');
+
+        $vB = $data['files'][1]['violations'][0];
+        self::assertNull($vB['metricValue'], 'INF metric value should be null in JSON');
+    }
+
     public function testGetDefaultGroupBy(): void
     {
         self::assertSame(GroupBy::None, $this->formatter->getDefaultGroupBy());

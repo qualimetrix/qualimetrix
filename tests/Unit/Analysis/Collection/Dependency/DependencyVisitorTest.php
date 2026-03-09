@@ -468,6 +468,62 @@ PHP;
         self::assertSame('Second\\Logger', array_values($serviceBDeps)[0]->target->toString());
     }
 
+    #[Test]
+    public function anonymous_class_extends_implements_attributed_to_enclosing_class(): void
+    {
+        $code = <<<'PHP'
+<?php
+namespace App;
+
+use Vendor\Foo;
+use Vendor\Bar;
+
+class Outer {
+    public function factory() {
+        return new class extends Foo implements Bar {
+            public function inner() {}
+        };
+    }
+}
+PHP;
+        $deps = $this->analyze($code);
+
+        // Should have Extends(Foo) and Implements(Bar) attributed to App\Outer
+        $outerDeps = array_filter(
+            $deps,
+            static fn($d) => $d->source->toString() === 'App\\Outer',
+        );
+        $outerDeps = array_values($outerDeps);
+
+        self::assertCount(2, $outerDeps);
+
+        $targets = array_map(static fn($d) => $d->target->toString(), $outerDeps);
+        $types = array_map(static fn($d) => $d->type, $outerDeps);
+
+        self::assertContains('Vendor\\Foo', $targets);
+        self::assertContains('Vendor\\Bar', $targets);
+        self::assertContains(DependencyType::Extends, $types);
+        self::assertContains(DependencyType::Implements, $types);
+    }
+
+    #[Test]
+    public function anonymous_class_without_enclosing_class_is_ignored(): void
+    {
+        $code = <<<'PHP'
+<?php
+namespace App;
+
+use Vendor\Foo;
+
+// Anonymous class outside any named class
+$obj = new class extends Foo {};
+PHP;
+        $deps = $this->analyze($code);
+
+        // No enclosing class context, so dependencies are not tracked
+        self::assertCount(0, $deps);
+    }
+
     /**
      * @return array<\AiMessDetector\Core\Dependency\Dependency>
      */

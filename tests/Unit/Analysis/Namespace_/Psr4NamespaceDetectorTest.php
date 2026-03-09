@@ -193,6 +193,57 @@ final class Psr4NamespaceDetectorTest extends TestCase
     }
 
     #[Test]
+    public function itHandlesEmptyPsr4PrefixWithoutLeadingBackslash(): void
+    {
+        $this->createStructure([
+            'composer.json' => json_encode([
+                'autoload' => [
+                    'psr-4' => [
+                        '' => 'src/',
+                    ],
+                ],
+            ], \JSON_THROW_ON_ERROR),
+            'src/Sub/Foo.php' => '<?php namespace Sub; class Foo {}',
+        ]);
+
+        $detector = new Psr4NamespaceDetector($this->fixturesDir . '/composer.json');
+        $file = new SplFileInfo($this->fixturesDir . '/src/Sub/Foo.php');
+
+        // Should return 'Sub', not '\Sub'
+        self::assertSame('Sub', $detector->detect($file));
+    }
+
+    #[Test]
+    public function itMergesSamePrefixFromAutoloadAndAutoloadDev(): void
+    {
+        $this->createStructure([
+            'composer.json' => json_encode([
+                'autoload' => [
+                    'psr-4' => [
+                        'App\\' => 'src/',
+                    ],
+                ],
+                'autoload-dev' => [
+                    'psr-4' => [
+                        'App\\' => 'tests/',
+                    ],
+                ],
+            ], \JSON_THROW_ON_ERROR),
+            'src/Service/FooService.php' => '<?php namespace App\\Service; class FooService {}',
+            'tests/Service/FooServiceTest.php' => '<?php namespace App\\Service; class FooServiceTest {}',
+        ]);
+
+        $detector = new Psr4NamespaceDetector($this->fixturesDir . '/composer.json');
+
+        // Both src/ and tests/ should resolve under App\ prefix
+        $srcFile = new SplFileInfo($this->fixturesDir . '/src/Service/FooService.php');
+        self::assertSame('App\\Service', $detector->detect($srcFile));
+
+        $testFile = new SplFileInfo($this->fixturesDir . '/tests/Service/FooServiceTest.php');
+        self::assertSame('App\\Service', $detector->detect($testFile));
+    }
+
+    #[Test]
     public function itReturnsEmptyStringForFileWithInvalidPath(): void
     {
         $this->createStructure([

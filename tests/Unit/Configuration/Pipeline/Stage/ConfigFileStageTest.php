@@ -178,6 +178,49 @@ final class ConfigFileStageTest extends TestCase
     }
 
     #[Test]
+    public function loadsAimdYmlWhenYamlDoesNotExist(): void
+    {
+        touch($this->tempDir . '/aimd.yml');
+
+        $loader = $this->createMock(ConfigLoaderInterface::class);
+        $loader->expects(self::once())
+            ->method('load')
+            ->with($this->tempDir . '/aimd.yml')
+            ->willReturn(['paths' => ['lib']]);
+
+        $stage = new ConfigFileStage($loader);
+        $context = new ConfigurationContext(new ArrayInput([]), $this->tempDir);
+
+        $layer = $stage->apply($context);
+
+        self::assertNotNull($layer);
+        self::assertSame('aimd.yml', $layer->source);
+        self::assertSame(['lib'], $layer->values['paths']);
+    }
+
+    #[Test]
+    public function prefersYamlOverYml(): void
+    {
+        // Both files exist — aimd.yaml should be preferred
+        touch($this->tempDir . '/aimd.yaml');
+        touch($this->tempDir . '/aimd.yml');
+
+        $loader = $this->createMock(ConfigLoaderInterface::class);
+        $loader->expects(self::once())
+            ->method('load')
+            ->with($this->tempDir . '/aimd.yaml')
+            ->willReturn(['paths' => ['src']]);
+
+        $stage = new ConfigFileStage($loader);
+        $context = new ConfigurationContext(new ArrayInput([]), $this->tempDir);
+
+        $layer = $stage->apply($context);
+
+        self::assertNotNull($layer);
+        self::assertSame('aimd.yaml', $layer->source);
+    }
+
+    #[Test]
     public function loadsFromExplicitConfigPath(): void
     {
         $configFile = $this->tempDir . '/custom-config.yaml';

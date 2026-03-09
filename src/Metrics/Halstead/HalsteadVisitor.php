@@ -178,8 +178,12 @@ final class HalsteadVisitor extends NodeVisitorAbstract implements ResettableVis
             return null;
         }
 
-        // Start of a closure
+        // Start of a closure (skip if inside anonymous class)
         if ($node instanceof Expr\Closure) {
+            if ($this->anonymousClassDepth > 0) {
+                return null;
+            }
+
             ++$this->closureCounter;
             $fqn = $this->buildClosureFqn();
             $closureName = '{closure#' . $this->closureCounter . '}';
@@ -188,8 +192,12 @@ final class HalsteadVisitor extends NodeVisitorAbstract implements ResettableVis
             return null;
         }
 
-        // Arrow function
+        // Arrow function (skip if inside anonymous class)
         if ($node instanceof Expr\ArrowFunction) {
+            if ($this->anonymousClassDepth > 0) {
+                return null;
+            }
+
             ++$this->closureCounter;
             $fqn = $this->buildClosureFqn();
             $closureName = '{closure#' . $this->closureCounter . '}';
@@ -222,12 +230,18 @@ final class HalsteadVisitor extends NodeVisitorAbstract implements ResettableVis
             return null;
         }
 
-        // End of function/closure/arrow function
-        if ($node instanceof Stmt\Function_
-            || $node instanceof Expr\Closure
-            || $node instanceof Expr\ArrowFunction
-        ) {
+        // End of function
+        if ($node instanceof Stmt\Function_) {
             $this->endMethod($node->getEndLine());
+
+            return null;
+        }
+
+        // End of closure/arrow function (skip if inside anonymous class — we didn't start it)
+        if ($node instanceof Expr\Closure || $node instanceof Expr\ArrowFunction) {
+            if ($this->anonymousClassDepth === 0) {
+                $this->endMethod($node->getEndLine());
+            }
 
             return null;
         }

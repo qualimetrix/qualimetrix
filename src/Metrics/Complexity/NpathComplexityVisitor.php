@@ -154,8 +154,12 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
             return null;
         }
 
-        // Start of a closure
+        // Start of a closure (skip if inside anonymous class)
         if ($node instanceof Closure) {
+            if ($this->anonymousClassDepth > 0) {
+                return null;
+            }
+
             ++$this->closureCounter;
             $fqn = $this->buildClosureFqn();
             $closureName = '{closure#' . $this->closureCounter . '}';
@@ -165,8 +169,12 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
             return null;
         }
 
-        // Start of an arrow function
+        // Start of an arrow function (skip if inside anonymous class)
         if ($node instanceof ArrowFunction) {
+            if ($this->anonymousClassDepth > 0) {
+                return null;
+            }
+
             ++$this->closureCounter;
             $fqn = $this->buildClosureFqn();
             $closureName = '{closure#' . $this->closureCounter . '}';
@@ -190,8 +198,16 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
             return null;
         }
 
-        if ($node instanceof Function_ || $node instanceof Closure || $node instanceof ArrowFunction) {
+        if ($node instanceof Function_) {
             $this->endMethod();
+
+            return null;
+        }
+
+        if ($node instanceof Closure || $node instanceof ArrowFunction) {
+            if ($this->anonymousClassDepth === 0) {
+                $this->endMethod();
+            }
 
             return null;
         }

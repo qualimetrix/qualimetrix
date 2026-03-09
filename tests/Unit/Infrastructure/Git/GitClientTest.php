@@ -10,6 +10,7 @@ use AiMessDetector\Infrastructure\Git\GitClient;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use ReflectionMethod;
 use RuntimeException;
 use Symfony\Component\Process\Process;
 
@@ -193,6 +194,44 @@ final class GitClientTest extends TestCase
         $this->assertSame('new.php', $files[0]->path);
         $this->assertSame(ChangeStatus::Renamed, $files[0]->status);
         $this->assertSame('old.php', $files[0]->oldPath);
+    }
+
+    #[Test]
+    public function itParsesCopiedFilesFromNameStatusOutput(): void
+    {
+        $this->initGitRepo();
+
+        $client = new GitClient($this->repoRoot);
+
+        // Use reflection to test parseNameStatus directly with copy format
+        $method = new ReflectionMethod($client, 'parseNameStatus');
+
+        $output = "C100\told.php\tnew.php\n";
+        $files = $method->invoke($client, $output);
+
+        $this->assertCount(1, $files);
+        $this->assertSame('new.php', $files[0]->path);
+        $this->assertSame(ChangeStatus::Copied, $files[0]->status);
+        $this->assertSame('old.php', $files[0]->oldPath);
+    }
+
+    #[Test]
+    public function itParsesCopiedFilesWithPartialSimilarity(): void
+    {
+        $this->initGitRepo();
+
+        $client = new GitClient($this->repoRoot);
+
+        $method = new ReflectionMethod($client, 'parseNameStatus');
+
+        // Copy with partial similarity (e.g., C075)
+        $output = "C075\tsrc/original.php\tsrc/copy.php\n";
+        $files = $method->invoke($client, $output);
+
+        $this->assertCount(1, $files);
+        $this->assertSame('src/copy.php', $files[0]->path);
+        $this->assertSame(ChangeStatus::Copied, $files[0]->status);
+        $this->assertSame('src/original.php', $files[0]->oldPath);
     }
 
     #[Test]

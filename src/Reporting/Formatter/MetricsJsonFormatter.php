@@ -38,10 +38,17 @@ final class MetricsJsonFormatter implements FormatterInterface
             foreach ($symbolTypes as $type) {
                 foreach ($report->metrics->all($type) as $symbolInfo) {
                     $bag = $report->metrics->get($symbolInfo->symbolPath);
+                    // Filter out internal derived-metric keys (contain ':')
+                    $rawMetrics = array_filter(
+                        $bag->all(),
+                        static fn(string $key): bool => !str_contains($key, ':'),
+                        \ARRAY_FILTER_USE_KEY,
+                    );
+
                     // Replace non-finite values (NAN/INF from edge-case calculations) with null for JSON compatibility
                     $metricsArray = array_map(
                         static fn(int|float $v): int|float|null => \is_int($v) || is_finite($v) ? $v : null,
-                        $bag->all(),
+                        $rawMetrics,
                     );
 
                     if ($metricsArray === []) {

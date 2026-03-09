@@ -149,8 +149,12 @@ final class CyclomaticComplexityVisitor extends NodeVisitorAbstract implements R
             return null;
         }
 
-        // Start of a closure or arrow function
+        // Start of a closure or arrow function (skip if inside anonymous class)
         if ($node instanceof Closure || $node instanceof ArrowFunction) {
+            if ($this->anonymousClassDepth > 0) {
+                return null;
+            }
+
             ++$this->closureCounter;
             $fqn = $this->buildClosureFqn();
             $closureName = '{closure#' . $this->closureCounter . '}';
@@ -176,8 +180,16 @@ final class CyclomaticComplexityVisitor extends NodeVisitorAbstract implements R
             return null;
         }
 
-        if ($node instanceof Function_ || $node instanceof Closure || $node instanceof ArrowFunction) {
+        if ($node instanceof Function_) {
             $this->endMethod();
+
+            return null;
+        }
+
+        if ($node instanceof Closure || $node instanceof ArrowFunction) {
+            if ($this->anonymousClassDepth === 0) {
+                $this->endMethod();
+            }
 
             return null;
         }
@@ -276,9 +288,9 @@ final class CyclomaticComplexityVisitor extends NodeVisitorAbstract implements R
             return 1;
         }
 
-        // Match arm: +1 for each non-default arm
+        // Match arm: +1 for each condition value (each is a separate decision path)
         if ($node instanceof MatchArm && $node->conds !== null && $node->conds !== []) {
-            return 1;
+            return \count($node->conds);
         }
 
         return 0;

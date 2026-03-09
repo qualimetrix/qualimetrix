@@ -131,6 +131,44 @@ final class InMemoryStorageTest extends TestCase
         $this->assertNull($this->storage->getFile('/src/Foo.php'));
     }
 
+    public function testTransactionRollbackRestoresFileSymbols(): void
+    {
+        // Store a file and metrics before transaction
+        $record = new FileRecord(
+            path: '/src/Before.php',
+            contentHash: 'before',
+            mtime: 1234567890,
+            size: 500,
+        );
+        $fileId = $this->storage->storeFile($record);
+        $classPath = SymbolPath::forClass('App', 'Before');
+        $this->storage->storeMetrics($classPath, ['loc' => 50], $fileId);
+
+        // Begin transaction and store more metrics
+        $this->storage->beginTransaction();
+
+        $record2 = new FileRecord(
+            path: '/src/During.php',
+            contentHash: 'during',
+            mtime: 1234567891,
+            size: 600,
+        );
+        $fileId2 = $this->storage->storeFile($record2);
+        $classPath2 = SymbolPath::forClass('App', 'During');
+        $this->storage->storeMetrics($classPath2, ['loc' => 100], $fileId2);
+
+        // Rollback
+        $this->storage->rollback();
+
+        // Pre-transaction metrics should still be accessible
+        $this->assertNotNull($this->storage->getMetrics($classPath));
+
+        // Remove original file — should cascade and delete its metrics
+        // This proves fileSymbols was restored correctly
+        $this->storage->removeFile('/src/Before.php');
+        $this->assertNull($this->storage->getMetrics($classPath));
+    }
+
     public function testTransactionCommit(): void
     {
         $this->storage->beginTransaction();
