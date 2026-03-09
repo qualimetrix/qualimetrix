@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Rules\CodeSmell;
 
+use AiMessDetector\Core\Metric\MetricName;
 use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\RuleCategory;
 use AiMessDetector\Core\Symbol\SymbolType;
@@ -29,13 +30,11 @@ final class UnusedPrivateRule extends AbstractRule
 {
     public const string NAME = 'code-smell.unused-private';
 
-    private const MESSAGES = [
-        'method' => 'Unused private method',
-        'property' => 'Unused private property',
-        'constant' => 'Unused private constant',
+    private const ENTRY_KEYS = [
+        MetricName::STRUCTURE_UNUSED_PRIVATE_METHOD => 'Unused private method',
+        MetricName::STRUCTURE_UNUSED_PRIVATE_PROPERTY => 'Unused private property',
+        MetricName::STRUCTURE_UNUSED_PRIVATE_CONSTANT => 'Unused private constant',
     ];
-
-    private const MEMBER_TYPES = ['method', 'property', 'constant'];
 
     public function getName(): string
     {
@@ -55,7 +54,7 @@ final class UnusedPrivateRule extends AbstractRule
     public function requires(): array
     {
         return [
-            'unusedPrivate.total',
+            MetricName::STRUCTURE_UNUSED_PRIVATE_TOTAL,
         ];
     }
 
@@ -69,25 +68,22 @@ final class UnusedPrivateRule extends AbstractRule
 
         foreach ($context->metrics->all(SymbolType::Class_) as $classInfo) {
             $metrics = $context->metrics->get($classInfo->symbolPath);
-            $total = (int) ($metrics->get('unusedPrivate.total') ?? 0);
+            $total = (int) ($metrics->get(MetricName::STRUCTURE_UNUSED_PRIVATE_TOTAL) ?? 0);
 
             if ($total === 0) {
                 continue;
             }
 
-            foreach (self::MEMBER_TYPES as $type) {
-                $countMetric = "unusedPrivate.{$type}.count";
-                $count = (int) ($metrics->get($countMetric) ?? 0);
-
-                for ($i = 0; $i < $count; $i++) {
-                    $line = (int) ($metrics->get("unusedPrivate.{$type}.line.{$i}") ?? 1);
+            foreach (self::ENTRY_KEYS as $entryKey => $message) {
+                foreach ($metrics->entries($entryKey) as $entry) {
+                    $line = (int) $entry['line'];
 
                     $violations[] = new Violation(
                         location: new Location($classInfo->file, $line),
                         symbolPath: $classInfo->symbolPath,
                         ruleName: $this->getName(),
                         violationCode: $this->getName(),
-                        message: self::MESSAGES[$type],
+                        message: $message,
                         severity: Severity::Warning,
                         metricValue: $total,
                     );

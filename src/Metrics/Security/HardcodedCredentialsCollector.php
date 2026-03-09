@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AiMessDetector\Metrics\Security;
 
 use AiMessDetector\Core\Metric\MetricBag;
+use AiMessDetector\Core\Metric\MetricName;
 use AiMessDetector\Metrics\AbstractCollector;
 use PhpParser\Node;
 use SplFileInfo;
@@ -14,24 +15,13 @@ use SplFileInfo;
  *
  * Detects hardcoded passwords, API keys, secrets, and other credentials.
  *
- * Metrics:
- * - security.hardcodedCredentials.count - total number of findings
- * - security.hardcodedCredentials.line.{i} - line number for each finding
+ * Entries (security.hardcodedCredentials):
+ * - line: int — line number of the finding
+ * - pattern: string — detection pattern type (variable, array_key, etc.)
  */
 final class HardcodedCredentialsCollector extends AbstractCollector
 {
     private const NAME = 'hardcoded-credentials';
-
-    /** @var array<string, int> */
-    public const PATTERN_CODES = [
-        'variable' => 1,
-        'array_key' => 2,
-        'class_const' => 3,
-        'define' => 4,
-        'property' => 5,
-        'parameter' => 6,
-        'enum_case' => 7,
-    ];
 
     public function __construct(
         SensitiveNameMatcher $matcher = new SensitiveNameMatcher(),
@@ -50,7 +40,7 @@ final class HardcodedCredentialsCollector extends AbstractCollector
      */
     public function provides(): array
     {
-        return ['security.hardcodedCredentials.count'];
+        return [MetricName::SECURITY_HARDCODED_CREDENTIALS];
     }
 
     /**
@@ -62,18 +52,14 @@ final class HardcodedCredentialsCollector extends AbstractCollector
 
         $locations = $this->visitor->getLocations();
         $bag = new MetricBag();
-        $bag = $bag->with('security.hardcodedCredentials.count', \count($locations));
 
-        foreach ($locations as $i => $location) {
-            $bag = $bag->with("security.hardcodedCredentials.line.{$i}", $location->line);
-            $bag = $bag->with("security.hardcodedCredentials.pattern.{$i}", self::encodePattern($location->pattern));
+        foreach ($locations as $location) {
+            $bag = $bag->withEntry(MetricName::SECURITY_HARDCODED_CREDENTIALS, [
+                'line' => $location->line,
+                'pattern' => $location->pattern,
+            ]);
         }
 
         return $bag;
-    }
-
-    private static function encodePattern(string $pattern): int
-    {
-        return self::PATTERN_CODES[$pattern] ?? 0;
     }
 }

@@ -63,7 +63,7 @@ final class IdenticalSubExpressionRule extends AbstractRule
         $requires = [];
 
         foreach (array_keys(self::FINDING_TYPES) as $type) {
-            $requires[] = "identicalSubExpression.{$type}.count";
+            $requires[] = "identicalSubExpression.{$type}";
         }
 
         return $requires;
@@ -92,14 +92,8 @@ final class IdenticalSubExpressionRule extends AbstractRule
             $metrics = $context->metrics->get($fileInfo->symbolPath);
 
             foreach (self::FINDING_TYPES as $type => $message) {
-                $count = (int) ($metrics->get("identicalSubExpression.{$type}.count") ?? 0);
-
-                if ($count === 0) {
-                    continue;
-                }
-
-                for ($i = 0; $i < $count; $i++) {
-                    $line = (int) ($metrics->get("identicalSubExpression.{$type}.line.{$i}") ?? 1);
+                foreach ($metrics->entries("identicalSubExpression.{$type}") as $entry) {
+                    $line = (int) $entry['line'];
 
                     $violations[] = new Violation(
                         location: new Location($fileInfo->file, $line),

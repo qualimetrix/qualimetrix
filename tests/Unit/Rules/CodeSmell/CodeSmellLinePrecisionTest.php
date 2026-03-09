@@ -23,7 +23,7 @@ use PHPUnit\Framework\TestCase;
 use SplFileInfo;
 
 /**
- * Regression test: CodeSmellCollector stores per-occurrence line data,
+ * Regression test: CodeSmellCollector stores per-occurrence entries via DataBag,
  * and AbstractCodeSmellRule creates per-occurrence violations with correct lines.
  *
  * Previously, the collector only stored counts and the rule created a single
@@ -70,17 +70,18 @@ PHP;
         $metrics = $collector->collect(new SplFileInfo(__FILE__), $ast);
 
         // The count should be 2
-        self::assertSame(2, $metrics->get('codeSmell.eval.count'));
+        self::assertSame(2, $metrics->entryCount('codeSmell.eval'));
 
-        // Collector now stores per-occurrence line data
+        // Collector now stores per-occurrence line data via entries
+        $entries = $metrics->entries('codeSmell.eval');
         self::assertSame(
             5,
-            $metrics->get('codeSmell.eval.line.0'),
+            $entries[0]['line'],
             'Collector should store line data for first eval() occurrence at line 5',
         );
         self::assertSame(
             16,
-            $metrics->get('codeSmell.eval.line.1'),
+            $entries[1]['line'],
             'Collector should store line data for second eval() occurrence at line 16',
         );
     }
@@ -127,22 +128,14 @@ PHP;
         self::assertSame(5, $locations[0]->line, 'Visitor correctly records line 5 for first eval()');
         self::assertSame(16, $locations[1]->line, 'Visitor correctly records line 16 for second eval()');
 
-        // The collector now also stores line data
+        // The collector stores line data via DataBag entries
         $metrics = $collector->collect(new SplFileInfo(__FILE__), $ast);
-        $allMetrics = $metrics->all();
 
-        $hasLineData = false;
-        foreach (array_keys($allMetrics) as $key) {
-            if (str_contains((string) $key, 'eval.line')) {
-                $hasLineData = true;
-                break;
-            }
-        }
+        self::assertSame(2, $metrics->entryCount('codeSmell.eval'));
 
-        self::assertTrue(
-            $hasLineData,
-            'CodeSmellCollector should propagate line data from visitor',
-        );
+        $entries = $metrics->entries('codeSmell.eval');
+        self::assertSame(5, $entries[0]['line']);
+        self::assertSame(16, $entries[1]['line']);
     }
 
     #[Test]
@@ -153,11 +146,10 @@ PHP;
         $symbolPath = SymbolPath::forFile('src/example.php');
         $fileInfo = new SymbolInfo($symbolPath, 'src/example.php', null);
 
-        // Simulate MetricBag WITH line data
+        // Simulate MetricBag with entry data
         $metricBag = (new MetricBag())
-            ->with('codeSmell.eval.count', 2)
-            ->with('codeSmell.eval.line.0', 5)
-            ->with('codeSmell.eval.line.1', 16);
+            ->withEntry('codeSmell.eval', ['line' => 5])
+            ->withEntry('codeSmell.eval', ['line' => 16]);
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -184,8 +176,7 @@ PHP;
         $fileInfo = new SymbolInfo($symbolPath, 'src/test.php', null);
 
         $metricBag = (new MetricBag())
-            ->with('codeSmell.eval.count', 1)
-            ->with('codeSmell.eval.line.0', 42);
+            ->withEntry('codeSmell.eval', ['line' => 42]);
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
         $repository->method('all')

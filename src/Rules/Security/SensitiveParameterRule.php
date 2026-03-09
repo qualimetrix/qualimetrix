@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Rules\Security;
 
+use AiMessDetector\Core\Metric\MetricName;
 use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\RuleCategory;
 use AiMessDetector\Core\Symbol\SymbolType;
@@ -41,7 +42,7 @@ final class SensitiveParameterRule extends AbstractRule
      */
     public function requires(): array
     {
-        return ['security.sensitiveParameter.count'];
+        return [MetricName::SECURITY_SENSITIVE_PARAMETER];
     }
 
     /**
@@ -65,19 +66,19 @@ final class SensitiveParameterRule extends AbstractRule
 
         foreach ($context->metrics->all(SymbolType::File) as $fileInfo) {
             $metrics = $context->metrics->get($fileInfo->symbolPath);
-            $count = (int) ($metrics->get('security.sensitiveParameter.count') ?? 0);
+            $entries = $metrics->entries(MetricName::SECURITY_SENSITIVE_PARAMETER);
 
-            if ($count === 0) {
+            if ($entries === []) {
                 continue;
             }
 
-            $severity = $this->options->getSeverity($count);
+            $severity = $this->options->getSeverity(\count($entries));
             if ($severity === null) {
                 continue;
             }
 
-            for ($i = 0; $i < $count; $i++) {
-                $line = (int) ($metrics->get("security.sensitiveParameter.line.{$i}") ?? 1);
+            foreach ($entries as $entry) {
+                $line = (int) $entry['line'];
 
                 $violations[] = new Violation(
                     location: new Location($fileInfo->file, $line),

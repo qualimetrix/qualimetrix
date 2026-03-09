@@ -59,7 +59,7 @@ final class CachedCollector
                     if ($cachedDeps !== null) {
                         // Full cache hit — no AST traversal needed
                         return new CollectionOutput(
-                            metrics: MetricBag::fromArray($cached),
+                            metrics: MetricBag::fromStorageArray($cached),
                             dependencies: $cachedDeps,
                         );
                     }
@@ -83,7 +83,7 @@ final class CachedCollector
 
         $this->storage->storeMetrics(
             SymbolPath::forFile($path),
-            $output->metrics->all(),
+            $output->metrics->toStorageArray(),
             $fileId,
         );
 

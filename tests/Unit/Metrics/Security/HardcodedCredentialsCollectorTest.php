@@ -29,7 +29,7 @@ final class HardcodedCredentialsCollectorTest extends TestCase
 
     public function testProvides(): void
     {
-        self::assertSame(['security.hardcodedCredentials.count'], $this->collector->provides());
+        self::assertSame(['security.hardcodedCredentials'], $this->collector->provides());
     }
 
     public function testCollectWithTwoFindings(): void
@@ -42,9 +42,10 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(2, $metrics->get('security.hardcodedCredentials.count'));
-        self::assertSame(2, $metrics->get('security.hardcodedCredentials.line.0'));
-        self::assertSame(3, $metrics->get('security.hardcodedCredentials.line.1'));
+        self::assertSame(2, $metrics->entryCount('security.hardcodedCredentials'));
+        $entries = $metrics->entries('security.hardcodedCredentials');
+        self::assertSame(2, $entries[0]['line']);
+        self::assertSame(3, $entries[1]['line']);
     }
 
     public function testCollectWithNoFindings(): void
@@ -57,7 +58,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(0, $metrics->get('security.hardcodedCredentials.count'));
+        self::assertSame(0, $metrics->entryCount('security.hardcodedCredentials'));
     }
 
     public function testReset(): void
@@ -70,7 +71,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code2);
 
-        self::assertSame(0, $metrics->get('security.hardcodedCredentials.count'));
+        self::assertSame(0, $metrics->entryCount('security.hardcodedCredentials'));
     }
 
     private function collectMetrics(string $code): MetricBag

@@ -44,11 +44,11 @@ final class IdenticalSubExpressionRuleTest extends TestCase
         $rule = new IdenticalSubExpressionRule(new IdenticalSubExpressionOptions());
         $requires = $rule->requires();
 
-        self::assertContains('identicalSubExpression.identical_operands.count', $requires);
-        self::assertContains('identicalSubExpression.duplicate_condition.count', $requires);
-        self::assertContains('identicalSubExpression.identical_ternary.count', $requires);
-        self::assertContains('identicalSubExpression.duplicate_match_arm.count', $requires);
-        self::assertContains('identicalSubExpression.duplicate_switch_case.count', $requires);
+        self::assertContains('identicalSubExpression.identical_operands', $requires);
+        self::assertContains('identicalSubExpression.duplicate_condition', $requires);
+        self::assertContains('identicalSubExpression.identical_ternary', $requires);
+        self::assertContains('identicalSubExpression.duplicate_match_arm', $requires);
+        self::assertContains('identicalSubExpression.duplicate_switch_case', $requires);
     }
 
     public function testGetOptionsClass(): void
@@ -71,7 +71,7 @@ final class IdenticalSubExpressionRuleTest extends TestCase
     {
         $rule = new IdenticalSubExpressionRule(new IdenticalSubExpressionOptions());
 
-        $metricBag = $this->createEmptyMetricBag();
+        $metricBag = new MetricBag();
         $context = $this->createContext($metricBag);
 
         self::assertSame([], $rule->analyze($context));
@@ -81,9 +81,8 @@ final class IdenticalSubExpressionRuleTest extends TestCase
     {
         $rule = new IdenticalSubExpressionRule(new IdenticalSubExpressionOptions());
 
-        $metricBag = $this->createEmptyMetricBag()
-            ->with('identicalSubExpression.identical_operands.count', 1)
-            ->with('identicalSubExpression.identical_operands.line.0', 10);
+        $metricBag = (new MetricBag())
+            ->withEntry('identicalSubExpression.identical_operands', ['line' => 10]);
 
         $context = $this->createContext($metricBag);
         $violations = $rule->analyze($context);
@@ -100,9 +99,8 @@ final class IdenticalSubExpressionRuleTest extends TestCase
     {
         $rule = new IdenticalSubExpressionRule(new IdenticalSubExpressionOptions());
 
-        $metricBag = $this->createEmptyMetricBag()
-            ->with('identicalSubExpression.duplicate_condition.count', 1)
-            ->with('identicalSubExpression.duplicate_condition.line.0', 5);
+        $metricBag = (new MetricBag())
+            ->withEntry('identicalSubExpression.duplicate_condition', ['line' => 5]);
 
         $context = $this->createContext($metricBag);
         $violations = $rule->analyze($context);
@@ -115,9 +113,8 @@ final class IdenticalSubExpressionRuleTest extends TestCase
     {
         $rule = new IdenticalSubExpressionRule(new IdenticalSubExpressionOptions());
 
-        $metricBag = $this->createEmptyMetricBag()
-            ->with('identicalSubExpression.identical_ternary.count', 1)
-            ->with('identicalSubExpression.identical_ternary.line.0', 3);
+        $metricBag = (new MetricBag())
+            ->withEntry('identicalSubExpression.identical_ternary', ['line' => 3]);
 
         $context = $this->createContext($metricBag);
         $violations = $rule->analyze($context);
@@ -130,9 +127,8 @@ final class IdenticalSubExpressionRuleTest extends TestCase
     {
         $rule = new IdenticalSubExpressionRule(new IdenticalSubExpressionOptions());
 
-        $metricBag = $this->createEmptyMetricBag()
-            ->with('identicalSubExpression.duplicate_match_arm.count', 1)
-            ->with('identicalSubExpression.duplicate_match_arm.line.0', 7);
+        $metricBag = (new MetricBag())
+            ->withEntry('identicalSubExpression.duplicate_match_arm', ['line' => 7]);
 
         $context = $this->createContext($metricBag);
         $violations = $rule->analyze($context);
@@ -145,12 +141,10 @@ final class IdenticalSubExpressionRuleTest extends TestCase
     {
         $rule = new IdenticalSubExpressionRule(new IdenticalSubExpressionOptions());
 
-        $metricBag = $this->createEmptyMetricBag()
-            ->with('identicalSubExpression.identical_operands.count', 2)
-            ->with('identicalSubExpression.identical_operands.line.0', 5)
-            ->with('identicalSubExpression.identical_operands.line.1', 8)
-            ->with('identicalSubExpression.duplicate_condition.count', 1)
-            ->with('identicalSubExpression.duplicate_condition.line.0', 12);
+        $metricBag = (new MetricBag())
+            ->withEntry('identicalSubExpression.identical_operands', ['line' => 5])
+            ->withEntry('identicalSubExpression.identical_operands', ['line' => 8])
+            ->withEntry('identicalSubExpression.duplicate_condition', ['line' => 12]);
 
         $context = $this->createContext($metricBag);
         $violations = $rule->analyze($context);
@@ -158,7 +152,7 @@ final class IdenticalSubExpressionRuleTest extends TestCase
         self::assertCount(3, $violations);
     }
 
-    // ── Options Tests ───────────────────────────────────────────────
+    // -- Options Tests ---------------------------------------------------
 
     public function testOptionsDefaultEnabled(): void
     {
@@ -196,17 +190,7 @@ final class IdenticalSubExpressionRuleTest extends TestCase
         self::assertNull($options->getSeverity(0));
     }
 
-    // ── Helpers ──────────────────────────────────────────────────────
-
-    private function createEmptyMetricBag(): MetricBag
-    {
-        return (new MetricBag())
-            ->with('identicalSubExpression.identical_operands.count', 0)
-            ->with('identicalSubExpression.duplicate_condition.count', 0)
-            ->with('identicalSubExpression.identical_ternary.count', 0)
-            ->with('identicalSubExpression.duplicate_match_arm.count', 0)
-            ->with('identicalSubExpression.duplicate_switch_case.count', 0);
-    }
+    // -- Helpers ----------------------------------------------------------
 
     private function createContext(MetricBag $metricBag): AnalysisContext
     {

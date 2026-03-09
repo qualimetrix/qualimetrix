@@ -36,7 +36,7 @@ final class BooleanArgumentRuleTest extends TestCase
     {
         $rule = new BooleanArgumentRule(new CodeSmellOptions());
 
-        self::assertSame(['codeSmell.boolean_argument.count'], $rule->requires());
+        self::assertSame(['codeSmell.boolean_argument'], $rule->requires());
     }
 
     #[Test]
@@ -66,7 +66,7 @@ final class BooleanArgumentRuleTest extends TestCase
         $symbolPath = SymbolPath::forFile('src/Clean.php');
         $fileInfo = new SymbolInfo($symbolPath, 'src/Clean.php', null);
 
-        $metricBag = (new MetricBag())->with('codeSmell.boolean_argument.count', 0);
+        $metricBag = new MetricBag();
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -89,9 +89,8 @@ final class BooleanArgumentRuleTest extends TestCase
         $fileInfo = new SymbolInfo($symbolPath, 'src/Smelly.php', null);
 
         $metricBag = (new MetricBag())
-            ->with('codeSmell.boolean_argument.count', 2)
-            ->with('codeSmell.boolean_argument.line.0', 10)
-            ->with('codeSmell.boolean_argument.line.1', 25);
+            ->withEntry('codeSmell.boolean_argument', ['line' => 10])
+            ->withEntry('codeSmell.boolean_argument', ['line' => 25]);
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
         $repository->method('all')

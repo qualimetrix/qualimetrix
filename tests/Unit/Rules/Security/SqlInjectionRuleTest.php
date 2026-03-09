@@ -35,7 +35,7 @@ final class SqlInjectionRuleTest extends TestCase
     {
         $rule = new SqlInjectionRule(new SecurityPatternOptions());
 
-        self::assertSame(['security.sql_injection.count'], $rule->requires());
+        self::assertSame(['security.sql_injection'], $rule->requires());
     }
 
     public function testDisabledReturnsNoViolations(): void
@@ -43,7 +43,7 @@ final class SqlInjectionRuleTest extends TestCase
         $rule = new SqlInjectionRule(new SecurityPatternOptions(enabled: false));
 
         $context = $this->createContext(
-            MetricBag::fromArray(['security.sql_injection.count' => 2]),
+            (new MetricBag())->withEntry('security.sql_injection', ['line' => 1, 'superglobal' => '']),
         );
 
         self::assertCount(0, $rule->analyze($context));
@@ -53,9 +53,7 @@ final class SqlInjectionRuleTest extends TestCase
     {
         $rule = new SqlInjectionRule(new SecurityPatternOptions());
 
-        $context = $this->createContext(
-            MetricBag::fromArray(['security.sql_injection.count' => 0]),
-        );
+        $context = $this->createContext(new MetricBag());
 
         self::assertCount(0, $rule->analyze($context));
     }
@@ -65,10 +63,8 @@ final class SqlInjectionRuleTest extends TestCase
         $rule = new SqlInjectionRule(new SecurityPatternOptions());
 
         $context = $this->createContext(
-            MetricBag::fromArray([
-                'security.sql_injection.count' => 1,
-                'security.sql_injection.line.0' => 15,
-            ]),
+            (new MetricBag())
+                ->withEntry('security.sql_injection', ['line' => 15, 'superglobal' => '']),
         );
 
         $violations = $rule->analyze($context);
@@ -85,12 +81,10 @@ final class SqlInjectionRuleTest extends TestCase
         $rule = new SqlInjectionRule(new SecurityPatternOptions());
 
         $context = $this->createContext(
-            MetricBag::fromArray([
-                'security.sql_injection.count' => 3,
-                'security.sql_injection.line.0' => 10,
-                'security.sql_injection.line.1' => 25,
-                'security.sql_injection.line.2' => 42,
-            ]),
+            (new MetricBag())
+                ->withEntry('security.sql_injection', ['line' => 10, 'superglobal' => ''])
+                ->withEntry('security.sql_injection', ['line' => 25, 'superglobal' => ''])
+                ->withEntry('security.sql_injection', ['line' => 42, 'superglobal' => '']),
         );
 
         $violations = $rule->analyze($context);

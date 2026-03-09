@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Rules\Security;
 
+use AiMessDetector\Core\Metric\MetricName;
 use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\RuleCategory;
 use AiMessDetector\Core\Symbol\SymbolType;
@@ -41,7 +42,7 @@ final class HardcodedCredentialsRule extends AbstractRule
      */
     public function requires(): array
     {
-        return ['security.hardcodedCredentials.count'];
+        return [MetricName::SECURITY_HARDCODED_CREDENTIALS];
     }
 
     /**
@@ -65,28 +66,28 @@ final class HardcodedCredentialsRule extends AbstractRule
 
         foreach ($context->metrics->all(SymbolType::File) as $fileInfo) {
             $metrics = $context->metrics->get($fileInfo->symbolPath);
-            $count = (int) ($metrics->get('security.hardcodedCredentials.count') ?? 0);
+            $entries = $metrics->entries(MetricName::SECURITY_HARDCODED_CREDENTIALS);
 
-            if ($count === 0) {
+            if ($entries === []) {
                 continue;
             }
 
-            $severity = $this->options->getSeverity($count);
+            $severity = $this->options->getSeverity(\count($entries));
             if ($severity === null) {
                 continue;
             }
 
-            for ($i = 0; $i < $count; $i++) {
-                $line = (int) ($metrics->get("security.hardcodedCredentials.line.{$i}") ?? 1);
-                $patternCode = (int) ($metrics->get("security.hardcodedCredentials.pattern.{$i}") ?? 0);
-                $message = match ($patternCode) {
-                    1 => 'Hardcoded credential in variable assignment',
-                    2 => 'Hardcoded credential in array key',
-                    3 => 'Hardcoded credential in class constant',
-                    4 => 'Hardcoded credential in define() call',
-                    5 => 'Hardcoded credential in property default',
-                    6 => 'Hardcoded credential in parameter default',
-                    7 => 'Hardcoded credential in enum case',
+            foreach ($entries as $entry) {
+                $line = (int) $entry['line'];
+                $pattern = (string) $entry['pattern'];
+                $message = match ($pattern) {
+                    'variable' => 'Hardcoded credential in variable assignment',
+                    'array_key' => 'Hardcoded credential in array key',
+                    'class_const' => 'Hardcoded credential in class constant',
+                    'define' => 'Hardcoded credential in define() call',
+                    'property' => 'Hardcoded credential in property default',
+                    'parameter' => 'Hardcoded credential in parameter default',
+                    'enum_case' => 'Hardcoded credential in enum case',
                     default => 'Hardcoded credential found',
                 };
                 $message .= ' — use environment variables or a secrets manager';

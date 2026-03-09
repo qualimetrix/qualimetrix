@@ -29,7 +29,7 @@ final class SensitiveParameterCollectorTest extends TestCase
 
     public function testProvides(): void
     {
-        self::assertSame(['security.sensitiveParameter.count'], $this->collector->provides());
+        self::assertSame(['security.sensitiveParameter'], $this->collector->provides());
     }
 
     public function testCollectWithFindings(): void
@@ -41,9 +41,11 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(2, $metrics->get('security.sensitiveParameter.count'));
-        self::assertNotNull($metrics->get('security.sensitiveParameter.line.0'));
-        self::assertNotNull($metrics->get('security.sensitiveParameter.line.1'));
+        self::assertSame(2, $metrics->entryCount('security.sensitiveParameter'));
+        $entries = $metrics->entries('security.sensitiveParameter');
+        self::assertCount(2, $entries);
+        self::assertArrayHasKey('line', $entries[0]);
+        self::assertArrayHasKey('line', $entries[1]);
     }
 
     public function testCollectWithNoFindings(): void
@@ -55,7 +57,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(0, $metrics->get('security.sensitiveParameter.count'));
+        self::assertSame(0, $metrics->entryCount('security.sensitiveParameter'));
     }
 
     public function testCollectWithAttribute(): void
@@ -67,7 +69,7 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        self::assertSame(0, $metrics->get('security.sensitiveParameter.count'));
+        self::assertSame(0, $metrics->entryCount('security.sensitiveParameter'));
     }
 
     public function testReset(): void
@@ -80,7 +82,7 @@ PHP;
         $code2 = '<?php function foo(string $name) {}';
         $metrics = $this->collectMetrics($code2);
 
-        self::assertSame(0, $metrics->get('security.sensitiveParameter.count'));
+        self::assertSame(0, $metrics->entryCount('security.sensitiveParameter'));
     }
 
     private function collectMetrics(string $code): MetricBag

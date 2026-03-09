@@ -12,10 +12,10 @@ use SplFileInfo;
 /**
  * Collects code smell metrics for files.
  *
- * Detects various code smells and stores counts for each type.
+ * Detects various code smells and stores entries for each type.
  *
- * Metrics:
- * - codeSmell.{type}.count - number of occurrences
+ * Entries (codeSmell.{type}):
+ * - line: int — line number of the occurrence
  *
  * Types: goto, eval, exit, empty_catch, debug_code, error_suppression, count_in_loop, superglobals, boolean_argument
  */
@@ -53,8 +53,7 @@ final class CodeSmellCollector extends AbstractCollector
         $metrics = [];
 
         foreach (self::SMELL_TYPES as $type) {
-            $metrics[] = "codeSmell.{$type}.count";
-            // Line data keys (codeSmell.{type}.line.{i}) are dynamic
+            $metrics[] = "codeSmell.{$type}";
         }
 
         return $metrics;
@@ -71,12 +70,11 @@ final class CodeSmellCollector extends AbstractCollector
 
         foreach (self::SMELL_TYPES as $type) {
             $locations = $this->visitor->getLocationsByType($type);
-            $count = \count($locations);
 
-            $bag = $bag->with("codeSmell.{$type}.count", $count);
-
-            foreach ($locations as $i => $location) {
-                $bag = $bag->with("codeSmell.{$type}.line.{$i}", $location->line);
+            foreach ($locations as $location) {
+                $bag = $bag->withEntry("codeSmell.{$type}", [
+                    'line' => $location->line,
+                ]);
             }
         }
 

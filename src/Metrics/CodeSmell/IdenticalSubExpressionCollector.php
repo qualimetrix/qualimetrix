@@ -15,9 +15,8 @@ use SplFileInfo;
  * Detects patterns like identical operands ($a === $a), duplicate conditions
  * in if/elseif chains, identical ternary branches, and duplicate match arm conditions.
  *
- * Metrics per finding type:
- * - identicalSubExpression.{type}.count - number of findings of this type
- * - identicalSubExpression.{type}.line.{i} - line number of each finding
+ * Entries (identicalSubExpression.{type}):
+ * - line: int — line number of each finding
  */
 final class IdenticalSubExpressionCollector extends AbstractCollector
 {
@@ -49,7 +48,7 @@ final class IdenticalSubExpressionCollector extends AbstractCollector
         $metrics = [];
 
         foreach (self::FINDING_TYPES as $type) {
-            $metrics[] = "identicalSubExpression.{$type}.count";
+            $metrics[] = "identicalSubExpression.{$type}";
         }
 
         return $metrics;
@@ -65,20 +64,10 @@ final class IdenticalSubExpressionCollector extends AbstractCollector
         $findings = $this->visitor->getFindings();
         $bag = new MetricBag();
 
-        // Group findings by type
-        $grouped = [];
-
         foreach ($findings as $finding) {
-            $grouped[$finding->type][] = $finding;
-        }
-
-        foreach (self::FINDING_TYPES as $type) {
-            $typedFindings = $grouped[$type] ?? [];
-            $bag = $bag->with("identicalSubExpression.{$type}.count", \count($typedFindings));
-
-            foreach ($typedFindings as $i => $finding) {
-                $bag = $bag->with("identicalSubExpression.{$type}.line.{$i}", $finding->line);
-            }
+            $bag = $bag->withEntry("identicalSubExpression.{$finding->type}", [
+                'line' => $finding->line,
+            ]);
         }
 
         return $bag;
