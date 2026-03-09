@@ -8,6 +8,8 @@ use AiMessDetector\Core\Symbol\SymbolPath;
 use AiMessDetector\Core\Violation\Location;
 use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
+use AiMessDetector\Reporting\Debt\DebtCalculator;
+use AiMessDetector\Reporting\Debt\RemediationTimeRegistry;
 use AiMessDetector\Reporting\Formatter\TextVerboseFormatter;
 use AiMessDetector\Reporting\FormatterContext;
 use AiMessDetector\Reporting\GroupBy;
@@ -24,7 +26,7 @@ final class TextVerboseFormatterTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->formatter = new TextVerboseFormatter();
+        $this->formatter = new TextVerboseFormatter(new DebtCalculator(new RemediationTimeRegistry()));
         $this->plainContext = new FormatterContext(useColor: false, groupBy: GroupBy::File);
     }
 
@@ -51,6 +53,7 @@ final class TextVerboseFormatterTest extends TestCase
         self::assertStringContainsString('AI Mess Detector Report', $output);
         self::assertStringContainsString('No violations found.', $output);
         self::assertStringContainsString('Files: 42 analyzed, 0 skipped | Errors: 0 | Warnings: 0 | Time: 0.15s', $output);
+        self::assertStringContainsString('Technical debt: 0min', $output);
     }
 
     public function testFormatGroupedByFile(): void
@@ -334,6 +337,7 @@ final class TextVerboseFormatterTest extends TestCase
         $output = $this->formatter->format($report, $this->plainContext);
 
         self::assertStringContainsString('AI Mess Detector Report', $output);
+        self::assertStringContainsString('Technical debt: 0min', $output);
     }
 
     public function testSortingWithinFileGroup(): void
@@ -369,6 +373,60 @@ final class TextVerboseFormatterTest extends TestCase
         self::assertNotFalse($posError);
         self::assertNotFalse($posWarning);
         self::assertLessThan($posWarning, $posError);
+    }
+
+    public function testDebtBreakdownOutput(): void
+    {
+        $report = ReportBuilder::create()
+            ->addViolation(new Violation(
+                location: new Location('src/Foo.php', 10),
+                symbolPath: SymbolPath::forMethod('App', 'Foo', 'doWork'),
+                ruleName: 'complexity.cyclomatic',
+                violationCode: 'complexity.cyclomatic',
+                message: 'Cyclomatic complexity is 25',
+                severity: Severity::Error,
+                metricValue: 25,
+            ))
+            ->addViolation(new Violation(
+                location: new Location('src/Foo.php', 20),
+                symbolPath: SymbolPath::forMethod('App', 'Foo', 'process'),
+                ruleName: 'complexity.cyclomatic',
+                violationCode: 'complexity.cyclomatic',
+                message: 'Cyclomatic complexity is 15',
+                severity: Severity::Warning,
+                metricValue: 15,
+            ))
+            ->addViolation(new Violation(
+                location: new Location('src/Bar.php', 5),
+                symbolPath: SymbolPath::forClass('App', 'Bar'),
+                ruleName: 'design.lcom',
+                violationCode: 'design.lcom',
+                message: 'LCOM is 5',
+                severity: Severity::Warning,
+                metricValue: 5,
+            ))
+            ->filesAnalyzed(2)
+            ->filesSkipped(0)
+            ->duration(0.05)
+            ->build();
+
+        $output = $this->formatter->format($report, $this->plainContext);
+
+        // Total debt: 2 × 30min (cyclomatic) + 1 × 45min (lcom) = 105min = 1h 45min
+        self::assertStringContainsString('Technical debt: 1h 45min', $output);
+
+        // Per-rule breakdown sorted by debt descending
+        // complexity.cyclomatic: 60min (2 violations × 30min)
+        self::assertStringContainsString('complexity.cyclomatic: 1h (2 violations', $output);
+        // design.lcom: 45min (1 violation × 45min)
+        self::assertStringContainsString('design.lcom: 45min (1 violation', $output);
+
+        // complexity.cyclomatic should appear before design.lcom (60 > 45)
+        $posCyclomatic = strpos($output, 'complexity.cyclomatic:');
+        $posLcom = strpos($output, 'design.lcom:');
+        self::assertNotFalse($posCyclomatic);
+        self::assertNotFalse($posLcom);
+        self::assertLessThan($posLcom, $posCyclomatic);
     }
 
     private function buildMultiFileReport(): Report

@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- ClassRank metric — PageRank-based class importance ranking via dependency graph (`coupling.class-rank` rule)
+- Security pattern rules: `security.sql-injection`, `security.xss`, `security.command-injection` — AST-based detection of direct superglobal flows
+- `security.sensitive-parameter` rule — detects parameters with sensitive names missing `#[\SensitiveParameter]` attribute
+- Technical debt reporting — remediation time estimates per violation, aggregated debt in text and JSON output
 - `DependencyGraphInterface` and `Dependency` VO now use `SymbolPath` instead of raw string FQNs
 - `SymbolPath::forProject()` factory for project-level metrics, separated from global namespace
 - `AnalysisContext::$cycles` typed property replaces untyped `additionalData` side-channel

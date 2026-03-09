@@ -32,6 +32,10 @@ Reporting/
 ├── GroupBy.php                             # Grouping mode enum (None, File, Rule, Severity)
 ├── AnsiColor.php                           # Lightweight ANSI color wrapper
 ├── ViolationSorter.php                     # Sorting/grouping utility for violations
+├── Debt/
+│   ├── RemediationTimeRegistry.php        # Rule name -> estimated remediation minutes
+│   ├── DebtSummary.php                    # Value Object: total, per-file, per-rule debt
+│   └── DebtCalculator.php                 # Calculates DebtSummary from violations
 └── Formatter/
     ├── FormatterInterface.php              # Formatter contract
     ├── FormatterRegistryInterface.php      # Registry contract

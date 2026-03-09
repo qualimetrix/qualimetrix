@@ -67,13 +67,13 @@ Each domain has its own `README.md` with detailed structure, classes, and contra
 ### Metrics and Rules
 - **Complexity**: Cyclomatic (CCN), Cognitive Complexity, NPATH Complexity
 - **Maintainability**: Halstead, Maintainability Index
-- **Coupling**: CBO (Coupling Between Objects), Distance from Main Sequence, Instability, Abstractness
+- **Coupling**: CBO (Coupling Between Objects), Distance from Main Sequence, Instability, Abstractness, ClassRank (PageRank)
 - **Cohesion**: TCC/LCC (Tight/Loose Class Cohesion), LCOM4, WMC (Weighted Methods per Class)
 - **Size**: LOC, Class Count, Namespace Size, Property Count, Method Count
 - **Design**: DIT (Depth of Inheritance Tree), NOC (Number of Children), Type Coverage
 - **Architecture**: Circular Dependency Detection, Dependency Graph Export (DOT)
 - **Code Smell**: Boolean Argument, Debug Code, Empty Catch, eval, exit/die, goto, Superglobals, Error Suppression, Count in Loop, Long Parameter List, Unreachable Code
-- **Security**: Hardcoded Credentials
+- **Security**: Hardcoded Credentials, SQL Injection, XSS, Command Injection, Sensitive Parameter Detection
 
 ### Infrastructure
 - **Parallel Processing**: Multi-worker file processing via amphp/parallel
@@ -84,6 +84,7 @@ Each domain has its own `README.md` with detailed structure, classes, and contra
 - **Multiple Formats**: Text, JSON, Metrics JSON, Checkstyle, SARIF, GitLab Code Quality
 - **Caching**: AST caching for faster repeated runs
 - **Progress Reporting**: Progress bar, PSR-3 logging
+- **Technical Debt**: Remediation time estimation, debt summary in reports
 - **Git Hooks**: Automatic pre-commit checks
 
 ---

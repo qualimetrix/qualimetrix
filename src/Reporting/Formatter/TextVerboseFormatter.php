@@ -7,6 +7,8 @@ namespace AiMessDetector\Reporting\Formatter;
 use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
 use AiMessDetector\Reporting\AnsiColor;
+use AiMessDetector\Reporting\Debt\DebtCalculator;
+use AiMessDetector\Reporting\Debt\DebtSummary;
 use AiMessDetector\Reporting\FormatterContext;
 use AiMessDetector\Reporting\GroupBy;
 use AiMessDetector\Reporting\Report;
@@ -23,6 +25,10 @@ final class TextVerboseFormatter implements FormatterInterface
 {
     private const HEADER = 'AI Mess Detector Report';
     private const SEPARATOR = '──────────────────────────────────────────────────';
+
+    public function __construct(
+        private readonly DebtCalculator $debtCalculator,
+    ) {}
 
     public function format(Report $report, FormatterContext $context): string
     {
@@ -51,6 +57,10 @@ final class TextVerboseFormatter implements FormatterInterface
         // Summary
         $lines[] = self::SEPARATOR;
         $lines[] = $this->formatSummary($report, $color);
+
+        // Technical debt breakdown
+        $debt = $this->debtCalculator->calculate($report->violations);
+        $lines[] = $this->formatDebtBreakdown($debt, $report);
 
         return implode("\n", $lines) . "\n";
     }
@@ -183,6 +193,37 @@ final class TextVerboseFormatter implements FormatterInterface
             : (string) $violation->metricValue;
 
         return ' ' . $color->bold('(' . $formatted . ')');
+    }
+
+    private function formatDebtBreakdown(DebtSummary $debt, Report $report): string
+    {
+        $lines = [\sprintf('Technical debt: %s', $debt->formatTotal())];
+
+        // Count violations per rule for the breakdown
+        /** @var array<string, int> $violationCounts */
+        $violationCounts = [];
+        foreach ($report->violations as $violation) {
+            $violationCounts[$violation->ruleName] = ($violationCounts[$violation->ruleName] ?? 0) + 1;
+        }
+
+        // Sort by debt descending
+        $perRule = $debt->perRule;
+        arsort($perRule);
+
+        foreach ($perRule as $ruleName => $minutes) {
+            $count = $violationCounts[$ruleName] ?? 0;
+            $perViolation = $count > 0 ? intdiv($minutes, $count) : 0;
+            $lines[] = \sprintf(
+                '  %s: %s (%d %s × %s)',
+                $ruleName,
+                DebtSummary::formatMinutes($minutes),
+                $count,
+                $count === 1 ? 'violation' : 'violations',
+                DebtSummary::formatMinutes($perViolation),
+            );
+        }
+
+        return implode("\n", $lines);
     }
 
     private function formatSummary(Report $report, AnsiColor $color): string

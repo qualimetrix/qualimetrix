@@ -8,6 +8,8 @@ use AiMessDetector\Core\Symbol\SymbolPath;
 use AiMessDetector\Core\Violation\Location;
 use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
+use AiMessDetector\Reporting\Debt\DebtCalculator;
+use AiMessDetector\Reporting\Debt\RemediationTimeRegistry;
 use AiMessDetector\Reporting\Formatter\TextFormatter;
 use AiMessDetector\Reporting\FormatterContext;
 use AiMessDetector\Reporting\GroupBy;
@@ -23,7 +25,7 @@ final class TextFormatterTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->formatter = new TextFormatter();
+        $this->formatter = new TextFormatter(new DebtCalculator(new RemediationTimeRegistry()));
         $this->plainContext = new FormatterContext(useColor: false);
     }
 
@@ -47,7 +49,7 @@ final class TextFormatterTest extends TestCase
 
         $output = $this->formatter->format($report, $this->plainContext);
 
-        self::assertSame("0 error(s), 0 warning(s) in 42 file(s)\n", $output);
+        self::assertSame("0 error(s), 0 warning(s) in 42 file(s)\nTechnical debt: 0min\n", $output);
     }
 
     public function testFormatSingleViolation(): void
@@ -71,13 +73,14 @@ final class TextFormatterTest extends TestCase
 
         $lines = explode("\n", rtrim($output, "\n"));
 
-        self::assertCount(3, $lines);
+        self::assertCount(4, $lines);
         self::assertSame(
             'src/Service/UserService.php:42: error[cyclomatic-complexity]: Cyclomatic complexity of 25 exceeds threshold (UserService::calculateDiscount)',
             $lines[0],
         );
         self::assertSame('', $lines[1]);
         self::assertSame('1 error(s), 0 warning(s) in 1 file(s)', $lines[2]);
+        self::assertStringStartsWith('Technical debt:', $lines[3]);
         self::assertStringEndsWith("\n", $output);
     }
 
@@ -111,11 +114,12 @@ final class TextFormatterTest extends TestCase
 
         $lines = explode("\n", rtrim($output, "\n"));
 
-        self::assertCount(4, $lines);
+        self::assertCount(5, $lines);
         self::assertStringStartsWith('src/Service/UserService.php:42: error[cyclomatic-complexity]:', $lines[0]);
         self::assertStringStartsWith('src/Service/UserService.php:120: warning[cyclomatic-complexity]:', $lines[1]);
         self::assertSame('', $lines[2]);
         self::assertSame('1 error(s), 1 warning(s) in 1 file(s)', $lines[3]);
+        self::assertStringStartsWith('Technical debt:', $lines[4]);
         self::assertStringEndsWith("\n", $output);
     }
 

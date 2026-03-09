@@ -8,6 +8,7 @@ use AiMessDetector\Core\Symbol\SymbolType;
 use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
 use AiMessDetector\Reporting\AnsiColor;
+use AiMessDetector\Reporting\Debt\DebtCalculator;
 use AiMessDetector\Reporting\FormatterContext;
 use AiMessDetector\Reporting\GroupBy;
 use AiMessDetector\Reporting\Report;
@@ -27,6 +28,10 @@ use AiMessDetector\Reporting\ViolationSorter;
  */
 final class TextFormatter implements FormatterInterface
 {
+    public function __construct(
+        private readonly DebtCalculator $debtCalculator,
+    ) {}
+
     public function format(Report $report, FormatterContext $context): string
     {
         $color = new AnsiColor($context->useColor);
@@ -43,6 +48,10 @@ final class TextFormatter implements FormatterInterface
             $lines[] = '';
         }
         $lines[] = $this->formatSummary($report, $color);
+
+        // Technical debt line (dimmed to visually distinguish from summary)
+        $debt = $this->debtCalculator->calculate($report->violations);
+        $lines[] = $color->dim(\sprintf('Technical debt: %s', $debt->formatTotal()));
 
         return implode("\n", $lines) . "\n";
     }

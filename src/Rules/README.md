@@ -34,6 +34,7 @@ Rules are analysis rule implementations for static analysis. Rules are **complet
 | **coupling.instability**             | Coupling        | Hierarchical (Class, Namespace) | Instability (Ca/Ce)             | warning: 0.8, error: 0.95          |
 | **coupling.cbo**                     | Coupling        | Hierarchical (Class, Namespace) | Coupling Between Objects        | warning: ..., error: ...           |
 | **coupling.distance**                | Coupling        | Simple                          | Distance from Main Sequence     | warning: 0.3, error: 0.5           |
+| **coupling.class-rank**              | Coupling        | Simple                          | ClassRank (PageRank on deps)    | warning: 0.02, error: 0.05         |
 | **architecture.circular-dependency** | Architecture    | Simple                          | Circular dependencies           | enabled: true                      |
 | **code-smell.boolean-argument**      | CodeSmell       | Simple                          | Boolean arguments in signatures | enabled: true                      |
 | **code-smell.count-in-loop**         | CodeSmell       | Simple                          | count() calls in loops          | enabled: true                      |
@@ -48,6 +49,10 @@ Rules are analysis rule implementations for static analysis. Rules are **complet
 | **code-smell.unreachable-code**      | CodeSmell       | Simple                          | Unreachable code detection      | warning: 1, error: 2               |
 | **design.type-coverage**             | Design          | Simple                          | Type declaration coverage       | param/return/property: 80%/50%     |
 | **security.hardcoded-credentials**   | Security        | Simple                          | Hardcoded credentials           | enabled: true                      |
+| **security.sql-injection**           | Security        | Simple                          | SQL injection patterns          | enabled: true                      |
+| **security.xss**                     | Security        | Simple                          | XSS patterns                    | enabled: true                      |
+| **security.command-injection**       | Security        | Simple                          | Command injection patterns      | enabled: true                      |
+| **security.sensitive-parameter**     | Security        | Simple                          | Missing #[\SensitiveParameter]  | enabled: true                      |
 
 ---
 
@@ -461,6 +466,79 @@ rules:
 --disable-rule=security                        # Disable all security.* rules
 --only-rule=security.hardcoded-credentials     # Enable only this rule
 ```
+
+---
+
+### Security Pattern Rules
+
+Three rules that detect common security vulnerabilities by analyzing data flow from user input to dangerous sinks.
+
+| Rule                           | Description                                              | Severity |
+| ------------------------------ | -------------------------------------------------------- | -------- |
+| **security.sql-injection**     | SQL injection via string concat/interpolation in queries | Error    |
+| **security.xss**               | XSS via unescaped output (echo, print)                   | Error    |
+| **security.command-injection** | Command injection via shell functions with variables     | Error    |
+
+All three extend `AbstractSecurityPatternRule` and use `SecurityPatternOptions` (single `enabled` option).
+
+**Configuration:**
+```yaml
+rules:
+  security.sql-injection:
+    enabled: true
+  security.xss:
+    enabled: true
+  security.command-injection:
+    enabled: true
+```
+
+**CLI:**
+```bash
+--disable-rule=security.sql-injection     # Disable a specific pattern rule
+--disable-rule=security                   # Disable all security.* rules
+```
+
+---
+
+### Sensitive Parameter Rule
+
+**Name:** `security.sensitive-parameter` | **Category:** Security | **Type:** Simple
+
+Detects function/method parameters with sensitive names (e.g., `$password`, `$secret`, `$apiKey`) that lack the `#[\SensitiveParameter]` attribute (PHP 8.2+). This attribute prevents sensitive values from appearing in stack traces.
+
+**Severity:** Warning
+
+**Configuration:**
+```yaml
+rules:
+  security.sensitive-parameter:
+    enabled: true
+```
+
+**CLI:**
+```bash
+--disable-rule=security.sensitive-parameter
+```
+
+---
+
+## ClassRank Rule
+
+**Name:** `coupling.class-rank` | **Category:** Coupling | **Type:** Simple
+
+Checks ClassRank — a PageRank-based metric computed on the dependency graph. High ClassRank indicates a class is heavily depended upon (directly and transitively), making it a critical coupling point.
+
+**Default:** warning: 0.02, error: 0.05
+
+**Configuration:**
+```yaml
+rules:
+  coupling.class-rank:
+    warning: 0.02
+    error: 0.05
+```
+
+**CLI:** `--class-rank-warning=0.02 --class-rank-error=0.05`
 
 ---
 

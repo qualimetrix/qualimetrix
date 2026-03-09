@@ -6,6 +6,8 @@ namespace AiMessDetector\Reporting\Formatter;
 
 use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
+use AiMessDetector\Reporting\Debt\DebtCalculator;
+use AiMessDetector\Reporting\Debt\DebtSummary;
 use AiMessDetector\Reporting\FormatterContext;
 use AiMessDetector\Reporting\GroupBy;
 use AiMessDetector\Reporting\Report;
@@ -20,9 +22,15 @@ final class JsonFormatter implements FormatterInterface
     private const VERSION = '1.0.0';
     private const PACKAGE = 'aimd';
 
+    public function __construct(
+        private readonly DebtCalculator $debtCalculator,
+    ) {}
+
     public function format(Report $report, FormatterContext $context): string
     {
         $files = $this->groupViolationsByFile($report->violations, $context);
+
+        $debt = $this->debtCalculator->calculate($report->violations);
 
         $data = [
             'version' => self::VERSION,
@@ -37,6 +45,7 @@ final class JsonFormatter implements FormatterInterface
                 'warnings' => $report->warningCount,
                 'duration' => round($report->duration, 3),
             ],
+            'debt' => $this->formatDebt($debt, $report, $context),
         ];
 
         $json = json_encode($data, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR);
@@ -52,6 +61,46 @@ final class JsonFormatter implements FormatterInterface
     public function getDefaultGroupBy(): GroupBy
     {
         return GroupBy::None;
+    }
+
+    /**
+     * Formats debt summary as an associative array for JSON output.
+     *
+     * @return array{total: string, totalMinutes: int, perRule: array<string, array{minutes: int, violations: int, formatted: string}>, perFile: array<string, array{minutes: int, formatted: string}>}
+     */
+    private function formatDebt(DebtSummary $debt, Report $report, FormatterContext $context): array
+    {
+        // Count violations per rule
+        /** @var array<string, int> $violationCounts */
+        $violationCounts = [];
+        foreach ($report->violations as $violation) {
+            $violationCounts[$violation->ruleName] = ($violationCounts[$violation->ruleName] ?? 0) + 1;
+        }
+
+        $perRule = [];
+        foreach ($debt->perRule as $ruleName => $minutes) {
+            $perRule[$ruleName] = [
+                'minutes' => $minutes,
+                'violations' => $violationCounts[$ruleName] ?? 0,
+                'formatted' => DebtSummary::formatMinutes($minutes),
+            ];
+        }
+
+        $perFile = [];
+        foreach ($debt->perFile as $filePath => $minutes) {
+            $relativePath = $context->relativizePath($filePath);
+            $perFile[$relativePath] = [
+                'minutes' => $minutes,
+                'formatted' => DebtSummary::formatMinutes($minutes),
+            ];
+        }
+
+        return [
+            'total' => $debt->formatTotal(),
+            'totalMinutes' => $debt->totalMinutes,
+            'perRule' => $perRule,
+            'perFile' => $perFile,
+        ];
     }
 
     /**

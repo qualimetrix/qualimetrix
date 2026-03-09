@@ -65,6 +65,14 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
     {
         $loader = new PhpFileLoader($container, new FileLocator($this->srcDir));
 
+        // Auto-register debt calculation services from src/Reporting/Debt/*
+        $debtPrototype = (new Definition())->setAutoconfigured(true)->setAutowired(true);
+        $loader->registerClasses(
+            $debtPrototype,
+            'AiMessDetector\\Reporting\\Debt\\',
+            $this->srcDir . '/Reporting/Debt/*',
+        );
+
         // Auto-register all formatters from src/Reporting/Formatter/*
         // Classes implementing FormatterInterface will be auto-tagged via registerForAutoconfiguration
         $prototype = (new Definition())->setAutoconfigured(true)->setAutowired(true);

@@ -44,10 +44,15 @@ use AiMessDetector\Rules\Complexity\CognitiveComplexityRule;
 use AiMessDetector\Rules\Complexity\ComplexityRule;
 use AiMessDetector\Rules\Complexity\NpathComplexityRule;
 use AiMessDetector\Rules\Coupling\CboRule;
+use AiMessDetector\Rules\Coupling\ClassRankRule;
 use AiMessDetector\Rules\Coupling\DistanceRule;
 use AiMessDetector\Rules\Coupling\InstabilityRule;
 use AiMessDetector\Rules\Design\TypeCoverageRule;
 use AiMessDetector\Rules\Maintainability\MaintainabilityRule;
+use AiMessDetector\Rules\Security\CommandInjectionRule;
+use AiMessDetector\Rules\Security\SensitiveParameterRule;
+use AiMessDetector\Rules\Security\SqlInjectionRule;
+use AiMessDetector\Rules\Security\XssRule;
 use AiMessDetector\Rules\Size\ClassCountRule;
 use AiMessDetector\Rules\Size\MethodCountRule;
 use AiMessDetector\Rules\Size\PropertyCountRule;
@@ -363,6 +368,11 @@ final class ContainerFactoryTest extends TestCase
             UnreachableCodeRule::class,
             TypeCoverageRule::class,
             \AiMessDetector\Rules\Security\HardcodedCredentialsRule::class,
+            ClassRankRule::class,
+            SqlInjectionRule::class,
+            XssRule::class,
+            CommandInjectionRule::class,
+            SensitiveParameterRule::class,
         ];
 
         $registeredClasses = $registry->getClasses();

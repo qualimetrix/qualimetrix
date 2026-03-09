@@ -8,6 +8,8 @@ use AiMessDetector\Core\Symbol\SymbolPath;
 use AiMessDetector\Core\Violation\Location;
 use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
+use AiMessDetector\Reporting\Debt\DebtCalculator;
+use AiMessDetector\Reporting\Debt\RemediationTimeRegistry;
 use AiMessDetector\Reporting\Formatter\JsonFormatter;
 use AiMessDetector\Reporting\FormatterContext;
 use AiMessDetector\Reporting\GroupBy;
@@ -25,7 +27,7 @@ final class JsonFormatterTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->formatter = new JsonFormatter();
+        $this->formatter = new JsonFormatter(new DebtCalculator(new RemediationTimeRegistry()));
     }
 
     public function testGetNameReturnsJson(): void
@@ -68,6 +70,13 @@ final class JsonFormatterTest extends TestCase
         self::assertSame(0, $data['summary']['errors']);
         self::assertSame(0, $data['summary']['warnings']);
         self::assertSame(0.15, $data['summary']['duration']);
+
+        // Debt section
+        self::assertArrayHasKey('debt', $data);
+        self::assertSame('0min', $data['debt']['total']);
+        self::assertSame(0, $data['debt']['totalMinutes']);
+        self::assertSame([], $data['debt']['perRule']);
+        self::assertSame([], $data['debt']['perFile']);
     }
 
     public function testFormatReportWithViolations(): void
@@ -129,6 +138,13 @@ final class JsonFormatterTest extends TestCase
         self::assertSame(2, $data['summary']['violations']);
         self::assertSame(1, $data['summary']['errors']);
         self::assertSame(1, $data['summary']['warnings']);
+
+        // Debt
+        self::assertArrayHasKey('debt', $data);
+        self::assertGreaterThan(0, $data['debt']['totalMinutes']);
+        self::assertArrayHasKey('cyclomatic-complexity', $data['debt']['perRule']);
+        self::assertSame(2, $data['debt']['perRule']['cyclomatic-complexity']['violations']);
+        self::assertArrayHasKey('src/Service/UserService.php', $data['debt']['perFile']);
     }
 
     public function testFormatGroupsViolationsByFile(): void

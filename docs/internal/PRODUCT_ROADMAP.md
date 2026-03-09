@@ -103,7 +103,7 @@ These fill the biggest competitive gaps.
 - **Effort:** Medium
 - **Value:** High
 
-### 3.3 ClassRank (PageRank) Metric
+### 3.3 ClassRank (PageRank) Metric ✅ DONE
 
 - **Metric:** `classRank` — applies Google's PageRank algorithm to the dependency graph
 - **Implementation:** AIMD already has the dependency graph; PageRank is a simple iterative algorithm
@@ -111,7 +111,7 @@ These fill the biggest competitive gaps.
 - **Type:** `GlobalContextCollectorInterface` collector
 - **Effort:** Low-Medium
 
-### 3.4 Basic Security Pattern Detection
+### 3.4 Basic Security Pattern Detection ✅ DONE
 
 - **Rule group:** `security.*`
 - **Rules:**
@@ -138,7 +138,7 @@ These fill the biggest competitive gaps.
 - AST comparison within expressions
 - Medium effort, medium value
 
-### 4.3 Technical Debt Estimation
+### 4.3 Technical Debt Estimation ✅ DONE
 - Assign remediation time metadata to each rule (e.g., "15 min to fix")
 - Aggregate and report total "debt" per file/namespace/project
 - Low effort (metadata on rules), medium value
