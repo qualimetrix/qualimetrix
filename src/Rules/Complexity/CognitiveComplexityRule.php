@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Rules\Complexity;
 
+use AiMessDetector\Core\Metric\MetricName;
 use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\HierarchicalRuleInterface;
 use AiMessDetector\Core\Rule\RuleCategory;
@@ -23,7 +24,6 @@ use AiMessDetector\Rules\AbstractRule;
 final class CognitiveComplexityRule extends AbstractRule implements HierarchicalRuleInterface
 {
     public const string NAME = 'complexity.cognitive';
-    private const string METRIC_COGNITIVE = 'cognitive';
 
     public function getName(): string
     {
@@ -45,7 +45,7 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
      */
     public function requires(): array
     {
-        return [self::METRIC_COGNITIVE];
+        return [MetricName::COMPLEXITY_COGNITIVE];
     }
 
     /**
@@ -130,7 +130,7 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
 
         foreach ($context->metrics->all(SymbolType::Method) as $methodInfo) {
             $metrics = $context->metrics->get($methodInfo->symbolPath);
-            $cognitive = $metrics->get(self::METRIC_COGNITIVE);
+            $cognitive = $metrics->get(MetricName::COMPLEXITY_COGNITIVE);
 
             if ($cognitive === null) {
                 continue;
@@ -170,7 +170,7 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
 
         foreach ($context->metrics->all(SymbolType::Class_) as $classInfo) {
             $metrics = $context->metrics->get($classInfo->symbolPath);
-            $maxCognitive = $metrics->get('cognitive.max');
+            $maxCognitive = $metrics->get(MetricName::COMPLEXITY_COGNITIVE . '.max');
 
             if ($maxCognitive === null) {
                 continue;

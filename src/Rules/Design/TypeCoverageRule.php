@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Rules\Design;
 
+use AiMessDetector\Core\Metric\MetricName;
 use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\RuleCategory;
 use AiMessDetector\Core\Symbol\SymbolType;
@@ -44,7 +45,7 @@ final class TypeCoverageRule extends AbstractRule
      */
     public function requires(): array
     {
-        return ['typeCoverage'];
+        return [MetricName::TYPE_COVERAGE_PARAM];
     }
 
     /**
@@ -85,9 +86,9 @@ final class TypeCoverageRule extends AbstractRule
             $metrics = $context->metrics->get($classInfo->symbolPath);
 
             // Check parameter type coverage
-            $paramTotal = $metrics->get('typeCoverage.paramTotal');
+            $paramTotal = $metrics->get(MetricName::TYPE_COVERAGE_PARAM_TOTAL);
             if ($paramTotal !== null && (int) $paramTotal > 0) {
-                $paramCoverage = (float) ($metrics->get('typeCoverage.param') ?? 0.0);
+                $paramCoverage = (float) ($metrics->get(MetricName::TYPE_COVERAGE_PARAM) ?? 0.0);
                 $paramSeverity = $this->options->getParamSeverity($paramCoverage);
 
                 if ($paramSeverity !== null) {
@@ -112,9 +113,9 @@ final class TypeCoverageRule extends AbstractRule
             }
 
             // Check return type coverage
-            $returnTotal = $metrics->get('typeCoverage.returnTotal');
+            $returnTotal = $metrics->get(MetricName::TYPE_COVERAGE_RETURN_TOTAL);
             if ($returnTotal !== null && (int) $returnTotal > 0) {
-                $returnCoverage = (float) ($metrics->get('typeCoverage.return') ?? 0.0);
+                $returnCoverage = (float) ($metrics->get(MetricName::TYPE_COVERAGE_RETURN) ?? 0.0);
                 $returnSeverity = $this->options->getReturnSeverity($returnCoverage);
 
                 if ($returnSeverity !== null) {
@@ -139,9 +140,9 @@ final class TypeCoverageRule extends AbstractRule
             }
 
             // Check property type coverage
-            $propertyTotal = $metrics->get('typeCoverage.propertyTotal');
+            $propertyTotal = $metrics->get(MetricName::TYPE_COVERAGE_PROPERTY_TOTAL);
             if ($propertyTotal !== null && (int) $propertyTotal > 0) {
-                $propertyCoverage = (float) ($metrics->get('typeCoverage.property') ?? 0.0);
+                $propertyCoverage = (float) ($metrics->get(MetricName::TYPE_COVERAGE_PROPERTY) ?? 0.0);
                 $propertySeverity = $this->options->getPropertySeverity($propertyCoverage);
 
                 if ($propertySeverity !== null) {

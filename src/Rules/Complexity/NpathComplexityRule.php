@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Rules\Complexity;
 
+use AiMessDetector\Core\Metric\MetricName;
 use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\HierarchicalRuleInterface;
 use AiMessDetector\Core\Rule\RuleCategory;
@@ -26,7 +27,6 @@ use AiMessDetector\Rules\AbstractRule;
 final class NpathComplexityRule extends AbstractRule implements HierarchicalRuleInterface
 {
     public const string NAME = 'complexity.npath';
-    private const string METRIC_NPATH = 'npath';
     private const int MAX_DISPLAY = 1_000_000_000;
 
     public function getName(): string
@@ -49,7 +49,7 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
      */
     public function requires(): array
     {
-        return [self::METRIC_NPATH];
+        return [MetricName::COMPLEXITY_NPATH];
     }
 
     /**
@@ -134,7 +134,7 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
 
         foreach ($context->metrics->all(SymbolType::Method) as $methodInfo) {
             $metrics = $context->metrics->get($methodInfo->symbolPath);
-            $npath = $metrics->get(self::METRIC_NPATH);
+            $npath = $metrics->get(MetricName::COMPLEXITY_NPATH);
 
             if ($npath === null) {
                 continue;
@@ -175,7 +175,7 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
 
         foreach ($context->metrics->all(SymbolType::Class_) as $classInfo) {
             $metrics = $context->metrics->get($classInfo->symbolPath);
-            $maxNpath = $metrics->get('npath.max');
+            $maxNpath = $metrics->get(MetricName::COMPLEXITY_NPATH . '.max');
 
             if ($maxNpath === null) {
                 continue;

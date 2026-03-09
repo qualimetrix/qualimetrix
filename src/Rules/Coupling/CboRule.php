@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AiMessDetector\Rules\Coupling;
 
 use AiMessDetector\Core\Metric\MetricBag;
+use AiMessDetector\Core\Metric\MetricName;
 use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\HierarchicalRuleInterface;
 use AiMessDetector\Core\Rule\RuleCategory;
@@ -27,9 +28,6 @@ use AiMessDetector\Rules\AbstractRule;
 final class CboRule extends AbstractRule implements HierarchicalRuleInterface
 {
     public const string NAME = 'coupling.cbo';
-    private const string METRIC_CBO = 'cbo';
-    private const string METRIC_CA = 'ca';
-    private const string METRIC_CE = 'ce';
 
     public function getName(): string
     {
@@ -51,7 +49,7 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
      */
     public function requires(): array
     {
-        return [self::METRIC_CBO, self::METRIC_CA, self::METRIC_CE];
+        return [MetricName::COUPLING_CBO, MetricName::COUPLING_CA, MetricName::COUPLING_CE];
     }
 
     /**
@@ -137,7 +135,7 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
         foreach ($context->metrics->all(SymbolType::Class_) as $classInfo) {
             $metrics = $context->metrics->get($classInfo->symbolPath);
 
-            $cbo = $metrics->get(self::METRIC_CBO);
+            $cbo = $metrics->get(MetricName::COUPLING_CBO);
             if ($cbo === null) {
                 continue;
             }
@@ -174,12 +172,12 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
             $metrics = $context->metrics->get($nsInfo->symbolPath);
 
             // Skip namespaces with too few classes
-            $classCount = (int) ($metrics->get('classCount.sum') ?? 0);
+            $classCount = (int) ($metrics->get(MetricName::SIZE_CLASS_COUNT . '.sum') ?? 0);
             if ($classCount < $namespaceOptions->minClassCount) {
                 continue;
             }
 
-            $cbo = $metrics->get(self::METRIC_CBO);
+            $cbo = $metrics->get(MetricName::COUPLING_CBO);
             if ($cbo === null) {
                 continue;
             }
@@ -204,8 +202,8 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
         ClassCboOptions|NamespaceCboOptions $options,
         RuleLevel $level,
     ): ?Violation {
-        $ca = (int) ($metrics->get(self::METRIC_CA) ?? 0);
-        $ce = (int) ($metrics->get(self::METRIC_CE) ?? 0);
+        $ca = (int) ($metrics->get(MetricName::COUPLING_CA) ?? 0);
+        $ce = (int) ($metrics->get(MetricName::COUPLING_CE) ?? 0);
 
         $violationCode = self::NAME . ($level === RuleLevel::Namespace_ ? '.namespace' : '.class');
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Rules\Structure;
 
+use AiMessDetector\Core\Metric\MetricName;
 use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\RuleCategory;
 use AiMessDetector\Core\Symbol\SymbolType;
@@ -25,7 +26,6 @@ use AiMessDetector\Rules\AbstractRule;
 final class NocRule extends AbstractRule
 {
     public const string NAME = 'design.noc';
-    private const string METRIC_NOC = 'noc';
 
     public function getName(): string
     {
@@ -47,7 +47,7 @@ final class NocRule extends AbstractRule
      */
     public function requires(): array
     {
-        return [self::METRIC_NOC];
+        return [MetricName::STRUCTURE_NOC];
     }
 
     /**
@@ -63,7 +63,7 @@ final class NocRule extends AbstractRule
 
         foreach ($context->metrics->all(SymbolType::Class_) as $classInfo) {
             $metrics = $context->metrics->get($classInfo->symbolPath);
-            $noc = $metrics->get(self::METRIC_NOC);
+            $noc = $metrics->get(MetricName::STRUCTURE_NOC);
 
             if ($noc === null || $noc === 0) {
                 continue;

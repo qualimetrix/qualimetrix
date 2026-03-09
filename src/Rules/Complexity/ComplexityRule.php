@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Rules\Complexity;
 
+use AiMessDetector\Core\Metric\MetricName;
 use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\HierarchicalRuleInterface;
 use AiMessDetector\Core\Rule\RuleCategory;
@@ -23,7 +24,6 @@ use AiMessDetector\Rules\AbstractRule;
 final class ComplexityRule extends AbstractRule implements HierarchicalRuleInterface
 {
     public const string NAME = 'complexity.cyclomatic';
-    private const string METRIC_CCN = 'ccn';
 
     public function getName(): string
     {
@@ -45,7 +45,7 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
      */
     public function requires(): array
     {
-        return [self::METRIC_CCN];
+        return [MetricName::COMPLEXITY_CCN];
     }
 
     /**
@@ -128,7 +128,7 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
 
         foreach ($context->metrics->all(SymbolType::Method) as $methodInfo) {
             $metrics = $context->metrics->get($methodInfo->symbolPath);
-            $ccn = $metrics->get(self::METRIC_CCN);
+            $ccn = $metrics->get(MetricName::COMPLEXITY_CCN);
 
             if ($ccn === null) {
                 continue;
@@ -168,7 +168,7 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
 
         foreach ($context->metrics->all(SymbolType::Class_) as $classInfo) {
             $metrics = $context->metrics->get($classInfo->symbolPath);
-            $maxCcn = $metrics->get('ccn.max');
+            $maxCcn = $metrics->get(MetricName::COMPLEXITY_CCN . '.max');
 
             if ($maxCcn === null) {
                 continue;

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Rules\Size;
 
+use AiMessDetector\Core\Metric\MetricName;
 use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\RuleCategory;
 use AiMessDetector\Core\Symbol\SymbolType;
@@ -42,7 +43,7 @@ final class ClassCountRule extends AbstractRule
      */
     public function requires(): array
     {
-        return ['classCount'];
+        return [MetricName::SIZE_CLASS_COUNT];
     }
 
     /**
@@ -79,7 +80,7 @@ final class ClassCountRule extends AbstractRule
             $metrics = $context->metrics->get($namespaceInfo->symbolPath);
 
             // Get aggregated classCount (sum from all files in namespace)
-            $classCount = (int) ($metrics->get('classCount.sum') ?? 0);
+            $classCount = (int) ($metrics->get(MetricName::SIZE_CLASS_COUNT . '.sum') ?? 0);
 
             if ($classCount === 0) {
                 continue;

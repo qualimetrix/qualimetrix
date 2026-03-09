@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Rules\CodeSmell;
 
+use AiMessDetector\Core\Metric\MetricName;
 use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\RuleCategory;
 use AiMessDetector\Core\Symbol\SymbolInfo;
@@ -43,7 +44,7 @@ final class LongParameterListRule extends AbstractRule
      */
     public function requires(): array
     {
-        return ['parameterCount'];
+        return [MetricName::CODE_SMELL_PARAMETER_COUNT];
     }
 
     /**
@@ -95,7 +96,7 @@ final class LongParameterListRule extends AbstractRule
         $options = $this->options;
 
         $metrics = $context->metrics->get($symbolInfo->symbolPath);
-        $parameterCount = $metrics->get('parameterCount');
+        $parameterCount = $metrics->get(MetricName::CODE_SMELL_PARAMETER_COUNT);
 
         if ($parameterCount === null) {
             return null;

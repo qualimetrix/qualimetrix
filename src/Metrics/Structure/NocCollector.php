@@ -9,6 +9,7 @@ use AiMessDetector\Core\Dependency\DependencyType;
 use AiMessDetector\Core\Metric\AggregationStrategy;
 use AiMessDetector\Core\Metric\GlobalContextCollectorInterface;
 use AiMessDetector\Core\Metric\MetricDefinition;
+use AiMessDetector\Core\Metric\MetricName;
 use AiMessDetector\Core\Metric\MetricRepositoryInterface;
 use AiMessDetector\Core\Metric\SymbolLevel;
 use AiMessDetector\Core\Symbol\SymbolPath;
@@ -37,7 +38,6 @@ use AiMessDetector\Core\Symbol\SymbolType;
 final class NocCollector implements GlobalContextCollectorInterface
 {
     private const NAME = 'noc';
-    private const METRIC_NOC = 'noc';
 
     public function getName(): string
     {
@@ -51,14 +51,14 @@ final class NocCollector implements GlobalContextCollectorInterface
 
     public function provides(): array
     {
-        return [self::METRIC_NOC];
+        return [MetricName::STRUCTURE_NOC];
     }
 
     public function getMetricDefinitions(): array
     {
         return [
             new MetricDefinition(
-                name: self::METRIC_NOC,
+                name: MetricName::STRUCTURE_NOC,
                 collectedAt: SymbolLevel::Class_,
                 aggregations: [
                     SymbolLevel::Namespace_->value => [
@@ -96,7 +96,7 @@ final class NocCollector implements GlobalContextCollectorInterface
             $metrics = $repository->get($parentPath);
 
             // Add NOC metric
-            $metrics = $metrics->with(self::METRIC_NOC, $noc);
+            $metrics = $metrics->with(MetricName::STRUCTURE_NOC, $noc);
 
             // Update repository
             $repository->add($parentPath, $metrics, '', 0);
@@ -111,8 +111,8 @@ final class NocCollector implements GlobalContextCollectorInterface
 
             $metrics = $repository->get($classSymbol->symbolPath);
 
-            if (!$metrics->has(self::METRIC_NOC)) {
-                $metrics = $metrics->with(self::METRIC_NOC, 0);
+            if (!$metrics->has(MetricName::STRUCTURE_NOC)) {
+                $metrics = $metrics->with(MetricName::STRUCTURE_NOC, 0);
                 $repository->add($classSymbol->symbolPath, $metrics, $classSymbol->file, $classSymbol->line);
             }
         }

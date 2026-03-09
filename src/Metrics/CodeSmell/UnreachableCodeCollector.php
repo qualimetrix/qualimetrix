@@ -9,6 +9,7 @@ use AiMessDetector\Core\Metric\MethodMetricsProviderInterface;
 use AiMessDetector\Core\Metric\MethodWithMetrics;
 use AiMessDetector\Core\Metric\MetricBag;
 use AiMessDetector\Core\Metric\MetricDefinition;
+use AiMessDetector\Core\Metric\MetricName;
 use AiMessDetector\Core\Metric\SymbolLevel;
 use AiMessDetector\Metrics\AbstractCollector;
 use Override;
@@ -24,8 +25,6 @@ use SplFileInfo;
 final class UnreachableCodeCollector extends AbstractCollector implements MethodMetricsProviderInterface
 {
     private const NAME = 'unreachable-code';
-    private const METRIC_COUNT = 'unreachableCode';
-    private const METRIC_FIRST_LINE = 'unreachableCode.firstLine';
 
     public function __construct()
     {
@@ -42,7 +41,7 @@ final class UnreachableCodeCollector extends AbstractCollector implements Method
      */
     public function provides(): array
     {
-        return [self::METRIC_COUNT, self::METRIC_FIRST_LINE];
+        return [MetricName::CODE_SMELL_UNREACHABLE_CODE, MetricName::CODE_SMELL_UNREACHABLE_CODE_FIRST_LINE];
     }
 
     /**
@@ -55,11 +54,11 @@ final class UnreachableCodeCollector extends AbstractCollector implements Method
         \assert($this->visitor instanceof UnreachableCodeVisitor);
 
         foreach ($this->visitor->getUnreachableCounts() as $fqn => $count) {
-            $bag = $bag->with(self::METRIC_COUNT . ':' . $fqn, $count);
+            $bag = $bag->with(MetricName::CODE_SMELL_UNREACHABLE_CODE . ':' . $fqn, $count);
         }
 
         foreach ($this->visitor->getFirstUnreachableLines() as $fqn => $line) {
-            $bag = $bag->with(self::METRIC_FIRST_LINE . ':' . $fqn, $line);
+            $bag = $bag->with(MetricName::CODE_SMELL_UNREACHABLE_CODE_FIRST_LINE . ':' . $fqn, $line);
         }
 
         return $bag;
@@ -83,7 +82,7 @@ final class UnreachableCodeCollector extends AbstractCollector implements Method
     {
         return [
             new MetricDefinition(
-                name: self::METRIC_COUNT,
+                name: MetricName::CODE_SMELL_UNREACHABLE_CODE,
                 collectedAt: SymbolLevel::Method,
                 aggregations: [
                     SymbolLevel::Class_->value => [
@@ -98,7 +97,7 @@ final class UnreachableCodeCollector extends AbstractCollector implements Method
                 ],
             ),
             new MetricDefinition(
-                name: self::METRIC_FIRST_LINE,
+                name: MetricName::CODE_SMELL_UNREACHABLE_CODE_FIRST_LINE,
                 collectedAt: SymbolLevel::Method,
                 aggregations: [],
             ),

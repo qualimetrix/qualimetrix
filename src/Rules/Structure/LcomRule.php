@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Rules\Structure;
 
+use AiMessDetector\Core\Metric\MetricName;
 use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\RuleCategory;
 use AiMessDetector\Core\Symbol\SymbolType;
@@ -22,7 +23,6 @@ use AiMessDetector\Rules\AbstractRule;
 final class LcomRule extends AbstractRule
 {
     public const string NAME = 'design.lcom';
-    private const string METRIC_LCOM = 'lcom';
 
     public function getName(): string
     {
@@ -44,7 +44,7 @@ final class LcomRule extends AbstractRule
      */
     public function requires(): array
     {
-        return [self::METRIC_LCOM, 'methodCount', 'isReadonly'];
+        return [MetricName::STRUCTURE_LCOM, MetricName::STRUCTURE_METHOD_COUNT, MetricName::STRUCTURE_IS_READONLY];
     }
 
     /**
@@ -62,17 +62,17 @@ final class LcomRule extends AbstractRule
             $metrics = $context->metrics->get($classInfo->symbolPath);
 
             // Skip readonly classes if configured
-            if ($this->options->excludeReadonly && $metrics->get('isReadonly') === 1) {
+            if ($this->options->excludeReadonly && $metrics->get(MetricName::STRUCTURE_IS_READONLY) === 1) {
                 continue;
             }
 
             // Skip classes with too few methods
-            $methodCount = (int) ($metrics->get('methodCount') ?? 0);
+            $methodCount = (int) ($metrics->get(MetricName::STRUCTURE_METHOD_COUNT) ?? 0);
             if ($methodCount < $this->options->minMethods) {
                 continue;
             }
 
-            $lcom = $metrics->get(self::METRIC_LCOM);
+            $lcom = $metrics->get(MetricName::STRUCTURE_LCOM);
 
             if ($lcom === null) {
                 continue;

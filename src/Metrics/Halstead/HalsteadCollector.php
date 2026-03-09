@@ -9,6 +9,7 @@ use AiMessDetector\Core\Metric\MethodMetricsProviderInterface;
 use AiMessDetector\Core\Metric\MethodWithMetrics;
 use AiMessDetector\Core\Metric\MetricBag;
 use AiMessDetector\Core\Metric\MetricDefinition;
+use AiMessDetector\Core\Metric\MetricName;
 use AiMessDetector\Core\Metric\SymbolLevel;
 use AiMessDetector\Metrics\AbstractCollector;
 use Override;
@@ -73,12 +74,6 @@ final class HalsteadCollector extends AbstractCollector implements MethodMetrics
 {
     private const NAME = 'halstead';
 
-    private const METRIC_VOLUME = 'halstead.volume';
-    private const METRIC_DIFFICULTY = 'halstead.difficulty';
-    private const METRIC_EFFORT = 'halstead.effort';
-    private const METRIC_BUGS = 'halstead.bugs';
-    private const METRIC_TIME = 'halstead.time';
-
     public function __construct()
     {
         $this->visitor = new HalsteadVisitor();
@@ -95,11 +90,11 @@ final class HalsteadCollector extends AbstractCollector implements MethodMetrics
     public function provides(): array
     {
         return [
-            self::METRIC_VOLUME,
-            self::METRIC_DIFFICULTY,
-            self::METRIC_EFFORT,
-            self::METRIC_BUGS,
-            self::METRIC_TIME,
+            MetricName::HALSTEAD_VOLUME,
+            MetricName::HALSTEAD_DIFFICULTY,
+            MetricName::HALSTEAD_EFFORT,
+            MetricName::HALSTEAD_BUGS,
+            MetricName::HALSTEAD_TIME,
         ];
     }
 
@@ -119,12 +114,12 @@ final class HalsteadCollector extends AbstractCollector implements MethodMetrics
             $metrics = $method->metrics;
 
             $bag = $bag
-                ->with(self::METRIC_VOLUME . ':' . $fqn, $metrics->get('halstead.volume') ?? 0.0)
-                ->with(self::METRIC_DIFFICULTY . ':' . $fqn, $metrics->get('halstead.difficulty') ?? 0.0)
-                ->with(self::METRIC_EFFORT . ':' . $fqn, $metrics->get('halstead.effort') ?? 0.0)
-                ->with(self::METRIC_BUGS . ':' . $fqn, $metrics->get('halstead.bugs') ?? 0.0)
-                ->with(self::METRIC_TIME . ':' . $fqn, $metrics->get('halstead.time') ?? 0.0)
-                ->with('methodLoc:' . $fqn, $metrics->get('methodLoc') ?? 0);
+                ->with(MetricName::HALSTEAD_VOLUME . ':' . $fqn, $metrics->get('halstead.volume') ?? 0.0)
+                ->with(MetricName::HALSTEAD_DIFFICULTY . ':' . $fqn, $metrics->get('halstead.difficulty') ?? 0.0)
+                ->with(MetricName::HALSTEAD_EFFORT . ':' . $fqn, $metrics->get('halstead.effort') ?? 0.0)
+                ->with(MetricName::HALSTEAD_BUGS . ':' . $fqn, $metrics->get('halstead.bugs') ?? 0.0)
+                ->with(MetricName::HALSTEAD_TIME . ':' . $fqn, $metrics->get('halstead.time') ?? 0.0)
+                ->with(MetricName::HALSTEAD_METHOD_LOC . ':' . $fqn, $metrics->get(MetricName::HALSTEAD_METHOD_LOC) ?? 0);
         }
 
         return $bag;
@@ -163,22 +158,22 @@ final class HalsteadCollector extends AbstractCollector implements MethodMetrics
 
         return [
             new MetricDefinition(
-                name: self::METRIC_VOLUME,
+                name: MetricName::HALSTEAD_VOLUME,
                 collectedAt: SymbolLevel::Method,
                 aggregations: $aggregations,
             ),
             new MetricDefinition(
-                name: self::METRIC_DIFFICULTY,
+                name: MetricName::HALSTEAD_DIFFICULTY,
                 collectedAt: SymbolLevel::Method,
                 aggregations: $aggregations,
             ),
             new MetricDefinition(
-                name: self::METRIC_EFFORT,
+                name: MetricName::HALSTEAD_EFFORT,
                 collectedAt: SymbolLevel::Method,
                 aggregations: $aggregations,
             ),
             new MetricDefinition(
-                name: self::METRIC_BUGS,
+                name: MetricName::HALSTEAD_BUGS,
                 collectedAt: SymbolLevel::Method,
                 aggregations: [
                     SymbolLevel::Class_->value => [
@@ -195,7 +190,7 @@ final class HalsteadCollector extends AbstractCollector implements MethodMetrics
                 ],
             ),
             new MetricDefinition(
-                name: self::METRIC_TIME,
+                name: MetricName::HALSTEAD_TIME,
                 collectedAt: SymbolLevel::Method,
                 aggregations: [
                     SymbolLevel::Class_->value => [

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Rules\Coupling;
 
+use AiMessDetector\Core\Metric\MetricName;
 use AiMessDetector\Core\Namespace_\ProjectNamespaceResolverInterface;
 use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\RuleCategory;
@@ -36,9 +37,6 @@ use AiMessDetector\Rules\AbstractRule;
 final class DistanceRule extends AbstractRule
 {
     public const string NAME = 'coupling.distance';
-    private const string METRIC_DISTANCE = 'distance';
-    private const string METRIC_ABSTRACTNESS = 'abstractness';
-    private const string METRIC_INSTABILITY = 'instability';
 
     public function __construct(
         RuleOptionsInterface $options,
@@ -67,7 +65,7 @@ final class DistanceRule extends AbstractRule
      */
     public function requires(): array
     {
-        return [self::METRIC_DISTANCE, self::METRIC_ABSTRACTNESS, self::METRIC_INSTABILITY];
+        return [MetricName::COUPLING_DISTANCE, MetricName::COUPLING_ABSTRACTNESS, MetricName::COUPLING_INSTABILITY];
     }
 
     /**
@@ -97,12 +95,12 @@ final class DistanceRule extends AbstractRule
             $metrics = $context->metrics->get($nsInfo->symbolPath);
 
             // Skip namespaces with too few classes for meaningful analysis
-            $classCount = (int) ($metrics->get('classCount.sum') ?? 0);
+            $classCount = (int) ($metrics->get(MetricName::SIZE_CLASS_COUNT . '.sum') ?? 0);
             if ($classCount < $this->options->minClassCount) {
                 continue;
             }
 
-            $distance = $metrics->get(self::METRIC_DISTANCE);
+            $distance = $metrics->get(MetricName::COUPLING_DISTANCE);
 
             if ($distance === null) {
                 continue;
@@ -112,8 +110,8 @@ final class DistanceRule extends AbstractRule
             $severity = $this->options->getSeverity($distanceValue);
 
             if ($severity !== null) {
-                $abstractness = (float) ($metrics->get(self::METRIC_ABSTRACTNESS) ?? 0.0);
-                $instability = (float) ($metrics->get(self::METRIC_INSTABILITY) ?? 0.0);
+                $abstractness = (float) ($metrics->get(MetricName::COUPLING_ABSTRACTNESS) ?? 0.0);
+                $instability = (float) ($metrics->get(MetricName::COUPLING_INSTABILITY) ?? 0.0);
 
                 $violations[] = new Violation(
                     location: new Location($nsInfo->file, $nsInfo->line),
@@ -150,10 +148,8 @@ final class DistanceRule extends AbstractRule
         \assert($this->options instanceof DistanceOptions);
 
         // Check explicit exclusions first
-        foreach ($this->options->excludeNamespaces as $excludePrefix) {
-            if ($this->namespaceMatchesPrefix($namespace, $excludePrefix)) {
-                return false;
-            }
+        if ($this->options->isNamespaceExcluded($namespace)) {
+            return false;
         }
 
         // If explicit includes are set, check against them

@@ -8,6 +8,7 @@ use AiMessDetector\Core\Dependency\DependencyGraphInterface;
 use AiMessDetector\Core\Metric\GlobalContextCollectorInterface;
 use AiMessDetector\Core\Metric\MetricBag;
 use AiMessDetector\Core\Metric\MetricDefinition;
+use AiMessDetector\Core\Metric\MetricName;
 use AiMessDetector\Core\Metric\MetricRepositoryInterface;
 use AiMessDetector\Core\Metric\SymbolLevel;
 use AiMessDetector\Core\Symbol\SymbolType;
@@ -36,19 +37,19 @@ final class DistanceCollector implements GlobalContextCollectorInterface
 
     public function requires(): array
     {
-        return ['instability', 'abstractness'];
+        return [MetricName::COUPLING_INSTABILITY, MetricName::COUPLING_ABSTRACTNESS];
     }
 
     public function provides(): array
     {
-        return ['distance'];
+        return [MetricName::COUPLING_DISTANCE];
     }
 
     public function getMetricDefinitions(): array
     {
         return [
             new MetricDefinition(
-                name: 'distance',
+                name: MetricName::COUPLING_DISTANCE,
                 collectedAt: SymbolLevel::Namespace_,
                 aggregations: [],
             ),
@@ -64,12 +65,12 @@ final class DistanceCollector implements GlobalContextCollectorInterface
             $nsPath = $symbolInfo->symbolPath;
             $metrics = $repository->get($nsPath);
 
-            $instability = $metrics->get('instability') ?? 0.0;
-            $abstractness = $metrics->get('abstractness') ?? 0.0;
+            $instability = $metrics->get(MetricName::COUPLING_INSTABILITY) ?? 0.0;
+            $abstractness = $metrics->get(MetricName::COUPLING_ABSTRACTNESS) ?? 0.0;
 
             $distance = $this->computeDistance((float) $instability, (float) $abstractness);
 
-            $newMetrics = (new MetricBag())->with('distance', $distance);
+            $newMetrics = (new MetricBag())->with(MetricName::COUPLING_DISTANCE, $distance);
 
             $repository->add($nsPath, $newMetrics, '', null);
         }

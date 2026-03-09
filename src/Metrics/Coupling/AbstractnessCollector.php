@@ -8,6 +8,7 @@ use AiMessDetector\Core\Dependency\DependencyGraphInterface;
 use AiMessDetector\Core\Metric\GlobalContextCollectorInterface;
 use AiMessDetector\Core\Metric\MetricBag;
 use AiMessDetector\Core\Metric\MetricDefinition;
+use AiMessDetector\Core\Metric\MetricName;
 use AiMessDetector\Core\Metric\MetricRepositoryInterface;
 use AiMessDetector\Core\Metric\SymbolLevel;
 use AiMessDetector\Core\Symbol\SymbolType;
@@ -32,19 +33,25 @@ final class AbstractnessCollector implements GlobalContextCollectorInterface
 
     public function requires(): array
     {
-        return ['classCount.sum', 'enumCount.sum', 'traitCount.sum', 'abstractClassCount.sum', 'interfaceCount.sum'];
+        return [
+            MetricName::SIZE_CLASS_COUNT . '.sum',
+            MetricName::SIZE_ENUM_COUNT . '.sum',
+            MetricName::SIZE_TRAIT_COUNT . '.sum',
+            MetricName::SIZE_ABSTRACT_CLASS_COUNT . '.sum',
+            MetricName::SIZE_INTERFACE_COUNT . '.sum',
+        ];
     }
 
     public function provides(): array
     {
-        return ['abstractness'];
+        return [MetricName::COUPLING_ABSTRACTNESS];
     }
 
     public function getMetricDefinitions(): array
     {
         return [
             new MetricDefinition(
-                name: 'abstractness',
+                name: MetricName::COUPLING_ABSTRACTNESS,
                 collectedAt: SymbolLevel::Namespace_,
                 aggregations: [],
             ),
@@ -60,18 +67,18 @@ final class AbstractnessCollector implements GlobalContextCollectorInterface
             $nsPath = $symbolInfo->symbolPath;
             $metrics = $repository->get($nsPath);
 
-            $classCount = $metrics->get('classCount.sum') ?? 0;
-            $enumCount = $metrics->get('enumCount.sum') ?? 0;
-            $traitCount = $metrics->get('traitCount.sum') ?? 0;
-            $abstractCount = $metrics->get('abstractClassCount.sum') ?? 0;
-            $interfaceCount = $metrics->get('interfaceCount.sum') ?? 0;
+            $classCount = $metrics->get(MetricName::SIZE_CLASS_COUNT . '.sum') ?? 0;
+            $enumCount = $metrics->get(MetricName::SIZE_ENUM_COUNT . '.sum') ?? 0;
+            $traitCount = $metrics->get(MetricName::SIZE_TRAIT_COUNT . '.sum') ?? 0;
+            $abstractCount = $metrics->get(MetricName::SIZE_ABSTRACT_CLASS_COUNT . '.sum') ?? 0;
+            $interfaceCount = $metrics->get(MetricName::SIZE_INTERFACE_COUNT . '.sum') ?? 0;
 
             $totalTypes = (int) $classCount + (int) $enumCount + (int) $traitCount + (int) $interfaceCount;
             $totalAbstractions = (int) $abstractCount + (int) $interfaceCount;
 
             $abstractness = $this->computeAbstractness($totalTypes, $totalAbstractions);
 
-            $newMetrics = (new MetricBag())->with('abstractness', $abstractness);
+            $newMetrics = (new MetricBag())->with(MetricName::COUPLING_ABSTRACTNESS, $abstractness);
 
             $repository->add($nsPath, $newMetrics, '', null);
         }

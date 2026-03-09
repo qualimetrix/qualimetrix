@@ -7,6 +7,7 @@ namespace AiMessDetector\Metrics\Size;
 use AiMessDetector\Core\Metric\AggregationStrategy;
 use AiMessDetector\Core\Metric\MetricBag;
 use AiMessDetector\Core\Metric\MetricDefinition;
+use AiMessDetector\Core\Metric\MetricName;
 use AiMessDetector\Core\Metric\SymbolLevel;
 use AiMessDetector\Metrics\AbstractCollector;
 use Override;
@@ -30,12 +31,6 @@ use SplFileInfo;
 final class ClassCountCollector extends AbstractCollector
 {
     private const NAME = 'class-count';
-    private const METRIC_CLASS_COUNT = 'classCount';
-    private const METRIC_ABSTRACT_CLASS_COUNT = 'abstractClassCount';
-    private const METRIC_INTERFACE_COUNT = 'interfaceCount';
-    private const METRIC_TRAIT_COUNT = 'traitCount';
-    private const METRIC_ENUM_COUNT = 'enumCount';
-    private const METRIC_FUNCTION_COUNT = 'functionCount';
 
     public function __construct()
     {
@@ -53,12 +48,12 @@ final class ClassCountCollector extends AbstractCollector
     public function provides(): array
     {
         return [
-            self::METRIC_CLASS_COUNT,
-            self::METRIC_ABSTRACT_CLASS_COUNT,
-            self::METRIC_INTERFACE_COUNT,
-            self::METRIC_TRAIT_COUNT,
-            self::METRIC_ENUM_COUNT,
-            self::METRIC_FUNCTION_COUNT,
+            MetricName::SIZE_CLASS_COUNT,
+            MetricName::SIZE_ABSTRACT_CLASS_COUNT,
+            MetricName::SIZE_INTERFACE_COUNT,
+            MetricName::SIZE_TRAIT_COUNT,
+            MetricName::SIZE_ENUM_COUNT,
+            MetricName::SIZE_FUNCTION_COUNT,
         ];
     }
 
@@ -70,12 +65,12 @@ final class ClassCountCollector extends AbstractCollector
         \assert($this->visitor instanceof ClassCountVisitor);
 
         return (new MetricBag())
-            ->with(self::METRIC_CLASS_COUNT, $this->visitor->getClassCount())
-            ->with(self::METRIC_ABSTRACT_CLASS_COUNT, $this->visitor->getAbstractClassCount())
-            ->with(self::METRIC_INTERFACE_COUNT, $this->visitor->getInterfaceCount())
-            ->with(self::METRIC_TRAIT_COUNT, $this->visitor->getTraitCount())
-            ->with(self::METRIC_ENUM_COUNT, $this->visitor->getEnumCount())
-            ->with(self::METRIC_FUNCTION_COUNT, $this->visitor->getFunctionCount());
+            ->with(MetricName::SIZE_CLASS_COUNT, $this->visitor->getClassCount())
+            ->with(MetricName::SIZE_ABSTRACT_CLASS_COUNT, $this->visitor->getAbstractClassCount())
+            ->with(MetricName::SIZE_INTERFACE_COUNT, $this->visitor->getInterfaceCount())
+            ->with(MetricName::SIZE_TRAIT_COUNT, $this->visitor->getTraitCount())
+            ->with(MetricName::SIZE_ENUM_COUNT, $this->visitor->getEnumCount())
+            ->with(MetricName::SIZE_FUNCTION_COUNT, $this->visitor->getFunctionCount());
     }
 
     /**
@@ -95,32 +90,32 @@ final class ClassCountCollector extends AbstractCollector
 
         return [
             new MetricDefinition(
-                name: self::METRIC_CLASS_COUNT,
+                name: MetricName::SIZE_CLASS_COUNT,
                 collectedAt: SymbolLevel::File,
                 aggregations: $aggregations,
             ),
             new MetricDefinition(
-                name: self::METRIC_ABSTRACT_CLASS_COUNT,
+                name: MetricName::SIZE_ABSTRACT_CLASS_COUNT,
                 collectedAt: SymbolLevel::File,
                 aggregations: $aggregations,
             ),
             new MetricDefinition(
-                name: self::METRIC_INTERFACE_COUNT,
+                name: MetricName::SIZE_INTERFACE_COUNT,
                 collectedAt: SymbolLevel::File,
                 aggregations: $aggregations,
             ),
             new MetricDefinition(
-                name: self::METRIC_TRAIT_COUNT,
+                name: MetricName::SIZE_TRAIT_COUNT,
                 collectedAt: SymbolLevel::File,
                 aggregations: $aggregations,
             ),
             new MetricDefinition(
-                name: self::METRIC_ENUM_COUNT,
+                name: MetricName::SIZE_ENUM_COUNT,
                 collectedAt: SymbolLevel::File,
                 aggregations: $aggregations,
             ),
             new MetricDefinition(
-                name: self::METRIC_FUNCTION_COUNT,
+                name: MetricName::SIZE_FUNCTION_COUNT,
                 collectedAt: SymbolLevel::File,
                 aggregations: $aggregations,
             ),

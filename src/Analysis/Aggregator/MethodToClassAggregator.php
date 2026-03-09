@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AiMessDetector\Analysis\Aggregator;
 
 use AiMessDetector\Core\Metric\MetricDefinition;
+use AiMessDetector\Core\Metric\MetricName;
 use AiMessDetector\Core\Metric\MetricRepositoryInterface;
 use AiMessDetector\Core\Metric\SymbolLevel;
 use AiMessDetector\Core\Profiler\ProfilerHolder;
@@ -51,9 +52,9 @@ final class MethodToClassAggregator implements AggregationPhaseInterface
             $classBag = AggregationHelper::applyAggregations($metricValues, $methodDefinitions, SymbolLevel::Class_);
 
             // Add WMC alias (WMC = ccn.sum)
-            $ccnSum = $classBag->get('ccn.sum');
+            $ccnSum = $classBag->get(MetricName::COMPLEXITY_CCN . '.sum');
             if ($ccnSum !== null) {
-                $classBag = $classBag->with('wmc', $ccnSum);
+                $classBag = $classBag->with(MetricName::STRUCTURE_WMC, $ccnSum);
             }
 
             // Add method symbol count for class-level rules (distinct from methodCount quality metric)
