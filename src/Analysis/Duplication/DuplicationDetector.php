@@ -18,14 +18,23 @@ use SplFileInfo;
  * 4. Verify token matches, extend blocks, compute line ranges
  * 5. Filter out blocks shorter than minLines, deduplicate overlapping blocks
  *
- * This two-pass approach avoids holding all tokens + full hash index simultaneously,
- * reducing peak memory from O(total_tokens + total_positions) to
- * O(total_positions) during pass 1 and O(matching_tokens + matching_positions) during pass 2.
+ * Memory optimizations:
+ * - Two-pass avoids holding all tokens + full hash index simultaneously
+ * - Positions packed as single int (fileIdx << 20 | offset) instead of 2-element arrays
+ * - Hash index pruned before re-tokenization pass
+ * - Only files with matches are re-tokenized
  */
 final class DuplicationDetector
 {
     private const HASH_BASE = 33;
     private const HASH_MOD = 1_000_000_007;
+
+    /**
+     * Bit shift for packing fileIdx and offset into a single int.
+     * Supports up to 1,048,575 tokens per file (20 bits) and ~8.7M files.
+     */
+    private const OFFSET_BITS = 20;
+    private const OFFSET_MASK = (1 << self::OFFSET_BITS) - 1; // 0xFFFFF
 
     private TokenNormalizer $normalizer;
 
@@ -50,10 +59,10 @@ final class DuplicationDetector
         $this->minLines = $minLines;
 
         // Pass 1: Build hash index streaming (tokenize → hash → discard tokens)
-        // Uses integer file indices for compact position storage
+        // Positions are packed as (fileIdx << 20 | offset) to avoid array-per-position overhead
         /** @var list<string> $filePaths maps fileIdx → realPath */
         $filePaths = [];
-        /** @var array<int, list<array{int, int}>> $hashIndex maps hash → list of [fileIdx, offset] */
+        /** @var array<int, list<int>> $hashIndex maps hash → list of packed positions */
         $hashIndex = [];
 
         foreach ($files as $file) {
@@ -98,8 +107,8 @@ final class DuplicationDetector
         // Determine which files need re-tokenization
         $neededFileIndices = [];
         foreach ($hashIndex as $positions) {
-            foreach ($positions as [$fileIdx]) {
-                $neededFileIndices[$fileIdx] = true;
+            foreach ($positions as $packed) {
+                $neededFileIndices[$packed >> self::OFFSET_BITS] = true;
             }
         }
 
@@ -128,7 +137,7 @@ final class DuplicationDetector
      * Computes rolling hashes for a single file's tokens and adds them to the index.
      *
      * @param list<NormalizedToken> $tokens
-     * @param array<int, list<array{int, int}>> $index modified by reference
+     * @param array<int, list<int>> $index modified by reference
      */
     private function addFileHashesToIndex(array $tokens, int $fileIdx, array &$index): void
     {
@@ -136,6 +145,8 @@ final class DuplicationDetector
         if ($tokenCount < $this->minTokens) {
             return;
         }
+
+        $packedBase = $fileIdx << self::OFFSET_BITS;
 
         // Compute initial hash for the first window
         $hash = 0;
@@ -148,7 +159,7 @@ final class DuplicationDetector
             }
         }
 
-        $index[$hash][] = [$fileIdx, 0];
+        $index[$hash][] = $packedBase; // offset 0
 
         // Roll the hash forward
         for ($i = 1; $i <= $tokenCount - $this->minTokens; $i++) {
@@ -157,14 +168,14 @@ final class DuplicationDetector
 
             $hash = (($hash - (($outToken * $highPow) % self::HASH_MOD) + self::HASH_MOD) * self::HASH_BASE + $inToken) % self::HASH_MOD;
 
-            $index[$hash][] = [$fileIdx, $i];
+            $index[$hash][] = $packedBase | $i;
         }
     }
 
     /**
      * Finds duplicate blocks by verifying hash matches and extending them.
      *
-     * @param array<int, list<array{int, int}>> $hashIndex hash → list of [fileIdx, offset]
+     * @param array<int, list<int>> $hashIndex hash → list of packed positions
      * @param array<int, list<NormalizedToken>> $fileTokens fileIdx → tokens
      * @param list<string> $filePaths fileIdx → realPath
      *
@@ -180,9 +191,12 @@ final class DuplicationDetector
             // Compare all pairs in this hash bucket
             $count = \count($positions);
             for ($i = 0; $i < $count - 1; $i++) {
+                $fileIdxA = $positions[$i] >> self::OFFSET_BITS;
+                $offsetA = $positions[$i] & self::OFFSET_MASK;
+
                 for ($j = $i + 1; $j < $count; $j++) {
-                    [$fileIdxA, $offsetA] = $positions[$i];
-                    [$fileIdxB, $offsetB] = $positions[$j];
+                    $fileIdxB = $positions[$j] >> self::OFFSET_BITS;
+                    $offsetB = $positions[$j] & self::OFFSET_MASK;
 
                     // Skip same-file same-offset (trivial self-match)
                     if ($fileIdxA === $fileIdxB && $offsetA === $offsetB) {
