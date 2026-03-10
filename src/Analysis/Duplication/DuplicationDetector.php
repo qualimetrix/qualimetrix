@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Analysis\Duplication;
 
+use AiMessDetector\Configuration\ConfigurationProviderInterface;
 use AiMessDetector\Core\Duplication\DuplicateBlock;
 use AiMessDetector\Core\Duplication\DuplicateLocation;
 use SplFileInfo;
@@ -41,22 +42,27 @@ final class DuplicationDetector
     private int $minTokens;
     private int $minLines;
 
-    public function __construct()
-    {
+    public function __construct(
+        private readonly ConfigurationProviderInterface $configurationProvider,
+    ) {
         $this->normalizer = new TokenNormalizer();
     }
 
     /**
      * Detects duplicate code blocks across the given files.
      *
+     * Reads min_tokens and min_lines thresholds from rule configuration.
+     *
      * @param list<SplFileInfo> $files
      *
      * @return list<DuplicateBlock>
      */
-    public function detect(array $files, int $minTokens = 70, int $minLines = 5): array
+    public function detect(array $files): array
     {
-        $this->minTokens = $minTokens;
-        $this->minLines = $minLines;
+        $ruleOptions = $this->configurationProvider->getRuleOptions();
+        $dupOptions = $ruleOptions['duplication.code-duplication'] ?? [];
+        $this->minTokens = (int) ($dupOptions['min_tokens'] ?? $dupOptions['minTokens'] ?? 70);
+        $this->minLines = (int) ($dupOptions['min_lines'] ?? $dupOptions['minLines'] ?? 5);
 
         // Pass 1: Build hash index streaming (tokenize → hash → discard tokens)
         // Positions are packed as (fileIdx << 20 | offset) to avoid array-per-position overhead
