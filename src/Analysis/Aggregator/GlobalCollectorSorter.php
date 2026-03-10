@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Analysis\Collection\Metric;
+namespace AiMessDetector\Analysis\Aggregator;
 
 use AiMessDetector\Analysis\Exception\CyclicDependencyException;
 use AiMessDetector\Core\Metric\GlobalContextCollectorInterface;

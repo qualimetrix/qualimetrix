@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Infrastructure\DependencyInjection\Configurator;
 
-use AiMessDetector\Analysis\Aggregation\GlobalCollectorRunner;
+use AiMessDetector\Analysis\Aggregator\GlobalCollectorRunner;
 use AiMessDetector\Analysis\Collection\CollectionOrchestrator;
 use AiMessDetector\Analysis\Collection\CollectionOrchestratorInterface;
 use AiMessDetector\Analysis\Collection\Dependency\DependencyGraphBuilder;
@@ -105,7 +105,10 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
         $container->register(DependencyGraphBuilder::class);
 
         // DuplicationDetector for copy-paste detection
-        $container->register(DuplicationDetector::class);
+        $container->register(DuplicationDetector::class)
+            ->setArguments([
+                new Reference(ConfigurationProviderInterface::class),
+            ]);
 
         // AnalysisPipeline - main orchestrator
         $container->register(AnalysisPipeline::class)

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Tests\Unit\Infrastructure\DependencyInjection\CompilerPass;
 
-use AiMessDetector\Analysis\Aggregation\GlobalCollectorRunner;
+use AiMessDetector\Analysis\Aggregator\GlobalCollectorRunner;
 use AiMessDetector\Infrastructure\DependencyInjection\CompilerPass\GlobalCollectorCompilerPass;
 use AiMessDetector\Metrics\Coupling\CouplingCollector;
 use AiMessDetector\Metrics\Structure\NocCollector;

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Infrastructure\DependencyInjection\CompilerPass;
 
-use AiMessDetector\Analysis\Aggregation\GlobalCollectorRunner;
+use AiMessDetector\Analysis\Aggregator\GlobalCollectorRunner;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;

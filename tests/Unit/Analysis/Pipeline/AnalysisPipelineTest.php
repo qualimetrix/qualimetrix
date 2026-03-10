@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Tests\Unit\Analysis\Pipeline;
 
-use AiMessDetector\Analysis\Aggregation\GlobalCollectorRunner;
+use AiMessDetector\Analysis\Aggregator\GlobalCollectorRunner;
 use AiMessDetector\Analysis\Collection\CollectionOrchestratorInterface;
 use AiMessDetector\Analysis\Collection\CollectionPhaseOutput;
 use AiMessDetector\Analysis\Collection\CollectionResult;
