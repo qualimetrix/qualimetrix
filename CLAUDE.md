@@ -277,15 +277,9 @@ bin/aimd check --help
 
 **Before implementation:** read README.md in the corresponding `src/` directory
 
-**Work order:**
-1. Implement the contract (interface)
-2. Write unit tests
-3. `composer check` — validation
-4. Update `README.md` in the affected `src/` directory (add new files, fix outdated info)
-5. Update website documentation (see [Website Documentation](#website-documentation) section below)
-6. Commit
-
-**Commit format:** `<type>: short description` (`feat`, `fix`, `refactor`, `test`, `docs`, `chore`)
+**Project-specific steps** (in addition to the global workflow):
+- **Validation**: `composer check` (tests + phpstan + deptrac)
+- **Documentation**: Update `README.md` in the affected `src/` directory (add new files, fix outdated info). Update website documentation (see [Website Documentation](#website-documentation) section below)
 
 **Commit granularity:** Split large changes into logical commits when it improves changelog readability. Each commit should represent one coherent change (e.g., separate "rename command" from "update documentation"). Avoid monolithic commits that bundle unrelated changes — they make changelogs harder to generate and git history harder to navigate.
 

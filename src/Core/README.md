@@ -23,7 +23,8 @@ Core/
 │   ├── DerivedCollectorInterface.php      # Derived (composite) collectors
 │   ├── GlobalContextCollectorInterface.php # Cross-file collectors
 │   ├── AggregationStrategy.php            # Strategy enum
-│   └── SymbolLevel.php                    # Hierarchy level enum
+│   ├── SymbolLevel.php                    # Hierarchy level enum
+│   └── ParallelSafeCollectorInterface.php # Marker for parallel-safe collectors
 ├── Rule/
 │   ├── RuleInterface.php
 │   ├── RuleCategory.php
@@ -70,6 +71,9 @@ Core/
 │   ├── ProfilerHolder.php                 # Static holder for profiler instance
 │   ├── NullProfiler.php                   # No-op profiler
 │   └── Span.php                           # Profiling span VO
+├── Suppression/
+│   ├── Suppression.php                    # VO: suppression tag from docblock (@aimd-ignore)
+│   └── SuppressionType.php                # Enum: suppression scope (symbol/next-line/file)
 ├── Util/
 │   ├── StringSet.php                      # Immutable set of unique strings
 │   └── PathMatcher.php                    # Glob pattern matching for file paths
@@ -129,6 +133,15 @@ Extends `BaseCollectorInterface`. Collector that computes metrics from global co
 - `calculate(DependencyGraphInterface $graph, MetricRepositoryInterface $repository): void` — compute and store metrics
 
 **DI Tags:** `aimd.global_collector`
+
+### ParallelSafeCollectorInterface
+
+Marker interface for collectors that can be safely instantiated in parallel workers. Parallel workers cannot use DI — collectors are instantiated via `new $className()`. Only collectors implementing this interface will be used in parallel mode; others fall back to sequential execution.
+
+**Requirements for implementing classes:**
+- Must have no required constructor parameters
+- Must not depend on external services
+- All state must be self-contained and resettable via `reset()`
 
 ### MethodMetricsProviderInterface
 
@@ -615,6 +628,34 @@ Matches file paths against glob patterns using `fnmatch()`. Used for `exclude_pa
 **Methods:**
 - `matches(string $filePath): bool` — whether path matches any pattern
 - `isEmpty(): bool` — whether no patterns are configured
+
+---
+
+## Suppression Value Objects
+
+### Suppression
+
+Value Object representing a suppression tag from a docblock (e.g., `@aimd-ignore complexity Reason`).
+
+**Fields:**
+- `rule: string` — rule pattern to suppress (`*` for all, or prefix like `complexity`)
+- `reason: ?string` — optional reason for suppression
+- `line: int` — line number of the suppression tag
+- `type: SuppressionType` — scope of suppression
+- `endLine: ?int` — end line for scoped suppressions
+
+**Methods:**
+- `matches(string $violationCode): bool` — checks if suppression applies to a violation code (supports wildcard `*`, prefix matching, and exact matching via `RuleMatcher`)
+
+### SuppressionType (Enum)
+
+Defines the scope of a suppression tag.
+
+| Value      | Description                                      |
+| ---------- | ------------------------------------------------ |
+| `Symbol`   | Suppress at symbol level (class/method docblock) |
+| `NextLine` | Suppress the next line only                      |
+| `File`     | Suppress all matching violations in entire file  |
 
 ---
 

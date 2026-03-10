@@ -34,8 +34,7 @@ Analysis/
 │   ├── Metric/
 │   │   ├── CompositeCollector.php       # Combines visitors (unified AST traversal)
 │   │   ├── CollectionOutput.php         # Output of composite collection
-│   │   ├── DerivedMetricExtractor.php   # Extracts derived metrics from collected data
-│   │   └── GlobalCollectorSorter.php    # Topological sort of global collectors
+│   │   └── DerivedMetricExtractor.php   # Extracts derived metrics from collected data
 │   │
 │   ├── Dependency/
 │   │   ├── DependencyGraph.php          # Dependency graph
@@ -71,15 +70,14 @@ Analysis/
 │   ├── MethodToClassAggregator.php      # Method → Class phase
 │   ├── ClassToNamespaceAggregator.php   # Class → Namespace phase
 │   ├── NamespaceToProjectAggregator.php # Namespace → Project phase
-│   └── MetricAggregator.php             # Thin orchestrator
-│
-├── Aggregation/
-│   └── GlobalCollectorRunner.php
+│   ├── MetricAggregator.php             # Thin orchestrator
+│   ├── GlobalCollectorRunner.php        # Runs global (cross-file) collectors
+│   └── GlobalCollectorSorter.php        # Topological sort of global collectors
 │
 ├── Duplication/
 │   ├── NormalizedToken.php              # VO: normalized token for comparison
 │   ├── TokenNormalizer.php              # Normalizes PHP tokens for duplicate detection
-│   └── DuplicationDetector.php          # Detects duplicate code blocks across files
+│   └── DuplicationDetector.php          # Detects duplicate code blocks (config via DI)
 │
 ├── RuleExecution/
 │   ├── RuleExecutorInterface.php        # Rule executor contract
@@ -97,6 +95,16 @@ Analysis/
 └── Exception/
     └── CyclicDependencyException.php
 ```
+
+---
+
+## Internal Dependency Layers (deptrac)
+
+Analysis sub-packages follow layered dependency rules:
+
+- **Leaf** (no Analysis siblings): Exception, Discovery, Namespace\_, Repository, Duplication
+- **Mid**: Aggregator depends on Exception; RuleExecution is standalone; Collection depends on Exception
+- **Orchestrator**: Pipeline depends on all sub-layers
 
 ---
 
