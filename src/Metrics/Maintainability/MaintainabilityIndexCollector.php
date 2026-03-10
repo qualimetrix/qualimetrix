@@ -9,6 +9,7 @@ use AiMessDetector\Core\Metric\DerivedCollectorInterface;
 use AiMessDetector\Core\Metric\MetricBag;
 use AiMessDetector\Core\Metric\MetricDefinition;
 use AiMessDetector\Core\Metric\MetricName;
+use AiMessDetector\Core\Metric\ParallelSafeCollectorInterface;
 use AiMessDetector\Core\Metric\SymbolLevel;
 
 /**
@@ -22,7 +23,7 @@ use AiMessDetector\Core\Metric\SymbolLevel;
  * Formula: MI = 171 - 5.2×ln(V) - 0.23×CCN - 16.2×ln(LOC)
  * Normalized to 0-100 scale.
  */
-final class MaintainabilityIndexCollector implements DerivedCollectorInterface
+final class MaintainabilityIndexCollector implements DerivedCollectorInterface, ParallelSafeCollectorInterface
 {
     private const NAME = 'maintainability-index';
 

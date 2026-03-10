@@ -11,11 +11,11 @@ use AiMessDetector\Analysis\Collection\FileProcessorInterface;
 use AiMessDetector\Analysis\Collection\Metric\CompositeCollector;
 use AiMessDetector\Core\Metric\DerivedCollectorInterface;
 use AiMessDetector\Core\Metric\MetricCollectorInterface;
+use AiMessDetector\Core\Metric\ParallelSafeCollectorInterface;
 use AiMessDetector\Infrastructure\Ast\CachedFileParser;
 use AiMessDetector\Infrastructure\Ast\PhpFileParser;
 use AiMessDetector\Infrastructure\Cache\CacheKeyGenerator;
 use AiMessDetector\Infrastructure\Cache\FileCache;
-use ReflectionClass;
 
 /**
  * Bootstrap for worker processes.
@@ -195,7 +195,10 @@ final class WorkerBootstrap
     }
 
     /**
-     * Checks if a class can be safely instantiated without constructor arguments.
+     * Checks if a collector class can be safely instantiated in a parallel worker.
+     *
+     * Only collectors implementing ParallelSafeCollectorInterface are allowed.
+     * This provides a compile-time contract instead of runtime reflection.
      *
      * @param class-string $className
      */
@@ -210,23 +213,15 @@ final class WorkerBootstrap
             return false;
         }
 
-        $reflection = new ReflectionClass($className);
-        $constructor = $reflection->getConstructor();
+        if (!is_subclass_of($className, ParallelSafeCollectorInterface::class)) {
+            fwrite(\STDERR, \sprintf(
+                "[WorkerBootstrap] WARNING: collector '%s' does not implement ParallelSafeCollectorInterface "
+                . "and will be SKIPPED in parallel mode. Run with --workers=0 for complete results, "
+                . "or implement ParallelSafeCollectorInterface if the collector has no required dependencies.\n",
+                $className,
+            ));
 
-        if ($constructor !== null) {
-            foreach ($constructor->getParameters() as $param) {
-                if (!$param->isOptional()) {
-                    fwrite(\STDERR, \sprintf(
-                        "[WorkerBootstrap] WARNING: collector '%s' has required constructor parameter '%s' and cannot be instantiated in a worker without DI. "
-                        . "This collector will be SKIPPED in parallel mode, which may produce different results than --workers=1. "
-                        . "Run with --workers=1 for complete results, or refactor the collector to be serializable.\n",
-                        $className,
-                        $param->getName(),
-                    ));
-
-                    return false;
-                }
-            }
+            return false;
         }
 
         return true;

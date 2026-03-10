@@ -7,6 +7,7 @@ namespace AiMessDetector\Metrics;
 use AiMessDetector\Core\Metric\MetricBag;
 use AiMessDetector\Core\Metric\MetricCollectorInterface;
 use AiMessDetector\Core\Metric\MetricDefinition;
+use AiMessDetector\Core\Metric\ParallelSafeCollectorInterface;
 use PhpParser\Node;
 use PhpParser\NodeVisitorAbstract;
 use SplFileInfo;
@@ -18,7 +19,7 @@ use SplFileInfo;
  * - Holds visitor instance
  * - Implements reset() by delegating to visitor
  */
-abstract class AbstractCollector implements MetricCollectorInterface
+abstract class AbstractCollector implements MetricCollectorInterface, ParallelSafeCollectorInterface
 {
     protected NodeVisitorAbstract $visitor;
 
