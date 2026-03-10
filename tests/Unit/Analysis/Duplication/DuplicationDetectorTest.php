@@ -7,6 +7,7 @@ namespace AiMessDetector\Tests\Unit\Analysis\Duplication;
 use AiMessDetector\Analysis\Duplication\DuplicationDetector;
 use AiMessDetector\Analysis\Duplication\NormalizedToken;
 use AiMessDetector\Analysis\Duplication\TokenNormalizer;
+use AiMessDetector\Configuration\ConfigurationProviderInterface;
 use AiMessDetector\Core\Duplication\DuplicateBlock;
 use AiMessDetector\Core\Duplication\DuplicateLocation;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -52,8 +53,8 @@ PHP;
         $file1 = $this->createFile('file1.php', $code);
         $file2 = $this->createFile('file2.php', $code);
 
-        $detector = new DuplicationDetector();
-        $blocks = $detector->detect([$file1, $file2], minTokens: 20, minLines: 3);
+        $detector = $this->createDetector(minTokens: 20, minLines: 3);
+        $blocks = $detector->detect([$file1, $file2]);
 
         self::assertNotEmpty($blocks, 'Should detect duplication between identical files');
         self::assertCount(1, $blocks);
@@ -96,8 +97,8 @@ PHP;
         $file1 = $this->createFile('users.php', $code1);
         $file2 = $this->createFile('orders.php', $code2);
 
-        $detector = new DuplicationDetector();
-        $blocks = $detector->detect([$file1, $file2], minTokens: 20, minLines: 3);
+        $detector = $this->createDetector(minTokens: 20, minLines: 3);
+        $blocks = $detector->detect([$file1, $file2]);
 
         // Should detect duplication because variable names are normalized
         self::assertNotEmpty($blocks, 'Should detect near-miss duplication (different variable names)');
@@ -126,8 +127,8 @@ PHP;
         $file1 = $this->createFile('math.php', $code1);
         $file2 = $this->createFile('service.php', $code2);
 
-        $detector = new DuplicationDetector();
-        $blocks = $detector->detect([$file1, $file2], minTokens: 20, minLines: 3);
+        $detector = $this->createDetector(minTokens: 20, minLines: 3);
+        $blocks = $detector->detect([$file1, $file2]);
 
         self::assertEmpty($blocks, 'Should not detect duplication in structurally different code');
     }
@@ -150,8 +151,8 @@ PHP;
         $file1 = $this->createFile('short1.php', $code1);
         $file2 = $this->createFile('short2.php', $code2);
 
-        $detector = new DuplicationDetector();
-        $blocks = $detector->detect([$file1, $file2], minTokens: 5, minLines: 5);
+        $detector = $this->createDetector(minTokens: 5, minLines: 5);
+        $blocks = $detector->detect([$file1, $file2]);
 
         self::assertEmpty($blocks, 'Should not detect duplication below minLines threshold');
     }
@@ -164,8 +165,8 @@ PHP;
         $file1 = $this->createFile('tiny1.php', $code);
         $file2 = $this->createFile('tiny2.php', $code);
 
-        $detector = new DuplicationDetector();
-        $blocks = $detector->detect([$file1, $file2], minTokens: 70, minLines: 3);
+        $detector = $this->createDetector(minTokens: 70, minLines: 3);
+        $blocks = $detector->detect([$file1, $file2]);
 
         self::assertEmpty($blocks, 'Should skip files with fewer tokens than minTokens');
     }
@@ -198,15 +199,15 @@ PHP;
 
         $file = $this->createFile('same_file.php', $code);
 
-        $detector = new DuplicationDetector();
-        $blocks = $detector->detect([$file], minTokens: 20, minLines: 3);
+        $detector = $this->createDetector(minTokens: 20, minLines: 3);
+        $blocks = $detector->detect([$file]);
 
         self::assertNotEmpty($blocks, 'Should detect duplication within the same file');
     }
 
     public function testEmptyFileList(): void
     {
-        $detector = new DuplicationDetector();
+        $detector = $this->createDetector();
         $blocks = $detector->detect([]);
 
         self::assertSame([], $blocks);
@@ -236,6 +237,19 @@ PHP;
 
         self::assertSame(16, $loc->lineCount());
         self::assertSame('src/Foo.php:10-25', $loc->toString());
+    }
+
+    private function createDetector(int $minTokens = 70, int $minLines = 5): DuplicationDetector
+    {
+        $configProvider = $this->createMock(ConfigurationProviderInterface::class);
+        $configProvider->method('getRuleOptions')->willReturn([
+            'duplication.code-duplication' => [
+                'min_tokens' => $minTokens,
+                'min_lines' => $minLines,
+            ],
+        ]);
+
+        return new DuplicationDetector($configProvider);
     }
 
     private function createFile(string $name, string $content): SplFileInfo
