@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Infrastructure\Cache;
 
-use AiMessDetector\Infrastructure\Parallel\Serializer\SerializerInterface;
-use AiMessDetector\Infrastructure\Parallel\Serializer\SerializerSelector;
+use AiMessDetector\Infrastructure\Serializer\SerializerInterface;
+use AiMessDetector\Infrastructure\Serializer\SerializerSelector;
 use FilesystemIterator;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;

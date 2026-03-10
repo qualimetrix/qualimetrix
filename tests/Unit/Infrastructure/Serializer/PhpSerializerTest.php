@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Infrastructure\Parallel\Serializer;
+namespace AiMessDetector\Tests\Unit\Infrastructure\Serializer;
 
-use AiMessDetector\Infrastructure\Parallel\Serializer\PhpSerializer;
+use AiMessDetector\Infrastructure\Serializer\PhpSerializer;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;

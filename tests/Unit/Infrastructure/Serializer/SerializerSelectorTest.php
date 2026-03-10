@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Infrastructure\Parallel\Serializer;
+namespace AiMessDetector\Tests\Unit\Infrastructure\Serializer;
 
-use AiMessDetector\Infrastructure\Parallel\Serializer\IgbinarySerializer;
-use AiMessDetector\Infrastructure\Parallel\Serializer\PhpSerializer;
-use AiMessDetector\Infrastructure\Parallel\Serializer\SerializerInterface;
-use AiMessDetector\Infrastructure\Parallel\Serializer\SerializerSelector;
+use AiMessDetector\Infrastructure\Serializer\IgbinarySerializer;
+use AiMessDetector\Infrastructure\Serializer\PhpSerializer;
+use AiMessDetector\Infrastructure\Serializer\SerializerInterface;
+use AiMessDetector\Infrastructure\Serializer\SerializerSelector;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;

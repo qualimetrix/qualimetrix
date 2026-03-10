@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\Parallel\Serializer;
+namespace AiMessDetector\Infrastructure\Serializer;
 
 use RuntimeException;
 

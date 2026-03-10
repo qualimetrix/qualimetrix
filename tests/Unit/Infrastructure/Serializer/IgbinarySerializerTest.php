@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Infrastructure\Parallel\Serializer;
+namespace AiMessDetector\Tests\Unit\Infrastructure\Serializer;
 
-use AiMessDetector\Infrastructure\Parallel\Serializer\IgbinarySerializer;
+use AiMessDetector\Infrastructure\Serializer\IgbinarySerializer;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 use PHPUnit\Framework\Attributes\Test;
