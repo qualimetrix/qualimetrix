@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace AiMessDetector\Tests\Unit\Configuration;
 
 use AiMessDetector\Configuration\AnalysisConfiguration;
+use AiMessDetector\Core\Violation\Severity;
+use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
@@ -25,6 +27,7 @@ final class AnalysisConfigurationTest extends TestCase
         self::assertSame([], $config->disabledRules);
         self::assertSame([], $config->onlyRules);
         self::assertSame([], $config->excludePaths);
+        self::assertNull($config->failOn);
     }
 
     public function testFromArrayWithDefaults(): void
@@ -365,5 +368,70 @@ final class AnalysisConfigurationTest extends TestCase
 
         self::assertTrue($config->isViolationCodeEnabled('complexity.cyclomatic.method'));
         self::assertFalse($config->isViolationCodeEnabled('complexity.cyclomatic.class'));
+    }
+
+    // --- failOn tests ---
+
+    public function testFromArrayParsesFailOnWarning(): void
+    {
+        $config = AnalysisConfiguration::fromArray(['fail_on' => 'warning']);
+
+        self::assertSame(Severity::Warning, $config->failOn);
+    }
+
+    public function testFromArrayParsesFailOnError(): void
+    {
+        $config = AnalysisConfiguration::fromArray(['fail_on' => 'error']);
+
+        self::assertSame(Severity::Error, $config->failOn);
+    }
+
+    public function testFromArrayFailOnNullByDefault(): void
+    {
+        $config = AnalysisConfiguration::fromArray([]);
+
+        self::assertNull($config->failOn);
+    }
+
+    public function testFromArrayFailOnInvalidStringThrowsException(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Invalid value "invalid" for "fail_on"');
+
+        AnalysisConfiguration::fromArray(['fail_on' => 'invalid']);
+    }
+
+    public function testFromArrayFailOnSeverityEnum(): void
+    {
+        $config = AnalysisConfiguration::fromArray(['fail_on' => Severity::Error]);
+
+        self::assertSame(Severity::Error, $config->failOn);
+    }
+
+    public function testMergeFailOnOverridesWhenPresent(): void
+    {
+        $base = new AnalysisConfiguration(failOn: Severity::Warning);
+
+        $merged = $base->merge(['fail_on' => 'error']);
+
+        self::assertSame(Severity::Error, $merged->failOn);
+    }
+
+    public function testMergeFailOnPreservesWhenNotInOverrides(): void
+    {
+        $base = new AnalysisConfiguration(failOn: Severity::Error);
+
+        $merged = $base->merge(['format' => 'json']);
+
+        self::assertSame(Severity::Error, $merged->failOn);
+    }
+
+    public function testMergeFailOnPreservesNullWhenNotInOverrides(): void
+    {
+        $base = new AnalysisConfiguration();
+
+        $merged = $base->merge(['format' => 'json']);
+
+        self::assertNull($merged->failOn);
     }
 }

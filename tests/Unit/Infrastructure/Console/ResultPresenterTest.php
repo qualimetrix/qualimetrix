@@ -14,6 +14,10 @@ use AiMessDetector\Configuration\ConfigurationHolder;
 use AiMessDetector\Configuration\ConfigurationProviderInterface;
 use AiMessDetector\Core\Profiler\ProfilerHolder;
 use AiMessDetector\Core\Profiler\ProfilerInterface;
+use AiMessDetector\Core\Symbol\SymbolPath;
+use AiMessDetector\Core\Violation\Location;
+use AiMessDetector\Core\Violation\Severity;
+use AiMessDetector\Core\Violation\Violation;
 use AiMessDetector\Infrastructure\Console\ResultPresenter;
 use AiMessDetector\Reporting\Formatter\FormatterInterface;
 use AiMessDetector\Reporting\Formatter\FormatterRegistryInterface;
@@ -167,5 +171,128 @@ final class ResultPresenterTest extends TestCase
         if (file_exists($profilePath)) {
             unlink($profilePath);
         }
+    }
+
+    #[Test]
+    public function presentResultsReturnsExitCode1ForWarningsWithoutFailOn(): void
+    {
+        $exitCode = $this->presentWithViolationsAndFailOn(
+            [self::createViolation(Severity::Warning)],
+            null,
+        );
+
+        self::assertSame(1, $exitCode);
+    }
+
+    #[Test]
+    public function presentResultsReturnsExitCode2ForErrorsWithoutFailOn(): void
+    {
+        $exitCode = $this->presentWithViolationsAndFailOn(
+            [self::createViolation(Severity::Error)],
+            null,
+        );
+
+        self::assertSame(2, $exitCode);
+    }
+
+    #[Test]
+    public function presentResultsReturnsExitCode0ForWarningsWhenFailOnError(): void
+    {
+        $exitCode = $this->presentWithViolationsAndFailOn(
+            [self::createViolation(Severity::Warning)],
+            Severity::Error,
+        );
+
+        self::assertSame(0, $exitCode);
+    }
+
+    #[Test]
+    public function presentResultsReturnsExitCode2ForErrorsWhenFailOnError(): void
+    {
+        $exitCode = $this->presentWithViolationsAndFailOn(
+            [self::createViolation(Severity::Error)],
+            Severity::Error,
+        );
+
+        self::assertSame(2, $exitCode);
+    }
+
+    #[Test]
+    public function presentResultsReturnsExitCode1ForWarningsWhenFailOnWarning(): void
+    {
+        $exitCode = $this->presentWithViolationsAndFailOn(
+            [self::createViolation(Severity::Warning)],
+            Severity::Warning,
+        );
+
+        self::assertSame(1, $exitCode);
+    }
+
+    #[Test]
+    public function presentResultsReturnsExitCode0WhenNoViolations(): void
+    {
+        $exitCode = $this->presentWithViolationsAndFailOn([], null);
+
+        self::assertSame(0, $exitCode);
+    }
+
+    /**
+     * @param list<Violation> $violations
+     */
+    private function presentWithViolationsAndFailOn(array $violations, ?Severity $failOn): int
+    {
+        $configHolder = new ConfigurationHolder();
+        $configHolder->setConfiguration(new AnalysisConfiguration(failOn: $failOn));
+
+        $mockFormatter = $this->createMock(FormatterInterface::class);
+        $mockFormatter->method('format')->willReturn('');
+        $mockFormatter->method('getDefaultGroupBy')->willReturn(GroupBy::None);
+
+        $registry = $this->createMock(FormatterRegistryInterface::class);
+        $registry->method('get')->willReturn($mockFormatter);
+
+        $presenter = new ResultPresenter(
+            formatterRegistry: $registry,
+            profilerHolder: new ProfilerHolder(),
+            baselineGenerator: new BaselineGenerator(new ViolationHasher()),
+            baselineWriter: new BaselineWriter(),
+            configurationProvider: $configHolder,
+        );
+
+        $input = $this->createStub(InputInterface::class);
+        $input->method('getOption')->willReturnCallback(
+            static fn(string $name): mixed => match ($name) {
+                'format' => null,
+                'group-by' => null,
+                'format-opt' => [],
+                default => null,
+            },
+        );
+
+        $output = $this->createStub(OutputInterface::class);
+        $output->method('isDecorated')->willReturn(false);
+
+        $analysisResult = new AnalysisResult(
+            violations: $violations,
+            filesAnalyzed: 1,
+            filesSkipped: 0,
+            duration: 0.1,
+            metrics: new InMemoryMetricRepository(),
+            suppressions: [],
+        );
+
+        return $presenter->presentResults($violations, $analysisResult, $input, $output);
+    }
+
+    private static function createViolation(Severity $severity): Violation
+    {
+        return new Violation(
+            location: new Location('test.php', 1),
+            symbolPath: SymbolPath::forFile('test.php'),
+            ruleName: 'test.rule',
+            violationCode: 'test.rule.violation',
+            message: 'Test violation',
+            severity: $severity,
+        );
     }
 }

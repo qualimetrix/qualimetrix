@@ -217,12 +217,19 @@ final class ResultPresenter
     }
 
     /**
-     * Determines exit code based on violation severity.
+     * Determines exit code based on violation severity and failOn configuration.
+     *
+     * When failOn is Severity::Error, only errors cause non-zero exit code (warnings are ignored).
+     * When failOn is null or Severity::Warning, current behavior is preserved.
      *
      * @param list<Violation> $violations
      */
     private function determineExitCode(array $violations): int
     {
+        $failOn = $this->configurationProvider->hasConfiguration()
+            ? $this->configurationProvider->getConfiguration()->failOn
+            : null;
+
         $hasErrors = false;
         $hasWarnings = false;
 
@@ -237,11 +244,11 @@ final class ResultPresenter
         }
 
         if ($hasErrors) {
-            return 2;
+            return Severity::Error->getExitCode();
         }
 
-        if ($hasWarnings) {
-            return 1;
+        if ($hasWarnings && $failOn !== Severity::Error) {
+            return Severity::Warning->getExitCode();
         }
 
         return 0;

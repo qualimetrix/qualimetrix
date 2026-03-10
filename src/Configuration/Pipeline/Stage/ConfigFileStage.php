@@ -148,6 +148,11 @@ final class ConfigFileStage implements ConfigurationStageInterface
             $result['exclude_paths'] = $data['excludePaths'];
         }
 
+        // Fail-on severity
+        if (isset($data['failOn'])) {
+            $result['fail_on'] = $data['failOn'];
+        }
+
         return $result;
     }
 }

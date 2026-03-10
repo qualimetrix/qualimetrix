@@ -75,12 +75,19 @@ final class CheckCommandDefinition
 
     private static function addOutputOptions(Command $command): void
     {
-        $command->addOption(
-            'format',
-            'f',
-            InputOption::VALUE_REQUIRED,
-            'Output format (text, json, checkstyle, sarif, gitlab, metrics-json)',
-        );
+        $command
+            ->addOption(
+                'format',
+                'f',
+                InputOption::VALUE_REQUIRED,
+                'Output format (text, json, checkstyle, sarif, gitlab, github, metrics-json)',
+            )
+            ->addOption(
+                'fail-on',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Minimum severity to trigger non-zero exit code (warning, error)',
+            );
     }
 
     private static function addCacheOptions(Command $command): void
