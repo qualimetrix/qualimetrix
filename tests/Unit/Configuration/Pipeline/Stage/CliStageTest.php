@@ -196,6 +196,21 @@ final class CliStageTest extends TestCase
     }
 
     #[Test]
+    public function extractsFailOnOption(): void
+    {
+        $definition = new InputDefinition([
+            new InputOption('fail-on', null, InputOption::VALUE_REQUIRED),
+        ]);
+        $input = new ArrayInput(['--fail-on' => 'error'], $definition);
+        $context = new ConfigurationContext($input, '/tmp');
+
+        $layer = $this->stage->apply($context);
+
+        self::assertNotNull($layer);
+        self::assertSame('error', $layer->values['fail_on']);
+    }
+
+    #[Test]
     public function combinesMultipleOptions(): void
     {
         $definition = new InputDefinition([

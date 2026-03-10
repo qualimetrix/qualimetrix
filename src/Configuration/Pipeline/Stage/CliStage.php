@@ -41,6 +41,7 @@ final class CliStage implements ConfigurationStageInterface
         $this->setIfNotEmpty($values, 'cache.dir', $this->extractStringOption($input, 'cache-dir'));
         $this->setIfNotEmpty($values, 'disabled_rules', $this->extractArrayOption($input, 'disable-rule'));
         $this->setIfNotEmpty($values, 'only_rules', $this->extractArrayOption($input, 'only-rule'));
+        $this->setIfNotEmpty($values, 'fail_on', $this->extractStringOption($input, 'fail-on'));
 
         // Cache disable flag
         if ($input->hasOption('no-cache') && $input->getOption('no-cache') === true) {

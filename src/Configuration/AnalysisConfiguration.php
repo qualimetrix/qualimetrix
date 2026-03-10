@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace AiMessDetector\Configuration;
 
 use AiMessDetector\Core\Rule\RuleMatcher;
+use AiMessDetector\Core\Violation\Severity;
+use InvalidArgumentException;
 
 /**
  * Value object containing general analysis configuration (not rule-specific).
@@ -34,6 +36,7 @@ final readonly class AnalysisConfiguration
      * @param list<string> $excludePaths Path patterns to suppress violations for
      * @param int|null $workers Number of parallel workers (null = auto-detect, 1 = sequential)
      * @param string $projectRoot Project root directory (for parallel workers)
+     * @param Severity|null $failOn Minimum severity to trigger non-zero exit code (null = current behavior)
      */
     public function __construct(
         public string $cacheDir = self::DEFAULT_CACHE_DIR,
@@ -48,6 +51,7 @@ final readonly class AnalysisConfiguration
         public array $excludePaths = [],
         public ?int $workers = null,
         public string $projectRoot = '.',
+        public ?Severity $failOn = null,
     ) {}
 
     /**
@@ -70,6 +74,7 @@ final readonly class AnalysisConfiguration
             excludePaths: self::getStringList($config, 'exclude_paths'),
             workers: self::getIntOrNull($config, 'parallel.workers'),
             projectRoot: self::getString($config, 'project_root', '.'),
+            failOn: self::getSeverityOrNull($config, 'fail_on'),
         );
     }
 
@@ -97,6 +102,7 @@ final readonly class AnalysisConfiguration
             excludePaths: array_values(array_unique([...$this->excludePaths, ...self::getStringList($overrides, 'exclude_paths')])),
             workers: self::getIntOrNull($overrides, 'parallel.workers') ?? $this->workers,
             projectRoot: self::getString($overrides, 'project_root', $this->projectRoot),
+            failOn: self::getSeverityOrNull($overrides, 'fail_on') ?? $this->failOn,
         );
     }
 
@@ -179,6 +185,35 @@ final readonly class AnalysisConfiguration
         $value = self::getNestedValue($config, $path);
 
         return \is_int($value) ? $value : null;
+    }
+
+    /**
+     * @param array<string, mixed> $config
+     */
+    private static function getSeverityOrNull(array $config, string $path): ?Severity
+    {
+        $value = self::getNestedValue($config, $path);
+
+        if ($value instanceof Severity) {
+            return $value;
+        }
+
+        if (\is_string($value)) {
+            $severity = Severity::tryFrom($value);
+
+            if ($severity === null) {
+                throw new InvalidArgumentException(\sprintf(
+                    'Invalid value "%s" for "%s". Allowed values: %s',
+                    $value,
+                    $path,
+                    implode(', ', array_map(static fn(Severity $s) => $s->value, Severity::cases())),
+                ));
+            }
+
+            return $severity;
+        }
+
+        return null;
     }
 
     /**
