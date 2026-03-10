@@ -6,13 +6,13 @@ deptrac:
     - '#.*Test\.php$#'
 
   layers:
-    # Core layer - no dependencies on other layers
+    # ── Core ─────────────────────────────────────────────────────────
     - name: Core
       collectors:
         - type: directory
           value: src/Core/.*
 
-    # Domain layers - depend only on Core
+    # ── Domain layers ────────────────────────────────────────────────
     - name: Metrics
       collectors:
         - type: directory
@@ -38,23 +38,118 @@ deptrac:
         - type: directory
           value: src/Baseline/.*
 
-    # Analysis layer - depends on Core, orchestrates domain layers
-    - name: Analysis
+    # ── Analysis sub-layers ──────────────────────────────────────────
+    - name: Analysis.Exception
       collectors:
         - type: directory
-          value: src/Analysis/.*
+          value: src/Analysis/Exception/.*
 
-    # Infrastructure layer - depends on everything
-    - name: Infrastructure
+    - name: Analysis.Discovery
       collectors:
         - type: directory
-          value: src/Infrastructure/.*
+          value: src/Analysis/Discovery/.*
+
+    - name: Analysis.Namespace
+      collectors:
+        - type: directory
+          value: src/Analysis/Namespace_/.*
+
+    - name: Analysis.Repository
+      collectors:
+        - type: directory
+          value: src/Analysis/Repository/.*
+
+    - name: Analysis.Duplication
+      collectors:
+        - type: directory
+          value: src/Analysis/Duplication/.*
+
+    - name: Analysis.Aggregator
+      collectors:
+        - type: directory
+          value: src/Analysis/Aggregator/.*
+
+    - name: Analysis.RuleExecution
+      collectors:
+        - type: directory
+          value: src/Analysis/RuleExecution/.*
+
+    - name: Analysis.Collection
+      collectors:
+        - type: directory
+          value: src/Analysis/Collection/.*
+
+    - name: Analysis.Pipeline
+      collectors:
+        - type: directory
+          value: src/Analysis/Pipeline/.*
+
+    # ── Infrastructure sub-layers ────────────────────────────────────
+    - name: Infra.Serializer
+      collectors:
+        - type: directory
+          value: src/Infrastructure/Serializer/.*
+
+    - name: Infra.Storage
+      collectors:
+        - type: directory
+          value: src/Infrastructure/Storage/.*
+
+    - name: Infra.Logging
+      collectors:
+        - type: directory
+          value: src/Infrastructure/Logging/.*
+
+    - name: Infra.Profiler
+      collectors:
+        - type: directory
+          value: src/Infrastructure/Profiler/.*
+
+    - name: Infra.Rule
+      collectors:
+        - type: directory
+          value: src/Infrastructure/Rule/.*
+
+    - name: Infra.Git
+      collectors:
+        - type: directory
+          value: src/Infrastructure/Git/.*
+
+    - name: Infra.Cache
+      collectors:
+        - type: directory
+          value: src/Infrastructure/Cache/.*
+
+    - name: Infra.Ast
+      collectors:
+        - type: directory
+          value: src/Infrastructure/Ast/.*
+
+    - name: Infra.Collector
+      collectors:
+        - type: directory
+          value: src/Infrastructure/Collector/.*
+
+    - name: Infra.Parallel
+      collectors:
+        - type: directory
+          value: src/Infrastructure/Parallel/.*
+
+    - name: Infra.Console
+      collectors:
+        - type: directory
+          value: src/Infrastructure/Console/.*
+
+    - name: Infra.DI
+      collectors:
+        - type: directory
+          value: src/Infrastructure/DependencyInjection/.*
 
   ruleset:
-    # Core has no dependencies on other internal layers
+    # ── Core ─────────────────────────────────────────────────────────
     Core: []
 
-    # Domain layers depend only on Core
+    # ── Domain layers ────────────────────────────────────────────────
     Metrics:
       - Core
     Rules:
@@ -66,24 +161,128 @@ deptrac:
     Baseline:
       - Core
 
-    # Analysis orchestrates domain layers
-    Analysis:
+    # ── Analysis sub-layers ──────────────────────────────────────────
+    Analysis.Exception:
+      - Core
+    Analysis.Discovery:
+      - Core
+    Analysis.Namespace:
+      - Core
+      - Configuration
+    Analysis.Repository:
+      - Core
+    Analysis.Duplication:
+      - Core
+      - Configuration
+    Analysis.Aggregator:
+      - Core
+      - Analysis.Exception
+    Analysis.RuleExecution:
+      - Core
+      - Configuration
+    Analysis.Collection:
+      - Core
+      - Baseline
+      - Analysis.Exception
+    Analysis.Pipeline:
       - Core
       - Metrics
       - Rules
-      - Reporting
       - Configuration
       - Baseline
+      - Reporting
+      - Analysis.Exception
+      - Analysis.Discovery
+      - Analysis.Namespace
+      - Analysis.Repository
+      - Analysis.Duplication
+      - Analysis.Aggregator
+      - Analysis.RuleExecution
+      - Analysis.Collection
 
-    # Infrastructure can depend on everything
-    Infrastructure:
+    # ── Infrastructure sub-layers ────────────────────────────────────
+    # Leaf modules
+    Infra.Serializer:
+      - Core
+    Infra.Storage:
+      - Core
+    Infra.Logging:
+      - Core
+    Infra.Profiler:
+      - Core
+    Infra.Rule:
+      - Core
+    Infra.Git:
+      - Core
+      - Configuration
+      - Analysis.Discovery
+
+    # Mid-level modules
+    Infra.Cache:
+      - Core
+      - Configuration
+      - Infra.Serializer
+    Infra.Ast:
+      - Core
+      - Configuration
+      - Infra.Cache
+    Infra.Collector:
+      - Core
+      - Analysis.Collection
+      - Infra.Storage
+    Infra.Parallel:
+      - Core
+      - Configuration
+      - Analysis.Collection
+      - Infra.Serializer
+      - Infra.Ast
+      - Infra.Cache
+
+    # Hub modules
+    Infra.Console:
+      - Core
+      - Analysis.Pipeline
+      - Analysis.Collection
+      - Analysis.Discovery
+      - Analysis.Namespace
+      - Analysis.RuleExecution
+      - Configuration
+      - Baseline
+      - Reporting
+      - Infra.Git
+      - Infra.Rule
+      - Infra.Cache
+      - Infra.Logging
+      - Infra.Profiler
+      - Infra.Parallel
+
+    Infra.DI:
       - Core
       - Metrics
       - Rules
-      - Reporting
       - Configuration
       - Baseline
-      - Analysis
+      - Reporting
+      - Analysis.Exception
+      - Analysis.Discovery
+      - Analysis.Namespace
+      - Analysis.Repository
+      - Analysis.Duplication
+      - Analysis.Aggregator
+      - Analysis.RuleExecution
+      - Analysis.Collection
+      - Analysis.Pipeline
+      - Infra.Serializer
+      - Infra.Storage
+      - Infra.Logging
+      - Infra.Profiler
+      - Infra.Rule
+      - Infra.Git
+      - Infra.Cache
+      - Infra.Ast
+      - Infra.Parallel
+      - Infra.Collector
+      - Infra.Console
 
   formatters:
     graphviz:
