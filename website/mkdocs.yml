@@ -49,6 +49,7 @@ plugins:
             Quick Start: Быстрый старт
             Configuration: Конфигурация
             Usage: Использование
+            Usage Scenarios: Сценарии использования
             CLI Options: Опции CLI
             Git Integration: Интеграция с Git
             Baseline: Baseline
@@ -96,6 +97,7 @@ nav:
       - Quick Start: getting-started/quick-start.md
       - Configuration: getting-started/configuration.md
   - Usage:
+      - Usage Scenarios: usage/usage-scenarios.md
       - CLI Options: usage/cli-options.md
       - Git Integration: usage/git-integration.md
       - Baseline: usage/baseline.md

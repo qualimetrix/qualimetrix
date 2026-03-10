@@ -31,7 +31,7 @@ What AIMD should own:              What to leave to others:
 ## Completed Work
 
 <details>
-<summary><strong>Tier 1–3: All Done</strong> (click to expand)</summary>
+<summary><strong>Tier 1–4: All Done</strong> (click to expand)</summary>
 
 ### Tier 1: Accuracy Fixes
 - Raw metric export (`--format=metrics-json`)
@@ -50,6 +50,10 @@ What AIMD should own:              What to leave to others:
 - Security patterns — `security.sql-injection`, `security.xss`, `security.command-injection`, `security.sensitive-parameter`
 - Identical Sub-expression (`code-smell.identical-subexpression`)
 - Technical Debt estimation — remediation time per rule, debt summary in reports
+
+### Tier 4: CI Integration & Usability
+- `--fail-on` option — control exit code by severity (`--fail-on=error` ignores warnings)
+- `--format=github` — GitHub Actions inline PR annotations without SARIF upload
 
 </details>
 

@@ -36,10 +36,10 @@ jobs:
 
 ## Выходные параметры
 
-| Параметр     | Описание                                        |
-| ------------ | ----------------------------------------------- |
-| `violations` | Количество найденных нарушений                  |
-| `exit-code`  | Код возврата (0 = успех, 1 = найдены нарушения) |
+| Параметр     | Описание                                                 |
+| ------------ | -------------------------------------------------------- |
+| `violations` | Количество найденных нарушений                           |
+| `exit-code`  | Код возврата (0 = чисто, 1 = предупреждения, 2 = ошибки) |
 
 ## Примеры
 
@@ -95,6 +95,34 @@ jobs:
         if: steps.aimd.outputs.exit-code != '0'
         run: exit ${{ steps.aimd.outputs.exit-code }}
 ```
+
+### Инлайн-аннотации в PR (рекомендуется)
+
+Самый простой способ видеть нарушения прямо в диффе PR. Не требует дополнительных шагов загрузки.
+
+```yaml
+jobs:
+  aimd:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+
+      - name: Install dependencies
+        run: composer install --no-dev
+
+      - name: Run AI Mess Detector
+        run: vendor/bin/aimd check src/ --format=github --fail-on=error --no-progress
+```
+
+Нарушения отображаются как аннотации warning и error прямо на изменённых строках. Используйте `--fail-on=error`, чтобы предупреждения не приводили к падению сборки.
+
+!!! tip
+    Для одновременного получения инлайн-аннотаций И результатов во вкладке Security запустите AIMD дважды — один раз с `--format=github` и один раз с `--format=sarif`.
 
 ### JSON-вывод с артефактами
 

@@ -63,7 +63,7 @@ bin/aimd check src/ --format=json
 bin/aimd check src/ --format=sarif
 ```
 
-Доступные форматы: `text`, `text-verbose`, `json`, `metrics-json`, `checkstyle`, `sarif`, `gitlab`.
+Доступные форматы: `text`, `text-verbose`, `json`, `metrics-json`, `checkstyle`, `sarif`, `gitlab`, `github`.
 
 Подробности о каждом формате смотрите в разделе [Форматы вывода](output-formats.md).
 
@@ -83,6 +83,26 @@ bin/aimd check src/ --format=text-verbose --group-by=rule
 
 ```bash
 bin/aimd check src/ --format-opt=key=value
+```
+
+### `--fail-on`
+
+Минимальный уровень нарушения, при котором возвращается ненулевой код выхода. По умолчанию: любой уровень вызывает ошибку.
+
+```bash
+# Ошибка только при error, предупреждения допускаются
+bin/aimd check src/ --fail-on=error
+
+# Явно: ошибка и при warning (поведение по умолчанию)
+bin/aimd check src/ --fail-on=warning
+```
+
+Полезно в CI для постепенного внедрения AIMD — начните с `--fail-on=error` и ужесточите до `--fail-on=warning`, когда все предупреждения будут устранены.
+
+Также можно задать в `aimd.yaml`:
+
+```yaml
+fail_on: error
 ```
 
 ---

@@ -63,7 +63,7 @@ bin/aimd check src/ --format=json
 bin/aimd check src/ --format=sarif
 ```
 
-Available formats: `text`, `text-verbose`, `json`, `metrics-json`, `checkstyle`, `sarif`, `gitlab`.
+Available formats: `text`, `text-verbose`, `json`, `metrics-json`, `checkstyle`, `sarif`, `gitlab`, `github`.
 
 See [Output Formats](output-formats.md) for details on each format.
 
@@ -83,6 +83,26 @@ Pass formatter-specific options as key=value pairs. Can be repeated:
 
 ```bash
 bin/aimd check src/ --format-opt=key=value
+```
+
+### `--fail-on`
+
+Set the minimum severity that causes a non-zero exit code. Default: all severities cause failure.
+
+```bash
+# Only fail on errors, allow warnings
+bin/aimd check src/ --fail-on=error
+
+# Explicit: fail on warnings too (default behavior)
+bin/aimd check src/ --fail-on=warning
+```
+
+This is useful in CI to adopt AIMD gradually — start with `--fail-on=error` and tighten to `--fail-on=warning` once warnings are resolved.
+
+Can also be set in `aimd.yaml`:
+
+```yaml
+fail_on: error
 ```
 
 ---

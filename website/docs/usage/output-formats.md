@@ -1,6 +1,6 @@
 # Output Formats
 
-AI Mess Detector supports 7 output formats. Choose the one that fits your workflow.
+AI Mess Detector supports 8 output formats. Choose the one that fits your workflow.
 
 ```bash
 bin/aimd check src/ --format=<format>
@@ -323,6 +323,40 @@ Violations appear inline in the **Changes** tab of your Merge Request.
 
 ---
 
+## github
+
+GitHub Actions workflow command format. Produces inline annotations that appear directly in PR diffs when running in GitHub Actions.
+
+**When to use:** GitHub Actions CI. Simpler setup than SARIF — no upload step needed.
+
+**Example output:**
+
+```
+::warning file=src/Service/UserService.php,line=87,title=size.method-count.class::Class has 22 methods, max recommended is 20
+::error file=src/Service/UserService.php,line=42,title=complexity.cyclomatic.method::Cyclomatic complexity is 15, max allowed is 10
+```
+
+**Severity mapping:**
+
+| AIMD Severity | GitHub Command |
+| ------------- | -------------- |
+| warning       | `::warning`    |
+| error         | `::error`      |
+
+**CI usage (GitHub Actions):**
+
+```yaml
+- name: Run AIMD
+  run: vendor/bin/aimd check src/ --format=github --fail-on=error --no-progress
+```
+
+Annotations appear directly on the changed lines in your pull request — no SARIF upload needed.
+
+!!! tip
+    Use `--format=github` for quick inline annotations. Use `--format=sarif` if you also want results in the GitHub Security tab.
+
+---
+
 ## Comparison table
 
 | Format         | Readable | Machine   | Grouping                     | CI Integration             |
@@ -334,13 +368,16 @@ Violations appear inline in the **Changes** tab of your Merge Request.
 | `checkstyle`   | No       | Yes       | Built-in (by file)           | Jenkins, SonarQube         |
 | `sarif`        | No       | Yes       | Built-in                     | GitHub, VS Code, JetBrains |
 | `gitlab`       | No       | Yes       | Flat list                    | GitLab MR widget           |
+| `github`       | No       | No        | Flat list                    | GitHub Actions annotations |
 
 ### Exit codes
 
 All formats use the same exit codes:
 
-| Exit code | Meaning                                              |
-| --------- | ---------------------------------------------------- |
-| 0         | No errors (warnings are allowed)                     |
-| 1         | At least one error-severity violation                |
-| 2         | Runtime error (invalid config, file not found, etc.) |
+| Exit code | Meaning                               |
+| --------- | ------------------------------------- |
+| 0         | No violations                         |
+| 1         | At least one warning (but no errors)  |
+| 2         | At least one error-severity violation |
+
+With `--fail-on=error`, warnings no longer cause exit code 1 — only errors trigger a non-zero exit.

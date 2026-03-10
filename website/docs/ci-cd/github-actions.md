@@ -36,10 +36,10 @@ jobs:
 
 ## Outputs
 
-| Output       | Description                                   |
-| ------------ | --------------------------------------------- |
-| `violations` | Number of violations found                    |
-| `exit-code`  | Exit code (0 = success, 1 = violations found) |
+| Output       | Description                                     |
+| ------------ | ----------------------------------------------- |
+| `violations` | Number of violations found                      |
+| `exit-code`  | Exit code (0 = clean, 1 = warnings, 2 = errors) |
 
 ## Examples
 
@@ -95,6 +95,34 @@ jobs:
         if: steps.aimd.outputs.exit-code != '0'
         run: exit ${{ steps.aimd.outputs.exit-code }}
 ```
+
+### Inline PR Annotations (Recommended)
+
+The simplest way to see violations directly in your PR diff. No extra upload steps needed.
+
+```yaml
+jobs:
+  aimd:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+
+      - name: Install dependencies
+        run: composer install --no-dev
+
+      - name: Run AI Mess Detector
+        run: vendor/bin/aimd check src/ --format=github --fail-on=error --no-progress
+```
+
+Violations appear as warning and error annotations directly on the changed lines. Use `--fail-on=error` to allow warnings without failing the build.
+
+!!! tip
+    For both inline annotations AND Security tab results, run AIMD twice — once with `--format=github` and once with `--format=sarif`.
 
 ### JSON Output with Artifacts
 
