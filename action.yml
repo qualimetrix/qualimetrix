@@ -18,7 +18,7 @@ inputs:
     description: 'Path to config file'
     required: false
   format:
-    description: 'Output format (text, json, sarif, gitlab)'
+    description: 'Output format (text, json, sarif, gitlab, github)'
     required: false
     default: 'text'
   php-version:

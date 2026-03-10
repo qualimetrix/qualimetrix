@@ -235,6 +235,7 @@ final class ContainerFactoryTest extends TestCase
             'checkstyle',
             'sarif',
             'gitlab',
+            'github',
             'metrics-json',
         ];
 
