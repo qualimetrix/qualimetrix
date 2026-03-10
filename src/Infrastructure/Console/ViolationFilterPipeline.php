@@ -6,10 +6,10 @@ namespace AiMessDetector\Infrastructure\Console;
 
 use AiMessDetector\Baseline\BaselineLoader;
 use AiMessDetector\Baseline\Filter\BaselineFilter;
-use AiMessDetector\Baseline\Suppression\Suppression;
 use AiMessDetector\Baseline\Suppression\SuppressionFilter;
 use AiMessDetector\Baseline\ViolationHasher;
 use AiMessDetector\Configuration\ConfigurationProviderInterface;
+use AiMessDetector\Core\Suppression\Suppression;
 use AiMessDetector\Core\Util\PathMatcher;
 use AiMessDetector\Core\Violation\Filter\PathExclusionFilter;
 use AiMessDetector\Core\Violation\Violation;

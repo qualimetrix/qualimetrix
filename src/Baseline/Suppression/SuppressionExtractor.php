@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Baseline\Suppression;
 
+use AiMessDetector\Core\Suppression\Suppression;
+use AiMessDetector\Core\Suppression\SuppressionType;
 use PhpParser\Node;
 
 /**

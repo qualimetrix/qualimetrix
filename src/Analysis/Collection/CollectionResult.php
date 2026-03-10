@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Analysis\Collection;
 
-use AiMessDetector\Baseline\Suppression\Suppression;
+use AiMessDetector\Core\Suppression\Suppression;
 
 /**
  * Result of the collection phase.

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace AiMessDetector\Tests\Unit\Baseline\Suppression;
 
 use AiMessDetector\Baseline\Suppression\SuppressionExtractor;
-use AiMessDetector\Baseline\Suppression\SuppressionType;
+use AiMessDetector\Core\Suppression\SuppressionType;
 use PhpParser\Comment\Doc;
 use PhpParser\Node\Stmt\Class_;
 use PHPUnit\Framework\Attributes\CoversClass;

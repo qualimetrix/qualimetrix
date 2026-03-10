@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Baseline\Suppression;
+namespace AiMessDetector\Tests\Unit\Core\Suppression;
 
-use AiMessDetector\Baseline\Suppression\Suppression;
-use AiMessDetector\Baseline\Suppression\SuppressionType;
+use AiMessDetector\Core\Suppression\Suppression;
+use AiMessDetector\Core\Suppression\SuppressionType;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 

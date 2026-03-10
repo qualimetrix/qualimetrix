@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace AiMessDetector\Analysis\Collection;
 
 use AiMessDetector\Analysis\Collection\Metric\CompositeCollector;
-use AiMessDetector\Baseline\Suppression\Suppression;
 use AiMessDetector\Baseline\Suppression\SuppressionExtractor;
 use AiMessDetector\Core\Ast\FileParserInterface;
 use AiMessDetector\Core\Exception\ParseException;
 use AiMessDetector\Core\Metric\ClassMetricsProviderInterface;
 use AiMessDetector\Core\Metric\MethodMetricsProviderInterface;
 use AiMessDetector\Core\Metric\MetricBag;
+use AiMessDetector\Core\Suppression\Suppression;
 use AiMessDetector\Core\Symbol\SymbolPath;
 use PhpParser\Node;
 use PhpParser\NodeFinder;

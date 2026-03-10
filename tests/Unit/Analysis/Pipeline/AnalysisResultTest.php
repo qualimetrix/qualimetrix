@@ -6,10 +6,10 @@ namespace AiMessDetector\Tests\Unit\Analysis\Pipeline;
 
 use AiMessDetector\Analysis\Pipeline\AnalysisResult;
 use AiMessDetector\Analysis\Repository\InMemoryMetricRepository;
-use AiMessDetector\Baseline\Suppression\Suppression;
-use AiMessDetector\Baseline\Suppression\SuppressionType;
 use AiMessDetector\Core\Metric\MetricBag;
 use AiMessDetector\Core\Metric\MetricRepositoryInterface;
+use AiMessDetector\Core\Suppression\Suppression;
+use AiMessDetector\Core\Suppression\SuppressionType;
 use AiMessDetector\Core\Symbol\SymbolPath;
 use AiMessDetector\Core\Violation\Location;
 use AiMessDetector\Core\Violation\Severity;
