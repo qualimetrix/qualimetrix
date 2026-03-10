@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace AiMessDetector\Analysis\Pipeline;
 
 use AiMessDetector\Analysis\Repository\InMemoryMetricRepository;
-use AiMessDetector\Baseline\Suppression\Suppression;
 use AiMessDetector\Core\Metric\MetricRepositoryInterface;
+use AiMessDetector\Core\Suppression\Suppression;
 use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
 

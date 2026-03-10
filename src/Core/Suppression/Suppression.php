@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Baseline\Suppression;
+namespace AiMessDetector\Core\Suppression;
 
 use AiMessDetector\Core\Rule\RuleMatcher;
 

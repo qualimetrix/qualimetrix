@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Tests\Unit\Baseline\Suppression;
 
-use AiMessDetector\Baseline\Suppression\Suppression;
 use AiMessDetector\Baseline\Suppression\SuppressionFilter;
-use AiMessDetector\Baseline\Suppression\SuppressionType;
+use AiMessDetector\Core\Suppression\Suppression;
+use AiMessDetector\Core\Suppression\SuppressionType;
 use AiMessDetector\Core\Symbol\SymbolPath;
 use AiMessDetector\Core\Violation\Location;
 use AiMessDetector\Core\Violation\Severity;

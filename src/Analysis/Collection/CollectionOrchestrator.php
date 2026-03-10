@@ -6,12 +6,12 @@ namespace AiMessDetector\Analysis\Collection;
 
 use AiMessDetector\Analysis\Collection\Metric\DerivedMetricExtractor;
 use AiMessDetector\Analysis\Collection\Strategy\StrategySelectorInterface;
-use AiMessDetector\Baseline\Suppression\Suppression;
 use AiMessDetector\Core\Dependency\Dependency;
 use AiMessDetector\Core\Metric\MetricRepositoryInterface;
 use AiMessDetector\Core\Profiler\ProfilerHolder;
 use AiMessDetector\Core\Progress\NullProgressReporter;
 use AiMessDetector\Core\Progress\ProgressReporter;
+use AiMessDetector\Core\Suppression\Suppression;
 use AiMessDetector\Core\Symbol\SymbolPath;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;

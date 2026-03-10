@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Analysis\Collection;
 
-use AiMessDetector\Baseline\Suppression\Suppression;
 use AiMessDetector\Core\Dependency\Dependency;
 use AiMessDetector\Core\Metric\MetricBag;
+use AiMessDetector\Core\Suppression\Suppression;
 use AiMessDetector\Core\Symbol\SymbolPath;
 
 /**
