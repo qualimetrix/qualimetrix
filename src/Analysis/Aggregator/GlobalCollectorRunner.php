@@ -2,9 +2,8 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Analysis\Aggregation;
+namespace AiMessDetector\Analysis\Aggregator;
 
-use AiMessDetector\Analysis\Collection\Metric\GlobalCollectorSorter;
 use AiMessDetector\Core\Dependency\DependencyGraphInterface;
 use AiMessDetector\Core\Metric\GlobalContextCollectorInterface;
 use AiMessDetector\Core\Metric\MetricRepositoryInterface;

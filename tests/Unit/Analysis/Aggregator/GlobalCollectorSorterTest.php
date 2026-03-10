@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Analysis\Collector;
+namespace AiMessDetector\Tests\Unit\Analysis\Aggregator;
 
-use AiMessDetector\Analysis\Collection\Metric\GlobalCollectorSorter;
+use AiMessDetector\Analysis\Aggregator\GlobalCollectorSorter;
 use AiMessDetector\Analysis\Exception\CyclicDependencyException;
 use AiMessDetector\Core\Metric\GlobalContextCollectorInterface;
 use Generator;

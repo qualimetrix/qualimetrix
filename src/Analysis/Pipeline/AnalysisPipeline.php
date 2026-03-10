@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Analysis\Pipeline;
 
-use AiMessDetector\Analysis\Aggregation\GlobalCollectorRunner;
 use AiMessDetector\Analysis\Aggregator\AggregationHelper;
+use AiMessDetector\Analysis\Aggregator\GlobalCollectorRunner;
 use AiMessDetector\Analysis\Aggregator\MetricAggregator;
 use AiMessDetector\Analysis\Collection\CollectionOrchestratorInterface;
 use AiMessDetector\Analysis\Collection\Dependency\CircularDependencyDetector;
@@ -167,14 +167,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
         $duplicateBlocks = [];
         if ($this->duplicationDetector !== null) {
             $profiler?->start('duplication', 'pipeline');
-
-            // Read duplication options from rule configuration
-            $ruleOptions = $this->configurationProvider->getRuleOptions();
-            $dupOptions = $ruleOptions['duplication.code-duplication'] ?? [];
-            $minTokens = (int) ($dupOptions['min_tokens'] ?? $dupOptions['minTokens'] ?? 70);
-            $minLines = (int) ($dupOptions['min_lines'] ?? $dupOptions['minLines'] ?? 5);
-
-            $duplicateBlocks = $this->duplicationDetector->detect($files, $minTokens, $minLines);
+            $duplicateBlocks = $this->duplicationDetector->detect($files);
             $profiler?->stop('duplication');
 
             $this->logger->info('Duplication detection completed', [

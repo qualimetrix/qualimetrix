@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Analysis\Aggregation;
+namespace AiMessDetector\Tests\Unit\Analysis\Aggregator;
 
-use AiMessDetector\Analysis\Aggregation\GlobalCollectorRunner;
+use AiMessDetector\Analysis\Aggregator\GlobalCollectorRunner;
 use AiMessDetector\Core\Dependency\DependencyGraphInterface;
 use AiMessDetector\Core\Metric\GlobalContextCollectorInterface;
 use AiMessDetector\Core\Metric\MetricRepositoryInterface;
