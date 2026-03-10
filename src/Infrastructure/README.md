@@ -10,8 +10,17 @@ Infrastructure contains external adapters and entry points:
 - **Storage**: SQLite metric storage for large projects ([details](Storage/README.md))
 - **Git**: Git integration for analyzing staged/changed files ([details](Git/README.md))
 - **Logging**: PSR-3 logging ([details](Logging/README.md))
-- **Parallel**: Parallel processing strategies and serialization
+- **Parallel**: Parallel processing strategies
+- **Serializer**: Serialization abstraction (igbinary/PHP native)
 - **Profiler**: Span-based performance profiler ([details](Profiler/README.md))
+
+## Internal Dependency Layers
+
+Infrastructure sub-packages follow internal deptrac rules to prevent circular dependencies:
+
+- **Leaf** (no Infrastructure siblings): Serializer, Storage, Logging, Profiler, Rule, Git
+- **Mid** (depends on specific siblings): Cache -> Serializer, Ast -> Cache, Collector -> Storage, Parallel -> Ast + Cache + Serializer
+- **Hub** (wide dependencies): Console -> Git, Rule, Cache, Logging, Profiler; DI -> all
 
 ## Structure
 
@@ -54,17 +63,17 @@ Infrastructure/
 │   └── FileLogger.php
 ├── Parallel/
 │   ├── FileProcessingTask.php       # Task executed in parallel workers
-│   ├── WorkerBootstrap.php          # Worker process bootstrap
-│   ├── Serializer/
-│   │   ├── SerializerInterface.php  # Serializer contract
-│   │   ├── IgbinarySerializer.php   # igbinary-based serializer
-│   │   ├── PhpSerializer.php        # PHP native serializer
-│   │   └── SerializerSelector.php   # Auto-selects best serializer
+│   ├── WorkerBootstrap.php          # Worker bootstrap (filters by ParallelSafeCollectorInterface)
 │   └── Strategy/
 │       ├── SequentialStrategy.php      # Single-process execution
 │       ├── AmphpParallelStrategy.php   # Multi-worker via amphp
 │       ├── StrategySelector.php        # Strategy selection logic
 │       └── WorkerCountDetector.php     # Detects optimal worker count
+├── Serializer/
+│   ├── SerializerInterface.php      # Serializer contract
+│   ├── IgbinarySerializer.php       # igbinary-based serializer
+│   ├── PhpSerializer.php            # PHP native serializer
+│   └── SerializerSelector.php       # Auto-selects best serializer
 ├── Profiler/                         # -> See Profiler/README.md
 │   ├── Profiler.php
 │   └── Export/
