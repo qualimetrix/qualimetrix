@@ -234,27 +234,19 @@ Impact: DIT divergence dropped from **26.8% → 14.5%** (remaining = standard PH
 
 ---
 
-## 5. Accuracy Issues and Bugs Found
+## 5. Known Intentional Deviations
 
-### 5.1 ~~Critical: MI Uses Physical LOC~~ [FIXED]
-
-AIMD previously used physical LOC (`endLine - startLine + 1`) instead of logical/executable LOC for the MI formula. Fixed in commit 1048c9f — AIMD now uses LLOC (logical lines).
-
-### 5.2 ~~DIT Cross-File Inheritance~~ [FIXED]
-
-DIT was calculated per-file only, resulting in DIT=1 for most classes with parents in other files. Fixed by adding `DitGlobalCollector` that recalculates DIT from the global dependency graph.
-
-### 5.3 CCN Variant Difference (intentional)
+### 5.1 CCN Variant Difference
 
 AIMD counts `??`, `?->`, and `match` arm conditions as decision points (CCN2+ variant). This is documented in website docs. Users comparing with pdepend will see AIMD report higher values for code using these constructs.
 
-### 5.4 NPath for `match` Expressions (intentional)
+### 5.2 NPath for `match` Expressions
 
 AIMD uses additive NPath for `match` (consistent with Nejmeh's original `switch` formula), while pdepend uses multiplicative approach producing extreme values (up to 1.4M). AIMD's approach is more reasonable and documented.
 
-### 5.5 ~~No Raw Metric Export~~ [FIXED]
+### 5.3 DIT Standard PHP Class Boundary
 
-The `--format=metrics-json` output format was added, providing full metric export for all symbols.
+AIMD stops DIT counting at standard PHP classes (Exception, DateTime, etc.), treating them as roots. pdepend counts depth inside PHP stdlib. AIMD's approach is intentional — stdlib depth is not useful for project-level analysis.
 
 ---
 
@@ -265,7 +257,7 @@ The `--format=metrics-json` output format was added, providing full metric expor
 | Parser         | nikic/php-parser 5.x               | nikic/php-parser 4/5.x                  | Custom tokenizer                     |
 | CCN variant    | CCN2 + `??` + `match` arms         | CCN (class-level)                       | CCN + CCN2                           |
 | MI scope       | Method-level, normalized 0-100     | Class-level, raw 0-171 + comment weight | Method-level, raw 0-171              |
-| MI LOC input   | LLOC (fixed)                       | LLOC                                    | ELOC                                 |
+| MI LOC input   | LLOC                               | LLOC                                    | ELOC                                 |
 | LCOM variant   | LCOM4 (connected components)       | Henderson-Sellers                       | Not reported                         |
 | CBO scope      | 14 dependency types, bidirectional | Afferent + efferent separated           | CA + CE separated                    |
 | Halstead scope | Method-level, semantic operators   | Class-level aggregated                  | Method-level, all tokens             |
