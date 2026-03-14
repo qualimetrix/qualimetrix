@@ -206,7 +206,7 @@ WMC is not collected by a dedicated collector. It is computed as `ccn.sum` — t
 
 ## DIT (Depth of Inheritance Tree)
 
-**Collector:** `InheritanceDepthCollector`
+**Collectors:** `InheritanceDepthCollector` (per-file), `DitGlobalCollector` (global recalculation)
 **Provides:** `dit`
 **Level:** Class
 
@@ -217,6 +217,10 @@ DIT = depth of the class in the inheritance hierarchy.
 - Classes without parents: DIT = 0
 - Subclasses of standard PHP classes (Exception, DateTime, etc.): DIT = 1
 - For others: recursive counting through the inheritance chain
+
+`InheritanceDepthCollector` computes DIT per-file (can only see classes within the same file).
+`DitGlobalCollector` then recalculates DIT using the global dependency graph, correctly
+traversing inheritance chains that span multiple files.
 
 ### Interpretation
 
