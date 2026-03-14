@@ -67,6 +67,8 @@
         "test:coverage": "phpunit --coverage-html coverage",
         "phpstan": "phpstan analyse --memory-limit=512M",
         "deptrac": "deptrac analyse",
+        "test:js": "cd src/Reporting/Template && npm test",
+        "build:js": "cd src/Reporting/Template && npm run build",
         "cs-check": "php-cs-fixer fix --dry-run --diff",
         "cs-fix": "php-cs-fixer fix",
         "check": [
@@ -81,6 +83,8 @@
         "test:coverage": "Run PHPUnit tests with HTML coverage report",
         "phpstan": "Run PHPStan static analysis (level 8)",
         "deptrac": "Check architectural layer dependencies",
+        "test:js": "Run JS tests for HTML report (vitest)",
+        "build:js": "Rebuild HTML report JS bundle (vite)",
         "cs-check": "Check code style without fixing",
         "cs-fix": "Fix code style with PHP-CS-Fixer",
         "check": "Run all checks: tests, phpstan, deptrac"

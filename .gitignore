@@ -58,3 +58,10 @@ website/site/
 # Demo/example files
 examples/
 *.json
+
+# Node modules (HTML report build pipeline)
+node_modules/
+
+# Benchmarks (vendor is downloaded, only composer.json is tracked)
+/benchmarks/vendor/
+/benchmarks/composer.lock
