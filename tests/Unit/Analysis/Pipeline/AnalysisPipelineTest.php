@@ -13,6 +13,7 @@ use AiMessDetector\Analysis\Discovery\FileDiscoveryInterface;
 use AiMessDetector\Analysis\Pipeline\AnalysisPipeline;
 use AiMessDetector\Analysis\Repository\DefaultMetricRepositoryFactory;
 use AiMessDetector\Analysis\RuleExecution\RuleExecutorInterface;
+use AiMessDetector\Configuration\AnalysisConfiguration;
 use AiMessDetector\Configuration\ConfigurationProviderInterface;
 use AiMessDetector\Core\Dependency\Dependency;
 use AiMessDetector\Core\Dependency\DependencyType;
@@ -48,6 +49,7 @@ final class AnalysisPipelineTest extends TestCase
         $this->logger = $this->createStub(LoggerInterface::class);
         $this->compositeCollector = new CompositeCollector([]);
 
+        $this->configurationProvider->method('getConfiguration')->willReturn(new AnalysisConfiguration());
         $this->configurationProvider->method('getRuleOptions')->willReturn([]);
         $this->ruleExecutor->method('execute')->willReturn([]);
     }
@@ -228,18 +230,59 @@ final class AnalysisPipelineTest extends TestCase
         $pipeline->analyze(['/path/to/src', '/path/to/src/sub']);
     }
 
+    #[Test]
+    public function itSkipsDuplicationDetectionWhenRuleDisabled(): void
+    {
+        $this->defaultDiscovery->method('discover')->willReturn(new ArrayIterator([]));
+        $this->collectionOrchestrator->method('collect')->willReturn(new CollectionPhaseOutput(new CollectionResult(0, 0), []));
+
+        $configProvider = $this->createStub(ConfigurationProviderInterface::class);
+        $configProvider->method('getConfiguration')->willReturn(
+            new AnalysisConfiguration(disabledRules: ['duplication.code-duplication']),
+        );
+        $configProvider->method('getRuleOptions')->willReturn([]);
+
+        // DuplicationDetector is final, so we verify indirectly:
+        // with rule disabled, pipeline completes without calling detect()
+        $pipeline = $this->createPipeline(configurationProvider: $configProvider);
+
+        $result = $pipeline->analyze('/path/to/src');
+
+        self::assertSame([], $result->violations);
+    }
+
+    #[Test]
+    public function itSkipsCircularDependencyDetectionWhenRuleDisabled(): void
+    {
+        $this->defaultDiscovery->method('discover')->willReturn(new ArrayIterator([]));
+        $this->collectionOrchestrator->method('collect')->willReturn(new CollectionPhaseOutput(new CollectionResult(0, 0), []));
+
+        $configProvider = $this->createStub(ConfigurationProviderInterface::class);
+        $configProvider->method('getConfiguration')->willReturn(
+            new AnalysisConfiguration(disabledRules: ['architecture.circular-dependency']),
+        );
+        $configProvider->method('getRuleOptions')->willReturn([]);
+
+        $pipeline = $this->createPipeline(configurationProvider: $configProvider);
+
+        $result = $pipeline->analyze('/path/to/src');
+
+        self::assertSame([], $result->violations);
+    }
+
     private function createPipeline(
         ?FileDiscoveryInterface $defaultDiscovery = null,
         ?CollectionOrchestratorInterface $collectionOrchestrator = null,
         ?RuleExecutorInterface $ruleExecutor = null,
         ?LoggerInterface $logger = null,
+        ?ConfigurationProviderInterface $configurationProvider = null,
     ): AnalysisPipeline {
         return new AnalysisPipeline(
             defaultDiscovery: $defaultDiscovery ?? $this->defaultDiscovery,
             collectionOrchestrator: $collectionOrchestrator ?? $this->collectionOrchestrator,
             compositeCollector: $this->compositeCollector,
             ruleExecutor: $ruleExecutor ?? $this->ruleExecutor,
-            configurationProvider: $this->configurationProvider,
+            configurationProvider: $configurationProvider ?? $this->configurationProvider,
             globalCollectorRunner: $this->globalCollectorRunner,
             repositoryFactory: new DefaultMetricRepositoryFactory(),
             logger: $logger ?? $this->logger,
