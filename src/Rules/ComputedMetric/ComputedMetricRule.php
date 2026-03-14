@@ -17,7 +17,7 @@ use AiMessDetector\Rules\AbstractRule;
 
 final class ComputedMetricRule extends AbstractRule
 {
-    public const string NAME = 'computed-metrics';
+    public const string NAME = 'computed.health';
 
     public function getName(): string
     {

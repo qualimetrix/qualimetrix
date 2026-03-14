@@ -56,7 +56,7 @@ Rules are analysis rule implementations for static analysis. Rules are **complet
 | **code-smell.unused-private**          | CodeSmell       | Simple                          | Unused private methods/props    | enabled: true                      |
 | **code-smell.identical-subexpression** | CodeSmell       | Simple                          | Identical sub-expressions       | enabled: true                      |
 | **duplication.code-duplication**       | Duplication     | Simple                          | Duplicate code blocks           | min_lines: 5, min_tokens: 70, W/E  |
-| **computed-metrics**                   | Maintainability | Simple                          | Computed health metric checks   | per-definition thresholds          |
+| **computed.health**                    | Maintainability | Simple                          | Computed health metric checks   | per-definition thresholds          |
 
 ---
 
@@ -621,7 +621,7 @@ rules:
 
 ## Computed Metric Rule
 
-**Name:** `computed-metrics` | **Category:** Maintainability | **Type:** Simple
+**Name:** `computed.health` | **Category:** Maintainability | **Type:** Simple
 
 Checks computed health metrics against thresholds. Evaluates derived metrics defined in the `computed_metrics` config section (or 6 built-in `health.*` scores) and generates violations when values cross thresholds.
 
@@ -658,7 +658,7 @@ computed_metrics:
 
 **CLI:**
 ```bash
---disable-rule=computed-metrics    # Disable all computed metric violations
+--disable-rule=computed.health    # Disable all computed metric violations
 --disable-rule=health              # Disable health.* violations (prefix match on violationCode)
 --disable-rule=health.complexity   # Disable a specific health score
 ```

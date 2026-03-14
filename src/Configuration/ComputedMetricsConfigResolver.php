@@ -62,6 +62,12 @@ final class ComputedMetricsConfigResolver
             if (isset($definitions[$name])) {
                 // Merge override into existing (health.*)
                 $definitions[$name] = $this->mergeDefinition($definitions[$name], $overrides);
+            } elseif (str_starts_with($name, 'health.')) {
+                throw new RuntimeException(\sprintf(
+                    'Computed metric name "%s" uses reserved "health.*" prefix. '
+                    . 'Use "computed.*" prefix for user-defined metrics.',
+                    $name,
+                ));
             } else {
                 // New user-defined metric
                 $definitions[$name] = $this->createDefinition($name, $overrides);
@@ -88,12 +94,13 @@ final class ComputedMetricsConfigResolver
     {
         $formulas = $base->formulas;
 
-        // 'formula' (singular) is shorthand for all levels
+        // 'formula' (singular) is shorthand — overrides ALL levels with one formula.
+        // This replaces any existing per-level formulas (including specialized ones
+        // like health.coupling's project formula). If the user wants to override
+        // only specific levels, they should use 'formulas' (plural) instead.
         if (isset($overrides['formula']) && \is_string($overrides['formula'])) {
             $shorthand = $overrides['formula'];
             foreach (['class', 'namespace', 'project'] as $levelKey) {
-                // Only apply as fallback — don't override existing per-level formulas
-                // unless 'formulas' also provides overrides (handled below)
                 $formulas[$levelKey] = $shorthand;
             }
         }

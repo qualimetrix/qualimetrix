@@ -44,7 +44,7 @@ final class CheckCommandTest extends TestCase
         $commandTester->execute([
             'paths' => [$this->tempDir],
             '--no-progress' => true,
-            '--disable-rule' => ['computed-metrics'],
+            '--disable-rule' => ['computed.health'],
         ]);
 
         // Assert success (exit code 0 - no violations)
@@ -114,7 +114,7 @@ class ComplexClass {
             'paths' => [$this->tempDir],
             '--format' => 'json',
             '--no-progress' => true,
-            '--disable-rule' => ['computed-metrics'],
+            '--disable-rule' => ['computed.health'],
         ]);
 
         // Assert success
@@ -140,7 +140,7 @@ class ComplexClass {
         $commandTester->execute([
             'paths' => [$nonExistentPath],
             '--no-progress' => true,
-            '--disable-rule' => ['computed-metrics'],
+            '--disable-rule' => ['computed.health'],
         ]);
 
         // Assert success (no files found, but not an error)
@@ -169,7 +169,7 @@ class ComplexClass {
             'paths' => [$this->tempDir],
             '--exclude' => ['vendor'],
             '--no-progress' => true,
-            '--disable-rule' => ['computed-metrics'],
+            '--disable-rule' => ['computed.health'],
         ]);
 
         // Assert success
