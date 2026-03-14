@@ -22,6 +22,8 @@ use AiMessDetector\Core\Metric\MetricDefinition;
 use AiMessDetector\Core\Profiler\ProfilerHolder;
 use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Metrics\ComputedMetric\ComputedMetricEvaluator;
+use AiMessDetector\Rules\Architecture\CircularDependencyRule;
+use AiMessDetector\Rules\Duplication\CodeDuplicationRule;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
@@ -170,13 +172,17 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
         }
 
         // Phase 3.7: Detect circular dependencies
-        $profiler?->start('cycles', 'pipeline');
-        $cycles = (new CircularDependencyDetector())->detect($graph);
-        $profiler?->stop('cycles');
+        $config = $this->configurationProvider->getConfiguration();
+        $cycles = [];
+        if ($config->isRuleEnabled(CircularDependencyRule::NAME)) {
+            $profiler?->start('cycles', 'pipeline');
+            $cycles = (new CircularDependencyDetector())->detect($graph);
+            $profiler?->stop('cycles');
+        }
 
         // Phase 3.8: Detect code duplication
         $duplicateBlocks = [];
-        if ($this->duplicationDetector !== null) {
+        if ($this->duplicationDetector !== null && $config->isRuleEnabled(CodeDuplicationRule::NAME)) {
             $profiler?->start('duplication', 'pipeline');
             $duplicateBlocks = $this->duplicationDetector->detect($files);
             $profiler?->stop('duplication');
