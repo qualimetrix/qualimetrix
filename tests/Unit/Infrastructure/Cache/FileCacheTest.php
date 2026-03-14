@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace AiMessDetector\Tests\Unit\Infrastructure\Cache;
 
 use AiMessDetector\Infrastructure\Cache\FileCache;
+use AiMessDetector\Infrastructure\Serializer\PhpSerializer;
+use AiMessDetector\Infrastructure\Serializer\SerializerInterface;
 use FilesystemIterator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -178,6 +180,101 @@ final class FileCacheTest extends TestCase
 
         self::assertNull($value);
         self::assertFalse($this->cache->has($key));
+    }
+
+    #[Test]
+    public function itWritesSerializerMarkerOnFirstAccess(): void
+    {
+        $this->cache->set('key', 'value');
+
+        $markerPath = $this->cacheDir . '/.serializer';
+        self::assertFileExists($markerPath);
+        $content = file_get_contents($markerPath);
+        self::assertIsString($content);
+        self::assertNotEmpty(trim($content));
+    }
+
+    #[Test]
+    public function itClearsCacheWhenSerializerChanges(): void
+    {
+        // Write data with default serializer
+        $cache1 = new FileCache($this->cacheDir, new PhpSerializer());
+        $cache1->set('key1', 'value1');
+        self::assertSame('value1', $cache1->get('key1'));
+
+        // Create a fake serializer with a different name
+        $otherSerializer = $this->createFakeSerializer('other');
+
+        // Create a new cache with the different serializer — should clear old data
+        $cache2 = new FileCache($this->cacheDir, $otherSerializer);
+        self::assertNull($cache2->get('key1'));
+
+        // New writes should work
+        $cache2->set('key2', 'value2');
+        self::assertSame('value2', $cache2->get('key2'));
+    }
+
+    #[Test]
+    public function itPreservesCacheWhenSerializerIsSame(): void
+    {
+        $cache1 = new FileCache($this->cacheDir, new PhpSerializer());
+        $cache1->set('key1', 'value1');
+
+        // Same serializer — cache should be preserved
+        $cache2 = new FileCache($this->cacheDir, new PhpSerializer());
+        self::assertSame('value1', $cache2->get('key1'));
+    }
+
+    #[Test]
+    public function itRewritesMarkerAfterManualClear(): void
+    {
+        $this->cache->set('key', 'value');
+        $markerPath = $this->cacheDir . '/.serializer';
+        self::assertFileExists($markerPath);
+
+        $this->cache->clear();
+        self::assertFileDoesNotExist($markerPath);
+
+        // Next access should re-create the marker
+        $this->cache->set('key2', 'value2');
+        self::assertFileExists($markerPath);
+    }
+
+    private function createFakeSerializer(string $name): SerializerInterface
+    {
+        $php = new PhpSerializer();
+
+        return new class ($name, $php) implements SerializerInterface {
+            public function __construct(
+                private readonly string $name,
+                private readonly PhpSerializer $inner,
+            ) {}
+
+            public function getName(): string
+            {
+                return $this->name;
+            }
+
+            public function isAvailable(): bool
+            {
+                return true;
+            }
+
+            public function getPriority(): int
+            {
+                return 0;
+            }
+
+            public function serialize(mixed $data): string
+            {
+                return $this->inner->serialize($data);
+            }
+
+            public function unserialize(string $data): mixed
+            {
+                return $this->inner->unserialize($data);
+            }
+        };
     }
 
     private function removeDirectory(string $dir): void

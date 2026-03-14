@@ -24,6 +24,12 @@ final class IgbinarySerializerTest extends TestCase
     }
 
     #[Test]
+    public function itReturnsName(): void
+    {
+        self::assertSame('igbinary', $this->serializer->getName());
+    }
+
+    #[Test]
     public function itIsAvailable(): void
     {
         // Test runs only if the extension is available

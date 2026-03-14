@@ -29,6 +29,11 @@ final class IgbinarySerializer implements SerializerInterface
      */
     private const string IGBINARY_NULL = "\x00\x00\x00\x02\x00";
 
+    public function getName(): string
+    {
+        return 'igbinary';
+    }
+
     /**
      * Checks if the igbinary extension is available.
      */
