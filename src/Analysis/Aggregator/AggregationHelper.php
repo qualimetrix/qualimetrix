@@ -19,11 +19,13 @@ final class AggregationHelper
      *
      * @param array<string, list<int|float>> $metricValues
      * @param list<MetricDefinition> $definitions
+     * @param array<string, list<float>>|null $metricWeights parallel weights for weighted average
      */
     public static function applyAggregations(
         array $metricValues,
         array $definitions,
         SymbolLevel $targetLevel,
+        ?array $metricWeights = null,
     ): MetricBag {
         $bag = new MetricBag();
 
@@ -34,10 +36,26 @@ final class AggregationHelper
                 continue;
             }
 
-            foreach ($definition->getStrategiesForLevel($targetLevel) as $strategy) {
-                $aggregatedValue = self::applyStrategy($strategy, $values);
+            $weights = $metricWeights[$definition->name] ?? null;
+            $strategies = $definition->getStrategiesForLevel($targetLevel);
+
+            foreach ($strategies as $strategy) {
+                $aggregatedValue = self::applyStrategy($strategy, $values, $weights);
                 $aggregatedName = $definition->aggregatedName($strategy);
                 $bag = $bag->with($aggregatedName, $aggregatedValue);
+            }
+
+            // Auto-store count alongside Average for weighted average at higher levels.
+            // At Method→Class level ($weights=null): count = number of methods.
+            // At Class→Namespace level ($weights present): count = sum of class-level method counts,
+            // giving the total number of methods across all classes in the namespace.
+            if (\in_array(AggregationStrategy::Average, $strategies, true)
+                && !\in_array(AggregationStrategy::Count, $strategies, true)
+            ) {
+                $countName = $definition->aggregatedName(AggregationStrategy::Count);
+                $weightSum = $weights !== null ? array_sum($weights) : 0.0;
+                $count = $weightSum > 0.0 ? (int) $weightSum : \count($values);
+                $bag = $bag->with($countName, $count);
             }
         }
 
@@ -48,11 +66,28 @@ final class AggregationHelper
      * Applies a single aggregation strategy to a list of values.
      *
      * @param list<int|float> $values
+     * @param list<float>|null $weights parallel weights for weighted average (same length as $values)
      */
-    public static function applyStrategy(AggregationStrategy $strategy, array $values): int|float
+    public static function applyStrategy(AggregationStrategy $strategy, array $values, ?array $weights = null): int|float
     {
         if ($values === []) {
             return 0;
+        }
+
+        if ($strategy === AggregationStrategy::Average && $weights !== null) {
+            $totalWeight = array_sum($weights);
+
+            if ($totalWeight <= 0.0) {
+                return array_sum($values) / \count($values);
+            }
+
+            $weightedSum = 0.0;
+
+            foreach ($values as $i => $value) {
+                $weightedSum += $value * ($weights[$i] ?? 1.0);
+            }
+
+            return $weightedSum / $totalWeight;
         }
 
         return match ($strategy) {
@@ -150,22 +185,25 @@ final class AggregationHelper
      * For Class-collected metrics, reads directly from Class level.
      * For File-collected metrics, reads directly from File level.
      *
+     * Also collects weights for weighted average: when reading .avg fallback,
+     * the corresponding .count is used as weight (falls back to 1.0 for backward compatibility).
+     *
      * @param list<SymbolInfo> $symbolInfos Class/Method symbols
      * @param list<SymbolInfo> $fileSymbols File symbols for this namespace
      * @param list<MetricDefinition> $definitions
-     *
-     * @return array<string, list<int|float>> metric name => values
      */
     public static function collectNamespaceMetricValues(
         MetricRepositoryInterface $repository,
         array $symbolInfos,
         array $fileSymbols,
         array $definitions,
-    ): array {
+    ): AggregationValues {
         $values = [];
+        $weights = [];
 
         foreach ($definitions as $definition) {
             $values[$definition->name] = [];
+            $weights[$definition->name] = [];
         }
 
         // Collect from class/method symbols
@@ -184,11 +222,20 @@ final class AggregationHelper
                 // feeds into namespace-level aggregation. For non-additive metrics (MI)
                 // that only have Average at class level, fall back to Average.
                 if ($definition->collectedAt === SymbolLevel::Method) {
-                    $value = $bag->get($definition->aggregatedName(AggregationStrategy::Sum))
-                        ?? $bag->get($definition->aggregatedName(AggregationStrategy::Average));
+                    $sumValue = $bag->get($definition->aggregatedName(AggregationStrategy::Sum));
 
-                    if ($value !== null) {
-                        $values[$definition->name][] = $value;
+                    if ($sumValue !== null) {
+                        $values[$definition->name][] = $sumValue;
+                        $weights[$definition->name][] = 1.0;
+                    } else {
+                        $avgValue = $bag->get($definition->aggregatedName(AggregationStrategy::Average));
+
+                        if ($avgValue !== null) {
+                            $values[$definition->name][] = $avgValue;
+                            // Use .count as weight for weighted average; fall back to 1.0
+                            $count = $bag->get($definition->aggregatedName(AggregationStrategy::Count));
+                            $weights[$definition->name][] = $count !== null && $count > 0 ? (float) $count : 1.0;
+                        }
                     }
                 }
 
@@ -198,6 +245,7 @@ final class AggregationHelper
 
                     if ($value !== null) {
                         $values[$definition->name][] = $value;
+                        $weights[$definition->name][] = 1.0;
                     }
                 }
             }
@@ -217,10 +265,11 @@ final class AggregationHelper
 
                 if ($value !== null) {
                     $values[$definition->name][] = $value;
+                    $weights[$definition->name][] = 1.0;
                 }
             }
         }
 
-        return $values;
+        return new AggregationValues($values, $weights);
     }
 }

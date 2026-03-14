@@ -20,6 +20,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 #[CoversClass(ClassToNamespaceAggregator::class)]
+#[CoversClass(AggregationHelper::class)]
 final class ClassToNamespaceAggregatorTest extends TestCase
 {
     #[Test]
@@ -102,11 +103,43 @@ final class ClassToNamespaceAggregatorTest extends TestCase
     }
 
     #[Test]
-    public function itAggregatesNonAdditiveMethodMetricsViaAverageFallback(): void
+    public function itAggregatesNonAdditiveMethodMetricsViaWeightedAverageFallback(): void
     {
         $repository = new InMemoryMetricRepository();
 
-        // Two classes with method-level MI already aggregated to class level (avg only, no sum)
+        // Class with 10 methods, MI avg=80 — weighs more than class with 2 methods
+        $class1 = SymbolPath::forClass('App\\Service', 'UserService');
+        $repository->add($class1, (new MetricBag())
+            ->with('mi.avg', 80.0)
+            ->with('mi.count', 10)
+            ->with('mi.min', 70.0), 'src/Service/UserService.php', 10);
+
+        $class2 = SymbolPath::forClass('App\\Service', 'OrderService');
+        $repository->add($class2, (new MetricBag())
+            ->with('mi.avg', 60.0)
+            ->with('mi.count', 2)
+            ->with('mi.min', 50.0), 'src/Service/OrderService.php', 10);
+
+        $collector = new MaintainabilityIndexCollector();
+        $aggregator = new MetricAggregator($collector->getMetricDefinitions());
+        $aggregator->aggregate($repository);
+
+        $nsMetrics = $repository->get(SymbolPath::forNamespace('App\\Service'));
+
+        // Weighted average: (80*10 + 60*2) / (10+2) = 920/12 ≈ 76.67
+        self::assertEqualsWithDelta(76.67, $nsMetrics->get('mi.avg'), 0.01);
+        // mi.count at namespace = total method count = 12 (stored as int)
+        self::assertSame(12, $nsMetrics->get('mi.count'));
+        // Namespace mi.min = min of [80.0, 60.0] = 60.0
+        self::assertEqualsWithDelta(60.0, $nsMetrics->get('mi.min'), 0.01);
+    }
+
+    #[Test]
+    public function itFallsBackToPlainAverageWhenCountMissing(): void
+    {
+        $repository = new InMemoryMetricRepository();
+
+        // Legacy data without .count — should fall back to plain average (weight=1.0)
         $class1 = SymbolPath::forClass('App\\Service', 'UserService');
         $repository->add($class1, (new MetricBag())
             ->with('mi.avg', 80.0)
@@ -123,11 +156,35 @@ final class ClassToNamespaceAggregatorTest extends TestCase
 
         $nsMetrics = $repository->get(SymbolPath::forNamespace('App\\Service'));
 
-        // MI uses Average fallback (no Sum at class level)
-        // Namespace mi.avg = average of [80.0, 60.0] = 70.0
+        // Without .count, weight=1.0 each → plain average: (80+60)/2 = 70
         self::assertEqualsWithDelta(70.0, $nsMetrics->get('mi.avg'), 0.01);
-        // Namespace mi.min = min of [80.0, 60.0] = 60.0
-        self::assertEqualsWithDelta(60.0, $nsMetrics->get('mi.min'), 0.01);
+        // mi.count = 2 (fallback weight=1.0 per class, sum of weights = 2)
+        self::assertSame(2, $nsMetrics->get('mi.count'));
+    }
+
+    #[Test]
+    public function itHandlesSingleClassNamespaceCorrectly(): void
+    {
+        $repository = new InMemoryMetricRepository();
+
+        // Single class with 5 methods — weighted average should equal the class avg
+        $class1 = SymbolPath::forClass('App\\Single', 'OnlyService');
+        $repository->add($class1, (new MetricBag())
+            ->with('mi.avg', 85.0)
+            ->with('mi.count', 5)
+            ->with('mi.min', 75.0), 'src/Single/OnlyService.php', 10);
+
+        $collector = new MaintainabilityIndexCollector();
+        $aggregator = new MetricAggregator($collector->getMetricDefinitions());
+        $aggregator->aggregate($repository);
+
+        $nsMetrics = $repository->get(SymbolPath::forNamespace('App\\Single'));
+
+        // Single class: weighted avg = 85.0 (trivially)
+        self::assertEqualsWithDelta(85.0, $nsMetrics->get('mi.avg'), 0.01);
+        self::assertSame(5, $nsMetrics->get('mi.count'));
+        // min is computed from collected values (.avg fallback) = min([85.0]) = 85.0
+        self::assertEqualsWithDelta(85.0, $nsMetrics->get('mi.min'), 0.01);
     }
 
     #[Test]
@@ -163,5 +220,108 @@ final class ClassToNamespaceAggregatorTest extends TestCase
         self::assertEqualsWithDelta(50.0, $nsMetrics->get('ccn.sum'), 0.01);
         // namespace ccn.avg = average of class sums = 25 (not average of class averages)
         self::assertEqualsWithDelta(25.0, $nsMetrics->get('ccn.avg'), 0.01);
+    }
+
+    #[Test]
+    public function itAdditiveMetricsAreUnaffectedByWeights(): void
+    {
+        $repository = new InMemoryMetricRepository();
+
+        // Additive metrics (CCN with Sum) use weight=1.0 — Sum/Max/Min are unaffected
+        $class1 = SymbolPath::forClass('App\\Service', 'UserService');
+        $repository->add($class1, (new MetricBag())
+            ->with('ccn.sum', 20.0)
+            ->with('ccn.avg', 5.0)
+            ->with('ccn.count', 4), 'src/Service/UserService.php', 10);
+
+        $class2 = SymbolPath::forClass('App\\Service', 'OrderService');
+        $repository->add($class2, (new MetricBag())
+            ->with('ccn.sum', 30.0)
+            ->with('ccn.avg', 10.0)
+            ->with('ccn.count', 3), 'src/Service/OrderService.php', 10);
+
+        $definition = new MetricDefinition(
+            name: 'ccn',
+            collectedAt: SymbolLevel::Method,
+            aggregations: [
+                SymbolLevel::Class_->value => [AggregationStrategy::Sum, AggregationStrategy::Average],
+                SymbolLevel::Namespace_->value => [AggregationStrategy::Sum, AggregationStrategy::Average],
+            ],
+        );
+        $aggregator = new MetricAggregator([$definition]);
+        $aggregator->aggregate($repository);
+
+        $nsMetrics = $repository->get(SymbolPath::forNamespace('App\\Service'));
+
+        // Sum uses .sum values (not .avg), weight=1.0 → Sum unaffected
+        self::assertEqualsWithDelta(50.0, $nsMetrics->get('ccn.sum'), 0.01);
+        // Average of .sum values with weight=1.0 → plain average: (20+30)/2 = 25
+        self::assertEqualsWithDelta(25.0, $nsMetrics->get('ccn.avg'), 0.01);
+    }
+
+    #[Test]
+    public function applyStrategyWithWeightsComputesWeightedAverage(): void
+    {
+        // Direct unit test for AggregationHelper::applyStrategy with weights
+        $values = [80.0, 60.0];
+        $weights = [10.0, 2.0];
+
+        $result = AggregationHelper::applyStrategy(AggregationStrategy::Average, $values, $weights);
+
+        // (80*10 + 60*2) / 12 = 76.666...
+        self::assertEqualsWithDelta(76.67, $result, 0.01);
+
+        // Non-Average strategies ignore weights
+        $sum = AggregationHelper::applyStrategy(AggregationStrategy::Sum, $values, $weights);
+        self::assertEqualsWithDelta(140.0, $sum, 0.01);
+
+        $max = AggregationHelper::applyStrategy(AggregationStrategy::Max, $values, $weights);
+        self::assertEqualsWithDelta(80.0, $max, 0.01);
+    }
+
+    #[Test]
+    public function applyAggregationsAutoStoresCountAlongsideAverage(): void
+    {
+        $definition = new MetricDefinition(
+            name: 'mi',
+            collectedAt: SymbolLevel::Method,
+            aggregations: [
+                SymbolLevel::Namespace_->value => [AggregationStrategy::Average, AggregationStrategy::Min],
+            ],
+        );
+
+        $metricValues = ['mi' => [80.0, 60.0, 70.0]];
+
+        $bag = AggregationHelper::applyAggregations($metricValues, [$definition], SymbolLevel::Namespace_);
+
+        // avg stored
+        self::assertEqualsWithDelta(70.0, $bag->get('mi.avg'), 0.01);
+        // count auto-stored = 3
+        self::assertEqualsWithDelta(3.0, $bag->get('mi.count'), 0.01);
+        // min stored
+        self::assertEqualsWithDelta(60.0, $bag->get('mi.min'), 0.01);
+    }
+
+    #[Test]
+    public function applyAggregationsDoesNotDuplicateExplicitCount(): void
+    {
+        $definition = new MetricDefinition(
+            name: 'test',
+            collectedAt: SymbolLevel::Method,
+            aggregations: [
+                SymbolLevel::Namespace_->value => [
+                    AggregationStrategy::Average,
+                    AggregationStrategy::Count,
+                ],
+            ],
+        );
+
+        $metricValues = ['test' => [10.0, 20.0]];
+
+        $bag = AggregationHelper::applyAggregations($metricValues, [$definition], SymbolLevel::Namespace_);
+
+        // Explicit Count strategy: count = 2
+        self::assertEqualsWithDelta(2.0, $bag->get('test.count'), 0.01);
+        self::assertEqualsWithDelta(15.0, $bag->get('test.avg'), 0.01);
     }
 }

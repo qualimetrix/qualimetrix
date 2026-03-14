@@ -45,14 +45,19 @@ final class ClassToNamespaceAggregator implements AggregationPhaseInterface
 
             $fileSymbols = $namespaceToFileSymbols[$namespace] ?? [];
 
-            $metricValues = AggregationHelper::collectNamespaceMetricValues(
+            $aggregationValues = AggregationHelper::collectNamespaceMetricValues(
                 $repository,
                 $symbolInfos,
                 $fileSymbols,
                 $namespaceDefinitions,
             );
 
-            $namespaceBag = AggregationHelper::applyAggregations($metricValues, $namespaceDefinitions, SymbolLevel::Namespace_);
+            $namespaceBag = AggregationHelper::applyAggregations(
+                $aggregationValues->values,
+                $namespaceDefinitions,
+                SymbolLevel::Namespace_,
+                $aggregationValues->weights,
+            );
             $namespaceBag = AggregationHelper::addSymbolCounts($namespaceBag, $symbolInfos);
 
             $firstFile = $symbolInfos[0]->file;

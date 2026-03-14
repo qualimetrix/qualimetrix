@@ -47,14 +47,19 @@ final class NamespaceToProjectAggregator implements AggregationPhaseInterface
         $profiler->stop('aggregation.to_project.collect_symbols');
 
         $profiler->start('aggregation.to_project.process', 'aggregation');
-        $metricValues = AggregationHelper::collectNamespaceMetricValues(
+        $aggregationValues = AggregationHelper::collectNamespaceMetricValues(
             $repository,
             $allSymbolInfos,
             $allFileSymbols,
             $projectDefinitions,
         );
 
-        $projectBag = AggregationHelper::applyAggregations($metricValues, $projectDefinitions, SymbolLevel::Project);
+        $projectBag = AggregationHelper::applyAggregations(
+            $aggregationValues->values,
+            $projectDefinitions,
+            SymbolLevel::Project,
+            $aggregationValues->weights,
+        );
         $projectBag = AggregationHelper::addSymbolCounts($projectBag, $allSymbolInfos);
 
         $firstFile = $allSymbolInfos[0]->file;
