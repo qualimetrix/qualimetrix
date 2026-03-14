@@ -237,6 +237,7 @@ final class ContainerFactoryTest extends TestCase
             'gitlab',
             'github',
             'metrics-json',
+            'html',
         ];
 
         foreach ($expectedFormatters as $name) {

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=1280">
+  <title>AIMD Report</title>
+  <style>__CSS__</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <nav id="breadcrumb"></nav>
+    <div id="controls">
+      <select id="metric-selector"></select>
+      <input id="search" type="text" placeholder="Search namespaces and classes...">
+    </div>
+  </header>
+  <div id="partial-warning" style="display:none"></div>
+  <main id="split-layout">
+    <div id="treemap"></div>
+    <div id="resize-handle"></div>
+    <div id="detail-panel">
+      <div id="detail-sidebar">
+        <div id="health-bars"></div>
+        <div id="node-summary"></div>
+      </div>
+      <div id="worst-sub-namespaces"></div>
+      <div id="worst-offenders"></div>
+      <div id="metrics-table"></div>
+      <div id="violations-table"></div>
+    </div>
+  </main>
+  <footer id="report-footer"></footer>
+</div>
+<script type="application/json" id="report-data">__DATA__</script>
+<script>__D3_JS__</script>
+<script>__APP_JS__</script>
+</body>
+</html>

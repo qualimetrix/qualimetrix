@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=1280">
+  <title>AIMD Report (Dev)</title>
+  <link rel="stylesheet" href="./report.css">
+</head>
+<body>
+<div id="app">
+  <header>
+    <nav id="breadcrumb"></nav>
+    <div id="controls">
+      <select id="metric-selector"></select>
+      <input id="search" type="text" placeholder="Search namespaces and classes...">
+    </div>
+  </header>
+  <div id="partial-warning" style="display:none"></div>
+  <main id="split-layout">
+    <div id="treemap"></div>
+    <div id="resize-handle"></div>
+    <div id="detail-panel">
+      <div id="detail-sidebar">
+        <div id="health-bars"></div>
+        <div id="node-summary"></div>
+      </div>
+      <div id="worst-sub-namespaces"></div>
+      <div id="worst-offenders"></div>
+      <div id="metrics-table"></div>
+      <div id="violations-table"></div>
+    </div>
+  </main>
+  <footer id="report-footer"></footer>
+</div>
+<script type="application/json" id="report-data">
+{
+  "project": {
+    "name": "my-app",
+    "generatedAt": "2026-03-14T10:00:00Z",
+    "aimdVersion": "1.0.0-dev",
+    "partialAnalysis": false
+  },
+  "tree": {
+    "name": "<project>",
+    "path": "",
+    "type": "project",
+    "metrics": { "loc.sum": 5000, "health.overall": 62 },
+    "violations": [],
+    "violationCountTotal": 15,
+    "debtMinutes": 120,
+    "children": [
+      {
+        "name": "App",
+        "path": "App",
+        "type": "namespace",
+        "metrics": { "loc.sum": 3000, "health.overall": 55 },
+        "violations": [],
+        "violationCountTotal": 12,
+        "debtMinutes": 90,
+        "children": [
+          {
+            "name": "Payment",
+            "path": "App\\Payment",
+            "type": "namespace",
+            "metrics": { "loc.sum": 1200, "health.overall": 40 },
+            "violations": [],
+            "violationCountTotal": 8,
+            "debtMinutes": 60,
+            "children": [
+              {
+                "name": "PaymentProcessor",
+                "path": "App\\Payment\\PaymentProcessor",
+                "type": "class",
+                "metrics": { "loc.sum": 450, "health.overall": 28, "health.complexity": 20, "health.coupling": 35, "ccn.sum": 45, "cbo.avg": 12 },
+                "violations": [
+                  { "ruleName": "complexity.cyclomatic", "violationCode": "complexity.cyclomatic.error", "message": "Cyclomatic complexity of process() is 24 (threshold: 20)", "severity": "error", "metricValue": 24, "symbolPath": "App\\Payment\\PaymentProcessor::process", "file": "src/Payment/PaymentProcessor.php", "line": 45 },
+                  { "ruleName": "coupling.cbo", "violationCode": "coupling.cbo.warning", "message": "CBO is 12 (threshold: 10)", "severity": "warning", "metricValue": 12, "symbolPath": "App\\Payment\\PaymentProcessor", "file": "src/Payment/PaymentProcessor.php", "line": 10 }
+                ],
+                "violationCountTotal": 2,
+                "debtMinutes": 30
+              },
+              {
+                "name": "RefundHandler",
+                "path": "App\\Payment\\RefundHandler",
+                "type": "class",
+                "metrics": { "loc.sum": 200, "health.overall": 55, "health.complexity": 60, "health.coupling": 50 },
+                "violations": [
+                  { "ruleName": "complexity.cyclomatic", "violationCode": "complexity.cyclomatic.warning", "message": "Cyclomatic complexity of refund() is 12 (threshold: 10)", "severity": "warning", "metricValue": 12, "symbolPath": "App\\Payment\\RefundHandler::refund", "file": "src/Payment/RefundHandler.php", "line": 30 }
+                ],
+                "violationCountTotal": 1,
+                "debtMinutes": 15
+              },
+              {
+                "name": "InvoiceGenerator",
+                "path": "App\\Payment\\InvoiceGenerator",
+                "type": "class",
+                "metrics": { "loc.sum": 350, "health.overall": 42, "health.complexity": 35, "health.coupling": 60 },
+                "violations": [
+                  { "ruleName": "size.method-count", "violationCode": "size.method-count.warning", "message": "Class has 15 methods (threshold: 12)", "severity": "warning", "metricValue": 15, "symbolPath": "App\\Payment\\InvoiceGenerator", "file": "src/Payment/InvoiceGenerator.php", "line": 1 }
+                ],
+                "violationCountTotal": 1,
+                "debtMinutes": 10
+              },
+              {
+                "name": "Receipt",
+                "path": "App\\Payment\\Receipt",
+                "type": "class",
+                "metrics": { "loc.sum": 80, "health.overall": 85, "health.complexity": 90, "health.coupling": 80 },
+                "violations": [],
+                "violationCountTotal": 0,
+                "debtMinutes": 0
+              },
+              {
+                "name": "TransactionLog",
+                "path": "App\\Payment\\TransactionLog",
+                "type": "class",
+                "metrics": { "loc.sum": 120, "health.overall": 70, "health.complexity": 75, "health.coupling": 65 },
+                "violations": [],
+                "violationCountTotal": 0,
+                "debtMinutes": 0
+              }
+            ]
+          },
+          {
+            "name": "User",
+            "path": "App\\User",
+            "type": "namespace",
+            "metrics": { "loc.sum": 800, "health.overall": 72 },
+            "violations": [],
+            "violationCountTotal": 2,
+            "debtMinutes": 20,
+            "children": [
+              {
+                "name": "UserService",
+                "path": "App\\User\\UserService",
+                "type": "class",
+                "metrics": { "loc.sum": 300, "health.overall": 65, "health.complexity": 55, "health.coupling": 70 },
+                "violations": [
+                  { "ruleName": "coupling.cbo", "violationCode": "coupling.cbo.warning", "message": "CBO is 11 (threshold: 10)", "severity": "warning", "metricValue": 11, "symbolPath": "App\\User\\UserService", "file": "src/User/UserService.php", "line": 5 }
+                ],
+                "violationCountTotal": 1,
+                "debtMinutes": 10
+              },
+              {
+                "name": "UserRepository",
+                "path": "App\\User\\UserRepository",
+                "type": "class",
+                "metrics": { "loc.sum": 250, "health.overall": 78, "health.complexity": 80, "health.coupling": 75 },
+                "violations": [
+                  { "ruleName": "code-smell.long-parameter-list", "violationCode": "code-smell.long-parameter-list.warning", "message": "Method find() has 6 parameters (threshold: 5)", "severity": "warning", "metricValue": 6, "symbolPath": "App\\User\\UserRepository::find", "file": "src/User/UserRepository.php", "line": 20 }
+                ],
+                "violationCountTotal": 1,
+                "debtMinutes": 10
+              },
+              {
+                "name": "UserValidator",
+                "path": "App\\User\\UserValidator",
+                "type": "class",
+                "metrics": { "loc.sum": 150, "health.overall": 82, "health.complexity": 85, "health.coupling": 78 },
+                "violations": [],
+                "violationCountTotal": 0,
+                "debtMinutes": 0
+              },
+              {
+                "name": "PasswordHasher",
+                "path": "App\\User\\PasswordHasher",
+                "type": "class",
+                "metrics": { "loc.sum": 100, "health.overall": 90, "health.complexity": 95, "health.coupling": 85 },
+                "violations": [],
+                "violationCountTotal": 0,
+                "debtMinutes": 0
+              }
+            ]
+          },
+          {
+            "name": "Notification",
+            "path": "App\\Notification",
+            "type": "namespace",
+            "metrics": { "loc.sum": 1000, "health.overall": 58 },
+            "violations": [],
+            "violationCountTotal": 2,
+            "debtMinutes": 10,
+            "children": [
+              {
+                "name": "EmailSender",
+                "path": "App\\Notification\\EmailSender",
+                "type": "class",
+                "metrics": { "loc.sum": 400, "health.overall": 50, "health.complexity": 45, "health.coupling": 55 },
+                "violations": [
+                  { "ruleName": "code-smell.boolean-argument", "violationCode": "code-smell.boolean-argument.warning", "message": "Method send() has boolean parameter $html", "severity": "warning", "metricValue": null, "symbolPath": "App\\Notification\\EmailSender::send", "file": "src/Notification/EmailSender.php", "line": 25 }
+                ],
+                "violationCountTotal": 1,
+                "debtMinutes": 5
+              },
+              {
+                "name": "SmsSender",
+                "path": "App\\Notification\\SmsSender",
+                "type": "class",
+                "metrics": { "loc.sum": 200, "health.overall": 75, "health.complexity": 80, "health.coupling": 70 },
+                "violations": [],
+                "violationCountTotal": 0,
+                "debtMinutes": 0
+              },
+              {
+                "name": "PushNotifier",
+                "path": "App\\Notification\\PushNotifier",
+                "type": "class",
+                "metrics": { "loc.sum": 250, "health.overall": 52, "health.complexity": 48, "health.coupling": 56 },
+                "violations": [
+                  { "ruleName": "complexity.cognitive", "violationCode": "complexity.cognitive.warning", "message": "Cognitive complexity of notify() is 18 (threshold: 15)", "severity": "warning", "metricValue": 18, "symbolPath": "App\\Notification\\PushNotifier::notify", "file": "src/Notification/PushNotifier.php", "line": 40 }
+                ],
+                "violationCountTotal": 1,
+                "debtMinutes": 5
+              },
+              {
+                "name": "TemplateEngine",
+                "path": "App\\Notification\\TemplateEngine",
+                "type": "class",
+                "metrics": { "loc.sum": 150, "health.overall": 68, "health.complexity": 70, "health.coupling": 65 },
+                "violations": [],
+                "violationCountTotal": 0,
+                "debtMinutes": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "Infrastructure",
+        "path": "Infrastructure",
+        "type": "namespace",
+        "metrics": { "loc.sum": 2000, "health.overall": 70 },
+        "violations": [],
+        "violationCountTotal": 3,
+        "debtMinutes": 30,
+        "children": [
+          {
+            "name": "Database",
+            "path": "Infrastructure\\Database",
+            "type": "namespace",
+            "metrics": { "loc.sum": 800, "health.overall": 65 },
+            "violations": [],
+            "violationCountTotal": 2,
+            "debtMinutes": 20,
+            "children": [
+              {
+                "name": "ConnectionPool",
+                "path": "Infrastructure\\Database\\ConnectionPool",
+                "type": "class",
+                "metrics": { "loc.sum": 350, "health.overall": 58, "health.complexity": 50, "health.coupling": 65 },
+                "violations": [
+                  { "ruleName": "complexity.cyclomatic", "violationCode": "complexity.cyclomatic.warning", "message": "Cyclomatic complexity of getConnection() is 11 (threshold: 10)", "severity": "warning", "metricValue": 11, "symbolPath": "Infrastructure\\Database\\ConnectionPool::getConnection", "file": "src/Infrastructure/Database/ConnectionPool.php", "line": 55 }
+                ],
+                "violationCountTotal": 1,
+                "debtMinutes": 10
+              },
+              {
+                "name": "QueryBuilder",
+                "path": "Infrastructure\\Database\\QueryBuilder",
+                "type": "class",
+                "metrics": { "loc.sum": 450, "health.overall": 48, "health.complexity": 40, "health.coupling": 55 },
+                "violations": [
+                  { "ruleName": "size.class-loc", "violationCode": "size.class-loc.warning", "message": "Class LOC is 450 (threshold: 400)", "severity": "warning", "metricValue": 450, "symbolPath": "Infrastructure\\Database\\QueryBuilder", "file": "src/Infrastructure/Database/QueryBuilder.php", "line": 1 }
+                ],
+                "violationCountTotal": 1,
+                "debtMinutes": 10
+              }
+            ]
+          },
+          {
+            "name": "Cache",
+            "path": "Infrastructure\\Cache",
+            "type": "namespace",
+            "metrics": { "loc.sum": 500, "health.overall": 78 },
+            "violations": [],
+            "violationCountTotal": 1,
+            "debtMinutes": 10,
+            "children": [
+              {
+                "name": "RedisAdapter",
+                "path": "Infrastructure\\Cache\\RedisAdapter",
+                "type": "class",
+                "metrics": { "loc.sum": 300, "health.overall": 72, "health.complexity": 70, "health.coupling": 74 },
+                "violations": [
+                  { "ruleName": "code-smell.empty-catch", "violationCode": "code-smell.empty-catch.warning", "message": "Empty catch block in get()", "severity": "warning", "metricValue": null, "symbolPath": "Infrastructure\\Cache\\RedisAdapter::get", "file": "src/Infrastructure/Cache/RedisAdapter.php", "line": 42 }
+                ],
+                "violationCountTotal": 1,
+                "debtMinutes": 10
+              },
+              {
+                "name": "CacheManager",
+                "path": "Infrastructure\\Cache\\CacheManager",
+                "type": "class",
+                "metrics": { "loc.sum": 200, "health.overall": 85, "health.complexity": 88, "health.coupling": 82 },
+                "violations": [],
+                "violationCountTotal": 0,
+                "debtMinutes": 0
+              }
+            ]
+          },
+          {
+            "name": "Logging",
+            "path": "Infrastructure\\Logging",
+            "type": "namespace",
+            "metrics": { "loc.sum": 700, "health.overall": 73 },
+            "violations": [],
+            "violationCountTotal": 0,
+            "debtMinutes": 0,
+            "children": [
+              {
+                "name": "FileLogger",
+                "path": "Infrastructure\\Logging\\FileLogger",
+                "type": "class",
+                "metrics": { "loc.sum": 250, "health.overall": 80, "health.complexity": 85, "health.coupling": 75 },
+                "violations": [],
+                "violationCountTotal": 0,
+                "debtMinutes": 0
+              },
+              {
+                "name": "LogFormatter",
+                "path": "Infrastructure\\Logging\\LogFormatter",
+                "type": "class",
+                "metrics": { "loc.sum": 180, "health.overall": 88, "health.complexity": 90, "health.coupling": 85 },
+                "violations": [],
+                "violationCountTotal": 0,
+                "debtMinutes": 0
+              },
+              {
+                "name": "StructuredLogger",
+                "path": "Infrastructure\\Logging\\StructuredLogger",
+                "type": "class",
+                "metrics": { "loc.sum": 270, "health.overall": 60, "health.complexity": 55, "health.coupling": 65 },
+                "violations": [],
+                "violationCountTotal": 0,
+                "debtMinutes": 0
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "summary": {
+    "totalFiles": 20,
+    "totalClasses": 18,
+    "totalViolations": 15,
+    "totalDebtMinutes": 120,
+    "healthScores": {
+      "health.overall": 62,
+      "health.complexity": 55,
+      "health.cohesion": 60,
+      "health.coupling": 65,
+      "health.typing": 78,
+      "health.maintainability": 58
+    }
+  },
+  "computedMetricDefinitions": {
+    "health.complexity": { "description": "Complexity health score (0-100)", "scale": [0, 100], "inverted": true },
+    "health.cohesion": { "description": "Cohesion health score (0-100)", "scale": [0, 100], "inverted": true },
+    "health.coupling": { "description": "Coupling health score (0-100)", "scale": [0, 100], "inverted": true },
+    "health.typing": { "description": "Type coverage health score (0-100)", "scale": [0, 100], "inverted": true },
+    "health.maintainability": { "description": "Maintainability health score (0-100)", "scale": [0, 100], "inverted": true },
+    "health.overall": { "description": "Overall health score (0-100)", "scale": [0, 100], "inverted": true }
+  }
+}
+</script>
+<script src="./dist/d3.min.js"></script>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>

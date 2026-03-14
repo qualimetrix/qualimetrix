@@ -46,7 +46,11 @@ Reporting/
     ├── CheckstyleFormatter.php             # Checkstyle XML
     ├── SarifFormatter.php                  # SARIF 2.1.0
     ├── GitLabCodeQualityFormatter.php      # GitLab Code Climate JSON
-    └── MetricsJsonFormatter.php            # Raw metrics JSON export
+    ├── MetricsJsonFormatter.php            # Raw metrics JSON export
+    ├── HtmlFormatter.php                   # Interactive HTML report with D3 treemap
+    └── Html/
+        ├── HtmlTreeBuilder.php            # Builds namespace tree from MetricRepository
+        └── HtmlTreeNode.php               # Internal VO for tree construction
 ```
 
 ## Contracts
@@ -88,9 +92,12 @@ final readonly class FormatterContext
         public bool $useColor = true,      // from OutputInterface::isDecorated()
         public GroupBy $groupBy = GroupBy::None,
         public array $options = [],        // from --format-opt key=value
+        public string $basePath = '',      // for relativizing file paths
+        public bool $partialAnalysis = false, // git:staged or similar partial mode
     ) {}
 
     public function getOption(string $key, string $default = ''): string;
+    public function relativizePath(string $filePath): string;
 }
 ```
 
@@ -235,6 +242,7 @@ Files: 1 analyzed, 0 skipped | Errors: 1 | Warnings: 1 | Time: 0.23s
 | SARIF        | `sarif`        | SARIF 2.1.0 for static analysis               | GitHub, VS Code, JetBrains |
 | GitLab       | `gitlab`       | Code Climate JSON for GitLab MR               | GitLab CI                  |
 | Metrics JSON | `metrics-json` | Raw metric values for all symbols             | Dashboards, cross-tool     |
+| HTML         | `html`         | Interactive treemap report with D3.js         | Browser, CI artifacts      |
 
 ## JsonFormatter
 
@@ -416,16 +424,16 @@ $report->duration         // float (seconds)
 
 ## Formatter Comparison
 
-| Characteristic          | Text   | Text Verbose | JSON    | Checkstyle        | SARIF        | GitLab | Metrics JSON |
-| ----------------------- | ------ | ------------ | ------- | ----------------- | ------------ | ------ | ------------ |
-| **ANSI Colors**         | Yes    | Yes          | No      | No                | No           | No     | No           |
-| **Grouping**            | No     | Yes (file)   | No      | No                | No           | No     | No           |
-| **Readability**         | High   | High         | No      | No                | No           | No     | No           |
-| **CI/CD integration**   | No     | No           | Generic | Jenkins/SonarQube | GitHub/Azure | GitLab | Custom       |
-| **IDE support**         | No     | No           | No      | Limited           | VS Code/JB   | No     | No           |
-| **PHPMD compatibility** | Full   | No           | Full    | Full              | No           | No     | No           |
-| **Fingerprinting**      | No     | No           | No      | No                | No           | Yes    | No           |
-| **Output**              | STDOUT | STDOUT       | STDOUT  | STDOUT            | STDOUT       | STDOUT | STDOUT       |
+| Characteristic          | Text   | Text Verbose | JSON    | Checkstyle        | SARIF        | GitLab | Metrics JSON | HTML            |
+| ----------------------- | ------ | ------------ | ------- | ----------------- | ------------ | ------ | ------------ | --------------- |
+| **ANSI Colors**         | Yes    | Yes          | No      | No                | No           | No     | No           | No              |
+| **Grouping**            | No     | Yes (file)   | No      | No                | No           | No     | No           | No              |
+| **Readability**         | High   | High         | No      | No                | No           | No     | No           | Visual          |
+| **CI/CD integration**   | No     | No           | Generic | Jenkins/SonarQube | GitHub/Azure | GitLab | Custom       | CI artifacts    |
+| **IDE support**         | No     | No           | No      | Limited           | VS Code/JB   | No     | No           | No              |
+| **PHPMD compatibility** | Full   | No           | Full    | Full              | No           | No     | No           | No              |
+| **Fingerprinting**      | No     | No           | No      | No                | No           | Yes    | No           | No              |
+| **Output**              | STDOUT | STDOUT       | STDOUT  | STDOUT            | STDOUT       | STDOUT | STDOUT       | File (--output) |
 
 ### Choosing the Right Format
 
@@ -438,11 +446,58 @@ $report->duration         // float (seconds)
 - **VS Code** -> `sarif`
 - **JetBrains IDE** -> `sarif`
 - **Custom dashboards / metrics analysis** -> `metrics-json`
+- **Visual exploration / stakeholder reports** -> `html`
+
+## HtmlFormatter
+
+**Name:** `html`
+
+Self-contained interactive HTML report with D3.js treemap visualization. All CSS, JS, and data are embedded in a single file — works offline, easy to share.
+
+### Features
+
+- **Treemap** — namespace hierarchy colored by health score (blue = healthy, red = unhealthy)
+- **Drill-down** — click namespaces to explore deeper
+- **Detail panel** — health bars, worst offenders, metrics table, violations
+- **Metric selector** — switch coloring between health scores (complexity, cohesion, coupling, etc.)
+- **Search** — find namespaces and classes by name
+- **URL hash navigation** — deep linking via `#ns:App/Payment`, `#cl:App/Service`
+- **Dark mode** — adapts to system preference
+- **Partial analysis warning** — banner when using `--analyze=git:staged`
+
+### Usage
+
+```bash
+# Generate HTML report (recommended: save to file)
+bin/aimd check src/ --format=html --output=report.html
+
+# Also works with stdout (but warns on TTY)
+bin/aimd check src/ --format=html > report.html
+```
+
+### Architecture
+
+- `HtmlFormatter` — implements `FormatterInterface`, orchestrates assembly
+- `Html/HtmlTreeBuilder` — builds namespace hierarchy from `MetricRepositoryInterface`
+- `Html/HtmlTreeNode` — mutable VO for tree construction
+- `Template/` — HTML skeleton, CSS, JS source and build pipeline
+- `Template/dist/` — built JS artifacts (committed to git, no Node.js at runtime)
+
+### JS Build Pipeline
+
+```bash
+cd src/Reporting/Template
+npm install        # first time only
+npm test           # vitest unit tests
+npm run build      # produces dist/report.min.js + dist/d3.min.js
+npm run dev        # vite dev server with HMR (uses dev.html)
+```
+
+---
 
 ## Planned Formats
 
 Possible extensions:
 
-- **HTML** — interactive web report
 - **Markdown** — for documentation and PR comments
 - **JUnit XML** — for integration with test frameworks
