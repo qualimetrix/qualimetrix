@@ -120,4 +120,13 @@ final class IgbinarySerializerTest extends TestCase
 
         self::assertFalse($unserialized);
     }
+
+    #[Test]
+    public function itHandlesNullValue(): void
+    {
+        $serialized = $this->serializer->serialize(null);
+        $unserialized = $this->serializer->unserialize($serialized);
+
+        self::assertNull($unserialized);
+    }
 }

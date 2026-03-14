@@ -19,12 +19,15 @@ final class IgbinarySerializer implements SerializerInterface
 {
     /**
      * Igbinary v2 serialized representation of `false`.
-     *
-     * Used as a sentinel to distinguish legitimate `false` results
-     * from unserialization failures (which also return `false`).
-     * Format: header (4 bytes: \x00\x00\x00\x02) + false type byte (\x06).
+     * Format: header (4 bytes: \x00\x00\x00\x02) + false type byte (\x04).
      */
-    private const string IGBINARY_FALSE = "\x00\x00\x00\x02\x06";
+    private const string IGBINARY_FALSE = "\x00\x00\x00\x02\x04";
+
+    /**
+     * Igbinary v2 serialized representation of `null`.
+     * Format: header (4 bytes: \x00\x00\x00\x02) + null type byte (\x00).
+     */
+    private const string IGBINARY_NULL = "\x00\x00\x00\x02\x00";
 
     /**
      * Checks if the igbinary extension is available.
@@ -67,6 +70,13 @@ final class IgbinarySerializer implements SerializerInterface
         $result = @igbinary_unserialize($data);
 
         if ($result === false && $data !== self::IGBINARY_FALSE) {
+            $error = error_get_last();
+            throw new RuntimeException(
+                \sprintf('Igbinary unserialization failed: %s', $error['message'] ?? 'unknown error'),
+            );
+        }
+
+        if ($result === null && $data !== self::IGBINARY_NULL) {
             $error = error_get_last();
             throw new RuntimeException(
                 \sprintf('Igbinary unserialization failed: %s', $error['message'] ?? 'unknown error'),
