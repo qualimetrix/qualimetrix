@@ -66,5 +66,5 @@ Output is written to `docs/internal/benchmark-data.json` by default.
 
 ## Known Issues
 
-- DuplicationDetector causes OOM on large projects (php-parser, doctrine-dbal, private-codebase, private-codebase, private-codebase)
-- Workaround: increase `memory_limit` or skip duplication analysis
+- DuplicationDetector is memory-intensive on large projects (500+ files). It stores normalized tokens for all files with matching hashes in memory simultaneously
+- Workaround: `--disable-rule=duplication` skips the detection phase entirely and frees the memory. Alternatively, increase `memory_limit`

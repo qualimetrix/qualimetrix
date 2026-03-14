@@ -56,6 +56,8 @@ src/
 ├── Reporting/         # Output formatters
 ├── Configuration/     # YAML config loading
 └── Infrastructure/    # CLI, DI, cache, git, profiler
+benchmarks/            # Benchmark PHP projects for metric calibration (see benchmarks/README.md)
+scripts/               # Utility scripts (benchmark data collection)
 ```
 
 Each domain has its own `README.md` with detailed structure, classes, and contracts.
@@ -269,6 +271,10 @@ bin/aimd check src/ --report=git:main..HEAD
 # Baseline
 bin/aimd check src/ --baseline=baseline.json
 bin/aimd check src/ --generate-baseline=baseline.json
+
+# Benchmarks (metric calibration against real projects)
+cd benchmarks && composer install
+php scripts/collect-benchmark-data.php [output-file.json]
 
 # Hooks
 bin/aimd hook:install
