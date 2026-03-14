@@ -311,6 +311,27 @@ new MetricDefinition(
 );
 ```
 
+### Metric Aggregation Model
+
+Metrics are aggregated **upward** through the symbol hierarchy: Method → Class → Namespace → Project.
+Each level aggregates only from its **direct children** (flat aggregation):
+
+- **Class** metrics = aggregated from its methods (e.g., `ccn.sum` = sum of all method CCN values)
+- **Namespace** metrics = aggregated from its direct classes (not from nested namespaces)
+- **Project** metrics = aggregated from all namespaces
+
+This means namespace metrics describe the namespace **as an organizational unit**, not its entire subtree.
+For example, `App\Payment` with `ccn.avg = 25` reflects only classes directly in `App\Payment`,
+not classes in `App\Payment\Gateway` or other sub-namespaces.
+
+**Hierarchical (subtree) aggregation** — recursive roll-up across nested namespaces — is not part of the
+core metric system. It is a presentation concern, computed on the client side (e.g., JS in the HTML report)
+for drill-down navigation and "worst sub-namespaces" views.
+
+**Rationale:** Rules and violations target specific symbols. A violation on `App\Payment` means that
+namespace itself has a problem. Hierarchical roll-up would mask issues (averaging hides bad sub-namespaces)
+and produce non-actionable violations (e.g., "namespace too large" when it is properly decomposed).
+
 ---
 
 ## Rule Contracts

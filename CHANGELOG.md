@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- `--disable-rule=duplication` now skips the memory-intensive duplication detection phase entirely (previously only suppressed violations). Same for `--disable-rule=architecture.circular-dependency`. Resolves out-of-memory issues on large codebases (500+ files)
+- `--format=html` interactive HTML report — self-contained file with D3.js treemap visualization, health score coloring, drill-down navigation, search, metric selector, dark mode support
+- `--output` / `-o` generic option to write any format to a file with atomic writes (works with all formats, not just HTML)
 - `computed_metrics` config section with 6 default `health.*` scores (complexity, cohesion, coupling, typing, maintainability, overall), user-definable `computed.*` metrics via Symfony Expression Language formulas, per-level formulas, threshold-based violations. Formulas calibrated against 9 open-source projects (391 namespaces): harmonic decay for complexity, balanced TCC/LCOM weights for cohesion, distance+CBO model for coupling
 - `typeCoverage.pct` derived metric — overall type coverage percentage at class level
 - `--fail-on` option to control which severity level triggers a non-zero exit code (`--fail-on=error` allows warnings)

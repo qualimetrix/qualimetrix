@@ -128,6 +128,7 @@ Collection (parallel) -> Aggregation -> Analysis -> Reporting
 
 - **Collection** — the only parallelizable phase (85-95% of total time)
 - **Aggregation/Analysis/Reporting** — sequential, fast
+- **Duplication detection** is memory-intensive (stores tokens of all matching files). Automatically skipped when `duplication.code-duplication` rule is disabled via `--disable-rule`. Same for `architecture.circular-dependency`
 
 ### 4. SymbolPath for Identification
 
@@ -253,6 +254,10 @@ composer check          # tests + phpstan + deptrac
 composer test           # PHPUnit
 composer phpstan        # PHPStan level 8
 
+# HTML report (run when modifying src/Reporting/Template/)
+composer test:js        # JS tests for HTML report (vitest)
+composer build:js       # Rebuild HTML report JS bundle
+
 # Basic analysis
 bin/aimd check src/
 bin/aimd check src/ --format=json --workers=0
@@ -280,8 +285,10 @@ bin/aimd check --help
 **Before implementation:** read README.md in the corresponding `src/` directory
 
 **Project-specific steps** (in addition to the global workflow):
-- **Validation**: `composer check` (tests + phpstan + deptrac)
+- **Validation**: `composer check` (tests + phpstan + deptrac). When modifying `src/Reporting/Template/`, also run `composer test:js` and `composer build:js`
 - **Documentation**: Update `README.md` in the affected `src/` directory (add new files, fix outdated info). Update website documentation (see [Website Documentation](#website-documentation) section below)
+
+**Architecture Decision Records:** After implementing a feature with non-obvious design decisions, create an ADR in `docs/adr/` (see [docs/adr/README.md](docs/adr/README.md) for format). If a spec existed during design (`docs/internal/SPEC_*.md`), it can be archived or deleted after the ADR captures key decisions. ADRs preserve the "why" — implementation details live in code and component READMEs.
 
 **Commit granularity:** Split large changes into logical commits when it improves changelog readability. Each commit should represent one coherent change (e.g., separate "rename command" from "update documentation"). Avoid monolithic commits that bundle unrelated changes — they make changelogs harder to generate and git history harder to navigate.
 
@@ -341,6 +348,9 @@ Key rules:
 - [src/Reporting/README.md](src/Reporting/README.md) — formatting
 - [src/Configuration/README.md](src/Configuration/README.md) — configuration
 - [src/Infrastructure/README.md](src/Infrastructure/README.md) — CLI, DI, caching
+
+### Architecture Decision Records (in docs/adr/)
+- [docs/adr/README.md](docs/adr/README.md) — ADR format and index
 
 ### Internal Documentation (in docs/internal/)
 - [docs/internal/CLI_CONVENTIONS.md](docs/internal/CLI_CONVENTIONS.md) — CLI naming conventions

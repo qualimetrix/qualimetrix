@@ -30,7 +30,7 @@ A self-contained HTML file (`--format=html`) with:
 2. **Category breakdown** — bar chart showing per-category health scores
 3. **Metric detail** — raw metric values for a selected namespace/class
 4. **Violation list** — filterable table of violations (if any)
-5. **Worst offenders** — "Top 10 worst classes" table for quick prioritization
+5. **Worst offenders** — "Top 10 worst sub-namespaces" + collapsible "Top 10 worst classes" for prioritization
 6. **Drill-down navigation** — click to explore from project → namespace → class
 
 All data embedded as JSON in the HTML file. JS library inlined for offline support. No external dependencies at runtime.
@@ -54,15 +54,15 @@ Split layout: treemap (~70vh top) + detail panel (~30vh bottom), both visible wi
 │  │ └───────────┘    │         │ └──────────────────┘    ││
 │  └──────────────────────────────────────────────────────┘│
 ├──────────────────────────────────────────────────────────┤
-│  ┌─ Health ───────┐ ┌─ Worst Classes ──────────────────┐│
-│  │ Complexity:  42│ │ PaymentProcessor  │ 28 │ CCN 18  ││
-│  │ Cohesion:    35│ │ RefundHandler     │ 65 │ CCN 6   ││
-│  │ Coupling:    55│ │ TransactionLogger │ 82 │ CCN 3   ││
+│  ┌─ Health ───────┐ ┌─ Worst Sub-namespaces ───────────┐│
+│  │ Complexity:  42│ │ Payment\Gateway   │ 31 │ 8 viol ││
+│  │ Cohesion:    35│ │ Payment\Webhook   │ 45 │ 3 viol ││
+│  │ Coupling:    55│ │ Auth\OAuth        │ 52 │ 2 viol ││
 │  │ Typing:      78│ └──────────────────────────────────┘│
-│  │ Maint.:      58│ ┌─ Violations (12) ────────────────┐│
-│  │ Overall:     51│ │ complexity.cyclomatic │ 5 │ ████ ││
-│  └────────────────┘ │ coupling.cbo          │ 4 │ ███  ││
-│  Debt: 4h 20m       │ code-smell.god-class  │ 3 │ ██   ││
+│  │ Maint.:      58│ ▶ Worst Classes (collapsed)         │
+│  │ Overall:     51│ ┌─ Violations (12) ────────────────┐│
+│  └────────────────┘ │ complexity.cyclomatic │ 5 │ ████ ││
+│  Debt: 4h 20m       │ coupling.cbo          │ 4 │ ███  ││
 │                      └─────────────────────────────────┘│
 ├──────────────────────────────────────────────────────────┤
 │  Generated 2026-03-10 │ AIMD 1.0.0                      │
@@ -107,9 +107,14 @@ zero-weight leaves). They still appear in the detail panel's class list and metr
 - **Breadcrumb**: `Project > App\Payment > Processing` — click any level to navigate back
 - **Search**: highlight by namespace or class name
 - **Sort toggle** (in list views): sort by health score, LOC, violation count
-- **Worst offenders** (on project/namespace level): flat table of the 10 worst classes sorted by health.overall ASC,
-  showing class name, health score, LOC, violation count, and top violation rule. Answers "what to refactor first?"
-  without requiring manual drill-down into each namespace.
+- **Worst offenders** (on project/namespace level): two sections supporting top-down investigation:
+  - **Worst sub-namespaces** (expanded by default): top 10 direct child namespaces sorted by subtree health.overall ASC,
+    showing namespace name, subtree health score, subtree LOC, subtree violation count. Subtree metrics are computed via
+    JS-side hierarchical roll-up (weighted average by LOC for health scores, sum for LOC/violations). Only shown when the
+    current node has child namespaces.
+  - **Worst classes** (collapsed by default): top 10 classes in the current subtree sorted by health.overall ASC, showing
+    class name, health score, LOC, violation count, and top violation rule. Expandable via click/toggle.
+  On class level, worst offenders are not shown (metrics and violations displayed directly).
 
 ---
 
@@ -408,12 +413,14 @@ src/Reporting/Template/
 │   ├── color.js            # Color scale, metric selector
 │   ├── hash.js             # URL hash parse/generate
 │   ├── search.js           # Search/highlight logic
+│   ├── subtree.js          # Hierarchical roll-up of namespace metrics (weighted avg, sum)
 │   └── detail.js           # Detail panel updates
 ├── tests/                  # vitest unit tests
 │   ├── tree.test.js
 │   ├── color.test.js
 │   ├── hash.test.js
-│   └── search.test.js
+│   ├── search.test.js
+│   └── subtree.test.js
 ├── report.html             # HTML skeleton with placeholders (used by PHP formatter)
 ├── report.css              # Plain CSS with custom properties (no preprocessor)
 ├── dev.html                # Dev-only entry point with test fixture data (not shipped)
@@ -437,7 +444,8 @@ src/Reporting/Template/
 - Visibility threshold logic (which nodes aggregate into "Other")
 - "Other" node aggregation (LOC summing, label generation)
 - Search matching and filtering
-- Worst offenders sorting
+- Worst offenders sorting (sub-namespaces and classes)
+- Subtree roll-up (weighted average by LOC for health, sum for counts)
 - Tree traversal helpers
 
 **What requires manual/visual verification:**
@@ -516,7 +524,10 @@ and paths is a candidate for Future Enhancements if requested.
 ### Phase C: Detail Panel
 
 1. Health score bars (horizontal bar chart per category: complexity, cohesion, coupling, typing, maintainability)
-2. "Top 10 worst classes" table (on project/namespace levels)
+2. Worst offenders (on project/namespace levels):
+    - "Top 10 worst sub-namespaces" table with subtree health scores (expanded by default)
+    - "Top 10 worst classes" table (collapsed by default, expandable via toggle)
+    - Subtree metrics computed via JS-side hierarchical roll-up from flat namespace data
 3. Metrics table, grouped by availability:
     - **Health Scores** — computed metrics (health.overall, health.complexity, etc.)
     - **Aggregated Metrics** — avg/sum of child metrics (ccn.avg, loc.sum, etc.)
@@ -608,7 +619,9 @@ is universally accessible and standard in data visualization (used by matplotlib
 
 - [ ] Split layout: treemap ~70vh top, detail panel ~30vh bottom (no scrolling needed)
 - [ ] Health score bars for each category (complexity, cohesion, coupling, typing, maintainability)
-- [ ] "Top 10 worst classes" table on project/namespace levels
+- [ ] "Top 10 worst sub-namespaces" table with JS-computed subtree metrics (expanded by default)
+- [ ] "Top 10 worst classes" table in current subtree (collapsed by default, expandable)
+- [ ] Subtree roll-up computed on JS side: weighted average by LOC for health scores, sum for LOC/violations
 - [ ] Metrics table grouped by type (health / aggregated / direct), only showing available metrics
 - [ ] Violations table showing only direct violations (sortable by severity, rule)
 - [ ] Tech debt summary (remediation time, computed from violations)
@@ -634,7 +647,7 @@ is universally accessible and standard in data visualization (used by matplotlib
 
 - [ ] Vite config with IIFE build output
 - [ ] `dev.html` with realistic test fixture data for HMR development
-- [ ] ES module structure: main, tree, color, hash, search, detail
+- [ ] ES module structure: main, tree, color, hash, search, subtree, detail
 - [ ] vitest unit tests for pure logic (tree, color, hash, search)
 - [ ] D3 custom bundle build script (`npm run build:d3`)
 - [ ] `dist/report.min.js` and `dist/d3.min.js` committed to repo
@@ -679,6 +692,18 @@ is universally accessible and standard in data visualization (used by matplotlib
 
 7. **Partial analysis** — `--analyze=git:staged` produces incomplete metrics. HTML report is still generated with a
    warning banner. `project.partialAnalysis` flag in JSON data enables the banner in JS.
+
+9. **Hierarchical namespace metrics** — the core metric system uses flat aggregation (namespace metrics come from
+   direct child classes only, not nested sub-namespaces). Hierarchical (subtree) roll-up is a presentation concern,
+   computed entirely on the JS side from flat namespace data. Rationale: flat metrics are correct for rules and
+   violations (they describe a namespace as an organizational unit); hierarchical roll-up would mask problems by
+   averaging across sub-namespaces and produce non-actionable violations. If a second consumer needs subtree metrics
+   (e.g., dashboard API), extraction to a core `SubtreeAggregator` can be considered then.
+
+10. **Worst offenders redesign** — original spec showed only "Top 10 worst classes" at all levels. Revised to support
+    top-down investigation: **worst sub-namespaces** (expanded, direct children only) + **worst classes** (collapsed).
+    Investigation flows project → worst namespace → worst sub-namespace → classes. Showing worst classes immediately
+    at project level skips abstraction levels and doesn't characterize systemic problems.
 
 ---
 
