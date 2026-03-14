@@ -13,6 +13,7 @@ use AiMessDetector\Baseline\BaselineLoader;
 use AiMessDetector\Baseline\BaselineWriter;
 use AiMessDetector\Baseline\Suppression\SuppressionFilter;
 use AiMessDetector\Baseline\ViolationHasher;
+use AiMessDetector\Configuration\ComputedMetricsConfigResolver;
 use AiMessDetector\Configuration\ConfigurationProviderInterface;
 use AiMessDetector\Configuration\Loader\ConfigLoaderInterface;
 use AiMessDetector\Configuration\Loader\YamlConfigLoader;
@@ -132,7 +133,11 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(RuleOptionsFactory::class),
                 new Reference(RuleRegistryInterface::class),
                 new Reference(CacheFactory::class),
+                new Reference(ComputedMetricsConfigResolver::class),
             ]);
+
+        // ComputedMetricsConfigResolver
+        $container->register(ComputedMetricsConfigResolver::class);
 
         // ResultPresenter for formatting/output of results and profiler export
         $container->register(ResultPresenter::class)

@@ -20,6 +20,7 @@ Configuration/
 ├── RuleOptionsParser.php          # CLI options parser for rules
 ├── RuleOptionsParserFactory.php   # Factory for creating RuleOptionsParser with CLI aliases
 ├── ConfigurationProviderInterface.php  # Interface for runtime config access
+├── ComputedMetricsConfigResolver.php  # Merges defaults with YAML overrides, validates formulas
 │
 ├── Pipeline/                      # Configuration Pipeline (RFC-002)
 │   ├── ConfigurationPipelineInterface.php  # Pipeline contract
@@ -260,6 +261,23 @@ aggregation:
     - App\Domain
     - App\Infrastructure
   auto_depth: 2
+
+# Computed metrics (health scores)
+computed_metrics:
+  # Override default health score thresholds
+  health.complexity:
+    warning: 60
+    error: 30
+  # Disable a health score
+  health.typing:
+    enabled: false
+  # Define a custom metric (computed.* prefix)
+  computed.risk_score:
+    formula: "ccn__avg * (1 - (tcc__avg ?? 0))"
+    levels: [namespace]
+    warning: 30
+    error: 60
+    description: "Risk score combining complexity and cohesion"
 ```
 
 ### Minimal Config
@@ -282,6 +300,27 @@ config/
 ```
 
 Order: base < local < ci (alphabetical or explicit priority).
+
+### ComputedMetricsConfigResolver
+
+Merges default computed metric definitions with user overrides from the `computed_metrics` YAML section. Validates the result: formula syntax (via ExpressionLanguage), formula coverage (each level has a formula), circular dependencies between computed metrics, and inter-metric references.
+
+**Methods:**
+- `resolve(array $rawConfig): list<ComputedMetricDefinition>` — merges defaults with user config, validates, returns resolved definitions
+
+**User config options per metric:**
+- `formula: string` — shorthand formula applied to all levels
+- `formulas: array<string, string>` — per-level formulas (`class`, `namespace`, `project`)
+- `levels: list<string>` — levels to evaluate at (default: `[namespace, project]` for new metrics)
+- `warning: float|null` — warning threshold
+- `error: float|null` — error threshold
+- `inverted: bool` — whether higher values are better (default: false for new metrics)
+- `enabled: false` — removes the metric entirely
+- `description: string` — human-readable description
+
+**Formula variable mapping:** Metric names use `__` as separator in formulas because ExpressionLanguage does not support `.` in identifiers. For example, `ccn.avg` becomes `ccn__avg`, `health.complexity` becomes `health__complexity`.
+
+**Available formula functions:** `min`, `max`, `abs`, `sqrt`, `log`, `log10`, `clamp(value, min, max)`.
 
 ---
 

@@ -1,0 +1,587 @@
+<?php
+
+declare(strict_types=1);
+
+namespace AiMessDetector\Tests\Unit\Rules\ComputedMetric;
+
+use AiMessDetector\Core\ComputedMetric\ComputedMetricDefinition;
+use AiMessDetector\Core\ComputedMetric\ComputedMetricDefinitionHolder;
+use AiMessDetector\Core\Metric\MetricBag;
+use AiMessDetector\Core\Metric\MetricRepositoryInterface;
+use AiMessDetector\Core\Rule\AnalysisContext;
+use AiMessDetector\Core\Rule\RuleCategory;
+use AiMessDetector\Core\Symbol\SymbolInfo;
+use AiMessDetector\Core\Symbol\SymbolPath;
+use AiMessDetector\Core\Symbol\SymbolType;
+use AiMessDetector\Core\Violation\Severity;
+use AiMessDetector\Rules\ComputedMetric\ComputedMetricRule;
+use AiMessDetector\Rules\ComputedMetric\ComputedMetricRuleOptions;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+
+#[CoversClass(ComputedMetricRule::class)]
+#[CoversClass(ComputedMetricRuleOptions::class)]
+final class ComputedMetricRuleTest extends TestCase
+{
+    protected function tearDown(): void
+    {
+        ComputedMetricDefinitionHolder::reset();
+    }
+
+    public function testGetName(): void
+    {
+        $rule = new ComputedMetricRule(new ComputedMetricRuleOptions());
+
+        self::assertSame('computed-metrics', $rule->getName());
+    }
+
+    public function testGetDescription(): void
+    {
+        $rule = new ComputedMetricRule(new ComputedMetricRuleOptions());
+
+        self::assertSame('Checks computed health metrics against thresholds', $rule->getDescription());
+    }
+
+    public function testGetCategory(): void
+    {
+        $rule = new ComputedMetricRule(new ComputedMetricRuleOptions());
+
+        self::assertSame(RuleCategory::Maintainability, $rule->getCategory());
+    }
+
+    public function testRequiresReturnsEmpty(): void
+    {
+        $rule = new ComputedMetricRule(new ComputedMetricRuleOptions());
+
+        self::assertSame([], $rule->requires());
+    }
+
+    public function testGetOptionsClass(): void
+    {
+        self::assertSame(ComputedMetricRuleOptions::class, ComputedMetricRule::getOptionsClass());
+    }
+
+    public function testDisabledRuleReturnsNoViolations(): void
+    {
+        $rule = new ComputedMetricRule(new ComputedMetricRuleOptions(enabled: false));
+
+        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository->expects(self::never())->method('all');
+
+        $context = new AnalysisContext($repository);
+
+        self::assertSame([], $rule->analyze($context));
+    }
+
+    public function testNoViolationWhenInvertedMetricAboveWarningThreshold(): void
+    {
+        $definition = new ComputedMetricDefinition(
+            name: 'health.score',
+            formulas: ['class' => 'mi * 0.5'],
+            description: 'Health score',
+            levels: [SymbolType::Class_],
+            inverted: true,
+            warningThreshold: 50.0,
+            errorThreshold: 30.0,
+        );
+
+        $rule = $this->createRuleWithDefinitions([$definition]);
+        $classPath = SymbolPath::forClass('App\\Service', 'UserService');
+
+        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->with(SymbolType::Class_)
+            ->willReturn([new SymbolInfo($classPath, 'src/UserService.php', 10)]);
+        $repository->method('get')
+            ->with($classPath)
+            ->willReturn((new MetricBag())->with('health.score', 75.0));
+
+        $violations = $rule->analyze(new AnalysisContext($repository));
+
+        self::assertCount(0, $violations);
+    }
+
+    public function testWarningForInvertedMetricBelowWarningAboveError(): void
+    {
+        $definition = new ComputedMetricDefinition(
+            name: 'health.score',
+            formulas: ['class' => 'mi * 0.5'],
+            description: 'Health score',
+            levels: [SymbolType::Class_],
+            inverted: true,
+            warningThreshold: 50.0,
+            errorThreshold: 30.0,
+        );
+
+        $rule = $this->createRuleWithDefinitions([$definition]);
+        $classPath = SymbolPath::forClass('App\\Service', 'UserService');
+
+        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->with(SymbolType::Class_)
+            ->willReturn([new SymbolInfo($classPath, 'src/UserService.php', 10)]);
+        $repository->method('get')
+            ->with($classPath)
+            ->willReturn((new MetricBag())->with('health.score', 40.0));
+
+        $violations = $rule->analyze(new AnalysisContext($repository));
+
+        self::assertCount(1, $violations);
+        self::assertSame(Severity::Warning, $violations[0]->severity);
+    }
+
+    public function testErrorForInvertedMetricBelowErrorThreshold(): void
+    {
+        $definition = new ComputedMetricDefinition(
+            name: 'health.score',
+            formulas: ['class' => 'mi * 0.5'],
+            description: 'Health score',
+            levels: [SymbolType::Class_],
+            inverted: true,
+            warningThreshold: 50.0,
+            errorThreshold: 30.0,
+        );
+
+        $rule = $this->createRuleWithDefinitions([$definition]);
+        $classPath = SymbolPath::forClass('App\\Service', 'UserService');
+
+        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->with(SymbolType::Class_)
+            ->willReturn([new SymbolInfo($classPath, 'src/UserService.php', 10)]);
+        $repository->method('get')
+            ->with($classPath)
+            ->willReturn((new MetricBag())->with('health.score', 20.0));
+
+        $violations = $rule->analyze(new AnalysisContext($repository));
+
+        self::assertCount(1, $violations);
+        self::assertSame(Severity::Error, $violations[0]->severity);
+    }
+
+    public function testWarningForNormalMetricAboveWarningBelowError(): void
+    {
+        $definition = new ComputedMetricDefinition(
+            name: 'health.complexity',
+            formulas: ['class' => 'ccn'],
+            description: 'Complexity metric',
+            levels: [SymbolType::Class_],
+            inverted: false,
+            warningThreshold: 10.0,
+            errorThreshold: 20.0,
+        );
+
+        $rule = $this->createRuleWithDefinitions([$definition]);
+        $classPath = SymbolPath::forClass('App\\Service', 'UserService');
+
+        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->with(SymbolType::Class_)
+            ->willReturn([new SymbolInfo($classPath, 'src/UserService.php', 10)]);
+        $repository->method('get')
+            ->with($classPath)
+            ->willReturn((new MetricBag())->with('health.complexity', 15.0));
+
+        $violations = $rule->analyze(new AnalysisContext($repository));
+
+        self::assertCount(1, $violations);
+        self::assertSame(Severity::Warning, $violations[0]->severity);
+    }
+
+    public function testErrorForNormalMetricAboveErrorThreshold(): void
+    {
+        $definition = new ComputedMetricDefinition(
+            name: 'health.complexity',
+            formulas: ['class' => 'ccn'],
+            description: 'Complexity metric',
+            levels: [SymbolType::Class_],
+            inverted: false,
+            warningThreshold: 10.0,
+            errorThreshold: 20.0,
+        );
+
+        $rule = $this->createRuleWithDefinitions([$definition]);
+        $classPath = SymbolPath::forClass('App\\Service', 'UserService');
+
+        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->with(SymbolType::Class_)
+            ->willReturn([new SymbolInfo($classPath, 'src/UserService.php', 10)]);
+        $repository->method('get')
+            ->with($classPath)
+            ->willReturn((new MetricBag())->with('health.complexity', 25.0));
+
+        $violations = $rule->analyze(new AnalysisContext($repository));
+
+        self::assertCount(1, $violations);
+        self::assertSame(Severity::Error, $violations[0]->severity);
+    }
+
+    public function testNoViolationWhenMetricAbsent(): void
+    {
+        $definition = new ComputedMetricDefinition(
+            name: 'health.score',
+            formulas: ['class' => 'mi * 0.5'],
+            description: 'Health score',
+            levels: [SymbolType::Class_],
+            inverted: true,
+            warningThreshold: 50.0,
+            errorThreshold: 30.0,
+        );
+
+        $rule = $this->createRuleWithDefinitions([$definition]);
+        $classPath = SymbolPath::forClass('App\\Service', 'UserService');
+
+        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->with(SymbolType::Class_)
+            ->willReturn([new SymbolInfo($classPath, 'src/UserService.php', 10)]);
+        $repository->method('get')
+            ->with($classPath)
+            ->willReturn(new MetricBag());
+
+        $violations = $rule->analyze(new AnalysisContext($repository));
+
+        self::assertCount(0, $violations);
+    }
+
+    public function testNoViolationsWhenNoThresholdsDefined(): void
+    {
+        $definition = new ComputedMetricDefinition(
+            name: 'health.info',
+            formulas: ['class' => 'ccn'],
+            description: 'Info only metric',
+            levels: [SymbolType::Class_],
+        );
+
+        $rule = $this->createRuleWithDefinitions([$definition]);
+
+        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository->expects(self::never())->method('all');
+
+        $violations = $rule->analyze(new AnalysisContext($repository));
+
+        self::assertCount(0, $violations);
+    }
+
+    public function testViolationMessageFormat(): void
+    {
+        $definition = new ComputedMetricDefinition(
+            name: 'health.score',
+            formulas: ['class' => 'mi'],
+            description: 'Health score',
+            levels: [SymbolType::Class_],
+            inverted: true,
+            warningThreshold: 50.0,
+            errorThreshold: 30.0,
+        );
+
+        $rule = $this->createRuleWithDefinitions([$definition]);
+        $classPath = SymbolPath::forClass('App\\Service', 'UserService');
+
+        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->with(SymbolType::Class_)
+            ->willReturn([new SymbolInfo($classPath, 'src/UserService.php', 10)]);
+        $repository->method('get')
+            ->with($classPath)
+            ->willReturn((new MetricBag())->with('health.score', 25.0));
+
+        $violations = $rule->analyze(new AnalysisContext($repository));
+
+        self::assertCount(1, $violations);
+        self::assertSame(
+            'App\Service\UserService: health.score = 25.0 (error threshold: below 30.0)',
+            $violations[0]->message,
+        );
+    }
+
+    public function testViolationCodeEqualsDefinitionName(): void
+    {
+        $definition = new ComputedMetricDefinition(
+            name: 'health.custom',
+            formulas: ['class' => 'ccn'],
+            description: 'Custom metric',
+            levels: [SymbolType::Class_],
+            inverted: false,
+            warningThreshold: 10.0,
+        );
+
+        $rule = $this->createRuleWithDefinitions([$definition]);
+        $classPath = SymbolPath::forClass('App', 'Test');
+
+        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->with(SymbolType::Class_)
+            ->willReturn([new SymbolInfo($classPath, 'test.php', 1)]);
+        $repository->method('get')
+            ->with($classPath)
+            ->willReturn((new MetricBag())->with('health.custom', 15.0));
+
+        $violations = $rule->analyze(new AnalysisContext($repository));
+
+        self::assertCount(1, $violations);
+        self::assertSame('health.custom', $violations[0]->violationCode);
+        self::assertSame('computed-metrics', $violations[0]->ruleName);
+    }
+
+    public function testMultipleDefinitionsProcessed(): void
+    {
+        $def1 = new ComputedMetricDefinition(
+            name: 'health.alpha',
+            formulas: ['class' => 'ccn'],
+            description: 'Alpha',
+            levels: [SymbolType::Class_],
+            inverted: false,
+            warningThreshold: 10.0,
+        );
+        $def2 = new ComputedMetricDefinition(
+            name: 'health.beta',
+            formulas: ['class' => 'loc'],
+            description: 'Beta',
+            levels: [SymbolType::Class_],
+            inverted: false,
+            warningThreshold: 100.0,
+        );
+
+        $rule = $this->createRuleWithDefinitions([$def1, $def2]);
+        $classPath = SymbolPath::forClass('App', 'Test');
+
+        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->with(SymbolType::Class_)
+            ->willReturn([new SymbolInfo($classPath, 'test.php', 1)]);
+        $repository->method('get')
+            ->with($classPath)
+            ->willReturn(
+                (new MetricBag())
+                    ->with('health.alpha', 15.0)
+                    ->with('health.beta', 200.0),
+            );
+
+        $violations = $rule->analyze(new AnalysisContext($repository));
+
+        self::assertCount(2, $violations);
+
+        $codes = array_map(static fn($v) => $v->violationCode, $violations);
+        self::assertContains('health.alpha', $codes);
+        self::assertContains('health.beta', $codes);
+    }
+
+    public function testMultipleLevels(): void
+    {
+        $definition = new ComputedMetricDefinition(
+            name: 'health.multi',
+            formulas: ['class' => 'ccn', 'namespace' => 'avg(ccn)'],
+            description: 'Multi-level',
+            levels: [SymbolType::Class_, SymbolType::Namespace_],
+            inverted: false,
+            warningThreshold: 10.0,
+        );
+
+        $rule = $this->createRuleWithDefinitions([$definition]);
+        $classPath = SymbolPath::forClass('App', 'Test');
+        $nsPath = SymbolPath::forNamespace('App');
+
+        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->with(SymbolType::Class_)
+            ->willReturn([new SymbolInfo($classPath, 'test.php', 1)]);
+        $repository->method('getNamespaces')
+            ->willReturn(['App']);
+        $repository->method('get')
+            ->willReturnCallback(static function (SymbolPath $path) use ($classPath, $nsPath): MetricBag {
+                if ($path->toCanonical() === $classPath->toCanonical()) {
+                    return (new MetricBag())->with('health.multi', 15.0);
+                }
+                if ($path->toCanonical() === $nsPath->toCanonical()) {
+                    return (new MetricBag())->with('health.multi', 12.0);
+                }
+
+                return new MetricBag();
+            });
+
+        $violations = $rule->analyze(new AnalysisContext($repository));
+
+        self::assertCount(2, $violations);
+    }
+
+    public function testProjectLevelUsesLocationNone(): void
+    {
+        $definition = new ComputedMetricDefinition(
+            name: 'health.project',
+            formulas: ['project' => 'avg(ccn)'],
+            description: 'Project metric',
+            levels: [SymbolType::Project],
+            inverted: false,
+            warningThreshold: 5.0,
+        );
+
+        $rule = $this->createRuleWithDefinitions([$definition]);
+        $projectPath = SymbolPath::forProject();
+
+        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository->method('get')
+            ->with(self::callback(static fn(SymbolPath $p) => $p->toCanonical() === $projectPath->toCanonical()))
+            ->willReturn((new MetricBag())->with('health.project', 8.0));
+
+        $violations = $rule->analyze(new AnalysisContext($repository));
+
+        self::assertCount(1, $violations);
+        self::assertTrue($violations[0]->location->isNone());
+        self::assertSame(Severity::Warning, $violations[0]->severity);
+    }
+
+    public function testNamespaceLevelUsesLocationNone(): void
+    {
+        $definition = new ComputedMetricDefinition(
+            name: 'health.ns',
+            formulas: ['namespace' => 'avg(ccn)'],
+            description: 'NS metric',
+            levels: [SymbolType::Namespace_],
+            inverted: false,
+            warningThreshold: 5.0,
+        );
+
+        $rule = $this->createRuleWithDefinitions([$definition]);
+
+        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository->method('getNamespaces')
+            ->willReturn(['App\\Service']);
+        $repository->method('get')
+            ->willReturn((new MetricBag())->with('health.ns', 8.0));
+
+        $violations = $rule->analyze(new AnalysisContext($repository));
+
+        self::assertCount(1, $violations);
+        self::assertTrue($violations[0]->location->isNone());
+    }
+
+    public function testClassLevelUsesFileAndLine(): void
+    {
+        $definition = new ComputedMetricDefinition(
+            name: 'health.cls',
+            formulas: ['class' => 'ccn'],
+            description: 'Class metric',
+            levels: [SymbolType::Class_],
+            inverted: false,
+            warningThreshold: 5.0,
+        );
+
+        $rule = $this->createRuleWithDefinitions([$definition]);
+        $classPath = SymbolPath::forClass('App', 'Foo');
+
+        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->with(SymbolType::Class_)
+            ->willReturn([new SymbolInfo($classPath, 'src/Foo.php', 42)]);
+        $repository->method('get')
+            ->with($classPath)
+            ->willReturn((new MetricBag())->with('health.cls', 10.0));
+
+        $violations = $rule->analyze(new AnalysisContext($repository));
+
+        self::assertCount(1, $violations);
+        self::assertSame('src/Foo.php', $violations[0]->location->file);
+        self::assertSame(42, $violations[0]->location->line);
+    }
+
+    public function testMetricValueIsRoundedToOneDecimal(): void
+    {
+        $definition = new ComputedMetricDefinition(
+            name: 'health.precise',
+            formulas: ['class' => 'mi'],
+            description: 'Precise metric',
+            levels: [SymbolType::Class_],
+            inverted: false,
+            warningThreshold: 10.0,
+        );
+
+        $rule = $this->createRuleWithDefinitions([$definition]);
+        $classPath = SymbolPath::forClass('App', 'Test');
+
+        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->with(SymbolType::Class_)
+            ->willReturn([new SymbolInfo($classPath, 'test.php', 1)]);
+        $repository->method('get')
+            ->with($classPath)
+            ->willReturn((new MetricBag())->with('health.precise', 15.678));
+
+        $violations = $rule->analyze(new AnalysisContext($repository));
+
+        self::assertCount(1, $violations);
+        self::assertSame(15.7, $violations[0]->metricValue);
+    }
+
+    public function testNormalMetricMessageUsesAbove(): void
+    {
+        $definition = new ComputedMetricDefinition(
+            name: 'health.norm',
+            formulas: ['class' => 'ccn'],
+            description: 'Normal metric',
+            levels: [SymbolType::Class_],
+            inverted: false,
+            warningThreshold: 10.0,
+        );
+
+        $rule = $this->createRuleWithDefinitions([$definition]);
+        $classPath = SymbolPath::forClass('App', 'Test');
+
+        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->with(SymbolType::Class_)
+            ->willReturn([new SymbolInfo($classPath, 'test.php', 1)]);
+        $repository->method('get')
+            ->with($classPath)
+            ->willReturn((new MetricBag())->with('health.norm', 15.0));
+
+        $violations = $rule->analyze(new AnalysisContext($repository));
+
+        self::assertCount(1, $violations);
+        self::assertStringContainsString('above', $violations[0]->message);
+        self::assertStringNotContainsString('below', $violations[0]->message);
+    }
+
+    public function testInvertedMetricMessageUsesBelow(): void
+    {
+        $definition = new ComputedMetricDefinition(
+            name: 'health.inv',
+            formulas: ['class' => 'mi'],
+            description: 'Inverted metric',
+            levels: [SymbolType::Class_],
+            inverted: true,
+            warningThreshold: 50.0,
+        );
+
+        $rule = $this->createRuleWithDefinitions([$definition]);
+        $classPath = SymbolPath::forClass('App', 'Test');
+
+        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->with(SymbolType::Class_)
+            ->willReturn([new SymbolInfo($classPath, 'test.php', 1)]);
+        $repository->method('get')
+            ->with($classPath)
+            ->willReturn((new MetricBag())->with('health.inv', 40.0));
+
+        $violations = $rule->analyze(new AnalysisContext($repository));
+
+        self::assertCount(1, $violations);
+        self::assertStringContainsString('below', $violations[0]->message);
+        self::assertStringNotContainsString('above', $violations[0]->message);
+    }
+
+    /**
+     * @param list<ComputedMetricDefinition> $definitions
+     */
+    private function createRuleWithDefinitions(array $definitions): ComputedMetricRule
+    {
+        return new ComputedMetricRule(
+            new ComputedMetricRuleOptions(
+                enabled: true,
+                definitions: $definitions,
+            ),
+        );
+    }
+}

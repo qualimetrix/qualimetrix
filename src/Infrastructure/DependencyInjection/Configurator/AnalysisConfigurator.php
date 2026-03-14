@@ -32,6 +32,7 @@ use AiMessDetector\Core\Profiler\ProfilerHolder;
 use AiMessDetector\Infrastructure\Console\Progress\DelegatingProgressReporter;
 use AiMessDetector\Infrastructure\Logging\DelegatingLogger;
 use AiMessDetector\Infrastructure\Parallel\Strategy\StrategySelector;
+use AiMessDetector\Metrics\ComputedMetric\ComputedMetricEvaluator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
 
@@ -124,6 +125,7 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
                 new Reference(DelegatingLogger::class),
                 new Reference(ProfilerHolder::class),
                 new Reference(DuplicationDetector::class),
+                new Reference(ComputedMetricEvaluator::class),
             ])
             ->setPublic(true);
         $container->setAlias(AnalysisPipelineInterface::class, AnalysisPipeline::class)

@@ -42,6 +42,7 @@ final class MetricName
     public const string TYPE_COVERAGE_PROPERTY_TOTAL = 'typeCoverage.propertyTotal';
     public const string TYPE_COVERAGE_PROPERTY_TYPED = 'typeCoverage.propertyTyped';
     public const string TYPE_COVERAGE_PROPERTY = 'typeCoverage.property';
+    public const string TYPE_COVERAGE_PCT = 'typeCoverage.pct';
 
     // -- Halstead ------------------------------------------------------------
 

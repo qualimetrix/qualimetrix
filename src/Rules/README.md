@@ -56,6 +56,7 @@ Rules are analysis rule implementations for static analysis. Rules are **complet
 | **code-smell.unused-private**          | CodeSmell       | Simple                          | Unused private methods/props    | enabled: true                      |
 | **code-smell.identical-subexpression** | CodeSmell       | Simple                          | Identical sub-expressions       | enabled: true                      |
 | **duplication.code-duplication**       | Duplication     | Simple                          | Duplicate code blocks           | min_lines: 5, min_tokens: 70, W/E  |
+| **computed-metrics**                   | Maintainability | Simple                          | Computed health metric checks   | per-definition thresholds          |
 
 ---
 
@@ -615,6 +616,56 @@ rules:
 **Files:**
 - `src/Rules/Duplication/CodeDuplicationRule.php` — rule implementation
 - `src/Rules/Duplication/CodeDuplicationOptions.php` — rule options
+
+---
+
+## Computed Metric Rule
+
+**Name:** `computed-metrics` | **Category:** Maintainability | **Type:** Simple
+
+Checks computed health metrics against thresholds. Evaluates derived metrics defined in the `computed_metrics` config section (or 6 built-in `health.*` scores) and generates violations when values cross thresholds.
+
+**Built-in health scores (inverted — higher is better, 0-100):**
+
+| Metric                   | Default Warning | Default Error | Components                          |
+| ------------------------ | --------------- | ------------- | ----------------------------------- |
+| `health.complexity`      | 50              | 25            | CCN + Cognitive Complexity          |
+| `health.cohesion`        | 50              | 25            | TCC + LCOM                          |
+| `health.coupling`        | 50              | 25            | CBO + Distance from Main Sequence   |
+| `health.typing`          | 80              | 50            | Type Coverage Percentage            |
+| `health.maintainability` | 65              | 50            | Maintainability Index (passthrough) |
+| `health.overall`         | 50              | 30            | Weighted average of 5 sub-scores    |
+
+All health scores are computed at class, namespace, and project levels with per-level formulas.
+
+**Configuration:**
+```yaml
+computed_metrics:
+  # Override default thresholds
+  health.complexity:
+    warning: 50
+    error: 25
+  # Disable a health score
+  health.typing:
+    enabled: false
+  # Define a custom metric
+  computed.risk_score:
+    formula: "ccn__avg * (1 - (tcc__avg ?? 0))"
+    levels: [namespace]
+    warning: 30
+    error: 60
+```
+
+**CLI:**
+```bash
+--disable-rule=computed-metrics    # Disable all computed metric violations
+--disable-rule=health              # Disable health.* violations (prefix match on violationCode)
+--disable-rule=health.complexity   # Disable a specific health score
+```
+
+**Files:**
+- `src/Rules/ComputedMetric/ComputedMetricRule.php` — rule implementation
+- `src/Rules/ComputedMetric/ComputedMetricRuleOptions.php` — rule options (reads from ComputedMetricDefinitionHolder)
 
 ---
 

@@ -14,10 +14,12 @@ final readonly class ResolvedConfiguration
 {
     /**
      * @param array<string, mixed> $ruleOptions
+     * @param array<string, mixed> $computedMetrics
      */
     public function __construct(
         public PathsConfiguration $paths,
         public AnalysisConfiguration $analysis,
         public array $ruleOptions,
+        public array $computedMetrics = [],
     ) {}
 }

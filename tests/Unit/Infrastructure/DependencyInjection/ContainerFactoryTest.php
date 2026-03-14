@@ -377,6 +377,7 @@ final class ContainerFactoryTest extends TestCase
             \AiMessDetector\Rules\CodeSmell\UnusedPrivateRule::class,
             \AiMessDetector\Rules\CodeSmell\IdenticalSubExpressionRule::class,
             \AiMessDetector\Rules\Duplication\CodeDuplicationRule::class,
+            \AiMessDetector\Rules\ComputedMetric\ComputedMetricRule::class,
         ];
 
         $registeredClasses = $registry->getClasses();

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AiMessDetector\Tests\Unit\Infrastructure\Console;
 
 use AiMessDetector\Configuration\AnalysisConfiguration;
+use AiMessDetector\Configuration\ComputedMetricsConfigResolver;
 use AiMessDetector\Configuration\ConfigurationProviderInterface;
 use AiMessDetector\Configuration\PathsConfiguration;
 use AiMessDetector\Configuration\Pipeline\ResolvedConfiguration;
@@ -49,6 +50,7 @@ final class RuntimeConfiguratorTest extends TestCase
             $this->ruleOptionsFactory,
             $ruleRegistry,
             new CacheFactory($this->configProvider),
+            new ComputedMetricsConfigResolver(),
         );
     }
 

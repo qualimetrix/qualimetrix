@@ -17,9 +17,11 @@ use AiMessDetector\Analysis\Repository\DefaultMetricRepositoryFactory;
 use AiMessDetector\Analysis\Repository\MetricRepositoryFactoryInterface;
 use AiMessDetector\Analysis\RuleExecution\RuleExecutorInterface;
 use AiMessDetector\Configuration\ConfigurationProviderInterface;
+use AiMessDetector\Core\ComputedMetric\ComputedMetricDefinitionHolder;
 use AiMessDetector\Core\Metric\MetricDefinition;
 use AiMessDetector\Core\Profiler\ProfilerHolder;
 use AiMessDetector\Core\Rule\AnalysisContext;
+use AiMessDetector\Metrics\ComputedMetric\ComputedMetricEvaluator;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
@@ -56,6 +58,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
         private readonly LoggerInterface $logger = new NullLogger(),
         private readonly ?ProfilerHolder $profilerHolder = null,
         private readonly ?Duplication\DuplicationDetector $duplicationDetector = null,
+        private readonly ?ComputedMetricEvaluator $computedMetricEvaluator = null,
     ) {
         $this->graphBuilder = $graphBuilder ?? new DependencyGraphBuilder();
 
@@ -156,6 +159,14 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
             $globalAggregator = new MetricAggregator($this->globalDefinitions);
             $globalAggregator->aggregate($repository);
             $profiler?->stop('aggregation.global');
+        }
+
+        // Phase 3.65: Computed metrics (health scores)
+        $definitions = ComputedMetricDefinitionHolder::getDefinitions();
+        if ($definitions !== [] && $this->computedMetricEvaluator !== null) {
+            $profiler?->start('computed', 'pipeline');
+            $this->computedMetricEvaluator->compute($repository, $definitions);
+            $profiler?->stop('computed');
         }
 
         // Phase 3.7: Detect circular dependencies

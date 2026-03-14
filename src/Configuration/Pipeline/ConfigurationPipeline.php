@@ -87,6 +87,7 @@ final class ConfigurationPipeline implements ConfigurationPipelineInterface
             ),
             analysis: AnalysisConfiguration::fromArray($merged),
             ruleOptions: $this->getAssocArrayValue($merged, 'rules', []),
+            computedMetrics: $this->getAssocArrayValue($merged, 'computed_metrics', []),
         );
     }
 

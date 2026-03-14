@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace AiMessDetector\Infrastructure\Console;
 
 use AiMessDetector\Configuration\AnalysisConfiguration;
+use AiMessDetector\Configuration\ComputedMetricsConfigResolver;
 use AiMessDetector\Configuration\ConfigurationProviderInterface;
 use AiMessDetector\Configuration\Pipeline\ResolvedConfiguration;
 use AiMessDetector\Configuration\RuleOptionsFactory;
 use AiMessDetector\Configuration\RuleOptionsParserFactory;
+use AiMessDetector\Core\ComputedMetric\ComputedMetricDefinitionHolder;
 use AiMessDetector\Core\Profiler\ProfilerHolder;
 use AiMessDetector\Core\Progress\NullProgressReporter;
 use AiMessDetector\Infrastructure\Cache\CacheFactory;
@@ -37,6 +39,7 @@ final class RuntimeConfigurator
         private readonly RuleOptionsFactory $ruleOptionsFactory,
         private readonly RuleRegistryInterface $ruleRegistry,
         private readonly CacheFactory $cacheFactory,
+        private readonly ComputedMetricsConfigResolver $computedMetricsResolver,
     ) {}
 
     /**
@@ -50,6 +53,7 @@ final class RuntimeConfigurator
         // Reset memoized state from previous run to prevent leaking
         $this->ruleOptionsFactory->resetCliOptions();
         $this->cacheFactory->reset();
+        ComputedMetricDefinitionHolder::reset();
 
         $this->configureLogger($input, $output);
         $this->configureProgressReporter($input, $output);
@@ -75,6 +79,10 @@ final class RuntimeConfigurator
 
         // Configure runtime providers
         $this->configureRuntime($resolved->analysis, $ruleOptions);
+
+        // Resolve computed metrics definitions and store in holder
+        $definitions = $this->computedMetricsResolver->resolve($resolved->computedMetrics);
+        ComputedMetricDefinitionHolder::setDefinitions($definitions);
     }
 
     /**

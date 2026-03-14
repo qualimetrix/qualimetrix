@@ -74,6 +74,7 @@ Each domain has its own `README.md` with detailed structure, classes, and contra
 - **Architecture**: Circular Dependency Detection, Dependency Graph Export (DOT)
 - **Code Smell**: Boolean Argument, Debug Code, Empty Catch, eval, exit/die, goto, Superglobals, Error Suppression, Count in Loop, Long Parameter List, Unreachable Code, Identical Sub-expression
 - **Security**: Hardcoded Credentials, SQL Injection, XSS, Command Injection, Sensitive Parameter Detection
+- **Computed Metrics**: 6 built-in health scores (complexity, cohesion, coupling, design, maintainability, overall), user-definable metrics via Symfony Expression Language formulas, per-level formulas, threshold-based violations
 
 ### Infrastructure
 - **Parallel Processing**: Multi-worker file processing via amphp/parallel
@@ -236,6 +237,7 @@ Standard Symfony practices are used: **autowiring** and **autoconfiguration**.
 | symfony/console              | ^7.4 \|\| ^8.0 | CLI                      |
 | symfony/dependency-injection | ^7.4 \|\| ^8.0 | DI container             |
 | symfony/yaml                 | ^7.4 \|\| ^8.0 | YAML configuration       |
+| symfony/expression-language  | ^7.4 \|\| ^8.0 | Computed metric formulas |
 | symfony/finder               | ^7.4 \|\| ^8.0 | File discovery           |
 | psr/log                      | ^3.0           | PSR-3 logging            |
 | PHPUnit                      | ^12.0          | Tests                    |
