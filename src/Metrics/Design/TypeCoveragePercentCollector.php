@@ -44,32 +44,24 @@ final class TypeCoveragePercentCollector implements DerivedCollectorInterface, P
 
     public function calculate(MetricBag $sourceBag): MetricBag
     {
-        $result = new MetricBag();
-        $prefix = MetricName::TYPE_COVERAGE_PARAM_TOTAL . ':';
+        $paramTyped = $sourceBag->get(MetricName::TYPE_COVERAGE_PARAM_TYPED) ?? 0;
+        $returnTyped = $sourceBag->get(MetricName::TYPE_COVERAGE_RETURN_TYPED) ?? 0;
+        $propertyTyped = $sourceBag->get(MetricName::TYPE_COVERAGE_PROPERTY_TYPED) ?? 0;
 
-        foreach ($sourceBag->all() as $key => $value) {
-            if (!str_starts_with($key, $prefix)) {
-                continue;
-            }
+        $paramTotal = $sourceBag->get(MetricName::TYPE_COVERAGE_PARAM_TOTAL) ?? 0;
+        $returnTotal = $sourceBag->get(MetricName::TYPE_COVERAGE_RETURN_TOTAL) ?? 0;
+        $propertyTotal = $sourceBag->get(MetricName::TYPE_COVERAGE_PROPERTY_TOTAL) ?? 0;
 
-            $fqn = substr($key, \strlen($prefix));
+        $totalTyped = $paramTyped + $returnTyped + $propertyTyped;
+        $totalAll = $paramTotal + $returnTotal + $propertyTotal;
 
-            $paramTyped = $sourceBag->get(MetricName::TYPE_COVERAGE_PARAM_TYPED . ':' . $fqn) ?? 0;
-            $returnTyped = $sourceBag->get(MetricName::TYPE_COVERAGE_RETURN_TYPED . ':' . $fqn) ?? 0;
-            $propertyTyped = $sourceBag->get(MetricName::TYPE_COVERAGE_PROPERTY_TYPED . ':' . $fqn) ?? 0;
-
-            $paramTotal = $sourceBag->get(MetricName::TYPE_COVERAGE_PARAM_TOTAL . ':' . $fqn) ?? 0;
-            $returnTotal = $sourceBag->get(MetricName::TYPE_COVERAGE_RETURN_TOTAL . ':' . $fqn) ?? 0;
-            $propertyTotal = $sourceBag->get(MetricName::TYPE_COVERAGE_PROPERTY_TOTAL . ':' . $fqn) ?? 0;
-
-            $totalTyped = $paramTyped + $returnTyped + $propertyTyped;
-            $totalAll = $paramTotal + $returnTotal + $propertyTotal;
-
-            $pct = $totalAll > 0 ? round($totalTyped / $totalAll * 100, 2) : 100.0;
-            $result = $result->with(MetricName::TYPE_COVERAGE_PCT . ':' . $fqn, $pct);
+        if ($totalAll === 0) {
+            return (new MetricBag())->with(MetricName::TYPE_COVERAGE_PCT, 100.0);
         }
 
-        return $result;
+        $pct = round($totalTyped / $totalAll * 100, 2);
+
+        return (new MetricBag())->with(MetricName::TYPE_COVERAGE_PCT, $pct);
     }
 
     /**
