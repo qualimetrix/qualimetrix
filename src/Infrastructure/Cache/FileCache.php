@@ -21,8 +21,10 @@ use Throwable;
 final class FileCache implements CacheInterface
 {
     private const EXTENSION = '.cache';
+    private const SERIALIZER_MARKER = '.serializer';
 
     private readonly SerializerInterface $serializer;
+    private bool $serializerVerified = false;
 
     public function __construct(
         private readonly string $directory,
@@ -33,6 +35,8 @@ final class FileCache implements CacheInterface
 
     public function get(string $key): mixed
     {
+        $this->ensureSerializerCompatibility();
+
         $path = $this->getPath($key);
 
         if (!is_file($path)) {
@@ -60,6 +64,7 @@ final class FileCache implements CacheInterface
      */
     public function set(string $key, mixed $value): void
     {
+        $this->ensureSerializerCompatibility();
         $path = $this->getPath($key);
         $dir = \dirname($path);
 
@@ -96,6 +101,8 @@ final class FileCache implements CacheInterface
 
     public function clear(): void
     {
+        $this->serializerVerified = false;
+
         if (!is_dir($this->directory)) {
             return;
         }
@@ -120,6 +127,39 @@ final class FileCache implements CacheInterface
     public function getDirectory(): string
     {
         return $this->directory;
+    }
+
+    /**
+     * Checks if the current serializer matches the one used to write the cache.
+     * If not, clears the entire cache and writes a new marker.
+     */
+    private function ensureSerializerCompatibility(): void
+    {
+        if ($this->serializerVerified) {
+            return;
+        }
+
+        $this->serializerVerified = true;
+        $markerPath = $this->directory . '/' . self::SERIALIZER_MARKER;
+        $currentName = $this->serializer->getName();
+
+        $storedName = @file_get_contents($markerPath);
+
+        if ($storedName !== false && trim($storedName) === $currentName) {
+            return;
+        }
+
+        if ($storedName !== false) {
+            // Serializer changed — invalidate entire cache
+            $this->clear();
+        }
+
+        // Write marker (create directory if needed)
+        if (!is_dir($this->directory) && !@mkdir($this->directory, 0755, true) && !is_dir($this->directory)) {
+            return;
+        }
+
+        @file_put_contents($markerPath, $currentName);
     }
 
     /**

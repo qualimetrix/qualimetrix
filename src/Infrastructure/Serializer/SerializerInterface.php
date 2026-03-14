@@ -13,6 +13,13 @@ namespace AiMessDetector\Infrastructure\Serializer;
 interface SerializerInterface
 {
     /**
+     * Returns a unique identifier for this serializer.
+     *
+     * Used by FileCache to detect serializer changes and invalidate cache.
+     */
+    public function getName(): string;
+
+    /**
      * Checks if the serializer is available in the current environment.
      *
      * For example, IgbinarySerializer checks for ext-igbinary availability.

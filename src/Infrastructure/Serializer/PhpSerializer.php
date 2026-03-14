@@ -14,6 +14,11 @@ use RuntimeException;
  */
 final class PhpSerializer implements SerializerInterface
 {
+    public function getName(): string
+    {
+        return 'php';
+    }
+
     /**
      * PHP serialize/unserialize are always available.
      */

@@ -22,6 +22,12 @@ final class PhpSerializerTest extends TestCase
     }
 
     #[Test]
+    public function itReturnsName(): void
+    {
+        self::assertSame('php', $this->serializer->getName());
+    }
+
+    #[Test]
     public function itIsAlwaysAvailable(): void
     {
         self::assertTrue($this->serializer->isAvailable());
