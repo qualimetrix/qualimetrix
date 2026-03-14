@@ -45,6 +45,7 @@ final class ResultPresenter
         AnalysisResult $analysisResult,
         InputInterface $input,
         OutputInterface $output,
+        bool $partialAnalysis = false,
     ): int {
         $profiler = $this->profilerHolder->get();
         $profiler->start('reporting', 'pipeline');
@@ -56,7 +57,7 @@ final class ResultPresenter
             : ($input->getOption('format') ?? AnalysisConfiguration::DEFAULT_FORMAT);
         /** @var string $format */
         $formatter = $this->formatterRegistry->get($format);
-        $context = $this->buildFormatterContext($input, $output, $formatter);
+        $context = $this->buildFormatterContext($input, $output, $formatter, $partialAnalysis);
 
         // Build and output report with filtered violations
         $report = ReportBuilder::create()
@@ -66,7 +67,9 @@ final class ResultPresenter
             ->duration($analysisResult->duration)
             ->metrics($analysisResult->metrics)
             ->build();
-        OutputHelper::write($output, $formatter->format($report, $context));
+        $formattedOutput = $formatter->format($report, $context);
+
+        $this->writeOutput($formattedOutput, $format, $input, $output);
 
         $profiler->stop('reporting');
 
@@ -172,10 +175,77 @@ final class ResultPresenter
         ));
     }
 
+    /**
+     * Writes formatted output to file (--output) or stdout.
+     */
+    private function writeOutput(
+        string $formattedOutput,
+        string $format,
+        InputInterface $input,
+        OutputInterface $output,
+    ): void {
+        /** @var string|null $outputPath */
+        $outputPath = $input->getOption('output');
+
+        if (\is_string($outputPath) && $outputPath !== '') {
+            // Atomic write: tmp file + rename
+            $tmpFile = $outputPath . '.tmp.' . getmypid();
+            $writeResult = @file_put_contents($tmpFile, $formattedOutput);
+
+            if ($writeResult === false) {
+                $output->writeln(
+                    \sprintf('<error>Failed to write output to %s</error>', $outputPath),
+                    OutputInterface::OUTPUT_NORMAL | OutputInterface::VERBOSITY_NORMAL,
+                );
+
+                return;
+            }
+
+            if (!rename($tmpFile, $outputPath)) {
+                $output->writeln(
+                    \sprintf('<error>Failed to rename temporary file to %s</error>', $outputPath),
+                    OutputInterface::OUTPUT_NORMAL | OutputInterface::VERBOSITY_NORMAL,
+                );
+                if (file_exists($tmpFile)) {
+                    unlink($tmpFile);
+                }
+
+                return;
+            }
+
+            $output->writeln(
+                \sprintf('<info>Report written to %s</info>', $outputPath),
+                OutputInterface::OUTPUT_NORMAL | OutputInterface::VERBOSITY_NORMAL,
+            );
+
+            return;
+        }
+
+        // TTY warning for HTML output to stdout
+        if ($format === 'html' && $this->isOutputTty($output)) {
+            $output->writeln(
+                '<comment>HTML output is best saved to a file. Use --output=report.html</comment>',
+                OutputInterface::OUTPUT_NORMAL | OutputInterface::VERBOSITY_NORMAL,
+            );
+        }
+
+        OutputHelper::write($output, $formattedOutput);
+    }
+
+    private function isOutputTty(OutputInterface $output): bool
+    {
+        if ($output instanceof \Symfony\Component\Console\Output\StreamOutput) {
+            return stream_isatty($output->getStream());
+        }
+
+        return false;
+    }
+
     private function buildFormatterContext(
         InputInterface $input,
         OutputInterface $output,
         FormatterInterface $formatter,
+        bool $partialAnalysis = false,
     ): FormatterContext {
         // Resolve group-by: explicit CLI option or formatter default
         /** @var string|null $groupByValue */
@@ -213,6 +283,7 @@ final class ResultPresenter
             groupBy: $groupBy,
             options: $options,
             basePath: getcwd() ?: '.',
+            partialAnalysis: $partialAnalysis,
         );
     }
 

@@ -135,7 +135,8 @@ final class CheckCommand extends Command
 
         $this->resultPresenter->generateBaselineIfRequested($result->violations, $input, $output);
 
-        $exitCode = $this->resultPresenter->presentResults($filteredViolations, $result, $input, $output);
+        $partialAnalysis = $scopeResolution->analyzeScope !== null;
+        $exitCode = $this->resultPresenter->presentResults($filteredViolations, $result, $input, $output, $partialAnalysis);
 
         $this->resultPresenter->presentProfile($input, $output);
 

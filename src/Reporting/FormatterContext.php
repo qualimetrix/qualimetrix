@@ -16,12 +16,14 @@ final readonly class FormatterContext
      * @param GroupBy $groupBy How to group violations in output
      * @param array<string, string> $options Formatter-specific options from --format-opt
      * @param string $basePath Base directory for relativizing file paths in output (e.g., CWD)
+     * @param bool $partialAnalysis Whether this is a partial analysis (e.g., git:staged)
      */
     public function __construct(
         public bool $useColor = true,
         public GroupBy $groupBy = GroupBy::None,
         public array $options = [],
         public string $basePath = '',
+        public bool $partialAnalysis = false,
     ) {}
 
     public function getOption(string $key, string $default = ''): string

@@ -80,7 +80,13 @@ final class CheckCommandDefinition
                 'format',
                 'f',
                 InputOption::VALUE_REQUIRED,
-                'Output format (text, json, checkstyle, sarif, gitlab, github, metrics-json)',
+                'Output format (text, json, checkstyle, sarif, gitlab, github, metrics-json, html)',
+            )
+            ->addOption(
+                'output',
+                'o',
+                InputOption::VALUE_REQUIRED,
+                'Write output to file instead of stdout (atomic write)',
             )
             ->addOption(
                 'fail-on',
@@ -317,7 +323,7 @@ final class CheckCommandDefinition
                 'disable-rule',
                 null,
                 InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
-                'Disable a rule or group by prefix (e.g., complexity, size.class-count)',
+                'Disable a rule or group by prefix (e.g., complexity, size.class-count). Disabling duplication.code-duplication also skips the memory-intensive detection phase',
             )
             ->addOption(
                 'only-rule',
