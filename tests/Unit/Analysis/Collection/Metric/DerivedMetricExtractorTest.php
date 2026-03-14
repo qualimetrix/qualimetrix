@@ -20,7 +20,7 @@ final class DerivedMetricExtractorTest extends TestCase
     #[Test]
     public function itExtractsDerivedMetricsForExistingMethods(): void
     {
-        $derivedCollector = $this->createMock(DerivedCollectorInterface::class);
+        $derivedCollector = $this->createStub(DerivedCollectorInterface::class);
         $derivedCollector->method('provides')->willReturn(['mi']);
 
         $compositeCollector = new CompositeCollector([], [$derivedCollector]);
@@ -46,7 +46,7 @@ final class DerivedMetricExtractorTest extends TestCase
     #[Test]
     public function itIgnoresInvalidFqns(): void
     {
-        $derivedCollector = $this->createMock(DerivedCollectorInterface::class);
+        $derivedCollector = $this->createStub(DerivedCollectorInterface::class);
         $derivedCollector->method('provides')->willReturn(['mi']);
 
         $compositeCollector = new CompositeCollector([], [$derivedCollector]);
@@ -71,7 +71,7 @@ final class DerivedMetricExtractorTest extends TestCase
     #[Test]
     public function itIgnoresNonDerivedMetrics(): void
     {
-        $derivedCollector = $this->createMock(DerivedCollectorInterface::class);
+        $derivedCollector = $this->createStub(DerivedCollectorInterface::class);
         $derivedCollector->method('provides')->willReturn(['mi']);
 
         $compositeCollector = new CompositeCollector([], [$derivedCollector]);
@@ -119,7 +119,7 @@ final class DerivedMetricExtractorTest extends TestCase
     #[Test]
     public function itIgnoresDerivedMetricsForNonExistentMethods(): void
     {
-        $derivedCollector = $this->createMock(DerivedCollectorInterface::class);
+        $derivedCollector = $this->createStub(DerivedCollectorInterface::class);
         $derivedCollector->method('provides')->willReturn(['mi']);
 
         $compositeCollector = new CompositeCollector([], [$derivedCollector]);
@@ -140,7 +140,7 @@ final class DerivedMetricExtractorTest extends TestCase
     #[Test]
     public function itHandlesFqnWithoutNamespace(): void
     {
-        $derivedCollector = $this->createMock(DerivedCollectorInterface::class);
+        $derivedCollector = $this->createStub(DerivedCollectorInterface::class);
         $derivedCollector->method('provides')->willReturn(['mi']);
 
         $compositeCollector = new CompositeCollector([], [$derivedCollector]);
@@ -163,7 +163,7 @@ final class DerivedMetricExtractorTest extends TestCase
     #[Test]
     public function itIgnoresMetricsWithoutColonSeparator(): void
     {
-        $derivedCollector = $this->createMock(DerivedCollectorInterface::class);
+        $derivedCollector = $this->createStub(DerivedCollectorInterface::class);
         $derivedCollector->method('provides')->willReturn(['mi']);
 
         $compositeCollector = new CompositeCollector([], [$derivedCollector]);

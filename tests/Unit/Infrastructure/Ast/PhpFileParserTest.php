@@ -127,7 +127,7 @@ final class PhpFileParserTest extends TestCase
 
     public function testParserThrowsExceptionWhenParserReturnsNull(): void
     {
-        $mockParser = $this->createMock(\PhpParser\Parser::class);
+        $mockParser = $this->createStub(\PhpParser\Parser::class);
         $mockParser->method('parse')
             ->willReturn(null);
 
@@ -144,7 +144,7 @@ final class PhpFileParserTest extends TestCase
     {
         $originalException = new RuntimeException('Original error');
 
-        $mockParser = $this->createMock(\PhpParser\Parser::class);
+        $mockParser = $this->createStub(\PhpParser\Parser::class);
         $mockParser->method('parse')
             ->willThrowException($originalException);
 

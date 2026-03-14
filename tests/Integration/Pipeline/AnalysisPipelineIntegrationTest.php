@@ -83,7 +83,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
 
         // Spy rule that captures the context
         $capturedContext = null;
-        $spyRule = $this->createMock(RuleInterface::class);
+        $spyRule = $this->createStub(RuleInterface::class);
         $spyRule->method('getName')->willReturn('test.spy');
         $spyRule->method('analyze')->willReturnCallback(
             function (AnalysisContext $context) use (&$capturedContext): array {
@@ -248,7 +248,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         // CompositeCollector has no per-file collectors for this test
         $compositeCollector = new CompositeCollector([]);
 
-        $ruleExecutor = $this->createMock(\AiMessDetector\Analysis\RuleExecution\RuleExecutorInterface::class);
+        $ruleExecutor = $this->createStub(\AiMessDetector\Analysis\RuleExecution\RuleExecutorInterface::class);
         $ruleExecutor->method('execute')->willReturn([]);
 
         $pipeline = $this->createPipelineWithGlobalCollectors(
@@ -301,12 +301,12 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         \AiMessDetector\Analysis\RuleExecution\RuleExecutorInterface $ruleExecutor,
         ?InMemoryMetricRepository $existingRepository = null,
     ): AnalysisPipeline {
-        $discovery = $this->createMock(FileDiscoveryInterface::class);
+        $discovery = $this->createStub(FileDiscoveryInterface::class);
         $discovery->method('discover')->willReturn(new ArrayIterator([
             new SplFileInfo('/tmp/dummy.php'),
         ]));
 
-        $orchestrator = $this->createMock(CollectionOrchestratorInterface::class);
+        $orchestrator = $this->createStub(CollectionOrchestratorInterface::class);
         $orchestrator->method('collect')->willReturnCallback(
             function (array $files, $repository) use ($dependencies, $existingRepository): CollectionPhaseOutput {
                 // If we have a pre-populated repository, copy its data
@@ -345,12 +345,12 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         CompositeCollector $compositeCollector,
         InMemoryMetricRepository $existingRepository,
     ): AnalysisPipeline {
-        $discovery = $this->createMock(FileDiscoveryInterface::class);
+        $discovery = $this->createStub(FileDiscoveryInterface::class);
         $discovery->method('discover')->willReturn(new ArrayIterator([
             new SplFileInfo('/tmp/dummy.php'),
         ]));
 
-        $orchestrator = $this->createMock(CollectionOrchestratorInterface::class);
+        $orchestrator = $this->createStub(CollectionOrchestratorInterface::class);
         $orchestrator->method('collect')->willReturnCallback(
             function (array $files, $repository) use ($dependencies, $existingRepository): CollectionPhaseOutput {
                 // Copy pre-populated symbols into the pipeline's repository
@@ -383,7 +383,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
     {
         $config = new AnalysisConfiguration();
 
-        $provider = $this->createMock(ConfigurationProviderInterface::class);
+        $provider = $this->createStub(ConfigurationProviderInterface::class);
         $provider->method('getRuleOptions')->willReturn([]);
         $provider->method('getConfiguration')->willReturn($config);
         $provider->method('hasConfiguration')->willReturn(true);

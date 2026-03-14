@@ -224,7 +224,7 @@ final class GlobalCollectorSorterTest extends TestCase
      */
     private function createCollector(string $name, array $requires, array $provides): GlobalContextCollectorInterface
     {
-        $collector = $this->createMock(GlobalContextCollectorInterface::class);
+        $collector = $this->createStub(GlobalContextCollectorInterface::class);
         $collector->method('getName')->willReturn($name);
         $collector->method('requires')->willReturn($requires);
         $collector->method('provides')->willReturn($provides);

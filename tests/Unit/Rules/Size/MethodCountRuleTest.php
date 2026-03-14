@@ -10,7 +10,6 @@ use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\RuleCategory;
 use AiMessDetector\Core\Symbol\SymbolInfo;
 use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Symbol\SymbolType;
 use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Rules\Size\MethodCountOptions;
 use AiMessDetector\Rules\Size\MethodCountRule;
@@ -107,12 +106,10 @@ final class MethodCountRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('methodCount', 5);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([$classInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -129,12 +126,10 @@ final class MethodCountRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('methodCount', 15);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([$classInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -157,12 +152,10 @@ final class MethodCountRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('methodCount', 25);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([$classInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -187,12 +180,10 @@ final class MethodCountRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('methodCount', $methodCount);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([$classInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);

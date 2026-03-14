@@ -295,7 +295,7 @@ final class AnalysisResultTest extends TestCase
             filesAnalyzed: $filesAnalyzed,
             filesSkipped: $filesSkipped,
             duration: $duration,
-            metrics: $this->createMock(MetricRepositoryInterface::class),
+            metrics: $this->createStub(MetricRepositoryInterface::class),
         );
     }
 

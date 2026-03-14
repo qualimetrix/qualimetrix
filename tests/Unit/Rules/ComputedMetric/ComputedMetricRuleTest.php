@@ -88,12 +88,10 @@ final class ComputedMetricRuleTest extends TestCase
         $rule = $this->createRuleWithDefinitions([$definition]);
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([new SymbolInfo($classPath, 'src/UserService.php', 10)]);
         $repository->method('get')
-            ->with($classPath)
             ->willReturn((new MetricBag())->with('health.score', 75.0));
 
         $violations = $rule->analyze(new AnalysisContext($repository));
@@ -116,12 +114,10 @@ final class ComputedMetricRuleTest extends TestCase
         $rule = $this->createRuleWithDefinitions([$definition]);
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([new SymbolInfo($classPath, 'src/UserService.php', 10)]);
         $repository->method('get')
-            ->with($classPath)
             ->willReturn((new MetricBag())->with('health.score', 40.0));
 
         $violations = $rule->analyze(new AnalysisContext($repository));
@@ -145,12 +141,10 @@ final class ComputedMetricRuleTest extends TestCase
         $rule = $this->createRuleWithDefinitions([$definition]);
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([new SymbolInfo($classPath, 'src/UserService.php', 10)]);
         $repository->method('get')
-            ->with($classPath)
             ->willReturn((new MetricBag())->with('health.score', 20.0));
 
         $violations = $rule->analyze(new AnalysisContext($repository));
@@ -174,12 +168,10 @@ final class ComputedMetricRuleTest extends TestCase
         $rule = $this->createRuleWithDefinitions([$definition]);
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([new SymbolInfo($classPath, 'src/UserService.php', 10)]);
         $repository->method('get')
-            ->with($classPath)
             ->willReturn((new MetricBag())->with('health.complexity', 15.0));
 
         $violations = $rule->analyze(new AnalysisContext($repository));
@@ -203,12 +195,10 @@ final class ComputedMetricRuleTest extends TestCase
         $rule = $this->createRuleWithDefinitions([$definition]);
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([new SymbolInfo($classPath, 'src/UserService.php', 10)]);
         $repository->method('get')
-            ->with($classPath)
             ->willReturn((new MetricBag())->with('health.complexity', 25.0));
 
         $violations = $rule->analyze(new AnalysisContext($repository));
@@ -232,12 +222,10 @@ final class ComputedMetricRuleTest extends TestCase
         $rule = $this->createRuleWithDefinitions([$definition]);
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([new SymbolInfo($classPath, 'src/UserService.php', 10)]);
         $repository->method('get')
-            ->with($classPath)
             ->willReturn(new MetricBag());
 
         $violations = $rule->analyze(new AnalysisContext($repository));
@@ -279,12 +267,10 @@ final class ComputedMetricRuleTest extends TestCase
         $rule = $this->createRuleWithDefinitions([$definition]);
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([new SymbolInfo($classPath, 'src/UserService.php', 10)]);
         $repository->method('get')
-            ->with($classPath)
             ->willReturn((new MetricBag())->with('health.score', 25.0));
 
         $violations = $rule->analyze(new AnalysisContext($repository));
@@ -310,12 +296,10 @@ final class ComputedMetricRuleTest extends TestCase
         $rule = $this->createRuleWithDefinitions([$definition]);
         $classPath = SymbolPath::forClass('App', 'Test');
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([new SymbolInfo($classPath, 'test.php', 1)]);
         $repository->method('get')
-            ->with($classPath)
             ->willReturn((new MetricBag())->with('health.custom', 15.0));
 
         $violations = $rule->analyze(new AnalysisContext($repository));
@@ -347,12 +331,10 @@ final class ComputedMetricRuleTest extends TestCase
         $rule = $this->createRuleWithDefinitions([$def1, $def2]);
         $classPath = SymbolPath::forClass('App', 'Test');
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([new SymbolInfo($classPath, 'test.php', 1)]);
         $repository->method('get')
-            ->with($classPath)
             ->willReturn(
                 (new MetricBag())
                     ->with('health.alpha', 15.0)
@@ -383,9 +365,8 @@ final class ComputedMetricRuleTest extends TestCase
         $classPath = SymbolPath::forClass('App', 'Test');
         $nsPath = SymbolPath::forNamespace('App');
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([new SymbolInfo($classPath, 'test.php', 1)]);
         $repository->method('getNamespaces')
             ->willReturn(['App']);
@@ -420,9 +401,8 @@ final class ComputedMetricRuleTest extends TestCase
         $rule = $this->createRuleWithDefinitions([$definition]);
         $projectPath = SymbolPath::forProject();
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('get')
-            ->with(self::callback(static fn(SymbolPath $p) => $p->toCanonical() === $projectPath->toCanonical()))
             ->willReturn((new MetricBag())->with('health.project', 8.0));
 
         $violations = $rule->analyze(new AnalysisContext($repository));
@@ -445,7 +425,7 @@ final class ComputedMetricRuleTest extends TestCase
 
         $rule = $this->createRuleWithDefinitions([$definition]);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('getNamespaces')
             ->willReturn(['App\\Service']);
         $repository->method('get')
@@ -471,12 +451,10 @@ final class ComputedMetricRuleTest extends TestCase
         $rule = $this->createRuleWithDefinitions([$definition]);
         $classPath = SymbolPath::forClass('App', 'Foo');
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([new SymbolInfo($classPath, 'src/Foo.php', 42)]);
         $repository->method('get')
-            ->with($classPath)
             ->willReturn((new MetricBag())->with('health.cls', 10.0));
 
         $violations = $rule->analyze(new AnalysisContext($repository));
@@ -500,12 +478,10 @@ final class ComputedMetricRuleTest extends TestCase
         $rule = $this->createRuleWithDefinitions([$definition]);
         $classPath = SymbolPath::forClass('App', 'Test');
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([new SymbolInfo($classPath, 'test.php', 1)]);
         $repository->method('get')
-            ->with($classPath)
             ->willReturn((new MetricBag())->with('health.precise', 15.678));
 
         $violations = $rule->analyze(new AnalysisContext($repository));
@@ -528,12 +504,10 @@ final class ComputedMetricRuleTest extends TestCase
         $rule = $this->createRuleWithDefinitions([$definition]);
         $classPath = SymbolPath::forClass('App', 'Test');
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([new SymbolInfo($classPath, 'test.php', 1)]);
         $repository->method('get')
-            ->with($classPath)
             ->willReturn((new MetricBag())->with('health.norm', 15.0));
 
         $violations = $rule->analyze(new AnalysisContext($repository));
@@ -557,12 +531,10 @@ final class ComputedMetricRuleTest extends TestCase
         $rule = $this->createRuleWithDefinitions([$definition]);
         $classPath = SymbolPath::forClass('App', 'Test');
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([new SymbolInfo($classPath, 'test.php', 1)]);
         $repository->method('get')
-            ->with($classPath)
             ->willReturn((new MetricBag())->with('health.inv', 40.0));
 
         $violations = $rule->analyze(new AnalysisContext($repository));

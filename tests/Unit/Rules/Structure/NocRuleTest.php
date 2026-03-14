@@ -10,7 +10,6 @@ use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\RuleCategory;
 use AiMessDetector\Core\Symbol\SymbolInfo;
 use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Symbol\SymbolType;
 use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Rules\Structure\NocOptions;
 use AiMessDetector\Rules\Structure\NocRule;
@@ -64,7 +63,7 @@ final class NocRuleTest extends TestCase
 
     public function testThrowsExceptionForWrongOptionsType(): void
     {
-        $wrongOptions = $this->createMock(\AiMessDetector\Core\Rule\RuleOptionsInterface::class);
+        $wrongOptions = $this->createStub(\AiMessDetector\Core\Rule\RuleOptionsInterface::class);
 
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Expected');
@@ -88,9 +87,8 @@ final class NocRuleTest extends TestCase
     {
         $rule = new NocRule(new NocOptions());
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([]);
 
         $context = new AnalysisContext($repository);
@@ -108,12 +106,10 @@ final class NocRuleTest extends TestCase
         // NOC of 0 means no children (should be skipped)
         $metricBag = (new MetricBag())->with('noc', 0);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([$classInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -132,12 +128,10 @@ final class NocRuleTest extends TestCase
         // NOC of 12 is above warning threshold (10) but below error (15)
         $metricBag = (new MetricBag())->with('noc', 12);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([$classInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -162,12 +156,10 @@ final class NocRuleTest extends TestCase
         // NOC of 20 is above error threshold (15)
         $metricBag = (new MetricBag())->with('noc', 20);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([$classInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -188,12 +180,10 @@ final class NocRuleTest extends TestCase
         // NOC of 3 is normal (below warning threshold 7)
         $metricBag = (new MetricBag())->with('noc', 3);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([$classInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -212,12 +202,10 @@ final class NocRuleTest extends TestCase
         // No 'noc' metric
         $metricBag = new MetricBag();
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([$classInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -276,12 +264,10 @@ final class NocRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('noc', $noc);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([$classInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);

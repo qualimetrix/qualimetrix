@@ -10,7 +10,6 @@ use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\RuleCategory;
 use AiMessDetector\Core\Symbol\SymbolInfo;
 use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Symbol\SymbolType;
 use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Rules\Coupling\ClassRankOptions;
 use AiMessDetector\Rules\Coupling\ClassRankRule;
@@ -91,9 +90,8 @@ final class ClassRankRuleTest extends TestCase
     {
         $rule = new ClassRankRule(new ClassRankOptions());
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([]);
 
         $context = new AnalysisContext($repository);
@@ -109,12 +107,10 @@ final class ClassRankRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App', 'SomeClass');
         $classInfo = new SymbolInfo($symbolPath, 'src/SomeClass.php', 10);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([$classInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn(new MetricBag());
 
         $context = new AnalysisContext($repository);
@@ -132,12 +128,10 @@ final class ClassRankRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('classRank', 0.01);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([$classInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -157,12 +151,10 @@ final class ClassRankRuleTest extends TestCase
         // 0.03 is above warning (0.02) but below error (0.05)
         $metricBag = (new MetricBag())->with('classRank', 0.03);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([$classInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -188,12 +180,10 @@ final class ClassRankRuleTest extends TestCase
         // 0.08 is above error threshold (0.05)
         $metricBag = (new MetricBag())->with('classRank', 0.08);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([$classInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -221,12 +211,10 @@ final class ClassRankRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('classRank', $classRank);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([$classInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);

@@ -10,7 +10,6 @@ use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\RuleCategory;
 use AiMessDetector\Core\Symbol\SymbolInfo;
 use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Symbol\SymbolType;
 use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Rules\Security\SecurityPatternOptions;
 use AiMessDetector\Rules\Security\SqlInjectionRule;
@@ -116,7 +115,7 @@ final class SqlInjectionRuleTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
 
-        $options = $this->createMock(\AiMessDetector\Core\Rule\RuleOptionsInterface::class);
+        $options = $this->createStub(\AiMessDetector\Core\Rule\RuleOptionsInterface::class);
         new SqlInjectionRule($options);
     }
 
@@ -129,12 +128,10 @@ final class SqlInjectionRuleTest extends TestCase
             line: null,
         );
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::File)
             ->willReturn([$fileInfo]);
         $repository->method('get')
-            ->with($filePath)
             ->willReturn($metrics);
 
         return new AnalysisContext(metrics: $repository);

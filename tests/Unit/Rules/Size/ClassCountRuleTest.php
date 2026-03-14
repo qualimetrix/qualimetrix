@@ -10,7 +10,6 @@ use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\RuleCategory;
 use AiMessDetector\Core\Symbol\SymbolInfo;
 use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Symbol\SymbolType;
 use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Rules\Size\ClassCountOptions;
 use AiMessDetector\Rules\Size\ClassCountRule;
@@ -107,12 +106,10 @@ final class ClassCountRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('classCount.sum', 5);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Namespace_)
             ->willReturn([$namespaceInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -130,12 +127,10 @@ final class ClassCountRuleTest extends TestCase
         // 18 classes is above warning (15) but below error (25)
         $metricBag = (new MetricBag())->with('classCount.sum', 18);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Namespace_)
             ->willReturn([$namespaceInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -159,12 +154,10 @@ final class ClassCountRuleTest extends TestCase
         // 30 classes is above error threshold (25)
         $metricBag = (new MetricBag())->with('classCount.sum', 30);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Namespace_)
             ->willReturn([$namespaceInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -189,12 +182,10 @@ final class ClassCountRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('classCount.sum', $classCount);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Namespace_)
             ->willReturn([$nsInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);

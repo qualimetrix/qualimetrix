@@ -10,7 +10,6 @@ use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\RuleCategory;
 use AiMessDetector\Core\Symbol\SymbolInfo;
 use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Symbol\SymbolType;
 use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Rules\Structure\InheritanceOptions;
 use AiMessDetector\Rules\Structure\InheritanceRule;
@@ -64,7 +63,7 @@ final class InheritanceRuleTest extends TestCase
 
     public function testThrowsExceptionForWrongOptionsType(): void
     {
-        $wrongOptions = $this->createMock(\AiMessDetector\Core\Rule\RuleOptionsInterface::class);
+        $wrongOptions = $this->createStub(\AiMessDetector\Core\Rule\RuleOptionsInterface::class);
 
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Expected');
@@ -88,9 +87,8 @@ final class InheritanceRuleTest extends TestCase
     {
         $rule = new InheritanceRule(new InheritanceOptions());
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([]);
 
         $context = new AnalysisContext($repository);
@@ -108,12 +106,10 @@ final class InheritanceRuleTest extends TestCase
         // DIT of 5 is at warning threshold (5) but below error (7)
         $metricBag = (new MetricBag())->with('dit', 5);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([$classInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -138,12 +134,10 @@ final class InheritanceRuleTest extends TestCase
         // DIT of 8 is above error threshold (7)
         $metricBag = (new MetricBag())->with('dit', 8);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([$classInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -164,12 +158,10 @@ final class InheritanceRuleTest extends TestCase
         // DIT of 2 is normal (below warning threshold 5)
         $metricBag = (new MetricBag())->with('dit', 2);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([$classInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -188,12 +180,10 @@ final class InheritanceRuleTest extends TestCase
         // No 'dit' metric
         $metricBag = new MetricBag();
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([$classInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -252,12 +242,10 @@ final class InheritanceRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('dit', $dit);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([$classInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);

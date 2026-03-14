@@ -10,7 +10,6 @@ use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\RuleCategory;
 use AiMessDetector\Core\Symbol\SymbolInfo;
 use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Symbol\SymbolType;
 use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Rules\Coupling\DistanceOptions;
 use AiMessDetector\Rules\Coupling\DistanceRule;
@@ -88,9 +87,8 @@ final class DistanceRuleTest extends TestCase
     {
         $rule = new DistanceRule(new DistanceOptions(includeNamespaces: ['App'], minClassCount: 0));
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Namespace_)
             ->willReturn([]);
 
         $context = new AnalysisContext($repository);
@@ -107,12 +105,10 @@ final class DistanceRuleTest extends TestCase
 
         $metricBag = new MetricBag();
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Namespace_)
             ->willReturn([$nsInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -133,12 +129,10 @@ final class DistanceRuleTest extends TestCase
             ->with('abstractness', 0.2)
             ->with('instability', 0.45);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Namespace_)
             ->willReturn([$nsInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -167,12 +161,10 @@ final class DistanceRuleTest extends TestCase
             ->with('abstractness', 0.1)
             ->with('instability', 0.3);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Namespace_)
             ->willReturn([$nsInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -196,12 +188,10 @@ final class DistanceRuleTest extends TestCase
             ->with('abstractness', 0.5)
             ->with('instability', 0.5);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Namespace_)
             ->willReturn([$nsInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -229,9 +219,8 @@ final class DistanceRuleTest extends TestCase
             ->with('abstractness', 0.0)
             ->with('instability', 0.45);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Namespace_)
             ->willReturn([$nsInfo1, $nsInfo2]);
         $repository->method('get')
             ->willReturnCallback(fn(SymbolPath $path) => match ($path) {
@@ -314,12 +303,10 @@ final class DistanceRuleTest extends TestCase
             ->with('abstractness', 0.0)
             ->with('instability', 0.0);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Namespace_)
             ->willReturn([$nsInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -362,12 +349,10 @@ final class DistanceRuleTest extends TestCase
             ->with('instability', 0.3)
             ->with('classCount.sum', 2);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Namespace_)
             ->willReturn([$nsInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -392,12 +377,10 @@ final class DistanceRuleTest extends TestCase
             ->with('instability', 0.3)
             ->with('classCount.sum', 3);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Namespace_)
             ->willReturn([$nsInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -422,12 +405,10 @@ final class DistanceRuleTest extends TestCase
             ->with('abstractness', 0.1)
             ->with('instability', 0.3);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Namespace_)
             ->willReturn([$nsInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -467,7 +448,7 @@ final class DistanceRuleTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Expected');
 
-        $invalidOptions = $this->createMock(\AiMessDetector\Core\Rule\RuleOptionsInterface::class);
+        $invalidOptions = $this->createStub(\AiMessDetector\Core\Rule\RuleOptionsInterface::class);
         new DistanceRule($invalidOptions);
     }
 }

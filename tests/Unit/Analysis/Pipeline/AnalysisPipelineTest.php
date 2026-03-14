@@ -22,7 +22,7 @@ use AiMessDetector\Core\Violation\Location;
 use ArrayIterator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use SplFileInfo;
@@ -30,22 +30,22 @@ use SplFileInfo;
 #[CoversClass(AnalysisPipeline::class)]
 final class AnalysisPipelineTest extends TestCase
 {
-    private FileDiscoveryInterface&MockObject $defaultDiscovery;
-    private CollectionOrchestratorInterface&MockObject $collectionOrchestrator;
-    private RuleExecutorInterface&MockObject $ruleExecutor;
-    private ConfigurationProviderInterface&MockObject $configurationProvider;
+    private FileDiscoveryInterface&Stub $defaultDiscovery;
+    private CollectionOrchestratorInterface&Stub $collectionOrchestrator;
+    private RuleExecutorInterface&Stub $ruleExecutor;
+    private ConfigurationProviderInterface&Stub $configurationProvider;
     private GlobalCollectorRunner $globalCollectorRunner;
-    private LoggerInterface&MockObject $logger;
+    private LoggerInterface&Stub $logger;
     private CompositeCollector $compositeCollector;
 
     protected function setUp(): void
     {
-        $this->defaultDiscovery = $this->createMock(FileDiscoveryInterface::class);
-        $this->collectionOrchestrator = $this->createMock(CollectionOrchestratorInterface::class);
-        $this->ruleExecutor = $this->createMock(RuleExecutorInterface::class);
-        $this->configurationProvider = $this->createMock(ConfigurationProviderInterface::class);
+        $this->defaultDiscovery = $this->createStub(FileDiscoveryInterface::class);
+        $this->collectionOrchestrator = $this->createStub(CollectionOrchestratorInterface::class);
+        $this->ruleExecutor = $this->createStub(RuleExecutorInterface::class);
+        $this->configurationProvider = $this->createStub(ConfigurationProviderInterface::class);
         $this->globalCollectorRunner = new GlobalCollectorRunner([]);
-        $this->logger = $this->createMock(LoggerInterface::class);
+        $this->logger = $this->createStub(LoggerInterface::class);
         $this->compositeCollector = new CompositeCollector([]);
 
         $this->configurationProvider->method('getRuleOptions')->willReturn([]);
@@ -76,7 +76,9 @@ final class AnalysisPipelineTest extends TestCase
         ];
 
         $this->defaultDiscovery->method('discover')->willReturn(new ArrayIterator($files));
-        $this->collectionOrchestrator->expects(self::once())
+
+        $collectionOrchestrator = $this->createMock(CollectionOrchestratorInterface::class);
+        $collectionOrchestrator->expects(self::once())
             ->method('collect')
             ->with(
                 $files,
@@ -84,7 +86,7 @@ final class AnalysisPipelineTest extends TestCase
             )
             ->willReturn(new CollectionPhaseOutput(new CollectionResult(2, 0), []));
 
-        $pipeline = $this->createPipeline();
+        $pipeline = $this->createPipeline(collectionOrchestrator: $collectionOrchestrator);
 
         $result = $pipeline->analyze('/path/to/src');
 
@@ -95,13 +97,14 @@ final class AnalysisPipelineTest extends TestCase
     #[Test]
     public function itUsesCustomFileDiscovery(): void
     {
-        $customDiscovery = $this->createMock(FileDiscoveryInterface::class);
+        $customDiscovery = $this->createStub(FileDiscoveryInterface::class);
         $customDiscovery->method('discover')->willReturn(new ArrayIterator([]));
 
-        $this->defaultDiscovery->expects(self::never())->method('discover');
+        $defaultDiscovery = $this->createMock(FileDiscoveryInterface::class);
+        $defaultDiscovery->expects(self::never())->method('discover');
         $this->collectionOrchestrator->method('collect')->willReturn(new CollectionPhaseOutput(new CollectionResult(0, 0), []));
 
-        $pipeline = $this->createPipeline();
+        $pipeline = $this->createPipeline(defaultDiscovery: $defaultDiscovery);
 
         $pipeline->analyze('/path/to/src', $customDiscovery);
     }
@@ -115,7 +118,9 @@ final class AnalysisPipelineTest extends TestCase
         ];
 
         $this->defaultDiscovery->method('discover')->willReturn(new ArrayIterator($files));
-        $this->collectionOrchestrator->expects(self::once())
+
+        $collectionOrchestrator = $this->createMock(CollectionOrchestratorInterface::class);
+        $collectionOrchestrator->expects(self::once())
             ->method('collect')
             ->with(
                 $files,
@@ -123,7 +128,7 @@ final class AnalysisPipelineTest extends TestCase
             )
             ->willReturn(new CollectionPhaseOutput(new CollectionResult(1, 0), $dependencies));
 
-        $pipeline = $this->createPipeline();
+        $pipeline = $this->createPipeline(collectionOrchestrator: $collectionOrchestrator);
 
         $result = $pipeline->analyze('/path/to/src');
 
@@ -152,9 +157,10 @@ final class AnalysisPipelineTest extends TestCase
         $this->defaultDiscovery->method('discover')->willReturn(new ArrayIterator([]));
         $this->collectionOrchestrator->method('collect')->willReturn(new CollectionPhaseOutput(new CollectionResult(0, 0), []));
 
-        $this->ruleExecutor->expects(self::once())->method('execute');
+        $ruleExecutor = $this->createMock(RuleExecutorInterface::class);
+        $ruleExecutor->expects(self::once())->method('execute')->willReturn([]);
 
-        $pipeline = $this->createPipeline();
+        $pipeline = $this->createPipeline(ruleExecutor: $ruleExecutor);
 
         $pipeline->analyze('/path/to/src');
     }
@@ -165,11 +171,12 @@ final class AnalysisPipelineTest extends TestCase
         $this->defaultDiscovery->method('discover')->willReturn(new ArrayIterator([]));
         $this->collectionOrchestrator->method('collect')->willReturn(new CollectionPhaseOutput(new CollectionResult(0, 0), []));
 
+        $logger = $this->createMock(LoggerInterface::class);
         // Expect multiple log calls for different phases
-        $this->logger->expects(self::atLeast(3))->method('info');
-        $this->logger->expects(self::atLeast(2))->method('debug');
+        $logger->expects(self::atLeast(3))->method('info');
+        $logger->expects(self::atLeast(2))->method('debug');
 
-        $pipeline = $this->createPipeline();
+        $pipeline = $this->createPipeline(logger: $logger);
 
         $pipeline->analyze('/path/to/src');
     }
@@ -179,13 +186,14 @@ final class AnalysisPipelineTest extends TestCase
     {
         $paths = ['/path/to/src', '/path/to/lib'];
 
-        $this->defaultDiscovery->expects(self::once())
+        $defaultDiscovery = $this->createMock(FileDiscoveryInterface::class);
+        $defaultDiscovery->expects(self::once())
             ->method('discover')
             ->with($paths)
             ->willReturn(new ArrayIterator([]));
         $this->collectionOrchestrator->method('collect')->willReturn(new CollectionPhaseOutput(new CollectionResult(0, 0), []));
 
-        $pipeline = $this->createPipeline();
+        $pipeline = $this->createPipeline(defaultDiscovery: $defaultDiscovery);
 
         $pipeline->analyze($paths);
     }
@@ -203,7 +211,9 @@ final class AnalysisPipelineTest extends TestCase
         ]);
 
         $this->defaultDiscovery->method('discover')->willReturn($discoveryResult);
-        $this->collectionOrchestrator->expects(self::once())
+
+        $collectionOrchestrator = $this->createMock(CollectionOrchestratorInterface::class);
+        $collectionOrchestrator->expects(self::once())
             ->method('collect')
             ->with(
                 self::callback(static function (array $files): bool {
@@ -214,21 +224,25 @@ final class AnalysisPipelineTest extends TestCase
             )
             ->willReturn(new CollectionPhaseOutput(new CollectionResult(2, 0), []));
 
-        $pipeline = $this->createPipeline();
+        $pipeline = $this->createPipeline(collectionOrchestrator: $collectionOrchestrator);
         $pipeline->analyze(['/path/to/src', '/path/to/src/sub']);
     }
 
-    private function createPipeline(): AnalysisPipeline
-    {
+    private function createPipeline(
+        ?FileDiscoveryInterface $defaultDiscovery = null,
+        ?CollectionOrchestratorInterface $collectionOrchestrator = null,
+        ?RuleExecutorInterface $ruleExecutor = null,
+        ?LoggerInterface $logger = null,
+    ): AnalysisPipeline {
         return new AnalysisPipeline(
-            defaultDiscovery: $this->defaultDiscovery,
-            collectionOrchestrator: $this->collectionOrchestrator,
+            defaultDiscovery: $defaultDiscovery ?? $this->defaultDiscovery,
+            collectionOrchestrator: $collectionOrchestrator ?? $this->collectionOrchestrator,
             compositeCollector: $this->compositeCollector,
-            ruleExecutor: $this->ruleExecutor,
+            ruleExecutor: $ruleExecutor ?? $this->ruleExecutor,
             configurationProvider: $this->configurationProvider,
             globalCollectorRunner: $this->globalCollectorRunner,
             repositoryFactory: new DefaultMetricRepositoryFactory(),
-            logger: $this->logger,
+            logger: $logger ?? $this->logger,
         );
     }
 }

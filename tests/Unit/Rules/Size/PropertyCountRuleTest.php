@@ -10,7 +10,6 @@ use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\RuleCategory;
 use AiMessDetector\Core\Symbol\SymbolInfo;
 use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Symbol\SymbolType;
 use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Rules\Size\PropertyCountOptions;
 use AiMessDetector\Rules\Size\PropertyCountRule;
@@ -138,12 +137,10 @@ final class PropertyCountRuleTest extends TestCase
             line: 1,
         );
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([$symbolInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($bag);
 
         $context = new AnalysisContext($repository);
@@ -200,12 +197,10 @@ final class PropertyCountRuleTest extends TestCase
             line: 1,
         );
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([$symbolInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($bag);
 
         return new AnalysisContext($repository);

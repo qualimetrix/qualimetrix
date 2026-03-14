@@ -241,7 +241,7 @@ PHP;
 
     private function createDetector(int $minTokens = 70, int $minLines = 5): DuplicationDetector
     {
-        $configProvider = $this->createMock(ConfigurationProviderInterface::class);
+        $configProvider = $this->createStub(ConfigurationProviderInterface::class);
         $configProvider->method('getRuleOptions')->willReturn([
             'duplication.code-duplication' => [
                 'min_tokens' => $minTokens,

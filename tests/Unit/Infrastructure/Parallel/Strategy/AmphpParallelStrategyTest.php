@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace AiMessDetector\Tests\Unit\Infrastructure\Parallel\Strategy;
 
 use AiMessDetector\Infrastructure\Parallel\Strategy\AmphpParallelStrategy;
+use AiMessDetector\Metrics\Maintainability\MaintainabilityIndexCollector;
+use AiMessDetector\Metrics\Size\LocCollector;
 use FilesystemIterator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -223,8 +225,7 @@ final class AmphpParallelStrategyTest extends TestCase
         $files = $this->createTestFiles(20);
 
         // Set collector classes (required condition)
-        /** @phpstan-ignore argument.type */
-        $this->strategy->setCollectorClasses(['SomeCollector']);
+        $this->strategy->setCollectorClasses([LocCollector::class]);
 
         // Don't set projectRoot - should cause fallback
 
@@ -324,8 +325,7 @@ final class AmphpParallelStrategyTest extends TestCase
 
         $strategy = new AmphpParallelStrategy($logger);
         $strategy->setMinFilesForParallel(10);
-        /** @phpstan-ignore argument.type */
-        $strategy->setCollectorClasses(['SomeCollector']);
+        $strategy->setCollectorClasses([LocCollector::class]);
 
         $files = $this->createTestFiles(20);
         $processor = fn(SplFileInfo $file): string => $file->getPathname();
@@ -407,10 +407,8 @@ final class AmphpParallelStrategyTest extends TestCase
         // Setup strategy with all required configuration
         $this->strategy->setMinFilesForParallel(10);
         $this->strategy->setProjectRoot($this->tempDir);
-        /** @phpstan-ignore argument.type */
-        $this->strategy->setCollectorClasses(['SomeCollector']);
-        /** @phpstan-ignore argument.type */
-        $this->strategy->setDerivedCollectorClasses(['SomeDerivedCollector']);
+        $this->strategy->setCollectorClasses([LocCollector::class]);
+        $this->strategy->setDerivedCollectorClasses([MaintainabilityIndexCollector::class]);
 
         // Create enough files to pass threshold
         $files = $this->createTestFiles(20);
@@ -453,8 +451,7 @@ final class AmphpParallelStrategyTest extends TestCase
         $strategy = new AmphpParallelStrategy($logger);
         $strategy->setMinFilesForParallel(10);
         $strategy->setProjectRoot($this->tempDir);
-        /** @phpstan-ignore argument.type */
-        $strategy->setCollectorClasses(['SomeCollector']);
+        $strategy->setCollectorClasses([LocCollector::class]);
 
         $files = $this->createTestFiles(20);
         $processor = fn(SplFileInfo $file): string => $file->getPathname();

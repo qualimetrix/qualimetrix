@@ -89,7 +89,7 @@ final class InstabilityRuleTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Expected');
 
-        $invalidOptions = $this->createMock(\AiMessDetector\Core\Rule\RuleOptionsInterface::class);
+        $invalidOptions = $this->createStub(\AiMessDetector\Core\Rule\RuleOptionsInterface::class);
         new InstabilityRule($invalidOptions);
     }
 
@@ -115,9 +115,8 @@ final class InstabilityRuleTest extends TestCase
     {
         $rule = new InstabilityRule(new InstabilityOptions());
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([]);
 
         $context = new AnalysisContext($repository);
@@ -134,12 +133,10 @@ final class InstabilityRuleTest extends TestCase
 
         $metricBag = new MetricBag();
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([$classInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -160,12 +157,10 @@ final class InstabilityRuleTest extends TestCase
             ->with('ca', 2)
             ->with('ce', 12);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([$classInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -193,12 +188,10 @@ final class InstabilityRuleTest extends TestCase
             ->with('ca', 1)
             ->with('ce', 32);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([$classInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -241,12 +234,10 @@ final class InstabilityRuleTest extends TestCase
             ->with('ce', 22)
             ->with('classCount.sum', 5);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Namespace_)
             ->willReturn([$nsInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -273,12 +264,10 @@ final class InstabilityRuleTest extends TestCase
             ->with('ce', 49)
             ->with('classCount.sum', 5);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Namespace_)
             ->willReturn([$nsInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -305,12 +294,10 @@ final class InstabilityRuleTest extends TestCase
             ->with('ce', 49)
             ->with('classCount.sum', 1);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Namespace_)
             ->willReturn([$nsInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -333,12 +320,10 @@ final class InstabilityRuleTest extends TestCase
             ->with('ce', 49)
             ->with('classCount.sum', 5);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Namespace_)
             ->willReturn([$nsInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -370,7 +355,7 @@ final class InstabilityRuleTest extends TestCase
             ->with('ce', 22)
             ->with('classCount.sum', 5);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => match ($type) {
                 SymbolType::Class_ => [$classInfo],
@@ -586,9 +571,8 @@ final class InstabilityRuleTest extends TestCase
             ->with('ce', 49)
             ->with('classCount.sum', 5);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Namespace_)
             ->willReturn([$includedInfo, $excludedInfo]);
         $repository->method('get')
             ->willReturn($violatingBag);
@@ -624,12 +608,10 @@ final class InstabilityRuleTest extends TestCase
             ->with('ca', 5)
             ->with('ce', 10);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([$classInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);

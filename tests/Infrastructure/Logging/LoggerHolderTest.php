@@ -23,7 +23,7 @@ final class LoggerHolderTest extends TestCase
     public function testCanSetCustomLogger(): void
     {
         $holder = new LoggerHolder();
-        $customLogger = $this->createMock(LoggerInterface::class);
+        $customLogger = $this->createStub(LoggerInterface::class);
 
         $holder->setLogger($customLogger);
 
@@ -34,11 +34,11 @@ final class LoggerHolderTest extends TestCase
     {
         $holder = new LoggerHolder();
 
-        $firstLogger = $this->createMock(LoggerInterface::class);
+        $firstLogger = $this->createStub(LoggerInterface::class);
         $holder->setLogger($firstLogger);
         $this->assertSame($firstLogger, $holder->getLogger());
 
-        $secondLogger = $this->createMock(LoggerInterface::class);
+        $secondLogger = $this->createStub(LoggerInterface::class);
         $holder->setLogger($secondLogger);
         $this->assertSame($secondLogger, $holder->getLogger());
     }
@@ -46,7 +46,7 @@ final class LoggerHolderTest extends TestCase
     public function testMultipleGettersReturnSameInstance(): void
     {
         $holder = new LoggerHolder();
-        $logger = $this->createMock(LoggerInterface::class);
+        $logger = $this->createStub(LoggerInterface::class);
 
         $holder->setLogger($logger);
 

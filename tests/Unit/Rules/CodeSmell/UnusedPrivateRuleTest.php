@@ -62,11 +62,10 @@ final class UnusedPrivateRuleTest extends TestCase
         $metricBag = (new MetricBag())
             ->with('unusedPrivate.total', 0);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Class_ ? [$classInfo] : []);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -86,11 +85,10 @@ final class UnusedPrivateRuleTest extends TestCase
             ->with('unusedPrivate.total', 1)
             ->withEntry('unusedPrivate.method', ['line' => 15]);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Class_ ? [$classInfo] : []);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -116,11 +114,10 @@ final class UnusedPrivateRuleTest extends TestCase
             ->with('unusedPrivate.total', 1)
             ->withEntry('unusedPrivate.property', ['line' => 10]);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Class_ ? [$classInfo] : []);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -142,11 +139,10 @@ final class UnusedPrivateRuleTest extends TestCase
             ->with('unusedPrivate.total', 1)
             ->withEntry('unusedPrivate.constant', ['line' => 8]);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Class_ ? [$classInfo] : []);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -172,11 +168,10 @@ final class UnusedPrivateRuleTest extends TestCase
             ->withEntry('unusedPrivate.property', ['line' => 7])
             ->withEntry('unusedPrivate.constant', ['line' => 8]);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Class_ ? [$classInfo] : []);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);

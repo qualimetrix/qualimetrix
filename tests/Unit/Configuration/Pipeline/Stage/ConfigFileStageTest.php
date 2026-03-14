@@ -32,7 +32,7 @@ final class ConfigFileStageTest extends TestCase
     #[Test]
     public function hasPriorityTwenty(): void
     {
-        $stage = new ConfigFileStage($this->createMock(ConfigLoaderInterface::class));
+        $stage = new ConfigFileStage($this->createStub(ConfigLoaderInterface::class));
 
         self::assertSame(20, $stage->priority());
     }
@@ -40,7 +40,7 @@ final class ConfigFileStageTest extends TestCase
     #[Test]
     public function hasNameConfigFile(): void
     {
-        $stage = new ConfigFileStage($this->createMock(ConfigLoaderInterface::class));
+        $stage = new ConfigFileStage($this->createStub(ConfigLoaderInterface::class));
 
         self::assertSame('config_file', $stage->name());
     }
@@ -85,7 +85,7 @@ final class ConfigFileStageTest extends TestCase
     {
         touch($this->tempDir . '/aimd.yaml');
 
-        $loader = $this->createMock(ConfigLoaderInterface::class);
+        $loader = $this->createStub(ConfigLoaderInterface::class);
         $loader->method('load')->willReturn([
             'cache' => [
                 'dir' => '/custom/cache',
@@ -112,7 +112,7 @@ final class ConfigFileStageTest extends TestCase
     {
         touch($this->tempDir . '/aimd.yaml');
 
-        $loader = $this->createMock(ConfigLoaderInterface::class);
+        $loader = $this->createStub(ConfigLoaderInterface::class);
         $loader->method('load')->willReturn([
             'paths' => ['src', 'lib'],
             'exclude' => ['vendor', 'tests'],
@@ -163,7 +163,7 @@ final class ConfigFileStageTest extends TestCase
     {
         touch($this->tempDir . '/aimd.yaml');
 
-        $loader = $this->createMock(ConfigLoaderInterface::class);
+        $loader = $this->createStub(ConfigLoaderInterface::class);
         $loader->method('load')->willReturn([
             'excludePaths' => ['vendor/', 'tests/'],
         ]);

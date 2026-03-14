@@ -150,7 +150,7 @@ final class ReportBuilderTest extends TestCase
 
     public function testMetricsPassedThrough(): void
     {
-        $metrics = $this->createMock(MetricRepositoryInterface::class);
+        $metrics = $this->createStub(MetricRepositoryInterface::class);
 
         $report = ReportBuilder::create()
             ->metrics($metrics)

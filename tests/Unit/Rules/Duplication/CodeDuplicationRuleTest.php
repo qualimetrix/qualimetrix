@@ -43,7 +43,7 @@ final class CodeDuplicationRuleTest extends TestCase
     {
         $rule = new CodeDuplicationRule(new CodeDuplicationOptions(enabled: false));
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $context = new AnalysisContext(
             $repository,
             duplicateBlocks: [
@@ -63,7 +63,7 @@ final class CodeDuplicationRuleTest extends TestCase
     {
         $rule = new CodeDuplicationRule(new CodeDuplicationOptions());
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $context = new AnalysisContext($repository);
 
         self::assertSame([], $rule->analyze($context));
@@ -74,7 +74,7 @@ final class CodeDuplicationRuleTest extends TestCase
     {
         $rule = new CodeDuplicationRule(new CodeDuplicationOptions());
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $context = new AnalysisContext(
             $repository,
             duplicateBlocks: [
@@ -109,7 +109,7 @@ final class CodeDuplicationRuleTest extends TestCase
     {
         $rule = new CodeDuplicationRule(new CodeDuplicationOptions());
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $context = new AnalysisContext(
             $repository,
             duplicateBlocks: [
@@ -135,7 +135,7 @@ final class CodeDuplicationRuleTest extends TestCase
     {
         $rule = new CodeDuplicationRule(new CodeDuplicationOptions());
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $context = new AnalysisContext(
             $repository,
             duplicateBlocks: [
@@ -162,7 +162,7 @@ final class CodeDuplicationRuleTest extends TestCase
     {
         $rule = new CodeDuplicationRule(new CodeDuplicationOptions());
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $context = new AnalysisContext(
             $repository,
             duplicateBlocks: [

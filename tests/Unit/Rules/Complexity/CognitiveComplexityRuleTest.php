@@ -95,9 +95,8 @@ final class CognitiveComplexityRuleTest extends TestCase
     {
         $rule = new CognitiveComplexityRule(new CognitiveComplexityOptions());
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Method)
             ->willReturn([]);
 
         $context = new AnalysisContext($repository);
@@ -114,12 +113,10 @@ final class CognitiveComplexityRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('cognitive', 20);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Method)
             ->willReturn([$methodInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -142,12 +139,10 @@ final class CognitiveComplexityRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('cognitive', 35);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Method)
             ->willReturn([$methodInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -185,12 +180,10 @@ final class CognitiveComplexityRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('cognitive.max', 35); // Above warning (30), below error (50)
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([$classInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -212,12 +205,10 @@ final class CognitiveComplexityRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('cognitive.max', 55); // Above error (50)
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([$classInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -243,7 +234,7 @@ final class CognitiveComplexityRuleTest extends TestCase
         $methodBag = (new MetricBag())->with('cognitive', 20); // Warning
         $classBag = (new MetricBag())->with('cognitive.max', 35); // Warning
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => match ($type) {
                 SymbolType::Method => [$methodInfo],
@@ -378,12 +369,10 @@ final class CognitiveComplexityRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('cognitive', $cognitive);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Method)
             ->willReturn([$methodInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
