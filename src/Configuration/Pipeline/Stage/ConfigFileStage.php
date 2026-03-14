@@ -148,6 +148,11 @@ final class ConfigFileStage implements ConfigurationStageInterface
             $result['exclude_paths'] = $data['excludePaths'];
         }
 
+        // Computed metrics (pass as-is, resolved later by ComputedMetricsConfigResolver)
+        if (isset($data['computed_metrics']) || isset($data['computedMetrics'])) {
+            $result['computed_metrics'] = $data['computed_metrics'] ?? $data['computedMetrics'];
+        }
+
         // Fail-on severity
         if (isset($data['failOn'])) {
             $result['fail_on'] = $data['failOn'];

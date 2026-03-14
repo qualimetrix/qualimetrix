@@ -71,6 +71,10 @@ Core/
 │   ├── ProfilerHolder.php                 # Static holder for profiler instance
 │   ├── NullProfiler.php                   # No-op profiler
 │   └── Span.php                           # Profiling span VO
+├── ComputedMetric/
+│   ├── ComputedMetricDefinition.php       # VO: computed metric definition (name, formulas, levels, thresholds)
+│   ├── ComputedMetricDefaults.php         # Default health.* definitions (6 built-in scores)
+│   └── ComputedMetricDefinitionHolder.php # Static runtime holder for resolved definitions
 ├── Suppression/
 │   ├── Suppression.php                    # VO: suppression tag from docblock (@aimd-ignore)
 │   └── SuppressionType.php                # Enum: suppression scope (symbol/next-line/file)
@@ -656,6 +660,51 @@ Defines the scope of a suppression tag.
 | `Symbol`   | Suppress at symbol level (class/method docblock) |
 | `NextLine` | Suppress the next line only                      |
 | `File`     | Suppress all matching violations in entire file  |
+
+---
+
+## Computed Metric Contracts
+
+### ComputedMetricDefinition
+
+Value Object — defines a computed (derived) metric evaluated from aggregated raw metrics using Symfony Expression Language formulas.
+
+**Fields:**
+- `name: string` — metric name, must start with `health.` or `computed.` (e.g., `health.complexity`, `computed.risk_score`)
+- `formulas: array<string, string>` — formulas per level (`class`, `namespace`, `project`). Project inherits from namespace if not explicitly set
+- `description: string` — human-readable description
+- `levels: list<SymbolType>` — levels at which to evaluate (`Class_`, `Namespace_`, `Project`)
+- `inverted: bool` — if true, higher values are better (below threshold = violation)
+- `warningThreshold: ?float` — warning threshold (null = no warning)
+- `errorThreshold: ?float` — error threshold (null = no error)
+
+**Methods:**
+- `getFormulaForLevel(SymbolType $level): ?string` — gets formula for the given level
+- `hasLevel(SymbolType $level): bool` — checks if the definition operates at this level
+
+**Formula variable mapping:** Metric names use `__` as separator in formulas (ExpressionLanguage does not support `.` in identifiers). Examples: `ccn__avg` maps to `ccn.avg`, `health__complexity` maps to `health.complexity`.
+
+### ComputedMetricDefaults
+
+Static factory providing 6 default health score definitions:
+- `health.complexity` — CCN + cognitive complexity (inverted, 0-100)
+- `health.cohesion` — TCC + LCOM (inverted, 0-100)
+- `health.coupling` — CBO + distance (inverted, 0-100)
+- `health.typing` — type coverage percentage (inverted, 0-100)
+- `health.maintainability` — MI passthrough (inverted, 0-100)
+- `health.overall` — weighted average of the 5 sub-scores (inverted, 0-100)
+
+**Methods:**
+- `getDefaults(): array<string, ComputedMetricDefinition>` — returns all default definitions
+
+### ComputedMetricDefinitionHolder
+
+Static runtime holder for resolved computed metric definitions. Similar to `ProfilerHolder` — used to pass definitions from the configuration layer to rule options without DI wiring.
+
+**Methods:**
+- `setDefinitions(list<ComputedMetricDefinition> $definitions): void` — set definitions
+- `getDefinitions(): list<ComputedMetricDefinition>` — get current definitions
+- `reset(): void` — reset (for testing)
 
 ---
 

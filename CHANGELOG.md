@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- `computed_metrics` config section with 6 default `health.*` scores (complexity, cohesion, coupling, typing, maintainability, overall), user-definable `computed.*` metrics via Symfony Expression Language formulas, per-level formulas, threshold-based violations. Formulas calibrated against 9 open-source projects (391 namespaces): harmonic decay for complexity, balanced TCC/LCOM weights for cohesion, distance+CBO model for coupling
+- `typeCoverage.pct` derived metric — overall type coverage percentage at class level
 - `--fail-on` option to control which severity level triggers a non-zero exit code (`--fail-on=error` allows warnings)
 - `--format=github` output format for GitHub Actions inline PR annotations
 - Identical sub-expression detection — catches copy-paste errors and logic bugs: identical operands (`$a === $a`), duplicate if/elseif conditions, identical ternary branches, duplicate match arms (`code-smell.identical-subexpression` rule)
@@ -40,6 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - NPath complexity formula changes: `for` loop follows Nejmeh 1988 standard, `try-catch-finally` follows PMD/Checkstyle convention — existing NPath values may change
 
 ### Fixed
+- Fixed Maintainability Index (MI) not aggregated to namespace/project level — non-additive method metrics now use Average fallback when Sum is unavailable
 - Fixed cognitive complexity nesting level not restored after closures/arrow functions inside nested scopes
 - Fixed cyclomatic complexity not counting `match` expression arms
 - Fixed NPath `for`-loop formula deviation from Nejmeh 1988 standard (extra +1 for init removed)

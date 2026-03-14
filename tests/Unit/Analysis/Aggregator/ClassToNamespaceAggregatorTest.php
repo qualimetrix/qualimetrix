@@ -8,8 +8,12 @@ use AiMessDetector\Analysis\Aggregator\AggregationHelper;
 use AiMessDetector\Analysis\Aggregator\ClassToNamespaceAggregator;
 use AiMessDetector\Analysis\Aggregator\MetricAggregator;
 use AiMessDetector\Analysis\Repository\InMemoryMetricRepository;
+use AiMessDetector\Core\Metric\AggregationStrategy;
 use AiMessDetector\Core\Metric\MetricBag;
+use AiMessDetector\Core\Metric\MetricDefinition;
+use AiMessDetector\Core\Metric\SymbolLevel;
 use AiMessDetector\Core\Symbol\SymbolPath;
+use AiMessDetector\Metrics\Maintainability\MaintainabilityIndexCollector;
 use AiMessDetector\Metrics\Size\LocCollector;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -95,5 +99,69 @@ final class ClassToNamespaceAggregatorTest extends TestCase
         $nsMetrics = $repository->get(SymbolPath::forNamespace('App\\Service'));
 
         self::assertSame(130, (int) $nsMetrics->get('loc.sum')); // 100 + 30
+    }
+
+    #[Test]
+    public function itAggregatesNonAdditiveMethodMetricsViaAverageFallback(): void
+    {
+        $repository = new InMemoryMetricRepository();
+
+        // Two classes with method-level MI already aggregated to class level (avg only, no sum)
+        $class1 = SymbolPath::forClass('App\\Service', 'UserService');
+        $repository->add($class1, (new MetricBag())
+            ->with('mi.avg', 80.0)
+            ->with('mi.min', 70.0), 'src/Service/UserService.php', 10);
+
+        $class2 = SymbolPath::forClass('App\\Service', 'OrderService');
+        $repository->add($class2, (new MetricBag())
+            ->with('mi.avg', 60.0)
+            ->with('mi.min', 50.0), 'src/Service/OrderService.php', 10);
+
+        $collector = new MaintainabilityIndexCollector();
+        $aggregator = new MetricAggregator($collector->getMetricDefinitions());
+        $aggregator->aggregate($repository);
+
+        $nsMetrics = $repository->get(SymbolPath::forNamespace('App\\Service'));
+
+        // MI uses Average fallback (no Sum at class level)
+        // Namespace mi.avg = average of [80.0, 60.0] = 70.0
+        self::assertEqualsWithDelta(70.0, $nsMetrics->get('mi.avg'), 0.01);
+        // Namespace mi.min = min of [80.0, 60.0] = 60.0
+        self::assertEqualsWithDelta(60.0, $nsMetrics->get('mi.min'), 0.01);
+    }
+
+    #[Test]
+    public function itPrefersSumOverAverageForAdditiveMethodMetrics(): void
+    {
+        $repository = new InMemoryMetricRepository();
+
+        // Two classes with both Sum and Average at class level — Sum should be preferred
+        $class1 = SymbolPath::forClass('App\\Service', 'UserService');
+        $repository->add($class1, (new MetricBag())
+            ->with('ccn.sum', 20.0)
+            ->with('ccn.avg', 5.0), 'src/Service/UserService.php', 10);
+
+        $class2 = SymbolPath::forClass('App\\Service', 'OrderService');
+        $repository->add($class2, (new MetricBag())
+            ->with('ccn.sum', 30.0)
+            ->with('ccn.avg', 10.0), 'src/Service/OrderService.php', 10);
+
+        $definition = new MetricDefinition(
+            name: 'ccn',
+            collectedAt: SymbolLevel::Method,
+            aggregations: [
+                SymbolLevel::Class_->value => [AggregationStrategy::Sum, AggregationStrategy::Average],
+                SymbolLevel::Namespace_->value => [AggregationStrategy::Sum, AggregationStrategy::Average],
+            ],
+        );
+        $aggregator = new MetricAggregator([$definition]);
+        $aggregator->aggregate($repository);
+
+        $nsMetrics = $repository->get(SymbolPath::forNamespace('App\\Service'));
+
+        // Sum is preferred: namespace ccn.sum = sum of class sums = 50
+        self::assertEqualsWithDelta(50.0, $nsMetrics->get('ccn.sum'), 0.01);
+        // namespace ccn.avg = average of class sums = 25 (not average of class averages)
+        self::assertEqualsWithDelta(25.0, $nsMetrics->get('ccn.avg'), 0.01);
     }
 }
