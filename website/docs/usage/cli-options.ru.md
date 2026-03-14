@@ -318,6 +318,9 @@ bin/aimd check src/ --disable-rule=complexity
 bin/aimd check src/ --disable-rule=complexity --disable-rule=design.lcom
 ```
 
+!!! tip "Оптимизация памяти"
+    Отключение `duplication.code-duplication` также полностью пропускает ресурсоёмкую фазу обнаружения дубликатов. На больших кодовых базах (500+ файлов) это может значительно снизить потребление памяти. Используйте `--disable-rule=duplication`, если возникают ошибки нехватки памяти.
+
 ### `--only-rule`
 
 Запустить только указанные правила или группы. Можно указывать несколько раз:

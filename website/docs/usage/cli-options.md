@@ -318,6 +318,9 @@ bin/aimd check src/ --disable-rule=complexity
 bin/aimd check src/ --disable-rule=complexity --disable-rule=design.lcom
 ```
 
+!!! tip "Memory optimization"
+    Disabling `duplication.code-duplication` also skips the memory-intensive duplication detection phase entirely. On large codebases (500+ files), this can significantly reduce memory usage. Use `--disable-rule=duplication` if you encounter out-of-memory errors.
+
 ### `--only-rule`
 
 Run only the specified rules or groups. Can be repeated:

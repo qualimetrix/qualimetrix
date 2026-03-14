@@ -132,3 +132,6 @@ You can also disable the rule entirely:
 ```bash
 bin/aimd check src/ --disable-rule=duplication
 ```
+
+!!! note "Memory usage"
+    Duplication detection uses the Rabin-Karp rolling hash algorithm, which requires storing normalized tokens for all files with matching hashes in memory simultaneously. On large codebases (500+ files), this can consume significant memory. Disabling the rule with `--disable-rule=duplication` skips the detection phase entirely and frees the memory.

@@ -130,8 +130,8 @@ Finding PHP files via `FileDiscoveryInterface`.
 - Aggregating metrics by levels (method -> class -> namespace -> project)
 - Running global collectors
 - Re-aggregating metrics after global collectors (so global metrics like CBO, Instability, NOC, Distance are properly aggregated to namespace and project levels)
-- Running circular dependency detection
-- Running duplication detection (token-based duplicate code block detection across analyzed files)
+- Running circular dependency detection (skipped when `architecture.circular-dependency` rule is disabled)
+- Running duplication detection — token-based duplicate code block detection across analyzed files (skipped when `duplication.code-duplication` rule is disabled; this phase is memory-intensive on large codebases)
 
 **Phase 4: RuleExecution**
 - Creating `AnalysisContext` with repository, dependency graph, circular dependency results, duplicate blocks, and rule options
