@@ -340,7 +340,7 @@ final class RuleExecutorTest extends TestCase
      */
     private function createRule(string $name, array $violations, RuleCategory $category = RuleCategory::Complexity): RuleInterface
     {
-        $rule = $this->createMock(RuleInterface::class);
+        $rule = $this->createStub(RuleInterface::class);
         $rule->method('getName')->willReturn($name);
         $rule->method('analyze')->willReturn($violations);
         $rule->method('getCategory')->willReturn($category);
@@ -350,7 +350,7 @@ final class RuleExecutorTest extends TestCase
 
     private function createMinimalContext(): AnalysisContext
     {
-        $repository = $this->createMock(\AiMessDetector\Core\Metric\MetricRepositoryInterface::class);
+        $repository = $this->createStub(\AiMessDetector\Core\Metric\MetricRepositoryInterface::class);
         $repository->method('all')->willReturn([]);
 
         return new AnalysisContext($repository, []);

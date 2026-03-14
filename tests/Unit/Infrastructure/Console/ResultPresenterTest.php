@@ -36,11 +36,11 @@ final class ResultPresenterTest extends TestCase
     protected function setUp(): void
     {
         $this->presenter = new ResultPresenter(
-            formatterRegistry: $this->createMock(FormatterRegistryInterface::class),
+            formatterRegistry: $this->createStub(FormatterRegistryInterface::class),
             profilerHolder: new ProfilerHolder(),
             baselineGenerator: new BaselineGenerator(new ViolationHasher()),
             baselineWriter: new BaselineWriter(),
-            configurationProvider: $this->createMock(ConfigurationProviderInterface::class),
+            configurationProvider: $this->createStub(ConfigurationProviderInterface::class),
         );
     }
 
@@ -57,7 +57,7 @@ final class ResultPresenterTest extends TestCase
         $configHolder->setConfiguration(new AnalysisConfiguration(format: 'json'));
 
         // Create a mock formatter that records it was called
-        $mockFormatter = $this->createMock(FormatterInterface::class);
+        $mockFormatter = $this->createStub(FormatterInterface::class);
         $mockFormatter->method('format')->willReturn('[]');
         $mockFormatter->method('getDefaultGroupBy')->willReturn(GroupBy::None);
 
@@ -105,7 +105,7 @@ final class ResultPresenterTest extends TestCase
     public function presentProfileShowsErrorWhenTmpFileWriteFails(): void
     {
         // Enable profiler
-        $profiler = $this->createMock(ProfilerInterface::class);
+        $profiler = $this->createStub(ProfilerInterface::class);
         $profiler->method('isEnabled')->willReturn(true);
         $profiler->method('export')->willReturn('{"test":"data"}');
         ProfilerHolder::set($profiler);
@@ -139,7 +139,7 @@ final class ResultPresenterTest extends TestCase
     public function presentProfileShowsSuccessOnValidWrite(): void
     {
         // Enable profiler
-        $profiler = $this->createMock(ProfilerInterface::class);
+        $profiler = $this->createStub(ProfilerInterface::class);
         $profiler->method('isEnabled')->willReturn(true);
         $profiler->method('export')->willReturn('{"test":"data"}');
         ProfilerHolder::set($profiler);
@@ -244,11 +244,11 @@ final class ResultPresenterTest extends TestCase
         $configHolder = new ConfigurationHolder();
         $configHolder->setConfiguration(new AnalysisConfiguration(failOn: $failOn));
 
-        $mockFormatter = $this->createMock(FormatterInterface::class);
+        $mockFormatter = $this->createStub(FormatterInterface::class);
         $mockFormatter->method('format')->willReturn('');
         $mockFormatter->method('getDefaultGroupBy')->willReturn(GroupBy::None);
 
-        $registry = $this->createMock(FormatterRegistryInterface::class);
+        $registry = $this->createStub(FormatterRegistryInterface::class);
         $registry->method('get')->willReturn($mockFormatter);
 
         $presenter = new ResultPresenter(

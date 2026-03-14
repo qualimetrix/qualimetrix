@@ -68,11 +68,10 @@ final class DebugCodeRuleTest extends TestCase
 
         $metricBag = new MetricBag();
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::File ? [$fileInfo] : []);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -93,11 +92,10 @@ final class DebugCodeRuleTest extends TestCase
             ->withEntry('codeSmell.debug_code', ['line' => 12])
             ->withEntry('codeSmell.debug_code', ['line' => 30]);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::File ? [$fileInfo] : []);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);

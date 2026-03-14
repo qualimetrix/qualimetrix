@@ -16,6 +16,7 @@ use AiMessDetector\Infrastructure\Ast\CachedFileParser;
 use AiMessDetector\Infrastructure\Ast\PhpFileParser;
 use AiMessDetector\Infrastructure\Cache\CacheKeyGenerator;
 use AiMessDetector\Infrastructure\Cache\FileCache;
+use RuntimeException;
 
 /**
  * Bootstrap for worker processes.
@@ -205,12 +206,10 @@ final class WorkerBootstrap
     private static function canInstantiate(string $className): bool
     {
         if (!class_exists($className)) {
-            fwrite(\STDERR, \sprintf(
-                "[WorkerBootstrap] Warning: class '%s' does not exist, skipping.\n",
+            throw new RuntimeException(\sprintf(
+                "WorkerBootstrap: class '%s' does not exist. This indicates a misconfigured collector.",
                 $className,
             ));
-
-            return false;
         }
 
         if (!is_subclass_of($className, ParallelSafeCollectorInterface::class)) {

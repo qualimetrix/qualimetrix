@@ -68,11 +68,10 @@ final class EvalRuleTest extends TestCase
 
         $metricBag = new MetricBag();
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::File ? [$fileInfo] : []);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -91,11 +90,10 @@ final class EvalRuleTest extends TestCase
         $metricBag = (new MetricBag())
             ->withEntry('codeSmell.eval', ['line' => 42]);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::File ? [$fileInfo] : []);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);

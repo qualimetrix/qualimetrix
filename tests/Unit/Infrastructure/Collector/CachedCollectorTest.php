@@ -318,7 +318,7 @@ final class CachedCollectorTest extends TestCase
     public function testFallsBackToInnerWhenGetRealPathReturnsFalse(): void
     {
         // Create a mock SplFileInfo that returns false for getRealPath()
-        $file = $this->createMock(SplFileInfo::class);
+        $file = $this->createStub(SplFileInfo::class);
         $file->method('getRealPath')->willReturn(false);
 
         // Storage should NOT be consulted at all

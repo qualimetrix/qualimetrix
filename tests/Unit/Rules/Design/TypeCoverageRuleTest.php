@@ -10,7 +10,6 @@ use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\RuleCategory;
 use AiMessDetector\Core\Symbol\SymbolInfo;
 use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Symbol\SymbolType;
 use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Rules\Design\TypeCoverageOptions;
 use AiMessDetector\Rules\Design\TypeCoverageRule;
@@ -125,12 +124,10 @@ final class TypeCoverageRuleTest extends TestCase
             ->with('typeCoverage.propertyTyped', 2)
             ->with('typeCoverage.property', 100.0);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([$classInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -155,12 +152,10 @@ final class TypeCoverageRuleTest extends TestCase
             ->with('typeCoverage.returnTotal', 0)
             ->with('typeCoverage.propertyTotal', 0);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([$classInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -190,12 +185,10 @@ final class TypeCoverageRuleTest extends TestCase
             ->with('typeCoverage.returnTotal', 0)
             ->with('typeCoverage.propertyTotal', 0);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([$classInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -223,12 +216,10 @@ final class TypeCoverageRuleTest extends TestCase
             ->with('typeCoverage.return', 25.0)
             ->with('typeCoverage.propertyTotal', 0);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([$classInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -256,12 +247,10 @@ final class TypeCoverageRuleTest extends TestCase
             ->with('typeCoverage.propertyTyped', 3)
             ->with('typeCoverage.property', 60.0);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([$classInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -297,12 +286,10 @@ final class TypeCoverageRuleTest extends TestCase
             ->with('typeCoverage.propertyTyped', 0)
             ->with('typeCoverage.property', 0.0);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([$classInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -326,12 +313,10 @@ final class TypeCoverageRuleTest extends TestCase
             ->with('typeCoverage.returnTotal', 0)
             ->with('typeCoverage.propertyTotal', 0);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([$classInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);

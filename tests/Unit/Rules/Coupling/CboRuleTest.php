@@ -89,7 +89,7 @@ final class CboRuleTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Expected');
 
-        $invalidOptions = $this->createMock(\AiMessDetector\Core\Rule\RuleOptionsInterface::class);
+        $invalidOptions = $this->createStub(\AiMessDetector\Core\Rule\RuleOptionsInterface::class);
         new CboRule($invalidOptions);
     }
 
@@ -115,9 +115,8 @@ final class CboRuleTest extends TestCase
     {
         $rule = new CboRule(new CboOptions());
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([]);
 
         $context = new AnalysisContext($repository);
@@ -134,12 +133,10 @@ final class CboRuleTest extends TestCase
 
         $metricBag = new MetricBag();
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([$classInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -160,12 +157,10 @@ final class CboRuleTest extends TestCase
             ->with('ca', 5)
             ->with('ce', 5);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([$classInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -187,12 +182,10 @@ final class CboRuleTest extends TestCase
             ->with('ca', 8)
             ->with('ce', 10);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([$classInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -220,12 +213,10 @@ final class CboRuleTest extends TestCase
             ->with('ca', 10)
             ->with('ce', 15);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([$classInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -257,12 +248,10 @@ final class CboRuleTest extends TestCase
             ->with('ca', 6)
             ->with('ce', 6);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([$classInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -305,12 +294,10 @@ final class CboRuleTest extends TestCase
             ->with('ce', 10)
             ->with('classCount.sum', 5);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Namespace_)
             ->willReturn([$nsInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -337,12 +324,10 @@ final class CboRuleTest extends TestCase
             ->with('ce', 15)
             ->with('classCount.sum', 5);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Namespace_)
             ->willReturn([$nsInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -369,12 +354,10 @@ final class CboRuleTest extends TestCase
             ->with('ce', 30)
             ->with('classCount.sum', 1);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Namespace_)
             ->willReturn([$nsInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -405,7 +388,7 @@ final class CboRuleTest extends TestCase
             ->with('ce', 10)
             ->with('classCount.sum', 5);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => match ($type) {
                 SymbolType::Class_ => [$classInfo],
@@ -621,9 +604,8 @@ final class CboRuleTest extends TestCase
             ->with('ce', 15)
             ->with('classCount.sum', 5);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Namespace_)
             ->willReturn([$includedInfo, $excludedInfo]);
         $repository->method('get')
             ->willReturn($violatingBag);
@@ -659,12 +641,10 @@ final class CboRuleTest extends TestCase
             ->with('ca', 5)
             ->with('ce', $cbo - 5);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([$classInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);

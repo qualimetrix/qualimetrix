@@ -95,9 +95,8 @@ final class NpathComplexityRuleTest extends TestCase
     {
         $rule = new NpathComplexityRule(new NpathComplexityOptions());
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Method)
             ->willReturn([]);
 
         $context = new AnalysisContext($repository);
@@ -114,12 +113,10 @@ final class NpathComplexityRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('npath', 250); // Above warning (200), below error (1000)
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Method)
             ->willReturn([$methodInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -142,12 +139,10 @@ final class NpathComplexityRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('npath', 1200); // Above error (1000)
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Method)
             ->willReturn([$methodInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -189,12 +184,10 @@ final class NpathComplexityRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('npath.max', 600); // Above warning (500), below error (1000)
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([$classInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -220,12 +213,10 @@ final class NpathComplexityRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('npath.max', 1200); // Above error (1000)
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([$classInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -256,7 +247,7 @@ final class NpathComplexityRuleTest extends TestCase
         $methodBag = (new MetricBag())->with('npath', 250); // Warning
         $classBag = (new MetricBag())->with('npath.max', 600); // Warning
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => match ($type) {
                 SymbolType::Method => [$methodInfo],
@@ -289,12 +280,10 @@ final class NpathComplexityRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('npath', 1_500_000_000); // > 1 billion
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Method)
             ->willReturn([$methodInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -428,12 +417,10 @@ final class NpathComplexityRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('npath', $npath);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Method)
             ->willReturn([$methodInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);

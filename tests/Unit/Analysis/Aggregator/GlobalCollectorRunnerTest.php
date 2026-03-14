@@ -10,6 +10,8 @@ use AiMessDetector\Core\Metric\GlobalContextCollectorInterface;
 use AiMessDetector\Core\Metric\MetricRepositoryInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
 
 #[CoversClass(GlobalCollectorRunner::class)]
@@ -37,8 +39,8 @@ final class GlobalCollectorRunnerTest extends TestCase
         // Pass collectors in reverse order to verify sorting works
         $runner = new GlobalCollectorRunner([$collector2, $collector1]);
 
-        $graph = $this->createMock(DependencyGraphInterface::class);
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $graph = $this->createStub(DependencyGraphInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
 
         $runner->run($graph, $repository);
 
@@ -54,8 +56,8 @@ final class GlobalCollectorRunnerTest extends TestCase
         self::assertSame(0, $runner->count());
         self::assertFalse($runner->hasCollectors());
 
-        $graph = $this->createMock(DependencyGraphInterface::class);
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $graph = $this->createStub(DependencyGraphInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
 
         // Should not throw
         $runner->run($graph, $repository);
@@ -64,8 +66,8 @@ final class GlobalCollectorRunnerTest extends TestCase
     #[Test]
     public function itReportsCorrectCollectorCount(): void
     {
-        $collector1 = $this->createCollector('collector1', [], ['metric1']);
-        $collector2 = $this->createCollector('collector2', [], ['metric2']);
+        $collector1 = $this->createCollectorStub('collector1', [], ['metric1']);
+        $collector2 = $this->createCollectorStub('collector2', [], ['metric2']);
 
         $runner = new GlobalCollectorRunner([$collector1, $collector2]);
 
@@ -94,8 +96,8 @@ final class GlobalCollectorRunnerTest extends TestCase
 
         $runner = new GlobalCollectorRunner([$collector1, $collector2]);
 
-        $graph = $this->createMock(DependencyGraphInterface::class);
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $graph = $this->createStub(DependencyGraphInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
 
         $runner->run($graph, $repository);
 
@@ -110,8 +112,26 @@ final class GlobalCollectorRunnerTest extends TestCase
         string $name,
         array $requires,
         array $provides,
-    ): GlobalContextCollectorInterface&\PHPUnit\Framework\MockObject\MockObject {
+    ): GlobalContextCollectorInterface&MockObject {
         $collector = $this->createMock(GlobalContextCollectorInterface::class);
+        $collector->method('getName')->willReturn($name);
+        $collector->method('requires')->willReturn($requires);
+        $collector->method('provides')->willReturn($provides);
+        $collector->method('getMetricDefinitions')->willReturn([]);
+
+        return $collector;
+    }
+
+    /**
+     * @param list<string> $requires
+     * @param list<string> $provides
+     */
+    private function createCollectorStub(
+        string $name,
+        array $requires,
+        array $provides,
+    ): GlobalContextCollectorInterface&Stub {
+        $collector = $this->createStub(GlobalContextCollectorInterface::class);
         $collector->method('getName')->willReturn($name);
         $collector->method('requires')->willReturn($requires);
         $collector->method('provides')->willReturn($provides);

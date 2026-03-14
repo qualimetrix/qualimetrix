@@ -10,7 +10,6 @@ use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\RuleCategory;
 use AiMessDetector\Core\Symbol\SymbolInfo;
 use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Symbol\SymbolType;
 use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Rules\Maintainability\MaintainabilityOptions;
 use AiMessDetector\Rules\Maintainability\MaintainabilityRule;
@@ -64,7 +63,7 @@ final class MaintainabilityRuleTest extends TestCase
 
     public function testThrowsExceptionForWrongOptionsType(): void
     {
-        $wrongOptions = $this->createMock(\AiMessDetector\Core\Rule\RuleOptionsInterface::class);
+        $wrongOptions = $this->createStub(\AiMessDetector\Core\Rule\RuleOptionsInterface::class);
 
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Expected');
@@ -88,9 +87,8 @@ final class MaintainabilityRuleTest extends TestCase
     {
         $rule = new MaintainabilityRule(new MaintainabilityOptions());
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Method)
             ->willReturn([]);
 
         $context = new AnalysisContext($repository);
@@ -110,12 +108,10 @@ final class MaintainabilityRuleTest extends TestCase
             ->with('mi', 30.0)
             ->with('methodLoc', 15);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Method)
             ->willReturn([$methodInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -140,12 +136,10 @@ final class MaintainabilityRuleTest extends TestCase
             ->with('mi', 15.0)
             ->with('methodLoc', 20);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Method)
             ->willReturn([$methodInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -168,12 +162,10 @@ final class MaintainabilityRuleTest extends TestCase
             ->with('mi', 90.0)
             ->with('methodLoc', 12);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Method)
             ->willReturn([$methodInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -193,12 +185,10 @@ final class MaintainabilityRuleTest extends TestCase
             ->with('mi', 25.67)
             ->with('methodLoc', 15);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Method)
             ->willReturn([$methodInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -219,12 +209,10 @@ final class MaintainabilityRuleTest extends TestCase
         // No 'mi' metric
         $metricBag = new MetricBag();
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Method)
             ->willReturn([$methodInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -285,12 +273,10 @@ final class MaintainabilityRuleTest extends TestCase
             ->with('mi', $mi)
             ->with('methodLoc', 15);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Method)
             ->willReturn([$methodInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -365,12 +351,10 @@ final class MaintainabilityRuleTest extends TestCase
             ->with('mi', 15.0)
             ->with('methodLoc', 20);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Method)
             ->willReturn([$methodInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -392,12 +376,10 @@ final class MaintainabilityRuleTest extends TestCase
             ->with('mi', 15.0)
             ->with('methodLoc', 20);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Method)
             ->willReturn([$methodInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -420,12 +402,10 @@ final class MaintainabilityRuleTest extends TestCase
             ->with('mi', 15.0)
             ->with('methodLoc', 10);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Method)
             ->willReturn([$methodInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -447,12 +427,10 @@ final class MaintainabilityRuleTest extends TestCase
             ->with('mi', 15.0)
             ->with('methodLoc', 20);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Method)
             ->willReturn([$methodInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);

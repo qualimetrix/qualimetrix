@@ -21,7 +21,7 @@ use AiMessDetector\Core\Symbol\SymbolPath;
 use AiMessDetector\Core\Violation\Location;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use SplFileInfo;
@@ -29,21 +29,21 @@ use SplFileInfo;
 #[CoversClass(CollectionOrchestrator::class)]
 final class CollectionOrchestratorTest extends TestCase
 {
-    private FileProcessorInterface&MockObject $fileProcessor;
-    private ExecutionStrategyInterface&MockObject $strategy;
-    private StrategySelectorInterface&MockObject $strategySelector;
-    private ProgressReporter&MockObject $progress;
-    private LoggerInterface&MockObject $logger;
+    private FileProcessorInterface&Stub $fileProcessor;
+    private ExecutionStrategyInterface&Stub $strategy;
+    private StrategySelectorInterface&Stub $strategySelector;
+    private ProgressReporter&Stub $progress;
+    private LoggerInterface&Stub $logger;
     private DerivedMetricExtractor $derivedMetricExtractor;
 
     protected function setUp(): void
     {
-        $this->fileProcessor = $this->createMock(FileProcessorInterface::class);
-        $this->strategy = $this->createMock(ExecutionStrategyInterface::class);
-        $this->strategySelector = $this->createMock(StrategySelectorInterface::class);
+        $this->fileProcessor = $this->createStub(FileProcessorInterface::class);
+        $this->strategy = $this->createStub(ExecutionStrategyInterface::class);
+        $this->strategySelector = $this->createStub(StrategySelectorInterface::class);
         $this->strategySelector->method('select')->willReturn($this->strategy);
-        $this->progress = $this->createMock(ProgressReporter::class);
-        $this->logger = $this->createMock(LoggerInterface::class);
+        $this->progress = $this->createStub(ProgressReporter::class);
+        $this->logger = $this->createStub(LoggerInterface::class);
         $this->derivedMetricExtractor = new DerivedMetricExtractor(new CompositeCollector([]));
     }
 
@@ -80,11 +80,13 @@ final class CollectionOrchestratorTest extends TestCase
         ];
 
         $this->strategy->method('execute')->willReturn($processingResults);
-        $this->progress->expects(self::once())->method('start')->with(2);
-        $this->progress->expects(self::exactly(2))->method('advance');
-        $this->progress->expects(self::once())->method('finish');
 
-        $orchestrator = $this->createOrchestrator();
+        $progress = $this->createMock(ProgressReporter::class);
+        $progress->expects(self::once())->method('start')->with(2);
+        $progress->expects(self::exactly(2))->method('advance');
+        $progress->expects(self::once())->method('finish');
+
+        $orchestrator = $this->createOrchestratorWith(progress: $progress);
         $repository = new InMemoryMetricRepository();
 
         $result = $orchestrator->collect($files, $repository);
@@ -122,9 +124,11 @@ final class CollectionOrchestratorTest extends TestCase
         ];
 
         $this->strategy->method('execute')->willReturn($processingResults);
-        $this->logger->expects(self::once())->method('warning');
 
-        $orchestrator = $this->createOrchestrator();
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects(self::once())->method('warning');
+
+        $orchestrator = $this->createOrchestratorWith(logger: $logger);
         $repository = new InMemoryMetricRepository();
 
         $result = $orchestrator->collect($files, $repository);
@@ -276,9 +280,11 @@ final class CollectionOrchestratorTest extends TestCase
         ];
 
         $this->strategy->method('execute')->willReturn($processingResults);
-        $this->logger->expects(self::exactly(2))->method('warning');
 
-        $orchestrator = $this->createOrchestrator();
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects(self::exactly(2))->method('warning');
+
+        $orchestrator = $this->createOrchestratorWith(logger: $logger);
         $repository = new InMemoryMetricRepository();
 
         $result = $orchestrator->collect($files, $repository);
@@ -312,7 +318,9 @@ final class CollectionOrchestratorTest extends TestCase
         ];
 
         $this->strategy->method('execute')->willReturn($processingResults);
-        $this->logger->expects(self::exactly(2))->method('warning')->willReturnCallback(
+
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects(self::exactly(2))->method('warning')->willReturnCallback(
             function (string $message, array $context): void {
                 self::assertSame('Failed to process file', $message);
                 self::assertArrayHasKey('file', $context);
@@ -320,7 +328,7 @@ final class CollectionOrchestratorTest extends TestCase
             },
         );
 
-        $orchestrator = $this->createOrchestrator();
+        $orchestrator = $this->createOrchestratorWith(logger: $logger);
         $repository = new InMemoryMetricRepository();
 
         $result = $orchestrator->collect($files, $repository);
@@ -351,15 +359,16 @@ final class CollectionOrchestratorTest extends TestCase
         $this->strategy->method('execute')->willReturn($processingResults);
 
         // Verify progress reporting sequence
-        $this->progress->expects(self::once())->method('start')->with(2);
-        $this->progress->expects(self::exactly(2))->method('setMessage')
+        $progress = $this->createMock(ProgressReporter::class);
+        $progress->expects(self::once())->method('start')->with(2);
+        $progress->expects(self::exactly(2))->method('setMessage')
             ->willReturnCallback(function (string $message): void {
                 self::assertStringStartsWith('Registering ', $message);
             });
-        $this->progress->expects(self::exactly(2))->method('advance');
-        $this->progress->expects(self::once())->method('finish');
+        $progress->expects(self::exactly(2))->method('advance');
+        $progress->expects(self::once())->method('finish');
 
-        $orchestrator = $this->createOrchestrator();
+        $orchestrator = $this->createOrchestratorWith(progress: $progress);
         $repository = new InMemoryMetricRepository();
 
         $orchestrator->collect($files, $repository);
@@ -370,12 +379,16 @@ final class CollectionOrchestratorTest extends TestCase
     {
         $files = [new SplFileInfo('/tmp/test.php')];
 
+        $strategy = $this->createMock(ExecutionStrategyInterface::class);
+        $strategySelector = $this->createStub(StrategySelectorInterface::class);
+        $strategySelector->method('select')->willReturn($strategy);
+
         // Verify that strategy receives a callable
-        $this->strategy->expects(self::once())
+        $strategy->expects(self::once())
             ->method('execute')
             ->with(
                 self::identicalTo($files),
-                self::isType('callable'),
+                self::isCallable(),
                 self::isTrue(), // allow parallelization
             )
             ->willReturn([
@@ -385,7 +398,7 @@ final class CollectionOrchestratorTest extends TestCase
                 ),
             ]);
 
-        $orchestrator = $this->createOrchestrator();
+        $orchestrator = $this->createOrchestratorWith(strategySelector: $strategySelector);
         $repository = new InMemoryMetricRepository();
 
         $orchestrator->collect($files, $repository);
@@ -395,7 +408,7 @@ final class CollectionOrchestratorTest extends TestCase
     public function itRegistersDerivedMetricsForMethods(): void
     {
         // Create mock derived collector
-        $derivedCollector = $this->createMock(DerivedCollectorInterface::class);
+        $derivedCollector = $this->createStub(DerivedCollectorInterface::class);
         $derivedCollector->method('provides')->willReturn(['mi']);
 
         $compositeCollector = new CompositeCollector([], [$derivedCollector]);
@@ -448,7 +461,7 @@ final class CollectionOrchestratorTest extends TestCase
     public function itIgnoresDerivedMetricsForNonExistentMethods(): void
     {
         // Create mock derived collector
-        $derivedCollector = $this->createMock(DerivedCollectorInterface::class);
+        $derivedCollector = $this->createStub(DerivedCollectorInterface::class);
         $derivedCollector->method('provides')->willReturn(['mi']);
 
         $compositeCollector = new CompositeCollector([], [$derivedCollector]);
@@ -491,7 +504,7 @@ final class CollectionOrchestratorTest extends TestCase
     public function itIgnoresInvalidMethodFqnsInDerivedMetrics(): void
     {
         // Create mock derived collector
-        $derivedCollector = $this->createMock(DerivedCollectorInterface::class);
+        $derivedCollector = $this->createStub(DerivedCollectorInterface::class);
         $derivedCollector->method('provides')->willReturn(['mi']);
 
         $compositeCollector = new CompositeCollector([], [$derivedCollector]);
@@ -535,7 +548,7 @@ final class CollectionOrchestratorTest extends TestCase
     public function itHandlesDerivedMetricsWithoutNamespace(): void
     {
         // Create mock derived collector
-        $derivedCollector = $this->createMock(DerivedCollectorInterface::class);
+        $derivedCollector = $this->createStub(DerivedCollectorInterface::class);
         $derivedCollector->method('provides')->willReturn(['mi']);
 
         $compositeCollector = new CompositeCollector([], [$derivedCollector]);
@@ -586,7 +599,7 @@ final class CollectionOrchestratorTest extends TestCase
     public function itIgnoresNonDerivedMetricsWithColonFormat(): void
     {
         // Create mock derived collector that provides 'mi'
-        $derivedCollector = $this->createMock(DerivedCollectorInterface::class);
+        $derivedCollector = $this->createStub(DerivedCollectorInterface::class);
         $derivedCollector->method('provides')->willReturn(['mi']);
 
         $compositeCollector = new CompositeCollector([], [$derivedCollector]);
@@ -641,7 +654,7 @@ final class CollectionOrchestratorTest extends TestCase
     public function itHandlesMetricsWithoutColonSeparator(): void
     {
         // Create mock derived collector
-        $derivedCollector = $this->createMock(DerivedCollectorInterface::class);
+        $derivedCollector = $this->createStub(DerivedCollectorInterface::class);
         $derivedCollector->method('provides')->willReturn(['mi']);
 
         $compositeCollector = new CompositeCollector([], [$derivedCollector]);
@@ -735,7 +748,7 @@ final class CollectionOrchestratorTest extends TestCase
     public function itHandlesUnicodeInMethodFqn(): void
     {
         // Create mock derived collector
-        $derivedCollector = $this->createMock(DerivedCollectorInterface::class);
+        $derivedCollector = $this->createStub(DerivedCollectorInterface::class);
         $derivedCollector->method('provides')->willReturn(['mi']);
 
         $compositeCollector = new CompositeCollector([], [$derivedCollector]);
@@ -794,20 +807,14 @@ final class CollectionOrchestratorTest extends TestCase
         );
 
         // Strategy selector should be called on each collect() call
-        $this->strategySelector = $this->createMock(StrategySelectorInterface::class);
-        $this->strategySelector->expects(self::exactly(2))
+        $strategySelector = $this->createMock(StrategySelectorInterface::class);
+        $strategySelector->expects(self::exactly(2))
             ->method('select')
             ->willReturn($this->strategy);
 
         $this->strategy->method('execute')->willReturn([$processingResult]);
 
-        $orchestrator = new CollectionOrchestrator(
-            fileProcessor: $this->fileProcessor,
-            strategySelector: $this->strategySelector,
-            derivedMetricExtractor: $this->derivedMetricExtractor,
-            progress: $this->progress,
-            logger: $this->logger,
-        );
+        $orchestrator = $this->createOrchestratorWith(strategySelector: $strategySelector);
 
         $repository1 = new InMemoryMetricRepository();
         $orchestrator->collect($files, $repository1);
@@ -824,6 +831,20 @@ final class CollectionOrchestratorTest extends TestCase
             derivedMetricExtractor: $this->derivedMetricExtractor,
             progress: $this->progress,
             logger: $this->logger,
+        );
+    }
+
+    private function createOrchestratorWith(
+        ?StrategySelectorInterface $strategySelector = null,
+        ?ProgressReporter $progress = null,
+        ?LoggerInterface $logger = null,
+    ): CollectionOrchestrator {
+        return new CollectionOrchestrator(
+            fileProcessor: $this->fileProcessor,
+            strategySelector: $strategySelector ?? $this->strategySelector,
+            derivedMetricExtractor: $this->derivedMetricExtractor,
+            progress: $progress ?? $this->progress,
+            logger: $logger ?? $this->logger,
         );
     }
 }

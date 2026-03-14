@@ -19,10 +19,10 @@ final class ChainNamespaceDetectorTest extends TestCase
     #[Test]
     public function itReturnsFirstNonEmptyResult(): void
     {
-        $first = $this->createMock(NamespaceDetectorInterface::class);
+        $first = $this->createStub(NamespaceDetectorInterface::class);
         $first->method('detect')->willReturn('');
 
-        $second = $this->createMock(NamespaceDetectorInterface::class);
+        $second = $this->createStub(NamespaceDetectorInterface::class);
         $second->method('detect')->willReturn('App\\Service');
 
         $third = $this->createMock(NamespaceDetectorInterface::class);
@@ -36,10 +36,10 @@ final class ChainNamespaceDetectorTest extends TestCase
     #[Test]
     public function itReturnsEmptyWhenAllDetectorsReturnEmpty(): void
     {
-        $first = $this->createMock(NamespaceDetectorInterface::class);
+        $first = $this->createStub(NamespaceDetectorInterface::class);
         $first->method('detect')->willReturn('');
 
-        $second = $this->createMock(NamespaceDetectorInterface::class);
+        $second = $this->createStub(NamespaceDetectorInterface::class);
         $second->method('detect')->willReturn('');
 
         $chain = new ChainNamespaceDetector([$first, $second]);
@@ -50,10 +50,10 @@ final class ChainNamespaceDetectorTest extends TestCase
     #[Test]
     public function itIgnoresExceptionsFromDetectors(): void
     {
-        $throwing = $this->createMock(NamespaceDetectorInterface::class);
+        $throwing = $this->createStub(NamespaceDetectorInterface::class);
         $throwing->method('detect')->willThrowException(new RuntimeException('Test'));
 
-        $working = $this->createMock(NamespaceDetectorInterface::class);
+        $working = $this->createStub(NamespaceDetectorInterface::class);
         $working->method('detect')->willReturn('App\\Domain');
 
         $chain = new ChainNamespaceDetector([$throwing, $working]);
@@ -72,7 +72,7 @@ final class ChainNamespaceDetectorTest extends TestCase
     #[Test]
     public function itAcceptsIterableOfDetectors(): void
     {
-        $detector = $this->createMock(NamespaceDetectorInterface::class);
+        $detector = $this->createStub(NamespaceDetectorInterface::class);
         $detector->method('detect')->willReturn('App\\Test');
 
         $generator = (static function () use ($detector): Generator {

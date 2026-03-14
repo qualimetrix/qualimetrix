@@ -268,7 +268,7 @@ final class MetricAggregatorTest extends TestCase
     public function itHandlesCollectorsWithNoDefinitions(): void
     {
         // Create a collector that returns no metric definitions
-        $collectorWithoutDefinitions = $this->createMock(MetricCollectorInterface::class);
+        $collectorWithoutDefinitions = $this->createStub(MetricCollectorInterface::class);
         $collectorWithoutDefinitions->method('getMetricDefinitions')->willReturn([]);
         $collectorWithoutDefinitions->method('getName')->willReturn('empty');
 

@@ -10,7 +10,6 @@ use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\RuleCategory;
 use AiMessDetector\Core\Symbol\SymbolInfo;
 use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Symbol\SymbolType;
 use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Rules\Structure\LcomOptions;
 use AiMessDetector\Rules\Structure\LcomRule;
@@ -64,7 +63,7 @@ final class LcomRuleTest extends TestCase
 
     public function testThrowsExceptionForWrongOptionsType(): void
     {
-        $wrongOptions = $this->createMock(\AiMessDetector\Core\Rule\RuleOptionsInterface::class);
+        $wrongOptions = $this->createStub(\AiMessDetector\Core\Rule\RuleOptionsInterface::class);
 
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Expected');
@@ -88,9 +87,8 @@ final class LcomRuleTest extends TestCase
     {
         $rule = new LcomRule(new LcomOptions());
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([]);
 
         $context = new AnalysisContext($repository);
@@ -111,12 +109,10 @@ final class LcomRuleTest extends TestCase
             ->with('methodCount', 5)
             ->with('isReadonly', 0);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([$classInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -144,12 +140,10 @@ final class LcomRuleTest extends TestCase
             ->with('methodCount', 10)
             ->with('isReadonly', 0);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([$classInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -170,12 +164,10 @@ final class LcomRuleTest extends TestCase
         // LCOM of 1 means perfectly cohesive (below warning threshold 2)
         $metricBag = (new MetricBag())->with('lcom', 1);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([$classInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -194,12 +186,10 @@ final class LcomRuleTest extends TestCase
         // No 'lcom' metric
         $metricBag = new MetricBag();
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([$classInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -261,12 +251,10 @@ final class LcomRuleTest extends TestCase
             ->with('methodCount', 5)
             ->with('isReadonly', 0);
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->with(SymbolType::Class_)
             ->willReturn([$classInfo]);
         $repository->method('get')
-            ->with($symbolPath)
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);

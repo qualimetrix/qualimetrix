@@ -31,7 +31,7 @@ final class FileParserFactoryTest extends TestCase
 
         $factory = new FileParserFactory(
             new PhpFileParser(),
-            $this->createMock(CacheInterface::class),
+            $this->createStub(CacheInterface::class),
             new CacheKeyGenerator(),
             $configProvider,
         );
@@ -54,7 +54,7 @@ final class FileParserFactoryTest extends TestCase
 
         $factory = new FileParserFactory(
             new PhpFileParser(),
-            $this->createMock(CacheInterface::class),
+            $this->createStub(CacheInterface::class),
             new CacheKeyGenerator(),
             $configProvider,
         );

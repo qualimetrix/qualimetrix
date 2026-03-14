@@ -14,7 +14,7 @@ use AiMessDetector\Infrastructure\Parallel\Strategy\StrategySelector;
 use AiMessDetector\Infrastructure\Parallel\Strategy\WorkerCountDetector;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use ReflectionProperty;
@@ -24,13 +24,13 @@ final class StrategySelectorTest extends TestCase
 {
     private AmphpParallelStrategy $amphpStrategy;
     private SequentialStrategy $sequentialStrategy;
-    private ConfigurationProviderInterface&MockObject $configProvider;
+    private ConfigurationProviderInterface&Stub $configProvider;
 
     protected function setUp(): void
     {
         $this->amphpStrategy = new AmphpParallelStrategy(new NullLogger());
         $this->sequentialStrategy = new SequentialStrategy();
-        $this->configProvider = $this->createMock(ConfigurationProviderInterface::class);
+        $this->configProvider = $this->createStub(ConfigurationProviderInterface::class);
     }
 
 

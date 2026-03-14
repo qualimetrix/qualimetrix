@@ -23,18 +23,18 @@ use PhpParser\Node;
 use PhpParser\NodeVisitorAbstract;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
 use SplFileInfo;
 
 #[CoversClass(FileProcessor::class)]
 final class FileProcessorTest extends TestCase
 {
-    private FileParserInterface&MockObject $parser;
+    private FileParserInterface&Stub $parser;
 
     protected function setUp(): void
     {
-        $this->parser = $this->createMock(FileParserInterface::class);
+        $this->parser = $this->createStub(FileParserInterface::class);
     }
 
     #[Test]

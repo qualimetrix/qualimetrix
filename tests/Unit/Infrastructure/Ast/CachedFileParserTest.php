@@ -50,8 +50,8 @@ final class CachedFileParserTest extends TestCase
         $inner = $this->createMock(FileParserInterface::class);
         $inner->expects(self::never())->method('parse');
 
-        $cache = $this->createMock(CacheInterface::class);
-        $cache->method('get')->with($key)->willReturn($cachedAst);
+        $cache = $this->createStub(CacheInterface::class);
+        $cache->method('get')->willReturn($cachedAst);
 
         $parser = new CachedFileParser($inner, $cache, $keyGenerator);
 
@@ -72,7 +72,7 @@ final class CachedFileParserTest extends TestCase
         $inner->expects(self::once())->method('parse')->willReturn($freshAst);
 
         $cache = $this->createMock(CacheInterface::class);
-        $cache->method('get')->with($key)->willReturn(null);
+        $cache->method('get')->willReturn(null);
         $cache->expects(self::once())->method('set')->with($key, $freshAst);
 
         $parser = new CachedFileParser($inner, $cache, $keyGenerator);
@@ -118,7 +118,7 @@ final class CachedFileParserTest extends TestCase
         $inner->expects(self::once())->method('parse')->willReturn($freshAst);
 
         $cache = $this->createMock(CacheInterface::class);
-        $cache->method('get')->with($key)->willReturn('not an array');
+        $cache->method('get')->willReturn('not an array');
         $cache->expects(self::once())->method('set');
 
         $parser = new CachedFileParser($inner, $cache, $keyGenerator);

@@ -68,7 +68,7 @@ final class MetricsJsonFormatterTest extends TestCase
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
         $methodPath = SymbolPath::forMethod('App\\Service', 'UserService', 'calculate');
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(static function (SymbolType $type) use ($classPath, $methodPath): array {
                 if ($type === SymbolType::Class_) {
@@ -128,7 +128,7 @@ final class MetricsJsonFormatterTest extends TestCase
     {
         $classPath = SymbolPath::forClass('App', 'Empty');
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(static function (SymbolType $type) use ($classPath): array {
                 if ($type === SymbolType::Class_) {
@@ -161,7 +161,7 @@ final class MetricsJsonFormatterTest extends TestCase
     {
         $classPath = SymbolPath::forClass('App', 'Test');
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(static function (SymbolType $type) use ($classPath): array {
                 if ($type === SymbolType::Class_) {
@@ -210,7 +210,7 @@ final class MetricsJsonFormatterTest extends TestCase
     {
         $filePath = SymbolPath::forFile('src/Service/UserService.php');
 
-        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(static function (SymbolType $type) use ($filePath): array {
                 if ($type === SymbolType::File) {

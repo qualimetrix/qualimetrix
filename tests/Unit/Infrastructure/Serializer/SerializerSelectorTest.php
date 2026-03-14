@@ -19,15 +19,15 @@ final class SerializerSelectorTest extends TestCase
     #[Test]
     public function itSelectsHighestPriorityAvailable(): void
     {
-        $lowPriority = $this->createMock(SerializerInterface::class);
+        $lowPriority = $this->createStub(SerializerInterface::class);
         $lowPriority->method('isAvailable')->willReturn(true);
         $lowPriority->method('getPriority')->willReturn(10);
 
-        $highPriority = $this->createMock(SerializerInterface::class);
+        $highPriority = $this->createStub(SerializerInterface::class);
         $highPriority->method('isAvailable')->willReturn(true);
         $highPriority->method('getPriority')->willReturn(100);
 
-        $mediumPriority = $this->createMock(SerializerInterface::class);
+        $mediumPriority = $this->createStub(SerializerInterface::class);
         $mediumPriority->method('isAvailable')->willReturn(true);
         $mediumPriority->method('getPriority')->willReturn(50);
 
@@ -45,11 +45,11 @@ final class SerializerSelectorTest extends TestCase
     #[Test]
     public function itSkipsUnavailableSerializers(): void
     {
-        $unavailable = $this->createMock(SerializerInterface::class);
+        $unavailable = $this->createStub(SerializerInterface::class);
         $unavailable->method('isAvailable')->willReturn(false);
         $unavailable->method('getPriority')->willReturn(100);
 
-        $available = $this->createMock(SerializerInterface::class);
+        $available = $this->createStub(SerializerInterface::class);
         $available->method('isAvailable')->willReturn(true);
         $available->method('getPriority')->willReturn(50);
 
@@ -66,10 +66,10 @@ final class SerializerSelectorTest extends TestCase
     #[Test]
     public function itThrowsExceptionWhenNoSerializersAvailable(): void
     {
-        $unavailable1 = $this->createMock(SerializerInterface::class);
+        $unavailable1 = $this->createStub(SerializerInterface::class);
         $unavailable1->method('isAvailable')->willReturn(false);
 
-        $unavailable2 = $this->createMock(SerializerInterface::class);
+        $unavailable2 = $this->createStub(SerializerInterface::class);
         $unavailable2->method('isAvailable')->willReturn(false);
 
         $selector = new SerializerSelector([
@@ -125,11 +125,11 @@ final class SerializerSelectorTest extends TestCase
     #[Test]
     public function itHandlesEqualPriorities(): void
     {
-        $serializer1 = $this->createMock(SerializerInterface::class);
+        $serializer1 = $this->createStub(SerializerInterface::class);
         $serializer1->method('isAvailable')->willReturn(true);
         $serializer1->method('getPriority')->willReturn(50);
 
-        $serializer2 = $this->createMock(SerializerInterface::class);
+        $serializer2 = $this->createStub(SerializerInterface::class);
         $serializer2->method('isAvailable')->willReturn(true);
         $serializer2->method('getPriority')->willReturn(50);
 

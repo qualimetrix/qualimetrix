@@ -15,7 +15,7 @@ final class ConsoleProgressBarTest extends TestCase
     {
         $this->expectNotToPerformAssertions();
 
-        $output = $this->createMock(OutputInterface::class);
+        $output = $this->createStub(OutputInterface::class);
         $reporter = new ConsoleProgressBar($output, minFilesForProgress: 10);
 
         // Should not create progress bar for 5 files
@@ -45,7 +45,7 @@ final class ConsoleProgressBarTest extends TestCase
     {
         $this->expectNotToPerformAssertions();
 
-        $output = $this->createMock(OutputInterface::class);
+        $output = $this->createStub(OutputInterface::class);
         $reporter = new ConsoleProgressBar($output);
 
         // Should not throw when advancing before start
@@ -58,7 +58,7 @@ final class ConsoleProgressBarTest extends TestCase
     {
         $this->expectNotToPerformAssertions();
 
-        $output = $this->createMock(OutputInterface::class);
+        $output = $this->createStub(OutputInterface::class);
         $reporter = new ConsoleProgressBar($output);
 
         $reporter->start(5); // Too few files, progress bar not created
