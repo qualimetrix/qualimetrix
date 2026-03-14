@@ -87,7 +87,7 @@ All definitions (built-in + user-defined) arrive through `ComputedMetricRuleOpti
 ```php
 class ComputedMetricRule implements RuleInterface
 {
-    public const NAME = 'computed-metrics';
+    public const NAME = 'computed.health';
 
     // Receives ComputedMetricRuleOptions with merged definitions at runtime
     // analyze() iterates definitions, reads pre-computed values, checks thresholds
@@ -95,10 +95,8 @@ class ComputedMetricRule implements RuleInterface
 }
 ```
 
-**Note on NAME convention:** `computed-metrics` is an intentional exception to the `group.rule-name` convention used by
-other rules (e.g., `complexity.cyclomatic`). This is a meta-rule that spans multiple conceptual groups (`health.*`,
-`computed.*`). Using a dot-separated name like `computed.metrics` would create ambiguity with `--disable-rule=computed`
-(which should disable `computed.*` violation codes, not the rule itself).
+**NAME convention:** `computed.health` follows the standard `group.rule-name` convention.
+`--disable-rule=computed` prefix-matches `computed.health`, disabling the rule entirely.
 ```
 
 **Why this works:**
@@ -110,15 +108,15 @@ other rules (e.g., `complexity.cyclomatic`). This is a meta-rule that spans mult
   pattern as every other rule in the system.
 - **`--disable-rule` granularity** — works via `isViolationCodeEnabled()`, the same mechanism used by hierarchical
   rules:
-    - `--disable-rule=computed-metrics` → standard match on rule NAME → disables the whole rule
+    - `--disable-rule=computed.health` → standard match on rule NAME → disables the whole rule
     - `--disable-rule=health` → prefix match on violation code → disables all `health.*` violations
     - `--disable-rule=health.complexity` → exact match on violation code → disables one metric
     - `--disable-rule=computed` → prefix match → disables all `computed.*` violations
 - **Suppression** — `@aimd-ignore health.complexity` matches the violation code. `@aimd-ignore health` matches all
   health violations via prefix.
 - **Baseline** — violation code (`health.complexity`) + symbol path → standard baseline behavior.
-- **Profiler** — `RuleExecutor` creates one span `rule.computed-metrics`. Inside `analyze()`, the rule creates sub-spans
-  per definition (`rule.computed-metrics.health.complexity`, etc.) for diagnostics. (Note: rule-level spans use the rule
+- **Profiler** — `RuleExecutor` creates one span `rule.computed.health`. Inside `analyze()`, the rule creates sub-spans
+  per definition (`rule.computed.health.health.complexity`, etc.) for diagnostics. (Note: rule-level spans use the rule
   NAME with hyphens; pipeline-level spans use `computed` with dots — these are separate span trees.)
 
 **Minimal infrastructure changes.** No modifications to RuleRegistry, RuleExecutor, RuleOptionsCompilerPass, or any
@@ -135,7 +133,7 @@ existing CompilerPass. New additions: `ComputedMetricDefinitionHolder` (simple v
 
 **Runtime creation flow:**
 
-1. `RuleOptionsFactory::create('computed-metrics', ComputedMetricRuleOptions::class)` is called
+1. `RuleOptionsFactory::create('computed.health', ComputedMetricRuleOptions::class)` is called
 2. Factory calls `ComputedMetricRuleOptions::fromArray($config)` with the rule's config section
 3. `fromArray()` reads pre-merged definitions from `ComputedMetricDefinitionHolder` (injected) — it does NOT perform the
    merge itself
@@ -147,7 +145,7 @@ source of truth.
 
 **Config pipeline mapping:** A `ComputedMetricsStage` (or extension of `ConfigFileStage`) reads the `computed_metrics`
 top-level YAML section, performs the merge+validation, and stores results in `ComputedMetricDefinitionHolder`. The
-`computed_metrics` key is NOT mapped to `ruleOptions['computed-metrics']` — the rule options bypass
+`computed_metrics` key is NOT mapped to `ruleOptions['computed.health']` — the rule options bypass
 `RuleOptionsFactory`'s standard config lookup and read from the holder directly.
 
 ### Dependency Flow
@@ -275,7 +273,7 @@ registration required.
 
 ### ComputedMetricRule (Rules)
 
-`ComputedMetricRule` is a standard rule with `NAME = 'computed-metrics'`. It receives all definitions through
+`ComputedMetricRule` is a standard rule with `NAME = 'computed.health'`. It receives all definitions through
 `ComputedMetricRuleOptions` at runtime.
 
 **`analyze()` logic:**
@@ -294,17 +292,17 @@ repository — same as any other rule reading raw metrics.
 
 **`--disable-rule` behavior** (via existing `isViolationCodeEnabled()`):
 
-- `--disable-rule=computed-metrics` → standard match on NAME → rule skipped entirely
+- `--disable-rule=computed.health` → standard match on NAME → rule skipped entirely
 - `--disable-rule=health` → prefix match on violation code → health violations filtered
 - `--disable-rule=computed` → prefix match → computed.* violations filtered
 - `--disable-rule=health.complexity` → exact match on violation code → one metric filtered
 
 **`--only-rule` limitation:** `--only-rule=health.complexity` does NOT work for individual computed metrics.
-`RuleExecutor.isRuleEnabled()` checks the rule NAME (`computed-metrics`), which has no prefix relationship with
+`RuleExecutor.isRuleEnabled()` checks the rule NAME (`computed.health`), which has no prefix relationship with
 violation codes (`health.*`, `computed.*`). The rule is disabled entirely before `isViolationCodeEnabled()` gets a
 chance to filter.
 
-Supported: `--only-rule=computed-metrics` (enables the whole rule). For granular control, use `--disable-rule` to
+Supported: `--only-rule=computed.health` (enables the whole rule). For granular control, use `--disable-rule` to
 exclude unwanted metrics instead. This is a known trade-off of the single-rule architecture — documented, not a bug.
 
 ### Integration with Analysis Pipeline
@@ -560,7 +558,7 @@ bin/aimd check src/ --format=metrics-json   # computed metrics included
 bin/aimd check src/ --format=json           # violations only
 
 # Disable all computed metric violations (the rule itself)
-bin/aimd check src/ --disable-rule=computed-metrics
+bin/aimd check src/ --disable-rule=computed.health
 
 # Disable all health score violations (prefix match on violation code)
 bin/aimd check src/ --disable-rule=health
@@ -857,7 +855,7 @@ Lightweight, no transitive dependencies. Already in the Symfony ecosystem.
 
 ### Rules
 
-- [ ] `ComputedMetricRule` implements `RuleInterface` with `NAME = 'computed-metrics'`
+- [ ] `ComputedMetricRule` implements `RuleInterface` with `NAME = 'computed.health'`
 - [ ] Standard DI registration via autoconfiguration — no new CompilerPasses
 - [ ] `ComputedMetricRuleOptions` holds merged definitions + thresholds, implements `RuleOptionsInterface`
 - [ ] `ComputedMetricRuleOptions::fromArray()` reads pre-merged definitions from `ComputedMetricDefinitionHolder`
@@ -865,7 +863,7 @@ Lightweight, no transitive dependencies. Already in the Symfony ecosystem.
 - [ ] Violation code = definition name (e.g., `health.complexity`, `computed.risk_score`)
 - [ ] Threshold semantics: inverted metrics (below threshold = violation) vs normal (above = violation)
 - [ ] Violation message format: `<symbol>: <metric> = <value> (<severity> threshold: <op> <threshold>)`
-- [ ] Per-definition profiler sub-spans inside `analyze()` (`rule.computed-metrics.health.complexity`, etc.)
+- [ ] Per-definition profiler sub-spans inside `analyze()` (`rule.computed.health.health.complexity`, etc.)
 - [ ] Unit tests for violation generation with various threshold/inverted combinations
 - [ ] Unit tests for `--disable-rule` via `isViolationCodeEnabled()` (prefix and exact match)
 - [ ] Unit tests for suppression compatibility (`@aimd-ignore health.complexity`, `@aimd-ignore health`)
@@ -976,7 +974,7 @@ Lightweight, no transitive dependencies. Already in the Symfony ecosystem.
 
 17. **Violation message format** → `<symbol>: <metric> = <value> (<severity> threshold: <op> <threshold>)`.
 
-18. **Rule architecture** → Single `ComputedMetricRule` with `NAME = 'computed-metrics'`, standard DI registration. NOT
+18. **Rule architecture** → Single `ComputedMetricRule` with `NAME = 'computed.health'`, standard DI registration. NOT
     N instances via CompilerPass — `aimd.yaml` loads at runtime, after container compilation. Definitions arrive through
     `ComputedMetricRuleOptions` via `RuleOptionsFactory` pattern. Granular `--disable-rule` via
     `isViolationCodeEnabled()` (existing hierarchical rule mechanism).
@@ -1013,8 +1011,8 @@ Lightweight, no transitive dependencies. Already in the Symfony ecosystem.
     `tcc.avg` → `tcc__avg`, but `tcc` → `tcc` (no dots, no mapping).
 
 27. **`--only-rule` limitation** → `--only-rule=health.complexity` does NOT work for individual computed metrics (rule
-    NAME `computed-metrics` has no prefix relation to violation codes `health.*`/`computed.*`). Only
-    `--only-rule=computed-metrics` works. For granular control, use `--disable-rule` instead. Documented trade-off of
+    NAME `computed.health` has no prefix relation to violation codes `health.*`/`computed.*`). Only
+    `--only-rule=computed.health` works. For granular control, use `--disable-rule` instead. Documented trade-off of
     single-rule architecture.
 
 28. **`cbo__avg` at namespace level** → Deliberately uses `cbo.avg` (average class CBO in namespace), not
@@ -1040,7 +1038,7 @@ None. All questions resolved.
   original name matched the `*Calculator.php` exclude pattern in `CollectorConfigurator`, preventing DI registration
   entirely. Renamed to `ComputedMetricEvaluator` which is auto-registered as a plain autowired service.
 - **Fixed:** Replaced `SymbolLevel` (non-existent type) with `SymbolType` (existing enum in Core).
-- **Added:** Note on `NAME = 'computed-metrics'` being an intentional exception to `group.rule-name` convention.
+- **Added:** Note on `NAME = 'computed.health'` being an intentional exception to `group.rule-name` convention.
 - **Added:** Warning about disabling sub-scores breaking `health.overall` (missing variable without `??`).
 - **Added:** `symfony/expression-language` to DoD Infrastructure section.
 - **Added:** Formula inheritance caution for namespace-native metrics at project level.

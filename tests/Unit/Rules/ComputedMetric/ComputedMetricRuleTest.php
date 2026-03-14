@@ -32,7 +32,7 @@ final class ComputedMetricRuleTest extends TestCase
     {
         $rule = new ComputedMetricRule(new ComputedMetricRuleOptions());
 
-        self::assertSame('computed-metrics', $rule->getName());
+        self::assertSame('computed.health', $rule->getName());
     }
 
     public function testGetDescription(): void
@@ -322,7 +322,7 @@ final class ComputedMetricRuleTest extends TestCase
 
         self::assertCount(1, $violations);
         self::assertSame('health.custom', $violations[0]->violationCode);
-        self::assertSame('computed-metrics', $violations[0]->ruleName);
+        self::assertSame('computed.health', $violations[0]->ruleName);
     }
 
     public function testMultipleDefinitionsProcessed(): void

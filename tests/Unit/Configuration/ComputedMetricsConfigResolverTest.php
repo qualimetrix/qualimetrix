@@ -205,6 +205,18 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         ]);
     }
 
+    public function testReservedHealthPrefixForNewMetricThrows(): void
+    {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('reserved "health.*" prefix');
+
+        $this->resolver->resolve([
+            'health.custom' => [
+                'formula' => 'ccn__avg * 10',
+            ],
+        ]);
+    }
+
     public function testFormulaAndFormulasInteraction(): void
     {
         $result = $this->resolver->resolve([
