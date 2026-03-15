@@ -13,11 +13,12 @@ use AiMessDetector\Reporting\DetailedViolationRenderer;
 use AiMessDetector\Reporting\FormatterContext;
 use AiMessDetector\Reporting\GroupBy;
 use AiMessDetector\Reporting\HealthScore;
+use AiMessDetector\Reporting\NamespaceDrillDown;
 use AiMessDetector\Reporting\Report;
 use AiMessDetector\Reporting\WorstOffender;
 
 /**
- * Summary formatter — default CLI output.
+ * Summary formatter -- default CLI output.
  *
  * Shows health overview, worst offenders, and contextual hints in one screen.
  * For detailed violation listing, use --format=text.
@@ -34,6 +35,7 @@ final class SummaryFormatter implements FormatterInterface
 
     public function __construct(
         private readonly DetailedViolationRenderer $detailedRenderer,
+        private readonly NamespaceDrillDown $namespaceDrillDown,
     ) {}
 
     public function format(Report $report, FormatterContext $context): string
@@ -49,7 +51,7 @@ final class SummaryFormatter implements FormatterInterface
             $this->renderPartialAnalysisWarning($color, $lines);
             $this->renderViolationSummary($report, $context, $color, $lines);
         } else {
-            $this->renderHealthScores($report, $color, $terminalWidth, $ascii, $lines);
+            $this->renderHealthScores($report, $context, $color, $terminalWidth, $ascii, $lines);
             $this->renderWorstNamespaces($report, $color, $context, $lines);
             $this->renderWorstClasses($report, $color, $context, $lines);
             $this->renderViolationSummary($report, $context, $color, $lines);
@@ -121,12 +123,15 @@ final class SummaryFormatter implements FormatterInterface
      */
     private function renderHealthScores(
         Report $report,
+        FormatterContext $context,
         AnsiColor $color,
         int $terminalWidth,
         bool $ascii,
         array &$lines,
     ): void {
-        if ($report->healthScores === []) {
+        $healthScores = $this->resolveHealthScores($report, $context);
+
+        if ($healthScores === []) {
             $lines[] = $color->dim('Health: insufficient data');
             $lines[] = '';
 
@@ -134,14 +139,19 @@ final class SummaryFormatter implements FormatterInterface
         }
 
         // Render overall first, then dimensions
-        $overall = $report->healthScores['overall'] ?? null;
+        $overall = $healthScores['overall'] ?? null;
         $dimensions = array_filter(
-            $report->healthScores,
+            $healthScores,
             static fn(HealthScore $hs): bool => $hs->name !== 'overall',
         );
 
+        $headerSuffix = '';
+        if ($context->namespace !== null) {
+            $headerSuffix = ' ' . $color->dim(\sprintf('[namespace: %s]', $context->namespace));
+        }
+
         if ($overall !== null) {
-            $lines[] = $color->bold('Health') . ' '
+            $lines[] = $color->bold('Health') . $headerSuffix . ' '
                 . $this->renderHealthBar($overall->score, $overall->warningThreshold, $overall->errorThreshold, $terminalWidth, $ascii, $color)
                 . ' ' . $this->formatScore($overall->score, $color, $overall->warningThreshold, $overall->errorThreshold)
                 . ' ' . $color->dim($overall->label);
@@ -175,6 +185,22 @@ final class SummaryFormatter implements FormatterInterface
         }
 
         $lines[] = '';
+    }
+
+    /**
+     * Resolves health scores: namespace-level when filtering, project-level otherwise.
+     *
+     * @return array<string, HealthScore>
+     */
+    private function resolveHealthScores(Report $report, FormatterContext $context): array
+    {
+        if ($context->namespace === null || $report->metrics === null) {
+            return $report->healthScores;
+        }
+
+        $nsScores = $this->namespaceDrillDown->buildSubtreeHealthScores($report->metrics, $context->namespace);
+
+        return $nsScores !== [] ? $nsScores : $report->healthScores;
     }
 
     private function renderHealthBar(
@@ -272,7 +298,7 @@ final class SummaryFormatter implements FormatterInterface
         FormatterContext $context,
         array &$lines,
     ): void {
-        $offenders = $this->filterWorstOffenders($report->worstClasses, $context);
+        $offenders = $this->resolveWorstClasses($report, $context);
 
         if ($offenders === []) {
             return;
@@ -286,6 +312,20 @@ final class SummaryFormatter implements FormatterInterface
         $lines[] = $color->bold('Worst classes');
         $this->renderOffenderList($offenders, $color, $lines, showClassCount: false);
         $lines[] = '';
+    }
+
+    /**
+     * Resolves worst classes: builds from namespace metrics when filtering, otherwise uses pre-built list.
+     *
+     * @return list<WorstOffender>
+     */
+    private function resolveWorstClasses(Report $report, FormatterContext $context): array
+    {
+        if ($context->namespace !== null && $report->metrics !== null) {
+            return $this->namespaceDrillDown->buildWorstClasses($report->metrics, $context->namespace, $report->violations);
+        }
+
+        return $this->filterWorstOffenders($report->worstClasses, $context);
     }
 
     /**

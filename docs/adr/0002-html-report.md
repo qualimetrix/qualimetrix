@@ -27,7 +27,7 @@ AIMD produces text, JSON, and CI-oriented formats but no visual overview answeri
 
 8. **Metric hints** — PHP `MetricHintProvider` is the single source of truth. Ranges, labels, health decomposition, and format templates are embedded as JSON in the report. JS `initHints()` populates Maps from embedded data at startup (no hardcoded hint data in JS).
 
-9. **Hierarchical roll-up** — subtree metrics (worst sub-namespaces) computed entirely on JS side from flat namespace data. Core metric system uses flat aggregation (correct for rules/violations); hierarchical is a presentation concern.
+9. **Hierarchical roll-up** — subtree metrics computed as a presentation concern, not in the core metric system. Core uses flat aggregation (each namespace reflects only its direct classes). Subtree roll-up (weighted-average health across sub-namespaces) is computed in JS (HTML report) and in `NamespaceDrillDown` service (CLI/JSON `--namespace` drill-down).
 
 **Alternatives considered:**
 - ECharts — simpler API but 800KB, less treemap customization

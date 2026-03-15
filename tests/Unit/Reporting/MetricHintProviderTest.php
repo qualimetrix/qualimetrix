@@ -203,16 +203,18 @@ final class MetricHintProviderTest extends TestCase
     public static function scoreLabelProvider(): iterable
     {
         // score, warnThreshold, errThreshold, expected
-        yield 'Excellent: above warning + 20' => [95.0, 70.0, 40.0, 'Excellent'];
-        yield 'Excellent: exactly warning + 20.01' => [90.01, 70.0, 40.0, 'Excellent'];
-        yield 'Good: exactly warning + 20 is not excellent' => [90.0, 70.0, 40.0, 'Good'];
-        yield 'Good: above warning' => [75.0, 70.0, 40.0, 'Good'];
-        yield 'Good: exactly warning + 0.01' => [70.01, 70.0, 40.0, 'Good'];
-        yield 'Needs attention: exactly warning is not good' => [70.0, 70.0, 40.0, 'Needs attention'];
-        yield 'Needs attention: above error' => [50.0, 70.0, 40.0, 'Needs attention'];
-        yield 'Needs attention: exactly error + 0.01' => [40.01, 70.0, 40.0, 'Needs attention'];
-        yield 'Poor: exactly error' => [40.0, 70.0, 40.0, 'Poor'];
-        yield 'Poor: below error' => [20.0, 70.0, 40.0, 'Poor'];
+        // strongThreshold = 70 + (100 - 70) * 0.4 = 82
+        yield 'Strong: well above strong threshold' => [95.0, 70.0, 40.0, 'Strong'];
+        yield 'Strong: above strong threshold' => [90.0, 70.0, 40.0, 'Strong'];
+        yield 'Strong: just above strong threshold' => [82.01, 70.0, 40.0, 'Strong'];
+        yield 'Acceptable: exactly strong threshold is not strong' => [82.0, 70.0, 40.0, 'Acceptable'];
+        yield 'Acceptable: above warning' => [75.0, 70.0, 40.0, 'Acceptable'];
+        yield 'Acceptable: just above warning' => [70.01, 70.0, 40.0, 'Acceptable'];
+        yield 'Weak: exactly warning is not acceptable' => [70.0, 70.0, 40.0, 'Weak'];
+        yield 'Weak: above error' => [50.0, 70.0, 40.0, 'Weak'];
+        yield 'Weak: just above error' => [40.01, 70.0, 40.0, 'Weak'];
+        yield 'Critical: exactly error' => [40.0, 70.0, 40.0, 'Critical'];
+        yield 'Critical: below error' => [20.0, 70.0, 40.0, 'Critical'];
     }
 
     #[DataProvider('scoreLabelProvider')]

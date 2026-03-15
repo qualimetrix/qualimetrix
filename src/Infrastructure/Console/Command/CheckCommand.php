@@ -123,9 +123,27 @@ final class CheckCommand extends Command
 
         $this->clearCacheIfRequested($input, $output);
 
+        $this->validateWorkersOption($input);
+        $this->warnAboutUnknownRules($resolved, $output);
+
         $scopeResolution = (new GitScopeResolver())->resolve($input, $resolved);
 
+        $pathErrors = $this->validatePaths($scopeResolution->paths);
+        if ($pathErrors !== []) {
+            foreach ($pathErrors as $error) {
+                $output->writeln(\sprintf('<error>%s</error>', $error));
+            }
+
+            return self::FAILURE;
+        }
+
         $result = $this->runAnalysis($scopeResolution->paths, $scopeResolution->fileDiscovery);
+
+        if ($result->filesAnalyzed === 0 && $scopeResolution->analyzeScope === null) {
+            $output->writeln('<comment>No PHP files found in the given paths.</comment>');
+
+            return self::SUCCESS;
+        }
 
         // Feed collected suppressions into the filter pipeline before filtering
         $this->violationFilterPipeline->loadSuppressions($result->suppressions);
@@ -294,5 +312,75 @@ final class CheckCommand extends Command
         $output->writeln('Or use --baseline-ignore-stale to continue anyway.');
 
         throw new InvalidArgumentException('Baseline contains stale entries');
+    }
+
+    /**
+     * Validates that all provided paths exist.
+     *
+     * @param list<string> $paths
+     *
+     * @return list<string> Error messages (empty if all valid)
+     */
+    private function validatePaths(array $paths): array
+    {
+        $errors = [];
+        foreach ($paths as $path) {
+            if (!file_exists($path)) {
+                $errors[] = "Error: path '{$path}' does not exist";
+            }
+        }
+
+        return $errors;
+    }
+
+    /**
+     * Validates that --workers value is a non-negative integer.
+     */
+    private function validateWorkersOption(InputInterface $input): void
+    {
+        $workers = $input->getOption('workers');
+        if ($workers === null) {
+            return;
+        }
+
+        $filtered = filter_var($workers, \FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
+        if ($filtered === false) {
+            throw new InvalidArgumentException(
+                \sprintf('Invalid value "%s" for --workers. Expected a non-negative integer.', $workers),
+            );
+        }
+    }
+
+    /**
+     * Warns about unknown rule names in --only-rule and --disable-rule.
+     */
+    private function warnAboutUnknownRules(ResolvedConfiguration $resolved, OutputInterface $output): void
+    {
+        $knownNames = array_map(
+            fn(string $class): string => $class::NAME,
+            $this->ruleRegistry->getClasses(),
+        );
+
+        $checkNames = [
+            ...$resolved->analysis->onlyRules,
+            ...$resolved->analysis->disabledRules,
+        ];
+
+        foreach ($checkNames as $name) {
+            $matched = false;
+            foreach ($knownNames as $known) {
+                // Support both exact match and prefix match (e.g., "complexity" matches "complexity.cyclomatic")
+                if ($name === $known || str_starts_with($known, $name . '.')) {
+                    $matched = true;
+                    break;
+                }
+            }
+            if (!$matched) {
+                $output->writeln(\sprintf(
+                    '<comment>Warning: rule "%s" does not match any registered rule</comment>',
+                    $name,
+                ));
+            }
+        }
     }
 }

@@ -525,19 +525,21 @@ final class MetricHintProvider
 
     public function getScoreLabel(float $score, float $warnThreshold, float $errThreshold): string
     {
-        if ($score > $warnThreshold + 20) {
-            return 'Excellent';
+        $strongThreshold = $warnThreshold + (100 - $warnThreshold) * 0.4;
+
+        if ($score > $strongThreshold) {
+            return 'Strong';
         }
 
         if ($score > $warnThreshold) {
-            return 'Good';
+            return 'Acceptable';
         }
 
         if ($score > $errThreshold) {
-            return 'Needs attention';
+            return 'Weak';
         }
 
-        return 'Poor';
+        return 'Critical';
     }
 
     public function getHealthDimensionLabel(string $dimension, bool $bad): string

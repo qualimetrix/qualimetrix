@@ -163,9 +163,9 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
             $profiler?->stop('aggregation.global');
         }
 
-        // Phase 3.65: Computed metrics (health scores)
+        // Phase 3.65: Computed metrics (health scores) — skip when no files were analyzed
         $definitions = ComputedMetricDefinitionHolder::getDefinitions();
-        if ($definitions !== [] && $this->computedMetricEvaluator !== null) {
+        if ($definitions !== [] && $this->computedMetricEvaluator !== null && $collectionResult->filesAnalyzed > 0) {
             $profiler?->start('computed', 'pipeline');
             $this->computedMetricEvaluator->compute($repository, $definitions);
             $profiler?->stop('computed');

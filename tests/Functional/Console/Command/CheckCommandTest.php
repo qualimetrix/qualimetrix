@@ -144,14 +144,12 @@ class ComplexClass {
             'paths' => [$nonExistentPath],
             '--format' => 'text',
             '--no-progress' => true,
-            '--disable-rule' => ['computed.health'],
         ]);
 
-        // Assert success (no files found, but not an error)
-        $this->assertSame(0, $commandTester->getStatusCode());
+        // Assert failure with clear error message
+        $this->assertSame(1, $commandTester->getStatusCode());
         $output = $commandTester->getDisplay();
-        // Output shows "0 error(s), 0 warning(s) in 0 file(s)"
-        $this->assertStringContainsString('0 error(s), 0 warning(s)', $output);
+        $this->assertStringContainsString('does not exist', $output);
     }
 
     #[Test]

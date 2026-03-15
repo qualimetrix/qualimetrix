@@ -11,6 +11,7 @@ use AiMessDetector\Reporting\DecompositionItem;
 use AiMessDetector\Reporting\FormatterContext;
 use AiMessDetector\Reporting\GroupBy;
 use AiMessDetector\Reporting\HealthScore;
+use AiMessDetector\Reporting\NamespaceDrillDown;
 use AiMessDetector\Reporting\Report;
 use AiMessDetector\Reporting\WorstOffender;
 use Composer\InstalledVersions;
@@ -29,6 +30,7 @@ final class JsonFormatter implements FormatterInterface
 
     public function __construct(
         private readonly DebtCalculator $debtCalculator,
+        private readonly NamespaceDrillDown $namespaceDrillDown,
     ) {}
 
     public function format(Report $report, FormatterContext $context): string
@@ -53,18 +55,17 @@ final class JsonFormatter implements FormatterInterface
                 'timestamp' => gmdate('c'),
             ],
             'summary' => $this->buildSummary($report, $violations, $isDrillDown),
-            'health' => $this->formatHealthScores($report->healthScores, $context),
+            'health' => $this->resolveAndFormatHealthScores($report, $context),
             'worstNamespaces' => $context->partialAnalysis ? [] : $this->formatWorstOffenders(
                 $report->worstNamespaces,
                 $context,
                 $topN,
                 showClassCount: true,
             ),
-            'worstClasses' => $context->partialAnalysis ? [] : $this->formatWorstOffenders(
-                $report->worstClasses,
+            'worstClasses' => $context->partialAnalysis ? [] : $this->resolveAndFormatWorstClasses(
+                $report,
                 $context,
                 $topN,
-                showClassCount: false,
             ),
             'violations' => array_map(
                 fn(Violation $v): array => $this->formatViolation($v, $context),
@@ -132,6 +133,29 @@ final class JsonFormatter implements FormatterInterface
     }
 
     /**
+     * Resolves health scores (namespace-level when filtering) and formats for JSON.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function resolveAndFormatHealthScores(Report $report, FormatterContext $context): ?array
+    {
+        if ($context->partialAnalysis) {
+            return null;
+        }
+
+        $healthScores = $report->healthScores;
+
+        if ($context->namespace !== null && $report->metrics !== null) {
+            $nsScores = $this->namespaceDrillDown->buildSubtreeHealthScores($report->metrics, $context->namespace);
+            if ($nsScores !== []) {
+                $healthScores = $nsScores;
+            }
+        }
+
+        return $this->formatHealthScores($healthScores, $context);
+    }
+
+    /**
      * Formats health scores for JSON output.
      *
      * Returns null for partial analysis (no health data) or empty health scores.
@@ -170,6 +194,52 @@ final class JsonFormatter implements FormatterInterface
         }
 
         return $result;
+    }
+
+    /**
+     * Resolves and formats worst classes: namespace-scoped when filtering.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function resolveAndFormatWorstClasses(
+        Report $report,
+        FormatterContext $context,
+        int $topN,
+    ): array {
+        if ($context->namespace !== null && $report->metrics !== null) {
+            $nsClasses = $this->namespaceDrillDown->buildWorstClasses(
+                $report->metrics,
+                $context->namespace,
+                $report->violations,
+                includeNotableMetrics: true,
+            );
+            $sliced = \array_slice($nsClasses, 0, $topN);
+
+            $result = [];
+            foreach ($sliced as $offender) {
+                $result[] = [
+                    'symbolPath' => $offender->symbolPath->toString(),
+                    'healthOverall' => $this->sanitizeFloat($offender->healthOverall),
+                    'label' => $offender->label,
+                    'reason' => $offender->reason,
+                    'violationCount' => $offender->violationCount,
+                    'file' => $offender->file !== null
+                        ? $context->relativizePath($offender->file)
+                        : null,
+                    'metrics' => $this->sanitizeFloatArray($offender->metrics),
+                    'healthScores' => $this->sanitizeFloatArray($offender->healthScores),
+                ];
+            }
+
+            return $result;
+        }
+
+        return $this->formatWorstOffenders(
+            $report->worstClasses,
+            $context,
+            $topN,
+            showClassCount: false,
+        );
     }
 
     /**
@@ -413,7 +483,7 @@ final class JsonFormatter implements FormatterInterface
     }
 
     /**
-     * Sanitizes a float for JSON encoding (NaN/INF → null).
+     * Sanitizes a float for JSON encoding (NaN/INF -> null).
      */
     private function sanitizeFloat(float $value): ?float
     {
@@ -421,7 +491,7 @@ final class JsonFormatter implements FormatterInterface
     }
 
     /**
-     * Sanitizes a numeric value for JSON encoding (NaN/INF → null).
+     * Sanitizes a numeric value for JSON encoding (NaN/INF -> null).
      */
     private function sanitizeNumeric(int|float|null $value): int|float|null
     {

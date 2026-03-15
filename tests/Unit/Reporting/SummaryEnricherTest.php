@@ -88,25 +88,25 @@ final class SummaryEnricherTest extends TestCase
         self::assertArrayHasKey('cohesion', $result->healthScores);
         self::assertArrayHasKey('overall', $result->healthScores);
 
-        // Complexity is 65 > warning 50, so "Good" label and no decomposition
+        // Complexity is 65 > warning 50, so "Acceptable" label and no decomposition
         $complexity = $result->healthScores['complexity'];
         self::assertSame('complexity', $complexity->name);
         self::assertSame(65.0, $complexity->score);
-        self::assertSame('Good', $complexity->label);
+        self::assertSame('Acceptable', $complexity->label);
         self::assertSame([], $complexity->decomposition);
 
-        // Cohesion is 45 <= warning 50, so "Needs attention" and has decomposition
+        // Cohesion is 45 <= warning 50, so "Weak" and has decomposition
         $cohesion = $result->healthScores['cohesion'];
         self::assertSame(45.0, $cohesion->score);
-        self::assertSame('Needs attention', $cohesion->label);
+        self::assertSame('Weak', $cohesion->label);
         self::assertCount(2, $cohesion->decomposition);
         self::assertSame('tcc.avg', $cohesion->decomposition[0]->metricKey);
         self::assertSame(0.15, $cohesion->decomposition[0]->value);
         self::assertSame('lcom.avg', $cohesion->decomposition[1]->metricKey);
 
-        // Maintainability is 58 <= warning 65, so "Needs attention"
+        // Maintainability is 58 <= warning 65, so "Weak"
         $maintainability = $result->healthScores['maintainability'];
-        self::assertSame('Needs attention', $maintainability->label);
+        self::assertSame('Weak', $maintainability->label);
     }
 
     public function testEnrichesWithTechDebt(): void

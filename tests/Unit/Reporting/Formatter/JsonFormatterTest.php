@@ -15,6 +15,8 @@ use AiMessDetector\Reporting\Formatter\JsonFormatter;
 use AiMessDetector\Reporting\FormatterContext;
 use AiMessDetector\Reporting\GroupBy;
 use AiMessDetector\Reporting\HealthScore;
+use AiMessDetector\Reporting\MetricHintProvider;
+use AiMessDetector\Reporting\NamespaceDrillDown;
 use AiMessDetector\Reporting\Report;
 use AiMessDetector\Reporting\ReportBuilder;
 use AiMessDetector\Reporting\WorstOffender;
@@ -30,7 +32,8 @@ final class JsonFormatterTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->formatter = new JsonFormatter(new DebtCalculator(new RemediationTimeRegistry()));
+        $hintProvider = new MetricHintProvider();
+        $this->formatter = new JsonFormatter(new DebtCalculator(new RemediationTimeRegistry()), new NamespaceDrillDown($hintProvider));
     }
 
     public function testGetNameReturnsJson(): void
@@ -196,7 +199,7 @@ final class JsonFormatterTest extends TestCase
                 'complexity' => new HealthScore(
                     name: 'complexity',
                     score: 65.0,
-                    label: 'Good',
+                    label: 'Acceptable',
                     warningThreshold: 50.0,
                     errorThreshold: 25.0,
                     decomposition: [
@@ -213,7 +216,7 @@ final class JsonFormatterTest extends TestCase
                 'cohesion' => new HealthScore(
                     name: 'cohesion',
                     score: 45.0,
-                    label: 'Needs attention',
+                    label: 'Weak',
                     warningThreshold: 50.0,
                     errorThreshold: 25.0,
                 ),
@@ -229,7 +232,7 @@ final class JsonFormatterTest extends TestCase
 
         $complexity = $data['health']['complexity'];
         self::assertEquals(65.0, $complexity['score']);
-        self::assertSame('Good', $complexity['label']);
+        self::assertSame('Acceptable', $complexity['label']);
         self::assertEquals(50.0, $complexity['threshold']['warning']);
         self::assertEquals(25.0, $complexity['threshold']['error']);
 
@@ -256,7 +259,7 @@ final class JsonFormatterTest extends TestCase
             errorCount: 0,
             warningCount: 0,
             healthScores: [
-                'complexity' => new HealthScore('complexity', 65.0, 'Good', 50.0, 25.0),
+                'complexity' => new HealthScore('complexity', 65.0, 'Acceptable', 50.0, 25.0),
             ],
         );
 
@@ -281,7 +284,7 @@ final class JsonFormatterTest extends TestCase
                     symbolPath: SymbolPath::forNamespace('App\Payment'),
                     file: null,
                     healthOverall: 31.0,
-                    label: 'Poor',
+                    label: 'Critical',
                     reason: 'low cohesion, high complexity',
                     violationCount: 12,
                     classCount: 4,
@@ -298,7 +301,7 @@ final class JsonFormatterTest extends TestCase
         $ns = $data['worstNamespaces'][0];
         self::assertSame('App\Payment', $ns['symbolPath']);
         self::assertEquals(31.0, $ns['healthOverall']);
-        self::assertSame('Poor', $ns['label']);
+        self::assertSame('Critical', $ns['label']);
         self::assertSame('low cohesion, high complexity', $ns['reason']);
         self::assertSame(12, $ns['violationCount']);
         self::assertSame(4, $ns['classCount']);
@@ -321,7 +324,7 @@ final class JsonFormatterTest extends TestCase
                     symbolPath: SymbolPath::forClass('App\Payment', 'PaymentService'),
                     file: 'src/Payment/PaymentService.php',
                     healthOverall: 28.0,
-                    label: 'Poor',
+                    label: 'Critical',
                     reason: '32 methods, high coupling',
                     violationCount: 5,
                     classCount: 0,
@@ -339,7 +342,7 @@ final class JsonFormatterTest extends TestCase
         self::assertSame('App\Payment\PaymentService', $cls['symbolPath']);
         self::assertSame('src/Payment/PaymentService.php', $cls['file']);
         self::assertEquals(28.0, $cls['healthOverall']);
-        self::assertSame('Poor', $cls['label']);
+        self::assertSame('Critical', $cls['label']);
         self::assertSame(5, $cls['violationCount']);
         self::assertArrayNotHasKey('classCount', $cls);
         self::assertSame(['methodCount' => 32, 'cbo' => 18], $cls['metrics']);
@@ -797,9 +800,9 @@ final class JsonFormatterTest extends TestCase
             errorCount: 0,
             warningCount: 0,
             worstNamespaces: [
-                new WorstOffender(SymbolPath::forNamespace('App\A'), null, 20.0, 'Poor', 'bad', 5, 3),
-                new WorstOffender(SymbolPath::forNamespace('App\B'), null, 25.0, 'Poor', 'bad', 3, 2),
-                new WorstOffender(SymbolPath::forNamespace('App\C'), null, 30.0, 'Poor', 'bad', 2, 1),
+                new WorstOffender(SymbolPath::forNamespace('App\A'), null, 20.0, 'Critical', 'bad', 5, 3),
+                new WorstOffender(SymbolPath::forNamespace('App\B'), null, 25.0, 'Critical', 'bad', 3, 2),
+                new WorstOffender(SymbolPath::forNamespace('App\C'), null, 30.0, 'Critical', 'bad', 2, 1),
             ],
         );
 
@@ -861,9 +864,9 @@ final class JsonFormatterTest extends TestCase
             errorCount: 0,
             warningCount: 0,
             worstNamespaces: [
-                new WorstOffender(SymbolPath::forNamespace('App\Payment'), null, 30.0, 'Poor', 'bad', 5, 3),
-                new WorstOffender(SymbolPath::forNamespace('App\Payment\Gateway'), null, 25.0, 'Poor', 'bad', 3, 2),
-                new WorstOffender(SymbolPath::forNamespace('App\User'), null, 35.0, 'Poor', 'bad', 2, 1),
+                new WorstOffender(SymbolPath::forNamespace('App\Payment'), null, 30.0, 'Critical', 'bad', 5, 3),
+                new WorstOffender(SymbolPath::forNamespace('App\Payment\Gateway'), null, 25.0, 'Critical', 'bad', 3, 2),
+                new WorstOffender(SymbolPath::forNamespace('App\User'), null, 35.0, 'Critical', 'bad', 2, 1),
             ],
         );
 
@@ -917,7 +920,7 @@ final class JsonFormatterTest extends TestCase
                     symbolPath: SymbolPath::forClass('App', 'Foo'),
                     file: '/home/user/project/src/Foo.php',
                     healthOverall: 20.0,
-                    label: 'Poor',
+                    label: 'Critical',
                     reason: 'bad',
                     violationCount: 1,
                     classCount: 0,
@@ -942,10 +945,10 @@ final class JsonFormatterTest extends TestCase
             errorCount: 0,
             warningCount: 0,
             worstNamespaces: [
-                new WorstOffender(SymbolPath::forNamespace('App'), null, 30.0, 'Poor', 'bad', 5, 3),
+                new WorstOffender(SymbolPath::forNamespace('App'), null, 30.0, 'Critical', 'bad', 5, 3),
             ],
             worstClasses: [
-                new WorstOffender(SymbolPath::forClass('App', 'Foo'), 'src/Foo.php', 20.0, 'Poor', 'bad', 1, 0),
+                new WorstOffender(SymbolPath::forClass('App', 'Foo'), 'src/Foo.php', 20.0, 'Critical', 'bad', 1, 0),
             ],
         );
 
@@ -994,5 +997,145 @@ final class JsonFormatterTest extends TestCase
         self::assertCount(2, $data['violations']);
         self::assertSame('test.b', $data['violations'][0]['code']);
         self::assertSame('test.a', $data['violations'][1]['code']);
+    }
+
+    public function testNamespaceFilterShowsNamespaceHealthScores(): void
+    {
+        $nsPath = SymbolPath::forNamespace('App\Service');
+        $nsMetrics = \AiMessDetector\Core\Metric\MetricBag::fromArray([
+            'health.overall' => 40.0,
+            'health.complexity' => 55.0,
+            'health.cohesion' => 25.0,
+            'classCount' => 5,
+        ]);
+
+        $metrics = $this->createMock(\AiMessDetector\Core\Metric\MetricRepositoryInterface::class);
+        $metrics->method('has')->willReturnCallback(
+            static fn(SymbolPath $sp): bool => $sp->toCanonical() === $nsPath->toCanonical(),
+        );
+        $metrics->method('get')->willReturnCallback(
+            static fn(SymbolPath $sp): \AiMessDetector\Core\Metric\MetricBag => $sp->toCanonical() === $nsPath->toCanonical()
+                ? $nsMetrics
+                : new \AiMessDetector\Core\Metric\MetricBag(),
+        );
+        $metrics->method('all')->willReturnCallback(
+            static fn(\AiMessDetector\Core\Symbol\SymbolType $type): array => $type === \AiMessDetector\Core\Symbol\SymbolType::Namespace_
+                ? [new \AiMessDetector\Core\Symbol\SymbolInfo($nsPath, 'src/Service', 0)]
+                : [],
+        );
+
+        $report = new Report(
+            violations: [],
+            filesAnalyzed: 50,
+            filesSkipped: 0,
+            duration: 1.0,
+            errorCount: 0,
+            warningCount: 0,
+            metrics: $metrics,
+            healthScores: [
+                'overall' => new HealthScore('overall', 72.0, 'Acceptable', 50.0, 30.0),
+            ],
+        );
+
+        $context = new FormatterContext(namespace: 'App\Service');
+        $output = $this->formatter->format($report, $context);
+        $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
+
+        // Should use namespace-level scores, not project-level
+        self::assertNotNull($data['health']);
+        self::assertArrayHasKey('overall', $data['health']);
+        self::assertEquals(40.0, $data['health']['overall']['score']);
+        self::assertArrayHasKey('complexity', $data['health']);
+        self::assertEquals(55.0, $data['health']['complexity']['score']);
+        self::assertArrayHasKey('cohesion', $data['health']);
+        self::assertEquals(25.0, $data['health']['cohesion']['score']);
+    }
+
+    public function testNamespaceFilterBuildsWorstClassesFromMetrics(): void
+    {
+        $classPath = SymbolPath::forClass('App\Service', 'UserService');
+        $classMetrics = \AiMessDetector\Core\Metric\MetricBag::fromArray([
+            'health.overall' => 25.0,
+            'health.complexity' => 20.0,
+            'health.cohesion' => 15.0,
+            'methodCount' => 32,
+            'cbo' => 18,
+        ]);
+
+        $nsPath = SymbolPath::forNamespace('App\Service');
+        $nsMetrics = \AiMessDetector\Core\Metric\MetricBag::fromArray([
+            'health.overall' => 40.0,
+        ]);
+
+        $metrics = $this->createMock(\AiMessDetector\Core\Metric\MetricRepositoryInterface::class);
+        $metrics->method('has')->willReturnCallback(
+            static fn(SymbolPath $sp): bool => $sp->toCanonical() === $nsPath->toCanonical(),
+        );
+        $metrics->method('get')->willReturnCallback(
+            static fn(SymbolPath $sp): \AiMessDetector\Core\Metric\MetricBag => match ($sp->toCanonical()) {
+                $nsPath->toCanonical() => $nsMetrics,
+                $classPath->toCanonical() => $classMetrics,
+                default => new \AiMessDetector\Core\Metric\MetricBag(),
+            },
+        );
+        $metrics->method('all')->willReturnCallback(
+            static fn(\AiMessDetector\Core\Symbol\SymbolType $type): array => $type === \AiMessDetector\Core\Symbol\SymbolType::Class_
+                ? [new \AiMessDetector\Core\Symbol\SymbolInfo($classPath, 'src/Service/UserService.php', 1)]
+                : [],
+        );
+
+        $report = new Report(
+            violations: [],
+            filesAnalyzed: 50,
+            filesSkipped: 0,
+            duration: 1.0,
+            errorCount: 0,
+            warningCount: 0,
+            metrics: $metrics,
+            healthScores: [
+                'overall' => new HealthScore('overall', 72.0, 'Acceptable', 50.0, 30.0),
+            ],
+            worstClasses: [],
+        );
+
+        $context = new FormatterContext(namespace: 'App\Service');
+        $output = $this->formatter->format($report, $context);
+        $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
+
+        // Should build worst classes from namespace classes
+        self::assertCount(1, $data['worstClasses']);
+        self::assertSame('App\Service\UserService', $data['worstClasses'][0]['symbolPath']);
+        self::assertEquals(25.0, $data['worstClasses'][0]['healthOverall']);
+        self::assertSame('src/Service/UserService.php', $data['worstClasses'][0]['file']);
+        self::assertSame(32, $data['worstClasses'][0]['metrics']['methodCount']);
+    }
+
+    public function testNamespaceFilterFallsBackToProjectWhenNoNsMetrics(): void
+    {
+        $metrics = $this->createMock(\AiMessDetector\Core\Metric\MetricRepositoryInterface::class);
+        $metrics->method('has')->willReturn(false);
+        $metrics->method('get')->willReturn(new \AiMessDetector\Core\Metric\MetricBag());
+        $metrics->method('all')->willReturn([]);
+
+        $report = new Report(
+            violations: [],
+            filesAnalyzed: 50,
+            filesSkipped: 0,
+            duration: 1.0,
+            errorCount: 0,
+            warningCount: 0,
+            metrics: $metrics,
+            healthScores: [
+                'overall' => new HealthScore('overall', 72.0, 'Acceptable', 50.0, 30.0),
+            ],
+        );
+
+        $context = new FormatterContext(namespace: 'App\NonExistent');
+        $output = $this->formatter->format($report, $context);
+        $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
+
+        // Falls back to project-level
+        self::assertNotNull($data['health']);
+        self::assertEquals(72.0, $data['health']['overall']['score']);
     }
 }

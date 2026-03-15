@@ -17,14 +17,14 @@ final class HealthScoreTest extends TestCase
         $score = new HealthScore(
             name: 'health.complexity',
             score: 85.0,
-            label: 'Good',
+            label: 'Acceptable',
             warningThreshold: 70.0,
             errorThreshold: 40.0,
         );
 
         self::assertSame('health.complexity', $score->name);
         self::assertSame(85.0, $score->score);
-        self::assertSame('Good', $score->label);
+        self::assertSame('Acceptable', $score->label);
         self::assertSame(70.0, $score->warningThreshold);
         self::assertSame(40.0, $score->errorThreshold);
         self::assertSame([], $score->decomposition);
@@ -44,7 +44,7 @@ final class HealthScoreTest extends TestCase
         $score = new HealthScore(
             name: 'health.complexity',
             score: 85.0,
-            label: 'Good',
+            label: 'Acceptable',
             warningThreshold: 70.0,
             errorThreshold: 40.0,
             decomposition: [$item],

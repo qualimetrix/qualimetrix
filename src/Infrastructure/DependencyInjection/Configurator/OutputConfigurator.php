@@ -42,6 +42,7 @@ use AiMessDetector\Reporting\Formatter\FormatterInterface;
 use AiMessDetector\Reporting\Formatter\FormatterRegistry;
 use AiMessDetector\Reporting\Formatter\FormatterRegistryInterface;
 use AiMessDetector\Reporting\MetricHintProvider;
+use AiMessDetector\Reporting\NamespaceDrillDown;
 use AiMessDetector\Reporting\SummaryEnricher;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -89,6 +90,10 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
 
         // MetricHintProvider (pure data class, no dependencies)
         $container->register(MetricHintProvider::class);
+
+        // NamespaceDrillDown (shared logic for namespace drill-down in formatters)
+        $container->register(NamespaceDrillDown::class)
+            ->setAutowired(true);
 
         // SummaryEnricher (depends on DebtCalculator and MetricHintProvider)
         $container->register(SummaryEnricher::class)

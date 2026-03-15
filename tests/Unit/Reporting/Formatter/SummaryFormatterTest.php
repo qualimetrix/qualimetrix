@@ -16,6 +16,8 @@ use AiMessDetector\Reporting\Formatter\SummaryFormatter;
 use AiMessDetector\Reporting\FormatterContext;
 use AiMessDetector\Reporting\GroupBy;
 use AiMessDetector\Reporting\HealthScore;
+use AiMessDetector\Reporting\MetricHintProvider;
+use AiMessDetector\Reporting\NamespaceDrillDown;
 use AiMessDetector\Reporting\Report;
 use AiMessDetector\Reporting\WorstOffender;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -30,7 +32,8 @@ final class SummaryFormatterTest extends TestCase
     protected function setUp(): void
     {
         $debtCalculator = new DebtCalculator(new RemediationTimeRegistry());
-        $this->formatter = new SummaryFormatter(new DetailedViolationRenderer($debtCalculator));
+        $hintProvider = new MetricHintProvider();
+        $this->formatter = new SummaryFormatter(new DetailedViolationRenderer($debtCalculator), new NamespaceDrillDown($hintProvider));
         $this->plainContext = new FormatterContext(useColor: false, terminalWidth: 120);
     }
 
@@ -69,7 +72,7 @@ final class SummaryFormatterTest extends TestCase
                     symbolPath: SymbolPath::forNamespace('App'),
                     file: null,
                     healthOverall: 30.0,
-                    label: 'Needs attention',
+                    label: 'Weak',
                     reason: 'test',
                     violationCount: 1,
                     classCount: 1,
@@ -80,7 +83,7 @@ final class SummaryFormatterTest extends TestCase
                     symbolPath: SymbolPath::forClass('App', 'Foo'),
                     file: 'src/Foo.php',
                     healthOverall: 30.0,
-                    label: 'Needs attention',
+                    label: 'Weak',
                     reason: 'test',
                     violationCount: 1,
                     classCount: 0,
@@ -104,9 +107,9 @@ final class SummaryFormatterTest extends TestCase
             filesAnalyzed: 100,
             duration: 5.0,
             healthScores: [
-                'overall' => new HealthScore('overall', 72.0, 'Good', 50.0, 30.0),
-                'complexity' => new HealthScore('complexity', 85.0, 'Excellent', 50.0, 25.0),
-                'cohesion' => new HealthScore('cohesion', 40.0, 'Needs attention', 50.0, 25.0, [
+                'overall' => new HealthScore('overall', 72.0, 'Strong', 50.0, 30.0),
+                'complexity' => new HealthScore('complexity', 85.0, 'Strong', 50.0, 25.0),
+                'cohesion' => new HealthScore('cohesion', 40.0, 'Weak', 50.0, 25.0, [
                     new DecompositionItem('tcc.avg', 'TCC (avg)', 0.3, 'above 0.5', 'higher_is_better', 'methods share few common fields'),
                 ]),
             ],
@@ -116,7 +119,7 @@ final class SummaryFormatterTest extends TestCase
 
         self::assertStringContainsString('Health', $output);
         self::assertStringContainsString('72%', $output);
-        self::assertStringContainsString('Good', $output);
+        self::assertStringContainsString('Strong', $output);
         self::assertStringContainsString('Complexity', $output);
         self::assertStringContainsString('85%', $output);
         self::assertStringContainsString('Cohesion', $output);
@@ -146,7 +149,7 @@ final class SummaryFormatterTest extends TestCase
                     symbolPath: SymbolPath::forNamespace('App\Service'),
                     file: null,
                     healthOverall: 35.0,
-                    label: 'Needs attention',
+                    label: 'Weak',
                     reason: 'high complexity, low cohesion',
                     violationCount: 15,
                     classCount: 8,
@@ -157,7 +160,7 @@ final class SummaryFormatterTest extends TestCase
                     symbolPath: SymbolPath::forClass('App\Service', 'UserService'),
                     file: 'src/Service/UserService.php',
                     healthOverall: 22.0,
-                    label: 'Poor',
+                    label: 'Critical',
                     reason: 'high coupling',
                     violationCount: 5,
                     classCount: 0,
@@ -218,7 +221,7 @@ final class SummaryFormatterTest extends TestCase
             filesAnalyzed: 5,
             duration: 0.5,
             healthScores: [
-                'overall' => new HealthScore('overall', 72.0, 'Good', 50.0, 30.0),
+                'overall' => new HealthScore('overall', 72.0, 'Strong', 50.0, 30.0),
             ],
         );
 
@@ -308,8 +311,8 @@ final class SummaryFormatterTest extends TestCase
                 filesAnalyzed: 10,
                 duration: 0.5,
                 healthScores: [
-                    'overall' => new HealthScore('overall', 72.0, 'Good', 50.0, 30.0),
-                    'complexity' => new HealthScore('complexity', 85.0, 'Excellent', 50.0, 25.0),
+                    'overall' => new HealthScore('overall', 72.0, 'Strong', 50.0, 30.0),
+                    'complexity' => new HealthScore('complexity', 85.0, 'Strong', 50.0, 25.0),
                 ],
             );
 
@@ -357,14 +360,14 @@ final class SummaryFormatterTest extends TestCase
             filesAnalyzed: 10,
             duration: 0.5,
             healthScores: [
-                'overall' => new HealthScore('overall', 72.0, 'Good', 50.0, 30.0),
+                'overall' => new HealthScore('overall', 72.0, 'Strong', 50.0, 30.0),
             ],
             worstNamespaces: [
                 new WorstOffender(
                     symbolPath: SymbolPath::forNamespace('App\Service'),
                     file: null,
                     healthOverall: 35.0,
-                    label: 'Needs attention',
+                    label: 'Weak',
                     reason: 'high complexity',
                     violationCount: 5,
                     classCount: 3,
@@ -384,7 +387,7 @@ final class SummaryFormatterTest extends TestCase
             symbolPath: SymbolPath::forNamespace('App\Payment\Gateway'),
             file: null,
             healthOverall: 30.0,
-            label: 'Needs attention',
+            label: 'Weak',
             reason: 'test',
             violationCount: 3,
             classCount: 2,
@@ -394,7 +397,7 @@ final class SummaryFormatterTest extends TestCase
             symbolPath: SymbolPath::forNamespace('App\PaymentGateway'),
             file: null,
             healthOverall: 25.0,
-            label: 'Poor',
+            label: 'Critical',
             reason: 'test',
             violationCount: 5,
             classCount: 4,
@@ -405,7 +408,7 @@ final class SummaryFormatterTest extends TestCase
             filesAnalyzed: 50,
             duration: 1.0,
             healthScores: [
-                'overall' => new HealthScore('overall', 72.0, 'Good', 50.0, 30.0),
+                'overall' => new HealthScore('overall', 72.0, 'Strong', 50.0, 30.0),
             ],
             worstNamespaces: [$offenderMatch, $offenderNoMatch],
         );
@@ -513,7 +516,7 @@ final class SummaryFormatterTest extends TestCase
             symbolPath: SymbolPath::forClass('App\Service', 'UserService'),
             file: 'src/Service/UserService.php',
             healthOverall: 22.0,
-            label: 'Poor',
+            label: 'Critical',
             reason: 'test',
             violationCount: 5,
             classCount: 0,
@@ -523,7 +526,7 @@ final class SummaryFormatterTest extends TestCase
             symbolPath: SymbolPath::forClass('App\Service', 'OrderService'),
             file: 'src/Service/OrderService.php',
             healthOverall: 30.0,
-            label: 'Needs attention',
+            label: 'Weak',
             reason: 'test',
             violationCount: 3,
             classCount: 0,
@@ -534,7 +537,7 @@ final class SummaryFormatterTest extends TestCase
             filesAnalyzed: 10,
             duration: 0.5,
             healthScores: [
-                'overall' => new HealthScore('overall', 72.0, 'Good', 50.0, 30.0),
+                'overall' => new HealthScore('overall', 72.0, 'Strong', 50.0, 30.0),
             ],
             worstClasses: [$offenderMatch, $offenderNoMatch],
         );
@@ -555,7 +558,7 @@ final class SummaryFormatterTest extends TestCase
                 symbolPath: SymbolPath::forNamespace('App\Ns' . $i),
                 file: null,
                 healthOverall: 20.0 + $i * 5,
-                label: 'Needs attention',
+                label: 'Weak',
                 reason: 'test',
                 violationCount: $i + 1,
                 classCount: $i + 2,
@@ -567,7 +570,7 @@ final class SummaryFormatterTest extends TestCase
             filesAnalyzed: 50,
             duration: 1.0,
             healthScores: [
-                'overall' => new HealthScore('overall', 60.0, 'Good', 50.0, 30.0),
+                'overall' => new HealthScore('overall', 60.0, 'Acceptable', 50.0, 30.0),
             ],
             worstNamespaces: $offenders,
         );
@@ -593,7 +596,7 @@ final class SummaryFormatterTest extends TestCase
                 symbolPath: SymbolPath::forNamespace('App\Ns' . $i),
                 file: null,
                 healthOverall: 20.0 + $i * 5,
-                label: 'Needs attention',
+                label: 'Weak',
                 reason: 'test',
                 violationCount: 1,
                 classCount: 1,
@@ -605,7 +608,7 @@ final class SummaryFormatterTest extends TestCase
             filesAnalyzed: 50,
             duration: 1.0,
             healthScores: [
-                'overall' => new HealthScore('overall', 60.0, 'Good', 50.0, 30.0),
+                'overall' => new HealthScore('overall', 60.0, 'Acceptable', 50.0, 30.0),
             ],
             worstNamespaces: $offenders,
         );
@@ -705,7 +708,7 @@ final class SummaryFormatterTest extends TestCase
             filesAnalyzed: 10,
             duration: 0.5,
             healthScores: [
-                'overall' => new HealthScore('overall', 50.0, 'Needs attention', 50.0, 30.0),
+                'overall' => new HealthScore('overall', 50.0, 'Weak', 50.0, 30.0),
             ],
         );
 
@@ -725,7 +728,7 @@ final class SummaryFormatterTest extends TestCase
             filesAnalyzed: 10,
             duration: 0.5,
             healthScores: [
-                'overall' => new HealthScore('overall', 50.1, 'Good', 50.0, 30.0),
+                'overall' => new HealthScore('overall', 50.1, 'Acceptable', 50.0, 30.0),
             ],
         );
 
@@ -744,7 +747,7 @@ final class SummaryFormatterTest extends TestCase
             filesAnalyzed: 10,
             duration: 0.5,
             healthScores: [
-                'overall' => new HealthScore('overall', 30.0, 'Needs attention', 50.0, 30.0),
+                'overall' => new HealthScore('overall', 30.0, 'Weak', 50.0, 30.0),
             ],
         );
 
@@ -881,6 +884,140 @@ final class SummaryFormatterTest extends TestCase
 
         // Should NOT hint --detail since we're already in detail mode
         self::assertStringNotContainsString('--detail to see all violations', $output);
+    }
+
+    public function testNamespaceFilterShowsNamespaceHealthScores(): void
+    {
+        $nsPath = SymbolPath::forNamespace('App\Service');
+        $nsMetrics = \AiMessDetector\Core\Metric\MetricBag::fromArray([
+            'health.overall' => 45.0,
+            'health.complexity' => 60.0,
+            'health.cohesion' => 30.0,
+            'health.coupling' => 55.0,
+            'health.typing' => 70.0,
+            'health.maintainability' => 50.0,
+            'classCount' => 5,
+        ]);
+
+        $metrics = $this->createMock(\AiMessDetector\Core\Metric\MetricRepositoryInterface::class);
+        $metrics->method('has')->willReturnCallback(
+            static fn(SymbolPath $sp): bool => $sp->toCanonical() === $nsPath->toCanonical(),
+        );
+        $metrics->method('get')->willReturnCallback(
+            static fn(SymbolPath $sp): \AiMessDetector\Core\Metric\MetricBag => $sp->toCanonical() === $nsPath->toCanonical()
+                ? $nsMetrics
+                : new \AiMessDetector\Core\Metric\MetricBag(),
+        );
+        $metrics->method('all')->willReturnCallback(
+            static fn(\AiMessDetector\Core\Symbol\SymbolType $type): array => $type === \AiMessDetector\Core\Symbol\SymbolType::Namespace_
+                ? [new \AiMessDetector\Core\Symbol\SymbolInfo($nsPath, 'src/Service', 0)]
+                : [],
+        );
+
+        $report = new Report(
+            violations: [],
+            filesAnalyzed: 50,
+            filesSkipped: 0,
+            duration: 1.0,
+            errorCount: 0,
+            warningCount: 0,
+            metrics: $metrics,
+            healthScores: [
+                'overall' => new HealthScore('overall', 72.0, 'Acceptable', 50.0, 30.0),
+                'complexity' => new HealthScore('complexity', 85.0, 'Strong', 50.0, 25.0),
+            ],
+        );
+
+        $context = new FormatterContext(useColor: false, namespace: 'App\Service', terminalWidth: 120);
+        $output = $this->formatter->format($report, $context);
+
+        // Should show namespace-level score (45%) not project-level (72%)
+        self::assertStringContainsString('45%', $output);
+        self::assertStringNotContainsString('72%', $output);
+        // Should show namespace-level dimension scores
+        self::assertStringContainsString('60%', $output); // complexity
+        self::assertStringContainsString('30%', $output); // cohesion
+    }
+
+    public function testNamespaceFilterBuildsWorstClassesFromMetrics(): void
+    {
+        $classPath = SymbolPath::forClass('App\Service', 'UserService');
+        $classMetrics = \AiMessDetector\Core\Metric\MetricBag::fromArray([
+            'health.overall' => 25.0,
+            'health.complexity' => 20.0,
+            'health.cohesion' => 15.0,
+        ]);
+
+        $nsPath = SymbolPath::forNamespace('App\Service');
+        $nsMetrics = \AiMessDetector\Core\Metric\MetricBag::fromArray([
+            'health.overall' => 40.0,
+            'health.complexity' => 50.0,
+        ]);
+
+        $metrics = $this->createMock(\AiMessDetector\Core\Metric\MetricRepositoryInterface::class);
+        $metrics->method('has')->willReturnCallback(
+            static fn(SymbolPath $sp): bool => $sp->toCanonical() === $nsPath->toCanonical(),
+        );
+        $metrics->method('get')->willReturnCallback(
+            static fn(SymbolPath $sp): \AiMessDetector\Core\Metric\MetricBag => match ($sp->toCanonical()) {
+                $nsPath->toCanonical() => $nsMetrics,
+                $classPath->toCanonical() => $classMetrics,
+                default => new \AiMessDetector\Core\Metric\MetricBag(),
+            },
+        );
+        $metrics->method('all')->willReturnCallback(
+            static fn(\AiMessDetector\Core\Symbol\SymbolType $type): array => $type === \AiMessDetector\Core\Symbol\SymbolType::Class_
+                ? [new \AiMessDetector\Core\Symbol\SymbolInfo($classPath, 'src/Service/UserService.php', 1)]
+                : [],
+        );
+
+        $report = new Report(
+            violations: [],
+            filesAnalyzed: 50,
+            filesSkipped: 0,
+            duration: 1.0,
+            errorCount: 0,
+            warningCount: 0,
+            metrics: $metrics,
+            healthScores: [
+                'overall' => new HealthScore('overall', 72.0, 'Acceptable', 50.0, 30.0),
+            ],
+            worstClasses: [],
+        );
+
+        $context = new FormatterContext(useColor: false, namespace: 'App\Service', terminalWidth: 120);
+        $output = $this->formatter->format($report, $context);
+
+        // Should show UserService as worst class even though it's not in global top
+        self::assertStringContainsString('UserService', $output);
+        self::assertStringContainsString('Worst classes', $output);
+    }
+
+    public function testNamespaceFilterFallsBackToProjectWhenNoNsMetrics(): void
+    {
+        $metrics = $this->createMock(\AiMessDetector\Core\Metric\MetricRepositoryInterface::class);
+        $metrics->method('has')->willReturn(false);
+        $metrics->method('get')->willReturn(new \AiMessDetector\Core\Metric\MetricBag());
+        $metrics->method('all')->willReturn([]);
+
+        $report = new Report(
+            violations: [],
+            filesAnalyzed: 50,
+            filesSkipped: 0,
+            duration: 1.0,
+            errorCount: 0,
+            warningCount: 0,
+            metrics: $metrics,
+            healthScores: [
+                'overall' => new HealthScore('overall', 72.0, 'Acceptable', 50.0, 30.0),
+            ],
+        );
+
+        $context = new FormatterContext(useColor: false, namespace: 'App\NonExistent', terminalWidth: 120);
+        $output = $this->formatter->format($report, $context);
+
+        // Falls back to project-level score
+        self::assertStringContainsString('72%', $output);
     }
 
     /**

@@ -41,9 +41,9 @@ final class ComputedMetricDefaults
             'health.coupling' => new ComputedMetricDefinition(
                 name: 'health.coupling',
                 formulas: [
-                    'class' => 'clamp(100 - max((cbo ?? 0) - 5, 0) * 5, 0, 100)',
-                    'namespace' => 'clamp(100 * 12 / (12 + (distance ?? 0) * 6.5 + max((cbo__avg ?? 0) - 7, 0) * 4), 0, 100)',
-                    'project' => 'clamp(100 * 12 / (12 + (distance__avg ?? 0) * 6.5 + max((cbo__avg ?? 0) - 7, 0) * 4), 0, 100)',
+                    'class' => 'clamp(100 * 15 / (15 + max((cbo ?? 0) - 5, 0)), 0, 100)',
+                    'namespace' => 'clamp(100 * 12 / (12 + (distance ?? 0) * 6.5 + max((cbo__avg ?? 0) - 7, 0) * 4 + max((cbo__max ?? 0) - 20, 0) * 0.15), 0, 100)',
+                    'project' => 'clamp(100 * 12 / (12 + (distance__avg ?? 0) * 6.5 + max((cbo__avg ?? 0) - 7, 0) * 4 + max((cbo__max ?? 0) - 20, 0) * 0.15), 0, 100)',
                 ],
                 description: 'Coupling health score (0-100, higher is better)',
                 levels: [SymbolType::Class_, SymbolType::Namespace_, SymbolType::Project],
