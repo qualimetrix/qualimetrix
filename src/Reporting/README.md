@@ -171,6 +171,7 @@ final readonly class Report
         public array $worstNamespaces = [],    // list<WorstOffender>
         public array $worstClasses = [],       // list<WorstOffender>
         public int $techDebtMinutes = 0,
+        public ?float $debtPer1kLoc = null,    // debt density (min/kLOC), null if no LOC data
     ) {}
 
     public function isEmpty(): bool;
@@ -266,13 +267,13 @@ bin/aimd check src/ --no-ansi
 ```
 AI Mess Detector — 412 files analyzed, 3.2s
 
-Health █████████████████████░░░░░░░░░ 68% Good
+Health █████████████████████░░░░░░░░░ 68% Acceptable
 
-  Complexity      ████████████████░░░░░░░░░░░░░░ 54% Good
-  Cohesion        ███████████████████░░░░░░░░░░░ 63% Good
-  Coupling        ███████████████████░░░░░░░░░░░ 62% Good
-  Typing          ██████████████████████████████ 99% Good
-  Maintainability ██████████████████████░░░░░░░░ 74% Good
+  Complexity      ████████████████░░░░░░░░░░░░░░ 54% Acceptable
+  Cohesion        ███████████████████░░░░░░░░░░░ 63% Acceptable
+  Coupling        ███████████████████░░░░░░░░░░░ 62% Acceptable
+  Typing          ██████████████████████████████ 99% Acceptable
+  Maintainability ██████████████████████░░░░░░░░ 74% Acceptable
 
 Worst namespaces
   46 App\Metrics\Halstead (3 classes, 29 violations) — high coupling, high complexity
@@ -333,15 +334,15 @@ Summary-oriented JSON for AI agents, CI/CD, and programmatic consumption. Includ
 ```json
 {
   "meta": { "version": "1.0.0", "package": "aimd", "timestamp": "..." },
-  "summary": { "filesAnalyzed": 342, "violationCount": 47, "errorCount": 12, "warningCount": 35, "techDebtMinutes": 270 },
-  "health": { "complexity": { "score": 65, "label": "Good", "threshold": { "warning": 50, "error": 25 }, "decomposition": [...] } },
+  "summary": { "filesAnalyzed": 342, "violationCount": 47, "errorCount": 12, "warningCount": 35, "techDebtMinutes": 270, "debtPer1kLoc": 5.4 },
+  "health": { "complexity": { "score": 65, "label": "Acceptable", "threshold": { "warning": 50, "error": 25 }, "decomposition": [...] } },
   "worstNamespaces": [{ "symbolPath": "App\\Payment", "healthOverall": 31, "reason": "low cohesion, high complexity" }],
   "worstClasses": [{ "symbolPath": "App\\Payment\\PaymentService", "file": "src/...", "healthOverall": 28, "metrics": {...} }],
   "violations": [{ "file": "src/...", "line": 42, "symbol": "...", "namespace": "App\\Service", "rule": "complexity.cyclomatic", "code": "complexity.cyclomatic.method", "severity": "error", "message": "...", "metricValue": 15, "threshold": 10 }]
 }
 ```
 
-**Options:** `--format-opt=violations=all|0|N` (default: 50), `--format-opt=top=N` (default: 10 offenders). `--detail` implies all violations. `--namespace`/`--class` filters violations and worst offenders. Partial analysis: `health` is `null`.
+**Options:** `--format-opt=violations=all|0|N` (default: 50), `--format-opt=top=N` (default: 10 offenders). `--detail` shows violations (default limit: 200, `--detail=all` for unlimited). `--namespace`/`--class` filters violations and worst offenders. Partial analysis: `health` is `null`.
 
 ---
 
@@ -505,6 +506,7 @@ $report->healthScores     // array<string, HealthScore> — per-dimension health
 $report->worstNamespaces  // list<WorstOffender> — worst namespaces by health
 $report->worstClasses     // list<WorstOffender> — worst classes by health
 $report->techDebtMinutes  // int — total remediation time
+$report->debtPer1kLoc     // ?float — debt density (minutes per 1K LOC)
 ```
 
 ## Formatter Comparison

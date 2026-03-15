@@ -800,7 +800,7 @@ final class SummaryFormatterTest extends TestCase
             duration: 0.1,
         );
 
-        $context = new FormatterContext(useColor: false, terminalWidth: 120, detail: true);
+        $context = new FormatterContext(useColor: false, terminalWidth: 120, detailLimit: 0);
         $output = $this->formatter->format($report, $context);
 
         // Should contain summary section
@@ -822,7 +822,7 @@ final class SummaryFormatterTest extends TestCase
             duration: 0.5,
         );
 
-        $context = new FormatterContext(useColor: false, terminalWidth: 120, detail: true);
+        $context = new FormatterContext(useColor: false, terminalWidth: 120, detailLimit: 0);
         $output = $this->formatter->format($report, $context);
 
         // Should NOT contain "Violations" section
@@ -855,7 +855,7 @@ final class SummaryFormatterTest extends TestCase
             duration: 0.5,
         );
 
-        $context = new FormatterContext(useColor: false, namespace: 'App\Service', terminalWidth: 120, detail: true);
+        $context = new FormatterContext(useColor: false, namespace: 'App\Service', terminalWidth: 120, detailLimit: 0);
         $output = $this->formatter->format($report, $context);
 
         self::assertStringContainsString('In scope', $output);
@@ -879,7 +879,7 @@ final class SummaryFormatterTest extends TestCase
             duration: 0.1,
         );
 
-        $context = new FormatterContext(useColor: false, terminalWidth: 120, detail: true);
+        $context = new FormatterContext(useColor: false, terminalWidth: 120, detailLimit: 0);
         $output = $this->formatter->format($report, $context);
 
         // Should NOT hint --detail since we're already in detail mode
@@ -1019,6 +1019,34 @@ final class SummaryFormatterTest extends TestCase
         // No health data for non-existent namespace — shows "insufficient data"
         self::assertStringContainsString('Health: insufficient data', $output);
         self::assertStringNotContainsString('72%', $output);
+    }
+
+    public function testDetailTruncationShowsRemainingCount(): void
+    {
+        $violations = [];
+        for ($i = 0; $i < 8; $i++) {
+            $violations[] = new Violation(
+                location: new Location('src/File' . $i . '.php', $i + 1),
+                symbolPath: SymbolPath::forClass('App', 'Class' . $i),
+                ruleName: 'complexity.cyclomatic',
+                violationCode: 'complexity.cyclomatic.method',
+                message: 'Too complex #' . $i,
+                severity: Severity::Error,
+                humanMessage: 'Cyclomatic complexity too high #' . $i,
+            );
+        }
+
+        $report = $this->createReport(
+            violations: $violations,
+            filesAnalyzed: 8,
+            duration: 0.5,
+        );
+
+        $context = new FormatterContext(useColor: false, terminalWidth: 120, detailLimit: 5);
+        $output = $this->formatter->format($report, $context);
+
+        // Should show truncation message: 8 total - 5 shown = 3 remaining
+        self::assertStringContainsString('... and 3 more. Use --detail=all', $output);
     }
 
     /**

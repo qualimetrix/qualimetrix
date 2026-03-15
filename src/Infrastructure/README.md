@@ -121,6 +121,7 @@ Infrastructure/
         ├── CheckCommand.php           # Thin orchestrator (delegates to extracted classes)
         ├── BaselineCleanupCommand.php
         ├── GraphExportCommand.php
+        ├── RulesCommand.php           # Lists all rules with options and CLI aliases
         ├── HookInstallCommand.php
         ├── HookStatusCommand.php
         └── HookUninstallCommand.php

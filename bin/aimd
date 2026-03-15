@@ -12,6 +12,7 @@ use AiMessDetector\Infrastructure\Console\Command\GraphExportCommand;
 use AiMessDetector\Infrastructure\Console\Command\HookInstallCommand;
 use AiMessDetector\Infrastructure\Console\Command\HookStatusCommand;
 use AiMessDetector\Infrastructure\Console\Command\HookUninstallCommand;
+use AiMessDetector\Infrastructure\Console\Command\RulesCommand;
 use AiMessDetector\Infrastructure\DependencyInjection\ContainerFactory;
 
 // Find autoloader
@@ -72,6 +73,8 @@ $hookInstallCommand = $container->get(HookInstallCommand::class);
 $hookUninstallCommand = $container->get(HookUninstallCommand::class);
 /** @var HookStatusCommand $hookStatusCommand */
 $hookStatusCommand = $container->get(HookStatusCommand::class);
+/** @var RulesCommand $rulesCommand */
+$rulesCommand = $container->get(RulesCommand::class);
 
 // Create and run application
 $application = new Application();
@@ -82,6 +85,7 @@ $application->addCommands([
     $hookInstallCommand,
     $hookUninstallCommand,
     $hookStatusCommand,
+    $rulesCommand,
 ]);
 // No default command - show help/list when run without arguments
 

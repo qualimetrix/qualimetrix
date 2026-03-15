@@ -395,7 +395,7 @@ final class JsonFormatterTest extends TestCase
         }
 
         $report = $builder->build();
-        $context = new FormatterContext(detail: true);
+        $context = new FormatterContext(detailLimit: 0);
         $output = $this->formatter->format($report, $context);
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
@@ -423,7 +423,7 @@ final class JsonFormatterTest extends TestCase
         $report = $builder->build();
 
         // --detail + --format-opt violations=5 → explicit opt wins
-        $context = new FormatterContext(detail: true, options: ['violations' => '5']);
+        $context = new FormatterContext(detailLimit: 0, options: ['violations' => '5']);
         $output = $this->formatter->format($report, $context);
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 

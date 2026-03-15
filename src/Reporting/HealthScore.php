@@ -14,7 +14,7 @@ final readonly class HealthScore
      */
     public function __construct(
         public string $name,
-        public float $score,
+        public ?float $score,
         public string $label,
         public float $warningThreshold,
         public float $errorThreshold,

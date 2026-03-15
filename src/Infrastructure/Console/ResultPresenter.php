@@ -301,7 +301,7 @@ final class ResultPresenter
         }
 
         $terminalWidth = (new \Symfony\Component\Console\Terminal())->getWidth() ?: 80;
-        $detail = (bool) $input->getOption('detail') || $namespaceFilter !== null || $classFilter !== null;
+        $detailLimit = $this->parseDetailOption($input, $namespaceFilter, $classFilter);
 
         return new FormatterContext(
             useColor: $output->isDecorated(),
@@ -312,9 +312,47 @@ final class ResultPresenter
             namespace: $namespaceFilter,
             class: $classFilter,
             terminalWidth: $terminalWidth,
-            detail: $detail,
+            detailLimit: $detailLimit,
             isGroupByExplicit: $isGroupByExplicit,
         );
+    }
+
+    private const int DEFAULT_DETAIL_LIMIT = 200;
+
+    /**
+     * Parses --detail option into a detail limit.
+     *
+     * Returns: null = off, 0 = all, N = limit.
+     * --detail (no value) = 200, --detail=all = 0, --detail=N = N.
+     * --namespace/--class implicitly enables detail with default limit.
+     */
+    private function parseDetailOption(InputInterface $input, ?string $namespaceFilter, ?string $classFilter): ?int
+    {
+        $detailValue = $input->getOption('detail');
+
+        // VALUE_OPTIONAL: false = not passed, null = passed without value, string = passed with value
+        if ($detailValue === false) {
+            // Not passed — but namespace/class filters imply detail
+            if ($namespaceFilter !== null || $classFilter !== null) {
+                return self::DEFAULT_DETAIL_LIMIT;
+            }
+
+            return null;
+        }
+
+        if ($detailValue === null) {
+            // --detail without value
+            return self::DEFAULT_DETAIL_LIMIT;
+        }
+
+        /** @var string $detailValue */
+        if ($detailValue === 'all' || $detailValue === '0') {
+            return 0;
+        }
+
+        $parsed = filter_var($detailValue, \FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+
+        return $parsed !== false ? $parsed : self::DEFAULT_DETAIL_LIMIT;
     }
 
     /**

@@ -136,6 +136,7 @@ final class JsonFormatter implements FormatterInterface
             'errorCount' => $report->errorCount,
             'warningCount' => $report->warningCount,
             'techDebtMinutes' => $report->techDebtMinutes,
+            'debtPer1kLoc' => $report->debtPer1kLoc,
         ];
     }
 
@@ -182,7 +183,7 @@ final class JsonFormatter implements FormatterInterface
         $result = [];
         foreach ($healthScores as $name => $hs) {
             $result[$name] = [
-                'score' => $this->sanitizeFloat($hs->score),
+                'score' => $hs->score !== null ? $this->sanitizeFloat($hs->score) : null,
                 'label' => $hs->label,
                 'threshold' => [
                     'warning' => $this->sanitizeFloat($hs->warningThreshold),
@@ -454,9 +455,9 @@ final class JsonFormatter implements FormatterInterface
             return $parsed !== false ? $parsed : self::DEFAULT_VIOLATION_LIMIT;
         }
 
-        // --detail implies all violations
-        if ($context->detail) {
-            return null;
+        // --detail mode: respect limit (0 = all)
+        if ($context->isDetailEnabled()) {
+            return $context->detailLimit === 0 ? null : $context->detailLimit;
         }
 
         return self::DEFAULT_VIOLATION_LIMIT;

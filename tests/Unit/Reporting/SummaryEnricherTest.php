@@ -401,6 +401,139 @@ final class SummaryEnricherTest extends TestCase
         self::assertSame([], $result->healthScores);
     }
 
+    public function testDebtPer1kLocComputedCorrectly(): void
+    {
+        $metrics = $this->createMetricRepository(
+            projectMetrics: MetricBag::fromArray([
+                'health.overall' => 72.0,
+                'loc.sum' => 5000,
+            ]),
+        );
+
+        $violation = new Violation(
+            location: new Location('test.php', 1),
+            symbolPath: SymbolPath::forFile('test.php'),
+            ruleName: 'complexity.cyclomatic',
+            violationCode: 'complexity.cyclomatic.method',
+            message: 'test',
+            severity: Severity::Error,
+        );
+
+        $report = new Report(
+            violations: [$violation, $violation],
+            filesAnalyzed: 10,
+            filesSkipped: 0,
+            duration: 1.0,
+            errorCount: 2,
+            warningCount: 0,
+            metrics: $metrics,
+        );
+
+        $result = $this->enricher->enrich($report);
+
+        // 2 violations * 30 min = 60 min total debt, 5000 LOC = 5 kLOC
+        // debtPer1kLoc = 60 / 5 = 12.0
+        self::assertSame(12.0, $result->debtPer1kLoc);
+    }
+
+    public function testDebtPer1kLocZeroWhenNoViolations(): void
+    {
+        $metrics = $this->createMetricRepository(
+            projectMetrics: MetricBag::fromArray([
+                'health.overall' => 85.0,
+                'loc.sum' => 10000,
+            ]),
+        );
+
+        $report = new Report(
+            violations: [],
+            filesAnalyzed: 10,
+            filesSkipped: 0,
+            duration: 1.0,
+            errorCount: 0,
+            warningCount: 0,
+            metrics: $metrics,
+        );
+
+        $result = $this->enricher->enrich($report);
+
+        self::assertSame(0.0, $result->debtPer1kLoc);
+    }
+
+    public function testDebtPer1kLocNullWhenNoLoc(): void
+    {
+        $metrics = $this->createMetricRepository(
+            projectMetrics: MetricBag::fromArray([
+                'health.overall' => 72.0,
+            ]),
+        );
+
+        $report = new Report(
+            violations: [],
+            filesAnalyzed: 10,
+            filesSkipped: 0,
+            duration: 1.0,
+            errorCount: 0,
+            warningCount: 0,
+            metrics: $metrics,
+        );
+
+        $result = $this->enricher->enrich($report);
+
+        self::assertNull($result->debtPer1kLoc);
+    }
+
+    public function testTypingNAWhenOtherDimensionsExist(): void
+    {
+        $metrics = $this->createMetricRepository(
+            projectMetrics: MetricBag::fromArray([
+                'health.complexity' => 65.0,
+                'health.overall' => 72.0,
+            ]),
+        );
+
+        $report = new Report(
+            violations: [],
+            filesAnalyzed: 10,
+            filesSkipped: 0,
+            duration: 1.0,
+            errorCount: 0,
+            warningCount: 0,
+            metrics: $metrics,
+        );
+
+        $result = $this->enricher->enrich($report);
+
+        self::assertArrayHasKey('typing', $result->healthScores);
+        $typing = $result->healthScores['typing'];
+        self::assertNull($typing->score);
+        self::assertSame('0 classes analyzed', $typing->label);
+    }
+
+    public function testTypingNotAddedWhenNoDimensions(): void
+    {
+        $metrics = $this->createMetricRepository(
+            projectMetrics: MetricBag::fromArray([
+                'ccn.avg' => 5.0,
+                'loc' => 1000,
+            ]),
+        );
+
+        $report = new Report(
+            violations: [],
+            filesAnalyzed: 10,
+            filesSkipped: 0,
+            duration: 1.0,
+            errorCount: 0,
+            warningCount: 0,
+            metrics: $metrics,
+        );
+
+        $result = $this->enricher->enrich($report);
+
+        self::assertSame([], $result->healthScores);
+    }
+
     /**
      * @param list<SymbolInfo> $namespaces
      * @param array<string, MetricBag> $namespaceMetrics

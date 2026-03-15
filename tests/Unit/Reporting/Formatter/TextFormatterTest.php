@@ -432,7 +432,7 @@ final class TextFormatterTest extends TestCase
             ->duration(0.01)
             ->build();
 
-        $detailContext = new FormatterContext(useColor: false, detail: true);
+        $detailContext = new FormatterContext(useColor: false, detailLimit: 0);
         $output = $this->formatter->format($report, $detailContext);
 
         // Groups by file
@@ -466,7 +466,7 @@ final class TextFormatterTest extends TestCase
             ->duration(0.01)
             ->build();
 
-        $detailContext = new FormatterContext(useColor: false, detail: true);
+        $detailContext = new FormatterContext(useColor: false, detailLimit: 0);
         $output = $this->formatter->format($report, $detailContext);
 
         self::assertStringContainsString('No violations found.', $output);
@@ -492,7 +492,7 @@ final class TextFormatterTest extends TestCase
         $detailContext = new FormatterContext(
             useColor: false,
             groupBy: GroupBy::Rule,
-            detail: true,
+            detailLimit: 0,
             isGroupByExplicit: true,
         );
         $output = $this->formatter->format($report, $detailContext);

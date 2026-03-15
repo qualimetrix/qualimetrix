@@ -50,6 +50,7 @@ final class CheckCommand extends Command
     protected function configure(): void
     {
         CheckCommandDefinition::addOptions($this, $this->ruleRegistry);
+        $this->setHelp('Run <info>bin/aimd rules</info> to see all available rules and their CLI options.');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int

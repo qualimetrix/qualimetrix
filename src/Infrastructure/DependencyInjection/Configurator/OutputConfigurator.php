@@ -28,6 +28,7 @@ use AiMessDetector\Infrastructure\Console\Command\GraphExportCommand;
 use AiMessDetector\Infrastructure\Console\Command\HookInstallCommand;
 use AiMessDetector\Infrastructure\Console\Command\HookStatusCommand;
 use AiMessDetector\Infrastructure\Console\Command\HookUninstallCommand;
+use AiMessDetector\Infrastructure\Console\Command\RulesCommand;
 use AiMessDetector\Infrastructure\Console\Progress\ProgressReporterHolder;
 use AiMessDetector\Infrastructure\Console\ResultPresenter;
 use AiMessDetector\Infrastructure\Console\RuntimeConfigurator;
@@ -211,6 +212,13 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         $container->register(HookStatusCommand::class)
             ->setArguments([
                 new Reference(GitRepositoryLocator::class),
+            ])
+            ->setPublic(true);
+
+        // RulesCommand
+        $container->register(RulesCommand::class)
+            ->setArguments([
+                new Reference(RuleRegistryInterface::class),
             ])
             ->setPublic(true);
 
