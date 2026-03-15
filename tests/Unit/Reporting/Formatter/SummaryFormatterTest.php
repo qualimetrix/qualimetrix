@@ -8,7 +8,10 @@ use AiMessDetector\Core\Symbol\SymbolPath;
 use AiMessDetector\Core\Violation\Location;
 use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
+use AiMessDetector\Reporting\Debt\DebtCalculator;
+use AiMessDetector\Reporting\Debt\RemediationTimeRegistry;
 use AiMessDetector\Reporting\DecompositionItem;
+use AiMessDetector\Reporting\DetailedViolationRenderer;
 use AiMessDetector\Reporting\Formatter\SummaryFormatter;
 use AiMessDetector\Reporting\FormatterContext;
 use AiMessDetector\Reporting\GroupBy;
@@ -26,7 +29,8 @@ final class SummaryFormatterTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->formatter = new SummaryFormatter();
+        $debtCalculator = new DebtCalculator(new RemediationTimeRegistry());
+        $this->formatter = new SummaryFormatter(new DetailedViolationRenderer($debtCalculator));
         $this->plainContext = new FormatterContext(useColor: false, terminalWidth: 120);
     }
 
@@ -343,7 +347,7 @@ final class SummaryFormatterTest extends TestCase
 
         $output = $this->formatter->format($report, $this->plainContext);
 
-        self::assertStringContainsString('--format=text', $output);
+        self::assertStringContainsString('--detail', $output);
     }
 
     public function testHintsDrillDownForWorstOffender(): void
@@ -773,6 +777,110 @@ final class SummaryFormatterTest extends TestCase
 
         // Tech debt is project-level, don't show in scoped mode
         self::assertStringNotContainsString('Tech debt', $output);
+    }
+
+    public function testDetailAppendsViolationSection(): void
+    {
+        $report = $this->createReport(
+            violations: [
+                new Violation(
+                    location: new Location('src/Foo.php', 10),
+                    symbolPath: SymbolPath::forClass('App', 'Foo'),
+                    ruleName: 'complexity.cyclomatic',
+                    violationCode: 'complexity.cyclomatic.method',
+                    message: 'Cyclomatic complexity is 15',
+                    severity: Severity::Error,
+                    humanMessage: 'Cyclomatic complexity: 15 (max 10) — too many code paths',
+                ),
+            ],
+            filesAnalyzed: 1,
+            duration: 0.1,
+        );
+
+        $context = new FormatterContext(useColor: false, terminalWidth: 120, detail: true);
+        $output = $this->formatter->format($report, $context);
+
+        // Should contain summary section
+        self::assertStringContainsString('1 violation', $output);
+
+        // Should contain detailed violations section
+        self::assertStringContainsString('Violations', $output);
+        self::assertStringContainsString('src/Foo.php (1 violation)', $output);
+        self::assertStringContainsString('too many code paths', $output);
+        self::assertStringContainsString('[complexity.cyclomatic.method]', $output);
+        self::assertStringContainsString('ERROR', $output);
+    }
+
+    public function testDetailNotShownForEmptyReport(): void
+    {
+        $report = $this->createReport(
+            violations: [],
+            filesAnalyzed: 10,
+            duration: 0.5,
+        );
+
+        $context = new FormatterContext(useColor: false, terminalWidth: 120, detail: true);
+        $output = $this->formatter->format($report, $context);
+
+        // Should NOT contain "Violations" section
+        self::assertStringNotContainsString('Violations', $output);
+        self::assertStringContainsString('No violations found.', $output);
+    }
+
+    public function testDetailWithNamespaceFilterShowsScopedViolationsOnly(): void
+    {
+        $report = $this->createReport(
+            violations: [
+                new Violation(
+                    location: new Location('a.php', 1),
+                    symbolPath: SymbolPath::forClass('App\Service', 'UserService'),
+                    ruleName: 'test',
+                    violationCode: 'test',
+                    message: 'In scope',
+                    severity: Severity::Error,
+                ),
+                new Violation(
+                    location: new Location('b.php', 1),
+                    symbolPath: SymbolPath::forClass('App\Other', 'Foo'),
+                    ruleName: 'test',
+                    violationCode: 'test',
+                    message: 'Out of scope',
+                    severity: Severity::Warning,
+                ),
+            ],
+            filesAnalyzed: 10,
+            duration: 0.5,
+        );
+
+        $context = new FormatterContext(useColor: false, namespace: 'App\Service', terminalWidth: 120, detail: true);
+        $output = $this->formatter->format($report, $context);
+
+        self::assertStringContainsString('In scope', $output);
+        self::assertStringNotContainsString('Out of scope', $output);
+    }
+
+    public function testDetailHintNotShownWhenDetailActive(): void
+    {
+        $report = $this->createReport(
+            violations: [
+                new Violation(
+                    location: new Location('a.php', 1),
+                    symbolPath: SymbolPath::forClass('App', 'A'),
+                    ruleName: 'test',
+                    violationCode: 'test',
+                    message: 'Msg',
+                    severity: Severity::Error,
+                ),
+            ],
+            filesAnalyzed: 1,
+            duration: 0.1,
+        );
+
+        $context = new FormatterContext(useColor: false, terminalWidth: 120, detail: true);
+        $output = $this->formatter->format($report, $context);
+
+        // Should NOT hint --detail since we're already in detail mode
+        self::assertStringNotContainsString('--detail to see all violations', $output);
     }
 
     /**

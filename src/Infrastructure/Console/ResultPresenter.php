@@ -58,6 +58,14 @@ final class ResultPresenter
             ? $this->configurationProvider->getConfiguration()->format
             : ($input->getOption('format') ?? AnalysisConfiguration::DEFAULT_FORMAT);
         /** @var string $format */
+
+        // Deprecation warning for text-verbose (stderr only, not in formatted output)
+        if ($format === 'text-verbose' && $output instanceof \Symfony\Component\Console\Output\ConsoleOutput) {
+            $output->getErrorOutput()->writeln(
+                '<comment>Warning: --format=text-verbose is deprecated. Use --format=text --detail instead.</comment>',
+            );
+        }
+
         $formatter = $this->formatterRegistry->get($format);
         $context = $this->buildFormatterContext($input, $output, $formatter, $partialAnalysis);
 
@@ -253,8 +261,9 @@ final class ResultPresenter
         // Resolve group-by: explicit CLI option or formatter default
         /** @var string|null $groupByValue */
         $groupByValue = $input->getOption('group-by');
+        $isGroupByExplicit = $groupByValue !== null;
         try {
-            $groupBy = $groupByValue !== null
+            $groupBy = $isGroupByExplicit
                 ? GroupBy::from($groupByValue)
                 : $formatter->getDefaultGroupBy();
         } catch (ValueError) {
@@ -292,6 +301,7 @@ final class ResultPresenter
         }
 
         $terminalWidth = (new \Symfony\Component\Console\Terminal())->getWidth() ?: 80;
+        $detail = (bool) $input->getOption('detail');
 
         return new FormatterContext(
             useColor: $output->isDecorated(),
@@ -302,6 +312,8 @@ final class ResultPresenter
             namespace: $namespaceFilter,
             class: $classFilter,
             terminalWidth: $terminalWidth,
+            detail: $detail,
+            isGroupByExplicit: $isGroupByExplicit,
         );
     }
 

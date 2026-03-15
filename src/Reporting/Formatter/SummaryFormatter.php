@@ -9,6 +9,7 @@ use AiMessDetector\Core\Violation\Violation;
 use AiMessDetector\Reporting\AnsiColor;
 use AiMessDetector\Reporting\Debt\DebtSummary;
 use AiMessDetector\Reporting\DecompositionItem;
+use AiMessDetector\Reporting\DetailedViolationRenderer;
 use AiMessDetector\Reporting\FormatterContext;
 use AiMessDetector\Reporting\GroupBy;
 use AiMessDetector\Reporting\HealthScore;
@@ -31,7 +32,9 @@ final class SummaryFormatter implements FormatterInterface
     private const float OFFENDER_WARN_THRESHOLD = 50.0;
     private const float OFFENDER_ERR_THRESHOLD = 30.0;
 
-    public function __construct() {}
+    public function __construct(
+        private readonly DetailedViolationRenderer $detailedRenderer,
+    ) {}
 
     public function format(Report $report, FormatterContext $context): string
     {
@@ -53,6 +56,16 @@ final class SummaryFormatter implements FormatterInterface
         }
 
         $this->renderHints($report, $context, $color, $lines);
+
+        // Append detailed violation list when --detail is used
+        if ($context->detail && !$report->isEmpty()) {
+            $filteredViolations = $this->filterViolations($report->violations, $context);
+            if ($filteredViolations !== []) {
+                $lines[] = '';
+                $lines[] = $color->bold('Violations');
+                $lines[] = $this->detailedRenderer->render($filteredViolations, $context);
+            }
+        }
 
         return implode("\n", $lines) . "\n";
     }
@@ -392,8 +405,8 @@ final class SummaryFormatter implements FormatterInterface
     {
         $hints = [];
 
-        if (!$report->isEmpty()) {
-            $hints[] = '--format=text to see all violations';
+        if (!$report->isEmpty() && !$context->detail) {
+            $hints[] = '--detail to see all violations';
         }
 
         if ($context->partialAnalysis) {

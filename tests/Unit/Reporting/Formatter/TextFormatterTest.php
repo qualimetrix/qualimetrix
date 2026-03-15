@@ -10,6 +10,7 @@ use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
 use AiMessDetector\Reporting\Debt\DebtCalculator;
 use AiMessDetector\Reporting\Debt\RemediationTimeRegistry;
+use AiMessDetector\Reporting\DetailedViolationRenderer;
 use AiMessDetector\Reporting\Formatter\TextFormatter;
 use AiMessDetector\Reporting\FormatterContext;
 use AiMessDetector\Reporting\GroupBy;
@@ -25,7 +26,8 @@ final class TextFormatterTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->formatter = new TextFormatter(new DebtCalculator(new RemediationTimeRegistry()));
+        $debtCalculator = new DebtCalculator(new RemediationTimeRegistry());
+        $this->formatter = new TextFormatter($debtCalculator, new DetailedViolationRenderer($debtCalculator));
         $this->plainContext = new FormatterContext(useColor: false);
     }
 
@@ -403,5 +405,100 @@ final class TextFormatterTest extends TestCase
 
         // Summary should be bold green when no violations
         self::assertStringContainsString("\e[1;32m0 error(s)", $output);
+    }
+
+    public function testDetailModeGroupsByFile(): void
+    {
+        $report = ReportBuilder::create()
+            ->addViolation(new Violation(
+                location: new Location('src/Foo.php', 10),
+                symbolPath: SymbolPath::forClass('App', 'Foo'),
+                ruleName: 'test',
+                violationCode: 'test.rule',
+                message: 'Test msg',
+                severity: Severity::Error,
+                humanMessage: 'Human: test error',
+            ))
+            ->addViolation(new Violation(
+                location: new Location('src/Bar.php', 20),
+                symbolPath: SymbolPath::forClass('App', 'Bar'),
+                ruleName: 'test',
+                violationCode: 'test.rule',
+                message: 'Bar msg',
+                severity: Severity::Warning,
+            ))
+            ->filesAnalyzed(2)
+            ->filesSkipped(0)
+            ->duration(0.01)
+            ->build();
+
+        $detailContext = new FormatterContext(useColor: false, detail: true);
+        $output = $this->formatter->format($report, $detailContext);
+
+        // Groups by file
+        self::assertStringContainsString('src/Foo.php (1 violation)', $output);
+        self::assertStringContainsString('src/Bar.php (1 violation)', $output);
+
+        // Uses humanMessage when available
+        self::assertStringContainsString('Human: test error', $output);
+        // Falls back to message for the second violation
+        self::assertStringContainsString('Bar msg', $output);
+
+        // Shows violation code in brackets
+        self::assertStringContainsString('[test.rule]', $output);
+
+        // Shows severity tags
+        self::assertStringContainsString('ERROR', $output);
+        self::assertStringContainsString('WARN', $output);
+
+        // Has debt breakdown
+        self::assertStringContainsString('Technical debt by rule:', $output);
+
+        // Has summary at the end
+        self::assertStringContainsString('1 error(s), 1 warning(s) in 2 file(s)', $output);
+    }
+
+    public function testDetailModeEmptyReport(): void
+    {
+        $report = ReportBuilder::create()
+            ->filesAnalyzed(5)
+            ->filesSkipped(0)
+            ->duration(0.01)
+            ->build();
+
+        $detailContext = new FormatterContext(useColor: false, detail: true);
+        $output = $this->formatter->format($report, $detailContext);
+
+        self::assertStringContainsString('No violations found.', $output);
+        self::assertStringContainsString('0 error(s), 0 warning(s) in 5 file(s)', $output);
+    }
+
+    public function testDetailModeRespectsExplicitGroupByRule(): void
+    {
+        $report = ReportBuilder::create()
+            ->addViolation(new Violation(
+                location: new Location('src/Foo.php', 10),
+                symbolPath: SymbolPath::forClass('App', 'Foo'),
+                ruleName: 'complexity.cyclomatic',
+                violationCode: 'complexity.cyclomatic.method',
+                message: 'Complex',
+                severity: Severity::Error,
+            ))
+            ->filesAnalyzed(1)
+            ->filesSkipped(0)
+            ->duration(0.01)
+            ->build();
+
+        $detailContext = new FormatterContext(
+            useColor: false,
+            groupBy: GroupBy::Rule,
+            detail: true,
+            isGroupByExplicit: true,
+        );
+        $output = $this->formatter->format($report, $detailContext);
+
+        // Should group by rule, not file
+        self::assertStringContainsString('complexity.cyclomatic (1)', $output);
+        self::assertStringNotContainsString('src/Foo.php (1', $output);
     }
 }

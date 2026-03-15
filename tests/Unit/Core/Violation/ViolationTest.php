@@ -168,4 +168,39 @@ final class ViolationTest extends TestCase
 
         self::assertNull($violation->level);
     }
+
+    public function testGetDisplayMessageReturnsHumanMessageWhenAvailable(): void
+    {
+        $violation = new Violation(
+            location: new Location('src/test.php', 10),
+            symbolPath: SymbolPath::forClass('App', 'Foo'),
+            ruleName: 'complexity',
+            violationCode: 'complexity.method',
+            message: 'Cyclomatic complexity is 15, exceeds threshold of 10',
+            severity: Severity::Error,
+            humanMessage: 'Cyclomatic complexity: 15 (max 10) — too many code paths',
+        );
+
+        self::assertSame(
+            'Cyclomatic complexity: 15 (max 10) — too many code paths',
+            $violation->getDisplayMessage(),
+        );
+    }
+
+    public function testGetDisplayMessageFallsBackToMessageWhenHumanMessageNull(): void
+    {
+        $violation = new Violation(
+            location: new Location('src/test.php', 10),
+            symbolPath: SymbolPath::forClass('App', 'Foo'),
+            ruleName: 'complexity',
+            violationCode: 'complexity.method',
+            message: 'Cyclomatic complexity is 15, exceeds threshold of 10',
+            severity: Severity::Error,
+        );
+
+        self::assertSame(
+            'Cyclomatic complexity is 15, exceeds threshold of 10',
+            $violation->getDisplayMessage(),
+        );
+    }
 }

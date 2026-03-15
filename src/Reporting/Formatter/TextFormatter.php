@@ -9,6 +9,7 @@ use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
 use AiMessDetector\Reporting\AnsiColor;
 use AiMessDetector\Reporting\Debt\DebtCalculator;
+use AiMessDetector\Reporting\DetailedViolationRenderer;
 use AiMessDetector\Reporting\FormatterContext;
 use AiMessDetector\Reporting\GroupBy;
 use AiMessDetector\Reporting\Report;
@@ -24,15 +25,35 @@ use AiMessDetector\Reporting\ViolationSorter;
  * - Parseable by grep, awk, cut and similar tools
  * - Clickable in IDEs and terminals
  *
- * Use --format=text-verbose for human-readable multi-line output.
+ * With --detail: switches to grouped, human-readable output with debt breakdown.
  */
 final class TextFormatter implements FormatterInterface
 {
     public function __construct(
         private readonly DebtCalculator $debtCalculator,
+        private readonly DetailedViolationRenderer $detailedRenderer,
     ) {}
 
     public function format(Report $report, FormatterContext $context): string
+    {
+        if ($context->detail) {
+            return $this->formatDetailed($report, $context);
+        }
+
+        return $this->formatFlat($report, $context);
+    }
+
+    public function getName(): string
+    {
+        return 'text';
+    }
+
+    public function getDefaultGroupBy(): GroupBy
+    {
+        return GroupBy::None;
+    }
+
+    private function formatFlat(Report $report, FormatterContext $context): string
     {
         $color = new AnsiColor($context->useColor);
         $sorted = ViolationSorter::sort($report->violations, $context->groupBy);
@@ -56,14 +77,19 @@ final class TextFormatter implements FormatterInterface
         return implode("\n", $lines) . "\n";
     }
 
-    public function getName(): string
+    private function formatDetailed(Report $report, FormatterContext $context): string
     {
-        return 'text';
-    }
+        $lines = [];
 
-    public function getDefaultGroupBy(): GroupBy
-    {
-        return GroupBy::None;
+        // Detailed violation list
+        $lines[] = $this->detailedRenderer->render($report->violations, $context);
+        $lines[] = '';
+
+        // Summary line
+        $color = new AnsiColor($context->useColor);
+        $lines[] = $this->formatSummary($report, $color);
+
+        return implode("\n", $lines) . "\n";
     }
 
     private function formatViolation(Violation $violation, AnsiColor $color, FormatterContext $context): string

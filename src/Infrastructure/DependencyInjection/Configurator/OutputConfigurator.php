@@ -37,6 +37,7 @@ use AiMessDetector\Infrastructure\Logging\DelegatingLogger;
 use AiMessDetector\Infrastructure\Logging\LoggerFactory;
 use AiMessDetector\Infrastructure\Logging\LoggerHolder;
 use AiMessDetector\Infrastructure\Rule\RuleRegistryInterface;
+use AiMessDetector\Reporting\DetailedViolationRenderer;
 use AiMessDetector\Reporting\Formatter\FormatterInterface;
 use AiMessDetector\Reporting\Formatter\FormatterRegistry;
 use AiMessDetector\Reporting\Formatter\FormatterRegistryInterface;
@@ -91,6 +92,10 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
 
         // SummaryEnricher (depends on DebtCalculator and MetricHintProvider)
         $container->register(SummaryEnricher::class)
+            ->setAutowired(true);
+
+        // DetailedViolationRenderer (shared by TextFormatter and SummaryFormatter)
+        $container->register(DetailedViolationRenderer::class)
             ->setAutowired(true);
 
         // FormatterRegistry will be populated by compiler pass

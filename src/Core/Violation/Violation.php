@@ -37,4 +37,14 @@ final readonly class Violation
     {
         return \sprintf('%s:%s', $this->ruleName, $this->symbolPath->toCanonical());
     }
+
+    /**
+     * Returns the best available human-readable message.
+     *
+     * Prefers humanMessage when available, falls back to technical message.
+     */
+    public function getDisplayMessage(): string
+    {
+        return $this->humanMessage ?? $this->message;
+    }
 }

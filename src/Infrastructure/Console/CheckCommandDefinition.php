@@ -264,6 +264,12 @@ final class CheckCommandDefinition
                 InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
                 'Formatter-specific option (format: key=value)',
                 [],
+            )
+            ->addOption(
+                'detail',
+                null,
+                InputOption::VALUE_NONE,
+                'Show detailed output (grouped violations with explanations and debt breakdown)',
             );
     }
 
