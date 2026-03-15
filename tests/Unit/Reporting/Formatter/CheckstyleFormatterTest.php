@@ -199,8 +199,9 @@ final class CheckstyleFormatterTest extends TestCase
         $error = $xml->getElementsByTagName('error')->item(0);
         self::assertNotNull($error);
 
-        // No line attribute when location has no line
-        self::assertFalse($error->hasAttribute('line'));
+        // Line defaults to 1 for namespace-level violations without explicit line
+        self::assertTrue($error->hasAttribute('line'));
+        self::assertSame('1', $error->getAttribute('line'));
         self::assertSame('aimd.namespace-size', $error->getAttribute('source'));
     }
 

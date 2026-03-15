@@ -434,4 +434,29 @@ final class AnalysisConfigurationTest extends TestCase
 
         self::assertNull($merged->failOn);
     }
+
+    public function testFromArrayParsesFailOnNone(): void
+    {
+        $config = AnalysisConfiguration::fromArray(['fail_on' => 'none']);
+
+        self::assertFalse($config->failOn);
+    }
+
+    public function testMergeFailOnNoneOverridesWhenPresent(): void
+    {
+        $base = new AnalysisConfiguration(failOn: Severity::Warning);
+
+        $merged = $base->merge(['fail_on' => 'none']);
+
+        self::assertFalse($merged->failOn);
+    }
+
+    public function testMergeFailOnNonePreservedWhenNotOverridden(): void
+    {
+        $base = new AnalysisConfiguration(failOn: false);
+
+        $merged = $base->merge(['format' => 'json']);
+
+        self::assertFalse($merged->failOn);
+    }
 }

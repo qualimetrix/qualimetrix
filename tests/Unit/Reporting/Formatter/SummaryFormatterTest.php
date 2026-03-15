@@ -1016,8 +1016,9 @@ final class SummaryFormatterTest extends TestCase
         $context = new FormatterContext(useColor: false, namespace: 'App\NonExistent', terminalWidth: 120);
         $output = $this->formatter->format($report, $context);
 
-        // Falls back to project-level score
-        self::assertStringContainsString('72%', $output);
+        // No health data for non-existent namespace — shows "insufficient data"
+        self::assertStringContainsString('Health: insufficient data', $output);
+        self::assertStringNotContainsString('72%', $output);
     }
 
     /**

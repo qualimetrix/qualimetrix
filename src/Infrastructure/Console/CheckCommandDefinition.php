@@ -92,7 +92,7 @@ final class CheckCommandDefinition
                 'fail-on',
                 null,
                 InputOption::VALUE_REQUIRED,
-                'Minimum severity to trigger non-zero exit code (warning, error)',
+                'Minimum severity to trigger non-zero exit code (none, warning, error). Exit codes: 0 = no violations, 1 = warnings, 2 = errors',
             )
             ->addOption(
                 'namespace',

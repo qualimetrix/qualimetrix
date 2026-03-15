@@ -36,9 +36,11 @@ final class ConfigurationPipeline implements ConfigurationPipelineInterface
 
         // Collect layers
         $merged = [];
+        $appliedSources = [];
         foreach ($stages as $stage) {
             $layer = $stage->apply($context);
             if ($layer !== null) {
+                $appliedSources[] = $layer->source;
                 // Merge list-type keys that accumulate across stages (union semantics),
                 // override everything else
                 foreach ($layer->values as $key => $value) {
@@ -53,7 +55,7 @@ final class ConfigurationPipeline implements ConfigurationPipelineInterface
             }
         }
 
-        return $this->buildResolved($merged);
+        return $this->buildResolved($merged, $appliedSources);
     }
 
     public function addStage(ConfigurationStageInterface $stage): void
@@ -77,8 +79,9 @@ final class ConfigurationPipeline implements ConfigurationPipelineInterface
 
     /**
      * @param array<string, mixed> $merged
+     * @param list<string> $appliedSources
      */
-    private function buildResolved(array $merged): ResolvedConfiguration
+    private function buildResolved(array $merged, array $appliedSources): ResolvedConfiguration
     {
         return new ResolvedConfiguration(
             paths: new PathsConfiguration(
@@ -88,6 +91,7 @@ final class ConfigurationPipeline implements ConfigurationPipelineInterface
             analysis: AnalysisConfiguration::fromArray($merged),
             ruleOptions: $this->getAssocArrayValue($merged, 'rules', []),
             computedMetrics: $this->getAssocArrayValue($merged, 'computed_metrics', []),
+            appliedSources: $appliedSources,
         );
     }
 

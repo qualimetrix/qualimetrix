@@ -27,6 +27,12 @@ final class SarifFormatter implements FormatterInterface
     {
         $rules = $this->collectRules($report->violations);
 
+        // Build ruleIndex map: violationCode -> index in rules array
+        $ruleIndexMap = [];
+        foreach ($rules as $index => $rule) {
+            $ruleIndexMap[$rule['id']] = $index;
+        }
+
         $run = [
             'tool' => [
                 'driver' => [
@@ -36,7 +42,7 @@ final class SarifFormatter implements FormatterInterface
                     'rules' => $rules,
                 ],
             ],
-            'results' => $this->formatResults($report->violations, $context),
+            'results' => $this->formatResults($report->violations, $context, $ruleIndexMap),
         ];
 
         // Add originalUriBaseIds when basePath is provided
@@ -102,6 +108,10 @@ final class SarifFormatter implements FormatterInterface
                 'shortDescription' => [
                     'text' => $this->getRuleDescription($code),
                 ],
+                'fullDescription' => [
+                    'text' => $this->getRuleDescription($code),
+                ],
+                'helpUri' => self::INFORMATION_URI,
                 'defaultConfiguration' => [
                     'level' => $this->mapLevel($info['maxSeverity']),
                 ],
@@ -153,17 +163,22 @@ final class SarifFormatter implements FormatterInterface
      * Formats violations as SARIF results.
      *
      * @param list<Violation> $violations
+     * @param array<string, int> $ruleIndexMap
      *
      * @return list<array<string, mixed>>
      */
-    private function formatResults(array $violations, FormatterContext $context): array
+    private function formatResults(array $violations, FormatterContext $context, array $ruleIndexMap): array
     {
         return array_map(
-            function (Violation $v) use ($context): array {
+            function (Violation $v) use ($context, $ruleIndexMap): array {
                 $result = [
                     'ruleId' => $v->violationCode,
+                    'ruleIndex' => $ruleIndexMap[$v->violationCode] ?? 0,
                     'level' => $this->mapLevel($v->severity),
                     'message' => ['text' => $v->message],
+                    'partialFingerprints' => [
+                        'primaryLocationLineHash' => $v->getFingerprint(),
+                    ],
                 ];
 
                 if ($v->location->isNone()) {

@@ -249,10 +249,32 @@ final class ResultPresenterTest extends TestCase
         self::assertSame(0, $exitCode);
     }
 
+    #[Test]
+    public function presentResultsReturnsExitCode0ForWarningsWhenFailOnNone(): void
+    {
+        $exitCode = $this->presentWithViolationsAndFailOn(
+            [$this->createViolation(Severity::Warning)],
+            false,
+        );
+
+        self::assertSame(0, $exitCode);
+    }
+
+    #[Test]
+    public function presentResultsReturnsExitCode0ForErrorsWhenFailOnNone(): void
+    {
+        $exitCode = $this->presentWithViolationsAndFailOn(
+            [$this->createViolation(Severity::Error)],
+            false,
+        );
+
+        self::assertSame(0, $exitCode);
+    }
+
     /**
      * @param list<Violation> $violations
      */
-    private function presentWithViolationsAndFailOn(array $violations, ?Severity $failOn): int
+    private function presentWithViolationsAndFailOn(array $violations, Severity|false|null $failOn): int
     {
         $configHolder = new ConfigurationHolder();
         $configHolder->setConfiguration(new AnalysisConfiguration(failOn: $failOn));

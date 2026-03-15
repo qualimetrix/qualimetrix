@@ -301,7 +301,7 @@ final class ResultPresenter
         }
 
         $terminalWidth = (new \Symfony\Component\Console\Terminal())->getWidth() ?: 80;
-        $detail = (bool) $input->getOption('detail');
+        $detail = (bool) $input->getOption('detail') || $namespaceFilter !== null || $classFilter !== null;
 
         return new FormatterContext(
             useColor: $output->isDecorated(),
@@ -330,6 +330,11 @@ final class ResultPresenter
         $failOn = $this->configurationProvider->hasConfiguration()
             ? $this->configurationProvider->getConfiguration()->failOn
             : null;
+
+        // --fail-on=none: never fail on violations
+        if ($failOn === false) {
+            return 0;
+        }
 
         $hasErrors = false;
         $hasWarnings = false;
