@@ -4,9 +4,16 @@
 
 import { getWorstOffenders } from './tree.js';
 import { getWorstSubNamespaces } from './subtree.js';
+import { getMetricHint, getHealthHint } from './hints.js';
 
 /** @type {function|null} Navigation callback for sub-namespace clicks */
 let _navigateTo = null;
+
+/** @type {HTMLElement|null} Detail tooltip element (reused for health bar hints) */
+let detailTooltip = null;
+
+/** @type {boolean} Suppresses tooltip show immediately after navigation */
+let tooltipSuppressed = false;
 
 /**
  * Sets the navigation callback used by sub-namespace click handlers.
@@ -27,6 +34,7 @@ export function setNavigateTo(fn) {
 export function renderDetail(node, summary, currentMetric) {
   if (!node) return;
 
+  suppressDetailTooltip();
   renderHealthBars(node, summary);
   renderNodeSummary(node);
   renderWorstSubNamespaces(node, currentMetric);
@@ -75,6 +83,20 @@ function renderHealthBars(node, summary) {
     row.appendChild(nameEl);
     row.appendChild(barOuter);
     row.appendChild(valueEl);
+
+    // Tooltip with health decomposition
+    // For project nodes, health scores live in summary.healthScores, not node.metrics
+    const hintNode = source === node.metrics ? node : { metrics: { ...node.metrics, ...source } };
+    const hint = getHealthHint(metric, hintNode);
+    if (hint) {
+      row.style.cursor = 'help';
+      row.addEventListener('mouseenter', (e) => {
+        showDetailTooltip(e, hint.text, hint.details);
+      });
+      row.addEventListener('mousemove', (e) => moveDetailTooltip(e));
+      row.addEventListener('mouseleave', () => hideDetailTooltip());
+    }
+
     container.appendChild(row);
   }
 }
@@ -149,6 +171,11 @@ function renderWorstSubNamespaces(node, metric) {
   const title = document.createElement('h3');
   title.textContent = 'Worst Sub-Namespaces';
   container.appendChild(title);
+
+  const hint = document.createElement('p');
+  hint.className = 'section-hint';
+  hint.textContent = 'Scores aggregated recursively across entire subtree';
+  container.appendChild(hint);
 
   const table = document.createElement('table');
   table.className = 'worst-offenders-table';
@@ -235,6 +262,13 @@ function renderMetricsTable(node) {
   title.textContent = 'Metrics';
   container.appendChild(title);
 
+  if (node.type === 'namespace') {
+    const hint = document.createElement('p');
+    hint.className = 'section-hint';
+    hint.textContent = 'This namespace only — excludes sub-namespaces';
+    container.appendChild(hint);
+  }
+
   const table = document.createElement('table');
   table.className = 'metrics-table';
 
@@ -256,8 +290,13 @@ function renderMetricsTable(node) {
     keyTd.textContent = key;
     const valTd = document.createElement('td');
     valTd.textContent = typeof value === 'number' ? formatMetricValue(value) : String(value);
+    const hintTd = document.createElement('td');
+    hintTd.className = 'metric-hint';
+    const hint = typeof value === 'number' ? getMetricHint(key, value) : null;
+    if (hint) hintTd.textContent = hint;
     tr.appendChild(keyTd);
     tr.appendChild(valTd);
+    tr.appendChild(hintTd);
     tbody.appendChild(tr);
   }
 
@@ -317,6 +356,65 @@ function escapeHtml(str) {
   const div = document.createElement('div');
   div.textContent = str;
   return div.innerHTML;
+}
+
+// ---------------------------------------------------------------------------
+// Detail tooltip (for health bar hints)
+// ---------------------------------------------------------------------------
+
+function ensureDetailTooltip() {
+  if (!detailTooltip) {
+    detailTooltip = document.createElement('div');
+    detailTooltip.className = 'treemap-tooltip detail-tooltip';
+    detailTooltip.style.display = 'none';
+    document.body.appendChild(detailTooltip);
+  }
+  return detailTooltip;
+}
+
+function showDetailTooltip(event, title, details) {
+  if (tooltipSuppressed) return;
+  const tip = ensureDetailTooltip();
+  let html = `<strong>${escapeHtml(title)}</strong>`;
+  for (const line of details) {
+    html += `<br>${escapeHtml(line)}`;
+  }
+  tip.innerHTML = html;
+  tip.style.display = 'block';
+  moveDetailTooltip(event);
+}
+
+function moveDetailTooltip(event) {
+  const tip = detailTooltip;
+  if (!tip) return;
+
+  const offsetX = 12;
+  const offsetY = 12;
+  let x = event.clientX + offsetX;
+  let y = event.clientY + offsetY;
+
+  const rect = tip.getBoundingClientRect();
+  if (x + rect.width > window.innerWidth) x = event.clientX - rect.width - offsetX;
+  if (y + rect.height > window.innerHeight) y = event.clientY - rect.height - offsetY;
+
+  tip.style.left = x + 'px';
+  tip.style.top = y + 'px';
+}
+
+function hideDetailTooltip() {
+  if (detailTooltip) detailTooltip.style.display = 'none';
+}
+
+/**
+ * Hides tooltip and suppresses re-show briefly.
+ * Prevents stale tooltips when DOM is rebuilt under the cursor (navigation).
+ * Uses setTimeout because synthetic mouseenter on newly created elements
+ * fires after requestAnimationFrame (during layout/paint).
+ */
+function suppressDetailTooltip() {
+  hideDetailTooltip();
+  tooltipSuppressed = true;
+  setTimeout(() => { tooltipSuppressed = false; }, 100);
 }
 
 // Export escapeHtml for reuse

@@ -351,6 +351,19 @@ td {
   font-family: var(--font-sans);
 }
 
+.metrics-table .metric-hint {
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: 11px;
+}
+
+.section-hint {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-style: italic;
+  margin-bottom: 6px;
+}
+
 .empty-state {
   color: var(--text-secondary);
   font-size: 13px;
@@ -366,6 +379,34 @@ td {
   border-top: 1px solid var(--border-color);
   text-align: center;
   flex-shrink: 0;
+}
+
+/* Type badge (class indicator) */
+.type-badge {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 700;
+  font-family: var(--font-sans);
+  line-height: 14px;
+  width: 14px;
+  height: 14px;
+  text-align: center;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.25);
+  color: #fff;
+  vertical-align: middle;
+  margin-right: 3px;
+  flex-shrink: 0;
+}
+
+#breadcrumb .type-badge {
+  background: var(--border-color);
+  color: var(--text-primary);
+}
+
+.treemap-tooltip .type-badge {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
 }
 
 /* Selected node */

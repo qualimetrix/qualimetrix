@@ -56,11 +56,16 @@ export function generateHash(node) {
  *
  * @param {object} rootNode - Root tree node
  * @param {function} navigateTo - Callback to navigate to a node
+ * @param {object} [defaultNode] - Node to navigate to when hash is empty (browser back to root)
  */
-export function initHashNavigation(rootNode, navigateTo) {
+export function initHashNavigation(rootNode, navigateTo, defaultNode) {
   function handleHash() {
     const parsed = parseHash(window.location.hash);
-    if (!parsed) return;
+    if (!parsed) {
+      // Empty hash — navigate to default node (e.g., browser back to root)
+      if (defaultNode) navigateTo(defaultNode);
+      return;
+    }
 
     const node = findNode(rootNode, parsed.path);
     if (node) {
