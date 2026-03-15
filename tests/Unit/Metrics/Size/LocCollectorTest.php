@@ -51,7 +51,7 @@ final class LocCollectorTest extends TestCase
 
     public function testProvides(): void
     {
-        self::assertSame(['loc', 'lloc', 'cloc'], $this->collector->provides());
+        self::assertSame(['loc', 'lloc', 'cloc', 'classLoc'], $this->collector->provides());
     }
 
     public function testEmptyFile(): void
@@ -364,31 +364,152 @@ PHP;
     {
         $definitions = $this->collector->getMetricDefinitions();
 
-        self::assertCount(3, $definitions);
+        self::assertCount(4, $definitions);
 
         $metricNames = array_map(fn($d) => $d->name, $definitions);
         self::assertContains('loc', $metricNames);
         self::assertContains('lloc', $metricNames);
         self::assertContains('cloc', $metricNames);
+        self::assertContains('classLoc', $metricNames);
 
-        foreach ($definitions as $definition) {
+        // File-level metrics (loc, lloc, cloc)
+        foreach (\array_slice($definitions, 0, 3) as $definition) {
             self::assertSame(SymbolLevel::File, $definition->collectedAt);
 
-            // Check Namespace_ level aggregations
             $namespaceStrategies = $definition->getStrategiesForLevel(SymbolLevel::Namespace_);
             self::assertCount(2, $namespaceStrategies);
             self::assertContains(AggregationStrategy::Sum, $namespaceStrategies);
             self::assertContains(AggregationStrategy::Average, $namespaceStrategies);
 
-            // Check Project level aggregations
             $projectStrategies = $definition->getStrategiesForLevel(SymbolLevel::Project);
             self::assertCount(2, $projectStrategies);
             self::assertContains(AggregationStrategy::Sum, $projectStrategies);
             self::assertContains(AggregationStrategy::Average, $projectStrategies);
-
-            // Should not have Class_ level aggregations
-            self::assertEmpty($definition->getStrategiesForLevel(SymbolLevel::Class_));
         }
+
+        // Class-level metric (classLoc)
+        $classLocDef = $definitions[3];
+        self::assertSame(SymbolLevel::Class_, $classLocDef->collectedAt);
+
+        $namespaceStrategies = $classLocDef->getStrategiesForLevel(SymbolLevel::Namespace_);
+        self::assertCount(3, $namespaceStrategies);
+        self::assertContains(AggregationStrategy::Sum, $namespaceStrategies);
+        self::assertContains(AggregationStrategy::Average, $namespaceStrategies);
+        self::assertContains(AggregationStrategy::Max, $namespaceStrategies);
+    }
+
+    public function testClassLocSingleClass(): void
+    {
+        $code = <<<'PHP'
+<?php
+namespace App\Service;
+
+class UserService
+{
+    public function create(): void
+    {
+        // logic
+    }
+
+    public function delete(): void
+    {
+        // logic
+    }
+}
+PHP;
+        $metrics = $this->collectMetrics($code);
+
+        // Class spans lines 5-16 = 12 lines
+        self::assertSame(12, $metrics->get('classLoc:App\Service\UserService'));
+    }
+
+    public function testClassLocMultipleClasses(): void
+    {
+        $code = <<<'PHP'
+<?php
+namespace App;
+
+class Foo
+{
+    public function bar(): void {}
+}
+
+class Baz
+{
+    public function qux(): void {}
+}
+PHP;
+        $metrics = $this->collectMetrics($code);
+
+        self::assertNotNull($metrics->get('classLoc:App\Foo'));
+        self::assertNotNull($metrics->get('classLoc:App\Baz'));
+    }
+
+    public function testClassLocAnonymousClassSkipped(): void
+    {
+        $code = <<<'PHP'
+<?php
+$obj = new class {
+    public function foo(): void {}
+};
+PHP;
+        $metrics = $this->collectMetrics($code);
+
+        // No classLoc keys for anonymous classes
+        self::assertNull($metrics->get('classLoc:'));
+    }
+
+    public function testClassLocNoNamespace(): void
+    {
+        $code = <<<'PHP'
+<?php
+class GlobalClass
+{
+    public function foo(): void {}
+}
+PHP;
+        $metrics = $this->collectMetrics($code);
+
+        self::assertNotNull($metrics->get('classLoc:GlobalClass'));
+    }
+
+    public function testGetClassesWithMetrics(): void
+    {
+        $code = <<<'PHP'
+<?php
+namespace App\Model;
+
+class Order
+{
+    public function process(): void {}
+}
+PHP;
+        $this->collectMetrics($code);
+
+        $classes = $this->collector->getClassesWithMetrics();
+
+        self::assertCount(1, $classes);
+        self::assertSame('App\Model', $classes[0]->namespace);
+        self::assertSame('Order', $classes[0]->class);
+        self::assertNotNull($classes[0]->metrics->get('classLoc'));
+    }
+
+    public function testGetClassesWithMetricsNoNamespace(): void
+    {
+        $code = <<<'PHP'
+<?php
+class Standalone
+{
+    public function run(): void {}
+}
+PHP;
+        $this->collectMetrics($code);
+
+        $classes = $this->collector->getClassesWithMetrics();
+
+        self::assertCount(1, $classes);
+        self::assertNull($classes[0]->namespace);
+        self::assertSame('Standalone', $classes[0]->class);
     }
 
     private function collectMetrics(string $code): \AiMessDetector\Core\Metric\MetricBag
