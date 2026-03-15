@@ -59,7 +59,7 @@ Tool configuration, CLI interface, DI container, and caching.
 3. Choose the relevant component above and read the corresponding document
 
 **I want to integrate the tool:**
--> [Quick Start](QUICK_START.md) or [GitHub Action](GITHUB_ACTION.md)
+-> [Quick Start](../website/docs/getting-started/quick-start.md) or [GitHub Action](../website/docs/ci-cd/github-actions.md)
 
 **I want to understand the entire system:**
 -> [Architecture Overview](ARCHITECTURE.md) -> [Core Primitives](../src/Core/README.md)

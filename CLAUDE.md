@@ -356,6 +356,7 @@ Key rules:
 - [src/Analysis/README.md](src/Analysis/README.md) — orchestration
 - [src/Reporting/README.md](src/Reporting/README.md) — formatting
 - [src/Configuration/README.md](src/Configuration/README.md) — configuration
+- [src/Baseline/README.md](src/Baseline/README.md) — baseline support and @aimd-ignore suppression
 - [src/Infrastructure/README.md](src/Infrastructure/README.md) — CLI, DI, caching
 
 ### Architecture Decision Records (in docs/adr/)
@@ -364,6 +365,8 @@ Key rules:
 ### Internal Documentation (in docs/internal/)
 - [docs/internal/PRODUCT_VISION.md](docs/internal/PRODUCT_VISION.md) — target users, key questions, design principles
 - [docs/internal/CLI_CONVENTIONS.md](docs/internal/CLI_CONVENTIONS.md) — CLI naming conventions
+- [docs/internal/PRODUCT_ROADMAP.md](docs/internal/PRODUCT_ROADMAP.md) — feature roadmap and priorities
+- [docs/internal/COMPETITOR_COMPARISON.md](docs/internal/COMPETITOR_COMPARISON.md) — comparison with PHPMD, PHPStan, etc.
 
 ### General Documentation (in docs/)
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — overall architecture
