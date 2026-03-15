@@ -7,20 +7,25 @@ namespace AiMessDetector\Reporting\Formatter;
 use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
 use AiMessDetector\Reporting\Debt\DebtCalculator;
-use AiMessDetector\Reporting\Debt\DebtSummary;
+use AiMessDetector\Reporting\DecompositionItem;
 use AiMessDetector\Reporting\FormatterContext;
 use AiMessDetector\Reporting\GroupBy;
+use AiMessDetector\Reporting\HealthScore;
 use AiMessDetector\Reporting\Report;
+use AiMessDetector\Reporting\WorstOffender;
+use Composer\InstalledVersions;
 
 /**
- * Formats report as JSON output.
+ * Formats report as JSON with summary structure.
  *
- * Compatible with PHPMD JSON output format for CI/CD integration.
+ * Outputs health scores, worst offenders, and violations in a machine-readable
+ * format suitable for AI agents, CI pipelines, and programmatic consumption.
  */
 final class JsonFormatter implements FormatterInterface
 {
-    private const VERSION = '1.0.0';
     private const PACKAGE = 'aimd';
+    private const DEFAULT_VIOLATION_LIMIT = 50;
+    private const DEFAULT_TOP_OFFENDERS = 10;
 
     public function __construct(
         private readonly DebtCalculator $debtCalculator,
@@ -28,29 +33,46 @@ final class JsonFormatter implements FormatterInterface
 
     public function format(Report $report, FormatterContext $context): string
     {
-        $files = $this->groupViolationsByFile($report->violations, $context);
+        $violations = $this->filterViolations($report->violations, $context);
+        $filteredViolations = $this->sortViolations($violations);
 
-        $debt = $this->debtCalculator->calculate($report->violations);
+        $limit = $this->getViolationLimit($context);
+        $outputViolations = $limit === null
+            ? $filteredViolations
+            : \array_slice($filteredViolations, 0, $limit);
+
+        $topN = $this->getTopN($context);
+
+        // When drill-down is active, compute summary from filtered violations
+        $isDrillDown = $context->namespace !== null || $context->class !== null;
 
         $data = [
-            'version' => self::VERSION,
-            'package' => self::PACKAGE,
-            'timestamp' => gmdate('c'),
-            'files' => $files,
-            'summary' => [
-                'filesAnalyzed' => $report->filesAnalyzed,
-                'filesSkipped' => $report->filesSkipped,
-                'violations' => $report->getTotalViolations(),
-                'errors' => $report->errorCount,
-                'warnings' => $report->warningCount,
-                'duration' => round($report->duration, 3),
+            'meta' => [
+                'version' => InstalledVersions::getRootPackage()['pretty_version'] ?? 'dev',
+                'package' => self::PACKAGE,
+                'timestamp' => gmdate('c'),
             ],
-            'debt' => $this->formatDebt($debt, $report, $context),
+            'summary' => $this->buildSummary($report, $violations, $isDrillDown),
+            'health' => $this->formatHealthScores($report->healthScores, $context),
+            'worstNamespaces' => $context->partialAnalysis ? [] : $this->formatWorstOffenders(
+                $report->worstNamespaces,
+                $context,
+                $topN,
+                showClassCount: true,
+            ),
+            'worstClasses' => $context->partialAnalysis ? [] : $this->formatWorstOffenders(
+                $report->worstClasses,
+                $context,
+                $topN,
+                showClassCount: false,
+            ),
+            'violations' => array_map(
+                fn(Violation $v): array => $this->formatViolation($v, $context),
+                $outputViolations,
+            ),
         ];
 
-        $json = json_encode($data, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR);
-
-        return $json;
+        return json_encode($data, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR);
     }
 
     public function getName(): string
@@ -64,70 +86,85 @@ final class JsonFormatter implements FormatterInterface
     }
 
     /**
-     * Formats debt summary as an associative array for JSON output.
+     * Builds the summary section.
      *
-     * @return array{total: string, totalMinutes: int, perRule: array<string, array{minutes: int, violations: int, formatted: string}>, perFile: array<string, array{minutes: int, formatted: string}>}
+     * When drill-down is active, violation counts reflect the filtered set.
+     *
+     * @param list<Violation> $filteredViolations
+     *
+     * @return array<string, mixed>
      */
-    private function formatDebt(DebtSummary $debt, Report $report, FormatterContext $context): array
+    private function buildSummary(Report $report, array $filteredViolations, bool $isDrillDown): array
     {
-        // Count violations per rule
-        /** @var array<string, int> $violationCounts */
-        $violationCounts = [];
-        foreach ($report->violations as $violation) {
-            $violationCounts[$violation->ruleName] = ($violationCounts[$violation->ruleName] ?? 0) + 1;
-        }
+        if ($isDrillDown) {
+            $errorCount = 0;
+            $warningCount = 0;
+            foreach ($filteredViolations as $v) {
+                if ($v->severity === Severity::Error) {
+                    $errorCount++;
+                } else {
+                    $warningCount++;
+                }
+            }
 
-        $perRule = [];
-        foreach ($debt->perRule as $ruleName => $minutes) {
-            $perRule[$ruleName] = [
-                'minutes' => $minutes,
-                'violations' => $violationCounts[$ruleName] ?? 0,
-                'formatted' => DebtSummary::formatMinutes($minutes),
-            ];
-        }
+            $debtSummary = $this->debtCalculator->calculate($filteredViolations);
 
-        $perFile = [];
-        foreach ($debt->perFile as $filePath => $minutes) {
-            $relativePath = $context->relativizePath($filePath);
-            $perFile[$relativePath] = [
-                'minutes' => $minutes,
-                'formatted' => DebtSummary::formatMinutes($minutes),
+            return [
+                'filesAnalyzed' => $report->filesAnalyzed,
+                'filesSkipped' => $report->filesSkipped,
+                'duration' => round($report->duration, 3),
+                'violationCount' => \count($filteredViolations),
+                'errorCount' => $errorCount,
+                'warningCount' => $warningCount,
+                'techDebtMinutes' => $debtSummary->totalMinutes,
             ];
         }
 
         return [
-            'total' => $debt->formatTotal(),
-            'totalMinutes' => $debt->totalMinutes,
-            'perRule' => $perRule,
-            'perFile' => $perFile,
+            'filesAnalyzed' => $report->filesAnalyzed,
+            'filesSkipped' => $report->filesSkipped,
+            'duration' => round($report->duration, 3),
+            'violationCount' => $report->getTotalViolations(),
+            'errorCount' => $report->errorCount,
+            'warningCount' => $report->warningCount,
+            'techDebtMinutes' => $report->techDebtMinutes,
         ];
     }
 
     /**
-     * Groups violations by file path for PHPMD-compatible output.
+     * Formats health scores for JSON output.
      *
-     * @param list<Violation> $violations
+     * Returns null for partial analysis (no health data) or empty health scores.
+     * Always includes decomposition in JSON (unlike terminal where it's conditional).
      *
-     * @return list<array{file: string|null, violations: list<array{beginLine: int|null, endLine: int|null, rule: string, code: string, symbol: string, priority: int, severity: string, description: string, metricValue: int|float|null}>}>
+     * @param array<string, HealthScore> $healthScores
+     *
+     * @return array<string, mixed>|null
      */
-    private function groupViolationsByFile(array $violations, FormatterContext $context): array
+    private function formatHealthScores(array $healthScores, FormatterContext $context): ?array
     {
-        /** @var array<string, list<Violation>> $grouped */
-        $grouped = [];
-
-        foreach ($violations as $violation) {
-            $file = $violation->location->isNone() ? '' : $context->relativizePath($violation->location->file);
-            $grouped[$file] ??= [];
-            $grouped[$file][] = $violation;
+        if ($context->partialAnalysis || $healthScores === []) {
+            return null;
         }
 
         $result = [];
-        foreach ($grouped as $file => $fileViolations) {
-            $result[] = [
-                'file' => $file !== '' ? $file : null,
-                'violations' => array_map(
-                    fn(Violation $v): array => $this->formatViolation($v),
-                    $fileViolations,
+        foreach ($healthScores as $name => $hs) {
+            $result[$name] = [
+                'score' => $this->sanitizeFloat($hs->score),
+                'label' => $hs->label,
+                'threshold' => [
+                    'warning' => $this->sanitizeFloat($hs->warningThreshold),
+                    'error' => $this->sanitizeFloat($hs->errorThreshold),
+                ],
+                'decomposition' => array_map(
+                    fn(DecompositionItem $item): array => [
+                        'metric' => $item->metricKey,
+                        'humanName' => $item->humanName,
+                        'value' => $this->sanitizeFloat($item->value),
+                        'good' => $item->goodValue,
+                        'direction' => $item->direction,
+                    ],
+                    $hs->decomposition,
                 ),
             ];
         }
@@ -136,41 +173,283 @@ final class JsonFormatter implements FormatterInterface
     }
 
     /**
+     * Formats and filters worst offenders.
+     *
+     * @param list<WorstOffender> $offenders
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function formatWorstOffenders(
+        array $offenders,
+        FormatterContext $context,
+        int $topN,
+        bool $showClassCount,
+    ): array {
+        $filtered = $this->filterWorstOffenders($offenders, $context);
+        $sliced = \array_slice($filtered, 0, $topN);
+
+        $result = [];
+        foreach ($sliced as $offender) {
+            $entry = [
+                'symbolPath' => $offender->symbolPath->toString(),
+                'healthOverall' => $this->sanitizeFloat($offender->healthOverall),
+                'label' => $offender->label,
+                'reason' => $offender->reason,
+                'violationCount' => $offender->violationCount,
+            ];
+
+            if ($showClassCount) {
+                $entry['classCount'] = $offender->classCount;
+            } else {
+                $entry['file'] = $offender->file !== null
+                    ? $context->relativizePath($offender->file)
+                    : null;
+                $entry['metrics'] = $this->sanitizeFloatArray($offender->metrics);
+            }
+
+            $entry['healthScores'] = $this->sanitizeFloatArray($offender->healthScores);
+
+            $result[] = $entry;
+        }
+
+        return $result;
+    }
+
+    /**
      * Formats a single violation for JSON output.
      *
-     * @return array{beginLine: int|null, endLine: int|null, rule: string, code: string, symbol: string, priority: int, severity: string, description: string, metricValue: int|float|null}
+     * @return array<string, mixed>
      */
-    private function formatViolation(Violation $violation): array
+    private function formatViolation(Violation $violation, FormatterContext $context): array
     {
+        $ns = $violation->symbolPath->namespace ?? '';
+        $file = $violation->location->isNone()
+            ? null
+            : $context->relativizePath($violation->location->file);
+
         return [
-            'beginLine' => $violation->location->line,
-            'endLine' => $violation->location->line,
+            'file' => $file,
+            'line' => $violation->location->line,
+            'symbol' => $violation->symbolPath->toString(),
+            'namespace' => $ns !== '' ? $ns : null,
             'rule' => $violation->ruleName,
             'code' => $violation->violationCode,
-            'symbol' => $violation->symbolPath->toString(),
-            'priority' => $this->severityToPriority($violation->severity),
-            'severity' => $this->severityToString($violation->severity),
-            'description' => $violation->message,
-            'metricValue' => \is_float($violation->metricValue) && !is_finite($violation->metricValue) ? null : $violation->metricValue,
+            'severity' => $violation->severity->value,
+            'message' => $violation->getDisplayMessage(),
+            'metricValue' => $this->sanitizeNumeric($violation->metricValue),
+            'threshold' => $this->sanitizeNumeric($violation->threshold),
         ];
     }
 
     /**
-     * Converts severity to PHPMD-style priority (1-5, lower = more severe).
+     * Filters violations by namespace/class context.
+     *
+     * @param list<Violation> $violations
+     *
+     * @return list<Violation>
      */
-    private function severityToPriority(Severity $severity): int
+    private function filterViolations(array $violations, FormatterContext $context): array
     {
-        return match ($severity) {
-            Severity::Error => 1,
-            Severity::Warning => 3,
-        };
+        if ($context->namespace === null && $context->class === null) {
+            return $violations;
+        }
+
+        return array_values(array_filter($violations, function (Violation $v) use ($context): bool {
+            $ns = $v->symbolPath->namespace ?? '';
+            $class = $v->symbolPath->type;
+
+            if ($context->namespace !== null) {
+                return $this->matchesNamespace($ns, $context->namespace);
+            }
+
+            if ($context->class !== null && $class !== null) {
+                $fqcn = $ns !== '' ? $ns . '\\' . $class : $class;
+
+                return $fqcn === $context->class;
+            }
+
+            return false;
+        }));
     }
 
-    private function severityToString(Severity $severity): string
+    /**
+     * Filters worst offenders by namespace/class context.
+     *
+     * @param list<WorstOffender> $offenders
+     *
+     * @return list<WorstOffender>
+     */
+    private function filterWorstOffenders(array $offenders, FormatterContext $context): array
     {
-        return match ($severity) {
-            Severity::Error => 'error',
-            Severity::Warning => 'warning',
-        };
+        if ($context->namespace === null && $context->class === null) {
+            return $offenders;
+        }
+
+        return array_values(array_filter($offenders, function (WorstOffender $o) use ($context): bool {
+            $name = $o->symbolPath->toString();
+
+            if ($context->namespace !== null) {
+                return $this->matchesNamespace($name, $context->namespace);
+            }
+
+            if ($context->class !== null) {
+                return $name === $context->class;
+            }
+
+            return false;
+        }));
+    }
+
+    /**
+     * Sorts violations by severity (errors first), then by absolute threshold exceedance, then stable tie-breaker.
+     *
+     * @param list<Violation> $violations
+     *
+     * @return list<Violation>
+     */
+    private function sortViolations(array $violations): array
+    {
+        usort($violations, static function (Violation $a, Violation $b): int {
+            // Errors before warnings
+            $severityOrder = ($a->severity === Severity::Error ? 0 : 1) <=> ($b->severity === Severity::Error ? 0 : 1);
+            if ($severityOrder !== 0) {
+                return $severityOrder;
+            }
+
+            // Higher absolute exceedance first (when both have numeric values)
+            $exceedA = self::getExceedance($a);
+            $exceedB = self::getExceedance($b);
+            $exceedOrder = $exceedB <=> $exceedA; // desc
+            if ($exceedOrder !== 0) {
+                return $exceedOrder;
+            }
+
+            // Stable tie-breaker: file, line, code
+            return ($a->location->file <=> $b->location->file)
+                ?: ($a->location->line <=> $b->location->line)
+                ?: ($a->violationCode <=> $b->violationCode);
+        });
+
+        return $violations;
+    }
+
+    /**
+     * Returns absolute distance between metric value and threshold.
+     *
+     * Returns 0.0 when either value is null (code smells without metrics).
+     */
+    private static function getExceedance(Violation $v): float
+    {
+        if ($v->metricValue === null || $v->threshold === null) {
+            return 0.0;
+        }
+
+        $val = (float) $v->metricValue;
+        $thr = (float) $v->threshold;
+
+        if (!is_finite($val) || !is_finite($thr)) {
+            return 0.0;
+        }
+
+        return abs($val - $thr);
+    }
+
+    /**
+     * Returns the violation limit based on context.
+     *
+     * Priority: explicit --format-opt violations=N > --detail > default (50).
+     * Returns null for "all violations" (no limit).
+     */
+    private function getViolationLimit(FormatterContext $context): ?int
+    {
+        $opt = $context->getOption('violations');
+
+        if ($opt !== '') {
+            if ($opt === 'all') {
+                return null;
+            }
+
+            $parsed = filter_var($opt, \FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
+
+            return $parsed !== false ? $parsed : self::DEFAULT_VIOLATION_LIMIT;
+        }
+
+        // --detail implies all violations
+        if ($context->detail) {
+            return null;
+        }
+
+        return self::DEFAULT_VIOLATION_LIMIT;
+    }
+
+    /**
+     * Returns the top-N limit for worst offenders.
+     */
+    private function getTopN(FormatterContext $context): int
+    {
+        $opt = $context->getOption('top');
+
+        if ($opt !== '') {
+            $parsed = filter_var($opt, \FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+
+            return $parsed !== false ? $parsed : self::DEFAULT_TOP_OFFENDERS;
+        }
+
+        return self::DEFAULT_TOP_OFFENDERS;
+    }
+
+    /**
+     * Boundary-aware namespace prefix match.
+     *
+     * App\Payment matches App\Payment and App\Payment\Gateway but not App\PaymentGateway.
+     */
+    private function matchesNamespace(string $subject, string $prefix): bool
+    {
+        if ($subject === $prefix) {
+            return true;
+        }
+
+        return str_starts_with($subject, $prefix . '\\');
+    }
+
+    /**
+     * Sanitizes a float for JSON encoding (NaN/INF → null).
+     */
+    private function sanitizeFloat(float $value): ?float
+    {
+        return is_finite($value) ? $value : null;
+    }
+
+    /**
+     * Sanitizes a numeric value for JSON encoding (NaN/INF → null).
+     */
+    private function sanitizeNumeric(int|float|null $value): int|float|null
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        if (\is_float($value) && !is_finite($value)) {
+            return null;
+        }
+
+        return $value;
+    }
+
+    /**
+     * Sanitizes an array of float values for JSON encoding.
+     *
+     * @param array<string, int|float> $values
+     *
+     * @return array<string, int|float|null>
+     */
+    private function sanitizeFloatArray(array $values): array
+    {
+        $result = [];
+        foreach ($values as $key => $value) {
+            $result[$key] = $this->sanitizeNumeric($value);
+        }
+
+        return $result;
     }
 }

@@ -10,15 +10,16 @@ Reporting is responsible for formatting analysis results for user output. It sup
 
 | Aspect               | Compatibility | Comment                                                |
 | -------------------- | ------------- | ------------------------------------------------------ |
-| **Output formats**   | Partial       | text, json, checkstyle — compatible with PHPMD         |
+| **Output formats**   | Partial       | text, checkstyle — compatible with PHPMD               |
 | **Input parameters** | No            | Our options are richer; compatibility would limit them |
 | **Configuration**    | No            | Custom YAML format, different structure                |
 
 ### PHPMD-Compatible Formats
 
 - **text** — text output (identical format)
-- **json** — PHPMD JSON format
 - **checkstyle** — Checkstyle XML
+
+**Note:** `--format=json` uses a custom summary structure (health scores, worst offenders, violations) and is NOT PHPMD-compatible.
 
 **Benefits:** seamless PHPMD replacement in CI/CD, use of existing IDE plugins, integration with existing tools.
 
@@ -48,7 +49,7 @@ Reporting/
     ├── SummaryFormatter.php                # Default: health overview + worst offenders + hints
     ├── TextFormatter.php                   # Compact text output (with colors)
     ├── TextVerboseFormatter.php            # Verbose text output (grouped, colored)
-    ├── JsonFormatter.php                   # PHPMD-compatible JSON
+    ├── JsonFormatter.php                   # Summary-oriented JSON (health, worst offenders, violations)
     ├── CheckstyleFormatter.php             # Checkstyle XML
     ├── SarifFormatter.php                  # SARIF 2.1.0
     ├── GitLabCodeQualityFormatter.php      # GitLab Code Climate JSON
@@ -316,7 +317,7 @@ Files: 1 analyzed, 0 skipped | Errors: 1 | Warnings: 1 | Time: 0.23s
 | Summary      | `summary`      | **Default.** Health overview + worst offenders | CLI                        |
 | Text         | `text`         | Compact human-readable text output             | CLI                        |
 | Text Verbose | `text-verbose` | Detailed text output with sorting by severity  | CLI                        |
-| JSON         | `json`         | PHPMD-compatible JSON for CI/CD                | Generic CI/CD              |
+| JSON         | `json`         | Summary-oriented JSON (health + violations)    | AI agents, CI/CD           |
 | Checkstyle   | `checkstyle`   | Checkstyle XML for CI systems                  | Jenkins, SonarQube         |
 | SARIF        | `sarif`        | SARIF 2.1.0 for static analysis                | GitHub, VS Code, JetBrains |
 | GitLab       | `gitlab`       | Code Climate JSON for GitLab MR                | GitLab CI                  |
@@ -327,21 +328,20 @@ Files: 1 analyzed, 0 skipped | Errors: 1 | Warnings: 1 | Time: 0.23s
 
 **Name:** `json`
 
-PHPMD-compatible JSON for CI/CD. Structure: violations + summary. Example:
+Summary-oriented JSON for AI agents, CI/CD, and programmatic consumption. Includes health scores, worst offenders, and violations (top 50 by default). Example:
 
 ```json
 {
-  "violations": [{
-    "file": "src/Service/UserService.php",
-    "line": 42,
-    "severity": "error",
-    "message": "...",
-    "rule": "cyclomatic-complexity",
-    "code": "complexity.method"
-  }],
-  "summary": { "filesAnalyzed": 42, "errors": 2, "warnings": 1 }
+  "meta": { "version": "1.0.0", "package": "aimd", "timestamp": "..." },
+  "summary": { "filesAnalyzed": 342, "violationCount": 47, "errorCount": 12, "warningCount": 35, "techDebtMinutes": 270 },
+  "health": { "complexity": { "score": 65, "label": "Good", "threshold": { "warning": 50, "error": 25 }, "decomposition": [...] } },
+  "worstNamespaces": [{ "symbolPath": "App\\Payment", "healthOverall": 31, "reason": "low cohesion, high complexity" }],
+  "worstClasses": [{ "symbolPath": "App\\Payment\\PaymentService", "file": "src/...", "healthOverall": 28, "metrics": {...} }],
+  "violations": [{ "file": "src/...", "line": 42, "symbol": "...", "namespace": "App\\Service", "rule": "complexity.cyclomatic", "code": "complexity.cyclomatic.method", "severity": "error", "message": "...", "metricValue": 15, "threshold": 10 }]
 }
 ```
+
+**Options:** `--format-opt=violations=all|0|N` (default: 50), `--format-opt=top=N` (default: 10 offenders). `--detail` implies all violations. `--namespace`/`--class` filters violations and worst offenders. Partial analysis: `health` is `null`.
 
 ---
 
@@ -517,7 +517,7 @@ $report->techDebtMinutes  // int — total remediation time
 | **Readability**         | High    | High   | High         | No      | No                | No           | No     | No           | Visual          |
 | **CI/CD integration**   | No      | No     | No           | Generic | Jenkins/SonarQube | GitHub/Azure | GitLab | Custom       | CI artifacts    |
 | **IDE support**         | No      | No     | No           | No      | Limited           | VS Code/JB   | No     | No           | No              |
-| **PHPMD compatibility** | No      | Full   | No           | Full    | Full              | No           | No     | No           | No              |
+| **PHPMD compatibility** | No      | Full   | No           | No      | Full              | No           | No     | No           | No              |
 | **Fingerprinting**      | No      | No     | No           | No      | No                | No           | Yes    | No           | No              |
 | **Output**              | STDOUT  | STDOUT | STDOUT       | STDOUT  | STDOUT            | STDOUT       | STDOUT | STDOUT       | File (--output) |
 
