@@ -56,14 +56,14 @@ bin/aimd check src/ --exclude-path="src/Entity/*" --exclude-path="src/DTO/*"
 
 ### `--format`, `-f`
 
-Выбор формата вывода. По умолчанию: `text`.
+Выбор формата вывода. По умолчанию: `summary`.
 
 ```bash
 bin/aimd check src/ --format=json
 bin/aimd check src/ --format=sarif
 ```
 
-Доступные форматы: `text`, `text-verbose`, `json`, `metrics-json`, `checkstyle`, `sarif`, `gitlab`, `github`.
+Доступные форматы: `summary`, `text`, `text-verbose`, `json`, `metrics-json`, `checkstyle`, `sarif`, `gitlab`, `github`, `html`.
 
 Подробности о каждом формате смотрите в разделе [Форматы вывода](output-formats.md).
 
@@ -104,6 +104,47 @@ bin/aimd check src/ --fail-on=warning
 ```yaml
 fail_on: error
 ```
+
+### `--detail`
+
+Показать группированный список нарушений после сводки. Действует только на формат `summary`.
+
+```bash
+# Лимит по умолчанию (200 нарушений)
+bin/aimd check src/ --detail
+
+# Показать все нарушения (без лимита)
+bin/aimd check src/ --detail=all
+
+# Пользовательский лимит
+bin/aimd check src/ --detail=50
+```
+
+Автоматически включается при использовании `--namespace` или `--class`.
+
+### `--namespace`
+
+Фильтрация вывода по конкретному поддереву пространства имён. Использует сопоставление по префиксу с учётом границ.
+
+```bash
+bin/aimd check src/ --namespace=App\\Service
+```
+
+Фильтрует нарушения и худших нарушителей по указанному пространству имён. Показывает оценки здоровья поддерева. Автоматически включает `--detail`.
+
+Взаимоисключающий с `--class`.
+
+### `--class`
+
+Фильтрация вывода по конкретному классу с точным совпадением FQCN.
+
+```bash
+bin/aimd check src/ --class=App\\Service\\UserService
+```
+
+Фильтрует нарушения по указанному классу. Автоматически включает `--detail`.
+
+Взаимоисключающий с `--namespace`.
 
 ---
 
@@ -497,4 +538,31 @@ bin/aimd hook:uninstall
 
 # Восстановить оригинальный хук из резервной копии
 bin/aimd hook:uninstall --restore-backup
+```
+
+### rules
+
+Вывести список всех доступных правил с описаниями и опциями CLI:
+
+```bash
+# Показать все правила
+bin/aimd rules
+
+# Фильтр по группе
+bin/aimd rules --group=complexity
+```
+
+**Пример вывода:**
+
+```
+complexity.cyclomatic    Cyclomatic complexity (McCabe)
+  --cyclomatic-warning=N         method.warning (default: 10)
+  --cyclomatic-error=N           method.error (default: 20)
+  --cyclomatic-class-warning=N   class.max_warning (default: 50)
+  --cyclomatic-class-error=N     class.max_error (default: 100)
+
+complexity.cognitive     Cognitive complexity (SonarSource)
+  --cognitive-warning=N          method.warning (default: 8)
+  --cognitive-error=N            method.error (default: 15)
+  ...
 ```

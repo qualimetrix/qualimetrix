@@ -8,6 +8,74 @@ Three ways to integrate AI Mess Detector into your project:
 
 ---
 
+## Your First Analysis
+
+### Install
+
+```bash
+composer require --dev fractalizer/ai-mess-detector
+```
+
+### Run the analysis
+
+```bash
+vendor/bin/aimd check src/
+```
+
+### Interpret the output
+
+The default output shows a health summary with scores by category:
+
+```
+AI Mess Detector — 127 files analyzed, 2.3s
+
+Health ████████████████████░░░░░░░░░░ 67.2% Acceptable
+
+  Complexity      ██████████████████████████░░░░ 85.1% Strong
+  Cohesion        ████████████░░░░░░░░░░░░░░░░░░ 42.3% Weak
+  Coupling        █████████████████░░░░░░░░░░░░░ 55.8% Acceptable
+  Typing          ████████████████████████████░░ 92.0% Strong
+  Maintainability ████████████████████░░░░░░░░░░ 64.5% Acceptable
+
+Worst namespaces
+  38 App\Service (12 classes, 28 violations) — low cohesion, high coupling
+  42 App\Repository (8 classes, 15 violations) — low cohesion
+
+45 violations (12 errors, 33 warnings) | Tech debt: 2d 4h (8.5 min/kLOC)
+
+Hints: --detail to see violations (top 200) | --namespace='App\Service' to drill down | --format=html -o report.html for full report
+```
+
+Each category gets a label: **Strong** (good), **Acceptable** (room for improvement), **Weak** (needs attention), or **Critical** (action required). The "Worst namespaces" section highlights where to focus first.
+
+### Drill down into a namespace
+
+Investigate a specific namespace to see its classes and violations:
+
+```bash
+vendor/bin/aimd check src/ --namespace='App\Service'
+```
+
+### See detailed violations
+
+List individual violations with file paths, line numbers, and remediation hints:
+
+```bash
+vendor/bin/aimd check src/ --detail
+```
+
+### Generate an HTML report
+
+For a full interactive report with charts and drill-down navigation:
+
+```bash
+vendor/bin/aimd check src/ --format=html -o report.html
+```
+
+Open `report.html` in your browser to explore the results.
+
+---
+
 ## 1. Pre-commit Hook
 
 Automatic checking of staged files before every commit.

@@ -1,6 +1,6 @@
 # Output Formats
 
-AI Mess Detector supports 8 output formats. Choose the one that fits your workflow.
+AI Mess Detector supports 10 output formats. Choose the one that fits your workflow.
 
 ```bash
 bin/aimd check src/ --format=<format>
@@ -8,7 +8,73 @@ bin/aimd check src/ --format=<format>
 
 ---
 
-## text (default)
+## summary (default)
+
+Health-oriented overview showing project health scores, worst offenders, and violation summary. This is the default CLI output designed for quick project assessment.
+
+**When to use:** Local development, quick project health overview.
+
+**Key features:**
+
+- 6 health dimensions with progress bars (complexity, cohesion, coupling, typing, maintainability, overall)
+- Top-3 worst namespaces and classes with health scores
+- Violation count with tech debt estimate (including debt density per 1K LOC)
+- Contextual hints for next steps
+
+**Example output:**
+
+```
+AI Mess Detector — Project Health
+
+  Complexity     ████████████████░░░░  78 Strong
+  Cohesion       ██████████████░░░░░░  68 Acceptable
+  Coupling       ████████████░░░░░░░░  59 Acceptable
+  Typing         ██████████████████░░  88 Strong
+  Maintainability████████████████░░░░  80 Strong
+  Overall        ██████████████░░░░░░  72 Acceptable
+
+Worst offenders (namespaces):
+  App\Service           52 Weak      | App\Repository        61 Acceptable
+  App\Controller        55 Acceptable
+
+Worst offenders (classes):
+  App\Service\OrderService          38 Critical  | App\Service\UserService   45 Weak
+  App\Repository\OrderRepository    51 Weak
+
+Violations: 12 errors, 8 warnings | Tech debt: 4h 30m (2.1/1K LOC)
+
+Hint: Run with --namespace=App\\Service to drill down into the worst namespace
+```
+
+**Drill-down with `--namespace` and `--class`:**
+
+```bash
+# Show violations for a specific namespace subtree
+bin/aimd check src/ --namespace=App\\Service
+
+# Show violations for a specific class
+bin/aimd check src/ --class=App\\Service\\UserService
+```
+
+**Detail mode with `--detail`:**
+
+```bash
+# Append grouped violation list (default limit: 200)
+bin/aimd check src/ --detail
+
+# Show all violations (no limit)
+bin/aimd check src/ --detail=all
+
+# Custom limit
+bin/aimd check src/ --detail=50
+```
+
+!!! note
+    `--detail` is auto-enabled when using `--namespace` or `--class`.
+
+---
+
+## text
 
 Compact, one-line-per-violation output. Compatible with GCC/Clang error format, so violations are clickable in most terminals and IDEs.
 
@@ -357,18 +423,54 @@ Annotations appear directly on the changed lines in your pull request — no SAR
 
 ---
 
+## html
+
+Interactive treemap report with D3.js visualization. Generates a self-contained single HTML file with namespace/class hierarchy.
+
+**When to use:** Project-wide visualization, stakeholder reports, team reviews.
+
+**Key features:**
+
+- Namespace/class hierarchy with LOC-proportional sizing
+- Color-coded health scores per node
+- Click to drill down into namespaces
+- Detail panel with metrics, violations, and decomposition
+- Self-contained single HTML file (no external dependencies)
+
+**Usage:**
+
+```bash
+bin/aimd check src/ --format=html -o report.html
+```
+
+**Example workflow:**
+
+```bash
+# Generate and open the report
+bin/aimd check src/ --format=html -o report.html
+open report.html  # macOS
+xdg-open report.html  # Linux
+```
+
+!!! note
+    The `-o` (output) flag is recommended with `html` format. Without it, HTML content is written to stdout.
+
+---
+
 ## Comparison table
 
-| Format         | Readable | Machine   | Grouping                     | CI Integration             |
-| -------------- | -------- | --------- | ---------------------------- | -------------------------- |
-| `text`         | Good     | Parseable | `--group-by`                 | Any (exit code)            |
-| `text-verbose` | Best     | No        | `--group-by` (default: file) | Any (exit code)            |
-| `json`         | No       | Yes       | Built-in (by file)           | Custom scripts             |
-| `metrics-json` | No       | Yes       | Built-in (by symbol)         | Custom scripts, dashboards |
-| `checkstyle`   | No       | Yes       | Built-in (by file)           | Jenkins, SonarQube         |
-| `sarif`        | No       | Yes       | Built-in                     | GitHub, VS Code, JetBrains |
-| `gitlab`       | No       | Yes       | Flat list                    | GitLab MR widget           |
-| `github`       | No       | No        | Flat list                    | GitHub Actions annotations |
+| Format         | Readable    | Machine   | Grouping                     | CI Integration             |
+| -------------- | ----------- | --------- | ---------------------------- | -------------------------- |
+| `summary`      | Best        | No        | Health scores, drill-down    | Any (exit code)            |
+| `text`         | Good        | Parseable | `--group-by`                 | Any (exit code)            |
+| `text-verbose` | Good        | No        | `--group-by` (default: file) | Any (exit code)            |
+| `json`         | No          | Yes       | Built-in (by file)           | Custom scripts             |
+| `metrics-json` | No          | Yes       | Built-in (by symbol)         | Custom scripts, dashboards |
+| `checkstyle`   | No          | Yes       | Built-in (by file)           | Jenkins, SonarQube         |
+| `sarif`        | No          | Yes       | Built-in                     | GitHub, VS Code, JetBrains |
+| `gitlab`       | No          | Yes       | Flat list                    | GitLab MR widget           |
+| `github`       | No          | No        | Flat list                    | GitHub Actions annotations |
+| `html`         | Interactive | No        | Treemap hierarchy            | Reports, reviews           |
 
 ### Exit codes
 

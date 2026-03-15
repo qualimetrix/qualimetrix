@@ -71,6 +71,7 @@ These rules measure how tightly your classes depend on each other. Tightly coupl
 | [CBO](coupling.md)         | `coupling.cbo`         | Total number of dependencies                              | 14              | 20            |
 | [Instability](coupling.md) | `coupling.instability` | How much a class depends on others vs others depend on it | 0.8             | 0.95          |
 | [Distance](coupling.md)    | `coupling.distance`    | Balance between abstractness and stability                | 0.3             | 0.5           |
+| [ClassRank](coupling.md)   | `coupling.class-rank`  | Critical hub classes via PageRank algorithm               | 0.02            | 0.05          |
 
 [Read more about Coupling rules --&gt;](coupling.md)
 
@@ -104,20 +105,24 @@ These rules detect duplicated code blocks across your codebase using token-strea
 
 These rules detect common bad practices that are almost always wrong, regardless of context. Most produce an **Error** severity by default.
 
-| Rule                                      | ID                                   | What it detects                                                 |
-| ----------------------------------------- | ------------------------------------ | --------------------------------------------------------------- |
-| [Boolean Argument](code-smell.md)         | `code-smell.boolean-argument`        | `bool` parameters in method signatures                          |
-| [Count in Loop](code-smell.md)            | `code-smell.count-in-loop`           | Calling `count()` in a loop condition                           |
-| [Debug Code](code-smell.md)               | `code-smell.debug-code`              | `var_dump`, `print_r`, `debug_backtrace`, etc.                  |
-| [Empty Catch](code-smell.md)              | `code-smell.empty-catch`             | `catch` blocks with no body                                     |
-| [Error Suppression](code-smell.md)        | `code-smell.error-suppression`       | The `@` error suppression operator                              |
-| [Eval](code-smell.md)                     | `code-smell.eval`                    | Use of `eval()`                                                 |
-| [Exit](code-smell.md)                     | `code-smell.exit`                    | Use of `exit()` or `die()`                                      |
-| [Goto](code-smell.md)                     | `code-smell.goto`                    | Use of `goto`                                                   |
-| [Superglobals](code-smell.md)             | `code-smell.superglobals`            | Direct access to `$_GET`, `$_POST`, etc.                        |
-| [Long Parameter List](code-smell.md)      | `code-smell.long-parameter-list`     | Methods with too many parameters                                |
-| [Unreachable Code](code-smell.md)         | `code-smell.unreachable-code`        | Code after return/throw/exit statements                         |
-| [Identical Sub-expression](code-smell.md) | `code-smell.identical-subexpression` | Identical operands, duplicate conditions, same ternary branches |
+| Rule                                        | ID                                     | What it detects                                                 |
+| ------------------------------------------- | -------------------------------------- | --------------------------------------------------------------- |
+| [Boolean Argument](code-smell.md)           | `code-smell.boolean-argument`          | `bool` parameters in method signatures                          |
+| [Count in Loop](code-smell.md)              | `code-smell.count-in-loop`             | Calling `count()` in a loop condition                           |
+| [Debug Code](code-smell.md)                 | `code-smell.debug-code`                | `var_dump`, `print_r`, `debug_backtrace`, etc.                  |
+| [Empty Catch](code-smell.md)                | `code-smell.empty-catch`               | `catch` blocks with no body                                     |
+| [Error Suppression](code-smell.md)          | `code-smell.error-suppression`         | The `@` error suppression operator                              |
+| [Eval](code-smell.md)                       | `code-smell.eval`                      | Use of `eval()`                                                 |
+| [Exit](code-smell.md)                       | `code-smell.exit`                      | Use of `exit()` or `die()`                                      |
+| [Goto](code-smell.md)                       | `code-smell.goto`                      | Use of `goto`                                                   |
+| [Superglobals](code-smell.md)               | `code-smell.superglobals`              | Direct access to `$_GET`, `$_POST`, etc.                        |
+| [Long Parameter List](code-smell.md)        | `code-smell.long-parameter-list`       | Methods with too many parameters                                |
+| [Unreachable Code](code-smell.md)           | `code-smell.unreachable-code`          | Code after return/throw/exit statements                         |
+| [Identical Sub-expression](code-smell.md)   | `code-smell.identical-subexpression`   | Identical operands, duplicate conditions, same ternary branches |
+| [Constructor Over-injection](code-smell.md) | `code-smell.constructor-overinjection` | Too many constructor dependencies                               |
+| [Data Class](code-smell.md)                 | `code-smell.data-class`                | High public surface but low complexity (getter/setter classes)  |
+| [God Class](code-smell.md)                  | `code-smell.god-class`                 | Overly complex, large classes with low cohesion                 |
+| [Unused Private](code-smell.md)             | `code-smell.unused-private`            | Unused private methods, properties, constants                   |
 
 [Read more about Code Smell rules --&gt;](code-smell.md)
 
@@ -125,9 +130,13 @@ These rules detect common bad practices that are almost always wrong, regardless
 
 These rules detect patterns that may introduce security vulnerabilities.
 
-| Rule                                 | ID                               | What it detects                     |
-| ------------------------------------ | -------------------------------- | ----------------------------------- |
-| [Hardcoded Credentials](security.md) | `security.hardcoded-credentials` | Passwords, API keys, tokens in code |
+| Rule                                 | ID                               | What it detects                          |
+| ------------------------------------ | -------------------------------- | ---------------------------------------- |
+| [Hardcoded Credentials](security.md) | `security.hardcoded-credentials` | Passwords, API keys, tokens in code      |
+| [SQL Injection](security.md)         | `security.sql-injection`         | Superglobals in SQL queries              |
+| [XSS](security.md)                   | `security.xss`                   | Unsanitized superglobals in echo/print   |
+| [Command Injection](security.md)     | `security.command-injection`     | Superglobals in shell functions          |
+| [Sensitive Parameter](security.md)   | `security.sensitive-parameter`   | Missing #[\SensitiveParameter] attribute |
 
 [Read more about Security rules --&gt;](security.md)
 

@@ -56,14 +56,14 @@ bin/aimd check src/ --exclude-path="src/Entity/*" --exclude-path="src/DTO/*"
 
 ### `--format`, `-f`
 
-Choose the output format. Default: `text`.
+Choose the output format. Default: `summary`.
 
 ```bash
 bin/aimd check src/ --format=json
 bin/aimd check src/ --format=sarif
 ```
 
-Available formats: `text`, `text-verbose`, `json`, `metrics-json`, `checkstyle`, `sarif`, `gitlab`, `github`.
+Available formats: `summary`, `text`, `text-verbose`, `json`, `metrics-json`, `checkstyle`, `sarif`, `gitlab`, `github`, `html`.
 
 See [Output Formats](output-formats.md) for details on each format.
 
@@ -104,6 +104,47 @@ Can also be set in `aimd.yaml`:
 ```yaml
 fail_on: error
 ```
+
+### `--detail`
+
+Show a grouped violation list after the summary. Only affects `summary` format.
+
+```bash
+# Default limit (200 violations)
+bin/aimd check src/ --detail
+
+# Show all violations (no limit)
+bin/aimd check src/ --detail=all
+
+# Custom limit
+bin/aimd check src/ --detail=50
+```
+
+Auto-enabled when `--namespace` or `--class` is used.
+
+### `--namespace`
+
+Filter output to a specific namespace subtree. Uses boundary-aware prefix matching.
+
+```bash
+bin/aimd check src/ --namespace=App\\Service
+```
+
+Filters violations and worst offenders to the specified namespace. Shows subtree health scores. Auto-enables `--detail`.
+
+Mutually exclusive with `--class`.
+
+### `--class`
+
+Filter output to a specific class by exact FQCN match.
+
+```bash
+bin/aimd check src/ --class=App\\Service\\UserService
+```
+
+Filters violations to the specified class. Auto-enables `--detail`.
+
+Mutually exclusive with `--namespace`.
 
 ---
 
@@ -497,4 +538,31 @@ bin/aimd hook:uninstall
 
 # Restore the original hook from backup
 bin/aimd hook:uninstall --restore-backup
+```
+
+### rules
+
+List all available rules with their descriptions and CLI options:
+
+```bash
+# List all rules
+bin/aimd rules
+
+# Filter by group
+bin/aimd rules --group=complexity
+```
+
+**Example output:**
+
+```
+complexity.cyclomatic    Cyclomatic complexity (McCabe)
+  --cyclomatic-warning=N         method.warning (default: 10)
+  --cyclomatic-error=N           method.error (default: 20)
+  --cyclomatic-class-warning=N   class.max_warning (default: 50)
+  --cyclomatic-class-error=N     class.max_error (default: 100)
+
+complexity.cognitive     Cognitive complexity (SonarSource)
+  --cognitive-warning=N          method.warning (default: 8)
+  --cognitive-error=N            method.error (default: 15)
+  ...
 ```

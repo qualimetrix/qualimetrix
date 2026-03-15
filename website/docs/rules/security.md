@@ -2,6 +2,9 @@
 
 Security rules detect patterns that may introduce security vulnerabilities into your codebase. These rules focus on finding credentials, secrets, and other sensitive data that should never be hardcoded.
 
+!!! note "Scope limitation"
+    These security rules detect only **direct superglobal usage** patterns (`$_GET`, `$_POST`, etc.). They do NOT perform taint analysis or track data flow through variables. For deeper security analysis with taint tracking, consider dedicated tools like [PHPStan Security](https://github.com/phpstan/phpstan-security), [Psalm Taint Analysis](https://psalm.dev/docs/security_analysis/), or [SonarQube](https://www.sonarqube.org/).
+
 ---
 
 ## Hardcoded Credentials

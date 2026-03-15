@@ -76,6 +76,50 @@ rules:
 
 This means: report a **warning** when a method's cyclomatic complexity reaches 15, and an **error** when it reaches 25.
 
+### Disabled Rules
+
+Disable specific rules or entire groups:
+
+```yaml
+disabled_rules:
+  - code-smell.boolean-argument
+  - duplication
+```
+
+Equivalent CLI: `--disable-rule=code-smell.boolean-argument --disable-rule=duplication`
+
+### Only Rules
+
+Run only specified rules (everything else is disabled):
+
+```yaml
+only_rules:
+  - complexity.cyclomatic
+  - complexity.cognitive
+```
+
+Equivalent CLI: `--only-rule=complexity.cyclomatic --only-rule=complexity.cognitive`
+
+### Fail On
+
+Control which severity levels cause a non-zero exit code:
+
+```yaml
+fail_on: error    # Only fail on errors (warnings exit 0)
+# fail_on: warning  # Fail on warnings too (default)
+# fail_on: none     # Never fail on violations
+```
+
+### Format
+
+Set the default output format:
+
+```yaml
+format: summary   # Default
+# format: json
+# format: html
+```
+
 ---
 
 ## Full Example
@@ -92,6 +136,13 @@ exclude_paths:
   - src/Entity/*
   - src/DTO/*
 
+format: summary
+fail_on: error
+
+disabled_rules:
+  - code-smell.boolean-argument
+  - duplication
+
 rules:
   complexity.cyclomatic:
     method:
@@ -101,9 +152,6 @@ rules:
   size.method-count:
     warning: 25
     error: 40
-
-  code-smell.boolean-argument:
-    enabled: false
 ```
 
 ---

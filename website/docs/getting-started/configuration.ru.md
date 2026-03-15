@@ -76,6 +76,50 @@ rules:
 
 Это означает: выдавать **предупреждение** (warning), когда цикломатическая сложность метода достигает 15, и **ошибку** (error), когда достигает 25.
 
+### Отключение правил (disabled_rules)
+
+Отключение конкретных правил или целых групп:
+
+```yaml
+disabled_rules:
+  - code-smell.boolean-argument
+  - duplication
+```
+
+Эквивалент в CLI: `--disable-rule=code-smell.boolean-argument --disable-rule=duplication`
+
+### Только указанные правила (only_rules)
+
+Запустить только указанные правила (все остальные отключаются):
+
+```yaml
+only_rules:
+  - complexity.cyclomatic
+  - complexity.cognitive
+```
+
+Эквивалент в CLI: `--only-rule=complexity.cyclomatic --only-rule=complexity.cognitive`
+
+### Условие завершения с ошибкой (fail_on)
+
+Управление тем, какие уровни серьёзности приводят к ненулевому коду завершения:
+
+```yaml
+fail_on: error    # Завершение с ошибкой только при error (warning даёт код 0)
+# fail_on: warning  # Завершение с ошибкой и при warning (по умолчанию)
+# fail_on: none     # Никогда не завершаться с ошибкой из-за нарушений
+```
+
+### Формат вывода (format)
+
+Формат отчёта по умолчанию:
+
+```yaml
+format: summary   # По умолчанию
+# format: json
+# format: html
+```
+
 ---
 
 ## Полный пример
@@ -92,6 +136,13 @@ exclude_paths:
   - src/Entity/*
   - src/DTO/*
 
+format: summary
+fail_on: error
+
+disabled_rules:
+  - code-smell.boolean-argument
+  - duplication
+
 rules:
   complexity.cyclomatic:
     method:
@@ -101,9 +152,6 @@ rules:
   size.method-count:
     warning: 25
     error: 40
-
-  code-smell.boolean-argument:
-    enabled: false
 ```
 
 ---

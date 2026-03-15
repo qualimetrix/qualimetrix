@@ -8,6 +8,74 @@
 
 ---
 
+## Первый запуск анализа
+
+### Установка
+
+```bash
+composer require --dev fractalizer/ai-mess-detector
+```
+
+### Запуск анализа
+
+```bash
+vendor/bin/aimd check src/
+```
+
+### Интерпретация результатов
+
+По умолчанию выводится сводка состояния проекта с оценками по категориям:
+
+```
+AI Mess Detector — 127 files analyzed, 2.3s
+
+Health ████████████████████░░░░░░░░░░ 67.2% Acceptable
+
+  Complexity      ██████████████████████████░░░░ 85.1% Strong
+  Cohesion        ████████████░░░░░░░░░░░░░░░░░░ 42.3% Weak
+  Coupling        █████████████████░░░░░░░░░░░░░ 55.8% Acceptable
+  Typing          ████████████████████████████░░ 92.0% Strong
+  Maintainability ████████████████████░░░░░░░░░░ 64.5% Acceptable
+
+Worst namespaces
+  38 App\Service (12 classes, 28 violations) — low cohesion, high coupling
+  42 App\Repository (8 classes, 15 violations) — low cohesion
+
+45 violations (12 errors, 33 warnings) | Tech debt: 2d 4h (8.5 min/kLOC)
+
+Hints: --detail to see violations (top 200) | --namespace='App\Service' to drill down | --format=html -o report.html for full report
+```
+
+Каждая категория получает метку: **Strong** (хорошо), **Acceptable** (есть куда расти), **Weak** (требует внимания) или **Critical** (необходимы действия). Секция "Worst namespaces" показывает, на чём стоит сосредоточиться в первую очередь.
+
+### Детализация по пространству имён
+
+Изучите конкретное пространство имён, чтобы увидеть его классы и нарушения:
+
+```bash
+vendor/bin/aimd check src/ --namespace='App\Service'
+```
+
+### Просмотр детальных нарушений
+
+Вывод отдельных нарушений с путями к файлам, номерами строк и рекомендациями по исправлению:
+
+```bash
+vendor/bin/aimd check src/ --detail
+```
+
+### Генерация HTML-отчёта
+
+Для полного интерактивного отчёта с графиками и навигацией:
+
+```bash
+vendor/bin/aimd check src/ --format=html -o report.html
+```
+
+Откройте `report.html` в браузере для изучения результатов.
+
+---
+
 ## 1. Pre-commit хук
 
 Автоматическая проверка подготовленных (staged) файлов перед каждым коммитом.
