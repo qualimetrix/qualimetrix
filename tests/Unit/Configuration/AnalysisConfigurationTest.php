@@ -19,7 +19,7 @@ final class AnalysisConfigurationTest extends TestCase
 
         self::assertSame('.aimd-cache', $config->cacheDir);
         self::assertTrue($config->cacheEnabled);
-        self::assertSame('text', $config->format);
+        self::assertSame('summary', $config->format);
         self::assertSame('chain', $config->namespaceStrategy);
         self::assertNull($config->composerJsonPath);
         self::assertSame([], $config->aggregationPrefixes);
@@ -36,7 +36,7 @@ final class AnalysisConfigurationTest extends TestCase
 
         self::assertSame('.aimd-cache', $config->cacheDir);
         self::assertTrue($config->cacheEnabled);
-        self::assertSame('text', $config->format);
+        self::assertSame('summary', $config->format);
     }
 
     public function testFromArrayWithValues(): void

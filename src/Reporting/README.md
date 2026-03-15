@@ -33,7 +33,7 @@ Reporting/
 ├── DecompositionItem.php                  # VO: one contributing metric in a health score breakdown
 ├── HealthScore.php                        # VO: one health dimension (complexity, cohesion, etc.)
 ├── WorstOffender.php                      # VO: a namespace or class ranked by health
-├── FormatterContext.php                    # Context passed to formatters (color, grouping, options)
+├── FormatterContext.php                    # Context passed to formatters (color, grouping, filters, options)
 ├── GroupBy.php                             # Grouping mode enum (None, File, Rule, Severity)
 ├── AnsiColor.php                           # Lightweight ANSI color wrapper
 ├── ViolationSorter.php                     # Sorting/grouping utility for violations
@@ -45,6 +45,7 @@ Reporting/
     ├── FormatterInterface.php              # Formatter contract
     ├── FormatterRegistryInterface.php      # Registry contract
     ├── FormatterRegistry.php               # Registry implementation
+    ├── SummaryFormatter.php                # Default: health overview + worst offenders + hints
     ├── TextFormatter.php                   # Compact text output (with colors)
     ├── TextVerboseFormatter.php            # Verbose text output (grouped, colored)
     ├── JsonFormatter.php                   # PHPMD-compatible JSON
@@ -99,6 +100,8 @@ final readonly class FormatterContext
         public array $options = [],        // from --format-opt key=value
         public string $basePath = '',      // for relativizing file paths
         public bool $partialAnalysis = false, // git:staged or similar partial mode
+        public ?string $namespace = null,  // --namespace filter (boundary-aware prefix)
+        public ?string $class = null,      // --class filter (exact FQCN match)
     ) {}
 
     public function getOption(string $key, string $default = ''): string;
@@ -205,6 +208,16 @@ final class MetricHintProvider
 }
 ```
 
+### SummaryFormatter
+
+**Name:** `summary` (default) | **Default grouping:** `none`
+
+One-screen health overview with worst offenders and contextual hints. Shows health bars for 6 dimensions (complexity, cohesion, coupling, typing, maintainability, overall), top-3 worst namespaces/classes, violation summary, and actionable hints.
+
+Supports `--namespace` and `--class` for drill-down (filtering worst offenders). Handles edge cases: partial analysis (no health scores), missing metrics, single file (no namespace section), zero violations, narrow terminals (no bars).
+
+ASCII fallback with `AIMD_ASCII=1` env variable.
+
 ### TextFormatter
 
 **Name:** `text` | **Default grouping:** `none`
@@ -228,6 +241,10 @@ Human-readable verbose output with:
 ## CLI Options
 
 ```bash
+# Drill-down (mutually exclusive, works with summary/text/json)
+bin/aimd check src/ --namespace=App\\Service   # filter by namespace prefix (boundary-aware)
+bin/aimd check src/ --class=App\\Service\\UserService  # filter by exact FQCN
+
 # Grouping (overrides formatter default)
 bin/aimd check src/ --group-by=file      # group by file
 bin/aimd check src/ --group-by=rule      # group by rule name
@@ -242,6 +259,28 @@ bin/aimd check src/ --no-ansi
 ```
 
 ## Output Examples
+
+### SummaryFormatter (default)
+
+```
+AI Mess Detector — 412 files analyzed, 3.2s
+
+Health █████████████████████░░░░░░░░░ 68% Good
+
+  Complexity      ████████████████░░░░░░░░░░░░░░ 54% Good
+  Cohesion        ███████████████████░░░░░░░░░░░ 63% Good
+  Coupling        ███████████████████░░░░░░░░░░░ 62% Good
+  Typing          ██████████████████████████████ 99% Good
+  Maintainability ██████████████████████░░░░░░░░ 74% Good
+
+Worst namespaces
+  46 App\Metrics\Halstead (3 classes, 29 violations) — high coupling, high complexity
+  49 App\Metrics\Complexity (6 classes, 51 violations) — high coupling
+
+1251 violations (384 errors, 867 warnings) | Tech debt: 63d 5h 35min
+
+Hints: --format=text to see all violations | --namespace="App\Metrics\Halstead" to drill down | --format=html -o report.html for full report
+```
 
 ### TextFormatter (`--format=text`)
 
@@ -272,16 +311,17 @@ Files: 1 analyzed, 0 skipped | Errors: 1 | Warnings: 1 | Time: 0.23s
 
 ## Implemented Formats
 
-| Format       | Name           | Description                                   | Integration                |
-| ------------ | -------------- | --------------------------------------------- | -------------------------- |
-| Text         | `text`         | Compact human-readable text output            | CLI                        |
-| Text Verbose | `text-verbose` | Detailed text output with sorting by severity | CLI                        |
-| JSON         | `json`         | PHPMD-compatible JSON for CI/CD               | Generic CI/CD              |
-| Checkstyle   | `checkstyle`   | Checkstyle XML for CI systems                 | Jenkins, SonarQube         |
-| SARIF        | `sarif`        | SARIF 2.1.0 for static analysis               | GitHub, VS Code, JetBrains |
-| GitLab       | `gitlab`       | Code Climate JSON for GitLab MR               | GitLab CI                  |
-| Metrics JSON | `metrics-json` | Raw metric values for all symbols             | Dashboards, cross-tool     |
-| HTML         | `html`         | Interactive treemap report with D3.js         | Browser, CI artifacts      |
+| Format       | Name           | Description                                    | Integration                |
+| ------------ | -------------- | ---------------------------------------------- | -------------------------- |
+| Summary      | `summary`      | **Default.** Health overview + worst offenders | CLI                        |
+| Text         | `text`         | Compact human-readable text output             | CLI                        |
+| Text Verbose | `text-verbose` | Detailed text output with sorting by severity  | CLI                        |
+| JSON         | `json`         | PHPMD-compatible JSON for CI/CD                | Generic CI/CD              |
+| Checkstyle   | `checkstyle`   | Checkstyle XML for CI systems                  | Jenkins, SonarQube         |
+| SARIF        | `sarif`        | SARIF 2.1.0 for static analysis                | GitHub, VS Code, JetBrains |
+| GitLab       | `gitlab`       | Code Climate JSON for GitLab MR                | GitLab CI                  |
+| Metrics JSON | `metrics-json` | Raw metric values for all symbols              | Dashboards, cross-tool     |
+| HTML         | `html`         | Interactive treemap report with D3.js          | Browser, CI artifacts      |
 
 ## JsonFormatter
 
@@ -469,20 +509,22 @@ $report->techDebtMinutes  // int — total remediation time
 
 ## Formatter Comparison
 
-| Characteristic          | Text   | Text Verbose | JSON    | Checkstyle        | SARIF        | GitLab | Metrics JSON | HTML            |
-| ----------------------- | ------ | ------------ | ------- | ----------------- | ------------ | ------ | ------------ | --------------- |
-| **ANSI Colors**         | Yes    | Yes          | No      | No                | No           | No     | No           | No              |
-| **Grouping**            | No     | Yes (file)   | No      | No                | No           | No     | No           | No              |
-| **Readability**         | High   | High         | No      | No                | No           | No     | No           | Visual          |
-| **CI/CD integration**   | No     | No           | Generic | Jenkins/SonarQube | GitHub/Azure | GitLab | Custom       | CI artifacts    |
-| **IDE support**         | No     | No           | No      | Limited           | VS Code/JB   | No     | No           | No              |
-| **PHPMD compatibility** | Full   | No           | Full    | Full              | No           | No     | No           | No              |
-| **Fingerprinting**      | No     | No           | No      | No                | No           | Yes    | No           | No              |
-| **Output**              | STDOUT | STDOUT       | STDOUT  | STDOUT            | STDOUT       | STDOUT | STDOUT       | File (--output) |
+| Characteristic          | Summary | Text   | Text Verbose | JSON    | Checkstyle        | SARIF        | GitLab | Metrics JSON | HTML            |
+| ----------------------- | ------- | ------ | ------------ | ------- | ----------------- | ------------ | ------ | ------------ | --------------- |
+| **ANSI Colors**         | Yes     | Yes    | Yes          | No      | No                | No           | No     | No           | No              |
+| **Health overview**     | Yes     | No     | No           | No      | No                | No           | No     | No           | Yes             |
+| **Grouping**            | No      | No     | Yes (file)   | No      | No                | No           | No     | No           | No              |
+| **Readability**         | High    | High   | High         | No      | No                | No           | No     | No           | Visual          |
+| **CI/CD integration**   | No      | No     | No           | Generic | Jenkins/SonarQube | GitHub/Azure | GitLab | Custom       | CI artifacts    |
+| **IDE support**         | No      | No     | No           | No      | Limited           | VS Code/JB   | No     | No           | No              |
+| **PHPMD compatibility** | No      | Full   | No           | Full    | Full              | No           | No     | No           | No              |
+| **Fingerprinting**      | No      | No     | No           | No      | No                | No           | Yes    | No           | No              |
+| **Output**              | STDOUT  | STDOUT | STDOUT       | STDOUT  | STDOUT            | STDOUT       | STDOUT | STDOUT       | File (--output) |
 
 ### Choosing the Right Format
 
-- **CLI usage (compact)** -> `text`
+- **CLI usage (overview)** -> `summary` (default)
+- **CLI usage (compact violations)** -> `text`
 - **CLI usage (detailed)** -> `text-verbose`
 - **Generic CI/CD** (GitLab CI, CircleCI, Travis) -> `json`
 - **Jenkins / SonarQube** -> `checkstyle`

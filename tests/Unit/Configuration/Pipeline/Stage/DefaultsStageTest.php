@@ -45,7 +45,7 @@ final class DefaultsStageTest extends TestCase
         self::assertSame(['vendor', 'node_modules', '.git'], $layer->values['excludes']);
         self::assertSame('.aimd-cache', $layer->values['cache.dir']);
         self::assertTrue($layer->values['cache.enabled']);
-        self::assertSame('text', $layer->values['format']);
+        self::assertSame('summary', $layer->values['format']);
         self::assertSame('chain', $layer->values['namespace.strategy']);
     }
 }

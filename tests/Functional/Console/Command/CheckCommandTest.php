@@ -43,6 +43,7 @@ final class CheckCommandTest extends TestCase
         $commandTester = $this->createCommandTester();
         $commandTester->execute([
             'paths' => [$this->tempDir],
+            '--format' => 'text',
             '--no-progress' => true,
             '--disable-rule' => ['computed.health'],
         ]);
@@ -90,6 +91,7 @@ class ComplexClass {
         $commandTester = $this->createCommandTester();
         $commandTester->execute([
             'paths' => [$this->tempDir],
+            '--format' => 'text',
             '--no-progress' => true,
         ]);
 
@@ -139,6 +141,7 @@ class ComplexClass {
         $commandTester = $this->createCommandTester();
         $commandTester->execute([
             'paths' => [$nonExistentPath],
+            '--format' => 'text',
             '--no-progress' => true,
             '--disable-rule' => ['computed.health'],
         ]);
@@ -168,6 +171,7 @@ class ComplexClass {
         $commandTester->execute([
             'paths' => [$this->tempDir],
             '--exclude' => ['vendor'],
+            '--format' => 'text',
             '--no-progress' => true,
             '--disable-rule' => ['computed.health'],
         ]);

@@ -17,6 +17,9 @@ final readonly class FormatterContext
      * @param array<string, string> $options Formatter-specific options from --format-opt
      * @param string $basePath Base directory for relativizing file paths in output (e.g., CWD)
      * @param bool $partialAnalysis Whether this is a partial analysis (e.g., git:staged)
+     * @param string|null $namespace Namespace filter for drill-down (boundary-aware prefix match)
+     * @param string|null $class Class filter for drill-down (exact FQCN match)
+     * @param int $terminalWidth Terminal width for adaptive rendering (0 = use default 80)
      */
     public function __construct(
         public bool $useColor = true,
@@ -24,6 +27,9 @@ final readonly class FormatterContext
         public array $options = [],
         public string $basePath = '',
         public bool $partialAnalysis = false,
+        public ?string $namespace = null,
+        public ?string $class = null,
+        public int $terminalWidth = 0,
     ) {}
 
     public function getOption(string $key, string $default = ''): string

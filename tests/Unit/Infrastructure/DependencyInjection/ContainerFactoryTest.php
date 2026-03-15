@@ -229,6 +229,7 @@ final class ContainerFactoryTest extends TestCase
         self::assertInstanceOf(FormatterRegistryInterface::class, $registry);
 
         $expectedFormatters = [
+            'summary',
             'text',
             'text-verbose',
             'json',
