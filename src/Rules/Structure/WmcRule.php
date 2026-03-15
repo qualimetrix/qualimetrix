@@ -78,6 +78,10 @@ final class WmcRule extends AbstractRule
             $severity = $this->options->getSeverity($wmcValue);
 
             if ($severity !== null) {
+                $threshold = $severity === Severity::Error
+                    ? $this->options->error
+                    : $this->options->warning;
+
                 $violations[] = new Violation(
                     location: new Location($classInfo->file, $classInfo->line),
                     symbolPath: $classInfo->symbolPath,
@@ -86,12 +90,12 @@ final class WmcRule extends AbstractRule
                     message: \sprintf(
                         'WMC (Weighted Methods per Class) is %d, exceeds threshold of %d. Simplify methods or split the class',
                         $wmcValue,
-                        $severity === Severity::Error
-                            ? $this->options->error
-                            : $this->options->warning,
+                        $threshold,
                     ),
                     severity: $severity,
                     metricValue: $wmcValue,
+                    humanMessage: \sprintf('WMC: %d (max %d) — total method complexity is high', $wmcValue, $threshold),
+                    threshold: $threshold,
                 );
             }
         }

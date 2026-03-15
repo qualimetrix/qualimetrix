@@ -40,6 +40,8 @@ use AiMessDetector\Infrastructure\Rule\RuleRegistryInterface;
 use AiMessDetector\Reporting\Formatter\FormatterInterface;
 use AiMessDetector\Reporting\Formatter\FormatterRegistry;
 use AiMessDetector\Reporting\Formatter\FormatterRegistryInterface;
+use AiMessDetector\Reporting\MetricHintProvider;
+use AiMessDetector\Reporting\SummaryEnricher;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -83,6 +85,13 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
             $this->srcDir . '/Reporting/Formatter/*',
             $this->srcDir . '/Reporting/Formatter/{*Interface.php,FormatterRegistry.php}',
         );
+
+        // MetricHintProvider (pure data class, no dependencies)
+        $container->register(MetricHintProvider::class);
+
+        // SummaryEnricher (depends on DebtCalculator and MetricHintProvider)
+        $container->register(SummaryEnricher::class)
+            ->setAutowired(true);
 
         // FormatterRegistry will be populated by compiler pass
         $container->register(FormatterRegistry::class)
@@ -147,6 +156,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(BaselineGenerator::class),
                 new Reference(BaselineWriter::class),
                 new Reference(ConfigurationProviderInterface::class),
+                new Reference(SummaryEnricher::class),
             ]);
 
         // CheckCommand with all dependencies injected

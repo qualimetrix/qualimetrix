@@ -22,6 +22,8 @@ final readonly class Violation
         public int|float|null $metricValue = null,
         public ?RuleLevel $level = null,
         public array $relatedLocations = [],
+        public ?string $humanMessage = null,
+        public int|float|null $threshold = null,
     ) {}
 
     /**

@@ -494,6 +494,8 @@ A rule violation.
 - `metricValue: int|float|null` — metric value (for reports)
 - `level: ?RuleLevel` — rule level that produced this violation (null for non-hierarchical rules)
 - `relatedLocations: list<Location>` — additional locations related to this violation (e.g., other occurrences of duplicated code)
+- `humanMessage: ?string` — human-readable message for summary/detail formatters (e.g., "Cyclomatic complexity: 15 (max 10) — too many code paths")
+- `threshold: int|float|null` — threshold that was exceeded (for programmatic comparison)
 
 **Methods:**
 - `getFingerprint(): string` — unique identifier for baseline (`ruleName:symbolPath`)

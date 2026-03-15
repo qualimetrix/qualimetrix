@@ -99,6 +99,8 @@ final class MaintainabilityRule extends AbstractRule
                     ),
                     severity: $severity,
                     metricValue: round($miValue, 1),
+                    humanMessage: \sprintf('MI: %.1f (min %.1f) — code is hard to change safely', $miValue, $threshold),
+                    threshold: $threshold,
                 );
             }
         }

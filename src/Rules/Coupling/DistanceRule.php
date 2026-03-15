@@ -113,6 +113,8 @@ final class DistanceRule extends AbstractRule
                 $abstractness = (float) ($metrics->get(MetricName::COUPLING_ABSTRACTNESS) ?? 0.0);
                 $instability = (float) ($metrics->get(MetricName::COUPLING_INSTABILITY) ?? 0.0);
 
+                $threshold = $severity === Severity::Error ? $this->options->maxDistanceError : $this->options->maxDistanceWarning;
+
                 $violations[] = new Violation(
                     location: new Location($nsInfo->file, $nsInfo->line),
                     symbolPath: $nsInfo->symbolPath,
@@ -123,10 +125,12 @@ final class DistanceRule extends AbstractRule
                         $distanceValue,
                         $abstractness,
                         $instability,
-                        $severity === Severity::Error ? $this->options->maxDistanceError : $this->options->maxDistanceWarning,
+                        $threshold,
                     ),
                     severity: $severity,
                     metricValue: $distanceValue,
+                    humanMessage: \sprintf('Distance: %.2f (max %.2f) — poor balance of abstraction and stability', $distanceValue, $threshold),
+                    threshold: $threshold,
                 );
             }
         }

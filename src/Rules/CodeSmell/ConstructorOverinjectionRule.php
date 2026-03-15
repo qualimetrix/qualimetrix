@@ -133,6 +133,8 @@ final class ConstructorOverinjectionRule extends AbstractRule
             ),
             severity: $severity,
             metricValue: $parameterCountValue,
+            humanMessage: \sprintf('Constructor parameters: %d (max %d) — consider splitting responsibilities', $parameterCountValue, $threshold),
+            threshold: $threshold,
         );
     }
 }

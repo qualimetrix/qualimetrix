@@ -17,6 +17,7 @@ use AiMessDetector\Reporting\Formatter\FormatterRegistryInterface;
 use AiMessDetector\Reporting\FormatterContext;
 use AiMessDetector\Reporting\GroupBy;
 use AiMessDetector\Reporting\ReportBuilder;
+use AiMessDetector\Reporting\SummaryEnricher;
 use InvalidArgumentException;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -33,6 +34,7 @@ final class ResultPresenter
         private readonly BaselineGenerator $baselineGenerator,
         private readonly BaselineWriter $baselineWriter,
         private readonly ConfigurationProviderInterface $configurationProvider,
+        private readonly SummaryEnricher $summaryEnricher,
     ) {}
 
     /**
@@ -67,6 +69,7 @@ final class ResultPresenter
             ->duration($analysisResult->duration)
             ->metrics($analysisResult->metrics)
             ->build();
+        $report = $this->summaryEnricher->enrich($report, $partialAnalysis);
         $formattedOutput = $formatter->format($report, $context);
 
         $this->writeOutput($formattedOutput, $format, $input, $output);

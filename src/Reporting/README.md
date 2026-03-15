@@ -26,8 +26,13 @@ Reporting is responsible for formatting analysis results for user output. It sup
 
 ```
 Reporting/
-├── Report.php                              # Report aggregate
+├── Report.php                              # Report aggregate (with health scores, worst offenders, tech debt)
 ├── ReportBuilder.php                       # Builder for creating reports
+├── SummaryEnricher.php                    # Enriches Report with health scores, worst offenders, tech debt
+├── MetricHintProvider.php                 # Single source of truth for metric display metadata
+├── DecompositionItem.php                  # VO: one contributing metric in a health score breakdown
+├── HealthScore.php                        # VO: one health dimension (complexity, cohesion, etc.)
+├── WorstOffender.php                      # VO: a namespace or class ranked by health
 ├── FormatterContext.php                    # Context passed to formatters (color, grouping, options)
 ├── GroupBy.php                             # Grouping mode enum (None, File, Rule, Severity)
 ├── AnsiColor.php                           # Lightweight ANSI color wrapper
@@ -157,12 +162,46 @@ final readonly class Report
         public float $duration,
         public int $errorCount,
         public int $warningCount,
+        public ?MetricRepositoryInterface $metrics = null,
+        public array $healthScores = [],       // array<string, HealthScore>
+        public array $worstNamespaces = [],    // list<WorstOffender>
+        public array $worstClasses = [],       // list<WorstOffender>
+        public int $techDebtMinutes = 0,
     ) {}
 
     public function isEmpty(): bool;
     public function getTotalViolations(): int;
     public function getViolationsBySeverity(Severity $severity): array;
     public function getExitCode(): int;
+}
+```
+
+### SummaryEnricher
+
+Enriches a base `Report` with health scores, worst offenders, and tech debt. Called in the pipeline between `ReportBuilder::build()` and `Formatter::format()`.
+
+```php
+final readonly class SummaryEnricher
+{
+    public function __construct(DebtCalculator $debtCalculator, MetricHintProvider $hintProvider);
+    public function enrich(Report $report): Report;
+}
+```
+
+### MetricHintProvider
+
+Single source of truth for metric display metadata (27 metrics, 6 health decompositions, 5 dimension labels). Used by `SummaryEnricher` and future formatters.
+
+```php
+final class MetricHintProvider
+{
+    public function getLabel(string $metricKey): ?string;
+    public function getExplanation(string $metricKey, float $value): string;
+    public function getGoodValue(string $metricKey): ?string;
+    public function getDirection(string $metricKey): ?string;
+    public function getDecomposition(string $healthDimension): array;
+    public function getScoreLabel(float $score, float $warnThreshold, float $errThreshold): string;
+    public function getHealthDimensionLabel(string $dimension, bool $bad): string;
 }
 ```
 
@@ -408,7 +447,9 @@ bin/aimd check src/ --format=metrics-json > metrics.json
 
 ```php
 $violation->severity      // Severity enum (Error, Warning, Info)
-$violation->message       // Violation description
+$violation->message       // Violation description (technical, for text/checkstyle/sarif)
+$violation->humanMessage  // ?string — human-readable message (for summary/detail/json)
+$violation->threshold     // int|float|null — threshold that was exceeded
 $violation->ruleName      // Rule name
 $violation->violationCode // Stable violation code for identification
 $violation->symbolPath    // SymbolPath object
@@ -420,6 +461,10 @@ $report->filesAnalyzed    // int
 $report->errorCount       // int
 $report->warningCount     // int
 $report->duration         // float (seconds)
+$report->healthScores     // array<string, HealthScore> — per-dimension health scores
+$report->worstNamespaces  // list<WorstOffender> — worst namespaces by health
+$report->worstClasses     // list<WorstOffender> — worst classes by health
+$report->techDebtMinutes  // int — total remediation time
 ```
 
 ## Formatter Comparison

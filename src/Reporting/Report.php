@@ -15,6 +15,9 @@ final readonly class Report
 {
     /**
      * @param list<Violation> $violations
+     * @param array<string, HealthScore> $healthScores
+     * @param list<WorstOffender> $worstNamespaces
+     * @param list<WorstOffender> $worstClasses
      */
     public function __construct(
         public array $violations,
@@ -24,6 +27,10 @@ final readonly class Report
         public int $errorCount,
         public int $warningCount,
         public ?MetricRepositoryInterface $metrics = null,
+        public array $healthScores = [],
+        public array $worstNamespaces = [],
+        public array $worstClasses = [],
+        public int $techDebtMinutes = 0,
     ) {}
 
     /**
