@@ -9,6 +9,7 @@ use InvalidArgumentException;
 use ReflectionClass;
 use ReflectionNamedType;
 use ReflectionParameter;
+use RuntimeException;
 
 /**
  * Factory for creating RuleOptions instances with merged configuration.
@@ -61,7 +62,10 @@ final class RuleOptionsFactory
         $cliRuleOptions = $this->expandDotNotation($this->cliOptions[$ruleName] ?? []);
         $merged = $this->deepMerge($merged, $cliRuleOptions);
 
-        // 4. Create instance using fromArray
+        // 4. Validate numeric fields before instantiation
+        $this->validateNumericFields($merged, $ruleName);
+
+        // 5. Create instance using fromArray
         return $optionsClass::fromArray($merged);
     }
 
@@ -275,6 +279,57 @@ final class RuleOptionsFactory
         }
 
         return $result;
+    }
+
+    /**
+     * Validates that numeric option fields contain actual numeric values.
+     *
+     * Detects when YAML config contains a non-numeric string for a field whose name
+     * suggests it should be numeric (e.g. threshold, warning, error, count, limit, etc.).
+     * PHP's (int) cast would silently coerce "not_a_number" to 0, hiding misconfiguration.
+     *
+     * @param array<string, mixed> $options
+     *
+     * @throws RuntimeException when a numeric field contains a non-numeric string value
+     */
+    private function validateNumericFields(array $options, string $ruleName, string $path = ''): void
+    {
+        // Key name suffixes/substrings that indicate a numeric value is expected.
+        static $numericPatterns = ['threshold', 'warning', 'error', 'count', 'limit', 'depth', 'min', 'max', 'size', 'length', 'weight', 'ratio', 'score'];
+
+        foreach ($options as $key => $value) {
+            $fullKey = $path !== '' ? "{$path}.{$key}" : (string) $key;
+
+            if (\is_array($value)) {
+                $this->validateNumericFields($value, $ruleName, $fullKey);
+
+                continue;
+            }
+
+            if (!\is_string($value)) {
+                continue;
+            }
+
+            $lowerKey = strtolower((string) $key);
+            $isNumericField = false;
+            foreach ($numericPatterns as $pattern) {
+                if (str_contains($lowerKey, $pattern)) {
+                    $isNumericField = true;
+                    break;
+                }
+            }
+
+            if ($isNumericField && (!is_numeric($value) || !is_finite((float) $value))) {
+                throw new RuntimeException(
+                    \sprintf(
+                        'Invalid configuration for rule "%s": option "%s" must be numeric, got "%s".',
+                        $ruleName,
+                        $fullKey,
+                        $value,
+                    ),
+                );
+            }
+        }
     }
 
     /**

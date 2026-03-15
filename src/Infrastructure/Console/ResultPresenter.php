@@ -48,6 +48,7 @@ final class ResultPresenter
         InputInterface $input,
         OutputInterface $output,
         bool $partialAnalysis = false,
+        bool $baselineGenerated = false,
     ): int {
         $profiler = $this->profilerHolder->get();
         $profiler->start('reporting', 'pipeline');
@@ -83,6 +84,12 @@ final class ResultPresenter
         $this->writeOutput($formattedOutput, $format, $input, $output);
 
         $profiler->stop('reporting');
+
+        // When a baseline was successfully written, the purpose was to capture current state —
+        // not to assert clean code. Override exit code to 0 regardless of violation count.
+        if ($baselineGenerated) {
+            return 0;
+        }
 
         return $this->determineExitCode($violations);
     }
@@ -164,16 +171,18 @@ final class ResultPresenter
     /**
      * Generates baseline file if requested.
      *
+     * Returns true when a baseline was successfully written, false when skipped.
+     *
      * @param list<Violation> $violations
      */
     public function generateBaselineIfRequested(
         array $violations,
         InputInterface $input,
         OutputInterface $output,
-    ): void {
+    ): bool {
         $generateBaselinePath = $input->getOption('generate-baseline');
         if (!\is_string($generateBaselinePath) || $generateBaselinePath === '') {
-            return;
+            return false;
         }
 
         $baseline = $this->baselineGenerator->generate($violations);
@@ -181,9 +190,11 @@ final class ResultPresenter
 
         $output->writeln(\sprintf(
             '<info>Baseline with %d violations written to %s</info>',
-            \count($violations),
+            $baseline->count(),
             $generateBaselinePath,
         ));
+
+        return true;
     }
 
     /**

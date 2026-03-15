@@ -98,7 +98,7 @@ final class MethodCountRule extends AbstractRule
                     message: \sprintf('Method count is %d, exceeds threshold of %d. Consider splitting into smaller focused classes', $methodCountValue, $threshold),
                     severity: $severity,
                     metricValue: $methodCountValue,
-                    humanMessage: \sprintf('Methods: %d (max %d) — too many methods', $methodCountValue, $threshold),
+                    recommendation: \sprintf('Methods: %d (max %d) — too many methods', $methodCountValue, $threshold),
                     threshold: $threshold,
                 );
             }

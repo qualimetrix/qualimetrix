@@ -72,9 +72,13 @@ final class CodeSmellCollector extends AbstractCollector
             $locations = $this->visitor->getLocationsByType($type);
 
             foreach ($locations as $location) {
-                $bag = $bag->withEntry("codeSmell.{$type}", [
-                    'line' => $location->line,
-                ]);
+                $entry = ['line' => $location->line];
+
+                if ($location->extra !== null) {
+                    $entry['extra'] = $location->extra;
+                }
+
+                $bag = $bag->withEntry("codeSmell.{$type}", $entry);
             }
         }
 

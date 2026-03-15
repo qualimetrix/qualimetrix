@@ -142,7 +142,7 @@ final class DetailedViolationRendererTest extends TestCase
                 message: 'Cyclomatic complexity is 15, exceeds threshold of 10',
                 severity: Severity::Error,
                 metricValue: 15,
-                humanMessage: 'Cyclomatic complexity: 15 (max 10) — too many code paths',
+                recommendation: 'Cyclomatic complexity: 15 (max 10) — too many code paths',
             ),
         ];
 

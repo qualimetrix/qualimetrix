@@ -37,8 +37,22 @@ abstract class AbstractCodeSmellRule extends AbstractRule
 
     /**
      * Returns the violation message describing a single occurrence.
+     *
+     * Subclasses may override {@see buildMessage()} instead to access the entry's extra data.
      */
     abstract protected function getMessageTemplate(): string;
+
+    /**
+     * Builds the violation message for a single entry.
+     *
+     * Subclasses may override this to incorporate extra data (e.g. parameter name) from the entry.
+     *
+     * @param array<string, mixed> $entry
+     */
+    protected function buildMessage(array $entry): string
+    {
+        return $this->getMessageTemplate();
+    }
 
     /**
      * @return list<string>
@@ -76,7 +90,7 @@ abstract class AbstractCodeSmellRule extends AbstractRule
                     symbolPath: $fileInfo->symbolPath,
                     ruleName: $this->getName(),
                     violationCode: $this->getName(),
-                    message: $this->getMessageTemplate(),
+                    message: $this->buildMessage($entry),
                     severity: $this->getSeverity(),
                     metricValue: 1.0,
                 );

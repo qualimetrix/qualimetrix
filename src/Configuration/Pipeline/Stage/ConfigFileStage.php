@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace AiMessDetector\Configuration\Pipeline\Stage;
 
 use AiMessDetector\Configuration\Exception\ConfigLoadException;
+use AiMessDetector\Configuration\KnownRuleNamesProviderInterface;
 use AiMessDetector\Configuration\Loader\ConfigLoaderInterface;
 use AiMessDetector\Configuration\Pipeline\ConfigurationContext;
 use AiMessDetector\Configuration\Pipeline\ConfigurationLayer;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 
 /**
  * Loads configuration from config file (priority: 20).
@@ -23,6 +26,8 @@ final class ConfigFileStage implements ConfigurationStageInterface
 
     public function __construct(
         private readonly ConfigLoaderInterface $loader,
+        private readonly ?KnownRuleNamesProviderInterface $knownRuleNamesProvider = null,
+        private readonly LoggerInterface $logger = new NullLogger(),
     ) {}
 
     public function priority(): int
@@ -44,6 +49,8 @@ final class ConfigFileStage implements ConfigurationStageInterface
         }
 
         $data = $this->loader->load($configPath);
+
+        $this->warnAboutUnknownRuleNames($data, basename($configPath));
 
         return new ConfigurationLayer(
             basename($configPath),
@@ -159,5 +166,51 @@ final class ConfigFileStage implements ConfigurationStageInterface
         }
 
         return $result;
+    }
+
+    /**
+     * Warns about unknown rule names in the "rules:" config section.
+     *
+     * Emits a PSR-3 warning for each rule name that does not match any registered rule.
+     * Matching follows the same prefix logic as CLI --disable-rule / --only-rule:
+     * exact match, prefix match ("complexity" matches "complexity.cyclomatic"), and
+     * reverse prefix match ("complexity.cyclomatic.method" refines "complexity.cyclomatic").
+     *
+     * @param array<string, mixed> $data raw config data (before normalization)
+     * @param string $configSource filename for warning messages
+     */
+    private function warnAboutUnknownRuleNames(array $data, string $configSource): void
+    {
+        if ($this->knownRuleNamesProvider === null) {
+            return;
+        }
+
+        $rulesSection = $data['rules'] ?? null;
+        if (!\is_array($rulesSection) || $rulesSection === []) {
+            return;
+        }
+
+        $knownNames = $this->knownRuleNamesProvider->getKnownRuleNames();
+
+        foreach (array_keys($rulesSection) as $configuredName) {
+            $name = (string) $configuredName;
+            $matched = false;
+            foreach ($knownNames as $known) {
+                if ($name === $known
+                    || str_starts_with($known, $name . '.')
+                    || str_starts_with($name, $known . '.')
+                ) {
+                    $matched = true;
+                    break;
+                }
+            }
+
+            if (!$matched) {
+                $this->logger->warning(
+                    'Unknown rule name "{rule}" in config file "{source}" — does not match any registered rule.',
+                    ['rule' => $name, 'source' => $configSource],
+                );
+            }
+        }
     }
 }

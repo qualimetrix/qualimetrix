@@ -24,7 +24,7 @@ bin/aimd check src/ --format=<формат>
 **Пример вывода:**
 
 ```
-AI Mess Detector — Project Health
+AI Mess Detector — 45 files analyzed, 1.23s
 
   Complexity     ████████████████░░░░  78 Strong
   Cohesion       ██████████████░░░░░░  68 Acceptable
@@ -33,11 +33,11 @@ AI Mess Detector — Project Health
   Maintainability████████████████░░░░  80 Strong
   Overall        ██████████████░░░░░░  72 Acceptable
 
-Worst offenders (namespaces):
+Worst namespaces:
   App\Service           52 Weak      | App\Repository        61 Acceptable
   App\Controller        55 Acceptable
 
-Worst offenders (classes):
+Worst classes:
   App\Service\OrderService          38 Critical  | App\Service\UserService   45 Weak
   App\Repository\OrderRepository    51 Weak
 
@@ -70,7 +70,7 @@ bin/aimd check src/ --detail=50
 ```
 
 !!! note
-    `--detail` включается автоматически при использовании `--namespace` или `--class`.
+    `--detail` включается автоматически при использовании `--namespace` или `--class`. Флаг также работает с `--format=text`: добавляет группированный список нарушений после компактного построчного вывода.
 
 ---
 
@@ -96,45 +96,19 @@ src/Repository/OrderRepository.php:15: error[coupling.cbo.class]: CBO is 18, max
 
 ## text-verbose
 
-Подробный, многострочный вывод с группировкой. Показывает больше контекста, чем `text`, включая количество файлов и время выполнения.
+!!! warning "Устарело"
+    `text-verbose` устарел. Используйте вместо него `--format=text --detail`, который обеспечивает аналогичный группированный многострочный вывод нарушений.
 
-**Когда использовать:** Детальный локальный обзор, когда нужна группировка нарушений по файлу, правилу или уровню.
-
-**Пример вывода:**
-
-```
-AI Mess Detector Report
-──────────────────────────────────────────────────
-
-src/Service/UserService.php (2)
-
-  ERROR src/Service/UserService.php:42  App\Service\UserService::calculate
-    Cyclomatic complexity is 15, max allowed is 10 (15) [complexity.cyclomatic.method]
-
-  WARN src/Service/UserService.php:87  App\Service\UserService
-    Class has 22 methods, max recommended is 20 (22) [size.method-count.class]
-
-src/Repository/OrderRepository.php (1)
-
-  ERROR src/Repository/OrderRepository.php:15  App\Repository\OrderRepository
-    CBO is 18, max allowed is 15 (18) [coupling.cbo.class]
-
-──────────────────────────────────────────────────
-Files: 45 analyzed, 0 skipped | Errors: 2 | Warnings: 1 | Time: 1.23s
-```
-
-**Группировка:** По умолчанию `--group-by=file`. Можно изменить:
-
-```bash
-bin/aimd check src/ --format=text-verbose --group-by=rule
-bin/aimd check src/ --format=text-verbose --group-by=severity
-```
+    ```bash
+    # Замена: bin/aimd check src/ --format=text-verbose
+    bin/aimd check src/ --format=text --detail
+    ```
 
 ---
 
 ## json
 
-Машиночитаемый JSON-вывод. Совместим с форматом PHPMD JSON для интеграции с инструментами.
+Машиночитаемый JSON-вывод. Формат, ориентированный на сводную информацию: оценки здоровья, худшие нарушители и ограниченный список нарушений.
 
 **Когда использовать:** Пользовательские скрипты, дашборды, программная обработка.
 
@@ -142,34 +116,82 @@ bin/aimd check src/ --format=text-verbose --group-by=severity
 
 ```json
 {
-    "version": "1.0.0",
-    "package": "aimd",
-    "timestamp": "2025-01-15T10:30:00+00:00",
-    "files": [
-        {
-            "file": "src/Service/UserService.php",
-            "violations": [
-                {
-                    "beginLine": 42,
-                    "endLine": 42,
-                    "rule": "CyclomaticComplexityRule",
-                    "code": "complexity.cyclomatic.method",
-                    "symbol": "App\\Service\\UserService::calculate",
-                    "priority": 1,
-                    "severity": "error",
-                    "description": "Cyclomatic complexity is 15, max allowed is 10",
-                    "metricValue": 15
-                }
-            ]
-        }
-    ],
+    "meta": {
+        "version": "1.0.0",
+        "package": "aimd",
+        "timestamp": "2025-01-15T10:30:00+00:00"
+    },
     "summary": {
         "filesAnalyzed": 45,
         "filesSkipped": 0,
-        "violations": 3,
-        "errors": 2,
-        "warnings": 1,
-        "duration": 1.234
+        "duration": 1.234,
+        "violationCount": 3,
+        "errorCount": 2,
+        "warningCount": 1,
+        "techDebtMinutes": 270,
+        "debtPer1kLoc": 2.1
+    },
+    "health": {
+        "complexity": {
+            "score": 78.0,
+            "label": "Strong",
+            "threshold": {"warning": 50, "error": 25},
+            "decomposition": []
+        },
+        "overall": {
+            "score": 72.0,
+            "label": "Acceptable",
+            "threshold": {"warning": 50, "error": 25},
+            "decomposition": []
+        }
+    },
+    "worstNamespaces": [
+        {
+            "symbolPath": "App\\Service",
+            "healthOverall": 52.0,
+            "label": "Weak",
+            "reason": "high coupling",
+            "violationCount": 15,
+            "classCount": 8,
+            "healthScores": {}
+        }
+    ],
+    "worstClasses": [
+        {
+            "symbolPath": "App\\Service\\UserService",
+            "healthOverall": 45.0,
+            "label": "Weak",
+            "reason": "low cohesion",
+            "violationCount": 8,
+            "file": "src/Service/UserService.php",
+            "metrics": {},
+            "healthScores": {}
+        }
+    ],
+    "violations": [
+        {
+            "file": "src/Service/UserService.php",
+            "line": 42,
+            "symbol": "App\\Service\\UserService::calculate",
+            "namespace": "App\\Service",
+            "rule": "complexity.cyclomatic",
+            "code": "complexity.cyclomatic.method",
+            "severity": "error",
+            "message": "Cyclomatic complexity: 15 (max 10) — too many code paths",
+            "recommendation": null,
+            "metricValue": 15,
+            "threshold": 10,
+            "techDebtMinutes": 30
+        }
+    ],
+    "violationsMeta": {
+        "total": 3,
+        "limit": 50,
+        "truncated": false,
+        "byRule": {
+            "complexity.cyclomatic": 2,
+            "coupling.cbo": 1
+        }
     }
 }
 ```
@@ -204,10 +226,7 @@ bin/aimd check src/ --format=json --no-progress > report.json
             "metrics": {
                 "loc": 150,
                 "lloc": 120,
-                "classCount": 1,
-                "ccn:App\\Service\\UserService::calculate": 15,
-                "cognitive:App\\Service\\UserService::calculate": 22,
-                "halstead.volume:App\\Service\\UserService::calculate": 384.5
+                "classCount": 1
             }
         },
         {
@@ -224,6 +243,18 @@ bin/aimd check src/ --format=json --no-progress > report.json
                 "ce": 12,
                 "cbo": 17,
                 "instability": 0.71
+            }
+        },
+        {
+            "type": "method",
+            "name": "App\\Service\\UserService::calculate",
+            "file": "src/Service/UserService.php",
+            "line": 42,
+            "metrics": {
+                "ccn": 15,
+                "cognitive": 22,
+                "halstead.volume": 384.5,
+                "loc": 35
             }
         }
     ],

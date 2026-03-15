@@ -17,8 +17,8 @@ final class ComputedMetricDefaults
             'health.complexity' => new ComputedMetricDefinition(
                 name: 'health.complexity',
                 formulas: [
-                    'class' => 'clamp(100 * 32 / (32 + max(ccn__avg - 1, 0) * 0.2 + cognitive__avg * 2.2), 0, 100)',
-                    'namespace' => 'clamp(100 * 32 / (32 + max(ccn__avg - 1, 0) * 0.2 + cognitive__avg * 2.2), 0, 100)',
+                    'class' => 'clamp(100 - max(ccn__avg - 4, 0) * 2.0 - max(cognitive__avg - 5, 0) * 2.5 - min(max(npath__avg ?? 0, 0) / 20, 20) * 0.5, 0, 100)',
+                    'namespace' => 'clamp(100 - max(ccn__avg - 4, 0) * 2.0 - max(cognitive__avg - 5, 0) * 2.5 - min(max(npath__avg ?? 0, 0) / 20, 20) * 0.5, 0, 100)',
                 ],
                 description: 'Complexity health score (0-100, higher is better)',
                 levels: [SymbolType::Class_, SymbolType::Namespace_, SymbolType::Project],
@@ -41,7 +41,7 @@ final class ComputedMetricDefaults
             'health.coupling' => new ComputedMetricDefinition(
                 name: 'health.coupling',
                 formulas: [
-                    'class' => 'clamp(100 * 15 / (15 + max((cbo ?? 0) - 5, 0)), 0, 100)',
+                    'class' => 'clamp(100 * 15 / (15 + max((ce ?? 0) - 5, 0)), 0, 100)',
                     'namespace' => 'clamp(100 * 12 / (12 + (distance ?? 0) * 6.5 + max((cbo__avg ?? 0) - 7, 0) * 4 + max((cbo__max ?? 0) - 20, 0) * 0.15), 0, 100)',
                     'project' => 'clamp(100 * 12 / (12 + (distance__avg ?? 0) * 6.5 + max((cbo__avg ?? 0) - 7, 0) * 4 + max((cbo__max ?? 0) - 20, 0) * 0.15), 0, 100)',
                 ],

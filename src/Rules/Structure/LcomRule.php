@@ -99,7 +99,7 @@ final class LcomRule extends AbstractRule
                     ),
                     severity: $severity,
                     metricValue: $lcomValue,
-                    humanMessage: \sprintf('LCOM4: %d (max %d) — class has %d unrelated method groups', $lcomValue, $threshold, $lcomValue),
+                    recommendation: \sprintf('LCOM4: %d (max %d) — class has %d unrelated method groups', $lcomValue, $threshold, $lcomValue),
                     threshold: $threshold,
                 );
             }

@@ -278,7 +278,10 @@ final class SummaryEnricherTest extends TestCase
 
         $result = $this->enricher->enrich($report);
 
-        self::assertSame([], $result->worstClasses);
+        // H3: Always show top-N classes regardless of threshold
+        self::assertCount(1, $result->worstClasses);
+        self::assertSame('App\\Service\\GoodService', $result->worstClasses[0]->symbolPath->toString());
+        self::assertSame(85.0, $result->worstClasses[0]->healthOverall);
     }
 
     public function testPreservesOriginalReportFields(): void

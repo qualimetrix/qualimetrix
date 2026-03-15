@@ -793,7 +793,7 @@ final class SummaryFormatterTest extends TestCase
                     violationCode: 'complexity.cyclomatic.method',
                     message: 'Cyclomatic complexity is 15',
                     severity: Severity::Error,
-                    humanMessage: 'Cyclomatic complexity: 15 (max 10) — too many code paths',
+                    recommendation: 'Cyclomatic complexity: 15 (max 10) — too many code paths',
                 ),
             ],
             filesAnalyzed: 1,
@@ -1032,7 +1032,7 @@ final class SummaryFormatterTest extends TestCase
                 violationCode: 'complexity.cyclomatic.method',
                 message: 'Too complex #' . $i,
                 severity: Severity::Error,
-                humanMessage: 'Cyclomatic complexity too high #' . $i,
+                recommendation: 'Cyclomatic complexity too high #' . $i,
             );
         }
 

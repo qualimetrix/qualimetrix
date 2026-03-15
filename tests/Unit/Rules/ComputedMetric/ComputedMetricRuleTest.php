@@ -17,6 +17,7 @@ use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Rules\ComputedMetric\ComputedMetricRule;
 use AiMessDetector\Rules\ComputedMetric\ComputedMetricRuleOptions;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 #[CoversClass(ComputedMetricRule::class)]
@@ -542,6 +543,50 @@ final class ComputedMetricRuleTest extends TestCase
         self::assertCount(1, $violations);
         self::assertStringContainsString('below', $violations[0]->message);
         self::assertStringNotContainsString('above', $violations[0]->message);
+    }
+
+    /**
+     * @return array<string, array{string, string}>
+     */
+    public static function dimensionRecommendationProvider(): array
+    {
+        return [
+            'complexity dimension' => ['health.complexity', 'Reduce complexity'],
+            'cohesion dimension' => ['health.cohesion', 'Improve class cohesion'],
+            'coupling dimension' => ['health.coupling', 'Reduce coupling'],
+            'design dimension' => ['health.design', 'Improve design'],
+            'maintainability dimension' => ['health.maintainability', 'Improve maintainability'],
+            'unknown dimension' => ['health.custom', 'Review the metric value'],
+        ];
+    }
+
+    #[DataProvider('dimensionRecommendationProvider')]
+    public function testViolationHasDimensionSpecificRecommendation(string $dimensionName, string $expectedPrefix): void
+    {
+        $definition = new ComputedMetricDefinition(
+            name: $dimensionName,
+            formulas: ['class' => 'ccn'],
+            description: 'Test dimension',
+            levels: [SymbolType::Class_],
+            inverted: false,
+            warningThreshold: 10.0,
+        );
+
+        $rule = $this->createRuleWithDefinitions([$definition]);
+        $classPath = SymbolPath::forClass('App', 'Test');
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturn([new SymbolInfo($classPath, 'test.php', 1)]);
+        $repository->method('get')
+            ->willReturn((new MetricBag())->with($dimensionName, 15.0));
+
+        $violations = $rule->analyze(new AnalysisContext($repository));
+
+        self::assertCount(1, $violations);
+        $recommendation = $violations[0]->recommendation;
+        self::assertNotNull($recommendation);
+        self::assertStringContainsString($expectedPrefix, $recommendation);
     }
 
     /**

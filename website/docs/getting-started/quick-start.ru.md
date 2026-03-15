@@ -102,7 +102,7 @@ vendor/bin/aimd check src/ --format=html -o report.html
 === "Встроенная команда"
 
     ```bash
-    bin/aimd hook:install
+    vendor/bin/aimd hook:install
     ```
 
 ### Использование
@@ -131,7 +131,7 @@ git commit --no-verify -m "WIP: work in progress"
 
 ```bash
 # Создать базовую линию для существующих проблем
-bin/aimd check src/ --generate-baseline=baseline.json
+vendor/bin/aimd check src/ --generate-baseline=baseline.json
 
 # Теперь хук будет игнорировать проблемы из базовой линии
 git commit -m "Add feature"
@@ -208,7 +208,7 @@ services:
     volumes:
       - .:/app:ro
       - ./baseline.json:/app/baseline.json
-    command: analyze src/ --baseline=baseline.json
+    command: check src/ --baseline=baseline.json
 ```
 
 ```bash
@@ -273,7 +273,7 @@ docker-compose run --rm aimd
 === "CLI"
 
     ```bash
-    bin/aimd check src/ --exclude-path='src/Entity/*' --exclude-path='*/DTO/*'
+    vendor/bin/aimd check src/ --exclude-path='src/Entity/*' --exclude-path='*/DTO/*'
     ```
 
 CLI-паттерны объединяются с паттернами из конфигурационного файла.

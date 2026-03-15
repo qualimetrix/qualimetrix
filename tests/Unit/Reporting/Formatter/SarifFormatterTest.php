@@ -521,6 +521,55 @@ final class SarifFormatterTest extends TestCase
         self::assertStringNotContainsString(' ', $uri);
     }
 
+    public function testRuleHelpUriMapsToDocsCategoryPage(): void
+    {
+        $report = ReportBuilder::create()
+            ->addViolation(new Violation(
+                location: new Location('src/A.php', 10),
+                symbolPath: SymbolPath::forClass('App', 'A'),
+                ruleName: 'complexity.cyclomatic',
+                violationCode: 'complexity.cyclomatic',
+                message: 'Too complex',
+                severity: Severity::Error,
+            ))
+            ->addViolation(new Violation(
+                location: new Location('src/B.php', 20),
+                symbolPath: SymbolPath::forClass('App', 'B'),
+                ruleName: 'code-smell.boolean-argument',
+                violationCode: 'code-smell.boolean-argument',
+                message: 'Boolean argument',
+                severity: Severity::Warning,
+            ))
+            ->addViolation(new Violation(
+                location: new Location('src/C.php', 30),
+                symbolPath: SymbolPath::forClass('App', 'C'),
+                ruleName: 'unknown-rule',
+                violationCode: 'unknown-rule',
+                message: 'Unknown',
+                severity: Severity::Warning,
+            ))
+            ->filesAnalyzed(3)
+            ->filesSkipped(0)
+            ->duration(0.1)
+            ->build();
+
+        $output = $this->formatter->format($report, new FormatterContext());
+        $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
+
+        $rules = $data['runs'][0]['tool']['driver']['rules'];
+        $rulesByCode = [];
+        foreach ($rules as $rule) {
+            $rulesByCode[$rule['id']] = $rule;
+        }
+
+        // Known categories map to their docs page
+        self::assertSame('https://aimd.dev/rules/complexity/', $rulesByCode['complexity.cyclomatic']['helpUri']);
+        self::assertSame('https://aimd.dev/rules/code-smell/', $rulesByCode['code-smell.boolean-argument']['helpUri']);
+
+        // Unknown category falls back to repository URL
+        self::assertSame('https://github.com/FractalizeR/php_ai_mess_detector', $rulesByCode['unknown-rule']['helpUri']);
+    }
+
     public function testRuleDescriptionUsesViolationCodeNotRuleName(): void
     {
         // When ruleName differs from violationCode, the description should

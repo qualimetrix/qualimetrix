@@ -149,7 +149,7 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
                     severity: $severity,
                     metricValue: $ccnValue,
                     level: RuleLevel::Method,
-                    humanMessage: \sprintf('Cyclomatic complexity: %d (max %d) — too many code paths', $ccnValue, $threshold),
+                    recommendation: \sprintf('Cyclomatic complexity: %d (max %d) — too many code paths', $ccnValue, $threshold),
                     threshold: $threshold,
                 );
             }
@@ -191,7 +191,7 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
                     severity: $severity,
                     metricValue: $maxCcnValue,
                     level: RuleLevel::Class_,
-                    humanMessage: \sprintf('Max cyclomatic complexity: %d (max %d) — too many code paths', $maxCcnValue, $threshold),
+                    recommendation: \sprintf('Max cyclomatic complexity: %d (max %d) — too many code paths', $maxCcnValue, $threshold),
                     threshold: $threshold,
                 );
             }

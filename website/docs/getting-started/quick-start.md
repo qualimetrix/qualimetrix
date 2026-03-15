@@ -102,7 +102,7 @@ Automatic checking of staged files before every commit.
 === "Built-in command"
 
     ```bash
-    bin/aimd hook:install
+    vendor/bin/aimd hook:install
     ```
 
 ### Usage
@@ -131,7 +131,7 @@ If the project already contains legacy code with violations:
 
 ```bash
 # Create a baseline for existing issues
-bin/aimd check src/ --generate-baseline=baseline.json
+vendor/bin/aimd check src/ --generate-baseline=baseline.json
 
 # Now the hook will ignore issues from the baseline
 git commit -m "Add feature"
@@ -208,7 +208,7 @@ services:
     volumes:
       - .:/app:ro
       - ./baseline.json:/app/baseline.json
-    command: analyze src/ --baseline=baseline.json
+    command: check src/ --baseline=baseline.json
 ```
 
 ```bash
@@ -273,7 +273,7 @@ Suppress violations for files matching glob patterns. Useful for generated code,
 === "CLI"
 
     ```bash
-    bin/aimd check src/ --exclude-path='src/Entity/*' --exclude-path='*/DTO/*'
+    vendor/bin/aimd check src/ --exclude-path='src/Entity/*' --exclude-path='*/DTO/*'
     ```
 
 CLI patterns are merged with those defined in the config file.

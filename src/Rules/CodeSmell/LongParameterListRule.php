@@ -120,7 +120,7 @@ final class LongParameterListRule extends AbstractRule
             message: \sprintf('%s has %d parameters, exceeds threshold of %d. Consider introducing a parameter object', $kind, $parameterCountValue, $threshold),
             severity: $severity,
             metricValue: $parameterCountValue,
-            humanMessage: \sprintf('Parameters: %d (max %d) — consider introducing a parameter object', $parameterCountValue, $threshold),
+            recommendation: \sprintf('Parameters: %d (max %d) — consider introducing a parameter object', $parameterCountValue, $threshold),
             threshold: $threshold,
         );
     }

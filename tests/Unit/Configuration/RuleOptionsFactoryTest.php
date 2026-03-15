@@ -13,6 +13,7 @@ use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 use stdClass;
 
 #[CoversClass(RuleOptionsFactory::class)]
@@ -865,5 +866,84 @@ final class RuleOptionsFactoryTest extends TestCase
 
         self::assertArrayHasKey('test-rule', $cliOptions);
         self::assertSame('deep-value', $cliOptions['test-rule']['a.b.c.d.e']);
+    }
+
+    #[Test]
+    public function itThrowsWhenNumericFieldContainsNonNumericString(): void
+    {
+        $this->factory->setConfigFileOptions([
+            'test-rule' => [
+                'warning_threshold' => 'not_a_number',
+            ],
+        ]);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('option "warningThreshold" must be numeric');
+
+        $this->factory->create('test-rule', TestRuleOptions::class);
+    }
+
+    #[Test]
+    public function itThrowsWhenErrorThresholdIsNonNumericString(): void
+    {
+        $this->factory->setConfigFileOptions([
+            'test-rule' => [
+                'error_threshold' => 'invalid',
+            ],
+        ]);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('option "errorThreshold" must be numeric');
+
+        $this->factory->create('test-rule', TestRuleOptions::class);
+    }
+
+    #[Test]
+    public function itAcceptsNumericStringForThresholdFields(): void
+    {
+        $this->factory->setConfigFileOptions([
+            'test-rule' => [
+                'warning_threshold' => '15',
+                'error_threshold' => '30',
+            ],
+        ]);
+
+        // Numeric strings are valid — no exception should be thrown
+        /** @var TestRuleOptions $options */
+        $options = $this->factory->create('test-rule', TestRuleOptions::class);
+
+        self::assertSame(15, $options->warningThreshold);
+        self::assertSame(30, $options->errorThreshold);
+    }
+
+    #[Test]
+    public function itAcceptsFloatStringForThresholdFields(): void
+    {
+        $this->factory->setConfigFileOptions([
+            'test-rule' => [
+                'warning_threshold' => '10.5',
+            ],
+        ]);
+
+        // Float numeric strings should be accepted
+        /** @var TestRuleOptions $options */
+        $options = $this->factory->create('test-rule', TestRuleOptions::class);
+
+        self::assertSame(10, $options->warningThreshold); // cast to int
+    }
+
+    #[Test]
+    public function itIncludesRuleNameInNumericValidationError(): void
+    {
+        $this->factory->setConfigFileOptions([
+            'complexity.cyclomatic' => [
+                'error_threshold' => 'not_a_number',
+            ],
+        ]);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('rule "complexity.cyclomatic"');
+
+        $this->factory->create('complexity.cyclomatic', TestRuleOptions::class);
     }
 }

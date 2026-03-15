@@ -176,9 +176,11 @@ final class ComputedMetricEvaluatorTest extends TestCase
         $repo->add($classPath, MetricBag::fromArray([
             'ccn.avg' => 4.0,
             'cognitive.avg' => 6.0,
+            'npath.avg' => 10.0,
             'tcc' => 0.6,
             'lcom' => 2.0,
             'cbo' => 8.0,
+            'ce' => 6.0,
             'typeCoverage.pct' => 80.0,
             'dit' => 2.0,
             'mi.avg' => 65.0,
@@ -189,14 +191,15 @@ final class ComputedMetricEvaluatorTest extends TestCase
 
         $bag = $repo->get($classPath);
 
-        // health.complexity = 100 * 32 / (32 + max(4-1,0)*0.2 + 6*2.2) = 3200 / 45.8 ≈ 69.87
-        self::assertEqualsWithDelta(69.87, $bag->get('health.complexity'), 0.01);
+        // health.complexity = clamp(100 - max(4-4,0)*2.0 - max(6-5,0)*2.5 - min(10/20,20)*0.5, 0, 100)
+        //                   = 100 - 0 - 2.5 - 0.25 = 97.25
+        self::assertEqualsWithDelta(97.25, $bag->get('health.complexity'), 0.01);
 
         // health.cohesion = clamp(0.6*50 + (1 - clamp((2-1)/5, 0, 1)) * 50, 0, 100) = 30 + 0.8*50 = 70
         self::assertEqualsWithDelta(70.0, $bag->get('health.cohesion'), 0.01);
 
-        // health.coupling = clamp(100 * 15 / (15 + max(8-5, 0)), 0, 100) = 1500/18 ≈ 83.33
-        self::assertEqualsWithDelta(83.33, $bag->get('health.coupling'), 0.01);
+        // health.coupling = clamp(100 * 15 / (15 + max(6-5, 0)), 0, 100) = 1500/16 = 93.75
+        self::assertEqualsWithDelta(93.75, $bag->get('health.coupling'), 0.01);
 
         // health.typing = clamp(80, 0, 100) = 80
         self::assertEqualsWithDelta(80.0, $bag->get('health.typing'), 0.01);
@@ -204,9 +207,9 @@ final class ComputedMetricEvaluatorTest extends TestCase
         // health.maintainability = clamp(65, 0, 100) = 65
         self::assertEqualsWithDelta(65.0, $bag->get('health.maintainability'), 0.01);
 
-        // health.overall = clamp(69.87*0.30 + 70*0.25 + 83.33*0.25 + 80*0.20, 0, 100)
-        //                = 20.96 + 17.5 + 20.83 + 16.0 = 75.29
-        self::assertEqualsWithDelta(75.29, $bag->get('health.overall'), 0.01);
+        // health.overall = clamp(97.25*0.30 + 70*0.25 + 93.75*0.25 + 80*0.20, 0, 100)
+        //                = 29.175 + 17.5 + 23.4375 + 16.0 = 86.11
+        self::assertEqualsWithDelta(86.11, $bag->get('health.overall'), 0.01);
     }
 
     #[Test]
@@ -223,6 +226,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
         $repo->add($nsPath, MetricBag::fromArray([
             'ccn.avg' => 3.0,
             'cognitive.avg' => 4.0,
+            'npath.avg' => 5.0,
             'tcc.avg' => 0.5,
             'lcom.avg' => 3.0,
             'cbo.avg' => 6.0,
@@ -243,8 +247,9 @@ final class ComputedMetricEvaluatorTest extends TestCase
 
         $bag = $repo->get($nsPath);
 
-        // health.complexity = 100 * 32 / (32 + (3-1)*0.2 + 4*2.2) = 3200 / 41.2 ≈ 77.67
-        self::assertEqualsWithDelta(77.67, $bag->get('health.complexity'), 0.01);
+        // health.complexity = clamp(100 - max(3-4,0)*2.0 - max(4-5,0)*2.5 - min(5/20,20)*0.5, 0, 100)
+        //                   = 100 - 0 - 0 - 0.125 = 99.875
+        self::assertEqualsWithDelta(99.88, $bag->get('health.complexity'), 0.01);
 
         // health.cohesion = clamp(0.5*50 + (1 - clamp((3-1)/5, 0, 1))*50, 0, 100) = 25 + 0.6*50 = 55
         self::assertEqualsWithDelta(55.0, $bag->get('health.cohesion'), 0.01);
@@ -258,9 +263,9 @@ final class ComputedMetricEvaluatorTest extends TestCase
         // health.maintainability = clamp(70, 0, 100) = 70
         self::assertEqualsWithDelta(70.0, $bag->get('health.maintainability'), 0.01);
 
-        // health.overall = clamp(77.67*0.25 + 55*0.20 + 86.02*0.20 + 76*0.15 + 70*0.20, 0, 100)
-        //                = 19.42 + 11.0 + 17.20 + 11.4 + 14.0 = 73.02
-        self::assertEqualsWithDelta(73.02, $bag->get('health.overall'), 0.01);
+        // health.overall = clamp(99.88*0.25 + 55*0.20 + 86.02*0.20 + 76*0.15 + 70*0.20, 0, 100)
+        //                = 24.97 + 11.0 + 17.20 + 11.4 + 14.0 = 78.57
+        self::assertEqualsWithDelta(78.57, $bag->get('health.overall'), 0.01);
     }
 
     #[Test]

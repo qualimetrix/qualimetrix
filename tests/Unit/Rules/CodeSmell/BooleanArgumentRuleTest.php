@@ -109,4 +109,55 @@ final class BooleanArgumentRuleTest extends TestCase
         self::assertSame('code-smell.boolean-argument', $violations[0]->violationCode);
         self::assertSame(1.0, $violations[0]->metricValue);
     }
+
+    #[Test]
+    public function smellWithParamNameIncludesItInMessage(): void
+    {
+        $rule = new BooleanArgumentRule(new CodeSmellOptions());
+
+        $symbolPath = SymbolPath::forFile('src/Smelly.php');
+        $fileInfo = new SymbolInfo($symbolPath, 'src/Smelly.php', null);
+
+        $metricBag = (new MetricBag())
+            ->withEntry('codeSmell.boolean_argument', ['line' => 10, 'extra' => 'overwrite'])
+            ->withEntry('codeSmell.boolean_argument', ['line' => 25, 'extra' => '$silent']);
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::File ? [$fileInfo] : []);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyze($context);
+
+        self::assertCount(2, $violations);
+        self::assertSame('Boolean argument $overwrite detected - consider splitting methods or using enums', $violations[0]->message);
+        // Leading $ in stored extra is stripped
+        self::assertSame('Boolean argument $silent detected - consider splitting methods or using enums', $violations[1]->message);
+    }
+
+    #[Test]
+    public function smellWithoutParamNameFallsBackToGenericMessage(): void
+    {
+        $rule = new BooleanArgumentRule(new CodeSmellOptions());
+
+        $symbolPath = SymbolPath::forFile('src/Smelly.php');
+        $fileInfo = new SymbolInfo($symbolPath, 'src/Smelly.php', null);
+
+        $metricBag = (new MetricBag())
+            ->withEntry('codeSmell.boolean_argument', ['line' => 10]);
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::File ? [$fileInfo] : []);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyze($context);
+
+        self::assertCount(1, $violations);
+        self::assertSame('Boolean argument detected - consider splitting methods or using enums', $violations[0]->message);
+    }
 }

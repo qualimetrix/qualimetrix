@@ -178,7 +178,7 @@ final class ViolationTest extends TestCase
             violationCode: 'complexity.method',
             message: 'Cyclomatic complexity is 15, exceeds threshold of 10',
             severity: Severity::Error,
-            humanMessage: 'Cyclomatic complexity: 15 (max 10) — too many code paths',
+            recommendation: 'Cyclomatic complexity: 15 (max 10) — too many code paths',
         );
 
         self::assertSame(

@@ -46,6 +46,22 @@ final class BooleanArgumentRule extends AbstractCodeSmellRule
     }
 
     /**
+     * Includes the parameter name in the message when available.
+     *
+     * @param array<string, mixed> $entry
+     */
+    protected function buildMessage(array $entry): string
+    {
+        $paramName = isset($entry['extra']) && \is_string($entry['extra']) ? $entry['extra'] : null;
+
+        if ($paramName !== null) {
+            return \sprintf('Boolean argument $%s detected - consider splitting methods or using enums', ltrim($paramName, '$'));
+        }
+
+        return $this->getMessageTemplate();
+    }
+
+    /**
      * @return class-string<CodeSmellOptions>
      */
     public static function getOptionsClass(): string

@@ -8,6 +8,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Complexity health formula retuned — linear penalty model with balanced CCN/cognitive/NPath weights (was harmonic K=32 with 92% cognitive bias). Cross-project score spread improved from 1.8pt to 6.6pt
+- Class-level coupling health uses efferent coupling (CE) instead of bidirectional CBO — popular utility classes (e.g., `Collection`) no longer penalized for being widely used
+- `--class` drill-down now shows the class's own health scores in the header (was showing project-wide scores)
+- Namespace drill-down header shows `(direct: X%)` marker when recursive and flat scores differ by >5 points
+- `worstClasses` always shows top-N classes regardless of health threshold (previously empty when all classes scored above 50%)
+- Empty root namespaces (no direct classes) filtered from worst namespace list
+- `--format-opt=top=N` now works with `summary` format (was hardcoded to 3, only worked with JSON)
+- Namespace drill-down hints now suggest `--class=` for the worst class (completing the progressive disclosure chain)
+- `+N more` in worst offenders now suggests `--format=html` or `--format-opt=top=N`
+- Per-dimension label footnote explains that dimensions have independent thresholds
+- Typing health decomposition shows parameter/return/property type percentages
+- `health.typing` violations now include specific recommendation text
+- `--generate-baseline` exits 0 when baseline is successfully written (was exit 2)
+- Baseline "written" message reports deduplicated violation count (was raw count)
+- Boolean argument violations now show the parameter name (e.g., `$overwrite`)
+- `computed.health` violations include dimension-specific fix recommendations
+- Debt density display clarified with "to fix" suffix
+- `violationsMeta.byRule` added to JSON output — per-rule violation counts for complete visibility without `violations=all`
+- SARIF `helpUri` now links to rule-specific documentation pages
+- GitLab Code Quality: project-level violations use `[project-level]` path instead of invalid `.`
+
+### Breaking
+- JSON field `humanMessage` renamed to `recommendation` in violation objects. Update any scripts parsing `humanMessage`
+- Health score values changed due to formula retuning — baselines and stored thresholds may need regeneration
 - `--format=json` redesigned as summary-oriented output — includes `meta`, `summary`, `health` scores with decomposition, `worstNamespaces`, `worstClasses`, and `violations` (top 50 by default). Supports `--format-opt=violations=all|0|N`, `--format-opt=top=N`, `--detail`, `--namespace`/`--class` drill-down. No longer PHPMD-compatible
 - `--format=summary` is now the **default CLI output** — shows health overview with bars, worst offenders, violation summary, and contextual hints in one screen. Previous default `text` format is still available via `--format=text`
 - `--namespace` and `--class` CLI options for drill-down filtering — boundary-aware namespace prefix matching and exact FQCN class matching (mutually exclusive)

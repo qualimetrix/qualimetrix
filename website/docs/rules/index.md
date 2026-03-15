@@ -60,6 +60,9 @@ These rules measure how well the methods inside a class work together. Low cohes
 | [TCC](cohesion.md) | `tcc` | Fraction of public method pairs sharing properties | >= 0.5      |
 | [LCC](cohesion.md) | `lcc` | Fraction including transitive connections          | >= 0.5      |
 
+!!! note
+    TCC and LCC are **metrics**, not rules. They cannot be enabled or disabled via `--disable-rule` / `--only-rule`, and do not generate violations. They appear in reports as informational values and are used by the God Class rule as inputs.
+
 [Read more about Cohesion rules --&gt;](cohesion.md)
 
 ### Coupling Rules

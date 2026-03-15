@@ -165,7 +165,7 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
                     severity: $severity,
                     metricValue: $instabilityValue,
                     level: RuleLevel::Class_,
-                    humanMessage: \sprintf('Instability: %.2f (max %.2f) — package is highly unstable', $instabilityValue, $threshold),
+                    recommendation: \sprintf('Instability: %.2f (max %.2f) — package is highly unstable', $instabilityValue, $threshold),
                     threshold: $threshold,
                 );
             }
@@ -231,7 +231,7 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
                     severity: $severity,
                     metricValue: $instabilityValue,
                     level: RuleLevel::Namespace_,
-                    humanMessage: \sprintf('Instability: %.2f (max %.2f) — package is highly unstable', $instabilityValue, $threshold),
+                    recommendation: \sprintf('Instability: %.2f (max %.2f) — package is highly unstable', $instabilityValue, $threshold),
                     threshold: $threshold,
                 );
             }

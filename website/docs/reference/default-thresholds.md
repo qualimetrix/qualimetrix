@@ -90,24 +90,24 @@ These rules are **inverted**: a violation is reported when the metric falls **be
 
 These rules detect specific patterns that are usually bad practice. Most do not have numeric thresholds -- they either find the pattern or they don't. Two rules (Long Parameter List and Unreachable Code) use numeric thresholds.
 
-| Rule              | ID                             | Severity | Default |
-| ----------------- | ------------------------------ | -------- | ------- |
-| Constructor Over-injection | `code-smell.constructor-overinjection` | 8 params | 12 params | enabled |
-| Data Class        | `code-smell.data-class`        | Warning  | WOC ≥ 80%, WMC ≤ 10 | enabled |
-| God Class         | `code-smell.god-class`         | Warning/Error | WMC ≥ 47, LCOM ≥ 3, TCC < 0.33, LOC ≥ 300 (3 of 4) | enabled |
-| Boolean Argument  | `code-smell.boolean-argument`  | Warning  | enabled |
-| count() in Loop   | `code-smell.count-in-loop`     | Warning  | enabled |
-| Debug Code        | `code-smell.debug-code`        | Error    | enabled |
-| Empty Catch       | `code-smell.empty-catch`       | Error    | enabled |
-| Error Suppression | `code-smell.error-suppression` | Warning  | enabled |
-| eval()            | `code-smell.eval`              | Error    | enabled |
-| exit()/die()      | `code-smell.exit`              | Warning  | enabled |
-| goto              | `code-smell.goto`              | Error    | enabled |
-| Superglobals      | `code-smell.superglobals`      | Warning  | enabled |
-| Long Parameter List | `code-smell.long-parameter-list` | 4 params | 6 params | enabled |
-| Unreachable Code  | `code-smell.unreachable-code`  | 1        | 2        | enabled |
-| Unused Private    | `code-smell.unused-private`    | Warning  | -        | enabled |
-| Identical Sub-expression | `code-smell.identical-subexpression` | Warning | - | enabled |
+| Rule                       | ID                                     | Warning                                            | Error     | Status  |
+| -------------------------- | -------------------------------------- | -------------------------------------------------- | --------- | ------- |
+| Constructor Over-injection | `code-smell.constructor-overinjection` | 8 params                                           | 12 params | enabled |
+| Data Class                 | `code-smell.data-class`                | WOC ≥ 80%, WMC ≤ 10                                | —         | enabled |
+| God Class                  | `code-smell.god-class`                 | WMC ≥ 47, TCC < 0.33, LCOM ≥ 3, LOC ≥ 300 (3 of 4) | —         | enabled |
+| Boolean Argument           | `code-smell.boolean-argument`          | —                                                  | —         | enabled |
+| count() in Loop            | `code-smell.count-in-loop`             | —                                                  | —         | enabled |
+| Debug Code                 | `code-smell.debug-code`                | —                                                  | always    | enabled |
+| Empty Catch                | `code-smell.empty-catch`               | —                                                  | always    | enabled |
+| Error Suppression          | `code-smell.error-suppression`         | always                                             | —         | enabled |
+| eval()                     | `code-smell.eval`                      | —                                                  | always    | enabled |
+| exit()/die()               | `code-smell.exit`                      | always                                             | —         | enabled |
+| goto                       | `code-smell.goto`                      | —                                                  | always    | enabled |
+| Superglobals               | `code-smell.superglobals`              | always                                             | —         | enabled |
+| Long Parameter List        | `code-smell.long-parameter-list`       | 4 params                                           | 6 params  | enabled |
+| Unreachable Code           | `code-smell.unreachable-code`          | 1                                                  | 2         | enabled |
+| Unused Private             | `code-smell.unused-private`            | always                                             | —         | enabled |
+| Identical Sub-expression   | `code-smell.identical-subexpression`   | always                                             | —         | enabled |
 
 ## Duplication Rules
 

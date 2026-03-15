@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Reporting\Formatter;
 
+use AiMessDetector\Core\Symbol\SymbolPath;
 use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
 use AiMessDetector\Reporting\Debt\DebtCalculator;
@@ -77,6 +78,7 @@ final class JsonFormatter implements FormatterInterface
                 'total' => \count($filteredViolations),
                 'limit' => $limit,
                 'truncated' => $limit !== null && \count($filteredViolations) > $limit,
+                'byRule' => $this->countByRule($filteredViolations),
             ],
         ];
 
@@ -153,12 +155,34 @@ final class JsonFormatter implements FormatterInterface
 
         $healthScores = $report->healthScores;
 
-        if ($context->namespace !== null && $report->metrics !== null) {
-            $nsScores = $this->namespaceDrillDown->buildSubtreeHealthScores($report->metrics, $context->namespace);
-            if ($nsScores === []) {
-                return null; // No health data for this namespace
+        if ($report->metrics !== null) {
+            if ($context->class !== null) {
+                $classScores = $this->namespaceDrillDown->buildClassHealthScores($report->metrics, $context->class);
+                if ($classScores !== []) {
+                    $healthScores = $classScores;
+                }
+            } elseif ($context->namespace !== null) {
+                $nsScores = $this->namespaceDrillDown->buildSubtreeHealthScores($report->metrics, $context->namespace);
+                if ($nsScores === []) {
+                    return null; // No health data for this namespace
+                }
+                $healthScores = $nsScores;
+
+                // C2: Include direct (flat) score for transparency
+                $nsPath = SymbolPath::forNamespace($context->namespace);
+                $flatOverall = $report->metrics->get($nsPath)->get('health.overall');
+                $result = $this->formatHealthScores($healthScores, $context);
+                if ($result !== null && $flatOverall !== null) {
+                    $recursiveScore = $result['overall']['score'] ?? null;
+                    $flatScore = $this->sanitizeFloat((float) $flatOverall);
+                    if ($recursiveScore !== null && abs($recursiveScore - $flatScore) > 5.0) {
+                        $result['overall']['scope'] = 'recursive';
+                        $result['overall']['directScore'] = $flatScore;
+                    }
+                }
+
+                return $result;
             }
-            $healthScores = $nsScores;
         }
 
         return $this->formatHealthScores($healthScores, $context);
@@ -315,11 +339,32 @@ final class JsonFormatter implements FormatterInterface
             'code' => $violation->violationCode,
             'severity' => $violation->severity->value,
             'message' => $violation->getDisplayMessage(),
-            'humanMessage' => $violation->humanMessage,
+            'recommendation' => $violation->recommendation,
             'metricValue' => $this->sanitizeNumeric($violation->metricValue),
             'threshold' => $this->sanitizeNumeric($violation->threshold),
             'techDebtMinutes' => $this->remediationTimeRegistry->getMinutes($violation->ruleName),
         ];
+    }
+
+    /**
+     * Counts violations by rule name.
+     *
+     * @param list<Violation> $violations
+     *
+     * @return array<string, int>
+     */
+    private function countByRule(array $violations): array
+    {
+        $counts = [];
+
+        foreach ($violations as $violation) {
+            $rule = $violation->ruleName;
+            $counts[$rule] = ($counts[$rule] ?? 0) + 1;
+        }
+
+        arsort($counts);
+
+        return $counts;
     }
 
     /**

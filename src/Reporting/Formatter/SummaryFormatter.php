@@ -162,13 +162,30 @@ final class SummaryFormatter implements FormatterInterface
         $headerSuffix = '';
         if ($context->namespace !== null) {
             $headerSuffix = ' ' . $color->dim(\sprintf('[namespace: %s]', $context->namespace));
+        } elseif ($context->class !== null) {
+            $headerSuffix = ' ' . $color->dim(\sprintf('[class: %s]', $context->class));
         }
 
         if ($overall !== null && $overall->score !== null) {
-            $lines[] = $color->bold('Health') . $headerSuffix . ' '
+            $healthLine = $color->bold('Health') . $headerSuffix . ' '
                 . $this->renderHealthBar($overall->score, $overall->warningThreshold, $overall->errorThreshold, $terminalWidth, $ascii, $color)
                 . ' ' . $this->formatScore($overall->score, $color, $overall->warningThreshold, $overall->errorThreshold)
                 . ' ' . $color->dim($overall->label);
+
+            // C2: Show flat (direct) score when namespace drill-down uses recursive aggregation
+            if ($context->namespace !== null && $report->metrics !== null) {
+                $nsPath = \AiMessDetector\Core\Symbol\SymbolPath::forNamespace($context->namespace);
+                $flatOverall = $report->metrics->get($nsPath)->get('health.overall');
+                if ($flatOverall !== null) {
+                    $flatScore = (float) $flatOverall;
+                    $delta = abs($overall->score - $flatScore);
+                    if ($delta > 5.0) { // Only show when meaningfully different
+                        $healthLine .= $color->dim(\sprintf(' (direct: %.1f%%)', $flatScore));
+                    }
+                }
+            }
+
+            $lines[] = $healthLine;
             $lines[] = '';
         }
 
@@ -206,6 +223,18 @@ final class SummaryFormatter implements FormatterInterface
             }
         }
 
+        // H8: Explain that dimensions have independent scales when labels might seem contradictory
+        if (\count($dimensions) > 1) {
+            $thresholds = array_unique(array_map(
+                static fn(HealthScore $hs): float => $hs->warningThreshold,
+                array_values($dimensions),
+            ));
+
+            if (\count($thresholds) > 1) {
+                $lines[] = $color->dim('  * Labels reflect per-dimension scales (e.g., Typing requires >80% for Acceptable)');
+            }
+        }
+
         $lines[] = '';
     }
 
@@ -216,13 +245,23 @@ final class SummaryFormatter implements FormatterInterface
      */
     private function resolveHealthScores(Report $report, FormatterContext $context): array
     {
-        if ($context->namespace === null || $report->metrics === null) {
+        if ($report->metrics === null) {
             return $report->healthScores;
         }
 
-        $nsScores = $this->namespaceDrillDown->buildSubtreeHealthScores($report->metrics, $context->namespace);
+        if ($context->class !== null) {
+            $classScores = $this->namespaceDrillDown->buildClassHealthScores($report->metrics, $context->class);
 
-        return $nsScores !== [] ? $nsScores : [];
+            return $classScores !== [] ? $classScores : $report->healthScores;
+        }
+
+        if ($context->namespace !== null) {
+            $nsScores = $this->namespaceDrillDown->buildSubtreeHealthScores($report->metrics, $context->namespace);
+
+            return $nsScores !== [] ? $nsScores : [];
+        }
+
+        return $report->healthScores;
     }
 
     private function renderHealthBar(
@@ -307,7 +346,7 @@ final class SummaryFormatter implements FormatterInterface
         }
 
         $lines[] = $color->bold('Worst namespaces');
-        $this->renderOffenderList($offenders, $color, $lines, showClassCount: true);
+        $this->renderOffenderList($offenders, $color, $lines, showClassCount: true, context: $context);
         $lines[] = '';
     }
 
@@ -332,7 +371,7 @@ final class SummaryFormatter implements FormatterInterface
         }
 
         $lines[] = $color->bold('Worst classes');
-        $this->renderOffenderList($offenders, $color, $lines, showClassCount: false);
+        $this->renderOffenderList($offenders, $color, $lines, showClassCount: false, context: $context);
         $lines[] = '';
     }
 
@@ -356,16 +395,29 @@ final class SummaryFormatter implements FormatterInterface
      * @param list<WorstOffender> $offenders
      * @param list<string> $lines
      */
-    private function renderOffenderList(array $offenders, AnsiColor $color, array &$lines, bool $showClassCount): void
+    private function renderOffenderList(array $offenders, AnsiColor $color, array &$lines, bool $showClassCount, FormatterContext $context): void
     {
-        foreach (\array_slice($offenders, 0, self::MAX_WORST_OFFENDERS) as $offender) {
+        $topN = $this->getTopN($context);
+
+        foreach (\array_slice($offenders, 0, $topN) as $offender) {
             $this->renderWorstOffender($offender, $color, $lines, $showClassCount);
         }
 
-        $remaining = \count($offenders) - self::MAX_WORST_OFFENDERS;
+        $remaining = \count($offenders) - $topN;
         if ($remaining > 0) {
-            $lines[] = $color->dim(\sprintf('  +%d more', $remaining));
+            $lines[] = $color->dim(\sprintf('  +%d more (use --format=html or --format-opt=top=%d)', $remaining, \count($offenders)));
         }
+    }
+
+    private function getTopN(FormatterContext $context): int
+    {
+        $topOpt = $context->options['top'] ?? null;
+
+        if ($topOpt !== null && is_numeric($topOpt) && (int) $topOpt > 0) {
+            return (int) $topOpt;
+        }
+
+        return self::MAX_WORST_OFFENDERS;
     }
 
     /**
@@ -446,7 +498,7 @@ final class SummaryFormatter implements FormatterInterface
         if ($report->techDebtMinutes > 0 && $context->namespace === null && $context->class === null) {
             $debtStr = DebtSummary::formatMinutes($report->techDebtMinutes);
             if ($report->debtPer1kLoc !== null) {
-                $debtStr .= \sprintf(' (%.1f min/kLOC)', $report->debtPer1kLoc);
+                $debtStr .= \sprintf(' (%.1f min/kLOC to fix)', $report->debtPer1kLoc);
             }
             $parts[] = \sprintf('Tech debt: %s', $debtStr);
         }
@@ -479,12 +531,22 @@ final class SummaryFormatter implements FormatterInterface
             $hints[] = 'run full analysis for project health overview';
         }
 
-        if ($report->healthScores !== [] && $context->namespace === null && $context->class === null) {
-            // Suggest drill-down into worst namespace
-            $worstNs = $report->worstNamespaces[0] ?? null;
-            if ($worstNs !== null) {
-                $nsName = $this->escapeForShell($worstNs->symbolPath->toString());
-                $hints[] = \sprintf('--namespace=%s to drill down', $nsName);
+        if ($report->healthScores !== [] && $context->class === null) {
+            if ($context->namespace !== null) {
+                // In namespace drill-down: suggest --class for worst class
+                $worstClasses = $this->resolveWorstClasses($report, $context);
+                $worstCls = $worstClasses[0] ?? null;
+                if ($worstCls !== null) {
+                    $clsName = $this->escapeForShell($worstCls->symbolPath->toString());
+                    $hints[] = \sprintf('--class=%s to drill deeper', $clsName);
+                }
+            } else {
+                // At project level: suggest --namespace for worst namespace
+                $worstNs = $report->worstNamespaces[0] ?? null;
+                if ($worstNs !== null) {
+                    $nsName = $this->escapeForShell($worstNs->symbolPath->toString());
+                    $hints[] = \sprintf('--namespace=%s to drill down', $nsName);
+                }
             }
         }
 

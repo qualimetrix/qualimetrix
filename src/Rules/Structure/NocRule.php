@@ -89,7 +89,7 @@ final class NocRule extends AbstractRule
                     ),
                     severity: $severity,
                     metricValue: $nocValue,
-                    humanMessage: \sprintf('NOC: %d (max %d) — too many direct subclasses', $nocValue, $threshold),
+                    recommendation: \sprintf('NOC: %d (max %d) — too many direct subclasses', $nocValue, $threshold),
                     threshold: $threshold,
                 );
             }

@@ -94,7 +94,7 @@ final class WmcRule extends AbstractRule
                     ),
                     severity: $severity,
                     metricValue: $wmcValue,
-                    humanMessage: \sprintf('WMC: %d (max %d) — total method complexity is high', $wmcValue, $threshold),
+                    recommendation: \sprintf('WMC: %d (max %d) — total method complexity is high', $wmcValue, $threshold),
                     threshold: $threshold,
                 );
             }

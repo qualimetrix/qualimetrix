@@ -86,7 +86,7 @@ final class ClassRankRule extends AbstractRule
                     ),
                     severity: $severity,
                     metricValue: $rankValue,
-                    humanMessage: \sprintf('ClassRank: %.4f (max %.4f) — coupling hotspot, many depend on this', $rankValue, $threshold),
+                    recommendation: \sprintf('ClassRank: %.4f (max %.4f) — coupling hotspot, many depend on this', $rankValue, $threshold),
                     threshold: $threshold,
                 );
             }

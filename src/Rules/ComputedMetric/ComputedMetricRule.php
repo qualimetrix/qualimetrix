@@ -121,8 +121,28 @@ final class ComputedMetricRule extends AbstractRule
                 ),
                 severity: $severity,
                 metricValue: round($floatValue, 1),
+                recommendation: $this->getRecommendation($definition->name),
             );
         }
+    }
+
+    /**
+     * Returns a dimension-specific recommendation for a computed health metric violation.
+     *
+     * Maps well-known health dimension names (e.g. "health.complexity") to actionable advice.
+     * Falls back to a generic recommendation for custom or unknown dimensions.
+     */
+    private function getRecommendation(string $dimensionName): string
+    {
+        return match (true) {
+            str_contains($dimensionName, 'complexity') => 'Reduce complexity by extracting methods, simplifying conditional logic, and breaking large classes into focused components.',
+            str_contains($dimensionName, 'cohesion') => 'Improve class cohesion by grouping related methods and fields; consider splitting classes that serve multiple unrelated responsibilities.',
+            str_contains($dimensionName, 'coupling') => 'Reduce coupling by applying dependency inversion, introducing interfaces, and limiting the number of direct dependencies.',
+            str_contains($dimensionName, 'typing') => 'Add type declarations to parameters, return types, and properties to improve type safety and IDE support.',
+            str_contains($dimensionName, 'design') => 'Improve design by reducing inheritance depth, limiting the number of subclasses, and preferring composition over inheritance.',
+            str_contains($dimensionName, 'maintainability') => 'Improve maintainability by reducing method length, lowering cyclomatic complexity, and adding documentation.',
+            default => 'Review the metric value and refactor the affected code to bring it within acceptable thresholds.',
+        };
     }
 
     /**

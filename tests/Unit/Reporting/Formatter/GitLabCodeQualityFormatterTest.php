@@ -336,7 +336,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
         self::assertSame('complexity.method', $issue['check_name']);
     }
 
-    public function testProjectLevelViolationUsesDotAsPath(): void
+    public function testProjectLevelViolationUsesDescriptiveSyntheticPath(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -356,9 +356,10 @@ final class GitLabCodeQualityFormatterTest extends TestCase
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         $issue = $data[0];
-        // Project-level violations must use '.' as path, not empty string
-        // (empty path violates GitLab Code Quality spec)
-        self::assertSame('.', $issue['location']['path']);
+        // Project-level violations must use a descriptive synthetic path, not '.' or ''
+        // '.' is not a valid file path per GitLab Code Quality spec
+        self::assertSame('_project', $issue['location']['path']);
+        self::assertNotSame('.', $issue['location']['path']);
         self::assertNotSame('', $issue['location']['path']);
     }
 

@@ -60,7 +60,7 @@ final class TextVerboseFormatterTest extends TestCase
                 message: 'Cyclomatic complexity is 15',
                 severity: Severity::Error,
                 metricValue: 15,
-                humanMessage: 'Cyclomatic complexity: 15 (max 10) — too many code paths',
+                recommendation: 'Cyclomatic complexity: 15 (max 10) — too many code paths',
             ))
             ->filesAnalyzed(1)
             ->filesSkipped(0)
@@ -156,7 +156,7 @@ final class TextVerboseFormatterTest extends TestCase
                 message: 'Cyclomatic complexity is 25, exceeds threshold of 10',
                 severity: Severity::Error,
                 metricValue: 25,
-                humanMessage: 'Cyclomatic complexity: 25 (max 10) — too many code paths',
+                recommendation: 'Cyclomatic complexity: 25 (max 10) — too many code paths',
             ))
             ->filesAnalyzed(1)
             ->filesSkipped(0)
@@ -165,7 +165,7 @@ final class TextVerboseFormatterTest extends TestCase
 
         $output = $this->formatter->format($report, $this->plainContext);
 
-        // Should use humanMessage, not technical message
+        // Should use recommendation, not technical message
         self::assertStringContainsString('too many code paths', $output);
     }
 

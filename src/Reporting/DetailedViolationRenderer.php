@@ -13,7 +13,7 @@ use LogicException;
 /**
  * Renders detailed violation output shared by TextFormatter (--detail) and SummaryFormatter (--detail).
  *
- * Groups violations by file/rule/severity, shows humanMessage with metric context,
+ * Groups violations by file/rule/severity, shows recommendation with metric context,
  * and appends a technical debt breakdown by rule.
  */
 final class DetailedViolationRenderer

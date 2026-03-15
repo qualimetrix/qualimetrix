@@ -489,7 +489,7 @@ bin/aimd check src/ --format=metrics-json > metrics.json
 ```php
 $violation->severity      // Severity enum (Error, Warning, Info)
 $violation->message       // Violation description (technical, for text/checkstyle/sarif)
-$violation->humanMessage  // ?string — human-readable message (for summary/detail/json)
+$violation->recommendation  // ?string — human-readable message (for summary/detail/json)
 $violation->threshold     // int|float|null — threshold that was exceeded
 $violation->ruleName      // Rule name
 $violation->violationCode // Stable violation code for identification

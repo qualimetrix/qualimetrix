@@ -220,6 +220,61 @@ final readonly class NamespaceDrillDown
         return implode(', ', $reasons);
     }
 
+    /**
+     * Builds health scores for a single class from its metrics.
+     *
+     * @return array<string, HealthScore> Empty array if class not found.
+     */
+    public function buildClassHealthScores(MetricRepositoryInterface $metrics, string $classFqn): array
+    {
+        $defaults = ComputedMetricDefaults::getDefaults();
+        $dimensions = ['health.complexity', 'health.cohesion', 'health.coupling', 'health.typing', 'health.maintainability', 'health.overall'];
+
+        // Find the class in the metrics repository
+        $classPath = null;
+        foreach ($metrics->all(SymbolType::Class_) as $symbolInfo) {
+            $ns = $symbolInfo->symbolPath->namespace ?? '';
+            $type = $symbolInfo->symbolPath->type ?? '';
+            $fqcn = $ns !== '' ? $ns . '\\' . $type : $type;
+
+            if ($fqcn === $classFqn) {
+                $classPath = $symbolInfo->symbolPath;
+                break;
+            }
+        }
+
+        if ($classPath === null) {
+            return [];
+        }
+
+        $classMetrics = $metrics->get($classPath);
+        $healthScores = [];
+
+        foreach ($dimensions as $dimension) {
+            $score = $classMetrics->get($dimension);
+
+            if ($score === null) {
+                continue;
+            }
+
+            $scoreValue = (float) $score;
+            $definition = $defaults[$dimension];
+            $warnThreshold = $definition->warningThreshold ?? 50.0;
+            $errThreshold = $definition->errorThreshold ?? 25.0;
+            $dimensionName = str_replace('health.', '', $dimension);
+
+            $healthScores[$dimensionName] = new HealthScore(
+                name: $dimensionName,
+                score: $scoreValue,
+                label: $this->hintProvider->getScoreLabel($scoreValue, $warnThreshold, $errThreshold),
+                warningThreshold: $warnThreshold,
+                errorThreshold: $errThreshold,
+            );
+        }
+
+        return $healthScores;
+    }
+
     private function matchesNamespace(string $subject, string $prefix): bool
     {
         if ($subject === $prefix) {

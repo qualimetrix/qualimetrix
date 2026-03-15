@@ -417,7 +417,7 @@ final class TextFormatterTest extends TestCase
                 violationCode: 'test.rule',
                 message: 'Test msg',
                 severity: Severity::Error,
-                humanMessage: 'Human: test error',
+                recommendation: 'Human: test error',
             ))
             ->addViolation(new Violation(
                 location: new Location('src/Bar.php', 20),
@@ -439,7 +439,7 @@ final class TextFormatterTest extends TestCase
         self::assertStringContainsString('src/Foo.php (1 violation)', $output);
         self::assertStringContainsString('src/Bar.php (1 violation)', $output);
 
-        // Uses humanMessage when available
+        // Uses recommendation when available
         self::assertStringContainsString('Human: test error', $output);
         // Falls back to message for the second violation
         self::assertStringContainsString('Bar msg', $output);

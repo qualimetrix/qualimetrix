@@ -125,6 +125,11 @@ final readonly class SummaryEnricher
             return [];
         }
 
+        // Typing dimension needs special handling: compute percentages from raw sums
+        if ($dimension === 'health.typing') {
+            return $this->buildTypingDecomposition($projectMetrics);
+        }
+
         $metricKeys = $this->hintProvider->getDecomposition($dimension);
         $items = [];
 
@@ -155,6 +160,42 @@ final readonly class SummaryEnricher
     }
 
     /**
+     * @return list<DecompositionItem>
+     */
+    private function buildTypingDecomposition(\AiMessDetector\Core\Metric\MetricBag $metrics): array
+    {
+        $components = [
+            ['label' => 'Parameter types', 'typed' => 'typeCoverage.paramTyped.sum', 'total' => 'typeCoverage.paramTotal.sum'],
+            ['label' => 'Return types', 'typed' => 'typeCoverage.returnTyped.sum', 'total' => 'typeCoverage.returnTotal.sum'],
+            ['label' => 'Property types', 'typed' => 'typeCoverage.propertyTyped.sum', 'total' => 'typeCoverage.propertyTotal.sum'],
+        ];
+
+        $items = [];
+
+        foreach ($components as $component) {
+            $typed = $metrics->get($component['typed']);
+            $total = $metrics->get($component['total']);
+
+            if ($total === null || (int) $total === 0) {
+                continue;
+            }
+
+            $pct = round((float) $typed / (float) $total * 100, 1);
+
+            $items[] = new DecompositionItem(
+                metricKey: $component['typed'],
+                humanName: $component['label'],
+                value: $pct,
+                goodValue: '100%',
+                direction: 'higher_is_better',
+                explanation: \sprintf('%d of %d typed (%.1f%%)', (int) $typed, (int) $total, $pct),
+            );
+        }
+
+        return $items;
+    }
+
+    /**
      * @return list<WorstOffender>
      */
     private function buildWorstOffenders(Report $report, SymbolType $symbolType, int $limit): array
@@ -178,9 +219,13 @@ final readonly class SummaryEnricher
 
             $scoreValue = (float) $healthOverall;
 
-            // Only include symbols below the warning threshold
-            if ($scoreValue > $warnThreshold) {
-                continue;
+            // Skip namespaces with no direct classes (e.g., root namespace containers like "PHPUnit")
+            if ($symbolType === SymbolType::Namespace_) {
+                $classCountInNs = (int) ($metrics->get('classCount.sum') ?? 0);
+
+                if ($classCountInNs === 0) {
+                    continue;
+                }
             }
 
             $candidates[] = ['score' => $scoreValue, 'info' => $symbolInfo];
@@ -239,7 +284,7 @@ final readonly class SummaryEnricher
      */
     private function getPerDimensionScores(\AiMessDetector\Core\Metric\MetricBag $metrics): array
     {
-        $dimensions = ['complexity', 'cohesion', 'coupling', 'typing', 'maintainability'];
+        $dimensions = ['complexity', 'cohesion', 'coupling', 'typing', 'maintainability', 'overall'];
         $scores = [];
 
         foreach ($dimensions as $dim) {

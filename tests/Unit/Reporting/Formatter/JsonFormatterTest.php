@@ -115,7 +115,7 @@ final class JsonFormatterTest extends TestCase
                 severity: Severity::Error,
                 metricValue: 25,
                 threshold: 10,
-                humanMessage: 'Cyclomatic complexity: 25 (max 10) — too many code paths',
+                recommendation: 'Cyclomatic complexity: 25 (max 10) — too many code paths',
             ))
             ->addViolation(new Violation(
                 location: new Location('src/Service/UserService.php', 120),
@@ -126,7 +126,7 @@ final class JsonFormatterTest extends TestCase
                 severity: Severity::Warning,
                 metricValue: 12,
                 threshold: 10,
-                humanMessage: 'Cyclomatic complexity: 12 (max 10) — too many code paths',
+                recommendation: 'Cyclomatic complexity: 12 (max 10) — too many code paths',
             ))
             ->filesAnalyzed(42)
             ->filesSkipped(1)
@@ -182,7 +182,7 @@ final class JsonFormatterTest extends TestCase
         $output = $this->formatter->format($report, new FormatterContext());
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
-        // Without humanMessage, getDisplayMessage() falls back to message
+        // Without recommendation, getDisplayMessage() falls back to message
         self::assertSame('Technical message only', $data['violations'][0]['message']);
     }
 

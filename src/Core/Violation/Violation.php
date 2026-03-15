@@ -22,7 +22,7 @@ final readonly class Violation
         public int|float|null $metricValue = null,
         public ?RuleLevel $level = null,
         public array $relatedLocations = [],
-        public ?string $humanMessage = null,
+        public ?string $recommendation = null,
         public int|float|null $threshold = null,
     ) {}
 
@@ -41,10 +41,10 @@ final readonly class Violation
     /**
      * Returns the best available human-readable message.
      *
-     * Prefers humanMessage when available, falls back to technical message.
+     * Prefers recommendation when available, falls back to technical message.
      */
     public function getDisplayMessage(): string
     {
-        return $this->humanMessage ?? $this->message;
+        return $this->recommendation ?? $this->message;
     }
 }

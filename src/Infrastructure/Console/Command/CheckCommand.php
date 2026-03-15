@@ -154,10 +154,10 @@ final class CheckCommand extends Command
         $filterResult = $this->filterViolations($result, $input, $output, $scopeResolution);
         $filteredViolations = $filterResult->violations;
 
-        $this->resultPresenter->generateBaselineIfRequested($result->violations, $input, $output);
+        $baselineGenerated = $this->resultPresenter->generateBaselineIfRequested($result->violations, $input, $output);
 
         $partialAnalysis = $scopeResolution->analyzeScope !== null;
-        $exitCode = $this->resultPresenter->presentResults($filteredViolations, $result, $input, $output, $partialAnalysis);
+        $exitCode = $this->resultPresenter->presentResults($filteredViolations, $result, $input, $output, $partialAnalysis, $baselineGenerated);
 
         $this->resultPresenter->presentProfile($input, $output);
 

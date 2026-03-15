@@ -432,38 +432,63 @@ bin/aimd check src/ --rule-opt=complexity.cyclomatic:method.error=30
 
 === "Проектирование"
 
-| Флаг                                 | Правило              | Опция            |
-| ------------------------------------ | -------------------- | ---------------- |
-| `--dit-warning=N`                    | design.inheritance   | warning          |
-| `--dit-error=N`                      | design.inheritance   | error            |
-| `--lcom-warning=N`                   | design.lcom          | warning          |
-| `--lcom-error=N`                     | design.lcom          | error            |
-| `--lcom-min-methods=N`               | design.lcom          | minMethods       |
-| `--noc-warning=N`                    | design.noc           | warning          |
-| `--noc-error=N`                      | design.noc           | error            |
-| `--type-coverage-param-warning=N`    | design.type-coverage | param_warning    |
-| `--type-coverage-param-error=N`      | design.type-coverage | param_error      |
-| `--type-coverage-return-warning=N`   | design.type-coverage | return_warning   |
-| `--type-coverage-return-error=N`     | design.type-coverage | return_error     |
-| `--type-coverage-property-warning=N` | design.type-coverage | property_warning |
-| `--type-coverage-property-error=N`   | design.type-coverage | property_error   |
+| Флаг                                 | Правило              | Опция               |
+| ------------------------------------ | -------------------- | ------------------- |
+| `--dit-warning=N`                    | design.inheritance   | warning             |
+| `--dit-error=N`                      | design.inheritance   | error               |
+| `--lcom-warning=N`                   | design.lcom          | warning             |
+| `--lcom-error=N`                     | design.lcom          | error               |
+| `--lcom-min-methods=N`               | design.lcom          | minMethods          |
+| `--lcom-exclude-readonly`            | design.lcom          | excludeReadonly     |
+| `--noc-warning=N`                    | design.noc           | warning             |
+| `--noc-error=N`                      | design.noc           | error               |
+| `--type-coverage-param-warning=N`    | design.type-coverage | param_warning       |
+| `--type-coverage-param-error=N`      | design.type-coverage | param_error         |
+| `--type-coverage-return-warning=N`   | design.type-coverage | return_warning      |
+| `--type-coverage-return-error=N`     | design.type-coverage | return_error        |
+| `--type-coverage-property-warning=N` | design.type-coverage | property_warning    |
+| `--type-coverage-property-error=N`   | design.type-coverage | property_error      |
+| `--property-exclude-readonly`        | size.property-count  | excludeReadonly     |
+| `--property-exclude-promoted-only`   | size.property-count  | excludePromotedOnly |
 
 === "Сопровождаемость"
 
-| Флаг             | Правило               | Опция   |
-| ---------------- | --------------------- | ------- |
-| `--mi-warning=N` | maintainability.index | warning |
-| `--mi-error=N`   | maintainability.index | error   |
-| `--mi-min-loc=N` | maintainability.index | minLoc  |
+| Флаг                 | Правило               | Опция        |
+| -------------------- | --------------------- | ------------ |
+| `--mi-warning=N`     | maintainability.index | warning      |
+| `--mi-error=N`       | maintainability.index | error        |
+| `--mi-min-loc=N`     | maintainability.index | minLoc       |
+| `--mi-exclude-tests` | maintainability.index | excludeTests |
 
 === "Запахи кода"
 
-| Флаг                              | Правило                        | Опция   |
-| --------------------------------- | ------------------------------ | ------- |
-| `--long-parameter-list-warning=N` | code-smell.long-parameter-list | warning |
-| `--long-parameter-list-error=N`   | code-smell.long-parameter-list | error   |
-| `--unreachable-code-warning=N`    | code-smell.unreachable-code    | warning |
-| `--unreachable-code-error=N`      | code-smell.unreachable-code    | error   |
+| Флаг                                    | Правило                              | Опция               |
+| --------------------------------------- | ------------------------------------ | ------------------- |
+| `--constructor-overinjection-warning=N` | code-smell.constructor-overinjection | warning             |
+| `--constructor-overinjection-error=N`   | code-smell.constructor-overinjection | error               |
+| `--data-class-woc-threshold=N`          | code-smell.data-class                | wocThreshold        |
+| `--data-class-wmc-threshold=N`          | code-smell.data-class                | wmcThreshold        |
+| `--data-class-min-methods=N`            | code-smell.data-class                | minMethods          |
+| `--data-class-exclude-readonly`         | code-smell.data-class                | excludeReadonly     |
+| `--data-class-exclude-promoted-only`    | code-smell.data-class                | excludePromotedOnly |
+| `--god-class-wmc-threshold=N`           | code-smell.god-class                 | wmcThreshold        |
+| `--god-class-lcom-threshold=N`          | code-smell.god-class                 | lcomThreshold       |
+| `--god-class-tcc-threshold=N`           | code-smell.god-class                 | tccThreshold        |
+| `--god-class-class-loc-threshold=N`     | code-smell.god-class                 | classLocThreshold   |
+| `--god-class-min-criteria=N`            | code-smell.god-class                 | minCriteria         |
+| `--god-class-min-methods=N`             | code-smell.god-class                 | minMethods          |
+| `--god-class-exclude-readonly`          | code-smell.god-class                 | excludeReadonly     |
+| `--long-parameter-list-warning=N`       | code-smell.long-parameter-list       | warning             |
+| `--long-parameter-list-error=N`         | code-smell.long-parameter-list       | error               |
+| `--unreachable-code-warning=N`          | code-smell.unreachable-code          | warning             |
+| `--unreachable-code-error=N`            | code-smell.unreachable-code          | error               |
+
+=== "Архитектура"
+
+| Флаг                 | Правило                          | Опция        |
+| -------------------- | -------------------------------- | ------------ |
+| `--circular-deps`    | architecture.circular-dependency | enabled      |
+| `--max-cycle-size=N` | architecture.circular-dependency | maxCycleSize |
 
 ---
 
@@ -558,11 +583,11 @@ bin/aimd rules --group=complexity
 complexity.cyclomatic    Cyclomatic complexity (McCabe)
   --cyclomatic-warning=N         method.warning (default: 10)
   --cyclomatic-error=N           method.error (default: 20)
-  --cyclomatic-class-warning=N   class.max_warning (default: 50)
-  --cyclomatic-class-error=N     class.max_error (default: 100)
+  --cyclomatic-class-warning=N   class.max_warning (default: 30)
+  --cyclomatic-class-error=N     class.max_error (default: 50)
 
 complexity.cognitive     Cognitive complexity (SonarSource)
-  --cognitive-warning=N          method.warning (default: 8)
-  --cognitive-error=N            method.error (default: 15)
+  --cognitive-warning=N          method.warning (default: 15)
+  --cognitive-error=N            method.error (default: 30)
   ...
 ```

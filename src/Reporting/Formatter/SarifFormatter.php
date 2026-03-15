@@ -22,6 +22,22 @@ final class SarifFormatter implements FormatterInterface
     private const VERSION = '0.1.0';
     private const SCHEMA = 'https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json';
     private const INFORMATION_URI = 'https://github.com/FractalizeR/php_ai_mess_detector';
+    private const DOCS_BASE_URI = 'https://aimd.dev/rules/';
+
+    /** @var array<string, string> Maps rule category prefix to its docs page path segment */
+    private const CATEGORY_DOCS_MAP = [
+        'complexity' => 'complexity/',
+        'coupling' => 'coupling/',
+        'cohesion' => 'cohesion/',
+        'design' => 'design/',
+        'maintainability' => 'maintainability/',
+        'size' => 'size/',
+        'code-smell' => 'code-smell/',
+        'architecture' => 'architecture/',
+        'security' => 'security/',
+        'duplication' => 'architecture/',
+        'computed' => 'maintainability/',
+    ];
 
     public function format(Report $report, FormatterContext $context): string
     {
@@ -111,7 +127,7 @@ final class SarifFormatter implements FormatterInterface
                 'fullDescription' => [
                     'text' => $this->getRuleDescription($code),
                 ],
-                'helpUri' => self::INFORMATION_URI,
+                'helpUri' => $this->getHelpUri($code),
                 'defaultConfiguration' => [
                     'level' => $this->mapLevel($info['maxSeverity']),
                 ],
@@ -157,6 +173,25 @@ final class SarifFormatter implements FormatterInterface
             'code-smell.unused-private' => 'Unused private member detected',
             default => ucfirst(str_replace(['.', '-'], ' ', $ruleName)),
         };
+    }
+
+    /**
+     * Returns the documentation URL for a rule, based on its category prefix.
+     *
+     * Maps known category prefixes (e.g. "complexity", "code-smell") to the
+     * corresponding page on the AIMD website. Falls back to the repository URL
+     * for unknown or user-defined rule names.
+     */
+    private function getHelpUri(string $ruleName): string
+    {
+        $dotPos = strpos($ruleName, '.');
+        $category = $dotPos !== false ? substr($ruleName, 0, $dotPos) : $ruleName;
+
+        if (isset(self::CATEGORY_DOCS_MAP[$category])) {
+            return self::DOCS_BASE_URI . self::CATEGORY_DOCS_MAP[$category];
+        }
+
+        return self::INFORMATION_URI;
     }
 
     /**
