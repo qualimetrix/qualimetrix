@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import {
+  initHints,
   getMetricHint,
   getHealthHint,
   METRIC_HINTS,
@@ -7,6 +8,279 @@ import {
   resolveBaseKey,
   matchRange,
 } from '../src/hints.js';
+
+// ---------------------------------------------------------------------------
+// Fixture: matches MetricHintProvider::exportForHtml() output
+// ---------------------------------------------------------------------------
+
+const hintsFixture = {
+  metricHints: {
+    ccn: {
+      label: 'Cyclomatic Complexity', // Matches PHP HTML_LABELS override
+      ranges: [
+        { max: 4, text: 'Simple, easy to test' },
+        { max: 10, text: 'Moderate complexity' },
+        { max: 20, text: 'Complex, consider refactoring' },
+        { max: 50, text: 'Very complex, hard to maintain' },
+        { above: true, text: 'Extremely complex' },
+      ],
+      formatTemplate: null,
+    },
+    cognitive: {
+      label: 'Cognitive Complexity',
+      ranges: [
+        { max: 5, text: 'Simple, easy to understand' },
+        { max: 15, text: 'Moderate complexity' },
+        { max: 30, text: 'Complex, hard to follow' },
+        { above: true, text: 'Very hard to follow' },
+      ],
+      formatTemplate: null,
+    },
+    npath: {
+      label: 'NPath Complexity',
+      ranges: [
+        { max: 20, text: 'Simple, few execution paths' },
+        { max: 200, text: 'Moderate path count' },
+        { max: 1000, text: 'Many execution paths' },
+        { above: true, text: 'Explosive path count' },
+      ],
+      formatTemplate: null,
+    },
+    lcom: {
+      label: 'LCOM4',
+      ranges: [
+        { max: 1, text: 'Cohesive — single responsibility' },
+        { max: 3, text: 'Moderate cohesion' },
+        { max: 5, text: 'Low cohesion, consider splitting' },
+        { above: true, text: 'Very low cohesion' },
+      ],
+      formatTemplate: '{value} disconnected group{plural}',
+    },
+    tcc: {
+      label: 'Tight Class Cohesion',
+      ranges: [
+        { max: 0.29, text: 'Low method interconnection' },
+        { max: 0.49, text: 'Moderate cohesion' },
+        { above: true, text: 'Good cohesion' },
+      ],
+      formatTemplate: null,
+    },
+    lcc: {
+      label: 'Loose Class Cohesion',
+      ranges: [
+        { max: 0.29, text: 'Low cohesion (incl. transitive)' },
+        { max: 0.49, text: 'Moderate cohesion' },
+        { above: true, text: 'Good cohesion' },
+      ],
+      formatTemplate: null,
+    },
+    wmc: {
+      label: 'Weighted Methods per Class',
+      ranges: [
+        { max: 20, text: 'Manageable class' },
+        { max: 50, text: 'Large class' },
+        { max: 80, text: 'Very large class' },
+        { above: true, text: 'Excessive — consider splitting' },
+      ],
+      formatTemplate: null,
+    },
+    cbo: {
+      label: 'Coupling Between Objects',
+      ranges: [
+        { max: 7, text: 'Normal coupling' },
+        { max: 14, text: 'Moderate coupling' },
+        { max: 20, text: 'High coupling' },
+        { above: true, text: 'Very high coupling' },
+      ],
+      formatTemplate: null,
+    },
+    instability: {
+      label: 'Instability',
+      ranges: [
+        { max: 0.09, text: 'Maximally stable' },
+        { max: 0.29, text: 'Stable' },
+        { max: 0.7, text: 'Balanced' },
+        { max: 0.9, text: 'Unstable' },
+        { above: true, text: 'Maximally unstable' },
+      ],
+      formatTemplate: null,
+    },
+    abstractness: {
+      label: 'Abstractness',
+      ranges: [
+        { max: 0.09, text: 'All concrete' },
+        { max: 0.5, text: 'Mostly concrete' },
+        { max: 0.9, text: 'Mostly abstract' },
+        { above: true, text: 'All abstract' },
+      ],
+      formatTemplate: null,
+    },
+    distance: {
+      label: 'Distance',
+      ranges: [
+        { max: 0.1, text: 'On main sequence' },
+        { max: 0.3, text: 'Acceptable balance' },
+        { above: true, text: 'Off balance' },
+      ],
+      formatTemplate: null,
+    },
+    classRank: {
+      label: 'ClassRank',
+      ranges: [
+        { max: 0.009, text: 'Peripheral class' },
+        { max: 0.02, text: 'Moderate importance' },
+        { max: 0.05, text: 'Important hub' },
+        { above: true, text: 'Critical coupling point' },
+      ],
+      formatTemplate: null,
+    },
+    dit: {
+      label: 'Depth of Inheritance Tree',
+      ranges: [
+        { max: 0, text: 'Root class' },
+        { max: 3, text: 'Normal depth' },
+        { max: 6, text: 'Deep hierarchy' },
+        { above: true, text: 'Fragile hierarchy' },
+      ],
+      formatTemplate: null,
+    },
+    noc: {
+      label: 'Number of Children',
+      ranges: [
+        { max: 0, text: 'Leaf class' },
+        { max: 5, text: 'Normal inheritance' },
+        { max: 10, text: 'Many subclasses' },
+        { above: true, text: 'Heavy base class' },
+      ],
+      formatTemplate: null,
+    },
+    rfc: {
+      label: 'Response for a Class',
+      ranges: [
+        { max: 20, text: 'Simple interface' },
+        { max: 50, text: 'Moderate interface' },
+        { max: 100, text: 'Complex interface' },
+        { above: true, text: 'Very complex interface' },
+      ],
+      formatTemplate: null,
+    },
+    methodCount: {
+      label: 'Method Count',
+      ranges: [
+        { max: 10, text: 'Focused class' },
+        { max: 20, text: 'Large class' },
+        { max: 30, text: 'Very large class' },
+        { above: true, text: 'God Class territory' },
+      ],
+      formatTemplate: null,
+    },
+    propertyCount: {
+      label: 'Property Count',
+      ranges: [
+        { max: 10, text: 'Normal' },
+        { max: 15, text: 'Large' },
+        { max: 20, text: 'Heavy' },
+        { above: true, text: 'Excessive' },
+      ],
+      formatTemplate: null,
+    },
+    'classCount.sum': {
+      label: 'Class Count',
+      ranges: [
+        { max: 10, text: 'Focused namespace' },
+        { max: 15, text: 'Moderate namespace' },
+        { max: 25, text: 'Large namespace' },
+        { above: true, text: 'Bloated namespace' },
+      ],
+      formatTemplate: null,
+    },
+    mi: {
+      label: 'Maintainability Index',
+      ranges: [
+        { max: 19, text: 'Critical — very hard to maintain' },
+        { max: 39, text: 'Poor — refactoring recommended' },
+        { max: 64, text: 'Moderate — could benefit from simplification' },
+        { max: 84, text: 'Good maintainability' },
+        { above: true, text: 'Excellent maintainability' },
+      ],
+      formatTemplate: null,
+    },
+    'typeCoverage.pct': {
+      label: 'Type coverage',
+      ranges: [
+        { max: 49, text: 'Low type coverage' },
+        { max: 79, text: 'Moderate type coverage' },
+        { above: true, text: 'Good type coverage' },
+      ],
+      formatTemplate: null,
+    },
+    'typeCoverage.param': {
+      label: 'Parameter Type Coverage',
+      ranges: [
+        { max: 49, text: 'Low coverage' },
+        { max: 79, text: 'Moderate coverage' },
+        { above: true, text: 'Good coverage' },
+      ],
+      formatTemplate: null,
+    },
+    'typeCoverage.return': {
+      label: 'Return Type Coverage',
+      ranges: [
+        { max: 49, text: 'Low coverage' },
+        { max: 79, text: 'Moderate coverage' },
+        { above: true, text: 'Good coverage' },
+      ],
+      formatTemplate: null,
+    },
+    'typeCoverage.property': {
+      label: 'Property Type Coverage',
+      ranges: [
+        { max: 49, text: 'Low coverage' },
+        { max: 79, text: 'Moderate coverage' },
+        { above: true, text: 'Good coverage' },
+      ],
+      formatTemplate: null,
+    },
+  },
+  healthDecomposition: {
+    'health.complexity': {
+      inputs: [
+        { key: 'ccn.avg', altKey: 'ccn', label: 'CCN', ideal: '1-4', direction: 'lower' },
+        { key: 'cognitive.avg', altKey: 'cognitive', label: 'Cognitive', ideal: '0-5', direction: 'lower' },
+      ],
+    },
+    'health.cohesion': {
+      inputs: [
+        { key: 'tcc.avg', altKey: 'tcc', label: 'TCC', ideal: '1.0', direction: 'higher' },
+        { key: 'lcom.avg', altKey: 'lcom', label: 'LCOM', ideal: '1', direction: 'lower' },
+      ],
+    },
+    'health.coupling': {
+      inputs: [
+        { key: 'cbo.avg', altKey: 'cbo', label: 'CBO', ideal: '0-7', direction: 'lower' },
+        { key: 'distance.avg', altKey: 'distance', label: 'Distance', ideal: '0.0', direction: 'lower' },
+      ],
+    },
+    'health.typing': {
+      inputs: [
+        { key: 'typeCoverage.pct', altKey: null, label: 'Coverage', ideal: '100%', direction: 'higher' },
+      ],
+    },
+    'health.maintainability': {
+      inputs: [
+        { key: 'mi.avg', altKey: 'mi', label: 'MI', ideal: '85+', direction: 'higher' },
+      ],
+    },
+    'health.overall': {
+      inputs: [],
+    },
+  },
+};
+
+// Initialize hints before all tests
+beforeAll(() => {
+  initHints(hintsFixture);
+});
 
 // ---------------------------------------------------------------------------
 // resolveBaseKey
@@ -414,6 +688,37 @@ describe('getHealthHint', () => {
     };
     const result = getHealthHint('health.complexity', node);
     expect(result).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// initHints
+// ---------------------------------------------------------------------------
+
+describe('initHints', () => {
+  it('populates METRIC_HINTS map', () => {
+    expect(METRIC_HINTS.size).toBeGreaterThan(0);
+    expect(METRIC_HINTS.has('ccn')).toBe(true);
+  });
+
+  it('populates HEALTH_DECOMPOSITION map', () => {
+    expect(HEALTH_DECOMPOSITION.size).toBeGreaterThan(0);
+    expect(HEALTH_DECOMPOSITION.has('health.complexity')).toBe(true);
+  });
+
+  it('creates format function from template', () => {
+    const lcom = METRIC_HINTS.get('lcom');
+    expect(lcom.format).toBeTypeOf('function');
+    expect(lcom.format(1)).toBe('1 disconnected group');
+    expect(lcom.format(3)).toBe('3 disconnected groups');
+  });
+
+  it('handles null input gracefully', () => {
+    initHints(null);
+    expect(METRIC_HINTS.size).toBe(0);
+    expect(HEALTH_DECOMPOSITION.size).toBe(0);
+    // Re-init for other tests
+    initHints(hintsFixture);
   });
 });
 

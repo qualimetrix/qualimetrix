@@ -12,6 +12,7 @@ import { parseHash, generateHash, initHashNavigation } from './hash.js';
 import { createSearchHandler } from './search.js';
 import { renderDetail, setNavigateTo } from './detail.js';
 import { computeSubtreeMetrics } from './subtree.js';
+import { initHints } from './hints.js';
 
 /** @type {import('./types').ReportData} */
 let DATA;
@@ -45,6 +46,11 @@ export function init() {
   }
 
   DATA = JSON.parse(el.textContent);
+
+  // Initialize hint data from embedded JSON (PHP is the single source of truth)
+  if (DATA.hints) {
+    initHints(DATA.hints);
+  }
 
   // Detect neutral color from CSS variable (adapts to dark/light mode)
   const neutralColor = getComputedStyle(document.documentElement)
