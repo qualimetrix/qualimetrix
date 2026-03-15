@@ -36,6 +36,9 @@ When starting a session in the web environment, `scripts/init-environment.sh` is
 - Update README.md in the affected `src/` directory: add new files/classes to the structure diagram, update descriptions
 - If default thresholds changed, update the defaults table in `src/Rules/README.md`
 
+**Before planning a new feature:**
+- Read [docs/internal/PRODUCT_VISION.md](docs/internal/PRODUCT_VISION.md) — target users, design principles, scope boundaries
+
 **Before adding CLI commands or options:**
 - Read [docs/internal/CLI_CONVENTIONS.md](docs/internal/CLI_CONVENTIONS.md) — naming rules
 
@@ -359,6 +362,7 @@ Key rules:
 - [docs/adr/README.md](docs/adr/README.md) — ADR format and index
 
 ### Internal Documentation (in docs/internal/)
+- [docs/internal/PRODUCT_VISION.md](docs/internal/PRODUCT_VISION.md) — target users, key questions, design principles
 - [docs/internal/CLI_CONVENTIONS.md](docs/internal/CLI_CONVENTIONS.md) — CLI naming conventions
 
 ### General Documentation (in docs/)
