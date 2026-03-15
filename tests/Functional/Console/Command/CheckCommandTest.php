@@ -126,9 +126,10 @@ class ComplexClass {
         // Verify JSON output
         $json = json_decode($output, true);
         $this->assertIsArray($json);
-        // JSON format uses 'files' key for violations grouped by file, and 'summary' for stats
-        $this->assertArrayHasKey('files', $json);
+        // JSON format uses summary structure with meta, health, worst offenders, and violations
+        $this->assertArrayHasKey('meta', $json);
         $this->assertArrayHasKey('summary', $json);
+        $this->assertArrayHasKey('violations', $json);
     }
 
     #[Test]

@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- `--format=json` redesigned as summary-oriented output — includes `meta`, `summary`, `health` scores with decomposition, `worstNamespaces`, `worstClasses`, and `violations` (top 50 by default). Supports `--format-opt=violations=all|0|N`, `--format-opt=top=N`, `--detail`, `--namespace`/`--class` drill-down. No longer PHPMD-compatible
 - `--format=summary` is now the **default CLI output** — shows health overview with bars, worst offenders, violation summary, and contextual hints in one screen. Previous default `text` format is still available via `--format=text`
 - `--namespace` and `--class` CLI options for drill-down filtering — boundary-aware namespace prefix matching and exact FQCN class matching (mutually exclusive)
 - Composite code-smell rules: God Class (`code-smell.god-class`, Lanza & Marinescu 4-criteria detection), Data Class (`code-smell.data-class`, high WOC + low WMC), Constructor Over-injection (`code-smell.constructor-overinjection`, configurable thresholds 8/12)
@@ -45,6 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `WorkerBootstrap` validates collector instantiability before creating instances
 
 ### Breaking
+- `--format=json` output structure completely redesigned — no longer PHPMD-compatible. Use `--format=text` for grep-friendly output
 - Baseline version 3 is no longer supported — regenerate with `--generate-baseline` (v3 hashes were silently incompatible with v4)
 - NPath complexity formula changes: `for` loop follows Nejmeh 1988 standard, `try-catch-finally` follows PMD/Checkstyle convention — existing NPath values may change
 
