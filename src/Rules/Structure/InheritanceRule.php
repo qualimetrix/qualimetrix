@@ -86,6 +86,8 @@ final class InheritanceRule extends AbstractRule
                     ),
                     severity: $severity,
                     metricValue: $ditValue,
+                    humanMessage: \sprintf('DIT: %d (max %d) — deep inheritance, fragile hierarchy', $ditValue, $threshold),
+                    threshold: $threshold,
                 );
             }
         }

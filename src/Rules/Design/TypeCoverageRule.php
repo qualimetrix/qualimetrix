@@ -108,6 +108,8 @@ final class TypeCoverageRule extends AbstractRule
                         ),
                         severity: $paramSeverity,
                         metricValue: $paramCoverage,
+                        humanMessage: \sprintf('Parameter type coverage: %.1f%% (min %.1f%%) — missing type declarations', $paramCoverage, $threshold),
+                        threshold: $threshold,
                     );
                 }
             }
@@ -135,6 +137,8 @@ final class TypeCoverageRule extends AbstractRule
                         ),
                         severity: $returnSeverity,
                         metricValue: $returnCoverage,
+                        humanMessage: \sprintf('Return type coverage: %.1f%% (min %.1f%%) — missing type declarations', $returnCoverage, $threshold),
+                        threshold: $threshold,
                     );
                 }
             }
@@ -162,6 +166,8 @@ final class TypeCoverageRule extends AbstractRule
                         ),
                         severity: $propertySeverity,
                         metricValue: $propertyCoverage,
+                        humanMessage: \sprintf('Property type coverage: %.1f%% (min %.1f%%) — missing type declarations', $propertyCoverage, $threshold),
+                        threshold: $threshold,
                     );
                 }
             }

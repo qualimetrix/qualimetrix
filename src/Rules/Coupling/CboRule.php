@@ -223,6 +223,8 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
                 severity: Severity::Error,
                 metricValue: (float) $cbo,
                 level: $level,
+                humanMessage: \sprintf('CBO: %d (max %d) — depends on too many classes', $cbo, $options->error),
+                threshold: $options->error,
             );
         }
 
@@ -242,6 +244,8 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
                 severity: Severity::Warning,
                 metricValue: (float) $cbo,
                 level: $level,
+                humanMessage: \sprintf('CBO: %d (max %d) — depends on too many classes', $cbo, $options->warning),
+                threshold: $options->warning,
             );
         }
 

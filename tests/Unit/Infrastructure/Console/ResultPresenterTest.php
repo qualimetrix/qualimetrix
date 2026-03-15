@@ -19,9 +19,13 @@ use AiMessDetector\Core\Violation\Location;
 use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
 use AiMessDetector\Infrastructure\Console\ResultPresenter;
+use AiMessDetector\Reporting\Debt\DebtCalculator;
+use AiMessDetector\Reporting\Debt\RemediationTimeRegistry;
 use AiMessDetector\Reporting\Formatter\FormatterInterface;
 use AiMessDetector\Reporting\Formatter\FormatterRegistryInterface;
 use AiMessDetector\Reporting\GroupBy;
+use AiMessDetector\Reporting\MetricHintProvider;
+use AiMessDetector\Reporting\SummaryEnricher;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -41,6 +45,10 @@ final class ResultPresenterTest extends TestCase
             baselineGenerator: new BaselineGenerator(new ViolationHasher()),
             baselineWriter: new BaselineWriter(),
             configurationProvider: $this->createStub(ConfigurationProviderInterface::class),
+            summaryEnricher: new SummaryEnricher(
+                new DebtCalculator(new RemediationTimeRegistry()),
+                new MetricHintProvider(),
+            ),
         );
     }
 
@@ -74,6 +82,10 @@ final class ResultPresenterTest extends TestCase
             baselineGenerator: new BaselineGenerator(new ViolationHasher()),
             baselineWriter: new BaselineWriter(),
             configurationProvider: $configHolder,
+            summaryEnricher: new SummaryEnricher(
+                new DebtCalculator(new RemediationTimeRegistry()),
+                new MetricHintProvider(),
+            ),
         );
 
         $input = $this->createStub(InputInterface::class);
@@ -257,6 +269,10 @@ final class ResultPresenterTest extends TestCase
             baselineGenerator: new BaselineGenerator(new ViolationHasher()),
             baselineWriter: new BaselineWriter(),
             configurationProvider: $configHolder,
+            summaryEnricher: new SummaryEnricher(
+                new DebtCalculator(new RemediationTimeRegistry()),
+                new MetricHintProvider(),
+            ),
         );
 
         $input = $this->createStub(InputInterface::class);

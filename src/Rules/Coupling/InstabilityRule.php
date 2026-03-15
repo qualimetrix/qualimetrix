@@ -148,6 +148,8 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
                 $ca = (int) ($metrics->get(MetricName::COUPLING_CA) ?? 0);
                 $ce = (int) ($metrics->get(MetricName::COUPLING_CE) ?? 0);
 
+                $threshold = $severity === Severity::Error ? $classOptions->maxError : $classOptions->maxWarning;
+
                 $violations[] = new Violation(
                     location: new Location($classInfo->file, $classInfo->line),
                     symbolPath: $classInfo->symbolPath,
@@ -158,11 +160,13 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
                         $instabilityValue,
                         $ca,
                         $ce,
-                        $severity === Severity::Error ? $classOptions->maxError : $classOptions->maxWarning,
+                        $threshold,
                     ),
                     severity: $severity,
                     metricValue: $instabilityValue,
                     level: RuleLevel::Class_,
+                    humanMessage: \sprintf('Instability: %.2f (max %.2f) — package is highly unstable', $instabilityValue, $threshold),
+                    threshold: $threshold,
                 );
             }
         }
@@ -210,6 +214,8 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
                 $ca = (int) ($metrics->get(MetricName::COUPLING_CA) ?? 0);
                 $ce = (int) ($metrics->get(MetricName::COUPLING_CE) ?? 0);
 
+                $threshold = $severity === Severity::Error ? $namespaceOptions->maxError : $namespaceOptions->maxWarning;
+
                 $violations[] = new Violation(
                     location: new Location($nsInfo->file, $nsInfo->line),
                     symbolPath: $nsInfo->symbolPath,
@@ -220,11 +226,13 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
                         $instabilityValue,
                         $ca,
                         $ce,
-                        $severity === Severity::Error ? $namespaceOptions->maxError : $namespaceOptions->maxWarning,
+                        $threshold,
                     ),
                     severity: $severity,
                     metricValue: $instabilityValue,
                     level: RuleLevel::Namespace_,
+                    humanMessage: \sprintf('Instability: %.2f (max %.2f) — package is highly unstable', $instabilityValue, $threshold),
+                    threshold: $threshold,
                 );
             }
         }
