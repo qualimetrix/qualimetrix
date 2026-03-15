@@ -141,6 +141,9 @@ final class SarifFormatter implements FormatterInterface
             'coupling.cbo', 'coupling.instability', 'coupling.distance' => 'Coupling issue',
             'architecture.circular-dependency' => 'Circular dependency detected',
             'duplication.code-duplication' => 'Duplicated code block detected',
+            'code-smell.constructor-overinjection' => 'Constructor has too many dependencies',
+            'code-smell.data-class' => 'Data Class detected (high public surface, low complexity)',
+            'code-smell.god-class' => 'God Class detected (complex, large, low cohesion)',
             'code-smell.unused-private' => 'Unused private member detected',
             default => ucfirst(str_replace(['.', '-'], ' ', $ruleName)),
         };
