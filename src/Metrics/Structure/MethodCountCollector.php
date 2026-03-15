@@ -53,8 +53,7 @@ final class MethodCountCollector extends AbstractCollector implements ClassMetri
 
     // RFC-008: Class characteristics for false positive reduction
 
-    // PDepend WOC metric
-    private const METRIC_WOC = 'woc';
+    // PDepend WOC metric — see MetricName::STRUCTURE_WOC
 
     public function __construct()
     {
@@ -89,7 +88,7 @@ final class MethodCountCollector extends AbstractCollector implements ClassMetri
             MetricName::STRUCTURE_IS_PROMOTED_PROPERTIES_ONLY,
             MetricName::STRUCTURE_IS_DATA_CLASS,
             // PDepend WOC metric
-            self::METRIC_WOC,
+            MetricName::STRUCTURE_WOC,
         ];
     }
 
@@ -140,7 +139,7 @@ final class MethodCountCollector extends AbstractCollector implements ClassMetri
                 ->with(MetricName::STRUCTURE_IS_PROMOTED_PROPERTIES_ONLY . ':' . $classFqn, $isPromotedOnly ? 1 : 0)
                 ->with(MetricName::STRUCTURE_IS_DATA_CLASS . ':' . $classFqn, $isDataClass ? 1 : 0)
                 // PDepend WOC metric
-                ->with(self::METRIC_WOC . ':' . $classFqn, $woc);
+                ->with(MetricName::STRUCTURE_WOC . ':' . $classFqn, $woc);
         }
 
         return $bag;
@@ -190,7 +189,7 @@ final class MethodCountCollector extends AbstractCollector implements ClassMetri
                 ->with(MetricName::STRUCTURE_IS_PROMOTED_PROPERTIES_ONLY, $isPromotedOnly ? 1 : 0)
                 ->with(MetricName::STRUCTURE_IS_DATA_CLASS, $isDataClass ? 1 : 0)
                 // PDepend WOC metric
-                ->with(self::METRIC_WOC, $woc);
+                ->with(MetricName::STRUCTURE_WOC, $woc);
 
             $result[] = new ClassWithMetrics(
                 namespace: $metrics->namespace,
@@ -311,7 +310,7 @@ final class MethodCountCollector extends AbstractCollector implements ClassMetri
             ),
             // PDepend WOC metric (percentage 0-100)
             new MetricDefinition(
-                name: self::METRIC_WOC,
+                name: MetricName::STRUCTURE_WOC,
                 collectedAt: SymbolLevel::Class_,
                 aggregations: [
                     SymbolLevel::Namespace_->value => [

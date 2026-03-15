@@ -9,6 +9,7 @@ use AiMessDetector\Core\Metric\ClassMetricsProviderInterface;
 use AiMessDetector\Core\Metric\ClassWithMetrics;
 use AiMessDetector\Core\Metric\MetricBag;
 use AiMessDetector\Core\Metric\MetricDefinition;
+use AiMessDetector\Core\Metric\MetricName;
 use AiMessDetector\Core\Metric\SymbolLevel;
 use AiMessDetector\Metrics\AbstractCollector;
 use Override;
@@ -39,8 +40,6 @@ use SplFileInfo;
 final class TccLccCollector extends AbstractCollector implements ClassMetricsProviderInterface
 {
     private const NAME = 'tcc_lcc';
-    private const METRIC_TCC = 'tcc';
-    private const METRIC_LCC = 'lcc';
 
     public function __construct()
     {
@@ -57,7 +56,7 @@ final class TccLccCollector extends AbstractCollector implements ClassMetricsPro
      */
     public function provides(): array
     {
-        return [self::METRIC_TCC, self::METRIC_LCC];
+        return [MetricName::COHESION_TCC, MetricName::COHESION_LCC];
     }
 
     /**
@@ -74,8 +73,8 @@ final class TccLccCollector extends AbstractCollector implements ClassMetricsPro
             $lcc = $classData->calculateLcc();
 
             // Store metrics with class FQN as key
-            $bag = $bag->with(self::METRIC_TCC . ':' . $classFqn, round($tcc, 3));
-            $bag = $bag->with(self::METRIC_LCC . ':' . $classFqn, round($lcc, 3));
+            $bag = $bag->with(MetricName::COHESION_TCC . ':' . $classFqn, round($tcc, 3));
+            $bag = $bag->with(MetricName::COHESION_LCC . ':' . $classFqn, round($lcc, 3));
         }
 
         return $bag;
@@ -95,8 +94,8 @@ final class TccLccCollector extends AbstractCollector implements ClassMetricsPro
             $lcc = round($classData->calculateLcc(), 3);
 
             $bag = (new MetricBag())
-                ->with(self::METRIC_TCC, $tcc)
-                ->with(self::METRIC_LCC, $lcc);
+                ->with(MetricName::COHESION_TCC, $tcc)
+                ->with(MetricName::COHESION_LCC, $lcc);
 
             $result[] = new ClassWithMetrics(
                 namespace: $classData->namespace,
@@ -117,7 +116,7 @@ final class TccLccCollector extends AbstractCollector implements ClassMetricsPro
     {
         return [
             new MetricDefinition(
-                name: self::METRIC_TCC,
+                name: MetricName::COHESION_TCC,
                 collectedAt: SymbolLevel::Class_,
                 aggregations: [
                     SymbolLevel::Namespace_->value => [
@@ -131,7 +130,7 @@ final class TccLccCollector extends AbstractCollector implements ClassMetricsPro
                 ],
             ),
             new MetricDefinition(
-                name: self::METRIC_LCC,
+                name: MetricName::COHESION_LCC,
                 collectedAt: SymbolLevel::Class_,
                 aggregations: [
                     SymbolLevel::Namespace_->value => [
