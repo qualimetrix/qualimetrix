@@ -22,6 +22,9 @@ let currentMetric = 'health.overall';
 /** @type {import('./types').TreeNode|null} */
 let currentNode = null;
 
+/** @type {import('./types').TreeNode|null} The node whose children populate the treemap */
+let treemapNode = null;
+
 /** @type {function} Color scale function */
 let colorScale;
 
@@ -74,6 +77,7 @@ export function init() {
   }
 
   currentNode = initialNode;
+  treemapNode = initialNode;
 
   // Create tooltip element
   createTooltip();
@@ -82,7 +86,7 @@ export function init() {
   initMetricSelector(DATA.computedMetricDefinitions);
   initBreadcrumb();
   initSearch();
-  initHashNavigation(treeData, navigateTo);
+  initHashNavigation(treeData, navigateTo, initialNode);
   setNavigateTo(navigateTo);
   renderTreemap(currentNode);
   updateBreadcrumb(currentNode);
@@ -96,8 +100,8 @@ export function init() {
   window.addEventListener('resize', () => {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(() => {
-      if (currentNode) {
-        renderTreemap(currentNode);
+      if (treemapNode) {
+        renderTreemap(treemapNode);
       }
     }, 150);
   });
@@ -257,7 +261,15 @@ function renderTreemap(node) {
     if (nodeWidth > 40 && nodeHeight > 18) {
       const label = document.createElement('div');
       label.className = 'node-label';
-      label.textContent = sourceNode.name;
+      if (sourceNode.type === 'class' && nodeWidth > 60) {
+        const badge = document.createElement('span');
+        badge.className = 'type-badge';
+        badge.textContent = 'C';
+        label.appendChild(badge);
+        label.appendChild(document.createTextNode(sourceNode.name));
+      } else {
+        label.textContent = sourceNode.name;
+      }
       label.style.maxWidth = (nodeWidth - 8) + 'px';
       div.appendChild(label);
 
@@ -323,7 +335,7 @@ function renderLeafNode(container, node, width, height) {
   const bgColor = getHealthColor(node, currentMetric, colorScale);
   div.style.backgroundColor = bgColor;
 
-  if (hasErrorViolations(node)) {
+  if (hasOwnErrorViolations(node)) {
     div.classList.add('has-violations');
   }
 
@@ -369,7 +381,9 @@ function selectNode(node) {
 // ---------------------------------------------------------------------------
 
 function navigateTo(node) {
+  if (currentNode === node) return;
   currentNode = node;
+  treemapNode = node;
   renderTreemap(node);
   renderDetail(node, DATA.summary, currentMetric);
   updateBreadcrumb(node);
@@ -397,7 +411,15 @@ function updateBreadcrumb(node) {
     if (isLast) {
       const span = document.createElement('span');
       span.className = 'current';
-      span.textContent = seg.name;
+      if (seg.type === 'class') {
+        const badge = document.createElement('span');
+        badge.className = 'type-badge';
+        badge.textContent = 'C';
+        span.appendChild(badge);
+        span.appendChild(document.createTextNode(seg.name));
+      } else {
+        span.textContent = seg.name;
+      }
       nav.appendChild(span);
     } else {
       const link = document.createElement('a');
@@ -417,7 +439,7 @@ function buildBreadcrumbPath(node) {
   const segments = [];
 
   // Always start with root
-  segments.push({ name: treeData.name || 'Project', path: '' });
+  segments.push({ name: treeData.name || 'Project', path: '', type: 'project' });
 
   if (!node.path) return segments;
 
@@ -429,9 +451,9 @@ function buildBreadcrumbPath(node) {
     currentPath = i === 0 ? parts[0] : currentPath + '\\' + parts[i];
     const found = findNode(treeData, currentPath);
     if (found) {
-      segments.push({ name: found.name, path: found.path });
+      segments.push({ name: found.name, path: found.path, type: found.type });
     } else {
-      segments.push({ name: parts[i], path: currentPath });
+      segments.push({ name: parts[i], path: currentPath, type: 'namespace' });
     }
   }
 
@@ -454,26 +476,37 @@ function showTooltip(event, node) {
 
   const loc = getLoc(node);
 
-  let html = `<strong>${escapeHtml(node.name)}</strong><br>`;
+  const typeLabel = node.type === 'class'
+    ? '<span class="type-badge">C</span> '
+    : '';
+  let html = `<strong>${typeLabel}${escapeHtml(node.name)}</strong><br>`;
   html += `LOC: ${loc.toLocaleString()}`;
 
   if (node.violationCountTotal > 0) {
     html += ` | Violations: ${node.violationCountTotal}`;
   }
 
-  // Show all health scores as a compact list
-  const healthKeys = ['complexity', 'cohesion', 'coupling', 'typing', 'maintainability', 'overall'];
-  const healthEntries = healthKeys
+  // Show overall health first, then detailed breakdown
+  const overall = node.metrics?.['health.overall'];
+  if (overall != null) {
+    const v = Math.round(overall);
+    const color = v >= 70 ? '#28a745' : v >= 40 ? '#ffc107' : '#ff6b6b';
+    html += `<br><span style="color:${color}">●</span> Health: <strong>${v}</strong>`;
+  }
+
+  const detailKeys = ['complexity', 'cohesion', 'coupling', 'typing', 'maintainability'];
+  const detailEntries = detailKeys
     .map(k => ({ label: k, value: node.metrics?.['health.' + k] }))
     .filter(e => e.value != null);
 
-  if (healthEntries.length > 0) {
-    html += '<br><span style="color:#aaa">Health:</span>';
-    for (const e of healthEntries) {
+  if (detailEntries.length > 0) {
+    html += '<div style="margin-top:4px">';
+    for (const e of detailEntries) {
       const v = Math.round(e.value);
       const color = v >= 70 ? '#28a745' : v >= 40 ? '#ffc107' : '#ff6b6b';
       html += `<br><span style="color:${color}">●</span> ${e.label}: ${v}`;
     }
+    html += '</div>';
   }
 
   // Show up to 3 top issues with useful descriptions
@@ -623,8 +656,8 @@ function initResizeHandle() {
     document.body.style.userSelect = '';
 
     // Re-render treemap with new dimensions
-    if (currentNode) {
-      renderTreemap(currentNode);
+    if (treemapNode) {
+      renderTreemap(treemapNode);
     }
   });
 }
