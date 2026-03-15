@@ -1,0 +1,817 @@
+<?php
+
+declare(strict_types=1);
+
+namespace AiMessDetector\Tests\Unit\Reporting\Formatter;
+
+use AiMessDetector\Core\Symbol\SymbolPath;
+use AiMessDetector\Core\Violation\Location;
+use AiMessDetector\Core\Violation\Severity;
+use AiMessDetector\Core\Violation\Violation;
+use AiMessDetector\Reporting\DecompositionItem;
+use AiMessDetector\Reporting\Formatter\SummaryFormatter;
+use AiMessDetector\Reporting\FormatterContext;
+use AiMessDetector\Reporting\GroupBy;
+use AiMessDetector\Reporting\HealthScore;
+use AiMessDetector\Reporting\Report;
+use AiMessDetector\Reporting\WorstOffender;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+
+#[CoversClass(SummaryFormatter::class)]
+final class SummaryFormatterTest extends TestCase
+{
+    private SummaryFormatter $formatter;
+    private FormatterContext $plainContext;
+
+    protected function setUp(): void
+    {
+        $this->formatter = new SummaryFormatter();
+        $this->plainContext = new FormatterContext(useColor: false, terminalWidth: 120);
+    }
+
+    public function testGetNameReturnsSummary(): void
+    {
+        self::assertSame('summary', $this->formatter->getName());
+    }
+
+    public function testGetDefaultGroupByReturnsNone(): void
+    {
+        self::assertSame(GroupBy::None, $this->formatter->getDefaultGroupBy());
+    }
+
+    public function testFormatZeroViolations(): void
+    {
+        $report = $this->createReport(violations: [], filesAnalyzed: 42, duration: 1.5);
+
+        $output = $this->formatter->format($report, $this->plainContext);
+
+        self::assertStringContainsString('AI Mess Detector', $output);
+        self::assertStringContainsString('42 files analyzed', $output);
+        self::assertStringContainsString('1.5s', $output);
+        self::assertStringContainsString('No violations found.', $output);
+        self::assertStringNotContainsString('Worst namespaces', $output);
+        self::assertStringNotContainsString('Worst classes', $output);
+    }
+
+    public function testFormatSingleFileNoNamespacesOrClasses(): void
+    {
+        $report = $this->createReport(
+            violations: [],
+            filesAnalyzed: 1,
+            duration: 0.1,
+            worstNamespaces: [
+                new WorstOffender(
+                    symbolPath: SymbolPath::forNamespace('App'),
+                    file: null,
+                    healthOverall: 30.0,
+                    label: 'Needs attention',
+                    reason: 'test',
+                    violationCount: 1,
+                    classCount: 1,
+                ),
+            ],
+            worstClasses: [
+                new WorstOffender(
+                    symbolPath: SymbolPath::forClass('App', 'Foo'),
+                    file: 'src/Foo.php',
+                    healthOverall: 30.0,
+                    label: 'Needs attention',
+                    reason: 'test',
+                    violationCount: 1,
+                    classCount: 0,
+                ),
+            ],
+        );
+
+        $output = $this->formatter->format($report, $this->plainContext);
+
+        self::assertStringContainsString('1 file analyzed', $output);
+        self::assertStringNotContainsString('1 files', $output);
+        // Both worst sections skipped for single file
+        self::assertStringNotContainsString('Worst namespaces', $output);
+        self::assertStringNotContainsString('Worst classes', $output);
+    }
+
+    public function testFormatWithHealthScores(): void
+    {
+        $report = $this->createReport(
+            violations: [],
+            filesAnalyzed: 100,
+            duration: 5.0,
+            healthScores: [
+                'overall' => new HealthScore('overall', 72.0, 'Good', 50.0, 30.0),
+                'complexity' => new HealthScore('complexity', 85.0, 'Excellent', 50.0, 25.0),
+                'cohesion' => new HealthScore('cohesion', 40.0, 'Needs attention', 50.0, 25.0, [
+                    new DecompositionItem('tcc.avg', 'TCC (avg)', 0.3, 'above 0.5', 'higher_is_better', 'methods share few common fields'),
+                ]),
+            ],
+        );
+
+        $output = $this->formatter->format($report, $this->plainContext);
+
+        self::assertStringContainsString('Health', $output);
+        self::assertStringContainsString('72%', $output);
+        self::assertStringContainsString('Good', $output);
+        self::assertStringContainsString('Complexity', $output);
+        self::assertStringContainsString('85%', $output);
+        self::assertStringContainsString('Cohesion', $output);
+        self::assertStringContainsString('40%', $output);
+        self::assertStringContainsString('TCC (avg)', $output);
+        self::assertStringContainsString('0.3', $output);
+        self::assertStringContainsString('above 0.5', $output);
+    }
+
+    public function testFormatWithWorstOffenders(): void
+    {
+        $report = $this->createReport(
+            violations: [
+                new Violation(
+                    location: new Location('src/Service/UserService.php', 42),
+                    symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
+                    ruleName: 'complexity.cyclomatic',
+                    violationCode: 'complexity.cyclomatic.method',
+                    message: 'Too complex',
+                    severity: Severity::Error,
+                ),
+            ],
+            filesAnalyzed: 50,
+            duration: 2.0,
+            worstNamespaces: [
+                new WorstOffender(
+                    symbolPath: SymbolPath::forNamespace('App\Service'),
+                    file: null,
+                    healthOverall: 35.0,
+                    label: 'Needs attention',
+                    reason: 'high complexity, low cohesion',
+                    violationCount: 15,
+                    classCount: 8,
+                ),
+            ],
+            worstClasses: [
+                new WorstOffender(
+                    symbolPath: SymbolPath::forClass('App\Service', 'UserService'),
+                    file: 'src/Service/UserService.php',
+                    healthOverall: 22.0,
+                    label: 'Poor',
+                    reason: 'high coupling',
+                    violationCount: 5,
+                    classCount: 0,
+                ),
+            ],
+        );
+
+        $output = $this->formatter->format($report, $this->plainContext);
+
+        self::assertStringContainsString('Worst namespaces', $output);
+        self::assertStringContainsString('App\Service', $output);
+        self::assertStringContainsString('8 classes', $output);
+        self::assertStringContainsString('15 violations', $output);
+
+        self::assertStringContainsString('Worst classes', $output);
+        self::assertStringContainsString('UserService', $output);
+        self::assertStringContainsString('5 violations', $output);
+    }
+
+    public function testFormatViolationSummary(): void
+    {
+        $report = $this->createReport(
+            violations: [
+                new Violation(
+                    location: new Location('a.php', 1),
+                    symbolPath: SymbolPath::forClass('App', 'A'),
+                    ruleName: 'test',
+                    violationCode: 'test',
+                    message: 'Msg1',
+                    severity: Severity::Error,
+                ),
+                new Violation(
+                    location: new Location('b.php', 1),
+                    symbolPath: SymbolPath::forClass('App', 'B'),
+                    ruleName: 'test',
+                    violationCode: 'test',
+                    message: 'Msg2',
+                    severity: Severity::Warning,
+                ),
+            ],
+            filesAnalyzed: 2,
+            duration: 0.1,
+            techDebtMinutes: 90,
+        );
+
+        $output = $this->formatter->format($report, $this->plainContext);
+
+        self::assertStringContainsString('2 violations', $output);
+        self::assertStringContainsString('1 error', $output);
+        self::assertStringContainsString('1 warning', $output);
+        self::assertStringContainsString('Tech debt: 1h 30min', $output);
+    }
+
+    public function testFormatPartialAnalysis(): void
+    {
+        $report = $this->createReport(
+            violations: [],
+            filesAnalyzed: 5,
+            duration: 0.5,
+            healthScores: [
+                'overall' => new HealthScore('overall', 72.0, 'Good', 50.0, 30.0),
+            ],
+        );
+
+        $context = new FormatterContext(useColor: false, partialAnalysis: true, terminalWidth: 120);
+        $output = $this->formatter->format($report, $context);
+
+        // Warning shown
+        self::assertStringContainsString('Health scores unavailable in partial analysis mode', $output);
+        // Header annotated
+        self::assertStringContainsString('(partial)', $output);
+        // Hint to run full analysis
+        self::assertStringContainsString('run full analysis', $output);
+        // Health bars should NOT be shown
+        self::assertStringNotContainsString('72%', $output);
+    }
+
+    public function testFormatMissingMetrics(): void
+    {
+        $report = $this->createReport(
+            violations: [],
+            filesAnalyzed: 10,
+            duration: 0.3,
+            healthScores: [],
+        );
+
+        $output = $this->formatter->format($report, $this->plainContext);
+
+        self::assertStringContainsString('Health: insufficient data', $output);
+    }
+
+    public function testFormatWithColorContainsAnsiCodes(): void
+    {
+        $colorContext = new FormatterContext(useColor: true, terminalWidth: 120);
+
+        $report = $this->createReport(
+            violations: [
+                new Violation(
+                    location: new Location('a.php', 1),
+                    symbolPath: SymbolPath::forClass('App', 'A'),
+                    ruleName: 'test',
+                    violationCode: 'test',
+                    message: 'Msg',
+                    severity: Severity::Error,
+                ),
+            ],
+            filesAnalyzed: 1,
+            duration: 0.1,
+        );
+
+        $output = $this->formatter->format($report, $colorContext);
+
+        self::assertStringContainsString("\e[", $output);
+        // Error summary should be bold red
+        self::assertStringContainsString("\e[1;31m", $output);
+    }
+
+    public function testFormatNoAnsiCodesWithColorDisabled(): void
+    {
+        $report = $this->createReport(
+            violations: [
+                new Violation(
+                    location: new Location('a.php', 1),
+                    symbolPath: SymbolPath::forClass('App', 'A'),
+                    ruleName: 'test',
+                    violationCode: 'test',
+                    message: 'Msg',
+                    severity: Severity::Error,
+                ),
+            ],
+            filesAnalyzed: 1,
+            duration: 0.1,
+        );
+
+        $output = $this->formatter->format($report, $this->plainContext);
+
+        self::assertStringNotContainsString("\e[", $output);
+    }
+
+    public function testAsciiMode(): void
+    {
+        $originalEnv = getenv('AIMD_ASCII');
+        putenv('AIMD_ASCII=1');
+
+        try {
+            $report = $this->createReport(
+                violations: [],
+                filesAnalyzed: 10,
+                duration: 0.5,
+                healthScores: [
+                    'overall' => new HealthScore('overall', 72.0, 'Good', 50.0, 30.0),
+                    'complexity' => new HealthScore('complexity', 85.0, 'Excellent', 50.0, 25.0),
+                ],
+            );
+
+            $output = $this->formatter->format($report, $this->plainContext);
+
+            self::assertStringContainsString('[', $output);
+            self::assertStringContainsString('#', $output);
+            self::assertStringNotContainsString('█', $output);
+            self::assertStringNotContainsString('░', $output);
+        } finally {
+            if ($originalEnv === false) {
+                putenv('AIMD_ASCII');
+            } else {
+                putenv('AIMD_ASCII=' . $originalEnv);
+            }
+        }
+    }
+
+    public function testHintsShownForViolations(): void
+    {
+        $report = $this->createReport(
+            violations: [
+                new Violation(
+                    location: new Location('a.php', 1),
+                    symbolPath: SymbolPath::forClass('App', 'A'),
+                    ruleName: 'test',
+                    violationCode: 'test',
+                    message: 'Msg',
+                    severity: Severity::Error,
+                ),
+            ],
+            filesAnalyzed: 1,
+            duration: 0.1,
+        );
+
+        $output = $this->formatter->format($report, $this->plainContext);
+
+        self::assertStringContainsString('--format=text', $output);
+    }
+
+    public function testHintsDrillDownForWorstOffender(): void
+    {
+        $report = $this->createReport(
+            violations: [],
+            filesAnalyzed: 10,
+            duration: 0.5,
+            healthScores: [
+                'overall' => new HealthScore('overall', 72.0, 'Good', 50.0, 30.0),
+            ],
+            worstNamespaces: [
+                new WorstOffender(
+                    symbolPath: SymbolPath::forNamespace('App\Service'),
+                    file: null,
+                    healthOverall: 35.0,
+                    label: 'Needs attention',
+                    reason: 'high complexity',
+                    violationCount: 5,
+                    classCount: 3,
+                ),
+            ],
+        );
+
+        $output = $this->formatter->format($report, $this->plainContext);
+
+        // Uses single quotes for shell escaping
+        self::assertStringContainsString("--namespace='App\\Service'", $output);
+    }
+
+    public function testNamespaceFilterBoundaryAware(): void
+    {
+        $offenderMatch = new WorstOffender(
+            symbolPath: SymbolPath::forNamespace('App\Payment\Gateway'),
+            file: null,
+            healthOverall: 30.0,
+            label: 'Needs attention',
+            reason: 'test',
+            violationCount: 3,
+            classCount: 2,
+        );
+
+        $offenderNoMatch = new WorstOffender(
+            symbolPath: SymbolPath::forNamespace('App\PaymentGateway'),
+            file: null,
+            healthOverall: 25.0,
+            label: 'Poor',
+            reason: 'test',
+            violationCount: 5,
+            classCount: 4,
+        );
+
+        $report = $this->createReport(
+            violations: [],
+            filesAnalyzed: 50,
+            duration: 1.0,
+            healthScores: [
+                'overall' => new HealthScore('overall', 72.0, 'Good', 50.0, 30.0),
+            ],
+            worstNamespaces: [$offenderMatch, $offenderNoMatch],
+        );
+
+        $context = new FormatterContext(useColor: false, namespace: 'App\Payment', terminalWidth: 120);
+        $output = $this->formatter->format($report, $context);
+
+        self::assertStringContainsString('App\Payment\Gateway', $output);
+        self::assertStringNotContainsString('App\PaymentGateway', $output);
+    }
+
+    public function testNamespaceFilterAppliesToViolations(): void
+    {
+        $report = $this->createReport(
+            violations: [
+                new Violation(
+                    location: new Location('a.php', 1),
+                    symbolPath: SymbolPath::forClass('App\Service', 'UserService'),
+                    ruleName: 'test',
+                    violationCode: 'test',
+                    message: 'In scope',
+                    severity: Severity::Error,
+                ),
+                new Violation(
+                    location: new Location('b.php', 1),
+                    symbolPath: SymbolPath::forClass('App\Controller', 'HomeController'),
+                    ruleName: 'test',
+                    violationCode: 'test',
+                    message: 'Out of scope',
+                    severity: Severity::Warning,
+                ),
+            ],
+            filesAnalyzed: 10,
+            duration: 0.5,
+        );
+
+        $context = new FormatterContext(useColor: false, namespace: 'App\Service', terminalWidth: 120);
+        $output = $this->formatter->format($report, $context);
+
+        // Only 1 violation in scope
+        self::assertStringContainsString('1 violation', $output);
+        self::assertStringContainsString('1 error', $output);
+        self::assertStringNotContainsString('warning', $output);
+    }
+
+    public function testClassFilterAppliesToViolations(): void
+    {
+        $report = $this->createReport(
+            violations: [
+                new Violation(
+                    location: new Location('a.php', 1),
+                    symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
+                    ruleName: 'test',
+                    violationCode: 'test',
+                    message: 'Match',
+                    severity: Severity::Error,
+                ),
+                new Violation(
+                    location: new Location('b.php', 1),
+                    symbolPath: SymbolPath::forClass('App\Service', 'OrderService'),
+                    ruleName: 'test',
+                    violationCode: 'test',
+                    message: 'No match',
+                    severity: Severity::Warning,
+                ),
+            ],
+            filesAnalyzed: 10,
+            duration: 0.5,
+        );
+
+        $context = new FormatterContext(useColor: false, class: 'App\Service\UserService', terminalWidth: 120);
+        $output = $this->formatter->format($report, $context);
+
+        self::assertStringContainsString('1 violation', $output);
+        self::assertStringContainsString('1 error', $output);
+        self::assertStringNotContainsString('warning', $output);
+    }
+
+    public function testNoViolationsInScopeMessage(): void
+    {
+        $report = $this->createReport(
+            violations: [
+                new Violation(
+                    location: new Location('a.php', 1),
+                    symbolPath: SymbolPath::forClass('App\Other', 'Foo'),
+                    ruleName: 'test',
+                    violationCode: 'test',
+                    message: 'Msg',
+                    severity: Severity::Error,
+                ),
+            ],
+            filesAnalyzed: 10,
+            duration: 0.5,
+        );
+
+        $context = new FormatterContext(useColor: false, namespace: 'App\Service', terminalWidth: 120);
+        $output = $this->formatter->format($report, $context);
+
+        self::assertStringContainsString('No violations in this scope.', $output);
+    }
+
+    public function testClassFilterExactMatch(): void
+    {
+        $offenderMatch = new WorstOffender(
+            symbolPath: SymbolPath::forClass('App\Service', 'UserService'),
+            file: 'src/Service/UserService.php',
+            healthOverall: 22.0,
+            label: 'Poor',
+            reason: 'test',
+            violationCount: 5,
+            classCount: 0,
+        );
+
+        $offenderNoMatch = new WorstOffender(
+            symbolPath: SymbolPath::forClass('App\Service', 'OrderService'),
+            file: 'src/Service/OrderService.php',
+            healthOverall: 30.0,
+            label: 'Needs attention',
+            reason: 'test',
+            violationCount: 3,
+            classCount: 0,
+        );
+
+        $report = $this->createReport(
+            violations: [],
+            filesAnalyzed: 10,
+            duration: 0.5,
+            healthScores: [
+                'overall' => new HealthScore('overall', 72.0, 'Good', 50.0, 30.0),
+            ],
+            worstClasses: [$offenderMatch, $offenderNoMatch],
+        );
+
+        $userServiceCanonical = $offenderMatch->symbolPath->toString();
+        $context = new FormatterContext(useColor: false, class: $userServiceCanonical, terminalWidth: 120);
+        $output = $this->formatter->format($report, $context);
+
+        self::assertStringContainsString('UserService', $output);
+        self::assertStringNotContainsString('OrderService', $output);
+    }
+
+    public function testPlusNMoreForTruncatedList(): void
+    {
+        $offenders = [];
+        for ($i = 0; $i < 5; $i++) {
+            $offenders[] = new WorstOffender(
+                symbolPath: SymbolPath::forNamespace('App\Ns' . $i),
+                file: null,
+                healthOverall: 20.0 + $i * 5,
+                label: 'Needs attention',
+                reason: 'test',
+                violationCount: $i + 1,
+                classCount: $i + 2,
+            );
+        }
+
+        $report = $this->createReport(
+            violations: [],
+            filesAnalyzed: 50,
+            duration: 1.0,
+            healthScores: [
+                'overall' => new HealthScore('overall', 60.0, 'Good', 50.0, 30.0),
+            ],
+            worstNamespaces: $offenders,
+        );
+
+        $output = $this->formatter->format($report, $this->plainContext);
+
+        // First 3 shown
+        self::assertStringContainsString('App\Ns0', $output);
+        self::assertStringContainsString('App\Ns1', $output);
+        self::assertStringContainsString('App\Ns2', $output);
+        // 4th and 5th not shown
+        self::assertStringNotContainsString('App\Ns3', $output);
+        self::assertStringNotContainsString('App\Ns4', $output);
+        // "+2 more" shown
+        self::assertStringContainsString('+2 more', $output);
+    }
+
+    public function testExactly3OffendersNoPlusMore(): void
+    {
+        $offenders = [];
+        for ($i = 0; $i < 3; $i++) {
+            $offenders[] = new WorstOffender(
+                symbolPath: SymbolPath::forNamespace('App\Ns' . $i),
+                file: null,
+                healthOverall: 20.0 + $i * 5,
+                label: 'Needs attention',
+                reason: 'test',
+                violationCount: 1,
+                classCount: 1,
+            );
+        }
+
+        $report = $this->createReport(
+            violations: [],
+            filesAnalyzed: 50,
+            duration: 1.0,
+            healthScores: [
+                'overall' => new HealthScore('overall', 60.0, 'Good', 50.0, 30.0),
+            ],
+            worstNamespaces: $offenders,
+        );
+
+        $output = $this->formatter->format($report, $this->plainContext);
+
+        self::assertStringNotContainsString('+', $output);
+    }
+
+    public function testTechDebtZeroNotShown(): void
+    {
+        $report = $this->createReport(
+            violations: [
+                new Violation(
+                    location: new Location('a.php', 1),
+                    symbolPath: SymbolPath::forClass('App', 'A'),
+                    ruleName: 'test',
+                    violationCode: 'test',
+                    message: 'Msg',
+                    severity: Severity::Warning,
+                ),
+            ],
+            filesAnalyzed: 1,
+            duration: 0.1,
+            techDebtMinutes: 0,
+        );
+
+        $output = $this->formatter->format($report, $this->plainContext);
+
+        self::assertStringNotContainsString('Tech debt', $output);
+    }
+
+    public function testHtmlHintAlwaysShown(): void
+    {
+        // Even without health scores
+        $report = $this->createReport(violations: [], filesAnalyzed: 10, duration: 0.5);
+
+        $output = $this->formatter->format($report, $this->plainContext);
+
+        self::assertStringContainsString('--format=html', $output);
+    }
+
+    public function testPartialAnalysisHintForFullRun(): void
+    {
+        $report = $this->createReport(violations: [], filesAnalyzed: 5, duration: 0.5);
+
+        $context = new FormatterContext(useColor: false, partialAnalysis: true, terminalWidth: 120);
+        $output = $this->formatter->format($report, $context);
+
+        self::assertStringContainsString('run full analysis', $output);
+    }
+
+    public function testHeaderAnnotatedWithNamespaceFilter(): void
+    {
+        $report = $this->createReport(violations: [], filesAnalyzed: 10, duration: 0.5);
+
+        $context = new FormatterContext(useColor: false, namespace: 'App\Service', terminalWidth: 120);
+        $output = $this->formatter->format($report, $context);
+
+        self::assertStringContainsString('[namespace: App\Service]', $output);
+    }
+
+    public function testHeaderAnnotatedWithClassFilter(): void
+    {
+        $report = $this->createReport(violations: [], filesAnalyzed: 10, duration: 0.5);
+
+        $context = new FormatterContext(useColor: false, class: 'App\Service\UserService', terminalWidth: 120);
+        $output = $this->formatter->format($report, $context);
+
+        self::assertStringContainsString('[class: App\Service\UserService]', $output);
+    }
+
+    public function testNanScoreRenderedAsDash(): void
+    {
+        $report = $this->createReport(
+            violations: [],
+            filesAnalyzed: 10,
+            duration: 0.5,
+            healthScores: [
+                'overall' => new HealthScore('overall', \NAN, 'Unknown', 50.0, 30.0),
+            ],
+        );
+
+        $output = $this->formatter->format($report, $this->plainContext);
+
+        self::assertStringContainsString('—%', $output);
+        self::assertStringNotContainsString('NAN', $output);
+    }
+
+    public function testScoreColorBoundaryAtWarningThreshold(): void
+    {
+        $colorContext = new FormatterContext(useColor: true, terminalWidth: 120);
+
+        // Score exactly at warning threshold (50.0) should be yellow (not green)
+        $report = $this->createReport(
+            violations: [],
+            filesAnalyzed: 10,
+            duration: 0.5,
+            healthScores: [
+                'overall' => new HealthScore('overall', 50.0, 'Needs attention', 50.0, 30.0),
+            ],
+        );
+
+        $output = $this->formatter->format($report, $colorContext);
+
+        // Yellow = \e[33m, Green = \e[32m
+        // 50.0 is NOT > 50.0, so should be yellow
+        self::assertStringContainsString("\e[33m50%\e[0m", $output);
+    }
+
+    public function testScoreColorAboveWarningThresholdIsGreen(): void
+    {
+        $colorContext = new FormatterContext(useColor: true, terminalWidth: 120);
+
+        $report = $this->createReport(
+            violations: [],
+            filesAnalyzed: 10,
+            duration: 0.5,
+            healthScores: [
+                'overall' => new HealthScore('overall', 50.1, 'Good', 50.0, 30.0),
+            ],
+        );
+
+        $output = $this->formatter->format($report, $colorContext);
+
+        // 50.1 > 50.0 → green
+        self::assertStringContainsString("\e[32m", $output);
+    }
+
+    public function testScoreColorAtErrorThresholdIsRed(): void
+    {
+        $colorContext = new FormatterContext(useColor: true, terminalWidth: 120);
+
+        $report = $this->createReport(
+            violations: [],
+            filesAnalyzed: 10,
+            duration: 0.5,
+            healthScores: [
+                'overall' => new HealthScore('overall', 30.0, 'Needs attention', 50.0, 30.0),
+            ],
+        );
+
+        $output = $this->formatter->format($report, $colorContext);
+
+        // 30.0 is NOT > 30.0 → red
+        self::assertStringContainsString("\e[31m30%\e[0m", $output);
+    }
+
+    public function testTechDebtHiddenInScopedMode(): void
+    {
+        $report = $this->createReport(
+            violations: [
+                new Violation(
+                    location: new Location('a.php', 1),
+                    symbolPath: SymbolPath::forClass('App\Service', 'Foo'),
+                    ruleName: 'test',
+                    violationCode: 'test',
+                    message: 'Msg',
+                    severity: Severity::Error,
+                ),
+            ],
+            filesAnalyzed: 10,
+            duration: 0.5,
+            techDebtMinutes: 120,
+        );
+
+        $context = new FormatterContext(useColor: false, namespace: 'App\Service', terminalWidth: 120);
+        $output = $this->formatter->format($report, $context);
+
+        // Tech debt is project-level, don't show in scoped mode
+        self::assertStringNotContainsString('Tech debt', $output);
+    }
+
+    /**
+     * @param list<Violation> $violations
+     * @param array<string, HealthScore> $healthScores
+     * @param list<WorstOffender> $worstNamespaces
+     * @param list<WorstOffender> $worstClasses
+     */
+    private function createReport(
+        array $violations = [],
+        int $filesAnalyzed = 0,
+        float $duration = 0.0,
+        array $healthScores = [],
+        array $worstNamespaces = [],
+        array $worstClasses = [],
+        int $techDebtMinutes = 0,
+    ): Report {
+        $errorCount = 0;
+        $warningCount = 0;
+
+        foreach ($violations as $v) {
+            if ($v->severity === Severity::Error) {
+                $errorCount++;
+            } else {
+                $warningCount++;
+            }
+        }
+
+        return new Report(
+            violations: $violations,
+            filesAnalyzed: $filesAnalyzed,
+            filesSkipped: 0,
+            duration: $duration,
+            errorCount: $errorCount,
+            warningCount: $warningCount,
+            healthScores: $healthScores,
+            worstNamespaces: $worstNamespaces,
+            worstClasses: $worstClasses,
+            techDebtMinutes: $techDebtMinutes,
+        );
+    }
+}

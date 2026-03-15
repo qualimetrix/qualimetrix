@@ -26,6 +26,7 @@ use AiMessDetector\Reporting\Formatter\FormatterRegistryInterface;
 use AiMessDetector\Reporting\GroupBy;
 use AiMessDetector\Reporting\MetricHintProvider;
 use AiMessDetector\Reporting\SummaryEnricher;
+use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -298,6 +299,61 @@ final class ResultPresenterTest extends TestCase
         );
 
         return $presenter->presentResults($violations, $analysisResult, $input, $output);
+    }
+
+    #[Test]
+    public function presentResultsThrowsOnMutuallyExclusiveNamespaceAndClass(): void
+    {
+        $configHolder = new ConfigurationHolder();
+        $configHolder->setConfiguration(new AnalysisConfiguration());
+
+        $mockFormatter = $this->createStub(FormatterInterface::class);
+        $mockFormatter->method('format')->willReturn('');
+        $mockFormatter->method('getDefaultGroupBy')->willReturn(GroupBy::None);
+
+        $registry = $this->createStub(FormatterRegistryInterface::class);
+        $registry->method('get')->willReturn($mockFormatter);
+
+        $presenter = new ResultPresenter(
+            formatterRegistry: $registry,
+            profilerHolder: new ProfilerHolder(),
+            baselineGenerator: new BaselineGenerator(new ViolationHasher()),
+            baselineWriter: new BaselineWriter(),
+            configurationProvider: $configHolder,
+            summaryEnricher: new SummaryEnricher(
+                new DebtCalculator(new RemediationTimeRegistry()),
+                new MetricHintProvider(),
+            ),
+        );
+
+        $input = $this->createStub(InputInterface::class);
+        $input->method('getOption')->willReturnCallback(
+            static fn(string $name): mixed => match ($name) {
+                'format' => null,
+                'group-by' => null,
+                'format-opt' => [],
+                'namespace' => 'App\Service',
+                'class' => 'App\Service\UserService',
+                default => null,
+            },
+        );
+
+        $output = $this->createStub(OutputInterface::class);
+        $output->method('isDecorated')->willReturn(false);
+
+        $analysisResult = new AnalysisResult(
+            violations: [],
+            filesAnalyzed: 0,
+            filesSkipped: 0,
+            duration: 0.0,
+            metrics: new InMemoryMetricRepository(),
+            suppressions: [],
+        );
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('mutually exclusive');
+
+        $presenter->presentResults([], $analysisResult, $input, $output);
     }
 
     private static function createViolation(Severity $severity): Violation

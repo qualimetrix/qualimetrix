@@ -14,7 +14,7 @@ use InvalidArgumentException;
 final readonly class AnalysisConfiguration
 {
     public const string DEFAULT_CACHE_DIR = '.aimd-cache';
-    public const string DEFAULT_FORMAT = 'text';
+    public const string DEFAULT_FORMAT = 'summary';
     public const string DEFAULT_NAMESPACE_STRATEGY = 'chain';
 
     /**

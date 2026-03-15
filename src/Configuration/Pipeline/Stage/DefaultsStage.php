@@ -33,7 +33,7 @@ final class DefaultsStage implements ConfigurationStageInterface
             'excludes' => ['vendor', 'node_modules', '.git'],
             'cache.dir' => '.aimd-cache',
             'cache.enabled' => true,
-            'format' => 'text',
+            'format' => 'summary',
             'namespace.strategy' => 'chain',
             'project_root' => $context->workingDirectory,
         ]);

@@ -281,12 +281,27 @@ final class ResultPresenter
             $options[substr($opt, 0, $eqPos)] = substr($opt, $eqPos + 1);
         }
 
+        // Parse --namespace and --class (mutually exclusive)
+        /** @var string|null $namespaceFilter */
+        $namespaceFilter = $input->getOption('namespace');
+        /** @var string|null $classFilter */
+        $classFilter = $input->getOption('class');
+
+        if ($namespaceFilter !== null && $classFilter !== null) {
+            throw new InvalidArgumentException('Options --namespace and --class are mutually exclusive');
+        }
+
+        $terminalWidth = (new \Symfony\Component\Console\Terminal())->getWidth() ?: 80;
+
         return new FormatterContext(
             useColor: $output->isDecorated(),
             groupBy: $groupBy,
             options: $options,
             basePath: getcwd() ?: '.',
             partialAnalysis: $partialAnalysis,
+            namespace: $namespaceFilter,
+            class: $classFilter,
+            terminalWidth: $terminalWidth,
         );
     }
 

@@ -80,7 +80,7 @@ final class CheckCommandDefinition
                 'format',
                 'f',
                 InputOption::VALUE_REQUIRED,
-                'Output format (text, json, checkstyle, sarif, gitlab, github, metrics-json, html)',
+                'Output format (summary, text, json, checkstyle, sarif, gitlab, github, metrics-json, html). Default: summary',
             )
             ->addOption(
                 'output',
@@ -93,6 +93,18 @@ final class CheckCommandDefinition
                 null,
                 InputOption::VALUE_REQUIRED,
                 'Minimum severity to trigger non-zero exit code (warning, error)',
+            )
+            ->addOption(
+                'namespace',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Filter results by namespace (boundary-aware prefix match)',
+            )
+            ->addOption(
+                'class',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Filter results by class FQCN (exact match)',
             );
     }
 
