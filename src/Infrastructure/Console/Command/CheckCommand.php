@@ -125,6 +125,8 @@ final class CheckCommand extends Command
 
         $this->validateWorkersOption($input);
         $this->warnAboutUnknownRules($resolved, $output);
+        $this->warnAboutConflictingRuleFilters($resolved, $output);
+        $this->logConfigSources($resolved, $output);
 
         $scopeResolution = (new GitScopeResolver())->resolve($input, $resolved);
 
@@ -352,6 +354,33 @@ final class CheckCommand extends Command
     }
 
     /**
+     * Warns if both --disable-rule and --only-rule are used simultaneously.
+     */
+    private function warnAboutConflictingRuleFilters(ResolvedConfiguration $resolved, OutputInterface $output): void
+    {
+        if ($resolved->analysis->disabledRules !== [] && $resolved->analysis->onlyRules !== []) {
+            $output->writeln(
+                '<comment>Warning: both --disable-rule and --only-rule are active. This may result in no rules being enabled.</comment>',
+            );
+        }
+    }
+
+    /**
+     * Logs which configuration sources were applied (verbose mode only).
+     */
+    private function logConfigSources(ResolvedConfiguration $resolved, OutputInterface $output): void
+    {
+        if (!$output->isVerbose() || $resolved->appliedSources === []) {
+            return;
+        }
+
+        $output->writeln(\sprintf(
+            '<info>Configuration loaded from: %s</info>',
+            implode(', ', $resolved->appliedSources),
+        ));
+    }
+
+    /**
      * Warns about unknown rule names in --only-rule and --disable-rule.
      */
     private function warnAboutUnknownRules(ResolvedConfiguration $resolved, OutputInterface $output): void
@@ -369,8 +398,9 @@ final class CheckCommand extends Command
         foreach ($checkNames as $name) {
             $matched = false;
             foreach ($knownNames as $known) {
-                // Support both exact match and prefix match (e.g., "complexity" matches "complexity.cyclomatic")
-                if ($name === $known || str_starts_with($known, $name . '.')) {
+                // Support exact match, prefix match (e.g., "complexity" matches "complexity.cyclomatic"),
+                // and reverse prefix match (e.g., "complexity.cyclomatic.method" refines "complexity.cyclomatic")
+                if ($name === $known || str_starts_with($known, $name . '.') || str_starts_with($name, $known . '.')) {
                     $matched = true;
                     break;
                 }

@@ -85,9 +85,7 @@ final class CheckstyleFormatter implements FormatterInterface
     {
         $xml->startElement('error');
 
-        if ($violation->location->line !== null) {
-            $xml->writeAttribute('line', (string) $violation->location->line);
-        }
+        $xml->writeAttribute('line', (string) ($violation->location->line ?? 1));
 
         $xml->writeAttribute('severity', $this->severityToString($violation->severity));
         $xml->writeAttribute('message', $violation->message);

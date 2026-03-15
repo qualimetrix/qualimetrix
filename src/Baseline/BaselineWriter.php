@@ -69,6 +69,8 @@ final readonly class BaselineWriter
             'version' => $baseline->version,
             'generated' => $baseline->generated->format('c'), // ISO 8601
             'count' => $baseline->count(),
+            'violationCount' => $baseline->count(),
+            'symbolCount' => \count($baseline->entries),
             'violations' => $violations,
         ];
     }

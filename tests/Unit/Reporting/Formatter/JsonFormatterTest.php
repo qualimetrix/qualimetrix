@@ -33,7 +33,7 @@ final class JsonFormatterTest extends TestCase
     protected function setUp(): void
     {
         $hintProvider = new MetricHintProvider();
-        $this->formatter = new JsonFormatter(new DebtCalculator(new RemediationTimeRegistry()), new NamespaceDrillDown($hintProvider));
+        $this->formatter = new JsonFormatter(new DebtCalculator(new RemediationTimeRegistry()), new NamespaceDrillDown($hintProvider), new RemediationTimeRegistry());
     }
 
     public function testGetNameReturnsJson(): void
@@ -1134,8 +1134,7 @@ final class JsonFormatterTest extends TestCase
         $output = $this->formatter->format($report, $context);
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
-        // Falls back to project-level
-        self::assertNotNull($data['health']);
-        self::assertEquals(72.0, $data['health']['overall']['score']);
+        // Returns null when namespace has no health data (no misleading fallback)
+        self::assertNull($data['health']);
     }
 }

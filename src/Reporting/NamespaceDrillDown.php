@@ -6,6 +6,7 @@ namespace AiMessDetector\Reporting;
 
 use AiMessDetector\Core\ComputedMetric\ComputedMetricDefaults;
 use AiMessDetector\Core\Metric\MetricRepositoryInterface;
+use AiMessDetector\Core\Symbol\SymbolPath;
 use AiMessDetector\Core\Symbol\SymbolType;
 use AiMessDetector\Core\Violation\Violation;
 
@@ -43,7 +44,7 @@ final readonly class NamespaceDrillDown
             }
 
             $nsMetrics = $metrics->get($nsInfo->symbolPath);
-            $classCount = (int) ($nsMetrics->get('classCount') ?? 1);
+            $classCount = (int) ($nsMetrics->get('classCount.sum') ?? 1);
             if ($classCount < 1) {
                 $classCount = 1;
             }
@@ -111,11 +112,18 @@ final readonly class NamespaceDrillDown
         $warnThreshold = $overallDef->warningThreshold ?? 50.0;
         $errThreshold = $overallDef->errorThreshold ?? 30.0;
 
-        // Pre-compute violation counts per class
+        // Pre-compute violation counts per class (normalize method-level violations to class)
         $violationCounts = [];
         foreach ($violations as $violation) {
-            $canonical = $violation->symbolPath->toCanonical();
-            $violationCounts[$canonical] = ($violationCounts[$canonical] ?? 0) + 1;
+            if ($violation->symbolPath->type === null) {
+                continue; // Skip namespace/file-level violations
+            }
+            $classPath = SymbolPath::forClass(
+                $violation->symbolPath->namespace ?? '',
+                $violation->symbolPath->type,
+            );
+            $key = $classPath->toCanonical();
+            $violationCounts[$key] = ($violationCounts[$key] ?? 0) + 1;
         }
 
         /** @var list<WorstOffender> $offenders */

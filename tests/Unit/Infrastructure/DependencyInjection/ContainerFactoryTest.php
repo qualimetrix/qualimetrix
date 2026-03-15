@@ -231,7 +231,6 @@ final class ContainerFactoryTest extends TestCase
         $expectedFormatters = [
             'summary',
             'text',
-            'text-verbose',
             'json',
             'checkstyle',
             'sarif',
@@ -248,11 +247,14 @@ final class ContainerFactoryTest extends TestCase
             );
         }
 
-        // Verify we have exactly the expected number of formatters
+        // text-verbose is registered but hidden from getAvailableNames() (deprecated)
+        self::assertTrue($registry->has('text-verbose'), 'Deprecated text-verbose formatter should still be registered');
+
+        // Verify we have exactly the expected number of public formatters
         self::assertCount(
             \count($expectedFormatters),
             $registry->getAvailableNames(),
-            'FormatterRegistry should contain exactly ' . \count($expectedFormatters) . ' formatters',
+            'FormatterRegistry should contain exactly ' . \count($expectedFormatters) . ' public formatters',
         );
     }
 

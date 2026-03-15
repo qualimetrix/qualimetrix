@@ -7,6 +7,7 @@ namespace AiMessDetector\Reporting\Formatter;
 use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
 use AiMessDetector\Reporting\Debt\DebtCalculator;
+use AiMessDetector\Reporting\Debt\RemediationTimeRegistry;
 use AiMessDetector\Reporting\DecompositionItem;
 use AiMessDetector\Reporting\FormatterContext;
 use AiMessDetector\Reporting\GroupBy;
@@ -31,6 +32,7 @@ final class JsonFormatter implements FormatterInterface
     public function __construct(
         private readonly DebtCalculator $debtCalculator,
         private readonly NamespaceDrillDown $namespaceDrillDown,
+        private readonly RemediationTimeRegistry $remediationTimeRegistry,
     ) {}
 
     public function format(Report $report, FormatterContext $context): string
@@ -71,6 +73,11 @@ final class JsonFormatter implements FormatterInterface
                 fn(Violation $v): array => $this->formatViolation($v, $context),
                 $outputViolations,
             ),
+            'violationsMeta' => [
+                'total' => \count($filteredViolations),
+                'limit' => $limit,
+                'truncated' => $limit !== null && \count($filteredViolations) > $limit,
+            ],
         ];
 
         return json_encode($data, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR);
@@ -147,9 +154,10 @@ final class JsonFormatter implements FormatterInterface
 
         if ($context->namespace !== null && $report->metrics !== null) {
             $nsScores = $this->namespaceDrillDown->buildSubtreeHealthScores($report->metrics, $context->namespace);
-            if ($nsScores !== []) {
-                $healthScores = $nsScores;
+            if ($nsScores === []) {
+                return null; // No health data for this namespace
             }
+            $healthScores = $nsScores;
         }
 
         return $this->formatHealthScores($healthScores, $context);
@@ -306,8 +314,10 @@ final class JsonFormatter implements FormatterInterface
             'code' => $violation->violationCode,
             'severity' => $violation->severity->value,
             'message' => $violation->getDisplayMessage(),
+            'humanMessage' => $violation->humanMessage,
             'metricValue' => $this->sanitizeNumeric($violation->metricValue),
             'threshold' => $this->sanitizeNumeric($violation->threshold),
+            'techDebtMinutes' => $this->remediationTimeRegistry->getMinutes($violation->ruleName),
         ];
     }
 

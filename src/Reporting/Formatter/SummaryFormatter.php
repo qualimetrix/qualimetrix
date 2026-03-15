@@ -200,7 +200,7 @@ final class SummaryFormatter implements FormatterInterface
 
         $nsScores = $this->namespaceDrillDown->buildSubtreeHealthScores($report->metrics, $context->namespace);
 
-        return $nsScores !== [] ? $nsScores : $report->healthScores;
+        return $nsScores !== [] ? $nsScores : [];
     }
 
     private function renderHealthBar(
