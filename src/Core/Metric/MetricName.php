@@ -62,8 +62,14 @@ final class MetricName
     public const string SECURITY_HARDCODED_CREDENTIALS = 'security.hardcodedCredentials';
     public const string SECURITY_SENSITIVE_PARAMETER = 'security.sensitiveParameter';
 
+    // -- Cohesion ------------------------------------------------------------
+
+    public const string COHESION_TCC = 'tcc';
+    public const string COHESION_LCC = 'lcc';
+
     // -- Size ----------------------------------------------------------------
 
+    public const string SIZE_CLASS_LOC = 'classLoc';
     public const string SIZE_CLASS_COUNT = 'classCount';
     public const string SIZE_ABSTRACT_CLASS_COUNT = 'abstractClassCount';
     public const string SIZE_INTERFACE_COUNT = 'interfaceCount';
@@ -89,6 +95,7 @@ final class MetricName
     public const string STRUCTURE_UNUSED_PRIVATE_PROPERTY = 'unusedPrivate.property';
     public const string STRUCTURE_UNUSED_PRIVATE_CONSTANT = 'unusedPrivate.constant';
     public const string STRUCTURE_WMC = 'wmc';
+    public const string STRUCTURE_WOC = 'woc';
 
     // -- Code Smell ----------------------------------------------------------
 
