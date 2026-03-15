@@ -24,6 +24,7 @@ Collectors **do not interpret** metrics — they only collect them. Interpretati
 | `mi`                                                                 | Maintainability | Method           | Maintainability Index (derived from Halstead + CCN)                                                                                                                               |
 | **Size**                                                             |                 |                  |                                                                                                                                                                                   |
 | `loc`, `lloc`, `cloc`                                                | Size            | File             | Lines of Code (total, logical, comments)                                                                                                                                          |
+| `classLoc`                                                           | Size            | Class            | Physical lines of code per class (endLine - startLine + 1)                                                                                                                        |
 | `classCount`, `interfaceCount`, `traitCount`, `enumCount`            | Size            | File             | Number of classes/interfaces/traits/enums                                                                                                                                         |
 | `abstractClassCount`                                                 | Size            | File             | Number of abstract classes                                                                                                                                                        |
 | `functionCount`                                                      | Size            | File             | Number of standalone functions                                                                                                                                                    |
@@ -176,6 +177,8 @@ new MetricDefinition(
 7. [ ] For method-level metrics: implement `MethodMetricsProviderInterface`
 8. [ ] Add `aimd.collector` DI tag (automatically via autoconfiguration)
 9. [ ] Write unit tests (including a test for getMetricDefinitions)
+10. [ ] Add value hints to `src/Reporting/Template/src/hints.js` (`METRIC_HINTS` map) — range-based interpretations for the HTML report
+11. [ ] Add "How to read the value" table to the corresponding `website/docs/rules/` page (both EN and RU)
 
 ### Metric Naming Conventions
 

@@ -20,6 +20,15 @@ It works by looking at which properties (fields) each method uses. If two method
 
 Think of it like a team: if all team members work on the same project, the team is cohesive (LCOM = 1). If half the team works on project A and the other half on project B with no overlap, the team should probably be split in two (LCOM = 2).
 
+**How to read the value:**
+
+| LCOM | Interpretation                                  |
+| ---- | ----------------------------------------------- |
+| 1    | Cohesive -- single responsibility               |
+| 2--3 | Moderate, may have distinct concerns            |
+| 4--5 | Low cohesion -- consider splitting              |
+| 6+   | Very low cohesion -- class does too many things |
+
 ### Thresholds
 
 | Value | Severity | Meaning                                      |
@@ -115,6 +124,15 @@ NOC counts how many classes **directly extend** (inherit from) a given class.
 
 For example, if 12 classes all write `extends BaseRepository`, then `BaseRepository` has NOC = 12.
 
+**How to read the value:**
+
+| NOC   | Interpretation                              |
+| ----- | ------------------------------------------- |
+| 0     | Leaf class (no subclasses)                  |
+| 1--5  | Normal inheritance                          |
+| 6--10 | Many subclasses -- review base class design |
+| 10+   | Heavy base class -- consider composition    |
+
 ### Why it matters
 
 A class with many children is a **high-impact change point**. Any modification to the parent class -- changing a method signature, altering behavior, or adding abstract methods -- affects every child class. The more children, the riskier any change becomes.
@@ -187,6 +205,15 @@ This rule counts how many levels of parent classes a class has. This metric is c
 - `class B extends A {}` -- DIT = 1
 - `class C extends B {}` -- DIT = 2
 - `class D extends C {}` -- DIT = 3
+
+**How to read the value:**
+
+| DIT  | Interpretation                           |
+| ---- | ---------------------------------------- |
+| 0    | Root class (no parent)                   |
+| 1--3 | Normal depth                             |
+| 4--6 | Deep hierarchy -- may be fragile         |
+| 6+   | Very deep -- fragile, hard to understand |
 
 ### Why it matters
 
@@ -276,6 +303,14 @@ Checks the percentage of type declarations in a class. Produces up to three viol
 - **Property type coverage** -- percentage of properties with type declarations
 
 Unlike most rules, this one uses **inverted thresholds**: lower values are worse. A warning is reported when coverage drops below the warning threshold, and an error when it drops below the error threshold.
+
+**How to read the value:**
+
+| Coverage | Interpretation         |
+| -------- | ---------------------- |
+| 0--49%   | Low type coverage      |
+| 50--79%  | Moderate type coverage |
+| 80--100% | Good type coverage     |
 
 ### Thresholds
 

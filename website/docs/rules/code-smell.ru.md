@@ -382,6 +382,191 @@ class UserController
 
 ---
 
+## Избыточное внедрение в конструктор (Constructor Over-injection)
+
+**Идентификатор правила:** `code-smell.constructor-overinjection`
+
+### Что измеряет
+
+Обнаруживает конструкторы со слишком большим количеством внедрённых зависимостей. Длинный список параметров конструктора в кодовых базах с DI -- прямой сигнал нарушения принципа единственной ответственности (SRP): класс имеет слишком много коллабораторов.
+
+### Пороговые значения
+
+| Значение | Серьёзность | Что означает                                       |
+| -------- | ----------- | -------------------------------------------------- |
+| 8        | Warning     | Слишком много зависимостей, рассмотрите разделение |
+| 12+      | Error       | Класс явно нарушает SRP                            |
+
+### Пример
+
+```php
+// Плохо: конструктор зависит от слишком многих сервисов
+class OrderProcessor
+{
+    public function __construct(
+        private UserRepository $users,
+        private ProductRepository $products,
+        private InventoryService $inventory,
+        private PricingService $pricing,
+        private TaxCalculator $tax,
+        private ShippingService $shipping,
+        private NotificationService $notifications,
+        private AuditLogger $audit,
+        private MetricsCollector $metrics,
+    ) {}
+}
+```
+
+### Как исправить
+
+1. **Разделите класс** на меньшие, сфокусированные сервисы (например, `OrderValidator`, `OrderFulfiller`, `OrderNotifier`).
+2. **Используйте Фасад или Медиатор** для группировки связанных зависимостей за единым интерфейсом.
+3. **Внедрите Command Bus** -- вместо прямого внедрения обработчиков отправляйте команды.
+
+### Конфигурация
+
+```yaml
+# aimd.yaml
+rules:
+  code-smell.constructor-overinjection:
+    warning: 8
+    error: 12
+```
+
+```bash
+bin/aimd check src/ --rule-opt="code-smell.constructor-overinjection:warning=6"
+```
+
+---
+
+## Класс данных (Data Class)
+
+**Идентификатор правила:** `code-smell.data-class`
+**Серьезность:** Warning
+
+### Что измеряет
+
+Обнаруживает классы с высокой публичной поверхностью (WOC -- Weight of Class, % публичных методов), но низкой сложностью (WMC -- Weighted Methods per Class). Такие классы в основном предоставляют данные через геттеры/сеттеры без инкапсуляции значимого поведения. Основано на метриках Lanza & Marinescu.
+
+Намеренные DTO исключаются: readonly-классы, классы только с promoted properties и классы, помеченные как data-классы, не вызывают предупреждений.
+
+### Пороговые значения
+
+| Метрика         | Условие  | По умолчанию |
+| --------------- | -------- | ------------ |
+| WOC             | ≥ порога | 80%          |
+| WMC             | ≤ порога | 10           |
+| Минимум методов | ≥        | 3            |
+
+### Пример
+
+```php
+// Помечается: высокая публичная поверхность, низкая сложность, не readonly
+class UserProfile
+{
+    private string $name;
+    private string $email;
+    private string $phone;
+
+    public function getName(): string { return $this->name; }
+    public function setName(string $name): void { $this->name = $name; }
+    public function getEmail(): string { return $this->email; }
+    public function setEmail(string $email): void { $this->email = $email; }
+    public function getPhone(): string { return $this->phone; }
+    public function setPhone(string $phone): void { $this->phone = $phone; }
+}
+
+// Не помечается: намеренный DTO (readonly)
+readonly class UserDTO
+{
+    public function __construct(
+        public string $name,
+        public string $email,
+    ) {}
+}
+```
+
+### Как исправить
+
+1. **Инкапсулируйте поведение** -- перенесите операции, использующие эти данные, внутрь самого класса.
+2. **Превратите в DTO** -- если класс намеренно является только данными, сделайте его `readonly` для выражения намерения.
+3. **Объедините с потребителем** -- если класс только хранит данные для другого класса, рассмотрите встраивание.
+
+### Конфигурация
+
+```yaml
+# aimd.yaml
+rules:
+  code-smell.data-class:
+    woc_threshold: 80
+    wmc_threshold: 10
+    min_methods: 3
+    exclude_readonly: true
+    exclude_promoted_only: true
+```
+
+---
+
+## God Class (Божественный класс)
+
+**Идентификатор правила:** `code-smell.god-class`
+**Серьезность:** Warning (3+ критерия) / Error (все оцениваемые критерии)
+
+### Что измеряет
+
+Обнаруживает God-классы -- чрезмерно сложные, крупные классы с низкой связностью. Использует мульти-критериальный подход Lanza & Marinescu: класс помечается, когда он соответствует минимум `minCriteria` из до 4 оцениваемых критериев.
+
+Критерии (всего 4):
+
+| Критерий  | Условие  | По умолчанию | Описание                                |
+| --------- | -------- | ------------ | --------------------------------------- |
+| WMC       | ≥ порога | 47           | Взвешенные методы класса                |
+| LCOM4     | ≥ порога | 3            | Недостаток связности                    |
+| TCC       | < порога | 0.33         | Тесная связность класса (инвертировано) |
+| Class LOC | ≥ порога | 300          | Физические строки кода                  |
+
+Недостающие метрики уменьшают количество оцениваемых критериев. Если оцениваемых критериев меньше `minCriteria`, нарушение не создаётся.
+
+### Пример
+
+```php
+// Помечается: высокий WMC, высокий LCOM, низкий TCC, большой размер
+class ApplicationManager
+{
+    // 400+ LOC, 25 методов, обрабатывает:
+    // - аутентификацию пользователей
+    // - управление сессиями
+    // - маршрутизацию запросов
+    // - форматирование ответов
+    // - обработку ошибок
+    // - логирование
+    // - кеширование
+}
+```
+
+### Как исправить
+
+1. **Извлеките классы по ответственности** -- определите кластеры методов, работающих с одними данными, и выделите их в отдельные классы.
+2. **Применяйте принцип единственной ответственности** -- каждый класс должен иметь одну причину для изменения.
+3. **Используйте композицию** -- замените иерархии наследования составными объектами.
+
+### Конфигурация
+
+```yaml
+# aimd.yaml
+rules:
+  code-smell.god-class:
+    wmc_threshold: 47
+    lcom_threshold: 3
+    tcc_threshold: 0.33
+    class_loc_threshold: 300
+    min_criteria: 3
+    min_methods: 3
+    exclude_readonly: true
+```
+
+---
+
 ## Длинный список параметров (Long Parameter List)
 
 **Идентификатор правила:** `code-smell.long-parameter-list`
@@ -652,6 +837,12 @@ bin/aimd check src/ --rule-opt="code-smell.unreachable-code:error=1"
 rules:
   code-smell.boolean-argument:
     enabled: true
+  code-smell.data-class:
+    woc_threshold: 80
+    wmc_threshold: 10
+    min_methods: 3
+    exclude_readonly: true
+    exclude_promoted_only: true
   code-smell.debug-code:
     enabled: true
   code-smell.empty-catch:
@@ -660,10 +851,21 @@ rules:
     enabled: false    # выключить, если есть легитимное использование eval
   code-smell.exit:
     enabled: true
+  code-smell.god-class:
+    wmc_threshold: 47
+    lcom_threshold: 3
+    tcc_threshold: 0.33
+    class_loc_threshold: 300
+    min_criteria: 3
+    min_methods: 3
+    exclude_readonly: true
   code-smell.goto:
     enabled: true
   code-smell.superglobals:
     enabled: true
+  code-smell.constructor-overinjection:
+    warning: 8
+    error: 12
   code-smell.count-in-loop:
     enabled: true
   code-smell.error-suppression:

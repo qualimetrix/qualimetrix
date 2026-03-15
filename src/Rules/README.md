@@ -18,45 +18,48 @@ Rules are analysis rule implementations for static analysis. Rules are **complet
 
 ## Implemented Rules
 
-| Rule                                   | Category        | Type                            | Description                     | Default Thresholds                 |
-| -------------------------------------- | --------------- | ------------------------------- | ------------------------------- | ---------------------------------- |
-| **complexity.cyclomatic**              | Complexity      | Hierarchical (Method, Class)    | Cyclomatic Complexity (CCN)     | method: 10/20, class.max: 30/50    |
-| **complexity.cognitive**               | Complexity      | Hierarchical (Method, Class)    | Cognitive Complexity            | method: 15/30, class.max: 30/50    |
-| **complexity.npath**                   | Complexity      | Hierarchical (Method, Class)    | NPATH Complexity                | method: 200/1000, class (disabled) |
-| **complexity.wmc**                     | Complexity      | Simple                          | Weighted Methods per Class      | warning: 50, error: 80             |
-| **size.method-count**                  | Size            | Simple                          | Method count per class          | warning: 20, error: 30             |
-| **size.class-count**                   | Size            | Simple                          | Class count per namespace       | warning: 15, error: 25             |
-| **size.property-count**                | Size            | Simple                          | Class property count            | warning: 15, error: 20             |
-| **maintainability.index**              | Maintainability | Simple                          | Maintainability Index           | warning: 40, error: 20             |
-| **design.lcom**                        | Design          | Simple                          | Lack of Cohesion (LCOM4)        | warning: 3, error: 5               |
-| **design.noc**                         | Design          | Simple                          | Number of Children              | warning: 10, error: 15             |
-| **design.inheritance**                 | Design          | Simple                          | Depth of Inheritance Tree (DIT) | warning: 4, error: 6               |
-| **coupling.instability**               | Coupling        | Hierarchical (Class, Namespace) | Instability (Ca/Ce)             | warning: 0.8, error: 0.95          |
-| **coupling.cbo**                       | Coupling        | Hierarchical (Class, Namespace) | Coupling Between Objects        | warning: ..., error: ...           |
-| **coupling.distance**                  | Coupling        | Simple                          | Distance from Main Sequence     | warning: 0.3, error: 0.5           |
-| **coupling.class-rank**                | Coupling        | Simple                          | ClassRank (PageRank on deps)    | warning: 0.02, error: 0.05         |
-| **architecture.circular-dependency**   | Architecture    | Simple                          | Circular dependencies           | enabled: true                      |
-| **code-smell.boolean-argument**        | CodeSmell       | Simple                          | Boolean arguments in signatures | enabled: true                      |
-| **code-smell.count-in-loop**           | CodeSmell       | Simple                          | count() calls in loops          | enabled: true                      |
-| **code-smell.debug-code**              | CodeSmell       | Simple                          | Debug code (var_dump, etc.)     | enabled: true                      |
-| **code-smell.empty-catch**             | CodeSmell       | Simple                          | Empty catch blocks              | enabled: true                      |
-| **code-smell.error-suppression**       | CodeSmell       | Simple                          | Error suppression operator (@)  | enabled: true                      |
-| **code-smell.eval**                    | CodeSmell       | Simple                          | eval() usage                    | enabled: true                      |
-| **code-smell.exit**                    | CodeSmell       | Simple                          | exit/die usage                  | enabled: true                      |
-| **code-smell.goto**                    | CodeSmell       | Simple                          | goto statements                 | enabled: true                      |
-| **code-smell.long-parameter-list**     | CodeSmell       | Simple                          | Long parameter lists            | warning: 4, error: 6               |
-| **code-smell.superglobals**            | CodeSmell       | Simple                          | Direct superglobal access       | enabled: true                      |
-| **code-smell.unreachable-code**        | CodeSmell       | Simple                          | Unreachable code detection      | warning: 1, error: 2               |
-| **design.type-coverage**               | Design          | Simple                          | Type declaration coverage       | param/return/property: 80%/50%     |
-| **security.hardcoded-credentials**     | Security        | Simple                          | Hardcoded credentials           | enabled: true                      |
-| **security.sql-injection**             | Security        | Simple                          | SQL injection patterns          | enabled: true                      |
-| **security.xss**                       | Security        | Simple                          | XSS patterns                    | enabled: true                      |
-| **security.command-injection**         | Security        | Simple                          | Command injection patterns      | enabled: true                      |
-| **security.sensitive-parameter**       | Security        | Simple                          | Missing #[\SensitiveParameter]  | enabled: true                      |
-| **code-smell.unused-private**          | CodeSmell       | Simple                          | Unused private methods/props    | enabled: true                      |
-| **code-smell.identical-subexpression** | CodeSmell       | Simple                          | Identical sub-expressions       | enabled: true                      |
-| **duplication.code-duplication**       | Duplication     | Simple                          | Duplicate code blocks           | min_lines: 5, min_tokens: 70, W/E  |
-| **computed.health**                    | Maintainability | Simple                          | Computed health metric checks   | per-definition thresholds          |
+| Rule                                     | Category        | Type                            | Description                     | Default Thresholds                    |
+| ---------------------------------------- | --------------- | ------------------------------- | ------------------------------- | ------------------------------------- |
+| **complexity.cyclomatic**                | Complexity      | Hierarchical (Method, Class)    | Cyclomatic Complexity (CCN)     | method: 10/20, class.max: 30/50       |
+| **complexity.cognitive**                 | Complexity      | Hierarchical (Method, Class)    | Cognitive Complexity            | method: 15/30, class.max: 30/50       |
+| **complexity.npath**                     | Complexity      | Hierarchical (Method, Class)    | NPATH Complexity                | method: 200/1000, class (disabled)    |
+| **complexity.wmc**                       | Complexity      | Simple                          | Weighted Methods per Class      | warning: 50, error: 80                |
+| **size.method-count**                    | Size            | Simple                          | Method count per class          | warning: 20, error: 30                |
+| **size.class-count**                     | Size            | Simple                          | Class count per namespace       | warning: 15, error: 25                |
+| **size.property-count**                  | Size            | Simple                          | Class property count            | warning: 15, error: 20                |
+| **maintainability.index**                | Maintainability | Simple                          | Maintainability Index           | warning: 40, error: 20                |
+| **design.lcom**                          | Design          | Simple                          | Lack of Cohesion (LCOM4)        | warning: 3, error: 5                  |
+| **design.noc**                           | Design          | Simple                          | Number of Children              | warning: 10, error: 15                |
+| **design.inheritance**                   | Design          | Simple                          | Depth of Inheritance Tree (DIT) | warning: 4, error: 6                  |
+| **coupling.instability**                 | Coupling        | Hierarchical (Class, Namespace) | Instability (Ca/Ce)             | warning: 0.8, error: 0.95             |
+| **coupling.cbo**                         | Coupling        | Hierarchical (Class, Namespace) | Coupling Between Objects        | warning: ..., error: ...              |
+| **coupling.distance**                    | Coupling        | Simple                          | Distance from Main Sequence     | warning: 0.3, error: 0.5              |
+| **coupling.class-rank**                  | Coupling        | Simple                          | ClassRank (PageRank on deps)    | warning: 0.02, error: 0.05            |
+| **architecture.circular-dependency**     | Architecture    | Simple                          | Circular dependencies           | enabled: true                         |
+| **code-smell.boolean-argument**          | CodeSmell       | Simple                          | Boolean arguments in signatures | enabled: true                         |
+| **code-smell.count-in-loop**             | CodeSmell       | Simple                          | count() calls in loops          | enabled: true                         |
+| **code-smell.debug-code**                | CodeSmell       | Simple                          | Debug code (var_dump, etc.)     | enabled: true                         |
+| **code-smell.empty-catch**               | CodeSmell       | Simple                          | Empty catch blocks              | enabled: true                         |
+| **code-smell.error-suppression**         | CodeSmell       | Simple                          | Error suppression operator (@)  | enabled: true                         |
+| **code-smell.eval**                      | CodeSmell       | Simple                          | eval() usage                    | enabled: true                         |
+| **code-smell.exit**                      | CodeSmell       | Simple                          | exit/die usage                  | enabled: true                         |
+| **code-smell.goto**                      | CodeSmell       | Simple                          | goto statements                 | enabled: true                         |
+| **code-smell.constructor-overinjection** | CodeSmell       | Simple                          | Constructor over-injection      | warning: 8, error: 12                 |
+| **code-smell.data-class**                | CodeSmell       | Simple                          | Data Class detection            | wocThreshold: 80, wmcThreshold: 10    |
+| **code-smell.god-class**                 | CodeSmell       | Simple                          | God Class detection (L&M)       | wmc: 47, lcom: 3, tcc: 0.33, loc: 300 |
+| **code-smell.long-parameter-list**       | CodeSmell       | Simple                          | Long parameter lists            | warning: 4, error: 6                  |
+| **code-smell.superglobals**              | CodeSmell       | Simple                          | Direct superglobal access       | enabled: true                         |
+| **code-smell.unreachable-code**          | CodeSmell       | Simple                          | Unreachable code detection      | warning: 1, error: 2                  |
+| **design.type-coverage**                 | Design          | Simple                          | Type declaration coverage       | param/return/property: 80%/50%        |
+| **security.hardcoded-credentials**       | Security        | Simple                          | Hardcoded credentials           | enabled: true                         |
+| **security.sql-injection**               | Security        | Simple                          | SQL injection patterns          | enabled: true                         |
+| **security.xss**                         | Security        | Simple                          | XSS patterns                    | enabled: true                         |
+| **security.command-injection**           | Security        | Simple                          | Command injection patterns      | enabled: true                         |
+| **security.sensitive-parameter**         | Security        | Simple                          | Missing #[\SensitiveParameter]  | enabled: true                         |
+| **code-smell.unused-private**            | CodeSmell       | Simple                          | Unused private methods/props    | enabled: true                         |
+| **code-smell.identical-subexpression**   | CodeSmell       | Simple                          | Identical sub-expressions       | enabled: true                         |
+| **duplication.code-duplication**         | Duplication     | Simple                          | Duplicate code blocks           | min_lines: 5, min_tokens: 70, W/E     |
+| **computed.health**                      | Maintainability | Simple                          | Computed health metric checks   | per-definition thresholds             |
 
 ---
 
@@ -737,6 +740,8 @@ Violations are triggered when a metric value meets or exceeds the threshold (`>=
 3. Implement `analyze(AnalysisContext): array` — validation logic
 4. Create a `{Name}Options implements RuleOptionsInterface` class
 5. Write unit tests
+6. Add value hints to `src/Reporting/Template/src/hints.js` — range-based interpretations for the HTML report
+7. Add "How to read the value" table to `website/docs/rules/` page (both EN and RU)
 
 **Example:**
 ```php

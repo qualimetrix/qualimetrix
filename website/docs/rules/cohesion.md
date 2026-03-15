@@ -30,6 +30,14 @@ The result is a ratio from 0.0 to 1.0:
 
 Think of it like a dinner party: if every guest knows every other guest, the group is tightly knit (TCC = 1.0). If guests form isolated cliques with no overlap, the party should have been two separate events (TCC near 0.0).
 
+**How to read the value:**
+
+| TCC       | Interpretation                                   |
+| --------- | ------------------------------------------------ |
+| 0.5--1.0  | Good -- methods are well interconnected          |
+| 0.3--0.5  | Moderate cohesion                                |
+| Below 0.3 | Low method interconnection -- consider splitting |
+
 ### Thresholds
 
 TCC and LCC are currently reported as **metrics only** (visible in `--format=metrics-json` output). They do not produce violations on their own. Use them alongside [LCOM](design.md#lcom----lack-of-cohesion-of-methods) for a fuller picture of class cohesion.

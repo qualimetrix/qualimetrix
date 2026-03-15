@@ -16,6 +16,16 @@ Cyclomatic Complexity (often abbreviated CCN) counts the number of **decision po
 
 The number roughly tells you the minimum number of test cases you need to fully cover the method.
 
+**How to read the value:**
+
+| CCN    | Interpretation                          |
+| ------ | --------------------------------------- |
+| 1--4   | Simple, easy to test                    |
+| 5--10  | Moderate -- typical for business logic  |
+| 11--20 | Complex -- consider refactoring         |
+| 21--50 | Very complex, hard to maintain and test |
+| 50+    | Extremely complex -- split immediately  |
+
 ### Thresholds
 
 **Method level** (enabled by default):
@@ -115,6 +125,15 @@ Key differences from cyclomatic complexity:
 - **Shorthand structures score less.** A `switch` with 10 cases adds only 1 point (it is a single mental structure), while 10 separate `if` statements add 10 points each plus nesting.
 - **Breaks in linear flow add points.** `break`, `continue`, and `goto` all cost points because they disrupt the reading flow.
 
+**How to read the value:**
+
+| Cognitive | Interpretation                              |
+| --------- | ------------------------------------------- |
+| 0--5      | Simple, easy to understand                  |
+| 6--15     | Moderate complexity                         |
+| 16--30    | Complex, hard to follow                     |
+| 30+       | Very hard to follow -- refactoring required |
+
 ### Thresholds
 
 **Method level** (enabled by default):
@@ -190,6 +209,15 @@ NPath Complexity counts the total number of **unique execution paths** through a
 Think of it this way: if a method has 3 independent `if` statements, each can be true or false. That gives 2 x 2 x 2 = 8 possible paths. NPath would be 8, while cyclomatic complexity would be 4.
 
 This makes NPath grow very fast. It reflects the true testing burden: to fully test all paths, you would need one test case per unique path.
+
+**How to read the value:**
+
+| NPath     | Interpretation                             |
+| --------- | ------------------------------------------ |
+| 1--20     | Simple, few execution paths                |
+| 21--200   | Moderate path count                        |
+| 201--1000 | Many execution paths, testing becomes hard |
+| 1000+     | Explosive path count -- split the method   |
 
 ### Thresholds
 
@@ -273,6 +301,15 @@ bin/aimd check src/ --rule-opt="complexity.npath:class.enabled=true"
 WMC (Weighted Methods per Class) is the **sum of cyclomatic complexity of all methods** in a class. It tells you the overall complexity burden of the entire class.
 
 A class with 20 simple getter/setter methods (each with complexity 1) has WMC = 20. A class with 5 methods where each has complexity 10 also has WMC = 50. Both are "heavy" in different ways: the first has too many methods, the second has too-complex methods.
+
+**How to read the value:**
+
+| WMC    | Interpretation                                  |
+| ------ | ----------------------------------------------- |
+| 1--20  | Manageable class                                |
+| 21--50 | Large class -- review for single responsibility |
+| 51--80 | Very large class                                |
+| 80+    | Excessive -- strongly consider splitting        |
 
 ### Thresholds
 

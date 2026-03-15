@@ -67,19 +67,19 @@ Unused private members and unreachable code are done. **Unused variables** is th
 
 Low effort — all data already collected, only need rule logic on top.
 
-### 1.1 God Class Detection
+### 1.1 God Class Detection ✅
 
 - **Rule:** `code-smell.god-class`
 - **Logic:** Composite threshold on WMC + LCOM4 + TCC + class LOC. A class is a God Class when it has high WMC, low cohesion (high LCOM or low TCC), and is large
-- **Thresholds (draft):** WMC ≥ 47, LCOM4 ≥ 3, TCC < 0.33, classLoc ≥ 300 (any 3 of 4)
+- **Thresholds:** WMC ≥ 47, LCOM4 ≥ 3, TCC < 0.33, classLoc ≥ 300 (any 3 of 4 = Warning, all evaluable = Error)
 - **Reference:** Lanza & Marinescu "Object-Oriented Metrics in Practice", SonarQube S1820
 - **Effort:** Low
 - **Value:** High — the most requested OOP smell, phpmd has it, SonarQube has it
 
-### 1.2 Data Class Detection
+### 1.2 Data Class Detection ✅
 
 - **Rule:** `code-smell.data-class`
-- **Logic:** High WOC (≥ 0.8 = mostly public accessors), low WMC, no business logic methods
+- **Logic:** High WOC (≥ 80% = mostly public accessors), low WMC (≤ 10), excludes readonly/promoted-only/intentional DTOs
 - **Reference:** Fowler's "Refactoring", Lanza & Marinescu
 - **Effort:** Low
 - **Value:** Medium — encourages moving behavior closer to data
@@ -92,10 +92,10 @@ Low effort — all data already collected, only need rule logic on top.
 - **Effort:** Medium (may need new per-method metric)
 - **Value:** Medium — classic Fowler smell
 
-### 1.4 Constructor Over-injection
+### 1.4 Constructor Over-injection ✅
 
 - **Rule:** `code-smell.constructor-overinjection`
-- **Logic:** `__construct` parameter count ≥ threshold (default: 10). Already have parameter count per method; need to filter for constructors specifically
+- **Logic:** `__construct` parameter count ≥ threshold (warning: 8, error: 12)
 - **Effort:** Low
 - **Value:** Medium — direct signal of SRP violation in DI-heavy codebases
 

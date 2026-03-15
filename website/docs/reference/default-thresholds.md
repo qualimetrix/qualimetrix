@@ -92,6 +92,9 @@ These rules detect specific patterns that are usually bad practice. Most do not 
 
 | Rule              | ID                             | Severity | Default |
 | ----------------- | ------------------------------ | -------- | ------- |
+| Constructor Over-injection | `code-smell.constructor-overinjection` | 8 params | 12 params | enabled |
+| Data Class        | `code-smell.data-class`        | Warning  | WOC ≥ 80%, WMC ≤ 10 | enabled |
+| God Class         | `code-smell.god-class`         | Warning/Error | WMC ≥ 47, LCOM ≥ 3, TCC < 0.33, LOC ≥ 300 (3 of 4) | enabled |
 | Boolean Argument  | `code-smell.boolean-argument`  | Warning  | enabled |
 | count() in Loop   | `code-smell.count-in-loop`     | Warning  | enabled |
 | Debug Code        | `code-smell.debug-code`        | Error    | enabled |

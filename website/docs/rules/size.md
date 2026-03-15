@@ -12,6 +12,15 @@ Size rules catch classes and namespaces that have grown too large. Large classes
 
 Counts the number of methods in a class. A class with too many methods is likely doing too much and should be split into smaller, more focused classes.
 
+**How to read the value:**
+
+| Methods | Interpretation                              |
+| ------- | ------------------------------------------- |
+| 1--10   | Focused class                               |
+| 11--20  | Large class                                 |
+| 21--30  | Very large class -- review responsibilities |
+| 30+     | God Class territory -- split immediately    |
+
 ### Thresholds
 
 | Value  | Severity | Meaning                                    |
@@ -96,6 +105,15 @@ class OrderService
 
 Counts the number of classes in a namespace (package). This is measured at the namespace level, not the class level. A namespace with too many classes is hard to navigate and likely has too broad a scope.
 
+**How to read the value:**
+
+| Classes | Interpretation                              |
+| ------- | ------------------------------------------- |
+| 1--10   | Focused namespace                           |
+| 11--15  | Moderate namespace                          |
+| 16--25  | Large namespace -- consider sub-namespacing |
+| 25+     | Bloated namespace                           |
+
 ### Thresholds
 
 | Value  | Severity | Meaning                                       |
@@ -159,6 +177,15 @@ App\Service\                  # 28 classes -- too many!
 ### What it measures
 
 Counts the number of properties (fields) in a class. A class with many properties often has too many responsibilities or is storing too much state.
+
+**How to read the value:**
+
+| Properties | Interpretation                           |
+| ---------- | ---------------------------------------- |
+| 1--10      | Normal                                   |
+| 11--15     | Large -- review for data clumps          |
+| 16--20     | Heavy -- consider splitting or using VOs |
+| 20+        | Excessive                                |
 
 !!! note
     This rule uses a strict comparison (`>` instead of `>=`). A class with exactly 15 properties will **not** trigger a warning; it needs 16 or more.

@@ -21,6 +21,15 @@ CBO = Ca + Ce.
 
 For example, if `UserService` uses `UserRepository`, `Logger`, `Validator`, and `Mailer`, and is used by `UserController` and `AdminController`, its CBO = 4 + 2 = 6.
 
+**How to read the value:**
+
+| CBO    | Interpretation                                  |
+| ------ | ----------------------------------------------- |
+| 0--7   | Normal coupling                                 |
+| 8--14  | Moderate -- typical for complex classes         |
+| 15--20 | High coupling -- consider reducing dependencies |
+| 20+    | Very high coupling                              |
+
 ### Thresholds
 
 **Class level** (enabled by default):
@@ -130,6 +139,16 @@ The result is a number between 0.0 and 1.0:
 !!! note "Why is high instability bad?"
     An instability close to 1.0 means the class has many outgoing dependencies and nobody depends on it. While this sounds "free to change," it also means the class is very sensitive to changes in its dependencies. If any of those dependencies change, this class might break.
 
+**How to read the value:**
+
+| I (Instability) | Interpretation                              |
+| --------------- | ------------------------------------------- |
+| 0.0             | Maximally stable (only depended upon)       |
+| 0.0--0.3        | Stable -- hard to change, many dependents   |
+| 0.3--0.7        | Balanced                                    |
+| 0.7--1.0        | Unstable -- easy to change                  |
+| 1.0             | Maximally unstable (only depends on others) |
+
 ### Thresholds
 
 **Class level** (enabled by default):
@@ -226,6 +245,14 @@ There are two bad zones:
 - **Zone of Pain** (bottom-left): stable + concrete. Many classes depend on this package, but it is all concrete code. Any change will ripple outward. Solution: add interfaces.
 - **Zone of Uselessness** (top-right): unstable + abstract. The package is full of abstractions that nobody implements. Dead weight.
 
+**How to read the value:**
+
+| Distance | Interpretation                             |
+| -------- | ------------------------------------------ |
+| 0.0--0.1 | On the main sequence -- well balanced      |
+| 0.1--0.3 | Acceptable balance                         |
+| 0.3+     | Off balance -- zone of pain or uselessness |
+
 ### Thresholds
 
 | Level   | Threshold | Severity |
@@ -288,6 +315,15 @@ ClassRank applies the **PageRank algorithm** to your project's dependency graph 
 A high ClassRank means the class is a critical hub in your codebase. If that class breaks or changes its API, the impact ripples across many dependents (directly and transitively). Think of it like a highway interchange: the more roads that pass through it, the bigger the traffic jam when it is closed.
 
 The result is a value between 0.0 and 1.0, where all class ranks in the project sum to 1.0.
+
+**How to read the value:**
+
+| ClassRank  | Interpretation                            |
+| ---------- | ----------------------------------------- |
+| Below 0.01 | Peripheral class                          |
+| 0.01--0.02 | Moderate importance                       |
+| 0.02--0.05 | Important hub -- changes have wide impact |
+| 0.05+      | Critical coupling point                   |
 
 ### Thresholds
 
