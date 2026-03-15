@@ -41,4 +41,6 @@ What follows from this decision — trade-offs, constraints, future implications
 
 ## Index
 
-(No ADRs yet)
+- [0001 — Computed Metrics (Health Scores)](0001-computed-metrics.md) — formula-based health scores, calibration, Expression Language
+- [0002 — Interactive HTML Report](0002-html-report.md) — D3 treemap, self-contained HTML, JS build pipeline, hint embedding
+- [0003 — Reporting UX Redesign](0003-reporting-ux-redesign.md) — summary-first CLI, progressive disclosure, MetricHintProvider
