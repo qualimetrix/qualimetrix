@@ -8,6 +8,7 @@ use AiMessDetector\Reporting\Debt\DebtCalculator;
 use AiMessDetector\Reporting\Formatter\Html\HtmlTreeBuilder;
 use AiMessDetector\Reporting\FormatterContext;
 use AiMessDetector\Reporting\GroupBy;
+use AiMessDetector\Reporting\MetricHintProvider;
 use AiMessDetector\Reporting\Report;
 use RuntimeException;
 
@@ -20,12 +21,14 @@ final class HtmlFormatter implements FormatterInterface
 {
     public function __construct(
         private readonly DebtCalculator $debtCalculator,
+        private readonly MetricHintProvider $hintProvider,
     ) {}
 
     public function format(Report $report, FormatterContext $context): string
     {
         $builder = new HtmlTreeBuilder($this->debtCalculator);
         $data = $builder->build($report, $context, $context->partialAnalysis);
+        $data['hints'] = $this->hintProvider->exportForHtml();
 
         $json = json_encode(
             $data,

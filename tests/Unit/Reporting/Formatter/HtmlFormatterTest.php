@@ -9,6 +9,7 @@ use AiMessDetector\Reporting\Debt\RemediationTimeRegistry;
 use AiMessDetector\Reporting\Formatter\HtmlFormatter;
 use AiMessDetector\Reporting\FormatterContext;
 use AiMessDetector\Reporting\GroupBy;
+use AiMessDetector\Reporting\MetricHintProvider;
 use AiMessDetector\Reporting\ReportBuilder;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
@@ -20,7 +21,10 @@ final class HtmlFormatterTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->formatter = new HtmlFormatter(new DebtCalculator(new RemediationTimeRegistry()));
+        $this->formatter = new HtmlFormatter(
+            new DebtCalculator(new RemediationTimeRegistry()),
+            new MetricHintProvider(),
+        );
     }
 
     public function testGetNameReturnsHtml(): void
@@ -142,5 +146,20 @@ final class HtmlFormatterTest extends TestCase
         // Should produce valid HTML with minimal data
         self::assertStringContainsString('<!DOCTYPE html>', $output);
         self::assertStringContainsString('"totalViolations":0', $output);
+    }
+
+    public function testFormatEmbedsHintsData(): void
+    {
+        $report = ReportBuilder::create()
+            ->filesAnalyzed(1)
+            ->filesSkipped(0)
+            ->duration(0.1)
+            ->build();
+
+        $output = $this->formatter->format($report, new FormatterContext());
+
+        self::assertStringContainsString('"hints"', $output);
+        self::assertStringContainsString('"metricHints"', $output);
+        self::assertStringContainsString('"healthDecomposition"', $output);
     }
 }

@@ -3,6 +3,9 @@
  *
  * Provides human-readable interpretations of raw metric values
  * and health score decompositions for the HTML report.
+ *
+ * Hint data is embedded in the report JSON by PHP (MetricHintProvider)
+ * and loaded at startup via initHints().
  */
 
 /**
@@ -16,269 +19,64 @@
  * @typedef {object} HintDef
  * @property {string} label - Human-readable metric name
  * @property {HintRange[]} ranges - Ordered ranges (lowest first)
- * @property {string} [unit] - Optional unit suffix (e.g., 'lines')
+ * @property {function} [format] - Optional custom format function
  */
 
 /** @type {Map<string, HintDef>} */
-const METRIC_HINTS = new Map([
-  // --- Complexity ---
-  ['ccn', {
-    label: 'Cyclomatic Complexity',
-    ranges: [
-      { max: 4, text: 'Simple, easy to test' },
-      { max: 10, text: 'Moderate complexity' },
-      { max: 20, text: 'Complex, consider refactoring' },
-      { max: 50, text: 'Very complex, hard to maintain' },
-      { above: true, text: 'Extremely complex' },
-    ],
-  }],
-  ['cognitive', {
-    label: 'Cognitive Complexity',
-    ranges: [
-      { max: 5, text: 'Simple, easy to understand' },
-      { max: 15, text: 'Moderate complexity' },
-      { max: 30, text: 'Complex, hard to follow' },
-      { above: true, text: 'Very hard to follow' },
-    ],
-  }],
-  ['npath', {
-    label: 'NPath Complexity',
-    ranges: [
-      { max: 20, text: 'Simple, few execution paths' },
-      { max: 200, text: 'Moderate path count' },
-      { max: 1000, text: 'Many execution paths' },
-      { above: true, text: 'Explosive path count' },
-    ],
-  }],
-
-  // --- Cohesion ---
-  ['lcom', {
-    label: 'LCOM4',
-    ranges: [
-      { max: 1, text: 'Cohesive — single responsibility' },
-      { max: 3, text: 'Moderate cohesion' },
-      { max: 5, text: 'Low cohesion, consider splitting' },
-      { above: true, text: 'Very low cohesion' },
-    ],
-    format: (v) => `${v} disconnected group${v === 1 ? '' : 's'}`,
-  }],
-  ['tcc', {
-    label: 'Tight Class Cohesion',
-    ranges: [
-      { max: 0.29, text: 'Low method interconnection' },
-      { max: 0.49, text: 'Moderate cohesion' },
-      { above: true, text: 'Good cohesion' },
-    ],
-  }],
-  ['lcc', {
-    label: 'Loose Class Cohesion',
-    ranges: [
-      { max: 0.29, text: 'Low cohesion (incl. transitive)' },
-      { max: 0.49, text: 'Moderate cohesion' },
-      { above: true, text: 'Good cohesion' },
-    ],
-  }],
-  ['wmc', {
-    label: 'Weighted Methods per Class',
-    ranges: [
-      { max: 20, text: 'Manageable class' },
-      { max: 50, text: 'Large class' },
-      { max: 80, text: 'Very large class' },
-      { above: true, text: 'Excessive — consider splitting' },
-    ],
-  }],
-
-  // --- Coupling ---
-  ['cbo', {
-    label: 'Coupling Between Objects',
-    ranges: [
-      { max: 7, text: 'Normal coupling' },
-      { max: 14, text: 'Moderate coupling' },
-      { max: 20, text: 'High coupling' },
-      { above: true, text: 'Very high coupling' },
-    ],
-  }],
-  ['instability', {
-    label: 'Instability',
-    ranges: [
-      { max: 0.09, text: 'Maximally stable' },
-      { max: 0.29, text: 'Stable' },
-      { max: 0.7, text: 'Balanced' },
-      { max: 0.9, text: 'Unstable' },
-      { above: true, text: 'Maximally unstable' },
-    ],
-  }],
-  ['abstractness', {
-    label: 'Abstractness',
-    ranges: [
-      { max: 0.09, text: 'All concrete' },
-      { max: 0.5, text: 'Mostly concrete' },
-      { max: 0.9, text: 'Mostly abstract' },
-      { above: true, text: 'All abstract' },
-    ],
-  }],
-  ['distance', {
-    label: 'Distance from Main Sequence',
-    ranges: [
-      { max: 0.1, text: 'On main sequence' },
-      { max: 0.3, text: 'Acceptable balance' },
-      { above: true, text: 'Off balance' },
-    ],
-  }],
-  ['classRank', {
-    label: 'ClassRank',
-    ranges: [
-      { max: 0.009, text: 'Peripheral class' },
-      { max: 0.02, text: 'Moderate importance' },
-      { max: 0.05, text: 'Important hub' },
-      { above: true, text: 'Critical coupling point' },
-    ],
-  }],
-
-  // --- Design ---
-  ['dit', {
-    label: 'Depth of Inheritance Tree',
-    ranges: [
-      { max: 0, text: 'Root class' },
-      { max: 3, text: 'Normal depth' },
-      { max: 6, text: 'Deep hierarchy' },
-      { above: true, text: 'Fragile hierarchy' },
-    ],
-  }],
-  ['noc', {
-    label: 'Number of Children',
-    ranges: [
-      { max: 0, text: 'Leaf class' },
-      { max: 5, text: 'Normal inheritance' },
-      { max: 10, text: 'Many subclasses' },
-      { above: true, text: 'Heavy base class' },
-    ],
-  }],
-  ['rfc', {
-    label: 'Response for a Class',
-    ranges: [
-      { max: 20, text: 'Simple interface' },
-      { max: 50, text: 'Moderate interface' },
-      { max: 100, text: 'Complex interface' },
-      { above: true, text: 'Very complex interface' },
-    ],
-  }],
-
-  // --- Size ---
-  ['methodCount', {
-    label: 'Method Count',
-    ranges: [
-      { max: 10, text: 'Focused class' },
-      { max: 20, text: 'Large class' },
-      { max: 30, text: 'Very large class' },
-      { above: true, text: 'God Class territory' },
-    ],
-  }],
-  ['propertyCount', {
-    label: 'Property Count',
-    ranges: [
-      { max: 10, text: 'Normal' },
-      { max: 15, text: 'Large' },
-      { max: 20, text: 'Heavy' },
-      { above: true, text: 'Excessive' },
-    ],
-  }],
-  ['classCount.sum', {
-    label: 'Class Count',
-    ranges: [
-      { max: 10, text: 'Focused namespace' },
-      { max: 15, text: 'Moderate namespace' },
-      { max: 25, text: 'Large namespace' },
-      { above: true, text: 'Bloated namespace' },
-    ],
-  }],
-
-  // --- Maintainability ---
-  ['mi', {
-    label: 'Maintainability Index',
-    ranges: [
-      { max: 19, text: 'Critical — very hard to maintain' },
-      { max: 39, text: 'Poor — refactoring recommended' },
-      { max: 64, text: 'Moderate — could benefit from simplification' },
-      { max: 84, text: 'Good maintainability' },
-      { above: true, text: 'Excellent maintainability' },
-    ],
-  }],
-
-  // --- Type Coverage ---
-  ['typeCoverage.pct', {
-    label: 'Type Coverage',
-    ranges: [
-      { max: 49, text: 'Low type coverage' },
-      { max: 79, text: 'Moderate type coverage' },
-      { above: true, text: 'Good type coverage' },
-    ],
-  }],
-  ['typeCoverage.param', {
-    label: 'Parameter Type Coverage',
-    ranges: [
-      { max: 49, text: 'Low coverage' },
-      { max: 79, text: 'Moderate coverage' },
-      { above: true, text: 'Good coverage' },
-    ],
-  }],
-  ['typeCoverage.return', {
-    label: 'Return Type Coverage',
-    ranges: [
-      { max: 49, text: 'Low coverage' },
-      { max: 79, text: 'Moderate coverage' },
-      { above: true, text: 'Good coverage' },
-    ],
-  }],
-  ['typeCoverage.property', {
-    label: 'Property Type Coverage',
-    ranges: [
-      { max: 49, text: 'Low coverage' },
-      { max: 79, text: 'Moderate coverage' },
-      { above: true, text: 'Good coverage' },
-    ],
-  }],
-]);
+let METRIC_HINTS = new Map();
 
 /**
  * Health score decomposition definitions.
  * Maps health metric keys to their contributing input metrics.
  *
- * @type {Map<string, {inputs: Array<{key: string, label: string, ideal: number|string, direction: string}>}>}
+ * @type {Map<string, {inputs: Array<{key: string, altKey: string|null, label: string, ideal: string, direction: string}>}>}
  */
-const HEALTH_DECOMPOSITION = new Map([
-  ['health.complexity', {
-    inputs: [
-      { key: 'ccn.avg', altKey: 'ccn', label: 'CCN', ideal: '1-4', direction: 'lower' },
-      { key: 'cognitive.avg', altKey: 'cognitive', label: 'Cognitive', ideal: '0-5', direction: 'lower' },
-    ],
-  }],
-  ['health.cohesion', {
-    inputs: [
-      { key: 'tcc', altKey: 'tcc.avg', label: 'TCC', ideal: '1.0', direction: 'higher' },
-      { key: 'lcom', altKey: 'lcom.avg', label: 'LCOM', ideal: '1', direction: 'lower' },
-    ],
-  }],
-  ['health.coupling', {
-    inputs: [
-      { key: 'cbo', altKey: 'cbo.avg', label: 'CBO', ideal: '0-7', direction: 'lower' },
-      { key: 'distance', altKey: 'distance.avg', label: 'Distance', ideal: '0.0', direction: 'lower' },
-    ],
-  }],
-  ['health.typing', {
-    inputs: [
-      { key: 'typeCoverage.pct', label: 'Coverage', ideal: '100%', direction: 'higher' },
-    ],
-  }],
-  ['health.maintainability', {
-    inputs: [
-      { key: 'mi.avg', altKey: 'mi', label: 'MI', ideal: '85+', direction: 'higher' },
-    ],
-  }],
-  ['health.overall', {
-    inputs: [], // Special: decomposes into sub-health scores
-  }],
-]);
+let HEALTH_DECOMPOSITION = new Map();
+
+/**
+ * Initializes hint data from the embedded JSON produced by MetricHintProvider::exportForHtml().
+ *
+ * Must be called before any hint lookups. Populates METRIC_HINTS and HEALTH_DECOMPOSITION.
+ *
+ * @param {object} hintsData - The hints object from DATA.hints
+ * @param {object} hintsData.metricHints - Metric hint definitions
+ * @param {object} hintsData.healthDecomposition - Health decomposition definitions
+ */
+export function initHints(hintsData) {
+  METRIC_HINTS = new Map();
+  HEALTH_DECOMPOSITION = new Map();
+
+  if (!hintsData) return;
+
+  // Populate METRIC_HINTS
+  if (hintsData.metricHints) {
+    for (const [key, def] of Object.entries(hintsData.metricHints)) {
+      const entry = {
+        label: def.label,
+        ranges: def.ranges,
+      };
+
+      // Build format function from template if present
+      if (def.formatTemplate) {
+        const template = def.formatTemplate;
+        entry.format = (v) => {
+          return template
+            .replace('{value}', String(v))
+            .replace('{plural}', v === 1 ? '' : 's');
+        };
+      }
+
+      METRIC_HINTS.set(key, entry);
+    }
+  }
+
+  // Populate HEALTH_DECOMPOSITION
+  if (hintsData.healthDecomposition) {
+    for (const [key, def] of Object.entries(hintsData.healthDecomposition)) {
+      HEALTH_DECOMPOSITION.set(key, def);
+    }
+  }
+}
 
 /**
  * Returns a human-readable hint for a metric value.
@@ -404,10 +202,8 @@ function capitalize(str) {
  * Decomposes health.overall into its weakest sub-health score.
  */
 function getOverallDecomposition(node, score) {
-  const subKeys = [
-    'health.complexity', 'health.cohesion', 'health.coupling',
-    'health.typing', 'health.maintainability',
-  ];
+  // Derive sub-health dimensions from HEALTH_DECOMPOSITION (PHP is the source of truth)
+  const subKeys = [...HEALTH_DECOMPOSITION.keys()].filter(k => k !== 'health.overall');
 
   let weakest = null;
   let weakestValue = Infinity;
