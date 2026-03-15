@@ -20,7 +20,7 @@ final readonly class FormatterContext
      * @param string|null $namespace Namespace filter for drill-down (boundary-aware prefix match)
      * @param string|null $class Class filter for drill-down (exact FQCN match)
      * @param int $terminalWidth Terminal width for adaptive rendering (0 = use default 80)
-     * @param bool $detail Whether to show detailed output (grouped violations, debt breakdown)
+     * @param int|null $detailLimit Violation limit for --detail mode (null = off, 0 = all, N = limit)
      * @param bool $isGroupByExplicit Whether --group-by was explicitly set by the user
      */
     public function __construct(
@@ -32,9 +32,17 @@ final readonly class FormatterContext
         public ?string $namespace = null,
         public ?string $class = null,
         public int $terminalWidth = 0,
-        public bool $detail = false,
+        public ?int $detailLimit = null,
         public bool $isGroupByExplicit = false,
     ) {}
+
+    /**
+     * Whether detail mode is enabled (any non-null detailLimit).
+     */
+    public function isDetailEnabled(): bool
+    {
+        return $this->detailLimit !== null;
+    }
 
     /**
      * Returns a copy with detail mode enabled/disabled.
@@ -44,7 +52,17 @@ final readonly class FormatterContext
      */
     public function withDetail(bool $detail): self
     {
-        if ($this->detail === $detail) {
+        return $this->withDetailLimit($detail ? 0 : null);
+    }
+
+    /**
+     * Returns a copy with a specific detail limit.
+     *
+     * @param int|null $detailLimit null = off, 0 = all, N = limit
+     */
+    public function withDetailLimit(?int $detailLimit): self
+    {
+        if ($this->detailLimit === $detailLimit) {
             return $this;
         }
 
@@ -57,7 +75,7 @@ final readonly class FormatterContext
             namespace: $this->namespace,
             class: $this->class,
             terminalWidth: $this->terminalWidth,
-            detail: $detail,
+            detailLimit: $detailLimit,
             isGroupByExplicit: $this->isGroupByExplicit,
         );
     }

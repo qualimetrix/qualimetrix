@@ -268,8 +268,9 @@ final class CheckCommandDefinition
             ->addOption(
                 'detail',
                 null,
-                InputOption::VALUE_NONE,
-                'Show detailed output (grouped violations with explanations and debt breakdown)',
+                InputOption::VALUE_OPTIONAL,
+                'Show detailed violations (default: 200, --detail=all for unlimited, --detail=N for custom limit)',
+                false, // false = not passed, null = passed without value
             );
     }
 

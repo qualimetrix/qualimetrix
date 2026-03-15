@@ -36,7 +36,7 @@ final class TextFormatter implements FormatterInterface
 
     public function format(Report $report, FormatterContext $context): string
     {
-        if ($context->detail) {
+        if ($context->isDetailEnabled()) {
             return $this->formatDetailed($report, $context);
         }
 
@@ -79,14 +79,30 @@ final class TextFormatter implements FormatterInterface
 
     private function formatDetailed(Report $report, FormatterContext $context): string
     {
+        $violations = $report->violations;
+        $limit = $context->detailLimit;
+        $totalCount = \count($violations);
+        $showAll = $limit === null || $limit === 0 || $totalCount <= $limit;
+        $displayViolations = $showAll ? $violations : \array_slice($violations, 0, $limit);
+
+        $color = new AnsiColor($context->useColor);
         $lines = [];
 
         // Detailed violation list
-        $lines[] = $this->detailedRenderer->render($report->violations, $context);
+        $lines[] = $this->detailedRenderer->render($displayViolations, $context);
+
+        if (!$showAll) {
+            $remaining = $totalCount - $limit;
+            $lines[] = '';
+            $lines[] = $color->dim(\sprintf(
+                '... and %d more. Use --detail=all to see all violations',
+                $remaining,
+            ));
+        }
+
         $lines[] = '';
 
         // Summary line
-        $color = new AnsiColor($context->useColor);
         $lines[] = $this->formatSummary($report, $color);
 
         return implode("\n", $lines) . "\n";

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AiMessDetector\Reporting;
 
 use AiMessDetector\Core\ComputedMetric\ComputedMetricDefaults;
+use AiMessDetector\Core\Metric\MetricName;
 use AiMessDetector\Core\Symbol\SymbolPath;
 use AiMessDetector\Core\Symbol\SymbolType;
 use AiMessDetector\Core\Violation\Violation;
@@ -34,6 +35,13 @@ final readonly class SummaryEnricher
         $worstClasses = $this->buildWorstOffenders($report, SymbolType::Class_, self::DEFAULT_TOP_CLASSES);
         $debtSummary = $this->debtCalculator->calculate($report->violations);
 
+        // Compute debt density (minutes per 1K LOC)
+        $projectMetrics = $report->metrics->get(SymbolPath::forProject());
+        $totalLoc = $projectMetrics->get(MetricName::SIZE_LOC . '.sum');
+        $debtPer1kLoc = ($totalLoc !== null && $totalLoc > 0)
+            ? round($debtSummary->totalMinutes / ((float) $totalLoc / 1000), 1)
+            : null;
+
         return new Report(
             violations: $report->violations,
             filesAnalyzed: $report->filesAnalyzed,
@@ -46,6 +54,7 @@ final readonly class SummaryEnricher
             worstNamespaces: $worstNamespaces,
             worstClasses: $worstClasses,
             techDebtMinutes: $debtSummary->totalMinutes,
+            debtPer1kLoc: $debtPer1kLoc,
         );
     }
 
@@ -84,6 +93,18 @@ final readonly class SummaryEnricher
                 warningThreshold: $warnThreshold,
                 errorThreshold: $errThreshold,
                 decomposition: $decomposition,
+            );
+        }
+
+        // Show typing dimension with "0 classes analyzed" when other dimensions exist but typing doesn't
+        if ($healthScores !== [] && !isset($healthScores['typing'])) {
+            $typingDef = $defaults['health.typing'];
+            $healthScores['typing'] = new HealthScore(
+                name: 'typing',
+                score: null,
+                label: '0 classes analyzed',
+                warningThreshold: $typingDef->warningThreshold ?? 50.0,
+                errorThreshold: $typingDef->errorThreshold ?? 25.0,
             );
         }
 

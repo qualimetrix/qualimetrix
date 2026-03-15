@@ -31,6 +31,7 @@ final readonly class Report
         public array $worstNamespaces = [],
         public array $worstClasses = [],
         public int $techDebtMinutes = 0,
+        public ?float $debtPer1kLoc = null,
     ) {}
 
     /**

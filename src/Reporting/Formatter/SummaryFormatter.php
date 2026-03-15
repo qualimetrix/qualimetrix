@@ -60,12 +60,26 @@ final class SummaryFormatter implements FormatterInterface
         $this->renderHints($report, $context, $color, $lines);
 
         // Append detailed violation list when --detail is used
-        if ($context->detail && !$report->isEmpty()) {
+        if ($context->isDetailEnabled() && !$report->isEmpty()) {
             $filteredViolations = $this->filterViolations($report->violations, $context);
             if ($filteredViolations !== []) {
+                $limit = $context->detailLimit;
+                $totalCount = \count($filteredViolations);
+                $showAll = $limit === null || $limit === 0 || $totalCount <= $limit;
+                $displayViolations = $showAll ? $filteredViolations : \array_slice($filteredViolations, 0, $limit);
+
                 $lines[] = '';
                 $lines[] = $color->bold('Violations');
-                $lines[] = $this->detailedRenderer->render($filteredViolations, $context);
+                $lines[] = $this->detailedRenderer->render($displayViolations, $context);
+
+                if (!$showAll) {
+                    $remaining = $totalCount - $limit;
+                    $lines[] = '';
+                    $lines[] = $color->dim(\sprintf(
+                        '... and %d more. Use --detail=all to see all violations',
+                        $remaining,
+                    ));
+                }
             }
         }
 
@@ -150,7 +164,7 @@ final class SummaryFormatter implements FormatterInterface
             $headerSuffix = ' ' . $color->dim(\sprintf('[namespace: %s]', $context->namespace));
         }
 
-        if ($overall !== null) {
+        if ($overall !== null && $overall->score !== null) {
             $lines[] = $color->bold('Health') . $headerSuffix . ' '
                 . $this->renderHealthBar($overall->score, $overall->warningThreshold, $overall->errorThreshold, $terminalWidth, $ascii, $color)
                 . ' ' . $this->formatScore($overall->score, $color, $overall->warningThreshold, $overall->errorThreshold)
@@ -168,6 +182,14 @@ final class SummaryFormatter implements FormatterInterface
 
         foreach ($dimensions as $hs) {
             $label = str_pad(ucfirst($hs->name), $padWidth);
+
+            if ($hs->score === null) {
+                // N/A dimension (e.g., typing with no classes)
+                $lines[] = \sprintf('  %s %s %s', $label, $color->dim('N/A'), $color->dim($hs->label));
+
+                continue;
+            }
+
             $scoreStr = $this->formatScore($hs->score, $color, $hs->warningThreshold, $hs->errorThreshold);
 
             if ($terminalWidth < self::DEFAULT_TERMINAL_WIDTH) {
@@ -422,7 +444,11 @@ final class SummaryFormatter implements FormatterInterface
         }
 
         if ($report->techDebtMinutes > 0 && $context->namespace === null && $context->class === null) {
-            $parts[] = \sprintf('Tech debt: %s', DebtSummary::formatMinutes($report->techDebtMinutes));
+            $debtStr = DebtSummary::formatMinutes($report->techDebtMinutes);
+            if ($report->debtPer1kLoc !== null) {
+                $debtStr .= \sprintf(' (%.1f min/kLOC)', $report->debtPer1kLoc);
+            }
+            $parts[] = \sprintf('Tech debt: %s', $debtStr);
         }
 
         $summary = implode(' | ', $parts);
@@ -445,8 +471,8 @@ final class SummaryFormatter implements FormatterInterface
     {
         $hints = [];
 
-        if (!$report->isEmpty() && !$context->detail) {
-            $hints[] = '--detail to see all violations';
+        if (!$report->isEmpty() && !$context->isDetailEnabled()) {
+            $hints[] = '--detail to see violations (top 200)';
         }
 
         if ($context->partialAnalysis) {

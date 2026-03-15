@@ -71,7 +71,7 @@ final class TextVerboseFormatterTest extends TestCase
         $verboseOutput = $this->formatter->format($report, $context);
 
         // Should produce detail-mode output (same as TextFormatter --detail)
-        $detailContext = new FormatterContext(useColor: false, groupBy: GroupBy::File, detail: true);
+        $detailContext = new FormatterContext(useColor: false, groupBy: GroupBy::File, detailLimit: 0);
         $detailOutput = $this->textFormatter->format($report, $detailContext);
 
         self::assertSame($detailOutput, $verboseOutput);
