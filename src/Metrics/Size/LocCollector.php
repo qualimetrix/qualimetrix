@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace AiMessDetector\Metrics\Size;
 
 use AiMessDetector\Core\Metric\AggregationStrategy;
+use AiMessDetector\Core\Metric\ClassMetricsProviderInterface;
+use AiMessDetector\Core\Metric\ClassWithMetrics;
 use AiMessDetector\Core\Metric\MetricBag;
 use AiMessDetector\Core\Metric\MetricDefinition;
 use AiMessDetector\Core\Metric\MetricName;
@@ -21,12 +23,13 @@ use SplFileInfo;
  * - loc:{path} — Total lines of code
  * - lloc:{path} — Logical lines (lines with at least one code token)
  * - cloc:{path} — Pure comment lines (no code tokens on the same line)
+ * - classLoc — Physical LOC per class (endLine - startLine + 1)
  *
  * A line with both code and an inline comment (e.g., `$a = 1; // note`)
  * counts as LLOC but NOT as CLOC. Only lines where ALL tokens are
  * comments/whitespace count as CLOC.
  */
-final class LocCollector extends AbstractCollector
+final class LocCollector extends AbstractCollector implements ClassMetricsProviderInterface
 {
     private const NAME = 'loc';
 
@@ -49,6 +52,7 @@ final class LocCollector extends AbstractCollector
             MetricName::SIZE_LOC,
             MetricName::SIZE_LLOC,
             MetricName::SIZE_CLOC,
+            MetricName::SIZE_CLASS_LOC,
         ];
     }
 
@@ -75,10 +79,46 @@ final class LocCollector extends AbstractCollector
 
         $metrics = $this->calculateMetrics($content);
 
-        return (new MetricBag())
+        $bag = (new MetricBag())
             ->with(MetricName::SIZE_LOC, $metrics['loc'])
             ->with(MetricName::SIZE_LLOC, $metrics['lloc'])
             ->with(MetricName::SIZE_CLOC, $metrics['cloc']);
+
+        // Store class-level LOC with class FQN as key
+        \assert($this->visitor instanceof LocVisitor);
+
+        foreach ($this->visitor->getClassRanges() as $classFqn => $range) {
+            $classLoc = $range['endLine'] - $range['startLine'] + 1;
+            $bag = $bag->with(MetricName::SIZE_CLASS_LOC . ':' . $classFqn, $classLoc);
+        }
+
+        return $bag;
+    }
+
+    /**
+     * @return list<ClassWithMetrics>
+     */
+    public function getClassesWithMetrics(): array
+    {
+        \assert($this->visitor instanceof LocVisitor);
+
+        $result = [];
+
+        foreach ($this->visitor->getClassRanges() as $range) {
+            $classLoc = $range['endLine'] - $range['startLine'] + 1;
+
+            $bag = (new MetricBag())
+                ->with(MetricName::SIZE_CLASS_LOC, $classLoc);
+
+            $result[] = new ClassWithMetrics(
+                namespace: $range['namespace'],
+                class: $range['className'],
+                line: $range['startLine'],
+                metrics: $bag,
+            );
+        }
+
+        return $result;
     }
 
     /**
@@ -201,6 +241,22 @@ final class LocCollector extends AbstractCollector
                 name: MetricName::SIZE_CLOC,
                 collectedAt: SymbolLevel::File,
                 aggregations: $aggregations,
+            ),
+            new MetricDefinition(
+                name: MetricName::SIZE_CLASS_LOC,
+                collectedAt: SymbolLevel::Class_,
+                aggregations: [
+                    SymbolLevel::Namespace_->value => [
+                        AggregationStrategy::Sum,
+                        AggregationStrategy::Average,
+                        AggregationStrategy::Max,
+                    ],
+                    SymbolLevel::Project->value => [
+                        AggregationStrategy::Sum,
+                        AggregationStrategy::Average,
+                        AggregationStrategy::Max,
+                    ],
+                ],
             ),
         ];
     }
