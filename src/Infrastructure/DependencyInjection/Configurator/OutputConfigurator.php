@@ -39,11 +39,14 @@ use AiMessDetector\Infrastructure\Logging\LoggerFactory;
 use AiMessDetector\Infrastructure\Logging\LoggerHolder;
 use AiMessDetector\Infrastructure\Rule\RuleRegistryInterface;
 use AiMessDetector\Reporting\DetailedViolationRenderer;
+use AiMessDetector\Reporting\Filter\ViolationFilter;
 use AiMessDetector\Reporting\Formatter\FormatterInterface;
 use AiMessDetector\Reporting\Formatter\FormatterRegistry;
 use AiMessDetector\Reporting\Formatter\FormatterRegistryInterface;
+use AiMessDetector\Reporting\Health\HealthScoreResolver;
 use AiMessDetector\Reporting\MetricHintProvider;
 use AiMessDetector\Reporting\NamespaceDrillDown;
+use AiMessDetector\Reporting\Profile\ProfileSummaryRenderer;
 use AiMessDetector\Reporting\SummaryEnricher;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -79,15 +82,22 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
             $this->srcDir . '/Reporting/Debt/*',
         );
 
-        // Auto-register all formatters from src/Reporting/Formatter/*
+        // Auto-register all formatters from src/Reporting/Formatter/ (recursive)
         // Classes implementing FormatterInterface will be auto-tagged via registerForAutoconfiguration
         $prototype = (new Definition())->setAutoconfigured(true)->setAutowired(true);
         $loader->registerClasses(
             $prototype,
             'AiMessDetector\\Reporting\\Formatter\\',
-            $this->srcDir . '/Reporting/Formatter/*',
+            $this->srcDir . '/Reporting/Formatter/{*,**/*}',
             $this->srcDir . '/Reporting/Formatter/{*Interface.php,FormatterRegistry.php}',
         );
+
+        // ViolationFilter (shared filtering logic for formatters)
+        $container->register(ViolationFilter::class);
+
+        // HealthScoreResolver (shared health score resolution logic for formatters)
+        $container->register(HealthScoreResolver::class)
+            ->setAutowired(true);
 
         // MetricHintProvider (pure data class, no dependencies)
         $container->register(MetricHintProvider::class);
@@ -159,6 +169,9 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         // ComputedMetricsConfigResolver
         $container->register(ComputedMetricsConfigResolver::class);
 
+        // ProfileSummaryRenderer (stateless, no dependencies)
+        $container->register(ProfileSummaryRenderer::class);
+
         // ResultPresenter for formatting/output of results and profiler export
         $container->register(ResultPresenter::class)
             ->setArguments([
@@ -168,6 +181,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(BaselineWriter::class),
                 new Reference(ConfigurationProviderInterface::class),
                 new Reference(SummaryEnricher::class),
+                new Reference(ProfileSummaryRenderer::class),
             ]);
 
         // CheckCommand with all dependencies injected

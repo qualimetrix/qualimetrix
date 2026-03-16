@@ -38,6 +38,12 @@ Reporting/
 ├── GroupBy.php                             # Grouping mode enum (None, File, Rule, Severity)
 ├── AnsiColor.php                           # Lightweight ANSI color wrapper
 ├── ViolationSorter.php                     # Sorting/grouping utility for violations
+├── Filter/
+│   └── ViolationFilter.php                # Shared violation/offender filtering by namespace/class context
+├── Health/
+│   └── HealthScoreResolver.php            # Shared health score resolution (project/namespace/class level)
+├── Profile/
+│   └── ProfileSummaryRenderer.php         # Profiler summary rendering for console
 ├── Debt/
 │   ├── RemediationTimeRegistry.php        # Rule name -> estimated remediation minutes
 │   ├── DebtSummary.php                    # Value Object: total, per-file, per-rule debt
@@ -46,18 +52,26 @@ Reporting/
     ├── FormatterInterface.php              # Formatter contract
     ├── FormatterRegistryInterface.php      # Registry contract
     ├── FormatterRegistry.php               # Registry implementation
-    ├── SummaryFormatter.php                # Default: health overview + worst offenders + hints
     ├── TextFormatter.php                   # Compact text output (with colors)
     ├── TextVerboseFormatter.php            # Verbose text output (grouped, colored)
-    ├── JsonFormatter.php                   # Summary-oriented JSON (health, worst offenders, violations)
     ├── CheckstyleFormatter.php             # Checkstyle XML
-    ├── SarifFormatter.php                  # SARIF 2.1.0
-    ├── GitLabCodeQualityFormatter.php      # GitLab Code Climate JSON
+    ├── GithubActionsFormatter.php          # GitHub Actions annotation output
     ├── MetricsJsonFormatter.php            # Raw metrics JSON export
-    ├── HtmlFormatter.php                   # Interactive HTML report with D3 treemap
-    └── Html/
-        ├── HtmlTreeBuilder.php            # Builds namespace tree from MetricRepository
-        └── HtmlTreeNode.php               # Internal VO for tree construction
+    ├── Summary/
+    │   ├── SummaryFormatter.php           # Default: health overview + worst offenders + hints
+    │   ├── HealthBarRenderer.php          # Renders ANSI health bars for console output
+    │   └── OffenderListRenderer.php       # Renders worst offender lists for console output
+    ├── Json/
+    │   ├── JsonFormatter.php              # Summary-oriented JSON (health, worst offenders, violations)
+    │   └── JsonSanitizer.php              # Sanitizes metric values (NaN/INF → null) for JSON output
+    ├── Sarif/
+    │   ├── SarifFormatter.php             # SARIF 2.1.0
+    │   └── SarifRuleCollector.php         # Collects rule metadata for SARIF tool component
+    ├── Html/
+    │   ├── HtmlFormatter.php              # Interactive HTML report with D3 treemap
+    │   ├── HtmlTreeBuilder.php            # Builds namespace tree from MetricRepository
+    │   └── HtmlTreeNode.php               # Internal VO for tree construction
+    └── GitLabCodeQualityFormatter.php      # GitLab Code Climate JSON
 ```
 
 ## Contracts

@@ -17,7 +17,9 @@ Analysis/
 ├── Pipeline/                            # Orchestration of all phases
 │   ├── AnalysisPipelineInterface.php    # Pipeline contract
 │   ├── AnalysisPipeline.php             # Main orchestrator
-│   └── AnalysisResult.php               # Analysis result
+│   ├── AnalysisResult.php               # Analysis result
+│   ├── MetricEnricher.php               # Enrichment phases (aggregation, global collectors, computed metrics, cycles, duplication)
+│   └── EnrichmentResult.php             # VO: cycles and duplicate blocks from the enrichment phase
 │
 ├── Discovery/                           # File discovery
 │   ├── FileDiscoveryInterface.php       # Discovery contract

@@ -19,6 +19,7 @@ use AiMessDetector\Analysis\Duplication\DuplicationDetector;
 use AiMessDetector\Analysis\Namespace_\ProjectNamespaceResolver;
 use AiMessDetector\Analysis\Pipeline\AnalysisPipeline;
 use AiMessDetector\Analysis\Pipeline\AnalysisPipelineInterface;
+use AiMessDetector\Analysis\Pipeline\MetricEnricher;
 use AiMessDetector\Analysis\Repository\DefaultMetricRepositoryFactory;
 use AiMessDetector\Analysis\Repository\InMemoryMetricRepository;
 use AiMessDetector\Analysis\Repository\MetricRepositoryFactoryInterface;
@@ -111,21 +112,30 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
                 new Reference(ConfigurationProviderInterface::class),
             ]);
 
+        // MetricEnricher - handles aggregation, global collectors, computed metrics, cycle/duplication detection
+        $container->register(MetricEnricher::class)
+            ->setArguments([
+                new Reference(CompositeCollector::class),
+                new Reference(GlobalCollectorRunner::class),
+                new Reference(ConfigurationProviderInterface::class),
+                new Reference(DelegatingLogger::class),
+                new Reference(ProfilerHolder::class),
+                new Reference(DuplicationDetector::class),
+                new Reference(ComputedMetricEvaluator::class),
+            ]);
+
         // AnalysisPipeline - main orchestrator
         $container->register(AnalysisPipeline::class)
             ->setArguments([
                 new Reference(FileDiscoveryInterface::class),
                 new Reference(CollectionOrchestratorInterface::class),
-                new Reference(CompositeCollector::class),
                 new Reference(RuleExecutorInterface::class),
                 new Reference(ConfigurationProviderInterface::class),
-                new Reference(GlobalCollectorRunner::class),
+                new Reference(MetricEnricher::class),
                 new Reference(MetricRepositoryFactoryInterface::class),
                 new Reference(DependencyGraphBuilder::class),
                 new Reference(DelegatingLogger::class),
                 new Reference(ProfilerHolder::class),
-                new Reference(DuplicationDetector::class),
-                new Reference(ComputedMetricEvaluator::class),
             ])
             ->setPublic(true);
         $container->setAlias(AnalysisPipelineInterface::class, AnalysisPipeline::class)

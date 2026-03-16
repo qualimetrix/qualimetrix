@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Reporting\Formatter;
+namespace AiMessDetector\Reporting\Formatter\Json;
 
 use AiMessDetector\Core\Symbol\SymbolPath;
 use AiMessDetector\Core\Violation\Severity;
@@ -10,8 +10,11 @@ use AiMessDetector\Core\Violation\Violation;
 use AiMessDetector\Reporting\Debt\DebtCalculator;
 use AiMessDetector\Reporting\Debt\RemediationTimeRegistry;
 use AiMessDetector\Reporting\DecompositionItem;
+use AiMessDetector\Reporting\Filter\ViolationFilter;
+use AiMessDetector\Reporting\Formatter\FormatterInterface;
 use AiMessDetector\Reporting\FormatterContext;
 use AiMessDetector\Reporting\GroupBy;
+use AiMessDetector\Reporting\Health\HealthScoreResolver;
 use AiMessDetector\Reporting\HealthScore;
 use AiMessDetector\Reporting\NamespaceDrillDown;
 use AiMessDetector\Reporting\Report;
@@ -34,11 +37,14 @@ final class JsonFormatter implements FormatterInterface
         private readonly DebtCalculator $debtCalculator,
         private readonly NamespaceDrillDown $namespaceDrillDown,
         private readonly RemediationTimeRegistry $remediationTimeRegistry,
+        private readonly ViolationFilter $filter,
+        private readonly HealthScoreResolver $healthResolver,
+        private readonly JsonSanitizer $sanitizer,
     ) {}
 
     public function format(Report $report, FormatterContext $context): string
     {
-        $violations = $this->filterViolations($report->violations, $context);
+        $violations = $this->filter->filterViolations($report->violations, $context);
         $filteredViolations = $this->sortViolations($violations);
 
         $limit = $this->getViolationLimit($context);
@@ -57,7 +63,7 @@ final class JsonFormatter implements FormatterInterface
                 'package' => self::PACKAGE,
                 'timestamp' => gmdate('c'),
             ],
-            'summary' => $this->buildSummary($report, $violations, $isDrillDown),
+            'summary' => $this->buildSummary($report, $filteredViolations, $isDrillDown),
             'health' => $this->resolveAndFormatHealthScores($report, $context),
             'worstNamespaces' => $context->partialAnalysis ? [] : $this->formatWorstOffenders(
                 $report->worstNamespaces,
@@ -154,36 +160,29 @@ final class JsonFormatter implements FormatterInterface
             return null;
         }
 
-        $healthScores = $report->healthScores;
-
-        if ($report->metrics !== null) {
-            if ($context->class !== null) {
-                $classScores = $this->namespaceDrillDown->buildClassHealthScores($report->metrics, $context->class);
-                if ($classScores !== []) {
-                    $healthScores = $classScores;
-                }
-            } elseif ($context->namespace !== null) {
-                $nsScores = $this->namespaceDrillDown->buildSubtreeHealthScores($report->metrics, $context->namespace);
-                if ($nsScores === []) {
-                    return null; // No health data for this namespace
-                }
-                $healthScores = $nsScores;
-
-                // C2: Include direct (flat) score for transparency
-                $nsPath = SymbolPath::forNamespace($context->namespace);
-                $flatOverall = $report->metrics->get($nsPath)->get('health.overall');
-                $result = $this->formatHealthScores($healthScores, $context);
-                if ($result !== null && $flatOverall !== null) {
-                    $recursiveScore = $result['overall']['score'] ?? null;
-                    $flatScore = $this->sanitizeFloat((float) $flatOverall);
-                    if ($recursiveScore !== null && abs($recursiveScore - $flatScore) > 5.0) {
-                        $result['overall']['scope'] = 'recursive';
-                        $result['overall']['directScore'] = $flatScore;
-                    }
-                }
-
-                return $result;
+        $healthScores = $this->healthResolver->resolve($report, $context);
+        if ($healthScores === []) {
+            // For namespace drill-down that returns empty, this means no health data
+            if ($context->namespace !== null) {
+                return null;
             }
+        }
+
+        // C2: Include direct (flat) score for transparency (namespace drill-down only)
+        if ($context->namespace !== null && $report->metrics !== null) {
+            $nsPath = SymbolPath::forNamespace($context->namespace);
+            $flatOverall = $report->metrics->get($nsPath)->get('health.overall');
+            $result = $this->formatHealthScores($healthScores, $context);
+            if ($result !== null && $flatOverall !== null) {
+                $recursiveScore = $result['overall']['score'] ?? null;
+                $flatScore = $this->sanitizer->sanitizeFloat((float) $flatOverall);
+                if ($recursiveScore !== null && abs($recursiveScore - $flatScore) > 5.0) {
+                    $result['overall']['scope'] = 'recursive';
+                    $result['overall']['directScore'] = $flatScore;
+                }
+            }
+
+            return $result;
         }
 
         return $this->formatHealthScores($healthScores, $context);
@@ -208,17 +207,17 @@ final class JsonFormatter implements FormatterInterface
         $result = [];
         foreach ($healthScores as $name => $hs) {
             $result[$name] = [
-                'score' => $hs->score !== null ? $this->sanitizeFloat($hs->score) : null,
+                'score' => $hs->score !== null ? $this->sanitizer->sanitizeFloat($hs->score) : null,
                 'label' => $hs->label,
                 'threshold' => [
-                    'warning' => $this->sanitizeFloat($hs->warningThreshold),
-                    'error' => $this->sanitizeFloat($hs->errorThreshold),
+                    'warning' => $this->sanitizer->sanitizeFloat($hs->warningThreshold),
+                    'error' => $this->sanitizer->sanitizeFloat($hs->errorThreshold),
                 ],
                 'decomposition' => array_map(
                     fn(DecompositionItem $item): array => [
                         'metric' => $item->metricKey,
                         'humanName' => $item->humanName,
-                        'value' => $this->sanitizeFloat($item->value),
+                        'value' => $this->sanitizer->sanitizeFloat($item->value),
                         'good' => $item->goodValue,
                         'direction' => $item->direction,
                     ],
@@ -253,15 +252,15 @@ final class JsonFormatter implements FormatterInterface
             foreach ($sliced as $offender) {
                 $result[] = [
                     'symbolPath' => $offender->symbolPath->toString(),
-                    'healthOverall' => $this->sanitizeFloat($offender->healthOverall),
+                    'healthOverall' => $this->sanitizer->sanitizeFloat($offender->healthOverall),
                     'label' => $offender->label,
                     'reason' => $offender->reason,
                     'violationCount' => $offender->violationCount,
                     'file' => $offender->file !== null
                         ? $context->relativizePath($offender->file)
                         : null,
-                    'metrics' => $this->sanitizeFloatArray($offender->metrics),
-                    'healthScores' => $this->sanitizeFloatArray($offender->healthScores),
+                    'metrics' => $this->sanitizer->sanitizeFloatArray($offender->metrics),
+                    'healthScores' => $this->sanitizer->sanitizeFloatArray($offender->healthScores),
                 ];
             }
 
@@ -289,14 +288,14 @@ final class JsonFormatter implements FormatterInterface
         int $topN,
         bool $showClassCount,
     ): array {
-        $filtered = $this->filterWorstOffenders($offenders, $context);
+        $filtered = $this->filter->filterWorstOffenders($offenders, $context);
         $sliced = \array_slice($filtered, 0, $topN);
 
         $result = [];
         foreach ($sliced as $offender) {
             $entry = [
                 'symbolPath' => $offender->symbolPath->toString(),
-                'healthOverall' => $this->sanitizeFloat($offender->healthOverall),
+                'healthOverall' => $this->sanitizer->sanitizeFloat($offender->healthOverall),
                 'label' => $offender->label,
                 'reason' => $offender->reason,
                 'violationCount' => $offender->violationCount,
@@ -308,10 +307,10 @@ final class JsonFormatter implements FormatterInterface
                 $entry['file'] = $offender->file !== null
                     ? $context->relativizePath($offender->file)
                     : null;
-                $entry['metrics'] = $this->sanitizeFloatArray($offender->metrics);
+                $entry['metrics'] = $this->sanitizer->sanitizeFloatArray($offender->metrics);
             }
 
-            $entry['healthScores'] = $this->sanitizeFloatArray($offender->healthScores);
+            $entry['healthScores'] = $this->sanitizer->sanitizeFloatArray($offender->healthScores);
 
             $result[] = $entry;
         }
@@ -341,8 +340,8 @@ final class JsonFormatter implements FormatterInterface
             'severity' => $violation->severity->value,
             'message' => $violation->message,
             'recommendation' => $violation->recommendation,
-            'metricValue' => $this->sanitizeNumeric($violation->metricValue),
-            'threshold' => $this->sanitizeNumeric($violation->threshold),
+            'metricValue' => $this->sanitizer->sanitizeNumeric($violation->metricValue),
+            'threshold' => $this->sanitizer->sanitizeNumeric($violation->threshold),
             'techDebtMinutes' => $this->remediationTimeRegistry->getMinutesForViolation($violation),
         ];
     }
@@ -366,65 +365,6 @@ final class JsonFormatter implements FormatterInterface
         arsort($counts);
 
         return $counts;
-    }
-
-    /**
-     * Filters violations by namespace/class context.
-     *
-     * @param list<Violation> $violations
-     *
-     * @return list<Violation>
-     */
-    private function filterViolations(array $violations, FormatterContext $context): array
-    {
-        if ($context->namespace === null && $context->class === null) {
-            return $violations;
-        }
-
-        return array_values(array_filter($violations, function (Violation $v) use ($context): bool {
-            $ns = $v->symbolPath->namespace ?? '';
-            $class = $v->symbolPath->type;
-
-            if ($context->namespace !== null) {
-                return $this->matchesNamespace($ns, $context->namespace);
-            }
-
-            if ($context->class !== null && $class !== null) {
-                $fqcn = $ns !== '' ? $ns . '\\' . $class : $class;
-
-                return $fqcn === $context->class;
-            }
-
-            return false;
-        }));
-    }
-
-    /**
-     * Filters worst offenders by namespace/class context.
-     *
-     * @param list<WorstOffender> $offenders
-     *
-     * @return list<WorstOffender>
-     */
-    private function filterWorstOffenders(array $offenders, FormatterContext $context): array
-    {
-        if ($context->namespace === null && $context->class === null) {
-            return $offenders;
-        }
-
-        return array_values(array_filter($offenders, function (WorstOffender $o) use ($context): bool {
-            $name = $o->symbolPath->toString();
-
-            if ($context->namespace !== null) {
-                return $this->matchesNamespace($name, $context->namespace);
-            }
-
-            if ($context->class !== null) {
-                return $name === $context->class;
-            }
-
-            return false;
-        }));
     }
 
     /**
@@ -540,60 +480,5 @@ final class JsonFormatter implements FormatterInterface
         }
 
         return self::DEFAULT_TOP_OFFENDERS;
-    }
-
-    /**
-     * Boundary-aware namespace prefix match.
-     *
-     * App\Payment matches App\Payment and App\Payment\Gateway but not App\PaymentGateway.
-     */
-    private function matchesNamespace(string $subject, string $prefix): bool
-    {
-        if ($subject === $prefix) {
-            return true;
-        }
-
-        return str_starts_with($subject, $prefix . '\\');
-    }
-
-    /**
-     * Sanitizes a float for JSON encoding (NaN/INF -> null).
-     */
-    private function sanitizeFloat(float $value): ?float
-    {
-        return is_finite($value) ? $value : null;
-    }
-
-    /**
-     * Sanitizes a numeric value for JSON encoding (NaN/INF -> null).
-     */
-    private function sanitizeNumeric(int|float|null $value): int|float|null
-    {
-        if ($value === null) {
-            return null;
-        }
-
-        if (\is_float($value) && !is_finite($value)) {
-            return null;
-        }
-
-        return $value;
-    }
-
-    /**
-     * Sanitizes an array of float values for JSON encoding.
-     *
-     * @param array<string, int|float> $values
-     *
-     * @return array<string, int|float|null>
-     */
-    private function sanitizeFloatArray(array $values): array
-    {
-        $result = [];
-        foreach ($values as $key => $value) {
-            $result[$key] = $this->sanitizeNumeric($value);
-        }
-
-        return $result;
     }
 }

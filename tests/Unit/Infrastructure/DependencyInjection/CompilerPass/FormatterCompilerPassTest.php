@@ -6,7 +6,7 @@ namespace AiMessDetector\Tests\Unit\Infrastructure\DependencyInjection\CompilerP
 
 use AiMessDetector\Infrastructure\DependencyInjection\CompilerPass\FormatterCompilerPass;
 use AiMessDetector\Reporting\Formatter\FormatterRegistry;
-use AiMessDetector\Reporting\Formatter\JsonFormatter;
+use AiMessDetector\Reporting\Formatter\Json\JsonFormatter;
 use AiMessDetector\Reporting\Formatter\TextFormatter;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;

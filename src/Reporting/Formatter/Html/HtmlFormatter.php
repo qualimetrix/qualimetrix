@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Reporting\Formatter;
+namespace AiMessDetector\Reporting\Formatter\Html;
 
 use AiMessDetector\Reporting\Debt\DebtCalculator;
-use AiMessDetector\Reporting\Formatter\Html\HtmlTreeBuilder;
+use AiMessDetector\Reporting\Formatter\FormatterInterface;
 use AiMessDetector\Reporting\FormatterContext;
 use AiMessDetector\Reporting\GroupBy;
 use AiMessDetector\Reporting\MetricHintProvider;
@@ -35,7 +35,7 @@ final class HtmlFormatter implements FormatterInterface
             \JSON_HEX_TAG | \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR,
         );
 
-        $templateDir = \dirname(__DIR__) . '/Template';
+        $templateDir = \dirname(__DIR__, 2) . '/Template';
 
         $html = $this->readFile($templateDir . '/report.html');
         $css = $this->readFile($templateDir . '/report.css');

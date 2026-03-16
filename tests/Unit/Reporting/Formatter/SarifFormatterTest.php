@@ -8,7 +8,8 @@ use AiMessDetector\Core\Symbol\SymbolPath;
 use AiMessDetector\Core\Violation\Location;
 use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
-use AiMessDetector\Reporting\Formatter\SarifFormatter;
+use AiMessDetector\Reporting\Formatter\Sarif\SarifFormatter;
+use AiMessDetector\Reporting\Formatter\Sarif\SarifRuleCollector;
 use AiMessDetector\Reporting\FormatterContext;
 use AiMessDetector\Reporting\GroupBy;
 use AiMessDetector\Reporting\ReportBuilder;
@@ -22,7 +23,7 @@ final class SarifFormatterTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->formatter = new SarifFormatter();
+        $this->formatter = new SarifFormatter(new SarifRuleCollector());
     }
 
     public function testGetNameReturnsSarif(): void
