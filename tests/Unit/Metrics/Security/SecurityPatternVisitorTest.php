@@ -296,11 +296,23 @@ final class SecurityPatternVisitorTest extends TestCase
             'expectedCount' => 0,
         ];
 
-        // Known false negative: echo with interpolated string creates an InterpolatedString node.
-        // The XSS checker only inspects direct superglobals and Concat trees, not InterpolatedString parts.
-        // The InterpolatedString handler only checks for SQL injection, not XSS.
-        yield 'echo interpolated superglobal (known false negative)' => [
+        yield 'echo interpolated superglobal detects XSS' => [
             'code' => '<?php echo "Hello {$_GET[\'name\']}";',
+            'expectedCount' => 1,
+        ];
+
+        yield 'print interpolated superglobal detects XSS' => [
+            'code' => '<?php print "Welcome {$_POST[\'user\']}";',
+            'expectedCount' => 1,
+        ];
+
+        yield 'echo interpolated safe variable no XSS' => [
+            'code' => '<?php echo "Hello {$name}";',
+            'expectedCount' => 0,
+        ];
+
+        yield 'echo interpolated $_SESSION no XSS' => [
+            'code' => '<?php echo "User: {$_SESSION[\'user\']}";',
             'expectedCount' => 0,
         ];
     }
@@ -349,6 +361,11 @@ final class SecurityPatternVisitorTest extends TestCase
 
         yield 'system with nested array access' => [
             'code' => '<?php system($_GET["cmd"]["sub"]);',
+            'expectedCount' => 1,
+        ];
+
+        yield 'exec with interpolated superglobal' => [
+            'code' => '<?php exec("ls {$_GET[\'dir\']}");',
             'expectedCount' => 1,
         ];
 

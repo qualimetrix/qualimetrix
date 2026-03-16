@@ -193,6 +193,15 @@ final class SecurityPatternVisitor extends NodeVisitorAbstract implements Resett
                     line: $node->getStartLine(),
                     context: "echo \${$varName} without sanitization",
                 );
+            } elseif ($expr instanceof InterpolatedString) {
+                $varName = $this->findSuperglobalInInterpolatedString($expr);
+                if ($varName !== null) {
+                    $this->locations[] = new SecurityPatternLocation(
+                        type: 'xss',
+                        line: $node->getStartLine(),
+                        context: "echo \${$varName} without sanitization",
+                    );
+                }
             } elseif ($this->containsUnsanitizedSuperglobalInExpr($expr, self::XSS_SANITIZERS)) {
                 $varName = $this->findUnsanitizedSuperglobalName($expr, self::XSS_SANITIZERS);
                 if ($varName !== null) {
@@ -218,6 +227,15 @@ final class SecurityPatternVisitor extends NodeVisitorAbstract implements Resett
                 line: $node->getStartLine(),
                 context: "print \${$varName} without sanitization",
             );
+        } elseif ($node->expr instanceof InterpolatedString) {
+            $varName = $this->findSuperglobalInInterpolatedString($node->expr);
+            if ($varName !== null) {
+                $this->locations[] = new SecurityPatternLocation(
+                    type: 'xss',
+                    line: $node->getStartLine(),
+                    context: "print \${$varName} without sanitization",
+                );
+            }
         } elseif ($this->containsUnsanitizedSuperglobalInExpr($node->expr, self::XSS_SANITIZERS)) {
             $varName = $this->findUnsanitizedSuperglobalName($node->expr, self::XSS_SANITIZERS);
             if ($varName !== null) {
@@ -371,6 +389,20 @@ final class SecurityPatternVisitor extends NodeVisitorAbstract implements Resett
                 );
 
                 return;
+            }
+
+            // Check interpolated strings for unsanitized superglobals
+            if ($arg->value instanceof InterpolatedString) {
+                $varName = $this->findSuperglobalInInterpolatedString($arg->value);
+                if ($varName !== null) {
+                    $this->locations[] = new SecurityPatternLocation(
+                        type: 'command_injection',
+                        line: $node->getStartLine(),
+                        context: "\${$varName} in {$functionName}() call",
+                    );
+
+                    return;
+                }
             }
 
             // Also check concatenation containing unsanitized superglobal
@@ -545,6 +577,23 @@ final class SecurityPatternVisitor extends NodeVisitorAbstract implements Resett
             '/\b(?:SELECT|INSERT|UPDATE|DELETE|WHERE|FROM|INTO|SET|VALUES)\b/i',
             $value,
         );
+    }
+
+    /**
+     * Find an unsanitized superglobal in an InterpolatedString node.
+     *
+     * InterpolatedString parts are either InterpolatedStringPart (literal text)
+     * or Expr nodes (interpolated expressions like {$_GET['name']}).
+     */
+    private function findSuperglobalInInterpolatedString(InterpolatedString $node): ?string
+    {
+        foreach ($node->parts as $part) {
+            if ($part instanceof Expr && $this->isDangerousSuperglobal($part)) {
+                return $this->getSuperglobalName($part);
+            }
+        }
+
+        return null;
     }
 
     /**

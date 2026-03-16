@@ -287,6 +287,58 @@ function callApi(
 
 ---
 
+## Detection scope
+
+The security rules (`sql-injection`, `xss`, `command-injection`) use **pattern-based detection** -- they look for superglobal variables (`$_GET`, `$_POST`, `$_REQUEST`, `$_COOKIE`) used directly in dangerous contexts. This approach is fast and produces zero false positives for direct patterns, but has inherent limitations.
+
+### What IS detected
+
+Direct superglobal-to-sink patterns, including through concatenation and string interpolation:
+
+```php
+// All detected:
+echo $_GET['name'];                                          // direct
+echo "Hello " . $_POST['user'];                              // concatenation
+echo "Welcome {$_GET['name']}";                              // interpolation
+mysqli_query($conn, "SELECT * FROM t WHERE id=" . $_GET['id']); // SQL function arg
+exec("ping " . $_GET['host']);                                // command function arg
+```
+
+### What is NOT detected
+
+These rules do **not** perform taint analysis -- they cannot track data flow through variables, function returns, or object properties:
+
+```php
+// NOT detected -- value assigned to intermediate variable:
+$name = $_GET['name'];
+echo $name;
+
+// NOT detected -- value passed through a function:
+function getName() { return $_GET['name']; }
+echo getName();
+
+// NOT detected -- value stored in an object:
+$request->name = $_POST['name'];
+echo $request->name;
+
+// NOT detected -- indirect SQL injection:
+$id = $_GET['id'];
+$query = "SELECT * FROM users WHERE id = " . $id;
+```
+
+### Recommendations
+
+For comprehensive security analysis with full taint tracking, use dedicated tools alongside AIMD:
+
+- **[PHPStan Security Advisories](https://github.com/phpstan/phpstan-security)** -- security-focused PHPStan extension
+- **[Psalm Taint Analysis](https://psalm.dev/docs/security_analysis/)** -- tracks tainted data through assignments, function calls, and returns
+- **[SonarQube](https://www.sonarqube.org/)** -- commercial tool with deep data-flow analysis
+- **[Snyk Code](https://snyk.io/product/snyk-code/)** -- AI-powered security scanning with taint tracking
+
+AIMD security rules are best used as a **first line of defense** to catch the most obvious patterns. They complement but do not replace dedicated security analysis tools.
+
+---
+
 ## Configuration
 
 ```yaml
