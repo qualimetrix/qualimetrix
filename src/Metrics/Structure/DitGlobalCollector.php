@@ -154,9 +154,7 @@ final class DitGlobalCollector implements GlobalContextCollectorInterface
 
             $dit = $this->calculateDit($classFqn, $parentMap, $ditCache);
 
-            $metrics = $repository->get($classSymbol->symbolPath);
-            $metrics = $metrics->with(MetricName::STRUCTURE_DIT, $dit);
-            $repository->add($classSymbol->symbolPath, $metrics, $classSymbol->file, $classSymbol->line);
+            $repository->addScalar($classSymbol->symbolPath, MetricName::STRUCTURE_DIT, $dit);
         }
     }
 

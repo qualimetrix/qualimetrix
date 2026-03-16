@@ -7,7 +7,6 @@ namespace AiMessDetector\Metrics\Coupling;
 use AiMessDetector\Core\Dependency\DependencyGraphInterface;
 use AiMessDetector\Core\Metric\AggregationStrategy;
 use AiMessDetector\Core\Metric\GlobalContextCollectorInterface;
-use AiMessDetector\Core\Metric\MetricBag;
 use AiMessDetector\Core\Metric\MetricDefinition;
 use AiMessDetector\Core\Metric\MetricName;
 use AiMessDetector\Core\Metric\MetricRepositoryInterface;
@@ -92,12 +91,7 @@ final class ClassRankCollector implements GlobalContextCollectorInterface
 
         // Single class: rank = 1.0
         if ($n === 1) {
-            $repository->add(
-                $projectClasses[0],
-                (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 1.0),
-                '',
-                0,
-            );
+            $repository->addScalar($projectClasses[0], MetricName::COUPLING_CLASS_RANK, 1.0);
 
             return;
         }
@@ -144,12 +138,7 @@ final class ClassRankCollector implements GlobalContextCollectorInterface
 
         // Write metrics to repository
         foreach ($projectClasses as $i => $symbolPath) {
-            $repository->add(
-                $symbolPath,
-                (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, $ranks[$i]),
-                '',
-                0,
-            );
+            $repository->addScalar($symbolPath, MetricName::COUPLING_CLASS_RANK, $ranks[$i]);
         }
     }
 

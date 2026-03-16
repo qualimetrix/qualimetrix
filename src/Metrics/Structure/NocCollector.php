@@ -93,13 +93,8 @@ final class NocCollector implements GlobalContextCollectorInterface
             }
 
             $noc = $children['count'];
-            $metrics = $repository->get($parentPath);
 
-            // Add NOC metric
-            $metrics = $metrics->with(MetricName::STRUCTURE_NOC, $noc);
-
-            // Update repository
-            $repository->add($parentPath, $metrics, '', 0);
+            $repository->addScalar($parentPath, MetricName::STRUCTURE_NOC, $noc);
         }
 
         // Step 3: Ensure all classes have NOC (even if 0)
@@ -109,11 +104,8 @@ final class NocCollector implements GlobalContextCollectorInterface
                 continue;
             }
 
-            $metrics = $repository->get($classSymbol->symbolPath);
-
-            if (!$metrics->has(MetricName::STRUCTURE_NOC)) {
-                $metrics = $metrics->with(MetricName::STRUCTURE_NOC, 0);
-                $repository->add($classSymbol->symbolPath, $metrics, $classSymbol->file, $classSymbol->line);
+            if (!$repository->get($classSymbol->symbolPath)->has(MetricName::STRUCTURE_NOC)) {
+                $repository->addScalar($classSymbol->symbolPath, MetricName::STRUCTURE_NOC, 0);
             }
         }
     }

@@ -79,6 +79,17 @@ final class InMemoryMetricRepository implements MetricRepositoryInterface
         }
     }
 
+    public function addScalar(SymbolPath $symbol, string $key, int|float $value): void
+    {
+        $canonical = $symbol->toCanonical();
+
+        if (!isset($this->metrics[$canonical])) {
+            return;
+        }
+
+        $this->metrics[$canonical] = $this->metrics[$canonical]->with($key, $value);
+    }
+
     /**
      * Returns all namespaces that have metrics.
      *

@@ -6,7 +6,6 @@ namespace AiMessDetector\Metrics\Coupling;
 
 use AiMessDetector\Core\Dependency\DependencyGraphInterface;
 use AiMessDetector\Core\Metric\GlobalContextCollectorInterface;
-use AiMessDetector\Core\Metric\MetricBag;
 use AiMessDetector\Core\Metric\MetricDefinition;
 use AiMessDetector\Core\Metric\MetricName;
 use AiMessDetector\Core\Metric\MetricRepositoryInterface;
@@ -70,9 +69,7 @@ final class DistanceCollector implements GlobalContextCollectorInterface
 
             $distance = $this->computeDistance((float) $instability, (float) $abstractness);
 
-            $newMetrics = (new MetricBag())->with(MetricName::COUPLING_DISTANCE, $distance);
-
-            $repository->add($nsPath, $newMetrics, '', null);
+            $repository->addScalar($nsPath, MetricName::COUPLING_DISTANCE, $distance);
         }
     }
 

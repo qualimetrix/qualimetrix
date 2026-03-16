@@ -43,6 +43,17 @@ interface MetricRepositoryInterface
     public function add(SymbolPath $symbol, MetricBag $metrics, string $file, ?int $line): void;
 
     /**
+     * Adds a single scalar metric to an existing symbol.
+     *
+     * Unlike add(), this only touches scalar metrics and never duplicates
+     * DataBag entries. Use this when you need to enrich existing symbols
+     * with computed metrics (e.g., in global collectors).
+     *
+     * If the symbol does not exist, the metric is silently ignored.
+     */
+    public function addScalar(SymbolPath $symbol, string $key, int|float $value): void;
+
+    /**
      * Returns all namespaces that have metrics.
      *
      * @return list<string>
