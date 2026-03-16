@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Threshold phrasing in violation messages changed from `(max X)` / `(min X)` to `(threshold: X)` for clarity at boundary values
+- `--namespace` and `--class` drill-down now shows total tech debt line (aggregated from per-rule breakdown)
 - Complexity health formula retuned — linear penalty model with balanced CCN/cognitive/NPath weights (was harmonic K=32 with 92% cognitive bias). Cross-project score spread improved from 1.8pt to 6.6pt
 - Class-level coupling health uses efferent coupling (CE) instead of bidirectional CBO — popular utility classes (e.g., `Collection`) no longer penalized for being widely used
 - `--class` drill-down now shows the class's own health scores in the header (was showing project-wide scores)
@@ -75,6 +77,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - NPath complexity formula changes: `for` loop follows Nejmeh 1988 standard, `try-catch-finally` follows PMD/Checkstyle convention — existing NPath values may change
 
 ### Fixed
+- Fixed duplicate violations in `code-smell.unused-private` rule — global collectors were duplicating `DataBag` entries via `add()` merge; introduced `addScalar()` to `MetricRepositoryInterface`
 - Fixed Maintainability Index (MI) not aggregated to namespace/project level — non-additive method metrics now use Average fallback when Sum is unavailable
 - Fixed cognitive complexity nesting level not restored after closures/arrow functions inside nested scopes
 - Fixed cyclomatic complexity not counting `match` expression arms
