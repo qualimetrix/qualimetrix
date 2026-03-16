@@ -71,6 +71,12 @@ final class CheckCommandDefinition
                 [],
             )
             ->addOption(
+                'include-generated',
+                null,
+                InputOption::VALUE_NONE,
+                'Include files marked with @generated annotation (skipped by default)',
+            )
+            ->addOption(
                 'config',
                 'c',
                 InputOption::VALUE_REQUIRED,

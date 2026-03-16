@@ -38,6 +38,7 @@ final readonly class AnalysisConfiguration
      * @param string $projectRoot Project root directory (for parallel workers)
      * @param Severity|false|null $failOn Minimum severity to trigger non-zero exit code (null = default/warning, false = none/never fail)
      * @param list<string> $excludeHealth Health dimensions to exclude from scoring (e.g., 'typing', 'complexity')
+     * @param bool $includeGenerated Whether to include files marked with @generated annotation
      */
     public function __construct(
         public string $cacheDir = self::DEFAULT_CACHE_DIR,
@@ -54,6 +55,7 @@ final readonly class AnalysisConfiguration
         public string $projectRoot = '.',
         public Severity|false|null $failOn = null,
         public array $excludeHealth = [],
+        public bool $includeGenerated = false,
     ) {}
 
     /**
@@ -78,6 +80,7 @@ final readonly class AnalysisConfiguration
             projectRoot: self::getString($config, 'project_root', '.'),
             failOn: self::getFailOn($config, 'fail_on'),
             excludeHealth: self::getStringList($config, 'exclude_health'),
+            includeGenerated: self::getBool($config, 'include_generated', false),
         );
     }
 
@@ -109,6 +112,7 @@ final readonly class AnalysisConfiguration
             excludeHealth: self::hasNestedValue($overrides, 'exclude_health')
                 ? self::getStringList($overrides, 'exclude_health')
                 : $this->excludeHealth,
+            includeGenerated: self::getBool($overrides, 'include_generated', $this->includeGenerated),
         );
     }
 

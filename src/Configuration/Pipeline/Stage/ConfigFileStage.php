@@ -170,6 +170,11 @@ final class ConfigFileStage implements ConfigurationStageInterface
             $result['exclude_health'] = $data['excludeHealth'] ?? $data['exclude_health'];
         }
 
+        // Include generated files
+        if (isset($data['includeGenerated']) || isset($data['include_generated'])) {
+            $result['include_generated'] = $data['includeGenerated'] ?? $data['include_generated'];
+        }
+
         return $result;
     }
 
