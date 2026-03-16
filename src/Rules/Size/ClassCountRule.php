@@ -99,7 +99,7 @@ final class ClassCountRule extends AbstractRule
                     message: \sprintf('Class count is %d, exceeds threshold of %d. Consider splitting into sub-namespaces', $classCount, $threshold),
                     severity: $severity,
                     metricValue: $classCount,
-                    recommendation: \sprintf('Classes: %d (max %d) — too many classes in namespace', $classCount, $threshold),
+                    recommendation: \sprintf('Classes: %d (threshold: %d) — too many classes in namespace', $classCount, $threshold),
                     threshold: $threshold,
                 );
             }

@@ -129,7 +129,7 @@ final class DistanceRule extends AbstractRule
                     ),
                     severity: $severity,
                     metricValue: $distanceValue,
-                    recommendation: \sprintf('Distance: %.2f (max %.2f) — poor balance of abstraction and stability', $distanceValue, $threshold),
+                    recommendation: \sprintf('Distance: %.2f (threshold: %.2f) — poor balance of abstraction and stability', $distanceValue, $threshold),
                     threshold: $threshold,
                 );
             }

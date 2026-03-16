@@ -151,7 +151,7 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
                     severity: $severity,
                     metricValue: $cognitiveValue,
                     level: RuleLevel::Method,
-                    recommendation: \sprintf('Cognitive complexity: %d (max %d) — deeply nested, hard to follow', $cognitiveValue, $threshold),
+                    recommendation: \sprintf('Cognitive complexity: %d (threshold: %d) — deeply nested, hard to follow', $cognitiveValue, $threshold),
                     threshold: $threshold,
                 );
             }
@@ -193,7 +193,7 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
                     severity: $severity,
                     metricValue: $maxCognitiveValue,
                     level: RuleLevel::Class_,
-                    recommendation: \sprintf('Max cognitive complexity: %d (max %d) — deeply nested, hard to follow', $maxCognitiveValue, $threshold),
+                    recommendation: \sprintf('Max cognitive complexity: %d (threshold: %d) — deeply nested, hard to follow', $maxCognitiveValue, $threshold),
                     threshold: $threshold,
                 );
             }

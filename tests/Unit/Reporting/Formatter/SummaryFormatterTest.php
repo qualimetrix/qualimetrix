@@ -31,9 +31,10 @@ final class SummaryFormatterTest extends TestCase
 
     protected function setUp(): void
     {
-        $debtCalculator = new DebtCalculator(new RemediationTimeRegistry());
+        $registry = new RemediationTimeRegistry();
+        $debtCalculator = new DebtCalculator($registry);
         $hintProvider = new MetricHintProvider();
-        $this->formatter = new SummaryFormatter(new DetailedViolationRenderer($debtCalculator), new NamespaceDrillDown($hintProvider));
+        $this->formatter = new SummaryFormatter(new DetailedViolationRenderer($debtCalculator), new NamespaceDrillDown($hintProvider), $registry);
         $this->plainContext = new FormatterContext(useColor: false, terminalWidth: 120);
     }
 
@@ -757,13 +758,79 @@ final class SummaryFormatterTest extends TestCase
         self::assertStringContainsString("\e[31m30%\e[0m", $output);
     }
 
-    public function testTechDebtHiddenInScopedMode(): void
+    public function testTechDebtShownInScopedMode(): void
     {
         $report = $this->createReport(
             violations: [
                 new Violation(
                     location: new Location('a.php', 1),
                     symbolPath: SymbolPath::forClass('App\Service', 'Foo'),
+                    ruleName: 'complexity.cyclomatic',
+                    violationCode: 'complexity.cyclomatic.method',
+                    message: 'Msg',
+                    severity: Severity::Error,
+                ),
+                new Violation(
+                    location: new Location('b.php', 1),
+                    symbolPath: SymbolPath::forClass('App\Service', 'Bar'),
+                    ruleName: 'coupling.cbo',
+                    violationCode: 'coupling.cbo.class',
+                    message: 'Msg',
+                    severity: Severity::Error,
+                ),
+            ],
+            filesAnalyzed: 10,
+            duration: 0.5,
+            techDebtMinutes: 120,
+        );
+
+        $context = new FormatterContext(useColor: false, namespace: 'App\Service', terminalWidth: 120);
+        $output = $this->formatter->format($report, $context);
+
+        // Scoped tech debt computed from filtered violations (30min + 45min = 1h 15min)
+        self::assertStringContainsString('Tech debt: 1h 15min', $output);
+    }
+
+    public function testTechDebtShownInClassScopedMode(): void
+    {
+        $report = $this->createReport(
+            violations: [
+                new Violation(
+                    location: new Location('a.php', 1),
+                    symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
+                    ruleName: 'code-smell.god-class',
+                    violationCode: 'code-smell.god-class',
+                    message: 'God class',
+                    severity: Severity::Error,
+                ),
+                new Violation(
+                    location: new Location('b.php', 1),
+                    symbolPath: SymbolPath::forClass('App\Service', 'OrderService'),
+                    ruleName: 'coupling.cbo',
+                    violationCode: 'coupling.cbo.class',
+                    message: 'Out of scope',
+                    severity: Severity::Error,
+                ),
+            ],
+            filesAnalyzed: 10,
+            duration: 0.5,
+        );
+
+        $context = new FormatterContext(useColor: false, class: 'App\Service\UserService', terminalWidth: 120);
+        $output = $this->formatter->format($report, $context);
+
+        // Only god-class violation matches (120min = 2h)
+        self::assertStringContainsString('Tech debt: 2h', $output);
+        self::assertStringContainsString('1 violation', $output);
+    }
+
+    public function testTechDebtHiddenInScopedModeWithNoViolations(): void
+    {
+        $report = $this->createReport(
+            violations: [
+                new Violation(
+                    location: new Location('a.php', 1),
+                    symbolPath: SymbolPath::forClass('App\Other', 'Foo'),
                     ruleName: 'test',
                     violationCode: 'test',
                     message: 'Msg',
@@ -778,7 +845,7 @@ final class SummaryFormatterTest extends TestCase
         $context = new FormatterContext(useColor: false, namespace: 'App\Service', terminalWidth: 120);
         $output = $this->formatter->format($report, $context);
 
-        // Tech debt is project-level, don't show in scoped mode
+        // No violations in scope, so no tech debt line
         self::assertStringNotContainsString('Tech debt', $output);
     }
 
@@ -793,7 +860,7 @@ final class SummaryFormatterTest extends TestCase
                     violationCode: 'complexity.cyclomatic.method',
                     message: 'Cyclomatic complexity is 15',
                     severity: Severity::Error,
-                    recommendation: 'Cyclomatic complexity: 15 (max 10) — too many code paths',
+                    recommendation: 'Cyclomatic complexity: 15 (threshold: 10) — too many code paths',
                 ),
             ],
             filesAnalyzed: 1,

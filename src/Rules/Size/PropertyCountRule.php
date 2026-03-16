@@ -115,7 +115,7 @@ final class PropertyCountRule extends AbstractRule
                 ),
                 severity: $severity,
                 metricValue: $propertyCountValue,
-                recommendation: \sprintf('Properties: %d (max %d) — too many properties', $propertyCountValue, $threshold),
+                recommendation: \sprintf('Properties: %d (threshold: %d) — too many properties', $propertyCountValue, $threshold),
                 threshold: $threshold,
             );
         }

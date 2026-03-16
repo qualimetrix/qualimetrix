@@ -99,7 +99,7 @@ final class MaintainabilityRule extends AbstractRule
                     ),
                     severity: $severity,
                     metricValue: round($miValue, 1),
-                    recommendation: \sprintf('MI: %.1f (min %.1f) — code is hard to change safely', $miValue, $threshold),
+                    recommendation: \sprintf('MI: %.1f (threshold: %.1f) — code is hard to change safely', $miValue, $threshold),
                     threshold: $threshold,
                 );
             }

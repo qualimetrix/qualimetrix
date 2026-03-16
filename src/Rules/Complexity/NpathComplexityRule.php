@@ -156,7 +156,7 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
                     severity: $severity,
                     metricValue: $npathValue,
                     level: RuleLevel::Method,
-                    recommendation: \sprintf('NPath complexity: %s (max %s) — explosive number of execution paths', $displayValue, $threshold),
+                    recommendation: \sprintf('NPath complexity: %s (threshold: %s) — explosive number of execution paths', $displayValue, $threshold),
                     threshold: (float) $threshold,
                 );
             }
@@ -199,7 +199,7 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
                     severity: $severity,
                     metricValue: $maxNpathValue,
                     level: RuleLevel::Class_,
-                    recommendation: \sprintf('Max NPath complexity: %s (max %s) — explosive number of execution paths', $displayValue, $threshold),
+                    recommendation: \sprintf('Max NPath complexity: %s (threshold: %s) — explosive number of execution paths', $displayValue, $threshold),
                     threshold: (float) $threshold,
                 );
             }

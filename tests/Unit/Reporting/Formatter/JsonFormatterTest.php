@@ -115,7 +115,7 @@ final class JsonFormatterTest extends TestCase
                 severity: Severity::Error,
                 metricValue: 25,
                 threshold: 10,
-                recommendation: 'Cyclomatic complexity: 25 (max 10) — too many code paths',
+                recommendation: 'Cyclomatic complexity: 25 (threshold: 10) — too many code paths',
             ))
             ->addViolation(new Violation(
                 location: new Location('src/Service/UserService.php', 120),
@@ -126,7 +126,7 @@ final class JsonFormatterTest extends TestCase
                 severity: Severity::Warning,
                 metricValue: 12,
                 threshold: 10,
-                recommendation: 'Cyclomatic complexity: 12 (max 10) — too many code paths',
+                recommendation: 'Cyclomatic complexity: 12 (threshold: 10) — too many code paths',
             ))
             ->filesAnalyzed(42)
             ->filesSkipped(1)
@@ -147,7 +147,7 @@ final class JsonFormatterTest extends TestCase
         self::assertSame('complexity.cyclomatic', $v1['rule']);
         self::assertSame('complexity.cyclomatic.method', $v1['code']);
         self::assertSame('error', $v1['severity']);
-        self::assertSame('Cyclomatic complexity: 25 (max 10) — too many code paths', $v1['message']);
+        self::assertSame('Cyclomatic complexity: 25 (threshold: 10) — too many code paths', $v1['message']);
         self::assertSame(25, $v1['metricValue']);
         self::assertSame(10, $v1['threshold']);
 
