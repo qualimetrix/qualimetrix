@@ -113,6 +113,7 @@ Infrastructure/
     ├── RuntimeConfigurator.php        # Runtime DI configuration
     ├── ResultPresenter.php            # Output presentation
     ├── CheckCommandDefinition.php     # Command option definitions
+    ├── FilteredInputDefinition.php    # InputDefinition that hides rule-specific options from --help
     ├── Progress/
     │   ├── ConsoleProgressBar.php
     │   ├── ProgressReporterHolder.php
@@ -120,7 +121,7 @@ Infrastructure/
     └── Command/
         ├── CheckCommand.php           # Thin orchestrator (delegates to extracted classes)
         ├── BaselineCleanupCommand.php
-        ├── GraphExportCommand.php
+        ├── GraphExportCommand.php           # Export dependency graph (DOT, JSON)
         ├── RulesCommand.php           # Lists all rules with options and CLI aliases
         ├── HookInstallCommand.php
         ├── HookStatusCommand.php
