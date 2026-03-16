@@ -52,6 +52,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `code-smell.unreachable-code` rule — detects dead code after return/throw/exit statements
 - `design.type-coverage` rule — measures type declaration coverage for parameters, return types, and properties per class
 - `--format=metrics-json` output format — exports raw metric values for all symbols (methods, classes, namespaces, files)
+- CCN violations show divergence hint when cognitive complexity is low — indicates mechanical branching (switch/match) with lower refactoring priority
+- CBO violations include top-5 efferent dependencies in recommendation to guide decoupling
+- Rule-specific options hidden from `--help` output (55 lines instead of ~105) — use `bin/aimd rules` for rule details
+- Files with `@generated` annotation automatically skipped from analysis — use `--include-generated` to override
+- Unused-private rule resolves same-file trait method calls — reduces false positives when traits call class private methods
+- All rule violations now include actionable recommendations (distinct from the violation message)
 
 ### Breaking
 - JSON field `humanMessage` renamed to `recommendation` in violation objects. Update any scripts parsing `humanMessage`
