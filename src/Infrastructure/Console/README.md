@@ -23,6 +23,7 @@ Console/
 ├── RuntimeConfigurator.php
 ├── ResultPresenter.php
 ├── CheckCommandDefinition.php
+├── FilteredInputDefinition.php      # InputDefinition that hides rule-specific options from --help
 ├── OutputHelper.php                 # Line-by-line output with flush (avoids PTY truncation)
 ├── Progress/
 │   ├── ConsoleProgressBar.php
@@ -31,7 +32,7 @@ Console/
 └── Command/
     ├── CheckCommand.php             # Main analysis command
     ├── BaselineCleanupCommand.php   # Cleanup stale baseline entries
-    ├── GraphExportCommand.php       # Export dependency graph to DOT
+    ├── GraphExportCommand.php       # Export dependency graph (DOT, JSON)
     ├── HookInstallCommand.php       # Install pre-commit hook
     ├── HookStatusCommand.php        # Check hook status
     └── HookUninstallCommand.php     # Remove pre-commit hook
@@ -74,18 +75,18 @@ Cleanup baseline from stale entries (violations that have already been fixed).
 
 ### GraphExportCommand
 
-Export dependency graph to DOT format (Graphviz).
+Export dependency graph in DOT or JSON format.
 
 **Name:** `graph:export`
 
 **Options:**
 - `--output` — output file path (default: stdout)
 - `--namespace` — filter by namespace prefix
+- `--format` — output format: `dot` (default) or `json`
 
-**Output format:**
-- DOT format (Graphviz)
-- Circular dependencies highlighted in red
-- Clustering by namespace
+**Output formats:**
+- **DOT** (Graphviz) — circular dependencies highlighted in red, clustering by namespace
+- **JSON** — structured graph data for programmatic consumption
 
 ### Hook Commands
 

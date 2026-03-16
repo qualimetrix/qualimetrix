@@ -21,7 +21,8 @@ Analysis/
 │
 ├── Discovery/                           # File discovery
 │   ├── FileDiscoveryInterface.php       # Discovery contract
-│   └── FinderFileDiscovery.php
+│   ├── FinderFileDiscovery.php
+│   └── GeneratedFileFilter.php          # Filters out generated files
 │
 ├── Collection/                          # Data collection
 │   ├── CollectionOrchestratorInterface.php # Orchestrator contract
@@ -57,7 +58,8 @@ Analysis/
 │   │   └── Export/                      # Graph export
 │   │       ├── GraphExporterInterface.php
 │   │       ├── DotExporter.php          # DOT format export
-│   │       └── DotExporterOptions.php
+│   │       ├── DotExporterOptions.php
+│   │       └── JsonGraphExporter.php    # JSON format export
 │   │
 │   └── Strategy/                        # Execution strategy contracts
 │       ├── ExecutionStrategyInterface.php
@@ -168,6 +170,8 @@ Finding PHP files for analysis.
 - Searches for `*.php` in specified paths
 - Sorts by name
 - Returns a Generator for memory efficiency
+
+**GeneratedFileFilter** — filters out generated files (e.g., auto-generated proxies, compiled templates) from analysis.
 
 ---
 
@@ -322,6 +326,7 @@ Resolves class dependencies from collected data.
 
 **GraphExporterInterface** — contract for graph exporters.
 **DotExporter** — exports dependency graph in DOT format for visualization with Graphviz.
+**JsonGraphExporter** — exports dependency graph in JSON format for programmatic consumption.
 
 ### CircularDependencyDetector
 
