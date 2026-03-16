@@ -104,7 +104,7 @@ final class ComputedMetricEvaluator
                 continue;
             }
 
-            $repo->add($symbolPath, (new MetricBag())->with($definition->name, $result), $file, $line);
+            $repo->addScalar($symbolPath, $definition->name, $result);
         }
     }
 
