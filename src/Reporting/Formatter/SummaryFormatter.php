@@ -8,6 +8,7 @@ use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
 use AiMessDetector\Reporting\AnsiColor;
 use AiMessDetector\Reporting\Debt\DebtSummary;
+use AiMessDetector\Reporting\Debt\RemediationTimeRegistry;
 use AiMessDetector\Reporting\DecompositionItem;
 use AiMessDetector\Reporting\DetailedViolationRenderer;
 use AiMessDetector\Reporting\FormatterContext;
@@ -36,6 +37,7 @@ final class SummaryFormatter implements FormatterInterface
     public function __construct(
         private readonly DetailedViolationRenderer $detailedRenderer,
         private readonly NamespaceDrillDown $namespaceDrillDown,
+        private readonly RemediationTimeRegistry $remediationTimeRegistry,
     ) {}
 
     public function format(Report $report, FormatterContext $context): string
@@ -495,12 +497,19 @@ final class SummaryFormatter implements FormatterInterface
             $parts[0] .= ' (' . implode(', ', $details) . ')';
         }
 
-        if ($report->techDebtMinutes > 0 && $context->namespace === null && $context->class === null) {
-            $debtStr = DebtSummary::formatMinutes($report->techDebtMinutes);
-            if ($report->debtPer1kLoc !== null) {
-                $debtStr .= \sprintf(' (%.1f min/kLOC to fix)', $report->debtPer1kLoc);
+        if ($context->namespace === null && $context->class === null) {
+            if ($report->techDebtMinutes > 0) {
+                $debtStr = DebtSummary::formatMinutes($report->techDebtMinutes);
+                if ($report->debtPer1kLoc !== null) {
+                    $debtStr .= \sprintf(' (%.1f min/kLOC to fix)', $report->debtPer1kLoc);
+                }
+                $parts[] = \sprintf('Tech debt: %s', $debtStr);
             }
-            $parts[] = \sprintf('Tech debt: %s', $debtStr);
+        } else {
+            $scopedDebtMinutes = $this->calculateScopedDebt($violations);
+            if ($scopedDebtMinutes > 0) {
+                $parts[] = \sprintf('Tech debt: %s', DebtSummary::formatMinutes($scopedDebtMinutes));
+            }
         }
 
         $summary = implode(' | ', $parts);
@@ -640,6 +649,22 @@ final class SummaryFormatter implements FormatterInterface
         }
 
         return \sprintf('%.1f', $value);
+    }
+
+    /**
+     * Calculates total tech debt for scoped (namespace/class) violations.
+     *
+     * @param list<Violation> $violations Already filtered violations
+     */
+    private function calculateScopedDebt(array $violations): int
+    {
+        $totalMinutes = 0;
+
+        foreach ($violations as $violation) {
+            $totalMinutes += $this->remediationTimeRegistry->getMinutes($violation->ruleName);
+        }
+
+        return $totalMinutes;
     }
 
     private function escapeForShell(string $value): string
