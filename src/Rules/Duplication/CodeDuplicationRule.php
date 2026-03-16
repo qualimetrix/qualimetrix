@@ -97,6 +97,7 @@ final class CodeDuplicationRule extends AbstractRule
             severity: $severity ?? Severity::Warning,
             metricValue: $block->lines,
             relatedLocations: $relatedViolationLocations,
+            recommendation: 'Extract duplicated code into a shared method or class.',
         );
     }
 }

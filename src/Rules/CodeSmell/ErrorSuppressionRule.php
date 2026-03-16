@@ -41,6 +41,11 @@ final class ErrorSuppressionRule extends AbstractCodeSmellRule
         return 'Error suppression operator (@) detected - handle errors explicitly';
     }
 
+    protected function getRecommendation(): string
+    {
+        return 'Handle the error explicitly with try/catch or conditional checks.';
+    }
+
     /**
      * @return class-string<CodeSmellOptions>
      */

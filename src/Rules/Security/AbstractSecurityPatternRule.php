@@ -41,6 +41,17 @@ abstract class AbstractSecurityPatternRule extends AbstractRule
     abstract protected function getMessageTemplate(): string;
 
     /**
+     * Returns the actionable recommendation for this security pattern.
+     *
+     * While message describes what is wrong, recommendation tells the user what to do.
+     * Subclasses should override to provide a specific recommendation.
+     */
+    protected function getRecommendation(): ?string
+    {
+        return null;
+    }
+
+    /**
      * @return list<string>
      */
     public function requires(): array
@@ -96,6 +107,7 @@ abstract class AbstractSecurityPatternRule extends AbstractRule
                     message: $message,
                     severity: $this->getSeverity(),
                     metricValue: 1.0,
+                    recommendation: $this->getRecommendation(),
                 );
             }
         }

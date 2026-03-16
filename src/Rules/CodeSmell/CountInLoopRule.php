@@ -41,6 +41,11 @@ final class CountInLoopRule extends AbstractCodeSmellRule
         return 'count() in loop condition detected - store in variable before loop';
     }
 
+    protected function getRecommendation(): string
+    {
+        return 'Store the count result in a variable before the loop.';
+    }
+
     /**
      * @return class-string<CodeSmellOptions>
      */

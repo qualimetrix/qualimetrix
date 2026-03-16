@@ -41,6 +41,11 @@ final class SuperglobalsRule extends AbstractCodeSmellRule
         return 'Direct superglobal access detected - use dependency injection';
     }
 
+    protected function getRecommendation(): string
+    {
+        return 'Use dependency injection or a request object instead of direct superglobal access.';
+    }
+
     /**
      * @return class-string<CodeSmellOptions>
      */

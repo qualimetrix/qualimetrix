@@ -88,6 +88,7 @@ final class UnusedPrivateRule extends AbstractRule
                         message: $message,
                         severity: Severity::Warning,
                         metricValue: $total,
+                        recommendation: 'Remove the unused symbol to reduce dead code.',
                     );
                 }
             }

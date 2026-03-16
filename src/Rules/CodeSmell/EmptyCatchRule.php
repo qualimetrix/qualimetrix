@@ -41,6 +41,11 @@ final class EmptyCatchRule extends AbstractCodeSmellRule
         return 'Empty catch block detected - exceptions should not be silently ignored';
     }
 
+    protected function getRecommendation(): string
+    {
+        return 'Log the exception or add a comment explaining why it is safe to ignore.';
+    }
+
     /**
      * @return class-string<CodeSmellOptions>
      */

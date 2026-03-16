@@ -40,6 +40,11 @@ final class DebugCodeRule extends AbstractCodeSmellRule
         return 'Debug function call detected - remove before production';
     }
 
+    protected function getRecommendation(): string
+    {
+        return 'Remove debug statements before merging to production.';
+    }
+
     /**
      * @return class-string<CodeSmellOptions>
      */

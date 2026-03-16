@@ -40,4 +40,9 @@ final class XssRule extends AbstractSecurityPatternRule
     {
         return 'Potential XSS — use htmlspecialchars() or equivalent before outputting user input';
     }
+
+    protected function getRecommendation(): string
+    {
+        return 'Escape output with htmlspecialchars() or use a template engine with auto-escaping.';
+    }
 }

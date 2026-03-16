@@ -45,6 +45,11 @@ final class BooleanArgumentRule extends AbstractCodeSmellRule
         return 'Boolean argument detected - consider splitting methods or using enums';
     }
 
+    protected function getRecommendation(): string
+    {
+        return 'Replace boolean parameter with two explicit methods or use an enum.';
+    }
+
     /**
      * Includes the parameter name in the message when available.
      *

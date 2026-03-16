@@ -103,6 +103,7 @@ final class IdenticalSubExpressionRule extends AbstractRule
                         message: $message,
                         severity: Severity::Warning,
                         metricValue: 1.0,
+                        recommendation: 'This looks like a copy-paste error. Verify the intended logic.',
                     );
                 }
             }

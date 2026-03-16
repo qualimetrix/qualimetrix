@@ -122,6 +122,7 @@ final class UnreachableCodeRule extends AbstractRule
             ),
             severity: $severity,
             metricValue: $unreachableCountValue,
+            recommendation: 'Remove dead code after the terminal statement.',
         );
     }
 }

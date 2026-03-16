@@ -40,4 +40,9 @@ final class SqlInjectionRule extends AbstractSecurityPatternRule
     {
         return 'Potential SQL injection — use parameterized queries instead of direct superglobal interpolation';
     }
+
+    protected function getRecommendation(): string
+    {
+        return 'Use parameterized queries or prepared statements.';
+    }
 }

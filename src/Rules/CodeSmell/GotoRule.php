@@ -41,6 +41,11 @@ final class GotoRule extends AbstractCodeSmellRule
         return 'goto statement detected - avoid using goto';
     }
 
+    protected function getRecommendation(): string
+    {
+        return 'Replace goto with structured control flow (loops, early returns).';
+    }
+
     /**
      * @return class-string<CodeSmellOptions>
      */

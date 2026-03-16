@@ -88,6 +88,7 @@ final class SensitiveParameterRule extends AbstractRule
                     message: 'Sensitive parameter missing #[\\SensitiveParameter] attribute — add it to prevent credential leakage in stack traces',
                     severity: $severity,
                     metricValue: 1.0,
+                    recommendation: 'Add #[\\SensitiveParameter] attribute to prevent credential leakage in stack traces.',
                 );
             }
         }

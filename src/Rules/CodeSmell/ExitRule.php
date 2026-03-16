@@ -41,6 +41,11 @@ final class ExitRule extends AbstractCodeSmellRule
         return 'exit()/die() usage detected - use exceptions instead';
     }
 
+    protected function getRecommendation(): string
+    {
+        return 'Throw an exception instead of exit/die to allow proper error handling.';
+    }
+
     /**
      * @return class-string<CodeSmellOptions>
      */

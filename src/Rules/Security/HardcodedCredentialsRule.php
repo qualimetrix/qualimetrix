@@ -100,6 +100,7 @@ final class HardcodedCredentialsRule extends AbstractRule
                     message: $message,
                     severity: $severity,
                     metricValue: 1.0,
+                    recommendation: 'Move secrets to environment variables or a secrets manager.',
                 );
             }
         }

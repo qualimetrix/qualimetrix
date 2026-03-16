@@ -43,6 +43,17 @@ abstract class AbstractCodeSmellRule extends AbstractRule
     abstract protected function getMessageTemplate(): string;
 
     /**
+     * Returns the actionable recommendation for this smell.
+     *
+     * While message describes what is wrong, recommendation tells the user what to do.
+     * Subclasses should override to provide a specific recommendation.
+     */
+    protected function getRecommendation(): ?string
+    {
+        return null;
+    }
+
+    /**
      * Builds the violation message for a single entry.
      *
      * Subclasses may override this to incorporate extra data (e.g. parameter name) from the entry.
@@ -93,6 +104,7 @@ abstract class AbstractCodeSmellRule extends AbstractRule
                     message: $this->buildMessage($entry),
                     severity: $this->getSeverity(),
                     metricValue: 1.0,
+                    recommendation: $this->getRecommendation(),
                 );
             }
         }

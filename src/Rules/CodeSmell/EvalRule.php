@@ -41,6 +41,11 @@ final class EvalRule extends AbstractCodeSmellRule
         return 'eval() usage detected - security risk';
     }
 
+    protected function getRecommendation(): string
+    {
+        return 'Replace eval() with a safer alternative (closures, reflection, or template engine).';
+    }
+
     /**
      * @return class-string<CodeSmellOptions>
      */

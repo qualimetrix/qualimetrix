@@ -41,4 +41,9 @@ final class CommandInjectionRule extends AbstractSecurityPatternRule
     {
         return 'Potential command injection — use escapeshellarg() before passing user input to shell commands';
     }
+
+    protected function getRecommendation(): string
+    {
+        return 'Use escapeshellarg() for arguments or avoid shell commands entirely.';
+    }
 }

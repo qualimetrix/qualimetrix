@@ -164,6 +164,7 @@ final class GodClassRule extends AbstractRule
                 ),
                 severity: $severity,
                 metricValue: $matchedCount,
+                recommendation: 'Apply the Single Responsibility Principle. Extract cohesive method groups into separate classes.',
             );
         }
 

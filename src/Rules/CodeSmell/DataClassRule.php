@@ -138,6 +138,7 @@ final class DataClassRule extends AbstractRule
                     ),
                     severity: Severity::Warning,
                     metricValue: $wocValue,
+                    recommendation: 'Add behavior methods that operate on the data, or confirm this is intentionally a DTO.',
                 );
             }
         }
