@@ -22,6 +22,8 @@ use PhpParser\Node\Stmt\Enum_;
 use PhpParser\Node\Stmt\Interface_;
 use PhpParser\Node\Stmt\Property;
 use PhpParser\Node\Stmt\Trait_;
+use PhpParser\Node\Stmt\TraitUse;
+use PhpParser\NodeFinder;
 use PhpParser\NodeVisitorAbstract;
 
 /**
@@ -39,10 +41,17 @@ use PhpParser\NodeVisitorAbstract;
  * - Magic method awareness (__get/__set skip properties, __call/__callStatic skip methods)
  * - Anonymous class isolation via classStack
  *
+ * Same-file trait resolution:
+ * - When a class uses a trait defined in the same file, the trait's method bodies
+ *   are scanned for usages of $this->method(), $this->prop, self::CONST, etc.
+ * - These usages are added to the class's used sets, preventing false positives.
+ * - Recursive trait resolution is supported (trait using another trait in the same file).
+ * - Cross-file trait resolution is not supported.
+ *
  * Limitations:
  * - Variable method/property access ($this->$name) not detected
  * - Callable syntax [$this, 'method'] not detected
- * - Traits are not analyzed (would require cross-file resolution)
+ * - Traits from other files are not resolved
  */
 final class UnusedPrivateVisitor extends NodeVisitorAbstract implements ResettableVisitorInterface
 {
@@ -67,11 +76,19 @@ final class UnusedPrivateVisitor extends NodeVisitorAbstract implements Resettab
      */
     private array $classStack = [];
 
+    /**
+     * Trait definitions found in the current file, keyed by FQN.
+     *
+     * @var array<string, Trait_>
+     */
+    private array $traitDefinitions = [];
+
     public function reset(): void
     {
         $this->classData = [];
         $this->currentNamespace = null;
         $this->classStack = [];
+        $this->traitDefinitions = [];
     }
 
     /**
@@ -80,6 +97,36 @@ final class UnusedPrivateVisitor extends NodeVisitorAbstract implements Resettab
     public function getClassData(): array
     {
         return $this->classData;
+    }
+
+    /**
+     * Pre-pass: collect all trait definitions in the file for same-file resolution.
+     *
+     * @param Node[] $nodes
+     */
+    public function beforeTraverse(array $nodes): ?array
+    {
+        $this->traitDefinitions = [];
+
+        $finder = new NodeFinder();
+        $traits = $finder->findInstanceOf($nodes, Trait_::class);
+
+        foreach ($traits as $trait) {
+            \assert($trait instanceof Trait_);
+            if ($trait->name === null) {
+                continue;
+            }
+
+            $namespace = $this->resolveTraitNamespace($trait, $nodes);
+            $shortName = $trait->name->toString();
+            $fqn = ($namespace !== null && $namespace !== '')
+                ? $namespace . '\\' . $shortName
+                : $shortName;
+
+            $this->traitDefinitions[$fqn] = $trait;
+        }
+
+        return null;
     }
 
     public function enterNode(Node $node): ?int
@@ -191,6 +238,11 @@ final class UnusedPrivateVisitor extends NodeVisitorAbstract implements Resettab
             className: $className,
             line: $node->getStartLine(),
         );
+
+        // Resolve same-file trait usages
+        if ($node instanceof Class_ || $node instanceof Enum_) {
+            $this->resolveTraitUsages($node, $this->classData[$fqn]);
+        }
 
         return null;
     }
@@ -335,5 +387,153 @@ final class UnusedPrivateVisitor extends NodeVisitorAbstract implements Resettab
         }
 
         return $className;
+    }
+
+    /**
+     * Resolve trait usages for a class/enum node.
+     *
+     * Finds TraitUse statements in the class, resolves each trait from same-file
+     * definitions, and scans trait method bodies for member usages.
+     */
+    private function resolveTraitUsages(Class_|Enum_ $node, UnusedPrivateClassData $data): void
+    {
+        $this->resolveTraitUsagesRecursive($node->stmts, $data, []);
+    }
+
+    /**
+     * Recursively resolve trait usages, tracking already-resolved traits to prevent cycles.
+     *
+     * @param Node\Stmt[] $stmts Class or trait statements
+     * @param list<string> $resolvedFqns FQNs already resolved (cycle prevention)
+     */
+    private function resolveTraitUsagesRecursive(array $stmts, UnusedPrivateClassData $data, array $resolvedFqns): void
+    {
+        foreach ($stmts as $stmt) {
+            if (!$stmt instanceof TraitUse) {
+                continue;
+            }
+
+            foreach ($stmt->traits as $traitName) {
+                $traitNode = $this->findTraitDefinition($traitName);
+                if ($traitNode === null) {
+                    continue;
+                }
+
+                $traitFqn = $this->getTraitFqn($traitNode);
+                if (\in_array($traitFqn, $resolvedFqns, true)) {
+                    continue; // Prevent infinite recursion
+                }
+
+                $resolvedFqns[] = $traitFqn;
+
+                // Scan trait method bodies for usages
+                $this->scanTraitForUsages($traitNode, $data);
+
+                // Recursively resolve traits used by this trait
+                $this->resolveTraitUsagesRecursive($traitNode->stmts, $data, $resolvedFqns);
+            }
+        }
+    }
+
+    /**
+     * Find a trait definition from the same-file definitions map.
+     *
+     * Matches by short name (last part) since use statements may reference
+     * traits by short name, FQN, or with namespace aliases.
+     */
+    private function findTraitDefinition(Name $traitName): ?Trait_
+    {
+        $requestedName = $traitName->toString();
+
+        // Try exact FQN match first
+        if (isset($this->traitDefinitions[$requestedName])) {
+            return $this->traitDefinitions[$requestedName];
+        }
+
+        // Try with current namespace prefix
+        if ($this->currentNamespace !== null && $this->currentNamespace !== '') {
+            $fqn = $this->currentNamespace . '\\' . $requestedName;
+            if (isset($this->traitDefinitions[$fqn])) {
+                return $this->traitDefinitions[$fqn];
+            }
+        }
+
+        // Try matching by short name (last segment)
+        $requestedShort = $this->getShortName($requestedName);
+        foreach ($this->traitDefinitions as $fqn => $trait) {
+            if ($this->getShortName($fqn) === $requestedShort) {
+                return $trait;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Scan all method bodies in a trait for member usages ($this->method(), self::CONST, etc.).
+     */
+    private function scanTraitForUsages(Trait_ $trait, UnusedPrivateClassData $data): void
+    {
+        $finder = new NodeFinder();
+
+        foreach ($trait->stmts as $stmt) {
+            if (!$stmt instanceof ClassMethod) {
+                continue;
+            }
+
+            if ($stmt->stmts === null) {
+                continue;
+            }
+
+            // Find all usage nodes within the method body
+            $nodes = $finder->find($stmt->stmts, fn(Node $node): bool => $node instanceof MethodCall
+                    || $node instanceof StaticCall
+                    || $node instanceof PropertyFetch
+                    || $node instanceof StaticPropertyFetch
+                    || $node instanceof ClassConstFetch);
+
+            foreach ($nodes as $usageNode) {
+                $this->trackUsages($usageNode, $data);
+            }
+        }
+    }
+
+    /**
+     * Resolve the namespace for a trait node by finding its enclosing namespace in the AST.
+     *
+     * @param Node[] $rootNodes
+     */
+    private function resolveTraitNamespace(Trait_ $trait, array $rootNodes): ?string
+    {
+        foreach ($rootNodes as $node) {
+            if ($node instanceof Node\Stmt\Namespace_) {
+                foreach ($node->stmts as $stmt) {
+                    if ($stmt === $trait) {
+                        return $node->name?->toString() ?? '';
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private function getTraitFqn(Trait_ $trait): string
+    {
+        $shortName = $trait->name?->toString() ?? '';
+        foreach ($this->traitDefinitions as $fqn => $t) {
+            if ($t === $trait) {
+                return $fqn;
+            }
+        }
+
+        return $shortName;
+    }
+
+    private function getShortName(string $fqn): string
+    {
+        $pos = strrpos($fqn, '\\');
+
+        return $pos !== false ? substr($fqn, $pos + 1) : $fqn;
     }
 }

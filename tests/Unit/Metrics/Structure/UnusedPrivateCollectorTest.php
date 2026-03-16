@@ -878,6 +878,281 @@ PHP;
         self::assertSame(0, $metrics->entryCount('unusedPrivate.property:App\StaticPropAccess'));
     }
 
+    public function testSameFileTraitCallsPrivateMethod(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class MyClass
+{
+    use MyTrait;
+
+    private function helper(): void {}
+
+    public function doWork(): void {}
+}
+
+trait MyTrait
+{
+    public function traitWork(): void
+    {
+        $this->helper();
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // helper() is called from the trait, so it should NOT be flagged
+        self::assertSame(0, $metrics->entryCount('unusedPrivate.method:App\MyClass'));
+    }
+
+    public function testSameFileTraitReadsPrivateProperty(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class MyClass
+{
+    use MyTrait;
+
+    private string $secret = 'value';
+}
+
+trait MyTrait
+{
+    public function getSecret(): string
+    {
+        return $this->secret;
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(0, $metrics->entryCount('unusedPrivate.property:App\MyClass'));
+    }
+
+    public function testSameFileTraitReadsPrivateConstant(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class MyClass
+{
+    use MyTrait;
+
+    private const SECRET = 42;
+}
+
+trait MyTrait
+{
+    public function getSecret(): int
+    {
+        return self::SECRET;
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(0, $metrics->entryCount('unusedPrivate.constant:App\MyClass'));
+    }
+
+    public function testSameFileMultipleTraits(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class MyClass
+{
+    use TraitA, TraitB;
+
+    private function helperA(): void {}
+    private function helperB(): void {}
+    private function unused(): void {}
+}
+
+trait TraitA
+{
+    public function workA(): void
+    {
+        $this->helperA();
+    }
+}
+
+trait TraitB
+{
+    public function workB(): void
+    {
+        $this->helperB();
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // helperA and helperB are used via traits, only "unused" should be flagged
+        self::assertSame(1, $metrics->entryCount('unusedPrivate.method:App\MyClass'));
+        $entries = $metrics->entries('unusedPrivate.method:App\MyClass');
+        self::assertSame('unused', $entries[0]['name']);
+    }
+
+    public function testTraitNotInSameFileStillFlagged(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class MyClass
+{
+    use \Some\External\Trait_;
+
+    private function helper(): void {}
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // External trait cannot be resolved, so helper is still flagged
+        self::assertSame(1, $metrics->entryCount('unusedPrivate.method:App\MyClass'));
+    }
+
+    public function testSameFileTraitUsingAnotherTrait(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class MyClass
+{
+    use TraitA;
+
+    private function deepHelper(): void {}
+}
+
+trait TraitA
+{
+    use TraitB;
+
+    public function workA(): void {}
+}
+
+trait TraitB
+{
+    public function workB(): void
+    {
+        $this->deepHelper();
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // deepHelper is called from TraitB which is used by TraitA which is used by MyClass
+        self::assertSame(0, $metrics->entryCount('unusedPrivate.method:App\MyClass'));
+    }
+
+    public function testSameFileTraitStaticUsage(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class MyClass
+{
+    use MyTrait;
+
+    private static function staticHelper(): void {}
+    private static string $staticProp = '';
+}
+
+trait MyTrait
+{
+    public function work(): void
+    {
+        self::staticHelper();
+        $x = static::$staticProp;
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(0, $metrics->entryCount('unusedPrivate.method:App\MyClass'));
+        self::assertSame(0, $metrics->entryCount('unusedPrivate.property:App\MyClass'));
+    }
+
+    public function testTraitDefinitionItselfNotTracked(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+trait MyTrait
+{
+    private function traitPrivate(): void {}
+}
+
+class MyClass
+{
+    use MyTrait;
+
+    private function classHelper(): void {}
+
+    public function work(): void
+    {
+        $this->classHelper();
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // Trait itself should not be tracked (no unused metrics for it)
+        self::assertNull($metrics->get('unusedPrivate.total:App\MyTrait'));
+        // Class helper is used directly, not flagged
+        self::assertSame(0, $metrics->entryCount('unusedPrivate.method:App\MyClass'));
+    }
+
+    public function testSameFileTraitWithoutNamespace(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+class MyClass
+{
+    use MyTrait;
+
+    private function helper(): void {}
+}
+
+trait MyTrait
+{
+    public function work(): void
+    {
+        $this->helper();
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(0, $metrics->entryCount('unusedPrivate.method:MyClass'));
+    }
+
     private function collectMetrics(string $code): MetricBag
     {
         $this->parseAndTraverse($code);
