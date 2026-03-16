@@ -1,22 +1,30 @@
-# Product Research V3 — Remaining Findings
+# Product Research V3 — Findings Resolution
 
 **Extracted:** 2026-03-16
 **Source:** [SUMMARY.md](SUMMARY.md)
-**Updated:** 2026-03-16 (after 3 fix batches)
+**Updated:** 2026-03-16 (all findings resolved)
 
 ---
 
 ## Resolved
 
-All HIGH findings (H1-H11) and most MEDIUM/LOW findings have been resolved across 3 batches:
+All HIGH findings (H1-H11) and most MEDIUM/LOW findings were resolved across 3 batches:
 
 - **Batch 1** (da666d8): H1, H3, H4, H8, H11, M10, M14, M22, M25, L1
 - **Batch 2** (e056cd7): H2, H5, H6, H7, M6, M8, M16, L11
 - **Batch 3** (e651695): M3, M4, M9, M13, M18, M19, M20, M21, M24, L2, L3, L6, L10
 
-## Won't Fix / Deferred
+Remaining "Future Work" items were implemented in subsequent sessions:
 
-### By Design (no action needed)
+- **H9** — `graph:export --format=json` adjacency list export (8e6ab9e)
+- **H10** — `@generated` annotation detection + `--include-generated` flag (4c6f85a)
+- **M17** — CCN/cognitive divergence hint in recommendations (21df0f5)
+- **M26** — Same-file trait method call resolution for unused-private (3cdc550)
+- **M27** — XSS and command injection detection for interpolated strings (bd1b89f)
+- **L4** — Coupling health formula uses CE + distance (not just CBO average)
+- **L5** — CBO violations include top-5 efferent dependencies (9c6b734)
+
+## By Design (no action needed)
 
 | #   | Issue                                        | Reason                                                                                                   |
 | --- | -------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
@@ -31,15 +39,3 @@ All HIGH findings (H1-H11) and most MEDIUM/LOW findings have been resolved acros
 | L7  | MI violations 80% overlap with complexity    | By design — MI formula includes complexity. MI catches "long but simple" methods only.                   |
 | L8  | No JSON schema / OpenAPI spec                | Documentation work, not a code change.                                                                   |
 | L9  | Two formats required (json + metrics-json)   | Intentional design — violation JSON stays small, metrics-json is comprehensive.                          |
-
-### Future Work (new features / complex changes)
-
-| #   | Issue                                        | Scope                                                                                   |
-| --- | -------------------------------------------- | --------------------------------------------------------------------------------------- |
-| H9  | Dependency graph data in JSON/metrics-json   | New feature: adjacency list export. Significant effort.                                 |
-| H10 | identical-subexpression FP on generated code | New feature: `@generated` annotation detection + auto-exclude.                          |
-| M17 | Metric divergence not surfaced explicitly    | New feature: flag when CCN high but cognitive low (likely switch/match).                |
-| M26 | unused-private misses trait method calls     | Complex: requires cross-file trait composition resolution.                              |
-| M27 | Three security rules never fire              | Investigation needed. Rules work for superglobal patterns — may need broader detection. |
-| L4  | Coupling health uses only CBO average        | Formula redesign: incorporate instability/distance into coupling health dimension.      |
-| L5  | No dependency list for high-CBO classes      | New feature: show which classes contribute to CBO count.                                |

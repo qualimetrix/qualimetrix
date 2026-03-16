@@ -14,6 +14,7 @@ use AiMessDetector\Analysis\Collection\Dependency\DependencyGraphBuilder;
 use AiMessDetector\Analysis\Collection\Metric\CompositeCollector;
 use AiMessDetector\Analysis\Discovery\FileDiscoveryInterface;
 use AiMessDetector\Analysis\Pipeline\AnalysisPipeline;
+use AiMessDetector\Analysis\Pipeline\MetricEnricher;
 use AiMessDetector\Analysis\Repository\DefaultMetricRepositoryFactory;
 use AiMessDetector\Analysis\Repository\InMemoryMetricRepository;
 use AiMessDetector\Analysis\RuleExecution\RuleExecutor;
@@ -321,13 +322,18 @@ final class AnalysisPipelineIntegrationTest extends TestCase
             },
         );
 
+        $metricEnricher = new MetricEnricher(
+            compositeCollector: new CompositeCollector([]),
+            globalCollectorRunner: new GlobalCollectorRunner([]),
+            configurationProvider: $this->configurationProvider,
+        );
+
         return new AnalysisPipeline(
             defaultDiscovery: $discovery,
             collectionOrchestrator: $orchestrator,
-            compositeCollector: new CompositeCollector([]),
             ruleExecutor: $ruleExecutor,
             configurationProvider: $this->configurationProvider,
-            globalCollectorRunner: new GlobalCollectorRunner([]),
+            metricEnricher: $metricEnricher,
             repositoryFactory: new DefaultMetricRepositoryFactory(),
         );
     }
@@ -365,13 +371,18 @@ final class AnalysisPipelineIntegrationTest extends TestCase
             },
         );
 
+        $metricEnricher = new MetricEnricher(
+            compositeCollector: $compositeCollector,
+            globalCollectorRunner: $globalCollectorRunner,
+            configurationProvider: $this->configurationProvider,
+        );
+
         return new AnalysisPipeline(
             defaultDiscovery: $discovery,
             collectionOrchestrator: $orchestrator,
-            compositeCollector: $compositeCollector,
             ruleExecutor: $ruleExecutor,
             configurationProvider: $this->configurationProvider,
-            globalCollectorRunner: $globalCollectorRunner,
+            metricEnricher: $metricEnricher,
             repositoryFactory: new DefaultMetricRepositoryFactory(),
         );
     }

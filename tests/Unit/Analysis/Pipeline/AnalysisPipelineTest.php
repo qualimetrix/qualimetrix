@@ -11,6 +11,7 @@ use AiMessDetector\Analysis\Collection\CollectionResult;
 use AiMessDetector\Analysis\Collection\Metric\CompositeCollector;
 use AiMessDetector\Analysis\Discovery\FileDiscoveryInterface;
 use AiMessDetector\Analysis\Pipeline\AnalysisPipeline;
+use AiMessDetector\Analysis\Pipeline\MetricEnricher;
 use AiMessDetector\Analysis\Repository\DefaultMetricRepositoryFactory;
 use AiMessDetector\Analysis\RuleExecution\RuleExecutorInterface;
 use AiMessDetector\Configuration\AnalysisConfiguration;
@@ -277,15 +278,24 @@ final class AnalysisPipelineTest extends TestCase
         ?LoggerInterface $logger = null,
         ?ConfigurationProviderInterface $configurationProvider = null,
     ): AnalysisPipeline {
+        $resolvedConfigProvider = $configurationProvider ?? $this->configurationProvider;
+        $resolvedLogger = $logger ?? $this->logger;
+
+        $metricEnricher = new MetricEnricher(
+            compositeCollector: $this->compositeCollector,
+            globalCollectorRunner: $this->globalCollectorRunner,
+            configurationProvider: $resolvedConfigProvider,
+            logger: $resolvedLogger,
+        );
+
         return new AnalysisPipeline(
             defaultDiscovery: $defaultDiscovery ?? $this->defaultDiscovery,
             collectionOrchestrator: $collectionOrchestrator ?? $this->collectionOrchestrator,
-            compositeCollector: $this->compositeCollector,
             ruleExecutor: $ruleExecutor ?? $this->ruleExecutor,
-            configurationProvider: $configurationProvider ?? $this->configurationProvider,
-            globalCollectorRunner: $this->globalCollectorRunner,
+            configurationProvider: $resolvedConfigProvider,
+            metricEnricher: $metricEnricher,
             repositoryFactory: new DefaultMetricRepositoryFactory(),
-            logger: $logger ?? $this->logger,
+            logger: $resolvedLogger,
         );
     }
 }

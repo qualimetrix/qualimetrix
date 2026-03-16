@@ -1,6 +1,6 @@
 # AIMD Product Roadmap
 
-**Updated:** 2026-03-09
+**Updated:** 2026-03-16
 **Based on:** [Competitive analysis](COMPETITOR_COMPARISON.md), cross-ecosystem research (SonarQube, ESLint, Semgrep, NDepend, CodeScene, RuboCop, Ruff, ArchUnit)
 
 ---
@@ -230,32 +230,6 @@ After Phase 3, AIMD replaces: **phpmd + phpmetrics + phpcpd + deptrac** and offe
 **Target value proposition:** "One tool. 40x faster. Deeper metrics. Quality gates. Replaces five tools."
 
 ---
-
-## UX & Reporting Polish
-
-Items from product research (2026-03-15) that improve user experience:
-
-| Item                       | Priority | Effort | Description                                                                                                   |
-| -------------------------- | -------- | ------ | ------------------------------------------------------------------------------------------------------------- |
-| Tech debt normalization    | Medium   | Medium | Show debt per-1000-LOC or per-class ratio alongside raw totals ("65 days" feels inflated for large codebases) |
-| `--detail` truncation      | Medium   | Medium | Default limit (e.g. 200 violations) with warning, `--detail=all` for full output; 3800+ lines is overwhelming |
-| `--help-rules` subcommand  | Low      | Medium | Separate rule-specific options (~80) from core `--help`; important flags are currently buried                 |
-| `--top=N` CLI option       | Low      | Small  | Alias for `--format-opt top=N`; sugar for discoverability                                                     |
-| Typing dimension N/A label | Low      | Small  | Show "N/A" instead of hiding health dimension when no type coverage data exists                               |
-
-## Documentation Debt
-
-Items from product research (2026-03-15) Doc Holiday review:
-
-| Item                           | Priority | Effort | Description                                                                                         |
-| ------------------------------ | -------- | ------ | --------------------------------------------------------------------------------------------------- |
-| Quick Start tutorial           | High     | Medium | Add "first analysis" walkthrough section to quick-start guide                                       |
-| Format docs (`summary`/`html`) | High     | Small  | Document `summary` (default) and `html` formats; current docs say `text` is default                 |
-| Rules index missing entries    | Medium   | Medium | Add ~9 missing rules to website rules index (ClassRank, Constructor Over-injection, security rules) |
-| `--namespace`/`--class` docs   | Medium   | Small  | Document drill-down filters in website (currently CLI-only)                                         |
-| Configuration docs incomplete  | Medium   | Medium | Add `fail_on`, `only_rules`, `disabled_rules` YAML keys and ~7 CLI shortcut flags                   |
-| Security rules scope           | Low      | Small  | Clarify SQL/XSS/Command Injection detect superglobal usage only, not taint analysis                 |
-| Reporting README stale labels  | Low      | Small  | Update "Good" → "Acceptable" label references                                                       |
 
 ## Technical Debt
 

@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Reporting\Formatter;
+namespace AiMessDetector\Reporting\Formatter\Sarif;
 
 use AiMessDetector\Core\Violation\Location;
-use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
+use AiMessDetector\Reporting\Formatter\FormatterInterface;
 use AiMessDetector\Reporting\FormatterContext;
 use AiMessDetector\Reporting\GroupBy;
 use AiMessDetector\Reporting\Report;
@@ -21,27 +21,13 @@ final class SarifFormatter implements FormatterInterface
 {
     private const VERSION = '0.1.0';
     private const SCHEMA = 'https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json';
-    private const INFORMATION_URI = 'https://github.com/FractalizeR/php_ai_mess_detector';
-    private const DOCS_BASE_URI = 'https://aimd.dev/rules/';
-
-    /** @var array<string, string> Maps rule category prefix to its docs page path segment */
-    private const CATEGORY_DOCS_MAP = [
-        'complexity' => 'complexity/',
-        'coupling' => 'coupling/',
-        'cohesion' => 'cohesion/',
-        'design' => 'design/',
-        'maintainability' => 'maintainability/',
-        'size' => 'size/',
-        'code-smell' => 'code-smell/',
-        'architecture' => 'architecture/',
-        'security' => 'security/',
-        'duplication' => 'architecture/',
-        'computed' => 'maintainability/',
-    ];
+    public function __construct(
+        private readonly SarifRuleCollector $ruleCollector,
+    ) {}
 
     public function format(Report $report, FormatterContext $context): string
     {
-        $rules = $this->collectRules($report->violations);
+        $rules = $this->ruleCollector->collectRules($report->violations);
 
         // Build ruleIndex map: violationCode -> index in rules array
         $ruleIndexMap = [];
@@ -54,7 +40,7 @@ final class SarifFormatter implements FormatterInterface
                 'driver' => [
                     'name' => 'AI Mess Detector',
                     'version' => self::VERSION,
-                    'informationUri' => self::INFORMATION_URI,
+                    'informationUri' => SarifRuleCollector::INFORMATION_URI,
                     'rules' => $rules,
                 ],
             ],
@@ -90,111 +76,6 @@ final class SarifFormatter implements FormatterInterface
     }
 
     /**
-     * Collects unique rules from violations.
-     *
-     * @param list<Violation> $violations
-     *
-     * @return list<array{id: string, name: string, shortDescription: array{text: string}, defaultConfiguration: array{level: string}}>
-     */
-    private function collectRules(array $violations): array
-    {
-        // Collect unique violation codes with their max severity
-        /** @var array<string, array{ruleName: string, maxSeverity: Severity}> $violationCodes */
-        $violationCodes = [];
-
-        foreach ($violations as $violation) {
-            $code = $violation->violationCode;
-
-            if (!isset($violationCodes[$code])) {
-                $violationCodes[$code] = [
-                    'ruleName' => $violation->ruleName,
-                    'maxSeverity' => $violation->severity,
-                ];
-            } elseif ($violation->severity === Severity::Error) {
-                $violationCodes[$code]['maxSeverity'] = Severity::Error;
-            }
-        }
-
-        $rules = [];
-
-        foreach ($violationCodes as $code => $info) {
-            $rules[] = [
-                'id' => $code,
-                'name' => $this->formatRuleName($code),
-                'shortDescription' => [
-                    'text' => $this->getRuleDescription($code),
-                ],
-                'fullDescription' => [
-                    'text' => $this->getRuleDescription($code),
-                ],
-                'helpUri' => $this->getHelpUri($code),
-                'defaultConfiguration' => [
-                    'level' => $this->mapLevel($info['maxSeverity']),
-                ],
-            ];
-        }
-
-        return $rules;
-    }
-
-    /**
-     * Formats rule name from kebab-case to Title Case.
-     */
-    private function formatRuleName(string $ruleName): string
-    {
-        // Convert kebab-case and dot-separated names to words
-        $words = preg_split('/[-.]/', $ruleName) ?: [$ruleName];
-        $words = array_map('ucfirst', $words);
-
-        return implode(' ', $words);
-    }
-
-    /**
-     * Returns human-readable description for a rule.
-     */
-    private function getRuleDescription(string $ruleName): string
-    {
-        return match ($ruleName) {
-            'complexity.cyclomatic', 'complexity.cognitive', 'complexity.npath' => 'Code complexity exceeds threshold',
-            'complexity.wmc' => 'Weighted methods per class exceeds threshold',
-            'size.class-count', 'size.method-count', 'size.property-count', 'size.namespace-size' => 'Code size exceeds threshold',
-            'size.loc' => 'Lines of code exceeds threshold',
-            'size.long-parameter-list' => 'Too many parameters',
-            'maintainability.index' => 'Maintainability index below threshold',
-            'design.lcom' => 'Lack of cohesion of methods',
-            'design.inheritance', 'design.noc' => 'Inheritance structure issue',
-            'design.type-coverage' => 'Type coverage below threshold',
-            'coupling.cbo', 'coupling.instability', 'coupling.distance' => 'Coupling issue',
-            'architecture.circular-dependency' => 'Circular dependency detected',
-            'duplication.code-duplication' => 'Duplicated code block detected',
-            'code-smell.constructor-overinjection' => 'Constructor has too many dependencies',
-            'code-smell.data-class' => 'Data Class detected (high public surface, low complexity)',
-            'code-smell.god-class' => 'God Class detected (complex, large, low cohesion)',
-            'code-smell.unused-private' => 'Unused private member detected',
-            default => ucfirst(str_replace(['.', '-'], ' ', $ruleName)),
-        };
-    }
-
-    /**
-     * Returns the documentation URL for a rule, based on its category prefix.
-     *
-     * Maps known category prefixes (e.g. "complexity", "code-smell") to the
-     * corresponding page on the AIMD website. Falls back to the repository URL
-     * for unknown or user-defined rule names.
-     */
-    private function getHelpUri(string $ruleName): string
-    {
-        $dotPos = strpos($ruleName, '.');
-        $category = $dotPos !== false ? substr($ruleName, 0, $dotPos) : $ruleName;
-
-        if (isset(self::CATEGORY_DOCS_MAP[$category])) {
-            return self::DOCS_BASE_URI . self::CATEGORY_DOCS_MAP[$category];
-        }
-
-        return self::INFORMATION_URI;
-    }
-
-    /**
      * Formats violations as SARIF results.
      *
      * @param list<Violation> $violations
@@ -209,7 +90,7 @@ final class SarifFormatter implements FormatterInterface
                 $result = [
                     'ruleId' => $v->violationCode,
                     'ruleIndex' => $ruleIndexMap[$v->violationCode] ?? 0,
-                    'level' => $this->mapLevel($v->severity),
+                    'level' => $this->ruleCollector->mapLevel($v->severity),
                     'message' => ['text' => $v->message],
                     'partialFingerprints' => [
                         'primaryLocationLineHash' => $v->getFingerprint(),
@@ -263,11 +144,11 @@ final class SarifFormatter implements FormatterInterface
     }
 
     /**
-     * Maps internal severity to SARIF level.
+     * Builds a SARIF artifactLocation entry.
      *
-     * SARIF levels: error, warning, note, none
-     */
-    /**
+     * When a base path is configured, adds the uriBaseId reference so SARIF
+     * consumers can resolve paths relative to the repository root.
+     *
      * @return array<string, string>
      */
     private function buildArtifactLocation(string $uri, bool $hasBasePath): array
@@ -279,14 +160,6 @@ final class SarifFormatter implements FormatterInterface
         }
 
         return $location;
-    }
-
-    private function mapLevel(Severity $severity): string
-    {
-        return match ($severity) {
-            Severity::Error => 'error',
-            Severity::Warning => 'warning',
-        };
     }
 
     /**

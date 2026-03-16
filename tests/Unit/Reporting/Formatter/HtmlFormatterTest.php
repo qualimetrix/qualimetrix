@@ -6,7 +6,7 @@ namespace AiMessDetector\Tests\Unit\Reporting\Formatter;
 
 use AiMessDetector\Reporting\Debt\DebtCalculator;
 use AiMessDetector\Reporting\Debt\RemediationTimeRegistry;
-use AiMessDetector\Reporting\Formatter\HtmlFormatter;
+use AiMessDetector\Reporting\Formatter\Html\HtmlFormatter;
 use AiMessDetector\Reporting\FormatterContext;
 use AiMessDetector\Reporting\GroupBy;
 use AiMessDetector\Reporting\MetricHintProvider;

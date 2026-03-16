@@ -11,9 +11,12 @@ use AiMessDetector\Core\Violation\Violation;
 use AiMessDetector\Reporting\Debt\DebtCalculator;
 use AiMessDetector\Reporting\Debt\RemediationTimeRegistry;
 use AiMessDetector\Reporting\DecompositionItem;
-use AiMessDetector\Reporting\Formatter\JsonFormatter;
+use AiMessDetector\Reporting\Filter\ViolationFilter;
+use AiMessDetector\Reporting\Formatter\Json\JsonFormatter;
+use AiMessDetector\Reporting\Formatter\Json\JsonSanitizer;
 use AiMessDetector\Reporting\FormatterContext;
 use AiMessDetector\Reporting\GroupBy;
+use AiMessDetector\Reporting\Health\HealthScoreResolver;
 use AiMessDetector\Reporting\HealthScore;
 use AiMessDetector\Reporting\MetricHintProvider;
 use AiMessDetector\Reporting\NamespaceDrillDown;
@@ -33,7 +36,15 @@ final class JsonFormatterTest extends TestCase
     protected function setUp(): void
     {
         $hintProvider = new MetricHintProvider();
-        $this->formatter = new JsonFormatter(new DebtCalculator(new RemediationTimeRegistry()), new NamespaceDrillDown($hintProvider), new RemediationTimeRegistry());
+        $namespaceDrillDown = new NamespaceDrillDown($hintProvider);
+        $this->formatter = new JsonFormatter(
+            new DebtCalculator(new RemediationTimeRegistry()),
+            $namespaceDrillDown,
+            new RemediationTimeRegistry(),
+            new ViolationFilter(),
+            new HealthScoreResolver($namespaceDrillDown),
+            new JsonSanitizer(),
+        );
     }
 
     public function testGetNameReturnsJson(): void
