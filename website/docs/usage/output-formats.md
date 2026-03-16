@@ -177,7 +177,7 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
             "rule": "complexity.cyclomatic",
             "code": "complexity.cyclomatic.method",
             "severity": "error",
-            "message": "Cyclomatic complexity: 15 (max 10) — too many code paths",
+            "message": "Cyclomatic complexity: 15 (threshold: 10) — too many code paths",
             "recommendation": null,
             "metricValue": 15,
             "threshold": 10,

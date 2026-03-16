@@ -19,7 +19,7 @@ The default CLI output was a flat list of violations in GCC-style format — no 
 
 4. **`MetricHintProvider` as single source of truth** — centralizes labels, directions, good values, explanations, ranges, and health decomposition data. Used by SummaryFormatter, SummaryEnricher, HtmlFormatter, and JS (via embedded JSON). Two label sets: short (`METRICS`) for compact text, long (`HTML_LABELS`) for HTML report.
 
-5. **Dual violation messages** — `humanMessage` ("Cyclomatic complexity: 15 (max 10) — too many code paths") for summary/detail/JSON, `message` (existing format) for text/checkstyle/sarif/gitlab/github. GitLab fingerprint stability preserved.
+5. **Dual violation messages** — `humanMessage` ("Cyclomatic complexity: 15 (threshold: 10) — too many code paths") for summary/detail/JSON, `message` (existing format) for text/checkstyle/sarif/gitlab/github. GitLab fingerprint stability preserved.
 
 6. **JSON redesign** — summary-oriented structure with health scores, worst offenders, decomposition. Top-50 violations by default (`--format-opt=violations=all|0|N`). No longer PHPMD-compatible.
 
