@@ -40,6 +40,16 @@ exclude:
   - tests/Fixtures/
 ```
 
+### Include Generated
+
+By default, files with a `@generated` annotation in the first 2 KB are automatically skipped from analysis. To include them:
+
+```yaml
+include_generated: true
+```
+
+Equivalent CLI: `--include-generated`
+
 ### Exclude Paths
 
 Glob patterns for suppressing violations. Unlike `exclude`, these files **are still analyzed** (their metrics are collected), but violations are not reported. This is useful for generated code, simple data classes, or entity files where complexity rules don't make sense:
@@ -147,6 +157,8 @@ exclude:
 exclude_paths:
   - src/Entity/*
   - src/DTO/*
+
+include_generated: false
 
 format: summary
 fail_on: error

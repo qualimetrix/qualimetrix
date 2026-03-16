@@ -739,6 +739,7 @@ The rule is smart about edge cases:
 - **Anonymous classes:** private members in anonymous classes are isolated and don't leak to the parent class
 - **Excluded types:** interfaces, traits, and enums are not analyzed
 - **Access patterns:** recognizes `$this->method()`, `self::method()`, `static::method()`, property access, and constant access
+- **Trait resolution:** calls to methods defined in traits used by the same class (in the same file) are recognized, reducing false positives
 
 ### Example
 

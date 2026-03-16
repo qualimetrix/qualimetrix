@@ -42,6 +42,20 @@ Exclude directories from analysis. Can be repeated:
 bin/aimd check src/ --exclude=src/Generated --exclude=src/Legacy
 ```
 
+### `--include-generated`
+
+By default, AIMD automatically skips files that contain a `@generated` annotation in the first 2 KB. This flag overrides that behavior and includes generated files in the analysis:
+
+```bash
+bin/aimd check src/ --include-generated
+```
+
+Can also be set in `aimd.yaml`:
+
+```yaml
+include_generated: true
+```
+
 ### `--exclude-path`
 
 Suppress violations for files matching a glob pattern. The files are still analyzed (their metrics contribute to namespace-level calculations), but violations are not reported. Can be repeated:
@@ -544,6 +558,9 @@ Export the dependency graph for visualization:
 # Export as DOT (default)
 bin/aimd graph:export src/ -o graph.dot
 
+# Export as JSON (aggregated adjacency list with metadata)
+bin/aimd graph:export src/ --format=json -o graph.json
+
 # Export as Mermaid
 bin/aimd graph:export src/ --format=mermaid -o graph.md
 
@@ -563,7 +580,7 @@ bin/aimd graph:export src/ --no-clusters
 | Option                   | Description                                             |
 | ------------------------ | ------------------------------------------------------- |
 | `-o`, `--output=FILE`    | Output file (default: stdout)                           |
-| `-f`, `--format=FORMAT`  | `dot` (default) or `mermaid`                            |
+| `-f`, `--format=FORMAT`  | `dot` (default), `json`, or `mermaid`                   |
 | `-d`, `--direction=DIR`  | Graph direction: `LR`, `TB`, `RL`, `BT` (default: `LR`) |
 | `--no-clusters`          | Do not group nodes by namespace                         |
 | `--namespace=NS`         | Include only these namespaces (repeatable)              |

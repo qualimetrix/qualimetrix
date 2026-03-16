@@ -42,6 +42,20 @@ bin/aimd check src/ --config=aimd.yaml
 bin/aimd check src/ --exclude=src/Generated --exclude=src/Legacy
 ```
 
+### `--include-generated`
+
+По умолчанию AIMD автоматически пропускает файлы, содержащие аннотацию `@generated` в первых 2 КБ. Этот флаг переопределяет это поведение и включает сгенерированные файлы в анализ:
+
+```bash
+bin/aimd check src/ --include-generated
+```
+
+Также можно задать в `aimd.yaml`:
+
+```yaml
+include_generated: true
+```
+
 ### `--exclude-path`
 
 Подавить нарушения для файлов, соответствующих glob-паттерну. Файлы по-прежнему анализируются (их метрики учитываются при расчёте метрик пространства имён), но нарушения не выводятся. Можно указывать несколько раз:
@@ -544,6 +558,9 @@ bin/aimd baseline:cleanup baseline.json
 # Экспорт в формате DOT (по умолчанию)
 bin/aimd graph:export src/ -o graph.dot
 
+# Экспорт в формате JSON (агрегированный список смежности с метаданными)
+bin/aimd graph:export src/ --format=json -o graph.json
+
 # Экспорт в формате Mermaid
 bin/aimd graph:export src/ --format=mermaid -o graph.md
 
@@ -563,7 +580,7 @@ bin/aimd graph:export src/ --no-clusters
 | Опция                    | Описание                                                       |
 | ------------------------ | -------------------------------------------------------------- |
 | `-o`, `--output=FILE`    | Выходной файл (по умолчанию: stdout)                           |
-| `-f`, `--format=FORMAT`  | `dot` (по умолчанию) или `mermaid`                             |
+| `-f`, `--format=FORMAT`  | `dot` (по умолчанию), `json` или `mermaid`                     |
 | `-d`, `--direction=DIR`  | Направление графа: `LR`, `TB`, `RL`, `BT` (по умолчанию: `LR`) |
 | `--no-clusters`          | Не группировать узлы по пространствам имён                     |
 | `--namespace=NS`         | Включить только указанные пространства имён (можно повторять)  |
