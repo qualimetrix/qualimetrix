@@ -26,14 +26,16 @@ final class OutputHelper
      */
     public static function write(OutputInterface $output, string $content): void
     {
-        // For small output or non-TTY (pipes), write directly
-        if (\strlen($content) <= 4096 || !self::isTty($output)) {
+        // For non-TTY (pipes, files), write directly — no truncation risk
+        if (!self::isTty($output)) {
             $output->write($content);
 
             return;
         }
 
-        // For large TTY output, write line by line to avoid PTY buffer truncation
+        // For TTY output, write line by line to avoid PTY buffer truncation
+        // on macOS where the terminal cannot consume data fast enough
+        // before the process exits (regardless of output size)
         $lines = explode("\n", $content);
         $last = array_key_last($lines);
 
