@@ -72,6 +72,8 @@ plugins:
             Other CI Systems: Другие CI системы
             Reference: Справочник
             Default Thresholds: Пороговые значения
+            Guides: Руководства
+            Architecture Investigation: Исследование архитектуры
 
 markdown_extensions:
   - admonition
@@ -114,6 +116,8 @@ nav:
       - Duplication: rules/duplication.md
       - Code Smells: rules/code-smell.md
       - Security: rules/security.md
+  - Guides:
+      - Architecture Investigation: guides/architecture-investigation.md
   - CI/CD Integration:
       - GitHub Actions: ci-cd/github-actions.md
       - Other CI Systems: ci-cd/other-ci.md

@@ -632,14 +632,14 @@ Checks computed health metrics against thresholds. Evaluates derived metrics def
 
 **Built-in health scores (inverted — higher is better, 0-100):**
 
-| Metric                   | Default Warning | Default Error | Components                          |
-| ------------------------ | --------------- | ------------- | ----------------------------------- |
-| `health.complexity`      | 50              | 25            | CCN + Cognitive Complexity          |
-| `health.cohesion`        | 50              | 25            | TCC + LCOM                          |
-| `health.coupling`        | 50              | 25            | CBO + Distance from Main Sequence   |
-| `health.typing`          | 80              | 50            | Type Coverage Percentage            |
-| `health.maintainability` | 65              | 50            | Maintainability Index (passthrough) |
-| `health.overall`         | 50              | 30            | Weighted average of 5 sub-scores    |
+| Metric                   | Default Warning | Default Error | Components                        |
+| ------------------------ | --------------- | ------------- | --------------------------------- |
+| `health.complexity`      | 50              | 25            | CCN + Cognitive Complexity        |
+| `health.cohesion`        | 50              | 25            | TCC + LCOM                        |
+| `health.coupling`        | 50              | 25            | CBO + Distance from Main Sequence |
+| `health.typing`          | 80              | 50            | Type Coverage Percentage          |
+| `health.maintainability` | 50              | 25            | Maintainability Index (stretched) |
+| `health.overall`         | 50              | 30            | Weighted average of 5 sub-scores  |
 
 All health scores are computed at class, namespace, and project levels with per-level formulas.
 

@@ -35,7 +35,7 @@ Health ████████████████████░░░░�
   Cohesion        ████████████░░░░░░░░░░░░░░░░░░ 42.3% Weak
   Coupling        █████████████████░░░░░░░░░░░░░ 55.8% Acceptable
   Typing          ████████████████████████████░░ 92.0% Strong
-  Maintainability ████████████████████░░░░░░░░░░ 64.5% Acceptable
+  Maintainability ████████████████████░░░░░░░░░░ 64.5% Good
 
 Worst namespaces
   38 App\Service (12 classes, 28 violations) — low cohesion, high coupling
@@ -46,7 +46,7 @@ Worst namespaces
 Hints: --detail to see violations (top 200) | --namespace='App\Service' to drill down | --format=html -o report.html for full report
 ```
 
-Each category gets a label: **Strong** (good), **Acceptable** (room for improvement), **Weak** (needs attention), or **Critical** (action required). The "Worst namespaces" section highlights where to focus first.
+Each category gets a label: **Strong** (excellent), **Good** (solid), **Acceptable** (room for improvement), **Weak** (needs attention), or **Critical** (action required). The "Worst namespaces" section highlights where to focus first.
 
 ### Drill down into a namespace
 

@@ -110,6 +110,18 @@ fail_on: error    # Завершение с ошибкой только при e
 # fail_on: none     # Никогда не завершаться с ошибкой из-за нарушений
 ```
 
+### Исключение измерений здоровья (exclude_health)
+
+Исключить конкретные измерения здоровья из оценки. Исключённые измерения не отображаются в сводке здоровья и не влияют на общую оценку:
+
+```yaml
+exclude_health:
+  - typing
+  - maintainability
+```
+
+Эквивалент в CLI: `--exclude-health=typing --exclude-health=maintainability`
+
 ### Формат вывода (format)
 
 Формат отчёта по умолчанию:
@@ -138,6 +150,9 @@ exclude_paths:
 
 format: summary
 fail_on: error
+
+exclude_health:
+  - typing
 
 disabled_rules:
   - code-smell.boolean-argument

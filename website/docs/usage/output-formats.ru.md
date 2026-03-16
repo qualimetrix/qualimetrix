@@ -30,7 +30,7 @@ AI Mess Detector — 45 files analyzed, 1.23s
   Cohesion       ██████████████░░░░░░  68 Acceptable
   Coupling       ████████████░░░░░░░░  59 Acceptable
   Typing         ██████████████████░░  88 Strong
-  Maintainability████████████████░░░░  80 Strong
+  Maintainability████████████████░░░░  80 Good
   Overall        ██████████████░░░░░░  72 Acceptable
 
 Worst namespaces:
@@ -194,6 +194,19 @@ src/Repository/OrderRepository.php:15: error[coupling.cbo.class]: CBO is 18, max
         }
     }
 }
+```
+
+**Опции:**
+
+```bash
+# Управление лимитом нарушений (по умолчанию: 50)
+bin/aimd check src/ --format=json --format-opt=limit=100
+
+# Показать все нарушения (без лимита)
+bin/aimd check src/ --format=json --format-opt=violations=all
+
+# Управление количеством худших нарушителей (по умолчанию: 10)
+bin/aimd check src/ --format=json --format-opt=top=20
 ```
 
 **Использование в CI:**

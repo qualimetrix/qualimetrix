@@ -85,6 +85,19 @@ bin/aimd check src/ --format=text-verbose --group-by=rule
 bin/aimd check src/ --format-opt=key=value
 ```
 
+**Опции формата JSON:**
+
+| Опция               | По умолчанию | Описание                                |
+| ------------------- | ------------ | --------------------------------------- |
+| `violations=N\|all` | 50           | Макс. кол-во нарушений в выводе (0=нет) |
+| `limit=N`           | 50           | Псевдоним для `violations`              |
+| `top=N`             | 10           | Количество худших нарушителей           |
+
+```bash
+bin/aimd check src/ --format=json --format-opt=limit=100
+bin/aimd check src/ --format=json --format-opt=violations=all
+```
+
 ### `--fail-on`
 
 Минимальный уровень нарушения, при котором возвращается ненулевой код выхода. По умолчанию: любой уровень вызывает ошибку.
@@ -103,6 +116,27 @@ bin/aimd check src/ --fail-on=warning
 
 ```yaml
 fail_on: error
+```
+
+### `--exclude-health`
+
+Исключить конкретные измерения здоровья из оценки. Исключённые измерения не отображаются в сводке здоровья и не влияют на общую оценку. Можно указывать несколько раз:
+
+```bash
+# Исключить типизацию из оценки здоровья
+bin/aimd check src/ --exclude-health=typing
+
+# Исключить несколько измерений
+bin/aimd check src/ --exclude-health=typing --exclude-health=maintainability
+```
+
+Доступные измерения: `complexity`, `cohesion`, `coupling`, `typing`, `maintainability`.
+
+Также можно задать в `aimd.yaml`:
+
+```yaml
+exclude_health:
+  - typing
 ```
 
 ### `--detail`

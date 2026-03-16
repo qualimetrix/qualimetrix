@@ -146,6 +146,8 @@ The raw MI value (0-171 scale) is normalized to a **0-100 scale**: `max(0, MI x 
 
 **Scope:** MI is calculated per method, then aggregated to class/namespace/project level using average and minimum values.
 
+**Health score mapping:** The `health.maintainability` dimension stretches the MI natural range (typically 70--85 for normal code) into a wider health range. The formula `clamp((MI_avg - 40) x 1.667, 0, 100)` maps MI=40 to health 0 and MI=100 to health 100, producing more differentiated health scores.
+
 !!! note "LOC input"
     AIMD uses LLOC (logical lines -- the number of statements) for the MI formula, which aligns with the original Oman-Hagemeister paper. Some tools use physical LOC (including blank lines and comments) or ELOC (executable lines), which produces different results. LLOC gives the most stable and meaningful values because it is not affected by formatting or comment density.
 

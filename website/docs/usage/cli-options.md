@@ -85,6 +85,19 @@ Pass formatter-specific options as key=value pairs. Can be repeated:
 bin/aimd check src/ --format-opt=key=value
 ```
 
+**JSON format options:**
+
+| Option              | Default | Description                          |
+| ------------------- | ------- | ------------------------------------ |
+| `violations=N\|all` | 50      | Max violations in output (0=none)    |
+| `limit=N`           | 50      | Alias for `violations`               |
+| `top=N`             | 10      | Number of worst offenders to include |
+
+```bash
+bin/aimd check src/ --format=json --format-opt=limit=100
+bin/aimd check src/ --format=json --format-opt=violations=all
+```
+
 ### `--fail-on`
 
 Set the minimum severity that causes a non-zero exit code. Default: all severities cause failure.
@@ -103,6 +116,27 @@ Can also be set in `aimd.yaml`:
 
 ```yaml
 fail_on: error
+```
+
+### `--exclude-health`
+
+Exclude specific health dimensions from scoring. The excluded dimensions are not shown in the health summary and do not contribute to the overall score. Can be repeated:
+
+```bash
+# Exclude typing from health scoring
+bin/aimd check src/ --exclude-health=typing
+
+# Exclude multiple dimensions
+bin/aimd check src/ --exclude-health=typing --exclude-health=maintainability
+```
+
+Available dimensions: `complexity`, `cohesion`, `coupling`, `typing`, `maintainability`.
+
+Can also be set in `aimd.yaml`:
+
+```yaml
+exclude_health:
+  - typing
 ```
 
 ### `--detail`
