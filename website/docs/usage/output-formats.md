@@ -30,7 +30,7 @@ AI Mess Detector — 45 files analyzed, 1.23s
   Cohesion       ██████████████░░░░░░  68 Acceptable
   Coupling       ████████████░░░░░░░░  59 Acceptable
   Typing         ██████████████████░░  88 Strong
-  Maintainability████████████████░░░░  80 Strong
+  Maintainability████████████████░░░░  80 Good
   Overall        ██████████████░░░░░░  72 Acceptable
 
 Worst namespaces:
@@ -194,6 +194,19 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
         }
     }
 }
+```
+
+**Options:**
+
+```bash
+# Control violation limit (default: 50)
+bin/aimd check src/ --format=json --format-opt=limit=100
+
+# Show all violations (no limit)
+bin/aimd check src/ --format=json --format-opt=violations=all
+
+# Control number of worst offenders (default: 10)
+bin/aimd check src/ --format=json --format-opt=top=20
 ```
 
 **CI usage:**

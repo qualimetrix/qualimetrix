@@ -371,6 +371,8 @@ AIMD uses the standard PageRank algorithm with the following parameters:
 
 Ranks are normalized so they sum to 1.0 across all project classes. Vendor classes are excluded from the graph. Isolated classes (no incoming or outgoing dependencies) receive the base rank of `(1 - d) / N`, where `d` is the damping factor and `N` is the total number of classes.
 
+**Sqrt scaling for project size:** Because ranks sum to 1.0, individual ClassRank values naturally decrease as the number of classes grows (dilution effect). To keep thresholds meaningful across different project sizes, AIMD applies a `sqrt(classCount / 100)` scaling factor: thresholds remain unchanged for a 100-class project, loosen for larger projects, and tighten for smaller ones.
+
 ### Configuration
 
 ```yaml

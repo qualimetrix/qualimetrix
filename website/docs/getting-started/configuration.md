@@ -110,6 +110,18 @@ fail_on: error    # Only fail on errors (warnings exit 0)
 # fail_on: none     # Never fail on violations
 ```
 
+### Exclude Health
+
+Exclude specific health dimensions from scoring. The excluded dimensions are not shown in the health summary and do not contribute to the overall score:
+
+```yaml
+exclude_health:
+  - typing
+  - maintainability
+```
+
+Equivalent CLI: `--exclude-health=typing --exclude-health=maintainability`
+
 ### Format
 
 Set the default output format:
@@ -138,6 +150,9 @@ exclude_paths:
 
 format: summary
 fail_on: error
+
+exclude_health:
+  - typing
 
 disabled_rules:
   - code-smell.boolean-argument

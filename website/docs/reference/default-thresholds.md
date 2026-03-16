@@ -74,7 +74,7 @@ Rules that check how tightly classes and namespaces are connected to each other.
 
 **Distance from the Main Sequence** measures how well a namespace balances abstractness and stability. A distance close to 0 is ideal.
 
-**ClassRank** uses the PageRank algorithm on the dependency graph to identify the most critical classes. Ranks sum to 1.0 across the project; a high rank means many (or important) classes depend on it.
+**ClassRank** uses the PageRank algorithm on the dependency graph to identify the most critical classes. Ranks sum to 1.0 across the project; a high rank means many (or important) classes depend on it. Thresholds are automatically adjusted by project size using sqrt scaling (calibrated for 100 classes).
 
 ## Maintainability Rules
 
