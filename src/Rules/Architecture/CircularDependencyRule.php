@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Rules\Architecture;
 
+use AiMessDetector\Core\Dependency\CycleInterface;
 use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\RuleCategory;
 use AiMessDetector\Core\Violation\Location;
@@ -75,22 +76,75 @@ final class CircularDependencyRule extends AbstractRule
                 continue; // Empty cycle
             }
 
+            $category = $cycle->getSizeCategory();
+            $size = $cycle->getSize();
+
+            // Truncate path display for large cycles
+            $pathDisplay = $category === 'large'
+                ? $cycle->toTruncatedShortString(5)
+                : $cycle->toShortString();
+
+            $message = \sprintf(
+                'Circular dependency (%d classes): %s',
+                $size,
+                $pathDisplay,
+            );
+
+            $recommendation = $this->buildRecommendation($cycle, $category);
+
             $violations[] = new Violation(
                 location: Location::none(),
                 symbolPath: $firstClass,
                 ruleName: $this->getName(),
                 violationCode: self::NAME,
-                message: \sprintf(
-                    'Circular dependency (%d classes): %s. Break the cycle by introducing interfaces or restructuring',
-                    $cycle->getSize(),
-                    $cycle->toShortString(),
-                ),
+                message: $message,
                 severity: $severity,
-                metricValue: $cycle->getSize(),
+                metricValue: $size,
+                recommendation: $recommendation,
             );
         }
 
         return $violations;
+    }
+
+    /**
+     * Builds an actionable recommendation based on cycle size category.
+     *
+     * For small/medium cycles, provides specific guidance.
+     * For large cycles, emphasizes that the cycle is too large to fix at once
+     * and suggests focusing on entry-point classes.
+     *
+     * Includes structured cycle data (JSON) for AI agent consumption.
+     *
+     * @param 'small'|'medium'|'large' $category
+     */
+    private function buildRecommendation(
+        CycleInterface $cycle,
+        string $category,
+    ): string {
+        $structuredData = $cycle->toStructuredData();
+        $jsonData = json_encode($structuredData, \JSON_UNESCAPED_SLASHES);
+
+        $guidance = match ($category) {
+            'small' => \sprintf(
+                'Cycle path: %s (%d classes). Break by introducing an interface to invert one dependency.',
+                $cycle->toShortString(),
+                $cycle->getSize(),
+            ),
+            'medium' => \sprintf(
+                'Cycle path: %s (%d classes). Consider extracting a shared abstraction layer or splitting into smaller modules.',
+                $cycle->toShortString(),
+                $cycle->getSize(),
+            ),
+            'large' => \sprintf(
+                'Large cycle (%d classes) — focus on the entry-point classes: %s. '
+                . 'Break the cycle incrementally by introducing interfaces at key boundaries.',
+                $cycle->getSize(),
+                $cycle->toTruncatedShortString(3),
+            ),
+        };
+
+        return $guidance . "\n" . 'Cycle data: ' . $jsonData;
     }
 
     /**

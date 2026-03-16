@@ -69,6 +69,14 @@ final class TccLccCollector extends AbstractCollector implements ClassMetricsPro
         \assert($this->visitor instanceof TccLccVisitor);
 
         foreach ($this->visitor->getClassData() as $classFqn => $classData) {
+            // Skip classes with fewer than 2 public instance methods — TCC/LCC is not
+            // meaningful for them. This covers all-static utility classes, empty classes,
+            // single-method classes, and classes with only constructors/destructors.
+            // The health formula handles missing TCC via null-coalescing (tcc ?? 0.5).
+            if (\count($classData->getMethods()) < 2) {
+                continue;
+            }
+
             $tcc = $classData->calculateTcc();
             $lcc = $classData->calculateLcc();
 
@@ -90,6 +98,11 @@ final class TccLccCollector extends AbstractCollector implements ClassMetricsPro
         $result = [];
 
         foreach ($this->visitor->getClassData() as $classData) {
+            // Skip classes with fewer than 2 public instance methods (see collect() comment)
+            if (\count($classData->getMethods()) < 2) {
+                continue;
+            }
+
             $tcc = round($classData->calculateTcc(), 3);
             $lcc = round($classData->calculateLcc(), 3);
 

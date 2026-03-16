@@ -29,8 +29,8 @@ final class ComputedMetricDefaults
             'health.cohesion' => new ComputedMetricDefinition(
                 name: 'health.cohesion',
                 formulas: [
-                    'class' => 'clamp((tcc ?? 0) * 50 + (1 - clamp(((lcom ?? 0) - 1) / 5, 0, 1)) * 50, 0, 100)',
-                    'namespace' => 'clamp((tcc__avg ?? 0) * 50 + (1 - clamp(((lcom__avg ?? 0) - 1) / 5, 0, 1)) * 50, 0, 100)',
+                    'class' => 'clamp(((methodCount ?? 0) < 6 ? (tcc ?? 0.5) : (tcc ?? 0)) * 50 + (1 - clamp(((lcom ?? 0) - 1) / 5, 0, 1)) * 50, 0, 100)',
+                    'namespace' => 'clamp((tcc__avg ?? 0.5) * 50 + (1 - clamp(((lcom__avg ?? 0) - 1) / 5, 0, 1)) * 50, 0, 100)',
                 ],
                 description: 'Cohesion health score (0-100, higher is better)',
                 levels: [SymbolType::Class_, SymbolType::Namespace_, SymbolType::Project],
@@ -66,14 +66,16 @@ final class ComputedMetricDefaults
             'health.maintainability' => new ComputedMetricDefinition(
                 name: 'health.maintainability',
                 formulas: [
-                    'class' => 'clamp(mi__avg ?? 0, 0, 100)',
-                    'namespace' => 'clamp(mi__avg ?? 0, 0, 100)',
+                    // Stretch MI natural range (70-85) into wider health range (50-75).
+                    // Maps: MI=40→0, MI=100→100. Formula: (MI - 40) * 1.667
+                    'class' => 'clamp(((mi__avg ?? 75) - 40) * 1.667, 0, 100)',
+                    'namespace' => 'clamp(((mi__avg ?? 75) - 40) * 1.667, 0, 100)',
                 ],
                 description: 'Maintainability health score (0-100, higher is better)',
                 levels: [SymbolType::Class_, SymbolType::Namespace_, SymbolType::Project],
                 inverted: true,
-                warningThreshold: 65.0,
-                errorThreshold: 50.0,
+                warningThreshold: 50.0,
+                errorThreshold: 25.0,
             ),
             'health.overall' => new ComputedMetricDefinition(
                 name: 'health.overall',

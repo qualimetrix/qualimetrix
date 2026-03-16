@@ -42,4 +42,25 @@ interface CycleInterface
      * Returns short representation with only class names (without namespaces).
      */
     public function toShortString(): string;
+
+    /**
+     * Returns a truncated short string showing at most $maxEntries classes.
+     *
+     * For cycles larger than $maxEntries, shows the first classes plus "... (N more)".
+     */
+    public function toTruncatedShortString(int $maxEntries = 5): string;
+
+    /**
+     * Returns the cycle size category: 'small' (2-5), 'medium' (6-20), 'large' (21+).
+     *
+     * @return 'small'|'medium'|'large'
+     */
+    public function getSizeCategory(): string;
+
+    /**
+     * Returns the cycle as structured data for JSON consumers.
+     *
+     * @return array{cycle: list<string>, length: int, category: string}
+     */
+    public function toStructuredData(): array;
 }

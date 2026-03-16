@@ -88,12 +88,14 @@ final class SummaryEnricherTest extends TestCase
         self::assertArrayHasKey('cohesion', $result->healthScores);
         self::assertArrayHasKey('overall', $result->healthScores);
 
-        // Complexity is 65 > warning 50, so "Acceptable" label and no decomposition
+        // Complexity is 65 > warning 50, so "Acceptable" label; decomposition always present
         $complexity = $result->healthScores['complexity'];
         self::assertSame('complexity', $complexity->name);
         self::assertSame(65.0, $complexity->score);
         self::assertSame('Acceptable', $complexity->label);
-        self::assertSame([], $complexity->decomposition);
+        self::assertCount(2, $complexity->decomposition);
+        self::assertSame('ccn.avg', $complexity->decomposition[0]->metricKey);
+        self::assertSame('cognitive.avg', $complexity->decomposition[1]->metricKey);
 
         // Cohesion is 45 <= warning 50, so "Weak" and has decomposition
         $cohesion = $result->healthScores['cohesion'];
@@ -104,9 +106,9 @@ final class SummaryEnricherTest extends TestCase
         self::assertSame(0.15, $cohesion->decomposition[0]->value);
         self::assertSame('lcom.avg', $cohesion->decomposition[1]->metricKey);
 
-        // Maintainability is 58 <= warning 65, so "Weak"
+        // Maintainability is 58 > warning 50 (stretched formula), so "Acceptable"
         $maintainability = $result->healthScores['maintainability'];
-        self::assertSame('Weak', $maintainability->label);
+        self::assertSame('Acceptable', $maintainability->label);
     }
 
     public function testEnrichesWithTechDebt(): void

@@ -110,6 +110,50 @@ final class DebtCalculatorTest extends TestCase
         self::assertSame(['architecture.circular-dependency' => 120], $summary->perRule);
     }
 
+    public function testScaledDebtForViolationWithMetricAndThreshold(): void
+    {
+        // CCN=50, threshold=20: ratio=2.5, ln(2.5)=0.916, max(1, 0.916)=1 → 30*1=30
+        $violation = new Violation(
+            location: new Location('src/Foo.php', 1),
+            symbolPath: SymbolPath::forClass('App', 'TestClass'),
+            ruleName: 'complexity.cyclomatic',
+            violationCode: 'complexity.cyclomatic',
+            message: 'Test violation',
+            severity: Severity::Warning,
+            metricValue: 50,
+            threshold: 20,
+        );
+
+        $summary = $this->calculator->calculate([$violation]);
+
+        self::assertSame(30, $summary->totalMinutes);
+        self::assertSame(['src/Foo.php' => 30], $summary->perFile);
+        self::assertSame(['complexity.cyclomatic' => 30], $summary->perRule);
+    }
+
+    public function testMixedScaledAndFlatDebt(): void
+    {
+        $violations = [
+            // With metric data: ratio=2.5, max(1, ln(2.5))=1 → 30*1=30
+            new Violation(
+                location: new Location('src/Foo.php', 1),
+                symbolPath: SymbolPath::forClass('App', 'TestClass'),
+                ruleName: 'complexity.cyclomatic',
+                violationCode: 'complexity.cyclomatic',
+                message: 'Test',
+                severity: Severity::Warning,
+                metricValue: 50,
+                threshold: 20,
+            ),
+            // Without metric data: flat 5
+            $this->createViolation('src/Bar.php', 'code-smell.debug-code'),
+        ];
+
+        $summary = $this->calculator->calculate($violations);
+
+        self::assertSame(35, $summary->totalMinutes); // 30 (scaled) + 5 (flat)
+    }
+
     private function createViolation(string $file, string $ruleName): Violation
     {
         return new Violation(

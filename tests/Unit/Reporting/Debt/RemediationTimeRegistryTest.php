@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Tests\Unit\Reporting\Debt;
 
+use AiMessDetector\Core\Symbol\SymbolPath;
+use AiMessDetector\Core\Violation\Location;
+use AiMessDetector\Core\Violation\Severity;
+use AiMessDetector\Core\Violation\Violation;
 use AiMessDetector\Reporting\Debt\RemediationTimeRegistry;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -60,18 +64,161 @@ final class RemediationTimeRegistryTest extends TestCase
     }
 
     #[DataProvider('knownRulesProvider')]
-    public function testKnownRuleReturnsCorrectMinutes(string $ruleName, int $expectedMinutes): void
+    public function testKnownRuleReturnsCorrectBaseMinutes(string $ruleName, int $expectedMinutes): void
     {
-        self::assertSame($expectedMinutes, $this->registry->getMinutes($ruleName));
+        self::assertSame($expectedMinutes, $this->registry->getBaseMinutes($ruleName));
     }
 
     public function testUnknownRuleReturnsDefault(): void
     {
-        self::assertSame(15, $this->registry->getMinutes('unknown.rule'));
+        self::assertSame(15, $this->registry->getBaseMinutes('unknown.rule'));
     }
 
     public function testAnotherUnknownRuleReturnsDefault(): void
     {
-        self::assertSame(15, $this->registry->getMinutes('custom.my-rule'));
+        self::assertSame(15, $this->registry->getBaseMinutes('custom.my-rule'));
+    }
+
+    public function testViolationWithoutMetricValueUsesBaseMinutes(): void
+    {
+        $violation = $this->createViolation('complexity.cyclomatic');
+
+        self::assertSame(30, $this->registry->getMinutesForViolation($violation));
+    }
+
+    public function testViolationWithoutThresholdUsesBaseMinutes(): void
+    {
+        $violation = $this->createViolation('complexity.cyclomatic', metricValue: 25);
+
+        self::assertSame(30, $this->registry->getMinutesForViolation($violation));
+    }
+
+    public function testMinorOvershootGetsBaseDebt(): void
+    {
+        // CCN=21, threshold=20: ln(1.05)=0.049 < 1 → base * max(1, 0.049) = 30 * 1 = 30
+        $violation = $this->createViolation('complexity.cyclomatic', metricValue: 21, threshold: 20);
+
+        $minutes = $this->registry->getMinutesForViolation($violation);
+
+        self::assertSame(30, $minutes);
+    }
+
+    public function testModerateOvershootGetsBaseDebt(): void
+    {
+        // CCN=50, threshold=20: ln(2.5)=0.916 < 1 → base * max(1, 0.916) = 30 * 1 = 30
+        $violation = $this->createViolation('complexity.cyclomatic', metricValue: 50, threshold: 20);
+
+        $minutes = $this->registry->getMinutesForViolation($violation);
+
+        self::assertSame(30, $minutes);
+    }
+
+    public function testLargeOvershootScalesAboveBase(): void
+    {
+        // CCN=60, threshold=20: ln(3.0)=1.099 > 1 → 30 * 1.099 ≈ 33
+        $violation = $this->createViolation('complexity.cyclomatic', metricValue: 60, threshold: 20);
+
+        $minutes = $this->registry->getMinutesForViolation($violation);
+
+        self::assertSame(33, $minutes);
+    }
+
+    public function testExtremeOvershootGivesLargeDebt(): void
+    {
+        // NPath=1000000, threshold=200: ln(5000)=8.517 → 30 * 8.517 ≈ 256
+        $violation = $this->createViolation('complexity.npath', metricValue: 1000000, threshold: 200);
+
+        $minutes = $this->registry->getMinutesForViolation($violation);
+
+        self::assertSame(256, $minutes);
+    }
+
+    public function testInvertedRuleMaintainabilityIndex(): void
+    {
+        // MI=30, threshold=50 (inverted): ratio=50/30=1.667, ln(1.667)=0.511, max(1, 0.511)=1 → 60*1=60
+        $violation = $this->createViolation('maintainability.index', metricValue: 30, threshold: 50);
+
+        $minutes = $this->registry->getMinutesForViolation($violation);
+
+        self::assertSame(60, $minutes);
+    }
+
+    public function testInvertedRuleTypeCoverage(): void
+    {
+        // Type coverage=40, threshold=80 (inverted): ratio=80/40=2, ln(2)=0.693, max(1, 0.693)=1 → 15*1=15
+        $violation = $this->createViolation('design.type-coverage', metricValue: 40, threshold: 80);
+
+        $minutes = $this->registry->getMinutesForViolation($violation);
+
+        self::assertSame(15, $minutes);
+    }
+
+    public function testComputedHealthInvertedMetric(): void
+    {
+        // health score=30 (below threshold=50): ratio=50/30=1.667, ln=0.511, max(1, 0.511)=1 → 15*1=15
+        $violation = $this->createViolation('computed.health', metricValue: 30, threshold: 50);
+
+        $minutes = $this->registry->getMinutesForViolation($violation);
+
+        self::assertSame(15, $minutes);
+    }
+
+    public function testComputedHealthNormalMetric(): void
+    {
+        // Normal computed metric value > threshold: ratio=100/50=2, ln(2)=0.693, max(1, 0.693)=1 → 15*1=15
+        $violation = $this->createViolation('computed.health', metricValue: 100, threshold: 50);
+
+        $minutes = $this->registry->getMinutesForViolation($violation);
+
+        self::assertSame(15, $minutes);
+    }
+
+    public function testZeroThresholdUsesBaseMinutes(): void
+    {
+        $violation = $this->createViolation('complexity.cyclomatic', metricValue: 25, threshold: 0);
+
+        self::assertSame(30, $this->registry->getMinutesForViolation($violation));
+    }
+
+    public function testZeroMetricValueUsesBaseMinutes(): void
+    {
+        $violation = $this->createViolation('complexity.cyclomatic', metricValue: 0, threshold: 20);
+
+        self::assertSame(30, $this->registry->getMinutesForViolation($violation));
+    }
+
+    public function testMetricAtThresholdUsesBaseMinutes(): void
+    {
+        // Ratio = 1, ln(1) = 0 → base fallback
+        $violation = $this->createViolation('complexity.cyclomatic', metricValue: 20, threshold: 20);
+
+        self::assertSame(30, $this->registry->getMinutesForViolation($violation));
+    }
+
+    public function testMinorOvershootGetsBaseMinutes(): void
+    {
+        // Small overshoot: ratio=6/5=1.2, ln(1.2)=0.182, max(1, 0.182)=1 → 5*1=5
+        $violation = $this->createViolation('code-smell.debug-code', metricValue: 6, threshold: 5);
+
+        $minutes = $this->registry->getMinutesForViolation($violation);
+
+        self::assertSame(5, $minutes);
+    }
+
+    private function createViolation(
+        string $ruleName,
+        int|float|null $metricValue = null,
+        int|float|null $threshold = null,
+    ): Violation {
+        return new Violation(
+            location: new Location('src/Test.php', 1),
+            symbolPath: SymbolPath::forClass('App', 'TestClass'),
+            ruleName: $ruleName,
+            violationCode: $ruleName,
+            message: 'Test violation',
+            severity: Severity::Warning,
+            metricValue: $metricValue,
+            threshold: $threshold,
+        );
     }
 }

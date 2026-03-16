@@ -343,7 +343,7 @@ final class JsonFormatter implements FormatterInterface
             'recommendation' => $violation->recommendation,
             'metricValue' => $this->sanitizeNumeric($violation->metricValue),
             'threshold' => $this->sanitizeNumeric($violation->threshold),
-            'techDebtMinutes' => $this->remediationTimeRegistry->getMinutes($violation->ruleName),
+            'techDebtMinutes' => $this->remediationTimeRegistry->getMinutesForViolation($violation),
         ];
     }
 

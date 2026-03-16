@@ -29,7 +29,7 @@ final readonly class DebtCalculator
         $perRule = [];
 
         foreach ($violations as $violation) {
-            $minutes = $this->registry->getMinutes($violation->ruleName);
+            $minutes = $this->registry->getMinutesForViolation($violation);
             $totalMinutes += $minutes;
 
             $file = $violation->location->file;

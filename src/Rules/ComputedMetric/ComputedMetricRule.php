@@ -103,6 +103,8 @@ final class ComputedMetricRule extends AbstractRule
                 ? $definition->errorThreshold
                 : $definition->warningThreshold;
 
+            \assert($threshold !== null, 'Threshold must be set when severity is determined');
+
             $operator = $definition->inverted ? 'below' : 'above';
 
             $violations[] = new Violation(
@@ -121,7 +123,8 @@ final class ComputedMetricRule extends AbstractRule
                 ),
                 severity: $severity,
                 metricValue: round($floatValue, 1),
-                recommendation: $this->getRecommendation($definition->name),
+                recommendation: $this->getRecommendation($definition->name, $floatValue, $threshold),
+                threshold: $threshold,
             );
         }
     }
@@ -129,12 +132,16 @@ final class ComputedMetricRule extends AbstractRule
     /**
      * Returns a dimension-specific recommendation for a computed health metric violation.
      *
+     * Includes the dimension name, actual score, and threshold for actionable context.
      * Maps well-known health dimension names (e.g. "health.complexity") to actionable advice.
      * Falls back to a generic recommendation for custom or unknown dimensions.
      */
-    private function getRecommendation(string $dimensionName): string
+    private function getRecommendation(string $dimensionName, float $value, float $threshold): string
     {
-        return match (true) {
+        $dimensionLabel = $this->getDimensionLabel($dimensionName);
+        $header = \sprintf('%s health: %.1f (threshold: %.1f)', $dimensionLabel, $value, $threshold);
+
+        $advice = match (true) {
             str_contains($dimensionName, 'complexity') => 'Reduce complexity by extracting methods, simplifying conditional logic, and breaking large classes into focused components.',
             str_contains($dimensionName, 'cohesion') => 'Improve class cohesion by grouping related methods and fields; consider splitting classes that serve multiple unrelated responsibilities.',
             str_contains($dimensionName, 'coupling') => 'Reduce coupling by applying dependency inversion, introducing interfaces, and limiting the number of direct dependencies.',
@@ -143,6 +150,22 @@ final class ComputedMetricRule extends AbstractRule
             str_contains($dimensionName, 'maintainability') => 'Improve maintainability by reducing method length, lowering cyclomatic complexity, and adding documentation.',
             default => 'Review the metric value and refactor the affected code to bring it within acceptable thresholds.',
         };
+
+        return $header . ' — ' . $advice;
+    }
+
+    /**
+     * Extracts a human-readable dimension label from the metric name.
+     *
+     * Examples: "health.complexity" -> "Complexity", "health.overall" -> "Overall"
+     */
+    private function getDimensionLabel(string $dimensionName): string
+    {
+        // Extract the last segment after the last dot
+        $lastDot = strrpos($dimensionName, '.');
+        $segment = $lastDot !== false ? substr($dimensionName, $lastDot + 1) : $dimensionName;
+
+        return ucfirst($segment);
     }
 
     /**

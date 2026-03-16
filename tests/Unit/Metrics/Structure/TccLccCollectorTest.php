@@ -56,9 +56,9 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        // Empty class has no methods = TCC/LCC = 1.0
-        self::assertSame(1.0, $metrics->get('tcc:App\EmptyClass'));
-        self::assertSame(1.0, $metrics->get('lcc:App\EmptyClass'));
+        // Empty class has no public instance methods — TCC/LCC not emitted
+        self::assertNull($metrics->get('tcc:App\EmptyClass'));
+        self::assertNull($metrics->get('lcc:App\EmptyClass'));
     }
 
     public function testClassWithSinglePublicMethod(): void
@@ -81,9 +81,9 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        // Single method = perfect cohesion
-        self::assertSame(1.0, $metrics->get('tcc:App\SingleMethod'));
-        self::assertSame(1.0, $metrics->get('lcc:App\SingleMethod'));
+        // Single public instance method — TCC/LCC not emitted (needs >= 2 methods)
+        self::assertNull($metrics->get('tcc:App\SingleMethod'));
+        self::assertNull($metrics->get('lcc:App\SingleMethod'));
     }
 
     public function testPerfectlyCohesiveClass(): void
@@ -356,9 +356,9 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        // Factory has 1 method = TCC/LCC = 1.0
-        self::assertSame(1.0, $metrics->get('tcc:App\Factory'));
-        self::assertSame(1.0, $metrics->get('lcc:App\Factory'));
+        // Factory has 1 public instance method — TCC/LCC not emitted
+        self::assertNull($metrics->get('tcc:App\Factory'));
+        self::assertNull($metrics->get('lcc:App\Factory'));
         // Anonymous class should not appear
         self::assertNull($metrics->get('tcc:'));
         self::assertNull($metrics->get('lcc:'));
@@ -409,9 +409,9 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        // First: single method = 1.0
-        self::assertSame(1.0, $metrics->get('tcc:App\First'));
-        self::assertSame(1.0, $metrics->get('lcc:App\First'));
+        // First: single method — TCC/LCC not emitted
+        self::assertNull($metrics->get('tcc:App\First'));
+        self::assertNull($metrics->get('lcc:App\First'));
 
         // Second: two methods, no shared properties = 0.0
         self::assertSame(0.0, $metrics->get('tcc:App\Second'));
@@ -451,11 +451,11 @@ PHP;
         // Collect second file
         $metrics = $this->collectMetrics($code2);
 
-        // Should only contain metrics from second file
+        // Should only contain metrics from second file (but Second has 1 method => not emitted)
         self::assertNull($metrics->get('tcc:App\First'));
         self::assertNull($metrics->get('lcc:App\First'));
-        self::assertSame(1.0, $metrics->get('tcc:App\Second'));
-        self::assertSame(1.0, $metrics->get('lcc:App\Second'));
+        self::assertNull($metrics->get('tcc:App\Second'));
+        self::assertNull($metrics->get('lcc:App\Second'));
     }
 
     public function testGetMetricDefinitions(): void
@@ -717,9 +717,32 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        // All methods are static => 0 public instance methods => TCC/LCC = 1.0 (same as empty class)
-        self::assertSame(1.0, $metrics->get('tcc:App\AllStatic'));
-        self::assertSame(1.0, $metrics->get('lcc:App\AllStatic'));
+        // All methods are static => 0 public instance methods => TCC/LCC not emitted
+        self::assertNull($metrics->get('tcc:App\AllStatic'));
+        self::assertNull($metrics->get('lcc:App\AllStatic'));
+    }
+
+    public function testAllStaticUtilityClassNotEmitted(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class StringHelper
+{
+    public static function upper(string $s): string { return strtoupper($s); }
+    public static function lower(string $s): string { return strtolower($s); }
+    public static function trim(string $s): string { return trim($s); }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // All-static utility class: zero public instance methods => TCC/LCC not emitted.
+        // Prevents misleading TCC=1.0 for classes like Illuminate\Support\Str.
+        self::assertNull($metrics->get('tcc:App\StringHelper'));
+        self::assertNull($metrics->get('lcc:App\StringHelper'));
     }
 
     public function testAnonymousClassDoesNotCorruptMethodTracking(): void
@@ -991,9 +1014,9 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Both __construct and __destruct are excluded from TCC/LCC tracking.
-        // 0 tracked methods => N < 2 => returns 1.0
-        self::assertSame(1.0, $metrics->get('tcc:App\OnlyLifecycle'));
-        self::assertSame(1.0, $metrics->get('lcc:App\OnlyLifecycle'));
+        // 0 tracked methods => TCC/LCC not emitted
+        self::assertNull($metrics->get('tcc:App\OnlyLifecycle'));
+        self::assertNull($metrics->get('lcc:App\OnlyLifecycle'));
     }
 
     private function collectMetrics(string $code): MetricBag

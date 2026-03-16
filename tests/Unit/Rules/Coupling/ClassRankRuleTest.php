@@ -104,12 +104,11 @@ final class ClassRankRuleTest extends TestCase
     {
         $rule = new ClassRankRule(new ClassRankOptions());
 
-        $symbolPath = SymbolPath::forClass('App', 'SomeClass');
-        $classInfo = new SymbolInfo($symbolPath, 'src/SomeClass.php', 10);
+        $classes = $this->createDummyClasses(100, 'src/SomeClass.php', 10);
 
         $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->willReturn([$classInfo]);
+            ->willReturn($classes);
         $repository->method('get')
             ->willReturn(new MetricBag());
 
@@ -121,49 +120,56 @@ final class ClassRankRuleTest extends TestCase
     #[Test]
     public function analyze_noViolationBelowThreshold(): void
     {
+        // With 100 classes, scale factor = 1.0, so thresholds are unchanged
         $rule = new ClassRankRule(new ClassRankOptions());
 
-        $symbolPath = SymbolPath::forClass('App', 'NormalClass');
-        $classInfo = new SymbolInfo($symbolPath, 'src/NormalClass.php', 10);
+        $classes = $this->createDummyClasses(100);
 
         $metricBag = (new MetricBag())->with('classRank', 0.01);
 
         $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->willReturn([$classInfo]);
+            ->willReturn($classes);
         $repository->method('get')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
         $violations = $rule->analyze($context);
 
+        // All 100 classes have rank 0.01, below warning threshold 0.02
         self::assertCount(0, $violations);
     }
 
     #[Test]
     public function analyze_generatesWarning(): void
     {
+        // With 100 classes, scale factor = 1.0, thresholds unchanged
         $rule = new ClassRankRule(new ClassRankOptions());
 
-        $symbolPath = SymbolPath::forClass('App', 'ImportantClass');
-        $classInfo = new SymbolInfo($symbolPath, 'src/ImportantClass.php', 10);
+        $targetPath = SymbolPath::forClass('App', 'ImportantClass');
+        $targetInfo = new SymbolInfo($targetPath, 'src/ImportantClass.php', 10);
 
         // 0.03 is above warning (0.02) but below error (0.05)
-        $metricBag = (new MetricBag())->with('classRank', 0.03);
+        $targetBag = (new MetricBag())->with('classRank', 0.03);
+        $normalBag = (new MetricBag())->with('classRank', 0.005);
+
+        $classes = $this->createDummyClasses(99);
+        $classes[] = $targetInfo;
 
         $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->willReturn([$classInfo]);
+            ->willReturn($classes);
         $repository->method('get')
-            ->willReturn($metricBag);
+            ->willReturnCallback(static fn(SymbolPath $sp) => $sp === $targetPath ? $targetBag : $normalBag);
 
         $context = new AnalysisContext($repository);
         $violations = $rule->analyze($context);
 
+        // Only the target class exceeds the warning threshold
         self::assertCount(1, $violations);
         self::assertSame(Severity::Warning, $violations[0]->severity);
         self::assertStringContainsString('ClassRank is 0.0300', $violations[0]->message);
-        self::assertStringContainsString('exceeds threshold of 0.0200', $violations[0]->message);
+        self::assertStringContainsString('scaled for 100 classes', $violations[0]->message);
         self::assertEqualsWithDelta(0.03, $violations[0]->metricValue, 0.001);
         self::assertSame('coupling.class-rank', $violations[0]->ruleName);
         self::assertSame('coupling.class-rank', $violations[0]->violationCode);
@@ -172,19 +178,24 @@ final class ClassRankRuleTest extends TestCase
     #[Test]
     public function analyze_generatesError(): void
     {
+        // With 100 classes, scale factor = 1.0, thresholds unchanged
         $rule = new ClassRankRule(new ClassRankOptions());
 
-        $symbolPath = SymbolPath::forClass('App', 'CriticalHub');
-        $classInfo = new SymbolInfo($symbolPath, 'src/CriticalHub.php', 10);
+        $targetPath = SymbolPath::forClass('App', 'CriticalHub');
+        $targetInfo = new SymbolInfo($targetPath, 'src/CriticalHub.php', 10);
 
         // 0.08 is above error threshold (0.05)
-        $metricBag = (new MetricBag())->with('classRank', 0.08);
+        $targetBag = (new MetricBag())->with('classRank', 0.08);
+        $normalBag = (new MetricBag())->with('classRank', 0.005);
+
+        $classes = $this->createDummyClasses(99);
+        $classes[] = $targetInfo;
 
         $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->willReturn([$classInfo]);
+            ->willReturn($classes);
         $repository->method('get')
-            ->willReturn($metricBag);
+            ->willReturnCallback(static fn(SymbolPath $sp) => $sp === $targetPath ? $targetBag : $normalBag);
 
         $context = new AnalysisContext($repository);
         $violations = $rule->analyze($context);
@@ -206,25 +217,36 @@ final class ClassRankRuleTest extends TestCase
             error: $error,
         ));
 
-        $symbolPath = SymbolPath::forClass('App', 'TestClass');
-        $classInfo = new SymbolInfo($symbolPath, 'test.php', 1);
+        $targetPath = SymbolPath::forClass('App', 'TestClass');
+        $targetInfo = new SymbolInfo($targetPath, 'test.php', 1);
 
-        $metricBag = (new MetricBag())->with('classRank', $classRank);
+        $targetBag = (new MetricBag())->with('classRank', $classRank);
+        $normalBag = (new MetricBag())->with('classRank', 0.001);
+
+        // Use 100 classes so scale factor = 1.0
+        $classes = $this->createDummyClasses(99);
+        $classes[] = $targetInfo;
 
         $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
-            ->willReturn([$classInfo]);
+            ->willReturn($classes);
         $repository->method('get')
-            ->willReturn($metricBag);
+            ->willReturnCallback(static fn(SymbolPath $sp) => $sp === $targetPath ? $targetBag : $normalBag);
 
         $context = new AnalysisContext($repository);
         $violations = $rule->analyze($context);
 
+        // Filter to just the target class violations
+        $targetViolations = array_values(array_filter(
+            $violations,
+            static fn($v) => $v->symbolPath === $targetPath,
+        ));
+
         if ($expectedSeverity === null) {
-            self::assertCount(0, $violations);
+            self::assertCount(0, $targetViolations);
         } else {
-            self::assertCount(1, $violations);
-            self::assertSame($expectedSeverity, $violations[0]->severity);
+            self::assertCount(1, $targetViolations);
+            self::assertSame($expectedSeverity, $targetViolations[0]->severity);
         }
     }
 
@@ -240,7 +262,172 @@ final class ClassRankRuleTest extends TestCase
         yield 'above error' => [0.10, 0.02, 0.05, Severity::Error];
     }
 
-    // Options tests
+    // --- Threshold scaling tests ---
+
+    #[Test]
+    public function computeScaleFactor_at100Classes_returnsOne(): void
+    {
+        self::assertEqualsWithDelta(1.0, ClassRankRule::computeScaleFactor(100), 0.001);
+    }
+
+    #[Test]
+    public function computeScaleFactor_at1600Classes_returnsFour(): void
+    {
+        // sqrt(1600/100) = sqrt(16) = 4
+        self::assertEqualsWithDelta(4.0, ClassRankRule::computeScaleFactor(1600), 0.001);
+    }
+
+    #[Test]
+    public function computeScaleFactor_at25Classes_returnsHalf(): void
+    {
+        // sqrt(25/100) = sqrt(0.25) = 0.5
+        self::assertEqualsWithDelta(0.5, ClassRankRule::computeScaleFactor(25), 0.001);
+    }
+
+    #[Test]
+    public function computeScaleFactor_atZeroClasses_returnsOne(): void
+    {
+        self::assertEqualsWithDelta(1.0, ClassRankRule::computeScaleFactor(0), 0.001);
+    }
+
+    #[Test]
+    public function analyze_largeProject_lowersThresholds(): void
+    {
+        // With 400 classes: scale factor = sqrt(400/100) = 2.0
+        // Effective warning = 0.02 / 2 = 0.01, effective error = 0.05 / 2 = 0.025
+        $rule = new ClassRankRule(new ClassRankOptions());
+
+        $targetPath = SymbolPath::forClass('App', 'Hub');
+        $targetInfo = new SymbolInfo($targetPath, 'src/Hub.php', 10);
+
+        // 0.015 would be below unscaled warning (0.02), but above scaled warning (0.01)
+        $targetBag = (new MetricBag())->with('classRank', 0.015);
+        $normalBag = (new MetricBag())->with('classRank', 0.001);
+
+        $classes = $this->createDummyClasses(399);
+        $classes[] = $targetInfo;
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturn($classes);
+        $repository->method('get')
+            ->willReturnCallback(static fn(SymbolPath $sp) => $sp === $targetPath ? $targetBag : $normalBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyze($context);
+
+        $targetViolations = array_values(array_filter(
+            $violations,
+            static fn($v) => $v->symbolPath === $targetPath,
+        ));
+
+        self::assertCount(1, $targetViolations);
+        self::assertSame(Severity::Warning, $targetViolations[0]->severity);
+    }
+
+    #[Test]
+    public function analyze_smallProject_raisesThresholds(): void
+    {
+        // With 25 classes: scale factor = sqrt(25/100) = 0.5
+        // Effective warning = 0.02 / 0.5 = 0.04, effective error = 0.05 / 0.5 = 0.10
+        $rule = new ClassRankRule(new ClassRankOptions());
+
+        $targetPath = SymbolPath::forClass('App', 'SmallHub');
+        $targetInfo = new SymbolInfo($targetPath, 'src/SmallHub.php', 10);
+
+        // 0.03 would normally be a warning with default thresholds,
+        // but with 25 classes, scaled warning = 0.04, so no violation
+        $targetBag = (new MetricBag())->with('classRank', 0.03);
+        $normalBag = (new MetricBag())->with('classRank', 0.001);
+
+        $classes = $this->createDummyClasses(24);
+        $classes[] = $targetInfo;
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturn($classes);
+        $repository->method('get')
+            ->willReturnCallback(static fn(SymbolPath $sp) => $sp === $targetPath ? $targetBag : $normalBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyze($context);
+
+        $targetViolations = array_values(array_filter(
+            $violations,
+            static fn($v) => $v->symbolPath === $targetPath,
+        ));
+
+        self::assertCount(0, $targetViolations);
+    }
+
+    #[Test]
+    public function analyze_largeProject_errorAtLowerRank(): void
+    {
+        // With 1600 classes: scale factor = 4.0
+        // Effective error = 0.05 / 4 = 0.0125
+        $rule = new ClassRankRule(new ClassRankOptions());
+
+        $targetPath = SymbolPath::forClass('App', 'MegaHub');
+        $targetInfo = new SymbolInfo($targetPath, 'src/MegaHub.php', 10);
+
+        // 0.02 would normally just be a warning, but with 1600 classes it's an error
+        $targetBag = (new MetricBag())->with('classRank', 0.02);
+        $normalBag = (new MetricBag())->with('classRank', 0.0001);
+
+        $classes = $this->createDummyClasses(1599);
+        $classes[] = $targetInfo;
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturn($classes);
+        $repository->method('get')
+            ->willReturnCallback(static fn(SymbolPath $sp) => $sp === $targetPath ? $targetBag : $normalBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyze($context);
+
+        $targetViolations = array_values(array_filter(
+            $violations,
+            static fn($v) => $v->symbolPath === $targetPath,
+        ));
+
+        self::assertCount(1, $targetViolations);
+        self::assertSame(Severity::Error, $targetViolations[0]->severity);
+    }
+
+    #[Test]
+    public function analyze_messageIncludesClassCount(): void
+    {
+        $rule = new ClassRankRule(new ClassRankOptions());
+
+        $targetPath = SymbolPath::forClass('App', 'Hub');
+        $targetInfo = new SymbolInfo($targetPath, 'src/Hub.php', 10);
+
+        $targetBag = (new MetricBag())->with('classRank', 0.03);
+        $normalBag = (new MetricBag())->with('classRank', 0.001);
+
+        $classes = $this->createDummyClasses(99);
+        $classes[] = $targetInfo;
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturn($classes);
+        $repository->method('get')
+            ->willReturnCallback(static fn(SymbolPath $sp) => $sp === $targetPath ? $targetBag : $normalBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyze($context);
+
+        $targetViolations = array_values(array_filter(
+            $violations,
+            static fn($v) => $v->symbolPath === $targetPath,
+        ));
+
+        self::assertCount(1, $targetViolations);
+        self::assertStringContainsString('scaled for 100 classes', $targetViolations[0]->message);
+    }
+
+    // --- Options tests ---
 
     #[Test]
     public function options_defaults(): void
@@ -317,5 +504,21 @@ final class ClassRankRuleTest extends TestCase
         self::assertArrayHasKey('class-rank-error', $aliases);
         self::assertSame('warning', $aliases['class-rank-warning']);
         self::assertSame('error', $aliases['class-rank-error']);
+    }
+
+    /**
+     * Creates N dummy SymbolInfo instances for class symbols.
+     *
+     * @return list<SymbolInfo>
+     */
+    private function createDummyClasses(int $count, string $file = 'src/Dummy.php', int $line = 1): array
+    {
+        $classes = [];
+        for ($i = 0; $i < $count; $i++) {
+            $path = SymbolPath::forClass('App\\Dummy', 'DummyClass' . $i);
+            $classes[] = new SymbolInfo($path, $file, $line);
+        }
+
+        return $classes;
     }
 }

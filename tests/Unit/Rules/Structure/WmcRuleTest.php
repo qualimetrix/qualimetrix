@@ -51,7 +51,7 @@ final class WmcRuleTest extends TestCase
     {
         $rule = new WmcRule(new WmcOptions());
 
-        self::assertSame(['wmc', 'isDataClass'], $rule->requires());
+        self::assertSame(['wmc', 'isDataClass', 'methodCount'], $rule->requires());
     }
 
     public function testGetOptionsClass(): void
@@ -127,7 +127,7 @@ final class WmcRuleTest extends TestCase
         $classInfo = new SymbolInfo($symbolPath, 'src/Service/MediumClass.php', 10);
 
         // WMC of 60 is above warning threshold (50) but below error (80)
-        $metricBag = (new MetricBag())->with('wmc', 60);
+        $metricBag = (new MetricBag())->with('wmc', 60)->with('methodCount', 15);
 
         $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -145,6 +145,10 @@ final class WmcRuleTest extends TestCase
         self::assertStringContainsString('Simplify methods or split the class', $violations[0]->message);
         self::assertSame(60, $violations[0]->metricValue);
         self::assertSame('complexity.wmc', $violations[0]->ruleName);
+        // avg = 60/15 = 4.0, middle range
+        self::assertNotNull($violations[0]->recommendation);
+        self::assertStringContainsString('across 15 methods (avg 4.0)', $violations[0]->recommendation);
+        self::assertStringContainsString('weighted method complexity is high', $violations[0]->recommendation);
     }
 
     public function testErrorAboveErrorThreshold(): void
@@ -155,7 +159,7 @@ final class WmcRuleTest extends TestCase
         $classInfo = new SymbolInfo($symbolPath, 'src/Service/ComplexClass.php', 10);
 
         // WMC of 85 is above error threshold (80)
-        $metricBag = (new MetricBag())->with('wmc', 85);
+        $metricBag = (new MetricBag())->with('wmc', 85)->with('methodCount', 10);
 
         $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -172,6 +176,89 @@ final class WmcRuleTest extends TestCase
         self::assertStringContainsString('exceeds threshold of 80', $violations[0]->message);
         self::assertStringContainsString('Simplify methods or split the class', $violations[0]->message);
         self::assertSame(85, $violations[0]->metricValue);
+        // avg = 85/10 = 8.5, high complexity
+        self::assertNotNull($violations[0]->recommendation);
+        self::assertStringContainsString('across 10 methods (avg 8.5)', $violations[0]->recommendation);
+        self::assertStringContainsString('some methods are very complex', $violations[0]->recommendation);
+    }
+
+    public function testRecommendationManySimpleMethods(): void
+    {
+        $rule = new WmcRule(new WmcOptions());
+
+        $symbolPath = SymbolPath::forClass('App\Service', 'LargeClass');
+        $classInfo = new SymbolInfo($symbolPath, 'src/Service/LargeClass.php', 10);
+
+        // WMC of 93, 31 methods -> avg 3.0 -> "many methods, consider splitting"
+        $metricBag = (new MetricBag())->with('wmc', 93)->with('methodCount', 31);
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturn([$classInfo]);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyze($context);
+
+        self::assertCount(1, $violations);
+        // avg = 93/31 = 3.0 -> exactly 3.0, middle range (not < 3.0)
+        self::assertNotNull($violations[0]->recommendation);
+        self::assertStringContainsString('across 31 methods (avg 3.0)', $violations[0]->recommendation);
+        self::assertStringContainsString('weighted method complexity is high', $violations[0]->recommendation);
+    }
+
+    public function testRecommendationManyVerySimpleMethods(): void
+    {
+        $rule = new WmcRule(new WmcOptions());
+
+        $symbolPath = SymbolPath::forClass('App\Service', 'HugeClass');
+        $classInfo = new SymbolInfo($symbolPath, 'src/Service/HugeClass.php', 10);
+
+        // WMC of 60, 30 methods -> avg 2.0 -> "many methods, consider splitting"
+        $metricBag = (new MetricBag())->with('wmc', 60)->with('methodCount', 30);
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturn([$classInfo]);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyze($context);
+
+        self::assertCount(1, $violations);
+        // avg = 60/30 = 2.0 -> < 3.0 -> "many methods"
+        self::assertNotNull($violations[0]->recommendation);
+        self::assertStringContainsString('across 30 methods (avg 2.0)', $violations[0]->recommendation);
+        self::assertStringContainsString('many methods, consider splitting', $violations[0]->recommendation);
+    }
+
+    public function testRecommendationWithoutMethodCount(): void
+    {
+        $rule = new WmcRule(new WmcOptions());
+
+        $symbolPath = SymbolPath::forClass('App\Service', 'SomeClass');
+        $classInfo = new SymbolInfo($symbolPath, 'src/Service/SomeClass.php', 10);
+
+        // WMC without methodCount metric
+        $metricBag = (new MetricBag())->with('wmc', 60);
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturn([$classInfo]);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyze($context);
+
+        self::assertCount(1, $violations);
+        self::assertNotNull($violations[0]->recommendation);
+        self::assertStringContainsString('WMC: 60 (threshold: 50)', $violations[0]->recommendation);
+        self::assertStringContainsString('weighted method complexity is high', $violations[0]->recommendation);
+        // Should NOT contain "across N methods" when methodCount is missing
+        self::assertStringNotContainsString('across', $violations[0]->recommendation);
     }
 
     public function testCustomThresholds(): void

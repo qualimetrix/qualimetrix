@@ -84,7 +84,7 @@ final readonly class SummaryEnricher
             $warnThreshold = $definition->warningThreshold ?? 50.0;
             $errThreshold = $definition->errorThreshold ?? 25.0;
 
-            $decomposition = $this->buildDecomposition($dimension, $projectMetrics, $scoreValue, $warnThreshold);
+            $decomposition = $this->buildDecomposition($dimension, $projectMetrics);
 
             $dimensionName = str_replace('health.', '', $dimension);
             $healthScores[$dimensionName] = new HealthScore(
@@ -114,19 +114,17 @@ final readonly class SummaryEnricher
     }
 
     /**
+     * Builds decomposition items for a health dimension.
+     *
+     * Always returns the contributing metrics regardless of score value,
+     * so that JSON consumers can inspect what feeds into each dimension.
+     *
      * @return list<DecompositionItem>
      */
     private function buildDecomposition(
         string $dimension,
         \AiMessDetector\Core\Metric\MetricBag $projectMetrics,
-        float $score,
-        float $warnThreshold,
     ): array {
-        // Only decompose when score needs attention
-        if ($score > $warnThreshold) {
-            return [];
-        }
-
         // Typing dimension needs special handling: compute percentages from raw sums
         if ($dimension === 'health.typing') {
             return $this->buildTypingDecomposition($projectMetrics);

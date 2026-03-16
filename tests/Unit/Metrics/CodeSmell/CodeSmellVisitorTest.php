@@ -196,6 +196,100 @@ PHP;
     }
 
     #[Test]
+    public function emptyCatchInForeachWithReturnIsChainOfResponsibilityPattern(): void
+    {
+        // foreach + try { return ... } catch { } is a legitimate chain-of-responsibility pattern
+        $code = <<<'PHP'
+<?php
+class ChainedPublicUrlGenerator {
+    public function publicUrl(string $path): string {
+        foreach ($this->generators as $generator) {
+            try {
+                return $generator->publicUrl($path);
+            } catch (\Exception $e) {
+            }
+        }
+        throw new \RuntimeException('No generator could handle the path');
+    }
+}
+PHP;
+        $visitor = $this->analyze($code);
+
+        $locations = $visitor->getLocationsByType('empty_catch');
+        self::assertCount(0, $locations);
+    }
+
+    #[Test]
+    public function emptyCatchInForeachWithReturnAndCommentIsChainOfResponsibilityPattern(): void
+    {
+        // Same pattern with a comment in the catch block (Nop node)
+        $code = <<<'PHP'
+<?php
+class Resolver {
+    public function resolve(string $key): mixed {
+        foreach ($this->resolvers as $resolver) {
+            try {
+                return $resolver->resolve($key);
+            } catch (\Throwable $e) {
+                // try next resolver
+            }
+        }
+        return null;
+    }
+}
+PHP;
+        $visitor = $this->analyze($code);
+
+        $locations = $visitor->getLocationsByType('empty_catch');
+        self::assertCount(0, $locations);
+    }
+
+    #[Test]
+    public function emptyCatchInForeachWithoutReturnIsStillFlagged(): void
+    {
+        // foreach + try { ... } catch { } without return is NOT the chain pattern
+        $code = <<<'PHP'
+<?php
+class Processor {
+    public function process(): void {
+        foreach ($this->items as $item) {
+            try {
+                $item->doSomething();
+            } catch (\Exception $e) {
+            }
+        }
+    }
+}
+PHP;
+        $visitor = $this->analyze($code);
+
+        $locations = $visitor->getLocationsByType('empty_catch');
+        self::assertCount(1, $locations);
+    }
+
+    #[Test]
+    public function emptyCatchOutsideForeachIsStillFlagged(): void
+    {
+        // try { return ... } catch { } outside foreach is still flagged
+        $code = <<<'PHP'
+<?php
+class Service {
+    public function get(): mixed {
+        try {
+            return $this->fetch();
+        } catch (\Exception $e) {
+        }
+        return null;
+    }
+}
+PHP;
+        $visitor = $this->analyze($code);
+
+        $locations = $visitor->getLocationsByType('empty_catch');
+        self::assertCount(1, $locations);
+    }
+
+    #[Test]
     public function varExportWithReturnModeIsNotFlagged(): void
     {
         $code = <<<'PHP'

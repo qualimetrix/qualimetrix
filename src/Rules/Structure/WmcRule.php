@@ -46,7 +46,7 @@ final class WmcRule extends AbstractRule
      */
     public function requires(): array
     {
-        return [MetricName::STRUCTURE_WMC, MetricName::STRUCTURE_IS_DATA_CLASS];
+        return [MetricName::STRUCTURE_WMC, MetricName::STRUCTURE_IS_DATA_CLASS, MetricName::STRUCTURE_METHOD_COUNT];
     }
 
     /**
@@ -82,6 +82,9 @@ final class WmcRule extends AbstractRule
                     ? $this->options->error
                     : $this->options->warning;
 
+                $methodCount = $metrics->get(MetricName::STRUCTURE_METHOD_COUNT);
+                $recommendation = $this->buildRecommendation($wmcValue, $threshold, $methodCount !== null ? (int) $methodCount : null);
+
                 $violations[] = new Violation(
                     location: new Location($classInfo->file, $classInfo->line),
                     symbolPath: $classInfo->symbolPath,
@@ -94,13 +97,50 @@ final class WmcRule extends AbstractRule
                     ),
                     severity: $severity,
                     metricValue: $wmcValue,
-                    recommendation: \sprintf('WMC: %d (threshold: %d) — total method complexity is high', $wmcValue, $threshold),
+                    recommendation: $recommendation,
                     threshold: $threshold,
                 );
             }
         }
 
         return $violations;
+    }
+
+    /**
+     * Builds a contextual recommendation based on avg method complexity.
+     */
+    private function buildRecommendation(int $wmcValue, int $threshold, ?int $methodCount): string
+    {
+        if ($methodCount === null || $methodCount === 0) {
+            return \sprintf('WMC: %d (threshold: %d) — weighted method complexity is high', $wmcValue, $threshold);
+        }
+
+        $avgCcn = $wmcValue / $methodCount;
+
+        if ($avgCcn < 3.0) {
+            return \sprintf(
+                'WMC: %d across %d methods (avg %.1f) — many methods, consider splitting the class',
+                $wmcValue,
+                $methodCount,
+                $avgCcn,
+            );
+        }
+
+        if ($avgCcn >= 5.0) {
+            return \sprintf(
+                'WMC: %d across %d methods (avg %.1f) — some methods are very complex',
+                $wmcValue,
+                $methodCount,
+                $avgCcn,
+            );
+        }
+
+        return \sprintf(
+            'WMC: %d across %d methods (avg %.1f) — weighted method complexity is high',
+            $wmcValue,
+            $methodCount,
+            $avgCcn,
+        );
     }
 
     /**

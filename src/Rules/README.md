@@ -34,7 +34,7 @@ Rules are analysis rule implementations for static analysis. Rules are **complet
 | **coupling.instability**                 | Coupling        | Hierarchical (Class, Namespace) | Instability (Ca/Ce)             | warning: 0.8, error: 0.95             |
 | **coupling.cbo**                         | Coupling        | Hierarchical (Class, Namespace) | Coupling Between Objects        | warning: ..., error: ...              |
 | **coupling.distance**                    | Coupling        | Simple                          | Distance from Main Sequence     | warning: 0.3, error: 0.5              |
-| **coupling.class-rank**                  | Coupling        | Simple                          | ClassRank (PageRank on deps)    | warning: 0.02, error: 0.05            |
+| **coupling.class-rank**                  | Coupling        | Simple                          | ClassRank (PageRank on deps)    | warning: 0.02, error: 0.05 (scaled)   |
 | **architecture.circular-dependency**     | Architecture    | Simple                          | Circular dependencies           | enabled: true                         |
 | **code-smell.boolean-argument**          | CodeSmell       | Simple                          | Boolean arguments in signatures | enabled: true                         |
 | **code-smell.count-in-loop**             | CodeSmell       | Simple                          | count() calls in loops          | enabled: true                         |
@@ -536,7 +536,9 @@ rules:
 
 Checks ClassRank — a PageRank-based metric computed on the dependency graph. High ClassRank indicates a class is heavily depended upon (directly and transitively), making it a critical coupling point.
 
-**Default:** warning: 0.02, error: 0.05
+**Threshold scaling:** Since PageRank sums to 1.0, individual class ranks dilute as the project grows. Thresholds are automatically scaled by `sqrt(classCount / 100)`: at 100 classes thresholds are unchanged, at 1600 classes they are divided by 4, at 25 classes they are multiplied by 2.
+
+**Default (base thresholds):** warning: 0.02, error: 0.05
 
 **Configuration:**
 ```yaml

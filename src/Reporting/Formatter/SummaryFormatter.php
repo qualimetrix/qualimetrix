@@ -181,7 +181,13 @@ final class SummaryFormatter implements FormatterInterface
                 if ($flatOverall !== null) {
                     $flatScore = (float) $flatOverall;
                     $delta = abs($overall->score - $flatScore);
-                    if ($delta > 5.0) { // Only show when meaningfully different
+                    if ($delta > 10.0) {
+                        // Large difference: explain why scores differ
+                        $healthLine .= $color->dim(\sprintf(
+                            ' (direct classes: %.1f%% — sub-namespaces raise the score)',
+                            $flatScore,
+                        ));
+                    } elseif ($delta > 5.0) {
                         $healthLine .= $color->dim(\sprintf(' (direct: %.1f%%)', $flatScore));
                     }
                 }
@@ -661,7 +667,7 @@ final class SummaryFormatter implements FormatterInterface
         $totalMinutes = 0;
 
         foreach ($violations as $violation) {
-            $totalMinutes += $this->remediationTimeRegistry->getMinutes($violation->ruleName);
+            $totalMinutes += $this->remediationTimeRegistry->getMinutesForViolation($violation);
         }
 
         return $totalMinutes;

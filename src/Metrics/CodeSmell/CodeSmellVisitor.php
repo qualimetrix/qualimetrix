@@ -19,8 +19,11 @@ use PhpParser\Node\Stmt\Catch_;
 use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\Node\Stmt\Do_;
 use PhpParser\Node\Stmt\For_;
+use PhpParser\Node\Stmt\Foreach_;
 use PhpParser\Node\Stmt\Function_;
 use PhpParser\Node\Stmt\Goto_;
+use PhpParser\Node\Stmt\Return_;
+use PhpParser\Node\Stmt\TryCatch;
 use PhpParser\Node\Stmt\While_;
 use PhpParser\NodeVisitorAbstract;
 
@@ -81,10 +84,14 @@ final class CodeSmellVisitor extends NodeVisitorAbstract implements ResettableVi
     /** @var list<string> Stack of enclosing method/function names (lowercase) */
     private array $methodStack = [];
 
+    /** Depth of nested foreach loops (for chain-of-responsibility pattern detection) */
+    private int $foreachDepth = 0;
+
     public function reset(): void
     {
         $this->locations = [];
         $this->methodStack = [];
+        $this->foreachDepth = 0;
     }
 
     public function enterNode(Node $node): ?int
@@ -92,6 +99,10 @@ final class CodeSmellVisitor extends NodeVisitorAbstract implements ResettableVi
         if ($node instanceof ClassMethod || $node instanceof Function_) {
             $name = $node->name->toLowerString();
             $this->methodStack[] = $name;
+        }
+
+        if ($node instanceof Foreach_) {
+            $this->foreachDepth++;
         }
 
         if ($node instanceof Goto_) {
@@ -112,8 +123,8 @@ final class CodeSmellVisitor extends NodeVisitorAbstract implements ResettableVi
             return null;
         }
 
-        if ($node instanceof Catch_) {
-            $this->checkEmptyCatch($node);
+        if ($node instanceof TryCatch) {
+            $this->checkEmptyCatches($node);
 
             return null;
         }
@@ -157,6 +168,10 @@ final class CodeSmellVisitor extends NodeVisitorAbstract implements ResettableVi
             array_pop($this->methodStack);
         }
 
+        if ($node instanceof Foreach_) {
+            $this->foreachDepth--;
+        }
+
         return null;
     }
 
@@ -196,14 +211,67 @@ final class CodeSmellVisitor extends NodeVisitorAbstract implements ResettableVi
         );
     }
 
-    private function checkEmptyCatch(Catch_ $node): void
+    private function checkEmptyCatches(TryCatch $tryCatch): void
+    {
+        foreach ($tryCatch->catches as $catch) {
+            $this->checkEmptyCatch($catch, $tryCatch);
+        }
+    }
+
+    private function checkEmptyCatch(Catch_ $node, TryCatch $tryCatch): void
     {
         // Empty catch block = no statements (Nop nodes are comment-only placeholders)
         $realStmts = array_filter($node->stmts, static fn(Node $s): bool => !$s instanceof Node\Stmt\Nop);
 
-        if ($realStmts === []) {
-            $this->addLocation('empty_catch', $node);
+        if ($realStmts !== []) {
+            return;
         }
+
+        // Chain-of-responsibility pattern: foreach + try { return } catch { }
+        // This is a legitimate pattern where each handler is tried and failures are caught
+        if ($this->foreachDepth > 0 && $this->tryBlockContainsReturn($tryCatch)) {
+            return;
+        }
+
+        $this->addLocation('empty_catch', $node);
+    }
+
+    /**
+     * Check if the try block contains a return, continue, or yield statement.
+     * Checks recursively into if/else blocks but not into closures/loops.
+     */
+    private function tryBlockContainsReturn(TryCatch $tryCatch): bool
+    {
+        return $this->statementsContainChainSignal($tryCatch->stmts);
+    }
+
+    /**
+     * @param array<\PhpParser\Node\Stmt> $stmts
+     */
+    private function statementsContainChainSignal(array $stmts): bool
+    {
+        foreach ($stmts as $stmt) {
+            if ($stmt instanceof Return_ || $stmt instanceof \PhpParser\Node\Stmt\Continue_) {
+                return true;
+            }
+
+            // Check inside if/elseif/else blocks
+            if ($stmt instanceof \PhpParser\Node\Stmt\If_) {
+                if ($this->statementsContainChainSignal($stmt->stmts)) {
+                    return true;
+                }
+                foreach ($stmt->elseifs as $elseif) {
+                    if ($this->statementsContainChainSignal($elseif->stmts)) {
+                        return true;
+                    }
+                }
+                if ($stmt->else !== null && $this->statementsContainChainSignal($stmt->else->stmts)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     private function checkDebugFunction(FuncCall $node): void

@@ -43,7 +43,9 @@ final readonly class CircularDependencyOptions implements RuleOptionsInterface
     /**
      * Returns severity based on cycle size.
      *
-     * Direct cycles (size 2) are errors, transitive cycles are warnings.
+     * Small cycles (2-5 classes): error for direct (size ≤2), warning otherwise
+     * Medium cycles (6-20 classes): warning
+     * Large cycles (21+ classes): warning (too large for error-level urgency)
      */
     public function getSeverity(int|float $value): ?Severity
     {
@@ -59,6 +61,8 @@ final readonly class CircularDependencyOptions implements RuleOptionsInterface
             return Severity::Error;
         }
 
+        // Small transitive cycles (3-5) are still actionable warnings
+        // Medium and large cycles are always warnings
         return Severity::Warning;
     }
 }

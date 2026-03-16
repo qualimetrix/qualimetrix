@@ -4,10 +4,17 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Reporting\Debt;
 
+use AiMessDetector\Core\Violation\Violation;
+
 /**
  * Registry of estimated remediation times (in minutes) per rule.
  *
- * Times represent the average effort to fix a single violation of each rule.
+ * Base times represent the average effort for a typical violation. When a violation
+ * carries metricValue and threshold, the time is scaled by how far the metric
+ * exceeds the threshold: base * max(1, ln(metricValue / threshold)).
+ *
+ * For inverted metrics (lower value = worse, e.g. maintainability index),
+ * the ratio is flipped: threshold / metricValue.
  */
 final class RemediationTimeRegistry
 {
@@ -69,10 +76,76 @@ final class RemediationTimeRegistry
     ];
 
     /**
-     * Returns the estimated remediation time in minutes for the given rule.
+     * Rules where lower metric values indicate worse code (inverted scales).
+     *
+     * For these rules, the overshoot ratio is threshold/metricValue instead of
+     * metricValue/threshold.
+     *
+     * @var list<string>
      */
-    public function getMinutes(string $ruleName): int
+    private const array INVERTED_RULES = [
+        'maintainability.index',
+        'design.type-coverage',
+    ];
+
+    /**
+     * Returns the base remediation time in minutes for the given rule (without scaling).
+     */
+    public function getBaseMinutes(string $ruleName): int
     {
         return self::MINUTES_BY_RULE[$ruleName] ?? self::DEFAULT_MINUTES;
+    }
+
+    /**
+     * Returns the estimated remediation time in minutes for a specific violation.
+     *
+     * When the violation carries metricValue and threshold, the base time is scaled
+     * by the natural log of the overshoot ratio: base * max(1, ln(value / threshold)).
+     * This means minor overshoots get ~base time, while extreme violations get much more.
+     *
+     * Falls back to the flat base time when metricValue or threshold is missing.
+     */
+    public function getMinutesForViolation(Violation $violation): int
+    {
+        $base = $this->getBaseMinutes($violation->ruleName);
+
+        if ($violation->metricValue === null || $violation->threshold === null) {
+            return $base;
+        }
+
+        $metricValue = (float) $violation->metricValue;
+        $threshold = (float) $violation->threshold;
+
+        if ($threshold <= 0.0 || $metricValue <= 0.0 || is_nan($metricValue) || is_nan($threshold)
+            || is_infinite($metricValue) || is_infinite($threshold)) {
+            return $base;
+        }
+
+        $isInverted = \in_array($violation->ruleName, self::INVERTED_RULES, true)
+            || ($violation->ruleName === 'computed.health' && $this->isInvertedComputedMetric($metricValue, $threshold));
+
+        $ratio = $isInverted
+            ? $threshold / $metricValue
+            : $metricValue / $threshold;
+
+        // ratio <= 1 means not exceeding threshold (edge case) — use base
+        if ($ratio <= 1.0) {
+            return $base;
+        }
+
+        $scaled = (int) round($base * max(1.0, log($ratio)));
+
+        return max(1, $scaled);
+    }
+
+    /**
+     * Detects inverted computed metrics by checking if the metric value is below the threshold.
+     *
+     * For inverted health metrics (higher = better), the violation fires when
+     * metricValue < threshold, so metricValue < threshold indicates inversion.
+     */
+    private function isInvertedComputedMetric(float $metricValue, float $threshold): bool
+    {
+        return $metricValue < $threshold;
     }
 }

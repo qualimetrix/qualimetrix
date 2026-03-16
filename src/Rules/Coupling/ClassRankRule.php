@@ -56,9 +56,26 @@ final class ClassRankRule extends AbstractRule
             return [];
         }
 
+        // Collect all classes first — we need the count for threshold scaling
+        $classes = iterator_to_array($context->metrics->all(SymbolType::Class_), false);
+        $classCount = \count($classes);
+
+        if ($classCount === 0) {
+            return [];
+        }
+
+        // Scale thresholds by project size. PageRank sums to 1.0, so individual
+        // ranks dilute as class count grows. sqrt(classCount/100) normalizes:
+        // - 100 classes: thresholds unchanged (scale factor = 1.0)
+        // - 1600 classes: thresholds / 4 (catches more hubs)
+        // - 25 classes: thresholds * 2 (avoids false positives)
+        $scaleFactor = self::computeScaleFactor($classCount);
+        $scaledWarning = $this->options->warning / $scaleFactor;
+        $scaledError = $this->options->error / $scaleFactor;
+
         $violations = [];
 
-        foreach ($context->metrics->all(SymbolType::Class_) as $classInfo) {
+        foreach ($classes as $classInfo) {
             $metrics = $context->metrics->get($classInfo->symbolPath);
             $classRank = $metrics->get(MetricName::COUPLING_CLASS_RANK);
 
@@ -67,12 +84,12 @@ final class ClassRankRule extends AbstractRule
             }
 
             $rankValue = (float) $classRank;
-            $severity = $this->options->getSeverity($rankValue);
+            $severity = self::getSeverityForScaledThresholds($rankValue, $scaledWarning, $scaledError);
 
             if ($severity !== null) {
                 $threshold = $severity === Severity::Error
-                    ? $this->options->error
-                    : $this->options->warning;
+                    ? $scaledError
+                    : $scaledWarning;
 
                 $violations[] = new Violation(
                     location: new Location($classInfo->file, $classInfo->line),
@@ -80,9 +97,10 @@ final class ClassRankRule extends AbstractRule
                     ruleName: $this->getName(),
                     violationCode: self::NAME,
                     message: \sprintf(
-                        'ClassRank is %.4f, exceeds threshold of %.4f. This class is a critical hub — changes have wide impact',
+                        'ClassRank is %.4f, exceeds threshold of %.4f (scaled for %d classes). This class is a critical hub — changes have wide impact',
                         $rankValue,
                         $threshold,
+                        $classCount,
                     ),
                     severity: $severity,
                     metricValue: $rankValue,
@@ -93,6 +111,37 @@ final class ClassRankRule extends AbstractRule
         }
 
         return $violations;
+    }
+
+    /**
+     * Compute the scale factor for threshold adjustment based on class count.
+     *
+     * Uses sqrt(classCount / 100) so that thresholds are unchanged at 100 classes,
+     * decrease for larger projects, and increase for smaller ones.
+     */
+    public static function computeScaleFactor(int $classCount): float
+    {
+        if ($classCount <= 0) {
+            return 1.0;
+        }
+
+        return sqrt($classCount / 100);
+    }
+
+    private static function getSeverityForScaledThresholds(
+        float $value,
+        float $scaledWarning,
+        float $scaledError,
+    ): ?Severity {
+        if ($value >= $scaledError) {
+            return Severity::Error;
+        }
+
+        if ($value >= $scaledWarning) {
+            return Severity::Warning;
+        }
+
+        return null;
     }
 
     /**

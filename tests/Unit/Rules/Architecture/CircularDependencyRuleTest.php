@@ -59,7 +59,6 @@ final class CircularDependencyRuleTest extends TestCase
         $this->assertCount(1, $violations);
         $this->assertSame('architecture.circular-dependency', $violations[0]->ruleName);
         $this->assertStringContainsString('Circular dependency (2 classes)', $violations[0]->message);
-        $this->assertStringContainsString('Break the cycle by introducing interfaces or restructuring', $violations[0]->message);
     }
 
     public function testErrorSeverityForDirectCycle(): void
@@ -215,6 +214,143 @@ final class CircularDependencyRuleTest extends TestCase
         ]);
 
         self::assertSame(5, $options->maxCycleSize);
+    }
+
+    public function testSmallCycleRecommendationIncludesInterfaceGuidance(): void
+    {
+        $cycles = [
+            new Cycle($this->paths(['A', 'B']), $this->paths(['A', 'B', 'A'])),
+        ];
+
+        $rule = new CircularDependencyRule(new CircularDependencyOptions());
+
+        $context = new AnalysisContext(
+            metrics: new InMemoryMetricRepository(),
+            cycles: $cycles,
+        );
+
+        $violations = $rule->analyze($context);
+
+        self::assertCount(1, $violations);
+        self::assertNotNull($violations[0]->recommendation);
+        self::assertStringContainsString('Break by introducing an interface', $violations[0]->recommendation);
+    }
+
+    public function testMediumCycleRecommendationIncludesAbstractionGuidance(): void
+    {
+        // 10 classes → medium category (6-20)
+        $classNames = array_map(static fn(int $i): string => "Class{$i}", range(1, 10));
+        $pathNames = [...$classNames, $classNames[0]];
+
+        $cycles = [
+            new Cycle($this->paths($classNames), $this->paths($pathNames)),
+        ];
+
+        $rule = new CircularDependencyRule(new CircularDependencyOptions());
+
+        $context = new AnalysisContext(
+            metrics: new InMemoryMetricRepository(),
+            cycles: $cycles,
+        );
+
+        $violations = $rule->analyze($context);
+
+        self::assertCount(1, $violations);
+        self::assertNotNull($violations[0]->recommendation);
+        self::assertStringContainsString('extracting a shared abstraction layer', $violations[0]->recommendation);
+    }
+
+    public function testLargeCycleHasWarningSeverityAndEntryPointGuidance(): void
+    {
+        // 30 classes → large category (>20)
+        $classNames = array_map(static fn(int $i): string => "Class{$i}", range(1, 30));
+        $pathNames = [...$classNames, $classNames[0]];
+
+        $cycles = [
+            new Cycle($this->paths($classNames), $this->paths($pathNames)),
+        ];
+
+        $rule = new CircularDependencyRule(new CircularDependencyOptions());
+
+        $context = new AnalysisContext(
+            metrics: new InMemoryMetricRepository(),
+            cycles: $cycles,
+        );
+
+        $violations = $rule->analyze($context);
+
+        self::assertCount(1, $violations);
+        self::assertSame(Severity::Warning, $violations[0]->severity);
+        self::assertNotNull($violations[0]->recommendation);
+        self::assertStringContainsString('focus on the entry-point classes', $violations[0]->recommendation);
+    }
+
+    public function testRecommendationContainsStructuredJsonData(): void
+    {
+        $cycles = [
+            new Cycle($this->paths(['A', 'B', 'C']), $this->paths(['A', 'B', 'C', 'A'])),
+        ];
+
+        $rule = new CircularDependencyRule(new CircularDependencyOptions());
+
+        $context = new AnalysisContext(
+            metrics: new InMemoryMetricRepository(),
+            cycles: $cycles,
+        );
+
+        $violations = $rule->analyze($context);
+
+        self::assertCount(1, $violations);
+        self::assertNotNull($violations[0]->recommendation);
+
+        $recommendation = $violations[0]->recommendation;
+        self::assertStringContainsString('Cycle data: {', $recommendation);
+
+        // Extract JSON from recommendation
+        $jsonStart = strpos($recommendation, 'Cycle data: ');
+        self::assertIsInt($jsonStart);
+        $jsonString = substr($recommendation, $jsonStart + \strlen('Cycle data: '));
+        $decoded = json_decode($jsonString, true);
+
+        self::assertIsArray($decoded);
+        self::assertArrayHasKey('cycle', $decoded);
+        self::assertArrayHasKey('length', $decoded);
+        self::assertArrayHasKey('category', $decoded);
+        self::assertSame(3, $decoded['length']);
+        self::assertSame('small', $decoded['category']);
+    }
+
+    public function testLargeCycleStructuredDataHasLargeCategory(): void
+    {
+        // 30 classes → large category (>20)
+        $classNames = array_map(static fn(int $i): string => "Class{$i}", range(1, 30));
+        $pathNames = [...$classNames, $classNames[0]];
+
+        $cycles = [
+            new Cycle($this->paths($classNames), $this->paths($pathNames)),
+        ];
+
+        $rule = new CircularDependencyRule(new CircularDependencyOptions());
+
+        $context = new AnalysisContext(
+            metrics: new InMemoryMetricRepository(),
+            cycles: $cycles,
+        );
+
+        $violations = $rule->analyze($context);
+
+        self::assertCount(1, $violations);
+        self::assertNotNull($violations[0]->recommendation);
+
+        $recommendation = $violations[0]->recommendation;
+        $jsonStart = strpos($recommendation, 'Cycle data: ');
+        self::assertIsInt($jsonStart);
+        $jsonString = substr($recommendation, $jsonStart + \strlen('Cycle data: '));
+        $decoded = json_decode($jsonString, true);
+
+        self::assertIsArray($decoded);
+        self::assertSame('large', $decoded['category']);
+        self::assertSame(30, $decoded['length']);
     }
 
     /**

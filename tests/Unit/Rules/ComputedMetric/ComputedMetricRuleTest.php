@@ -125,6 +125,9 @@ final class ComputedMetricRuleTest extends TestCase
 
         self::assertCount(1, $violations);
         self::assertSame(Severity::Warning, $violations[0]->severity);
+        // L10: threshold matches the warning threshold for warning severity
+        self::assertSame(50.0, $violations[0]->threshold);
+        self::assertSame(40.0, $violations[0]->metricValue);
     }
 
     public function testErrorForInvertedMetricBelowErrorThreshold(): void
@@ -281,6 +284,9 @@ final class ComputedMetricRuleTest extends TestCase
             'App\Service\UserService: health.score = 25.0 (error threshold: below 30.0)',
             $violations[0]->message,
         );
+        // L10: threshold must be set for programmatic filtering
+        self::assertSame(30.0, $violations[0]->threshold);
+        self::assertSame(25.0, $violations[0]->metricValue);
     }
 
     public function testViolationCodeEqualsDefinitionName(): void
@@ -543,6 +549,94 @@ final class ComputedMetricRuleTest extends TestCase
         self::assertCount(1, $violations);
         self::assertStringContainsString('below', $violations[0]->message);
         self::assertStringNotContainsString('above', $violations[0]->message);
+    }
+
+    public function testRecommendationIncludesDimensionScoreAndThreshold(): void
+    {
+        $definition = new ComputedMetricDefinition(
+            name: 'health.complexity',
+            formulas: ['class' => 'ccn'],
+            description: 'Complexity metric',
+            levels: [SymbolType::Class_],
+            inverted: false,
+            warningThreshold: 10.0,
+            errorThreshold: 20.0,
+        );
+
+        $rule = $this->createRuleWithDefinitions([$definition]);
+        $classPath = SymbolPath::forClass('App\\Service', 'UserService');
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturn([new SymbolInfo($classPath, 'src/UserService.php', 10)]);
+        $repository->method('get')
+            ->willReturn((new MetricBag())->with('health.complexity', 25.0));
+
+        $violations = $rule->analyze(new AnalysisContext($repository));
+
+        self::assertCount(1, $violations);
+        $recommendation = $violations[0]->recommendation;
+        self::assertNotNull($recommendation);
+        // Header: "Complexity health: 25.0 (threshold: 20.0)"
+        self::assertStringContainsString('Complexity health: 25.0 (threshold: 20.0)', $recommendation);
+        // Advice still present
+        self::assertStringContainsString('Reduce complexity', $recommendation);
+    }
+
+    public function testRecommendationDimensionLabelExtraction(): void
+    {
+        $definition = new ComputedMetricDefinition(
+            name: 'health.cohesion',
+            formulas: ['class' => 'tcc'],
+            description: 'Cohesion metric',
+            levels: [SymbolType::Class_],
+            inverted: true,
+            warningThreshold: 50.0,
+        );
+
+        $rule = $this->createRuleWithDefinitions([$definition]);
+        $classPath = SymbolPath::forClass('App', 'Test');
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturn([new SymbolInfo($classPath, 'test.php', 1)]);
+        $repository->method('get')
+            ->willReturn((new MetricBag())->with('health.cohesion', 30.0));
+
+        $violations = $rule->analyze(new AnalysisContext($repository));
+
+        self::assertCount(1, $violations);
+        $recommendation = $violations[0]->recommendation;
+        self::assertNotNull($recommendation);
+        self::assertStringContainsString('Cohesion health: 30.0 (threshold: 50.0)', $recommendation);
+    }
+
+    public function testViolationCarriesThresholdField(): void
+    {
+        $definition = new ComputedMetricDefinition(
+            name: 'health.complexity',
+            formulas: ['class' => 'ccn'],
+            description: 'Complexity',
+            levels: [SymbolType::Class_],
+            inverted: false,
+            warningThreshold: 10.0,
+            errorThreshold: 20.0,
+        );
+
+        $rule = $this->createRuleWithDefinitions([$definition]);
+        $classPath = SymbolPath::forClass('App', 'Test');
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturn([new SymbolInfo($classPath, 'test.php', 1)]);
+        $repository->method('get')
+            ->willReturn((new MetricBag())->with('health.complexity', 25.0));
+
+        $violations = $rule->analyze(new AnalysisContext($repository));
+
+        self::assertCount(1, $violations);
+        self::assertSame(20.0, $violations[0]->threshold);
+        self::assertSame(25.0, $violations[0]->metricValue);
     }
 
     /**
