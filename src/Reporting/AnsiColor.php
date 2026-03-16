@@ -42,7 +42,7 @@ final readonly class AnsiColor
 
     public function dim(string $text): string
     {
-        return $this->wrap($text, '2');
+        return $this->wrap($text, '38;5;249');
     }
 
     public function boldRed(string $text): string
