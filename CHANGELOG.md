@@ -8,6 +8,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- 5-tier health labels (`Strong` / `Good` / `Acceptable` / `Weak` / `Critical`) replace the previous 4-tier scheme — new `Good` tier fills the 65–80 gap
+- `--exclude-health=DIMENSION` option (CLI + YAML) to exclude specific health dimensions from scoring and `health.overall` calculation
+- Complexity health now uses per-method CCN average instead of WMC-based average — fixes floor effect where small projects with concentrated complexity scored 0
+- Maintainability health formula stretched `(mi_avg - 40) * 1.667` for better score spread
+- ClassRank thresholds scale by `sqrt(classCount / 100)` — adapts to project size instead of fixed thresholds
+- Tech debt scaled by `base * max(1, ln(ratio))` — large violations no longer dominate total debt
+- `--format-opt=limit=N` for JSON violations count (`limit=0` for unlimited); `violationsMeta.shown` field added
+- God-class detection: TCC veto — classes with TCC >= 0.5 (good cohesion) can no longer be flagged as god classes
+- Data class rule excludes interfaces, abstract classes, zero-property classes, and exceptions (reduces false positives)
+- CBO violations show coupling direction (`afferent` / `efferent` / `balanced` with Ca/Ce counts)
+- Circular dependency output uses structured JSON with size categories
+- NPath display capped at `> 1M` instead of `> 10^9`
+- Debug-code rule: `var_export`/`print_r` in return mode no longer flagged; debug API methods and `debug_backtrace` excluded; severity lowered to WARNING
+- Unused-private violations now name the specific symbol in the message
+- WMC message includes average method CCN
+- `computed.health` violations include dimension-specific detail
+- TCC uses neutral value (0.5) for small classes (<6 methods) and all-static classes
+- Empty-catch rule excludes chain-of-responsibility pattern (catch with only return/continue)
+- Hardcoded credentials rule excludes human-readable messages and translation keys
 - Threshold phrasing in violation messages changed from `(max X)` / `(min X)` to `(threshold: X)` for clarity at boundary values
 - `--namespace` and `--class` drill-down now shows total tech debt line (aggregated from per-rule breakdown)
 - Complexity health formula retuned — linear penalty model with balanced CCN/cognitive/NPath weights (was harmonic K=32 with 92% cognitive bias). Cross-project score spread improved from 1.8pt to 6.6pt
@@ -25,15 +44,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `--generate-baseline` exits 0 when baseline is successfully written (was exit 2)
 - Baseline "written" message reports deduplicated violation count (was raw count)
 - Boolean argument violations now show the parameter name (e.g., `$overwrite`)
-- `computed.health` violations include dimension-specific fix recommendations
 - Debt density display clarified with "to fix" suffix
 - `violationsMeta.byRule` added to JSON output — per-rule violation counts for complete visibility without `violations=all`
 - SARIF `helpUri` now links to rule-specific documentation pages
 - GitLab Code Quality: project-level violations use `[project-level]` path instead of invalid `.`
+- `code-smell.long-parameter-list` rule — detects methods with too many parameters (warning: 4, error: 6)
+- `code-smell.unreachable-code` rule — detects dead code after return/throw/exit statements
+- `design.type-coverage` rule — measures type declaration coverage for parameters, return types, and properties per class
+- `--format=metrics-json` output format — exports raw metric values for all symbols (methods, classes, namespaces, files)
 
 ### Breaking
 - JSON field `humanMessage` renamed to `recommendation` in violation objects. Update any scripts parsing `humanMessage`
 - Health score values changed due to formula retuning — baselines and stored thresholds may need regeneration
+- `health.maintainability` thresholds changed from 65/50 to 50/25 due to stretched formula — existing baselines may need regeneration
+- Health label scheme changed from 4-tier to 5-tier — scripts checking label strings need updating
 - `--format=json` redesigned as summary-oriented output — includes `meta`, `summary`, `health` scores with decomposition, `worstNamespaces`, `worstClasses`, and `violations` (top 50 by default). Supports `--format-opt=violations=all|0|N`, `--format-opt=top=N`, `--detail`, `--namespace`/`--class` drill-down. No longer PHPMD-compatible
 - `--format=summary` is now the **default CLI output** — shows health overview with bars, worst offenders, violation summary, and contextual hints in one screen. Previous default `text` format is still available via `--format=text`
 - `--namespace` and `--class` CLI options for drill-down filtering — boundary-aware namespace prefix matching and exact FQCN class matching (mutually exclusive)
@@ -54,6 +78,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Security pattern rules: `security.sql-injection`, `security.xss`, `security.command-injection` — AST-based detection of direct superglobal flows
 - `security.sensitive-parameter` rule — detects parameters with sensitive names missing `#[\SensitiveParameter]` attribute
 - Technical debt reporting — remediation time estimates per violation, aggregated debt in text and JSON output
+- NPath complexity formula changes: `for` loop follows Nejmeh 1988 standard, `try-catch-finally` follows PMD/Checkstyle convention — existing NPath values may change
+- Baseline version 3 is no longer supported — regenerate with `--generate-baseline` (v3 hashes were silently incompatible with v4)
 - `DependencyGraphInterface` and `Dependency` VO now use `SymbolPath` instead of raw string FQNs
 - `SymbolPath::forProject()` factory for project-level metrics, separated from global namespace
 - `AnalysisContext::$cycles` typed property replaces untyped `additionalData` side-channel
@@ -71,12 +97,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `MetricAggregator` and all aggregators now depend on `MetricRepositoryInterface` instead of concrete implementation
 - `WorkerBootstrap` validates collector instantiability before creating instances
 
-### Breaking
-- `--format=json` output structure completely redesigned — no longer PHPMD-compatible. Use `--format=text` for grep-friendly output
-- Baseline version 3 is no longer supported — regenerate with `--generate-baseline` (v3 hashes were silently incompatible with v4)
-- NPath complexity formula changes: `for` loop follows Nejmeh 1988 standard, `try-catch-finally` follows PMD/Checkstyle convention — existing NPath values may change
-
 ### Fixed
+- Fixed Maintainability Index always reporting 0 at class level — collector now properly skips non-method symbols where Halstead data is absent
+- Fixed class-level instability rule flagging leaf classes with no afferent coupling (Ca=0)
+- Fixed Distance rule silently producing zero results when no project namespaces detected (now warns)
 - Fixed duplicate violations in `code-smell.unused-private` rule — global collectors were duplicating `DataBag` entries via `add()` merge; introduced `addScalar()` to `MetricRepositoryInterface`
 - Fixed Maintainability Index (MI) not aggregated to namespace/project level — non-additive method metrics now use Average fallback when Sum is unavailable
 - Fixed cognitive complexity nesting level not restored after closures/arrow functions inside nested scopes
@@ -119,10 +143,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed AST visitors losing class context after anonymous classes, causing incorrect FQN for subsequent methods
 - Fixed derived metric collectors not seeing each other's outputs (e.g., Maintainability Index depending on Halstead)
 - Fixed dependency graph not being passed to analysis rules
-- `code-smell.long-parameter-list` rule — detects methods with too many parameters (warning: 4, error: 6)
-- `code-smell.unreachable-code` rule — detects dead code after return/throw/exit statements
-- `design.type-coverage` rule — measures type declaration coverage for parameters, return types, and properties per class
-- `--format=metrics-json` output format — exports raw metric values for all symbols (methods, classes, namespaces, files)
 
 ## [0.3.0] - 2026-03-08
 
