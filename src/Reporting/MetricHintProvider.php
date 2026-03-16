@@ -83,7 +83,7 @@ final class MetricHintProvider
             'label' => 'CBO',
             'direction' => 'lower_is_better',
             'goodValue' => 'below 7',
-            'badExplanation' => 'depends on too many classes',
+            'badExplanation' => 'coupled to too many classes',
             'goodExplanation' => 'well-isolated',
         ],
         'cbo.avg' => [

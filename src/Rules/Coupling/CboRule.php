@@ -213,17 +213,11 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
                 symbolPath: $symbolInfo->symbolPath,
                 ruleName: $this->getName(),
                 violationCode: $violationCode,
-                message: \sprintf(
-                    'CBO (Coupling Between Objects) is %d (Ca=%d, Ce=%d), exceeds threshold of %d. Reduce dependencies to lower coupling',
-                    $cbo,
-                    $ca,
-                    $ce,
-                    $options->error,
-                ),
+                message: $this->buildMessage($cbo, $ca, $ce, $options->error),
                 severity: Severity::Error,
                 metricValue: (float) $cbo,
                 level: $level,
-                recommendation: \sprintf('CBO: %d (threshold: %d) — depends on too many classes', $cbo, $options->error),
+                recommendation: $this->buildRecommendation($cbo, $ca, $ce, $options->error),
                 threshold: $options->error,
             );
         }
@@ -234,21 +228,90 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
                 symbolPath: $symbolInfo->symbolPath,
                 ruleName: $this->getName(),
                 violationCode: $violationCode,
-                message: \sprintf(
-                    'CBO (Coupling Between Objects) is %d (Ca=%d, Ce=%d), exceeds threshold of %d. Reduce dependencies to lower coupling',
-                    $cbo,
-                    $ca,
-                    $ce,
-                    $options->warning,
-                ),
+                message: $this->buildMessage($cbo, $ca, $ce, $options->warning),
                 severity: Severity::Warning,
                 metricValue: (float) $cbo,
                 level: $level,
-                recommendation: \sprintf('CBO: %d (threshold: %d) — depends on too many classes', $cbo, $options->warning),
+                recommendation: $this->buildRecommendation($cbo, $ca, $ce, $options->warning),
                 threshold: $options->warning,
             );
         }
 
         return null;
+    }
+
+    /**
+     * Determines coupling direction and builds a direction-aware violation message.
+     */
+    private function buildMessage(int $cbo, int $ca, int $ce, int $threshold): string
+    {
+        $direction = $this->getCouplingDirection($ca, $ce);
+
+        return match ($direction) {
+            'efferent' => \sprintf(
+                'Efferent coupling too high: depends on %d classes (CBO: %d, threshold: %d)',
+                $ce,
+                $cbo,
+                $threshold,
+            ),
+            'afferent' => \sprintf(
+                'Afferent coupling too high: %d classes depend on this (CBO: %d, threshold: %d)',
+                $ca,
+                $cbo,
+                $threshold,
+            ),
+            default => \sprintf(
+                'Coupling too high: %d inbound + %d outbound (CBO: %d, threshold: %d)',
+                $ca,
+                $ce,
+                $cbo,
+                $threshold,
+            ),
+        };
+    }
+
+    /**
+     * Builds a direction-aware recommendation.
+     */
+    private function buildRecommendation(int $cbo, int $ca, int $ce, int $threshold): string
+    {
+        $direction = $this->getCouplingDirection($ca, $ce);
+
+        return match ($direction) {
+            'efferent' => \sprintf(
+                'CBO: %d (threshold: %d) — extract dependencies to reduce outbound coupling',
+                $cbo,
+                $threshold,
+            ),
+            'afferent' => \sprintf(
+                'CBO: %d (threshold: %d) — this class is a coupling magnet, consider if it is a healthy abstraction point',
+                $cbo,
+                $threshold,
+            ),
+            default => \sprintf(
+                'CBO: %d (threshold: %d) — reduce both inbound and outbound coupling',
+                $cbo,
+                $threshold,
+            ),
+        };
+    }
+
+    /**
+     * Determines coupling direction: 'afferent', 'efferent', or 'balanced'.
+     *
+     * Uses a 2:1 ratio threshold: a direction dominates when it accounts
+     * for more than twice the other direction.
+     */
+    private function getCouplingDirection(int $ca, int $ce): string
+    {
+        if ($ca > $ce * 2) {
+            return 'afferent';
+        }
+
+        if ($ce > $ca * 2) {
+            return 'efferent';
+        }
+
+        return 'balanced';
     }
 }

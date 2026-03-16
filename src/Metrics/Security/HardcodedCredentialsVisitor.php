@@ -237,6 +237,30 @@ final class HardcodedCredentialsVisitor extends NodeVisitorAbstract implements R
             return false;
         }
 
+        // Human-readable sentences (translations, error messages) are not credentials.
+        // A string with multiple spaces and sufficient length is likely a message, not a secret.
+        if ($this->isHumanReadableMessage($value)) {
+            return false;
+        }
+
         return true;
+    }
+
+    /**
+     * Check if a value looks like a human-readable message rather than a credential.
+     *
+     * Heuristic: strings containing 2+ spaces and longer than 20 characters are likely
+     * translations, error messages, or documentation strings — not secrets.
+     */
+    private function isHumanReadableMessage(string $value): bool
+    {
+        if (\strlen($value) <= 20) {
+            return false;
+        }
+
+        // Count words (sequences of 3+ word characters) — natural language has many
+        $wordCount = preg_match_all('/\b\w{3,}\b/', $value);
+
+        return $wordCount >= 3;
     }
 }

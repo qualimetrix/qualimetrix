@@ -338,7 +338,7 @@ final class JsonFormatter implements FormatterInterface
             'rule' => $violation->ruleName,
             'code' => $violation->violationCode,
             'severity' => $violation->severity->value,
-            'message' => $violation->getDisplayMessage(),
+            'message' => $violation->message,
             'recommendation' => $violation->recommendation,
             'metricValue' => $this->sanitizeNumeric($violation->metricValue),
             'threshold' => $this->sanitizeNumeric($violation->threshold),

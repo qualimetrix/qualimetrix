@@ -22,6 +22,7 @@ final readonly class DataClassOptions implements RuleOptionsInterface
         public int $minMethods = 3,
         public bool $excludeReadonly = true,
         public bool $excludePromotedOnly = true,
+        public bool $excludeExceptions = true,
     ) {}
 
     /**
@@ -40,6 +41,7 @@ final readonly class DataClassOptions implements RuleOptionsInterface
             minMethods: (int) ($config['min_methods'] ?? $config['minMethods'] ?? 3),
             excludeReadonly: (bool) ($config['exclude_readonly'] ?? $config['excludeReadonly'] ?? true),
             excludePromotedOnly: (bool) ($config['exclude_promoted_only'] ?? $config['excludePromotedOnly'] ?? true),
+            excludeExceptions: (bool) ($config['exclude_exceptions'] ?? $config['excludeExceptions'] ?? true),
         );
     }
 

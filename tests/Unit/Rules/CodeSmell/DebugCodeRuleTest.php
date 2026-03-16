@@ -102,7 +102,7 @@ final class DebugCodeRuleTest extends TestCase
         $violations = $rule->analyze($context);
 
         self::assertCount(3, $violations);
-        self::assertSame(Severity::Error, $violations[0]->severity);
+        self::assertSame(Severity::Warning, $violations[0]->severity);
         self::assertSame(5, $violations[0]->location->line);
         self::assertSame(12, $violations[1]->location->line);
         self::assertSame(30, $violations[2]->location->line);

@@ -32,7 +32,7 @@ final class DebugCodeRule extends AbstractCodeSmellRule
 
     protected function getSeverity(): Severity
     {
-        return Severity::Error;
+        return Severity::Warning;
     }
 
     protected function getMessageTemplate(): string

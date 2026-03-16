@@ -33,6 +33,9 @@ final class MethodCountMetrics
 
     // Class characteristics for false positive reduction (RFC-008)
     public bool $isReadonly = false;
+    public bool $isAbstract = false;
+    public bool $isInterface = false;
+    public bool $isException = false;
     public bool $hasConstructor = false;
 
     public function __construct(

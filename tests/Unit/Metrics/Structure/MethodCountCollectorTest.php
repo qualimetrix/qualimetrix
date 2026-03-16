@@ -397,7 +397,7 @@ PHP;
     {
         $definitions = $this->collector->getMetricDefinitions();
 
-        self::assertCount(16, $definitions);
+        self::assertCount(19, $definitions);
 
         $metricNames = array_map(fn($d) => $d->name, $definitions);
         self::assertContains('methodCount', $metricNames);
@@ -415,6 +415,9 @@ PHP;
         self::assertContains('isReadonly', $metricNames);
         self::assertContains('isPromotedPropertiesOnly', $metricNames);
         self::assertContains('isDataClass', $metricNames);
+        self::assertContains('isAbstract', $metricNames);
+        self::assertContains('isInterface', $metricNames);
+        self::assertContains('isException', $metricNames);
         self::assertContains('woc', $metricNames);
 
         // Check collected at level

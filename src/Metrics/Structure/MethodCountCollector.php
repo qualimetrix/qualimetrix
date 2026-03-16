@@ -87,6 +87,9 @@ final class MethodCountCollector extends AbstractCollector implements ClassMetri
             MetricName::STRUCTURE_IS_READONLY,
             MetricName::STRUCTURE_IS_PROMOTED_PROPERTIES_ONLY,
             MetricName::STRUCTURE_IS_DATA_CLASS,
+            MetricName::STRUCTURE_IS_ABSTRACT,
+            MetricName::STRUCTURE_IS_INTERFACE,
+            MetricName::STRUCTURE_IS_EXCEPTION,
             // PDepend WOC metric
             MetricName::STRUCTURE_WOC,
         ];
@@ -138,6 +141,9 @@ final class MethodCountCollector extends AbstractCollector implements ClassMetri
                 ->with(MetricName::STRUCTURE_IS_READONLY . ':' . $classFqn, $metrics->isReadonly ? 1 : 0)
                 ->with(MetricName::STRUCTURE_IS_PROMOTED_PROPERTIES_ONLY . ':' . $classFqn, $isPromotedOnly ? 1 : 0)
                 ->with(MetricName::STRUCTURE_IS_DATA_CLASS . ':' . $classFqn, $isDataClass ? 1 : 0)
+                ->with(MetricName::STRUCTURE_IS_ABSTRACT . ':' . $classFqn, $metrics->isAbstract ? 1 : 0)
+                ->with(MetricName::STRUCTURE_IS_INTERFACE . ':' . $classFqn, $metrics->isInterface ? 1 : 0)
+                ->with(MetricName::STRUCTURE_IS_EXCEPTION . ':' . $classFqn, $metrics->isException ? 1 : 0)
                 // PDepend WOC metric
                 ->with(MetricName::STRUCTURE_WOC . ':' . $classFqn, $woc);
         }
@@ -188,6 +194,9 @@ final class MethodCountCollector extends AbstractCollector implements ClassMetri
                 ->with(MetricName::STRUCTURE_IS_READONLY, $metrics->isReadonly ? 1 : 0)
                 ->with(MetricName::STRUCTURE_IS_PROMOTED_PROPERTIES_ONLY, $isPromotedOnly ? 1 : 0)
                 ->with(MetricName::STRUCTURE_IS_DATA_CLASS, $isDataClass ? 1 : 0)
+                ->with(MetricName::STRUCTURE_IS_ABSTRACT, $metrics->isAbstract ? 1 : 0)
+                ->with(MetricName::STRUCTURE_IS_INTERFACE, $metrics->isInterface ? 1 : 0)
+                ->with(MetricName::STRUCTURE_IS_EXCEPTION, $metrics->isException ? 1 : 0)
                 // PDepend WOC metric
                 ->with(MetricName::STRUCTURE_WOC, $woc);
 
@@ -302,6 +311,30 @@ final class MethodCountCollector extends AbstractCollector implements ClassMetri
             ),
             new MetricDefinition(
                 name: MetricName::STRUCTURE_IS_DATA_CLASS,
+                collectedAt: SymbolLevel::Class_,
+                aggregations: [
+                    SymbolLevel::Namespace_->value => [AggregationStrategy::Sum],
+                    SymbolLevel::Project->value => [AggregationStrategy::Sum],
+                ],
+            ),
+            new MetricDefinition(
+                name: MetricName::STRUCTURE_IS_ABSTRACT,
+                collectedAt: SymbolLevel::Class_,
+                aggregations: [
+                    SymbolLevel::Namespace_->value => [AggregationStrategy::Sum],
+                    SymbolLevel::Project->value => [AggregationStrategy::Sum],
+                ],
+            ),
+            new MetricDefinition(
+                name: MetricName::STRUCTURE_IS_INTERFACE,
+                collectedAt: SymbolLevel::Class_,
+                aggregations: [
+                    SymbolLevel::Namespace_->value => [AggregationStrategy::Sum],
+                    SymbolLevel::Project->value => [AggregationStrategy::Sum],
+                ],
+            ),
+            new MetricDefinition(
+                name: MetricName::STRUCTURE_IS_EXCEPTION,
                 collectedAt: SymbolLevel::Class_,
                 aggregations: [
                     SymbolLevel::Namespace_->value => [AggregationStrategy::Sum],

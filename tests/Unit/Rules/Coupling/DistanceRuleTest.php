@@ -6,6 +6,7 @@ namespace AiMessDetector\Tests\Unit\Rules\Coupling;
 
 use AiMessDetector\Core\Metric\MetricBag;
 use AiMessDetector\Core\Metric\MetricRepositoryInterface;
+use AiMessDetector\Core\Namespace_\ProjectNamespaceResolverInterface;
 use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\RuleCategory;
 use AiMessDetector\Core\Symbol\SymbolInfo;
@@ -17,6 +18,7 @@ use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 
 #[CoversClass(DistanceRule::class)]
 #[CoversClass(DistanceOptions::class)]
@@ -450,5 +452,124 @@ final class DistanceRuleTest extends TestCase
 
         $invalidOptions = $this->createStub(\AiMessDetector\Core\Rule\RuleOptionsInterface::class);
         new DistanceRule($invalidOptions);
+    }
+
+    public function testAnalyzeLogsWarningWhenNoProjectNamespacesDetected(): void
+    {
+        $resolver = $this->createStub(ProjectNamespaceResolverInterface::class);
+        $resolver->method('isProjectNamespace')
+            ->willReturn(false);
+
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects(self::once())
+            ->method('warning')
+            ->with(
+                self::stringContains('no project namespaces detected'),
+                self::equalTo(['total' => 1]),
+            );
+
+        $rule = new DistanceRule(
+            new DistanceOptions(minClassCount: 0),
+            $resolver,
+            $logger,
+        );
+
+        $symbolPath = SymbolPath::forNamespace('Vendor\Package');
+        $nsInfo = new SymbolInfo($symbolPath, 'vendor/package/src', null);
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturn([$nsInfo]);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyze($context);
+
+        self::assertSame([], $violations);
+    }
+
+    public function testAnalyzeDoesNotLogWarningWhenProjectNamespacesExist(): void
+    {
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects(self::never())
+            ->method('warning');
+
+        $rule = new DistanceRule(
+            new DistanceOptions(includeNamespaces: ['App'], minClassCount: 0),
+            null,
+            $logger,
+        );
+
+        $symbolPath = SymbolPath::forNamespace('App\Service');
+        $nsInfo = new SymbolInfo($symbolPath, 'src/Service', null);
+
+        $metricBag = (new MetricBag())
+            ->with('distance', 0.1)
+            ->with('abstractness', 0.5)
+            ->with('instability', 0.5);
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturn([$nsInfo]);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $rule->analyze($context);
+    }
+
+    public function testAnalyzeDoesNotLogWarningWhenNoNamespacesAtAll(): void
+    {
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects(self::never())
+            ->method('warning');
+
+        $rule = new DistanceRule(
+            new DistanceOptions(includeNamespaces: ['App'], minClassCount: 0),
+            null,
+            $logger,
+        );
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturn([]);
+
+        $context = new AnalysisContext($repository);
+        $rule->analyze($context);
+    }
+
+    public function testAnalyzeWarningIncludesRuleOptHint(): void
+    {
+        $resolver = $this->createStub(ProjectNamespaceResolverInterface::class);
+        $resolver->method('isProjectNamespace')
+            ->willReturn(false);
+
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects(self::once())
+            ->method('warning')
+            ->with(
+                self::stringContains("--rule-opt='coupling.distance:include_namespaces=...'"),
+                self::anything(),
+            );
+
+        $rule = new DistanceRule(
+            new DistanceOptions(minClassCount: 0),
+            $resolver,
+            $logger,
+        );
+
+        $nsPath1 = SymbolPath::forNamespace('Vendor\PackageA');
+        $nsInfo1 = new SymbolInfo($nsPath1, 'vendor/a/src', null);
+
+        $nsPath2 = SymbolPath::forNamespace('Vendor\PackageB');
+        $nsInfo2 = new SymbolInfo($nsPath2, 'vendor/b/src', null);
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturn([$nsInfo1, $nsInfo2]);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyze($context);
+
+        self::assertSame([], $violations);
     }
 }

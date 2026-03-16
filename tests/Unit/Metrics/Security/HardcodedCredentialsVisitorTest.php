@@ -179,6 +179,28 @@ final class HardcodedCredentialsVisitorTest extends TestCase
             'code' => '<?php class Service { private string $password; }',
             'expectedCount' => 0,
         ];
+
+        yield 'translation string in array (long sentence)' => [
+            'code' => '<?php return ["password" => "The provided password is incorrect."];',
+            'expectedCount' => 0,
+        ];
+
+        yield 'error message in variable' => [
+            'code' => '<?php $password = "The password must be at least 8 characters long.";',
+            'expectedCount' => 0,
+        ];
+
+        yield 'short credential-like value in array is still flagged' => [
+            'code' => '<?php $config = ["password" => "s3cr3t"];',
+            'expectedCount' => 1,
+            'expectedPattern' => 'array_key',
+        ];
+
+        yield 'credential with no spaces is flagged' => [
+            'code' => '<?php $apiKey = "sk-abc123def456ghi789jkl012mno345";',
+            'expectedCount' => 1,
+            'expectedPattern' => 'variable',
+        ];
     }
 
     public function testReset(): void

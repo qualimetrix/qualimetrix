@@ -8,6 +8,7 @@ use AiMessDetector\Metrics\ResettableVisitorInterface;
 use PhpParser\Node;
 use PhpParser\Node\Expr\ArrowFunction;
 use PhpParser\Node\Expr\Closure;
+use PhpParser\Node\Expr\ConstFetch;
 use PhpParser\Node\Expr\ErrorSuppress;
 use PhpParser\Node\Expr\Eval_;
 use PhpParser\Node\Expr\Exit_;
@@ -31,7 +32,7 @@ use PhpParser\NodeVisitorAbstract;
  * - eval() expressions
  * - exit()/die() expressions
  * - Empty catch blocks
- * - Debug code (var_dump, print_r, dd, dump, debug_backtrace)
+ * - Debug code (var_dump, print_r, dd, dump, debug_print_backtrace)
  * - Error suppression operator (@)
  * - count() in loop conditions
  * - Direct superglobal access ($_GET, $_POST, etc.)
@@ -45,8 +46,21 @@ final class CodeSmellVisitor extends NodeVisitorAbstract implements ResettableVi
         'var_export',
         'dd',
         'dump',
-        'debug_backtrace',
         'debug_print_backtrace',
+    ];
+
+    /**
+     * Method names that are part of a debugging API (e.g., Dumpable::dump(), dd()).
+     * Debug function calls inside these methods are intentional, not leftover debug code.
+     */
+    private const DEBUG_API_METHOD_NAMES = [
+        'dump',
+        'dd',
+        'debug',
+        'dumprawsql',
+        'dumpsql',
+        'debuginfo',
+        '__debuginfo',
     ];
 
     private const SUPERGLOBALS = [
@@ -64,13 +78,22 @@ final class CodeSmellVisitor extends NodeVisitorAbstract implements ResettableVi
     /** @var list<CodeSmellLocation> */
     private array $locations = [];
 
+    /** @var list<string> Stack of enclosing method/function names (lowercase) */
+    private array $methodStack = [];
+
     public function reset(): void
     {
         $this->locations = [];
+        $this->methodStack = [];
     }
 
     public function enterNode(Node $node): ?int
     {
+        if ($node instanceof ClassMethod || $node instanceof Function_) {
+            $name = $node->name->toLowerString();
+            $this->methodStack[] = $name;
+        }
+
         if ($node instanceof Goto_) {
             $this->addLocation('goto', $node);
 
@@ -123,6 +146,15 @@ final class CodeSmellVisitor extends NodeVisitorAbstract implements ResettableVi
             $this->checkBooleanArgument($node);
 
             return null;
+        }
+
+        return null;
+    }
+
+    public function leaveNode(Node $node): null
+    {
+        if ($node instanceof ClassMethod || $node instanceof Function_) {
+            array_pop($this->methodStack);
         }
 
         return null;
@@ -182,9 +214,62 @@ final class CodeSmellVisitor extends NodeVisitorAbstract implements ResettableVi
 
         $functionName = $node->name->toLowerString();
 
-        if (\in_array($functionName, self::DEBUG_FUNCTIONS, true)) {
-            $this->addLocation('debug_code', $node, $functionName);
+        if (!\in_array($functionName, self::DEBUG_FUNCTIONS, true)) {
+            return;
         }
+
+        // var_export()/print_r() with 2nd argument `true` is return mode (not output), not debug code
+        if (($functionName === 'var_export' || $functionName === 'print_r') && $this->isReturnModeCall($node)) {
+            return;
+        }
+
+        // Debug calls inside debug API methods (e.g., Dumpable::dump()) are intentional
+        if ($this->isInsideDebugApiMethod()) {
+            return;
+        }
+
+        $this->addLocation('debug_code', $node, $functionName);
+    }
+
+    /**
+     * Check if var_export()/print_r() is called with 2nd argument `true` (return mode).
+     * Also handles named arguments: var_export(return: true).
+     */
+    private function isReturnModeCall(FuncCall $node): bool
+    {
+        $args = $node->getArgs();
+
+        foreach ($args as $arg) {
+            // Named argument: var_export(return: true) or print_r(return: true)
+            if ($arg->name !== null && $arg->name->toString() === 'return') {
+                return $arg->value instanceof ConstFetch
+                    && $arg->value->name->toLowerString() === 'true';
+            }
+        }
+
+        // Positional: 2nd argument is `true`
+        if (\count($args) < 2) {
+            return false;
+        }
+
+        $secondArg = $args[1]->value;
+
+        return $secondArg instanceof ConstFetch
+            && $secondArg->name->toLowerString() === 'true';
+    }
+
+    /**
+     * Check if current context is inside a debug API method (dump, dd, debug, etc.).
+     */
+    private function isInsideDebugApiMethod(): bool
+    {
+        if ($this->methodStack === []) {
+            return false;
+        }
+
+        $currentMethod = $this->methodStack[\count($this->methodStack) - 1];
+
+        return \in_array($currentMethod, self::DEBUG_API_METHOD_NAMES, true);
     }
 
     private function checkCountInLoop(For_|While_|Do_ $node): void

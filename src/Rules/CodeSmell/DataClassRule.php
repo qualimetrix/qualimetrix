@@ -48,9 +48,13 @@ final class DataClassRule extends AbstractRule
             MetricName::STRUCTURE_WOC,
             MetricName::STRUCTURE_WMC,
             MetricName::STRUCTURE_METHOD_COUNT,
+            MetricName::STRUCTURE_PROPERTY_COUNT,
             MetricName::STRUCTURE_IS_READONLY,
             MetricName::STRUCTURE_IS_PROMOTED_PROPERTIES_ONLY,
             MetricName::STRUCTURE_IS_DATA_CLASS,
+            MetricName::STRUCTURE_IS_ABSTRACT,
+            MetricName::STRUCTURE_IS_INTERFACE,
+            MetricName::STRUCTURE_IS_EXCEPTION,
         ];
     }
 
@@ -67,6 +71,27 @@ final class DataClassRule extends AbstractRule
 
         foreach ($context->metrics->all(SymbolType::Class_) as $classInfo) {
             $metrics = $context->metrics->get($classInfo->symbolPath);
+
+            // Interfaces are contracts, not data classes — 100% WOC by definition
+            if ($metrics->get(MetricName::STRUCTURE_IS_INTERFACE) === 1) {
+                continue;
+            }
+
+            // Abstract classes are contracts, not data classes
+            if ($metrics->get(MetricName::STRUCTURE_IS_ABSTRACT) === 1) {
+                continue;
+            }
+
+            // Classes with zero properties cannot be data classes by definition
+            $propertyCount = (int) ($metrics->get(MetricName::STRUCTURE_PROPERTY_COUNT) ?? 0);
+            if ($propertyCount === 0) {
+                continue;
+            }
+
+            // Exception classes are DTOs by design — they hold error context, not behavior
+            if ($this->options->excludeExceptions && $metrics->get(MetricName::STRUCTURE_IS_EXCEPTION) === 1) {
+                continue;
+            }
 
             // Skip readonly classes if configured
             if ($this->options->excludeReadonly && $metrics->get(MetricName::STRUCTURE_IS_READONLY) === 1) {
@@ -139,6 +164,7 @@ final class DataClassRule extends AbstractRule
             'data-class-min-methods' => 'minMethods',
             'data-class-exclude-readonly' => 'excludeReadonly',
             'data-class-exclude-promoted-only' => 'excludePromotedOnly',
+            'data-class-exclude-exceptions' => 'excludeExceptions',
         ];
     }
 }

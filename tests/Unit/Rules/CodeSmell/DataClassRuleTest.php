@@ -20,6 +20,40 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(DataClassOptions::class)]
 final class DataClassRuleTest extends TestCase
 {
+    /**
+     * Creates a standard metric bag for a concrete class with properties.
+     * Override individual metrics as needed.
+     *
+     * @param array<string, int|null> $overrides
+     */
+    private function makeMetricBag(array $overrides = []): MetricBag
+    {
+        $defaults = [
+            'woc' => 90,
+            'wmc' => 5,
+            'methodCount' => 10,
+            'propertyCount' => 3,
+            'isReadonly' => 0,
+            'isPromotedPropertiesOnly' => 0,
+            'isDataClass' => 0,
+            'isAbstract' => 0,
+            'isInterface' => 0,
+            'isException' => 0,
+        ];
+
+        $values = array_merge($defaults, $overrides);
+
+        $bag = new MetricBag();
+
+        foreach ($values as $key => $value) {
+            if ($value !== null) {
+                $bag = $bag->with($key, $value);
+            }
+        }
+
+        return $bag;
+    }
+
     public function testGetName(): void
     {
         $rule = new DataClassRule(new DataClassOptions());
@@ -49,7 +83,7 @@ final class DataClassRuleTest extends TestCase
         $rule = new DataClassRule(new DataClassOptions());
 
         self::assertSame(
-            ['woc', 'wmc', 'methodCount', 'isReadonly', 'isPromotedPropertiesOnly', 'isDataClass'],
+            ['woc', 'wmc', 'methodCount', 'propertyCount', 'isReadonly', 'isPromotedPropertiesOnly', 'isDataClass', 'isAbstract', 'isInterface', 'isException'],
             $rule->requires(),
         );
     }
@@ -71,11 +105,13 @@ final class DataClassRuleTest extends TestCase
         self::assertArrayHasKey('data-class-min-methods', $aliases);
         self::assertArrayHasKey('data-class-exclude-readonly', $aliases);
         self::assertArrayHasKey('data-class-exclude-promoted-only', $aliases);
+        self::assertArrayHasKey('data-class-exclude-exceptions', $aliases);
         self::assertSame('wocThreshold', $aliases['data-class-woc-threshold']);
         self::assertSame('wmcThreshold', $aliases['data-class-wmc-threshold']);
         self::assertSame('minMethods', $aliases['data-class-min-methods']);
         self::assertSame('excludeReadonly', $aliases['data-class-exclude-readonly']);
         self::assertSame('excludePromotedOnly', $aliases['data-class-exclude-promoted-only']);
+        self::assertSame('excludeExceptions', $aliases['data-class-exclude-exceptions']);
     }
 
     public function testAnalyzeDisabledReturnsEmpty(): void
@@ -97,13 +133,7 @@ final class DataClassRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Service', 'SmallClass');
         $classInfo = new SymbolInfo($symbolPath, 'src/Service/SmallClass.php', 10);
 
-        $metricBag = (new MetricBag())
-            ->with('woc', 90)
-            ->with('wmc', 5)
-            ->with('methodCount', 2)
-            ->with('isReadonly', 0)
-            ->with('isPromotedPropertiesOnly', 0)
-            ->with('isDataClass', 0);
+        $metricBag = $this->makeMetricBag(['methodCount' => 2]);
 
         $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')->willReturn([$classInfo]);
@@ -121,13 +151,7 @@ final class DataClassRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Dto', 'ReadonlyDto');
         $classInfo = new SymbolInfo($symbolPath, 'src/Dto/ReadonlyDto.php', 5);
 
-        $metricBag = (new MetricBag())
-            ->with('woc', 90)
-            ->with('wmc', 5)
-            ->with('methodCount', 10)
-            ->with('isReadonly', 1)
-            ->with('isPromotedPropertiesOnly', 0)
-            ->with('isDataClass', 0);
+        $metricBag = $this->makeMetricBag(['isReadonly' => 1]);
 
         $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')->willReturn([$classInfo]);
@@ -145,13 +169,7 @@ final class DataClassRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Dto', 'ReadonlyDto');
         $classInfo = new SymbolInfo($symbolPath, 'src/Dto/ReadonlyDto.php', 5);
 
-        $metricBag = (new MetricBag())
-            ->with('woc', 90)
-            ->with('wmc', 5)
-            ->with('methodCount', 10)
-            ->with('isReadonly', 1)
-            ->with('isPromotedPropertiesOnly', 0)
-            ->with('isDataClass', 0);
+        $metricBag = $this->makeMetricBag(['isReadonly' => 1]);
 
         $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')->willReturn([$classInfo]);
@@ -171,13 +189,7 @@ final class DataClassRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Dto', 'PromotedDto');
         $classInfo = new SymbolInfo($symbolPath, 'src/Dto/PromotedDto.php', 5);
 
-        $metricBag = (new MetricBag())
-            ->with('woc', 90)
-            ->with('wmc', 5)
-            ->with('methodCount', 10)
-            ->with('isReadonly', 0)
-            ->with('isPromotedPropertiesOnly', 1)
-            ->with('isDataClass', 0);
+        $metricBag = $this->makeMetricBag(['isPromotedPropertiesOnly' => 1]);
 
         $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')->willReturn([$classInfo]);
@@ -195,13 +207,7 @@ final class DataClassRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Dto', 'PromotedDto');
         $classInfo = new SymbolInfo($symbolPath, 'src/Dto/PromotedDto.php', 5);
 
-        $metricBag = (new MetricBag())
-            ->with('woc', 90)
-            ->with('wmc', 5)
-            ->with('methodCount', 10)
-            ->with('isReadonly', 0)
-            ->with('isPromotedPropertiesOnly', 1)
-            ->with('isDataClass', 0);
+        $metricBag = $this->makeMetricBag(['isPromotedPropertiesOnly' => 1]);
 
         $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')->willReturn([$classInfo]);
@@ -221,13 +227,7 @@ final class DataClassRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Dto', 'PureDto');
         $classInfo = new SymbolInfo($symbolPath, 'src/Dto/PureDto.php', 5);
 
-        $metricBag = (new MetricBag())
-            ->with('woc', 90)
-            ->with('wmc', 5)
-            ->with('methodCount', 10)
-            ->with('isReadonly', 0)
-            ->with('isPromotedPropertiesOnly', 0)
-            ->with('isDataClass', 1);
+        $metricBag = $this->makeMetricBag(['isDataClass' => 1]);
 
         $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')->willReturn([$classInfo]);
@@ -245,13 +245,7 @@ final class DataClassRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
         $classInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
 
-        $metricBag = (new MetricBag())
-            ->with('woc', 90)
-            ->with('wmc', 5)
-            ->with('methodCount', 10)
-            ->with('isReadonly', 0)
-            ->with('isPromotedPropertiesOnly', 0)
-            ->with('isDataClass', 0);
+        $metricBag = $this->makeMetricBag();
 
         $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')->willReturn([$classInfo]);
@@ -278,13 +272,7 @@ final class DataClassRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Service', 'GoodClass');
         $classInfo = new SymbolInfo($symbolPath, 'src/Service/GoodClass.php', 10);
 
-        $metricBag = (new MetricBag())
-            ->with('woc', 50)
-            ->with('wmc', 5)
-            ->with('methodCount', 10)
-            ->with('isReadonly', 0)
-            ->with('isPromotedPropertiesOnly', 0)
-            ->with('isDataClass', 0);
+        $metricBag = $this->makeMetricBag(['woc' => 50]);
 
         $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')->willReturn([$classInfo]);
@@ -302,13 +290,7 @@ final class DataClassRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Service', 'ComplexClass');
         $classInfo = new SymbolInfo($symbolPath, 'src/Service/ComplexClass.php', 10);
 
-        $metricBag = (new MetricBag())
-            ->with('woc', 90)
-            ->with('wmc', 15)
-            ->with('methodCount', 10)
-            ->with('isReadonly', 0)
-            ->with('isPromotedPropertiesOnly', 0)
-            ->with('isDataClass', 0);
+        $metricBag = $this->makeMetricBag(['wmc' => 15]);
 
         $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')->willReturn([$classInfo]);
@@ -326,12 +308,17 @@ final class DataClassRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Service', 'NoWocClass');
         $classInfo = new SymbolInfo($symbolPath, 'src/Service/NoWocClass.php', 10);
 
+        // Omit 'woc' key entirely to get null
         $metricBag = (new MetricBag())
             ->with('wmc', 5)
             ->with('methodCount', 10)
+            ->with('propertyCount', 3)
             ->with('isReadonly', 0)
             ->with('isPromotedPropertiesOnly', 0)
-            ->with('isDataClass', 0);
+            ->with('isDataClass', 0)
+            ->with('isAbstract', 0)
+            ->with('isInterface', 0)
+            ->with('isException', 0);
 
         $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')->willReturn([$classInfo]);
@@ -341,6 +328,102 @@ final class DataClassRuleTest extends TestCase
 
         self::assertCount(0, $rule->analyze($context));
     }
+
+    // --- New tests for false positive reduction ---
+
+    public function testInterfaceSkipped(): void
+    {
+        $rule = new DataClassRule(new DataClassOptions());
+
+        $symbolPath = SymbolPath::forClass('App\Contract', 'NodeVisitor');
+        $classInfo = new SymbolInfo($symbolPath, 'src/Contract/NodeVisitor.php', 5);
+
+        $metricBag = $this->makeMetricBag(['isInterface' => 1]);
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')->willReturn([$classInfo]);
+        $repository->method('get')->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+
+        self::assertCount(0, $rule->analyze($context));
+    }
+
+    public function testAbstractClassSkipped(): void
+    {
+        $rule = new DataClassRule(new DataClassOptions());
+
+        $symbolPath = SymbolPath::forClass('App\Base', 'AbstractHandler');
+        $classInfo = new SymbolInfo($symbolPath, 'src/Base/AbstractHandler.php', 5);
+
+        $metricBag = $this->makeMetricBag(['isAbstract' => 1]);
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')->willReturn([$classInfo]);
+        $repository->method('get')->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+
+        self::assertCount(0, $rule->analyze($context));
+    }
+
+    public function testZeroPropertyClassSkipped(): void
+    {
+        $rule = new DataClassRule(new DataClassOptions());
+
+        $symbolPath = SymbolPath::forClass('App\Service', 'StatelessService');
+        $classInfo = new SymbolInfo($symbolPath, 'src/Service/StatelessService.php', 5);
+
+        $metricBag = $this->makeMetricBag(['propertyCount' => 0]);
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')->willReturn([$classInfo]);
+        $repository->method('get')->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+
+        self::assertCount(0, $rule->analyze($context));
+    }
+
+    public function testExceptionClassSkipped(): void
+    {
+        $rule = new DataClassRule(new DataClassOptions(excludeExceptions: true));
+
+        $symbolPath = SymbolPath::forClass('App\Exception', 'FileNotFoundException');
+        $classInfo = new SymbolInfo($symbolPath, 'src/Exception/FileNotFoundException.php', 5);
+
+        $metricBag = $this->makeMetricBag(['isException' => 1]);
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')->willReturn([$classInfo]);
+        $repository->method('get')->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+
+        self::assertCount(0, $rule->analyze($context));
+    }
+
+    public function testExceptionClassNotSkippedWhenOptionFalse(): void
+    {
+        $rule = new DataClassRule(new DataClassOptions(excludeExceptions: false));
+
+        $symbolPath = SymbolPath::forClass('App\Exception', 'FileNotFoundException');
+        $classInfo = new SymbolInfo($symbolPath, 'src/Exception/FileNotFoundException.php', 5);
+
+        $metricBag = $this->makeMetricBag(['isException' => 1]);
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')->willReturn([$classInfo]);
+        $repository->method('get')->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyze($context);
+
+        self::assertCount(1, $violations);
+        self::assertSame(Severity::Warning, $violations[0]->severity);
+    }
+
+    // --- Options tests ---
 
     public function testOptionsFromArrayDefaults(): void
     {
@@ -352,6 +435,7 @@ final class DataClassRuleTest extends TestCase
         self::assertSame(3, $options->minMethods);
         self::assertTrue($options->excludeReadonly);
         self::assertTrue($options->excludePromotedOnly);
+        self::assertTrue($options->excludeExceptions);
     }
 
     public function testOptionsFromArrayCustomValues(): void
@@ -363,6 +447,7 @@ final class DataClassRuleTest extends TestCase
             'min_methods' => 5,
             'exclude_readonly' => false,
             'exclude_promoted_only' => false,
+            'exclude_exceptions' => false,
         ]);
 
         self::assertTrue($options->enabled);
@@ -371,6 +456,7 @@ final class DataClassRuleTest extends TestCase
         self::assertSame(5, $options->minMethods);
         self::assertFalse($options->excludeReadonly);
         self::assertFalse($options->excludePromotedOnly);
+        self::assertFalse($options->excludeExceptions);
     }
 
     public function testOptionsFromArrayDualKey(): void
@@ -381,6 +467,7 @@ final class DataClassRuleTest extends TestCase
             'minMethods' => 4,
             'excludeReadonly' => false,
             'excludePromotedOnly' => false,
+            'excludeExceptions' => false,
         ]);
 
         self::assertSame(75, $options->wocThreshold);
@@ -388,6 +475,7 @@ final class DataClassRuleTest extends TestCase
         self::assertSame(4, $options->minMethods);
         self::assertFalse($options->excludeReadonly);
         self::assertFalse($options->excludePromotedOnly);
+        self::assertFalse($options->excludeExceptions);
     }
 
     public function testOptionsFromEmptyArrayDisabled(): void

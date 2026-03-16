@@ -75,9 +75,8 @@ final class MaintainabilityIndexCollectorTest extends TestCase
 
         $result = $this->collector->calculate($sourceBag);
 
-        // Should use defaults and return valid MI
-        self::assertTrue($result->has('mi'));
-        self::assertIsFloat($result->get('mi'));
+        // Without Halstead volume, MI cannot be calculated (e.g. class-level FQN)
+        self::assertFalse($result->has('mi'));
     }
 
     public function testCalculateWithHighComplexity(): void

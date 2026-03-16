@@ -10,9 +10,11 @@ use PhpParser\Node\Param;
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\Node\Stmt\Enum_;
+use PhpParser\Node\Stmt\GroupUse;
 use PhpParser\Node\Stmt\Interface_;
 use PhpParser\Node\Stmt\Property;
 use PhpParser\Node\Stmt\Trait_;
+use PhpParser\Node\Stmt\Use_;
 use PhpParser\NodeVisitorAbstract;
 
 /**
@@ -37,6 +39,34 @@ use PhpParser\NodeVisitorAbstract;
 final class MethodCountVisitor extends NodeVisitorAbstract implements ResettableVisitorInterface
 {
     /**
+     * Exception base classes in PHP.
+     * Any class extending one of these is considered an exception class.
+     */
+    private const array EXCEPTION_BASE_CLASSES = [
+        'Exception',
+        'Error',
+        'RuntimeException',
+        'LogicException',
+        'InvalidArgumentException',
+        'BadMethodCallException',
+        'BadFunctionCallException',
+        'DomainException',
+        'LengthException',
+        'OutOfRangeException',
+        'OverflowException',
+        'RangeException',
+        'UnderflowException',
+        'UnexpectedValueException',
+        'OutOfBoundsException',
+        'TypeError',
+        'ValueError',
+        'ArithmeticError',
+        'DivisionByZeroError',
+        'ParseError',
+        'FiberError',
+    ];
+
+    /**
      * @var array<string, MethodCountMetrics>
      *                                        Class FQN => metrics
      */
@@ -52,11 +82,19 @@ final class MethodCountVisitor extends NodeVisitorAbstract implements Resettable
      */
     private array $classStack = [];
 
+    /**
+     * Map of alias/short name => FQN from `use` statements in the current namespace.
+     *
+     * @var array<string, string>
+     */
+    private array $useImports = [];
+
     public function reset(): void
     {
         $this->classMetrics = [];
         $this->currentNamespace = null;
         $this->classStack = [];
+        $this->useImports = [];
     }
 
     /**
@@ -84,6 +122,32 @@ final class MethodCountVisitor extends NodeVisitorAbstract implements Resettable
         // Track namespace
         if ($node instanceof Node\Stmt\Namespace_) {
             $this->currentNamespace = $node->name?->toString() ?? '';
+            $this->useImports = [];
+
+            return null;
+        }
+
+        // Track use imports for parent class resolution
+        if ($node instanceof Use_ && $node->type === Use_::TYPE_NORMAL) {
+            foreach ($node->uses as $use) {
+                $alias = $use->getAlias()->toString();
+                $fqn = $use->name->toString();
+                $this->useImports[$alias] = $fqn;
+            }
+
+            return null;
+        }
+
+        if ($node instanceof GroupUse && $node->type === Use_::TYPE_NORMAL) {
+            $prefix = $node->prefix->toString();
+
+            foreach ($node->uses as $use) {
+                if ($use->type === Use_::TYPE_NORMAL || $use->type === Use_::TYPE_UNKNOWN) {
+                    $alias = $use->getAlias()->toString();
+                    $fqn = $prefix . '\\' . $use->name->toString();
+                    $this->useImports[$alias] = $fqn;
+                }
+            }
 
             return null;
         }
@@ -103,10 +167,17 @@ final class MethodCountVisitor extends NodeVisitorAbstract implements Resettable
                     line: $node->getStartLine(),
                 );
 
+                // Track interface flag
+                if ($node instanceof Interface_) {
+                    $this->classMetrics[$fqn]->isInterface = true;
+                }
+
                 // Process class characteristics and promoted properties
                 if ($node instanceof Class_) {
                     // RFC-008: Collect isReadonly for false positive reduction
                     $this->classMetrics[$fqn]->isReadonly = $node->isReadonly();
+                    $this->classMetrics[$fqn]->isAbstract = $node->isAbstract();
+                    $this->classMetrics[$fqn]->isException = $this->isExceptionClass($node);
 
                     $this->processConstructorPromotedProperties($node, $fqn);
                 }
@@ -143,6 +214,7 @@ final class MethodCountVisitor extends NodeVisitorAbstract implements Resettable
         // Exit namespace scope
         if ($node instanceof Node\Stmt\Namespace_) {
             $this->currentNamespace = null;
+            $this->useImports = [];
         }
 
         return null;
@@ -372,5 +444,66 @@ final class MethodCountVisitor extends NodeVisitorAbstract implements Resettable
         }
 
         return Class_::MODIFIER_PUBLIC; // default
+    }
+
+    /**
+     * Check if a class extends a known exception base class.
+     *
+     * Resolves the parent class name via use imports and checks against
+     * the list of standard PHP exception/error classes.
+     */
+    private function isExceptionClass(Class_ $node): bool
+    {
+        if ($node->extends === null) {
+            return false;
+        }
+
+        $parentFqn = $this->resolveClassName($node->extends);
+
+        // Strip leading backslash for comparison
+        $parentFqn = ltrim($parentFqn, '\\');
+
+        // Check the short name (last segment) against known exception base classes.
+        // This catches both direct extends (\Exception) and project-specific exceptions
+        // that extend framework exceptions (e.g., App\Exception\BaseException extends \RuntimeException).
+        $shortName = str_contains($parentFqn, '\\')
+            ? substr($parentFqn, strrpos($parentFqn, '\\') + 1)
+            : $parentFqn;
+
+        return \in_array($shortName, self::EXCEPTION_BASE_CLASSES, true);
+    }
+
+    /**
+     * Resolve class name to FQN using use imports.
+     */
+    private function resolveClassName(Node\Name $name): string
+    {
+        if ($name->isFullyQualified()) {
+            return $name->toString();
+        }
+
+        $className = $name->toString();
+
+        // Check use imports: for "Foo\Bar", the first part "Foo" might be an alias
+        $parts = explode('\\', $className);
+        $firstPart = $parts[0];
+
+        if (isset($this->useImports[$firstPart])) {
+            if (\count($parts) === 1) {
+                return $this->useImports[$firstPart];
+            }
+
+            // Replace alias with full path
+            $parts[0] = $this->useImports[$firstPart];
+
+            return implode('\\', $parts);
+        }
+
+        // Prepend current namespace
+        if ($this->currentNamespace !== null && $this->currentNamespace !== '') {
+            return $this->currentNamespace . '\\' . $className;
+        }
+
+        return $className;
     }
 }

@@ -7,6 +7,8 @@ namespace AiMessDetector\Infrastructure\DependencyInjection\CompilerPass;
 use AiMessDetector\Configuration\RuleOptionsFactory;
 use AiMessDetector\Core\Rule\RuleInterface;
 use AiMessDetector\Core\Rule\RuleOptionsInterface;
+use AiMessDetector\Infrastructure\Logging\DelegatingLogger;
+use Psr\Log\LoggerInterface;
 use ReflectionClass;
 use ReflectionNamedType;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
@@ -73,6 +75,27 @@ final class RuleOptionsCompilerPass implements CompilerPassInterface
     }
 
     /**
+     * Maps a type class to a concrete service ID in the container.
+     *
+     * Handles PSR interfaces that are registered via registerAliasForArgument()
+     * (parametric aliases) rather than plain setAlias(), which makes them
+     * invisible to $container->has().
+     */
+    private function resolveServiceId(string $typeClass, ContainerBuilder $container): ?string
+    {
+        if ($container->has($typeClass)) {
+            return $typeClass;
+        }
+
+        // Map well-known PSR interfaces to concrete implementations
+        if ($typeClass === LoggerInterface::class && $container->has(DelegatingLogger::class)) {
+            return DelegatingLogger::class;
+        }
+
+        return null;
+    }
+
+    /**
      * Resolves additional typed constructor parameters for rules.
      *
      * Since rules have autowiring disabled (due to RuleOptionsInterface injection),
@@ -117,9 +140,12 @@ final class RuleOptionsCompilerPass implements CompilerPassInterface
                 continue;
             }
 
+            // Map PSR interfaces to concrete implementations
+            $serviceId = $this->resolveServiceId($typeClass, $container);
+
             // If the container has this service, bind it
-            if ($container->has($typeClass)) {
-                $ruleDefinition->setArgument($paramName, new Reference($typeClass));
+            if ($serviceId !== null) {
+                $ruleDefinition->setArgument($paramName, new Reference($serviceId));
             } elseif ($type->allowsNull() || $param->isDefaultValueAvailable()) {
                 // Nullable or has default — skip (will use null/default)
             }

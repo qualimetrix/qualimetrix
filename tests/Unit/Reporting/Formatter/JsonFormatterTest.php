@@ -147,7 +147,7 @@ final class JsonFormatterTest extends TestCase
         self::assertSame('complexity.cyclomatic', $v1['rule']);
         self::assertSame('complexity.cyclomatic.method', $v1['code']);
         self::assertSame('error', $v1['severity']);
-        self::assertSame('Cyclomatic complexity: 25 (threshold: 10) — too many code paths', $v1['message']);
+        self::assertSame('Cyclomatic complexity of 25 exceeds threshold of 10', $v1['message']);
         self::assertSame(25, $v1['metricValue']);
         self::assertSame(10, $v1['threshold']);
 
@@ -182,7 +182,7 @@ final class JsonFormatterTest extends TestCase
         $output = $this->formatter->format($report, new FormatterContext());
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
-        // Without recommendation, getDisplayMessage() falls back to message
+        // message field always uses the raw violation message
         self::assertSame('Technical message only', $data['violations'][0]['message']);
     }
 

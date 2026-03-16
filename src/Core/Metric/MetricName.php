@@ -94,6 +94,9 @@ final class MetricName
     public const string STRUCTURE_UNUSED_PRIVATE_METHOD = 'unusedPrivate.method';
     public const string STRUCTURE_UNUSED_PRIVATE_PROPERTY = 'unusedPrivate.property';
     public const string STRUCTURE_UNUSED_PRIVATE_CONSTANT = 'unusedPrivate.constant';
+    public const string STRUCTURE_IS_ABSTRACT = 'isAbstract';
+    public const string STRUCTURE_IS_INTERFACE = 'isInterface';
+    public const string STRUCTURE_IS_EXCEPTION = 'isException';
     public const string STRUCTURE_WMC = 'wmc';
     public const string STRUCTURE_WOC = 'woc';
 

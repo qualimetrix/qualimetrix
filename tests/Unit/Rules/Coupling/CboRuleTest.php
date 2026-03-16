@@ -193,7 +193,7 @@ final class CboRuleTest extends TestCase
 
         self::assertCount(1, $violations);
         self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertStringContainsString('CBO (Coupling Between Objects) is 18 (Ca=8, Ce=10), exceeds threshold of 14', $violations[0]->message);
+        self::assertStringContainsString('Coupling too high: 8 inbound + 10 outbound (CBO: 18, threshold: 14)', $violations[0]->message);
         self::assertSame(18.0, $violations[0]->metricValue);
         self::assertSame('coupling.cbo', $violations[0]->ruleName);
         self::assertSame('coupling.cbo.class', $violations[0]->violationCode);
@@ -224,7 +224,7 @@ final class CboRuleTest extends TestCase
 
         self::assertCount(1, $violations);
         self::assertSame(Severity::Error, $violations[0]->severity);
-        self::assertStringContainsString('exceeds threshold of 20', $violations[0]->message);
+        self::assertStringContainsString('threshold: 20', $violations[0]->message);
         self::assertSame(25.0, $violations[0]->metricValue);
     }
 
@@ -259,7 +259,93 @@ final class CboRuleTest extends TestCase
 
         self::assertCount(1, $violations);
         self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertStringContainsString('exceeds threshold of 10', $violations[0]->message);
+        self::assertStringContainsString('threshold: 10', $violations[0]->message);
+    }
+
+    // Direction-aware message tests
+
+    public function testAfferentDominantMessageWhenCaExceedsCeTwoToOne(): void
+    {
+        $rule = new CboRule(new CboOptions());
+
+        $symbolPath = SymbolPath::forClass('App\Core', 'OutputInterface');
+        $classInfo = new SymbolInfo($symbolPath, 'src/Core/OutputInterface.php', 5);
+
+        // Ca=44, Ce=1 — strongly afferent
+        $metricBag = (new MetricBag())
+            ->with('cbo', 45)
+            ->with('ca', 44)
+            ->with('ce', 1);
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturn([$classInfo]);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyzeLevel(RuleLevel::Class_, $context);
+
+        self::assertCount(1, $violations);
+        self::assertStringContainsString('Afferent coupling too high: 44 classes depend on this', $violations[0]->message);
+        self::assertNotNull($violations[0]->recommendation);
+        self::assertStringContainsString('coupling magnet', $violations[0]->recommendation);
+    }
+
+    public function testEfferentDominantMessageWhenCeExceedsCaTwoToOne(): void
+    {
+        $rule = new CboRule(new CboOptions());
+
+        $symbolPath = SymbolPath::forClass('App\Service', 'GodService');
+        $classInfo = new SymbolInfo($symbolPath, 'src/Service/GodService.php', 10);
+
+        // Ca=3, Ce=22 — strongly efferent
+        $metricBag = (new MetricBag())
+            ->with('cbo', 25)
+            ->with('ca', 3)
+            ->with('ce', 22);
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturn([$classInfo]);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyzeLevel(RuleLevel::Class_, $context);
+
+        self::assertCount(1, $violations);
+        self::assertStringContainsString('Efferent coupling too high: depends on 22 classes', $violations[0]->message);
+        self::assertNotNull($violations[0]->recommendation);
+        self::assertStringContainsString('extract dependencies', $violations[0]->recommendation);
+    }
+
+    public function testBalancedMessageWhenCaAndCeRoughlyEqual(): void
+    {
+        $rule = new CboRule(new CboOptions());
+
+        $symbolPath = SymbolPath::forClass('App\Service', 'MixedService');
+        $classInfo = new SymbolInfo($symbolPath, 'src/Service/MixedService.php', 10);
+
+        // Ca=10, Ce=10 — balanced
+        $metricBag = (new MetricBag())
+            ->with('cbo', 20)
+            ->with('ca', 10)
+            ->with('ce', 10);
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturn([$classInfo]);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyzeLevel(RuleLevel::Class_, $context);
+
+        self::assertCount(1, $violations);
+        self::assertStringContainsString('Coupling too high: 10 inbound + 10 outbound', $violations[0]->message);
+        self::assertNotNull($violations[0]->recommendation);
+        self::assertStringContainsString('reduce both inbound and outbound', $violations[0]->recommendation);
     }
 
     // Namespace-level tests
@@ -305,7 +391,7 @@ final class CboRuleTest extends TestCase
 
         self::assertCount(1, $violations);
         self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertStringContainsString('CBO (Coupling Between Objects) is 16 (Ca=6, Ce=10), exceeds threshold of 14', $violations[0]->message);
+        self::assertStringContainsString('Coupling too high: 6 inbound + 10 outbound (CBO: 16, threshold: 14)', $violations[0]->message);
         self::assertSame('coupling.cbo.namespace', $violations[0]->violationCode);
         self::assertSame(RuleLevel::Namespace_, $violations[0]->level);
     }

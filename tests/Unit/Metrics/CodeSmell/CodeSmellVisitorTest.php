@@ -195,6 +195,188 @@ PHP;
         self::assertCount(0, $locations);
     }
 
+    #[Test]
+    public function varExportWithReturnModeIsNotFlagged(): void
+    {
+        $code = <<<'PHP'
+<?php
+function test($data) {
+    $result = var_export($data, true);
+    return $result;
+}
+PHP;
+        $visitor = $this->analyze($code);
+
+        $locations = $visitor->getLocationsByType('debug_code');
+        self::assertCount(0, $locations);
+    }
+
+    #[Test]
+    public function printRWithReturnModeIsNotFlagged(): void
+    {
+        $code = <<<'PHP'
+<?php
+function test($data) {
+    $result = print_r($data, true);
+    return $result;
+}
+PHP;
+        $visitor = $this->analyze($code);
+
+        $locations = $visitor->getLocationsByType('debug_code');
+        self::assertCount(0, $locations);
+    }
+
+    #[Test]
+    public function varExportWithNamedReturnArgumentIsNotFlagged(): void
+    {
+        $code = <<<'PHP'
+<?php
+function test($data) {
+    $result = var_export(value: $data, return: true);
+    return $result;
+}
+PHP;
+        $visitor = $this->analyze($code);
+
+        $locations = $visitor->getLocationsByType('debug_code');
+        self::assertCount(0, $locations);
+    }
+
+    #[Test]
+    public function printRWithoutReturnModeIsFlagged(): void
+    {
+        $code = <<<'PHP'
+<?php
+function test($data) {
+    print_r($data);
+}
+PHP;
+        $visitor = $this->analyze($code);
+
+        $locations = $visitor->getLocationsByType('debug_code');
+        self::assertCount(1, $locations);
+    }
+
+    #[Test]
+    public function varExportWithoutReturnModeIsFlagged(): void
+    {
+        $code = <<<'PHP'
+<?php
+function test($data) {
+    var_export($data);
+}
+PHP;
+        $visitor = $this->analyze($code);
+
+        $locations = $visitor->getLocationsByType('debug_code');
+        self::assertCount(1, $locations);
+        self::assertSame('var_export', $locations[0]->extra);
+    }
+
+    #[Test]
+    public function varExportWithFalseSecondArgIsFlagged(): void
+    {
+        $code = <<<'PHP'
+<?php
+function test($data) {
+    var_export($data, false);
+}
+PHP;
+        $visitor = $this->analyze($code);
+
+        $locations = $visitor->getLocationsByType('debug_code');
+        self::assertCount(1, $locations);
+    }
+
+    #[Test]
+    public function debugFunctionInsideDebugApiMethodIsNotFlagged(): void
+    {
+        $code = <<<'PHP'
+<?php
+class Dumpable {
+    public function dump() {
+        var_dump($this->data);
+    }
+    public function dd() {
+        var_dump($this->data);
+        die(1);
+    }
+}
+PHP;
+        $visitor = $this->analyze($code);
+
+        $locations = $visitor->getLocationsByType('debug_code');
+        self::assertCount(0, $locations);
+    }
+
+    #[Test]
+    public function debugFunctionOutsideDebugApiMethodIsFlagged(): void
+    {
+        $code = <<<'PHP'
+<?php
+class Service {
+    public function process() {
+        var_dump($this->data);
+    }
+}
+PHP;
+        $visitor = $this->analyze($code);
+
+        $locations = $visitor->getLocationsByType('debug_code');
+        self::assertCount(1, $locations);
+    }
+
+    #[Test]
+    public function debugBacktraceIsNotFlagged(): void
+    {
+        $code = <<<'PHP'
+<?php
+function getCallerInfo() {
+    $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
+    return $trace[1]['function'] ?? 'unknown';
+}
+PHP;
+        $visitor = $this->analyze($code);
+
+        $locations = $visitor->getLocationsByType('debug_code');
+        self::assertCount(0, $locations);
+    }
+
+    #[Test]
+    public function debugPrintBacktraceIsStillFlagged(): void
+    {
+        $code = <<<'PHP'
+<?php
+function test() {
+    debug_print_backtrace();
+}
+PHP;
+        $visitor = $this->analyze($code);
+
+        $locations = $visitor->getLocationsByType('debug_code');
+        self::assertCount(1, $locations);
+        self::assertSame('debug_print_backtrace', $locations[0]->extra);
+    }
+
+    #[Test]
+    public function debugInfoMethodIsNotFlagged(): void
+    {
+        $code = <<<'PHP'
+<?php
+class Entity {
+    public function __debugInfo(): array {
+        return ['id' => var_export($this->id, true)];
+    }
+}
+PHP;
+        $visitor = $this->analyze($code);
+
+        // var_export with true inside __debugInfo: both exclusions apply
+        $locations = $visitor->getLocationsByType('debug_code');
+        self::assertCount(0, $locations);
+    }
+
     private function analyze(string $code): CodeSmellVisitor
     {
         $visitor = new CodeSmellVisitor();

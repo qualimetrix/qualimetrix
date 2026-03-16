@@ -14,6 +14,7 @@ use AiMessDetector\Core\Violation\Location;
 use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
 use AiMessDetector\Rules\AbstractRule;
+use Psr\Log\LoggerInterface;
 
 /**
  * Rule that checks distance from main sequence at namespace level.
@@ -41,6 +42,7 @@ final class DistanceRule extends AbstractRule
     public function __construct(
         RuleOptionsInterface $options,
         private readonly ?ProjectNamespaceResolverInterface $namespaceResolver = null,
+        private readonly ?LoggerInterface $logger = null,
     ) {
         parent::__construct($options);
     }
@@ -78,6 +80,8 @@ final class DistanceRule extends AbstractRule
         }
 
         $violations = [];
+        $totalNamespaces = 0;
+        $analyzedNamespaces = 0;
 
         foreach ($context->metrics->all(SymbolType::Namespace_) as $nsInfo) {
             $namespace = $nsInfo->symbolPath->namespace;
@@ -87,10 +91,14 @@ final class DistanceRule extends AbstractRule
                 continue;
             }
 
+            ++$totalNamespaces;
+
             // Skip namespaces not belonging to the project
             if (!$this->shouldAnalyzeNamespace($namespace)) {
                 continue;
             }
+
+            ++$analyzedNamespaces;
 
             $metrics = $context->metrics->get($nsInfo->symbolPath);
 
@@ -133,6 +141,15 @@ final class DistanceRule extends AbstractRule
                     threshold: $threshold,
                 );
             }
+        }
+
+        // Warn when namespaces exist but none matched project namespace filter
+        if ($analyzedNamespaces === 0 && $totalNamespaces > 0) {
+            $this->logger?->warning(
+                'Distance rule: no project namespaces detected among {total} namespaces. '
+                . "Use --rule-opt='coupling.distance:include_namespaces=...' to specify namespaces for vendor code analysis.",
+                ['total' => $totalNamespaces],
+            );
         }
 
         return $violations;
