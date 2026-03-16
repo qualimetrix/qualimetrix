@@ -12,6 +12,7 @@ use AiMessDetector\Analysis\Collection\Dependency\CircularDependencyDetector;
 use AiMessDetector\Analysis\Collection\Dependency\DependencyGraphBuilder;
 use AiMessDetector\Analysis\Collection\Metric\CompositeCollector;
 use AiMessDetector\Analysis\Discovery\FileDiscoveryInterface;
+use AiMessDetector\Analysis\Discovery\GeneratedFileFilter;
 use AiMessDetector\Analysis\Duplication;
 use AiMessDetector\Analysis\Repository\DefaultMetricRepositoryFactory;
 use AiMessDetector\Analysis\Repository\MetricRepositoryFactoryInterface;
@@ -100,9 +101,24 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
         $profiler?->start('discovery', 'pipeline');
         $normalizedPaths = \is_array($paths) ? array_values($paths) : $paths;
         $files = array_values(iterator_to_array($discovery->discover($normalizedPaths), true));
+
+        // Filter out @generated files unless explicitly included
+        $config = $this->configurationProvider->getConfiguration();
+        $generatedSkipped = 0;
+        if (!$config->includeGenerated) {
+            $originalCount = \count($files);
+            $generatedFilter = new GeneratedFileFilter();
+            $files = $generatedFilter->filter($files);
+            $generatedSkipped = $originalCount - \count($files);
+        }
+
         $profiler?->stop('discovery');
 
         $this->logger->info('Discovered files', ['count' => \count($files)]);
+
+        if ($generatedSkipped > 0) {
+            $this->logger->info('Skipped @generated files', ['count' => $generatedSkipped]);
+        }
 
         // Phase 2: Collection (metrics + dependencies in single AST traversal)
         $phaseStartTime = microtime(true);
@@ -172,7 +188,6 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
         }
 
         // Phase 3.7: Detect circular dependencies
-        $config = $this->configurationProvider->getConfiguration();
         $cycles = [];
         if ($config->isRuleEnabled(CircularDependencyRule::NAME)) {
             $profiler?->start('cycles', 'pipeline');

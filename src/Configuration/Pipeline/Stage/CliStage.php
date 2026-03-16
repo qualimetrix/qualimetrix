@@ -49,6 +49,11 @@ final class CliStage implements ConfigurationStageInterface
             $values['cache.enabled'] = false;
         }
 
+        // Include generated files flag
+        if ($input->hasOption('include-generated') && $input->getOption('include-generated') === true) {
+            $values['include_generated'] = true;
+        }
+
         // Parallel workers (0 = auto-detect, 1 = sequential, >1 = parallel)
         if ($input->hasOption('workers') && $input->getOption('workers') !== null) {
             $values['parallel.workers'] = (int) $input->getOption('workers');
