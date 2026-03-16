@@ -9,6 +9,7 @@ use AiMessDetector\Analysis\Collection\Dependency\DependencyVisitor;
 use AiMessDetector\Analysis\Collection\Dependency\Export\DotExporter;
 use AiMessDetector\Analysis\Collection\Dependency\Export\DotExporterOptions;
 use AiMessDetector\Analysis\Collection\Dependency\Export\GraphExporterInterface;
+use AiMessDetector\Analysis\Collection\Dependency\Export\JsonGraphExporter;
 use AiMessDetector\Analysis\Discovery\FileDiscoveryInterface;
 use AiMessDetector\Core\Ast\FileParserInterface;
 use AiMessDetector\Core\Dependency\Dependency;
@@ -27,7 +28,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(
     name: 'graph:export',
-    description: 'Export dependency graph to DOT format for visualization',
+    description: 'Export dependency graph for visualization (DOT, JSON)',
 )]
 final class GraphExportCommand extends Command
 {
@@ -59,7 +60,7 @@ final class GraphExportCommand extends Command
                 'format',
                 'f',
                 InputOption::VALUE_REQUIRED,
-                'Output format (dot, mermaid)',
+                'Output format (dot, json)',
                 'dot',
             )
             ->addOption(
@@ -179,7 +180,10 @@ final class GraphExportCommand extends Command
         if ($outputFile !== null) {
             file_put_contents($outputFile, $content);
             $output->writeln(\sprintf('<info>Graph exported to %s</info>', $outputFile));
-            $output->writeln(\sprintf('<comment>Render with: dot -Tpng %s -o graph.png</comment>', $outputFile));
+
+            if ($format === 'dot') {
+                $output->writeln(\sprintf('<comment>Render with: dot -Tpng %s -o graph.png</comment>', $outputFile));
+            }
         } else {
             OutputHelper::write($output, $content);
         }
@@ -191,7 +195,11 @@ final class GraphExportCommand extends Command
     {
         return match ($format) {
             'dot' => new DotExporter($options),
-            default => throw new InvalidArgumentException(\sprintf('Unsupported format: %s', $format)),
+            'json' => new JsonGraphExporter(
+                includeNamespaces: $options->includeNamespaces,
+                excludeNamespaces: $options->excludeNamespaces,
+            ),
+            default => throw new InvalidArgumentException(\sprintf('Unsupported format: %s. Supported formats: dot, json', $format)),
         };
     }
 }
