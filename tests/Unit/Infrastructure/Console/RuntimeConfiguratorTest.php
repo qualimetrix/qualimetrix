@@ -10,6 +10,7 @@ use AiMessDetector\Configuration\ConfigurationProviderInterface;
 use AiMessDetector\Configuration\PathsConfiguration;
 use AiMessDetector\Configuration\Pipeline\ResolvedConfiguration;
 use AiMessDetector\Configuration\RuleOptionsFactory;
+use AiMessDetector\Core\ComputedMetric\ComputedMetricDefinitionHolder;
 use AiMessDetector\Core\Profiler\ProfilerHolder;
 use AiMessDetector\Infrastructure\Cache\CacheFactory;
 use AiMessDetector\Infrastructure\Console\Progress\ProgressReporterHolder;
@@ -253,6 +254,69 @@ final class RuntimeConfiguratorTest extends TestCase
         );
 
         return $input;
+    }
+
+    #[Test]
+    public function excludeHealthFiltersDimensionsAndNormalizesOverall(): void
+    {
+        $resolved = new ResolvedConfiguration(
+            paths: PathsConfiguration::defaults(),
+            analysis: new AnalysisConfiguration(excludeHealth: ['typing']),
+            ruleOptions: [],
+        );
+
+        $input = $this->createCliInput([]);
+
+        $this->configurator->configure($resolved, $input, $this->createOutput());
+
+        $definitions = ComputedMetricDefinitionHolder::getDefinitions();
+        $names = array_map(static fn($d) => $d->name, $definitions);
+
+        // health.typing should be excluded
+        self::assertNotContains('health.typing', $names);
+
+        // Other dimensions should remain
+        self::assertContains('health.complexity', $names);
+        self::assertContains('health.cohesion', $names);
+        self::assertContains('health.coupling', $names);
+        self::assertContains('health.maintainability', $names);
+        self::assertContains('health.overall', $names);
+
+        // health.overall formula should not reference typing
+        $overall = null;
+        foreach ($definitions as $def) {
+            if ($def->name === 'health.overall') {
+                $overall = $def;
+                break;
+            }
+        }
+        self::assertNotNull($overall);
+
+        foreach ($overall->formulas as $formula) {
+            self::assertStringNotContainsString('health__typing', $formula);
+        }
+    }
+
+    #[Test]
+    public function excludeHealthAcceptsHealthPrefixedNames(): void
+    {
+        $resolved = new ResolvedConfiguration(
+            paths: PathsConfiguration::defaults(),
+            analysis: new AnalysisConfiguration(excludeHealth: ['health.complexity', 'cohesion']),
+            ruleOptions: [],
+        );
+
+        $input = $this->createCliInput([]);
+
+        $this->configurator->configure($resolved, $input, $this->createOutput());
+
+        $definitions = ComputedMetricDefinitionHolder::getDefinitions();
+        $names = array_map(static fn($d) => $d->name, $definitions);
+
+        self::assertNotContains('health.complexity', $names);
+        self::assertNotContains('health.cohesion', $names);
+        self::assertContains('health.coupling', $names);
+        self::assertContains('health.typing', $names);
     }
 
     private function createOutput(): OutputInterface

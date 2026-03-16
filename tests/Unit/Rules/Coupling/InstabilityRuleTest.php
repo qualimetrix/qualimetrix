@@ -202,6 +202,31 @@ final class InstabilityRuleTest extends TestCase
         self::assertSame(0.97, $violations[0]->metricValue);
     }
 
+    public function testAnalyzeLevelClassSkipsLeafClassWithZeroCa(): void
+    {
+        $rule = new InstabilityRule(new InstabilityOptions());
+
+        $symbolPath = SymbolPath::forClass('App\Service', 'LeafService');
+        $classInfo = new SymbolInfo($symbolPath, 'src/Service/LeafService.php', 10);
+
+        // Ca=0 means nobody depends on this class, so I=1.00 is expected
+        $metricBag = (new MetricBag())
+            ->with('instability', 1.0)
+            ->with('ca', 0)
+            ->with('ce', 5);
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturn([$classInfo]);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyzeLevel(RuleLevel::Class_, $context);
+
+        self::assertCount(0, $violations);
+    }
+
     // Namespace-level tests
 
     public function testAnalyzeLevelNamespaceReturnsEmptyWhenDisabled(): void

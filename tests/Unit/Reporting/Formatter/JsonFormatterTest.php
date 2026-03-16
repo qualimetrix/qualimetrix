@@ -1137,4 +1137,147 @@ final class JsonFormatterTest extends TestCase
         // Returns null when namespace has no health data (no misleading fallback)
         self::assertNull($data['health']);
     }
+
+    public function testViolationsMetaIncludesShownCount(): void
+    {
+        $builder = ReportBuilder::create()
+            ->filesAnalyzed(1)
+            ->filesSkipped(0)
+            ->duration(0.1);
+
+        for ($i = 0; $i < 55; $i++) {
+            $builder->addViolation(new Violation(
+                location: new Location('src/A.php', $i + 1),
+                symbolPath: SymbolPath::forClass('App', 'A'),
+                ruleName: 'test',
+                violationCode: 'test',
+                message: "Violation {$i}",
+                severity: Severity::Warning,
+            ));
+        }
+
+        $report = $builder->build();
+        $output = $this->formatter->format($report, new FormatterContext());
+        $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
+
+        self::assertSame(55, $data['violationsMeta']['total']);
+        self::assertSame(50, $data['violationsMeta']['shown']);
+        self::assertSame(50, $data['violationsMeta']['limit']);
+        self::assertTrue($data['violationsMeta']['truncated']);
+    }
+
+    public function testViolationsMetaShownEqualsTotal(): void
+    {
+        $builder = ReportBuilder::create()
+            ->filesAnalyzed(1)
+            ->filesSkipped(0)
+            ->duration(0.1);
+
+        for ($i = 0; $i < 10; $i++) {
+            $builder->addViolation(new Violation(
+                location: new Location('src/A.php', $i + 1),
+                symbolPath: SymbolPath::forClass('App', 'A'),
+                ruleName: 'test',
+                violationCode: 'test',
+                message: "Violation {$i}",
+                severity: Severity::Warning,
+            ));
+        }
+
+        $report = $builder->build();
+        $output = $this->formatter->format($report, new FormatterContext());
+        $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
+
+        self::assertSame(10, $data['violationsMeta']['total']);
+        self::assertSame(10, $data['violationsMeta']['shown']);
+        self::assertFalse($data['violationsMeta']['truncated']);
+    }
+
+    public function testFormatOptLimitOverridesDefault(): void
+    {
+        $builder = ReportBuilder::create()
+            ->filesAnalyzed(1)
+            ->filesSkipped(0)
+            ->duration(0.1);
+
+        for ($i = 0; $i < 20; $i++) {
+            $builder->addViolation(new Violation(
+                location: new Location('src/A.php', $i + 1),
+                symbolPath: SymbolPath::forClass('App', 'A'),
+                ruleName: 'test',
+                violationCode: 'test',
+                message: "Violation {$i}",
+                severity: Severity::Warning,
+            ));
+        }
+
+        $report = $builder->build();
+        $context = new FormatterContext(options: ['limit' => '5']);
+        $output = $this->formatter->format($report, $context);
+        $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
+
+        self::assertCount(5, $data['violations']);
+        self::assertSame(20, $data['violationsMeta']['total']);
+        self::assertSame(5, $data['violationsMeta']['shown']);
+        self::assertTrue($data['violationsMeta']['truncated']);
+    }
+
+    public function testFormatOptLimitZeroShowsAllViolations(): void
+    {
+        $builder = ReportBuilder::create()
+            ->filesAnalyzed(1)
+            ->filesSkipped(0)
+            ->duration(0.1);
+
+        for ($i = 0; $i < 55; $i++) {
+            $builder->addViolation(new Violation(
+                location: new Location('src/A.php', $i + 1),
+                symbolPath: SymbolPath::forClass('App', 'A'),
+                ruleName: 'test',
+                violationCode: 'test',
+                message: "Violation {$i}",
+                severity: Severity::Warning,
+            ));
+        }
+
+        $report = $builder->build();
+        $context = new FormatterContext(options: ['limit' => '0']);
+        $output = $this->formatter->format($report, $context);
+        $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
+
+        self::assertCount(55, $data['violations']);
+        self::assertSame(55, $data['violationsMeta']['total']);
+        self::assertSame(55, $data['violationsMeta']['shown']);
+        self::assertNull($data['violationsMeta']['limit']);
+        self::assertFalse($data['violationsMeta']['truncated']);
+    }
+
+    public function testFormatOptViolationsTakesPrecedenceOverLimit(): void
+    {
+        $builder = ReportBuilder::create()
+            ->filesAnalyzed(1)
+            ->filesSkipped(0)
+            ->duration(0.1);
+
+        for ($i = 0; $i < 20; $i++) {
+            $builder->addViolation(new Violation(
+                location: new Location('src/A.php', $i + 1),
+                symbolPath: SymbolPath::forClass('App', 'A'),
+                ruleName: 'test',
+                violationCode: 'test',
+                message: "Violation {$i}",
+                severity: Severity::Warning,
+            ));
+        }
+
+        $report = $builder->build();
+
+        // When both are set, violations takes precedence
+        $context = new FormatterContext(options: ['violations' => '3', 'limit' => '10']);
+        $output = $this->formatter->format($report, $context);
+        $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
+
+        self::assertCount(3, $data['violations']);
+        self::assertSame(3, $data['violationsMeta']['shown']);
+    }
 }

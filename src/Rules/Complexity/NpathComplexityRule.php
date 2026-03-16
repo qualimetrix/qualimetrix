@@ -27,7 +27,7 @@ use AiMessDetector\Rules\AbstractRule;
 final class NpathComplexityRule extends AbstractRule implements HierarchicalRuleInterface
 {
     public const string NAME = 'complexity.npath';
-    private const int MAX_DISPLAY = 1_000_000_000;
+    private const int MAX_DISPLAY = 1_000_000;
 
     public function getName(): string
     {
@@ -144,7 +144,7 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
             $severity = $methodOptions->getSeverity($npathValue);
 
             if ($severity !== null) {
-                $displayValue = $npathValue >= self::MAX_DISPLAY ? '> 10^9' : (string) $npathValue;
+                $displayValue = $npathValue >= self::MAX_DISPLAY ? '> 1M' : (string) $npathValue;
                 $threshold = $severity === Severity::Error ? $methodOptions->error : $methodOptions->warning;
 
                 $violations[] = new Violation(
@@ -187,7 +187,7 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
             $severity = $classOptions->getSeverity($maxNpathValue);
 
             if ($severity !== null) {
-                $displayValue = $maxNpathValue >= self::MAX_DISPLAY ? '> 10^9' : (string) $maxNpathValue;
+                $displayValue = $maxNpathValue >= self::MAX_DISPLAY ? '> 1M' : (string) $maxNpathValue;
                 $threshold = $severity === Severity::Error ? $classOptions->maxError : $classOptions->maxWarning;
 
                 $violations[] = new Violation(

@@ -525,10 +525,16 @@ final class MetricHintProvider
 
     public function getScoreLabel(float $score, float $warnThreshold, float $errThreshold): string
     {
-        $strongThreshold = $warnThreshold + (100 - $warnThreshold) * 0.4;
+        $range = 100 - $warnThreshold;
+        $strongThreshold = $warnThreshold + $range * 0.6;
+        $goodThreshold = $warnThreshold + $range * 0.3;
 
         if ($score > $strongThreshold) {
             return 'Strong';
+        }
+
+        if ($score > $goodThreshold) {
+            return 'Good';
         }
 
         if ($score > $warnThreshold) {

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AiMessDetector\Reporting;
 
 use AiMessDetector\Core\ComputedMetric\ComputedMetricDefaults;
+use AiMessDetector\Core\ComputedMetric\ComputedMetricDefinitionHolder;
 use AiMessDetector\Core\Metric\MetricName;
 use AiMessDetector\Core\Symbol\SymbolPath;
 use AiMessDetector\Core\Symbol\SymbolType;
@@ -96,8 +97,9 @@ final readonly class SummaryEnricher
             );
         }
 
-        // Show typing dimension with "0 classes analyzed" when other dimensions exist but typing doesn't
-        if ($healthScores !== [] && !isset($healthScores['typing'])) {
+        // Show typing dimension with "0 classes analyzed" when other dimensions exist but typing doesn't,
+        // unless typing was explicitly excluded via --exclude-health
+        if ($healthScores !== [] && !isset($healthScores['typing']) && !$this->isDefinitionExcluded('health.typing')) {
             $typingDef = $defaults['health.typing'];
             $healthScores['typing'] = new HealthScore(
                 name: 'typing',
@@ -392,5 +394,28 @@ final readonly class SummaryEnricher
         }
 
         return $notable;
+    }
+
+    /**
+     * Checks if a computed metric definition was excluded via --exclude-health.
+     *
+     * Returns true only when definitions are loaded AND the named metric is not among them.
+     * When no definitions are loaded (e.g., in tests), returns false (not excluded).
+     */
+    private function isDefinitionExcluded(string $name): bool
+    {
+        $definitions = ComputedMetricDefinitionHolder::getDefinitions();
+
+        if ($definitions === []) {
+            return false;
+        }
+
+        foreach ($definitions as $def) {
+            if ($def->name === $name) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

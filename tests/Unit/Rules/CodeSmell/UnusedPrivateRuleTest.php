@@ -83,7 +83,7 @@ final class UnusedPrivateRuleTest extends TestCase
 
         $metricBag = (new MetricBag())
             ->with('unusedPrivate.total', 1)
-            ->withEntry('unusedPrivate.method', ['line' => 15]);
+            ->withEntry('unusedPrivate.method', ['line' => 15, 'name' => 'doLoadMappingFile']);
 
         $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -97,7 +97,7 @@ final class UnusedPrivateRuleTest extends TestCase
         self::assertCount(1, $violations);
         self::assertSame(Severity::Warning, $violations[0]->severity);
         self::assertSame(15, $violations[0]->location->line);
-        self::assertSame('Unused private method', $violations[0]->message);
+        self::assertSame('Unused private method `doLoadMappingFile`', $violations[0]->message);
         self::assertSame('code-smell.unused-private', $violations[0]->ruleName);
         self::assertSame(1, $violations[0]->metricValue);
     }
@@ -112,7 +112,7 @@ final class UnusedPrivateRuleTest extends TestCase
 
         $metricBag = (new MetricBag())
             ->with('unusedPrivate.total', 1)
-            ->withEntry('unusedPrivate.property', ['line' => 10]);
+            ->withEntry('unusedPrivate.property', ['line' => 10, 'name' => 'cache']);
 
         $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -124,7 +124,7 @@ final class UnusedPrivateRuleTest extends TestCase
         $violations = $rule->analyze($context);
 
         self::assertCount(1, $violations);
-        self::assertSame('Unused private property', $violations[0]->message);
+        self::assertSame('Unused private property `cache`', $violations[0]->message);
     }
 
     #[Test]
@@ -137,7 +137,7 @@ final class UnusedPrivateRuleTest extends TestCase
 
         $metricBag = (new MetricBag())
             ->with('unusedPrivate.total', 1)
-            ->withEntry('unusedPrivate.constant', ['line' => 8]);
+            ->withEntry('unusedPrivate.constant', ['line' => 8, 'name' => 'MAX_RETRIES']);
 
         $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -149,7 +149,7 @@ final class UnusedPrivateRuleTest extends TestCase
         $violations = $rule->analyze($context);
 
         self::assertCount(1, $violations);
-        self::assertSame('Unused private constant', $violations[0]->message);
+        self::assertSame('Unused private constant `MAX_RETRIES`', $violations[0]->message);
         self::assertSame(8, $violations[0]->location->line);
     }
 
@@ -163,10 +163,10 @@ final class UnusedPrivateRuleTest extends TestCase
 
         $metricBag = (new MetricBag())
             ->with('unusedPrivate.total', 4)
-            ->withEntry('unusedPrivate.method', ['line' => 10])
-            ->withEntry('unusedPrivate.method', ['line' => 15])
-            ->withEntry('unusedPrivate.property', ['line' => 7])
-            ->withEntry('unusedPrivate.constant', ['line' => 8]);
+            ->withEntry('unusedPrivate.method', ['line' => 10, 'name' => 'foo'])
+            ->withEntry('unusedPrivate.method', ['line' => 15, 'name' => 'bar'])
+            ->withEntry('unusedPrivate.property', ['line' => 7, 'name' => 'baz'])
+            ->withEntry('unusedPrivate.constant', ['line' => 8, 'name' => 'QUX']);
 
         $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -181,9 +181,9 @@ final class UnusedPrivateRuleTest extends TestCase
 
         // Check messages by type
         $messages = array_map(fn($v) => $v->message, $violations);
-        self::assertCount(2, array_filter($messages, fn($m) => $m === 'Unused private method'));
-        self::assertCount(1, array_filter($messages, fn($m) => $m === 'Unused private property'));
-        self::assertCount(1, array_filter($messages, fn($m) => $m === 'Unused private constant'));
+        self::assertCount(2, array_filter($messages, fn($m) => str_starts_with($m, 'Unused private method')));
+        self::assertCount(1, array_filter($messages, fn($m) => str_starts_with($m, 'Unused private property')));
+        self::assertCount(1, array_filter($messages, fn($m) => str_starts_with($m, 'Unused private constant')));
     }
 
     #[Test]

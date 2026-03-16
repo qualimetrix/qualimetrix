@@ -85,8 +85,8 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         self::assertNotNull($complexity);
         // Only class formula overridden
         self::assertSame('100 - ccn * 5', $complexity->getFormulaForLevel(SymbolType::Class_));
-        // Namespace keeps default formula
-        self::assertStringContainsString('ccn__avg', (string) $complexity->getFormulaForLevel(SymbolType::Namespace_));
+        // Namespace keeps default formula (uses per-method average via ccn__sum / symbolMethodCount)
+        self::assertStringContainsString('ccn__sum', (string) $complexity->getFormulaForLevel(SymbolType::Namespace_));
     }
 
     public function testDisableHealthMetric(): void

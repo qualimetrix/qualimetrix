@@ -95,21 +95,27 @@ final class GodClassRule extends AbstractRule
                 }
             }
 
-            // 2. LCOM >= lcomThreshold
+            // 2. LCOM >= lcomThreshold (vetoed if TCC >= 0.5 — high cohesion overrides LCOM)
             $lcom = $metrics->get(MetricName::STRUCTURE_LCOM);
+            $tcc = $metrics->get(MetricName::COHESION_TCC);
+            $tccValue = $tcc !== null ? (float) $tcc : null;
+
             if ($lcom !== null) {
                 $lcomValue = (int) $lcom;
-                $evaluableCount++;
-                if ($lcomValue >= $this->options->lcomThreshold) {
-                    $matchedCount++;
-                    $matchedCriteria[] = \sprintf('high LCOM (%d >= %d)', $lcomValue, $this->options->lcomThreshold);
+                $lcomVetoed = $tccValue !== null && $tccValue >= 0.5;
+                if ($lcomVetoed) {
+                    // TCC >= 0.5 means the class IS cohesive — don't count LCOM at all
+                } else {
+                    $evaluableCount++;
+                    if ($lcomValue >= $this->options->lcomThreshold) {
+                        $matchedCount++;
+                        $matchedCriteria[] = \sprintf('high LCOM (%d >= %d)', $lcomValue, $this->options->lcomThreshold);
+                    }
                 }
             }
 
             // 3. TCC < tccThreshold (inverted — low TCC is bad)
-            $tcc = $metrics->get(MetricName::COHESION_TCC);
-            if ($tcc !== null) {
-                $tccValue = (float) $tcc;
+            if ($tccValue !== null) {
                 $evaluableCount++;
                 if ($tccValue < $this->options->tccThreshold) {
                     $matchedCount++;

@@ -76,6 +76,7 @@ final class JsonFormatter implements FormatterInterface
             ),
             'violationsMeta' => [
                 'total' => \count($filteredViolations),
+                'shown' => \count($outputViolations),
                 'limit' => $limit,
                 'truncated' => $limit !== null && \count($filteredViolations) > $limit,
                 'byRule' => $this->countByRule($filteredViolations),
@@ -488,7 +489,15 @@ final class JsonFormatter implements FormatterInterface
      */
     private function getViolationLimit(FormatterContext $context): ?int
     {
+        // Support both --format-opt=violations=N and --format-opt=limit=N
+        // "violations" takes precedence when both are set
         $opt = $context->getOption('violations');
+        $isLimitAlias = false;
+
+        if ($opt === '') {
+            $opt = $context->getOption('limit');
+            $isLimitAlias = $opt !== '';
+        }
 
         if ($opt !== '') {
             if ($opt === 'all') {
@@ -497,7 +506,16 @@ final class JsonFormatter implements FormatterInterface
 
             $parsed = filter_var($opt, \FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
 
-            return $parsed !== false ? $parsed : self::DEFAULT_VIOLATION_LIMIT;
+            if ($parsed === false) {
+                return self::DEFAULT_VIOLATION_LIMIT;
+            }
+
+            // limit=0 means "no limit" (show all), violations=0 means "show none"
+            if ($isLimitAlias && $parsed === 0) {
+                return null;
+            }
+
+            return $parsed;
         }
 
         // --detail mode: respect limit (0 = all)

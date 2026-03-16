@@ -225,7 +225,10 @@ final class ComputedMetricEvaluatorTest extends TestCase
         $nsPath = SymbolPath::forNamespace('App\\Service');
         $repo->add($nsPath, MetricBag::fromArray([
             'ccn.avg' => 3.0,
+            'ccn.sum' => 30.0,
             'cognitive.avg' => 4.0,
+            'cognitive.sum' => 40.0,
+            'symbolMethodCount' => 10,
             'npath.avg' => 5.0,
             'tcc.avg' => 0.5,
             'lcom.avg' => 3.0,
@@ -247,7 +250,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
 
         $bag = $repo->get($nsPath);
 
-        // health.complexity = clamp(100 - max(3-4,0)*2.0 - max(4-5,0)*2.5 - min(5/20,20)*0.5, 0, 100)
+        // health.complexity = clamp(100 - max(30/10 - 4, 0)*2.0 - max(40/10 - 5, 0)*2.5 - min(5/20,20)*0.5, 0, 100)
         //                   = 100 - 0 - 0 - 0.125 = 99.875
         self::assertEqualsWithDelta(99.88, $bag->get('health.complexity'), 0.01);
 
@@ -391,5 +394,50 @@ final class ComputedMetricEvaluatorTest extends TestCase
         $bag = $repo->get($classPath);
         self::assertNotNull($bag->get('health.a'));
         self::assertNotNull($bag->get('health.b'));
+    }
+
+    #[Test]
+    public function complexityHealthUsesPerMethodAverageAtNamespaceLevel(): void
+    {
+        $repo = new InMemoryMetricRepository();
+
+        // Namespace with 2 classes: one has 5 methods (all CCN=2), another has 1 method (CCN=30)
+        // WMC class A = 10 (ccn.sum), WMC class B = 30 (ccn.sum)
+        // Per-class CCN avg (old formula) = avg(10, 30) = 20 → terrible score
+        // Per-method CCN avg (new formula) = (10+30)/6 = 6.67 → moderate
+
+        $classA = SymbolPath::forClass('App\\Service', 'ClassA');
+        $repo->add($classA, MetricBag::fromArray([]), 'src/ClassA.php', 1);
+
+        $nsPath = SymbolPath::forNamespace('App\\Service');
+        $repo->add($nsPath, MetricBag::fromArray([
+            'ccn.sum' => 40.0,          // total CCN across all methods
+            'ccn.avg' => 20.0,          // average WMC (per-class) - NOT per-method
+            'cognitive.sum' => 30.0,
+            'cognitive.avg' => 15.0,    // average per-class cognitive sum
+            'symbolMethodCount' => 6,    // total method count
+            'npath.avg' => 10.0,
+        ]), '', null);
+
+        $defaults = array_values(ComputedMetricDefaults::getDefaults());
+
+        // Only evaluate health.complexity
+        $complexityDef = array_filter($defaults, static fn($d) => $d->name === 'health.complexity');
+        $this->evaluator->compute($repo, array_values($complexityDef));
+
+        $bag = $repo->get($nsPath);
+        $score = $bag->get('health.complexity');
+        self::assertNotNull($score);
+
+        // Per-method averages: CCN = 40/6 ≈ 6.67, Cognitive = 30/6 = 5.0
+        // penalty = max(6.67-4, 0)*2.0 + max(5.0-5, 0)*2.5 + min(10/20, 20)*0.5
+        //         = 2.67*2.0 + 0 + 0.5*0.5 = 5.34 + 0.25 = 5.59
+        // score = 100 - 5.59 = 94.41
+        self::assertEqualsWithDelta(94.41, $score, 0.01);
+
+        // Verify: with old formula (ccn.avg=20), score would be much worse:
+        // penalty = max(20-4, 0)*2.0 + max(15-5, 0)*2.5 + 0.25 = 32 + 25 + 0.25 = 57.25
+        // score = 100 - 57.25 = 42.75 (much lower!)
+        self::assertGreaterThan(80.0, $score, 'Per-method averaging should give a much better score than per-class WMC averaging');
     }
 }

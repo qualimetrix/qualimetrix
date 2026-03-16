@@ -34,6 +34,7 @@ final class CheckCommandDefinition
         self::addRuntimeOptions($command);
         self::addProfileOptions($command);
         self::addFormatterOptions($command);
+        self::addHealthOptions($command);
         self::addDynamicRuleOptions($command, $ruleRegistry);
         self::addGenericRuleOptions($command);
     }
@@ -333,6 +334,18 @@ final class CheckCommandDefinition
         }
 
         return $booleanAliases;
+    }
+
+    private static function addHealthOptions(Command $command): void
+    {
+        $command
+            ->addOption(
+                'exclude-health',
+                null,
+                InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
+                'Exclude health dimension from scoring (complexity, cohesion, coupling, typing, maintainability)',
+                [],
+            );
     }
 
     private static function addGenericRuleOptions(Command $command): void

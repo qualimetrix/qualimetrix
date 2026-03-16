@@ -172,12 +172,13 @@ final class GodClassRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
         $classInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
 
-        // TCC = 0.5 >= 0.33, so TCC criterion NOT matched
+        // TCC = 0.2 < 0.33, so TCC criterion matched; LCOM not vetoed (TCC < 0.5)
+        // WMC matched, LCOM matched, TCC matched, LOC not matched → 3/4
         $metricBag = (new MetricBag())
             ->with('wmc', 50)
             ->with('lcom', 4)
-            ->with('tcc', 0.5)
-            ->with('classLoc', 350)
+            ->with('tcc', 0.2)
+            ->with('classLoc', 100)
             ->with('methodCount', 10)
             ->with('isReadonly', 0);
 
@@ -202,7 +203,7 @@ final class GodClassRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
         $classInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
 
-        // TCC = 0.5 (not matched), classLoc = 100 (not matched)
+        // TCC = 0.5 (not matched + vetoes LCOM), classLoc = 100 (not matched) → only WMC matched
         $metricBag = (new MetricBag())
             ->with('wmc', 50)
             ->with('lcom', 4)
@@ -220,6 +221,93 @@ final class GodClassRuleTest extends TestCase
         $context = new AnalysisContext($repository);
 
         self::assertSame([], $rule->analyze($context));
+    }
+
+    public function testHighTccVetoesLcomCriterion(): void
+    {
+        $rule = new GodClassRule(new GodClassOptions());
+
+        $symbolPath = SymbolPath::forClass('App\Printer', 'Standard');
+        $classInfo = new SymbolInfo($symbolPath, 'src/Printer/Standard.php', 10);
+
+        // WMC=400 (matched), LCOM=100 (vetoed — excluded from evaluable), TCC=0.8 (not matched), LOC=1500 (matched)
+        // evaluableCount=3 (WMC + TCC + LOC), matchedCount=2 (WMC + LOC) → not a god class
+        $metricBag = (new MetricBag())
+            ->with('wmc', 400)
+            ->with('lcom', 100)
+            ->with('tcc', 0.8)
+            ->with('classLoc', 1500)
+            ->with('methodCount', 50)
+            ->with('isReadonly', 0);
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Class_ ? [$classInfo] : []);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+
+        self::assertSame([], $rule->analyze($context));
+    }
+
+    public function testTccVetoThresholdExactlyHalf(): void
+    {
+        $rule = new GodClassRule(new GodClassOptions());
+
+        $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
+        $classInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+
+        // TCC = 0.5 exactly → vetoes LCOM (excluded from evaluable)
+        // evaluableCount=3 (WMC + TCC + LOC), matchedCount=2 (WMC + LOC) → 2/3
+        $metricBag = (new MetricBag())
+            ->with('wmc', 50)
+            ->with('lcom', 4)
+            ->with('tcc', 0.5)
+            ->with('classLoc', 350)
+            ->with('methodCount', 10)
+            ->with('isReadonly', 0);
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Class_ ? [$classInfo] : []);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+
+        self::assertSame([], $rule->analyze($context));
+    }
+
+    public function testTccBelowVetoThresholdDoesNotVetoLcom(): void
+    {
+        $rule = new GodClassRule(new GodClassOptions());
+
+        $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
+        $classInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+
+        // TCC = 0.49 < 0.5 → does NOT veto LCOM
+        // WMC matched, LCOM matched, TCC not matched (0.49 >= 0.33), LOC matched → 3/4
+        $metricBag = (new MetricBag())
+            ->with('wmc', 50)
+            ->with('lcom', 4)
+            ->with('tcc', 0.49)
+            ->with('classLoc', 350)
+            ->with('methodCount', 10)
+            ->with('isReadonly', 0);
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Class_ ? [$classInfo] : []);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyze($context);
+
+        self::assertCount(1, $violations);
+        self::assertSame(Severity::Warning, $violations[0]->severity);
+        self::assertSame(3, $violations[0]->metricValue);
     }
 
     public function testMissingTccAdjustsEvaluableCount(): void

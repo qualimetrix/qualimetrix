@@ -165,6 +165,11 @@ final class ConfigFileStage implements ConfigurationStageInterface
             $result['fail_on'] = $data['failOn'];
         }
 
+        // Exclude health dimensions
+        if (isset($data['excludeHealth']) || isset($data['exclude_health'])) {
+            $result['exclude_health'] = $data['excludeHealth'] ?? $data['exclude_health'];
+        }
+
         return $result;
     }
 

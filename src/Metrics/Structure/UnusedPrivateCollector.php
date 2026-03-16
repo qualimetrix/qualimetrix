@@ -19,9 +19,9 @@ use SplFileInfo;
  * but never referenced within the same class.
  *
  * DataBag entries per class (keyed by class FQN suffix):
- * - unusedPrivate.method: entries with ['line' => int]
- * - unusedPrivate.property: entries with ['line' => int]
- * - unusedPrivate.constant: entries with ['line' => int]
+ * - unusedPrivate.method: entries with ['line' => int, 'name' => string]
+ * - unusedPrivate.property: entries with ['line' => int, 'name' => string]
+ * - unusedPrivate.constant: entries with ['line' => int, 'name' => string]
  *
  * Scalar metrics per class:
  * - unusedPrivate.total: total count of all unused private members
@@ -142,8 +142,8 @@ final class UnusedPrivateCollector extends AbstractCollector implements ClassMet
     {
         $suffix = $classFqn !== null ? ':' . $classFqn : '';
 
-        foreach ($unusedMembers as $line) {
-            $bag = $bag->withEntry("{$entryKey}{$suffix}", ['line' => $line]);
+        foreach ($unusedMembers as $name => $line) {
+            $bag = $bag->withEntry("{$entryKey}{$suffix}", ['line' => $line, 'name' => $name]);
         }
 
         return $bag;

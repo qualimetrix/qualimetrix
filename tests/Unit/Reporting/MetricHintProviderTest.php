@@ -203,11 +203,16 @@ final class MetricHintProviderTest extends TestCase
     public static function scoreLabelProvider(): iterable
     {
         // score, warnThreshold, errThreshold, expected
-        // strongThreshold = 70 + (100 - 70) * 0.4 = 82
+        // range = 100 - 70 = 30
+        // strongThreshold = 70 + 30 * 0.6 = 88
+        // goodThreshold = 70 + 30 * 0.3 = 79
         yield 'Strong: well above strong threshold' => [95.0, 70.0, 40.0, 'Strong'];
         yield 'Strong: above strong threshold' => [90.0, 70.0, 40.0, 'Strong'];
-        yield 'Strong: just above strong threshold' => [82.01, 70.0, 40.0, 'Strong'];
-        yield 'Acceptable: exactly strong threshold is not strong' => [82.0, 70.0, 40.0, 'Acceptable'];
+        yield 'Strong: just above strong threshold' => [88.01, 70.0, 40.0, 'Strong'];
+        yield 'Good: exactly strong threshold is not strong' => [88.0, 70.0, 40.0, 'Good'];
+        yield 'Good: well above good threshold' => [85.0, 70.0, 40.0, 'Good'];
+        yield 'Good: just above good threshold' => [79.01, 70.0, 40.0, 'Good'];
+        yield 'Acceptable: exactly good threshold is not good' => [79.0, 70.0, 40.0, 'Acceptable'];
         yield 'Acceptable: above warning' => [75.0, 70.0, 40.0, 'Acceptable'];
         yield 'Acceptable: just above warning' => [70.01, 70.0, 40.0, 'Acceptable'];
         yield 'Weak: exactly warning is not acceptable' => [70.0, 70.0, 40.0, 'Weak'];
@@ -215,6 +220,16 @@ final class MetricHintProviderTest extends TestCase
         yield 'Weak: just above error' => [40.01, 70.0, 40.0, 'Weak'];
         yield 'Critical: exactly error' => [40.0, 70.0, 40.0, 'Critical'];
         yield 'Critical: below error' => [20.0, 70.0, 40.0, 'Critical'];
+
+        // Test with health.overall defaults (warn=50, err=30):
+        // range = 100 - 50 = 50
+        // strongThreshold = 50 + 50 * 0.6 = 80
+        // goodThreshold = 50 + 50 * 0.3 = 65
+        yield 'Overall: Strong (88.5)' => [88.5, 50.0, 30.0, 'Strong'];
+        yield 'Overall: Good (68.3)' => [68.3, 50.0, 30.0, 'Good'];
+        yield 'Overall: Acceptable (64.6)' => [64.6, 50.0, 30.0, 'Acceptable'];
+        yield 'Overall: Acceptable (52.5)' => [52.5, 50.0, 30.0, 'Acceptable'];
+        yield 'Overall: Weak (45.4)' => [45.4, 50.0, 30.0, 'Weak'];
     }
 
     #[DataProvider('scoreLabelProvider')]

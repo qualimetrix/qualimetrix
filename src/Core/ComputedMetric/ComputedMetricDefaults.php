@@ -18,7 +18,7 @@ final class ComputedMetricDefaults
                 name: 'health.complexity',
                 formulas: [
                     'class' => 'clamp(100 - max(ccn__avg - 4, 0) * 2.0 - max(cognitive__avg - 5, 0) * 2.5 - min(max(npath__avg ?? 0, 0) / 20, 20) * 0.5, 0, 100)',
-                    'namespace' => 'clamp(100 - max(ccn__avg - 4, 0) * 2.0 - max(cognitive__avg - 5, 0) * 2.5 - min(max(npath__avg ?? 0, 0) / 20, 20) * 0.5, 0, 100)',
+                    'namespace' => 'clamp(100 - max((ccn__sum ?? 0) / max(symbolMethodCount, 1) - 4, 0) * 2.0 - max((cognitive__sum ?? 0) / max(symbolMethodCount, 1) - 5, 0) * 2.5 - min(max(npath__avg ?? 0, 0) / 20, 20) * 0.5, 0, 100)',
                 ],
                 description: 'Complexity health score (0-100, higher is better)',
                 levels: [SymbolType::Class_, SymbolType::Namespace_, SymbolType::Project],

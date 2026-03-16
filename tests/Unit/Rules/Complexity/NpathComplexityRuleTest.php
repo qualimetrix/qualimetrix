@@ -278,7 +278,7 @@ final class NpathComplexityRuleTest extends TestCase
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
         $methodInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
 
-        $metricBag = (new MetricBag())->with('npath', 1_500_000_000); // > 1 billion
+        $metricBag = (new MetricBag())->with('npath', 2_500_000); // > 1M
 
         $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -290,8 +290,8 @@ final class NpathComplexityRuleTest extends TestCase
         $violations = $rule->analyzeLevel(RuleLevel::Method, $context);
 
         self::assertCount(1, $violations);
-        self::assertSame('NPath complexity (execution paths) is > 10^9, exceeds threshold of 1000. Reduce branching or extract methods', $violations[0]->message);
-        self::assertSame(1_500_000_000, $violations[0]->metricValue);
+        self::assertSame('NPath complexity (execution paths) is > 1M, exceeds threshold of 1000. Reduce branching or extract methods', $violations[0]->message);
+        self::assertSame(2_500_000, $violations[0]->metricValue);
     }
 
     // Options tests

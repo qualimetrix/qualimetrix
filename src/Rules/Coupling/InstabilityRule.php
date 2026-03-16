@@ -141,11 +141,19 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
                 continue;
             }
 
+            // Skip leaf classes with no afferent coupling (Ca=0) or no Ca metric.
+            // These classes have I=1.00 by definition, which is architecturally correct
+            // for concrete classes that nobody depends on.
+            $caRaw = $metrics->get(MetricName::COUPLING_CA);
+            $ca = $caRaw !== null ? (int) $caRaw : 0;
+            if ($ca === 0) {
+                continue;
+            }
+
             $instabilityValue = (float) $instability;
             $severity = $classOptions->getSeverity($instabilityValue);
 
             if ($severity !== null) {
-                $ca = (int) ($metrics->get(MetricName::COUPLING_CA) ?? 0);
                 $ce = (int) ($metrics->get(MetricName::COUPLING_CE) ?? 0);
 
                 $threshold = $severity === Severity::Error ? $classOptions->maxError : $classOptions->maxWarning;

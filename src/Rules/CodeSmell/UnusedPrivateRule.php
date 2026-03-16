@@ -74,9 +74,11 @@ final class UnusedPrivateRule extends AbstractRule
                 continue;
             }
 
-            foreach (self::ENTRY_KEYS as $entryKey => $message) {
+            foreach (self::ENTRY_KEYS as $entryKey => $label) {
                 foreach ($metrics->entries($entryKey) as $entry) {
                     $line = (int) $entry['line'];
+                    $name = isset($entry['name']) ? (string) $entry['name'] : null;
+                    $message = $name !== null ? \sprintf('%s `%s`', $label, $name) : $label;
 
                     $violations[] = new Violation(
                         location: new Location($classInfo->file, $line),
