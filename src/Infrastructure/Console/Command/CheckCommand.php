@@ -11,6 +11,7 @@ use AiMessDetector\Configuration\Pipeline\ConfigurationPipeline;
 use AiMessDetector\Configuration\Pipeline\ResolvedConfiguration;
 use AiMessDetector\Infrastructure\Cache\CacheFactory;
 use AiMessDetector\Infrastructure\Console\CheckCommandDefinition;
+use AiMessDetector\Infrastructure\Console\FilteredInputDefinition;
 use AiMessDetector\Infrastructure\Console\GitScopeFilterConfig;
 use AiMessDetector\Infrastructure\Console\ResultPresenter;
 use AiMessDetector\Infrastructure\Console\RuntimeConfigurator;
@@ -24,6 +25,7 @@ use AiMessDetector\Infrastructure\Rule\RuleRegistryInterface;
 use InvalidArgumentException;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Throwable;
@@ -35,6 +37,12 @@ use Throwable;
 )]
 final class CheckCommand extends Command
 {
+    /** @var list<string> Rule-specific option names hidden from --help */
+    private array $hiddenOptionNames = [];
+
+    private ?FilteredInputDefinition $filteredDefinition = null;
+    private ?int $filteredDefinitionSource = null;
+
     public function __construct(
         private readonly RuleRegistryInterface $ruleRegistry,
         private readonly AnalysisPipelineInterface $analyzer,
@@ -49,8 +57,39 @@ final class CheckCommand extends Command
 
     protected function configure(): void
     {
-        CheckCommandDefinition::addOptions($this, $this->ruleRegistry);
-        $this->setHelp('Run <info>bin/aimd rules</info> to see all available rules and their CLI options.');
+        $this->hiddenOptionNames = CheckCommandDefinition::addOptions($this, $this->ruleRegistry);
+        $this->setHelp(
+            'Run <info>bin/aimd rules</info> to see all available rules and their options.' . "\n"
+            . 'Use <info>--rule-opt=rule-name:option=value</info> to set rule-specific thresholds.',
+        );
+    }
+
+    /**
+     * Returns a FilteredInputDefinition that hides rule-specific options
+     * from --help output while keeping them functional for input parsing.
+     *
+     * The Symfony TextDescriptor iterates getDefinition()->getOptions() to render help.
+     * FilteredInputDefinition overrides getOptions() to exclude hidden options,
+     * while hasOption()/getOption()/getOptionForShortcut() still resolve them normally.
+     */
+    public function getDefinition(): InputDefinition
+    {
+        $definition = parent::getDefinition();
+
+        if ($this->hiddenOptionNames === []) {
+            return $definition;
+        }
+
+        // Rebuild when parent definition changes (e.g., after mergeApplicationDefinition)
+        if ($this->filteredDefinition === null || $this->filteredDefinitionSource !== spl_object_id($definition)) {
+            $this->filteredDefinition = new FilteredInputDefinition();
+            $this->filteredDefinition->setArguments($definition->getArguments());
+            $this->filteredDefinition->setOptions($definition->getOptions());
+            $this->filteredDefinition->setHiddenOptionNames($this->hiddenOptionNames);
+            $this->filteredDefinitionSource = spl_object_id($definition);
+        }
+
+        return $this->filteredDefinition;
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int

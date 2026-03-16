@@ -55,4 +55,24 @@ final class CheckCommandDefinitionTest extends TestCase
             'Numeric alias "cyclomatic-warning" should require a value',
         );
     }
+
+    #[Test]
+    public function addOptionsReturnsRuleSpecificOptionNames(): void
+    {
+        $command = new Command('test');
+        $registry = new RuleRegistry([
+            ComplexityRule::class,
+        ]);
+
+        $ruleOptionNames = CheckCommandDefinition::addOptions($command, $registry);
+
+        self::assertNotEmpty($ruleOptionNames);
+        self::assertContains('cyclomatic-warning', $ruleOptionNames);
+        self::assertContains('cyclomatic-error', $ruleOptionNames);
+
+        // Core options should NOT be in the returned list
+        self::assertNotContains('format', $ruleOptionNames);
+        self::assertNotContains('workers', $ruleOptionNames);
+        self::assertNotContains('disable-rule', $ruleOptionNames);
+    }
 }

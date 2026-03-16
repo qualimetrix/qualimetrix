@@ -21,8 +21,10 @@ final class CheckCommandDefinition
 {
     /**
      * Adds all arguments and options to the check command.
+     *
+     * @return list<string> Names of rule-specific options (to be hidden from --help)
      */
-    public static function addOptions(Command $command, RuleRegistryInterface $ruleRegistry): void
+    public static function addOptions(Command $command, RuleRegistryInterface $ruleRegistry): array
     {
         self::addPathArgument($command);
         self::addFileOptions($command);
@@ -35,8 +37,10 @@ final class CheckCommandDefinition
         self::addProfileOptions($command);
         self::addFormatterOptions($command);
         self::addHealthOptions($command);
-        self::addDynamicRuleOptions($command, $ruleRegistry);
+        $ruleOptionNames = self::addDynamicRuleOptions($command, $ruleRegistry);
         self::addGenericRuleOptions($command);
+
+        return $ruleOptionNames;
     }
 
     private static function addPathArgument(Command $command): void
@@ -275,11 +279,17 @@ final class CheckCommandDefinition
             );
     }
 
-    private static function addDynamicRuleOptions(Command $command, RuleRegistryInterface $ruleRegistry): void
+    /**
+     * @return list<string> Names of dynamically registered rule options
+     */
+    private static function addDynamicRuleOptions(Command $command, RuleRegistryInterface $ruleRegistry): array
     {
         $booleanAliases = self::detectBooleanAliases($ruleRegistry);
+        $optionNames = [];
 
         foreach ($ruleRegistry->getAllCliAliases() as $alias => $info) {
+            $optionNames[] = $alias;
+
             if (\in_array($alias, $booleanAliases, true)) {
                 $command->addOption(
                     $alias,
@@ -296,6 +306,8 @@ final class CheckCommandDefinition
                 );
             }
         }
+
+        return $optionNames;
     }
 
     /**
