@@ -58,6 +58,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Files with `@generated` annotation automatically skipped from analysis — use `--include-generated` to override
 - Unused-private rule resolves same-file trait method calls — reduces false positives when traits call class private methods
 - All rule violations now include actionable recommendations (distinct from the violation message)
+- `bin/aimd graph:export --format=json` — dependency graph as aggregated JSON adjacency list with namespace filtering
+
+### Fixed
+- XSS detection now catches superglobals in interpolated strings (`echo "Hello {$_GET['name']}"`)
+- Command injection detection now catches superglobals in interpolated strings (`exec("cmd {$_GET['x']}")`)
 
 ### Breaking
 - JSON field `humanMessage` renamed to `recommendation` in violation objects. Update any scripts parsing `humanMessage`
