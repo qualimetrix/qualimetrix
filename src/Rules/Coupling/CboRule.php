@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Rules\Coupling;
 
+use AiMessDetector\Core\Dependency\DependencyGraphInterface;
 use AiMessDetector\Core\Metric\MetricBag;
 use AiMessDetector\Core\Metric\MetricName;
 use AiMessDetector\Core\Rule\AnalysisContext;
@@ -11,6 +12,7 @@ use AiMessDetector\Core\Rule\HierarchicalRuleInterface;
 use AiMessDetector\Core\Rule\RuleCategory;
 use AiMessDetector\Core\Rule\RuleLevel;
 use AiMessDetector\Core\Symbol\SymbolInfo;
+use AiMessDetector\Core\Symbol\SymbolPath;
 use AiMessDetector\Core\Symbol\SymbolType;
 use AiMessDetector\Core\Violation\Location;
 use AiMessDetector\Core\Violation\Severity;
@@ -141,7 +143,7 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
             }
 
             $cboValue = (int) $cbo;
-            $violation = $this->checkCbo($cboValue, $classInfo, $metrics, $classOptions, RuleLevel::Class_);
+            $violation = $this->checkCbo($cboValue, $classInfo, $metrics, $classOptions, RuleLevel::Class_, $context->dependencyGraph);
             if ($violation !== null) {
                 $violations[] = $violation;
             }
@@ -201,6 +203,7 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
         MetricBag $metrics,
         ClassCboOptions|NamespaceCboOptions $options,
         RuleLevel $level,
+        ?DependencyGraphInterface $dependencyGraph = null,
     ): ?Violation {
         $ca = (int) ($metrics->get(MetricName::COUPLING_CA) ?? 0);
         $ce = (int) ($metrics->get(MetricName::COUPLING_CE) ?? 0);
@@ -217,7 +220,7 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
                 severity: Severity::Error,
                 metricValue: (float) $cbo,
                 level: $level,
-                recommendation: $this->buildRecommendation($cbo, $ca, $ce, $options->error),
+                recommendation: $this->buildRecommendation($cbo, $ca, $ce, $options->error, $symbolInfo->symbolPath, $dependencyGraph),
                 threshold: $options->error,
             );
         }
@@ -232,7 +235,7 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
                 severity: Severity::Warning,
                 metricValue: (float) $cbo,
                 level: $level,
-                recommendation: $this->buildRecommendation($cbo, $ca, $ce, $options->warning),
+                recommendation: $this->buildRecommendation($cbo, $ca, $ce, $options->warning, $symbolInfo->symbolPath, $dependencyGraph),
                 threshold: $options->warning,
             );
         }
@@ -271,13 +274,19 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
     }
 
     /**
-     * Builds a direction-aware recommendation.
+     * Builds a direction-aware recommendation, optionally including top dependencies.
      */
-    private function buildRecommendation(int $cbo, int $ca, int $ce, int $threshold): string
-    {
+    private function buildRecommendation(
+        int $cbo,
+        int $ca,
+        int $ce,
+        int $threshold,
+        ?SymbolPath $symbolPath = null,
+        ?DependencyGraphInterface $dependencyGraph = null,
+    ): string {
         $direction = $this->getCouplingDirection($ca, $ce);
 
-        return match ($direction) {
+        $base = match ($direction) {
             'efferent' => \sprintf(
                 'CBO: %d (threshold: %d) — extract dependencies to reduce outbound coupling',
                 $cbo,
@@ -294,6 +303,64 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
                 $threshold,
             ),
         };
+
+        $topDeps = $this->getTopDependencies($symbolPath, $dependencyGraph);
+        if ($topDeps !== '') {
+            return $topDeps . '. ' . $base;
+        }
+
+        return $base;
+    }
+
+    /**
+     * Returns a formatted string of top-5 efferent dependencies for a class, sorted by occurrence count.
+     *
+     * Only works for class-level SymbolPaths when the dependency graph is available.
+     */
+    private function getTopDependencies(?SymbolPath $symbolPath, ?DependencyGraphInterface $dependencyGraph): string
+    {
+        if ($symbolPath === null || $dependencyGraph === null) {
+            return '';
+        }
+
+        if ($symbolPath->getType() !== SymbolType::Class_) {
+            return '';
+        }
+
+        $dependencies = $dependencyGraph->getClassDependencies($symbolPath);
+        if ($dependencies === []) {
+            return '';
+        }
+
+        // Count occurrences per target class (a class may be referenced multiple times)
+        $counts = [];
+        $targetNames = [];
+        foreach ($dependencies as $dep) {
+            $targetKey = $dep->target->toCanonical();
+            $counts[$targetKey] = ($counts[$targetKey] ?? 0) + 1;
+            $targetNames[$targetKey] = $dep->target->type ?? $targetKey;
+        }
+
+        // Sort by occurrence count descending
+        arsort($counts);
+
+        // Take top 5 short class names
+        $topNames = [];
+        $i = 0;
+        foreach ($counts as $targetCanonical => $_count) {
+            if ($i >= 5) {
+                break;
+            }
+
+            $topNames[] = $targetNames[$targetCanonical];
+            $i++;
+        }
+
+        if ($topNames === []) {
+            return '';
+        }
+
+        return 'Top dependencies: ' . implode(', ', $topNames);
     }
 
     /**
