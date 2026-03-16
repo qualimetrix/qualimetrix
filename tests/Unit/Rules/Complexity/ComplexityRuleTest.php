@@ -55,7 +55,7 @@ final class ComplexityRuleTest extends TestCase
     {
         $rule = new ComplexityRule(new ComplexityOptions());
 
-        self::assertSame(['ccn'], $rule->requires());
+        self::assertSame(['ccn', 'cognitive'], $rule->requires());
     }
 
     public function testGetOptionsClass(): void
@@ -111,7 +111,7 @@ final class ComplexityRuleTest extends TestCase
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
         $methodInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
 
-        $metricBag = (new MetricBag())->with('ccn', 15);
+        $metricBag = (new MetricBag())->with('ccn', 15)->with('cognitive', 20);
 
         $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -128,6 +128,81 @@ final class ComplexityRuleTest extends TestCase
         self::assertSame(15, $violations[0]->metricValue);
         self::assertSame('complexity.cyclomatic', $violations[0]->ruleName);
         self::assertSame(RuleLevel::Method, $violations[0]->level);
+        // Both CCN and cognitive are high — standard recommendation
+        self::assertSame('Cyclomatic complexity: 15 (threshold: 10) — too many code paths', $violations[0]->recommendation);
+    }
+
+    public function testAnalyzeLevelMethodDivergenceRecommendation(): void
+    {
+        $rule = new ComplexityRule(new ComplexityOptions());
+
+        $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'handleStatus');
+        $methodInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+
+        // High CCN but low cognitive — typical switch/match pattern
+        $metricBag = (new MetricBag())->with('ccn', 15)->with('cognitive', 5);
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturn([$methodInfo]);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyzeLevel(RuleLevel::Method, $context);
+
+        self::assertCount(1, $violations);
+        self::assertSame(Severity::Warning, $violations[0]->severity);
+        self::assertNotNull($violations[0]->recommendation);
+        self::assertStringContainsString('mechanical branching', $violations[0]->recommendation);
+        self::assertStringContainsString('Lower refactoring priority', $violations[0]->recommendation);
+        self::assertStringContainsString('cognitive complexity (5)', $violations[0]->recommendation);
+    }
+
+    public function testAnalyzeLevelMethodNoCognitiveFallsBackToStandardRecommendation(): void
+    {
+        $rule = new ComplexityRule(new ComplexityOptions());
+
+        $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
+        $methodInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+
+        // No cognitive metric available
+        $metricBag = (new MetricBag())->with('ccn', 15);
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturn([$methodInfo]);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyzeLevel(RuleLevel::Method, $context);
+
+        self::assertCount(1, $violations);
+        self::assertSame('Cyclomatic complexity: 15 (threshold: 10) — too many code paths', $violations[0]->recommendation);
+    }
+
+    public function testAnalyzeLevelMethodCognitiveAtThresholdNoSpecialRecommendation(): void
+    {
+        $rule = new ComplexityRule(new ComplexityOptions());
+
+        $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
+        $methodInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+
+        // Cognitive exactly at threshold (15) — no divergence
+        $metricBag = (new MetricBag())->with('ccn', 15)->with('cognitive', 15);
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturn([$methodInfo]);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyzeLevel(RuleLevel::Method, $context);
+
+        self::assertCount(1, $violations);
+        self::assertSame('Cyclomatic complexity: 15 (threshold: 10) — too many code paths', $violations[0]->recommendation);
     }
 
     public function testAnalyzeLevelMethodGeneratesError(): void
@@ -137,7 +212,7 @@ final class ComplexityRuleTest extends TestCase
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
         $methodInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
 
-        $metricBag = (new MetricBag())->with('ccn', 25);
+        $metricBag = (new MetricBag())->with('ccn', 25)->with('cognitive', 30);
 
         $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -231,7 +306,7 @@ final class ComplexityRuleTest extends TestCase
         $classPath = SymbolPath::forClass('App\Service', 'UserService');
         $classInfo = new SymbolInfo($classPath, 'src/Service/UserService.php', 5);
 
-        $methodBag = (new MetricBag())->with('ccn', 15); // Warning
+        $methodBag = (new MetricBag())->with('ccn', 15)->with('cognitive', 20); // Warning
         $classBag = (new MetricBag())->with('ccn.max', 35); // Warning
 
         $repository = $this->createStub(MetricRepositoryInterface::class);

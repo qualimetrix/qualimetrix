@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Rules\Complexity;
 
+use AiMessDetector\Core\Metric\MetricBag;
 use AiMessDetector\Core\Metric\MetricName;
 use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\HierarchicalRuleInterface;
@@ -41,11 +42,19 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
     }
 
     /**
+     * Default cognitive complexity warning threshold.
+     *
+     * Used to detect divergence: high CCN with low cognitive complexity
+     * suggests mechanical branching (switch/match) rather than truly complex logic.
+     */
+    private const int COGNITIVE_WARNING_THRESHOLD = 15;
+
+    /**
      * @return list<string>
      */
     public function requires(): array
     {
-        return [MetricName::COMPLEXITY_CCN];
+        return [MetricName::COMPLEXITY_CCN, MetricName::COMPLEXITY_COGNITIVE];
     }
 
     /**
@@ -139,6 +148,7 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
 
             if ($severity !== null) {
                 $threshold = $severity === Severity::Error ? $methodOptions->error : $methodOptions->warning;
+                $recommendation = $this->buildMethodRecommendation($ccnValue, $threshold, $metrics);
 
                 $violations[] = new Violation(
                     location: new Location($methodInfo->file, $methodInfo->line),
@@ -149,13 +159,36 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
                     severity: $severity,
                     metricValue: $ccnValue,
                     level: RuleLevel::Method,
-                    recommendation: \sprintf('Cyclomatic complexity: %d (threshold: %d) — too many code paths', $ccnValue, $threshold),
+                    recommendation: $recommendation,
                     threshold: $threshold,
                 );
             }
         }
 
         return $violations;
+    }
+
+    /**
+     * Builds recommendation text for method-level CCN violations.
+     *
+     * When CCN is high but cognitive complexity is low, this indicates
+     * mechanical branching (e.g., switch/match statements) rather than
+     * genuinely complex logic — a lower refactoring priority.
+     */
+    private function buildMethodRecommendation(int $ccnValue, int $threshold, MetricBag $metrics): string
+    {
+        $cognitive = $metrics->get(MetricName::COMPLEXITY_COGNITIVE);
+
+        if ($cognitive !== null && (int) $cognitive < self::COGNITIVE_WARNING_THRESHOLD) {
+            return \sprintf(
+                'Cyclomatic complexity: %d (threshold: %d) — high CCN with low cognitive complexity (%d) suggests mechanical branching (switch/match). Lower refactoring priority.',
+                $ccnValue,
+                $threshold,
+                (int) $cognitive,
+            );
+        }
+
+        return \sprintf('Cyclomatic complexity: %d (threshold: %d) — too many code paths', $ccnValue, $threshold);
     }
 
     /**
