@@ -345,4 +345,56 @@ final class InMemoryMetricRepositoryTest extends TestCase
 
         self::assertSame(42, $info->line);
     }
+
+    #[Test]
+    public function testAddScalarDoesNotDuplicateDataBagEntries(): void
+    {
+        $repository = new InMemoryMetricRepository();
+
+        $symbol = SymbolPath::forClass('App\\Service', 'UserService');
+        $metrics = (new MetricBag())
+            ->with('ccn', 5)
+            ->withEntry('dependencies', ['name' => 'Foo'])
+            ->withEntry('dependencies', ['name' => 'Bar']);
+
+        $repository->add($symbol, $metrics, 'src/Service/UserService.php', 1);
+
+        $repository->addScalar($symbol, 'loc', 100);
+
+        $retrieved = $repository->get($symbol);
+
+        self::assertSame(2, $retrieved->entryCount('dependencies'));
+    }
+
+    #[Test]
+    public function testAddScalarIgnoresNonExistentSymbol(): void
+    {
+        $repository = new InMemoryMetricRepository();
+
+        $symbol = SymbolPath::forClass('App\\Service', 'NonExistent');
+
+        $repository->addScalar($symbol, 'ccn', 10);
+
+        self::assertFalse($repository->has($symbol));
+    }
+
+    #[Test]
+    public function testAddScalarUpdatesExistingMetric(): void
+    {
+        $repository = new InMemoryMetricRepository();
+
+        $symbol = SymbolPath::forClass('App\\Service', 'UserService');
+        $metrics = (new MetricBag())
+            ->with('foo', 10)
+            ->with('bar', 42);
+
+        $repository->add($symbol, $metrics, 'src/Service/UserService.php', 1);
+
+        $repository->addScalar($symbol, 'foo', 20);
+
+        $retrieved = $repository->get($symbol);
+
+        self::assertSame(20, $retrieved->get('foo'));
+        self::assertSame(42, $retrieved->get('bar'));
+    }
 }
