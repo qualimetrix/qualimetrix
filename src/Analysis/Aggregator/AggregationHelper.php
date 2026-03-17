@@ -96,7 +96,34 @@ final class AggregationHelper
             AggregationStrategy::Max => max($values),
             AggregationStrategy::Min => min($values),
             AggregationStrategy::Count => \count($values),
+            AggregationStrategy::Percentile95 => self::calculatePercentile95($values),
         };
+    }
+
+    /**
+     * Calculates the 95th percentile using linear interpolation.
+     *
+     * @param list<int|float> $values Non-empty list of values
+     */
+    private static function calculatePercentile95(array $values): float
+    {
+        sort($values);
+        $count = \count($values);
+
+        if ($count === 1) {
+            return (float) $values[0];
+        }
+
+        $index = 0.95 * ($count - 1);
+        $lower = (int) floor($index);
+        $upper = (int) ceil($index);
+        $fraction = $index - $lower;
+
+        if ($lower === $upper) {
+            return (float) $values[$lower];
+        }
+
+        return $values[$lower] + $fraction * ($values[$upper] - $values[$lower]);
     }
 
     /**

@@ -7,7 +7,10 @@ namespace AiMessDetector\Tests\Unit\Analysis\Aggregator;
 use AiMessDetector\Analysis\Aggregator\MetricAggregator;
 use AiMessDetector\Analysis\Aggregator\NamespaceToProjectAggregator;
 use AiMessDetector\Analysis\Repository\InMemoryMetricRepository;
+use AiMessDetector\Core\Metric\AggregationStrategy;
 use AiMessDetector\Core\Metric\MetricBag;
+use AiMessDetector\Core\Metric\MetricDefinition;
+use AiMessDetector\Core\Metric\SymbolLevel;
 use AiMessDetector\Core\Symbol\SymbolPath;
 use AiMessDetector\Metrics\Maintainability\MaintainabilityIndexCollector;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -57,5 +60,58 @@ final class NamespaceToProjectAggregatorTest extends TestCase
         self::assertSame(20, $projectMetrics->get('mi.count'));
         // Min is computed from collected values (.avg fallback) = min([80, 60, 90]) = 60.0
         self::assertEqualsWithDelta(60.0, $projectMetrics->get('mi.min'), 0.01);
+    }
+
+    #[Test]
+    public function itAggregatesNamespaceCollectedMetricsToProjectLevel(): void
+    {
+        $repository = new InMemoryMetricRepository();
+
+        // Register classes so namespaces exist in the repository
+        $repository->add(
+            SymbolPath::forClass('App\\Service', 'Svc'),
+            new MetricBag(),
+            'src/Service/Svc.php',
+            10,
+        );
+        $repository->add(
+            SymbolPath::forClass('App\\Repository', 'Repo'),
+            new MetricBag(),
+            'src/Repository/Repo.php',
+            10,
+        );
+
+        // Store namespace-collected metric (like distance) directly on namespace paths
+        $repository->add(
+            SymbolPath::forNamespace('App\\Service'),
+            (new MetricBag())->with('distance', 0.3),
+            '',
+            null,
+        );
+        $repository->add(
+            SymbolPath::forNamespace('App\\Repository'),
+            (new MetricBag())->with('distance', 0.1),
+            '',
+            null,
+        );
+
+        // Define a namespace-collected metric with project-level Average aggregation
+        $definitions = [
+            new MetricDefinition(
+                name: 'distance',
+                collectedAt: SymbolLevel::Namespace_,
+                aggregations: [
+                    SymbolLevel::Project->value => [AggregationStrategy::Average],
+                ],
+            ),
+        ];
+
+        $aggregator = new NamespaceToProjectAggregator();
+        $aggregator->aggregate($repository, $definitions);
+
+        $projectMetrics = $repository->get(SymbolPath::forProject());
+
+        // distance.avg = (0.3 + 0.1) / 2 = 0.2
+        self::assertEqualsWithDelta(0.2, $projectMetrics->get('distance.avg'), 0.001);
     }
 }
