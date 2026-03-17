@@ -6,6 +6,7 @@ namespace AiMessDetector\Tests\Unit\Metrics\Coupling;
 
 use AiMessDetector\Analysis\Collection\Dependency\DependencyGraph;
 use AiMessDetector\Analysis\Repository\InMemoryMetricRepository;
+use AiMessDetector\Core\Metric\AggregationStrategy;
 use AiMessDetector\Core\Metric\MetricBag;
 use AiMessDetector\Core\Metric\SymbolLevel;
 use AiMessDetector\Core\Symbol\SymbolPath;
@@ -52,9 +53,9 @@ final class DistanceCollectorTest extends TestCase
         $distance = $definitions[0];
         self::assertSame('distance', $distance->name);
         self::assertSame(SymbolLevel::Namespace_, $distance->collectedAt);
-        self::assertSame([], $distance->aggregations);
-        self::assertSame([], $distance->getStrategiesForLevel(SymbolLevel::Project));
-        self::assertFalse($distance->hasAggregationsForLevel(SymbolLevel::Project));
+        self::assertNotEmpty($distance->aggregations);
+        self::assertSame([AggregationStrategy::Average], $distance->getStrategiesForLevel(SymbolLevel::Project));
+        self::assertTrue($distance->hasAggregationsForLevel(SymbolLevel::Project));
     }
 
     #[Test]

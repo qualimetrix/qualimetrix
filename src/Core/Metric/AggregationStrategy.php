@@ -23,4 +23,7 @@ enum AggregationStrategy: string
 
     /** Count of elements (e.g., number of methods) */
     case Count = 'count';
+
+    /** 95th percentile of values (e.g., CBO excluding extreme outliers) */
+    case Percentile95 = 'p95';
 }

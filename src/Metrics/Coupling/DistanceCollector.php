@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AiMessDetector\Metrics\Coupling;
 
 use AiMessDetector\Core\Dependency\DependencyGraphInterface;
+use AiMessDetector\Core\Metric\AggregationStrategy;
 use AiMessDetector\Core\Metric\GlobalContextCollectorInterface;
 use AiMessDetector\Core\Metric\MetricDefinition;
 use AiMessDetector\Core\Metric\MetricName;
@@ -50,7 +51,9 @@ final class DistanceCollector implements GlobalContextCollectorInterface
             new MetricDefinition(
                 name: MetricName::COUPLING_DISTANCE,
                 collectedAt: SymbolLevel::Namespace_,
-                aggregations: [],
+                aggregations: [
+                    SymbolLevel::Project->value => [AggregationStrategy::Average],
+                ],
             ),
         ];
     }
