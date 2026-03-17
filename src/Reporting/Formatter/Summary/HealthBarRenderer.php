@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace AiMessDetector\Reporting\Formatter\Summary;
 
 use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Reporting\AnsiColor;
-use AiMessDetector\Reporting\DecompositionItem;
+use AiMessDetector\Reporting\Formatter\Support\AnsiColor;
 use AiMessDetector\Reporting\FormatterContext;
+use AiMessDetector\Reporting\Health\DecompositionItem;
+use AiMessDetector\Reporting\Health\HealthScore;
 use AiMessDetector\Reporting\Health\HealthScoreResolver;
-use AiMessDetector\Reporting\HealthScore;
 use AiMessDetector\Reporting\Report;
 
 /**

@@ -6,7 +6,7 @@ namespace AiMessDetector\Reporting\Filter;
 
 use AiMessDetector\Core\Violation\Violation;
 use AiMessDetector\Reporting\FormatterContext;
-use AiMessDetector\Reporting\WorstOffender;
+use AiMessDetector\Reporting\Health\WorstOffender;
 
 /**
  * Filters violations and worst offenders by namespace/class context.

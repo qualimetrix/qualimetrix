@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Reporting;
+namespace AiMessDetector\Reporting\Health;
 
 use AiMessDetector\Core\ComputedMetric\ComputedMetricDefaults;
 use AiMessDetector\Core\ComputedMetric\ComputedMetricDefinitionHolder;
@@ -11,6 +11,7 @@ use AiMessDetector\Core\Symbol\SymbolPath;
 use AiMessDetector\Core\Symbol\SymbolType;
 use AiMessDetector\Core\Violation\Violation;
 use AiMessDetector\Reporting\Debt\DebtCalculator;
+use AiMessDetector\Reporting\Report;
 
 /**
  * Enriches a Report with health scores, worst offenders, and tech debt.

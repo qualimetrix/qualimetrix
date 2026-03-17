@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Reporting;
+namespace AiMessDetector\Tests\Unit\Reporting\Formatter\Support;
 
-use AiMessDetector\Reporting\AnsiColor;
+use AiMessDetector\Reporting\Formatter\Support\AnsiColor;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 

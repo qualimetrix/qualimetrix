@@ -9,7 +9,7 @@ use AiMessDetector\Reporting\Debt\RemediationTimeRegistry;
 use AiMessDetector\Reporting\Formatter\Html\HtmlFormatter;
 use AiMessDetector\Reporting\FormatterContext;
 use AiMessDetector\Reporting\GroupBy;
-use AiMessDetector\Reporting\MetricHintProvider;
+use AiMessDetector\Reporting\Health\MetricHintProvider;
 use AiMessDetector\Reporting\ReportBuilder;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;

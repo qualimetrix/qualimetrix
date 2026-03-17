@@ -8,7 +8,7 @@ use AiMessDetector\Reporting\Debt\DebtCalculator;
 use AiMessDetector\Reporting\Formatter\FormatterInterface;
 use AiMessDetector\Reporting\FormatterContext;
 use AiMessDetector\Reporting\GroupBy;
-use AiMessDetector\Reporting\MetricHintProvider;
+use AiMessDetector\Reporting\Health\MetricHintProvider;
 use AiMessDetector\Reporting\Report;
 use RuntimeException;
 

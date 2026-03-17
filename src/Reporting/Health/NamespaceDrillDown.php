@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Reporting;
+namespace AiMessDetector\Reporting\Health;
 
 use AiMessDetector\Core\ComputedMetric\ComputedMetricDefaults;
 use AiMessDetector\Core\Metric\MetricRepositoryInterface;

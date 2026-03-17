@@ -7,13 +7,13 @@ namespace AiMessDetector\Reporting\Formatter;
 use AiMessDetector\Core\Symbol\SymbolType;
 use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
-use AiMessDetector\Reporting\AnsiColor;
 use AiMessDetector\Reporting\Debt\DebtCalculator;
-use AiMessDetector\Reporting\DetailedViolationRenderer;
+use AiMessDetector\Reporting\Formatter\Support\AnsiColor;
+use AiMessDetector\Reporting\Formatter\Support\DetailedViolationRenderer;
+use AiMessDetector\Reporting\Formatter\Support\ViolationSorter;
 use AiMessDetector\Reporting\FormatterContext;
 use AiMessDetector\Reporting\GroupBy;
 use AiMessDetector\Reporting\Report;
-use AiMessDetector\Reporting\ViolationSorter;
 
 /**
  * Formats report as compact, parseable text output (one line per violation).

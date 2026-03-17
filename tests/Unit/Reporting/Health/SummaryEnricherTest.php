@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Reporting;
+namespace AiMessDetector\Tests\Unit\Reporting\Health;
 
 use AiMessDetector\Core\Metric\MetricBag;
 use AiMessDetector\Core\Metric\MetricRepositoryInterface;
@@ -14,9 +14,9 @@ use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
 use AiMessDetector\Reporting\Debt\DebtCalculator;
 use AiMessDetector\Reporting\Debt\RemediationTimeRegistry;
-use AiMessDetector\Reporting\MetricHintProvider;
+use AiMessDetector\Reporting\Health\MetricHintProvider;
+use AiMessDetector\Reporting\Health\SummaryEnricher;
 use AiMessDetector\Reporting\Report;
-use AiMessDetector\Reporting\SummaryEnricher;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 

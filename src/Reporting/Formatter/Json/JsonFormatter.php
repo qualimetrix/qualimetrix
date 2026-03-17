@@ -9,16 +9,16 @@ use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
 use AiMessDetector\Reporting\Debt\DebtCalculator;
 use AiMessDetector\Reporting\Debt\RemediationTimeRegistry;
-use AiMessDetector\Reporting\DecompositionItem;
 use AiMessDetector\Reporting\Filter\ViolationFilter;
 use AiMessDetector\Reporting\Formatter\FormatterInterface;
 use AiMessDetector\Reporting\FormatterContext;
 use AiMessDetector\Reporting\GroupBy;
+use AiMessDetector\Reporting\Health\DecompositionItem;
+use AiMessDetector\Reporting\Health\HealthScore;
 use AiMessDetector\Reporting\Health\HealthScoreResolver;
-use AiMessDetector\Reporting\HealthScore;
-use AiMessDetector\Reporting\NamespaceDrillDown;
+use AiMessDetector\Reporting\Health\NamespaceDrillDown;
+use AiMessDetector\Reporting\Health\WorstOffender;
 use AiMessDetector\Reporting\Report;
-use AiMessDetector\Reporting\WorstOffender;
 use Composer\InstalledVersions;
 
 /**

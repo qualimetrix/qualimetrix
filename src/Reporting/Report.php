@@ -7,6 +7,8 @@ namespace AiMessDetector\Reporting;
 use AiMessDetector\Core\Metric\MetricRepositoryInterface;
 use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
+use AiMessDetector\Reporting\Health\HealthScore;
+use AiMessDetector\Reporting\Health\WorstOffender;
 
 /**
  * Value Object representing the analysis report.

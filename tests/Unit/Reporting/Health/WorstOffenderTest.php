@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Reporting;
+namespace AiMessDetector\Tests\Unit\Reporting\Health;
 
 use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Reporting\WorstOffender;
+use AiMessDetector\Reporting\Health\WorstOffender;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 

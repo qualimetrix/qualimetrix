@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Reporting;
+namespace AiMessDetector\Reporting\Formatter\Support;
 
 /**
  * Lightweight ANSI color wrapper for formatter output.

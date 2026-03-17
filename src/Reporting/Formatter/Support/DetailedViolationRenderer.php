@@ -2,12 +2,14 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Reporting;
+namespace AiMessDetector\Reporting\Formatter\Support;
 
 use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
 use AiMessDetector\Reporting\Debt\DebtCalculator;
 use AiMessDetector\Reporting\Debt\DebtSummary;
+use AiMessDetector\Reporting\FormatterContext;
+use AiMessDetector\Reporting\GroupBy;
 use LogicException;
 
 /**

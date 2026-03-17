@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Reporting;
+namespace AiMessDetector\Tests\Unit\Reporting\Health;
 
-use AiMessDetector\Reporting\DecompositionItem;
-use AiMessDetector\Reporting\HealthScore;
+use AiMessDetector\Reporting\Health\DecompositionItem;
+use AiMessDetector\Reporting\Health\HealthScore;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 

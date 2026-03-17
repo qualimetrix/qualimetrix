@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Reporting;
+namespace AiMessDetector\Reporting\Health;
 
 use AiMessDetector\Core\Symbol\SymbolPath;
 

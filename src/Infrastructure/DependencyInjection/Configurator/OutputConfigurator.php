@@ -38,16 +38,12 @@ use AiMessDetector\Infrastructure\Logging\DelegatingLogger;
 use AiMessDetector\Infrastructure\Logging\LoggerFactory;
 use AiMessDetector\Infrastructure\Logging\LoggerHolder;
 use AiMessDetector\Infrastructure\Rule\RuleRegistryInterface;
-use AiMessDetector\Reporting\DetailedViolationRenderer;
 use AiMessDetector\Reporting\Filter\ViolationFilter;
-use AiMessDetector\Reporting\Formatter\FormatterInterface;
 use AiMessDetector\Reporting\Formatter\FormatterRegistry;
 use AiMessDetector\Reporting\Formatter\FormatterRegistryInterface;
-use AiMessDetector\Reporting\Health\HealthScoreResolver;
-use AiMessDetector\Reporting\MetricHintProvider;
-use AiMessDetector\Reporting\NamespaceDrillDown;
+use AiMessDetector\Reporting\Formatter\Support\DetailedViolationRenderer;
+use AiMessDetector\Reporting\Health\SummaryEnricher;
 use AiMessDetector\Reporting\Profile\ProfileSummaryRenderer;
-use AiMessDetector\Reporting\SummaryEnricher;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -84,33 +80,29 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
 
         // Auto-register all formatters from src/Reporting/Formatter/ (recursive)
         // Classes implementing FormatterInterface will be auto-tagged via registerForAutoconfiguration
+        // Exclude Support/ (utility classes, some not DI-compatible: AnsiColor takes bool $enabled)
         $prototype = (new Definition())->setAutoconfigured(true)->setAutowired(true);
         $loader->registerClasses(
             $prototype,
             'AiMessDetector\\Reporting\\Formatter\\',
             $this->srcDir . '/Reporting/Formatter/{*,**/*}',
-            $this->srcDir . '/Reporting/Formatter/{*Interface.php,FormatterRegistry.php}',
+            $this->srcDir . '/Reporting/Formatter/{*Interface.php,FormatterRegistry.php,Support/**}',
+        );
+
+        // Auto-register health scoring services from src/Reporting/Health/
+        // Exclude VOs (scalar constructors, always instantiated via `new`)
+        $healthPrototype = (new Definition())->setAutoconfigured(true)->setAutowired(true);
+        $loader->registerClasses(
+            $healthPrototype,
+            'AiMessDetector\\Reporting\\Health\\',
+            $this->srcDir . '/Reporting/Health/*',
+            $this->srcDir . '/Reporting/Health/{HealthScore.php,WorstOffender.php,DecompositionItem.php}',
         );
 
         // ViolationFilter (shared filtering logic for formatters)
         $container->register(ViolationFilter::class);
 
-        // HealthScoreResolver (shared health score resolution logic for formatters)
-        $container->register(HealthScoreResolver::class)
-            ->setAutowired(true);
-
-        // MetricHintProvider (pure data class, no dependencies)
-        $container->register(MetricHintProvider::class);
-
-        // NamespaceDrillDown (shared logic for namespace drill-down in formatters)
-        $container->register(NamespaceDrillDown::class)
-            ->setAutowired(true);
-
-        // SummaryEnricher (depends on DebtCalculator and MetricHintProvider)
-        $container->register(SummaryEnricher::class)
-            ->setAutowired(true);
-
-        // DetailedViolationRenderer (shared by TextFormatter and SummaryFormatter)
+        // DetailedViolationRenderer (in Formatter/Support/, excluded from formatter glob)
         $container->register(DetailedViolationRenderer::class)
             ->setAutowired(true);
 

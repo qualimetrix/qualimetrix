@@ -2,10 +2,11 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Reporting;
+namespace AiMessDetector\Reporting\Formatter\Support;
 
 use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
+use AiMessDetector\Reporting\GroupBy;
 
 /**
  * Sorts violations based on GroupBy mode.

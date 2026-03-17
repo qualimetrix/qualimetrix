@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace AiMessDetector\Reporting\Health;
 
 use AiMessDetector\Reporting\FormatterContext;
-use AiMessDetector\Reporting\HealthScore;
-use AiMessDetector\Reporting\NamespaceDrillDown;
 use AiMessDetector\Reporting\Report;
 
 /**

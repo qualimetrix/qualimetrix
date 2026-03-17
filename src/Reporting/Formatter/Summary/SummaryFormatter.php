@@ -6,12 +6,12 @@ namespace AiMessDetector\Reporting\Formatter\Summary;
 
 use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
-use AiMessDetector\Reporting\AnsiColor;
 use AiMessDetector\Reporting\Debt\DebtSummary;
 use AiMessDetector\Reporting\Debt\RemediationTimeRegistry;
-use AiMessDetector\Reporting\DetailedViolationRenderer;
 use AiMessDetector\Reporting\Filter\ViolationFilter;
 use AiMessDetector\Reporting\Formatter\FormatterInterface;
+use AiMessDetector\Reporting\Formatter\Support\AnsiColor;
+use AiMessDetector\Reporting\Formatter\Support\DetailedViolationRenderer;
 use AiMessDetector\Reporting\FormatterContext;
 use AiMessDetector\Reporting\GroupBy;
 use AiMessDetector\Reporting\Report;

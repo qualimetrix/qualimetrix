@@ -29,19 +29,18 @@ Reporting is responsible for formatting analysis results for user output. It sup
 Reporting/
 ├── Report.php                              # Report aggregate (with health scores, worst offenders, tech debt)
 ├── ReportBuilder.php                       # Builder for creating reports
-├── SummaryEnricher.php                    # Enriches Report with health scores, worst offenders, tech debt
-├── MetricHintProvider.php                 # Single source of truth for metric display metadata
-├── DecompositionItem.php                  # VO: one contributing metric in a health score breakdown
-├── HealthScore.php                        # VO: one health dimension (complexity, cohesion, etc.)
-├── WorstOffender.php                      # VO: a namespace or class ranked by health
 ├── FormatterContext.php                    # Context passed to formatters (color, grouping, filters, options)
 ├── GroupBy.php                             # Grouping mode enum (None, File, Rule, Severity)
-├── AnsiColor.php                           # Lightweight ANSI color wrapper
-├── ViolationSorter.php                     # Sorting/grouping utility for violations
+├── Health/                                 # Health scoring module
+│   ├── HealthScoreResolver.php            # Shared health score resolution (project/namespace/class level)
+│   ├── SummaryEnricher.php                # Enriches Report with health scores, worst offenders, tech debt
+│   ├── MetricHintProvider.php             # Single source of truth for metric display metadata
+│   ├── NamespaceDrillDown.php             # Shared logic for namespace-level drill-down
+│   ├── HealthScore.php                    # VO: one health dimension (complexity, cohesion, etc.)
+│   ├── WorstOffender.php                  # VO: a namespace or class ranked by health
+│   └── DecompositionItem.php              # VO: one contributing metric in a health score breakdown
 ├── Filter/
 │   └── ViolationFilter.php                # Shared violation/offender filtering by namespace/class context
-├── Health/
-│   └── HealthScoreResolver.php            # Shared health score resolution (project/namespace/class level)
 ├── Profile/
 │   └── ProfileSummaryRenderer.php         # Profiler summary rendering for console
 ├── Debt/
@@ -57,6 +56,10 @@ Reporting/
     ├── CheckstyleFormatter.php             # Checkstyle XML
     ├── GithubActionsFormatter.php          # GitHub Actions annotation output
     ├── MetricsJsonFormatter.php            # Raw metrics JSON export
+    ├── Support/                            # Shared formatter utilities
+    │   ├── AnsiColor.php                  # Lightweight ANSI color wrapper
+    │   ├── ViolationSorter.php            # Sorting/grouping utility for violations
+    │   └── DetailedViolationRenderer.php  # Detailed violation output (--detail mode)
     ├── Summary/
     │   ├── SummaryFormatter.php           # Default: health overview + worst offenders + hints
     │   ├── HealthBarRenderer.php          # Renders ANSI health bars for console output
@@ -195,7 +198,7 @@ final readonly class Report
 }
 ```
 
-### SummaryEnricher
+### SummaryEnricher (Health/)
 
 Enriches a base `Report` with health scores, worst offenders, and tech debt. Called in the pipeline between `ReportBuilder::build()` and `Formatter::format()`.
 
@@ -207,7 +210,7 @@ final readonly class SummaryEnricher
 }
 ```
 
-### MetricHintProvider
+### MetricHintProvider (Health/)
 
 Single source of truth for metric display metadata (27 metrics, 6 health decompositions, 5 dimension labels). Used by `SummaryEnricher` and future formatters.
 

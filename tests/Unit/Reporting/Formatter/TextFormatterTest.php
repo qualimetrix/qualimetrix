@@ -10,7 +10,7 @@ use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
 use AiMessDetector\Reporting\Debt\DebtCalculator;
 use AiMessDetector\Reporting\Debt\RemediationTimeRegistry;
-use AiMessDetector\Reporting\DetailedViolationRenderer;
+use AiMessDetector\Reporting\Formatter\Support\DetailedViolationRenderer;
 use AiMessDetector\Reporting\Formatter\TextFormatter;
 use AiMessDetector\Reporting\FormatterContext;
 use AiMessDetector\Reporting\GroupBy;

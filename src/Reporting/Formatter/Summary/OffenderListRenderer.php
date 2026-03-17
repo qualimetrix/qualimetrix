@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Reporting\Formatter\Summary;
 
-use AiMessDetector\Reporting\AnsiColor;
 use AiMessDetector\Reporting\Filter\ViolationFilter;
+use AiMessDetector\Reporting\Formatter\Support\AnsiColor;
 use AiMessDetector\Reporting\FormatterContext;
-use AiMessDetector\Reporting\NamespaceDrillDown;
+use AiMessDetector\Reporting\Health\NamespaceDrillDown;
+use AiMessDetector\Reporting\Health\WorstOffender;
 use AiMessDetector\Reporting\Report;
-use AiMessDetector\Reporting\WorstOffender;
 
 /**
  * Renders the worst namespaces and worst classes sections for the summary formatter.
