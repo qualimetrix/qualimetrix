@@ -1,6 +1,6 @@
 # AIMD Product Roadmap
 
-**Updated:** 2026-03-16
+**Updated:** 2026-03-17
 **Based on:** [Competitive analysis](COMPETITOR_COMPARISON.md), cross-ecosystem research (SonarQube, ESLint, Semgrep, NDepend, CodeScene, RuboCop, Ruff, ArchUnit)
 
 ---
@@ -28,63 +28,11 @@ What AIMD should own:              What to leave to others:
 
 ---
 
-## Completed Work
-
-<details>
-<summary><strong>Tier 1–4: All Done</strong> (click to expand)</summary>
-
-### Tier 1: Accuracy Fixes
-- Raw metric export (`--format=metrics-json`)
-- MI formula fix (LLOC instead of physical LOC)
-
-### Tier 2: Quick Wins
-- Type Coverage collector + rule (`design.type-coverage`)
-- Long Parameter List rule (`code-smell.long-parameter-list`)
-- Unreachable Code rule (`code-smell.unreachable-code`)
-- Hardcoded Credentials rule (`security.hardcoded-credentials`)
-
-### Tier 3: Critical Gap Filling
-- Code Duplication detection (`duplication.code-duplication`) — token-stream Rabin-Karp
-- Unused Private Members (`code-smell.unused-private`) — methods, properties, constants
-- ClassRank / PageRank metric — `GlobalContextCollectorInterface`
-- Security patterns — `security.sql-injection`, `security.xss`, `security.command-injection`, `security.sensitive-parameter`
-- Identical Sub-expression (`code-smell.identical-subexpression`)
-- Technical Debt estimation — remediation time per rule, debt summary in reports
-
-### Tier 4: CI Integration & Usability
-- `--fail-on` option — control exit code by severity (`--fail-on=error` ignores warnings)
-- `--format=github` — GitHub Actions inline PR annotations without SARIF upload
-
-</details>
-
-### Remaining Gap: Dead Code
-
-Unused private members and unreachable code are done. **Unused variables** is the remaining gap — see Phase 2 below.
-
----
-
 ## Phase 1: Composite Rules & Quick Wins
 
 Low effort — all data already collected, only need rule logic on top.
 
-### 1.1 God Class Detection ✅
-
-- **Rule:** `code-smell.god-class`
-- **Logic:** Composite threshold on WMC + LCOM4 + TCC + class LOC. A class is a God Class when it has high WMC, low cohesion (high LCOM or low TCC), and is large
-- **Thresholds:** WMC ≥ 47, LCOM4 ≥ 3, TCC < 0.33, classLoc ≥ 300 (any 3 of 4 = Warning, all evaluable = Error)
-- **Reference:** Lanza & Marinescu "Object-Oriented Metrics in Practice", SonarQube S1820
-- **Effort:** Low
-- **Value:** High — the most requested OOP smell, phpmd has it, SonarQube has it
-
-### 1.2 Data Class Detection ✅
-
-- **Rule:** `code-smell.data-class`
-- **Logic:** High WOC (≥ 80% = mostly public accessors), low WMC (≤ 10), excludes readonly/promoted-only/intentional DTOs
-- **Reference:** Fowler's "Refactoring", Lanza & Marinescu
-- **Effort:** Low
-- **Value:** Medium — encourages moving behavior closer to data
-
-### 1.3 Feature Envy Detection
+### 1.1 Feature Envy Detection
 
 - **Rule:** `code-smell.feature-envy`
 - **Logic:** Method uses more symbols from another class than from its own class. Requires method-level coupling data (already available via RFC/CBO collectors)
@@ -92,23 +40,7 @@ Low effort — all data already collected, only need rule logic on top.
 - **Effort:** Medium (may need new per-method metric)
 - **Value:** Medium — classic Fowler smell
 
-### 1.4 Constructor Over-injection ✅
-
-- **Rule:** `code-smell.constructor-overinjection`
-- **Logic:** `__construct` parameter count ≥ threshold (warning: 8, error: 12)
-- **Effort:** Low
-- **Value:** Medium — direct signal of SRP violation in DI-heavy codebases
-
-### 1.5 Cyclomatic Density
-
-- **Metric:** `cyclomaticDensity` = CCN / LLOC
-- **Rule:** `complexity.cyclomatic-density`
-- **Logic:** Normalized complexity — high CCN in a short method is worse than the same CCN spread over many lines
-- **Reference:** Gill & Kemerer, NDepend "IL Cyclomatic Complexity / IL LOC"
-- **Effort:** Low (derived metric from existing CCN + LLOC)
-- **Value:** Low-Medium — useful for prioritization
-
-### 1.6 Effort-Aware Prioritization
+### 1.2 Effort-Aware Prioritization
 
 - **Feature:** Prioritized violation output combining ClassRank × severity × remediation_time
 - **Output:** "Top N highest-impact issues" section in text/JSON reports
@@ -116,6 +48,15 @@ Low effort — all data already collected, only need rule logic on top.
 - **All data already exists:** ClassRank, severity, remediation time
 - **Effort:** Low-Medium (reporting layer change)
 - **Value:** High — answers "what should I fix first?"
+
+### 1.3 Cyclomatic Density
+
+- **Metric:** `cyclomaticDensity` = CCN / LLOC
+- **Rule:** `complexity.cyclomatic-density`
+- **Logic:** Normalized complexity — high CCN in a short method is worse than the same CCN spread over many lines
+- **Reference:** Gill & Kemerer, NDepend "IL Cyclomatic Complexity / IL LOC"
+- **Effort:** Low (derived metric from existing CCN + LLOC)
+- **Value:** Low-Medium — useful for prioritization
 
 ---
 
@@ -151,9 +92,64 @@ Low effort — all data already collected, only need rule logic on top.
 
 ---
 
-## Phase 3: Architecture & Ecosystem
+## Phase 3: HTML Report Visualizations
 
-### 3.1 Architecture Rules (deptrac-killer)
+The basic HTML report (treemap, health bars, tables) is done. These additions leverage data we already collect but don't visualize prominently.
+
+### 3.1 Instability/Abstractness Scatter (Martin Diagram)
+
+- **Data:** `instability`, `abstractness`, `distance` (namespace-level, already collected)
+- **Visualization:** Scatter plot. X = Instability (0..1), Y = Abstractness (0..1). Diagonal = Main Sequence. Zone of Pain (0,0) = concrete & stable → brittle. Zone of Uselessness (1,1) = abstract & unstable → dead code. Dot size = LOC, color = distance from main sequence
+- **Reference:** Robert C. Martin "Clean Architecture", NDepend abstractness/instability graph
+- **Effort:** Low (data ready, simple D3 scatter)
+- **Value:** High — canonical architecture health diagram, one glance shows at-risk modules
+
+### 3.2 Complexity Distribution (Box Plots)
+
+- **Data:** Per-method `ccn`, `cognitive`, `npath` (already collected at method level)
+- **Visualization:** Box plot or histogram per class/namespace showing method complexity distribution. Click outlier → navigate to method
+- **Why:** avg/p95 hide distribution shape. Two classes with avg=10 can be radically different (200 simple methods + 3 monsters vs all moderate)
+- **Effort:** Medium (need method-level data in HTML tree, D3 box plot)
+- **Value:** High — distribution is far more informative than summary stats
+
+### 3.3 Tech Debt Breakdown
+
+- **Data:** `debtMinutes` per violation, `violationCode` grouped by rule group (complexity, coupling, code-smell...)
+- **Visualization:** Donut chart or treemap. Segments = rule groups, area = debt minutes. Per-project and per-namespace levels
+- **Why:** Shows where to invest refactoring time. Currently debt is a single number without category breakdown
+- **Effort:** Low (aggregate violations by group prefix, simple D3 pie/donut)
+- **Value:** Medium — directly actionable for refactoring prioritization
+
+### 3.4 Dependency Graph (Interactive)
+
+- **Data:** `ca`, `ce`, `cbo`, `classRank` (class-level), dependency edges (from DependencyVisitor)
+- **Visualization:** Force-directed graph (D3 force simulation). Nodes = classes/namespaces, size = LOC or classRank. Edges = directed dependencies. Color = health/instability. Cluster by namespace. Ego-graph mode: show dependencies of a selected class
+- **Reference:** NDepend dependency graph, CodeScene hotspot coupling map
+- **Challenge:** Performance on large projects (1000+ classes). Need filtering/threshold, lazy rendering, or WebGL
+- **Effort:** High (layout, performance, UX for filtering/zoom)
+- **Value:** High — makes coupling problems visually obvious, flagship visualization
+
+### 3.5 Health Radar Chart
+
+- **Data:** 5 sub-health scores (complexity, cohesion, coupling, typing, maintainability)
+- **Visualization:** Spider/radar chart per class or namespace. Overlay two namespaces for comparison
+- **Why:** Health bars are a linear list. Radar shows quality "shape" at a glance and enables comparison between modules
+- **Effort:** Low (D3 radar chart, data already available)
+- **Value:** Medium — useful for comparative analysis
+
+### 3.6 Type Coverage Heatmap
+
+- **Data:** `typeCoverage.param`, `.return`, `.property` per class
+- **Visualization:** Heatmap grid. Rows = classes (grouped by namespace), columns = param/return/property. Color = coverage %
+- **Why:** Quick pattern spotting: "property typing is weak everywhere" or "one namespace has no return types"
+- **Effort:** Low-Medium
+- **Value:** Low-Medium — niche but visually striking
+
+---
+
+## Phase 4: Architecture & Ecosystem
+
+### 4.1 Architecture Rules (deptrac-killer)
 
 - **Feature:** Declarative dependency constraints in `aimd.yml`
 - **Syntax (draft):**
@@ -172,18 +168,7 @@ Low effort — all data already collected, only need rule logic on top.
 - **Effort:** Medium-High
 - **Value:** Very High — replaces deptrac, reduces tool count. "One tool instead of five"
 
-### 3.2 Custom Rules API
-
-- **Feature:** User-defined rules without forking AIMD
-- **Options:**
-  - **YAML pattern rules** (like Semgrep) — low-code, pattern-based, limited power
-  - **PHP plugin interface** — `implements RuleInterface`, autoloaded from a configured path
-  - **Both** — YAML for simple patterns, PHP for complex logic
-- **Reference:** ESLint plugins, PHPStan extensions, Semgrep custom rules
-- **Effort:** Medium (PHP plugins) to High (YAML DSL)
-- **Value:** High — critical for enterprise adoption
-
-### 3.3 Trend Analysis & Quality Gates
+### 4.2 Trend Analysis & Quality Gates
 
 - **Feature:** Store metric snapshots between runs, detect regressions
 - **Approach:** SQLite database (`~/.aimd/history.db` or project-local) storing per-run aggregates
@@ -195,17 +180,16 @@ Low effort — all data already collected, only need rule logic on top.
 - **Effort:** High
 - **Value:** Very High — no PHP CLI tool does this. Unique selling point
 
-### 3.4 Interactive HTML Reports
+### 4.3 Custom Rules API
 
-- **Feature:** Self-contained HTML file with interactive visualizations
-- **Visualizations:**
-  - Treemap (file size × complexity, colored by MI)
-  - Bubble chart (coupling × cohesion × size)
-  - Dependency graph (interactive, zoomable)
-  - Hotspot table (sortable, filterable)
-- **Reference:** phpmetrics HTML reports, NDepend dashboards, CodeScene visualizations
-- **Effort:** High (standalone — needs JS charting library embedded)
-- **Value:** Medium — impressive for presentations/reviews, not essential for CI
+- **Feature:** User-defined rules without forking AIMD
+- **Options:**
+  - **YAML pattern rules** (like Semgrep) — low-code, pattern-based, limited power
+  - **PHP plugin interface** — `implements RuleInterface`, autoloaded from a configured path
+  - **Both** — YAML for simple patterns, PHP for complex logic
+- **Reference:** ESLint plugins, PHPStan extensions, Semgrep custom rules
+- **Effort:** Medium (PHP plugins) to High (YAML DSL)
+- **Value:** High — critical for enterprise adoption
 
 ---
 
@@ -225,7 +209,7 @@ Low effort — all data already collected, only need rule logic on top.
 
 After Phase 1–2, AIMD replaces: **phpmd + phpmetrics + phpcpd** (already largely achieved).
 
-After Phase 3, AIMD replaces: **phpmd + phpmetrics + phpcpd + deptrac** and offers capabilities no PHP tool has (trend analysis, quality gates).
+After Phase 3–4, AIMD replaces: **phpmd + phpmetrics + phpcpd + deptrac** and offers capabilities no PHP tool has (trend analysis, quality gates, interactive visualizations).
 
 **Target value proposition:** "One tool. 40x faster. Deeper metrics. Quality gates. Replaces five tools."
 
