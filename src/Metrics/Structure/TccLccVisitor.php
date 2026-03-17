@@ -12,6 +12,7 @@ use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\Node\Stmt\Enum_;
 use PhpParser\Node\Stmt\Interface_;
+use PhpParser\Node\Stmt\Property;
 use PhpParser\NodeVisitorAbstract;
 
 /**
@@ -114,6 +115,19 @@ final class TccLccVisitor extends NodeVisitorAbstract implements ResettableVisit
         // to keep push/pop balanced with leaveNode.
         $currentClass = $this->getCurrentClass();
         if ($node instanceof ClassMethod) {
+            // Count promoted constructor properties (PHP 8+): parameters with
+            // visibility modifiers are real instance properties.
+            if ($currentClass !== null && $node->name->toString() === '__construct') {
+                $fqn = $this->buildClassFqn($currentClass);
+                if (isset($this->classData[$fqn])) {
+                    foreach ($node->params as $param) {
+                        if ($param->flags !== 0) {
+                            $this->classData[$fqn]->incrementPropertyCount();
+                        }
+                    }
+                }
+            }
+
             // TCC/LCC only considers public, non-abstract methods of named classes.
             // Non-tracked methods push null to keep the stack balanced.
             if ($currentClass !== null
@@ -131,6 +145,21 @@ final class TccLccVisitor extends NodeVisitorAbstract implements ResettableVisit
                 }
             } else {
                 $this->methodStack[] = null;
+            }
+
+            return null;
+        }
+
+        // Track declared instance property declarations (not static) to detect
+        // property-less classes where TCC is structurally undefined.
+        if ($node instanceof Property && !$node->isStatic()) {
+            $currentClass = $this->getCurrentClass();
+            if ($currentClass !== null) {
+                $fqn = $this->buildClassFqn($currentClass);
+                if (isset($this->classData[$fqn])) {
+                    // A single Property node can declare multiple variables: public int $a, $b;
+                    $this->classData[$fqn]->incrementPropertyCount(\count($node->props));
+                }
             }
 
             return null;

@@ -77,6 +77,14 @@ final class TccLccCollector extends AbstractCollector implements ClassMetricsPro
                 continue;
             }
 
+            // Skip classes with no declared instance properties — TCC is structurally
+            // undefined (not 0) when there are no properties to share between methods.
+            // Emitting TCC=0.0 for these classes would drag down cohesion averages
+            // and misrepresent the health of namespaces with many property-less classes.
+            if ($classData->getPropertyCount() === 0) {
+                continue;
+            }
+
             $tcc = $classData->calculateTcc();
             $lcc = $classData->calculateLcc();
 
@@ -100,6 +108,11 @@ final class TccLccCollector extends AbstractCollector implements ClassMetricsPro
         foreach ($this->visitor->getClassData() as $classData) {
             // Skip classes with fewer than 2 public instance methods (see collect() comment)
             if (\count($classData->getMethods()) < 2) {
+                continue;
+            }
+
+            // Skip classes with no declared instance properties (see collect() comment)
+            if ($classData->getPropertyCount() === 0) {
                 continue;
             }
 
