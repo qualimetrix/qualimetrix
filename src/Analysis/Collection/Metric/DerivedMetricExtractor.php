@@ -79,39 +79,46 @@ final readonly class DerivedMetricExtractor
 
         // Add derived metrics to existing symbols
         foreach ($symbolMetrics as $fqn => $derivedBag) {
-            $symbolPath = $this->resolveSymbolPath($fqn);
+            foreach ($this->resolveCandidatePaths($fqn) as $symbolPath) {
+                // Only add if symbol exists (don't create new symbols)
+                if ($repository->has($symbolPath)) {
+                    $repository->add($symbolPath, $derivedBag, $filePath, 0);
 
-            // Only add if symbol exists (don't create new symbols)
-            if ($repository->has($symbolPath)) {
-                $repository->add($symbolPath, $derivedBag, $filePath, 0);
+                    break;
+                }
             }
         }
     }
 
     /**
-     * Resolves a FQN string to a SymbolPath.
+     * Resolves a FQN string to candidate SymbolPaths.
      *
-     * Supports:
-     * - Method FQN: "Namespace\Class::method" → SymbolPath::forMethod()
-     * - Class FQN: "Namespace\Class" → SymbolPath::forClass()
+     * For method FQNs (contains "::"), returns a single method path.
+     * For bare FQNs (no "::"), returns both class and function candidates,
+     * since "App\Utils\helper" could be either a class or a standalone function.
+     *
+     * @return list<SymbolPath>
      */
-    private function resolveSymbolPath(string $fqn): SymbolPath
+    private function resolveCandidatePaths(string $fqn): array
     {
         $doubleColonPos = strrpos($fqn, '::');
 
         if ($doubleColonPos !== false) {
-            // Method FQN: Namespace\Class::method
+            // Method FQN: Namespace\Class::method — unambiguous
             $classPath = substr($fqn, 0, $doubleColonPos);
             $methodName = substr($fqn, $doubleColonPos + 2);
             [$namespace, $className] = $this->splitClassPath($classPath);
 
-            return SymbolPath::forMethod($namespace, $className, $methodName);
+            return [SymbolPath::forMethod($namespace, $className, $methodName)];
         }
 
-        // Class FQN: Namespace\Class
-        [$namespace, $className] = $this->splitClassPath($fqn);
+        // Bare FQN: could be class or standalone function
+        [$namespace, $name] = $this->splitClassPath($fqn);
 
-        return SymbolPath::forClass($namespace, $className);
+        return [
+            SymbolPath::forClass($namespace, $name),
+            SymbolPath::forGlobalFunction($namespace, $name),
+        ];
     }
 
     /**

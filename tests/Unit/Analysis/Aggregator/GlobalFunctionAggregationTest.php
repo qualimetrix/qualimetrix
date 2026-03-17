@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace AiMessDetector\Tests\Unit\Analysis\Aggregator;
 
 use AiMessDetector\Analysis\Aggregator\AggregationHelper;
+use AiMessDetector\Analysis\Aggregator\ClassToNamespaceAggregator;
 use AiMessDetector\Analysis\Aggregator\MethodToClassAggregator;
+use AiMessDetector\Analysis\Aggregator\NamespaceToProjectAggregator;
 use AiMessDetector\Analysis\Repository\InMemoryMetricRepository;
 use AiMessDetector\Core\Metric\MetricBag;
 use AiMessDetector\Core\Symbol\SymbolPath;
@@ -25,6 +27,9 @@ use PHPUnit\Framework\TestCase;
  * any class.
  */
 #[CoversClass(MethodToClassAggregator::class)]
+#[CoversClass(ClassToNamespaceAggregator::class)]
+#[CoversClass(NamespaceToProjectAggregator::class)]
+#[CoversClass(AggregationHelper::class)]
 final class GlobalFunctionAggregationTest extends TestCase
 {
     #[Test]
@@ -121,5 +126,106 @@ final class GlobalFunctionAggregationTest extends TestCase
         // Function metrics should remain intact
         $functionBag = $repository->get($functionPath);
         self::assertSame(7, $functionBag->get('ccn'));
+    }
+
+    #[Test]
+    public function functionCcnAggregatesToNamespaceLevel(): void
+    {
+        $repository = new InMemoryMetricRepository();
+
+        // A standalone function with CCN
+        $functionPath = SymbolPath::forGlobalFunction('App\\Utils', 'helper');
+        $repository->add($functionPath, (new MetricBag())->with('ccn', 5), 'src/Utils/helpers.php', 10);
+
+        $definitions = AggregationHelper::collectDefinitions([new CyclomaticComplexityCollector()]);
+
+        // Method→Class does nothing for functions (correct behavior)
+        $methodToClass = new MethodToClassAggregator();
+        $methodToClass->aggregate($repository, $definitions);
+
+        // Class→Namespace should pick up the function's CCN
+        $classToNamespace = new ClassToNamespaceAggregator();
+        $classToNamespace->aggregate($repository, $definitions);
+
+        $namespaceBag = $repository->get(SymbolPath::forNamespace('App\\Utils'));
+        self::assertSame(5, $namespaceBag->get('ccn.sum'));
+        self::assertSame(1, $namespaceBag->get('symbolMethodCount'));
+    }
+
+    #[Test]
+    public function functionCcnAggregatesToProjectLevel(): void
+    {
+        $repository = new InMemoryMetricRepository();
+
+        $functionPath = SymbolPath::forGlobalFunction('App\\Utils', 'helper');
+        $repository->add($functionPath, (new MetricBag())->with('ccn', 8), 'src/Utils/helpers.php', 10);
+
+        $definitions = AggregationHelper::collectDefinitions([new CyclomaticComplexityCollector()]);
+
+        $methodToClass = new MethodToClassAggregator();
+        $methodToClass->aggregate($repository, $definitions);
+
+        $classToNamespace = new ClassToNamespaceAggregator();
+        $classToNamespace->aggregate($repository, $definitions);
+
+        $namespaceToProject = new NamespaceToProjectAggregator();
+        $namespaceToProject->aggregate($repository, $definitions);
+
+        $projectBag = $repository->get(SymbolPath::forProject());
+        self::assertSame(8, $projectBag->get('ccn.sum'));
+        self::assertSame(1, $projectBag->get('symbolMethodCount'));
+    }
+
+    #[Test]
+    public function functionCountedInSymbolMethodCount(): void
+    {
+        $repository = new InMemoryMetricRepository();
+
+        // A method and a function in the same namespace
+        $methodPath = SymbolPath::forMethod('App\\Service', 'UserService', 'find');
+        $repository->add($methodPath, (new MetricBag())->with('ccn', 3), 'src/Service/UserService.php', 20);
+
+        $classPath = SymbolPath::forClass('App\\Service', 'UserService');
+        $repository->add($classPath, new MetricBag(), 'src/Service/UserService.php', 1);
+
+        $functionPath = SymbolPath::forGlobalFunction('App\\Service', 'utility');
+        $repository->add($functionPath, (new MetricBag())->with('ccn', 10), 'src/Service/helpers.php', 5);
+
+        $symbolInfos = $repository->forNamespace('App\\Service');
+        $bag = AggregationHelper::addSymbolCounts(new MetricBag(), $symbolInfos);
+
+        // Both the method AND the function should be counted
+        self::assertSame(2, $bag->get('symbolMethodCount'));
+        self::assertSame(1, $bag->get('symbolClassCount'));
+    }
+
+    #[Test]
+    public function mixedClassAndFunctionNamespaceAggregation(): void
+    {
+        $repository = new InMemoryMetricRepository();
+
+        // Class method with CCN=3
+        $methodPath = SymbolPath::forMethod('App\\Service', 'UserService', 'find');
+        $repository->add($methodPath, (new MetricBag())->with('ccn', 3), 'src/Service/UserService.php', 20);
+
+        // Function with CCN=10
+        $functionPath = SymbolPath::forGlobalFunction('App\\Service', 'utility');
+        $repository->add($functionPath, (new MetricBag())->with('ccn', 10), 'src/Service/helpers.php', 5);
+
+        $definitions = AggregationHelper::collectDefinitions([new CyclomaticComplexityCollector()]);
+
+        // Method→Class aggregation: only aggregates the method
+        $methodToClass = new MethodToClassAggregator();
+        $methodToClass->aggregate($repository, $definitions);
+
+        // Class→Namespace: should include class CCN (3 from .sum) + function CCN (10 raw)
+        $classToNamespace = new ClassToNamespaceAggregator();
+        $classToNamespace->aggregate($repository, $definitions);
+
+        $namespaceBag = $repository->get(SymbolPath::forNamespace('App\\Service'));
+        // class sum (3) + function (10) = 13
+        self::assertSame(13, $namespaceBag->get('ccn.sum'));
+        // 1 method + 1 function = 2 callables
+        self::assertSame(2, $namespaceBag->get('symbolMethodCount'));
     }
 }
