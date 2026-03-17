@@ -182,4 +182,61 @@ final class DerivedMetricExtractorTest extends TestCase
         // No method symbols should have been created
         self::expectNotToPerformAssertions();
     }
+
+    #[Test]
+    public function itResolvesDerivedMetricsForStandaloneFunctions(): void
+    {
+        $derivedCollector = $this->createStub(DerivedCollectorInterface::class);
+        $derivedCollector->method('provides')->willReturn(['mi']);
+
+        $compositeCollector = new CompositeCollector([], [$derivedCollector]);
+        $extractor = new DerivedMetricExtractor($compositeCollector);
+
+        $repository = new InMemoryMetricRepository();
+        // Register a function (not a class) in the repository
+        $functionSymbol = SymbolPath::forGlobalFunction('App\\Utils', 'helper');
+        $repository->add($functionSymbol, MetricBag::fromArray(['ccn' => 5]), '/tmp/test.php', 10);
+
+        // Derived collector outputs MI keyed by FQN — same format as class FQN
+        $fileBag = MetricBag::fromArray([
+            'mi:App\\Utils\\helper' => 72.5,
+        ]);
+
+        $extractor->extract($repository, $fileBag, '/tmp/test.php');
+
+        // MI should be resolved to the function, not silently discarded
+        self::assertTrue($repository->has($functionSymbol));
+        $bag = $repository->get($functionSymbol);
+        self::assertSame(72.5, $bag->get('mi'));
+        self::assertSame(5, $bag->get('ccn'));
+    }
+
+    #[Test]
+    public function itPrefersClassOverFunctionWhenBothExist(): void
+    {
+        $derivedCollector = $this->createStub(DerivedCollectorInterface::class);
+        $derivedCollector->method('provides')->willReturn(['mi']);
+
+        $compositeCollector = new CompositeCollector([], [$derivedCollector]);
+        $extractor = new DerivedMetricExtractor($compositeCollector);
+
+        $repository = new InMemoryMetricRepository();
+        // Both a class and a function with same short name
+        $classSymbol = SymbolPath::forClass('App\\Utils', 'helper');
+        $repository->add($classSymbol, MetricBag::fromArray(['tcc' => 0.5]), '/tmp/test.php', 1);
+
+        $functionSymbol = SymbolPath::forGlobalFunction('App\\Utils', 'helper');
+        $repository->add($functionSymbol, MetricBag::fromArray(['ccn' => 3]), '/tmp/test.php', 20);
+
+        $fileBag = MetricBag::fromArray([
+            'mi:App\\Utils\\helper' => 80.0,
+        ]);
+
+        $extractor->extract($repository, $fileBag, '/tmp/test.php');
+
+        // Class takes priority
+        self::assertSame(80.0, $repository->get($classSymbol)->get('mi'));
+        // Function should NOT get the MI
+        self::assertNull($repository->get($functionSymbol)->get('mi'));
+    }
 }

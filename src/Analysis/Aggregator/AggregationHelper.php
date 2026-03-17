@@ -11,6 +11,7 @@ use AiMessDetector\Core\Metric\MetricDefinition;
 use AiMessDetector\Core\Metric\MetricRepositoryInterface;
 use AiMessDetector\Core\Metric\SymbolLevel;
 use AiMessDetector\Core\Symbol\SymbolInfo;
+use AiMessDetector\Core\Symbol\SymbolType;
 
 final class AggregationHelper
 {
@@ -156,6 +157,10 @@ final class AggregationHelper
     /**
      * Adds method and class counts to the metric bag.
      *
+     * Functions are counted in symbolMethodCount because health formulas use
+     * ccn__sum / symbolMethodCount for per-callable averages, and standalone
+     * functions are callables just like methods.
+     *
      * @param list<SymbolInfo> $symbolInfos
      */
     public static function addSymbolCounts(MetricBag $bag, array $symbolInfos): MetricBag
@@ -166,9 +171,10 @@ final class AggregationHelper
         foreach ($symbolInfos as $info) {
             $path = $info->symbolPath;
 
-            if ($path->type !== null && $path->member !== null) {
+            if ($path->member !== null) {
+                // Both methods (type !== null) and functions (type === null) are callables
                 $methodCount++;
-            } elseif ($path->type !== null && $path->member === null) {
+            } elseif ($path->type !== null) {
                 $classCount++;
             }
         }
@@ -242,7 +248,7 @@ final class AggregationHelper
      * Also collects weights for weighted average: when reading .avg fallback,
      * the corresponding .count is used as weight (falls back to 1.0 for backward compatibility).
      *
-     * @param list<SymbolInfo> $symbolInfos Class/Method symbols
+     * @param list<SymbolInfo> $symbolInfos Class/Method/Function symbols
      * @param list<SymbolInfo> $fileSymbols File symbols for this namespace
      * @param list<MetricDefinition> $definitions
      */
@@ -301,6 +307,32 @@ final class AggregationHelper
                         $values[$definition->name][] = $value;
                         $weights[$definition->name][] = 1.0;
                     }
+                }
+            }
+        }
+
+        // Collect from standalone functions (type === null, member !== null).
+        // Functions have no parent class, so no pre-aggregated .sum/.avg exists.
+        // Read raw metric values directly from the function's bag.
+        foreach ($symbolInfos as $info) {
+            $path = $info->symbolPath;
+
+            if ($path->getType() !== SymbolType::Function_) {
+                continue;
+            }
+
+            $bag = $repository->get($path);
+
+            foreach ($definitions as $definition) {
+                if ($definition->collectedAt !== SymbolLevel::Method) {
+                    continue;
+                }
+
+                $value = $bag->get($definition->name);
+
+                if ($value !== null) {
+                    $values[$definition->name][] = $value;
+                    $weights[$definition->name][] = 1.0;
                 }
             }
         }
