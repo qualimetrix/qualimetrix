@@ -42,8 +42,10 @@ final class ComputedMetricDefaults
                 name: 'health.coupling',
                 formulas: [
                     'class' => 'clamp(100 * 15 / (15 + max((ce ?? 0) - 5, 0)), 0, 100)',
-                    'namespace' => 'clamp(100 * 12 / (12 + (distance ?? 0) * 6.5 + max((cbo__avg ?? 0) - 7, 0) * 4 + max((cbo__max ?? 0) - 20, 0) * 0.15), 0, 100)',
-                    'project' => 'clamp(100 * 12 / (12 + (distance__avg ?? 0) * 6.5 + max((cbo__avg ?? 0) - 7, 0) * 4 + max((cbo__max ?? 0) - 20, 0) * 0.15), 0, 100)',
+                    // K=18, cbo_avg threshold=8, cbo_p95 threshold=15, sqrt-scaled max penalty.
+                    // Calibrated against 11 benchmark projects (Guzzle→92, Sf Console→64, AIMD→53, Laravel→53, Composer→32).
+                    'namespace' => 'clamp(100 * 18 / (18 + (distance ?? 0) * 6 + max((cbo__avg ?? 0) - 8, 0) * 3 + max((cbo__p95 ?? 0) - 15, 0) * 0.4 + max((cbo__max ?? 0) - 30, 0) ** 0.5 * 0.8), 0, 100)',
+                    'project' => 'clamp(100 * 18 / (18 + (distance__avg ?? 0) * 6 + max((cbo__avg ?? 0) - 8, 0) * 3 + max((cbo__p95 ?? 0) - 15, 0) * 0.4 + max((cbo__max ?? 0) - 30, 0) ** 0.5 * 0.8), 0, 100)',
                 ],
                 description: 'Coupling health score (0-100, higher is better)',
                 levels: [SymbolType::Class_, SymbolType::Namespace_, SymbolType::Project],
@@ -66,10 +68,10 @@ final class ComputedMetricDefaults
             'health.maintainability' => new ComputedMetricDefinition(
                 name: 'health.maintainability',
                 formulas: [
-                    // Stretch MI natural range (70-85) into wider health range (50-75).
-                    // Maps: MI=40→0, MI=100→100. Formula: (MI - 40) * 1.667
-                    'class' => 'clamp(((mi__avg ?? 75) - 40) * 1.667, 0, 100)',
-                    'namespace' => 'clamp(((mi__avg ?? 75) - 40) * 1.667, 0, 100)',
+                    // Maps: MI=30→0, MI=65→50, MI=85→79, MI=100→100.
+                    // Calibrated: MI=70 (SEI "good") → health=57, MI=80 → health=71.
+                    'class' => 'clamp(((mi__avg ?? 75) - 30) / 0.7, 0, 100)',
+                    'namespace' => 'clamp(((mi__avg ?? 75) - 30) / 0.7, 0, 100)',
                 ],
                 description: 'Maintainability health score (0-100, higher is better)',
                 levels: [SymbolType::Class_, SymbolType::Namespace_, SymbolType::Project],

@@ -204,8 +204,8 @@ final class ComputedMetricEvaluatorTest extends TestCase
         // health.typing = clamp(80, 0, 100) = 80
         self::assertEqualsWithDelta(80.0, $bag->get('health.typing'), 0.01);
 
-        // health.maintainability = clamp((65 - 40) * 1.667, 0, 100) = 25 * 1.667 = 41.675
-        self::assertEqualsWithDelta(41.675, $bag->get('health.maintainability'), 0.01);
+        // health.maintainability = clamp((65 - 30) / 0.7, 0, 100) = 35 / 0.7 = 50.0
+        self::assertEqualsWithDelta(50.0, $bag->get('health.maintainability'), 0.01);
 
         // health.overall = clamp(97.25*0.30 + 70*0.25 + 93.75*0.25 + 80*0.20, 0, 100)
         //                = 29.175 + 17.5 + 23.4375 + 16.0 = 86.11
@@ -257,18 +257,19 @@ final class ComputedMetricEvaluatorTest extends TestCase
         // health.cohesion = clamp(0.5*50 + (1 - clamp((3-1)/5, 0, 1))*50, 0, 100) = 25 + 0.6*50 = 55
         self::assertEqualsWithDelta(55.0, $bag->get('health.cohesion'), 0.01);
 
-        // health.coupling = 100 * 12 / (12 + 0.3*6.5 + max(6-7,0)*4) = 1200 / 13.95 ≈ 86.02
-        self::assertEqualsWithDelta(86.02, $bag->get('health.coupling'), 0.01);
+        // health.coupling = 100 * 18 / (18 + 0.3*6 + max(6-8,0)*3 + 0 + 0)
+        //                 = 1800 / 19.8 ≈ 90.91
+        self::assertEqualsWithDelta(90.91, $bag->get('health.coupling'), 0.01);
 
         // health.typing = (40+35+20) / max(50+50+25, 1) * 100 = 95/125 * 100 = 76
         self::assertEqualsWithDelta(76.0, $bag->get('health.typing'), 0.01);
 
-        // health.maintainability = clamp((70 - 40) * 1.667, 0, 100) = 30 * 1.667 = 50.01
-        self::assertEqualsWithDelta(50.01, $bag->get('health.maintainability'), 0.01);
+        // health.maintainability = clamp((70 - 30) / 0.7, 0, 100) = 40 / 0.7 ≈ 57.14
+        self::assertEqualsWithDelta(57.14, $bag->get('health.maintainability'), 0.01);
 
-        // health.overall = clamp(99.88*0.25 + 55*0.20 + 86.02*0.20 + 76*0.15 + 50.01*0.20, 0, 100)
-        //                = 24.97 + 11.0 + 17.204 + 11.4 + 10.002 = 74.576
-        self::assertEqualsWithDelta(74.58, $bag->get('health.overall'), 0.01);
+        // health.overall = clamp(99.88*0.25 + 55*0.20 + 90.91*0.20 + 76*0.15 + 57.14*0.20, 0, 100)
+        //                = 24.97 + 11.0 + 18.182 + 11.4 + 11.428 = 76.98
+        self::assertEqualsWithDelta(76.98, $bag->get('health.overall'), 0.01);
     }
 
     #[Test]
