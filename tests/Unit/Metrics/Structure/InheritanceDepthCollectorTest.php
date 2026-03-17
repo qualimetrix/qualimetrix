@@ -286,10 +286,12 @@ PHP;
         $namespaceStrategies = $def->getStrategiesForLevel(SymbolLevel::Namespace_);
         self::assertContains(AggregationStrategy::Average, $namespaceStrategies);
         self::assertContains(AggregationStrategy::Max, $namespaceStrategies);
+        self::assertContains(AggregationStrategy::Percentile95, $namespaceStrategies);
 
         $projectStrategies = $def->getStrategiesForLevel(SymbolLevel::Project);
         self::assertContains(AggregationStrategy::Average, $projectStrategies);
         self::assertContains(AggregationStrategy::Max, $projectStrategies);
+        self::assertContains(AggregationStrategy::Percentile95, $projectStrategies);
     }
 
     public function testExtendsExternalClass(): void

@@ -247,15 +247,17 @@ PHP;
 
         // Check Namespace_ level aggregations
         $namespaceStrategies = $definition->getStrategiesForLevel(SymbolLevel::Namespace_);
-        self::assertCount(2, $namespaceStrategies);
+        self::assertCount(3, $namespaceStrategies);
         self::assertContains(AggregationStrategy::Max, $namespaceStrategies);
         self::assertContains(AggregationStrategy::Average, $namespaceStrategies);
+        self::assertContains(AggregationStrategy::Percentile95, $namespaceStrategies);
 
         // Check Project level aggregations
         $projectStrategies = $definition->getStrategiesForLevel(SymbolLevel::Project);
-        self::assertCount(2, $projectStrategies);
+        self::assertCount(3, $projectStrategies);
         self::assertContains(AggregationStrategy::Max, $projectStrategies);
         self::assertContains(AggregationStrategy::Average, $projectStrategies);
+        self::assertContains(AggregationStrategy::Percentile95, $projectStrategies);
     }
 
     public function testInterfaceMethod(): void

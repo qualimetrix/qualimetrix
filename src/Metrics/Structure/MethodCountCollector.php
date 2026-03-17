@@ -222,11 +222,13 @@ final class MethodCountCollector extends AbstractCollector implements ClassMetri
                 AggregationStrategy::Sum,
                 AggregationStrategy::Average,
                 AggregationStrategy::Max,
+                AggregationStrategy::Percentile95,
             ],
             SymbolLevel::Project->value => [
                 AggregationStrategy::Sum,
                 AggregationStrategy::Average,
                 AggregationStrategy::Max,
+                AggregationStrategy::Percentile95,
             ],
         ];
 

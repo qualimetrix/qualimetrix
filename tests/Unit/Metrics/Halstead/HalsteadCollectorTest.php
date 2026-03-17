@@ -485,6 +485,12 @@ PHP;
         $classStrategies = $volumeDef->getStrategiesForLevel(SymbolLevel::Class_);
         self::assertContains(AggregationStrategy::Average, $classStrategies);
         self::assertContains(AggregationStrategy::Max, $classStrategies);
+
+        $namespaceStrategies = $volumeDef->getStrategiesForLevel(SymbolLevel::Namespace_);
+        self::assertContains(AggregationStrategy::Percentile95, $namespaceStrategies);
+
+        $projectStrategies = $volumeDef->getStrategiesForLevel(SymbolLevel::Project);
+        self::assertContains(AggregationStrategy::Percentile95, $projectStrategies);
     }
 
     public function testGetMethodsWithMetrics(): void

@@ -56,11 +56,13 @@ final class RfcCollectorTest extends TestCase
         self::assertContains(AggregationStrategy::Sum, $namespaceStrategies);
         self::assertContains(AggregationStrategy::Average, $namespaceStrategies);
         self::assertContains(AggregationStrategy::Max, $namespaceStrategies);
+        self::assertContains(AggregationStrategy::Percentile95, $namespaceStrategies);
 
         $projectStrategies = $rfcDef->getStrategiesForLevel(SymbolLevel::Project);
         self::assertContains(AggregationStrategy::Sum, $projectStrategies);
         self::assertContains(AggregationStrategy::Average, $projectStrategies);
         self::assertContains(AggregationStrategy::Max, $projectStrategies);
+        self::assertContains(AggregationStrategy::Percentile95, $projectStrategies);
 
         // Check rfc_own metric definition
         $rfcOwnDef = $definitions[1];

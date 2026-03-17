@@ -431,6 +431,10 @@ PHP;
         self::assertContains(AggregationStrategy::Sum, $namespaceStrategies);
         self::assertContains(AggregationStrategy::Average, $namespaceStrategies);
         self::assertContains(AggregationStrategy::Max, $namespaceStrategies);
+        self::assertContains(AggregationStrategy::Percentile95, $namespaceStrategies);
+
+        $projectStrategies = $methodCountDef->getStrategiesForLevel(SymbolLevel::Project);
+        self::assertContains(AggregationStrategy::Percentile95, $projectStrategies);
     }
 
     public function testGetterSetterCaseInsensitive(): void

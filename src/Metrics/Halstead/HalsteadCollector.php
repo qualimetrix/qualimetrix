@@ -149,10 +149,12 @@ final class HalsteadCollector extends AbstractCollector implements MethodMetrics
             SymbolLevel::Namespace_->value => [
                 AggregationStrategy::Average,
                 AggregationStrategy::Max,
+                AggregationStrategy::Percentile95,
             ],
             SymbolLevel::Project->value => [
                 AggregationStrategy::Average,
                 AggregationStrategy::Max,
+                AggregationStrategy::Percentile95,
             ],
         ];
 

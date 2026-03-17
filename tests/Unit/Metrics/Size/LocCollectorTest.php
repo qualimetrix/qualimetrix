@@ -392,10 +392,11 @@ PHP;
         self::assertSame(SymbolLevel::Class_, $classLocDef->collectedAt);
 
         $namespaceStrategies = $classLocDef->getStrategiesForLevel(SymbolLevel::Namespace_);
-        self::assertCount(3, $namespaceStrategies);
+        self::assertCount(4, $namespaceStrategies);
         self::assertContains(AggregationStrategy::Sum, $namespaceStrategies);
         self::assertContains(AggregationStrategy::Average, $namespaceStrategies);
         self::assertContains(AggregationStrategy::Max, $namespaceStrategies);
+        self::assertContains(AggregationStrategy::Percentile95, $namespaceStrategies);
     }
 
     public function testClassLocSingleClass(): void
