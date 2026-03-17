@@ -161,7 +161,7 @@ function resolveBaseKey(key) {
   if (METRIC_HINTS.has(key)) return key;
 
   // Strip known aggregation suffixes
-  const suffixes = ['.avg', '.max', '.min', '.sum', '.p95'];
+  const suffixes = ['.avg', '.max', '.min', '.sum', '.p95', '.p5'];
   for (const suffix of suffixes) {
     if (key.endsWith(suffix)) {
       const base = key.slice(0, -suffix.length);

@@ -102,10 +102,12 @@ final class MaintainabilityIndexCollector implements DerivedCollectorInterface, 
                     SymbolLevel::Namespace_->value => [
                         AggregationStrategy::Average,
                         AggregationStrategy::Min,
+                        AggregationStrategy::Percentile5,
                     ],
                     SymbolLevel::Project->value => [
                         AggregationStrategy::Average,
                         AggregationStrategy::Min,
+                        AggregationStrategy::Percentile5,
                     ],
                 ],
             ),

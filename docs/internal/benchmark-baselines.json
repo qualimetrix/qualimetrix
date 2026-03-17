@@ -19,12 +19,12 @@
                     100
                 ],
                 "health.maintainability": [
-                    65,
-                    85
+                    90,
+                    100
                 ],
                 "health.overall": [
-                    76,
-                    96
+                    81,
+                    100
                 ]
             }
         },
@@ -44,12 +44,12 @@
                     74
                 ],
                 "health.maintainability": [
-                    56,
-                    77
+                    61,
+                    82
                 ],
                 "health.overall": [
-                    62,
-                    83
+                    63,
+                    84
                 ]
             }
         },
@@ -69,12 +69,12 @@
                     60
                 ],
                 "health.maintainability": [
-                    49,
-                    70
+                    37,
+                    58
                 ],
                 "health.overall": [
-                    53,
-                    74
+                    51,
+                    72
                 ]
             }
         },
@@ -94,12 +94,12 @@
                     89
                 ],
                 "health.maintainability": [
-                    57,
-                    78
+                    67,
+                    88
                 ],
                 "health.overall": [
-                    66,
-                    87
+                    68,
+                    89
                 ]
             }
         },
@@ -119,12 +119,12 @@
                     82
                 ],
                 "health.maintainability": [
-                    55,
-                    76
+                    49,
+                    70
                 ],
                 "health.overall": [
-                    64,
-                    85
+                    63,
+                    84
                 ]
             }
         },
@@ -144,12 +144,12 @@
                     91
                 ],
                 "health.maintainability": [
-                    52,
-                    73
+                    48,
+                    68
                 ],
                 "health.overall": [
-                    62,
-                    83
+                    61,
+                    82
                 ]
             }
         },
@@ -169,11 +169,11 @@
                     71
                 ],
                 "health.maintainability": [
-                    61,
-                    82
+                    63,
+                    84
                 ],
                 "health.overall": [
-                    67,
+                    68,
                     88
                 ]
             }
@@ -197,12 +197,12 @@
                     53
                 ],
                 "health.maintainability": [
-                    60,
-                    81
+                    76,
+                    97
                 ],
                 "health.overall": [
-                    56,
-                    77
+                    59,
+                    80
                 ]
             }
         },
@@ -222,12 +222,12 @@
                     69
                 ],
                 "health.maintainability": [
-                    53,
-                    74
+                    56,
+                    77
                 ],
                 "health.overall": [
-                    61,
-                    82
+                    62,
+                    83
                 ]
             }
         },
@@ -247,12 +247,12 @@
                     74
                 ],
                 "health.maintainability": [
-                    57,
-                    77
+                    52,
+                    73
                 ],
                 "health.overall": [
-                    62,
-                    83
+                    61,
+                    82
                 ]
             }
         },
@@ -272,12 +272,12 @@
                     43
                 ],
                 "health.maintainability": [
-                    49,
-                    70
+                    40,
+                    61
                 ],
                 "health.overall": [
-                    44,
-                    65
+                    42,
+                    63
                 ]
             }
         },
@@ -297,12 +297,12 @@
                     67
                 ],
                 "health.maintainability": [
-                    52,
-                    72
+                    60,
+                    81
                 ],
                 "health.overall": [
-                    63,
-                    84
+                    65,
+                    86
                 ]
             }
         },
@@ -322,12 +322,12 @@
                     100
                 ],
                 "health.maintainability": [
-                    50,
-                    71
+                    58,
+                    79
                 ],
                 "health.overall": [
-                    62,
-                    83
+                    64,
+                    85
                 ]
             }
         },
@@ -347,12 +347,12 @@
                     64
                 ],
                 "health.maintainability": [
-                    58,
-                    79
+                    78,
+                    99
                 ],
                 "health.overall": [
-                    47,
-                    68
+                    51,
+                    72
                 ]
             }
         },
@@ -372,12 +372,12 @@
                     63
                 ],
                 "health.maintainability": [
-                    53,
-                    74
+                    56,
+                    77
                 ],
                 "health.overall": [
-                    60,
-                    81
+                    61,
+                    82
                 ]
             }
         }

@@ -97,6 +97,7 @@ final class AggregationHelper
             AggregationStrategy::Min => min($values),
             AggregationStrategy::Count => \count($values),
             AggregationStrategy::Percentile95 => self::calculatePercentile95($values),
+            AggregationStrategy::Percentile5 => self::calculatePercentile5($values),
         };
     }
 
@@ -115,6 +116,32 @@ final class AggregationHelper
         }
 
         $index = 0.95 * ($count - 1);
+        $lower = (int) floor($index);
+        $upper = (int) ceil($index);
+        $fraction = $index - $lower;
+
+        if ($lower === $upper) {
+            return (float) $values[$lower];
+        }
+
+        return $values[$lower] + $fraction * ($values[$upper] - $values[$lower]);
+    }
+
+    /**
+     * Calculates the 5th percentile using linear interpolation.
+     *
+     * @param list<int|float> $values Non-empty list of values
+     */
+    private static function calculatePercentile5(array $values): float
+    {
+        sort($values);
+        $count = \count($values);
+
+        if ($count === 1) {
+            return (float) $values[0];
+        }
+
+        $index = 0.05 * ($count - 1);
         $lower = (int) floor($index);
         $upper = (int) ceil($index);
         $fraction = $index - $lower;

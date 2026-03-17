@@ -186,7 +186,7 @@ final class MetricHintProviderTest extends TestCase
         self::assertSame(['tcc.avg', 'lcom.avg'], $this->provider->getDecomposition('health.cohesion'));
         self::assertSame(['cbo.avg', 'distance.avg'], $this->provider->getDecomposition('health.coupling'));
         self::assertSame(['typeCoverage.pct'], $this->provider->getDecomposition('health.typing'));
-        self::assertSame(['mi.avg'], $this->provider->getDecomposition('health.maintainability'));
+        self::assertSame(['mi.avg', 'mi.p5', 'mi.min'], $this->provider->getDecomposition('health.maintainability'));
         self::assertSame([], $this->provider->getDecomposition('health.overall'));
     }
 

@@ -26,4 +26,7 @@ enum AggregationStrategy: string
 
     /** 95th percentile of values (e.g., CBO excluding extreme outliers) */
     case Percentile95 = 'p95';
+
+    /** 5th percentile of values (e.g., worst ~5% of MI scores) */
+    case Percentile5 = 'p5';
 }

@@ -177,6 +177,13 @@ final class MetricHintProvider
             'badExplanation' => 'code is hard to change safely',
             'goodExplanation' => 'code is maintainable',
         ],
+        'mi.p5' => [
+            'label' => 'MI (p5)',
+            'direction' => 'higher_is_better',
+            'goodValue' => 'above 50',
+            'badExplanation' => 'worst methods are hard to maintain',
+            'goodExplanation' => 'even worst methods are maintainable',
+        ],
         'typeCoverage.pct' => [
             'label' => 'Type coverage',
             'direction' => 'higher_is_better',
@@ -406,7 +413,9 @@ final class MetricHintProvider
             ['key' => 'typeCoverage.pct', 'altKey' => null, 'label' => 'Coverage', 'ideal' => '100%', 'direction' => 'higher'],
         ],
         'health.maintainability' => [
-            ['key' => 'mi.avg', 'altKey' => 'mi', 'label' => 'MI', 'ideal' => '85+', 'direction' => 'higher'],
+            ['key' => 'mi.avg', 'altKey' => 'mi', 'label' => 'MI avg', 'ideal' => '82+', 'direction' => 'higher'],
+            ['key' => 'mi.p5', 'altKey' => null, 'label' => 'MI p5', 'ideal' => '≥65', 'direction' => 'higher'],
+            ['key' => 'mi.min', 'altKey' => null, 'label' => 'MI min', 'ideal' => '≥40', 'direction' => 'higher'],
         ],
         'health.overall' => [],
     ];
@@ -460,7 +469,7 @@ final class MetricHintProvider
     ];
 
     /** @var list<string> */
-    private const array AGGREGATION_SUFFIXES = ['.avg', '.max', '.min', '.sum', '.p95'];
+    private const array AGGREGATION_SUFFIXES = ['.avg', '.max', '.min', '.sum', '.p95', '.p5'];
 
     public function getLabel(string $metricKey): ?string
     {
