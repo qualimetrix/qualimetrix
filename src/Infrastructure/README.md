@@ -107,11 +107,14 @@ Infrastructure/
     ├── CliOptionsParser.php
     ├── OutputHelper.php               # Helper for large text output (line-by-line flush)
     ├── ViolationFilterPipeline.php    # Violation filtering orchestration
+    ├── ViolationFilterOrchestrator.php # Orchestrates violation filtering, baseline checks, and CLI output
     ├── ViolationFilterOptions.php     # Filter options VO
     ├── ViolationFilterResult.php      # Filter result VO
     ├── GitScopeFilterConfig.php       # Git scope filter config VO
     ├── RuntimeConfigurator.php        # Runtime DI configuration
     ├── ResultPresenter.php            # Output presentation
+    ├── ProfilePresenter.php           # Handles profiling output: summary to stderr or export to file
+    ├── FormatterContextFactory.php    # Creates FormatterContext from CLI input options
     ├── CheckCommandDefinition.php     # Command option definitions
     ├── FilteredInputDefinition.php    # InputDefinition that hides rule-specific options from --help
     ├── Progress/

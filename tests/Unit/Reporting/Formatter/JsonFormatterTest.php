@@ -12,7 +12,10 @@ use AiMessDetector\Reporting\Debt\DebtCalculator;
 use AiMessDetector\Reporting\Debt\RemediationTimeRegistry;
 use AiMessDetector\Reporting\Filter\ViolationFilter;
 use AiMessDetector\Reporting\Formatter\Json\JsonFormatter;
+use AiMessDetector\Reporting\Formatter\Json\JsonHealthSection;
+use AiMessDetector\Reporting\Formatter\Json\JsonOffenderSection;
 use AiMessDetector\Reporting\Formatter\Json\JsonSanitizer;
+use AiMessDetector\Reporting\Formatter\Json\JsonViolationSection;
 use AiMessDetector\Reporting\FormatterContext;
 use AiMessDetector\Reporting\GroupBy;
 use AiMessDetector\Reporting\Health\DecompositionItem;
@@ -37,13 +40,15 @@ final class JsonFormatterTest extends TestCase
     {
         $hintProvider = new MetricHintProvider();
         $namespaceDrillDown = new NamespaceDrillDown($hintProvider);
+        $sanitizer = new JsonSanitizer();
+        $violationFilter = new ViolationFilter();
+        $remediationTimeRegistry = new RemediationTimeRegistry();
         $this->formatter = new JsonFormatter(
-            new DebtCalculator(new RemediationTimeRegistry()),
-            $namespaceDrillDown,
-            new RemediationTimeRegistry(),
-            new ViolationFilter(),
-            new HealthScoreResolver($namespaceDrillDown),
-            new JsonSanitizer(),
+            new DebtCalculator($remediationTimeRegistry),
+            $violationFilter,
+            new JsonHealthSection(new HealthScoreResolver($namespaceDrillDown), $sanitizer),
+            new JsonOffenderSection($namespaceDrillDown, $violationFilter, $sanitizer),
+            new JsonViolationSection($remediationTimeRegistry, $sanitizer),
         );
     }
 

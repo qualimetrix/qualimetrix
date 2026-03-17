@@ -18,6 +18,7 @@ use AiMessDetector\Core\Symbol\SymbolPath;
 use AiMessDetector\Core\Violation\Location;
 use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
+use AiMessDetector\Infrastructure\Console\ProfilePresenter;
 use AiMessDetector\Infrastructure\Console\ResultPresenter;
 use AiMessDetector\Reporting\Debt\DebtCalculator;
 use AiMessDetector\Reporting\Debt\RemediationTimeRegistry;
@@ -50,6 +51,7 @@ final class ResultPresenterTest extends TestCase
                 new DebtCalculator(new RemediationTimeRegistry()),
                 new MetricHintProvider(),
             ),
+            profilePresenter: new ProfilePresenter(new ProfilerHolder()),
         );
     }
 
@@ -87,6 +89,7 @@ final class ResultPresenterTest extends TestCase
                 new DebtCalculator(new RemediationTimeRegistry()),
                 new MetricHintProvider(),
             ),
+            profilePresenter: new ProfilePresenter(new ProfilerHolder()),
         );
 
         $input = $this->createStub(InputInterface::class);
@@ -296,6 +299,7 @@ final class ResultPresenterTest extends TestCase
                 new DebtCalculator(new RemediationTimeRegistry()),
                 new MetricHintProvider(),
             ),
+            profilePresenter: new ProfilePresenter(new ProfilerHolder()),
         );
 
         $input = $this->createStub(InputInterface::class);
@@ -346,6 +350,7 @@ final class ResultPresenterTest extends TestCase
                 new DebtCalculator(new RemediationTimeRegistry()),
                 new MetricHintProvider(),
             ),
+            profilePresenter: new ProfilePresenter(new ProfilerHolder()),
         );
 
         $input = $this->createStub(InputInterface::class);

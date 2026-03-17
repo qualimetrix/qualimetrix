@@ -29,9 +29,12 @@ use AiMessDetector\Infrastructure\Console\Command\HookInstallCommand;
 use AiMessDetector\Infrastructure\Console\Command\HookStatusCommand;
 use AiMessDetector\Infrastructure\Console\Command\HookUninstallCommand;
 use AiMessDetector\Infrastructure\Console\Command\RulesCommand;
+use AiMessDetector\Infrastructure\Console\FormatterContextFactory;
+use AiMessDetector\Infrastructure\Console\ProfilePresenter;
 use AiMessDetector\Infrastructure\Console\Progress\ProgressReporterHolder;
 use AiMessDetector\Infrastructure\Console\ResultPresenter;
 use AiMessDetector\Infrastructure\Console\RuntimeConfigurator;
+use AiMessDetector\Infrastructure\Console\ViolationFilterOrchestrator;
 use AiMessDetector\Infrastructure\Console\ViolationFilterPipeline;
 use AiMessDetector\Infrastructure\Git\GitRepositoryLocator;
 use AiMessDetector\Infrastructure\Logging\DelegatingLogger;
@@ -164,6 +167,16 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         // ProfileSummaryRenderer (stateless, no dependencies)
         $container->register(ProfileSummaryRenderer::class);
 
+        // ProfilePresenter for profiling output
+        $container->register(ProfilePresenter::class)
+            ->setArguments([
+                new Reference(ProfilerHolder::class),
+                new Reference(ProfileSummaryRenderer::class),
+            ]);
+
+        // FormatterContextFactory (pure logic, no dependencies)
+        $container->register(FormatterContextFactory::class);
+
         // ResultPresenter for formatting/output of results and profiler export
         $container->register(ResultPresenter::class)
             ->setArguments([
@@ -173,7 +186,14 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(BaselineWriter::class),
                 new Reference(ConfigurationProviderInterface::class),
                 new Reference(SummaryEnricher::class),
-                new Reference(ProfileSummaryRenderer::class),
+                new Reference(ProfilePresenter::class),
+                new Reference(FormatterContextFactory::class),
+            ]);
+
+        // ViolationFilterOrchestrator
+        $container->register(ViolationFilterOrchestrator::class)
+            ->setArguments([
+                new Reference(ViolationFilterPipeline::class),
             ]);
 
         // CheckCommand with all dependencies injected
@@ -182,7 +202,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(RuleRegistryInterface::class),
                 new Reference(AnalysisPipelineInterface::class),
                 new Reference(CacheFactory::class),
-                new Reference(ViolationFilterPipeline::class),
+                new Reference(ViolationFilterOrchestrator::class),
                 new Reference(ConfigurationPipeline::class),
                 new Reference(RuntimeConfigurator::class),
                 new Reference(ResultPresenter::class),

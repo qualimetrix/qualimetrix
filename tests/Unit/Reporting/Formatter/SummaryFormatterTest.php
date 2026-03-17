@@ -12,8 +12,10 @@ use AiMessDetector\Reporting\Debt\DebtCalculator;
 use AiMessDetector\Reporting\Debt\RemediationTimeRegistry;
 use AiMessDetector\Reporting\Filter\ViolationFilter;
 use AiMessDetector\Reporting\Formatter\Summary\HealthBarRenderer;
+use AiMessDetector\Reporting\Formatter\Summary\HintRenderer;
 use AiMessDetector\Reporting\Formatter\Summary\OffenderListRenderer;
 use AiMessDetector\Reporting\Formatter\Summary\SummaryFormatter;
+use AiMessDetector\Reporting\Formatter\Summary\ViolationSummaryRenderer;
 use AiMessDetector\Reporting\Formatter\Support\DetailedViolationRenderer;
 use AiMessDetector\Reporting\FormatterContext;
 use AiMessDetector\Reporting\GroupBy;
@@ -40,12 +42,14 @@ final class SummaryFormatterTest extends TestCase
         $hintProvider = new MetricHintProvider();
         $namespaceDrillDown = new NamespaceDrillDown($hintProvider);
         $violationFilter = new ViolationFilter();
+        $offenderListRenderer = new OffenderListRenderer($violationFilter, $namespaceDrillDown);
         $this->formatter = new SummaryFormatter(
             new DetailedViolationRenderer($debtCalculator),
             new HealthBarRenderer(new HealthScoreResolver($namespaceDrillDown)),
-            new OffenderListRenderer($violationFilter, $namespaceDrillDown),
+            $offenderListRenderer,
             $violationFilter,
-            $registry,
+            new ViolationSummaryRenderer($violationFilter, $registry),
+            new HintRenderer($offenderListRenderer),
         );
         $this->plainContext = new FormatterContext(useColor: false, terminalWidth: 120);
     }

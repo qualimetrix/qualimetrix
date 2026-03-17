@@ -12,17 +12,11 @@ use AiMessDetector\Configuration\ConfigurationProviderInterface;
 use AiMessDetector\Core\Profiler\ProfilerHolder;
 use AiMessDetector\Core\Violation\Severity;
 use AiMessDetector\Core\Violation\Violation;
-use AiMessDetector\Reporting\Formatter\FormatterInterface;
 use AiMessDetector\Reporting\Formatter\FormatterRegistryInterface;
-use AiMessDetector\Reporting\FormatterContext;
-use AiMessDetector\Reporting\GroupBy;
 use AiMessDetector\Reporting\Health\SummaryEnricher;
-use AiMessDetector\Reporting\Profile\ProfileSummaryRenderer;
 use AiMessDetector\Reporting\ReportBuilder;
-use InvalidArgumentException;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use ValueError;
 
 /**
  * Handles formatting, output of analysis results and profiler export.
@@ -36,7 +30,8 @@ final class ResultPresenter
         private readonly BaselineWriter $baselineWriter,
         private readonly ConfigurationProviderInterface $configurationProvider,
         private readonly SummaryEnricher $summaryEnricher,
-        private readonly ProfileSummaryRenderer $profileRenderer = new ProfileSummaryRenderer(),
+        private readonly ProfilePresenter $profilePresenter,
+        private readonly FormatterContextFactory $formatterContextFactory = new FormatterContextFactory(),
     ) {}
 
     /**
@@ -70,7 +65,7 @@ final class ResultPresenter
         }
 
         $formatter = $this->formatterRegistry->get($format);
-        $context = $this->buildFormatterContext($input, $output, $formatter, $partialAnalysis);
+        $context = $this->formatterContextFactory->create($input, $output, $formatter, $partialAnalysis);
 
         // Build and output report with filtered violations
         $report = ReportBuilder::create()
@@ -101,73 +96,7 @@ final class ResultPresenter
      */
     public function presentProfile(InputInterface $input, OutputInterface $output): void
     {
-        $profiler = $this->profilerHolder->get();
-
-        if (!$profiler->isEnabled()) {
-            return;
-        }
-
-        $profileOption = $input->getOption('profile');
-
-        // If --profile without value, output summary to stderr
-        if ($profileOption === null) {
-            $summary = $this->profileRenderer->render($profiler->getSummary());
-            $output->writeln('', OutputInterface::OUTPUT_NORMAL | OutputInterface::VERBOSITY_NORMAL);
-            $output->writeln($summary, OutputInterface::OUTPUT_NORMAL | OutputInterface::VERBOSITY_NORMAL);
-
-            return;
-        }
-
-        // Export to file
-        /** @var string $formatOption */
-        $formatOption = $input->getOption('profile-format') ?? 'json';
-
-        // Validate format
-        if (!\in_array($formatOption, ['json', 'chrome-tracing'], true)) {
-            $output->writeln(
-                \sprintf('<error>Invalid profile format: %s. Valid formats: json, chrome-tracing</error>', $formatOption),
-                OutputInterface::OUTPUT_NORMAL | OutputInterface::VERBOSITY_NORMAL,
-            );
-
-            return;
-        }
-
-        /** @var 'json'|'chrome-tracing' $format */
-        $format = $formatOption;
-
-        $profileData = $profiler->export($format);
-
-        // Atomic write: write to temp file first, then rename
-        $tmpFile = $profileOption . '.tmp.' . getmypid();
-        $writeResult = @file_put_contents($tmpFile, $profileData);
-
-        if ($writeResult === false) {
-            $output->writeln(
-                \sprintf('<error>Failed to write profile data to temporary file %s</error>', $tmpFile),
-                OutputInterface::OUTPUT_NORMAL | OutputInterface::VERBOSITY_NORMAL,
-            );
-
-            return;
-        }
-
-        if (!rename($tmpFile, $profileOption)) {
-            $output->writeln(
-                \sprintf('<error>Failed to rename temporary profile file %s to %s</error>', $tmpFile, $profileOption),
-                OutputInterface::OUTPUT_NORMAL | OutputInterface::VERBOSITY_NORMAL,
-            );
-
-            // Clean up temp file on rename failure
-            if (file_exists($tmpFile)) {
-                unlink($tmpFile);
-            }
-
-            return;
-        }
-
-        $output->writeln(
-            \sprintf('<info>Profile exported to %s</info>', $profileOption),
-            OutputInterface::OUTPUT_NORMAL | OutputInterface::VERBOSITY_NORMAL,
-        );
+        $this->profilePresenter->present($input, $output);
     }
 
     /**
@@ -263,109 +192,6 @@ final class ResultPresenter
         }
 
         return false;
-    }
-
-    private function buildFormatterContext(
-        InputInterface $input,
-        OutputInterface $output,
-        FormatterInterface $formatter,
-        bool $partialAnalysis = false,
-    ): FormatterContext {
-        // Resolve group-by: explicit CLI option or formatter default
-        /** @var string|null $groupByValue */
-        $groupByValue = $input->getOption('group-by');
-        $isGroupByExplicit = $groupByValue !== null;
-        try {
-            $groupBy = $isGroupByExplicit
-                ? GroupBy::from($groupByValue)
-                : $formatter->getDefaultGroupBy();
-        } catch (ValueError) {
-            $valid = implode(', ', array_column(GroupBy::cases(), 'value'));
-            throw new InvalidArgumentException(\sprintf(
-                'Invalid --group-by value "%s". Valid values: %s',
-                $groupByValue,
-                $valid,
-            ));
-        }
-
-        // Parse --format-opt key=value pairs
-        /** @var list<string> $formatOpts */
-        $formatOpts = $input->getOption('format-opt');
-        $options = [];
-        foreach ($formatOpts as $opt) {
-            $eqPos = strpos($opt, '=');
-            if ($eqPos === false) {
-                throw new InvalidArgumentException(\sprintf(
-                    'Invalid --format-opt value "%s": expected format key=value',
-                    $opt,
-                ));
-            }
-            $options[substr($opt, 0, $eqPos)] = substr($opt, $eqPos + 1);
-        }
-
-        // Parse --namespace and --class (mutually exclusive)
-        /** @var string|null $namespaceFilter */
-        $namespaceFilter = $input->getOption('namespace');
-        /** @var string|null $classFilter */
-        $classFilter = $input->getOption('class');
-
-        if ($namespaceFilter !== null && $classFilter !== null) {
-            throw new InvalidArgumentException('Options --namespace and --class are mutually exclusive');
-        }
-
-        $terminalWidth = (new \Symfony\Component\Console\Terminal())->getWidth() ?: 80;
-        $detailLimit = $this->parseDetailOption($input, $namespaceFilter, $classFilter);
-
-        return new FormatterContext(
-            useColor: $output->isDecorated(),
-            groupBy: $groupBy,
-            options: $options,
-            basePath: getcwd() ?: '.',
-            partialAnalysis: $partialAnalysis,
-            namespace: $namespaceFilter,
-            class: $classFilter,
-            terminalWidth: $terminalWidth,
-            detailLimit: $detailLimit,
-            isGroupByExplicit: $isGroupByExplicit,
-        );
-    }
-
-    private const int DEFAULT_DETAIL_LIMIT = 200;
-
-    /**
-     * Parses --detail option into a detail limit.
-     *
-     * Returns: null = off, 0 = all, N = limit.
-     * --detail (no value) = 200, --detail=all = 0, --detail=N = N.
-     * --namespace/--class implicitly enables detail with default limit.
-     */
-    private function parseDetailOption(InputInterface $input, ?string $namespaceFilter, ?string $classFilter): ?int
-    {
-        $detailValue = $input->getOption('detail');
-
-        // VALUE_OPTIONAL: false = not passed, null = passed without value, string = passed with value
-        if ($detailValue === false) {
-            // Not passed -- but namespace/class filters imply detail
-            if ($namespaceFilter !== null || $classFilter !== null) {
-                return self::DEFAULT_DETAIL_LIMIT;
-            }
-
-            return null;
-        }
-
-        if ($detailValue === null) {
-            // --detail without value
-            return self::DEFAULT_DETAIL_LIMIT;
-        }
-
-        /** @var string $detailValue */
-        if ($detailValue === 'all' || $detailValue === '0') {
-            return 0;
-        }
-
-        $parsed = filter_var($detailValue, \FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
-
-        return $parsed !== false ? $parsed : self::DEFAULT_DETAIL_LIMIT;
     }
 
     /**
