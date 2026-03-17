@@ -80,6 +80,12 @@ final class MetricName
     public const string SIZE_LLOC = 'lloc';
     public const string SIZE_CLOC = 'cloc';
 
+    // -- RFC (Response for a Class) ------------------------------------------
+
+    public const string RFC_TOTAL = 'rfc';
+    public const string RFC_OWN = 'rfc_own';
+    public const string RFC_EXTERNAL = 'rfc_external';
+
     // -- Structure -----------------------------------------------------------
 
     public const string STRUCTURE_DIT = 'dit';
