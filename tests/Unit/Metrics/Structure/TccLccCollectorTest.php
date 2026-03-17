@@ -903,6 +903,69 @@ PHP;
         self::assertSame(0.0, $metrics->get('lcc:App\InflationCheck'));
     }
 
+    public function testClassWithMethodsButNoPropertiesNotEmitted(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Stateless
+{
+    public function compute(int $a, int $b): int
+    {
+        return $a + $b;
+    }
+
+    public function format(string $value): string
+    {
+        return strtoupper($value);
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // Class has 2 public instance methods but zero declared instance properties.
+        // TCC is structurally undefined — there are no properties to share between methods.
+        // Emitting TCC=0.0 would falsely suggest low cohesion.
+        self::assertNull($metrics->get('tcc:App\Stateless'));
+        self::assertNull($metrics->get('lcc:App\Stateless'));
+    }
+
+    public function testClassWithStaticPropertiesOnlyNotEmitted(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Registry
+{
+    private static array $instances = [];
+    private static int $count = 0;
+
+    public function register(string $key): void
+    {
+        self::$instances[$key] = true;
+        ++self::$count;
+    }
+
+    public function has(string $key): bool
+    {
+        return isset(self::$instances[$key]);
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // Class has 2 public instance methods but only static properties (no instance ones).
+        // Instance property count is 0 — TCC structurally undefined, not emitted.
+        self::assertNull($metrics->get('tcc:App\Registry'));
+        self::assertNull($metrics->get('lcc:App\Registry'));
+    }
+
     public function testEnumExcludedFromTccLcc(): void
     {
         $code = <<<'PHP'
@@ -1017,6 +1080,73 @@ PHP;
         // 0 tracked methods => TCC/LCC not emitted
         self::assertNull($metrics->get('tcc:App\OnlyLifecycle'));
         self::assertNull($metrics->get('lcc:App\OnlyLifecycle'));
+    }
+
+    public function testClassWithPromotedConstructorPropertiesIsEmitted(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class OrderService
+{
+    public function __construct(
+        private readonly RepositoryInterface $repo,
+        private readonly LoggerInterface $log,
+    ) {}
+
+    public function create(): void
+    {
+        $this->repo->save();
+    }
+
+    public function findAll(): array
+    {
+        $this->log->info('finding all');
+        return [];
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // Promoted constructor properties count as instance properties.
+        // Class has 2 public methods accessing separate promoted props => TCC = 0.0
+        self::assertSame(0.0, $metrics->get('tcc:App\OrderService'));
+        self::assertSame(0.0, $metrics->get('lcc:App\OrderService'));
+    }
+
+    public function testClassWithPromotedAndSharedPropertiesHasCohesion(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class UserService
+{
+    public function __construct(
+        private readonly Repository $repo,
+    ) {}
+
+    public function find(int $id): void
+    {
+        $this->repo->find($id);
+    }
+
+    public function save(object $entity): void
+    {
+        $this->repo->save($entity);
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // Both methods access the same promoted property => TCC = 1.0
+        self::assertSame(1.0, $metrics->get('tcc:App\UserService'));
+        self::assertSame(1.0, $metrics->get('lcc:App\UserService'));
     }
 
     private function collectMetrics(string $code): MetricBag

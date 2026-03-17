@@ -29,6 +29,11 @@ final class TccLccClassData
      */
     private array $propertyAccesses = [];
 
+    /**
+     * Number of declared non-static instance properties in the class.
+     */
+    private int $propertyCount = 0;
+
     public function __construct(
         public readonly ?string $namespace = null,
         public readonly string $className = '',
@@ -41,6 +46,24 @@ final class TccLccClassData
     public function addMethod(string $methodName): void
     {
         $this->methods[$methodName] = true;
+    }
+
+    /**
+     * Increment the count of declared non-static instance properties.
+     *
+     * @param int $count number of properties in a single declaration (e.g. `public int $a, $b` = 2)
+     */
+    public function incrementPropertyCount(int $count = 1): void
+    {
+        $this->propertyCount += $count;
+    }
+
+    /**
+     * Returns the number of declared non-static instance properties.
+     */
+    public function getPropertyCount(): int
+    {
+        return $this->propertyCount;
     }
 
     /**
