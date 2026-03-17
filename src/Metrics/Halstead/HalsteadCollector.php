@@ -95,6 +95,7 @@ final class HalsteadCollector extends AbstractCollector implements MethodMetrics
             MetricName::HALSTEAD_EFFORT,
             MetricName::HALSTEAD_BUGS,
             MetricName::HALSTEAD_TIME,
+            MetricName::HALSTEAD_METHOD_LOC,
         ];
     }
 

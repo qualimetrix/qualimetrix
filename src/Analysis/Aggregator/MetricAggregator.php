@@ -6,6 +6,7 @@ namespace AiMessDetector\Analysis\Aggregator;
 
 use AiMessDetector\Core\Metric\MetricDefinition;
 use AiMessDetector\Core\Metric\MetricRepositoryInterface;
+use AiMessDetector\Core\Metric\SymbolLevel;
 use AiMessDetector\Core\Profiler\ProfilerHolder;
 
 /**
@@ -21,6 +22,17 @@ final class MetricAggregator
      */
     public function __construct(private readonly array $definitions) {}
 
+    private function hasMethodLevelDefinitions(): bool
+    {
+        foreach ($this->definitions as $def) {
+            if ($def->collectedAt === SymbolLevel::Method && $def->hasAggregationsForLevel(SymbolLevel::Class_)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /**
      * Aggregates metrics and stores results in the repository.
      */
@@ -32,11 +44,14 @@ final class MetricAggregator
 
         $profiler = ProfilerHolder::get();
 
-        $phases = [
-            'aggregation.methods_to_classes' => new MethodToClassAggregator(),
-            'aggregation.to_namespaces' => new ClassToNamespaceAggregator(),
-            'aggregation.to_project' => new NamespaceToProjectAggregator(),
-        ];
+        // Skip method→class phase when no method-level definitions exist
+        // (e.g., during re-aggregation of global collector metrics).
+        $phases = [];
+        if ($this->hasMethodLevelDefinitions()) {
+            $phases['aggregation.methods_to_classes'] = new MethodToClassAggregator();
+        }
+        $phases['aggregation.to_namespaces'] = new ClassToNamespaceAggregator();
+        $phases['aggregation.to_project'] = new NamespaceToProjectAggregator();
 
         foreach ($phases as $spanName => $phase) {
             $profiler->start($spanName, 'aggregation');

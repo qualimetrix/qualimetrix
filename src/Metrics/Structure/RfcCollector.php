@@ -9,6 +9,7 @@ use AiMessDetector\Core\Metric\ClassMetricsProviderInterface;
 use AiMessDetector\Core\Metric\ClassWithMetrics;
 use AiMessDetector\Core\Metric\MetricBag;
 use AiMessDetector\Core\Metric\MetricDefinition;
+use AiMessDetector\Core\Metric\MetricName;
 use AiMessDetector\Core\Metric\SymbolLevel;
 use AiMessDetector\Metrics\AbstractCollector;
 use Override;
@@ -43,9 +44,9 @@ final class RfcCollector extends AbstractCollector implements ClassMetricsProvid
 {
     private const NAME = 'rfc';
 
-    private const METRIC_RFC = 'rfc';
-    private const METRIC_RFC_OWN = 'rfc_own';
-    private const METRIC_RFC_EXTERNAL = 'rfc_external';
+    private const METRIC_RFC = MetricName::RFC_TOTAL;
+    private const METRIC_RFC_OWN = MetricName::RFC_OWN;
+    private const METRIC_RFC_EXTERNAL = MetricName::RFC_EXTERNAL;
 
     public function __construct()
     {
