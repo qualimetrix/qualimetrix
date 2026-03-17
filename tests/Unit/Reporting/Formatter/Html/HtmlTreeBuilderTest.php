@@ -56,7 +56,7 @@ final class HtmlTreeBuilderTest extends TestCase
         self::assertArrayHasKey('computedMetricDefinitions', $result);
 
         $tree = $result['tree'];
-        self::assertSame('<project>', $tree['name']);
+        self::assertSame(basename(getcwd() ?: '.'), $tree['name']);
         self::assertSame('project', $tree['type']);
         self::assertArrayNotHasKey('children', $tree);
 
@@ -80,7 +80,7 @@ final class HtmlTreeBuilderTest extends TestCase
         $result = $this->builder->build($report, new FormatterContext());
 
         $tree = $result['tree'];
-        self::assertSame('<project>', $tree['name']);
+        self::assertSame(basename(getcwd() ?: '.'), $tree['name']);
         self::assertSame('project', $tree['type']);
         self::assertArrayNotHasKey('children', $tree);
         self::assertSame(0, $result['summary']['totalClasses']);

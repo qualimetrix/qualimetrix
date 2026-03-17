@@ -24,6 +24,8 @@ final class HtmlTreeBuilder
 {
     private const string NO_NAMESPACE_LABEL = '(no namespace)';
 
+    private ?string $projectName = null;
+
     public function __construct(
         private readonly DebtCalculator $debtCalculator,
     ) {}
@@ -35,6 +37,14 @@ final class HtmlTreeBuilder
      */
     public function build(Report $report, FormatterContext $context, bool $partialAnalysis = false): array
     {
+        // Resolve project name from base path (CWD)
+        if ($context->basePath !== '') {
+            $resolved = realpath($context->basePath);
+            if ($resolved !== false) {
+                $this->projectName = basename($resolved);
+            }
+        }
+
         // 1. Build the tree from metrics
         $root = $this->buildTree($report);
 
@@ -68,7 +78,7 @@ final class HtmlTreeBuilder
 
     private function buildTree(Report $report): HtmlTreeNode
     {
-        $root = new HtmlTreeNode('<project>', '', 'project');
+        $root = new HtmlTreeNode($this->resolveProjectName(), '', 'project');
 
         if ($report->metrics === null) {
             return $root;
@@ -522,11 +532,16 @@ final class HtmlTreeBuilder
     private function buildProjectMetadata(bool $partialAnalysis): array
     {
         return [
-            'name' => InstalledVersions::getRootPackage()['name'] ?? 'unknown',
+            'name' => $this->resolveProjectName(),
             'generatedAt' => gmdate('c'),
             'aimdVersion' => InstalledVersions::getRootPackage()['pretty_version'] ?? 'dev',
             'partialAnalysis' => $partialAnalysis,
         ];
+    }
+
+    private function resolveProjectName(): string
+    {
+        return $this->projectName ?? basename(getcwd() ?: '.');
     }
 
     /**

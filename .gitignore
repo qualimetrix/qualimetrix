@@ -63,6 +63,9 @@ examples/
 # Node modules (HTML report build pipeline)
 node_modules/
 
+# Playwright CLI artifacts
+.playwright-cli/
+
 # Benchmarks (vendor is downloaded, only composer.json is tracked)
 /benchmarks/vendor/
 /benchmarks/composer.lock

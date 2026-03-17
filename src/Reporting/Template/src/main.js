@@ -158,6 +158,13 @@ function initBreadcrumb() {
     const target = path === '' ? treeData : findNode(treeData, path);
     if (target) {
       navigateTo(target);
+      const hash = generateHash(target);
+      if (hash) {
+        window.location.hash = hash;
+      } else {
+        // Clear hash for root node — assignment to '' leaves '#', so use pushState
+        history.pushState(null, '', window.location.pathname + window.location.search);
+      }
     }
   });
 }
@@ -369,6 +376,7 @@ function hasOwnErrorViolations(node) {
  * Selects a node (shows detail) without drilling down.
  */
 function selectNode(node) {
+  hideTooltip();
   currentNode = node;
   renderDetail(node, DATA.summary, currentMetric);
   updateBreadcrumb(node);
@@ -387,6 +395,7 @@ function selectNode(node) {
 // ---------------------------------------------------------------------------
 
 function navigateTo(node) {
+  hideTooltip();
   if (currentNode === node) return;
   currentNode = node;
   treemapNode = node;
