@@ -76,10 +76,14 @@ final class ComputedMetricDefaults
             'health.maintainability' => new ComputedMetricDefinition(
                 name: 'health.maintainability',
                 formulas: [
-                    // Maps: MI=30→0, MI=65→50, MI=85→79, MI=100→100.
-                    // Calibrated: MI=70 (SEI "good") → health=57, MI=80 → health=71.
-                    'class' => 'clamp(((mi__avg ?? 75) - 30) / 0.7, 0, 100)',
-                    'namespace' => 'clamp(((mi__avg ?? 75) - 30) / 0.7, 0, 100)',
+                    // Penalty-based: avg detects uniformly poor MI, sqrt(min) penalizes worst methods.
+                    // MI=85→100, MI=75/min=50→85, MI=65/min=30→57.
+                    'class' => 'clamp(100 - max(85 - (mi__avg ?? 75), 0) * 1.5 - max(50 - (mi__min ?? 50), 0) ** 0.5 * 3.0, 0, 100)',
+                    // avg (base quality) + p5 (main differentiator) + dampened min (extreme outliers).
+                    // Calibrated against 13 benchmarks: Flysystem→100, PHPUnit→73, Sf-DI→48, Composer→51.
+                    'namespace' => 'clamp(100 - max(82 - (mi__avg ?? 75), 0) * 2.0 - max(65 - (mi__p5 ?? 65), 0) ** 0.5 * 6.0 - max(40 - (mi__min ?? 40), 0) ** 0.4 * 2.0, 0, 100)',
+                    // Project: same structure as namespace, explicit to avoid inherited formula drift.
+                    'project' => 'clamp(100 - max(82 - (mi__avg ?? 75), 0) * 2.0 - max(65 - (mi__p5 ?? 65), 0) ** 0.5 * 6.0 - max(40 - (mi__min ?? 40), 0) ** 0.4 * 2.0, 0, 100)',
                 ],
                 description: 'Maintainability health score (0-100, higher is better)',
                 levels: [SymbolType::Class_, SymbolType::Namespace_, SymbolType::Project],
