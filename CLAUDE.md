@@ -60,7 +60,7 @@ src/
 ├── Configuration/     # YAML config loading
 └── Infrastructure/    # CLI, DI, cache, git, profiler
 benchmarks/            # Benchmark PHP projects for metric calibration (see benchmarks/README.md)
-scripts/               # Utility scripts (benchmark data collection)
+scripts/               # Utility scripts (benchmark data collection, regression checks)
 ```
 
 Each domain has its own `README.md` with detailed structure, classes, and contracts.
@@ -278,6 +278,8 @@ bin/aimd check src/ --generate-baseline=baseline.json
 # Benchmarks (metric calibration against real projects)
 cd benchmarks && composer install
 php scripts/collect-benchmark-data.php [output-file.json]
+composer benchmark:check       # Regression check: health scores vs expected ranges
+composer benchmark:update      # Recalibrate baseline ranges after formula changes
 
 # Hooks
 bin/aimd hook:install
