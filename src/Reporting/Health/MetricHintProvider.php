@@ -389,8 +389,10 @@ final class MetricHintProvider
      */
     private const array HEALTH_INPUTS = [
         'health.complexity' => [
-            ['key' => 'ccn.avg', 'altKey' => 'ccn', 'label' => 'CCN', 'ideal' => '1-4', 'direction' => 'lower'],
-            ['key' => 'cognitive.avg', 'altKey' => 'cognitive', 'label' => 'Cognitive', 'ideal' => '0-5', 'direction' => 'lower'],
+            ['key' => 'ccn.avg', 'altKey' => 'ccn', 'label' => 'CCN avg', 'ideal' => '1-3', 'direction' => 'lower'],
+            ['key' => 'cognitive.avg', 'altKey' => 'cognitive', 'label' => 'Cognitive avg', 'ideal' => '0-4', 'direction' => 'lower'],
+            ['key' => 'ccn.p95', 'altKey' => null, 'label' => 'CCN p95', 'ideal' => '≤25', 'direction' => 'lower'],
+            ['key' => 'cognitive.p95', 'altKey' => null, 'label' => 'Cognitive p95', 'ideal' => '≤20', 'direction' => 'lower'],
         ],
         'health.cohesion' => [
             ['key' => 'tcc.avg', 'altKey' => 'tcc', 'label' => 'TCC', 'ideal' => '1.0', 'direction' => 'higher'],
@@ -458,7 +460,7 @@ final class MetricHintProvider
     ];
 
     /** @var list<string> */
-    private const array AGGREGATION_SUFFIXES = ['.avg', '.max', '.min', '.sum'];
+    private const array AGGREGATION_SUFFIXES = ['.avg', '.max', '.min', '.sum', '.p95'];
 
     public function getLabel(string $metricKey): ?string
     {

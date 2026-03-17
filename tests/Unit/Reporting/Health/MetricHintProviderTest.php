@@ -182,7 +182,7 @@ final class MetricHintProviderTest extends TestCase
 
     public function testGetDecompositionKnownDimension(): void
     {
-        self::assertSame(['ccn.avg', 'cognitive.avg'], $this->provider->getDecomposition('health.complexity'));
+        self::assertSame(['ccn.avg', 'cognitive.avg', 'ccn.p95', 'cognitive.p95'], $this->provider->getDecomposition('health.complexity'));
         self::assertSame(['tcc.avg', 'lcom.avg'], $this->provider->getDecomposition('health.cohesion'));
         self::assertSame(['cbo.avg', 'distance.avg'], $this->provider->getDecomposition('health.coupling'));
         self::assertSame(['typeCoverage.pct'], $this->provider->getDecomposition('health.typing'));

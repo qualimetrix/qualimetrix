@@ -17,8 +17,14 @@ final class ComputedMetricDefaults
             'health.complexity' => new ComputedMetricDefinition(
                 name: 'health.complexity',
                 formulas: [
-                    'class' => 'clamp(100 - max(ccn__avg - 4, 0) * 2.0 - max(cognitive__avg - 5, 0) * 2.5 - min(max(npath__avg ?? 0, 0) / 20, 20) * 0.5, 0, 100)',
-                    'namespace' => 'clamp(100 - max((ccn__sum ?? 0) / max(symbolMethodCount, 1) - 4, 0) * 2.0 - max((cognitive__sum ?? 0) / max(symbolMethodCount, 1) - 5, 0) * 2.5 - min(max(npath__avg ?? 0, 0) / 20, 20) * 0.5, 0, 100)',
+                    // Class: avg + max-method penalties. avg detects uniformly complex classes,
+                    // sqrt(max) penalizes single monster methods that hide behind a low average.
+                    'class' => 'clamp(100 - max(ccn__avg - 4, 0) * 2.0 - max(cognitive__avg - 5, 0) * 2.0 - max((ccn__max ?? 0) - 10, 0) ** 0.5 * 2.0 - max((cognitive__max ?? 0) - 10, 0) ** 0.5 * 2.0, 0, 100)',
+                    // Namespace: avg (base quality) + p95 (main differentiator) + sqrt(max) (extreme outliers).
+                    // Calibrated against 11 benchmarks: Flysystem→100, PHPUnit→87, AIMD→76, Doctrine→64, Composer→39.
+                    'namespace' => 'clamp(100 - max((ccn__sum ?? 0) / max(symbolMethodCount, 1) - 3, 0) * 1.5 - max((cognitive__sum ?? 0) / max(symbolMethodCount, 1) - 4, 0) * 1.5 - max((ccn__p95 ?? 0) - 25, 0) ** 0.5 * 2.0 - max((cognitive__p95 ?? 0) - 20, 0) ** 0.5 * 2.0 - max((ccn__max ?? 0) - 80, 0) ** 0.5 * 0.4, 0, 100)',
+                    // Project: same structure as namespace, explicit to avoid inherited formula drift.
+                    'project' => 'clamp(100 - max((ccn__sum ?? 0) / max(symbolMethodCount, 1) - 3, 0) * 1.5 - max((cognitive__sum ?? 0) / max(symbolMethodCount, 1) - 4, 0) * 1.5 - max((ccn__p95 ?? 0) - 25, 0) ** 0.5 * 2.0 - max((cognitive__p95 ?? 0) - 20, 0) ** 0.5 * 2.0 - max((ccn__max ?? 0) - 80, 0) ** 0.5 * 0.4, 0, 100)',
                 ],
                 description: 'Complexity health score (0-100, higher is better)',
                 levels: [SymbolType::Class_, SymbolType::Namespace_, SymbolType::Project],

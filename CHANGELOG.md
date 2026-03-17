@@ -12,7 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `--exclude-health=DIMENSION` option (CLI + YAML) to exclude specific health dimensions from scoring and `health.overall` calculation
 - Complexity health now uses per-method CCN average instead of WMC-based average — fixes floor effect where small projects with concentrated complexity scored 0
 - Health score recalibration: coupling uses P95 + sqrt-scaled max instead of raw cbo.max; maintainability anchor shifted from MI=40 to MI=30; TCC excludes classes with zero instance properties (structurally undefined, not low cohesion)
-- `Percentile95` aggregation strategy for metrics (used by CBO to reduce outlier sensitivity)
+- `Percentile95` aggregation strategy for metrics (used by CBO and complexity metrics to reduce outlier sensitivity)
+- Complexity health formula recalibrated: uses avg + P95 + sqrt(max) penalties instead of avg-only; differentiates project scores from 39–100 range (was 84–100)
 - `distance` metric now aggregates to project level (was namespace-only)
 - ClassRank thresholds scale by `sqrt(classCount / 100)` — adapts to project size instead of fixed thresholds
 - Tech debt scaled by `base * max(1, ln(ratio))` — large violations no longer dominate total debt
