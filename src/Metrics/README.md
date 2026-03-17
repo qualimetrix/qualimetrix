@@ -82,13 +82,14 @@ The system uses a **Self-Aggregating Metrics** pattern — each collector declar
 
 ### AggregationStrategy (Enum)
 
-| Value     | Description        | Example   |
-| --------- | ------------------ | --------- |
-| `Sum`     | Sum of values      | `ccn.sum` |
-| `Average` | Arithmetic mean    | `ccn.avg` |
-| `Max`     | Maximum            | `ccn.max` |
-| `Min`     | Minimum            | `mi.min`  |
-| `Count`   | Number of elements | —         |
+| Value          | Description        | Example   |
+| -------------- | ------------------ | --------- |
+| `Sum`          | Sum of values      | `ccn.sum` |
+| `Average`      | Arithmetic mean    | `ccn.avg` |
+| `Max`          | Maximum            | `ccn.max` |
+| `Min`          | Minimum            | `mi.min`  |
+| `Count`        | Number of elements | —         |
+| `Percentile95` | 95th percentile    | `ce.p95`  |
 
 ### SymbolLevel (Enum)
 
@@ -203,7 +204,7 @@ Metrics are stored in separate `MetricBag` instances for each symbol, so keys do
 - Empty file — `loc = 0`, `classCount = 0`
 - Class without methods — `lcom = 0`, `methodCount = 0`, `tcc = 1.0`, `lcc = 1.0`, `rfc = 0`
 - Class with one method — `tcc = 1.0`, `lcc = 1.0` (perfect cohesion by definition)
-- Class without properties — methods are isolated unless connected by `$this->method()` calls, `tcc = 0.0`, `lcc = 0.0`
+- Class without properties — methods are isolated unless connected by `$this->method()` calls, `tcc = 0.0`, `lcc = 0.0`; TCC/LCC metrics are skipped entirely for classes with 0 instance properties (no `MetricBag` entry emitted)
 - LCOM — static methods are excluded from the graph; `$this->method()` calls create edges; `self::`/`static::` calls do not
-- TCC/LCC — consider only public methods
+- TCC/LCC — consider only public methods; promoted constructor parameters count as instance properties; static properties are excluded
 - RFC — abstract methods are counted, `self::`/`static::`/`parent::` are not counted

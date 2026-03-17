@@ -11,7 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 5-tier health labels (`Strong` / `Good` / `Acceptable` / `Weak` / `Critical`) replace the previous 4-tier scheme — new `Good` tier fills the 65–80 gap
 - `--exclude-health=DIMENSION` option (CLI + YAML) to exclude specific health dimensions from scoring and `health.overall` calculation
 - Complexity health now uses per-method CCN average instead of WMC-based average — fixes floor effect where small projects with concentrated complexity scored 0
-- Maintainability health formula stretched `(mi_avg - 40) * 1.667` for better score spread
+- Health score recalibration: coupling uses P95 + sqrt-scaled max instead of raw cbo.max; maintainability anchor shifted from MI=40 to MI=30; TCC excludes classes with zero instance properties (structurally undefined, not low cohesion)
+- `Percentile95` aggregation strategy for metrics (used by CBO to reduce outlier sensitivity)
+- `distance` metric now aggregates to project level (was namespace-only)
 - ClassRank thresholds scale by `sqrt(classCount / 100)` — adapts to project size instead of fixed thresholds
 - Tech debt scaled by `base * max(1, ln(ratio))` — large violations no longer dominate total debt
 - `--format-opt=limit=N` for JSON violations count (`limit=0` for unlimited); `violationsMeta.shown` field added

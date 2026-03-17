@@ -264,13 +264,14 @@ foreach ($repository->all(SymbolType::Method) as $methodInfo) {
 
 Defines how metrics are aggregated when transitioning to a higher level.
 
-| Value     | Description        |
-| --------- | ------------------ |
-| `Sum`     | Sum of values      |
-| `Average` | Arithmetic mean    |
-| `Max`     | Maximum            |
-| `Min`     | Minimum            |
-| `Count`   | Number of elements |
+| Value          | Description             |
+| -------------- | ----------------------- |
+| `Sum`          | Sum of values           |
+| `Average`      | Arithmetic mean         |
+| `Max`          | Maximum                 |
+| `Min`          | Minimum                 |
+| `Count`        | Number of elements      |
+| `Percentile95` | 95th percentile (`p95`) |
 
 ### SymbolLevel (Enum)
 
