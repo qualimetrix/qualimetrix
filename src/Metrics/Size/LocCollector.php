@@ -250,11 +250,13 @@ final class LocCollector extends AbstractCollector implements ClassMetricsProvid
                         AggregationStrategy::Sum,
                         AggregationStrategy::Average,
                         AggregationStrategy::Max,
+                        AggregationStrategy::Percentile95,
                     ],
                     SymbolLevel::Project->value => [
                         AggregationStrategy::Sum,
                         AggregationStrategy::Average,
                         AggregationStrategy::Max,
+                        AggregationStrategy::Percentile95,
                     ],
                 ],
             ),

@@ -59,11 +59,11 @@ final class ClassRankCollectorTest extends TestCase
         self::assertSame('classRank', $def->name);
         self::assertSame(SymbolLevel::Class_, $def->collectedAt);
         self::assertSame(
-            [AggregationStrategy::Max, AggregationStrategy::Average],
+            [AggregationStrategy::Max, AggregationStrategy::Average, AggregationStrategy::Percentile95],
             $def->getStrategiesForLevel(SymbolLevel::Namespace_),
         );
         self::assertSame(
-            [AggregationStrategy::Max, AggregationStrategy::Average],
+            [AggregationStrategy::Max, AggregationStrategy::Average, AggregationStrategy::Percentile95],
             $def->getStrategiesForLevel(SymbolLevel::Project),
         );
     }

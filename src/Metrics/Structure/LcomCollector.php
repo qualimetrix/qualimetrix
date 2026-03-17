@@ -106,10 +106,12 @@ final class LcomCollector extends AbstractCollector implements ClassMetricsProvi
                     SymbolLevel::Namespace_->value => [
                         AggregationStrategy::Average,
                         AggregationStrategy::Max,
+                        AggregationStrategy::Percentile95,
                     ],
                     SymbolLevel::Project->value => [
                         AggregationStrategy::Average,
                         AggregationStrategy::Max,
+                        AggregationStrategy::Percentile95,
                     ],
                 ],
             ),
