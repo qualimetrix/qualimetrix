@@ -60,9 +60,29 @@ cd benchmarks && composer install
 
 # Collect benchmark data
 php scripts/collect-benchmark-data.php [output-file.json]
+
+# Regression check — verify health scores are within expected ranges
+composer benchmark:check
+
+# Update baselines after intentional formula changes
+composer benchmark:update
 ```
 
 Output is written to `docs/internal/benchmark-data.json` by default.
+
+## Regression Testing
+
+`composer benchmark:check` runs AIMD on all open-source benchmark projects and compares
+project-level health scores against expected ranges in `docs/internal/benchmark-baselines.json`.
+
+- Exit code 0: all scores within ranges
+- Exit code 1: regression detected (with details)
+- Use `--update-baselines` to recalibrate ranges after intentional formula changes
+
+This is NOT included in `composer check` (takes ~3 minutes). Run manually after:
+- Changing health score formulas
+- Modifying metric collectors or aggregation
+- Before releases
 
 ## Known Issues
 

@@ -58,6 +58,7 @@ website/site/
 # Demo/example files
 examples/
 *.json
+!/docs/internal/benchmark-baselines.json
 
 # Node modules (HTML report build pipeline)
 node_modules/

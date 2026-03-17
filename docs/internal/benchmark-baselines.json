@@ -1,0 +1,385 @@
+{
+    "version": 1,
+    "updated_at": "2026-03-17",
+    "description": "Expected health score ranges for benchmark projects. Used by scripts\/benchmark-regression.php to detect formula regressions.",
+    "projects": {
+        "flysystem": {
+            "path": "benchmarks\/vendor\/league\/flysystem\/src",
+            "expectations": {
+                "health.complexity": [
+                    90,
+                    100
+                ],
+                "health.cohesion": [
+                    58,
+                    79
+                ],
+                "health.coupling": [
+                    81,
+                    100
+                ],
+                "health.maintainability": [
+                    65,
+                    85
+                ],
+                "health.overall": [
+                    76,
+                    96
+                ]
+            }
+        },
+        "symfony-console": {
+            "path": "benchmarks\/vendor\/symfony\/console",
+            "expectations": {
+                "health.complexity": [
+                    55,
+                    76
+                ],
+                "health.cohesion": [
+                    66,
+                    87
+                ],
+                "health.coupling": [
+                    53,
+                    74
+                ],
+                "health.maintainability": [
+                    56,
+                    77
+                ],
+                "health.overall": [
+                    62,
+                    83
+                ]
+            }
+        },
+        "symfony-di": {
+            "path": "benchmarks\/vendor\/symfony\/dependency-injection",
+            "expectations": {
+                "health.complexity": [
+                    37,
+                    58
+                ],
+                "health.cohesion": [
+                    66,
+                    87
+                ],
+                "health.coupling": [
+                    39,
+                    60
+                ],
+                "health.maintainability": [
+                    49,
+                    70
+                ],
+                "health.overall": [
+                    53,
+                    74
+                ]
+            }
+        },
+        "symfony-http-foundation": {
+            "path": "benchmarks\/vendor\/symfony\/http-foundation",
+            "expectations": {
+                "health.complexity": [
+                    59,
+                    80
+                ],
+                "health.cohesion": [
+                    66,
+                    87
+                ],
+                "health.coupling": [
+                    68,
+                    89
+                ],
+                "health.maintainability": [
+                    57,
+                    78
+                ],
+                "health.overall": [
+                    66,
+                    87
+                ]
+            }
+        },
+        "symfony-http-kernel": {
+            "path": "benchmarks\/vendor\/symfony\/http-kernel",
+            "expectations": {
+                "health.complexity": [
+                    58,
+                    79
+                ],
+                "health.cohesion": [
+                    65,
+                    86
+                ],
+                "health.coupling": [
+                    61,
+                    82
+                ],
+                "health.maintainability": [
+                    55,
+                    76
+                ],
+                "health.overall": [
+                    64,
+                    85
+                ]
+            }
+        },
+        "symfony-routing": {
+            "path": "benchmarks\/vendor\/symfony\/routing",
+            "expectations": {
+                "health.complexity": [
+                    51,
+                    72
+                ],
+                "health.cohesion": [
+                    56,
+                    76
+                ],
+                "health.coupling": [
+                    70,
+                    91
+                ],
+                "health.maintainability": [
+                    52,
+                    73
+                ],
+                "health.overall": [
+                    62,
+                    83
+                ]
+            }
+        },
+        "phpunit": {
+            "path": "benchmarks\/vendor\/phpunit\/phpunit\/src",
+            "expectations": {
+                "health.complexity": [
+                    76,
+                    97
+                ],
+                "health.cohesion": [
+                    63,
+                    84
+                ],
+                "health.coupling": [
+                    50,
+                    71
+                ],
+                "health.maintainability": [
+                    61,
+                    82
+                ],
+                "health.overall": [
+                    67,
+                    88
+                ]
+            }
+        },
+        "php-parser": {
+            "path": "benchmarks\/vendor\/nikic\/php-parser\/lib",
+            "disable_rules": [
+                "duplication.code-duplication"
+            ],
+            "expectations": {
+                "health.complexity": [
+                    66,
+                    87
+                ],
+                "health.cohesion": [
+                    43,
+                    64
+                ],
+                "health.coupling": [
+                    33,
+                    53
+                ],
+                "health.maintainability": [
+                    60,
+                    81
+                ],
+                "health.overall": [
+                    56,
+                    77
+                ]
+            }
+        },
+        "doctrine-orm": {
+            "path": "benchmarks\/vendor\/doctrine\/orm\/src",
+            "expectations": {
+                "health.complexity": [
+                    53,
+                    74
+                ],
+                "health.cohesion": [
+                    72,
+                    93
+                ],
+                "health.coupling": [
+                    48,
+                    69
+                ],
+                "health.maintainability": [
+                    53,
+                    74
+                ],
+                "health.overall": [
+                    61,
+                    82
+                ]
+            }
+        },
+        "doctrine-dbal": {
+            "path": "benchmarks\/vendor\/doctrine\/dbal\/src",
+            "expectations": {
+                "health.complexity": [
+                    61,
+                    82
+                ],
+                "health.cohesion": [
+                    56,
+                    77
+                ],
+                "health.coupling": [
+                    53,
+                    74
+                ],
+                "health.maintainability": [
+                    57,
+                    77
+                ],
+                "health.overall": [
+                    62,
+                    83
+                ]
+            }
+        },
+        "composer": {
+            "path": "benchmarks\/vendor\/composer\/composer\/src",
+            "expectations": {
+                "health.complexity": [
+                    28,
+                    49
+                ],
+                "health.cohesion": [
+                    62,
+                    83
+                ],
+                "health.coupling": [
+                    22,
+                    43
+                ],
+                "health.maintainability": [
+                    49,
+                    70
+                ],
+                "health.overall": [
+                    44,
+                    65
+                ]
+            }
+        },
+        "monolog": {
+            "path": "benchmarks\/vendor\/monolog\/monolog\/src",
+            "expectations": {
+                "health.complexity": [
+                    71,
+                    92
+                ],
+                "health.cohesion": [
+                    64,
+                    85
+                ],
+                "health.coupling": [
+                    46,
+                    67
+                ],
+                "health.maintainability": [
+                    52,
+                    72
+                ],
+                "health.overall": [
+                    63,
+                    84
+                ]
+            }
+        },
+        "guzzle": {
+            "path": "benchmarks\/vendor\/guzzlehttp\/guzzle\/src",
+            "expectations": {
+                "health.complexity": [
+                    50,
+                    71
+                ],
+                "health.cohesion": [
+                    67,
+                    88
+                ],
+                "health.coupling": [
+                    80,
+                    100
+                ],
+                "health.maintainability": [
+                    50,
+                    71
+                ],
+                "health.overall": [
+                    62,
+                    83
+                ]
+            }
+        },
+        "laravel-framework": {
+            "path": "benchmarks\/vendor\/laravel\/framework\/src",
+            "expectations": {
+                "health.complexity": [
+                    58,
+                    79
+                ],
+                "health.cohesion": [
+                    57,
+                    78
+                ],
+                "health.coupling": [
+                    43,
+                    64
+                ],
+                "health.maintainability": [
+                    58,
+                    79
+                ],
+                "health.overall": [
+                    47,
+                    68
+                ]
+            }
+        },
+        "aimd": {
+            "path": "src",
+            "expectations": {
+                "health.complexity": [
+                    65,
+                    86
+                ],
+                "health.cohesion": [
+                    57,
+                    78
+                ],
+                "health.coupling": [
+                    42,
+                    63
+                ],
+                "health.maintainability": [
+                    53,
+                    74
+                ],
+                "health.overall": [
+                    60,
+                    81
+                ]
+            }
+        }
+    }
+}
