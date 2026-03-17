@@ -195,8 +195,9 @@ final class ComputedMetricEvaluatorTest extends TestCase
         //                   = 100 - 0 - 2.5 - 0.25 = 97.25
         self::assertEqualsWithDelta(97.25, $bag->get('health.complexity'), 0.01);
 
-        // health.cohesion = clamp(0.6*50 + (1 - clamp((2-1)/5, 0, 1)) * 50, 0, 100) = 30 + 0.8*50 = 70
-        self::assertEqualsWithDelta(70.0, $bag->get('health.cohesion'), 0.01);
+        // health.cohesion = clamp(sqrt(0.6)*50 + (1 - clamp((2-1)/5, 0, 1)) * 50, 0, 100)
+        //                 = 0.7746*50 + 0.8*50 = 38.73 + 40 = 78.73
+        self::assertEqualsWithDelta(78.73, $bag->get('health.cohesion'), 0.01);
 
         // health.coupling = clamp(100 * 15 / (15 + max(6-5, 0)), 0, 100) = 1500/16 = 93.75
         self::assertEqualsWithDelta(93.75, $bag->get('health.coupling'), 0.01);
@@ -207,9 +208,9 @@ final class ComputedMetricEvaluatorTest extends TestCase
         // health.maintainability = clamp((65 - 30) / 0.7, 0, 100) = 35 / 0.7 = 50.0
         self::assertEqualsWithDelta(50.0, $bag->get('health.maintainability'), 0.01);
 
-        // health.overall = clamp(97.25*0.30 + 70*0.25 + 93.75*0.25 + 80*0.20, 0, 100)
-        //                = 29.175 + 17.5 + 23.4375 + 16.0 = 86.11
-        self::assertEqualsWithDelta(86.11, $bag->get('health.overall'), 0.01);
+        // health.overall = clamp(97.25*0.30 + 78.73*0.25 + 93.75*0.25 + 80*0.20, 0, 100)
+        //                = 29.175 + 19.6825 + 23.4375 + 16.0 = 88.30
+        self::assertEqualsWithDelta(88.30, $bag->get('health.overall'), 0.01);
     }
 
     #[Test]
@@ -254,8 +255,9 @@ final class ComputedMetricEvaluatorTest extends TestCase
         //                   = 100 - 0 - 0 - 0.125 = 99.875
         self::assertEqualsWithDelta(99.88, $bag->get('health.complexity'), 0.01);
 
-        // health.cohesion = clamp(0.5*50 + (1 - clamp((3-1)/5, 0, 1))*50, 0, 100) = 25 + 0.6*50 = 55
-        self::assertEqualsWithDelta(55.0, $bag->get('health.cohesion'), 0.01);
+        // health.cohesion = clamp(sqrt(0.5)*50 + (1 - clamp((3-1)/5, 0, 1))*50, 0, 100)
+        //                 = 0.7071*50 + 0.6*50 = 35.36 + 30 = 65.36
+        self::assertEqualsWithDelta(65.36, $bag->get('health.cohesion'), 0.01);
 
         // health.coupling = 100 * 18 / (18 + 0.3*6 + max(6-8,0)*3 + 0 + 0)
         //                 = 1800 / 19.8 ≈ 90.91
@@ -267,9 +269,9 @@ final class ComputedMetricEvaluatorTest extends TestCase
         // health.maintainability = clamp((70 - 30) / 0.7, 0, 100) = 40 / 0.7 ≈ 57.14
         self::assertEqualsWithDelta(57.14, $bag->get('health.maintainability'), 0.01);
 
-        // health.overall = clamp(99.88*0.25 + 55*0.20 + 90.91*0.20 + 76*0.15 + 57.14*0.20, 0, 100)
-        //                = 24.97 + 11.0 + 18.182 + 11.4 + 11.428 = 76.98
-        self::assertEqualsWithDelta(76.98, $bag->get('health.overall'), 0.01);
+        // health.overall = clamp(99.88*0.25 + 65.36*0.20 + 90.91*0.20 + 76*0.15 + 57.14*0.20, 0, 100)
+        //                = 24.97 + 13.072 + 18.182 + 11.4 + 11.428 = 79.05
+        self::assertEqualsWithDelta(79.05, $bag->get('health.overall'), 0.01);
     }
 
     #[Test]

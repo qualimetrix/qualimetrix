@@ -29,8 +29,10 @@ final class ComputedMetricDefaults
             'health.cohesion' => new ComputedMetricDefinition(
                 name: 'health.cohesion',
                 formulas: [
-                    'class' => 'clamp(((methodCount ?? 0) < 6 ? (tcc ?? 0.5) : (tcc ?? 0)) * 50 + (1 - clamp(((lcom ?? 0) - 1) / 5, 0, 1)) * 50, 0, 100)',
-                    'namespace' => 'clamp((tcc__avg ?? 0.5) * 50 + (1 - clamp(((lcom__avg ?? 0) - 1) / 5, 0, 1)) * 50, 0, 100)',
+                    // sqrt(tcc) rescales typical TCC range (0.2–0.6) into a wider health range.
+                    // Linear tcc*50 capped real projects at ~73; sqrt allows Gold tier to reach 80+.
+                    'class' => 'clamp(((methodCount ?? 0) < 6 ? (tcc ?? 0.5) : (tcc ?? 0)) ** 0.5 * 50 + (1 - clamp(((lcom ?? 0) - 1) / 5, 0, 1)) * 50, 0, 100)',
+                    'namespace' => 'clamp((tcc__avg ?? 0.5) ** 0.5 * 50 + (1 - clamp(((lcom__avg ?? 0) - 1) / 5, 0, 1)) * 50, 0, 100)',
                 ],
                 description: 'Cohesion health score (0-100, higher is better)',
                 levels: [SymbolType::Class_, SymbolType::Namespace_, SymbolType::Project],
