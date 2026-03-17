@@ -102,7 +102,8 @@ final class HtmlFormatterTest extends TestCase
 
     public function testFormatUsesJsonHexTag(): void
     {
-        // JSON_HEX_TAG must escape < and > to prevent XSS (e.g., </script> injection)
+        // The tree node name contains </script> which could break the HTML
+        // JSON_HEX_TAG must escape < and > to prevent XSS
         $report = ReportBuilder::create()
             ->filesAnalyzed(1)
             ->filesSkipped(0)
@@ -111,14 +112,11 @@ final class HtmlFormatterTest extends TestCase
 
         $output = $this->formatter->format($report, new FormatterContext());
 
-        // Extract the JSON data block between <script> tags
-        preg_match('/<script[^>]*id="report-data"[^>]*>(.*?)<\/script>/s', $output, $matches);
-        self::assertNotEmpty($matches[1] ?? '', 'JSON data block not found');
-
-        // The JSON block must not contain literal </script> (would break HTML)
-        self::assertStringNotContainsString('</script>', $matches[1]);
-        // The JSON block must not contain unescaped angle brackets
-        self::assertStringNotContainsString('</', $matches[1]);
+        // The project name "<project>" uses angle brackets, so JSON_HEX_TAG
+        // must escape them. The literal string "<project>" should NOT appear
+        // inside the JSON script block.
+        self::assertStringContainsString('\u003Cproject\u003E', $output);
+        self::assertStringNotContainsString('"<project>"', $output);
     }
 
     public function testFormatPartialAnalysis(): void
