@@ -12,13 +12,9 @@ use AiMessDetector\Configuration\Pipeline\ResolvedConfiguration;
 use AiMessDetector\Infrastructure\Cache\CacheFactory;
 use AiMessDetector\Infrastructure\Console\CheckCommandDefinition;
 use AiMessDetector\Infrastructure\Console\FilteredInputDefinition;
-use AiMessDetector\Infrastructure\Console\GitScopeFilterConfig;
 use AiMessDetector\Infrastructure\Console\ResultPresenter;
 use AiMessDetector\Infrastructure\Console\RuntimeConfigurator;
-use AiMessDetector\Infrastructure\Console\ViolationFilterOptions;
-use AiMessDetector\Infrastructure\Console\ViolationFilterPipeline;
-use AiMessDetector\Infrastructure\Console\ViolationFilterResult;
-use AiMessDetector\Infrastructure\Git\GitScopeResolution;
+use AiMessDetector\Infrastructure\Console\ViolationFilterOrchestrator;
 use AiMessDetector\Infrastructure\Git\GitScopeResolver;
 use AiMessDetector\Infrastructure\Rule\Exception\ConflictingCliAliasException;
 use AiMessDetector\Infrastructure\Rule\RuleRegistryInterface;
@@ -47,7 +43,7 @@ final class CheckCommand extends Command
         private readonly RuleRegistryInterface $ruleRegistry,
         private readonly AnalysisPipelineInterface $analyzer,
         private readonly CacheFactory $cacheFactory,
-        private readonly ViolationFilterPipeline $violationFilterPipeline,
+        private readonly ViolationFilterOrchestrator $violationFilterOrchestrator,
         private readonly ConfigurationPipeline $configurationPipeline,
         private readonly RuntimeConfigurator $runtimeConfigurator,
         private readonly ResultPresenter $resultPresenter,
@@ -187,10 +183,7 @@ final class CheckCommand extends Command
             return self::SUCCESS;
         }
 
-        // Feed collected suppressions into the filter pipeline before filtering
-        $this->violationFilterPipeline->loadSuppressions($result->suppressions);
-
-        $filterResult = $this->filterViolations($result, $input, $output, $scopeResolution);
+        $filterResult = $this->violationFilterOrchestrator->filterAndReport($result, $input, $output, $scopeResolution);
         $filteredViolations = $filterResult->violations;
 
         $baselineGenerated = $this->resultPresenter->generateBaselineIfRequested($result->violations, $input, $output);
@@ -238,122 +231,6 @@ final class CheckCommand extends Command
     private function runAnalysis(array $paths, \AiMessDetector\Analysis\Discovery\FileDiscoveryInterface $fileDiscovery): \AiMessDetector\Analysis\Pipeline\AnalysisResult
     {
         return $this->analyzer->analyze($paths, $fileDiscovery);
-    }
-
-    /**
-     * Filters violations through the pipeline and handles output for stale baseline / show-resolved / etc.
-     */
-    private function filterViolations(
-        \AiMessDetector\Analysis\Pipeline\AnalysisResult $result,
-        InputInterface $input,
-        OutputInterface $output,
-        GitScopeResolution $scopeResolution,
-    ): ViolationFilterResult {
-        $baselinePath = $input->getOption('baseline');
-        /** @var list<string> $cliExcludePaths */
-        $cliExcludePaths = $input->getOption('exclude-path');
-
-        $gitScope = null;
-        if ($scopeResolution->gitClient !== null && $scopeResolution->reportScope !== null) {
-            $gitScope = new GitScopeFilterConfig(
-                gitClient: $scopeResolution->gitClient,
-                reportScope: $scopeResolution->reportScope,
-                analyzeScope: $scopeResolution->analyzeScope,
-                strictMode: (bool) $input->getOption('report-strict'),
-            );
-        }
-
-        $options = new ViolationFilterOptions(
-            baselinePath: \is_string($baselinePath) && $baselinePath !== '' ? $baselinePath : null,
-            ignoreStaleBaseline: (bool) $input->getOption('baseline-ignore-stale'),
-            disableSuppression: (bool) $input->getOption('no-suppression'),
-            excludePaths: $cliExcludePaths,
-            gitScope: $gitScope,
-        );
-
-        $filterResult = $this->violationFilterPipeline->filter($result->violations, $options);
-
-        // Handle stale baseline entries
-        if ($filterResult->staleBaselineKeys !== []) {
-            $this->handleStaleBaselineOutput($filterResult, $options, $output);
-        }
-
-        // Show resolved violations if requested
-        if ($input->getOption('show-resolved') && $filterResult->baselineFilter !== null) {
-            $resolved = $filterResult->baselineFilter->getResolvedFromBaseline($result->violations);
-            $resolvedCount = array_sum(array_map(count(...), $resolved));
-
-            if ($resolvedCount > 0) {
-                $output->writeln(\sprintf(
-                    '<info>%d violations from baseline have been resolved!</info>',
-                    $resolvedCount,
-                ));
-            }
-        }
-
-        // Show suppressed count if requested
-        if ($input->getOption('show-suppressed') && $filterResult->suppressionFiltered > 0) {
-            $output->writeln(\sprintf(
-                '<info>%d violations were suppressed by @aimd-ignore tags</info>',
-                $filterResult->suppressionFiltered,
-            ));
-        }
-
-        // Show path exclusion info in verbose mode
-        if ($filterResult->pathExclusionFiltered > 0 && $output->isVerbose()) {
-            $output->writeln(\sprintf(
-                '<info>%d violation(s) suppressed by path exclusion patterns</info>',
-                $filterResult->pathExclusionFiltered,
-            ));
-        }
-
-        // Show warning about partial analysis if analyze scope was used
-        if (
-            $gitScope !== null
-            && $gitScope->analyzeScope !== null
-            && $filterResult->violations !== []
-        ) {
-            $output->writeln(
-                '<comment>Note: Aggregated metrics not available in partial analysis mode.</comment>',
-            );
-        }
-
-        return $filterResult;
-    }
-
-    /**
-     * Handles output for stale baseline entries and throws if not ignored.
-     */
-    private function handleStaleBaselineOutput(
-        ViolationFilterResult $filterResult,
-        ViolationFilterOptions $options,
-        OutputInterface $output,
-    ): void {
-        if ($options->ignoreStaleBaseline) {
-            $output->writeln(\sprintf(
-                '<comment>Warning: Baseline contains %d stale entries (symbols no longer exist)</comment>',
-                $filterResult->staleBaselineCount,
-            ));
-            $output->writeln(\sprintf(
-                '<comment>Run `bin/aimd baseline:cleanup %s` to remove them.</comment>',
-                $options->baselinePath ?? '',
-            ));
-
-            return;
-        }
-
-        $output->writeln(\sprintf(
-            '<error>Error: Baseline contains %d stale entries (symbols no longer exist):</error>',
-            $filterResult->staleBaselineCount,
-        ));
-        foreach ($filterResult->staleBaselineKeys as $key) {
-            $output->writeln(\sprintf('  - %s', $key));
-        }
-        $output->writeln('');
-        $output->writeln(\sprintf('Run `bin/aimd baseline:cleanup %s` to remove stale entries.', $options->baselinePath ?? ''));
-        $output->writeln('Or use --baseline-ignore-stale to continue anyway.');
-
-        throw new InvalidArgumentException('Baseline contains stale entries');
     }
 
     /**

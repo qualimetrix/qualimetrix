@@ -63,10 +63,15 @@ Reporting/
     ├── Summary/
     │   ├── SummaryFormatter.php           # Default: health overview + worst offenders + hints
     │   ├── HealthBarRenderer.php          # Renders ANSI health bars for console output
-    │   └── OffenderListRenderer.php       # Renders worst offender lists for console output
+    │   ├── OffenderListRenderer.php       # Renders worst offender lists for console output
+    │   ├── ViolationSummaryRenderer.php   # Renders violation count summary with severity breakdown and tech debt
+    │   └── HintRenderer.php              # Renders contextual hints at the bottom of summary output
     ├── Json/
     │   ├── JsonFormatter.php              # Summary-oriented JSON (health, worst offenders, violations)
-    │   └── JsonSanitizer.php              # Sanitizes metric values (NaN/INF → null) for JSON output
+    │   ├── JsonSanitizer.php              # Sanitizes metric values (NaN/INF → null) for JSON output
+    │   ├── JsonHealthSection.php          # Formats health scores section for JSON output
+    │   ├── JsonOffenderSection.php        # Formats worst offenders sections for JSON output
+    │   └── JsonViolationSection.php       # Formats violations section for JSON output
     ├── Sarif/
     │   ├── SarifFormatter.php             # SARIF 2.1.0
     │   └── SarifRuleCollector.php         # Collects rule metadata for SARIF tool component
