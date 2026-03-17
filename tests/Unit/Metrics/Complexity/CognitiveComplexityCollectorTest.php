@@ -476,17 +476,19 @@ PHP;
 
         // Check Namespace_ level aggregations
         $namespaceStrategies = $cognitiveDefinition->getStrategiesForLevel(SymbolLevel::Namespace_);
-        self::assertCount(3, $namespaceStrategies);
+        self::assertCount(4, $namespaceStrategies);
         self::assertContains(AggregationStrategy::Sum, $namespaceStrategies);
         self::assertContains(AggregationStrategy::Average, $namespaceStrategies);
         self::assertContains(AggregationStrategy::Max, $namespaceStrategies);
+        self::assertContains(AggregationStrategy::Percentile95, $namespaceStrategies);
 
         // Check Project level aggregations
         $projectStrategies = $cognitiveDefinition->getStrategiesForLevel(SymbolLevel::Project);
-        self::assertCount(3, $projectStrategies);
+        self::assertCount(4, $projectStrategies);
         self::assertContains(AggregationStrategy::Sum, $projectStrategies);
         self::assertContains(AggregationStrategy::Average, $projectStrategies);
         self::assertContains(AggregationStrategy::Max, $projectStrategies);
+        self::assertContains(AggregationStrategy::Percentile95, $projectStrategies);
     }
 
     private function collectMetrics(string $code): \AiMessDetector\Core\Metric\MetricBag

@@ -245,8 +245,10 @@ const hintsFixture = {
   healthDecomposition: {
     'health.complexity': {
       inputs: [
-        { key: 'ccn.avg', altKey: 'ccn', label: 'CCN', ideal: '1-4', direction: 'lower' },
-        { key: 'cognitive.avg', altKey: 'cognitive', label: 'Cognitive', ideal: '0-5', direction: 'lower' },
+        { key: 'ccn.avg', altKey: 'ccn', label: 'CCN avg', ideal: '1-3', direction: 'lower' },
+        { key: 'cognitive.avg', altKey: 'cognitive', label: 'Cognitive avg', ideal: '0-4', direction: 'lower' },
+        { key: 'ccn.p95', altKey: null, label: 'CCN p95', ideal: '≤25', direction: 'lower' },
+        { key: 'cognitive.p95', altKey: null, label: 'Cognitive p95', ideal: '≤20', direction: 'lower' },
       ],
     },
     'health.cohesion': {
@@ -567,9 +569,9 @@ describe('getHealthHint', () => {
     expect(result).not.toBeNull();
     expect(result.text).toBe('Complexity: 72 / 100');
     expect(result.details).toHaveLength(2);
-    expect(result.details[0]).toContain('CCN = 8');
+    expect(result.details[0]).toContain('CCN avg = 8');
     expect(result.details[0]).toContain('moderate complexity');
-    expect(result.details[1]).toContain('Cognitive = 12');
+    expect(result.details[1]).toContain('Cognitive avg = 12');
   });
 
   it('decomposes health.cohesion with class-level keys', () => {
@@ -676,7 +678,7 @@ describe('getHealthHint', () => {
     const result = getHealthHint('health.complexity', node);
     expect(result).not.toBeNull();
     expect(result.details).toHaveLength(1);
-    expect(result.details[0]).toContain('CCN = 12');
+    expect(result.details[0]).toContain('CCN avg = 12');
   });
 
   it('returns null when no input metrics available', () => {

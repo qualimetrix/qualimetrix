@@ -711,7 +711,7 @@ Value Object — defines a computed (derived) metric evaluated from aggregated r
 ### ComputedMetricDefaults
 
 Static factory providing 6 default health score definitions:
-- `health.complexity` — CCN + cognitive complexity (inverted, 0-100)
+- `health.complexity` — CCN + cognitive complexity with p95 outlier penalties (inverted, 0-100)
 - `health.cohesion` — TCC + LCOM (inverted, 0-100)
 - `health.coupling` — CBO + distance (inverted, 0-100)
 - `health.typing` — type coverage percentage (inverted, 0-100)

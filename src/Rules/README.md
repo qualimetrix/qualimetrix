@@ -634,7 +634,7 @@ Checks computed health metrics against thresholds. Evaluates derived metrics def
 
 | Metric                   | Default Warning | Default Error | Components                        |
 | ------------------------ | --------------- | ------------- | --------------------------------- |
-| `health.complexity`      | 50              | 25            | CCN + Cognitive Complexity        |
+| `health.complexity`      | 50              | 25            | CCN + Cognitive (avg, p95, max)   |
 | `health.cohesion`        | 50              | 25            | TCC + LCOM                        |
 | `health.coupling`        | 50              | 25            | CBO + Distance from Main Sequence |
 | `health.typing`          | 80              | 50            | Type Coverage Percentage          |

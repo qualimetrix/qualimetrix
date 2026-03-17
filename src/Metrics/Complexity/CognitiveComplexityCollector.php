@@ -95,11 +95,13 @@ final class CognitiveComplexityCollector extends AbstractCollector implements Me
                         AggregationStrategy::Sum,
                         AggregationStrategy::Average,
                         AggregationStrategy::Max,
+                        AggregationStrategy::Percentile95,
                     ],
                     SymbolLevel::Project->value => [
                         AggregationStrategy::Sum,
                         AggregationStrategy::Average,
                         AggregationStrategy::Max,
+                        AggregationStrategy::Percentile95,
                     ],
                 ],
             ),

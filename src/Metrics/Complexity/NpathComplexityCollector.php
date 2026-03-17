@@ -91,10 +91,12 @@ final class NpathComplexityCollector extends AbstractCollector implements Method
                     SymbolLevel::Namespace_->value => [
                         AggregationStrategy::Max,
                         AggregationStrategy::Average,
+                        AggregationStrategy::Percentile95,
                     ],
                     SymbolLevel::Project->value => [
                         AggregationStrategy::Max,
                         AggregationStrategy::Average,
+                        AggregationStrategy::Percentile95,
                     ],
                 ],
             ),

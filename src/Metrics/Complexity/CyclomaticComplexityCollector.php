@@ -90,11 +90,13 @@ final class CyclomaticComplexityCollector extends AbstractCollector implements M
                         AggregationStrategy::Sum,
                         AggregationStrategy::Average,
                         AggregationStrategy::Max,
+                        AggregationStrategy::Percentile95,
                     ],
                     SymbolLevel::Project->value => [
                         AggregationStrategy::Sum,
                         AggregationStrategy::Average,
                         AggregationStrategy::Max,
+                        AggregationStrategy::Percentile95,
                     ],
                 ],
             ),
