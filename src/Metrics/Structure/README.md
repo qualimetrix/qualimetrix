@@ -102,9 +102,11 @@ class GodClass
 LCOM4 = number of connected components in the method graph.
 
 **The graph is built as follows:**
-1. Vertices = all class methods
-2. Edges = two methods access the same property (`$this->property`)
+1. Vertices = all instance methods (static methods are excluded)
+2. Edges = two methods share a property (`$this->property`) **or** one calls the other via `$this->method()`
 3. Count connected components (BFS)
+
+> **Note:** The original LCOM4 algorithm (Hitz & Montazeri, 1995) defines edges only through shared property access. AIMD extends this with method-call edges (`$this->method()`), which is the standard approach in modern tools (SonarQube, JDepend). Without method-call edges, a well-factored class that accesses properties through getters would appear to have poor cohesion.
 
 ### Interpretation
 
@@ -146,8 +148,14 @@ RFC = |RS|
 
 Where RS (Response Set) includes:
 - All class methods (public, protected, private)
-- All methods/functions called from class methods
+- All external calls from class methods:
+  - Method calls on dependencies ($this->repo->find())
+  - Static method calls (Logger::info())
+  - Global function calls (strlen(), array_map())
+  - Constructor calls (new SomeClass())
 ```
+
+> **Note:** The original RFC definition (Chidamber & Kemerer, 1994) only counted method calls. AIMD extends this to include global function calls, static calls, and constructor calls, which are common in PHP and represent real response set complexity. Internal calls (`$this->method()`, `self::`, `static::`, `parent::`) are excluded.
 
 ### Components
 

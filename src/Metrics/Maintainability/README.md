@@ -65,7 +65,7 @@ This inflates the values:
 - **Difficulty:** +75-220%
 - **Effort:** +100-350%
 
-AIMD follows the **original Halstead methodology (1977)**, measuring semantic complexity.
+AIMD uses a **semantic interpretation** of Halstead's methodology (1977), measuring algorithmic complexity rather than syntactic density. The original Halstead paper counted all tokens, but was designed for languages (Fortran, PL/I) with minimal syntactic noise. AIMD's approach excludes delimiters that carry no semantic meaning in C-family languages.
 
 ### Example
 
@@ -105,7 +105,7 @@ MI = 171 - 5.2xln(V) - 0.23xCCN - 16.2xln(LOC)
 Where:
 - V = Halstead Volume
 - CCN = Cyclomatic Complexity
-- LOC = Lines of Code (estimated from volume)
+- LOC = Logical Lines of Code (LLOC -- statement count, not physical line count; estimated from Halstead volume when not available directly)
 
 **Normalization:** The result is clamped to the 0-100 range.
 

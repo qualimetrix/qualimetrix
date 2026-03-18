@@ -95,6 +95,26 @@ Each domain has its own `README.md` with detailed structure, classes, and contra
 
 ---
 
+## Metrics Policy
+
+Base metrics must faithfully implement the original academic algorithm.
+
+**Acceptable extensions** (must be documented in code docblocks AND website docs):
+- Modern PHP operators absent from the original paper (e.g., `??`, `match`, `?->` for CCN)
+- Scope adaptation for PHP realities (e.g., RFC including global functions)
+- Graph extensions standard in modern tooling (e.g., LCOM4 method-call edges)
+
+**Not acceptable:**
+- Changing the fundamental formula without renaming the metric
+- Claiming "follows the original spec" when using a different approach
+- Undocumented deviations
+
+When documenting deviations: use `!!! info "Deviation from original spec"` blocks on the website,
+`> **Note:**` blocks in component READMEs, and accurate phrasing in docblocks
+(e.g., "semantic interpretation of" instead of "follows the original").
+
+---
+
 ## Critical Rules
 
 ### 1. Dependency Graph (DO NOT VIOLATE!)
