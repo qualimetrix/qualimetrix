@@ -56,7 +56,7 @@ final class TccLccCollector extends AbstractCollector implements ClassMetricsPro
      */
     public function provides(): array
     {
-        return [MetricName::COHESION_TCC, MetricName::COHESION_LCC];
+        return [MetricName::COHESION_TCC, MetricName::COHESION_LCC, MetricName::COHESION_PURE_METHOD_COUNT];
     }
 
     /**
@@ -81,16 +81,21 @@ final class TccLccCollector extends AbstractCollector implements ClassMetricsPro
             // undefined (not 0) when there are no properties to share between methods.
             // Emitting TCC=0.0 for these classes would drag down cohesion averages
             // and misrepresent the health of namespaces with many property-less classes.
+            // By-design: pureMethodCount is also skipped here — for propertyCount=0 classes
+            // the health formula uses tcc ?? 0.5 (neutral default), which is appropriate
+            // since TCC is undefined rather than low.
             if ($classData->getPropertyCount() === 0) {
                 continue;
             }
 
             $tcc = $classData->calculateTcc();
             $lcc = $classData->calculateLcc();
+            $pureCount = $this->countPureMethods($classData);
 
             // Store metrics with class FQN as key
             $bag = $bag->with(MetricName::COHESION_TCC . ':' . $classFqn, round($tcc, 3));
             $bag = $bag->with(MetricName::COHESION_LCC . ':' . $classFqn, round($lcc, 3));
+            $bag = $bag->with(MetricName::COHESION_PURE_METHOD_COUNT . ':' . $classFqn, $pureCount);
         }
 
         return $bag;
@@ -118,10 +123,12 @@ final class TccLccCollector extends AbstractCollector implements ClassMetricsPro
 
             $tcc = round($classData->calculateTcc(), 3);
             $lcc = round($classData->calculateLcc(), 3);
+            $pureCount = $this->countPureMethods($classData);
 
             $bag = (new MetricBag())
                 ->with(MetricName::COHESION_TCC, $tcc)
-                ->with(MetricName::COHESION_LCC, $lcc);
+                ->with(MetricName::COHESION_LCC, $lcc)
+                ->with(MetricName::COHESION_PURE_METHOD_COUNT, $pureCount);
 
             $result[] = new ClassWithMetrics(
                 namespace: $classData->namespace,
@@ -169,6 +176,32 @@ final class TccLccCollector extends AbstractCollector implements ClassMetricsPro
                     ],
                 ],
             ),
+            new MetricDefinition(
+                name: MetricName::COHESION_PURE_METHOD_COUNT,
+                collectedAt: SymbolLevel::Class_,
+                aggregations: [],
+            ),
         ];
+    }
+
+    /**
+     * Counts methods with zero property access ("pure" methods).
+     *
+     * These are typically interface contract implementations (getName(), getDescription())
+     * that inflate TCC denominator and LCOM without reflecting actual cohesion issues.
+     * Note: only $this->property accesses are tracked; static property accesses
+     * (self::$x, static::$x) are not considered — this matches TCC semantics.
+     */
+    private function countPureMethods(TccLccClassData $classData): int
+    {
+        $count = 0;
+
+        foreach ($classData->getMethods() as $method) {
+            if (\count($classData->getPropertiesAccessedBy($method)) === 0) {
+                ++$count;
+            }
+        }
+
+        return $count;
     }
 }

@@ -30,6 +30,7 @@ final class MetricName
     public const string COUPLING_ABSTRACTNESS = 'abstractness';
     public const string COUPLING_DISTANCE = 'distance';
     public const string COUPLING_CLASS_RANK = 'classRank';
+    public const string COUPLING_CE_PACKAGES = 'ce_packages';
 
     // -- Design --------------------------------------------------------------
 
@@ -66,6 +67,7 @@ final class MetricName
 
     public const string COHESION_TCC = 'tcc';
     public const string COHESION_LCC = 'lcc';
+    public const string COHESION_PURE_METHOD_COUNT = 'pureMethodCount_cohesion';
 
     // -- Size ----------------------------------------------------------------
 

@@ -199,8 +199,9 @@ final class ComputedMetricEvaluatorTest extends TestCase
         //                 = 0.7746*50 + 0.8*50 = 38.73 + 40 = 78.73
         self::assertEqualsWithDelta(78.73, $bag->get('health.cohesion'), 0.01);
 
-        // health.coupling = clamp(100 * 15 / (15 + max(6-5, 0)), 0, 100) = 1500/16 = 93.75
-        self::assertEqualsWithDelta(93.75, $bag->get('health.coupling'), 0.01);
+        // health.coupling = clamp(100 * 15 / (15 + max(0*3.0 + 6^0.5*0.5 - 5, 0)), 0, 100)
+        //                 = 100 * 15 / (15 + max(-3.78, 0)) = 100.0 (no ce_packages in test data)
+        self::assertEqualsWithDelta(100.0, $bag->get('health.coupling'), 0.01);
 
         // health.typing = clamp(80, 0, 100) = 80
         self::assertEqualsWithDelta(80.0, $bag->get('health.typing'), 0.01);
@@ -209,9 +210,40 @@ final class ComputedMetricEvaluatorTest extends TestCase
         //                       = 100 - 30 - 0 = 70.0
         self::assertEqualsWithDelta(70.0, $bag->get('health.maintainability'), 0.01);
 
-        // health.overall = clamp(98.0*0.30 + 78.73*0.25 + 93.75*0.25 + 80*0.20, 0, 100)
-        //                = 29.4 + 19.6825 + 23.4375 + 16.0 = 88.52
-        self::assertEqualsWithDelta(88.52, $bag->get('health.overall'), 0.01);
+        // health.overall = clamp(98.0*0.35 + 78.73*0.25 + 100.0*0.25 + 80*0.15, 0, 100)
+        //                = 34.3 + 19.6825 + 25.0 + 12.0 = 90.98
+        self::assertEqualsWithDelta(90.98, $bag->get('health.overall'), 0.01);
+    }
+
+    #[Test]
+    public function defaultHealthCohesionWithPureMethods(): void
+    {
+        $repo = new InMemoryMetricRepository();
+        $classPath = SymbolPath::forClass('App\\Rules', 'DistanceRule');
+        $repo->add($classPath, MetricBag::fromArray([
+            'tcc' => 0.0,
+            'lcom' => 5.0,
+            'methodCount' => 5,
+            'pureMethodCount_cohesion' => 4,
+            'ce' => 3.0,
+            'typeCoverage.pct' => 100.0,
+        ]), 'src/DistanceRule.php', 10);
+
+        $defaults = array_values(ComputedMetricDefaults::getDefaults());
+        $this->evaluator->compute($repo, $defaults);
+
+        $bag = $repo->get($classPath);
+
+        // tcc_adj = 0.0 + (1 - 0.0) * (4/5) * 0.4 = 0.32
+        // lcom_adj = max(5 - 4*0.7, 1) = max(2.2, 1) = 2.2
+        // cohesion = clamp(sqrt(0.32)*50 + (1 - clamp((2.2-1)/5, 0, 1))*50, 0, 100)
+        //          = 0.5657*50 + (1 - 0.24)*50 = 28.28 + 38.0 = 66.28
+        self::assertEqualsWithDelta(66.28, $bag->get('health.cohesion'), 0.5);
+
+        // Without pureMethodCount boost, cohesion would be:
+        // sqrt(0.0)*50 + (1 - clamp(4/5,0,1))*50 = 0 + 10 = 10.0
+        // The boost raises it from 10 to ~66 — significant improvement
+        self::assertGreaterThan(50.0, $bag->get('health.cohesion'));
     }
 
     #[Test]
@@ -273,9 +305,9 @@ final class ComputedMetricEvaluatorTest extends TestCase
         //                       = 100 - 24 - sqrt(15)*6 - 15^0.4*2 = 100 - 24 - 23.24 - 5.74 = 47.02
         self::assertEqualsWithDelta(47.02, $bag->get('health.maintainability'), 0.5);
 
-        // health.overall = clamp(100*0.25 + 65.36*0.20 + 90.91*0.20 + 76*0.15 + 47.02*0.20, 0, 100)
-        //                = 25.0 + 13.072 + 18.182 + 11.4 + 9.404 = 77.06
-        self::assertEqualsWithDelta(77.06, $bag->get('health.overall'), 0.5);
+        // health.overall = clamp(100*0.30 + 65.36*0.20 + 90.91*0.20 + 76*0.10 + 47.02*0.20, 0, 100)
+        //                = 30.0 + 13.072 + 18.182 + 7.6 + 9.404 = 78.26
+        self::assertEqualsWithDelta(78.26, $bag->get('health.overall'), 0.5);
     }
 
     #[Test]

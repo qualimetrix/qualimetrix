@@ -37,9 +37,10 @@ final class TccLccCollectorTest extends TestCase
     {
         $provides = $this->collector->provides();
 
-        self::assertCount(2, $provides);
+        self::assertCount(3, $provides);
         self::assertContains('tcc', $provides);
         self::assertContains('lcc', $provides);
+        self::assertContains('pureMethodCount_cohesion', $provides);
     }
 
     public function testEmptyClass(): void
@@ -462,7 +463,7 @@ PHP;
     {
         $definitions = $this->collector->getMetricDefinitions();
 
-        self::assertCount(2, $definitions);
+        self::assertCount(3, $definitions);
 
         // Check TCC definition
         $tccDef = $definitions[0];
@@ -477,6 +478,12 @@ PHP;
         $lccDef = $definitions[1];
         self::assertSame('lcc', $lccDef->name);
         self::assertSame(SymbolLevel::Class_, $lccDef->collectedAt);
+
+        // Check pureMethodCount definition
+        $pureDef = $definitions[2];
+        self::assertSame('pureMethodCount_cohesion', $pureDef->name);
+        self::assertSame(SymbolLevel::Class_, $pureDef->collectedAt);
+        self::assertSame([], $pureDef->getStrategiesForLevel(SymbolLevel::Namespace_));
     }
 
     public function testDynamicPropertyAccessIgnored(): void
@@ -619,6 +626,8 @@ PHP;
         self::assertSame('TestClass', $class->class);
         self::assertSame(1.0, $class->metrics->get('tcc'));
         self::assertSame(1.0, $class->metrics->get('lcc'));
+        // Both methods access $prop → 0 pure methods
+        self::assertSame(0, $class->metrics->get('pureMethodCount_cohesion'));
     }
 
     public function testStaticMethodsExcluded(): void
@@ -1147,6 +1156,78 @@ PHP;
         // Both methods access the same promoted property => TCC = 1.0
         self::assertSame(1.0, $metrics->get('tcc:App\UserService'));
         self::assertSame(1.0, $metrics->get('lcc:App\UserService'));
+    }
+
+    public function testPureMethodCount_allPure(): void
+    {
+        // Class with interface contract getters — all methods are "pure" (no property access)
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class DistanceRule
+{
+    private $threshold;
+
+    public function getName(): string { return 'distance'; }
+    public function getDescription(): string { return 'Distance from main sequence'; }
+    public function getSeverity(): string { return 'warning'; }
+    public function isEnabled(): bool { return true; }
+    public function analyze(): array { return [$this->threshold]; }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // 5 public methods, 4 access no properties → pureMethodCount = 4
+        // (analyze accesses $this->threshold, so it's not pure)
+        self::assertSame(4, $metrics->get('pureMethodCount_cohesion:App\DistanceRule'));
+    }
+
+    public function testPureMethodCount_noPure(): void
+    {
+        // All methods access properties → pureMethodCount = 0
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Rectangle
+{
+    private float $width;
+    private float $height;
+
+    public function getWidth(): float { return $this->width; }
+    public function getHeight(): float { return $this->height; }
+    public function getArea(): float { return $this->width * $this->height; }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(0, $metrics->get('pureMethodCount_cohesion:App\Rectangle'));
+    }
+
+    public function testPureMethodCount_skippedWhenTooFewMethods(): void
+    {
+        // Class with fewer than 2 public methods — TCC/LCC and pureMethodCount not emitted
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class SingleMethod
+{
+    private $x;
+
+    public function doStuff(): void {}
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertNull($metrics->get('pureMethodCount_cohesion:App\SingleMethod'));
     }
 
     private function collectMetrics(string $code): MetricBag

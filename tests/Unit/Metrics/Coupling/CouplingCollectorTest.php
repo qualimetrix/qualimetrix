@@ -45,7 +45,7 @@ final class CouplingCollectorTest extends TestCase
     #[Test]
     public function provides_returnsCouplingMetrics(): void
     {
-        self::assertSame(['ca', 'ce', 'cbo', 'instability'], $this->collector->provides());
+        self::assertSame(['ca', 'ce', 'cbo', 'instability', 'ce_packages'], $this->collector->provides());
     }
 
     #[Test]
@@ -53,7 +53,7 @@ final class CouplingCollectorTest extends TestCase
     {
         $definitions = $this->collector->getMetricDefinitions();
 
-        self::assertCount(4, $definitions);
+        self::assertCount(5, $definitions);
 
         // ca metric
         $ca = $definitions[0];
@@ -97,6 +97,19 @@ final class CouplingCollectorTest extends TestCase
             $instability->getStrategiesForLevel(SymbolLevel::Namespace_),
         );
         self::assertSame([], $instability->getStrategiesForLevel(SymbolLevel::Project));
+
+        // ce_packages metric
+        $cePackages = $definitions[4];
+        self::assertSame('ce_packages', $cePackages->name);
+        self::assertSame(SymbolLevel::Class_, $cePackages->collectedAt);
+        self::assertSame(
+            [AggregationStrategy::Average, AggregationStrategy::Max, AggregationStrategy::Percentile95],
+            $cePackages->getStrategiesForLevel(SymbolLevel::Namespace_),
+        );
+        self::assertSame(
+            [AggregationStrategy::Average, AggregationStrategy::Max, AggregationStrategy::Percentile95],
+            $cePackages->getStrategiesForLevel(SymbolLevel::Project),
+        );
     }
 
     #[Test]
@@ -246,6 +259,8 @@ final class CouplingCollectorTest extends TestCase
 
         self::assertSame(0, $metrics->get('ca'));
         self::assertSame(1, $metrics->get('ce'));
+        // Global namespace source (topNs='') depends on Vendor (topNs='Vendor') → 1 package
+        self::assertSame(1, $metrics->get('ce_packages'));
     }
 
     #[Test]
@@ -474,6 +489,96 @@ final class CouplingCollectorTest extends TestCase
             $repository->has($vendorNsPath),
             'Global collectors must not create symbols for external namespaces (see GlobalContextCollectorInterface::calculate() contract)',
         );
+    }
+
+    #[Test]
+    public function calculate_computesCePackages_multiplePackages(): void
+    {
+        // App\Foo depends on PhpParser\Node, PhpParser\Lexer, Symfony\Console, Psr\Log
+        // Top-level namespaces: PhpParser, Symfony, Psr → ce_packages = 3
+        $deps = [
+            $this->dep('App\\Foo', 'PhpParser\\Node'),
+            $this->dep('App\\Foo', 'PhpParser\\Lexer'),
+            $this->dep('App\\Foo', 'Symfony\\Console'),
+            $this->dep('App\\Foo', 'Psr\\Log'),
+        ];
+
+        $graph = $this->graphBuilder->build($deps);
+        $repository = new InMemoryMetricRepository();
+        $this->registerClass($repository, 'App\\Foo');
+
+        $this->collector->calculate($graph, $repository);
+
+        $fooPath = SymbolPath::forClass('App', 'Foo');
+        $fooMetrics = $repository->get($fooPath);
+
+        self::assertSame(3, $fooMetrics->get('ce_packages'));
+    }
+
+    #[Test]
+    public function calculate_computesCePackages_samePackage(): void
+    {
+        // All deps from same top-level namespace (PhpParser) → ce_packages = 1
+        $deps = [
+            $this->dep('App\\Service\\Foo', 'PhpParser\\Node\\Expr'),
+            $this->dep('App\\Service\\Foo', 'PhpParser\\Node\\Stmt'),
+            $this->dep('App\\Service\\Foo', 'PhpParser\\Lexer'),
+        ];
+
+        $graph = $this->graphBuilder->build($deps);
+        $repository = new InMemoryMetricRepository();
+        $this->registerClass($repository, 'App\\Service\\Foo');
+
+        $this->collector->calculate($graph, $repository);
+
+        $fooPath = SymbolPath::forClass('App\\Service', 'Foo');
+        $fooMetrics = $repository->get($fooPath);
+
+        self::assertSame(1, $fooMetrics->get('ce_packages'));
+    }
+
+    #[Test]
+    public function calculate_computesCePackages_intraPackageDepsExcluded(): void
+    {
+        // All deps within same top-level namespace (App) → ce_packages = 0
+        $deps = [
+            $this->dep('App\\Service\\Foo', 'App\\Repository\\Bar'),
+            $this->dep('App\\Service\\Foo', 'App\\Model\\Baz'),
+        ];
+
+        $graph = $this->graphBuilder->build($deps);
+        $repository = new InMemoryMetricRepository();
+        $this->registerClass($repository, 'App\\Service\\Foo');
+        $this->registerClass($repository, 'App\\Repository\\Bar');
+        $this->registerClass($repository, 'App\\Model\\Baz');
+
+        $this->collector->calculate($graph, $repository);
+
+        $fooPath = SymbolPath::forClass('App\\Service', 'Foo');
+        $fooMetrics = $repository->get($fooPath);
+
+        self::assertSame(0, $fooMetrics->get('ce_packages'));
+    }
+
+    #[Test]
+    public function calculate_computesCePackages_onlyIncomingDeps(): void
+    {
+        // App\Bar has only afferent deps (no Ce) → ce_packages = 0
+        $deps = [
+            $this->dep('App\\Foo', 'App\\Bar'),
+        ];
+
+        $graph = $this->graphBuilder->build($deps);
+        $repository = new InMemoryMetricRepository();
+        $this->registerClass($repository, 'App\\Foo');
+        $this->registerClass($repository, 'App\\Bar');
+
+        $this->collector->calculate($graph, $repository);
+
+        $barPath = SymbolPath::forClass('App', 'Bar');
+        $barMetrics = $repository->get($barPath);
+
+        self::assertSame(0, $barMetrics->get('ce_packages'));
     }
 
     private function dep(string $source, string $target): Dependency

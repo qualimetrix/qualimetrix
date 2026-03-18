@@ -38,7 +38,7 @@ final class CouplingCollector implements GlobalContextCollectorInterface
 
     public function provides(): array
     {
-        return [MetricName::COUPLING_CA, MetricName::COUPLING_CE, MetricName::COUPLING_CBO, MetricName::COUPLING_INSTABILITY];
+        return [MetricName::COUPLING_CA, MetricName::COUPLING_CE, MetricName::COUPLING_CBO, MetricName::COUPLING_INSTABILITY, MetricName::COUPLING_CE_PACKAGES];
     }
 
     public function getMetricDefinitions(): array
@@ -81,6 +81,22 @@ final class CouplingCollector implements GlobalContextCollectorInterface
                 collectedAt: SymbolLevel::Class_,
                 aggregations: [
                     SymbolLevel::Namespace_->value => [AggregationStrategy::Average],
+                ],
+            ),
+            new MetricDefinition(
+                name: MetricName::COUPLING_CE_PACKAGES,
+                collectedAt: SymbolLevel::Class_,
+                aggregations: [
+                    SymbolLevel::Namespace_->value => [
+                        AggregationStrategy::Average,
+                        AggregationStrategy::Max,
+                        AggregationStrategy::Percentile95,
+                    ],
+                    SymbolLevel::Project->value => [
+                        AggregationStrategy::Average,
+                        AggregationStrategy::Max,
+                        AggregationStrategy::Percentile95,
+                    ],
                 ],
             ),
         ];
@@ -131,11 +147,27 @@ final class CouplingCollector implements GlobalContextCollectorInterface
             $cbo = \count($coupledClasses);
             $instability = $this->computeInstability($ca, $ce);
 
+            // Count distinct top-level namespaces (vendor packages) among efferent deps,
+            // excluding the source class's own top-level namespace.
+            $sourceTopNs = $this->getTopLevelNamespace($symbolPath->namespace);
+            $externalPackages = [];
+
+            foreach ($graph->getClassDependencies($symbolPath) as $dep) {
+                $targetTopNs = $this->getTopLevelNamespace($dep->target->namespace);
+
+                if ($targetTopNs !== '' && $targetTopNs !== $sourceTopNs) {
+                    $externalPackages[$targetTopNs] = true;
+                }
+            }
+
+            $cePackages = \count($externalPackages);
+
             $metrics = (new MetricBag())
                 ->with(MetricName::COUPLING_CA, $ca)
                 ->with(MetricName::COUPLING_CE, $ce)
                 ->with(MetricName::COUPLING_CBO, $cbo)
-                ->with(MetricName::COUPLING_INSTABILITY, $instability);
+                ->with(MetricName::COUPLING_INSTABILITY, $instability)
+                ->with(MetricName::COUPLING_CE_PACKAGES, $cePackages);
 
             $repository->add($symbolPath, $metrics, '', 0);
         }
@@ -203,6 +235,22 @@ final class CouplingCollector implements GlobalContextCollectorInterface
         }
 
         return $coupled;
+    }
+
+    /**
+     * Extracts the first segment of a namespace (top-level vendor/package).
+     *
+     * E.g. "PhpParser\Node\Expr" → "PhpParser", "App\Service" → "App", "" → "".
+     */
+    private function getTopLevelNamespace(?string $namespace): string
+    {
+        if ($namespace === null || $namespace === '') {
+            return '';
+        }
+
+        $pos = strpos($namespace, '\\');
+
+        return $pos !== false ? substr($namespace, 0, $pos) : $namespace;
     }
 
     /**

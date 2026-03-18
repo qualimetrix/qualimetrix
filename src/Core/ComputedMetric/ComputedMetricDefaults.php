@@ -36,9 +36,10 @@ final class ComputedMetricDefaults
             'health.cohesion' => new ComputedMetricDefinition(
                 name: 'health.cohesion',
                 formulas: [
-                    // sqrt(tcc) rescales typical TCC range (0.2–0.6) into a wider health range.
-                    // Linear tcc*50 capped real projects at ~73; sqrt allows Gold tier to reach 80+.
-                    'class' => 'clamp(((methodCount ?? 0) < 6 ? (tcc ?? 0.5) : (tcc ?? 0)) ** 0.5 * 50 + (1 - clamp(((lcom ?? 0) - 1) / 5, 0, 1)) * 50, 0, 100)',
+                    // Pure methods (no property access, e.g. interface contract getters) inflate
+                    // TCC denominator and LCOM. Adjust both: boost TCC proportionally, reduce LCOM.
+                    // D_tcc=0.4, D_lcom=0.7. Classes with no pure methods: formula unchanged.
+                    'class' => 'clamp((((methodCount ?? 0) < 6 ? (tcc ?? 0.5) : (tcc ?? 0)) + (1 - ((methodCount ?? 0) < 6 ? (tcc ?? 0.5) : (tcc ?? 0))) * ((pureMethodCount_cohesion ?? 0) / max(methodCount ?? 1, 1)) * 0.4) ** 0.5 * 50 + (1 - clamp((max((lcom ?? 0) - (pureMethodCount_cohesion ?? 0) * 0.7, 1) - 1) / 5, 0, 1)) * 50, 0, 100)',
                     'namespace' => 'clamp((tcc__avg ?? 0.5) ** 0.5 * 50 + (1 - clamp(((lcom__avg ?? 0) - 1) / 5, 0, 1)) * 50, 0, 100)',
                 ],
                 description: 'Cohesion health score (0-100, higher is better)',
@@ -50,7 +51,10 @@ final class ComputedMetricDefaults
             'health.coupling' => new ComputedMetricDefinition(
                 name: 'health.coupling',
                 formulas: [
-                    'class' => 'clamp(100 * 15 / (15 + max((ce ?? 0) - 5, 0)), 0, 100)',
+                    // Blend ce_packages (dependency breadth) with dampened ce (volume).
+                    // K=15, W_pkg=3.0, W_raw=0.5, threshold=5.
+                    // HalsteadVisitor (ce=127, pkg≈1): ~80. ShowCommand (ce=43, pkg≈15): ~26.
+                    'class' => 'clamp(100 * 15 / (15 + max((ce_packages ?? 0) * 3.0 + (ce ?? 0) ** 0.5 * 0.5 - 5, 0)), 0, 100)',
                     // K=18, cbo_avg threshold=8, cbo_p95 threshold=15, sqrt-scaled max penalty.
                     // Calibrated against 11 benchmark projects (Guzzle→92, Sf Console→64, AIMD→53, Laravel→53, Composer→32).
                     'namespace' => 'clamp(100 * 18 / (18 + (distance ?? 0) * 6 + max((cbo__avg ?? 0) - 8, 0) * 3 + max((cbo__p95 ?? 0) - 15, 0) * 0.4 + max((cbo__max ?? 0) - 30, 0) ** 0.5 * 0.8), 0, 100)',
@@ -97,8 +101,9 @@ final class ComputedMetricDefaults
                 formulas: [
                     // Maintainability excluded at class level: MI is method-level,
                     // and its signal is already captured by complexity and cohesion sub-scores.
-                    'class' => 'clamp((health__complexity ?? 75) * 0.30 + (health__cohesion ?? 75) * 0.25 + (health__coupling ?? 75) * 0.25 + (health__typing ?? 75) * 0.20, 0, 100)',
-                    'namespace' => 'clamp((health__complexity ?? 75) * 0.25 + (health__cohesion ?? 75) * 0.20 + (health__coupling ?? 75) * 0.20 + (health__typing ?? 75) * 0.15 + (health__maintainability ?? 75) * 0.20, 0, 100)',
+                    // Typing weight reduced from 0.20→0.15 (inflates legacy code scores).
+                    'class' => 'clamp((health__complexity ?? 75) * 0.35 + (health__cohesion ?? 75) * 0.25 + (health__coupling ?? 75) * 0.25 + (health__typing ?? 75) * 0.15, 0, 100)',
+                    'namespace' => 'clamp((health__complexity ?? 75) * 0.30 + (health__cohesion ?? 75) * 0.20 + (health__coupling ?? 75) * 0.20 + (health__typing ?? 75) * 0.10 + (health__maintainability ?? 75) * 0.20, 0, 100)',
                 ],
                 description: 'Overall health score (0-100, higher is better)',
                 levels: [SymbolType::Class_, SymbolType::Namespace_, SymbolType::Project],
