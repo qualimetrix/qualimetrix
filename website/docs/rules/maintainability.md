@@ -151,6 +151,9 @@ The raw MI value (0-171 scale) is normalized to a **0-100 scale**: `max(0, MI x 
 !!! note "LOC input"
     AIMD uses LLOC (logical lines -- the number of statements) for the MI formula, which aligns with the original Oman-Hagemeister paper. Some tools use physical LOC (including blank lines and comments) or ELOC (executable lines), which produces different results. LLOC gives the most stable and meaningful values because it is not affected by formatting or comment density.
 
+!!! info "Halstead Volume: semantic approach"
+    Halstead Volume (the V in the formula) uses a **semantic interpretation** of Halstead's methodology (1977). AIMD counts only elements that carry semantic meaning (arithmetic, logical, comparison operators; variables, literals, constants) and excludes syntactic delimiters (`;`, `()`, `{}`, `,`). The original Halstead paper counted all tokens, but was designed for languages (Fortran, PL/I) with minimal syntactic noise. Tools that count all tokens (e.g., pdepend) report significantly higher Volume/Difficulty/Effort values. This does not affect relative comparisons between methods within the same project.
+
 ### Configuration
 
 | Option         | Default | Description                                  |

@@ -54,8 +54,9 @@ use SplFileInfo;
  * - Difficulty: +75-220%
  * - Effort: +100-350%
  *
- * AIMD follows the original Halstead methodology, measuring semantic
- * code complexity rather than syntactic density.
+ * AIMD uses a semantic interpretation of Halstead's methodology, measuring
+ * algorithmic complexity rather than syntactic density. The original paper
+ * counted all tokens, but was designed for languages with minimal syntax noise.
  *
  * ## Formulas
  *

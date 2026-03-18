@@ -84,11 +84,14 @@ This class has LCOM = 2. The profile methods and the financial methods use compl
 
 AIMD uses the **LCOM4** algorithm (Hitz & Montazeri, 1995), which is graph-based:
 
-1. Build a graph where each method is a node
-2. Add an edge between two methods if they share a property or one calls the other
+1. Build a graph where each instance method is a node (static methods are excluded)
+2. Add an edge between two methods if they share a property (`$this->property`) or one calls the other (`$this->method()`)
 3. LCOM4 = the number of **connected components** in this graph
 
 This is the most widely accepted LCOM variant in modern literature. A value of 1 means all methods are interconnected — the class is cohesive.
+
+!!! info "Deviation from original spec"
+    The original LCOM4 (Hitz & Montazeri, 1995) defines edges only through shared property access. AIMD extends this with method-call edges (`$this->method()`), following the standard approach used by modern tools (SonarQube, JDepend). Without this extension, a well-factored class that accesses properties through getters would appear to have poor cohesion.
 
 !!! note "Comparing with other tools"
     phpmetrics uses the **Henderson-Sellers LCOM** formula, which produces values on a completely different scale (0.0 to 1.0+). These values are **not comparable** with AIMD's LCOM4. A class that scores LCOM=2 in AIMD might show LCOM=0.8 in phpmetrics — both indicate low cohesion, but the numbers mean different things.

@@ -17,7 +17,9 @@ Coupling metrics measure dependencies between components. All collectors in this
 | ------------- | ----------------------------------------- | ------------------- |
 | `ca`          | Afferent Coupling — incoming dependencies | count(dependents)   |
 | `ce`          | Efferent Coupling — outgoing dependencies | count(dependencies) |
-| `instability` | Class instability                         | Ce / (Ca + Ce)      |
+| `instability` | Class instability (AIMD extension)        | Ce / (Ca + Ce)      |
+
+> **Note:** Robert C. Martin (1994) originally defined Instability only at the **package** (namespace) level. AIMD extends it to the class level for finer-grained analysis. The namespace-level instability is the canonical metric per Martin's specification.
 
 ### Instability Interpretation
 

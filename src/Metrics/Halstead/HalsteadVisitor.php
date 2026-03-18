@@ -57,8 +57,9 @@ use PhpParser\NodeVisitorAbstract;
  * - Difficulty: +75-220%
  * - Effort: +100-350%
  *
- * AIMD follows the original Halstead methodology (1977), measuring
- * semantic complexity rather than syntactic density.
+ * AIMD uses a semantic interpretation of Halstead's methodology (1977), measuring
+ * algorithmic complexity rather than syntactic density. The original paper
+ * counted all tokens, but was designed for languages with minimal syntax noise.
  *
  * @see HalsteadCollector
  * @see https://en.wikipedia.org/wiki/Halstead_complexity_measures

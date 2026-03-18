@@ -81,7 +81,7 @@ class ReportGenerator
 
 ### Implementation notes
 
-AIMD implements **bidirectional coupling** consistent with Chidamber & Kemerer (1994): CBO = Ca + Ce, counting both incoming and outgoing dependencies.
+AIMD implements **bidirectional coupling** consistent with Chidamber & Kemerer (1994): CBO = |Ca ∪ Ce|, counting the number of **unique** classes that appear in either incoming or outgoing dependencies. If class A both uses and is used by class B, B is counted once (union semantics), not twice.
 
 - **Extended coupling types:** AIMD detects 14 types of coupling, going beyond C&K's original "methods or instance variables" definition. These include: class instantiation, static method calls, type hints (parameters, return types, properties), `catch` clauses, `instanceof` checks, class constants, attributes, `extends`/`implements`, and trait `use`.
 - **Union and intersection types:** Each type in a union (`A|B`) or intersection (`A&B`) type hint is counted as a separate coupling.
@@ -189,6 +189,9 @@ class DailyReportJob
 - **Reduce outgoing dependencies.** Fewer `use` statements and constructor parameters mean lower Ce.
 - **Introduce abstractions.** If the class is a service that others could benefit from, extract an interface. This increases Ca (other classes will depend on the interface) and reduces I.
 - **Accept instability when it makes sense.** Entry points like console commands, controllers, and cron jobs are naturally unstable (high Ce, low Ca). Consider disabling the rule for these or raising the threshold.
+
+!!! info "Deviation from original spec"
+    Robert C. Martin (1994) originally defined Instability only at the **package** (namespace) level. AIMD extends it to the class level for finer-grained analysis. The namespace-level instability is the canonical metric per Martin's specification; the class-level metric is an AIMD extension.
 
 ### Configuration
 
