@@ -91,7 +91,7 @@ final class CheckCommandDefinition
                 'format',
                 'f',
                 InputOption::VALUE_REQUIRED,
-                'Output format (summary, text, json, checkstyle, sarif, gitlab, github, metrics-json, html). Default: summary',
+                'Output format (summary, text, json, checkstyle, sarif, gitlab, github, metrics, health). Default: summary',
             )
             ->addOption(
                 'output',

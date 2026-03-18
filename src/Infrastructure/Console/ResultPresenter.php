@@ -175,7 +175,7 @@ final class ResultPresenter
         }
 
         // TTY warning for HTML output to stdout
-        if ($format === 'html' && $this->isOutputTty($output)) {
+        if ($format === 'health' && $this->isOutputTty($output)) {
             $output->writeln(
                 '<comment>HTML output is best saved to a file. Use --output=report.html</comment>',
                 OutputInterface::OUTPUT_NORMAL | OutputInterface::VERBOSITY_NORMAL,

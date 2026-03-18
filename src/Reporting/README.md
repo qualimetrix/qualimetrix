@@ -303,7 +303,7 @@ Worst namespaces
 
 1251 violations (384 errors, 867 warnings) | Tech debt: 63d 5h 35min
 
-Hints: --format=text to see all violations | --namespace="App\Metrics\Halstead" to drill down | --format=html -o report.html for full report
+Hints: --format=text to see all violations | --namespace="App\Metrics\Halstead" to drill down | --format=health -o report.html for full report
 ```
 
 ### TextFormatter (`--format=text`)
@@ -344,8 +344,8 @@ Files: 1 analyzed, 0 skipped | Errors: 1 | Warnings: 1 | Time: 0.23s
 | Checkstyle   | `checkstyle`   | Checkstyle XML for CI systems                  | Jenkins, SonarQube         |
 | SARIF        | `sarif`        | SARIF 2.1.0 for static analysis                | GitHub, VS Code, JetBrains |
 | GitLab       | `gitlab`       | Code Climate JSON for GitLab MR                | GitLab CI                  |
-| Metrics JSON | `metrics-json` | Raw metric values for all symbols              | Dashboards, cross-tool     |
-| HTML         | `html`         | Interactive treemap report with D3.js          | Browser, CI artifacts      |
+| Metrics      | `metrics`      | Raw metric values for all symbols              | Dashboards, cross-tool     |
+| Health       | `health`       | Interactive treemap report with D3.js          | Browser, CI artifacts      |
 
 ## JsonFormatter
 
@@ -452,7 +452,7 @@ Results will appear in the **Code Quality** tab with inline comments in the MR.
 
 ## MetricsJsonFormatter
 
-**Name:** `metrics-json`
+**Name:** `metrics`
 
 Exports raw metric values for all symbols (methods, classes, namespaces, files) as JSON. Unlike `json` which outputs violations, this formatter outputs the actual metric data collected during analysis — useful for cross-tool comparison, metrics analysis, and custom dashboards.
 
@@ -491,7 +491,7 @@ Exports raw metric values for all symbols (methods, classes, namespaces, files) 
 ### Usage
 
 ```bash
-bin/aimd check src/ --format=metrics-json > metrics.json
+bin/aimd check src/ --format=metrics > metrics.json
 ```
 
 ---
@@ -533,17 +533,17 @@ $report->debtPer1kLoc     // ?float — debt density (minutes per 1K LOC)
 
 ## Formatter Comparison
 
-| Characteristic          | Summary | Text   | Text Verbose | JSON    | Checkstyle        | SARIF        | GitLab | Metrics JSON | HTML            |
-| ----------------------- | ------- | ------ | ------------ | ------- | ----------------- | ------------ | ------ | ------------ | --------------- |
-| **ANSI Colors**         | Yes     | Yes    | Yes          | No      | No                | No           | No     | No           | No              |
-| **Health overview**     | Yes     | No     | No           | No      | No                | No           | No     | No           | Yes             |
-| **Grouping**            | No      | No     | Yes (file)   | No      | No                | No           | No     | No           | No              |
-| **Readability**         | High    | High   | High         | No      | No                | No           | No     | No           | Visual          |
-| **CI/CD integration**   | No      | No     | No           | Generic | Jenkins/SonarQube | GitHub/Azure | GitLab | Custom       | CI artifacts    |
-| **IDE support**         | No      | No     | No           | No      | Limited           | VS Code/JB   | No     | No           | No              |
-| **PHPMD compatibility** | No      | Full   | No           | No      | Full              | No           | No     | No           | No              |
-| **Fingerprinting**      | No      | No     | No           | No      | No                | No           | Yes    | No           | No              |
-| **Output**              | STDOUT  | STDOUT | STDOUT       | STDOUT  | STDOUT            | STDOUT       | STDOUT | STDOUT       | File (--output) |
+| Characteristic          | Summary | Text   | Text Verbose | JSON    | Checkstyle        | SARIF        | GitLab | Metrics | Health          |
+| ----------------------- | ------- | ------ | ------------ | ------- | ----------------- | ------------ | ------ | ------- | --------------- |
+| **ANSI Colors**         | Yes     | Yes    | Yes          | No      | No                | No           | No     | No      | No              |
+| **Health overview**     | Yes     | No     | No           | No      | No                | No           | No     | No      | Yes             |
+| **Grouping**            | No      | No     | Yes (file)   | No      | No                | No           | No     | No      | No              |
+| **Readability**         | High    | High   | High         | No      | No                | No           | No     | No      | Visual          |
+| **CI/CD integration**   | No      | No     | No           | Generic | Jenkins/SonarQube | GitHub/Azure | GitLab | Custom  | CI artifacts    |
+| **IDE support**         | No      | No     | No           | No      | Limited           | VS Code/JB   | No     | No      | No              |
+| **PHPMD compatibility** | No      | Full   | No           | No      | Full              | No           | No     | No      | No              |
+| **Fingerprinting**      | No      | No     | No           | No      | No                | No           | Yes    | No      | No              |
+| **Output**              | STDOUT  | STDOUT | STDOUT       | STDOUT  | STDOUT            | STDOUT       | STDOUT | STDOUT  | File (--output) |
 
 ### Choosing the Right Format
 
@@ -556,12 +556,12 @@ $report->debtPer1kLoc     // ?float — debt density (minutes per 1K LOC)
 - **GitLab** -> `gitlab`
 - **VS Code** -> `sarif`
 - **JetBrains IDE** -> `sarif`
-- **Custom dashboards / metrics analysis** -> `metrics-json`
-- **Visual exploration / stakeholder reports** -> `html`
+- **Custom dashboards / metrics analysis** -> `metrics`
+- **Visual exploration / stakeholder reports** -> `health`
 
 ## HtmlFormatter
 
-**Name:** `html`
+**Name:** `health`
 
 Self-contained interactive HTML report with D3.js treemap visualization. All CSS, JS, and data are embedded in a single file — works offline, easy to share.
 
@@ -580,10 +580,10 @@ Self-contained interactive HTML report with D3.js treemap visualization. All CSS
 
 ```bash
 # Generate HTML report (recommended: save to file)
-bin/aimd check src/ --format=html --output=report.html
+bin/aimd check src/ --format=health --output=report.html
 
 # Also works with stdout (but warns on TTY)
-bin/aimd check src/ --format=html > report.html
+bin/aimd check src/ --format=health > report.html
 ```
 
 ### Architecture

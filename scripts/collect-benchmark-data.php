@@ -78,7 +78,7 @@ foreach ($projects as $project) {
     $start = microtime(true);
 
     $cmd = sprintf(
-        'php -d memory_limit=2G %s check %s --format=metrics-json --workers=0 2>/dev/null',
+        'php -d memory_limit=2G %s check %s --format=metrics --workers=0 2>/dev/null',
         escapeshellarg($aimdBin),
         escapeshellarg($path),
     );

@@ -267,7 +267,7 @@ bin/aimd check src/ --format=json --workers=0
 bin/aimd check src/ --namespace=App\\Domain --format=json --workers=0
 
 # Шаг 3: Сырые метрики для индивидуального анализа
-bin/aimd check src/ --format=metrics-json --workers=0
+bin/aimd check src/ --format=metrics --workers=0
 ```
 
 ### Наиболее полезные поля JSON

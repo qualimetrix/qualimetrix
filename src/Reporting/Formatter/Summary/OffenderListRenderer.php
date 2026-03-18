@@ -111,7 +111,7 @@ final class OffenderListRenderer
 
         $remaining = \count($offenders) - $topN;
         if ($remaining > 0) {
-            $lines[] = $color->dim(\sprintf('  +%d more (use --format=html or --format-opt=top=%d)', $remaining, \count($offenders)));
+            $lines[] = $color->dim(\sprintf('  +%d more (use --format=health or --format-opt=top=%d)', $remaining, \count($offenders)));
         }
     }
 

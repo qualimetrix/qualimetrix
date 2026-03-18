@@ -49,7 +49,7 @@ final class HintRenderer
             }
         }
 
-        $hints[] = '--format=html -o report.html for full report';
+        $hints[] = '--format=health -o report.html for full report';
 
         $lines[] = $color->dim('Hints: ' . implode(' | ', $hints));
     }

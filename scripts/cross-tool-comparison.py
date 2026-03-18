@@ -91,7 +91,7 @@ def run_aimd(project_path: Path) -> dict:
     cmd = [
         "php", "-d", "memory_limit=2G",
         str(PROJECT_ROOT / "bin/aimd"), "check", str(project_path),
-        "--format=metrics-json", "--workers=1",
+        "--format=metrics", "--workers=1",
         "--disable-rule=duplication.code-duplication",
         "--disable-rule=architecture.circular-dependency",
     ]

@@ -28,7 +28,7 @@ final class MetricsJsonFormatterTest extends TestCase
 
     public function testGetName(): void
     {
-        self::assertSame('metrics-json', $this->formatter->getName());
+        self::assertSame('metrics', $this->formatter->getName());
     }
 
     public function testGetDefaultGroupBy(): void

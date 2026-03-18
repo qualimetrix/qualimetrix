@@ -665,7 +665,7 @@ final class SummaryFormatterTest extends TestCase
 
         $output = $this->formatter->format($report, $this->plainContext);
 
-        self::assertStringContainsString('--format=html', $output);
+        self::assertStringContainsString('--format=health', $output);
     }
 
     public function testPartialAnalysisHintForFullRun(): void

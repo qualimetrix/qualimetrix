@@ -51,7 +51,7 @@ final class HtmlFormatter implements FormatterInterface
 
     public function getName(): string
     {
-        return 'html';
+        return 'health';
     }
 
     public function getDefaultGroupBy(): GroupBy

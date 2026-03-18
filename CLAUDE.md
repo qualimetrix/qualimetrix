@@ -87,7 +87,7 @@ Each domain has its own `README.md` with detailed structure, classes, and contra
 - **Serialization**: Automatic selection of the best serializer (igbinary/PHP serialize)
 - **Git Integration**: Analysis of changed files only, staged files
 - **Baseline Support**: Ignoring known issues, @aimd-ignore tags
-- **Multiple Formats**: Text, JSON, Metrics JSON, Checkstyle, SARIF, GitLab Code Quality
+- **Multiple Formats**: Text, JSON, Metrics, Checkstyle, SARIF, GitLab Code Quality, Health
 - **Caching**: AST caching for faster repeated runs
 - **Progress Reporting**: Progress bar, PSR-3 logging
 - **Technical Debt**: Remediation time estimation, debt summary in reports

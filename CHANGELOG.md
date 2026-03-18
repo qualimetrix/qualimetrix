@@ -41,7 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Empty root namespaces (no direct classes) filtered from worst namespace list
 - `--format-opt=top=N` now works with `summary` format (was hardcoded to 3, only worked with JSON)
 - Namespace drill-down hints now suggest `--class=` for the worst class (completing the progressive disclosure chain)
-- `+N more` in worst offenders now suggests `--format=html` or `--format-opt=top=N`
+- `+N more` in worst offenders now suggests `--format=health` or `--format-opt=top=N`
 - Per-dimension label footnote explains that dimensions have independent thresholds
 - Typing health decomposition shows parameter/return/property type percentages
 - `health.typing` violations now include specific recommendation text
@@ -55,7 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `code-smell.long-parameter-list` rule — detects methods with too many parameters (warning: 4, error: 6)
 - `code-smell.unreachable-code` rule — detects dead code after return/throw/exit statements
 - `design.type-coverage` rule — measures type declaration coverage for parameters, return types, and properties per class
-- `--format=metrics-json` output format — exports raw metric values for all symbols (methods, classes, namespaces, files)
+- `--format=metrics` output format — exports raw metric values for all symbols (methods, classes, namespaces, files)
 - CCN violations show divergence hint when cognitive complexity is low — indicates mechanical branching (switch/match) with lower refactoring priority
 - CBO violations include top-5 efferent dependencies in recommendation to guide decoupling
 - Rule-specific options hidden from `--help` output (55 lines instead of ~105) — use `bin/aimd rules` for rule details
@@ -69,6 +69,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Command injection detection now catches superglobals in interpolated strings (`exec("cmd {$_GET['x']}")`)
 
 ### Breaking
+- `--format=html` renamed to `--format=health` — reflects report content (health dashboard), not output format
+- `--format=metrics-json` renamed to `--format=metrics` — shorter, format suffix was redundant
 - JSON field `humanMessage` renamed to `recommendation` in violation objects. Update any scripts parsing `humanMessage`
 - Health score values changed due to formula retuning — baselines and stored thresholds may need regeneration
 - `health.maintainability` thresholds changed from 65/50 to 50/25 due to stretched formula — existing baselines may need regeneration
@@ -79,7 +81,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Composite code-smell rules: God Class (`code-smell.god-class`, Lanza & Marinescu 4-criteria detection), Data Class (`code-smell.data-class`, high WOC + low WMC), Constructor Over-injection (`code-smell.constructor-overinjection`, configurable thresholds 8/12)
 - Class-level LOC metric (`classLoc`) for accurate God Class size detection
 - `--disable-rule=duplication` now skips the memory-intensive duplication detection phase entirely (previously only suppressed violations). Same for `--disable-rule=architecture.circular-dependency`. Resolves out-of-memory issues on large codebases (500+ files)
-- `--format=html` interactive HTML report — self-contained file with D3.js treemap visualization, health score coloring, drill-down navigation, search, metric selector, dark mode support. Metric hints and health decomposition data are now embedded from PHP (single source of truth) with descriptive labels
+- `--format=health` interactive HTML report — self-contained file with D3.js treemap visualization, health score coloring, drill-down navigation, search, metric selector, dark mode support. Metric hints and health decomposition data are now embedded from PHP (single source of truth) with descriptive labels
 - `--output` / `-o` generic option to write any format to a file with atomic writes (works with all formats, not just HTML)
 - `computed_metrics` config section with 6 default `health.*` scores (complexity, cohesion, coupling, typing, maintainability, overall), user-definable `computed.*` metrics via Symfony Expression Language formulas, per-level formulas, threshold-based violations. Formulas calibrated against 9 open-source projects (391 namespaces): harmonic decay for complexity, balanced TCC/LCOM weights for cohesion, distance+CBO model for coupling
 - `typeCoverage.pct` derived metric — overall type coverage percentage at class level

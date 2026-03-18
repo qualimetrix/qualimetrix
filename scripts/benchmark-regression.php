@@ -64,7 +64,7 @@ foreach ($projects as $id => $config) {
 
     // Build command with optional disable-rules
     $cmd = sprintf(
-        'php -d memory_limit=2G %s check %s --format=metrics-json --workers=0',
+        'php -d memory_limit=2G %s check %s --format=metrics --workers=0',
         escapeshellarg($aimdBin),
         escapeshellarg($path),
     );

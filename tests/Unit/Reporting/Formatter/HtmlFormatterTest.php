@@ -29,7 +29,7 @@ final class HtmlFormatterTest extends TestCase
 
     public function testGetNameReturnsHtml(): void
     {
-        self::assertSame('html', $this->formatter->getName());
+        self::assertSame('health', $this->formatter->getName());
     }
 
     public function testGetDefaultGroupByReturnsNone(): void

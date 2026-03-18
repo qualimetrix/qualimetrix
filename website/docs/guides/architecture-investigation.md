@@ -267,7 +267,7 @@ bin/aimd check src/ --format=json --workers=0
 bin/aimd check src/ --namespace=App\\Domain --format=json --workers=0
 
 # Step 3: Raw metrics for custom analysis
-bin/aimd check src/ --format=metrics-json --workers=0
+bin/aimd check src/ --format=metrics --workers=0
 ```
 
 ### Most Useful JSON Fields

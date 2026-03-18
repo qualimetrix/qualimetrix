@@ -217,9 +217,9 @@ bin/aimd check src/ --format=json --no-progress > report.json
 
 ---
 
-## metrics-json
+## metrics
 
-Raw metric values for every symbol (file, class, method, namespace). Unlike `json` which outputs violations, `metrics-json` exports the underlying metric data that rules evaluate.
+Raw metric values for every symbol (file, class, method, namespace). Unlike `json` which outputs violations, `metrics` exports the underlying metric data that rules evaluate.
 
 **When to use:** Custom dashboards, trend analysis, data science pipelines, or building your own quality gates on raw metrics.
 
@@ -282,11 +282,11 @@ Raw metric values for every symbol (file, class, method, namespace). Unlike `jso
 **Usage:**
 
 ```bash
-bin/aimd check src/ --format=metrics-json --no-progress > metrics.json
+bin/aimd check src/ --format=metrics --no-progress > metrics.json
 ```
 
 !!! note
-    The `metrics-json` format exports **all collected metrics**, not just those that triggered violations. This makes it useful for tracking metric trends over time, even for code that passes all rules.
+    The `metrics` format exports **all collected metrics**, not just those that triggered violations. This makes it useful for tracking metric trends over time, even for code that passes all rules.
 
 ---
 
@@ -467,7 +467,7 @@ Annotations appear directly on the changed lines in your pull request — no SAR
 
 ---
 
-## html
+## health
 
 Interactive treemap report with D3.js visualization. Generates a self-contained single HTML file with namespace/class hierarchy.
 
@@ -484,20 +484,20 @@ Interactive treemap report with D3.js visualization. Generates a self-contained 
 **Usage:**
 
 ```bash
-bin/aimd check src/ --format=html -o report.html
+bin/aimd check src/ --format=health -o report.html
 ```
 
 **Example workflow:**
 
 ```bash
 # Generate and open the report
-bin/aimd check src/ --format=html -o report.html
+bin/aimd check src/ --format=health -o report.html
 open report.html  # macOS
 xdg-open report.html  # Linux
 ```
 
 !!! note
-    The `-o` (output) flag is recommended with `html` format. Without it, HTML content is written to stdout.
+    The `-o` (output) flag is recommended with `health` format. Without it, HTML content is written to stdout.
 
 ---
 
@@ -509,12 +509,12 @@ xdg-open report.html  # Linux
 | `text`         | Good        | Parseable | `--group-by`                 | Any (exit code)            |
 | `text-verbose` | Good        | No        | `--group-by` (default: file) | Any (exit code)            |
 | `json`         | No          | Yes       | Built-in (by file)           | Custom scripts             |
-| `metrics-json` | No          | Yes       | Built-in (by symbol)         | Custom scripts, dashboards |
+| `metrics`      | No          | Yes       | Built-in (by symbol)         | Custom scripts, dashboards |
 | `checkstyle`   | No          | Yes       | Built-in (by file)           | Jenkins, SonarQube         |
 | `sarif`        | No          | Yes       | Built-in                     | GitHub, VS Code, JetBrains |
 | `gitlab`       | No          | Yes       | Flat list                    | GitLab MR widget           |
 | `github`       | No          | No        | Flat list                    | GitHub Actions annotations |
-| `html`         | Interactive | No        | Treemap hierarchy            | Reports, reviews           |
+| `health`       | Interactive | No        | Treemap hierarchy            | Reports, reviews           |
 
 ### Exit codes
 

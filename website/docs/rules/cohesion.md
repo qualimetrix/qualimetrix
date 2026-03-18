@@ -40,7 +40,7 @@ Think of it like a dinner party: if every guest knows every other guest, the gro
 
 ### Thresholds
 
-TCC and LCC are currently reported as **metrics only** (visible in `--format=metrics-json` output). They do not produce violations on their own. Use them alongside [LCOM](design.md#lcom----lack-of-cohesion-of-methods) for a fuller picture of class cohesion.
+TCC and LCC are currently reported as **metrics only** (visible in `--format=metrics` output). They do not produce violations on their own. Use them alongside [LCOM](design.md#lcom----lack-of-cohesion-of-methods) for a fuller picture of class cohesion.
 
 Recommended interpretation:
 
@@ -159,7 +159,7 @@ AIMD implements a **simplified variant** of the Bieman & Kang (1995) TCC/LCC spe
 TCC and LCC are collected as metrics and do not have configurable thresholds. They appear in the metrics JSON output:
 
 ```bash
-bin/aimd check src/ --format=metrics-json
+bin/aimd check src/ --format=metrics
 ```
 
 To use TCC/LCC for quality gates, you can process the metrics JSON output programmatically (e.g., in a CI pipeline script).

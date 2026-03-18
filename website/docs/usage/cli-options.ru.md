@@ -77,7 +77,7 @@ bin/aimd check src/ --format=json
 bin/aimd check src/ --format=sarif
 ```
 
-Доступные форматы: `summary`, `text`, `text-verbose`, `json`, `metrics-json`, `checkstyle`, `sarif`, `gitlab`, `github`, `html`.
+Доступные форматы: `summary`, `text`, `text-verbose`, `json`, `metrics`, `checkstyle`, `sarif`, `gitlab`, `github`, `health`.
 
 Подробности о каждом формате смотрите в разделе [Форматы вывода](output-formats.md).
 

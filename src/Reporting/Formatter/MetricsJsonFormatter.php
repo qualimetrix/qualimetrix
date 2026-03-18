@@ -86,7 +86,7 @@ final class MetricsJsonFormatter implements FormatterInterface
 
     public function getName(): string
     {
-        return 'metrics-json';
+        return 'metrics';
     }
 
     public function getDefaultGroupBy(): GroupBy

@@ -236,8 +236,8 @@ final class ContainerFactoryTest extends TestCase
             'sarif',
             'gitlab',
             'github',
-            'metrics-json',
-            'html',
+            'metrics',
+            'health',
         ];
 
         foreach ($expectedFormatters as $name) {
