@@ -1,9 +1,9 @@
 {
-    "version": 4,
-    "generated": "2026-03-18T15:45:10+00:00",
-    "count": 966,
-    "violationCount": 966,
-    "symbolCount": 668,
+    "version": 5,
+    "generated": "2026-03-18T16:36:29+00:00",
+    "count": 967,
+    "violationCount": 967,
+    "symbolCount": 654,
     "violations": {
         "class:AiMessDetector\\Analysis\\Aggregator\\AggregationHelper": [
             {
@@ -1997,6 +1997,48 @@
                 "hash": "94c57dbd29c8268f"
             }
         ],
+        "file:src/Analysis/Collection/Dependency/Export/DotExporterOptions.php": [
+            {
+                "rule": "code-smell.boolean-argument",
+                "hash": "e6acee50dc42416e"
+            }
+        ],
+        "file:src/Analysis/Collection/FileProcessingResult.php": [
+            {
+                "rule": "code-smell.boolean-argument",
+                "hash": "e6acee50dc42416e"
+            }
+        ],
+        "file:src/Analysis/Collection/Strategy/ExecutionStrategyInterface.php": [
+            {
+                "rule": "code-smell.boolean-argument",
+                "hash": "e6acee50dc42416e"
+            }
+        ],
+        "file:src/Analysis/Duplication/DuplicationDetector.php": [
+            {
+                "rule": "code-smell.error-suppression",
+                "hash": "08df84ab3bd07d8f"
+            }
+        ],
+        "file:src/Analysis/Duplication/TokenNormalizer.php": [
+            {
+                "rule": "code-smell.error-suppression",
+                "hash": "08df84ab3bd07d8f"
+            }
+        ],
+        "file:src/Analysis/Namespace_/TokenizerNamespaceDetector.php": [
+            {
+                "rule": "code-smell.error-suppression",
+                "hash": "08df84ab3bd07d8f"
+            }
+        ],
+        "file:src/Baseline/BaselineWriter.php": [
+            {
+                "rule": "code-smell.error-suppression",
+                "hash": "08df84ab3bd07d8f"
+            }
+        ],
         "file:src/Baseline/Suppression/SuppressionExtractor.php": [
             {
                 "rule": "duplication.code-duplication",
@@ -2007,6 +2049,12 @@
             {
                 "rule": "duplication.code-duplication",
                 "hash": "94c57dbd29c8268f"
+            }
+        ],
+        "file:src/Configuration/Loader/YamlConfigLoader.php": [
+            {
+                "rule": "code-smell.boolean-argument",
+                "hash": "e6acee50dc42416e"
             }
         ],
         "file:src/Configuration/Pipeline/Stage/ConfigFileStage.php": [
@@ -2027,16 +2075,90 @@
                 "hash": "94c57dbd29c8268f"
             }
         ],
+        "file:src/Core/ComputedMetric/ComputedMetricDefinition.php": [
+            {
+                "rule": "code-smell.boolean-argument",
+                "hash": "e6acee50dc42416e"
+            }
+        ],
+        "file:src/Core/Metric/MetricName.php": [
+            {
+                "rule": "security.hardcoded-credentials",
+                "hash": "72fc252e015e3284"
+            }
+        ],
+        "file:src/Infrastructure/Ast/CachedFileParser.php": [
+            {
+                "rule": "code-smell.empty-catch",
+                "hash": "fe32c68e6d441eb2"
+            }
+        ],
+        "file:src/Infrastructure/Ast/PhpFileParser.php": [
+            {
+                "rule": "code-smell.error-suppression",
+                "hash": "08df84ab3bd07d8f"
+            }
+        ],
+        "file:src/Infrastructure/Cache/FileCache.php": [
+            {
+                "rule": "code-smell.error-suppression",
+                "hash": "08df84ab3bd07d8f"
+            }
+        ],
         "file:src/Infrastructure/Console/Command/HookInstallCommand.php": [
             {
                 "rule": "duplication.code-duplication",
                 "hash": "94c57dbd29c8268f"
             }
         ],
+        "file:src/Infrastructure/Console/FormatterContextFactory.php": [
+            {
+                "rule": "code-smell.boolean-argument",
+                "hash": "e6acee50dc42416e"
+            }
+        ],
+        "file:src/Infrastructure/Console/GitScopeFilterConfig.php": [
+            {
+                "rule": "code-smell.boolean-argument",
+                "hash": "e6acee50dc42416e"
+            }
+        ],
         "file:src/Infrastructure/Console/ProfilePresenter.php": [
             {
                 "rule": "code-smell.error-suppression",
                 "hash": "08df84ab3bd07d8f"
+            },
+            {
+                "rule": "duplication.code-duplication",
+                "hash": "94c57dbd29c8268f"
+            }
+        ],
+        "file:src/Infrastructure/Console/ResultPresenter.php": [
+            {
+                "rule": "code-smell.boolean-argument",
+                "hash": "e6acee50dc42416e"
+            },
+            {
+                "rule": "code-smell.error-suppression",
+                "hash": "08df84ab3bd07d8f"
+            }
+        ],
+        "file:src/Infrastructure/Console/ViolationFilterOptions.php": [
+            {
+                "rule": "code-smell.boolean-argument",
+                "hash": "e6acee50dc42416e"
+            }
+        ],
+        "file:src/Infrastructure/Git/GitRepositoryLocator.php": [
+            {
+                "rule": "code-smell.error-suppression",
+                "hash": "08df84ab3bd07d8f"
+            }
+        ],
+        "file:src/Infrastructure/Git/GitScopeFilter.php": [
+            {
+                "rule": "code-smell.boolean-argument",
+                "hash": "e6acee50dc42416e"
             }
         ],
         "file:src/Infrastructure/Logging/ConsoleLogger.php": [
@@ -2045,10 +2167,44 @@
                 "hash": "94c57dbd29c8268f"
             }
         ],
+        "file:src/Infrastructure/Parallel/Strategy/AmphpParallelStrategy.php": [
+            {
+                "rule": "code-smell.boolean-argument",
+                "hash": "e6acee50dc42416e"
+            }
+        ],
+        "file:src/Infrastructure/Parallel/Strategy/SequentialStrategy.php": [
+            {
+                "rule": "code-smell.boolean-argument",
+                "hash": "e6acee50dc42416e"
+            }
+        ],
+        "file:src/Infrastructure/Serializer/IgbinarySerializer.php": [
+            {
+                "rule": "code-smell.error-suppression",
+                "hash": "08df84ab3bd07d8f"
+            }
+        ],
+        "file:src/Infrastructure/Serializer/PhpSerializer.php": [
+            {
+                "rule": "code-smell.error-suppression",
+                "hash": "08df84ab3bd07d8f"
+            }
+        ],
+        "file:src/Infrastructure/Storage/ChangeDetector.php": [
+            {
+                "rule": "code-smell.error-suppression",
+                "hash": "08df84ab3bd07d8f"
+            }
+        ],
         "file:src/Infrastructure/Storage/SqliteStorage.php": [
             {
                 "rule": "code-smell.error-suppression",
                 "hash": "08df84ab3bd07d8f"
+            },
+            {
+                "rule": "duplication.code-duplication",
+                "hash": "94c57dbd29c8268f"
             }
         ],
         "file:src/Metrics/CodeSmell/ParameterCountCollector.php": [
@@ -2105,6 +2261,12 @@
                 "hash": "94c57dbd29c8268f"
             }
         ],
+        "file:src/Metrics/Size/LocCollector.php": [
+            {
+                "rule": "code-smell.error-suppression",
+                "hash": "08df84ab3bd07d8f"
+            }
+        ],
         "file:src/Metrics/Structure/DitGlobalCollector.php": [
             {
                 "rule": "duplication.code-duplication",
@@ -2135,6 +2297,12 @@
                 "hash": "94c57dbd29c8268f"
             }
         ],
+        "file:src/Metrics/Structure/MethodCountMetrics.php": [
+            {
+                "rule": "code-smell.boolean-argument",
+                "hash": "e6acee50dc42416e"
+            }
+        ],
         "file:src/Metrics/Structure/MethodCountVisitor.php": [
             {
                 "rule": "duplication.code-duplication",
@@ -2151,346 +2319,6 @@
             {
                 "rule": "duplication.code-duplication",
                 "hash": "94c57dbd29c8268f"
-            }
-        ],
-        "file:src/Reporting/Health/MetricHintProvider.php": [
-            {
-                "rule": "code-smell.boolean-argument",
-                "hash": "e6acee50dc42416e"
-            }
-        ],
-        "file:src/Reporting/Health/NamespaceDrillDown.php": [
-            {
-                "rule": "code-smell.boolean-argument",
-                "hash": "e6acee50dc42416e"
-            }
-        ],
-        "file:src/Rules/CodeSmell/BooleanArgumentRule.php": [
-            {
-                "rule": "duplication.code-duplication",
-                "hash": "94c57dbd29c8268f"
-            }
-        ],
-        "file:src/Rules/CodeSmell/CodeSmellOptions.php": [
-            {
-                "rule": "code-smell.boolean-argument",
-                "hash": "e6acee50dc42416e"
-            }
-        ],
-        "file:src/Rules/CodeSmell/ConstructorOverinjectionOptions.php": [
-            {
-                "rule": "code-smell.boolean-argument",
-                "hash": "e6acee50dc42416e"
-            }
-        ],
-        "file:src/Rules/CodeSmell/ConstructorOverinjectionRule.php": [
-            {
-                "rule": "duplication.code-duplication",
-                "hash": "94c57dbd29c8268f"
-            }
-        ],
-        "file:src/Rules/CodeSmell/CountInLoopRule.php": [
-            {
-                "rule": "duplication.code-duplication",
-                "hash": "94c57dbd29c8268f"
-            }
-        ],
-        "file:src/Rules/CodeSmell/EmptyCatchRule.php": [
-            {
-                "rule": "duplication.code-duplication",
-                "hash": "94c57dbd29c8268f"
-            }
-        ],
-        "file:src/Rules/CodeSmell/GodClassRule.php": [
-            {
-                "rule": "duplication.code-duplication",
-                "hash": "94c57dbd29c8268f"
-            }
-        ],
-        "file:src/Rules/CodeSmell/IdenticalSubExpressionOptions.php": [
-            {
-                "rule": "code-smell.boolean-argument",
-                "hash": "e6acee50dc42416e"
-            }
-        ],
-        "file:src/Rules/Complexity/ClassCognitiveComplexityOptions.php": [
-            {
-                "rule": "code-smell.boolean-argument",
-                "hash": "e6acee50dc42416e"
-            }
-        ],
-        "file:src/Rules/Complexity/ClassComplexityOptions.php": [
-            {
-                "rule": "code-smell.boolean-argument",
-                "hash": "e6acee50dc42416e"
-            }
-        ],
-        "file:src/Rules/Complexity/CognitiveComplexityOptions.php": [
-            {
-                "rule": "duplication.code-duplication",
-                "hash": "94c57dbd29c8268f"
-            }
-        ],
-        "file:src/Rules/Complexity/CognitiveComplexityRule.php": [
-            {
-                "rule": "duplication.code-duplication",
-                "hash": "94c57dbd29c8268f"
-            }
-        ],
-        "file:src/Rules/Complexity/MethodCognitiveComplexityOptions.php": [
-            {
-                "rule": "code-smell.boolean-argument",
-                "hash": "e6acee50dc42416e"
-            }
-        ],
-        "file:src/Rules/Complexity/MethodComplexityOptions.php": [
-            {
-                "rule": "code-smell.boolean-argument",
-                "hash": "e6acee50dc42416e"
-            }
-        ],
-        "file:src/Rules/Coupling/CboOptions.php": [
-            {
-                "rule": "duplication.code-duplication",
-                "hash": "94c57dbd29c8268f"
-            }
-        ],
-        "file:src/Rules/Coupling/CboRule.php": [
-            {
-                "rule": "duplication.code-duplication",
-                "hash": "94c57dbd29c8268f"
-            }
-        ],
-        "file:src/Rules/Coupling/ClassCboOptions.php": [
-            {
-                "rule": "code-smell.boolean-argument",
-                "hash": "e6acee50dc42416e"
-            }
-        ],
-        "file:src/Rules/Coupling/ClassInstabilityOptions.php": [
-            {
-                "rule": "code-smell.boolean-argument",
-                "hash": "e6acee50dc42416e"
-            }
-        ],
-        "file:src/Rules/Coupling/ClassRankOptions.php": [
-            {
-                "rule": "code-smell.boolean-argument",
-                "hash": "e6acee50dc42416e"
-            }
-        ],
-        "file:src/Rules/Coupling/ClassRankRule.php": [
-            {
-                "rule": "duplication.code-duplication",
-                "hash": "94c57dbd29c8268f"
-            }
-        ],
-        "file:src/Rules/Coupling/InstabilityRule.php": [
-            {
-                "rule": "duplication.code-duplication",
-                "hash": "94c57dbd29c8268f"
-            }
-        ],
-        "file:src/Rules/Design/TypeCoverageRule.php": [
-            {
-                "rule": "duplication.code-duplication",
-                "hash": "94c57dbd29c8268f"
-            }
-        ],
-        "file:src/Rules/Maintainability/MaintainabilityRule.php": [
-            {
-                "rule": "duplication.code-duplication",
-                "hash": "94c57dbd29c8268f"
-            }
-        ],
-        "file:src/Rules/Security/CommandInjectionRule.php": [
-            {
-                "rule": "duplication.code-duplication",
-                "hash": "94c57dbd29c8268f"
-            }
-        ],
-        "file:src/Rules/Size/MethodCountRule.php": [
-            {
-                "rule": "duplication.code-duplication",
-                "hash": "94c57dbd29c8268f"
-            }
-        ],
-        "file:src/Rules/Size/PropertyCountOptions.php": [
-            {
-                "rule": "code-smell.boolean-argument",
-                "hash": "e6acee50dc42416e"
-            }
-        ],
-        "file:src/Rules/Size/PropertyCountRule.php": [
-            {
-                "rule": "duplication.code-duplication",
-                "hash": "94c57dbd29c8268f"
-            }
-        ],
-        "file:src/Rules/Structure/InheritanceRule.php": [
-            {
-                "rule": "duplication.code-duplication",
-                "hash": "94c57dbd29c8268f"
-            }
-        ],
-        "file:src/Analysis/Collection/Dependency/Export/DotExporterOptions.php": [
-            {
-                "rule": "code-smell.boolean-argument",
-                "hash": "e6acee50dc42416e"
-            }
-        ],
-        "file:src/Analysis/Collection/FileProcessingResult.php": [
-            {
-                "rule": "code-smell.boolean-argument",
-                "hash": "e6acee50dc42416e"
-            }
-        ],
-        "file:src/Analysis/Collection/Strategy/ExecutionStrategyInterface.php": [
-            {
-                "rule": "code-smell.boolean-argument",
-                "hash": "e6acee50dc42416e"
-            }
-        ],
-        "file:src/Analysis/Duplication/DuplicationDetector.php": [
-            {
-                "rule": "code-smell.error-suppression",
-                "hash": "08df84ab3bd07d8f"
-            }
-        ],
-        "file:src/Analysis/Duplication/TokenNormalizer.php": [
-            {
-                "rule": "code-smell.error-suppression",
-                "hash": "08df84ab3bd07d8f"
-            }
-        ],
-        "file:src/Analysis/Namespace_/TokenizerNamespaceDetector.php": [
-            {
-                "rule": "code-smell.error-suppression",
-                "hash": "08df84ab3bd07d8f"
-            }
-        ],
-        "file:src/Baseline/BaselineWriter.php": [
-            {
-                "rule": "code-smell.error-suppression",
-                "hash": "08df84ab3bd07d8f"
-            }
-        ],
-        "file:src/Configuration/Loader/YamlConfigLoader.php": [
-            {
-                "rule": "code-smell.boolean-argument",
-                "hash": "e6acee50dc42416e"
-            }
-        ],
-        "file:src/Core/ComputedMetric/ComputedMetricDefinition.php": [
-            {
-                "rule": "code-smell.boolean-argument",
-                "hash": "e6acee50dc42416e"
-            }
-        ],
-        "file:src/Core/Metric/MetricName.php": [
-            {
-                "rule": "security.hardcoded-credentials",
-                "hash": "72fc252e015e3284"
-            }
-        ],
-        "file:src/Infrastructure/Ast/CachedFileParser.php": [
-            {
-                "rule": "code-smell.empty-catch",
-                "hash": "fe32c68e6d441eb2"
-            }
-        ],
-        "file:src/Infrastructure/Ast/PhpFileParser.php": [
-            {
-                "rule": "code-smell.error-suppression",
-                "hash": "08df84ab3bd07d8f"
-            }
-        ],
-        "file:src/Infrastructure/Cache/FileCache.php": [
-            {
-                "rule": "code-smell.error-suppression",
-                "hash": "08df84ab3bd07d8f"
-            }
-        ],
-        "file:src/Infrastructure/Console/FormatterContextFactory.php": [
-            {
-                "rule": "code-smell.boolean-argument",
-                "hash": "e6acee50dc42416e"
-            }
-        ],
-        "file:src/Infrastructure/Console/GitScopeFilterConfig.php": [
-            {
-                "rule": "code-smell.boolean-argument",
-                "hash": "e6acee50dc42416e"
-            }
-        ],
-        "file:src/Infrastructure/Console/ResultPresenter.php": [
-            {
-                "rule": "code-smell.boolean-argument",
-                "hash": "e6acee50dc42416e"
-            },
-            {
-                "rule": "code-smell.error-suppression",
-                "hash": "08df84ab3bd07d8f"
-            }
-        ],
-        "file:src/Infrastructure/Console/ViolationFilterOptions.php": [
-            {
-                "rule": "code-smell.boolean-argument",
-                "hash": "e6acee50dc42416e"
-            }
-        ],
-        "file:src/Infrastructure/Git/GitRepositoryLocator.php": [
-            {
-                "rule": "code-smell.error-suppression",
-                "hash": "08df84ab3bd07d8f"
-            }
-        ],
-        "file:src/Infrastructure/Git/GitScopeFilter.php": [
-            {
-                "rule": "code-smell.boolean-argument",
-                "hash": "e6acee50dc42416e"
-            }
-        ],
-        "file:src/Infrastructure/Parallel/Strategy/AmphpParallelStrategy.php": [
-            {
-                "rule": "code-smell.boolean-argument",
-                "hash": "e6acee50dc42416e"
-            }
-        ],
-        "file:src/Infrastructure/Parallel/Strategy/SequentialStrategy.php": [
-            {
-                "rule": "code-smell.boolean-argument",
-                "hash": "e6acee50dc42416e"
-            }
-        ],
-        "file:src/Infrastructure/Serializer/IgbinarySerializer.php": [
-            {
-                "rule": "code-smell.error-suppression",
-                "hash": "08df84ab3bd07d8f"
-            }
-        ],
-        "file:src/Infrastructure/Serializer/PhpSerializer.php": [
-            {
-                "rule": "code-smell.error-suppression",
-                "hash": "08df84ab3bd07d8f"
-            }
-        ],
-        "file:src/Infrastructure/Storage/ChangeDetector.php": [
-            {
-                "rule": "code-smell.error-suppression",
-                "hash": "08df84ab3bd07d8f"
-            }
-        ],
-        "file:src/Metrics/Size/LocCollector.php": [
-            {
-                "rule": "code-smell.error-suppression",
-                "hash": "08df84ab3bd07d8f"
-            }
-        ],
-        "file:src/Metrics/Structure/MethodCountMetrics.php": [
-            {
-                "rule": "code-smell.boolean-argument",
-                "hash": "e6acee50dc42416e"
             }
         ],
         "file:src/Reporting/Formatter/Html/HtmlTreeBuilder.php": [
@@ -2547,6 +2375,26 @@
                 "hash": "e6acee50dc42416e"
             }
         ],
+        "file:src/Reporting/Health/MetricHintProvider.php": [
+            {
+                "rule": "code-smell.boolean-argument",
+                "hash": "e6acee50dc42416e"
+            },
+            {
+                "rule": "duplication.code-duplication",
+                "hash": "94c57dbd29c8268f"
+            }
+        ],
+        "file:src/Reporting/Health/NamespaceDrillDown.php": [
+            {
+                "rule": "code-smell.boolean-argument",
+                "hash": "e6acee50dc42416e"
+            },
+            {
+                "rule": "duplication.code-duplication",
+                "hash": "94c57dbd29c8268f"
+            }
+        ],
         "file:src/Reporting/Health/SummaryEnricher.php": [
             {
                 "rule": "code-smell.boolean-argument",
@@ -2559,16 +2407,76 @@
                 "hash": "e6acee50dc42416e"
             }
         ],
+        "file:src/Rules/CodeSmell/BooleanArgumentRule.php": [
+            {
+                "rule": "duplication.code-duplication",
+                "hash": "94c57dbd29c8268f"
+            }
+        ],
+        "file:src/Rules/CodeSmell/CodeSmellOptions.php": [
+            {
+                "rule": "code-smell.boolean-argument",
+                "hash": "e6acee50dc42416e"
+            },
+            {
+                "rule": "duplication.code-duplication",
+                "hash": "94c57dbd29c8268f"
+            }
+        ],
+        "file:src/Rules/CodeSmell/ConstructorOverinjectionOptions.php": [
+            {
+                "rule": "code-smell.boolean-argument",
+                "hash": "e6acee50dc42416e"
+            },
+            {
+                "rule": "duplication.code-duplication",
+                "hash": "94c57dbd29c8268f"
+            }
+        ],
+        "file:src/Rules/CodeSmell/ConstructorOverinjectionRule.php": [
+            {
+                "rule": "duplication.code-duplication",
+                "hash": "94c57dbd29c8268f"
+            }
+        ],
+        "file:src/Rules/CodeSmell/CountInLoopRule.php": [
+            {
+                "rule": "duplication.code-duplication",
+                "hash": "94c57dbd29c8268f"
+            }
+        ],
         "file:src/Rules/CodeSmell/DataClassOptions.php": [
             {
                 "rule": "code-smell.boolean-argument",
                 "hash": "e6acee50dc42416e"
             }
         ],
+        "file:src/Rules/CodeSmell/EmptyCatchRule.php": [
+            {
+                "rule": "duplication.code-duplication",
+                "hash": "94c57dbd29c8268f"
+            }
+        ],
         "file:src/Rules/CodeSmell/GodClassOptions.php": [
             {
                 "rule": "code-smell.boolean-argument",
                 "hash": "e6acee50dc42416e"
+            }
+        ],
+        "file:src/Rules/CodeSmell/GodClassRule.php": [
+            {
+                "rule": "duplication.code-duplication",
+                "hash": "94c57dbd29c8268f"
+            }
+        ],
+        "file:src/Rules/CodeSmell/IdenticalSubExpressionOptions.php": [
+            {
+                "rule": "code-smell.boolean-argument",
+                "hash": "e6acee50dc42416e"
+            },
+            {
+                "rule": "duplication.code-duplication",
+                "hash": "94c57dbd29c8268f"
             }
         ],
         "file:src/Rules/CodeSmell/LongParameterListOptions.php": [
@@ -2589,10 +2497,62 @@
                 "hash": "e6acee50dc42416e"
             }
         ],
+        "file:src/Rules/Complexity/ClassCognitiveComplexityOptions.php": [
+            {
+                "rule": "code-smell.boolean-argument",
+                "hash": "e6acee50dc42416e"
+            },
+            {
+                "rule": "duplication.code-duplication",
+                "hash": "94c57dbd29c8268f"
+            }
+        ],
+        "file:src/Rules/Complexity/ClassComplexityOptions.php": [
+            {
+                "rule": "code-smell.boolean-argument",
+                "hash": "e6acee50dc42416e"
+            },
+            {
+                "rule": "duplication.code-duplication",
+                "hash": "94c57dbd29c8268f"
+            }
+        ],
         "file:src/Rules/Complexity/ClassNpathComplexityOptions.php": [
             {
                 "rule": "code-smell.boolean-argument",
                 "hash": "e6acee50dc42416e"
+            }
+        ],
+        "file:src/Rules/Complexity/CognitiveComplexityOptions.php": [
+            {
+                "rule": "duplication.code-duplication",
+                "hash": "94c57dbd29c8268f"
+            }
+        ],
+        "file:src/Rules/Complexity/CognitiveComplexityRule.php": [
+            {
+                "rule": "duplication.code-duplication",
+                "hash": "94c57dbd29c8268f"
+            }
+        ],
+        "file:src/Rules/Complexity/MethodCognitiveComplexityOptions.php": [
+            {
+                "rule": "code-smell.boolean-argument",
+                "hash": "e6acee50dc42416e"
+            },
+            {
+                "rule": "duplication.code-duplication",
+                "hash": "94c57dbd29c8268f"
+            }
+        ],
+        "file:src/Rules/Complexity/MethodComplexityOptions.php": [
+            {
+                "rule": "code-smell.boolean-argument",
+                "hash": "e6acee50dc42416e"
+            },
+            {
+                "rule": "duplication.code-duplication",
+                "hash": "94c57dbd29c8268f"
             }
         ],
         "file:src/Rules/Complexity/MethodNpathComplexityOptions.php": [
@@ -2607,10 +2567,64 @@
                 "hash": "e6acee50dc42416e"
             }
         ],
+        "file:src/Rules/Coupling/CboOptions.php": [
+            {
+                "rule": "duplication.code-duplication",
+                "hash": "94c57dbd29c8268f"
+            }
+        ],
+        "file:src/Rules/Coupling/CboRule.php": [
+            {
+                "rule": "duplication.code-duplication",
+                "hash": "94c57dbd29c8268f"
+            }
+        ],
+        "file:src/Rules/Coupling/ClassCboOptions.php": [
+            {
+                "rule": "code-smell.boolean-argument",
+                "hash": "e6acee50dc42416e"
+            },
+            {
+                "rule": "duplication.code-duplication",
+                "hash": "94c57dbd29c8268f"
+            }
+        ],
+        "file:src/Rules/Coupling/ClassInstabilityOptions.php": [
+            {
+                "rule": "code-smell.boolean-argument",
+                "hash": "e6acee50dc42416e"
+            },
+            {
+                "rule": "duplication.code-duplication",
+                "hash": "94c57dbd29c8268f"
+            }
+        ],
+        "file:src/Rules/Coupling/ClassRankOptions.php": [
+            {
+                "rule": "code-smell.boolean-argument",
+                "hash": "e6acee50dc42416e"
+            },
+            {
+                "rule": "duplication.code-duplication",
+                "hash": "94c57dbd29c8268f"
+            }
+        ],
+        "file:src/Rules/Coupling/ClassRankRule.php": [
+            {
+                "rule": "duplication.code-duplication",
+                "hash": "94c57dbd29c8268f"
+            }
+        ],
         "file:src/Rules/Coupling/DistanceOptions.php": [
             {
                 "rule": "code-smell.boolean-argument",
                 "hash": "e6acee50dc42416e"
+            }
+        ],
+        "file:src/Rules/Coupling/InstabilityRule.php": [
+            {
+                "rule": "duplication.code-duplication",
+                "hash": "94c57dbd29c8268f"
             }
         ],
         "file:src/Rules/Coupling/NamespaceCboOptions.php": [
@@ -2631,6 +2645,12 @@
                 "hash": "e6acee50dc42416e"
             }
         ],
+        "file:src/Rules/Design/TypeCoverageRule.php": [
+            {
+                "rule": "duplication.code-duplication",
+                "hash": "94c57dbd29c8268f"
+            }
+        ],
         "file:src/Rules/Duplication/CodeDuplicationOptions.php": [
             {
                 "rule": "code-smell.boolean-argument",
@@ -2641,6 +2661,18 @@
             {
                 "rule": "code-smell.boolean-argument",
                 "hash": "e6acee50dc42416e"
+            }
+        ],
+        "file:src/Rules/Maintainability/MaintainabilityRule.php": [
+            {
+                "rule": "duplication.code-duplication",
+                "hash": "94c57dbd29c8268f"
+            }
+        ],
+        "file:src/Rules/Security/CommandInjectionRule.php": [
+            {
+                "rule": "duplication.code-duplication",
+                "hash": "94c57dbd29c8268f"
             }
         ],
         "file:src/Rules/Security/HardcodedCredentialsOptions.php": [
@@ -2673,10 +2705,38 @@
                 "hash": "e6acee50dc42416e"
             }
         ],
+        "file:src/Rules/Size/MethodCountRule.php": [
+            {
+                "rule": "duplication.code-duplication",
+                "hash": "94c57dbd29c8268f"
+            }
+        ],
+        "file:src/Rules/Size/PropertyCountOptions.php": [
+            {
+                "rule": "code-smell.boolean-argument",
+                "hash": "e6acee50dc42416e"
+            },
+            {
+                "rule": "duplication.code-duplication",
+                "hash": "94c57dbd29c8268f"
+            }
+        ],
+        "file:src/Rules/Size/PropertyCountRule.php": [
+            {
+                "rule": "duplication.code-duplication",
+                "hash": "94c57dbd29c8268f"
+            }
+        ],
         "file:src/Rules/Structure/InheritanceOptions.php": [
             {
                 "rule": "code-smell.boolean-argument",
                 "hash": "e6acee50dc42416e"
+            }
+        ],
+        "file:src/Rules/Structure/InheritanceRule.php": [
+            {
+                "rule": "duplication.code-duplication",
+                "hash": "94c57dbd29c8268f"
             }
         ],
         "file:src/Rules/Structure/LcomOptions.php": [
@@ -4741,6 +4801,12 @@
             {
                 "rule": "coupling.distance",
                 "hash": "1680aa10054e3886"
+            }
+        ],
+        "ns:AiMessDetector\\Core\\Util": [
+            {
+                "rule": "coupling.distance",
+                "hash": "dcb22c23d1c19e8b"
             }
         ],
         "ns:AiMessDetector\\Core\\Violation": [

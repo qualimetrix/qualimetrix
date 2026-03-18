@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Baseline now correctly matches file-level violations (duplication, code smell, security rules) — previously ~150 violations passed through a freshly generated baseline
+- Duplicate code block locations are now sorted deterministically, making baseline entries stable across runs
+- File paths are normalized to relative (vs CWD) to prevent mismatches with absolute or `./`-prefixed paths
+
+### Breaking
+- Baseline version bumped to 5 — existing v4 baselines must be regenerated with `--generate-baseline`
+
 ## [0.5.0] - 2026-03-18
 
 ### Changed

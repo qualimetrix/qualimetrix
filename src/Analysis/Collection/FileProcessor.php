@@ -13,6 +13,7 @@ use AiMessDetector\Core\Metric\MethodMetricsProviderInterface;
 use AiMessDetector\Core\Metric\MetricBag;
 use AiMessDetector\Core\Suppression\Suppression;
 use AiMessDetector\Core\Symbol\SymbolPath;
+use AiMessDetector\Core\Util\PathNormalizer;
 use PhpParser\Node;
 use PhpParser\NodeFinder;
 use SplFileInfo;
@@ -58,7 +59,7 @@ final class FileProcessor implements FileProcessorInterface
             }
 
             return FileProcessingResult::success(
-                filePath: $file->getPathname(),
+                filePath: PathNormalizer::relativize($file->getPathname()),
                 fileBag: $output->metrics,
                 methodMetrics: $methodMetrics,
                 classMetrics: $classMetrics,
@@ -67,7 +68,7 @@ final class FileProcessor implements FileProcessorInterface
             );
         } catch (ParseException $e) {
             return FileProcessingResult::failure(
-                filePath: $file->getPathname(),
+                filePath: PathNormalizer::relativize($file->getPathname()),
                 error: $e->getMessage(),
             );
         }

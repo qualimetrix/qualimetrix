@@ -58,8 +58,7 @@ final readonly class ViolationFilterPipeline
 
         // 1. Baseline filter
         if ($options->baselinePath !== null && $options->baselinePath !== '') {
-            $projectRoot = $this->configurationProvider->getConfiguration()->projectRoot;
-            $baseline = $this->baselineLoader->load($options->baselinePath, $projectRoot);
+            $baseline = $this->baselineLoader->load($options->baselinePath);
 
             // Detect stale entries
             $existingCanonicals = array_values(array_unique(
