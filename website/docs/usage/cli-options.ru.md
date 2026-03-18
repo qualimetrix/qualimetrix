@@ -361,6 +361,7 @@ bin/aimd check src/ --no-progress
 
 ---
 
+<!-- llms:skip-begin -->
 ## Опции профилирования
 
 ### `--profile`
@@ -368,6 +369,8 @@ bin/aimd check src/ --no-progress
 Включить внутренний профайлер. Опционально можно указать файл для сохранения профиля:
 
 ```bash
+<!-- llms:skip-end -->
+
 # Показать сводку профилирования на экране
 bin/aimd check src/ --profile
 
@@ -431,6 +434,7 @@ bin/aimd check src/ --rule-opt=complexity.cyclomatic:method.warning=15
 bin/aimd check src/ --rule-opt=complexity.cyclomatic:method.error=30
 ```
 
+<!-- llms:skip-begin -->
 ### Быстрые флаги для правил
 
 Для многих правил доступны специальные CLI-флаги для быстрой настройки пороговых значений:
@@ -539,6 +543,8 @@ bin/aimd check src/ --rule-opt=complexity.cyclomatic:method.error=30
 | `--max-cycle-size=N` | architecture.circular-dependency | maxCycleSize |
 
 ---
+
+<!-- llms:skip-end -->
 
 ## Другие команды
 

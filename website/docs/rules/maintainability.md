@@ -8,6 +8,7 @@ The Maintainability Index combines several metrics into a single score that indi
 
 **Rule ID:** `maintainability.index`
 
+<!-- llms:skip-begin -->
 ### What it measures
 
 The Maintainability Index (MI) is a composite score that combines three factors:
@@ -31,6 +32,8 @@ These three factors are combined into a single number. The original formula prod
 !!! warning "Inverted thresholds"
     Unlike most rules where higher values are worse, here **lower values are worse**. The rule triggers when the score drops **below** the threshold.
 
+<!-- llms:skip-end -->
+
 ### Thresholds
 
 | Score    | Severity | Meaning                          |
@@ -39,6 +42,7 @@ These three factors are combined into a single number. The original formula prod
 | 20--39   | Warning  | Maintainability is deteriorating |
 | Below 20 | Error    | Code is very hard to maintain    |
 
+<!-- llms:skip-begin -->
 ### Example
 
 A method with low maintainability (MI around 15):
@@ -100,6 +104,9 @@ public function processOrder(array $items, array $discounts, ?Customer $customer
 
 This method has high complexity, many lines, and many operators/operands, all of which drive the MI score down.
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### How to fix
 
 1. **Extract helper methods.** Break the long method into smaller, named pieces:
@@ -128,6 +135,9 @@ This method has high complexity, many lines, and many operators/operands, all of
 !!! tip
     The `minLoc` option (default: 10) filters out trivially small methods. Simple getters and setters would produce extreme MI scores that are meaningless. Adjust this if you get too many false positives on small methods.
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### Implementation notes
 
 The Maintainability Index uses the **Oman-Hagemeister formula**:
@@ -153,6 +163,8 @@ The raw MI value (0-171 scale) is normalized to a **0-100 scale**: `max(0, MI x 
 
 !!! info "Halstead Volume: semantic approach"
     Halstead Volume (the V in the formula) uses a **semantic interpretation** of Halstead's methodology (1977). AIMD counts only elements that carry semantic meaning (arithmetic, logical, comparison operators; variables, literals, constants) and excludes syntactic delimiters (`;`, `()`, `{}`, `,`). The original Halstead paper counted all tokens, but was designed for languages (Fortran, PL/I) with minimal syntactic noise. Tools that count all tokens (e.g., pdepend) report significantly higher Volume/Difficulty/Effort values. This does not affect relative comparisons between methods within the same project.
+
+<!-- llms:skip-end -->
 
 ### Configuration
 

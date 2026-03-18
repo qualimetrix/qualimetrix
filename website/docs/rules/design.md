@@ -8,6 +8,7 @@ Design rules analyze the internal structure of your classes -- how focused they 
 
 **Rule ID:** `design.lcom`
 
+<!-- llms:skip-begin -->
 ### What it measures
 
 LCOM answers the question: "Is this class doing one thing, or several unrelated things?"
@@ -29,6 +30,8 @@ Think of it like a team: if all team members work on the same project, the team 
 | 4--5 | Low cohesion -- consider splitting              |
 | 6+   | Very low cohesion -- class does too many things |
 
+<!-- llms:skip-end -->
+
 ### Thresholds
 
 | Value | Severity | Meaning                                      |
@@ -37,6 +40,7 @@ Think of it like a team: if all team members work on the same project, the team 
 | 3--4  | Warning  | Class may have multiple responsibilities     |
 | 5+    | Error    | Class clearly does too much, should be split |
 
+<!-- llms:skip-begin -->
 ### Example
 
 This class has low cohesion -- two groups of methods working on unrelated data:
@@ -71,6 +75,9 @@ class UserManager
 
 This class has LCOM = 2. The profile methods and the financial methods use completely different properties.
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### How to fix
 
 - **Split the class** into smaller classes, one per responsibility. In the example: `UserProfile` for name/email, `UserWallet` for balance/transactions.
@@ -80,6 +87,9 @@ This class has LCOM = 2. The profile methods and the financial methods use compl
 !!! tip
     Readonly classes (DTOs, value objects) are excluded by default because their properties are typically set once in the constructor and read individually -- this naturally produces high LCOM values even though the class design is fine. You can control this with the `excludeReadonly` option.
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### Implementation notes
 
 AIMD uses the **LCOM4** algorithm (Hitz & Montazeri, 1995), which is graph-based:
@@ -95,6 +105,8 @@ This is the most widely accepted LCOM variant in modern literature. A value of 1
 
 !!! note "Comparing with other tools"
     phpmetrics uses the **Henderson-Sellers LCOM** formula, which produces values on a completely different scale (0.0 to 1.0+). These values are **not comparable** with AIMD's LCOM4. A class that scores LCOM=2 in AIMD might show LCOM=0.8 in phpmetrics — both indicate low cohesion, but the numbers mean different things.
+
+<!-- llms:skip-end -->
 
 ### Configuration
 
@@ -121,6 +133,7 @@ bin/aimd check src/ --rule-opt="design.lcom:exclude_readonly=false"
 
 **Rule ID:** `design.noc`
 
+<!-- llms:skip-begin -->
 ### What it measures
 
 NOC counts how many classes **directly extend** (inherit from) a given class.
@@ -135,6 +148,8 @@ For example, if 12 classes all write `extends BaseRepository`, then `BaseReposit
 | 1--5  | Normal inheritance                          |
 | 6--10 | Many subclasses -- review base class design |
 | 10+   | Heavy base class -- consider composition    |
+
+<!-- llms:skip-end -->
 
 ### Why it matters
 
@@ -154,6 +169,7 @@ High NOC can also indicate:
 | 10--14 | Warning  | Many children, changes will have wide impact         |
 | 15+    | Error    | Too many children, consider using interfaces instead |
 
+<!-- llms:skip-begin -->
 ### Example
 
 ```php
@@ -173,11 +189,16 @@ class CreateOrderHandler extends BaseHandler { /* ... */ }
 // ... 10 more handlers
 ```
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### How to fix
 
 - **Use an interface instead of a base class.** Each class implements the interface independently, so changing one does not affect the others.
 - **Use the Strategy pattern.** Instead of many subclasses, parameterize behavior through constructor dependencies.
 - **Move shared logic to a trait** if you still need common functionality without the tight coupling of inheritance.
+
+<!-- llms:skip-end -->
 
 ### Configuration
 
@@ -200,6 +221,7 @@ bin/aimd check src/ --rule-opt="design.noc:error=20"
 
 **Rule ID:** `design.inheritance`
 
+<!-- llms:skip-begin -->
 ### What it measures
 
 This rule counts how many levels of parent classes a class has. This metric is called the Depth of Inheritance Tree (DIT).
@@ -218,6 +240,8 @@ This rule counts how many levels of parent classes a class has. This metric is c
 | 4--6 | Deep hierarchy -- may be fragile         |
 | 6+   | Very deep -- fragile, hard to understand |
 
+<!-- llms:skip-end -->
+
 ### Why it matters
 
 When you read a class deep in an inheritance tree, you need to understand **all of its parent classes** to know what it does. Each level adds more implicit behavior: inherited methods, overridden methods, shared state, constructor side effects.
@@ -232,6 +256,7 @@ A class with DIT = 6 means you potentially need to read 7 classes to understand 
 | 4--5 | Warning  | Getting deep, review whether inheritance is needed |
 | 6+   | Error    | Too deep, likely a design problem                  |
 
+<!-- llms:skip-begin -->
 ### Example
 
 ```php
@@ -246,6 +271,9 @@ class UserEntity extends TenantEntity {}                  // DIT = 6  -> Error!
 
 To understand `UserEntity`, you need to read all 7 classes in the chain.
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### How to fix
 
 - **Prefer composition over inheritance.** Instead of extending a chain of base classes, inject behavior through dependencies:
@@ -276,6 +304,8 @@ To understand `UserEntity`, you need to read all 7 classes in the chain.
 !!! note
     Framework base classes (like Doctrine entities or Symfony controllers) count toward DIT. If your framework forces 2--3 levels of inheritance, adjust the thresholds accordingly.
 
+<!-- llms:skip-end -->
+
 ### Configuration
 
 ```yaml
@@ -297,6 +327,7 @@ bin/aimd check src/ --rule-opt="design.inheritance:error=7"
 
 **Rule ID:** `design.type-coverage`
 
+<!-- llms:skip-begin -->
 ### What it measures
 
 Checks the percentage of type declarations in a class. Produces up to three violations per class:
@@ -315,6 +346,8 @@ Unlike most rules, this one uses **inverted thresholds**: lower values are worse
 | 50--79%  | Moderate type coverage |
 | 80--100% | Good type coverage     |
 
+<!-- llms:skip-end -->
+
 ### Thresholds
 
 | Aspect    | Warning (below) | Error (below) |
@@ -323,6 +356,7 @@ Unlike most rules, this one uses **inverted thresholds**: lower values are worse
 | Return    | 80%             | 50%           |
 | Property  | 80%             | 50%           |
 
+<!-- llms:skip-begin -->
 ### Example
 
 ```php
@@ -348,6 +382,9 @@ class LegacyService
 // Property coverage: 0% (0 of 2 typed) -> Error
 ```
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### How to fix
 
 Add type declarations:
@@ -369,6 +406,8 @@ class LegacyService
 
 !!! tip
     Start by adding types to new code and gradually add types to existing code during refactoring. PHP 8.0+ supports union types (`string|int`) and PHP 8.1+ supports intersection types (`Countable&Iterator`) for complex cases.
+
+<!-- llms:skip-end -->
 
 ### Configuration
 

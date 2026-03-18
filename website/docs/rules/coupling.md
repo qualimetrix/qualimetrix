@@ -10,6 +10,7 @@ Think of coupling like wires connecting boxes. The more wires between two boxes,
 
 **Rule ID:** `coupling.cbo`
 
+<!-- llms:skip-begin -->
 ### What it measures
 
 CBO counts the total number of **other classes that this class is connected to**. A "connection" means either:
@@ -30,6 +31,8 @@ For example, if `UserService` uses `UserRepository`, `Logger`, `Validator`, and 
 | 15--20 | High coupling -- consider reducing dependencies |
 | 20+    | Very high coupling                              |
 
+<!-- llms:skip-end -->
+
 ### Thresholds
 
 **Class level** (enabled by default):
@@ -46,6 +49,7 @@ For example, if `UserService` uses `UserRepository`, `Logger`, `Validator`, and 
 | Warning | > 14      | Warning  |
 | Error   | > 20      | Error    |
 
+<!-- llms:skip-begin -->
 ### Example
 
 ```php
@@ -72,6 +76,9 @@ class ReportGenerator
 }
 ```
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### How to fix
 
 - **Split the class.** A class with 15+ dependencies is doing too much. Extract groups of related dependencies into focused services (e.g., `ReportDataProvider`, `ReportExporter`).
@@ -79,6 +86,9 @@ class ReportGenerator
 - **Apply dependency injection.** Avoid creating dependencies inside the class with `new`. Inject them through the constructor so they can be replaced.
 - **Consider the Facade pattern.** Wrap groups of related services behind a single interface.
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### Implementation notes
 
 AIMD implements **bidirectional coupling** consistent with Chidamber & Kemerer (1994): CBO = |Ca ∪ Ce|, counting the number of **unique** classes that appear in either incoming or outgoing dependencies. If class A both uses and is used by class B, B is counted once (union semantics), not twice.
@@ -86,6 +96,8 @@ AIMD implements **bidirectional coupling** consistent with Chidamber & Kemerer (
 - **Extended coupling types:** AIMD detects 14 types of coupling, going beyond C&K's original "methods or instance variables" definition. These include: class instantiation, static method calls, type hints (parameters, return types, properties), `catch` clauses, `instanceof` checks, class constants, attributes, `extends`/`implements`, and trait `use`.
 - **Union and intersection types:** Each type in a union (`A|B`) or intersection (`A&B`) type hint is counted as a separate coupling.
 - **Self-references excluded:** References to `self`, `static`, and `parent` within the same class are not counted as coupling.
+
+<!-- llms:skip-end -->
 
 ### Configuration
 
@@ -116,6 +128,7 @@ bin/aimd check src/ --rule-opt="coupling.cbo:namespace.enabled=false"
 
 **Rule ID:** `coupling.instability`
 
+<!-- llms:skip-begin -->
 ### What it measures
 
 Instability measures the **direction of dependencies** for a class or namespace. It answers the question: "Does this class mostly depend on others, or do others mostly depend on it?"
@@ -149,6 +162,8 @@ The result is a number between 0.0 and 1.0:
 | 0.7--1.0        | Unstable -- easy to change                  |
 | 1.0             | Maximally unstable (only depends on others) |
 
+<!-- llms:skip-end -->
+
 ### Thresholds
 
 **Class level** (enabled by default):
@@ -165,6 +180,7 @@ The result is a number between 0.0 and 1.0:
 | Warning | >= 0.8    | Warning  |
 | Error   | >= 0.95   | Error    |
 
+<!-- llms:skip-begin -->
 ### Example
 
 ```php
@@ -184,6 +200,9 @@ class DailyReportJob
 }
 ```
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### How to fix
 
 - **Reduce outgoing dependencies.** Fewer `use` statements and constructor parameters mean lower Ce.
@@ -192,6 +211,8 @@ class DailyReportJob
 
 !!! info "Deviation from original spec"
     Robert C. Martin (1994) originally defined Instability only at the **package** (namespace) level. AIMD extends it to the class level for finer-grained analysis. The namespace-level instability is the canonical metric per Martin's specification; the class-level metric is an AIMD extension.
+
+<!-- llms:skip-end -->
 
 ### Configuration
 
@@ -220,6 +241,7 @@ bin/aimd check src/ --rule-opt="coupling.instability:namespace.min_class_count=5
 
 **Rule ID:** `coupling.distance`
 
+<!-- llms:skip-begin -->
 ### What it measures
 
 This rule checks the **balance between abstractness and stability** of a namespace (group of classes). It is based on the idea that:
@@ -256,6 +278,8 @@ There are two bad zones:
 | 0.1--0.3 | Acceptable balance                         |
 | 0.3+     | Off balance -- zone of pain or uselessness |
 
+<!-- llms:skip-end -->
+
 ### Thresholds
 
 | Level   | Threshold | Severity |
@@ -265,6 +289,7 @@ There are two bad zones:
 
 Only namespaces with at least 3 classes are analyzed (configurable via `minClassCount`).
 
+<!-- llms:skip-begin -->
 ### Example
 
 Consider a namespace `App\Payment` with 10 classes:
@@ -275,11 +300,16 @@ Consider a namespace `App\Payment` with 10 classes:
 
 This namespace is in the **Zone of Pain**: it is stable (hard to change without breaking others) but has no abstractions (every change requires modifying concrete code).
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### How to fix
 
 - **For packages in the Zone of Pain:** Add interfaces. Extract contracts that other modules can depend on, while keeping implementations as details.
 - **For packages in the Zone of Uselessness:** Remove unused abstractions or make them concrete. Abstract classes that nobody extends are overhead.
 - **Aim for the main sequence:** Stable packages should be abstract; unstable packages should be concrete.
+
+<!-- llms:skip-end -->
 
 ### Configuration
 
@@ -311,6 +341,7 @@ By default, project namespaces are auto-detected from `composer.json` (`autoload
 
 **Rule ID:** `coupling.class-rank`
 
+<!-- llms:skip-begin -->
 ### What it measures
 
 ClassRank applies the **PageRank algorithm** to your project's dependency graph to identify the most "important" classes. The idea comes from how Google ranks web pages: if class A depends on class B, A "votes" for B. Classes that receive many votes -- or receive votes from classes that are themselves highly ranked -- get a higher ClassRank score.
@@ -328,6 +359,8 @@ The result is a value between 0.0 and 1.0, where all class ranks in the project 
 | 0.02--0.05 | Important hub -- changes have wide impact |
 | 0.05+      | Critical coupling point                   |
 
+<!-- llms:skip-end -->
+
 ### Thresholds
 
 | Level   | Threshold | Severity |
@@ -335,6 +368,7 @@ The result is a value between 0.0 and 1.0, where all class ranks in the project 
 | Warning | >= 0.02   | Warning  |
 | Error   | >= 0.05   | Error    |
 
+<!-- llms:skip-begin -->
 ### Example
 
 ```php
@@ -358,12 +392,18 @@ class DatabaseConnection
 // ClassRank = 0.06 -> ERROR
 ```
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### How to fix
 
 - **Extract an interface.** Create `DatabaseConnectionInterface` and depend on that. This applies the Dependency Inversion Principle: high-level modules depend on abstractions, not concrete classes.
 - **Split god-class responsibilities.** If the class does too many things, break it apart. For example, split `DatabaseConnection` into `QueryExecutor`, `TransactionManager`, etc.
 - **Reduce transitive importance.** If the dependents of this class are themselves hubs, refactoring them to depend on abstractions will lower the ClassRank of this class too.
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### Implementation notes
 
 AIMD uses the standard PageRank algorithm with the following parameters:
@@ -375,6 +415,8 @@ AIMD uses the standard PageRank algorithm with the following parameters:
 Ranks are normalized so they sum to 1.0 across all project classes. Vendor classes are excluded from the graph. Isolated classes (no incoming or outgoing dependencies) receive the base rank of `(1 - d) / N`, where `d` is the damping factor and `N` is the total number of classes.
 
 **Sqrt scaling for project size:** Because ranks sum to 1.0, individual ClassRank values naturally decrease as the number of classes grows (dilution effect). To keep thresholds meaningful across different project sizes, AIMD applies a `sqrt(classCount / 100)` scaling factor: thresholds remain unchanged for a 100-class project, loosen for larger projects, and tighten for smaller ones.
+
+<!-- llms:skip-end -->
 
 ### Configuration
 

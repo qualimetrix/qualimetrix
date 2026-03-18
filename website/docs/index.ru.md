@@ -45,3 +45,7 @@ vendor/bin/aimd check src/ --analyze=git:staged
 ## Начало работы
 
 Перейдите к руководству [Быстрый старт](getting-started/quick-start.ru.md), чтобы интегрировать AI Mess Detector в ваш проект за несколько минут.
+
+## Для AI-агентов
+
+Если вы AI-агент, используйте [llms.txt](llms.txt) для краткого обзора или [llms-full.txt](https://fractalizer.github.io/ai-mess-detector/llms-full.txt) для полной документации в одном файле.

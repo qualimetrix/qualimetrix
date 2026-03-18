@@ -85,6 +85,8 @@ bin/aimd check src/ --baseline=baseline.json
 - [Architecture](docs/ARCHITECTURE.md)
 - [GitHub Action](docs/GITHUB_ACTION.md)
 - [Changelog](CHANGELOG.md)
+- [llms.txt](https://fractalizer.github.io/ai-mess-detector/llms.txt) — concise reference for AI agents
+- [llms-full.txt](https://fractalizer.github.io/ai-mess-detector/llms-full.txt) — complete documentation in a single file
 
 ## Requirements
 

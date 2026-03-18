@@ -11,10 +11,14 @@ All code smell rules can be individually enabled or disabled.
 **Rule ID:** `code-smell.boolean-argument`
 **Severity:** Warning
 
+<!-- llms:skip-begin -->
 ### What it measures
 
 Detects methods that accept `bool` parameters. A boolean argument usually means the method does two different things depending on the flag, which violates the Single Responsibility Principle.
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### Example
 
 ```php
@@ -31,6 +35,9 @@ public function save(bool $sendNotification): void
 }
 ```
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### How to fix
 
 1. **Split into two methods** with descriptive names:
@@ -54,15 +61,21 @@ public function save(bool $sendNotification): void
 
 ---
 
+<!-- llms:skip-end -->
+
 ## count() in Loop
 
 **Rule ID:** `code-smell.count-in-loop`
 **Severity:** Warning
 
+<!-- llms:skip-begin -->
 ### What it measures
 
 Detects calls to `count()` (or `sizeof()`) inside loop conditions. When `count()` is in the loop condition, it gets recalculated on every iteration, which is wasteful.
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### Example
 
 ```php
@@ -72,6 +85,9 @@ for ($i = 0; $i < count($items); $i++) {
 }
 ```
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### How to fix
 
 Store the count in a variable before the loop:
@@ -91,15 +107,21 @@ foreach ($items as $item) {
 
 ---
 
+<!-- llms:skip-end -->
+
 ## Debug Code
 
 **Rule ID:** `code-smell.debug-code`
 **Severity:** Error
 
+<!-- llms:skip-begin -->
 ### What it measures
 
 Detects debugging functions left in production code: `var_dump()`, `print_r()`, `debug_print_backtrace()`, `debug_zval_dump()`, and similar.
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### Example
 
 ```php
@@ -112,6 +134,9 @@ public function processPayment(Order $order): void
 }
 ```
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### How to fix
 
 Remove all debug statements before committing. If you need to inspect data:
@@ -125,15 +150,21 @@ Remove all debug statements before committing. If you need to inspect data:
 
 ---
 
+<!-- llms:skip-end -->
+
 ## Empty Catch
 
 **Rule ID:** `code-smell.empty-catch`
 **Severity:** Error
 
+<!-- llms:skip-begin -->
 ### What it measures
 
 Detects `catch` blocks that are completely empty -- they catch an exception and do absolutely nothing with it. This silently swallows errors, making bugs extremely hard to diagnose.
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### Example
 
 ```php
@@ -145,6 +176,9 @@ try {
 }
 ```
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### How to fix
 
 1. **Log the exception:**
@@ -171,15 +205,21 @@ try {
 
 ---
 
+<!-- llms:skip-end -->
+
 ## Error Suppression
 
 **Rule ID:** `code-smell.error-suppression`
 **Severity:** Warning
 
+<!-- llms:skip-begin -->
 ### What it measures
 
 Detects use of the `@` error suppression operator. The `@` operator hides PHP errors and warnings, making it harder to find and fix problems.
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### Example
 
 ```php
@@ -190,6 +230,9 @@ $data = @file_get_contents('/path/to/file');
 $result = @json_decode($input);
 ```
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### How to fix
 
 Handle errors explicitly:
@@ -207,15 +250,21 @@ $result = json_decode($input, flags: JSON_THROW_ON_ERROR);
 
 ---
 
+<!-- llms:skip-end -->
+
 ## eval()
 
 **Rule ID:** `code-smell.eval`
 **Severity:** Error
 
+<!-- llms:skip-begin -->
 ### What it measures
 
 Detects use of `eval()`, which executes arbitrary PHP code from a string. This is a serious security risk: if user input reaches `eval()`, an attacker can run any code on your server.
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### Example
 
 ```php
@@ -227,6 +276,9 @@ $result = eval("return $formula;");
 eval('$config = ' . var_export($data, true) . ';');
 ```
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### How to fix
 
 - **Use closures or callable objects** instead of generating code as strings.
@@ -236,11 +288,14 @@ eval('$config = ' . var_export($data, true) . ';');
 
 ---
 
+<!-- llms:skip-end -->
+
 ## exit() / die()
 
 **Rule ID:** `code-smell.exit`
 **Severity:** Warning
 
+<!-- llms:skip-begin -->
 ### What it measures
 
 Detects use of `exit()` and `die()`. These functions terminate the entire PHP process immediately, which:
@@ -249,6 +304,9 @@ Detects use of `exit()` and `die()`. These functions terminate the entire PHP pr
 - Makes the code untestable (PHPUnit cannot catch `exit`)
 - Bypasses shutdown handlers and destructors
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### Example
 
 ```php
@@ -263,6 +321,9 @@ if ($error) {
 }
 ```
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### How to fix
 
 Throw exceptions instead:
@@ -279,15 +340,21 @@ if (!$user->isAdmin()) {
 
 ---
 
+<!-- llms:skip-end -->
+
 ## goto
 
 **Rule ID:** `code-smell.goto`
 **Severity:** Error
 
+<!-- llms:skip-begin -->
 ### What it measures
 
 Detects use of `goto` statements. `goto` makes control flow unpredictable -- the reader has to search for the target label, which can be anywhere in the function. This makes the code very hard to follow and debug.
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### Example
 
 ```php
@@ -306,6 +373,9 @@ function process(array $items): void
 }
 ```
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### How to fix
 
 Use standard control flow structures:
@@ -328,17 +398,23 @@ Use loops, functions, early returns, or exceptions -- they all express intent mo
 
 ---
 
+<!-- llms:skip-end -->
+
 ## Superglobals
 
 **Rule ID:** `code-smell.superglobals`
 **Severity:** Warning
 
+<!-- llms:skip-begin -->
 ### What it measures
 
 Detects direct access to PHP superglobal variables: `$_GET`, `$_POST`, `$_REQUEST`, `$_SERVER`, `$_SESSION`, `$_COOKIE`, `$_FILES`, `$_ENV`.
 
 Direct superglobal access creates hidden dependencies on the global state, making code hard to test and unpredictable.
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### Example
 
 ```php
@@ -355,6 +431,9 @@ class UserController
 }
 ```
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### How to fix
 
 Use dependency injection with request objects:
@@ -382,13 +461,18 @@ Common request abstractions:
 
 ---
 
+<!-- llms:skip-end -->
+
 ## Constructor Over-injection
 
 **Rule ID:** `code-smell.constructor-overinjection`
 
+<!-- llms:skip-begin -->
 ### What it measures
 
 Detects constructors with too many dependencies injected. A long constructor parameter list in DI-heavy codebases is a direct signal of Single Responsibility Principle violation -- the class has too many collaborators.
+
+<!-- llms:skip-end -->
 
 ### Thresholds
 
@@ -397,6 +481,7 @@ Detects constructors with too many dependencies injected. A long constructor par
 | 8     | Warning  | Too many dependencies, consider splitting |
 | 12+   | Error    | Class clearly violates SRP                |
 
+<!-- llms:skip-begin -->
 ### Example
 
 ```php
@@ -417,11 +502,16 @@ class OrderProcessor
 }
 ```
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### How to fix
 
 1. **Split the class** into smaller, focused services (e.g., `OrderValidator`, `OrderFulfiller`, `OrderNotifier`).
 2. **Use a Facade or Mediator** to group related dependencies behind a single interface.
 3. **Introduce a Command Bus** -- instead of injecting handlers directly, dispatch commands.
+
+<!-- llms:skip-end -->
 
 ### Configuration
 
@@ -444,11 +534,14 @@ bin/aimd check src/ --rule-opt="code-smell.constructor-overinjection:warning=6"
 **Rule ID:** `code-smell.data-class`
 **Severity:** Warning
 
+<!-- llms:skip-begin -->
 ### What it measures
 
 Detects classes with high public surface (WOC -- Weight of Class, % of public methods) but low complexity (WMC -- Weighted Methods per Class). Such classes mostly expose data through getters/setters without encapsulating meaningful behavior. Based on Lanza & Marinescu metrics.
 
 Intentional DTOs are excluded: readonly classes, promoted-properties-only classes, and classes marked as data classes via `isDataClass` are not flagged.
+
+<!-- llms:skip-end -->
 
 ### Thresholds
 
@@ -458,6 +551,7 @@ Intentional DTOs are excluded: readonly classes, promoted-properties-only classe
 | WMC             | ≤ threshold | 10      |
 | Minimum methods | ≥           | 3       |
 
+<!-- llms:skip-begin -->
 ### Example
 
 ```php
@@ -486,11 +580,16 @@ readonly class UserDTO
 }
 ```
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### How to fix
 
 1. **Encapsulate behavior** -- move operations that use this data into the class itself.
 2. **Convert to a DTO** -- if the class is intentionally just data, make it `readonly` to signal intent.
 3. **Merge with its consumer** -- if a class only holds data for another class, consider inlining it.
+
+<!-- llms:skip-end -->
 
 ### Configuration
 
@@ -512,6 +611,7 @@ rules:
 **Rule ID:** `code-smell.god-class`
 **Severity:** Warning (3+ criteria) / Error (all evaluable criteria)
 
+<!-- llms:skip-begin -->
 ### What it measures
 
 Detects God Classes -- overly complex, large classes with low cohesion. Uses Lanza & Marinescu's multi-criteria approach: a class is flagged when it matches at least `minCriteria` out of up to 4 evaluable criteria.
@@ -527,6 +627,9 @@ Criteria (4 total):
 
 Missing metrics reduce the evaluable count (e.g., if TCC is unavailable, 3 criteria are evaluated). If fewer criteria are evaluable than `minCriteria`, no violation is raised.
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### Example
 
 ```php
@@ -544,11 +647,16 @@ class ApplicationManager
 }
 ```
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### How to fix
 
 1. **Extract classes by responsibility** -- identify method clusters that work on the same data and extract them into separate classes.
 2. **Apply Single Responsibility Principle** -- each class should have one reason to change.
 3. **Use composition** -- replace inheritance hierarchies with composed objects.
+
+<!-- llms:skip-end -->
 
 ### Configuration
 
@@ -571,9 +679,12 @@ rules:
 
 **Rule ID:** `code-smell.long-parameter-list`
 
+<!-- llms:skip-begin -->
 ### What it measures
 
 Detects methods and functions with too many parameters. A long parameter list makes the method hard to call correctly, hard to test, and often indicates the method is doing too many things. Consider using a parameter object or splitting the method.
+
+<!-- llms:skip-end -->
 
 ### Thresholds
 
@@ -582,6 +693,7 @@ Detects methods and functions with too many parameters. A long parameter list ma
 | 4     | Warning  | Consider grouping parameters         |
 | 6+    | Error    | Too many parameters, refactor needed |
 
+<!-- llms:skip-begin -->
 ### Example
 
 ```php
@@ -599,6 +711,9 @@ public function createUser(
 }
 ```
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### How to fix
 
 1. **Use a parameter object (DTO):**
@@ -618,6 +733,8 @@ public function createUser(
     ```
 
 2. **Split the method** if parameters belong to different responsibilities.
+
+<!-- llms:skip-end -->
 
 ### Configuration
 
@@ -641,6 +758,7 @@ bin/aimd check src/ --rule-opt="code-smell.long-parameter-list:error=8"
 **Rule ID:** `code-smell.identical-subexpression`
 **Severity:** Warning
 
+<!-- llms:skip-begin -->
 ### What it measures
 
 Detects identical sub-expressions that indicate copy-paste errors or logic bugs. The rule catches four patterns:
@@ -654,6 +772,9 @@ Operators with legitimate identical-operand use cases are not flagged: `+`, `*`,
 
 Expressions with side effects (function calls, method calls, etc.) are excluded since consecutive calls may return different results.
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### Example
 
 ```php
@@ -689,6 +810,9 @@ class OrderService
 }
 ```
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### How to fix
 
 These are almost always bugs -- inspect each occurrence and fix the intended logic:
@@ -723,11 +847,14 @@ These are almost always bugs -- inspect each occurrence and fix the intended log
 
 ---
 
+<!-- llms:skip-end -->
+
 ## Unused Private Members
 
 **Rule ID:** `code-smell.unused-private`
 **Severity:** Warning
 
+<!-- llms:skip-begin -->
 ### What it measures
 
 Detects private methods, properties, and constants that are declared but never referenced within the class. Unused private members are dead code -- they add noise, increase cognitive load, and may indicate incomplete refactoring.
@@ -741,6 +868,9 @@ The rule is smart about edge cases:
 - **Access patterns:** recognizes `$this->method()`, `self::method()`, `static::method()`, property access, and constant access
 - **Trait resolution:** calls to methods defined in traits used by the same class (in the same file) are recognized, reducing false positives
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### Example
 
 ```php
@@ -762,6 +892,9 @@ class OrderService
 }
 ```
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### How to fix
 
 - **Remove** the unused member if it is truly dead code.
@@ -770,14 +903,20 @@ class OrderService
 
 ---
 
+<!-- llms:skip-end -->
+
 ## Unreachable Code
 
 **Rule ID:** `code-smell.unreachable-code`
 
+<!-- llms:skip-begin -->
 ### What it measures
 
 Detects code that can never be executed because it appears after a terminal statement (`return`, `throw`, `exit`/`die`, `continue`, `break`, `goto`). Dead code adds noise, confuses readers, and may indicate a logic error.
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### Example
 
 ```php
@@ -795,6 +934,9 @@ public function process(Order $order): string
 }
 ```
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### How to fix
 
 Remove the unreachable code. If the code was supposed to run, fix the control flow:
@@ -811,6 +953,8 @@ public function process(Order $order): string
     return 'pending';
 }
 ```
+
+<!-- llms:skip-end -->
 
 ### Configuration
 

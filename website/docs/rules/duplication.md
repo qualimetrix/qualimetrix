@@ -8,6 +8,7 @@ Code duplication is one of the most common sources of technical debt. When the s
 
 **Rule ID:** `duplication.code-duplication`
 
+<!-- llms:skip-begin -->
 ### What it measures
 
 Detects duplicated code blocks across files using token-stream hashing. The algorithm works in three steps:
@@ -17,6 +18,8 @@ Detects duplicated code blocks across files using token-stream hashing. The algo
 3. **Detect** -- duplicate sequences are found using a rolling hash (Rabin-Karp algorithm). Blocks shorter than the minimum thresholds are ignored.
 
 Think of it like comparing recipes: if two recipes have the exact same steps in the same order but use different ingredient names, they are duplicates.
+
+<!-- llms:skip-end -->
 
 ### Thresholds
 
@@ -32,6 +35,7 @@ Minimum block size (configurable):
 | `min_lines`  | 5       | Minimum number of lines for a block to be checked  |
 | `min_tokens` | 70      | Minimum number of tokens for a block to be flagged |
 
+<!-- llms:skip-begin -->
 ### Example
 
 These two methods have identical structure but different variable names -- the rule flags them as duplicates:
@@ -72,6 +76,9 @@ public function calculateInvoiceAmount(Invoice $invoice): float
 
 After normalization, both methods produce the same token sequence -- variables are replaced with `$_`, but method/class names like `getPrice`, `getQuantity`, `hasDiscount` are preserved.
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### How to fix
 
 1. **Extract Method** -- move the shared logic into a common method or service:
@@ -99,6 +106,9 @@ After normalization, both methods produce the same token sequence -- variables a
 
 3. **Template Method** -- when the overall structure is the same but subclasses differ in specific steps, use an abstract base class with template methods.
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### Implementation notes
 
 AIMD uses the **Rabin-Karp rolling hash** algorithm for efficient detection. The normalization step is key to finding "near-duplicates" that differ only in variable names, string values, or numeric constants. This approach is similar to tools like PMD CPD and Simian.
@@ -107,6 +117,8 @@ Because function/method/class names are preserved during normalization, the dete
 
 !!! tip "IDE integration"
     When using SARIF output (`--format=sarif`), duplicate copies are linked via `relatedLocations`. This means duplicate pairs appear as **clickable cross-references** in VS Code (SARIF Viewer extension) and JetBrains IDEs, making it easy to navigate between all copies of a duplicated block.
+
+<!-- llms:skip-end -->
 
 ### Configuration
 

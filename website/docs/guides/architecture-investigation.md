@@ -4,6 +4,7 @@ This guide walks you through practical workflows for analyzing PHP project archi
 
 ---
 
+<!-- llms:skip-begin -->
 ## The Drill-Down Workflow
 
 The most effective way to investigate a codebase is the **summary-to-detail drill-down**. Think of it like a map: start with the continent, then zoom into countries, then cities.
@@ -307,3 +308,5 @@ Use instability and abstractness from the metrics JSON to map your architecture:
 **Do not compare ClassRank values across projects** of different sizes. PageRank dilutes as the graph grows.
 
 **Do not rely solely on overall health.** Drill into the per-dimension scores. A project with "Acceptable" overall health might have "Critical" complexity hidden by "Strong" typing.
+
+<!-- llms:skip-end -->

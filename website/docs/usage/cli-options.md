@@ -361,6 +361,7 @@ bin/aimd check src/ --no-progress
 
 ---
 
+<!-- llms:skip-begin -->
 ## Profiling options
 
 ### `--profile`
@@ -368,6 +369,8 @@ bin/aimd check src/ --no-progress
 Enable the internal profiler. Optionally specify a file to save the profile:
 
 ```bash
+<!-- llms:skip-end -->
+
 # Show profiling summary on screen
 bin/aimd check src/ --profile
 
@@ -431,6 +434,7 @@ bin/aimd check src/ --rule-opt=complexity.cyclomatic:method.warning=15
 bin/aimd check src/ --rule-opt=complexity.cyclomatic:method.error=30
 ```
 
+<!-- llms:skip-begin -->
 ### Rule-specific shortcut flags
 
 Many rules have dedicated CLI flags for quick threshold adjustments:
@@ -539,6 +543,8 @@ Many rules have dedicated CLI flags for quick threshold adjustments:
 | `--max-cycle-size=N` | architecture.circular-dependency | maxCycleSize |
 
 ---
+
+<!-- llms:skip-end -->
 
 ## Other commands
 
