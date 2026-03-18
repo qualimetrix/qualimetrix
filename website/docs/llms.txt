@@ -19,10 +19,12 @@ It measures complexity, coupling, cohesion, maintainability, size, design, and d
 ## Key Commands
 
 ```
-vendor/bin/aimd check src/                              # basic analysis
-vendor/bin/aimd check src/ --detail                     # show violations
-vendor/bin/aimd check src/ --format=json                # JSON output
-vendor/bin/aimd check src/ --format=health -o report.html  # HTML report
+vendor/bin/aimd check src/                              # health summary (default)
+vendor/bin/aimd check src/ --detail                     # summary + violation list
+vendor/bin/aimd check src/ --format=text                # full violation report grouped by file
+vendor/bin/aimd check src/ --format=metrics             # raw metric values for all symbols
+vendor/bin/aimd check src/ --format=json                # structured JSON output
+vendor/bin/aimd check src/ --format=health -o report.html  # interactive HTML report
 vendor/bin/aimd check src/ --analyze=git:staged         # staged files only
 vendor/bin/aimd check src/ --disable-rule=complexity    # disable rule group
 vendor/bin/aimd check src/ --only-rule=coupling.cbo     # run specific rule
@@ -31,6 +33,20 @@ vendor/bin/aimd hook:install                            # pre-commit hook
 vendor/bin/aimd graph:export src/ -o graph.dot          # dependency graph
 vendor/bin/aimd rules                                   # list all rules
 ```
+
+## Output Formats
+
+| Format       | Use case                                                    |
+|--------------|-------------------------------------------------------------|
+| `summary`    | Default. Health overview, worst offenders, hint-driven       |
+| `text`       | Full violation report grouped by file, for human review      |
+| `metrics`    | Raw metric values (JSON) for all methods/classes/namespaces  |
+| `json`       | Structured output for CI/CD pipelines and tooling            |
+| `health`     | Interactive HTML report with treemap and drill-down          |
+| `sarif`      | GitHub Security, VS Code SARIF viewers                       |
+| `checkstyle` | Jenkins, SonarQube                                           |
+| `gitlab`     | GitLab Code Quality                                          |
+| `github`     | GitHub Actions inline PR annotations                         |
 
 ## Rule Groups
 
@@ -80,5 +96,5 @@ Use `@aimd-ignore-next-line` for single-line suppression.
 ## Documentation
 
 - [Full documentation (llms-full.txt)](llms-full.txt): Complete reference in a single file, optimized for LLMs
-- [Website](https://fractalizer.github.io/ai-mess-detector/): Human-readable documentation with examples
+- [Website](https://fractalizer.github.io/php_ai_mess_detector/): Human-readable documentation with examples
 - [GitHub](https://github.com/fractalizer/ai-mess-detector): Source code, issues, contributing

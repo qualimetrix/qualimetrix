@@ -30,11 +30,11 @@ HEADER = """\
 > optimized for consumption by LLMs and AI coding agents.
 >
 > For a concise overview, see llms.txt instead.
-> For human-readable documentation, visit https://fractalizer.github.io/ai-mess-detector/
+> For human-readable documentation, visit https://fractalizer.github.io/php_ai_mess_detector/
 
 """
 
-SITE_URL = "https://fractalizer.github.io/ai-mess-detector/"
+SITE_URL = "https://fractalizer.github.io/php_ai_mess_detector/"
 
 
 def on_post_build(config: dict[str, Any], **kwargs: Any) -> None:

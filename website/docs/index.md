@@ -48,4 +48,4 @@ Head to the [Quick Start](getting-started/quick-start.md) guide to integrate AI 
 
 ## For AI Agents
 
-If you are an AI coding agent, see [llms.txt](llms.txt) for a concise machine-readable overview, or [llms-full.txt](https://fractalizer.github.io/ai-mess-detector/llms-full.txt) for the complete reference in a single file.
+If you are an AI coding agent, see [llms.txt](llms.txt) for a concise machine-readable overview, or [llms-full.txt](https://fractalizer.github.io/php_ai_mess_detector/llms-full.txt) for the complete reference in a single file.

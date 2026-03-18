@@ -1,6 +1,6 @@
 site_name: AI Mess Detector
 site_description: Fast PHP static analysis tool for code quality metrics
-site_url: https://fractalizer.github.io/ai-mess-detector/
+site_url: https://fractalizer.github.io/php_ai_mess_detector/
 repo_url: https://github.com/fractalizer/ai-mess-detector
 repo_name: fractalizer/ai-mess-detector
 edit_uri: edit/main/website/docs/

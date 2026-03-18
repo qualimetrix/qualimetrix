@@ -48,4 +48,4 @@ vendor/bin/aimd check src/ --analyze=git:staged
 
 ## Для AI-агентов
 
-Если вы AI-агент, используйте [llms.txt](llms.txt) для краткого обзора или [llms-full.txt](https://fractalizer.github.io/ai-mess-detector/llms-full.txt) для полной документации в одном файле.
+Если вы AI-агент, используйте [llms.txt](llms.txt) для краткого обзора или [llms-full.txt](https://fractalizer.github.io/php_ai_mess_detector/llms-full.txt) для полной документации в одном файле.
