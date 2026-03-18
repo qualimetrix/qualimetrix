@@ -47,8 +47,7 @@ final class BaselineCleanupCommand extends Command
         }
 
         // Load baseline
-        $projectRoot = (string) getcwd();
-        $baseline = $this->baselineLoader->load($baselinePath, $projectRoot);
+        $baseline = $this->baselineLoader->load($baselinePath);
         $originalCount = $baseline->count();
 
         // Find stale entries (symbols whose files no longer exist)
@@ -83,7 +82,7 @@ final class BaselineCleanupCommand extends Command
         );
 
         // Write cleaned baseline
-        $this->baselineWriter->write($cleanedBaseline, $baselinePath, $projectRoot);
+        $this->baselineWriter->write($cleanedBaseline, $baselinePath);
 
         // Output statistics
         $output->writeln(\sprintf(

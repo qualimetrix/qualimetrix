@@ -14,21 +14,29 @@ use InvalidArgumentException;
  */
 final readonly class DuplicateBlock
 {
+    /** @var list<DuplicateLocation> */
+    public array $locations;
+
     /**
-     * @param list<DuplicateLocation> $locations At least 2 locations
+     * @param list<DuplicateLocation> $locations At least 2 locations (sorted deterministically)
      * @param int $lines Number of lines in the duplicated block
      * @param int $tokens Number of tokens in the duplicated block
      */
     public function __construct(
-        public array $locations,
+        array $locations,
         public int $lines,
         public int $tokens,
     ) {
-        if (\count($this->locations) < 2) {
+        if (\count($locations) < 2) {
             throw new InvalidArgumentException(
-                \sprintf('DuplicateBlock requires at least 2 locations, got %d', \count($this->locations)),
+                \sprintf('DuplicateBlock requires at least 2 locations, got %d', \count($locations)),
             );
         }
+
+        // Sort locations deterministically so primaryLocation() is stable
+        // regardless of file discovery order
+        usort($locations, static fn(DuplicateLocation $a, DuplicateLocation $b) => $a->file <=> $b->file ?: $a->startLine <=> $b->startLine);
+        $this->locations = $locations;
     }
 
     /**

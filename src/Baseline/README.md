@@ -40,8 +40,9 @@ JSON file -> BaselineLoader -> Baseline -> BaselineFilter -> filtered Violations
 - **Version 2**: Introduced canonical symbol path keys
 - **Version 3**: Rule naming scheme update (`group.rule-name` format)
 - **Version 4**: 16-char violation hashes (was 8-char in v3)
+- **Version 5**: Relative file paths in canonical keys (no path resolution needed)
 
-Only version 4 is supported. Older versions (2, 3) are rejected with an error message asking to regenerate.
+Only version 5 is supported. Older versions (2, 3, 4) are rejected with an error message asking to regenerate.
 
 ## ViolationHasher
 

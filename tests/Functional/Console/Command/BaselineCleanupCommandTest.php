@@ -235,7 +235,7 @@ final class BaselineCleanupCommandTest extends TestCase
         // Write a baseline with relative file: paths (portable format)
         $baselinePath = $projectDir . '/baseline.json';
         $json = json_encode([
-            'version' => 4,
+            'version' => 5,
             'generated' => '2025-12-08T10:00:00+00:00',
             'count' => 2,
             'violationCount' => 2,

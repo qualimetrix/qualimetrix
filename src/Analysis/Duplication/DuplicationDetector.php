@@ -7,6 +7,7 @@ namespace AiMessDetector\Analysis\Duplication;
 use AiMessDetector\Configuration\ConfigurationProviderInterface;
 use AiMessDetector\Core\Duplication\DuplicateBlock;
 use AiMessDetector\Core\Duplication\DuplicateLocation;
+use AiMessDetector\Core\Util\PathNormalizer;
 use SplFileInfo;
 
 /**
@@ -72,10 +73,7 @@ final class DuplicationDetector
         $hashIndex = [];
 
         foreach ($files as $file) {
-            $path = $file->getRealPath();
-            if ($path === false) {
-                continue;
-            }
+            $path = PathNormalizer::relativize($file->getPathname());
 
             $source = @file_get_contents($path);
             if ($source === false) {
