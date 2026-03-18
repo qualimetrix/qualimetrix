@@ -1,22 +1,12 @@
 # AI Mess Detector
 
-> Fast PHP static analysis tool for code quality metrics, complexity analysis, and architectural insights.
+> Fast PHP static analysis tool for code quality metrics. Requires PHP 8.4+.
+> Install: `composer require --dev fractalizer/ai-mess-detector`
+> Run: `vendor/bin/aimd check src/`
 
-## Overview
+AI Mess Detector (AIMD) analyzes PHP code and reports quality violations across complexity, coupling, cohesion, maintainability, size, design, architecture, code smells, and security.
 
-AI Mess Detector (AIMD) is a CLI tool that analyzes PHP code and reports quality violations.
-It measures complexity, coupling, cohesion, maintainability, size, design, and detects code smells and security issues.
-
-- Requires PHP 8.4+
-- Install: `composer require --dev fractalizer/ai-mess-detector`
-- Run: `vendor/bin/aimd check src/`
-- Output formats: summary (default), text, json, sarif, checkstyle, gitlab, github, health (HTML)
-- Git integration: `--analyze=git:staged`, `--report=git:main..HEAD`
-- Baseline: `--generate-baseline=baseline.json`, `--baseline=baseline.json`
-- Configuration: `aimd.yaml` (auto-discovered) or `--config=path`
-- Parallel processing: auto-detected, `--workers=N` to control
-
-## Key Commands
+Key commands:
 
 ```
 vendor/bin/aimd check src/                              # health summary (default)
@@ -26,75 +16,46 @@ vendor/bin/aimd check src/ --format=metrics             # raw metric values for 
 vendor/bin/aimd check src/ --format=json                # structured JSON output
 vendor/bin/aimd check src/ --format=health -o report.html  # interactive HTML report
 vendor/bin/aimd check src/ --analyze=git:staged         # staged files only
+vendor/bin/aimd check src/ --namespace='App\Service'    # drill down into namespace
 vendor/bin/aimd check src/ --disable-rule=complexity    # disable rule group
 vendor/bin/aimd check src/ --only-rule=coupling.cbo     # run specific rule
-vendor/bin/aimd check src/ --rule-opt="complexity.cyclomatic:method.warning=15"
-vendor/bin/aimd hook:install                            # pre-commit hook
+vendor/bin/aimd check src/ --baseline=baseline.json     # ignore known violations
+vendor/bin/aimd check src/ --generate-baseline=b.json   # generate baseline
+vendor/bin/aimd rules                                   # list all rules with options
 vendor/bin/aimd graph:export src/ -o graph.dot          # dependency graph
-vendor/bin/aimd rules                                   # list all rules
+vendor/bin/aimd hook:install                            # pre-commit hook
 ```
 
-## Output Formats
+Output formats: `summary` (default), `text`, `metrics`, `json`, `health` (HTML), `sarif`, `checkstyle`, `gitlab`, `github`.
 
-| Format       | Use case                                                    |
-|--------------|-------------------------------------------------------------|
-| `summary`    | Default. Health overview, worst offenders, hint-driven       |
-| `text`       | Full violation report grouped by file, for human review      |
-| `metrics`    | Raw metric values (JSON) for all methods/classes/namespaces  |
-| `json`       | Structured output for CI/CD pipelines and tooling            |
-| `health`     | Interactive HTML report with treemap and drill-down          |
-| `sarif`      | GitHub Security, VS Code SARIF viewers                       |
-| `checkstyle` | Jenkins, SonarQube                                           |
-| `gitlab`     | GitLab Code Quality                                          |
-| `github`     | GitHub Actions inline PR annotations                         |
+Rule groups: `complexity`, `coupling`, `size`, `design`, `maintainability`, `cohesion`, `architecture`, `duplication`, `code-smell`, `security`.
 
-## Rule Groups
+Configuration: `aimd.yaml` (auto-discovered) or `--config=path`. Suppression: `@aimd-ignore` / `@aimd-ignore-next-line` in docblocks or comments.
 
-- **complexity**: cyclomatic (CCN), cognitive, npath, wmc
-- **coupling**: cbo, instability, distance, class-rank
-- **cohesion**: tcc, lcc (metrics, not rules)
-- **size**: method-count, class-count, property-count
-- **design**: lcom, inheritance (DIT), noc, type-coverage
-- **maintainability**: index (Maintainability Index)
-- **architecture**: circular-dependency
-- **duplication**: code-duplication
-- **code-smell**: boolean-argument, count-in-loop, debug-code, empty-catch, error-suppression, eval, exit, goto, superglobals, long-parameter-list, unreachable-code, identical-subexpression, constructor-overinjection, data-class, god-class, unused-private
-- **security**: hardcoded-credentials, sql-injection, xss, command-injection, sensitive-parameter
+## Docs
 
-## Configuration Example (aimd.yaml)
+- [llms-full.txt](https://fractalizer.github.io/php_ai_mess_detector/llms-full.txt): Complete documentation in a single file — all rules, CLI options, configuration, output formats
+- [Quick Start](https://fractalizer.github.io/php_ai_mess_detector/getting-started/quick-start/): Installation, first analysis, pre-commit hook, GitHub Action, Docker
+- [Configuration](https://fractalizer.github.io/php_ai_mess_detector/getting-started/configuration/): YAML config format, rule options, exclude paths
+- [CLI Options](https://fractalizer.github.io/php_ai_mess_detector/usage/cli-options/): All command-line flags and options
+- [Rules Overview](https://fractalizer.github.io/php_ai_mess_detector/rules/): All rules with IDs, default thresholds, and descriptions
+- [Output Formats](https://fractalizer.github.io/php_ai_mess_detector/usage/output-formats/): Format details, examples, and formatter-specific options
+- [Git Integration](https://fractalizer.github.io/php_ai_mess_detector/usage/git-integration/): Staged files, diff analysis, report scoping
+- [Baseline](https://fractalizer.github.io/php_ai_mess_detector/usage/baseline/): Ignoring known violations, baseline management
+- [Default Thresholds](https://fractalizer.github.io/php_ai_mess_detector/reference/default-thresholds/): Complete threshold reference table
+- [GitHub Actions](https://fractalizer.github.io/php_ai_mess_detector/ci-cd/github-actions/): CI/CD integration guide
 
-```yaml
-rules:
-  complexity.cyclomatic:
-    method:
-      warning: 10
-      error: 20
-  size.method-count:
-    warning: 20
-    error: 30
-  coupling.cbo:
-    enabled: true
-exclude_paths:
-  - src/Entity/*
-  - src/DTO/*
-fail_on: error
-exclude_health:
-  - typing
-```
+## Optional
 
-## Suppression
-
-Add `@aimd-ignore` in a docblock or inline comment to suppress specific violations:
-
-```php
-/** @aimd-ignore complexity.cyclomatic — legacy algorithm */
-function complexLegacy() { ... }
-```
-
-Use `@aimd-ignore-next-line` for single-line suppression.
-
-## Documentation
-
-- [Full documentation (llms-full.txt)](llms-full.txt): Complete reference in a single file, optimized for LLMs
-- [Website](https://fractalizer.github.io/php_ai_mess_detector/): Human-readable documentation with examples
-- [GitHub](https://github.com/fractalizer/ai-mess-detector): Source code, issues, contributing
+- [Complexity Rules](https://fractalizer.github.io/php_ai_mess_detector/rules/complexity/): CCN, Cognitive, NPath, WMC — thresholds and configuration
+- [Coupling Rules](https://fractalizer.github.io/php_ai_mess_detector/rules/coupling/): CBO, Instability, Distance, ClassRank
+- [Size Rules](https://fractalizer.github.io/php_ai_mess_detector/rules/size/): Method count, class count, property count
+- [Design Rules](https://fractalizer.github.io/php_ai_mess_detector/rules/design/): LCOM, DIT, NOC, type coverage
+- [Maintainability Rules](https://fractalizer.github.io/php_ai_mess_detector/rules/maintainability/): Maintainability Index
+- [Cohesion](https://fractalizer.github.io/php_ai_mess_detector/rules/cohesion/): TCC/LCC metrics
+- [Architecture Rules](https://fractalizer.github.io/php_ai_mess_detector/rules/architecture/): Circular dependency detection
+- [Code Smell Rules](https://fractalizer.github.io/php_ai_mess_detector/rules/code-smell/): Boolean args, eval, goto, god class, data class, unused private, etc.
+- [Security Rules](https://fractalizer.github.io/php_ai_mess_detector/rules/security/): SQL injection, XSS, command injection, hardcoded credentials
+- [Duplication Rules](https://fractalizer.github.io/php_ai_mess_detector/rules/duplication/): Code duplication detection
+- [Other CI Systems](https://fractalizer.github.io/php_ai_mess_detector/ci-cd/other-ci/): GitLab CI, Jenkins, Bitbucket Pipelines
+- [Usage Scenarios](https://fractalizer.github.io/php_ai_mess_detector/usage/usage-scenarios/): Common workflows and use cases
