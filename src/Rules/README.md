@@ -727,6 +727,30 @@ rules:
 
 ---
 
+## Universal Per-Rule Options
+
+These options are available for **any** rule and are handled at framework level by `RuleExecutor`:
+
+| Option               | Type           | Description                                             |
+| -------------------- | -------------- | ------------------------------------------------------- |
+| `exclude_namespaces` | `list<string>` | Namespaces to exclude from violations (prefix matching) |
+
+```yaml
+rules:
+  complexity.cyclomatic:
+    exclude_namespaces: [App\Tests, App\Legacy]
+  coupling.cbo:
+    exclude_namespaces: [App\Tests]
+```
+
+Violations with `symbolPath->namespace` matching any prefix are filtered out by `RuleExecutor`.
+File-level violations (namespace = null) and global namespace violations (namespace = '') are never filtered.
+
+The option is extracted by `RuleOptionsFactory` and stored in `RuleNamespaceExclusionProvider`,
+so it does not leak into `Options::fromArray()`.
+
+---
+
 ## Threshold Semantics
 
 Violations are triggered when a metric value meets or exceeds the threshold (`>=`). For inverted metrics like Maintainability Index and Type Coverage, violations are triggered when the value is below the threshold (`<`).

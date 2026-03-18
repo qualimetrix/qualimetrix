@@ -155,6 +155,24 @@ bin/aimd check src/ --disable-rule=complexity.npath
 bin/aimd check src/ --disable-rule=code-smell
 ```
 
+## Excluding Namespaces
+
+Any rule supports `exclude_namespaces` to suppress violations from specific namespaces (prefix matching). The files are still analyzed and metrics are collected, but violations are not reported:
+
+```yaml
+rules:
+  complexity.cyclomatic:
+    exclude_namespaces:
+      - App\Tests
+      - App\Legacy
+```
+
+```bash
+bin/aimd check src/ --rule-opt="complexity.cyclomatic:exclude_namespaces=App\Tests"
+```
+
+This is useful for test code, generated code, or legacy modules that you want to keep in metrics but exclude from violation reports for a specific rule.
+
 ## Customizing Thresholds
 
 Override any threshold via the command line:

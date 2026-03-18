@@ -17,17 +17,11 @@ use AiMessDetector\Core\Violation\Severity;
  */
 final readonly class NamespaceCboOptions implements LevelOptionsInterface
 {
-    use ExcludesNamespaces;
-
-    /**
-     * @param list<string> $excludeNamespaces Namespaces to exclude from analysis (prefix matching)
-     */
     public function __construct(
         public bool $enabled = true,
         public int $warning = 14,
         public int $error = 20,
         public int $minClassCount = 3,
-        public array $excludeNamespaces = [],
     ) {}
 
     /**
@@ -44,7 +38,6 @@ final readonly class NamespaceCboOptions implements LevelOptionsInterface
             warning: (int) ($config['warning'] ?? 14),
             error: (int) ($config['error'] ?? 20),
             minClassCount: (int) ($config['min_class_count'] ?? $config['minClassCount'] ?? 3),
-            excludeNamespaces: self::parseExcludeNamespaces($config),
         );
     }
 

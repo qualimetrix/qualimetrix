@@ -13,16 +13,6 @@ use PHPUnit\Framework\TestCase;
 final class NamespaceCboOptionsTest extends TestCase
 {
     #[Test]
-    public function fromArrayStringExcludeNamespacesCoercedToArray(): void
-    {
-        $options = NamespaceCboOptions::fromArray([
-            'exclude_namespaces' => 'App\\Legacy',
-        ]);
-
-        self::assertSame(['App\\Legacy'], $options->excludeNamespaces);
-    }
-
-    #[Test]
     public function fromArrayEmptyReturnsEnabled(): void
     {
         $options = NamespaceCboOptions::fromArray([]);

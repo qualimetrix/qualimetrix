@@ -16,17 +16,11 @@ use AiMessDetector\Core\Violation\Severity;
  */
 final readonly class NamespaceInstabilityOptions implements LevelOptionsInterface
 {
-    use ExcludesNamespaces;
-
-    /**
-     * @param list<string> $excludeNamespaces Namespaces to exclude from analysis (prefix matching)
-     */
     public function __construct(
         public bool $enabled = true,
         public float $maxWarning = 0.8,
         public float $maxError = 0.95,
         public int $minClassCount = 3,
-        public array $excludeNamespaces = [],
     ) {}
 
     /**
@@ -43,7 +37,6 @@ final readonly class NamespaceInstabilityOptions implements LevelOptionsInterfac
             maxWarning: (float) ($config['max_warning'] ?? $config['maxWarning'] ?? 0.8),
             maxError: (float) ($config['max_error'] ?? $config['maxError'] ?? 0.95),
             minClassCount: (int) ($config['min_class_count'] ?? $config['minClassCount'] ?? 3),
-            excludeNamespaces: self::parseExcludeNamespaces($config),
         );
     }
 

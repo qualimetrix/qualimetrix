@@ -21,14 +21,6 @@ final class DistanceOptionsTest extends TestCase
     }
 
     #[Test]
-    public function fromArrayStringExcludeNamespacesCoercedToArray(): void
-    {
-        $options = DistanceOptions::fromArray(['exclude_namespaces' => 'App\\Legacy']);
-
-        self::assertSame(['App\\Legacy'], $options->excludeNamespaces);
-    }
-
-    #[Test]
     public function fromArrayArrayIncludeNamespacesPreserved(): void
     {
         $options = DistanceOptions::fromArray([

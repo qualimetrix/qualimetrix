@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace AiMessDetector\Analysis\RuleExecution;
 
 use AiMessDetector\Configuration\ConfigurationProviderInterface;
+use AiMessDetector\Configuration\RuleNamespaceExclusionProvider;
 use AiMessDetector\Core\Profiler\ProfilerHolder;
 use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\RuleInterface;
+use AiMessDetector\Core\Violation\Violation;
 use Traversable;
 
 /**
@@ -27,6 +29,7 @@ final class RuleExecutor implements RuleExecutorInterface
     public function __construct(
         iterable $rules,
         private readonly ConfigurationProviderInterface $configurationProvider,
+        private readonly RuleNamespaceExclusionProvider $exclusionProvider = new RuleNamespaceExclusionProvider(),
     ) {
         $this->allRules = $rules instanceof Traversable
             ? iterator_to_array($rules, false)
@@ -44,6 +47,16 @@ final class RuleExecutor implements RuleExecutorInterface
             $profiler->start($spanName, 'rules');
             $ruleViolations = $rule->analyze($context);
             $profiler->stop($spanName);
+
+            // Filter violations from excluded namespaces
+            $ruleName = $rule->getName();
+            $ruleViolations = array_filter(
+                $ruleViolations,
+                fn(Violation $v) => $v->symbolPath->namespace === null
+                    || $v->symbolPath->namespace === ''
+                    || !$this->exclusionProvider->isExcluded($ruleName, $v->symbolPath->namespace),
+            );
+
             $violations = [...$violations, ...$ruleViolations];
         }
 

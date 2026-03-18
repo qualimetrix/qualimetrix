@@ -8,6 +8,7 @@ use AiMessDetector\Configuration\AnalysisConfiguration;
 use AiMessDetector\Configuration\ConfigurationHolder;
 use AiMessDetector\Configuration\ConfigurationProviderInterface;
 use AiMessDetector\Configuration\Pipeline\ConfigurationPipeline;
+use AiMessDetector\Configuration\RuleNamespaceExclusionProvider;
 use AiMessDetector\Configuration\RuleOptionsFactory;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -37,11 +38,18 @@ final class ConfigurationConfigurator implements ContainerConfiguratorInterface
      */
     private function registerConfigurationHolder(ContainerBuilder $container): void
     {
+        // RuleNamespaceExclusionProvider - shared between RuleOptionsFactory and RuleExecutor
+        $exclusionProvider = new RuleNamespaceExclusionProvider();
+        $container->register(RuleNamespaceExclusionProvider::class)
+            ->setSynthetic(true)
+            ->setPublic(true);
+        $container->set(RuleNamespaceExclusionProvider::class, $exclusionProvider);
+
         // RuleOptionsFactory - mutable, can be configured with CLI options at runtime
         $container->register(RuleOptionsFactory::class)
             ->setSynthetic(true)
             ->setPublic(true);
-        $container->set(RuleOptionsFactory::class, new RuleOptionsFactory());
+        $container->set(RuleOptionsFactory::class, new RuleOptionsFactory($exclusionProvider));
 
         // ConfigurationHolder - mutable, configured at runtime with merged config
         $configProvider = new ConfigurationHolder();

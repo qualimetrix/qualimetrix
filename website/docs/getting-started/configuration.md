@@ -86,6 +86,27 @@ rules:
 
 This means: report a **warning** when a method's cyclomatic complexity reaches 15, and an **error** when it reaches 25.
 
+**Exclude namespaces from a rule:**
+
+Any rule can exclude specific namespaces using prefix matching. Violations from matching namespaces are suppressed:
+
+```yaml
+rules:
+  complexity.cyclomatic:
+    exclude_namespaces:
+      - App\Tests
+      - App\Legacy
+    method:
+      warning: 15
+      error: 25
+
+  coupling.cbo:
+    exclude_namespaces:
+      - App\Tests
+```
+
+This is useful when certain namespaces (e.g., tests, generated code, legacy modules) should not trigger violations for a specific rule, while still being analyzed for metrics.
+
 ### Disabled Rules
 
 Disable specific rules or entire groups:
@@ -172,6 +193,8 @@ disabled_rules:
 
 rules:
   complexity.cyclomatic:
+    exclude_namespaces:
+      - App\Tests
     method:
       warning: 15
       error: 25

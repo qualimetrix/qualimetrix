@@ -26,6 +26,7 @@ use AiMessDetector\Analysis\Repository\MetricRepositoryFactoryInterface;
 use AiMessDetector\Analysis\RuleExecution\RuleExecutor;
 use AiMessDetector\Analysis\RuleExecution\RuleExecutorInterface;
 use AiMessDetector\Configuration\ConfigurationProviderInterface;
+use AiMessDetector\Configuration\RuleNamespaceExclusionProvider;
 use AiMessDetector\Core\Ast\FileParserInterface;
 use AiMessDetector\Core\Metric\MetricRepositoryInterface;
 use AiMessDetector\Core\Namespace_\ProjectNamespaceResolverInterface;
@@ -100,6 +101,7 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
             ->setArguments([
                 '$rules' => [], // Will be set by RuleCompilerPass
                 '$configurationProvider' => new Reference(ConfigurationProviderInterface::class),
+                '$exclusionProvider' => new Reference(RuleNamespaceExclusionProvider::class),
             ]);
         $container->setAlias(RuleExecutorInterface::class, RuleExecutor::class);
 
