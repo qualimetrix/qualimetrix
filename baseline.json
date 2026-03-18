@@ -1,7 +1,9 @@
 {
     "version": 4,
     "generated": "2026-03-09T17:04:41+00:00",
-    "count": 672,
+    "count": 668,
+    "violationCount": 668,
+    "symbolCount": 486,
     "violations": {
         "class:AiMessDetector\\Analysis\\Aggregator\\AggregationHelper": [
             {
@@ -1931,18 +1933,6 @@
                 "hash": "e6acee50dc42416e"
             }
         ],
-        "file:src/Infrastructure/Parallel/Serializer/IgbinarySerializer.php": [
-            {
-                "rule": "code-smell.error-suppression",
-                "hash": "08df84ab3bd07d8f"
-            }
-        ],
-        "file:src/Infrastructure/Parallel/Serializer/PhpSerializer.php": [
-            {
-                "rule": "code-smell.error-suppression",
-                "hash": "08df84ab3bd07d8f"
-            }
-        ],
         "file:src/Infrastructure/Parallel/Strategy/AmphpParallelStrategy.php": [
             {
                 "rule": "code-smell.boolean-argument",
@@ -1974,18 +1964,6 @@
             }
         ],
         "file:src/Metrics/Structure/MethodCountMetrics.php": [
-            {
-                "rule": "code-smell.boolean-argument",
-                "hash": "e6acee50dc42416e"
-            }
-        ],
-        "file:src/Reporting/AnsiColor.php": [
-            {
-                "rule": "code-smell.boolean-argument",
-                "hash": "e6acee50dc42416e"
-            }
-        ],
-        "file:src/Reporting/Formatter/SarifFormatter.php": [
             {
                 "rule": "code-smell.boolean-argument",
                 "hash": "e6acee50dc42416e"
