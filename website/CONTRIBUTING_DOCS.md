@@ -97,6 +97,45 @@ Shared configuration section goes at the bottom of the page.
 
 ---
 
+## LLM Documentation (`llms.txt` / `llms-full.txt`)
+
+The site publishes machine-readable documentation for AI coding agents:
+
+- **`llms.txt`** — hand-written index with links to pages (static file in `docs/`)
+- **`llms-full.txt`** — auto-generated from all English pages via `hooks/generate_llms_txt.py` during `mkdocs build`
+
+### Excluding content from `llms-full.txt`
+
+Wrap human-oriented sections (explanations, examples, refactoring advice) with skip markers:
+
+```markdown
+<!-- llms:skip-begin -->
+### What it measures
+
+Cyclomatic Complexity counts the number of decision points...
+
+### Example
+
+```php
+// ... code example
+```
+
+### How to fix
+
+- Extract methods...
+<!-- llms:skip-end -->
+```
+
+The markers are standard HTML comments — invisible on the website, stripped by the generator.
+
+**What to skip:** `What it measures`, `Example`, `How to fix`, `Implementation notes`, tutorials, troubleshooting sections — anything an AI agent already knows or doesn't need for tool integration.
+
+**What to keep:** Rule IDs, thresholds, configuration (YAML/CLI), command syntax — the actionable reference.
+
+When adding a new rule page, add skip markers around the same sections as existing pages. Both EN and RU versions must have identical markers.
+
+---
+
 ## Admonitions
 
 Use MkDocs Material admonitions sparingly and consistently:
