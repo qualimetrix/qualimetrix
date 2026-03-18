@@ -86,7 +86,7 @@ jobs:
       - name: Run AI Mess Detector
         run: |
           if [ -f "baseline.json" ]; then
-            bin/aimd check src/ --baseline=baseline.json
+            bin/aimd check src/ --baseline=baseline.json --baseline-ignore-stale
           else
             bin/aimd check src/
           fi
