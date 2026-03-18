@@ -69,7 +69,7 @@ runs:
 
         # Add baseline if specified
         if [ -n "${{ inputs.baseline }}" ]; then
-          ARGS="$ARGS --baseline=${{ inputs.baseline }}"
+          ARGS="$ARGS --baseline=${{ inputs.baseline }} --baseline-ignore-stale"
         fi
 
         # Add config if specified
