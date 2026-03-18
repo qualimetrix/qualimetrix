@@ -28,6 +28,10 @@ final class RuleOptionsFactory
      */
     private array $cliOptions = [];
 
+    public function __construct(
+        private readonly RuleNamespaceExclusionProvider $exclusionProvider = new RuleNamespaceExclusionProvider(),
+    ) {}
+
     /**
      * Creates rule options with merged configuration.
      *
@@ -62,10 +66,13 @@ final class RuleOptionsFactory
         $cliRuleOptions = $this->expandDotNotation($this->cliOptions[$ruleName] ?? []);
         $merged = $this->deepMerge($merged, $cliRuleOptions);
 
-        // 4. Validate numeric fields before instantiation
+        // 4. Extract and store exclude_namespaces at framework level
+        $this->extractExcludeNamespaces($ruleName, $merged);
+
+        // 5. Validate numeric fields before instantiation
         $this->validateNumericFields($merged, $ruleName);
 
-        // 5. Create instance using fromArray
+        // 6. Create instance using fromArray
         return $optionsClass::fromArray($merged);
     }
 
@@ -142,6 +149,39 @@ final class RuleOptionsFactory
     {
         $this->configFileOptions = [];
         $this->cliOptions = [];
+        $this->exclusionProvider->reset();
+    }
+
+    public function getExclusionProvider(): RuleNamespaceExclusionProvider
+    {
+        return $this->exclusionProvider;
+    }
+
+    /**
+     * Extracts exclude_namespaces from merged options and stores them in the provider.
+     *
+     * Supports both snake_case (from config file) and camelCase (from CLI).
+     * Removes the key from $merged so it doesn't leak into Options::fromArray().
+     *
+     * @param array<string, mixed> $merged
+     */
+    private function extractExcludeNamespaces(string $ruleName, array &$merged): void
+    {
+        $raw = $merged['excludeNamespaces'] ?? $merged['exclude_namespaces'] ?? null;
+
+        unset($merged['excludeNamespaces'], $merged['exclude_namespaces']);
+
+        if (\is_string($raw)) {
+            $prefixes = [$raw];
+        } elseif (\is_array($raw)) {
+            $prefixes = array_values($raw);
+        } else {
+            return;
+        }
+
+        if ($prefixes !== []) {
+            $this->exclusionProvider->setExclusions($ruleName, $prefixes);
+        }
     }
 
     /**

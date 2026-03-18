@@ -53,6 +53,7 @@ final class RuntimeConfigurator
     ): void {
         // Reset memoized state from previous run to prevent leaking
         $this->ruleOptionsFactory->resetCliOptions();
+        $this->ruleOptionsFactory->getExclusionProvider()->reset();
         $this->cacheFactory->reset();
         ComputedMetricDefinitionHolder::reset();
 

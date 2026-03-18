@@ -7,6 +7,7 @@ namespace AiMessDetector\Tests\Unit\Analysis\RuleExecution;
 use AiMessDetector\Analysis\RuleExecution\RuleExecutor;
 use AiMessDetector\Configuration\AnalysisConfiguration;
 use AiMessDetector\Configuration\ConfigurationHolder;
+use AiMessDetector\Configuration\RuleNamespaceExclusionProvider;
 use AiMessDetector\Core\Rule\AnalysisContext;
 use AiMessDetector\Core\Rule\RuleCategory;
 use AiMessDetector\Core\Rule\RuleInterface;
@@ -327,6 +328,79 @@ final class RuleExecutorTest extends TestCase
         self::assertSame($methodViolation, $violations[0]);
     }
 
+    // --- Namespace exclusion tests ---
+
+    public function testNamespaceExclusionFiltersViolations(): void
+    {
+        $excludedViolation = $this->createViolationWithNamespace('rule1', 'App\\Tests');
+        $includedViolation = $this->createViolationWithNamespace('rule1', 'App\\Core');
+
+        $rule = $this->createRule('rule1', [$excludedViolation, $includedViolation]);
+
+        $exclusionProvider = new RuleNamespaceExclusionProvider();
+        $exclusionProvider->setExclusions('rule1', ['App\\Tests']);
+
+        $provider = $this->createConfiguredProvider();
+        $executor = new RuleExecutor([$rule], $provider, $exclusionProvider);
+
+        $violations = $executor->execute($this->createMinimalContext());
+
+        self::assertCount(1, $violations);
+        self::assertSame($includedViolation, $violations[0]);
+    }
+
+    public function testNamespaceExclusionPassesThroughNullNamespace(): void
+    {
+        $fileViolation = $this->createViolation('rule1');
+        $rule = $this->createRule('rule1', [$fileViolation]);
+
+        $exclusionProvider = new RuleNamespaceExclusionProvider();
+        $exclusionProvider->setExclusions('rule1', ['App\\Tests']);
+
+        $provider = $this->createConfiguredProvider();
+        $executor = new RuleExecutor([$rule], $provider, $exclusionProvider);
+
+        $violations = $executor->execute($this->createMinimalContext());
+
+        self::assertCount(1, $violations);
+    }
+
+    public function testNamespaceExclusionPassesThroughEmptyNamespace(): void
+    {
+        $globalViolation = $this->createViolationWithNamespace('rule1', '');
+        $rule = $this->createRule('rule1', [$globalViolation]);
+
+        $exclusionProvider = new RuleNamespaceExclusionProvider();
+        $exclusionProvider->setExclusions('rule1', ['App\\Tests']);
+
+        $provider = $this->createConfiguredProvider();
+        $executor = new RuleExecutor([$rule], $provider, $exclusionProvider);
+
+        $violations = $executor->execute($this->createMinimalContext());
+
+        self::assertCount(1, $violations);
+    }
+
+    public function testNamespaceExclusionDoesNotAffectOtherRules(): void
+    {
+        $v1 = $this->createViolationWithNamespace('rule1', 'App\\Tests');
+        $v2 = $this->createViolationWithNamespace('rule2', 'App\\Tests');
+
+        $rule1 = $this->createRule('rule1', [$v1]);
+        $rule2 = $this->createRule('rule2', [$v2]);
+
+        $exclusionProvider = new RuleNamespaceExclusionProvider();
+        $exclusionProvider->setExclusions('rule1', ['App\\Tests']);
+
+        $provider = $this->createConfiguredProvider();
+        $executor = new RuleExecutor([$rule1, $rule2], $provider, $exclusionProvider);
+
+        $violations = $executor->execute($this->createMinimalContext());
+
+        self::assertCount(1, $violations);
+        self::assertSame($v2, $violations[0]);
+    }
+
     private function createConfiguredProvider(?AnalysisConfiguration $config = null): ConfigurationHolder
     {
         $provider = new ConfigurationHolder();
@@ -386,6 +460,21 @@ final class RuleExecutorTest extends TestCase
             message: "Violation from $ruleName",
             severity: Severity::Warning,
             level: $level,
+        );
+    }
+
+    private function createViolationWithNamespace(string $ruleName, string $namespace): Violation
+    {
+        return new Violation(
+            location: new Location(
+                file: '/test/file.php',
+                line: 1,
+            ),
+            symbolPath: SymbolPath::forNamespace($namespace),
+            ruleName: $ruleName,
+            violationCode: $ruleName,
+            message: "Violation from $ruleName in $namespace",
+            severity: Severity::Warning,
         );
     }
 }

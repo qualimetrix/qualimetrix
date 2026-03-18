@@ -165,12 +165,6 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
         $violations = [];
 
         foreach ($context->metrics->all(SymbolType::Namespace_) as $nsInfo) {
-            // Skip excluded namespaces
-            if ($nsInfo->symbolPath->namespace !== null
-                && $namespaceOptions->isNamespaceExcluded($nsInfo->symbolPath->namespace)) {
-                continue;
-            }
-
             $metrics = $context->metrics->get($nsInfo->symbolPath);
 
             // Skip namespaces with too few classes

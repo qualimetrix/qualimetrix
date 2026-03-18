@@ -18,19 +18,16 @@ use AiMessDetector\Core\Violation\Severity;
  * Namespace filtering:
  * - By default, auto-detects project namespaces from composer.json (autoload.psr-4)
  * - Use `includeNamespaces` to override auto-detection with explicit list
- * - Use `excludeNamespaces` to exclude specific namespaces from analysis
+ * - Use `exclude_namespaces` (universal per-rule option) to exclude specific namespaces
  * - External dependencies (not matching project namespaces) are always excluded
  */
 final readonly class DistanceOptions implements RuleOptionsInterface
 {
-    use ExcludesNamespaces;
-
     /**
      * @param bool $enabled Enable distance rule
      * @param float $maxDistanceWarning Warning threshold for distance
      * @param float $maxDistanceError Error threshold for distance
      * @param list<string>|null $includeNamespaces Override auto-detected project namespaces (null = auto-detect from composer.json)
-     * @param list<string> $excludeNamespaces Additional namespaces to exclude from analysis
      * @param int $minClassCount Minimum number of classes in namespace for analysis (0 = disabled)
      */
     public function __construct(
@@ -38,7 +35,6 @@ final readonly class DistanceOptions implements RuleOptionsInterface
         public float $maxDistanceWarning = 0.3,
         public float $maxDistanceError = 0.5,
         public ?array $includeNamespaces = null,
-        public array $excludeNamespaces = [],
         public int $minClassCount = 3,
     ) {}
 
@@ -66,7 +62,6 @@ final readonly class DistanceOptions implements RuleOptionsInterface
             maxDistanceWarning: (float) ($config['max_distance_warning'] ?? $config['maxDistanceWarning'] ?? 0.3),
             maxDistanceError: (float) ($config['max_distance_error'] ?? $config['maxDistanceError'] ?? 0.5),
             includeNamespaces: $includeNamespaces,
-            excludeNamespaces: self::parseExcludeNamespaces($config),
             minClassCount: (int) ($config['min_class_count'] ?? $config['minClassCount'] ?? 3),
         );
     }

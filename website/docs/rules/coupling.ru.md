@@ -105,14 +105,14 @@ AIMD реализует **двунаправленную связанность*
 # aimd.yaml
 rules:
   coupling.cbo:
+    exclude_namespaces:
+      - App\Core\ValueObject
     class:
       warning: 18
       error: 25
     namespace:
       enabled: true
       min_class_count: 5
-      exclude_namespaces:
-        - App\Core\ValueObject
 ```
 
 ```bash
@@ -220,13 +220,13 @@ class DailyReportJob
 # aimd.yaml
 rules:
   coupling.instability:
+    exclude_namespaces:
+      - App\Core\ValueObject
     class:
       max_warning: 0.9
       max_error: 1.0
     namespace:
       min_class_count: 5
-      exclude_namespaces:
-        - App\Core\ValueObject
 ```
 
 ```bash

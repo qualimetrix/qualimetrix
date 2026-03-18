@@ -17,6 +17,7 @@ Configuration/
 ├── PathsConfiguration.php         # VO for paths and excludes
 ├── ConfigurationHolder.php        # Runtime configuration holder
 ├── RuleOptionsFactory.php         # Factory for creating rule options
+├── RuleNamespaceExclusionProvider.php  # Per-rule namespace exclusion storage
 ├── RuleOptionsParser.php          # CLI options parser for rules
 ├── RuleOptionsParserFactory.php   # Factory for creating RuleOptionsParser with CLI aliases
 ├── ConfigurationProviderInterface.php  # Interface for runtime config access
@@ -191,12 +192,25 @@ Creates rule options with priority handling.
 - `create(string $ruleName, string $optionsClass): RuleOptionsInterface`
 - `setConfigFileOptions(array $options): void`
 - `addCliOption(string $ruleName, string $option, mixed $value): void`
+- `getExclusionProvider(): RuleNamespaceExclusionProvider`
 
 **Algorithm of create():**
 1. Getting defaults from constructor via Reflection
 2. Merge with config file options
 3. Merge with CLI options
-4. Creating instance via named arguments
+4. Extract `exclude_namespaces` → `RuleNamespaceExclusionProvider` (framework-level filtering)
+5. Creating instance via named arguments
+
+### RuleNamespaceExclusionProvider
+
+Stores per-rule namespace exclusions extracted by `RuleOptionsFactory::create()`.
+Consumed by `RuleExecutor` to filter violations at framework level.
+
+**Methods:**
+- `setExclusions(string $ruleName, list<string> $prefixes): void`
+- `isExcluded(string $ruleName, string $namespace): bool` — prefix matching
+- `getExclusions(string $ruleName): list<string>`
+- `reset(): void`
 
 ---
 

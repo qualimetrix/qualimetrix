@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-03-18
+
+### Changed
+- `exclude_namespaces` is now a universal per-rule option available for any rule, not just coupling rules
+
+### Breaking
+- `exclude_namespaces` for `coupling.cbo` and `coupling.instability` moves from nested `namespace:` to top-level rule config
+- `exclude_namespaces` now filters violations at all levels (class + namespace), not just namespace level
+
 ## [0.4.0] - 2026-03-18
 
 ### Changed
@@ -109,7 +118,8 @@ Initial release.
 - Symfony DI with autowiring and autoconfiguration
 - GitHub Actions workflow
 
-[Unreleased]: https://github.com/fractalizer/ai-mess-detector/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/fractalizer/ai-mess-detector/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/fractalizer/ai-mess-detector/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/fractalizer/ai-mess-detector/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/fractalizer/ai-mess-detector/compare/v0.2.2...v0.3.0
 [0.2.2]: https://github.com/fractalizer/ai-mess-detector/compare/v0.2.1...v0.2.2

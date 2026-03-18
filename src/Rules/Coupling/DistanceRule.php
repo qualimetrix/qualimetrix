@@ -33,7 +33,7 @@ use Psr\Log\LoggerInterface;
  * Namespace filtering:
  * - By default, uses ProjectNamespaceResolver to auto-detect project namespaces from composer.json
  * - Use `includeNamespaces` option to override auto-detection
- * - Use `excludeNamespaces` option to exclude specific namespaces
+ * - Use `exclude_namespaces` (universal per-rule option) to exclude specific namespaces
  */
 final class DistanceRule extends AbstractRule
 {
@@ -159,19 +159,15 @@ final class DistanceRule extends AbstractRule
      * Determines if namespace should be analyzed.
      *
      * Logic:
-     * 1. Check explicit excludeNamespaces list first
-     * 2. If includeNamespaces is set, check against that list
-     * 3. If ProjectNamespaceResolver is provided, use it
-     * 4. Otherwise, include all namespaces
+     * 1. If includeNamespaces is set, check against that list
+     * 2. If ProjectNamespaceResolver is provided, use it
+     * 3. Otherwise, include all namespaces
+     *
+     * Note: exclude_namespaces is handled at framework level by RuleExecutor.
      */
     private function shouldAnalyzeNamespace(string $namespace): bool
     {
         \assert($this->options instanceof DistanceOptions);
-
-        // Check explicit exclusions first
-        if ($this->options->isNamespaceExcluded($namespace)) {
-            return false;
-        }
 
         // If explicit includes are set, check against them
         if ($this->options->includeNamespaces !== null && $this->options->includeNamespaces !== []) {

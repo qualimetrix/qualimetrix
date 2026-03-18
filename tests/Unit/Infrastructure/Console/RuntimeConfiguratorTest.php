@@ -100,6 +100,58 @@ final class RuntimeConfiguratorTest extends TestCase
     }
 
     #[Test]
+    public function itResetsNamespaceExclusionsBetweenConfigureCalls(): void
+    {
+        // First configure call: set exclude_namespaces via config
+        $resolved1 = new ResolvedConfiguration(
+            paths: PathsConfiguration::defaults(),
+            analysis: new AnalysisConfiguration(),
+            ruleOptions: [
+                'coupling.cbo' => [
+                    'exclude_namespaces' => ['App\\Tests'],
+                ],
+            ],
+        );
+
+        $input1 = $this->createCliInput([]);
+
+        $this->configProvider
+            ->expects($this->exactly(2))
+            ->method('setConfiguration');
+        $this->configProvider
+            ->expects($this->exactly(2))
+            ->method('setRuleOptions');
+
+        $this->configurator->configure($resolved1, $input1, $this->createOutput());
+
+        // Verify exclusions were set (create() is called lazily, so trigger it)
+        // The factory stores config but doesn't call create() yet — exclusions are populated during create().
+        // To verify the reset behavior, we manually check the provider after reset.
+        $provider = $this->ruleOptionsFactory->getExclusionProvider();
+
+        // Simulate what happens when create() populates the provider
+        $provider->setExclusions('coupling.cbo', ['App\\Tests']);
+        self::assertTrue($provider->isExcluded('coupling.cbo', 'App\\Tests'));
+
+        // Second configure call: no exclude_namespaces
+        $resolved2 = new ResolvedConfiguration(
+            paths: PathsConfiguration::defaults(),
+            analysis: new AnalysisConfiguration(),
+            ruleOptions: [],
+        );
+
+        $input2 = $this->createCliInput([]);
+
+        $this->configurator->configure($resolved2, $input2, $this->createOutput());
+
+        // Exclusions from first run should not persist
+        self::assertFalse(
+            $provider->isExcluded('coupling.cbo', 'App\\Tests'),
+            'Namespace exclusions from first configure() call should not leak into second call',
+        );
+    }
+
+    #[Test]
     public function cliOptionOverridesOnlySpecificKeysPreservingYamlOptions(): void
     {
         $resolved = new ResolvedConfiguration(

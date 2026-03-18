@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AiMessDetector\Tests\Unit\Configuration;
 
+use AiMessDetector\Configuration\RuleNamespaceExclusionProvider;
 use AiMessDetector\Configuration\RuleOptionsFactory;
 use AiMessDetector\Tests\Fixture\TestRuleOptions;
 use AiMessDetector\Tests\Fixture\TestRuleOptionsNoConstructor;
@@ -945,5 +946,86 @@ final class RuleOptionsFactoryTest extends TestCase
         $this->expectExceptionMessage('rule "complexity.cyclomatic"');
 
         $this->factory->create('complexity.cyclomatic', TestRuleOptions::class);
+    }
+
+    // --- exclude_namespaces extraction tests ---
+
+    #[Test]
+    public function createExtractsExcludeNamespacesSnakeCase(): void
+    {
+        $this->factory->setConfigFileOptions([
+            'test.rule' => [
+                'exclude_namespaces' => ['App\\Tests', 'App\\Legacy'],
+                'warningThreshold' => 5,
+            ],
+        ]);
+
+        $this->factory->create('test.rule', TestRuleOptions::class);
+
+        $provider = $this->factory->getExclusionProvider();
+        self::assertSame(['App\\Tests', 'App\\Legacy'], $provider->getExclusions('test.rule'));
+    }
+
+    #[Test]
+    public function createExtractsExcludeNamespacesCamelCase(): void
+    {
+        $this->factory->setConfigFileOptions([
+            'test.rule' => [
+                'excludeNamespaces' => ['App\\Tests'],
+            ],
+        ]);
+
+        $this->factory->create('test.rule', TestRuleOptions::class);
+
+        $provider = $this->factory->getExclusionProvider();
+        self::assertSame(['App\\Tests'], $provider->getExclusions('test.rule'));
+    }
+
+    #[Test]
+    public function createExtractsExcludeNamespacesStringCoercedToArray(): void
+    {
+        $this->factory->setConfigFileOptions([
+            'test.rule' => [
+                'exclude_namespaces' => 'App\\Tests',
+            ],
+        ]);
+
+        $this->factory->create('test.rule', TestRuleOptions::class);
+
+        $provider = $this->factory->getExclusionProvider();
+        self::assertSame(['App\\Tests'], $provider->getExclusions('test.rule'));
+    }
+
+    #[Test]
+    public function createRemovesExcludeNamespacesFromOptionsBeforeFromArray(): void
+    {
+        $this->factory->setConfigFileOptions([
+            'test.rule' => [
+                'exclude_namespaces' => ['App\\Tests'],
+                'warningThreshold' => 7,
+            ],
+        ]);
+
+        $options = $this->factory->create('test.rule', TestRuleOptions::class);
+
+        self::assertInstanceOf(TestRuleOptions::class, $options);
+        self::assertSame(7, $options->warningThreshold);
+        self::assertSame(['App\\Tests'], $this->factory->getExclusionProvider()->getExclusions('test.rule'));
+    }
+
+    #[Test]
+    public function resetClearsExclusionProvider(): void
+    {
+        $provider = new RuleNamespaceExclusionProvider();
+        $factory = new RuleOptionsFactory($provider);
+
+        $factory->setConfigFileOptions([
+            'test.rule' => ['exclude_namespaces' => ['App\\Tests']],
+        ]);
+        $factory->create('test.rule', TestRuleOptions::class);
+        self::assertSame(['App\\Tests'], $provider->getExclusions('test.rule'));
+
+        $factory->reset();
+        self::assertSame([], $provider->getExclusions('test.rule'));
     }
 }
