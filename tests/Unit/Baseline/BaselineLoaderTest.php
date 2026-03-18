@@ -229,6 +229,94 @@ final class BaselineLoaderTest extends TestCase
         $this->loader->load($path);
     }
 
+    public function testResolvesRelativeFilePathsToAbsolute(): void
+    {
+        $json = <<<'JSON'
+        {
+            "version": 4,
+            "generated": "2025-12-08T10:00:00+00:00",
+            "count": 2,
+            "violations": {
+                "file:src/Foo.php": [
+                    {
+                        "rule": "size.loc",
+                        "hash": "abc123"
+                    }
+                ],
+                "class:App\\Foo": [
+                    {
+                        "rule": "complexity",
+                        "hash": "def456"
+                    }
+                ]
+            }
+        }
+        JSON;
+
+        $path = $this->tempDir . '/baseline.json';
+        file_put_contents($path, $json);
+
+        $baseline = $this->loader->load($path, '/home/user/project');
+
+        self::assertArrayHasKey('file:/home/user/project/src/Foo.php', $baseline->entries, 'Relative file: path should be resolved to absolute');
+        self::assertArrayHasKey('class:App\Foo', $baseline->entries, 'Non-file keys should not change');
+    }
+
+    public function testKeepsAbsoluteFilePathsForLegacyBaselines(): void
+    {
+        $json = <<<'JSON'
+        {
+            "version": 4,
+            "generated": "2025-12-08T10:00:00+00:00",
+            "count": 1,
+            "violations": {
+                "file:/old/absolute/path/src/Foo.php": [
+                    {
+                        "rule": "size.loc",
+                        "hash": "abc123"
+                    }
+                ]
+            }
+        }
+        JSON;
+
+        $path = $this->tempDir . '/baseline.json';
+        file_put_contents($path, $json);
+
+        $baseline = $this->loader->load($path, '/home/user/project');
+
+        self::assertArrayHasKey('file:/old/absolute/path/src/Foo.php', $baseline->entries, 'Already absolute file: paths should be kept as-is for backward compatibility');
+    }
+
+    public function testDotProjectRootNormalizesToAbsolutePath(): void
+    {
+        $cwd = (string) getcwd();
+        $json = <<<'JSON'
+        {
+            "version": 4,
+            "generated": "2025-12-08T10:00:00+00:00",
+            "count": 1,
+            "violations": {
+                "file:src/Foo.php": [
+                    {
+                        "rule": "size.loc",
+                        "hash": "abc123"
+                    }
+                ]
+            }
+        }
+        JSON;
+
+        $path = $this->tempDir . '/baseline.json';
+        file_put_contents($path, $json);
+
+        // '.' should normalize to getcwd(), producing absolute paths
+        $baseline = $this->loader->load($path, '.');
+
+        self::assertArrayHasKey('file:' . $cwd . '/src/Foo.php', $baseline->entries, 'projectRoot="." should resolve relative file: paths using getcwd()');
+        self::assertArrayNotHasKey('file:./src/Foo.php', $baseline->entries, 'Must not produce file:./... paths');
+    }
+
     public function testLoadsEmptyBaseline(): void
     {
         $json = <<<'JSON'

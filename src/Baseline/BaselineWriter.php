@@ -20,7 +20,7 @@ final readonly class BaselineWriter
      *
      * @throws RuntimeException if write fails
      */
-    public function write(Baseline $baseline, string $path): void
+    public function write(Baseline $baseline, string $path, string $projectRoot = '.'): void
     {
         $directory = \dirname($path);
         if (!is_dir($directory)) {
@@ -29,7 +29,7 @@ final readonly class BaselineWriter
             }
         }
 
-        $data = $this->serializeBaseline($baseline);
+        $data = $this->serializeBaseline($baseline, $projectRoot);
         $json = json_encode($data, \JSON_THROW_ON_ERROR | \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES);
 
         // Atomic write: write to temp file, then rename
@@ -54,12 +54,14 @@ final readonly class BaselineWriter
     /**
      * @return array<string, mixed>
      */
-    private function serializeBaseline(Baseline $baseline): array
+    private function serializeBaseline(Baseline $baseline, string $projectRoot): array
     {
+        $normalizedRoot = self::normalizeProjectRoot($projectRoot);
         $violations = [];
 
-        foreach ($baseline->entries as $file => $entries) {
-            $violations[$file] = array_map(
+        foreach ($baseline->entries as $canonical => $entries) {
+            $portableKey = $this->relativizeCanonical($canonical, $normalizedRoot);
+            $violations[$portableKey] = array_map(
                 fn(BaselineEntry $entry) => $entry->toArray(),
                 $entries,
             );
@@ -73,5 +75,41 @@ final readonly class BaselineWriter
             'symbolCount' => \count($baseline->entries),
             'violations' => $violations,
         ];
+    }
+
+    /**
+     * Converts absolute file: canonical paths to relative for portability.
+     *
+     * Only affects file: keys — class:, method:, ns: keys are FQN-based
+     * and already portable.
+     */
+    private function relativizeCanonical(string $canonical, string $projectRoot): string
+    {
+        if (!str_starts_with($canonical, 'file:')) {
+            return $canonical;
+        }
+
+        $filePath = substr($canonical, 5);
+        $prefix = rtrim($projectRoot, '/') . '/';
+
+        if (str_starts_with($filePath, $prefix)) {
+            return 'file:' . substr($filePath, \strlen($prefix));
+        }
+
+        return $canonical;
+    }
+
+    /**
+     * Resolves relative projectRoot to absolute path.
+     */
+    private static function normalizeProjectRoot(string $projectRoot): string
+    {
+        if ($projectRoot === '.' || !str_starts_with($projectRoot, '/')) {
+            $resolved = realpath($projectRoot);
+
+            return $resolved !== false ? $resolved : ((string) getcwd());
+        }
+
+        return $projectRoot;
     }
 }

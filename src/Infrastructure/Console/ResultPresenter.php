@@ -117,7 +117,8 @@ final class ResultPresenter
         }
 
         $baseline = $this->baselineGenerator->generate($violations);
-        $this->baselineWriter->write($baseline, $generateBaselinePath);
+        $projectRoot = $this->configurationProvider->getConfiguration()->projectRoot;
+        $this->baselineWriter->write($baseline, $generateBaselinePath, $projectRoot);
 
         $output->writeln(\sprintf(
             '<info>Baseline with %d violations written to %s</info>',
