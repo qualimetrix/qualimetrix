@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-03-18
+
 ### Changed
 - **Health scores redesigned**: 5-tier labels (`Strong` / `Good` / `Acceptable` / `Weak` / `Critical`), recalibrated formulas for complexity (avg + P95 + sqrt(max) penalties), coupling (efferent-based, P95 + sqrt-scaled max), cohesion (TCC neutral value for small classes), maintainability (MI anchor shifted to 30). `--exclude-health=DIMENSION` to exclude dimensions from scoring
 - **Computed metrics**: 6 built-in `health.*` scores plus user-definable `computed.*` metrics via Symfony Expression Language formulas, per-level formulas, threshold-based violations
@@ -107,7 +109,8 @@ Initial release.
 - Symfony DI with autowiring and autoconfiguration
 - GitHub Actions workflow
 
-[Unreleased]: https://github.com/fractalizer/ai-mess-detector/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/fractalizer/ai-mess-detector/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/fractalizer/ai-mess-detector/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/fractalizer/ai-mess-detector/compare/v0.2.2...v0.3.0
 [0.2.2]: https://github.com/fractalizer/ai-mess-detector/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/fractalizer/ai-mess-detector/compare/v0.2.0...v0.2.1
