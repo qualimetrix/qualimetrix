@@ -73,10 +73,12 @@
         "cs-fix": "php-cs-fixer fix",
         "benchmark:check": "php scripts/benchmark-regression.php",
         "benchmark:update": "php scripts/benchmark-regression.php --update-baselines",
+        "selfcheck": "php bin/aimd check src/ --baseline=baseline.json --baseline-ignore-stale --fail-on=none",
         "check": [
             "@test",
             "@phpstan",
-            "@deptrac"
+            "@deptrac",
+            "@selfcheck"
         ]
     },
     "scripts-descriptions": {
@@ -91,7 +93,8 @@
         "cs-fix": "Fix code style with PHP-CS-Fixer",
         "benchmark:check": "Run benchmark regression check for health score formulas",
         "benchmark:update": "Update benchmark baselines with current scores (±10 margin)",
-        "check": "Run all checks: tests, phpstan, deptrac"
+        "selfcheck": "Run AI Mess Detector on its own source code",
+        "check": "Run all checks: tests, phpstan, deptrac, selfcheck"
     },
     "config": {
         "sort-packages": true,

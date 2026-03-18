@@ -19,7 +19,7 @@ final readonly class BaselineLoader
      *
      * @throws RuntimeException if file doesn't exist, is not readable, or contains invalid data
      */
-    public function load(string $path): Baseline
+    public function load(string $path, string $projectRoot = '.'): Baseline
     {
         if (!file_exists($path)) {
             throw new RuntimeException("Baseline file not found: {$path}");
@@ -44,13 +44,15 @@ final readonly class BaselineLoader
             throw new RuntimeException("Baseline file must contain a JSON object");
         }
 
-        return $this->parseBaseline($data);
+        $normalizedRoot = self::normalizeProjectRoot($projectRoot);
+
+        return $this->parseBaseline($data, $normalizedRoot);
     }
 
     /**
      * @param array<string, mixed> $data
      */
-    private function parseBaseline(array $data): Baseline
+    private function parseBaseline(array $data, string $projectRoot): Baseline
     {
         $this->validateStructure($data);
 
@@ -64,14 +66,15 @@ final readonly class BaselineLoader
                 throw new RuntimeException("Violations for key {$key} must be an array");
             }
 
-            $entries[$key] = [];
+            $resolvedKey = $this->resolveCanonical($key, $projectRoot);
+            $entries[$resolvedKey] = [];
             foreach ($keyViolations as $violation) {
                 if (!\is_array($violation)) {
                     throw new RuntimeException("Each violation must be an array");
                 }
 
                 $this->validateViolationEntry($violation);
-                $entries[$key][] = BaselineEntry::fromArray($violation);
+                $entries[$resolvedKey][] = BaselineEntry::fromArray($violation);
             }
         }
 
@@ -111,6 +114,27 @@ final readonly class BaselineLoader
     }
 
     /**
+     * Resolves relative file: canonical paths back to absolute.
+     *
+     * Handles both old baselines (already absolute) and new baselines (relative).
+     */
+    private function resolveCanonical(string $canonical, string $projectRoot): string
+    {
+        if (!str_starts_with($canonical, 'file:')) {
+            return $canonical;
+        }
+
+        $filePath = substr($canonical, 5);
+
+        // Already absolute — legacy baseline, keep as-is
+        if (str_starts_with($filePath, '/')) {
+            return $canonical;
+        }
+
+        return 'file:' . rtrim($projectRoot, '/') . '/' . $filePath;
+    }
+
+    /**
      * @param array<string, mixed> $data
      */
     private function validateStructure(array $data): void
@@ -147,5 +171,19 @@ final readonly class BaselineLoader
         if (!\is_array($data['violations'])) {
             throw new RuntimeException('Baseline "violations" must be an object');
         }
+    }
+
+    /**
+     * Resolves relative projectRoot to absolute path.
+     */
+    private static function normalizeProjectRoot(string $projectRoot): string
+    {
+        if ($projectRoot === '.' || !str_starts_with($projectRoot, '/')) {
+            $resolved = realpath($projectRoot);
+
+            return $resolved !== false ? $resolved : ((string) getcwd());
+        }
+
+        return $projectRoot;
     }
 }

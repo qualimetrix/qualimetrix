@@ -1,8 +1,8 @@
 {
     "version": 4,
-    "generated": "2026-03-18T15:25:39+00:00",
-    "count": 967,
-    "violationCount": 967,
+    "generated": "2026-03-18T15:45:10+00:00",
+    "count": 966,
+    "violationCount": 966,
     "symbolCount": 668,
     "violations": {
         "class:AiMessDetector\\Analysis\\Aggregator\\AggregationHelper": [
@@ -602,10 +602,6 @@
             }
         ],
         "class:AiMessDetector\\Infrastructure\\Console\\ResultPresenter": [
-            {
-                "rule": "computed.health",
-                "hash": "5faf67c1a155e109"
-            },
             {
                 "rule": "coupling.cbo",
                 "hash": "395591f9c9cb9daf"
@@ -1971,367 +1967,367 @@
                 "hash": "49bab8ebedd1aaf5"
             }
         ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Analysis/Aggregator/AggregationHelper.php": [
+        "file:src/Analysis/Aggregator/AggregationHelper.php": [
             {
                 "rule": "duplication.code-duplication",
                 "hash": "94c57dbd29c8268f"
             }
         ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Analysis/Aggregator/GlobalCollectorSorter.php": [
+        "file:src/Analysis/Aggregator/GlobalCollectorSorter.php": [
             {
                 "rule": "duplication.code-duplication",
                 "hash": "94c57dbd29c8268f"
             }
         ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Analysis/Collection/Dependency/DependencyGraphBuilder.php": [
+        "file:src/Analysis/Collection/Dependency/DependencyGraphBuilder.php": [
             {
                 "rule": "duplication.code-duplication",
                 "hash": "94c57dbd29c8268f"
             }
         ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Analysis/Collection/Dependency/DependencyVisitor.php": [
+        "file:src/Analysis/Collection/Dependency/DependencyVisitor.php": [
             {
                 "rule": "duplication.code-duplication",
                 "hash": "94c57dbd29c8268f"
             }
         ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Analysis/Collection/Dependency/Export/DotExporter.php": [
+        "file:src/Analysis/Collection/Dependency/Export/DotExporter.php": [
             {
                 "rule": "duplication.code-duplication",
                 "hash": "94c57dbd29c8268f"
             }
         ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Baseline/Suppression/SuppressionExtractor.php": [
+        "file:src/Baseline/Suppression/SuppressionExtractor.php": [
             {
                 "rule": "duplication.code-duplication",
                 "hash": "94c57dbd29c8268f"
             }
         ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Configuration/ComputedMetricsConfigResolver.php": [
+        "file:src/Configuration/ComputedMetricsConfigResolver.php": [
             {
                 "rule": "duplication.code-duplication",
                 "hash": "94c57dbd29c8268f"
             }
         ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Configuration/Pipeline/Stage/ConfigFileStage.php": [
+        "file:src/Configuration/Pipeline/Stage/ConfigFileStage.php": [
             {
                 "rule": "duplication.code-duplication",
                 "hash": "94c57dbd29c8268f"
             }
         ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Configuration/RuleOptionsParserFactory.php": [
+        "file:src/Configuration/RuleOptionsParserFactory.php": [
             {
                 "rule": "duplication.code-duplication",
                 "hash": "94c57dbd29c8268f"
             }
         ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Core/ComputedMetric/ComputedMetricDefaults.php": [
+        "file:src/Core/ComputedMetric/ComputedMetricDefaults.php": [
             {
                 "rule": "duplication.code-duplication",
                 "hash": "94c57dbd29c8268f"
             }
         ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Infrastructure/Console/Command/HookInstallCommand.php": [
+        "file:src/Infrastructure/Console/Command/HookInstallCommand.php": [
             {
                 "rule": "duplication.code-duplication",
                 "hash": "94c57dbd29c8268f"
             }
         ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Infrastructure/Console/ProfilePresenter.php": [
+        "file:src/Infrastructure/Console/ProfilePresenter.php": [
+            {
+                "rule": "code-smell.error-suppression",
+                "hash": "08df84ab3bd07d8f"
+            }
+        ],
+        "file:src/Infrastructure/Logging/ConsoleLogger.php": [
             {
                 "rule": "duplication.code-duplication",
                 "hash": "94c57dbd29c8268f"
             }
         ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Infrastructure/Logging/ConsoleLogger.php": [
+        "file:src/Infrastructure/Storage/SqliteStorage.php": [
+            {
+                "rule": "code-smell.error-suppression",
+                "hash": "08df84ab3bd07d8f"
+            }
+        ],
+        "file:src/Metrics/CodeSmell/ParameterCountCollector.php": [
             {
                 "rule": "duplication.code-duplication",
                 "hash": "94c57dbd29c8268f"
             }
         ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Infrastructure/Storage/SqliteStorage.php": [
+        "file:src/Metrics/CodeSmell/ParameterCountVisitor.php": [
             {
                 "rule": "duplication.code-duplication",
                 "hash": "94c57dbd29c8268f"
             }
         ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Metrics/CodeSmell/ParameterCountCollector.php": [
+        "file:src/Metrics/CodeSmell/UnreachableCodeVisitor.php": [
             {
                 "rule": "duplication.code-duplication",
                 "hash": "94c57dbd29c8268f"
             }
         ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Metrics/CodeSmell/ParameterCountVisitor.php": [
+        "file:src/Metrics/Complexity/CognitiveComplexityCollector.php": [
             {
                 "rule": "duplication.code-duplication",
                 "hash": "94c57dbd29c8268f"
             }
         ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Metrics/CodeSmell/UnreachableCodeVisitor.php": [
+        "file:src/Metrics/Complexity/CognitiveComplexityVisitor.php": [
             {
                 "rule": "duplication.code-duplication",
                 "hash": "94c57dbd29c8268f"
             }
         ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Metrics/Complexity/CognitiveComplexityCollector.php": [
+        "file:src/Metrics/Complexity/CyclomaticComplexityVisitor.php": [
             {
                 "rule": "duplication.code-duplication",
                 "hash": "94c57dbd29c8268f"
             }
         ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Metrics/Complexity/CognitiveComplexityVisitor.php": [
+        "file:src/Metrics/Design/TypeCoverageVisitor.php": [
             {
                 "rule": "duplication.code-duplication",
                 "hash": "94c57dbd29c8268f"
             }
         ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Metrics/Complexity/CyclomaticComplexityVisitor.php": [
+        "file:src/Metrics/Halstead/HalsteadVisitor.php": [
             {
                 "rule": "duplication.code-duplication",
                 "hash": "94c57dbd29c8268f"
             }
         ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Metrics/Design/TypeCoverageVisitor.php": [
+        "file:src/Metrics/Security/SensitiveNameMatcher.php": [
             {
                 "rule": "duplication.code-duplication",
                 "hash": "94c57dbd29c8268f"
             }
         ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Metrics/Halstead/HalsteadVisitor.php": [
+        "file:src/Metrics/Structure/DitGlobalCollector.php": [
             {
                 "rule": "duplication.code-duplication",
                 "hash": "94c57dbd29c8268f"
             }
         ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Metrics/Security/SensitiveNameMatcher.php": [
+        "file:src/Metrics/Structure/InheritanceDepthVisitor.php": [
             {
                 "rule": "duplication.code-duplication",
                 "hash": "94c57dbd29c8268f"
             }
         ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Metrics/Structure/DitGlobalCollector.php": [
+        "file:src/Metrics/Structure/LcomClassData.php": [
             {
                 "rule": "duplication.code-duplication",
                 "hash": "94c57dbd29c8268f"
             }
         ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Metrics/Structure/InheritanceDepthVisitor.php": [
+        "file:src/Metrics/Structure/LcomVisitor.php": [
             {
                 "rule": "duplication.code-duplication",
                 "hash": "94c57dbd29c8268f"
             }
         ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Metrics/Structure/LcomClassData.php": [
+        "file:src/Metrics/Structure/MethodCountCollector.php": [
             {
                 "rule": "duplication.code-duplication",
                 "hash": "94c57dbd29c8268f"
             }
         ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Metrics/Structure/LcomVisitor.php": [
+        "file:src/Metrics/Structure/MethodCountVisitor.php": [
             {
                 "rule": "duplication.code-duplication",
                 "hash": "94c57dbd29c8268f"
             }
         ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Metrics/Structure/MethodCountCollector.php": [
+        "file:src/Metrics/VisitorMethodTrackingTrait.php": [
             {
                 "rule": "duplication.code-duplication",
                 "hash": "94c57dbd29c8268f"
             }
         ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Metrics/Structure/MethodCountVisitor.php": [
+        "file:src/Reporting/Debt/RemediationTimeRegistry.php": [
             {
                 "rule": "duplication.code-duplication",
                 "hash": "94c57dbd29c8268f"
             }
         ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Metrics/VisitorMethodTrackingTrait.php": [
+        "file:src/Reporting/Health/MetricHintProvider.php": [
+            {
+                "rule": "code-smell.boolean-argument",
+                "hash": "e6acee50dc42416e"
+            }
+        ],
+        "file:src/Reporting/Health/NamespaceDrillDown.php": [
+            {
+                "rule": "code-smell.boolean-argument",
+                "hash": "e6acee50dc42416e"
+            }
+        ],
+        "file:src/Rules/CodeSmell/BooleanArgumentRule.php": [
             {
                 "rule": "duplication.code-duplication",
                 "hash": "94c57dbd29c8268f"
             }
         ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Reporting/Debt/RemediationTimeRegistry.php": [
+        "file:src/Rules/CodeSmell/CodeSmellOptions.php": [
+            {
+                "rule": "code-smell.boolean-argument",
+                "hash": "e6acee50dc42416e"
+            }
+        ],
+        "file:src/Rules/CodeSmell/ConstructorOverinjectionOptions.php": [
+            {
+                "rule": "code-smell.boolean-argument",
+                "hash": "e6acee50dc42416e"
+            }
+        ],
+        "file:src/Rules/CodeSmell/ConstructorOverinjectionRule.php": [
             {
                 "rule": "duplication.code-duplication",
                 "hash": "94c57dbd29c8268f"
             }
         ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Reporting/Health/MetricHintProvider.php": [
+        "file:src/Rules/CodeSmell/CountInLoopRule.php": [
             {
                 "rule": "duplication.code-duplication",
                 "hash": "94c57dbd29c8268f"
             }
         ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Reporting/Health/NamespaceDrillDown.php": [
+        "file:src/Rules/CodeSmell/EmptyCatchRule.php": [
             {
                 "rule": "duplication.code-duplication",
                 "hash": "94c57dbd29c8268f"
             }
         ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Rules/CodeSmell/BooleanArgumentRule.php": [
+        "file:src/Rules/CodeSmell/GodClassRule.php": [
             {
                 "rule": "duplication.code-duplication",
                 "hash": "94c57dbd29c8268f"
             }
         ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Rules/CodeSmell/CodeSmellOptions.php": [
+        "file:src/Rules/CodeSmell/IdenticalSubExpressionOptions.php": [
+            {
+                "rule": "code-smell.boolean-argument",
+                "hash": "e6acee50dc42416e"
+            }
+        ],
+        "file:src/Rules/Complexity/ClassCognitiveComplexityOptions.php": [
+            {
+                "rule": "code-smell.boolean-argument",
+                "hash": "e6acee50dc42416e"
+            }
+        ],
+        "file:src/Rules/Complexity/ClassComplexityOptions.php": [
+            {
+                "rule": "code-smell.boolean-argument",
+                "hash": "e6acee50dc42416e"
+            }
+        ],
+        "file:src/Rules/Complexity/CognitiveComplexityOptions.php": [
             {
                 "rule": "duplication.code-duplication",
                 "hash": "94c57dbd29c8268f"
             }
         ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Rules/CodeSmell/ConstructorOverinjectionOptions.php": [
+        "file:src/Rules/Complexity/CognitiveComplexityRule.php": [
             {
                 "rule": "duplication.code-duplication",
                 "hash": "94c57dbd29c8268f"
             }
         ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Rules/CodeSmell/ConstructorOverinjectionRule.php": [
+        "file:src/Rules/Complexity/MethodCognitiveComplexityOptions.php": [
+            {
+                "rule": "code-smell.boolean-argument",
+                "hash": "e6acee50dc42416e"
+            }
+        ],
+        "file:src/Rules/Complexity/MethodComplexityOptions.php": [
+            {
+                "rule": "code-smell.boolean-argument",
+                "hash": "e6acee50dc42416e"
+            }
+        ],
+        "file:src/Rules/Coupling/CboOptions.php": [
             {
                 "rule": "duplication.code-duplication",
                 "hash": "94c57dbd29c8268f"
             }
         ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Rules/CodeSmell/CountInLoopRule.php": [
+        "file:src/Rules/Coupling/CboRule.php": [
             {
                 "rule": "duplication.code-duplication",
                 "hash": "94c57dbd29c8268f"
             }
         ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Rules/CodeSmell/EmptyCatchRule.php": [
+        "file:src/Rules/Coupling/ClassCboOptions.php": [
+            {
+                "rule": "code-smell.boolean-argument",
+                "hash": "e6acee50dc42416e"
+            }
+        ],
+        "file:src/Rules/Coupling/ClassInstabilityOptions.php": [
+            {
+                "rule": "code-smell.boolean-argument",
+                "hash": "e6acee50dc42416e"
+            }
+        ],
+        "file:src/Rules/Coupling/ClassRankOptions.php": [
+            {
+                "rule": "code-smell.boolean-argument",
+                "hash": "e6acee50dc42416e"
+            }
+        ],
+        "file:src/Rules/Coupling/ClassRankRule.php": [
             {
                 "rule": "duplication.code-duplication",
                 "hash": "94c57dbd29c8268f"
             }
         ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Rules/CodeSmell/GodClassRule.php": [
+        "file:src/Rules/Coupling/InstabilityRule.php": [
             {
                 "rule": "duplication.code-duplication",
                 "hash": "94c57dbd29c8268f"
             }
         ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Rules/CodeSmell/IdenticalSubExpressionOptions.php": [
+        "file:src/Rules/Design/TypeCoverageRule.php": [
             {
                 "rule": "duplication.code-duplication",
                 "hash": "94c57dbd29c8268f"
             }
         ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Rules/Complexity/ClassCognitiveComplexityOptions.php": [
+        "file:src/Rules/Maintainability/MaintainabilityRule.php": [
             {
                 "rule": "duplication.code-duplication",
                 "hash": "94c57dbd29c8268f"
             }
         ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Rules/Complexity/ClassComplexityOptions.php": [
+        "file:src/Rules/Security/CommandInjectionRule.php": [
             {
                 "rule": "duplication.code-duplication",
                 "hash": "94c57dbd29c8268f"
             }
         ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Rules/Complexity/CognitiveComplexityOptions.php": [
+        "file:src/Rules/Size/MethodCountRule.php": [
             {
                 "rule": "duplication.code-duplication",
                 "hash": "94c57dbd29c8268f"
             }
         ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Rules/Complexity/CognitiveComplexityRule.php": [
+        "file:src/Rules/Size/PropertyCountOptions.php": [
+            {
+                "rule": "code-smell.boolean-argument",
+                "hash": "e6acee50dc42416e"
+            }
+        ],
+        "file:src/Rules/Size/PropertyCountRule.php": [
             {
                 "rule": "duplication.code-duplication",
                 "hash": "94c57dbd29c8268f"
             }
         ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Rules/Complexity/MethodCognitiveComplexityOptions.php": [
-            {
-                "rule": "duplication.code-duplication",
-                "hash": "94c57dbd29c8268f"
-            }
-        ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Rules/Complexity/MethodComplexityOptions.php": [
-            {
-                "rule": "duplication.code-duplication",
-                "hash": "94c57dbd29c8268f"
-            }
-        ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Rules/Coupling/CboOptions.php": [
-            {
-                "rule": "duplication.code-duplication",
-                "hash": "94c57dbd29c8268f"
-            }
-        ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Rules/Coupling/CboRule.php": [
-            {
-                "rule": "duplication.code-duplication",
-                "hash": "94c57dbd29c8268f"
-            }
-        ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Rules/Coupling/ClassCboOptions.php": [
-            {
-                "rule": "duplication.code-duplication",
-                "hash": "94c57dbd29c8268f"
-            }
-        ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Rules/Coupling/ClassInstabilityOptions.php": [
-            {
-                "rule": "duplication.code-duplication",
-                "hash": "94c57dbd29c8268f"
-            }
-        ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Rules/Coupling/ClassRankOptions.php": [
-            {
-                "rule": "duplication.code-duplication",
-                "hash": "94c57dbd29c8268f"
-            }
-        ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Rules/Coupling/ClassRankRule.php": [
-            {
-                "rule": "duplication.code-duplication",
-                "hash": "94c57dbd29c8268f"
-            }
-        ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Rules/Coupling/InstabilityRule.php": [
-            {
-                "rule": "duplication.code-duplication",
-                "hash": "94c57dbd29c8268f"
-            }
-        ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Rules/Design/TypeCoverageRule.php": [
-            {
-                "rule": "duplication.code-duplication",
-                "hash": "94c57dbd29c8268f"
-            }
-        ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Rules/Maintainability/MaintainabilityRule.php": [
-            {
-                "rule": "duplication.code-duplication",
-                "hash": "94c57dbd29c8268f"
-            }
-        ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Rules/Security/CommandInjectionRule.php": [
-            {
-                "rule": "duplication.code-duplication",
-                "hash": "94c57dbd29c8268f"
-            }
-        ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Rules/Size/MethodCountRule.php": [
-            {
-                "rule": "duplication.code-duplication",
-                "hash": "94c57dbd29c8268f"
-            }
-        ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Rules/Size/PropertyCountOptions.php": [
-            {
-                "rule": "duplication.code-duplication",
-                "hash": "94c57dbd29c8268f"
-            }
-        ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Rules/Size/PropertyCountRule.php": [
-            {
-                "rule": "duplication.code-duplication",
-                "hash": "94c57dbd29c8268f"
-            }
-        ],
-        "file:/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Rules/Structure/InheritanceRule.php": [
+        "file:src/Rules/Structure/InheritanceRule.php": [
             {
                 "rule": "duplication.code-duplication",
                 "hash": "94c57dbd29c8268f"
@@ -2427,12 +2423,6 @@
                 "hash": "e6acee50dc42416e"
             }
         ],
-        "file:src/Infrastructure/Console/ProfilePresenter.php": [
-            {
-                "rule": "code-smell.error-suppression",
-                "hash": "08df84ab3bd07d8f"
-            }
-        ],
         "file:src/Infrastructure/Console/ResultPresenter.php": [
             {
                 "rule": "code-smell.boolean-argument",
@@ -2486,12 +2476,6 @@
             }
         ],
         "file:src/Infrastructure/Storage/ChangeDetector.php": [
-            {
-                "rule": "code-smell.error-suppression",
-                "hash": "08df84ab3bd07d8f"
-            }
-        ],
-        "file:src/Infrastructure/Storage/SqliteStorage.php": [
             {
                 "rule": "code-smell.error-suppression",
                 "hash": "08df84ab3bd07d8f"
@@ -2563,18 +2547,6 @@
                 "hash": "e6acee50dc42416e"
             }
         ],
-        "file:src/Reporting/Health/MetricHintProvider.php": [
-            {
-                "rule": "code-smell.boolean-argument",
-                "hash": "e6acee50dc42416e"
-            }
-        ],
-        "file:src/Reporting/Health/NamespaceDrillDown.php": [
-            {
-                "rule": "code-smell.boolean-argument",
-                "hash": "e6acee50dc42416e"
-            }
-        ],
         "file:src/Reporting/Health/SummaryEnricher.php": [
             {
                 "rule": "code-smell.boolean-argument",
@@ -2587,18 +2559,6 @@
                 "hash": "e6acee50dc42416e"
             }
         ],
-        "file:src/Rules/CodeSmell/CodeSmellOptions.php": [
-            {
-                "rule": "code-smell.boolean-argument",
-                "hash": "e6acee50dc42416e"
-            }
-        ],
-        "file:src/Rules/CodeSmell/ConstructorOverinjectionOptions.php": [
-            {
-                "rule": "code-smell.boolean-argument",
-                "hash": "e6acee50dc42416e"
-            }
-        ],
         "file:src/Rules/CodeSmell/DataClassOptions.php": [
             {
                 "rule": "code-smell.boolean-argument",
@@ -2606,12 +2566,6 @@
             }
         ],
         "file:src/Rules/CodeSmell/GodClassOptions.php": [
-            {
-                "rule": "code-smell.boolean-argument",
-                "hash": "e6acee50dc42416e"
-            }
-        ],
-        "file:src/Rules/CodeSmell/IdenticalSubExpressionOptions.php": [
             {
                 "rule": "code-smell.boolean-argument",
                 "hash": "e6acee50dc42416e"
@@ -2635,31 +2589,7 @@
                 "hash": "e6acee50dc42416e"
             }
         ],
-        "file:src/Rules/Complexity/ClassCognitiveComplexityOptions.php": [
-            {
-                "rule": "code-smell.boolean-argument",
-                "hash": "e6acee50dc42416e"
-            }
-        ],
-        "file:src/Rules/Complexity/ClassComplexityOptions.php": [
-            {
-                "rule": "code-smell.boolean-argument",
-                "hash": "e6acee50dc42416e"
-            }
-        ],
         "file:src/Rules/Complexity/ClassNpathComplexityOptions.php": [
-            {
-                "rule": "code-smell.boolean-argument",
-                "hash": "e6acee50dc42416e"
-            }
-        ],
-        "file:src/Rules/Complexity/MethodCognitiveComplexityOptions.php": [
-            {
-                "rule": "code-smell.boolean-argument",
-                "hash": "e6acee50dc42416e"
-            }
-        ],
-        "file:src/Rules/Complexity/MethodComplexityOptions.php": [
             {
                 "rule": "code-smell.boolean-argument",
                 "hash": "e6acee50dc42416e"
@@ -2672,24 +2602,6 @@
             }
         ],
         "file:src/Rules/ComputedMetric/ComputedMetricRuleOptions.php": [
-            {
-                "rule": "code-smell.boolean-argument",
-                "hash": "e6acee50dc42416e"
-            }
-        ],
-        "file:src/Rules/Coupling/ClassCboOptions.php": [
-            {
-                "rule": "code-smell.boolean-argument",
-                "hash": "e6acee50dc42416e"
-            }
-        ],
-        "file:src/Rules/Coupling/ClassInstabilityOptions.php": [
-            {
-                "rule": "code-smell.boolean-argument",
-                "hash": "e6acee50dc42416e"
-            }
-        ],
-        "file:src/Rules/Coupling/ClassRankOptions.php": [
             {
                 "rule": "code-smell.boolean-argument",
                 "hash": "e6acee50dc42416e"
@@ -2756,12 +2668,6 @@
             }
         ],
         "file:src/Rules/Size/MethodCountOptions.php": [
-            {
-                "rule": "code-smell.boolean-argument",
-                "hash": "e6acee50dc42416e"
-            }
-        ],
-        "file:src/Rules/Size/PropertyCountOptions.php": [
             {
                 "rule": "code-smell.boolean-argument",
                 "hash": "e6acee50dc42416e"

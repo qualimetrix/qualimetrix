@@ -150,6 +150,76 @@ final class BaselineWriterTest extends TestCase
         self::assertEmpty($data['violations']);
     }
 
+    public function testRelativizesAbsoluteFilePathsInBaseline(): void
+    {
+        $projectRoot = '/home/user/project';
+        $baseline = new Baseline(
+            version: 4,
+            generated: new DateTimeImmutable('2025-12-08T10:00:00+00:00'),
+            entries: [
+                'file:/home/user/project/src/Foo.php' => [
+                    new BaselineEntry('size.loc', 'abc123'),
+                ],
+                'class:App\Foo' => [
+                    new BaselineEntry('complexity', 'def456'),
+                ],
+                'method:App\Foo::bar' => [
+                    new BaselineEntry('complexity', 'ghi789'),
+                ],
+            ],
+        );
+
+        $path = $this->tempDir . '/baseline.json';
+        $this->writer->write($baseline, $path, $projectRoot);
+
+        $data = json_decode((string) file_get_contents($path), true);
+        self::assertArrayHasKey('file:src/Foo.php', $data['violations'], 'Absolute file: path should be relativized');
+        self::assertArrayNotHasKey('file:/home/user/project/src/Foo.php', $data['violations']);
+        self::assertArrayHasKey('class:App\Foo', $data['violations'], 'Non-file keys should not change');
+        self::assertArrayHasKey('method:App\Foo::bar', $data['violations'], 'Non-file keys should not change');
+    }
+
+    public function testDotProjectRootNormalizesToAbsolutePath(): void
+    {
+        $cwd = (string) getcwd();
+        $baseline = new Baseline(
+            version: 4,
+            generated: new DateTimeImmutable(),
+            entries: [
+                'file:' . $cwd . '/src/Foo.php' => [
+                    new BaselineEntry('size.loc', 'abc123'),
+                ],
+            ],
+        );
+
+        $path = $this->tempDir . '/baseline.json';
+        // '.' should be normalized to getcwd(), then relativize correctly
+        $this->writer->write($baseline, $path, '.');
+
+        $data = json_decode((string) file_get_contents($path), true);
+        self::assertArrayHasKey('file:src/Foo.php', $data['violations'], 'projectRoot="." should normalize to getcwd() and relativize');
+        self::assertArrayNotHasKey('file:' . $cwd . '/src/Foo.php', $data['violations']);
+    }
+
+    public function testKeepsAlreadyRelativeFilePaths(): void
+    {
+        $baseline = new Baseline(
+            version: 4,
+            generated: new DateTimeImmutable(),
+            entries: [
+                'file:src/Foo.php' => [
+                    new BaselineEntry('size.loc', 'abc123'),
+                ],
+            ],
+        );
+
+        $path = $this->tempDir . '/baseline.json';
+        $this->writer->write($baseline, $path, '/some/project');
+
+        $data = json_decode((string) file_get_contents($path), true);
+        self::assertArrayHasKey('file:src/Foo.php', $data['violations']);
+    }
+
     private function recursiveDelete(string $dir): void
     {
         if (!is_dir($dir)) {

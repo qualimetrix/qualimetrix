@@ -223,6 +223,62 @@ final class BaselineCleanupCommandTest extends TestCase
         $this->assertStringContainsString('NonExisting.php', $output);
     }
 
+    #[Test]
+    public function itHandlesPortableRelativePathsInBaseline(): void
+    {
+        // Create a file structure simulating a project
+        $projectDir = $this->tempDir . '/project';
+        mkdir($projectDir . '/src', 0777, true);
+        $existingFile = $projectDir . '/src/Existing.php';
+        file_put_contents($existingFile, '<?php class Existing {}');
+
+        // Write a baseline with relative file: paths (portable format)
+        $baselinePath = $projectDir . '/baseline.json';
+        $json = json_encode([
+            'version' => 4,
+            'generated' => '2025-12-08T10:00:00+00:00',
+            'count' => 2,
+            'violationCount' => 2,
+            'symbolCount' => 2,
+            'violations' => [
+                'file:src/Existing.php' => [
+                    ['rule' => 'size.loc', 'hash' => 'abc123'],
+                ],
+                'file:src/Removed.php' => [
+                    ['rule' => 'size.loc', 'hash' => 'def456'],
+                ],
+            ],
+        ], \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES);
+        file_put_contents($baselinePath, $json);
+
+        // Run cleanup from the project directory
+        $originalDir = getcwd();
+        chdir($projectDir);
+
+        try {
+            $command = new BaselineCleanupCommand(
+                new BaselineLoader(),
+                new BaselineWriter(),
+            );
+
+            $application = new Application();
+            $application->addCommand($command);
+
+            $commandTester = new CommandTester($command);
+            $commandTester->execute(['baseline' => $baselinePath]);
+
+            self::assertSame(0, $commandTester->getStatusCode());
+            self::assertStringContainsString('Removed 1 stale entries', $commandTester->getDisplay());
+
+            // Verify the cleaned baseline still has relative paths
+            $data = json_decode((string) file_get_contents($baselinePath), true);
+            self::assertArrayHasKey('file:src/Existing.php', $data['violations']);
+            self::assertArrayNotHasKey('file:src/Removed.php', $data['violations']);
+        } finally {
+            chdir((string) $originalDir);
+        }
+    }
+
     /**
      * Recursively remove a directory.
      */
