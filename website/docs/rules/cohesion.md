@@ -10,6 +10,7 @@ See also: [LCOM (Lack of Cohesion of Methods)](design.md#lcom----lack-of-cohesio
 
 **Metric ID:** `tcc`
 
+<!-- llms:skip-begin -->
 ### What it measures
 
 TCC measures how connected the public methods of a class are through shared property access. If two public methods both read or write the same property (`$this->property`), they are considered **directly connected**.
@@ -38,6 +39,8 @@ Think of it like a dinner party: if every guest knows every other guest, the gro
 | 0.3--0.5  | Moderate cohesion                                |
 | Below 0.3 | Low method interconnection -- consider splitting |
 
+<!-- llms:skip-end -->
+
 ### Thresholds
 
 TCC and LCC are currently reported as **metrics only** (visible in `--format=metrics` output). They do not produce violations on their own. Use them alongside [LCOM](design.md#lcom----lack-of-cohesion-of-methods) for a fuller picture of class cohesion.
@@ -51,6 +54,7 @@ Recommended interpretation:
 | 0.3--0.5  | Moderate -- review whether the class has too many concerns |
 | < 0.3     | Low cohesion -- the class likely needs to be split         |
 
+<!-- llms:skip-begin -->
 ### Example
 
 ```php
@@ -94,6 +98,9 @@ class OrderService
 
 With 5 public methods, NP = 5 x 4 / 2 = 10 possible pairs. Only a few pairs share properties (e.g., `addItem`-`getTotal` share `$total`, `addItem`-`getItems` share `$items`, `setCustomer`-`getCustomerEmail` share `$customerEmail`). The two groups have no overlap, so TCC will be low (around 0.3).
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### How to fix
 
 - **Split the class** along the property boundaries. In the example: `OrderCart` for items/total and `CustomerInfo` for name/email.
@@ -102,10 +109,13 @@ With 5 public methods, NP = 5 x 4 / 2 = 10 possible pairs. Only a few pairs shar
 
 ---
 
+<!-- llms:skip-end -->
+
 ## LCC -- Loose Class Cohesion
 
 **Metric ID:** `lcc`
 
+<!-- llms:skip-begin -->
 ### What it measures
 
 LCC extends TCC by including **transitive connections**. Two methods are considered loosely connected if they are linked through a chain of directly connected methods, even if they don't share a property themselves.
@@ -124,6 +134,9 @@ LCC is always >= TCC for the same class. If TCC = LCC, there are no transitive-o
 | TCC = LCC    | All connections are direct -- no transitive chains            |
 | LCC >> TCC   | Methods form chains -- consider whether design is intentional |
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### Example
 
 Consider three methods A, B, and C:
@@ -136,6 +149,8 @@ TCC counts 2 direct pairs out of 3 possible: TCC = 2/3 = 0.67.
 LCC counts all 3 pairs (A-C are transitively connected through B): LCC = 3/3 = 1.0.
 
 ---
+
+<!-- llms:skip-end -->
 
 ## Implementation notes
 

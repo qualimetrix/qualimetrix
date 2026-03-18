@@ -31,6 +31,9 @@ theme:
     - content.code.copy
     - content.code.annotate
 
+hooks:
+  - hooks/generate_llms_txt.py
+
 plugins:
   - search
   - i18n:

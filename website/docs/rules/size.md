@@ -8,6 +8,7 @@ Size rules catch classes and namespaces that have grown too large. Large classes
 
 **Rule ID:** `size.method-count`
 
+<!-- llms:skip-begin -->
 ### What it measures
 
 Counts the number of methods in a class. A class with too many methods is likely doing too much and should be split into smaller, more focused classes.
@@ -20,6 +21,8 @@ Counts the number of methods in a class. A class with too many methods is likely
 | 11--20  | Large class                                 |
 | 21--30  | Very large class -- review responsibilities |
 | 30+     | God Class territory -- split immediately    |
+
+<!-- llms:skip-end -->
 
 ### Thresholds
 
@@ -50,6 +53,7 @@ bin/aimd check src/ --rule-opt="size.method-count:warning=25"
 bin/aimd check src/ --rule-opt="size.method-count:error=40"
 ```
 
+<!-- llms:skip-begin -->
 ### Example
 
 ```php
@@ -79,6 +83,9 @@ class OrderService
 }
 ```
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### How to fix
 
 1. **Identify method groups.** Look for clusters of methods that work together (e.g., all payment-related methods, all notification methods).
@@ -97,10 +104,13 @@ class OrderService
 
 ---
 
+<!-- llms:skip-end -->
+
 ## Class Count
 
 **Rule ID:** `size.class-count`
 
+<!-- llms:skip-begin -->
 ### What it measures
 
 Counts the number of classes in a namespace (package). This is measured at the namespace level, not the class level. A namespace with too many classes is hard to navigate and likely has too broad a scope.
@@ -113,6 +123,8 @@ Counts the number of classes in a namespace (package). This is measured at the n
 | 11--15  | Moderate namespace                          |
 | 16--25  | Large namespace -- consider sub-namespacing |
 | 25+     | Bloated namespace                           |
+
+<!-- llms:skip-end -->
 
 ### Thresholds
 
@@ -143,6 +155,7 @@ bin/aimd check src/ --rule-opt="size.class-count:warning=20"
 bin/aimd check src/ --rule-opt="size.class-count:error=30"
 ```
 
+<!-- llms:skip-begin -->
 ### Example
 
 ```
@@ -155,6 +168,9 @@ App\Service\                  # 28 classes -- too many!
 ├── ... (23 more files)
 ```
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### How to fix
 
 1. **Group related classes into sub-namespaces:**
@@ -170,10 +186,13 @@ App\Service\                  # 28 classes -- too many!
 
 ---
 
+<!-- llms:skip-end -->
+
 ## Property Count
 
 **Rule ID:** `size.property-count`
 
+<!-- llms:skip-begin -->
 ### What it measures
 
 Counts the number of properties (fields) in a class. A class with many properties often has too many responsibilities or is storing too much state.
@@ -189,6 +208,8 @@ Counts the number of properties (fields) in a class. A class with many propertie
 
 !!! note
     This rule uses a strict comparison (`>` instead of `>=`). A class with exactly 15 properties will **not** trigger a warning; it needs 16 or more.
+
+<!-- llms:skip-end -->
 
 ### Thresholds
 
@@ -223,6 +244,7 @@ bin/aimd check src/ --rule-opt="size.property-count:warning=18"
 bin/aimd check src/ --rule-opt="size.property-count:error=25"
 ```
 
+<!-- llms:skip-begin -->
 ### Example
 
 ```php
@@ -250,6 +272,9 @@ class ReportGenerator
 }
 ```
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### How to fix
 
 1. **Extract value objects.** Group related properties into small, focused objects:
@@ -289,3 +314,5 @@ class ReportGenerator
 
 !!! tip
     Classes with only promoted constructor properties (common in DTOs) are excluded by default via `excludePromotedOnly`. This avoids false positives on classes like `CreateUserRequest(string $name, string $email, ...)`.
+
+<!-- llms:skip-end -->

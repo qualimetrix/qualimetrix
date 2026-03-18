@@ -12,6 +12,7 @@
 **Идентификатор правила:** `security.hardcoded-credentials`
 **Серьезность:** Error
 
+<!-- llms:skip-begin -->
 ### Что измеряет
 
 Обнаруживает захардкоженные учетные данные в PHP-коде -- строковые литералы, присвоенные переменным, свойствам, константам, ключам массивов и параметрам с именами, связанными с учетными данными.
@@ -35,6 +36,9 @@
 
 **Фильтрация значений:** пустые строки, строки короче 4 символов и строки из одинаковых символов (`***`, `xxx`) пропускаются.
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### Пример
 
 ```php
@@ -52,6 +56,9 @@ class DatabaseConfig
 }
 ```
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### Как исправить
 
 1. **Используйте переменные окружения:**
@@ -79,15 +86,21 @@ class DatabaseConfig
 
 ---
 
+<!-- llms:skip-end -->
+
 ## SQL-инъекция (SQL Injection)
 
 **Идентификатор правила:** `security.sql-injection`
 **Серьезность:** Error
 
+<!-- llms:skip-begin -->
 ### Что измеряет
 
 Обнаруживает потенциальные уязвимости SQL-инъекции -- использование суперглобальных переменных (`$_GET`, `$_POST`, `$_REQUEST`, `$_COOKIE`) при построении SQL-запросов через конкатенацию, интерполяцию или прямую передачу в аргументы SQL-функций.
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### Пример
 
 ```php
@@ -96,6 +109,9 @@ $query = "SELECT * FROM users WHERE id = " . $_GET['id'];
 $result = mysqli_query($conn, "SELECT * FROM users WHERE name = '$_POST[name]'");
 ```
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### Как исправить
 
 1. **Используйте параметризованные запросы:**
@@ -118,15 +134,21 @@ $result = mysqli_query($conn, "SELECT * FROM users WHERE name = '$_POST[name]'")
 
 ---
 
+<!-- llms:skip-end -->
+
 ## XSS (Cross-Site Scripting)
 
 **Идентификатор правила:** `security.xss`
 **Серьезность:** Error
 
+<!-- llms:skip-begin -->
 ### Что измеряет
 
 Обнаруживает потенциальные уязвимости межсайтового скриптинга (XSS) -- вывод суперглобальных переменных (`$_GET`, `$_POST`, `$_REQUEST`, `$_COOKIE`) через `echo`/`print` без санитизации (`htmlspecialchars`, `htmlentities`, `strip_tags`, `intval`, приведение к `int`/`float`).
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### Пример
 
 ```php
@@ -135,6 +157,9 @@ echo $_GET['name'];
 print("Привет, " . $_POST['username']);
 ```
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### Как исправить
 
 1. **Экранируйте вывод:**
@@ -150,15 +175,21 @@ print("Привет, " . $_POST['username']);
 
 ---
 
+<!-- llms:skip-end -->
+
 ## Внедрение команд (Command Injection)
 
 **Идентификатор правила:** `security.command-injection`
 **Серьезность:** Error
 
+<!-- llms:skip-begin -->
 ### Что измеряет
 
 Обнаруживает потенциальные уязвимости внедрения команд -- использование суперглобальных переменных в качестве аргументов функций выполнения команд (`exec`, `system`, `passthru`, `shell_exec`, `proc_open`, `popen`) без санитизации (`escapeshellarg`, `escapeshellcmd`).
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### Пример
 
 ```php
@@ -167,6 +198,9 @@ exec("ping " . $_GET['host']);
 system("ls " . $_POST['dir']);
 ```
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### Как исправить
 
 1. **Экранируйте аргументы:**
@@ -184,15 +218,21 @@ system("ls " . $_POST['dir']);
 
 ---
 
+<!-- llms:skip-end -->
+
 ## Чувствительные параметры (Sensitive Parameter)
 
 **Идентификатор правила:** `security.sensitive-parameter`
 **Серьезность:** Warning
 
+<!-- llms:skip-begin -->
 ### Что измеряет
 
 Обнаруживает параметры с чувствительными именами (password, secret, apiKey и т.д.), у которых отсутствует атрибут `#[\SensitiveParameter]`. Этот атрибут (доступен с PHP 8.2) предотвращает утечку значений параметров в stack traces, что особенно важно для учетных данных.
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### Пример
 
 ```php
@@ -210,6 +250,9 @@ function authenticate(#[\SensitiveParameter] string $password): bool
 }
 ```
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### Как исправить
 
 Добавьте атрибут `#[\SensitiveParameter]` к параметрам с чувствительными именами:
@@ -227,6 +270,8 @@ function connect(
     Атрибут `#[\SensitiveParameter]` доступен начиная с PHP 8.2. Он заменяет значение параметра на `SensitiveParameterValue` в stack traces, предотвращая случайную утечку секретов в логи и отчеты об ошибках.
 
 ---
+
+<!-- llms:skip-end -->
 
 ## Область обнаружения
 

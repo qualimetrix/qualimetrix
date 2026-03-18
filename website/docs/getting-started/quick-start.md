@@ -22,6 +22,7 @@ composer require --dev fractalizer/ai-mess-detector
 vendor/bin/aimd check src/
 ```
 
+<!-- llms:skip-begin -->
 ### Interpret the output
 
 The default output shows a health summary with scores by category:
@@ -47,6 +48,8 @@ Hints: --detail to see violations (top 200) | --namespace='App\Service' to drill
 ```
 
 Each category gets a label: **Strong** (excellent), **Good** (solid), **Acceptable** (room for improvement), **Weak** (needs attention), or **Critical** (action required). The "Worst namespaces" section highlights where to focus first.
+
+<!-- llms:skip-end -->
 
 ### Drill down into a namespace
 
@@ -172,6 +175,7 @@ jobs:
 
 ---
 
+<!-- llms:skip-begin -->
 ## 3. Docker
 
 Run analysis in a container without installing PHP locally.
@@ -185,6 +189,8 @@ docker build -t aimd .
 ### Usage
 
 ```bash
+<!-- llms:skip-end -->
+
 # Analyze the current directory
 docker run --rm -v $(pwd):/app aimd check src/
 
@@ -280,6 +286,7 @@ CLI patterns are merged with those defined in the config file.
 
 ---
 
+<!-- llms:skip-begin -->
 ## Method Comparison
 
 | Method              | When to use       | Advantages                                | Disadvantages                      |
@@ -296,6 +303,9 @@ CLI patterns are merged with those defined in the config file.
 
 ---
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ## Troubleshooting
 
 ### Pre-commit Hook Not Working
@@ -303,6 +313,8 @@ CLI patterns are merged with those defined in the config file.
 **Hook does not run on commit:**
 
 ```bash
+<!-- llms:skip-end -->
+
 # Check that the hook exists and is executable
 ls -la .git/hooks/pre-commit
 chmod +x .git/hooks/pre-commit

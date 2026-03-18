@@ -1,0 +1,84 @@
+# AI Mess Detector
+
+> Fast PHP static analysis tool for code quality metrics, complexity analysis, and architectural insights.
+
+## Overview
+
+AI Mess Detector (AIMD) is a CLI tool that analyzes PHP code and reports quality violations.
+It measures complexity, coupling, cohesion, maintainability, size, design, and detects code smells and security issues.
+
+- Requires PHP 8.4+
+- Install: `composer require --dev fractalizer/ai-mess-detector`
+- Run: `vendor/bin/aimd check src/`
+- Output formats: summary (default), text, json, sarif, checkstyle, gitlab, github, health (HTML)
+- Git integration: `--analyze=git:staged`, `--report=git:main..HEAD`
+- Baseline: `--generate-baseline=baseline.json`, `--baseline=baseline.json`
+- Configuration: `aimd.yaml` (auto-discovered) or `--config=path`
+- Parallel processing: auto-detected, `--workers=N` to control
+
+## Key Commands
+
+```
+vendor/bin/aimd check src/                              # basic analysis
+vendor/bin/aimd check src/ --detail                     # show violations
+vendor/bin/aimd check src/ --format=json                # JSON output
+vendor/bin/aimd check src/ --format=health -o report.html  # HTML report
+vendor/bin/aimd check src/ --analyze=git:staged         # staged files only
+vendor/bin/aimd check src/ --disable-rule=complexity    # disable rule group
+vendor/bin/aimd check src/ --only-rule=coupling.cbo     # run specific rule
+vendor/bin/aimd check src/ --rule-opt="complexity.cyclomatic:method.warning=15"
+vendor/bin/aimd hook:install                            # pre-commit hook
+vendor/bin/aimd graph:export src/ -o graph.dot          # dependency graph
+vendor/bin/aimd rules                                   # list all rules
+```
+
+## Rule Groups
+
+- **complexity**: cyclomatic (CCN), cognitive, npath, wmc
+- **coupling**: cbo, instability, distance, class-rank
+- **cohesion**: tcc, lcc (metrics, not rules)
+- **size**: method-count, class-count, property-count
+- **design**: lcom, inheritance (DIT), noc, type-coverage
+- **maintainability**: index (Maintainability Index)
+- **architecture**: circular-dependency
+- **duplication**: code-duplication
+- **code-smell**: boolean-argument, count-in-loop, debug-code, empty-catch, error-suppression, eval, exit, goto, superglobals, long-parameter-list, unreachable-code, identical-subexpression, constructor-overinjection, data-class, god-class, unused-private
+- **security**: hardcoded-credentials, sql-injection, xss, command-injection, sensitive-parameter
+
+## Configuration Example (aimd.yaml)
+
+```yaml
+rules:
+  complexity.cyclomatic:
+    method:
+      warning: 10
+      error: 20
+  size.method-count:
+    warning: 20
+    error: 30
+  coupling.cbo:
+    enabled: true
+exclude_paths:
+  - src/Entity/*
+  - src/DTO/*
+fail_on: error
+exclude_health:
+  - typing
+```
+
+## Suppression
+
+Add `@aimd-ignore` in a docblock or inline comment to suppress specific violations:
+
+```php
+/** @aimd-ignore complexity.cyclomatic — legacy algorithm */
+function complexLegacy() { ... }
+```
+
+Use `@aimd-ignore-next-line` for single-line suppression.
+
+## Documentation
+
+- [Full documentation (llms-full.txt)](llms-full.txt): Complete reference in a single file, optimized for LLMs
+- [Website](https://fractalizer.github.io/ai-mess-detector/): Human-readable documentation with examples
+- [GitHub](https://github.com/fractalizer/ai-mess-detector): Source code, issues, contributing

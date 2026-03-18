@@ -12,6 +12,7 @@ Security rules detect patterns that may introduce security vulnerabilities into 
 **Rule ID:** `security.hardcoded-credentials`
 **Severity:** Error
 
+<!-- llms:skip-begin -->
 ### What it measures
 
 Detects hardcoded credentials in PHP code -- string literal values assigned to variables, properties, constants, array keys, and parameters with credential-related names.
@@ -35,6 +36,9 @@ Names like `$passwordHash`, `$tokenStorage`, `$cacheKey`, `OPTION_PASSWORD` are 
 
 **Value filtering:** empty strings, strings shorter than 4 characters, and strings of identical characters (`***`, `xxx`) are skipped.
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### Example
 
 ```php
@@ -52,6 +56,9 @@ class DatabaseConfig
 }
 ```
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### How to fix
 
 1. **Use environment variables:**
@@ -79,11 +86,14 @@ class DatabaseConfig
 
 ---
 
+<!-- llms:skip-end -->
+
 ## SQL Injection
 
 **Rule ID:** `security.sql-injection`
 **Severity:** Error
 
+<!-- llms:skip-begin -->
 ### What it measures
 
 Detects use of superglobals (`$_GET`, `$_POST`, `$_REQUEST`, `$_COOKIE`) in SQL contexts, where unsanitized user input can lead to SQL injection attacks.
@@ -94,6 +104,9 @@ Detects use of superglobals (`$_GET`, `$_POST`, `$_REQUEST`, `$_COOKIE`) in SQL 
 - Arguments to unsafe query functions: `mysql_query($_GET['q'])`, `mysqli_query($conn, $_POST['sql'])`, `pg_query($_REQUEST['q'])`
 - `sprintf()` with SQL template: `sprintf("SELECT * FROM users WHERE id = %s", $_GET['id'])`
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### Example
 
 ```php
@@ -107,6 +120,9 @@ $result = pg_query("SELECT * FROM orders WHERE status = '" . $_POST['status'] . 
 $sql = sprintf("DELETE FROM sessions WHERE token = '%s'", $_COOKIE['session']);
 ```
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### How to fix
 
 Use **parameterized queries** (prepared statements) instead of string concatenation:
@@ -127,11 +143,14 @@ $stmt->execute();
 
 ---
 
+<!-- llms:skip-end -->
+
 ## XSS
 
 **Rule ID:** `security.xss`
 **Severity:** Error
 
+<!-- llms:skip-begin -->
 ### What it measures
 
 Detects `echo` or `print` statements that output superglobals (`$_GET`, `$_POST`, `$_REQUEST`, `$_COOKIE`) without proper sanitization, which can lead to Cross-Site Scripting (XSS) attacks.
@@ -144,6 +163,9 @@ A violation is **not** reported when the value is wrapped in a sanitization func
 - `intval()`
 - `(int)` or `(float)` casts
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### Example
 
 ```php
@@ -156,6 +178,9 @@ echo htmlspecialchars($_GET['name'], ENT_QUOTES, 'UTF-8');
 echo (int) $_GET['page'];
 ```
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### How to fix
 
 Always sanitize user input before outputting it in HTML:
@@ -175,11 +200,14 @@ echo (int) $_GET['id'];
 
 ---
 
+<!-- llms:skip-end -->
+
 ## Command Injection
 
 **Rule ID:** `security.command-injection`
 **Severity:** Error
 
+<!-- llms:skip-begin -->
 ### What it measures
 
 Detects superglobals (`$_GET`, `$_POST`, `$_REQUEST`, `$_COOKIE`) passed as arguments to shell execution functions, which can lead to command injection attacks.
@@ -191,6 +219,9 @@ A violation is **not** reported when the value is wrapped in:
 - `escapeshellarg()`
 - `escapeshellcmd()`
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### Example
 
 ```php
@@ -203,6 +234,9 @@ $output = shell_exec("grep " . $_REQUEST['pattern'] . " /var/log/app.log");
 exec("convert " . escapeshellarg($_GET['filename']) . " output.png");
 ```
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### How to fix
 
 1. **Use `escapeshellarg()`** to escape individual arguments:
@@ -226,17 +260,23 @@ exec("convert " . escapeshellarg($_GET['filename']) . " output.png");
 
 ---
 
+<!-- llms:skip-end -->
+
 ## Sensitive Parameter
 
 **Rule ID:** `security.sensitive-parameter`
 **Severity:** Warning
 
+<!-- llms:skip-begin -->
 ### What it measures
 
 Detects function and method parameters with sensitive names that are missing the `#[\SensitiveParameter]` attribute (available since PHP 8.2). Without this attribute, sensitive values like passwords and tokens will appear in plain text in stack traces, error logs, and exception reports.
 
 **Sensitive parameter names** include: `password`, `passwd`, `pwd`, `secret`, `token`, `apiKey`, `privateKey`, `credential`, and similar patterns.
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### Example
 
 ```php
@@ -262,6 +302,9 @@ class AuthService
 }
 ```
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### How to fix
 
 Add the `#[\SensitiveParameter]` attribute to parameters that handle sensitive data:
@@ -286,6 +329,8 @@ function callApi(
     The `#[\SensitiveParameter]` attribute was introduced in PHP 8.2. It replaces the value with `SensitiveParameterValue` in stack traces, preventing accidental exposure in logs and error reports.
 
 ---
+
+<!-- llms:skip-end -->
 
 ## Detection scope
 

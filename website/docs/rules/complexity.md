@@ -10,6 +10,7 @@ Think of it like directions to someone's house: "go straight, then turn left" is
 
 **Rule ID:** `complexity.cyclomatic`
 
+<!-- llms:skip-begin -->
 ### What it measures
 
 Cyclomatic Complexity (often abbreviated CCN) counts the number of **decision points** in a method. Every `if`, `elseif`, `while`, `for`, `foreach`, `case`, `catch`, `&&`, `||`, `??`, and `?:` adds 1 to the count. A method with no branches at all has a complexity of 1.
@@ -25,6 +26,8 @@ The number roughly tells you the minimum number of test cases you need to fully 
 | 11--20 | Complex -- consider refactoring         |
 | 21--50 | Very complex, hard to maintain and test |
 | 50+    | Extremely complex -- split immediately  |
+
+<!-- llms:skip-end -->
 
 ### Thresholds
 
@@ -42,6 +45,7 @@ The number roughly tells you the minimum number of test cases you need to fully 
 | Warning | >= 30     | Warning  |
 | Error   | >= 50     | Error    |
 
+<!-- llms:skip-begin -->
 ### Example
 
 This method has a cyclomatic complexity of 5 (1 base + 4 decision points):
@@ -62,6 +66,9 @@ function processOrder(Order $order): void
 }
 ```
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### How to fix
 
 - **Extract methods.** Move nested logic into well-named helper methods. Each method becomes simpler and easier to test.
@@ -69,6 +76,9 @@ function processOrder(Order $order): void
 - **Replace conditionals with polymorphism.** If you have a long `switch` or chain of `if/elseif`, consider using the Strategy or State pattern.
 - **Simplify boolean expressions.** Complex conditions like `if ($a && ($b || $c) && !$d)` can often be broken into named boolean variables or separate methods.
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### Implementation notes
 
 AIMD uses an extended variant of Cyclomatic Complexity, sometimes called **CCN2+**. In addition to the standard decision points (if, elseif, while, for, foreach, case, catch, &&, ||, ?:), AIMD also counts:
@@ -86,6 +96,8 @@ This is a deliberate choice: all these constructs represent hidden branching. Fo
 
 !!! note "Comparing with other tools"
     Because of these additional decision points, AIMD will report **higher CCN values** than phpmd or pdepend for code that uses null coalescing or nullsafe operators. This is not a bug — it reflects a stricter definition of complexity. The difference is most noticeable in code with chained `??` expressions.
+
+<!-- llms:skip-end -->
 
 ### Configuration
 
@@ -115,6 +127,7 @@ bin/aimd check src/ --rule-opt="complexity.cyclomatic:class.enabled=false"
 
 **Rule ID:** `complexity.cognitive`
 
+<!-- llms:skip-begin -->
 ### What it measures
 
 Cognitive Complexity measures how hard the code is to **read and understand** by a human. Unlike cyclomatic complexity, which counts decision points mechanically, cognitive complexity considers how the code *feels* to the reader.
@@ -134,6 +147,8 @@ Key differences from cyclomatic complexity:
 | 16--30    | Complex, hard to follow                     |
 | 30+       | Very hard to follow -- refactoring required |
 
+<!-- llms:skip-end -->
+
 ### Thresholds
 
 **Method level** (enabled by default):
@@ -150,6 +165,7 @@ Key differences from cyclomatic complexity:
 | Warning | >= 30     | Warning  |
 | Error   | >= 50     | Error    |
 
+<!-- llms:skip-begin -->
 ### Example
 
 ```php
@@ -171,12 +187,17 @@ function calculate(array $items): float  // cognitive complexity: 9
 
 Notice how nesting makes the penalty grow. The deeply nested `if ($item->hasDiscount())` costs 3 points, not just 1, because it sits inside two other structures.
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### How to fix
 
 - **Reduce nesting depth.** This is the single most effective fix. Use early returns to "flatten" the code.
 - **Extract deeply nested blocks** into separate methods with descriptive names.
 - **Avoid `else` after `return`.** If the `if` branch returns, you do not need `else`.
 - **Replace loops with collection methods** (e.g., `array_filter`, `array_map`) when appropriate.
+
+<!-- llms:skip-end -->
 
 ### Configuration
 
@@ -202,6 +223,7 @@ bin/aimd check src/ --rule-opt="complexity.cognitive:method.error=40"
 
 **Rule ID:** `complexity.npath`
 
+<!-- llms:skip-begin -->
 ### What it measures
 
 NPath Complexity counts the total number of **unique execution paths** through a method. While cyclomatic complexity adds 1 for each decision point, NPath *multiplies* across branches.
@@ -219,6 +241,8 @@ This makes NPath grow very fast. It reflects the true testing burden: to fully t
 | 201--1000 | Many execution paths, testing becomes hard |
 | 1000+     | Explosive path count -- split the method   |
 
+<!-- llms:skip-end -->
+
 ### Thresholds
 
 **Method level** (enabled by default):
@@ -230,6 +254,7 @@ This makes NPath grow very fast. It reflects the true testing burden: to fully t
 
 **Class level** (disabled by default) -- checks the maximum NPath among methods.
 
+<!-- llms:skip-begin -->
 ### Example
 
 ```php
@@ -249,12 +274,18 @@ function validate(Request $request): bool
 
 Just 8 independent `if` statements already produce 256 paths.
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### How to fix
 
 - **Extract groups of related checks** into separate methods. Splitting validation into `validateContactInfo()` and `validateAddress()` cuts the path count dramatically.
 - **Reduce independent branches.** Combine related conditions or use data-driven validation (e.g., loop over a list of required fields).
 - **Avoid deeply nested conditions** -- they multiply NPath even faster than sequential ones.
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### Implementation notes
 
 AIMD follows Nejmeh (1988) with PHP-specific extensions:
@@ -271,6 +302,8 @@ NPath(match) = 1 + sum of NPath(each arm body)
 ```
 
 Some other tools (notably pdepend) use a multiplicative approach for `match`, which can produce extreme values (millions) for methods with large `match` expressions. AIMD's additive approach yields practical, actionable values.
+
+<!-- llms:skip-end -->
 
 ### Configuration
 
@@ -296,6 +329,7 @@ bin/aimd check src/ --rule-opt="complexity.npath:class.enabled=true"
 
 **Rule ID:** `complexity.wmc`
 
+<!-- llms:skip-begin -->
 ### What it measures
 
 WMC (Weighted Methods per Class) is the **sum of cyclomatic complexity of all methods** in a class. It tells you the overall complexity burden of the entire class.
@@ -311,6 +345,8 @@ A class with 20 simple getter/setter methods (each with complexity 1) has WMC = 
 | 51--80 | Very large class                                |
 | 80+    | Excessive -- strongly consider splitting        |
 
+<!-- llms:skip-end -->
+
 ### Thresholds
 
 | Level   | Threshold | Severity |
@@ -318,6 +354,7 @@ A class with 20 simple getter/setter methods (each with complexity 1) has WMC = 
 | Warning | > 50      | Warning  |
 | Error   | > 80      | Error    |
 
+<!-- llms:skip-begin -->
 ### Example
 
 ```php
@@ -334,15 +371,23 @@ class OrderProcessor
 }
 ```
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### How to fix
 
 - **Split the class** into smaller, focused classes. If WMC is high because of many methods, the class likely has too many responsibilities.
 - **Simplify individual methods.** If WMC is high because a few methods are very complex, refactor those methods first.
 - **Consider the Single Responsibility Principle.** A class should have only one reason to change.
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### Implementation notes
 
 WMC is calculated as the sum of [Cyclomatic Complexity](#cyclomatic-complexity) of all methods in a class. Since AIMD uses the CCN2+ variant (which counts `??` and `?->` as decision points), WMC values will be correspondingly higher than those reported by other tools.
+
+<!-- llms:skip-end -->
 
 ### Configuration
 

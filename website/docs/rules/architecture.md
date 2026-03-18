@@ -8,6 +8,7 @@ Architecture rules detect structural problems in your codebase that can lead to 
 
 **Rule ID:** `architecture.circular-dependency`
 
+<!-- llms:skip-begin -->
 ### What it measures
 
 Detects when classes depend on each other in a loop. A dependency means one class uses another (via constructor injection, method calls, type hints, etc.).
@@ -27,6 +28,8 @@ A --> B --> C --> A
 ```
 
 A depends on B, B depends on C, and C depends back on A. The loop is longer but the problem is the same.
+
+<!-- llms:skip-end -->
 
 ### Why it matters
 
@@ -65,6 +68,7 @@ rules:
     directAsError: true    # direct cycles are errors
 ```
 
+<!-- llms:skip-begin -->
 ### Example
 
 ```php
@@ -106,6 +110,9 @@ class PaymentService
 
 `OrderService` depends on `PaymentService`, and `PaymentService` depends on `OrderService`. This is a direct cycle of size 2.
 
+<!-- llms:skip-end -->
+
+<!-- llms:skip-begin -->
 ### How to fix
 
 1. **Introduce an interface (Dependency Inversion).** Make one class depend on an abstraction instead of the concrete class:
@@ -162,3 +169,5 @@ class PaymentService
 
 !!! tip
     Use the `maxCycleSize` option to focus on the most critical cycles first. Direct cycles (size 2) are the easiest to fix and the most harmful. Start there, then work on larger cycles.
+
+<!-- llms:skip-end -->
