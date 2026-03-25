@@ -26,6 +26,7 @@ final class SummaryFormatter implements FormatterInterface
         private readonly DetailedViolationRenderer $detailedRenderer,
         private readonly HealthBarRenderer $healthBarRenderer,
         private readonly OffenderListRenderer $offenderListRenderer,
+        private readonly TopIssuesRenderer $topIssuesRenderer,
         private readonly ViolationFilter $violationFilter,
         private readonly ViolationSummaryRenderer $violationSummaryRenderer,
         private readonly HintRenderer $hintRenderer,
@@ -47,6 +48,7 @@ final class SummaryFormatter implements FormatterInterface
             $this->healthBarRenderer->render($report, $context, $color, $terminalWidth, $ascii, $lines);
             $this->offenderListRenderer->renderWorstNamespaces($report, $color, $context, $lines);
             $this->offenderListRenderer->renderWorstClasses($report, $color, $context, $lines);
+            $this->topIssuesRenderer->render($report, $context, $color, $lines);
             $this->violationSummaryRenderer->render($report, $context, $color, $lines);
         }
 

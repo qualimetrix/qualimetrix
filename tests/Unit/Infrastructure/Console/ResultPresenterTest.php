@@ -31,6 +31,8 @@ use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
 use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Reporting\Health\MetricHintProvider;
 use Qualimetrix\Reporting\Health\SummaryEnricher;
+use Qualimetrix\Reporting\Impact\ClassRankResolver;
+use Qualimetrix\Reporting\Impact\ImpactCalculator;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -50,6 +52,7 @@ final class ResultPresenterTest extends TestCase
             summaryEnricher: new SummaryEnricher(
                 new DebtCalculator(new RemediationTimeRegistry()),
                 new MetricHintProvider(),
+                new ImpactCalculator(new ClassRankResolver(), new RemediationTimeRegistry()),
             ),
             profilePresenter: new ProfilePresenter(new ProfilerHolder()),
         );
@@ -88,6 +91,7 @@ final class ResultPresenterTest extends TestCase
             summaryEnricher: new SummaryEnricher(
                 new DebtCalculator(new RemediationTimeRegistry()),
                 new MetricHintProvider(),
+                new ImpactCalculator(new ClassRankResolver(), new RemediationTimeRegistry()),
             ),
             profilePresenter: new ProfilePresenter(new ProfilerHolder()),
         );
@@ -310,6 +314,7 @@ final class ResultPresenterTest extends TestCase
             summaryEnricher: new SummaryEnricher(
                 new DebtCalculator(new RemediationTimeRegistry()),
                 new MetricHintProvider(),
+                new ImpactCalculator(new ClassRankResolver(), new RemediationTimeRegistry()),
             ),
             profilePresenter: new ProfilePresenter(new ProfilerHolder()),
         );
@@ -361,6 +366,7 @@ final class ResultPresenterTest extends TestCase
             summaryEnricher: new SummaryEnricher(
                 new DebtCalculator(new RemediationTimeRegistry()),
                 new MetricHintProvider(),
+                new ImpactCalculator(new ClassRankResolver(), new RemediationTimeRegistry()),
             ),
             profilePresenter: new ProfilePresenter(new ProfilerHolder()),
         );

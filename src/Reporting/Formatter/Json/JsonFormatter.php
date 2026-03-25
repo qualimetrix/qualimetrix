@@ -67,6 +67,7 @@ final class JsonFormatter implements FormatterInterface
                 $context,
                 $topN,
             ),
+            'topIssues' => $context->partialAnalysis ? [] : $this->formatTopIssues($report, $context),
             'violations' => $this->violationSection->format($outputViolations, $context),
             'violationsMeta' => [
                 'total' => \count($filteredViolations),
@@ -88,6 +89,77 @@ final class JsonFormatter implements FormatterInterface
     public function getDefaultGroupBy(): GroupBy
     {
         return GroupBy::None;
+    }
+
+    /**
+     * Formats the top issues by impact section.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function formatTopIssues(Report $report, FormatterContext $context): array
+    {
+        if ($report->topIssues === [] || $context->topIssuesLimit === 0) {
+            return [];
+        }
+
+        $filtered = $this->filterTopIssuesByContext($report->topIssues, $context);
+
+        if ($filtered === []) {
+            return [];
+        }
+
+        $issues = \array_slice($filtered, 0, $context->topIssuesLimit);
+        $result = [];
+
+        foreach ($issues as $rank => $issue) {
+            $violation = $issue->violation;
+            $result[] = [
+                'rank' => $rank + 1,
+                'file' => $context->relativizePath($violation->location->file),
+                'line' => $violation->location->line,
+                'symbol' => $violation->symbolPath->toString(),
+                'rule' => $violation->ruleName,
+                'severity' => $violation->severity->value,
+                'message' => $violation->getDisplayMessage(),
+                'impactScore' => round($issue->impactScore, 2),
+                'classRank' => $issue->classRank !== null ? round($issue->classRank, 4) : null,
+                'debtMinutes' => $issue->debtMinutes,
+            ];
+        }
+
+        return $result;
+    }
+
+    /**
+     * Filters top issues by namespace/class drill-down context.
+     *
+     * @param list<\Qualimetrix\Reporting\Impact\RankedIssue> $issues
+     *
+     * @return list<\Qualimetrix\Reporting\Impact\RankedIssue>
+     */
+    private function filterTopIssuesByContext(array $issues, FormatterContext $context): array
+    {
+        if ($context->namespace === null && $context->class === null) {
+            return $issues;
+        }
+
+        return array_values(array_filter($issues, static function ($issue) use ($context): bool {
+            $sp = $issue->violation->symbolPath;
+            $ns = $sp->namespace ?? '';
+            $type = $sp->type;
+
+            if ($context->namespace !== null) {
+                return $ns === $context->namespace || str_starts_with($ns, $context->namespace . '\\');
+            }
+
+            if ($context->class !== null && $type !== null) {
+                $fqcn = $ns !== '' ? $ns . '\\' . $type : $type;
+
+                return $fqcn === $context->class;
+            }
+
+            return false;
+        }));
     }
 
     /**

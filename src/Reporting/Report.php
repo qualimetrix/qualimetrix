@@ -9,6 +9,7 @@ use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Reporting\Health\HealthScore;
 use Qualimetrix\Reporting\Health\WorstOffender;
+use Qualimetrix\Reporting\Impact\RankedIssue;
 
 /**
  * Value Object representing the analysis report.
@@ -20,6 +21,7 @@ final readonly class Report
      * @param array<string, HealthScore> $healthScores
      * @param list<WorstOffender> $worstNamespaces
      * @param list<WorstOffender> $worstClasses
+     * @param list<RankedIssue> $topIssues
      */
     public function __construct(
         public array $violations,
@@ -34,6 +36,7 @@ final readonly class Report
         public array $worstClasses = [],
         public int $techDebtMinutes = 0,
         public ?float $debtPer1kLoc = null,
+        public array $topIssues = [],
     ) {}
 
     /**
