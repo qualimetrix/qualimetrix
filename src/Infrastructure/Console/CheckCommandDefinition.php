@@ -282,6 +282,12 @@ final class CheckCommandDefinition
                 InputOption::VALUE_OPTIONAL,
                 'Show detailed violations (default: 200, --detail=all for unlimited, --detail=N for custom limit)',
                 false, // false = not passed, null = passed without value
+            )
+            ->addOption(
+                'top',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Number of top impact issues to show (default 10, 0 to disable)',
             );
     }
 

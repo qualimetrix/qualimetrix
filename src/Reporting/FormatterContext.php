@@ -11,6 +11,8 @@ namespace Qualimetrix\Reporting;
  */
 final readonly class FormatterContext
 {
+    public const int DEFAULT_TOP_ISSUES_LIMIT = 10;
+
     /**
      * @param bool $useColor Whether to use ANSI colors (from OutputInterface::isDecorated())
      * @param GroupBy $groupBy How to group violations in output
@@ -22,6 +24,7 @@ final readonly class FormatterContext
      * @param int $terminalWidth Terminal width for adaptive rendering (0 = use default 80)
      * @param int|null $detailLimit Violation limit for --detail mode (null = off, 0 = all, N = limit)
      * @param bool $isGroupByExplicit Whether --group-by was explicitly set by the user
+     * @param int $topIssuesLimit Number of top impact issues to show (0 = disabled)
      */
     public function __construct(
         public bool $useColor = true,
@@ -34,6 +37,7 @@ final readonly class FormatterContext
         public int $terminalWidth = 0,
         public ?int $detailLimit = null,
         public bool $isGroupByExplicit = false,
+        public int $topIssuesLimit = self::DEFAULT_TOP_ISSUES_LIMIT,
     ) {}
 
     /**
@@ -77,6 +81,7 @@ final readonly class FormatterContext
             terminalWidth: $this->terminalWidth,
             detailLimit: $detailLimit,
             isGroupByExplicit: $this->isGroupByExplicit,
+            topIssuesLimit: $this->topIssuesLimit,
         );
     }
 
