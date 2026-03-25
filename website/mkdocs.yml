@@ -75,6 +75,7 @@ plugins:
             Other CI Systems: Другие CI системы
             Reference: Справочник
             Default Thresholds: Пороговые значения
+            Health Scores: Оценки здоровья
             Guides: Руководства
             Architecture Investigation: Исследование архитектуры
 
@@ -126,4 +127,5 @@ nav:
       - Other CI Systems: ci-cd/other-ci.md
   - Reference:
       - Default Thresholds: reference/default-thresholds.md
+      - Health Scores: reference/health-scores.md
   - Changelog: changelog.md
