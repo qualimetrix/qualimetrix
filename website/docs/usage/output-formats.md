@@ -26,20 +26,20 @@ Health-oriented overview showing project health scores, worst offenders, and vio
 ```
 AI Mess Detector — 45 files analyzed, 1.23s
 
-  Complexity     ████████████████░░░░  78 Strong
-  Cohesion       ██████████████░░░░░░  68 Acceptable
-  Coupling       ████████████░░░░░░░░  59 Acceptable
-  Typing         ██████████████████░░  88 Strong
+  Complexity     ████████████████░░░░  78 Excellent
+  Cohesion       ██████████████░░░░░░  68 Fair
+  Coupling       ████████████░░░░░░░░  59 Fair
+  Typing         ██████████████████░░  88 Excellent
   Maintainability████████████████░░░░  80 Good
-  Overall        ██████████████░░░░░░  72 Acceptable
+  Overall        ██████████████░░░░░░  72 Fair
 
 Worst namespaces:
-  App\Service           52 Weak      | App\Repository        61 Acceptable
-  App\Controller        55 Acceptable
+  App\Service           52 Poor      | App\Repository        61 Fair
+  App\Controller        55 Fair
 
 Worst classes:
-  App\Service\OrderService          38 Critical  | App\Service\UserService   45 Weak
-  App\Repository\OrderRepository    51 Weak
+  App\Service\OrderService          38 Critical  | App\Service\UserService   45 Poor
+  App\Repository\OrderRepository    51 Poor
 
 Violations: 12 errors, 8 warnings | Tech debt: 4h 30m (2.1/1K LOC)
 
@@ -134,13 +134,13 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
     "health": {
         "complexity": {
             "score": 78.0,
-            "label": "Strong",
+            "label": "Excellent",
             "threshold": {"warning": 50, "error": 25},
             "decomposition": []
         },
         "overall": {
             "score": 72.0,
-            "label": "Acceptable",
+            "label": "Fair",
             "threshold": {"warning": 50, "error": 25},
             "decomposition": []
         }
@@ -149,7 +149,7 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
         {
             "symbolPath": "App\\Service",
             "healthOverall": 52.0,
-            "label": "Weak",
+            "label": "Poor",
             "reason": "high coupling",
             "violationCount": 15,
             "classCount": 8,
@@ -160,7 +160,7 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
         {
             "symbolPath": "App\\Service\\UserService",
             "healthOverall": 45.0,
-            "label": "Weak",
+            "label": "Poor",
             "reason": "low cohesion",
             "violationCount": 8,
             "file": "src/Service/UserService.php",

@@ -30,12 +30,12 @@ vendor/bin/aimd check src/
 ```
 AI Mess Detector — 127 files analyzed, 2.3s
 
-Health ████████████████████░░░░░░░░░░ 67.2% Acceptable
+Health ████████████████████░░░░░░░░░░ 67.2% Fair
 
-  Complexity      ██████████████████████████░░░░ 85.1% Strong
-  Cohesion        ████████████░░░░░░░░░░░░░░░░░░ 42.3% Weak
-  Coupling        █████████████████░░░░░░░░░░░░░ 55.8% Acceptable
-  Typing          ████████████████████████████░░ 92.0% Strong
+  Complexity      ██████████████████████████░░░░ 85.1% Excellent
+  Cohesion        ████████████░░░░░░░░░░░░░░░░░░ 42.3% Poor
+  Coupling        █████████████████░░░░░░░░░░░░░ 55.8% Fair
+  Typing          ████████████████████████████░░ 92.0% Excellent
   Maintainability ████████████████████░░░░░░░░░░ 64.5% Good
 
 Worst namespaces
@@ -47,7 +47,7 @@ Worst namespaces
 Hints: --detail to see violations (top 200) | --namespace='App\Service' to drill down | --format=health -o report.html for full report
 ```
 
-Каждая категория получает метку: **Strong** (отлично), **Good** (хорошо), **Acceptable** (есть куда расти), **Weak** (требует внимания) или **Critical** (необходимы действия). Секция "Worst namespaces" показывает, на чём стоит сосредоточиться в первую очередь.
+Каждая категория получает метку: **Excellent** (отлично), **Good** (хорошо), **Fair** (есть куда расти), **Poor** (требует внимания) или **Critical** (необходимы действия). Секция "Worst namespaces" показывает, на чём стоит сосредоточиться в первую очередь.
 
 <!-- llms:skip-end -->
 

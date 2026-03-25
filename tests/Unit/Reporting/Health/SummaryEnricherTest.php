@@ -92,7 +92,7 @@ final class SummaryEnricherTest extends TestCase
         $complexity = $result->healthScores['complexity'];
         self::assertSame('complexity', $complexity->name);
         self::assertSame(65.0, $complexity->score);
-        self::assertSame('Acceptable', $complexity->label);
+        self::assertSame('Fair', $complexity->label);
         self::assertCount(2, $complexity->decomposition);
         self::assertSame('ccn.avg', $complexity->decomposition[0]->metricKey);
         self::assertSame('cognitive.avg', $complexity->decomposition[1]->metricKey);
@@ -100,7 +100,7 @@ final class SummaryEnricherTest extends TestCase
         // Cohesion is 45 <= warning 50, so "Weak" and has decomposition
         $cohesion = $result->healthScores['cohesion'];
         self::assertSame(45.0, $cohesion->score);
-        self::assertSame('Weak', $cohesion->label);
+        self::assertSame('Poor', $cohesion->label);
         self::assertCount(2, $cohesion->decomposition);
         self::assertSame('tcc.avg', $cohesion->decomposition[0]->metricKey);
         self::assertSame(0.15, $cohesion->decomposition[0]->value);
@@ -108,7 +108,7 @@ final class SummaryEnricherTest extends TestCase
 
         // Maintainability is 58 > warning 50 (stretched formula), so "Acceptable"
         $maintainability = $result->healthScores['maintainability'];
-        self::assertSame('Acceptable', $maintainability->label);
+        self::assertSame('Fair', $maintainability->label);
     }
 
     public function testEnrichesWithTechDebt(): void

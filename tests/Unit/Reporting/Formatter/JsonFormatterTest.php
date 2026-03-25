@@ -215,7 +215,7 @@ final class JsonFormatterTest extends TestCase
                 'complexity' => new HealthScore(
                     name: 'complexity',
                     score: 65.0,
-                    label: 'Acceptable',
+                    label: 'Fair',
                     warningThreshold: 50.0,
                     errorThreshold: 25.0,
                     decomposition: [
@@ -232,7 +232,7 @@ final class JsonFormatterTest extends TestCase
                 'cohesion' => new HealthScore(
                     name: 'cohesion',
                     score: 45.0,
-                    label: 'Weak',
+                    label: 'Poor',
                     warningThreshold: 50.0,
                     errorThreshold: 25.0,
                 ),
@@ -248,7 +248,7 @@ final class JsonFormatterTest extends TestCase
 
         $complexity = $data['health']['complexity'];
         self::assertEquals(65.0, $complexity['score']);
-        self::assertSame('Acceptable', $complexity['label']);
+        self::assertSame('Fair', $complexity['label']);
         self::assertEquals(50.0, $complexity['threshold']['warning']);
         self::assertEquals(25.0, $complexity['threshold']['error']);
 
@@ -275,7 +275,7 @@ final class JsonFormatterTest extends TestCase
             errorCount: 0,
             warningCount: 0,
             healthScores: [
-                'complexity' => new HealthScore('complexity', 65.0, 'Acceptable', 50.0, 25.0),
+                'complexity' => new HealthScore('complexity', 65.0, 'Fair', 50.0, 25.0),
             ],
         );
 
@@ -1049,7 +1049,7 @@ final class JsonFormatterTest extends TestCase
             warningCount: 0,
             metrics: $metrics,
             healthScores: [
-                'overall' => new HealthScore('overall', 72.0, 'Acceptable', 50.0, 30.0),
+                'overall' => new HealthScore('overall', 72.0, 'Fair', 50.0, 30.0),
             ],
         );
 
@@ -1109,7 +1109,7 @@ final class JsonFormatterTest extends TestCase
             warningCount: 0,
             metrics: $metrics,
             healthScores: [
-                'overall' => new HealthScore('overall', 72.0, 'Acceptable', 50.0, 30.0),
+                'overall' => new HealthScore('overall', 72.0, 'Fair', 50.0, 30.0),
             ],
             worstClasses: [],
         );
@@ -1142,7 +1142,7 @@ final class JsonFormatterTest extends TestCase
             warningCount: 0,
             metrics: $metrics,
             healthScores: [
-                'overall' => new HealthScore('overall', 72.0, 'Acceptable', 50.0, 30.0),
+                'overall' => new HealthScore('overall', 72.0, 'Fair', 50.0, 30.0),
             ],
         );
 

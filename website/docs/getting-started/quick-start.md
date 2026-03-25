@@ -30,12 +30,12 @@ The default output shows a health summary with scores by category:
 ```
 AI Mess Detector — 127 files analyzed, 2.3s
 
-Health ████████████████████░░░░░░░░░░ 67.2% Acceptable
+Health ████████████████████░░░░░░░░░░ 67.2% Fair
 
-  Complexity      ██████████████████████████░░░░ 85.1% Strong
-  Cohesion        ████████████░░░░░░░░░░░░░░░░░░ 42.3% Weak
-  Coupling        █████████████████░░░░░░░░░░░░░ 55.8% Acceptable
-  Typing          ████████████████████████████░░ 92.0% Strong
+  Complexity      ██████████████████████████░░░░ 85.1% Excellent
+  Cohesion        ████████████░░░░░░░░░░░░░░░░░░ 42.3% Poor
+  Coupling        █████████████████░░░░░░░░░░░░░ 55.8% Fair
+  Typing          ████████████████████████████░░ 92.0% Excellent
   Maintainability ████████████████████░░░░░░░░░░ 64.5% Good
 
 Worst namespaces
@@ -47,7 +47,7 @@ Worst namespaces
 Hints: --detail to see violations (top 200) | --namespace='App\Service' to drill down | --format=health -o report.html for full report
 ```
 
-Each category gets a label: **Strong** (excellent), **Good** (solid), **Acceptable** (room for improvement), **Weak** (needs attention), or **Critical** (action required). The "Worst namespaces" section highlights where to focus first.
+Each category gets a label: **Excellent** (top quality), **Good** (solid), **Fair** (room for improvement), **Poor** (needs attention), or **Critical** (action required). The "Worst namespaces" section highlights where to focus first.
 
 <!-- llms:skip-end -->
 
