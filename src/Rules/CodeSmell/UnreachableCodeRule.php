@@ -112,7 +112,7 @@ final class UnreachableCodeRule extends AbstractRule
         $line = $firstLine !== null ? (int) $firstLine : $symbolInfo->line;
 
         return new Violation(
-            location: new Location($symbolInfo->file, $line),
+            location: new Location($symbolInfo->file, $line, precise: true),
             symbolPath: $symbolInfo->symbolPath,
             ruleName: $this->getName(),
             violationCode: self::NAME,

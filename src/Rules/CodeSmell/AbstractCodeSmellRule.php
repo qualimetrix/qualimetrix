@@ -97,7 +97,7 @@ abstract class AbstractCodeSmellRule extends AbstractRule
                 $line = (int) $entry['line'];
 
                 $violations[] = new Violation(
-                    location: new Location($fileInfo->file, $line),
+                    location: new Location($fileInfo->file, $line, precise: true),
                     symbolPath: $fileInfo->symbolPath,
                     ruleName: $this->getName(),
                     violationCode: $this->getName(),

@@ -84,12 +84,12 @@ final class CodeDuplicationRule extends AbstractRule
 
         // Build related locations for SARIF support
         $relatedViolationLocations = array_map(
-            static fn($loc) => new Location($loc->file, $loc->startLine),
+            static fn($loc) => new Location($loc->file, $loc->startLine, precise: true),
             $related,
         );
 
         return new Violation(
-            location: new Location($primary->file, $primary->startLine),
+            location: new Location($primary->file, $primary->startLine, precise: true),
             symbolPath: SymbolPath::forFile($primary->file),
             ruleName: $this->getName(),
             violationCode: $this->getName(),

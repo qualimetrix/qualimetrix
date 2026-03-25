@@ -8,9 +8,16 @@ use InvalidArgumentException;
 
 final readonly class Location
 {
+    /**
+     * @param bool $precise When true, the line points to the exact location of the problem
+     *                      (e.g., a specific code smell occurrence). When false, the line is
+     *                      merely the declaration line of the enclosing symbol (class/method).
+     *                      Formatters use this hint to decide whether to display the line number.
+     */
     public function __construct(
         public string $file,
         public ?int $line = null,
+        public bool $precise = false,
     ) {
         if ($this->line !== null && $this->line < 1) {
             throw new InvalidArgumentException(

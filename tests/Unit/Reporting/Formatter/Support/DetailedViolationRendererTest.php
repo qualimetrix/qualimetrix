@@ -99,8 +99,8 @@ final class DetailedViolationRendererTest extends TestCase
 
         // Should NOT have file group headers (but debt breakdown may mention "violation")
         self::assertStringNotContainsString('src/Foo.php (1 violation)', $output);
-        // But should have the violation with full path in the violation line
-        self::assertStringContainsString('src/Foo.php:10', $output);
+        // But should have the violation with full path in the violation line (without line number for non-precise)
+        self::assertStringContainsString('src/Foo.php', $output);
     }
 
     public function testExplicitGroupByRuleGroupsByRule(): void
