@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Metrics\Design;
+namespace Qualimetrix\Tests\Unit\Metrics\Design;
 
-use AiMessDetector\Core\Metric\AggregationStrategy;
-use AiMessDetector\Core\Metric\MetricBag;
-use AiMessDetector\Core\Metric\SymbolLevel;
-use AiMessDetector\Metrics\Design\TypeCoverageCollector;
-use AiMessDetector\Metrics\Design\TypeCoverageVisitor;
 use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Metric\AggregationStrategy;
+use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Metric\SymbolLevel;
+use Qualimetrix\Metrics\Design\TypeCoverageCollector;
+use Qualimetrix\Metrics\Design\TypeCoverageVisitor;
 use SplFileInfo;
 
 #[CoversClass(TypeCoverageCollector::class)]

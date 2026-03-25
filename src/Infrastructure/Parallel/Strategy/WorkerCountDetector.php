@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\Parallel\Strategy;
+namespace Qualimetrix\Infrastructure\Parallel\Strategy;
 
 /**
  * Detects the optimal number of worker processes.

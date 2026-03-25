@@ -2,20 +2,20 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Analysis\Pipeline;
+namespace Qualimetrix\Analysis\Pipeline;
 
-use AiMessDetector\Analysis\Collection\CollectionOrchestratorInterface;
-use AiMessDetector\Analysis\Collection\Dependency\DependencyGraphBuilder;
-use AiMessDetector\Analysis\Discovery\FileDiscoveryInterface;
-use AiMessDetector\Analysis\Discovery\GeneratedFileFilter;
-use AiMessDetector\Analysis\Repository\DefaultMetricRepositoryFactory;
-use AiMessDetector\Analysis\Repository\MetricRepositoryFactoryInterface;
-use AiMessDetector\Analysis\RuleExecution\RuleExecutorInterface;
-use AiMessDetector\Configuration\ConfigurationProviderInterface;
-use AiMessDetector\Core\Profiler\ProfilerHolder;
-use AiMessDetector\Core\Rule\AnalysisContext;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use Qualimetrix\Analysis\Collection\CollectionOrchestratorInterface;
+use Qualimetrix\Analysis\Collection\Dependency\DependencyGraphBuilder;
+use Qualimetrix\Analysis\Discovery\FileDiscoveryInterface;
+use Qualimetrix\Analysis\Discovery\GeneratedFileFilter;
+use Qualimetrix\Analysis\Repository\DefaultMetricRepositoryFactory;
+use Qualimetrix\Analysis\Repository\MetricRepositoryFactoryInterface;
+use Qualimetrix\Analysis\RuleExecution\RuleExecutorInterface;
+use Qualimetrix\Configuration\ConfigurationProviderInterface;
+use Qualimetrix\Core\Profiler\ProfilerHolder;
+use Qualimetrix\Core\Rule\AnalysisContext;
 
 /**
  * Main analysis pipeline orchestrator.

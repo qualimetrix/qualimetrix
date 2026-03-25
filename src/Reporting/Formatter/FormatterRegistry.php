@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Reporting\Formatter;
+namespace Qualimetrix\Reporting\Formatter;
 
 use InvalidArgumentException;
 

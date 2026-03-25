@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Infrastructure\Serializer;
+namespace Qualimetrix\Tests\Unit\Infrastructure\Serializer;
 
-use AiMessDetector\Infrastructure\Serializer\IgbinarySerializer;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Infrastructure\Serializer\IgbinarySerializer;
 use RuntimeException;
 use stdClass;
 

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Core\Rule;
+namespace Qualimetrix\Core\Rule;
 
 /**
  * Levels of code hierarchy at which rules can operate.

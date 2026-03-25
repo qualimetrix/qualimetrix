@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Analysis\Exception;
+namespace Qualimetrix\Analysis\Exception;
 
 use Exception;
 

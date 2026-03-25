@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\Git;
+namespace Qualimetrix\Infrastructure\Git;
 
 /**
  * Represents a file changed in git.

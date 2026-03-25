@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Analysis\Collection\Metric;
+namespace Qualimetrix\Tests\Unit\Analysis\Collection\Metric;
 
-use AiMessDetector\Analysis\Collection\Metric\CompositeCollector;
-use AiMessDetector\Analysis\Collection\Metric\DerivedMetricExtractor;
-use AiMessDetector\Analysis\Repository\InMemoryMetricRepository;
-use AiMessDetector\Core\Metric\DerivedCollectorInterface;
-use AiMessDetector\Core\Metric\MetricBag;
-use AiMessDetector\Core\Symbol\SymbolPath;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Collection\Metric\CompositeCollector;
+use Qualimetrix\Analysis\Collection\Metric\DerivedMetricExtractor;
+use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
+use Qualimetrix\Core\Metric\DerivedCollectorInterface;
+use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Symbol\SymbolPath;
 
 #[CoversClass(DerivedMetricExtractor::class)]
 final class DerivedMetricExtractorTest extends TestCase

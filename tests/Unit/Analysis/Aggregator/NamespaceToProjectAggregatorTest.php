@@ -2,20 +2,20 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Analysis\Aggregator;
+namespace Qualimetrix\Tests\Unit\Analysis\Aggregator;
 
-use AiMessDetector\Analysis\Aggregator\MetricAggregator;
-use AiMessDetector\Analysis\Aggregator\NamespaceToProjectAggregator;
-use AiMessDetector\Analysis\Repository\InMemoryMetricRepository;
-use AiMessDetector\Core\Metric\AggregationStrategy;
-use AiMessDetector\Core\Metric\MetricBag;
-use AiMessDetector\Core\Metric\MetricDefinition;
-use AiMessDetector\Core\Metric\SymbolLevel;
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Metrics\Maintainability\MaintainabilityIndexCollector;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Aggregator\MetricAggregator;
+use Qualimetrix\Analysis\Aggregator\NamespaceToProjectAggregator;
+use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
+use Qualimetrix\Core\Metric\AggregationStrategy;
+use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Metric\MetricDefinition;
+use Qualimetrix\Core\Metric\SymbolLevel;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Metrics\Maintainability\MaintainabilityIndexCollector;
 
 #[CoversClass(NamespaceToProjectAggregator::class)]
 final class NamespaceToProjectAggregatorTest extends TestCase

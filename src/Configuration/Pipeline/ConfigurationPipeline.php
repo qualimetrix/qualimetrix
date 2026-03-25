@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Configuration\Pipeline;
+namespace Qualimetrix\Configuration\Pipeline;
 
-use AiMessDetector\Configuration\AnalysisConfiguration;
-use AiMessDetector\Configuration\PathsConfiguration;
-use AiMessDetector\Configuration\Pipeline\Stage\ConfigurationStageInterface;
+use Qualimetrix\Configuration\AnalysisConfiguration;
+use Qualimetrix\Configuration\PathsConfiguration;
+use Qualimetrix\Configuration\Pipeline\Stage\ConfigurationStageInterface;
 
 /**
  * Configuration resolution pipeline.

@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Reporting\Formatter\Html;
+namespace Qualimetrix\Reporting\Formatter\Html;
 
-use AiMessDetector\Reporting\Debt\DebtCalculator;
-use AiMessDetector\Reporting\Formatter\FormatterInterface;
-use AiMessDetector\Reporting\FormatterContext;
-use AiMessDetector\Reporting\GroupBy;
-use AiMessDetector\Reporting\Health\MetricHintProvider;
-use AiMessDetector\Reporting\Report;
+use Qualimetrix\Reporting\Debt\DebtCalculator;
+use Qualimetrix\Reporting\Formatter\FormatterInterface;
+use Qualimetrix\Reporting\FormatterContext;
+use Qualimetrix\Reporting\GroupBy;
+use Qualimetrix\Reporting\Health\MetricHintProvider;
+use Qualimetrix\Reporting\Report;
 use RuntimeException;
 
 /**

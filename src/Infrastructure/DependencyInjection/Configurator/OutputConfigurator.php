@@ -2,51 +2,51 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\DependencyInjection\Configurator;
+namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
-use AiMessDetector\Analysis\Collection\Dependency\DependencyGraphBuilder;
-use AiMessDetector\Analysis\Collection\Dependency\DependencyVisitor;
-use AiMessDetector\Analysis\Discovery\FileDiscoveryInterface;
-use AiMessDetector\Analysis\Pipeline\AnalysisPipelineInterface;
-use AiMessDetector\Baseline\BaselineGenerator;
-use AiMessDetector\Baseline\BaselineLoader;
-use AiMessDetector\Baseline\BaselineWriter;
-use AiMessDetector\Baseline\Suppression\SuppressionFilter;
-use AiMessDetector\Baseline\ViolationHasher;
-use AiMessDetector\Configuration\ComputedMetricsConfigResolver;
-use AiMessDetector\Configuration\ConfigurationProviderInterface;
-use AiMessDetector\Configuration\Loader\ConfigLoaderInterface;
-use AiMessDetector\Configuration\Loader\YamlConfigLoader;
-use AiMessDetector\Configuration\Pipeline\ConfigurationPipeline;
-use AiMessDetector\Configuration\RuleOptionsFactory;
-use AiMessDetector\Core\Ast\FileParserInterface;
-use AiMessDetector\Core\Profiler\ProfilerHolder;
-use AiMessDetector\Infrastructure\Cache\CacheFactory;
-use AiMessDetector\Infrastructure\Console\Command\BaselineCleanupCommand;
-use AiMessDetector\Infrastructure\Console\Command\CheckCommand;
-use AiMessDetector\Infrastructure\Console\Command\GraphExportCommand;
-use AiMessDetector\Infrastructure\Console\Command\HookInstallCommand;
-use AiMessDetector\Infrastructure\Console\Command\HookStatusCommand;
-use AiMessDetector\Infrastructure\Console\Command\HookUninstallCommand;
-use AiMessDetector\Infrastructure\Console\Command\RulesCommand;
-use AiMessDetector\Infrastructure\Console\FormatterContextFactory;
-use AiMessDetector\Infrastructure\Console\ProfilePresenter;
-use AiMessDetector\Infrastructure\Console\Progress\ProgressReporterHolder;
-use AiMessDetector\Infrastructure\Console\ResultPresenter;
-use AiMessDetector\Infrastructure\Console\RuntimeConfigurator;
-use AiMessDetector\Infrastructure\Console\ViolationFilterOrchestrator;
-use AiMessDetector\Infrastructure\Console\ViolationFilterPipeline;
-use AiMessDetector\Infrastructure\Git\GitRepositoryLocator;
-use AiMessDetector\Infrastructure\Logging\DelegatingLogger;
-use AiMessDetector\Infrastructure\Logging\LoggerFactory;
-use AiMessDetector\Infrastructure\Logging\LoggerHolder;
-use AiMessDetector\Infrastructure\Rule\RuleRegistryInterface;
-use AiMessDetector\Reporting\Filter\ViolationFilter;
-use AiMessDetector\Reporting\Formatter\FormatterRegistry;
-use AiMessDetector\Reporting\Formatter\FormatterRegistryInterface;
-use AiMessDetector\Reporting\Formatter\Support\DetailedViolationRenderer;
-use AiMessDetector\Reporting\Health\SummaryEnricher;
-use AiMessDetector\Reporting\Profile\ProfileSummaryRenderer;
+use Qualimetrix\Analysis\Collection\Dependency\DependencyGraphBuilder;
+use Qualimetrix\Analysis\Collection\Dependency\DependencyVisitor;
+use Qualimetrix\Analysis\Discovery\FileDiscoveryInterface;
+use Qualimetrix\Analysis\Pipeline\AnalysisPipelineInterface;
+use Qualimetrix\Baseline\BaselineGenerator;
+use Qualimetrix\Baseline\BaselineLoader;
+use Qualimetrix\Baseline\BaselineWriter;
+use Qualimetrix\Baseline\Suppression\SuppressionFilter;
+use Qualimetrix\Baseline\ViolationHasher;
+use Qualimetrix\Configuration\ComputedMetricsConfigResolver;
+use Qualimetrix\Configuration\ConfigurationProviderInterface;
+use Qualimetrix\Configuration\Loader\ConfigLoaderInterface;
+use Qualimetrix\Configuration\Loader\YamlConfigLoader;
+use Qualimetrix\Configuration\Pipeline\ConfigurationPipeline;
+use Qualimetrix\Configuration\RuleOptionsFactory;
+use Qualimetrix\Core\Ast\FileParserInterface;
+use Qualimetrix\Core\Profiler\ProfilerHolder;
+use Qualimetrix\Infrastructure\Cache\CacheFactory;
+use Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand;
+use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
+use Qualimetrix\Infrastructure\Console\Command\GraphExportCommand;
+use Qualimetrix\Infrastructure\Console\Command\HookInstallCommand;
+use Qualimetrix\Infrastructure\Console\Command\HookStatusCommand;
+use Qualimetrix\Infrastructure\Console\Command\HookUninstallCommand;
+use Qualimetrix\Infrastructure\Console\Command\RulesCommand;
+use Qualimetrix\Infrastructure\Console\FormatterContextFactory;
+use Qualimetrix\Infrastructure\Console\ProfilePresenter;
+use Qualimetrix\Infrastructure\Console\Progress\ProgressReporterHolder;
+use Qualimetrix\Infrastructure\Console\ResultPresenter;
+use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
+use Qualimetrix\Infrastructure\Console\ViolationFilterOrchestrator;
+use Qualimetrix\Infrastructure\Console\ViolationFilterPipeline;
+use Qualimetrix\Infrastructure\Git\GitRepositoryLocator;
+use Qualimetrix\Infrastructure\Logging\DelegatingLogger;
+use Qualimetrix\Infrastructure\Logging\LoggerFactory;
+use Qualimetrix\Infrastructure\Logging\LoggerHolder;
+use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
+use Qualimetrix\Reporting\Filter\ViolationFilter;
+use Qualimetrix\Reporting\Formatter\FormatterRegistry;
+use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
+use Qualimetrix\Reporting\Formatter\Support\DetailedViolationRenderer;
+use Qualimetrix\Reporting\Health\SummaryEnricher;
+use Qualimetrix\Reporting\Profile\ProfileSummaryRenderer;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -77,7 +77,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         $debtPrototype = (new Definition())->setAutoconfigured(true)->setAutowired(true);
         $loader->registerClasses(
             $debtPrototype,
-            'AiMessDetector\\Reporting\\Debt\\',
+            'Qualimetrix\\Reporting\\Debt\\',
             $this->srcDir . '/Reporting/Debt/*',
         );
 
@@ -87,7 +87,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         $prototype = (new Definition())->setAutoconfigured(true)->setAutowired(true);
         $loader->registerClasses(
             $prototype,
-            'AiMessDetector\\Reporting\\Formatter\\',
+            'Qualimetrix\\Reporting\\Formatter\\',
             $this->srcDir . '/Reporting/Formatter/{*,**/*}',
             $this->srcDir . '/Reporting/Formatter/{*Interface.php,FormatterRegistry.php,Support/**}',
         );
@@ -97,7 +97,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         $healthPrototype = (new Definition())->setAutoconfigured(true)->setAutowired(true);
         $loader->registerClasses(
             $healthPrototype,
-            'AiMessDetector\\Reporting\\Health\\',
+            'Qualimetrix\\Reporting\\Health\\',
             $this->srcDir . '/Reporting/Health/*',
             $this->srcDir . '/Reporting/Health/{HealthScore.php,WorstOffender.php,DecompositionItem.php}',
         );
@@ -126,7 +126,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         $prototype = (new Definition())->setAutoconfigured(true)->setAutowired(true);
         $loader->registerClasses(
             $prototype,
-            'AiMessDetector\\Baseline\\',
+            'Qualimetrix\\Baseline\\',
             $this->srcDir . '/Baseline/*',
             $this->srcDir . '/Baseline/{Baseline.php,BaselineEntry.php,Suppression/Suppression.php}',
         );

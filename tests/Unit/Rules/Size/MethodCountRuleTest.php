@@ -2,21 +2,21 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Rules\Size;
+namespace Qualimetrix\Tests\Unit\Rules\Size;
 
-use AiMessDetector\Core\Metric\MetricBag;
-use AiMessDetector\Core\Metric\MetricRepositoryInterface;
-use AiMessDetector\Core\Rule\AnalysisContext;
-use AiMessDetector\Core\Rule\RuleCategory;
-use AiMessDetector\Core\Symbol\SymbolInfo;
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Violation\Severity;
-use AiMessDetector\Rules\Size\MethodCountOptions;
-use AiMessDetector\Rules\Size\MethodCountRule;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Rule\RuleCategory;
+use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Violation\Severity;
+use Qualimetrix\Rules\Size\MethodCountOptions;
+use Qualimetrix\Rules\Size\MethodCountRule;
 
 #[CoversClass(MethodCountRule::class)]
 #[CoversClass(MethodCountOptions::class)]
@@ -67,7 +67,7 @@ final class MethodCountRuleTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
 
-        new MethodCountRule(new class implements \AiMessDetector\Core\Rule\RuleOptionsInterface {
+        new MethodCountRule(new class implements \Qualimetrix\Core\Rule\RuleOptionsInterface {
             public static function fromArray(array $config): static
             {
                 return new static();

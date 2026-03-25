@@ -31,7 +31,7 @@ Maintainability metrics assess the difficulty of understanding, modifying, and t
 | Bugs       | Volume / 3000             | Estimated number of bugs     |
 | Time       | Effort / 18               | Time to understand (seconds) |
 
-### AIMD Methodology
+### Qualimetrix Methodology
 
 **Semantic approach** — only elements carrying semantic meaning are counted.
 
@@ -65,7 +65,7 @@ This inflates the values:
 - **Difficulty:** +75-220%
 - **Effort:** +100-350%
 
-AIMD uses a **semantic interpretation** of Halstead's methodology (1977), measuring algorithmic complexity rather than syntactic density. The original Halstead paper counted all tokens, but was designed for languages (Fortran, PL/I) with minimal syntactic noise. AIMD's approach excludes delimiters that carry no semantic meaning in C-family languages.
+Qualimetrix uses a **semantic interpretation** of Halstead's methodology (1977), measuring algorithmic complexity rather than syntactic density. The original Halstead paper counted all tokens, but was designed for languages (Fortran, PL/I) with minimal syntactic noise. Qualimetrix's approach excludes delimiters that carry no semantic meaning in C-family languages.
 
 ### Example
 

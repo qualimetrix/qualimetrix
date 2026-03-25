@@ -2,29 +2,29 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Rules\Coupling;
+namespace Qualimetrix\Tests\Unit\Rules\Coupling;
 
-use AiMessDetector\Core\Dependency\Dependency;
-use AiMessDetector\Core\Dependency\DependencyGraphInterface;
-use AiMessDetector\Core\Dependency\DependencyType;
-use AiMessDetector\Core\Metric\MetricBag;
-use AiMessDetector\Core\Metric\MetricRepositoryInterface;
-use AiMessDetector\Core\Rule\AnalysisContext;
-use AiMessDetector\Core\Rule\RuleCategory;
-use AiMessDetector\Core\Rule\RuleLevel;
-use AiMessDetector\Core\Symbol\SymbolInfo;
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Symbol\SymbolType;
-use AiMessDetector\Core\Violation\Location;
-use AiMessDetector\Core\Violation\Severity;
-use AiMessDetector\Rules\Coupling\CboOptions;
-use AiMessDetector\Rules\Coupling\CboRule;
-use AiMessDetector\Rules\Coupling\ClassCboOptions;
-use AiMessDetector\Rules\Coupling\NamespaceCboOptions;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Dependency\Dependency;
+use Qualimetrix\Core\Dependency\DependencyGraphInterface;
+use Qualimetrix\Core\Dependency\DependencyType;
+use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Rule\RuleCategory;
+use Qualimetrix\Core\Rule\RuleLevel;
+use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Violation\Location;
+use Qualimetrix\Core\Violation\Severity;
+use Qualimetrix\Rules\Coupling\CboOptions;
+use Qualimetrix\Rules\Coupling\CboRule;
+use Qualimetrix\Rules\Coupling\ClassCboOptions;
+use Qualimetrix\Rules\Coupling\NamespaceCboOptions;
 
 #[CoversClass(CboRule::class)]
 #[CoversClass(CboOptions::class)]
@@ -93,7 +93,7 @@ final class CboRuleTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Expected');
 
-        $invalidOptions = $this->createStub(\AiMessDetector\Core\Rule\RuleOptionsInterface::class);
+        $invalidOptions = $this->createStub(\Qualimetrix\Core\Rule\RuleOptionsInterface::class);
         new CboRule($invalidOptions);
     }
 

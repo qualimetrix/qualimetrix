@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Baseline;
+namespace Qualimetrix\Tests\Unit\Baseline;
 
-use AiMessDetector\Baseline\BaselineLoader;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Baseline\BaselineLoader;
 use RuntimeException;
 
 #[CoversClass(BaselineLoader::class)]
@@ -18,7 +18,7 @@ final class BaselineLoaderTest extends TestCase
     protected function setUp(): void
     {
         $this->loader = new BaselineLoader();
-        $this->tempDir = sys_get_temp_dir() . '/aimd_baseline_test_' . uniqid();
+        $this->tempDir = sys_get_temp_dir() . '/qmx_baseline_test_' . uniqid();
         mkdir($this->tempDir, 0755, true);
     }
 

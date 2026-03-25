@@ -1,6 +1,6 @@
-# Investigating Architecture with AIMD
+# Investigating Architecture with Qualimetrix
 
-This guide walks you through practical workflows for analyzing PHP project architecture using AI Mess Detector. It is based on real-world analysis of projects like Doctrine ORM, Laravel, Symfony Console, Composer, PHP-Parser, Guzzle, Monolog, and Flysystem.
+This guide walks you through practical workflows for analyzing PHP project architecture using Qualimetrix. It is based on real-world analysis of projects like Doctrine ORM, Laravel, Symfony Console, Composer, PHP-Parser, Guzzle, Monolog, and Flysystem.
 
 ---
 
@@ -12,7 +12,7 @@ The most effective way to investigate a codebase is the **summary-to-detail dril
 ### Step 1: Get the Big Picture
 
 ```bash
-bin/aimd check src/
+bin/qmx check src/
 ```
 
 The summary view shows overall health scores across five dimensions (complexity, cohesion, coupling, typing, maintainability), the worst namespaces, and the worst classes. This tells you where to look first.
@@ -23,7 +23,7 @@ The summary view shows overall health scores across five dimensions (complexity,
 ### Step 2: Drill Into Problem Namespaces
 
 ```bash
-bin/aimd check src/ --namespace=App\\Domain\\Order
+bin/qmx check src/ --namespace=App\\Domain\\Order
 ```
 
 The namespace view shows per-namespace health, child namespaces, and the worst classes within that scope. Look for namespaces with health below 50 (Poor or Critical).
@@ -34,14 +34,14 @@ The namespace view shows per-namespace health, child namespaces, and the worst c
 ### Step 3: Investigate Specific Classes
 
 ```bash
-bin/aimd check src/ --class=App\\Domain\\Order\\OrderService --detail
+bin/qmx check src/ --class=App\\Domain\\Order\\OrderService --detail
 ```
 
 The `--detail` flag shows individual method-level violations. Look at the "Technical debt by rule" breakdown to decide what **type** of refactoring to prioritize first.
 
 ### Step 4: Verify with Source Code
 
-AIMD gives line numbers for every violation. Open the flagged methods and read the actual code. A method with cognitive complexity 107 at line 342 is something you can jump to immediately.
+Qualimetrix gives line numbers for every violation. Open the flagged methods and read the actual code. A method with cognitive complexity 107 at line 342 is something you can jump to immediately.
 
 ---
 
@@ -54,19 +54,19 @@ Coupling analysis reveals how tightly your classes and namespaces are interconne
 1. **Start with the coupling dimension:**
 
     ```bash
-    bin/aimd check src/ --only-rule=coupling
+    bin/qmx check src/ --only-rule=coupling
     ```
 
 2. **Check circular dependencies separately** -- these are the highest-priority coupling issues:
 
     ```bash
-    bin/aimd check src/ --only-rule=architecture.circular-dependency
+    bin/qmx check src/ --only-rule=architecture.circular-dependency
     ```
 
 3. **Drill into the worst namespaces** and look at instability (I), abstractness (A), and distance from the main sequence (D):
 
     ```bash
-    bin/aimd check src/ --namespace=App\\Infrastructure
+    bin/qmx check src/ --namespace=App\\Infrastructure
     ```
 
 4. **Focus on CBO errors** (threshold 20) over warnings (threshold 14). CBO errors indicate classes that likely need decomposition.
@@ -88,7 +88,7 @@ Coupling analysis reveals how tightly your classes and namespaces are interconne
 **Distance from main sequence** requires namespace configuration when analyzing vendor/third-party code. Without it, you may get zero results:
 
 ```bash
-bin/aimd check vendor/doctrine/orm/src/ \
+bin/qmx check vendor/doctrine/orm/src/ \
   --rule-opt='coupling.distance:include_namespaces=Doctrine\ORM'
 ```
 
@@ -121,7 +121,7 @@ Complexity metrics help you find methods that are hard to understand, hard to te
 ### Triage Strategy
 
 ```bash
-bin/aimd check src/ --only-rule=complexity --detail
+bin/qmx check src/ --only-rule=complexity --detail
 ```
 
 1. Focus first on **ERROR-level cognitive complexity violations** (> 30)
@@ -154,7 +154,7 @@ Cohesion metrics help you find classes that try to do too much and should be spl
 ### Start with God Class Detection
 
 ```bash
-bin/aimd check src/ --only-rule=code-smell.god-class
+bin/qmx check src/ --only-rule=code-smell.god-class
 ```
 
 God class detection is the most actionable cohesion-related rule. For each finding:
@@ -185,7 +185,7 @@ The data class rule has a higher false-positive rate than god class detection, e
 - Exception classes (simple by design)
 - Small service classes with clean APIs
 
-Use `excludeReadonly: true` and `excludePromotedOnly: true` for codebases with PHP 8.2+ DTOs. For exception classes and interfaces, suppress with `@aimd-ignore code-smell.data-class`.
+Use `excludeReadonly: true` and `excludePromotedOnly: true` for codebases with PHP 8.2+ DTOs. For exception classes and interfaces, suppress with `@qmx-ignore code-smell.data-class`.
 
 ---
 
@@ -262,13 +262,13 @@ For CI pipelines or AI-assisted architecture reviews, the JSON output provides s
 
 ```bash
 # Step 1: Overview scan
-bin/aimd check src/ --format=json --workers=0
+bin/qmx check src/ --format=json --workers=0
 
 # Step 2: Deep dive into a specific namespace
-bin/aimd check src/ --namespace=App\\Domain --format=json --workers=0
+bin/qmx check src/ --namespace=App\\Domain --format=json --workers=0
 
 # Step 3: Raw metrics for custom analysis
-bin/aimd check src/ --format=metrics --workers=0
+bin/qmx check src/ --format=metrics --workers=0
 ```
 
 ### Most Useful JSON Fields

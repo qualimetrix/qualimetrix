@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Infrastructure\Ast;
+namespace Qualimetrix\Tests\Unit\Infrastructure\Ast;
 
-use AiMessDetector\Configuration\AnalysisConfiguration;
-use AiMessDetector\Configuration\ConfigurationHolder;
-use AiMessDetector\Infrastructure\Ast\CachedFileParser;
-use AiMessDetector\Infrastructure\Ast\FileParserFactory;
-use AiMessDetector\Infrastructure\Ast\PhpFileParser;
-use AiMessDetector\Infrastructure\Cache\CacheInterface;
-use AiMessDetector\Infrastructure\Cache\CacheKeyGenerator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Configuration\AnalysisConfiguration;
+use Qualimetrix\Configuration\ConfigurationHolder;
+use Qualimetrix\Infrastructure\Ast\CachedFileParser;
+use Qualimetrix\Infrastructure\Ast\FileParserFactory;
+use Qualimetrix\Infrastructure\Ast\PhpFileParser;
+use Qualimetrix\Infrastructure\Cache\CacheInterface;
+use Qualimetrix\Infrastructure\Cache\CacheKeyGenerator;
 
 #[CoversClass(FileParserFactory::class)]
 final class FileParserFactoryTest extends TestCase

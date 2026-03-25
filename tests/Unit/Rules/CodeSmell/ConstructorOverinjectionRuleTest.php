@@ -2,22 +2,22 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Rules\CodeSmell;
+namespace Qualimetrix\Tests\Unit\Rules\CodeSmell;
 
-use AiMessDetector\Core\Metric\MetricBag;
-use AiMessDetector\Core\Metric\MetricRepositoryInterface;
-use AiMessDetector\Core\Rule\AnalysisContext;
-use AiMessDetector\Core\Rule\RuleCategory;
-use AiMessDetector\Core\Symbol\SymbolInfo;
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Symbol\SymbolType;
-use AiMessDetector\Core\Violation\Severity;
-use AiMessDetector\Rules\CodeSmell\ConstructorOverinjectionOptions;
-use AiMessDetector\Rules\CodeSmell\ConstructorOverinjectionRule;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Rule\RuleCategory;
+use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Violation\Severity;
+use Qualimetrix\Rules\CodeSmell\ConstructorOverinjectionOptions;
+use Qualimetrix\Rules\CodeSmell\ConstructorOverinjectionRule;
 
 #[CoversClass(ConstructorOverinjectionRule::class)]
 #[CoversClass(ConstructorOverinjectionOptions::class)]
@@ -68,7 +68,7 @@ final class ConstructorOverinjectionRuleTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
 
-        new ConstructorOverinjectionRule(new class implements \AiMessDetector\Core\Rule\RuleOptionsInterface {
+        new ConstructorOverinjectionRule(new class implements \Qualimetrix\Core\Rule\RuleOptionsInterface {
             public static function fromArray(array $config): static
             {
                 return new static();

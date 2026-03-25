@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\Console;
+namespace Qualimetrix\Infrastructure\Console;
 
 /**
  * Options for the violation filter pipeline.

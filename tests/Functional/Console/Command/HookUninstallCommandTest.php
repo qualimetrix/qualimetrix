@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Functional\Console\Command;
+namespace Qualimetrix\Tests\Functional\Console\Command;
 
-use AiMessDetector\Infrastructure\Console\Command\HookUninstallCommand;
-use AiMessDetector\Infrastructure\Git\GitRepositoryLocator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Infrastructure\Console\Command\HookUninstallCommand;
+use Qualimetrix\Infrastructure\Git\GitRepositoryLocator;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;
 
@@ -21,7 +21,7 @@ final class HookUninstallCommandTest extends TestCase
     protected function setUp(): void
     {
         // Create temporary directory with fake git structure
-        $this->tempDir = sys_get_temp_dir() . '/aimd-test-' . uniqid();
+        $this->tempDir = sys_get_temp_dir() . '/qmx-test-' . uniqid();
         mkdir($this->tempDir, 0777, true);
 
         // Create .git/hooks directory
@@ -45,7 +45,7 @@ final class HookUninstallCommandTest extends TestCase
     {
         // Create our hook
         $hookPath = $this->gitDir . '/hooks/pre-commit';
-        file_put_contents($hookPath, "#!/bin/bash\n# AI Mess Detector pre-commit hook\necho 'Running hook'\n");
+        file_put_contents($hookPath, "#!/bin/bash\n# Qualimetrix pre-commit hook\necho 'Running hook'\n");
         chmod($hookPath, 0755);
 
         $command = new HookUninstallCommand(new GitRepositoryLocator());
@@ -102,7 +102,7 @@ final class HookUninstallCommandTest extends TestCase
         // Assert failure
         $this->assertSame(1, $commandTester->getStatusCode());
         $output = $commandTester->getDisplay();
-        $this->assertStringContainsString('not an AI Mess Detector hook', $output);
+        $this->assertStringContainsString('not an Qualimetrix hook', $output);
         $this->assertStringContainsString('Will not remove third-party hook', $output);
 
         // Verify hook still exists
@@ -114,7 +114,7 @@ final class HookUninstallCommandTest extends TestCase
     {
         // Create our hook
         $hookPath = $this->gitDir . '/hooks/pre-commit';
-        file_put_contents($hookPath, "#!/bin/bash\n# AI Mess Detector pre-commit hook\necho 'Running hook'\n");
+        file_put_contents($hookPath, "#!/bin/bash\n# Qualimetrix pre-commit hook\necho 'Running hook'\n");
         chmod($hookPath, 0755);
 
         // Create backup
@@ -150,7 +150,7 @@ final class HookUninstallCommandTest extends TestCase
     {
         // Create our hook without backup
         $hookPath = $this->gitDir . '/hooks/pre-commit';
-        file_put_contents($hookPath, "#!/bin/bash\n# AI Mess Detector pre-commit hook\necho 'Running hook'\n");
+        file_put_contents($hookPath, "#!/bin/bash\n# Qualimetrix pre-commit hook\necho 'Running hook'\n");
         chmod($hookPath, 0755);
 
         $command = new HookUninstallCommand(new GitRepositoryLocator());
@@ -173,7 +173,7 @@ final class HookUninstallCommandTest extends TestCase
     {
         // Create our hook
         $hookPath = $this->gitDir . '/hooks/pre-commit';
-        file_put_contents($hookPath, "#!/bin/bash\n# AI Mess Detector pre-commit hook\necho 'Running hook'\n");
+        file_put_contents($hookPath, "#!/bin/bash\n# Qualimetrix pre-commit hook\necho 'Running hook'\n");
         chmod($hookPath, 0755);
 
         // Create backup

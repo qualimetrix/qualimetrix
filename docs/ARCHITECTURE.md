@@ -1,4 +1,4 @@
-# AI Mess Detector — Architecture
+# Qualimetrix — Architecture
 
 ## Navigation
 
@@ -78,12 +78,12 @@ Used for:
 
 Symfony DI with autoconfiguration — new components are registered automatically:
 
-| Component | Condition                                | DI Tag              |
-| --------- | ---------------------------------------- | ------------------- |
-| Collector | implements `MetricCollectorInterface`    | `aimd.collector`    |
-| Rule      | implements `RuleInterface`               | `aimd.rule`         |
-| Formatter | implements `FormatterInterface`          | `aimd.formatter`    |
-| Stage     | implements `ConfigurationStageInterface` | `aimd.config_stage` |
+| Component | Condition                                | DI Tag             |
+| --------- | ---------------------------------------- | ------------------ |
+| Collector | implements `MetricCollectorInterface`    | `qmx.collector`    |
+| Rule      | implements `RuleInterface`               | `qmx.rule`         |
+| Formatter | implements `FormatterInterface`          | `qmx.formatter`    |
+| Stage     | implements `ConfigurationStageInterface` | `qmx.config_stage` |
 
 **No need** to modify `ContainerFactory` when adding new components.
 

@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Metrics\Security;
+namespace Qualimetrix\Tests\Unit\Metrics\Security;
 
-use AiMessDetector\Core\Metric\MetricBag;
-use AiMessDetector\Metrics\Security\SensitiveParameterCollector;
 use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Metrics\Security\SensitiveParameterCollector;
 use SplFileInfo;
 
 #[CoversClass(SensitiveParameterCollector::class)]

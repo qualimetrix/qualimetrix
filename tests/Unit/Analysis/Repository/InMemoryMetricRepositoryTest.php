@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Analysis\Repository;
+namespace Qualimetrix\Tests\Unit\Analysis\Repository;
 
-use AiMessDetector\Analysis\Repository\InMemoryMetricRepository;
-use AiMessDetector\Core\Metric\MetricBag;
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Symbol\SymbolType;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
+use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Symbol\SymbolType;
 
 #[CoversClass(InMemoryMetricRepository::class)]
 final class InMemoryMetricRepositoryTest extends TestCase

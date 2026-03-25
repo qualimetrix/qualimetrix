@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Metrics\Halstead;
+namespace Qualimetrix\Metrics\Halstead;
 
-use AiMessDetector\Core\Metric\AggregationStrategy;
-use AiMessDetector\Core\Metric\MethodMetricsProviderInterface;
-use AiMessDetector\Core\Metric\MethodWithMetrics;
-use AiMessDetector\Core\Metric\MetricBag;
-use AiMessDetector\Core\Metric\MetricDefinition;
-use AiMessDetector\Core\Metric\MetricName;
-use AiMessDetector\Core\Metric\SymbolLevel;
-use AiMessDetector\Metrics\AbstractCollector;
 use Override;
+use Qualimetrix\Core\Metric\AggregationStrategy;
+use Qualimetrix\Core\Metric\MethodMetricsProviderInterface;
+use Qualimetrix\Core\Metric\MethodWithMetrics;
+use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Metric\MetricDefinition;
+use Qualimetrix\Core\Metric\MetricName;
+use Qualimetrix\Core\Metric\SymbolLevel;
+use Qualimetrix\Metrics\AbstractCollector;
 use SplFileInfo;
 
 /**
@@ -22,7 +22,7 @@ use SplFileInfo;
  *
  * ## Methodology
  *
- * AIMD uses a **semantic approach** to token classification:
+ * Qualimetrix uses a **semantic approach** to token classification:
  *
  * ### Operators (n1, N1) - actions on data:
  * - Arithmetic: +, -, *, /, %, **
@@ -54,7 +54,7 @@ use SplFileInfo;
  * - Difficulty: +75-220%
  * - Effort: +100-350%
  *
- * AIMD uses a semantic interpretation of Halstead's methodology, measuring
+ * Qualimetrix uses a semantic interpretation of Halstead's methodology, measuring
  * algorithmic complexity rather than syntactic density. The original paper
  * counted all tokens, but was designed for languages with minimal syntax noise.
  *

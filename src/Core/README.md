@@ -76,7 +76,7 @@ Core/
 │   ├── ComputedMetricDefaults.php         # Default health.* definitions (6 built-in scores)
 │   └── ComputedMetricDefinitionHolder.php # Static runtime holder for resolved definitions
 ├── Suppression/
-│   ├── Suppression.php                    # VO: suppression tag from docblock (@aimd-ignore)
+│   ├── Suppression.php                    # VO: suppression tag from docblock (@qmx-ignore)
 │   └── SuppressionType.php                # Enum: suppression scope (symbol/next-line/file)
 ├── Util/
 │   ├── StringSet.php                      # Immutable set of unique strings
@@ -110,7 +110,7 @@ Extends `BaseCollectorInterface`. A metric collector gathers a specific group of
 - `collect(SplFileInfo $file, array $ast): MetricBag` — metric collection after traversal
 - `reset(): void` — reset visitor state between files
 
-**DI Tags:** `aimd.collector`
+**DI Tags:** `qmx.collector`
 
 ### DerivedCollectorInterface
 
@@ -123,7 +123,7 @@ Extends `BaseCollectorInterface`. Collector that derives metrics from other coll
 - `getMetricDefinitions(): array<MetricDefinition>` — metric definitions
 - `calculate(MetricBag $sourceBag): MetricBag` — calculate derived metrics from source metrics
 
-**DI Tags:** `aimd.derived_collector`
+**DI Tags:** `qmx.derived_collector`
 
 ### GlobalContextCollectorInterface
 
@@ -136,7 +136,7 @@ Extends `BaseCollectorInterface`. Collector that computes metrics from global co
 - `getMetricDefinitions(): array<MetricDefinition>` — metric definitions
 - `calculate(DependencyGraphInterface $graph, MetricRepositoryInterface $repository): void` — compute and store metrics
 
-**DI Tags:** `aimd.global_collector`
+**DI Tags:** `qmx.global_collector`
 
 ### ParallelSafeCollectorInterface
 
@@ -352,7 +352,7 @@ A rule analyzes metrics and generates violations. **Completely stateless.**
 - `getOptionsClass(): class-string<RuleOptionsInterface>` — rule options class
 - `getCliAliases(): array<string, string>` — CLI short aliases for options
 
-**DI Tags:** `aimd.rule`
+**DI Tags:** `qmx.rule`
 
 ### HierarchicalRuleInterface
 
@@ -663,7 +663,7 @@ Matches file paths against glob patterns using `fnmatch()`. Used for `exclude_pa
 
 ### Suppression
 
-Value Object representing a suppression tag from a docblock (e.g., `@aimd-ignore complexity Reason`).
+Value Object representing a suppression tag from a docblock (e.g., `@qmx-ignore complexity Reason`).
 
 **Fields:**
 - `rule: string` — rule pattern to suppress (`*` for all, or prefix like `complexity`)

@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Infrastructure\Console;
+namespace Qualimetrix\Tests\Unit\Infrastructure\Console;
 
-use AiMessDetector\Configuration\RuleOptionsParser;
-use AiMessDetector\Infrastructure\Console\CliOptionsParser;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Configuration\RuleOptionsParser;
+use Qualimetrix\Infrastructure\Console\CliOptionsParser;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Input\InputOption;

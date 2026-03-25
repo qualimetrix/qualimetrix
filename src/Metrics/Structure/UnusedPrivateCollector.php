@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Metrics\Structure;
+namespace Qualimetrix\Metrics\Structure;
 
-use AiMessDetector\Core\Metric\ClassMetricsProviderInterface;
-use AiMessDetector\Core\Metric\ClassWithMetrics;
-use AiMessDetector\Core\Metric\MetricBag;
-use AiMessDetector\Core\Metric\MetricName;
-use AiMessDetector\Metrics\AbstractCollector;
 use Override;
+use Qualimetrix\Core\Metric\ClassMetricsProviderInterface;
+use Qualimetrix\Core\Metric\ClassWithMetrics;
+use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Metric\MetricName;
+use Qualimetrix\Metrics\AbstractCollector;
 use SplFileInfo;
 
 /**

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\Console;
+namespace Qualimetrix\Infrastructure\Console;
 
-use AiMessDetector\Configuration\RuleOptionsParser;
+use Qualimetrix\Configuration\RuleOptionsParser;
 use Symfony\Component\Console\Input\InputInterface;
 
 /**

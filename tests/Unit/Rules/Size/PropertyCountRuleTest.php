@@ -2,19 +2,19 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Rules\Size;
+namespace Qualimetrix\Tests\Unit\Rules\Size;
 
-use AiMessDetector\Core\Metric\MetricBag;
-use AiMessDetector\Core\Metric\MetricRepositoryInterface;
-use AiMessDetector\Core\Rule\AnalysisContext;
-use AiMessDetector\Core\Rule\RuleCategory;
-use AiMessDetector\Core\Symbol\SymbolInfo;
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Violation\Severity;
-use AiMessDetector\Rules\Size\PropertyCountOptions;
-use AiMessDetector\Rules\Size\PropertyCountRule;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Rule\RuleCategory;
+use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Violation\Severity;
+use Qualimetrix\Rules\Size\PropertyCountOptions;
+use Qualimetrix\Rules\Size\PropertyCountRule;
 
 #[CoversClass(PropertyCountRule::class)]
 #[CoversClass(PropertyCountOptions::class)]

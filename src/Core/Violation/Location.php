@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Core\Violation;
+namespace Qualimetrix\Core\Violation;
 
 use InvalidArgumentException;
 

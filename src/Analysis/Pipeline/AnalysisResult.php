@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Analysis\Pipeline;
+namespace Qualimetrix\Analysis\Pipeline;
 
-use AiMessDetector\Analysis\Repository\InMemoryMetricRepository;
-use AiMessDetector\Core\Metric\MetricRepositoryInterface;
-use AiMessDetector\Core\Suppression\Suppression;
-use AiMessDetector\Core\Violation\Severity;
-use AiMessDetector\Core\Violation\Violation;
+use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
+use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Suppression\Suppression;
+use Qualimetrix\Core\Violation\Severity;
+use Qualimetrix\Core\Violation\Violation;
 
 final readonly class AnalysisResult
 {

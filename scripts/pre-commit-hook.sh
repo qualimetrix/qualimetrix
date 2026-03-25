@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================================
-# AI Mess Detector pre-commit hook
+# Qualimetrix pre-commit hook
 # ============================================================================
 # Analyzes staged PHP files before commit.
 # Blocks commit when violations are found.
@@ -23,19 +23,19 @@ if [ -z "$STAGED_FILES" ]; then
     exit 0
 fi
 
-echo "🔍 Running AI Mess Detector on staged files..."
+echo "🔍 Running Qualimetrix on staged files..."
 echo ""
 
 # Convert file list to command arguments
 FILES_ARGS=$(echo "$STAGED_FILES" | tr '\n' ' ')
 
-# Determine path to aimd (vendor/bin or bin/)
-if [ -f "vendor/bin/aimd" ]; then
-    AIMD_BIN="vendor/bin/aimd"
-elif [ -f "bin/aimd" ]; then
-    AIMD_BIN="bin/aimd"
+# Determine path to qmx (vendor/bin or bin/)
+if [ -f "vendor/bin/qmx" ]; then
+    QMX_BIN="vendor/bin/qmx"
+elif [ -f "bin/qmx" ]; then
+    QMX_BIN="bin/qmx"
 else
-    echo "❌ Error: aimd binary not found!"
+    echo "❌ Error: qmx binary not found!"
     echo "Run 'composer install' first."
     exit 1
 fi
@@ -47,19 +47,19 @@ if [ -f "baseline.json" ]; then
     BASELINE_ARG="--baseline=baseline.json"
 fi
 
-# Run aimd
-if $AIMD_BIN check $FILES_ARGS $BASELINE_ARG; then
+# Run qmx
+if $QMX_BIN check $FILES_ARGS $BASELINE_ARG; then
     echo ""
-    echo "✅ AI Mess Detector passed."
+    echo "✅ Qualimetrix passed."
     exit 0
 else
     EXIT_CODE=$?
     echo ""
-    echo "❌ AI Mess Detector found issues."
+    echo "❌ Qualimetrix found issues."
     echo ""
     echo "Options:"
     echo "  - Fix the issues and try again"
-    echo "  - Update baseline: $AIMD_BIN check src/ --generate-baseline=baseline.json"
+    echo "  - Update baseline: $QMX_BIN check src/ --generate-baseline=baseline.json"
     echo "  - Skip this check: git commit --no-verify"
     exit $EXIT_CODE
 fi

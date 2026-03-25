@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Core\Rule;
+namespace Qualimetrix\Tests\Unit\Core\Rule;
 
-use AiMessDetector\Core\Dependency\CycleInterface;
-use AiMessDetector\Core\Dependency\EmptyDependencyGraph;
-use AiMessDetector\Core\Metric\MetricRepositoryInterface;
-use AiMessDetector\Core\Rule\AnalysisContext;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Dependency\CycleInterface;
+use Qualimetrix\Core\Dependency\EmptyDependencyGraph;
+use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Rule\AnalysisContext;
 
 #[CoversClass(AnalysisContext::class)]
 final class AnalysisContextTest extends TestCase

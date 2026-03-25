@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Analysis\RuleExecution;
+namespace Qualimetrix\Analysis\RuleExecution;
 
-use AiMessDetector\Configuration\ConfigurationProviderInterface;
-use AiMessDetector\Configuration\RuleNamespaceExclusionProvider;
-use AiMessDetector\Core\Profiler\ProfilerHolder;
-use AiMessDetector\Core\Rule\AnalysisContext;
-use AiMessDetector\Core\Rule\RuleInterface;
-use AiMessDetector\Core\Violation\Violation;
+use Qualimetrix\Configuration\ConfigurationProviderInterface;
+use Qualimetrix\Configuration\RuleNamespaceExclusionProvider;
+use Qualimetrix\Core\Profiler\ProfilerHolder;
+use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Rule\RuleInterface;
+use Qualimetrix\Core\Violation\Violation;
 use Traversable;
 
 /**

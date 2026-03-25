@@ -85,19 +85,19 @@ Parses strings in format `git:staged`, `git:main..HEAD` into a `GitScope` object
 
 ```bash
 # Pre-commit: staged files only
-bin/aimd check src/ --analyze=git:staged
+bin/qmx check src/ --analyze=git:staged
 
 # PR review: full analysis, report only for changes
-bin/aimd check src/ --report=git:main..HEAD
+bin/qmx check src/ --report=git:main..HEAD
 
 # Quick PR: analyze only changed files
-bin/aimd check src/ --analyze=git:main..HEAD
+bin/qmx check src/ --analyze=git:main..HEAD
 
 # Strict mode: only violations in changed files
-bin/aimd check src/ --report=git:main..HEAD --report-strict
+bin/qmx check src/ --report=git:main..HEAD --report-strict
 
 # Combined with baseline
-bin/aimd check src/ --report=git:main..HEAD --baseline=baseline.json
+bin/qmx check src/ --report=git:main..HEAD --baseline=baseline.json
 ```
 
 ## Pre-commit Hook Integration
@@ -106,10 +106,10 @@ bin/aimd check src/ --report=git:main..HEAD --baseline=baseline.json
 #!/bin/bash
 # .git/hooks/pre-commit
 
-bin/aimd check --analyze=git:staged --format=text
+bin/qmx check --analyze=git:staged --format=text
 
 if [ $? -ne 0 ]; then
-    echo "AI Mess Detector found issues in staged files"
+    echo "Qualimetrix found issues in staged files"
     exit 1
 fi
 ```

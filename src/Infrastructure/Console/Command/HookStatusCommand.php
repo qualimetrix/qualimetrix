@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\Console\Command;
+namespace Qualimetrix\Infrastructure\Console\Command;
 
-use AiMessDetector\Infrastructure\Git\GitRepositoryLocator;
+use Qualimetrix\Infrastructure\Git\GitRepositoryLocator;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -25,7 +25,7 @@ final class HookStatusCommand extends Command
     /**
      * Marker comment to identify our hook.
      */
-    private const HOOK_MARKER = 'AI Mess Detector pre-commit hook';
+    private const HOOK_MARKER = 'Qualimetrix pre-commit hook';
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
@@ -49,7 +49,7 @@ final class HookStatusCommand extends Command
             $output->writeln('Status: <comment>NOT INSTALLED</comment>');
             $output->writeln('');
             $output->writeln('To install the hook, run:');
-            $output->writeln('  bin/aimd hook:install');
+            $output->writeln('  bin/qmx hook:install');
 
             return self::SUCCESS;
         }
@@ -71,11 +71,11 @@ final class HookStatusCommand extends Command
         }
 
         if ($isOurHook) {
-            $output->writeln('Owner: <info>AI Mess Detector</info>');
+            $output->writeln('Owner: <info>Qualimetrix</info>');
         } else {
             $output->writeln('Owner: <comment>Third-party hook</comment>');
             $output->writeln('');
-            $output->writeln('<comment>Warning: This is not an AI Mess Detector hook.</comment>');
+            $output->writeln('<comment>Warning: This is not an Qualimetrix hook.</comment>');
             $output->writeln('It may have been installed by another tool or manually.');
         }
 
@@ -101,11 +101,11 @@ final class HookStatusCommand extends Command
 
         // Show suggestions based on status
         if ($isOurHook) {
-            $output->writeln('The hook will run AI Mess Detector on staged PHP files before each commit.');
+            $output->writeln('The hook will run Qualimetrix on staged PHP files before each commit.');
             $output->writeln('To bypass the hook, use: git commit --no-verify');
         } else {
-            $output->writeln('To install AI Mess Detector hook, run:');
-            $output->writeln('  bin/aimd hook:install --force');
+            $output->writeln('To install Qualimetrix hook, run:');
+            $output->writeln('  bin/qmx hook:install --force');
         }
 
         return self::SUCCESS;

@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Metrics\CodeSmell;
+namespace Qualimetrix\Tests\Unit\Metrics\CodeSmell;
 
-use AiMessDetector\Metrics\CodeSmell\CodeSmellLocation;
-use AiMessDetector\Metrics\CodeSmell\CodeSmellVisitor;
 use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Metrics\CodeSmell\CodeSmellLocation;
+use Qualimetrix\Metrics\CodeSmell\CodeSmellVisitor;
 
 #[CoversClass(CodeSmellVisitor::class)]
 #[CoversClass(CodeSmellLocation::class)]

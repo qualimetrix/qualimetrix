@@ -2,9 +2,8 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Analysis\Collection\Dependency;
+namespace Qualimetrix\Tests\Unit\Analysis\Collection\Dependency;
 
-use AiMessDetector\Analysis\Collection\Dependency\DependencyResolver;
 use PhpParser\Node\Identifier;
 use PhpParser\Node\Name;
 use PhpParser\Node\Name\FullyQualified;
@@ -15,6 +14,7 @@ use PhpParser\Node\Stmt\UseUse;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Collection\Dependency\DependencyResolver;
 
 #[CoversClass(DependencyResolver::class)]
 final class DependencyResolverTest extends TestCase

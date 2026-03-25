@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Rules\Coupling;
+namespace Qualimetrix\Tests\Unit\Rules\Coupling;
 
-use AiMessDetector\Rules\Coupling\CboOptions;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Rules\Coupling\CboOptions;
 
 #[CoversClass(CboOptions::class)]
 final class CboOptionsTest extends TestCase

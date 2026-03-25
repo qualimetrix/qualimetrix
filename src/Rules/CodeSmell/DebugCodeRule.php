@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Rules\CodeSmell;
+namespace Qualimetrix\Rules\CodeSmell;
 
-use AiMessDetector\Core\Violation\Severity;
+use Qualimetrix\Core\Violation\Severity;
 
 /**
  * Detects debug code (var_dump, print_r, dd, etc).

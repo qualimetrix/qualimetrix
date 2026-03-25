@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\Console\Progress;
+namespace Qualimetrix\Infrastructure\Console\Progress;
 
-use AiMessDetector\Core\Progress\ProgressReporter;
+use Qualimetrix\Core\Progress\ProgressReporter;
 
 /**
  * Delegates all progress reporting calls to the current reporter in ProgressReporterHolder.

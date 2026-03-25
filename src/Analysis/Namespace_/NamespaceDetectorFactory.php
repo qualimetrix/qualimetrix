@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Analysis\Namespace_;
+namespace Qualimetrix\Analysis\Namespace_;
 
-use AiMessDetector\Configuration\ConfigurationProviderInterface;
-use AiMessDetector\Core\Namespace_\NamespaceDetectorInterface;
+use Qualimetrix\Configuration\ConfigurationProviderInterface;
+use Qualimetrix\Core\Namespace_\NamespaceDetectorInterface;
 
 /**
  * Factory for creating namespace detectors based on runtime configuration.

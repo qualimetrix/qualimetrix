@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Core\Rule;
+namespace Qualimetrix\Core\Rule;
 
 /**
  * Matches rule names and violation codes using prefix matching.

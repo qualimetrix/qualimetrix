@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Analysis\Collection\Dependency\Handler;
+namespace Qualimetrix\Analysis\Collection\Dependency\Handler;
 
-use AiMessDetector\Core\Dependency\DependencyType;
 use PhpParser\Node;
 use PhpParser\Node\Expr\New_;
 use PhpParser\Node\Name;
+use Qualimetrix\Core\Dependency\DependencyType;
 
 final readonly class InstantiationHandler implements NodeDependencyHandlerInterface
 {

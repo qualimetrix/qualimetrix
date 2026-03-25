@@ -2,9 +2,8 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Metrics\CodeSmell;
+namespace Qualimetrix\Metrics\CodeSmell;
 
-use AiMessDetector\Metrics\ResettableVisitorInterface;
 use PhpParser\Node;
 use PhpParser\Node\Expr\ArrowFunction;
 use PhpParser\Node\Expr\Closure;
@@ -26,6 +25,7 @@ use PhpParser\Node\Stmt\Return_;
 use PhpParser\Node\Stmt\TryCatch;
 use PhpParser\Node\Stmt\While_;
 use PhpParser\NodeVisitorAbstract;
+use Qualimetrix\Metrics\ResettableVisitorInterface;
 
 /**
  * Visitor for detecting code smells in AST.

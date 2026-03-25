@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Metrics\Size;
+namespace Qualimetrix\Tests\Unit\Metrics\Size;
 
-use AiMessDetector\Core\Metric\AggregationStrategy;
-use AiMessDetector\Core\Metric\SymbolLevel;
-use AiMessDetector\Metrics\Size\ClassCountCollector;
-use AiMessDetector\Metrics\Size\ClassCountVisitor;
 use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Metric\AggregationStrategy;
+use Qualimetrix\Core\Metric\SymbolLevel;
+use Qualimetrix\Metrics\Size\ClassCountCollector;
+use Qualimetrix\Metrics\Size\ClassCountVisitor;
 use SplFileInfo;
 
 #[CoversClass(ClassCountCollector::class)]
@@ -574,7 +574,7 @@ PHP;
         }
     }
 
-    private function collectMetrics(string $code): \AiMessDetector\Core\Metric\MetricBag
+    private function collectMetrics(string $code): \Qualimetrix\Core\Metric\MetricBag
     {
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($code) ?? [];

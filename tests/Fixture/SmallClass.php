@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Fixture;
+namespace Qualimetrix\Tests\Fixture;
 
 /**
  * RFC-008 Test Fixture: Small class with only 1-2 methods.

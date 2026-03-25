@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Core\Violation;
+namespace Qualimetrix\Tests\Unit\Core\Violation;
 
-use AiMessDetector\Core\Violation\Location;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Violation\Location;
 
 #[CoversClass(Location::class)]
 final class LocationTest extends TestCase

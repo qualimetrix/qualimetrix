@@ -33,7 +33,7 @@ Configuration/
 │       ├── ConfigurationStageInterface.php # Stage contract
 │       ├── DefaultsStage.php               # Priority 0: defaults
 │       ├── ComposerDiscoveryStage.php      # Priority 10: composer.json
-│       ├── ConfigFileStage.php             # Priority 20: aimd.yaml
+│       ├── ConfigFileStage.php             # Priority 20: qmx.yaml
 │       └── CliStage.php                    # Priority 30: CLI options
 │
 ├── Discovery/
@@ -51,7 +51,7 @@ Configuration/
 
 ## Configuration Pipeline (RFC-002)
 
-The pipeline provides a **zero-config experience** — `bin/aimd check` works without arguments,
+The pipeline provides a **zero-config experience** — `bin/qmx check` works without arguments,
 automatically detecting paths from `composer.json`.
 
 ### Architecture
@@ -75,7 +75,7 @@ automatically detecting paths from `composer.json`.
 | ------------------------ | -------- | ------------- | ----------------------------------------------------------------------------- |
 | `DefaultsStage`          | 0        | hardcoded     | Defaults: `paths=['.']`, `excludes=['vendor','node_modules','.git']`          |
 | `ComposerDiscoveryStage` | 10       | composer.json | Extracts PSR-4 autoload paths                                                 |
-| `ConfigFileStage`        | 20       | aimd.yaml     | Loads config file                                                             |
+| `ConfigFileStage`        | 20       | qmx.yaml      | Loads config file                                                             |
 | `CliStage`               | 30       | CLI           | Parses `--exclude`, `--exclude-path`, `--format`, `--cache-*`, paths argument |
 
 ### Layer Merging
@@ -121,7 +121,7 @@ final readonly class EnvironmentStage implements ConfigurationStageInterface
 
     public function apply(ConfigurationContext $context): ?ConfigurationLayer
     {
-        $paths = getenv('AIMD_PATHS');
+        $paths = getenv('QMX_PATHS');
         if (!$paths) {
             return null; // skip this stage
         }
@@ -137,7 +137,7 @@ final readonly class EnvironmentStage implements ConfigurationStageInterface
 ```
 CLI options            # Highest priority
      |
-Config file            # aimd.yaml
+Config file            # qmx.yaml
      |
 Defaults               # Default values in *Options classes
 ```
@@ -151,7 +151,7 @@ Defaults               # Default values in *Options classes
 General analysis settings (not related to rules).
 
 **Fields:**
-- `cacheDir: string` — cache directory (default: `.aimd-cache`)
+- `cacheDir: string` — cache directory (default: `.qmx-cache`)
 - `cacheEnabled: bool` — whether caching is enabled (default: true)
 - `format: string` — output format (default: `text`)
 - `namespaceStrategy: string` — namespace detection strategy (`psr4`, `tokenizer`, `chain`)
@@ -216,7 +216,7 @@ Consumed by `RuleExecutor` to filter violations at framework level.
 
 ## Config File Format
 
-### aimd.yaml
+### qmx.yaml
 
 ```yaml
 # Exclude paths from violations (glob patterns, fnmatch syntax)
@@ -259,7 +259,7 @@ rules:
 # Caching
 cache:
   enabled: true
-  dir: .aimd-cache
+  dir: .qmx-cache
 
 # Output format
 format: text
@@ -311,9 +311,9 @@ rules:
 All files from the `config/` directory are merged:
 ```
 config/
-├── aimd.yaml           # Base
-├── aimd.local.yaml     # Local overrides (in .gitignore)
-└── aimd.ci.yaml        # CI-specific
+├── qmx.yaml           # Base
+├── qmx.local.yaml     # Local overrides (in .gitignore)
+└── qmx.ci.yaml        # CI-specific
 ```
 
 Order: base < local < ci (alphabetical or explicit priority).
@@ -420,9 +420,9 @@ Rule names use `group.rule-name` format (kebab-case). The `--disable-rule` and `
 options support prefix matching — specifying a group prefix targets all rules in that group:
 
 ```bash
-bin/aimd check src/ --disable-rule=code-smell         # Disable all code-smell.* rules
-bin/aimd check src/ --only-rule=complexity             # Run only complexity.* rules
-bin/aimd check src/ --disable-rule=coupling.instability  # Disable a specific rule
+bin/qmx check src/ --disable-rule=code-smell         # Disable all code-smell.* rules
+bin/qmx check src/ --only-rule=complexity             # Run only complexity.* rules
+bin/qmx check src/ --disable-rule=coupling.instability  # Disable a specific rule
 ```
 
 ```yaml
@@ -458,7 +458,7 @@ CLI options parser for rules.
 
 ### PhpConfigLoader
 
-Loading from `aimd.php` with IDE autocompletion:
+Loading from `qmx.php` with IDE autocompletion:
 
 ```php
 return [
@@ -515,6 +515,6 @@ Setting structure:
 - [x] `--rule-opt` works
 - [x] `--disable-rule` disables a rule
 - [x] `--config` loads the specified file
-- [x] **Zero-config**: `bin/aimd check` works without arguments
+- [x] **Zero-config**: `bin/qmx check` works without arguments
 - [x] **Auto-discovery**: paths from composer.json PSR-4 autoload
 - [x] **Extensible**: new stages are automatically registered via DI

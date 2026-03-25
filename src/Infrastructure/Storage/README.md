@@ -27,7 +27,7 @@ Unified metric storage architecture based on SQLite, addressing two goals:
 | Aggregated   | SQLite     | GROUP BY needed                       |
 
 ```
-.aimd-cache/
+.qmx-cache/
 ├── ast/
 │   ├── a1b2c3.php      # Serialized ASTs
 │   └── d4e5f6.php
@@ -116,35 +116,35 @@ File change detection for cache invalidation.
 - File changed (content_hash) -> Invalidate file + children
 - File deleted -> CASCADE removes all metrics
 - Config changed -> Does NOT invalidate metrics cache (metrics do not depend on config)
-- AIMD version changed -> Full cache clear
+- Qualimetrix version changed -> Full cache clear
 
 ## CLI Options
 
-| Option               | Description                            |
-| -------------------- | -------------------------------------- |
-| `--storage=<type>`   | Storage type (auto/sqlite/memory)      |
-| `--cache-dir=<path>` | Cache directory (default: .aimd-cache) |
-| `--no-cache`         | Disable cache                          |
+| Option               | Description                           |
+| -------------------- | ------------------------------------- |
+| `--storage=<type>`   | Storage type (auto/sqlite/memory)     |
+| `--cache-dir=<path>` | Cache directory (default: .qmx-cache) |
+| `--no-cache`         | Disable cache                         |
 
 ## Examples
 
 ```bash
 # Analysis with auto-detect storage
-bin/aimd check src/
+bin/qmx check src/
 
 # Explicitly specify SQLite
-bin/aimd check src/ --storage=sqlite
+bin/qmx check src/ --storage=sqlite
 
 # Clear cache
-bin/aimd cache:clear
-bin/aimd cache:clear --only=metrics
-bin/aimd cache:clear --only=ast
+bin/qmx cache:clear
+bin/qmx cache:clear --only=metrics
+bin/qmx cache:clear --only=ast
 
 # Cache statistics
-bin/aimd cache:stats
+bin/qmx cache:stats
 
 # Vacuum (SQLite compaction)
-bin/aimd cache:vacuum
+bin/qmx cache:vacuum
 ```
 
 ## Definition of Done

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Analysis\Aggregator;
+namespace Qualimetrix\Analysis\Aggregator;
 
-use AiMessDetector\Analysis\Exception\CyclicDependencyException;
-use AiMessDetector\Core\Metric\GlobalContextCollectorInterface;
+use Qualimetrix\Analysis\Exception\CyclicDependencyException;
+use Qualimetrix\Core\Metric\GlobalContextCollectorInterface;
 
 /**
  * Sorts GlobalContextCollectors in topological order based on their dependencies.

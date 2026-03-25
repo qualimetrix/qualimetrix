@@ -2,19 +2,19 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\DependencyInjection\Configurator;
+namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
-use AiMessDetector\Analysis\Namespace_\NamespaceDetectorFactory;
-use AiMessDetector\Configuration\ConfigurationProviderInterface;
-use AiMessDetector\Core\Ast\FileParserInterface;
-use AiMessDetector\Core\Namespace_\NamespaceDetectorInterface;
-use AiMessDetector\Infrastructure\Ast\CachedFileParser;
-use AiMessDetector\Infrastructure\Ast\FileParserFactory;
-use AiMessDetector\Infrastructure\Ast\PhpFileParser;
-use AiMessDetector\Infrastructure\Cache\CacheFactory;
-use AiMessDetector\Infrastructure\Cache\CacheInterface;
-use AiMessDetector\Infrastructure\Cache\CacheKeyGenerator;
-use AiMessDetector\Infrastructure\Logging\DelegatingLogger;
+use Qualimetrix\Analysis\Namespace_\NamespaceDetectorFactory;
+use Qualimetrix\Configuration\ConfigurationProviderInterface;
+use Qualimetrix\Core\Ast\FileParserInterface;
+use Qualimetrix\Core\Namespace_\NamespaceDetectorInterface;
+use Qualimetrix\Infrastructure\Ast\CachedFileParser;
+use Qualimetrix\Infrastructure\Ast\FileParserFactory;
+use Qualimetrix\Infrastructure\Ast\PhpFileParser;
+use Qualimetrix\Infrastructure\Cache\CacheFactory;
+use Qualimetrix\Infrastructure\Cache\CacheInterface;
+use Qualimetrix\Infrastructure\Cache\CacheKeyGenerator;
+use Qualimetrix\Infrastructure\Logging\DelegatingLogger;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
 

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Configuration\Discovery;
+namespace Qualimetrix\Configuration\Discovery;
 
 final class ComposerReader
 {

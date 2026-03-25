@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Core\Dependency;
+namespace Qualimetrix\Tests\Unit\Core\Dependency;
 
-use AiMessDetector\Core\Dependency\Dependency;
-use AiMessDetector\Core\Dependency\DependencyType;
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Violation\Location;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Dependency\Dependency;
+use Qualimetrix\Core\Dependency\DependencyType;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Violation\Location;
 
 #[CoversClass(Dependency::class)]
 final class DependencyTest extends TestCase

@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Metrics\Size;
+namespace Qualimetrix\Metrics\Size;
 
-use AiMessDetector\Metrics\ResettableVisitorInterface;
 use PhpParser\Node;
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\Namespace_;
 use PhpParser\NodeVisitorAbstract;
+use Qualimetrix\Metrics\ResettableVisitorInterface;
 
 /**
  * Visitor for LocCollector.

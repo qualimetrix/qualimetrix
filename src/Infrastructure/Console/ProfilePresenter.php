@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\Console;
+namespace Qualimetrix\Infrastructure\Console;
 
-use AiMessDetector\Core\Profiler\ProfilerHolder;
-use AiMessDetector\Reporting\Profile\ProfileSummaryRenderer;
+use Qualimetrix\Core\Profiler\ProfilerHolder;
+use Qualimetrix\Reporting\Profile\ProfileSummaryRenderer;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 

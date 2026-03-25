@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\Git;
+namespace Qualimetrix\Infrastructure\Git;
 
-use AiMessDetector\Analysis\Discovery\FinderFileDiscovery;
-use AiMessDetector\Configuration\Pipeline\ResolvedConfiguration;
 use InvalidArgumentException;
+use Qualimetrix\Analysis\Discovery\FinderFileDiscovery;
+use Qualimetrix\Configuration\Pipeline\ResolvedConfiguration;
 use Symfony\Component\Console\Input\InputInterface;
 
 /**

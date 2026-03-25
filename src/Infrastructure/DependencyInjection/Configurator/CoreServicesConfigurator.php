@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\DependencyInjection\Configurator;
+namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
-use AiMessDetector\Core\Profiler\ProfilerHolder;
-use AiMessDetector\Infrastructure\Console\Progress\DelegatingProgressReporter;
-use AiMessDetector\Infrastructure\Console\Progress\ProgressReporterHolder;
-use AiMessDetector\Infrastructure\Logging\DelegatingLogger;
-use AiMessDetector\Infrastructure\Logging\LoggerFactory;
-use AiMessDetector\Infrastructure\Logging\LoggerHolder;
 use Psr\Log\LoggerInterface;
+use Qualimetrix\Core\Profiler\ProfilerHolder;
+use Qualimetrix\Infrastructure\Console\Progress\DelegatingProgressReporter;
+use Qualimetrix\Infrastructure\Console\Progress\ProgressReporterHolder;
+use Qualimetrix\Infrastructure\Logging\DelegatingLogger;
+use Qualimetrix\Infrastructure\Logging\LoggerFactory;
+use Qualimetrix\Infrastructure\Logging\LoggerHolder;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
 
@@ -42,7 +42,7 @@ final class CoreServicesConfigurator implements ContainerConfiguratorInterface
         // After DelegatingProgressReporter is registered, alias ProgressReporter to it
         $container->registerAliasForArgument(
             DelegatingProgressReporter::class,
-            \AiMessDetector\Core\Progress\ProgressReporter::class,
+            \Qualimetrix\Core\Progress\ProgressReporter::class,
         );
     }
 

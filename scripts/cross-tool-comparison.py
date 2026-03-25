@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Cross-tool metric validation: AIMD vs pdepend vs phpmetrics.
+Cross-tool metric validation: Qualimetrix vs pdepend vs phpmetrics.
 
 Runs all three tools on benchmark projects and compares metric values
 at method-level and class-level granularity.
@@ -44,7 +44,7 @@ PROJECTS = {
 }
 
 # Metric comparison definitions
-# (aimd_key, pdepend_attr, phpmetrics_key, level, description)
+# (qmx_key, pdepend_attr, phpmetrics_key, level, description)
 METHOD_METRICS = [
     ("ccn", ["ccn", "ccn2"], None, "Cyclomatic Complexity"),
     ("npath", ["npath"], None, "NPath Complexity"),
@@ -86,11 +86,11 @@ def safe_float(val: Any) -> Optional[float]:
 
 # --- Tool runners ---
 
-def run_aimd(project_path: Path) -> dict:
-    """Run AIMD and return {classes: {name: metrics}, methods: {name: metrics}}."""
+def run_qmx(project_path: Path) -> dict:
+    """Run Qualimetrix and return {classes: {name: metrics}, methods: {name: metrics}}."""
     cmd = [
         "php", "-d", "memory_limit=2G",
-        str(PROJECT_ROOT / "bin/aimd"), "check", str(project_path),
+        str(PROJECT_ROOT / "bin/qmx"), "check", str(project_path),
         "--format=metrics", "--workers=1",
         "--disable-rule=duplication.code-duplication",
         "--disable-rule=architecture.circular-dependency",
@@ -100,7 +100,7 @@ def run_aimd(project_path: Path) -> dict:
     stdout = result.stdout.strip()
 
     if not stdout:
-        raise RuntimeError(f"AIMD produced no output. stderr: {result.stderr[:500]}")
+        raise RuntimeError(f"Qualimetrix produced no output. stderr: {result.stderr[:500]}")
 
     data = json.loads(stdout)
     classes = {}
@@ -232,7 +232,7 @@ def run_phpmetrics(project_path: Path) -> dict:
 class Divergence:
     symbol: str
     metric: str
-    aimd_value: float
+    qmx_value: float
     other_tool: str
     other_key: str
     other_value: float
@@ -244,25 +244,25 @@ class MetricComparison:
     metric_name: str
     description: str
     level: str  # "method" or "class"
-    tool_pair: str  # e.g. "AIMD vs pdepend(ccn2)"
+    tool_pair: str  # e.g. "Qualimetrix vs pdepend(ccn2)"
     total_compared: int = 0
     exact_match: int = 0  # delta < 1%
     close_match: int = 0  # delta 1-10%
     divergent: int = 0    # delta > 10%
     top_divergences: list = field(default_factory=list)
 
-    def add(self, symbol: str, aimd_val: float, other_val: float,
+    def add(self, symbol: str, qmx_val: float, other_val: float,
             other_tool: str, other_key: str):
         self.total_compared += 1
 
         # Percentage diff relative to max absolute value
-        max_abs = max(abs(aimd_val), abs(other_val))
+        max_abs = max(abs(qmx_val), abs(other_val))
         if max_abs < 0.001:
             # Both essentially zero
             self.exact_match += 1
             return
 
-        pct_diff = abs(aimd_val - other_val) / max_abs * 100
+        pct_diff = abs(qmx_val - other_val) / max_abs * 100
 
         if pct_diff < 1:
             self.exact_match += 1
@@ -275,7 +275,7 @@ class MetricComparison:
             self.top_divergences.append(Divergence(
                 symbol=symbol,
                 metric=self.metric_name,
-                aimd_value=aimd_val,
+                qmx_value=qmx_val,
                 other_tool=other_tool,
                 other_key=other_key,
                 other_value=other_val,
@@ -288,34 +288,34 @@ class MetricComparison:
 
 
 def compare_method_metrics(
-    aimd: dict, pdepend: dict, project_id: str,
+    qmx: dict, pdepend: dict, project_id: str,
 ) -> list[MetricComparison]:
-    """Compare method-level metrics between AIMD and pdepend."""
+    """Compare method-level metrics between Qualimetrix and pdepend."""
     results = []
 
-    aimd_methods = aimd.get("methods", {})
+    qmx_methods = qmx.get("methods", {})
     pdepend_methods = pdepend.get("methods", {})
 
     # Find common method keys
-    common_keys = set(aimd_methods.keys()) & set(pdepend_methods.keys())
+    common_keys = set(qmx_methods.keys()) & set(pdepend_methods.keys())
 
-    for aimd_key, pdepend_attrs, _, description in METHOD_METRICS:
+    for qmx_key, pdepend_attrs, _, description in METHOD_METRICS:
         for pd_attr in pdepend_attrs:
             comp = MetricComparison(
-                metric_name=aimd_key,
+                metric_name=qmx_key,
                 description=description,
                 level="method",
-                tool_pair=f"AIMD vs pdepend({pd_attr})",
+                tool_pair=f"Qualimetrix vs pdepend({pd_attr})",
             )
 
             for method_key in sorted(common_keys):
-                aimd_val = safe_float(aimd_methods[method_key].get(aimd_key))
+                qmx_val = safe_float(qmx_methods[method_key].get(qmx_key))
                 pd_val = safe_float(pdepend_methods[method_key].get(pd_attr))
 
-                if aimd_val is not None and pd_val is not None:
+                if qmx_val is not None and pd_val is not None:
                     comp.add(
                         f"{project_id}::{method_key}",
-                        aimd_val, pd_val,
+                        qmx_val, pd_val,
                         "pdepend", pd_attr,
                     )
 
@@ -327,34 +327,34 @@ def compare_method_metrics(
 
 
 def compare_class_metrics(
-    aimd: dict, pdepend: dict, phpmetrics: dict, project_id: str,
+    qmx: dict, pdepend: dict, phpmetrics: dict, project_id: str,
 ) -> list[MetricComparison]:
-    """Compare class-level metrics between AIMD, pdepend, and phpmetrics."""
+    """Compare class-level metrics between Qualimetrix, pdepend, and phpmetrics."""
     results = []
 
-    aimd_classes = aimd.get("classes", {})
+    qmx_classes = qmx.get("classes", {})
     pdepend_classes = pdepend.get("classes", {})
     phpmetrics_classes = phpmetrics.get("classes", {})
 
-    for aimd_key, pdepend_attrs, pm_key, description in CLASS_METRICS:
-        # AIMD vs pdepend
-        common_pd = set(aimd_classes.keys()) & set(pdepend_classes.keys())
+    for qmx_key, pdepend_attrs, pm_key, description in CLASS_METRICS:
+        # Qualimetrix vs pdepend
+        common_pd = set(qmx_classes.keys()) & set(pdepend_classes.keys())
         for pd_attr in pdepend_attrs:
             comp = MetricComparison(
-                metric_name=aimd_key,
+                metric_name=qmx_key,
                 description=description,
                 level="class",
-                tool_pair=f"AIMD vs pdepend({pd_attr})",
+                tool_pair=f"Qualimetrix vs pdepend({pd_attr})",
             )
 
             for cls_key in sorted(common_pd):
-                aimd_val = safe_float(aimd_classes[cls_key].get(aimd_key))
+                qmx_val = safe_float(qmx_classes[cls_key].get(qmx_key))
                 pd_val = safe_float(pdepend_classes[cls_key].get(pd_attr))
 
-                if aimd_val is not None and pd_val is not None:
+                if qmx_val is not None and pd_val is not None:
                     comp.add(
                         f"{project_id}::{cls_key}",
-                        aimd_val, pd_val,
+                        qmx_val, pd_val,
                         "pdepend", pd_attr,
                     )
 
@@ -362,24 +362,24 @@ def compare_class_metrics(
             if comp.total_compared > 0:
                 results.append(comp)
 
-        # AIMD vs phpmetrics
+        # Qualimetrix vs phpmetrics
         if pm_key:
-            common_pm = set(aimd_classes.keys()) & set(phpmetrics_classes.keys())
+            common_pm = set(qmx_classes.keys()) & set(phpmetrics_classes.keys())
             comp = MetricComparison(
-                metric_name=aimd_key,
+                metric_name=qmx_key,
                 description=description,
                 level="class",
-                tool_pair=f"AIMD vs phpmetrics({pm_key})",
+                tool_pair=f"Qualimetrix vs phpmetrics({pm_key})",
             )
 
             for cls_key in sorted(common_pm):
-                aimd_val = safe_float(aimd_classes[cls_key].get(aimd_key))
+                qmx_val = safe_float(qmx_classes[cls_key].get(qmx_key))
                 pm_val = safe_float(phpmetrics_classes[cls_key].get(pm_key))
 
-                if aimd_val is not None and pm_val is not None:
+                if qmx_val is not None and pm_val is not None:
                     comp.add(
                         f"{project_id}::{cls_key}",
-                        aimd_val, pm_val,
+                        qmx_val, pm_val,
                         "phpmetrics", pm_key,
                     )
 
@@ -448,10 +448,10 @@ def print_report(all_comparisons: list[MetricComparison]) -> None:
         if all_divs:
             print(f"\n  Top divergences:")
             for d in all_divs[:15]:
-                sign = "+" if d.aimd_value > d.other_value else "-"
+                sign = "+" if d.qmx_value > d.other_value else "-"
                 print(
                     f"    {d.symbol}: "
-                    f"AIMD={fmt_val(d.aimd_value)}, "
+                    f"Qualimetrix={fmt_val(d.qmx_value)}, "
                     f"{d.other_tool}({d.other_key})={fmt_val(d.other_value)} "
                     f"({sign}{d.pct_diff}%)"
                 )
@@ -517,7 +517,7 @@ def build_json_report(
         divs = [
             {
                 "symbol": d.symbol,
-                "aimd": d.aimd_value,
+                "qmx": d.qmx_value,
                 "other_tool": d.other_tool,
                 "other_key": d.other_key,
                 "other_value": d.other_value,
@@ -595,10 +595,10 @@ def main():
         print(f"{'#'*80}")
 
         # Run tools
-        print(f"\n  Running AIMD...", end="", flush=True)
+        print(f"\n  Running Qualimetrix...", end="", flush=True)
         try:
-            aimd_data = run_aimd(project_path)
-            print(f" OK ({len(aimd_data['classes'])} classes, {len(aimd_data['methods'])} methods)")
+            qmx_data = run_qmx(project_path)
+            print(f" OK ({len(qmx_data['classes'])} classes, {len(qmx_data['methods'])} methods)")
         except Exception as e:
             print(f" FAILED: {e}")
             continue
@@ -620,39 +620,39 @@ def main():
             phpmetrics_data = {"classes": {}}
 
         # Symbol matching stats
-        aimd_classes = set(aimd_data["classes"].keys())
+        qmx_classes = set(qmx_data["classes"].keys())
         pd_classes = set(pdepend_data["classes"].keys())
         pm_classes = set(phpmetrics_data["classes"].keys())
 
-        aimd_methods = set(aimd_data["methods"].keys())
+        qmx_methods = set(qmx_data["methods"].keys())
         pd_methods = set(pdepend_data["methods"].keys())
 
         print(f"\n  Symbol matching:")
-        print(f"    Classes — AIMD: {len(aimd_classes)}, pdepend: {len(pd_classes)}, "
+        print(f"    Classes — Qualimetrix: {len(qmx_classes)}, pdepend: {len(pd_classes)}, "
               f"phpmetrics: {len(pm_classes)}")
-        print(f"    Classes matched — AIMD∩pd: {len(aimd_classes & pd_classes)}, "
-              f"AIMD∩pm: {len(aimd_classes & pm_classes)}")
-        print(f"    Methods — AIMD: {len(aimd_methods)}, pdepend: {len(pd_methods)}")
-        print(f"    Methods matched — AIMD∩pd: {len(aimd_methods & pd_methods)}")
+        print(f"    Classes matched — Qualimetrix∩pd: {len(qmx_classes & pd_classes)}, "
+              f"Qualimetrix∩pm: {len(qmx_classes & pm_classes)}")
+        print(f"    Methods — Qualimetrix: {len(qmx_methods)}, pdepend: {len(pd_methods)}")
+        print(f"    Methods matched — Qualimetrix∩pd: {len(qmx_methods & pd_methods)}")
 
         project_stats[pid] = {
-            "aimd_classes": len(aimd_classes),
+            "qmx_classes": len(qmx_classes),
             "pdepend_classes": len(pd_classes),
             "phpmetrics_classes": len(pm_classes),
-            "matched_classes_pd": len(aimd_classes & pd_classes),
-            "matched_classes_pm": len(aimd_classes & pm_classes),
-            "aimd_methods": len(aimd_methods),
+            "matched_classes_pd": len(qmx_classes & pd_classes),
+            "matched_classes_pm": len(qmx_classes & pm_classes),
+            "qmx_methods": len(qmx_methods),
             "pdepend_methods": len(pd_methods),
-            "matched_methods_pd": len(aimd_methods & pd_methods),
+            "matched_methods_pd": len(qmx_methods & pd_methods),
         }
 
         # Compare method-level
-        method_comps = compare_method_metrics(aimd_data, pdepend_data, pid)
+        method_comps = compare_method_metrics(qmx_data, pdepend_data, pid)
         all_comparisons.extend(method_comps)
 
         # Compare class-level
         class_comps = compare_class_metrics(
-            aimd_data, pdepend_data, phpmetrics_data, pid,
+            qmx_data, pdepend_data, phpmetrics_data, pid,
         )
         all_comparisons.extend(class_comps)
 

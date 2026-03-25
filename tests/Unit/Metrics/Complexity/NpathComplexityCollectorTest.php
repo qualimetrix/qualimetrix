@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Metrics\Complexity;
+namespace Qualimetrix\Tests\Unit\Metrics\Complexity;
 
-use AiMessDetector\Core\Metric\AggregationStrategy;
-use AiMessDetector\Core\Metric\SymbolLevel;
-use AiMessDetector\Metrics\Complexity\NpathComplexityCollector;
-use AiMessDetector\Metrics\Complexity\NpathComplexityVisitor;
 use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Metric\AggregationStrategy;
+use Qualimetrix\Core\Metric\SymbolLevel;
+use Qualimetrix\Metrics\Complexity\NpathComplexityCollector;
+use Qualimetrix\Metrics\Complexity\NpathComplexityVisitor;
 use SplFileInfo;
 
 #[CoversClass(NpathComplexityCollector::class)]
@@ -929,7 +929,7 @@ PHP;
     /**
      * Collect metrics for a standalone function (no class wrapper).
      */
-    private function collectFunctionMetrics(string $code): \AiMessDetector\Core\Metric\MetricBag
+    private function collectFunctionMetrics(string $code): \Qualimetrix\Core\Metric\MetricBag
     {
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($code);
@@ -944,7 +944,7 @@ PHP;
         return $collector->collect($file, $ast ?? []);
     }
 
-    private function collectMetrics(string $code): \AiMessDetector\Core\Metric\MetricBag
+    private function collectMetrics(string $code): \Qualimetrix\Core\Metric\MetricBag
     {
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($code);

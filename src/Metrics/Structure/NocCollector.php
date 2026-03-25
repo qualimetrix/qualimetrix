@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Metrics\Structure;
+namespace Qualimetrix\Metrics\Structure;
 
-use AiMessDetector\Core\Dependency\DependencyGraphInterface;
-use AiMessDetector\Core\Dependency\DependencyType;
-use AiMessDetector\Core\Metric\AggregationStrategy;
-use AiMessDetector\Core\Metric\GlobalContextCollectorInterface;
-use AiMessDetector\Core\Metric\MetricDefinition;
-use AiMessDetector\Core\Metric\MetricName;
-use AiMessDetector\Core\Metric\MetricRepositoryInterface;
-use AiMessDetector\Core\Metric\SymbolLevel;
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Dependency\DependencyGraphInterface;
+use Qualimetrix\Core\Dependency\DependencyType;
+use Qualimetrix\Core\Metric\AggregationStrategy;
+use Qualimetrix\Core\Metric\GlobalContextCollectorInterface;
+use Qualimetrix\Core\Metric\MetricDefinition;
+use Qualimetrix\Core\Metric\MetricName;
+use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Metric\SymbolLevel;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Symbol\SymbolType;
 
 /**
  * Computes Number of Children (NOC) metric from dependency graph.

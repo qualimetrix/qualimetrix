@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Reporting\Formatter;
+namespace Qualimetrix\Tests\Unit\Reporting\Formatter;
 
-use AiMessDetector\Reporting\Formatter\FormatterInterface;
-use AiMessDetector\Reporting\Formatter\FormatterRegistry;
-use AiMessDetector\Reporting\FormatterContext;
-use AiMessDetector\Reporting\GroupBy;
-use AiMessDetector\Reporting\Report;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Reporting\Formatter\FormatterInterface;
+use Qualimetrix\Reporting\Formatter\FormatterRegistry;
+use Qualimetrix\Reporting\FormatterContext;
+use Qualimetrix\Reporting\GroupBy;
+use Qualimetrix\Reporting\Report;
 
 #[CoversClass(FormatterRegistry::class)]
 final class FormatterRegistryTest extends TestCase

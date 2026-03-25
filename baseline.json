@@ -5,7 +5,7 @@
     "violationCount": 967,
     "symbolCount": 654,
     "violations": {
-        "class:AiMessDetector\\Analysis\\Aggregator\\AggregationHelper": [
+        "class:Qualimetrix\\Analysis\\Aggregator\\AggregationHelper": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "ca23168089c36d34"
@@ -19,7 +19,7 @@
                 "hash": "c69deade27b05a5d"
             }
         ],
-        "class:AiMessDetector\\Analysis\\Aggregator\\ClassToNamespaceAggregator": [
+        "class:Qualimetrix\\Analysis\\Aggregator\\ClassToNamespaceAggregator": [
             {
                 "rule": "computed.health",
                 "hash": "67f03f8969deb287"
@@ -29,13 +29,13 @@
                 "hash": "a26183f7abb6d4a2"
             }
         ],
-        "class:AiMessDetector\\Analysis\\Aggregator\\GlobalCollectorRunner": [
+        "class:Qualimetrix\\Analysis\\Aggregator\\GlobalCollectorRunner": [
             {
                 "rule": "code-smell.data-class",
                 "hash": "68e7a011dcd317db"
             }
         ],
-        "class:AiMessDetector\\Analysis\\Aggregator\\MethodToClassAggregator": [
+        "class:Qualimetrix\\Analysis\\Aggregator\\MethodToClassAggregator": [
             {
                 "rule": "computed.health",
                 "hash": "45fc681d765fe171"
@@ -45,13 +45,13 @@
                 "hash": "516b91de15aaaa01"
             }
         ],
-        "class:AiMessDetector\\Analysis\\Aggregator\\MetricAggregator": [
+        "class:Qualimetrix\\Analysis\\Aggregator\\MetricAggregator": [
             {
                 "rule": "coupling.instability",
                 "hash": "fc7de0d5650bd5d8"
             }
         ],
-        "class:AiMessDetector\\Analysis\\Aggregator\\NamespaceToProjectAggregator": [
+        "class:Qualimetrix\\Analysis\\Aggregator\\NamespaceToProjectAggregator": [
             {
                 "rule": "computed.health",
                 "hash": "743cec8b5eafb9e1"
@@ -61,7 +61,7 @@
                 "hash": "77b2a76439c2a2a6"
             }
         ],
-        "class:AiMessDetector\\Analysis\\Collection\\CollectionOrchestrator": [
+        "class:Qualimetrix\\Analysis\\Collection\\CollectionOrchestrator": [
             {
                 "rule": "computed.health",
                 "hash": "77775ec588ec6236"
@@ -75,25 +75,25 @@
                 "hash": "9ee54dcf29ab6ccc"
             }
         ],
-        "class:AiMessDetector\\Analysis\\Collection\\Dependency\\CircularDependencyDetector": [
+        "class:Qualimetrix\\Analysis\\Collection\\Dependency\\CircularDependencyDetector": [
             {
                 "rule": "computed.health",
                 "hash": "a76f73a063fc21d5"
             }
         ],
-        "class:AiMessDetector\\Analysis\\Collection\\Dependency\\DependencyGraph": [
+        "class:Qualimetrix\\Analysis\\Collection\\Dependency\\DependencyGraph": [
             {
                 "rule": "computed.health",
                 "hash": "b36b1ad4ffd77e1a"
             }
         ],
-        "class:AiMessDetector\\Analysis\\Collection\\Dependency\\DependencyVisitor": [
+        "class:Qualimetrix\\Analysis\\Collection\\Dependency\\DependencyVisitor": [
             {
                 "rule": "coupling.cbo",
                 "hash": "eac2a2d866920e60"
             }
         ],
-        "class:AiMessDetector\\Analysis\\Collection\\Dependency\\Export\\DotExporter": [
+        "class:Qualimetrix\\Analysis\\Collection\\Dependency\\Export\\DotExporter": [
             {
                 "rule": "computed.health",
                 "hash": "39ccdf4b0e4db2d3"
@@ -107,61 +107,61 @@
                 "hash": "e0b1964bb6472b1d"
             }
         ],
-        "class:AiMessDetector\\Analysis\\Collection\\Dependency\\Export\\JsonGraphExporter": [
+        "class:Qualimetrix\\Analysis\\Collection\\Dependency\\Export\\JsonGraphExporter": [
             {
                 "rule": "design.lcom",
                 "hash": "1a68a93d778dfa51"
             }
         ],
-        "class:AiMessDetector\\Analysis\\Collection\\Dependency\\Handler\\CatchInstanceofHandler": [
+        "class:Qualimetrix\\Analysis\\Collection\\Dependency\\Handler\\CatchInstanceofHandler": [
             {
                 "rule": "coupling.instability",
                 "hash": "19db9b9b30e16653"
             }
         ],
-        "class:AiMessDetector\\Analysis\\Collection\\Dependency\\Handler\\ClassLikeHandler": [
+        "class:Qualimetrix\\Analysis\\Collection\\Dependency\\Handler\\ClassLikeHandler": [
             {
                 "rule": "coupling.instability",
                 "hash": "e7c0d12d0e3d1cfb"
             }
         ],
-        "class:AiMessDetector\\Analysis\\Collection\\Dependency\\Handler\\DependencyContext": [
+        "class:Qualimetrix\\Analysis\\Collection\\Dependency\\Handler\\DependencyContext": [
             {
                 "rule": "coupling.cbo",
                 "hash": "1f9d6937eaa25795"
             }
         ],
-        "class:AiMessDetector\\Analysis\\Collection\\Dependency\\Handler\\InstantiationHandler": [
+        "class:Qualimetrix\\Analysis\\Collection\\Dependency\\Handler\\InstantiationHandler": [
             {
                 "rule": "coupling.instability",
                 "hash": "62095eb8d81bb689"
             }
         ],
-        "class:AiMessDetector\\Analysis\\Collection\\Dependency\\Handler\\MethodHandler": [
+        "class:Qualimetrix\\Analysis\\Collection\\Dependency\\Handler\\MethodHandler": [
             {
                 "rule": "coupling.instability",
                 "hash": "34e0ce5b2428c3c7"
             }
         ],
-        "class:AiMessDetector\\Analysis\\Collection\\Dependency\\Handler\\PropertyHandler": [
+        "class:Qualimetrix\\Analysis\\Collection\\Dependency\\Handler\\PropertyHandler": [
             {
                 "rule": "coupling.instability",
                 "hash": "a97a13d544448c71"
             }
         ],
-        "class:AiMessDetector\\Analysis\\Collection\\Dependency\\Handler\\StaticAccessHandler": [
+        "class:Qualimetrix\\Analysis\\Collection\\Dependency\\Handler\\StaticAccessHandler": [
             {
                 "rule": "coupling.instability",
                 "hash": "dcee8f1a91cf1800"
             }
         ],
-        "class:AiMessDetector\\Analysis\\Collection\\Dependency\\Handler\\TraitUseHandler": [
+        "class:Qualimetrix\\Analysis\\Collection\\Dependency\\Handler\\TraitUseHandler": [
             {
                 "rule": "coupling.instability",
                 "hash": "36693312a11a8b34"
             }
         ],
-        "class:AiMessDetector\\Analysis\\Collection\\FileProcessor": [
+        "class:Qualimetrix\\Analysis\\Collection\\FileProcessor": [
             {
                 "rule": "computed.health",
                 "hash": "6471c7ca091cd378"
@@ -175,31 +175,31 @@
                 "hash": "c5c026c817cde8e6"
             }
         ],
-        "class:AiMessDetector\\Analysis\\Collection\\Metric\\CompositeCollector": [
+        "class:Qualimetrix\\Analysis\\Collection\\Metric\\CompositeCollector": [
             {
                 "rule": "coupling.cbo",
                 "hash": "939a662f58ed870e"
             }
         ],
-        "class:AiMessDetector\\Analysis\\Duplication\\DuplicationDetector": [
+        "class:Qualimetrix\\Analysis\\Duplication\\DuplicationDetector": [
             {
                 "rule": "complexity.wmc",
                 "hash": "1e8e45f38eb89726"
             }
         ],
-        "class:AiMessDetector\\Analysis\\Namespace_\\ChainNamespaceDetector": [
+        "class:Qualimetrix\\Analysis\\Namespace_\\ChainNamespaceDetector": [
             {
                 "rule": "coupling.instability",
                 "hash": "7a6975e0335b9050"
             }
         ],
-        "class:AiMessDetector\\Analysis\\Namespace_\\NamespaceDetectorFactory": [
+        "class:Qualimetrix\\Analysis\\Namespace_\\NamespaceDetectorFactory": [
             {
                 "rule": "coupling.instability",
                 "hash": "d1f14413993dfab4"
             }
         ],
-        "class:AiMessDetector\\Analysis\\Pipeline\\AnalysisPipeline": [
+        "class:Qualimetrix\\Analysis\\Pipeline\\AnalysisPipeline": [
             {
                 "rule": "computed.health",
                 "hash": "c5575310f59621b1"
@@ -213,7 +213,7 @@
                 "hash": "269ea2850443950f"
             }
         ],
-        "class:AiMessDetector\\Analysis\\Pipeline\\MetricEnricher": [
+        "class:Qualimetrix\\Analysis\\Pipeline\\MetricEnricher": [
             {
                 "rule": "computed.health",
                 "hash": "88f7ec4e9622b7d0"
@@ -227,25 +227,25 @@
                 "hash": "8ec141eb0d106731"
             }
         ],
-        "class:AiMessDetector\\Configuration\\ComputedMetricsConfigResolver": [
+        "class:Qualimetrix\\Configuration\\ComputedMetricsConfigResolver": [
             {
                 "rule": "complexity.wmc",
                 "hash": "269f5aa24db54dd2"
             }
         ],
-        "class:AiMessDetector\\Configuration\\ConfigurationProviderInterface": [
+        "class:Qualimetrix\\Configuration\\ConfigurationProviderInterface": [
             {
                 "rule": "coupling.cbo",
                 "hash": "977fdcf379f957ae"
             }
         ],
-        "class:AiMessDetector\\Configuration\\Loader\\YamlConfigLoader": [
+        "class:Qualimetrix\\Configuration\\Loader\\YamlConfigLoader": [
             {
                 "rule": "coupling.instability",
                 "hash": "1541283b79fb7df7"
             }
         ],
-        "class:AiMessDetector\\Configuration\\Pipeline\\Stage\\CliStage": [
+        "class:Qualimetrix\\Configuration\\Pipeline\\Stage\\CliStage": [
             {
                 "rule": "computed.health",
                 "hash": "488e75f500885118"
@@ -255,13 +255,13 @@
                 "hash": "a4301aa00aa42c7a"
             }
         ],
-        "class:AiMessDetector\\Configuration\\Pipeline\\Stage\\ComposerDiscoveryStage": [
+        "class:Qualimetrix\\Configuration\\Pipeline\\Stage\\ComposerDiscoveryStage": [
             {
                 "rule": "design.lcom",
                 "hash": "e109752e52918158"
             }
         ],
-        "class:AiMessDetector\\Configuration\\Pipeline\\Stage\\ConfigFileStage": [
+        "class:Qualimetrix\\Configuration\\Pipeline\\Stage\\ConfigFileStage": [
             {
                 "rule": "computed.health",
                 "hash": "bc23b3ecfe3f3606"
@@ -271,25 +271,25 @@
                 "hash": "786bf6a8e78e0a69"
             }
         ],
-        "class:AiMessDetector\\Configuration\\Pipeline\\Stage\\DefaultsStage": [
+        "class:Qualimetrix\\Configuration\\Pipeline\\Stage\\DefaultsStage": [
             {
                 "rule": "design.lcom",
                 "hash": "6c92d085de8b9128"
             }
         ],
-        "class:AiMessDetector\\Configuration\\RuleOptionsFactory": [
+        "class:Qualimetrix\\Configuration\\RuleOptionsFactory": [
             {
                 "rule": "complexity.wmc",
                 "hash": "f0f8da8c331efca0"
             }
         ],
-        "class:AiMessDetector\\Core\\ComputedMetric\\ComputedMetricDefinition": [
+        "class:Qualimetrix\\Core\\ComputedMetric\\ComputedMetricDefinition": [
             {
                 "rule": "computed.health",
                 "hash": "49e6497866acc225"
             }
         ],
-        "class:AiMessDetector\\Core\\Dependency\\DependencyGraphInterface": [
+        "class:Qualimetrix\\Core\\Dependency\\DependencyGraphInterface": [
             {
                 "rule": "coupling.cbo",
                 "hash": "ca96e74ac57f56d0"
@@ -299,37 +299,37 @@
                 "hash": "34108a66b254bfd6"
             }
         ],
-        "class:AiMessDetector\\Core\\Dependency\\EmptyDependencyGraph": [
+        "class:Qualimetrix\\Core\\Dependency\\EmptyDependencyGraph": [
             {
                 "rule": "computed.health",
                 "hash": "0930312d381c0416"
             }
         ],
-        "class:AiMessDetector\\Core\\Metric\\AggregationStrategy": [
+        "class:Qualimetrix\\Core\\Metric\\AggregationStrategy": [
             {
                 "rule": "coupling.cbo",
                 "hash": "80df367cbb36dddb"
             }
         ],
-        "class:AiMessDetector\\Core\\Metric\\ClassWithMetrics": [
+        "class:Qualimetrix\\Core\\Metric\\ClassWithMetrics": [
             {
                 "rule": "computed.health",
                 "hash": "1883f0bb3a91502c"
             }
         ],
-        "class:AiMessDetector\\Core\\Metric\\DataBag": [
+        "class:Qualimetrix\\Core\\Metric\\DataBag": [
             {
                 "rule": "coupling.class-rank",
                 "hash": "4053f8978e06757d"
             }
         ],
-        "class:AiMessDetector\\Core\\Metric\\MethodWithMetrics": [
+        "class:Qualimetrix\\Core\\Metric\\MethodWithMetrics": [
             {
                 "rule": "computed.health",
                 "hash": "4d44307882b91c52"
             }
         ],
-        "class:AiMessDetector\\Core\\Metric\\MetricBag": [
+        "class:Qualimetrix\\Core\\Metric\\MetricBag": [
             {
                 "rule": "coupling.cbo",
                 "hash": "a42fe3f4211f28fa"
@@ -339,19 +339,19 @@
                 "hash": "8f84f604a1c3edeb"
             }
         ],
-        "class:AiMessDetector\\Core\\Metric\\MetricDefinition": [
+        "class:Qualimetrix\\Core\\Metric\\MetricDefinition": [
             {
                 "rule": "coupling.cbo",
                 "hash": "759654f695b8ca08"
             }
         ],
-        "class:AiMessDetector\\Core\\Metric\\MetricName": [
+        "class:Qualimetrix\\Core\\Metric\\MetricName": [
             {
                 "rule": "coupling.cbo",
                 "hash": "734084407df58773"
             }
         ],
-        "class:AiMessDetector\\Core\\Metric\\MetricRepositoryInterface": [
+        "class:Qualimetrix\\Core\\Metric\\MetricRepositoryInterface": [
             {
                 "rule": "coupling.cbo",
                 "hash": "7f17157f6f17cb7f"
@@ -361,13 +361,13 @@
                 "hash": "bb22cfa745ddee95"
             }
         ],
-        "class:AiMessDetector\\Core\\Metric\\SymbolLevel": [
+        "class:Qualimetrix\\Core\\Metric\\SymbolLevel": [
             {
                 "rule": "coupling.cbo",
                 "hash": "1b5c8f8defa1a753"
             }
         ],
-        "class:AiMessDetector\\Core\\Profiler\\NullProfiler": [
+        "class:Qualimetrix\\Core\\Profiler\\NullProfiler": [
             {
                 "rule": "computed.health",
                 "hash": "05a3b67c5218ef06"
@@ -377,37 +377,37 @@
                 "hash": "bf7bf47a814f3cdf"
             }
         ],
-        "class:AiMessDetector\\Core\\Profiler\\ProfilerHolder": [
+        "class:Qualimetrix\\Core\\Profiler\\ProfilerHolder": [
             {
                 "rule": "coupling.cbo",
                 "hash": "7365bb340bec5c8b"
             }
         ],
-        "class:AiMessDetector\\Core\\Progress\\NullProgressReporter": [
+        "class:Qualimetrix\\Core\\Progress\\NullProgressReporter": [
             {
                 "rule": "design.lcom",
                 "hash": "8e2592088b61c313"
             }
         ],
-        "class:AiMessDetector\\Core\\Rule\\AnalysisContext": [
+        "class:Qualimetrix\\Core\\Rule\\AnalysisContext": [
             {
                 "rule": "coupling.cbo",
                 "hash": "59a8a4ef5d5f92d9"
             }
         ],
-        "class:AiMessDetector\\Core\\Rule\\LevelOptionsInterface": [
+        "class:Qualimetrix\\Core\\Rule\\LevelOptionsInterface": [
             {
                 "rule": "coupling.cbo",
                 "hash": "2cfe2a6beca9cbf5"
             }
         ],
-        "class:AiMessDetector\\Core\\Rule\\RuleCategory": [
+        "class:Qualimetrix\\Core\\Rule\\RuleCategory": [
             {
                 "rule": "coupling.cbo",
                 "hash": "a91d259e74d50e17"
             }
         ],
-        "class:AiMessDetector\\Core\\Rule\\RuleOptionsInterface": [
+        "class:Qualimetrix\\Core\\Rule\\RuleOptionsInterface": [
             {
                 "rule": "coupling.cbo",
                 "hash": "0d45d5e0d4156584"
@@ -417,7 +417,7 @@
                 "hash": "64074ed33f0abaef"
             }
         ],
-        "class:AiMessDetector\\Core\\Symbol\\SymbolPath": [
+        "class:Qualimetrix\\Core\\Symbol\\SymbolPath": [
             {
                 "rule": "complexity.wmc",
                 "hash": "86de0a91a24c1c6b"
@@ -431,7 +431,7 @@
                 "hash": "573abb68e0dc2f9d"
             }
         ],
-        "class:AiMessDetector\\Core\\Symbol\\SymbolType": [
+        "class:Qualimetrix\\Core\\Symbol\\SymbolType": [
             {
                 "rule": "coupling.cbo",
                 "hash": "8db9b913321cb804"
@@ -441,13 +441,13 @@
                 "hash": "b3ac413d5b549103"
             }
         ],
-        "class:AiMessDetector\\Core\\Violation\\Location": [
+        "class:Qualimetrix\\Core\\Violation\\Location": [
             {
                 "rule": "coupling.cbo",
                 "hash": "5aa7d8a98be5909b"
             }
         ],
-        "class:AiMessDetector\\Core\\Violation\\Severity": [
+        "class:Qualimetrix\\Core\\Violation\\Severity": [
             {
                 "rule": "coupling.cbo",
                 "hash": "39ed751ac499196b"
@@ -457,7 +457,7 @@
                 "hash": "79eaafe5c3f5694b"
             }
         ],
-        "class:AiMessDetector\\Core\\Violation\\Violation": [
+        "class:Qualimetrix\\Core\\Violation\\Violation": [
             {
                 "rule": "computed.health",
                 "hash": "fd8792ef9950bffa"
@@ -471,31 +471,31 @@
                 "hash": "6a0a3b0cef394832"
             }
         ],
-        "class:AiMessDetector\\Infrastructure\\Ast\\FileParserFactory": [
+        "class:Qualimetrix\\Infrastructure\\Ast\\FileParserFactory": [
             {
                 "rule": "coupling.instability",
                 "hash": "a907a82b9dc646c9"
             }
         ],
-        "class:AiMessDetector\\Infrastructure\\Cache\\CacheFactory": [
+        "class:Qualimetrix\\Infrastructure\\Cache\\CacheFactory": [
             {
                 "rule": "code-smell.data-class",
                 "hash": "ae82f61cd8f61d16"
             }
         ],
-        "class:AiMessDetector\\Infrastructure\\Cache\\FileCache": [
+        "class:Qualimetrix\\Infrastructure\\Cache\\FileCache": [
             {
                 "rule": "coupling.instability",
                 "hash": "ac42b345822c9e19"
             }
         ],
-        "class:AiMessDetector\\Infrastructure\\Console\\CheckCommandDefinition": [
+        "class:Qualimetrix\\Infrastructure\\Console\\CheckCommandDefinition": [
             {
                 "rule": "coupling.instability",
                 "hash": "41e015f0ef4de54e"
             }
         ],
-        "class:AiMessDetector\\Infrastructure\\Console\\Command\\BaselineCleanupCommand": [
+        "class:Qualimetrix\\Infrastructure\\Console\\Command\\BaselineCleanupCommand": [
             {
                 "rule": "coupling.instability",
                 "hash": "a7e23559a8970058"
@@ -505,7 +505,7 @@
                 "hash": "eab6b549eec7b63f"
             }
         ],
-        "class:AiMessDetector\\Infrastructure\\Console\\Command\\CheckCommand": [
+        "class:Qualimetrix\\Infrastructure\\Console\\Command\\CheckCommand": [
             {
                 "rule": "computed.health",
                 "hash": "24d5d55ba376d526"
@@ -519,7 +519,7 @@
                 "hash": "5acc19f6fab8db31"
             }
         ],
-        "class:AiMessDetector\\Infrastructure\\Console\\Command\\GraphExportCommand": [
+        "class:Qualimetrix\\Infrastructure\\Console\\Command\\GraphExportCommand": [
             {
                 "rule": "computed.health",
                 "hash": "8317fd730a8b2b96"
@@ -537,7 +537,7 @@
                 "hash": "e6bd38ef419b0c9b"
             }
         ],
-        "class:AiMessDetector\\Infrastructure\\Console\\Command\\HookInstallCommand": [
+        "class:Qualimetrix\\Infrastructure\\Console\\Command\\HookInstallCommand": [
             {
                 "rule": "code-smell.unused-private",
                 "hash": "86577a11e19b4965"
@@ -551,13 +551,13 @@
                 "hash": "39b41acd9fcc12ed"
             }
         ],
-        "class:AiMessDetector\\Infrastructure\\Console\\Command\\HookStatusCommand": [
+        "class:Qualimetrix\\Infrastructure\\Console\\Command\\HookStatusCommand": [
             {
                 "rule": "coupling.instability",
                 "hash": "c226b70f1835308a"
             }
         ],
-        "class:AiMessDetector\\Infrastructure\\Console\\Command\\HookUninstallCommand": [
+        "class:Qualimetrix\\Infrastructure\\Console\\Command\\HookUninstallCommand": [
             {
                 "rule": "computed.health",
                 "hash": "786458727a89a1c9"
@@ -571,7 +571,7 @@
                 "hash": "202f1a7678a77da6"
             }
         ],
-        "class:AiMessDetector\\Infrastructure\\Console\\Command\\RulesCommand": [
+        "class:Qualimetrix\\Infrastructure\\Console\\Command\\RulesCommand": [
             {
                 "rule": "coupling.instability",
                 "hash": "3f975545dff252df"
@@ -581,7 +581,7 @@
                 "hash": "3a8e0d31be830761"
             }
         ],
-        "class:AiMessDetector\\Infrastructure\\Console\\FormatterContextFactory": [
+        "class:Qualimetrix\\Infrastructure\\Console\\FormatterContextFactory": [
             {
                 "rule": "computed.health",
                 "hash": "e9df59c8f828b422"
@@ -591,7 +591,7 @@
                 "hash": "bf69e422ea6116ea"
             }
         ],
-        "class:AiMessDetector\\Infrastructure\\Console\\Progress\\ConsoleProgressBar": [
+        "class:Qualimetrix\\Infrastructure\\Console\\Progress\\ConsoleProgressBar": [
             {
                 "rule": "code-smell.data-class",
                 "hash": "da2c8677f1f7ee86"
@@ -601,7 +601,7 @@
                 "hash": "bfc0862a5eaa4bdf"
             }
         ],
-        "class:AiMessDetector\\Infrastructure\\Console\\ResultPresenter": [
+        "class:Qualimetrix\\Infrastructure\\Console\\ResultPresenter": [
             {
                 "rule": "coupling.cbo",
                 "hash": "395591f9c9cb9daf"
@@ -615,7 +615,7 @@
                 "hash": "b2cd11110fad418d"
             }
         ],
-        "class:AiMessDetector\\Infrastructure\\Console\\RuntimeConfigurator": [
+        "class:Qualimetrix\\Infrastructure\\Console\\RuntimeConfigurator": [
             {
                 "rule": "computed.health",
                 "hash": "494ae19e62e9997a"
@@ -629,55 +629,55 @@
                 "hash": "22abeace3201ec74"
             }
         ],
-        "class:AiMessDetector\\Infrastructure\\Console\\ViolationFilterOrchestrator": [
+        "class:Qualimetrix\\Infrastructure\\Console\\ViolationFilterOrchestrator": [
             {
                 "rule": "coupling.instability",
                 "hash": "fbd0e75b9a1ae5c8"
             }
         ],
-        "class:AiMessDetector\\Infrastructure\\Console\\ViolationFilterPipeline": [
+        "class:Qualimetrix\\Infrastructure\\Console\\ViolationFilterPipeline": [
             {
                 "rule": "coupling.instability",
                 "hash": "4e48def925d71d04"
             }
         ],
-        "class:AiMessDetector\\Infrastructure\\DependencyInjection\\CompilerPass\\ConfigurationStageCompilerPass": [
+        "class:Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\ConfigurationStageCompilerPass": [
             {
                 "rule": "coupling.instability",
                 "hash": "c67bdce5a3a829d2"
             }
         ],
-        "class:AiMessDetector\\Infrastructure\\DependencyInjection\\CompilerPass\\FormatterCompilerPass": [
+        "class:Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\FormatterCompilerPass": [
             {
                 "rule": "coupling.instability",
                 "hash": "a98acbd4530ed688"
             }
         ],
-        "class:AiMessDetector\\Infrastructure\\DependencyInjection\\CompilerPass\\GlobalCollectorCompilerPass": [
+        "class:Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\GlobalCollectorCompilerPass": [
             {
                 "rule": "coupling.instability",
                 "hash": "eaf831b1d0d124f8"
             }
         ],
-        "class:AiMessDetector\\Infrastructure\\DependencyInjection\\CompilerPass\\ParallelCollectorClassesCompilerPass": [
+        "class:Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\ParallelCollectorClassesCompilerPass": [
             {
                 "rule": "coupling.instability",
                 "hash": "e14b34fdf80b8970"
             }
         ],
-        "class:AiMessDetector\\Infrastructure\\DependencyInjection\\CompilerPass\\RuleOptionsCompilerPass": [
+        "class:Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\RuleOptionsCompilerPass": [
             {
                 "rule": "coupling.instability",
                 "hash": "3f1c9b6716bea60f"
             }
         ],
-        "class:AiMessDetector\\Infrastructure\\DependencyInjection\\CompilerPass\\RuleRegistryCompilerPass": [
+        "class:Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\RuleRegistryCompilerPass": [
             {
                 "rule": "coupling.instability",
                 "hash": "0eb6ce8fc54b7857"
             }
         ],
-        "class:AiMessDetector\\Infrastructure\\DependencyInjection\\Configurator\\AnalysisConfigurator": [
+        "class:Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\AnalysisConfigurator": [
             {
                 "rule": "computed.health",
                 "hash": "bccd5db209d7d40e"
@@ -691,7 +691,7 @@
                 "hash": "027f56a136c3afac"
             }
         ],
-        "class:AiMessDetector\\Infrastructure\\DependencyInjection\\Configurator\\CollectorConfigurator": [
+        "class:Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\CollectorConfigurator": [
             {
                 "rule": "coupling.cbo",
                 "hash": "fae6531acb3da9f0"
@@ -701,19 +701,19 @@
                 "hash": "d6f94c52fa9d43aa"
             }
         ],
-        "class:AiMessDetector\\Infrastructure\\DependencyInjection\\Configurator\\ConfigurationConfigurator": [
+        "class:Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\ConfigurationConfigurator": [
             {
                 "rule": "coupling.instability",
                 "hash": "d692dde650b46774"
             }
         ],
-        "class:AiMessDetector\\Infrastructure\\DependencyInjection\\Configurator\\CoreServicesConfigurator": [
+        "class:Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\CoreServicesConfigurator": [
             {
                 "rule": "coupling.instability",
                 "hash": "2bae9c4cea69c174"
             }
         ],
-        "class:AiMessDetector\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator": [
+        "class:Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator": [
             {
                 "rule": "coupling.cbo",
                 "hash": "2af4ebc142f9cbc8"
@@ -723,7 +723,7 @@
                 "hash": "413828243ca5323f"
             }
         ],
-        "class:AiMessDetector\\Infrastructure\\DependencyInjection\\Configurator\\ParserConfigurator": [
+        "class:Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\ParserConfigurator": [
             {
                 "rule": "coupling.cbo",
                 "hash": "c4f9cef29b46cdd2"
@@ -733,55 +733,55 @@
                 "hash": "a1d0eb4407367d56"
             }
         ],
-        "class:AiMessDetector\\Infrastructure\\DependencyInjection\\Configurator\\RuleConfigurator": [
+        "class:Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\RuleConfigurator": [
             {
                 "rule": "coupling.instability",
                 "hash": "3403a4f667fec574"
             }
         ],
-        "class:AiMessDetector\\Infrastructure\\DependencyInjection\\ContainerFactory": [
+        "class:Qualimetrix\\Infrastructure\\DependencyInjection\\ContainerFactory": [
             {
                 "rule": "coupling.cbo",
                 "hash": "da778f284963983a"
             }
         ],
-        "class:AiMessDetector\\Infrastructure\\Git\\ChangedFile": [
+        "class:Qualimetrix\\Infrastructure\\Git\\ChangedFile": [
             {
                 "rule": "computed.health",
                 "hash": "94064a14b9c3b476"
             }
         ],
-        "class:AiMessDetector\\Infrastructure\\Git\\GitFileDiscovery": [
+        "class:Qualimetrix\\Infrastructure\\Git\\GitFileDiscovery": [
             {
                 "rule": "coupling.instability",
                 "hash": "7e7b7b2ac34312be"
             }
         ],
-        "class:AiMessDetector\\Infrastructure\\Git\\GitScopeFilter": [
+        "class:Qualimetrix\\Infrastructure\\Git\\GitScopeFilter": [
             {
                 "rule": "coupling.instability",
                 "hash": "dbb1d4e55c3f50f5"
             }
         ],
-        "class:AiMessDetector\\Infrastructure\\Git\\GitScopeResolver": [
+        "class:Qualimetrix\\Infrastructure\\Git\\GitScopeResolver": [
             {
                 "rule": "coupling.instability",
                 "hash": "be6893321ed08d76"
             }
         ],
-        "class:AiMessDetector\\Infrastructure\\Logging\\ConsoleLogger": [
+        "class:Qualimetrix\\Infrastructure\\Logging\\ConsoleLogger": [
             {
                 "rule": "coupling.instability",
                 "hash": "aeab24e0e2d2fd29"
             }
         ],
-        "class:AiMessDetector\\Infrastructure\\Logging\\DelegatingLogger": [
+        "class:Qualimetrix\\Infrastructure\\Logging\\DelegatingLogger": [
             {
                 "rule": "design.type-coverage",
                 "hash": "490923ac04db24ce"
             }
         ],
-        "class:AiMessDetector\\Infrastructure\\Logging\\FileLogger": [
+        "class:Qualimetrix\\Infrastructure\\Logging\\FileLogger": [
             {
                 "rule": "coupling.instability",
                 "hash": "c78250e83f7462d3"
@@ -791,55 +791,55 @@
                 "hash": "80b15e5c3cadf293"
             }
         ],
-        "class:AiMessDetector\\Infrastructure\\Parallel\\FileProcessingTask": [
+        "class:Qualimetrix\\Infrastructure\\Parallel\\FileProcessingTask": [
             {
                 "rule": "coupling.instability",
                 "hash": "1af24a712d9a4082"
             }
         ],
-        "class:AiMessDetector\\Infrastructure\\Parallel\\Strategy\\AmphpParallelStrategy": [
+        "class:Qualimetrix\\Infrastructure\\Parallel\\Strategy\\AmphpParallelStrategy": [
             {
                 "rule": "coupling.instability",
                 "hash": "78df6b5e5120faab"
             }
         ],
-        "class:AiMessDetector\\Infrastructure\\Parallel\\Strategy\\StrategySelector": [
+        "class:Qualimetrix\\Infrastructure\\Parallel\\Strategy\\StrategySelector": [
             {
                 "rule": "computed.health",
                 "hash": "343a807622158c98"
             }
         ],
-        "class:AiMessDetector\\Infrastructure\\Parallel\\WorkerBootstrap": [
+        "class:Qualimetrix\\Infrastructure\\Parallel\\WorkerBootstrap": [
             {
                 "rule": "coupling.instability",
                 "hash": "b089ce248e305439"
             }
         ],
-        "class:AiMessDetector\\Infrastructure\\Profiler\\Profiler": [
+        "class:Qualimetrix\\Infrastructure\\Profiler\\Profiler": [
             {
                 "rule": "coupling.instability",
                 "hash": "c439953b30b6c14b"
             }
         ],
-        "class:AiMessDetector\\Infrastructure\\Serializer\\IgbinarySerializer": [
+        "class:Qualimetrix\\Infrastructure\\Serializer\\IgbinarySerializer": [
             {
                 "rule": "computed.health",
                 "hash": "1cdf4fab3f614245"
             }
         ],
-        "class:AiMessDetector\\Infrastructure\\Serializer\\PhpSerializer": [
+        "class:Qualimetrix\\Infrastructure\\Serializer\\PhpSerializer": [
             {
                 "rule": "computed.health",
                 "hash": "09655925da89bcdb"
             }
         ],
-        "class:AiMessDetector\\Infrastructure\\Serializer\\SerializerSelector": [
+        "class:Qualimetrix\\Infrastructure\\Serializer\\SerializerSelector": [
             {
                 "rule": "coupling.instability",
                 "hash": "ec2b2da0ee02ccd2"
             }
         ],
-        "class:AiMessDetector\\Infrastructure\\Storage\\InMemoryStorage": [
+        "class:Qualimetrix\\Infrastructure\\Storage\\InMemoryStorage": [
             {
                 "rule": "complexity.wmc",
                 "hash": "6bd798fb87886026"
@@ -849,7 +849,7 @@
                 "hash": "47897835455e06f9"
             }
         ],
-        "class:AiMessDetector\\Infrastructure\\Storage\\SqliteStorage": [
+        "class:Qualimetrix\\Infrastructure\\Storage\\SqliteStorage": [
             {
                 "rule": "complexity.wmc",
                 "hash": "570769edd83cf801"
@@ -859,7 +859,7 @@
                 "hash": "f66845ee746b3d52"
             }
         ],
-        "class:AiMessDetector\\Metrics\\AbstractCollector": [
+        "class:Qualimetrix\\Metrics\\AbstractCollector": [
             {
                 "rule": "coupling.cbo",
                 "hash": "3016630e581926f2"
@@ -869,13 +869,13 @@
                 "hash": "7b83b1aa2172636c"
             }
         ],
-        "class:AiMessDetector\\Metrics\\CodeSmell\\CodeSmellCollector": [
+        "class:Qualimetrix\\Metrics\\CodeSmell\\CodeSmellCollector": [
             {
                 "rule": "design.lcom",
                 "hash": "ed687610ab36749a"
             }
         ],
-        "class:AiMessDetector\\Metrics\\CodeSmell\\CodeSmellVisitor": [
+        "class:Qualimetrix\\Metrics\\CodeSmell\\CodeSmellVisitor": [
             {
                 "rule": "complexity.wmc",
                 "hash": "da260281392ed27c"
@@ -889,13 +889,13 @@
                 "hash": "ee74a2f139bd62d3"
             }
         ],
-        "class:AiMessDetector\\Metrics\\CodeSmell\\IdenticalSubExpressionCollector": [
+        "class:Qualimetrix\\Metrics\\CodeSmell\\IdenticalSubExpressionCollector": [
             {
                 "rule": "design.lcom",
                 "hash": "c616994a5b16cfcc"
             }
         ],
-        "class:AiMessDetector\\Metrics\\CodeSmell\\IdenticalSubExpressionVisitor": [
+        "class:Qualimetrix\\Metrics\\CodeSmell\\IdenticalSubExpressionVisitor": [
             {
                 "rule": "complexity.wmc",
                 "hash": "22b6d3abc2d23e15"
@@ -909,25 +909,25 @@
                 "hash": "1a912c25fe1b01f4"
             }
         ],
-        "class:AiMessDetector\\Metrics\\CodeSmell\\ParameterCountCollector": [
+        "class:Qualimetrix\\Metrics\\CodeSmell\\ParameterCountCollector": [
             {
                 "rule": "design.lcom",
                 "hash": "cd1bf1ee7d5d8a32"
             }
         ],
-        "class:AiMessDetector\\Metrics\\CodeSmell\\ParameterCountVisitor": [
+        "class:Qualimetrix\\Metrics\\CodeSmell\\ParameterCountVisitor": [
             {
                 "rule": "coupling.instability",
                 "hash": "b52073612e4a226d"
             }
         ],
-        "class:AiMessDetector\\Metrics\\CodeSmell\\UnreachableCodeCollector": [
+        "class:Qualimetrix\\Metrics\\CodeSmell\\UnreachableCodeCollector": [
             {
                 "rule": "design.lcom",
                 "hash": "e2b8381ae79937bc"
             }
         ],
-        "class:AiMessDetector\\Metrics\\CodeSmell\\UnreachableCodeVisitor": [
+        "class:Qualimetrix\\Metrics\\CodeSmell\\UnreachableCodeVisitor": [
             {
                 "rule": "coupling.cbo",
                 "hash": "e34e832160758501"
@@ -937,13 +937,13 @@
                 "hash": "8da540ac3492c185"
             }
         ],
-        "class:AiMessDetector\\Metrics\\Complexity\\CognitiveComplexityCollector": [
+        "class:Qualimetrix\\Metrics\\Complexity\\CognitiveComplexityCollector": [
             {
                 "rule": "design.lcom",
                 "hash": "9b84307fada92305"
             }
         ],
-        "class:AiMessDetector\\Metrics\\Complexity\\CognitiveComplexityVisitor": [
+        "class:Qualimetrix\\Metrics\\Complexity\\CognitiveComplexityVisitor": [
             {
                 "rule": "complexity.wmc",
                 "hash": "74c657c1f1b864d4"
@@ -957,13 +957,13 @@
                 "hash": "e879d320096230ab"
             }
         ],
-        "class:AiMessDetector\\Metrics\\Complexity\\CyclomaticComplexityCollector": [
+        "class:Qualimetrix\\Metrics\\Complexity\\CyclomaticComplexityCollector": [
             {
                 "rule": "design.lcom",
                 "hash": "844a3b899cad28bd"
             }
         ],
-        "class:AiMessDetector\\Metrics\\Complexity\\CyclomaticComplexityVisitor": [
+        "class:Qualimetrix\\Metrics\\Complexity\\CyclomaticComplexityVisitor": [
             {
                 "rule": "coupling.cbo",
                 "hash": "439a8627556cca73"
@@ -973,13 +973,13 @@
                 "hash": "42713f9c33d8db5d"
             }
         ],
-        "class:AiMessDetector\\Metrics\\Complexity\\NpathComplexityCollector": [
+        "class:Qualimetrix\\Metrics\\Complexity\\NpathComplexityCollector": [
             {
                 "rule": "design.lcom",
                 "hash": "4207a5f7e1b4e22d"
             }
         ],
-        "class:AiMessDetector\\Metrics\\Complexity\\NpathComplexityVisitor": [
+        "class:Qualimetrix\\Metrics\\Complexity\\NpathComplexityVisitor": [
             {
                 "rule": "complexity.wmc",
                 "hash": "6381a240bafe93e4"
@@ -993,13 +993,13 @@
                 "hash": "4fb04a6bf54ac56b"
             }
         ],
-        "class:AiMessDetector\\Metrics\\ComputedMetric\\ComputedMetricEvaluator": [
+        "class:Qualimetrix\\Metrics\\ComputedMetric\\ComputedMetricEvaluator": [
             {
                 "rule": "coupling.instability",
                 "hash": "490a5c95e1b75a39"
             }
         ],
-        "class:AiMessDetector\\Metrics\\Coupling\\AbstractnessCollector": [
+        "class:Qualimetrix\\Metrics\\Coupling\\AbstractnessCollector": [
             {
                 "rule": "computed.health",
                 "hash": "d2d7d8d3444b0001"
@@ -1009,7 +1009,7 @@
                 "hash": "8ae81181c83481a6"
             }
         ],
-        "class:AiMessDetector\\Metrics\\Coupling\\ClassRankCollector": [
+        "class:Qualimetrix\\Metrics\\Coupling\\ClassRankCollector": [
             {
                 "rule": "computed.health",
                 "hash": "e6dde17c61ac95ac"
@@ -1019,7 +1019,7 @@
                 "hash": "86d33313264d573c"
             }
         ],
-        "class:AiMessDetector\\Metrics\\Coupling\\CouplingCollector": [
+        "class:Qualimetrix\\Metrics\\Coupling\\CouplingCollector": [
             {
                 "rule": "computed.health",
                 "hash": "184b14373b5026da"
@@ -1029,7 +1029,7 @@
                 "hash": "79fe7c31f89c6489"
             }
         ],
-        "class:AiMessDetector\\Metrics\\Coupling\\DistanceCollector": [
+        "class:Qualimetrix\\Metrics\\Coupling\\DistanceCollector": [
             {
                 "rule": "computed.health",
                 "hash": "92b40b46e418dfd0"
@@ -1039,13 +1039,13 @@
                 "hash": "479facb36b19a0b4"
             }
         ],
-        "class:AiMessDetector\\Metrics\\Design\\TypeCoverageCollector": [
+        "class:Qualimetrix\\Metrics\\Design\\TypeCoverageCollector": [
             {
                 "rule": "design.lcom",
                 "hash": "23598ff520e76384"
             }
         ],
-        "class:AiMessDetector\\Metrics\\Design\\TypeCoveragePercentCollector": [
+        "class:Qualimetrix\\Metrics\\Design\\TypeCoveragePercentCollector": [
             {
                 "rule": "computed.health",
                 "hash": "bb176ee1120a99f9"
@@ -1055,7 +1055,7 @@
                 "hash": "22e39861193df8e7"
             }
         ],
-        "class:AiMessDetector\\Metrics\\Design\\TypeCoverageVisitor": [
+        "class:Qualimetrix\\Metrics\\Design\\TypeCoverageVisitor": [
             {
                 "rule": "coupling.cbo",
                 "hash": "b96ba7c5a68b5f1c"
@@ -1065,13 +1065,13 @@
                 "hash": "490a6ca4611af403"
             }
         ],
-        "class:AiMessDetector\\Metrics\\Halstead\\HalsteadCollector": [
+        "class:Qualimetrix\\Metrics\\Halstead\\HalsteadCollector": [
             {
                 "rule": "design.lcom",
                 "hash": "97d05d3b3abece45"
             }
         ],
-        "class:AiMessDetector\\Metrics\\Halstead\\HalsteadVisitor": [
+        "class:Qualimetrix\\Metrics\\Halstead\\HalsteadVisitor": [
             {
                 "rule": "complexity.wmc",
                 "hash": "6822078512091203"
@@ -1085,13 +1085,13 @@
                 "hash": "21b22c3725bd46ed"
             }
         ],
-        "class:AiMessDetector\\Metrics\\Maintainability\\MaintainabilityIndexCollector": [
+        "class:Qualimetrix\\Metrics\\Maintainability\\MaintainabilityIndexCollector": [
             {
                 "rule": "design.lcom",
                 "hash": "c630798659181eb5"
             }
         ],
-        "class:AiMessDetector\\Metrics\\ResettableVisitorInterface": [
+        "class:Qualimetrix\\Metrics\\ResettableVisitorInterface": [
             {
                 "rule": "coupling.cbo",
                 "hash": "ffd8249708d98138"
@@ -1101,13 +1101,13 @@
                 "hash": "51a2edd0accf93d5"
             }
         ],
-        "class:AiMessDetector\\Metrics\\Security\\HardcodedCredentialsCollector": [
+        "class:Qualimetrix\\Metrics\\Security\\HardcodedCredentialsCollector": [
             {
                 "rule": "design.lcom",
                 "hash": "4b84d742372d4a88"
             }
         ],
-        "class:AiMessDetector\\Metrics\\Security\\HardcodedCredentialsVisitor": [
+        "class:Qualimetrix\\Metrics\\Security\\HardcodedCredentialsVisitor": [
             {
                 "rule": "complexity.wmc",
                 "hash": "b43d9352c3fcb377"
@@ -1121,13 +1121,13 @@
                 "hash": "70d6c8d890a65b41"
             }
         ],
-        "class:AiMessDetector\\Metrics\\Security\\SecurityPatternCollector": [
+        "class:Qualimetrix\\Metrics\\Security\\SecurityPatternCollector": [
             {
                 "rule": "design.lcom",
                 "hash": "6f36bedfc383a9ad"
             }
         ],
-        "class:AiMessDetector\\Metrics\\Security\\SecurityPatternVisitor": [
+        "class:Qualimetrix\\Metrics\\Security\\SecurityPatternVisitor": [
             {
                 "rule": "complexity.wmc",
                 "hash": "7dc675ef281eefc3"
@@ -1141,49 +1141,49 @@
                 "hash": "980b96cb79860514"
             }
         ],
-        "class:AiMessDetector\\Metrics\\Security\\SensitiveParameterCollector": [
+        "class:Qualimetrix\\Metrics\\Security\\SensitiveParameterCollector": [
             {
                 "rule": "design.lcom",
                 "hash": "a0f786fb68373633"
             }
         ],
-        "class:AiMessDetector\\Metrics\\Security\\SensitiveParameterVisitor": [
+        "class:Qualimetrix\\Metrics\\Security\\SensitiveParameterVisitor": [
             {
                 "rule": "coupling.instability",
                 "hash": "0e070eb704a0ae34"
             }
         ],
-        "class:AiMessDetector\\Metrics\\Size\\ClassCountCollector": [
+        "class:Qualimetrix\\Metrics\\Size\\ClassCountCollector": [
             {
                 "rule": "design.lcom",
                 "hash": "029fad264aa916e0"
             }
         ],
-        "class:AiMessDetector\\Metrics\\Size\\ClassCountVisitor": [
+        "class:Qualimetrix\\Metrics\\Size\\ClassCountVisitor": [
             {
                 "rule": "coupling.instability",
                 "hash": "ab6634182c9024c9"
             }
         ],
-        "class:AiMessDetector\\Metrics\\Size\\LocCollector": [
+        "class:Qualimetrix\\Metrics\\Size\\LocCollector": [
             {
                 "rule": "design.lcom",
                 "hash": "fe33f8dcd06bbdc3"
             }
         ],
-        "class:AiMessDetector\\Metrics\\Size\\LocVisitor": [
+        "class:Qualimetrix\\Metrics\\Size\\LocVisitor": [
             {
                 "rule": "coupling.instability",
                 "hash": "109e357ffc55576a"
             }
         ],
-        "class:AiMessDetector\\Metrics\\Structure\\ClassRfcData": [
+        "class:Qualimetrix\\Metrics\\Structure\\ClassRfcData": [
             {
                 "rule": "code-smell.data-class",
                 "hash": "abcd8e0a93770742"
             }
         ],
-        "class:AiMessDetector\\Metrics\\Structure\\DitGlobalCollector": [
+        "class:Qualimetrix\\Metrics\\Structure\\DitGlobalCollector": [
             {
                 "rule": "computed.health",
                 "hash": "3bae944d69de9c88"
@@ -1193,7 +1193,7 @@
                 "hash": "8ee97cffe3f15cf8"
             }
         ],
-        "class:AiMessDetector\\Metrics\\Structure\\InheritanceDepthCollector": [
+        "class:Qualimetrix\\Metrics\\Structure\\InheritanceDepthCollector": [
             {
                 "rule": "computed.health",
                 "hash": "53727db99f8316c2"
@@ -1203,25 +1203,25 @@
                 "hash": "a5130db94c7a5f53"
             }
         ],
-        "class:AiMessDetector\\Metrics\\Structure\\InheritanceDepthVisitor": [
+        "class:Qualimetrix\\Metrics\\Structure\\InheritanceDepthVisitor": [
             {
                 "rule": "coupling.instability",
                 "hash": "6666cf8aafc1d227"
             }
         ],
-        "class:AiMessDetector\\Metrics\\Structure\\LcomCollector": [
+        "class:Qualimetrix\\Metrics\\Structure\\LcomCollector": [
             {
                 "rule": "design.lcom",
                 "hash": "77082e225dcc0259"
             }
         ],
-        "class:AiMessDetector\\Metrics\\Structure\\LcomVisitor": [
+        "class:Qualimetrix\\Metrics\\Structure\\LcomVisitor": [
             {
                 "rule": "coupling.instability",
                 "hash": "fd493aa268de4241"
             }
         ],
-        "class:AiMessDetector\\Metrics\\Structure\\MethodCountCollector": [
+        "class:Qualimetrix\\Metrics\\Structure\\MethodCountCollector": [
             {
                 "rule": "computed.health",
                 "hash": "7e4226990e673895"
@@ -1231,7 +1231,7 @@
                 "hash": "07917f73ff4a38a1"
             }
         ],
-        "class:AiMessDetector\\Metrics\\Structure\\MethodCountMetrics": [
+        "class:Qualimetrix\\Metrics\\Structure\\MethodCountMetrics": [
             {
                 "rule": "code-smell.data-class",
                 "hash": "d8f75fd557fddf10"
@@ -1249,7 +1249,7 @@
                 "hash": "0347c2a3fe102085"
             }
         ],
-        "class:AiMessDetector\\Metrics\\Structure\\MethodCountVisitor": [
+        "class:Qualimetrix\\Metrics\\Structure\\MethodCountVisitor": [
             {
                 "rule": "complexity.wmc",
                 "hash": "1742bda80745661c"
@@ -1263,7 +1263,7 @@
                 "hash": "462922d4ae93c3ee"
             }
         ],
-        "class:AiMessDetector\\Metrics\\Structure\\NocCollector": [
+        "class:Qualimetrix\\Metrics\\Structure\\NocCollector": [
             {
                 "rule": "computed.health",
                 "hash": "8128c55bea45299c"
@@ -1273,13 +1273,13 @@
                 "hash": "a1b1841df957c68c"
             }
         ],
-        "class:AiMessDetector\\Metrics\\Structure\\RfcCollector": [
+        "class:Qualimetrix\\Metrics\\Structure\\RfcCollector": [
             {
                 "rule": "design.lcom",
                 "hash": "4bcf4618213f5ae4"
             }
         ],
-        "class:AiMessDetector\\Metrics\\Structure\\RfcVisitor": [
+        "class:Qualimetrix\\Metrics\\Structure\\RfcVisitor": [
             {
                 "rule": "complexity.wmc",
                 "hash": "d342dd6f3ed8816e"
@@ -1293,19 +1293,19 @@
                 "hash": "698f4afece3d17f8"
             }
         ],
-        "class:AiMessDetector\\Metrics\\Structure\\TccLccClassData": [
+        "class:Qualimetrix\\Metrics\\Structure\\TccLccClassData": [
             {
                 "rule": "design.lcom",
                 "hash": "3d3c6fe5dd5e97aa"
             }
         ],
-        "class:AiMessDetector\\Metrics\\Structure\\TccLccCollector": [
+        "class:Qualimetrix\\Metrics\\Structure\\TccLccCollector": [
             {
                 "rule": "design.lcom",
                 "hash": "ff4fa456399da0f2"
             }
         ],
-        "class:AiMessDetector\\Metrics\\Structure\\TccLccVisitor": [
+        "class:Qualimetrix\\Metrics\\Structure\\TccLccVisitor": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "409ceb6d65d6726d"
@@ -1327,13 +1327,13 @@
                 "hash": "9012356feaf05c88"
             }
         ],
-        "class:AiMessDetector\\Metrics\\Structure\\UnusedPrivateClassData": [
+        "class:Qualimetrix\\Metrics\\Structure\\UnusedPrivateClassData": [
             {
                 "rule": "computed.health",
                 "hash": "3a784b6e310f3bd7"
             }
         ],
-        "class:AiMessDetector\\Metrics\\Structure\\UnusedPrivateCollector": [
+        "class:Qualimetrix\\Metrics\\Structure\\UnusedPrivateCollector": [
             {
                 "rule": "computed.health",
                 "hash": "0963cb42b3fc5a47"
@@ -1343,7 +1343,7 @@
                 "hash": "f74431b20640db17"
             }
         ],
-        "class:AiMessDetector\\Metrics\\Structure\\UnusedPrivateVisitor": [
+        "class:Qualimetrix\\Metrics\\Structure\\UnusedPrivateVisitor": [
             {
                 "rule": "complexity.wmc",
                 "hash": "ce650322f76fc7d4"
@@ -1357,43 +1357,43 @@
                 "hash": "7934169d2f538b59"
             }
         ],
-        "class:AiMessDetector\\Reporting\\FormatterContext": [
+        "class:Qualimetrix\\Reporting\\FormatterContext": [
             {
                 "rule": "coupling.cbo",
                 "hash": "7475877b956d855a"
             }
         ],
-        "class:AiMessDetector\\Reporting\\Formatter\\CheckstyleFormatter": [
+        "class:Qualimetrix\\Reporting\\Formatter\\CheckstyleFormatter": [
             {
                 "rule": "design.lcom",
                 "hash": "bc5d5a0895e13e06"
             }
         ],
-        "class:AiMessDetector\\Reporting\\Formatter\\FormatterInterface": [
+        "class:Qualimetrix\\Reporting\\Formatter\\FormatterInterface": [
             {
                 "rule": "coupling.cbo",
                 "hash": "701794ac1ff9e452"
             }
         ],
-        "class:AiMessDetector\\Reporting\\Formatter\\GitLabCodeQualityFormatter": [
+        "class:Qualimetrix\\Reporting\\Formatter\\GitLabCodeQualityFormatter": [
             {
                 "rule": "design.lcom",
                 "hash": "46d417299116a1c9"
             }
         ],
-        "class:AiMessDetector\\Reporting\\Formatter\\GithubActionsFormatter": [
+        "class:Qualimetrix\\Reporting\\Formatter\\GithubActionsFormatter": [
             {
                 "rule": "design.lcom",
                 "hash": "014d25f308238bec"
             }
         ],
-        "class:AiMessDetector\\Reporting\\Formatter\\Html\\HtmlFormatter": [
+        "class:Qualimetrix\\Reporting\\Formatter\\Html\\HtmlFormatter": [
             {
                 "rule": "design.lcom",
                 "hash": "61358f57cb4e52bd"
             }
         ],
-        "class:AiMessDetector\\Reporting\\Formatter\\Html\\HtmlTreeBuilder": [
+        "class:Qualimetrix\\Reporting\\Formatter\\Html\\HtmlTreeBuilder": [
             {
                 "rule": "complexity.wmc",
                 "hash": "bdd102b578e230e5"
@@ -1407,25 +1407,25 @@
                 "hash": "995e06372777bbc7"
             }
         ],
-        "class:AiMessDetector\\Reporting\\Formatter\\Json\\JsonFormatter": [
+        "class:Qualimetrix\\Reporting\\Formatter\\Json\\JsonFormatter": [
             {
                 "rule": "design.lcom",
                 "hash": "a1dcf2fd7c03f34a"
             }
         ],
-        "class:AiMessDetector\\Reporting\\Formatter\\Json\\JsonHealthSection": [
+        "class:Qualimetrix\\Reporting\\Formatter\\Json\\JsonHealthSection": [
             {
                 "rule": "coupling.instability",
                 "hash": "947807ed9019c40f"
             }
         ],
-        "class:AiMessDetector\\Reporting\\Formatter\\Json\\JsonOffenderSection": [
+        "class:Qualimetrix\\Reporting\\Formatter\\Json\\JsonOffenderSection": [
             {
                 "rule": "coupling.instability",
                 "hash": "ab9c8459e7d085bd"
             }
         ],
-        "class:AiMessDetector\\Reporting\\Formatter\\Json\\JsonViolationSection": [
+        "class:Qualimetrix\\Reporting\\Formatter\\Json\\JsonViolationSection": [
             {
                 "rule": "coupling.instability",
                 "hash": "f12cdf59452bd8c4"
@@ -1435,13 +1435,13 @@
                 "hash": "2f6d57ee6472e241"
             }
         ],
-        "class:AiMessDetector\\Reporting\\Formatter\\Sarif\\SarifFormatter": [
+        "class:Qualimetrix\\Reporting\\Formatter\\Sarif\\SarifFormatter": [
             {
                 "rule": "design.lcom",
                 "hash": "da6ba6981b765f9c"
             }
         ],
-        "class:AiMessDetector\\Reporting\\Formatter\\Summary\\HealthBarRenderer": [
+        "class:Qualimetrix\\Reporting\\Formatter\\Summary\\HealthBarRenderer": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "42f18376de71b76c"
@@ -1455,31 +1455,31 @@
                 "hash": "03022ddebae6305b"
             }
         ],
-        "class:AiMessDetector\\Reporting\\Formatter\\Summary\\HintRenderer": [
+        "class:Qualimetrix\\Reporting\\Formatter\\Summary\\HintRenderer": [
             {
                 "rule": "coupling.instability",
                 "hash": "99ca1ac6bad1a23f"
             }
         ],
-        "class:AiMessDetector\\Reporting\\Formatter\\Summary\\SummaryFormatter": [
+        "class:Qualimetrix\\Reporting\\Formatter\\Summary\\SummaryFormatter": [
             {
                 "rule": "design.lcom",
                 "hash": "1b1afcd58ba753f3"
             }
         ],
-        "class:AiMessDetector\\Reporting\\Formatter\\Summary\\ViolationSummaryRenderer": [
+        "class:Qualimetrix\\Reporting\\Formatter\\Summary\\ViolationSummaryRenderer": [
             {
                 "rule": "coupling.instability",
                 "hash": "15d8c3a4af40b38d"
             }
         ],
-        "class:AiMessDetector\\Reporting\\Formatter\\Support\\DetailedViolationRenderer": [
+        "class:Qualimetrix\\Reporting\\Formatter\\Support\\DetailedViolationRenderer": [
             {
                 "rule": "computed.health",
                 "hash": "c770230a2478dc86"
             }
         ],
-        "class:AiMessDetector\\Reporting\\Formatter\\TextFormatter": [
+        "class:Qualimetrix\\Reporting\\Formatter\\TextFormatter": [
             {
                 "rule": "coupling.instability",
                 "hash": "1569c4bacd3fd9a3"
@@ -1489,7 +1489,7 @@
                 "hash": "90304465dd694720"
             }
         ],
-        "class:AiMessDetector\\Reporting\\GroupBy": [
+        "class:Qualimetrix\\Reporting\\GroupBy": [
             {
                 "rule": "coupling.cbo",
                 "hash": "9ff86764496b543f"
@@ -1499,7 +1499,7 @@
                 "hash": "4bbb03859cfe5eba"
             }
         ],
-        "class:AiMessDetector\\Reporting\\Health\\MetricHintProvider": [
+        "class:Qualimetrix\\Reporting\\Health\\MetricHintProvider": [
             {
                 "rule": "code-smell.god-class",
                 "hash": "2a3ec8bf541b8136"
@@ -1513,13 +1513,13 @@
                 "hash": "67a07df9960dda84"
             }
         ],
-        "class:AiMessDetector\\Reporting\\Health\\NamespaceDrillDown": [
+        "class:Qualimetrix\\Reporting\\Health\\NamespaceDrillDown": [
             {
                 "rule": "complexity.wmc",
                 "hash": "158b3b1902ba58e2"
             }
         ],
-        "class:AiMessDetector\\Reporting\\Health\\SummaryEnricher": [
+        "class:Qualimetrix\\Reporting\\Health\\SummaryEnricher": [
             {
                 "rule": "complexity.wmc",
                 "hash": "d6ceada1d7df96e3"
@@ -1541,25 +1541,25 @@
                 "hash": "3c87f39cf38f5d8a"
             }
         ],
-        "class:AiMessDetector\\Reporting\\Profile\\ProfileSummaryRenderer": [
+        "class:Qualimetrix\\Reporting\\Profile\\ProfileSummaryRenderer": [
             {
                 "rule": "computed.health",
                 "hash": "2018b050a55d879d"
             }
         ],
-        "class:AiMessDetector\\Reporting\\Report": [
+        "class:Qualimetrix\\Reporting\\Report": [
             {
                 "rule": "coupling.cbo",
                 "hash": "13e32bf946554da5"
             }
         ],
-        "class:AiMessDetector\\Reporting\\ReportBuilder": [
+        "class:Qualimetrix\\Reporting\\ReportBuilder": [
             {
                 "rule": "coupling.instability",
                 "hash": "55dda43df7944e5e"
             }
         ],
-        "class:AiMessDetector\\Rules\\AbstractRule": [
+        "class:Qualimetrix\\Rules\\AbstractRule": [
             {
                 "rule": "coupling.cbo",
                 "hash": "38120222b31d375d"
@@ -1569,13 +1569,13 @@
                 "hash": "6ed1b37583231af2"
             }
         ],
-        "class:AiMessDetector\\Rules\\Architecture\\CircularDependencyOptions": [
+        "class:Qualimetrix\\Rules\\Architecture\\CircularDependencyOptions": [
             {
                 "rule": "computed.health",
                 "hash": "82e81963fac6c721"
             }
         ],
-        "class:AiMessDetector\\Rules\\Architecture\\CircularDependencyRule": [
+        "class:Qualimetrix\\Rules\\Architecture\\CircularDependencyRule": [
             {
                 "rule": "coupling.instability",
                 "hash": "5c4f89d96236c705"
@@ -1585,7 +1585,7 @@
                 "hash": "b574e3db50fc6875"
             }
         ],
-        "class:AiMessDetector\\Rules\\CodeSmell\\AbstractCodeSmellRule": [
+        "class:Qualimetrix\\Rules\\CodeSmell\\AbstractCodeSmellRule": [
             {
                 "rule": "coupling.cbo",
                 "hash": "3060c1ccc61078c8"
@@ -1595,145 +1595,145 @@
                 "hash": "5fbc606dde13f212"
             }
         ],
-        "class:AiMessDetector\\Rules\\CodeSmell\\BooleanArgumentRule": [
+        "class:Qualimetrix\\Rules\\CodeSmell\\BooleanArgumentRule": [
             {
                 "rule": "computed.health",
                 "hash": "76eebdbcbe1e0a69"
             }
         ],
-        "class:AiMessDetector\\Rules\\CodeSmell\\ConstructorOverinjectionOptions": [
+        "class:Qualimetrix\\Rules\\CodeSmell\\ConstructorOverinjectionOptions": [
             {
                 "rule": "computed.health",
                 "hash": "fd11d55250dbb6f9"
             }
         ],
-        "class:AiMessDetector\\Rules\\CodeSmell\\ConstructorOverinjectionRule": [
+        "class:Qualimetrix\\Rules\\CodeSmell\\ConstructorOverinjectionRule": [
             {
                 "rule": "design.lcom",
                 "hash": "461f1e107384a113"
             }
         ],
-        "class:AiMessDetector\\Rules\\CodeSmell\\CountInLoopRule": [
+        "class:Qualimetrix\\Rules\\CodeSmell\\CountInLoopRule": [
             {
                 "rule": "computed.health",
                 "hash": "02f4474e50a2aa8e"
             }
         ],
-        "class:AiMessDetector\\Rules\\CodeSmell\\DataClassRule": [
+        "class:Qualimetrix\\Rules\\CodeSmell\\DataClassRule": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "3b23f6d9718f987c"
             }
         ],
-        "class:AiMessDetector\\Rules\\CodeSmell\\DebugCodeRule": [
+        "class:Qualimetrix\\Rules\\CodeSmell\\DebugCodeRule": [
             {
                 "rule": "computed.health",
                 "hash": "128827d669515fd4"
             }
         ],
-        "class:AiMessDetector\\Rules\\CodeSmell\\EmptyCatchRule": [
+        "class:Qualimetrix\\Rules\\CodeSmell\\EmptyCatchRule": [
             {
                 "rule": "computed.health",
                 "hash": "12baa2a9d78624bc"
             }
         ],
-        "class:AiMessDetector\\Rules\\CodeSmell\\ErrorSuppressionRule": [
+        "class:Qualimetrix\\Rules\\CodeSmell\\ErrorSuppressionRule": [
             {
                 "rule": "computed.health",
                 "hash": "3663733348b6e324"
             }
         ],
-        "class:AiMessDetector\\Rules\\CodeSmell\\EvalRule": [
+        "class:Qualimetrix\\Rules\\CodeSmell\\EvalRule": [
             {
                 "rule": "computed.health",
                 "hash": "c7ea5fa01d643842"
             }
         ],
-        "class:AiMessDetector\\Rules\\CodeSmell\\ExitRule": [
+        "class:Qualimetrix\\Rules\\CodeSmell\\ExitRule": [
             {
                 "rule": "computed.health",
                 "hash": "72a592c34d364eab"
             }
         ],
-        "class:AiMessDetector\\Rules\\CodeSmell\\GodClassRule": [
+        "class:Qualimetrix\\Rules\\CodeSmell\\GodClassRule": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "bad28794900f6188"
             }
         ],
-        "class:AiMessDetector\\Rules\\CodeSmell\\GotoRule": [
+        "class:Qualimetrix\\Rules\\CodeSmell\\GotoRule": [
             {
                 "rule": "computed.health",
                 "hash": "0b38f8f96944eb0c"
             }
         ],
-        "class:AiMessDetector\\Rules\\CodeSmell\\LongParameterListOptions": [
+        "class:Qualimetrix\\Rules\\CodeSmell\\LongParameterListOptions": [
             {
                 "rule": "computed.health",
                 "hash": "6be5435be36b43db"
             }
         ],
-        "class:AiMessDetector\\Rules\\CodeSmell\\LongParameterListRule": [
+        "class:Qualimetrix\\Rules\\CodeSmell\\LongParameterListRule": [
             {
                 "rule": "design.lcom",
                 "hash": "83a7a14b5f0e78e0"
             }
         ],
-        "class:AiMessDetector\\Rules\\CodeSmell\\SuperglobalsRule": [
+        "class:Qualimetrix\\Rules\\CodeSmell\\SuperglobalsRule": [
             {
                 "rule": "computed.health",
                 "hash": "ec0817c148f164fa"
             }
         ],
-        "class:AiMessDetector\\Rules\\CodeSmell\\UnreachableCodeOptions": [
+        "class:Qualimetrix\\Rules\\CodeSmell\\UnreachableCodeOptions": [
             {
                 "rule": "computed.health",
                 "hash": "a1148665752ae13f"
             }
         ],
-        "class:AiMessDetector\\Rules\\CodeSmell\\UnreachableCodeRule": [
+        "class:Qualimetrix\\Rules\\CodeSmell\\UnreachableCodeRule": [
             {
                 "rule": "design.lcom",
                 "hash": "4f9b5fda17da8664"
             }
         ],
-        "class:AiMessDetector\\Rules\\Complexity\\ClassCognitiveComplexityOptions": [
+        "class:Qualimetrix\\Rules\\Complexity\\ClassCognitiveComplexityOptions": [
             {
                 "rule": "computed.health",
                 "hash": "ceb272034fd29f0a"
             }
         ],
-        "class:AiMessDetector\\Rules\\Complexity\\ClassComplexityOptions": [
+        "class:Qualimetrix\\Rules\\Complexity\\ClassComplexityOptions": [
             {
                 "rule": "computed.health",
                 "hash": "8e0c18ecaa273aa5"
             }
         ],
-        "class:AiMessDetector\\Rules\\Complexity\\ClassNpathComplexityOptions": [
+        "class:Qualimetrix\\Rules\\Complexity\\ClassNpathComplexityOptions": [
             {
                 "rule": "computed.health",
                 "hash": "9bb60ca18be91f8d"
             }
         ],
-        "class:AiMessDetector\\Rules\\Complexity\\CognitiveComplexityOptions": [
+        "class:Qualimetrix\\Rules\\Complexity\\CognitiveComplexityOptions": [
             {
                 "rule": "coupling.instability",
                 "hash": "e5cc3f9b6cd294c8"
             }
         ],
-        "class:AiMessDetector\\Rules\\Complexity\\CognitiveComplexityRule": [
+        "class:Qualimetrix\\Rules\\Complexity\\CognitiveComplexityRule": [
             {
                 "rule": "design.lcom",
                 "hash": "ffdfa3ce340e39e6"
             }
         ],
-        "class:AiMessDetector\\Rules\\Complexity\\ComplexityOptions": [
+        "class:Qualimetrix\\Rules\\Complexity\\ComplexityOptions": [
             {
                 "rule": "coupling.instability",
                 "hash": "468750757ffa1927"
             }
         ],
-        "class:AiMessDetector\\Rules\\Complexity\\ComplexityRule": [
+        "class:Qualimetrix\\Rules\\Complexity\\ComplexityRule": [
             {
                 "rule": "computed.health",
                 "hash": "57aeaea39bde73e0"
@@ -1743,55 +1743,55 @@
                 "hash": "afe39aa901e4a51a"
             }
         ],
-        "class:AiMessDetector\\Rules\\Complexity\\MethodCognitiveComplexityOptions": [
+        "class:Qualimetrix\\Rules\\Complexity\\MethodCognitiveComplexityOptions": [
             {
                 "rule": "computed.health",
                 "hash": "23dc5951203af8cc"
             }
         ],
-        "class:AiMessDetector\\Rules\\Complexity\\MethodComplexityOptions": [
+        "class:Qualimetrix\\Rules\\Complexity\\MethodComplexityOptions": [
             {
                 "rule": "computed.health",
                 "hash": "a6eac76525496421"
             }
         ],
-        "class:AiMessDetector\\Rules\\Complexity\\MethodNpathComplexityOptions": [
+        "class:Qualimetrix\\Rules\\Complexity\\MethodNpathComplexityOptions": [
             {
                 "rule": "computed.health",
                 "hash": "a2b442a93a893033"
             }
         ],
-        "class:AiMessDetector\\Rules\\Complexity\\NpathComplexityOptions": [
+        "class:Qualimetrix\\Rules\\Complexity\\NpathComplexityOptions": [
             {
                 "rule": "coupling.instability",
                 "hash": "00c90db985ff92c0"
             }
         ],
-        "class:AiMessDetector\\Rules\\Complexity\\NpathComplexityRule": [
+        "class:Qualimetrix\\Rules\\Complexity\\NpathComplexityRule": [
             {
                 "rule": "design.lcom",
                 "hash": "481165abd5ce7475"
             }
         ],
-        "class:AiMessDetector\\Rules\\ComputedMetric\\ComputedMetricRule": [
+        "class:Qualimetrix\\Rules\\ComputedMetric\\ComputedMetricRule": [
             {
                 "rule": "design.lcom",
                 "hash": "e629cc6ca949e576"
             }
         ],
-        "class:AiMessDetector\\Rules\\ComputedMetric\\ComputedMetricRuleOptions": [
+        "class:Qualimetrix\\Rules\\ComputedMetric\\ComputedMetricRuleOptions": [
             {
                 "rule": "computed.health",
                 "hash": "0ecfa508c2e6302e"
             }
         ],
-        "class:AiMessDetector\\Rules\\Coupling\\CboOptions": [
+        "class:Qualimetrix\\Rules\\Coupling\\CboOptions": [
             {
                 "rule": "coupling.instability",
                 "hash": "ffb7ae371517ba8a"
             }
         ],
-        "class:AiMessDetector\\Rules\\Coupling\\CboRule": [
+        "class:Qualimetrix\\Rules\\Coupling\\CboRule": [
             {
                 "rule": "code-smell.god-class",
                 "hash": "9010bb66d4be7bdc"
@@ -1813,79 +1813,79 @@
                 "hash": "d06b69119cc7f055"
             }
         ],
-        "class:AiMessDetector\\Rules\\Coupling\\ClassCboOptions": [
+        "class:Qualimetrix\\Rules\\Coupling\\ClassCboOptions": [
             {
                 "rule": "computed.health",
                 "hash": "b151b86147198146"
             }
         ],
-        "class:AiMessDetector\\Rules\\Coupling\\ClassInstabilityOptions": [
+        "class:Qualimetrix\\Rules\\Coupling\\ClassInstabilityOptions": [
             {
                 "rule": "computed.health",
                 "hash": "43aac50deab46bbf"
             }
         ],
-        "class:AiMessDetector\\Rules\\Coupling\\ClassRankOptions": [
+        "class:Qualimetrix\\Rules\\Coupling\\ClassRankOptions": [
             {
                 "rule": "computed.health",
                 "hash": "c29bbdab02d05f56"
             }
         ],
-        "class:AiMessDetector\\Rules\\Coupling\\ClassRankRule": [
+        "class:Qualimetrix\\Rules\\Coupling\\ClassRankRule": [
             {
                 "rule": "design.lcom",
                 "hash": "a5de0ee67a3cd841"
             }
         ],
-        "class:AiMessDetector\\Rules\\Coupling\\DistanceOptions": [
+        "class:Qualimetrix\\Rules\\Coupling\\DistanceOptions": [
             {
                 "rule": "computed.health",
                 "hash": "7b9d29c1e93d4eef"
             }
         ],
-        "class:AiMessDetector\\Rules\\Coupling\\DistanceRule": [
+        "class:Qualimetrix\\Rules\\Coupling\\DistanceRule": [
             {
                 "rule": "design.lcom",
                 "hash": "372753e322b15810"
             }
         ],
-        "class:AiMessDetector\\Rules\\Coupling\\InstabilityOptions": [
+        "class:Qualimetrix\\Rules\\Coupling\\InstabilityOptions": [
             {
                 "rule": "coupling.instability",
                 "hash": "17031a73d6125dc4"
             }
         ],
-        "class:AiMessDetector\\Rules\\Coupling\\InstabilityRule": [
+        "class:Qualimetrix\\Rules\\Coupling\\InstabilityRule": [
             {
                 "rule": "design.lcom",
                 "hash": "b7b9dc0a46e26623"
             }
         ],
-        "class:AiMessDetector\\Rules\\Coupling\\NamespaceCboOptions": [
+        "class:Qualimetrix\\Rules\\Coupling\\NamespaceCboOptions": [
             {
                 "rule": "computed.health",
                 "hash": "8ffbbea0ddc5fa7c"
             }
         ],
-        "class:AiMessDetector\\Rules\\Coupling\\NamespaceInstabilityOptions": [
+        "class:Qualimetrix\\Rules\\Coupling\\NamespaceInstabilityOptions": [
             {
                 "rule": "computed.health",
                 "hash": "8e9e4b5d689dab45"
             }
         ],
-        "class:AiMessDetector\\Rules\\Design\\TypeCoverageOptions": [
+        "class:Qualimetrix\\Rules\\Design\\TypeCoverageOptions": [
             {
                 "rule": "computed.health",
                 "hash": "4c7627a337862ecf"
             }
         ],
-        "class:AiMessDetector\\Rules\\Duplication\\CodeDuplicationOptions": [
+        "class:Qualimetrix\\Rules\\Duplication\\CodeDuplicationOptions": [
             {
                 "rule": "computed.health",
                 "hash": "d70ef550d3c25b5c"
             }
         ],
-        "class:AiMessDetector\\Rules\\Duplication\\CodeDuplicationRule": [
+        "class:Qualimetrix\\Rules\\Duplication\\CodeDuplicationRule": [
             {
                 "rule": "coupling.instability",
                 "hash": "780cac7eebedbe13"
@@ -1895,73 +1895,73 @@
                 "hash": "513232a220cdd547"
             }
         ],
-        "class:AiMessDetector\\Rules\\Maintainability\\MaintainabilityOptions": [
+        "class:Qualimetrix\\Rules\\Maintainability\\MaintainabilityOptions": [
             {
                 "rule": "computed.health",
                 "hash": "9cc801a5d8ef91c0"
             }
         ],
-        "class:AiMessDetector\\Rules\\Security\\CommandInjectionRule": [
+        "class:Qualimetrix\\Rules\\Security\\CommandInjectionRule": [
             {
                 "rule": "computed.health",
                 "hash": "d23acc1cba28ce81"
             }
         ],
-        "class:AiMessDetector\\Rules\\Security\\SqlInjectionRule": [
+        "class:Qualimetrix\\Rules\\Security\\SqlInjectionRule": [
             {
                 "rule": "computed.health",
                 "hash": "9c44fb77280a70e8"
             }
         ],
-        "class:AiMessDetector\\Rules\\Security\\XssRule": [
+        "class:Qualimetrix\\Rules\\Security\\XssRule": [
             {
                 "rule": "computed.health",
                 "hash": "6d3d382bf87b5176"
             }
         ],
-        "class:AiMessDetector\\Rules\\Size\\ClassCountOptions": [
+        "class:Qualimetrix\\Rules\\Size\\ClassCountOptions": [
             {
                 "rule": "computed.health",
                 "hash": "14852ea14e9e6f06"
             }
         ],
-        "class:AiMessDetector\\Rules\\Size\\MethodCountOptions": [
+        "class:Qualimetrix\\Rules\\Size\\MethodCountOptions": [
             {
                 "rule": "computed.health",
                 "hash": "0bd7ac46f915713c"
             }
         ],
-        "class:AiMessDetector\\Rules\\Size\\PropertyCountOptions": [
+        "class:Qualimetrix\\Rules\\Size\\PropertyCountOptions": [
             {
                 "rule": "computed.health",
                 "hash": "bd882fa3fa2816e1"
             }
         ],
-        "class:AiMessDetector\\Rules\\Structure\\InheritanceOptions": [
+        "class:Qualimetrix\\Rules\\Structure\\InheritanceOptions": [
             {
                 "rule": "computed.health",
                 "hash": "43f0b593cc12aa9d"
             }
         ],
-        "class:AiMessDetector\\Rules\\Structure\\LcomOptions": [
+        "class:Qualimetrix\\Rules\\Structure\\LcomOptions": [
             {
                 "rule": "computed.health",
                 "hash": "68ab760fc49db07b"
             }
         ],
-        "class:AiMessDetector\\Rules\\Structure\\NocOptions": [
+        "class:Qualimetrix\\Rules\\Structure\\NocOptions": [
             {
                 "rule": "computed.health",
                 "hash": "75a8991765858832"
             }
         ],
-        "class:AiMessDetector\\Rules\\Structure\\WmcOptions": [
+        "class:Qualimetrix\\Rules\\Structure\\WmcOptions": [
             {
                 "rule": "computed.health",
                 "hash": "92b9365a6b482f80"
             }
         ],
-        "class:AiMessDetector\\Rules\\Structure\\WmcRule": [
+        "class:Qualimetrix\\Rules\\Structure\\WmcRule": [
             {
                 "rule": "design.lcom",
                 "hash": "49bab8ebedd1aaf5"
@@ -2757,7 +2757,7 @@
                 "hash": "e6acee50dc42416e"
             }
         ],
-        "method:AiMessDetector\\Analysis\\Aggregator\\AggregationHelper::applyAggregations": [
+        "method:Qualimetrix\\Analysis\\Aggregator\\AggregationHelper::applyAggregations": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "6bf5ad7b4513c631"
@@ -2767,13 +2767,13 @@
                 "hash": "98e7acb2155dc357"
             }
         ],
-        "method:AiMessDetector\\Analysis\\Aggregator\\AggregationHelper::applyStrategy": [
+        "method:Qualimetrix\\Analysis\\Aggregator\\AggregationHelper::applyStrategy": [
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "0912effba8177261"
             }
         ],
-        "method:AiMessDetector\\Analysis\\Aggregator\\AggregationHelper::collectNamespaceMetricValues": [
+        "method:Qualimetrix\\Analysis\\Aggregator\\AggregationHelper::collectNamespaceMetricValues": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "96efee59a23a1895"
@@ -2795,7 +2795,7 @@
                 "hash": "d6ce2e498d917252"
             }
         ],
-        "method:AiMessDetector\\Analysis\\Aggregator\\GlobalCollectorSorter::sort": [
+        "method:Qualimetrix\\Analysis\\Aggregator\\GlobalCollectorSorter::sort": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "8c364587b0cb917a"
@@ -2809,7 +2809,7 @@
                 "hash": "2f5ba159e5ce62b0"
             }
         ],
-        "method:AiMessDetector\\Analysis\\Aggregator\\NamespaceToProjectAggregator::aggregate": [
+        "method:Qualimetrix\\Analysis\\Aggregator\\NamespaceToProjectAggregator::aggregate": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "c9eb3c95f08b15f1"
@@ -2819,19 +2819,19 @@
                 "hash": "1b4f8dcc1407644b"
             }
         ],
-        "method:AiMessDetector\\Analysis\\Collection\\CollectionOrchestrator::__construct": [
+        "method:Qualimetrix\\Analysis\\Collection\\CollectionOrchestrator::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "9ce3d75a0dc6353e"
             }
         ],
-        "method:AiMessDetector\\Analysis\\Collection\\Dependency\\CircularDependencyDetector::findPath": [
+        "method:Qualimetrix\\Analysis\\Collection\\Dependency\\CircularDependencyDetector::findPath": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "f3090a54ae6d61d5"
             }
         ],
-        "method:AiMessDetector\\Analysis\\Collection\\Dependency\\CircularDependencyDetector::strongConnect": [
+        "method:Qualimetrix\\Analysis\\Collection\\Dependency\\CircularDependencyDetector::strongConnect": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "b40cce14cdb26c24"
@@ -2841,7 +2841,7 @@
                 "hash": "93b92f11f81f8f5c"
             }
         ],
-        "method:AiMessDetector\\Analysis\\Collection\\Dependency\\DependencyGraph::__construct": [
+        "method:Qualimetrix\\Analysis\\Collection\\Dependency\\DependencyGraph::__construct": [
             {
                 "rule": "code-smell.constructor-overinjection",
                 "hash": "bd7df4da414a310a"
@@ -2851,7 +2851,7 @@
                 "hash": "bab1a19516ca4b6c"
             }
         ],
-        "method:AiMessDetector\\Analysis\\Collection\\Dependency\\DependencyVisitor::enterNode": [
+        "method:Qualimetrix\\Analysis\\Collection\\Dependency\\DependencyVisitor::enterNode": [
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "c4aa4c96bb0fe1ac"
@@ -2861,25 +2861,25 @@
                 "hash": "92b44c631b100b62"
             }
         ],
-        "method:AiMessDetector\\Analysis\\Collection\\Dependency\\Export\\DotExporterOptions::__construct": [
+        "method:Qualimetrix\\Analysis\\Collection\\Dependency\\Export\\DotExporterOptions::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "041f6b235653f0d3"
             }
         ],
-        "method:AiMessDetector\\Analysis\\Collection\\Dependency\\Handler\\StaticAccessHandler::processStaticAccess": [
+        "method:Qualimetrix\\Analysis\\Collection\\Dependency\\Handler\\StaticAccessHandler::processStaticAccess": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "2b0e5f59de255bd1"
             }
         ],
-        "method:AiMessDetector\\Analysis\\Collection\\Dependency\\Handler\\TypeDependencyHelper::processType": [
+        "method:Qualimetrix\\Analysis\\Collection\\Dependency\\Handler\\TypeDependencyHelper::processType": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "6fc984dd870611e5"
             }
         ],
-        "method:AiMessDetector\\Analysis\\Collection\\FileProcessingResult::__construct": [
+        "method:Qualimetrix\\Analysis\\Collection\\FileProcessingResult::__construct": [
             {
                 "rule": "code-smell.constructor-overinjection",
                 "hash": "5ee6fed99f1fb5aa"
@@ -2889,19 +2889,19 @@
                 "hash": "1225f795330757f1"
             }
         ],
-        "method:AiMessDetector\\Analysis\\Collection\\FileProcessingResult::success": [
+        "method:Qualimetrix\\Analysis\\Collection\\FileProcessingResult::success": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "377c0b7a0b011e61"
             }
         ],
-        "method:AiMessDetector\\Analysis\\Collection\\FileProcessor::extractMethodMetrics": [
+        "method:Qualimetrix\\Analysis\\Collection\\FileProcessor::extractMethodMetrics": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "434f8cd61fc2ecda"
             }
         ],
-        "method:AiMessDetector\\Analysis\\Collection\\Metric\\CompositeCollector::sortDerivedCollectors": [
+        "method:Qualimetrix\\Analysis\\Collection\\Metric\\CompositeCollector::sortDerivedCollectors": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "8fd9553de727b60c"
@@ -2915,7 +2915,7 @@
                 "hash": "8352975c580a4191"
             }
         ],
-        "method:AiMessDetector\\Analysis\\Collection\\Metric\\DerivedMetricExtractor::extract": [
+        "method:Qualimetrix\\Analysis\\Collection\\Metric\\DerivedMetricExtractor::extract": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "4363eeedee5a0fe5"
@@ -2929,13 +2929,13 @@
                 "hash": "35b13958ff31fadb"
             }
         ],
-        "method:AiMessDetector\\Analysis\\Discovery\\FinderFileDiscovery::discover": [
+        "method:Qualimetrix\\Analysis\\Discovery\\FinderFileDiscovery::discover": [
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "a1b1b6ec0110f883"
             }
         ],
-        "method:AiMessDetector\\Analysis\\Duplication\\DuplicationDetector::detect": [
+        "method:Qualimetrix\\Analysis\\Duplication\\DuplicationDetector::detect": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "727084a15e8056b8"
@@ -2949,13 +2949,13 @@
                 "hash": "6591849aae650033"
             }
         ],
-        "method:AiMessDetector\\Analysis\\Duplication\\DuplicationDetector::extendMatch": [
+        "method:Qualimetrix\\Analysis\\Duplication\\DuplicationDetector::extendMatch": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "db166e864d175a2f"
             }
         ],
-        "method:AiMessDetector\\Analysis\\Duplication\\DuplicationDetector::findDuplicateBlocks": [
+        "method:Qualimetrix\\Analysis\\Duplication\\DuplicationDetector::findDuplicateBlocks": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "9865637e9f48f6ea"
@@ -2965,25 +2965,25 @@
                 "hash": "e8706e8568f07f68"
             }
         ],
-        "method:AiMessDetector\\Analysis\\Duplication\\DuplicationDetector::pairKey": [
+        "method:Qualimetrix\\Analysis\\Duplication\\DuplicationDetector::pairKey": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "a77b1ac2172d0bc4"
             }
         ],
-        "method:AiMessDetector\\Analysis\\Duplication\\DuplicationDetector::tokensMatch": [
+        "method:Qualimetrix\\Analysis\\Duplication\\DuplicationDetector::tokensMatch": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "be40f59687287150"
             }
         ],
-        "method:AiMessDetector\\Analysis\\Namespace_\\Psr4NamespaceDetector::detect": [
+        "method:Qualimetrix\\Analysis\\Namespace_\\Psr4NamespaceDetector::detect": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "b1d909a73ebef3d7"
             }
         ],
-        "method:AiMessDetector\\Analysis\\Namespace_\\Psr4NamespaceDetector::loadMapping": [
+        "method:Qualimetrix\\Analysis\\Namespace_\\Psr4NamespaceDetector::loadMapping": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "2bc8b27c2b889e3e"
@@ -2997,7 +2997,7 @@
                 "hash": "2b091051b150db46"
             }
         ],
-        "method:AiMessDetector\\Analysis\\Namespace_\\TokenizerNamespaceDetector::extractNamespace": [
+        "method:Qualimetrix\\Analysis\\Namespace_\\TokenizerNamespaceDetector::extractNamespace": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "351b51234873441c"
@@ -3007,7 +3007,7 @@
                 "hash": "4f76c8fef2464939"
             }
         ],
-        "method:AiMessDetector\\Analysis\\Pipeline\\AnalysisPipeline::__construct": [
+        "method:Qualimetrix\\Analysis\\Pipeline\\AnalysisPipeline::__construct": [
             {
                 "rule": "code-smell.constructor-overinjection",
                 "hash": "741ea990f3e6b588"
@@ -3017,7 +3017,7 @@
                 "hash": "114cd6a1255d55ab"
             }
         ],
-        "method:AiMessDetector\\Analysis\\Pipeline\\AnalysisPipeline::analyze": [
+        "method:Qualimetrix\\Analysis\\Pipeline\\AnalysisPipeline::analyze": [
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "27760585d82440d7"
@@ -3027,19 +3027,19 @@
                 "hash": "820664c59d73a102"
             }
         ],
-        "method:AiMessDetector\\Analysis\\Pipeline\\AnalysisResult::__construct": [
+        "method:Qualimetrix\\Analysis\\Pipeline\\AnalysisResult::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "d22d7b9b1dbcb2d2"
             }
         ],
-        "method:AiMessDetector\\Analysis\\Pipeline\\MetricEnricher::__construct": [
+        "method:Qualimetrix\\Analysis\\Pipeline\\MetricEnricher::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "5f2ea6159ed4e1fe"
             }
         ],
-        "method:AiMessDetector\\Analysis\\Pipeline\\MetricEnricher::enrich": [
+        "method:Qualimetrix\\Analysis\\Pipeline\\MetricEnricher::enrich": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "c38e6351a03dbf18"
@@ -3053,19 +3053,19 @@
                 "hash": "b58d297bdc1c1999"
             }
         ],
-        "method:AiMessDetector\\Analysis\\Repository\\InMemoryMetricRepository::add": [
+        "method:Qualimetrix\\Analysis\\Repository\\InMemoryMetricRepository::add": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "4b2ba7745cb4f9aa"
             }
         ],
-        "method:AiMessDetector\\Analysis\\Repository\\InMemoryMetricRepository::mergeWith": [
+        "method:Qualimetrix\\Analysis\\Repository\\InMemoryMetricRepository::mergeWith": [
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "169964b3f07dc2cb"
             }
         ],
-        "method:AiMessDetector\\Baseline\\Suppression\\SuppressionExtractor::extract": [
+        "method:Qualimetrix\\Baseline\\Suppression\\SuppressionExtractor::extract": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "8146f4056e761bf4"
@@ -3075,7 +3075,7 @@
                 "hash": "3bbce5ea043462f6"
             }
         ],
-        "method:AiMessDetector\\Baseline\\Suppression\\SuppressionFilter::shouldInclude": [
+        "method:Qualimetrix\\Baseline\\Suppression\\SuppressionFilter::shouldInclude": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "2ea00238d204711e"
@@ -3085,7 +3085,7 @@
                 "hash": "222bce5e67b5451b"
             }
         ],
-        "method:AiMessDetector\\Configuration\\ComputedMetricsConfigResolver::createDefinition": [
+        "method:Qualimetrix\\Configuration\\ComputedMetricsConfigResolver::createDefinition": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "9f157e144c2e9b9c"
@@ -3095,7 +3095,7 @@
                 "hash": "806d8d55f0d75371"
             }
         ],
-        "method:AiMessDetector\\Configuration\\ComputedMetricsConfigResolver::mergeDefinition": [
+        "method:Qualimetrix\\Configuration\\ComputedMetricsConfigResolver::mergeDefinition": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "b85befe7b01a7c6e"
@@ -3105,7 +3105,7 @@
                 "hash": "a0de173c3768a7d2"
             }
         ],
-        "method:AiMessDetector\\Configuration\\Loader\\YamlConfigLoader::validateStructure": [
+        "method:Qualimetrix\\Configuration\\Loader\\YamlConfigLoader::validateStructure": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "a0786e9ba9b15b5e"
@@ -3119,13 +3119,13 @@
                 "hash": "1cb82490b642cc21"
             }
         ],
-        "method:AiMessDetector\\Configuration\\Pipeline\\ResolvedConfiguration::__construct": [
+        "method:Qualimetrix\\Configuration\\Pipeline\\ResolvedConfiguration::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "987b9f2437505b28"
             }
         ],
-        "method:AiMessDetector\\Configuration\\Pipeline\\Stage\\ConfigFileStage::normalizeConfigData": [
+        "method:Qualimetrix\\Configuration\\Pipeline\\Stage\\ConfigFileStage::normalizeConfigData": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "7e644f77dc825649"
@@ -3139,13 +3139,13 @@
                 "hash": "e942abed9f4fb552"
             }
         ],
-        "method:AiMessDetector\\Configuration\\Pipeline\\Stage\\ConfigFileStage::warnAboutUnknownRuleNames": [
+        "method:Qualimetrix\\Configuration\\Pipeline\\Stage\\ConfigFileStage::warnAboutUnknownRuleNames": [
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "755ae40b398352b7"
             }
         ],
-        "method:AiMessDetector\\Configuration\\RuleOptionsFactory::validateNumericFields": [
+        "method:Qualimetrix\\Configuration\\RuleOptionsFactory::validateNumericFields": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "8fd396e97f66ac75"
@@ -3155,43 +3155,43 @@
                 "hash": "3ee5001c51b50a43"
             }
         ],
-        "method:AiMessDetector\\Core\\ComputedMetric\\ComputedMetricDefinition::__construct": [
+        "method:Qualimetrix\\Core\\ComputedMetric\\ComputedMetricDefinition::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "2211379dfe8e03ce"
             }
         ],
-        "method:AiMessDetector\\Core\\Dependency\\Dependency::__construct": [
+        "method:Qualimetrix\\Core\\Dependency\\Dependency::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "805c566afafa1890"
             }
         ],
-        "method:AiMessDetector\\Core\\Dependency\\DependencyType::description": [
+        "method:Qualimetrix\\Core\\Dependency\\DependencyType::description": [
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "8e016447d816a647"
             }
         ],
-        "method:AiMessDetector\\Core\\Metric\\ClassWithMetrics::__construct": [
+        "method:Qualimetrix\\Core\\Metric\\ClassWithMetrics::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "9a8e086e2a14ed18"
             }
         ],
-        "method:AiMessDetector\\Core\\Metric\\MethodWithMetrics::__construct": [
+        "method:Qualimetrix\\Core\\Metric\\MethodWithMetrics::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "67e46f48fa425b47"
             }
         ],
-        "method:AiMessDetector\\Core\\Metric\\MetricRepositoryInterface::add": [
+        "method:Qualimetrix\\Core\\Metric\\MetricRepositoryInterface::add": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "cd9ebc6418a203be"
             }
         ],
-        "method:AiMessDetector\\Core\\Profiler\\Span::__construct": [
+        "method:Qualimetrix\\Core\\Profiler\\Span::__construct": [
             {
                 "rule": "code-smell.constructor-overinjection",
                 "hash": "7ade452c0a9f357f"
@@ -3201,49 +3201,49 @@
                 "hash": "fb653f6f3b191701"
             }
         ],
-        "method:AiMessDetector\\Core\\Rule\\AnalysisContext::__construct": [
+        "method:Qualimetrix\\Core\\Rule\\AnalysisContext::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "859d06b44cc1fb61"
             }
         ],
-        "method:AiMessDetector\\Core\\Suppression\\Suppression::__construct": [
+        "method:Qualimetrix\\Core\\Suppression\\Suppression::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "49151fa61c70e96c"
             }
         ],
-        "method:AiMessDetector\\Core\\Symbol\\ClassInfo::__construct": [
+        "method:Qualimetrix\\Core\\Symbol\\ClassInfo::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "c90a69c68cede446"
             }
         ],
-        "method:AiMessDetector\\Core\\Symbol\\MethodInfo::__construct": [
+        "method:Qualimetrix\\Core\\Symbol\\MethodInfo::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "c87b8271abbeb1c9"
             }
         ],
-        "method:AiMessDetector\\Core\\Symbol\\SymbolPath::__construct": [
+        "method:Qualimetrix\\Core\\Symbol\\SymbolPath::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "62ca5cfd24e8fbdd"
             }
         ],
-        "method:AiMessDetector\\Core\\Symbol\\SymbolPath::getType": [
+        "method:Qualimetrix\\Core\\Symbol\\SymbolPath::getType": [
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "35a951e67d33147e"
             }
         ],
-        "method:AiMessDetector\\Core\\Symbol\\SymbolPath::toString": [
+        "method:Qualimetrix\\Core\\Symbol\\SymbolPath::toString": [
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "58821f839f4cf4be"
             }
         ],
-        "method:AiMessDetector\\Core\\Violation\\Violation::__construct": [
+        "method:Qualimetrix\\Core\\Violation\\Violation::__construct": [
             {
                 "rule": "code-smell.constructor-overinjection",
                 "hash": "a8f016e601ab1832"
@@ -3253,31 +3253,31 @@
                 "hash": "6a7a4258c1d1e1c4"
             }
         ],
-        "method:AiMessDetector\\Infrastructure\\Ast\\FileParserFactory::__construct": [
+        "method:Qualimetrix\\Infrastructure\\Ast\\FileParserFactory::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "3bbfb19e41ad3686"
             }
         ],
-        "method:AiMessDetector\\Infrastructure\\Console\\Command\\CheckCommand::__construct": [
+        "method:Qualimetrix\\Infrastructure\\Console\\Command\\CheckCommand::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "bfe4c377c219c9ba"
             }
         ],
-        "method:AiMessDetector\\Infrastructure\\Console\\Command\\GraphExportCommand::__construct": [
+        "method:Qualimetrix\\Infrastructure\\Console\\Command\\GraphExportCommand::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "3610e08b5c2cf77e"
             }
         ],
-        "method:AiMessDetector\\Infrastructure\\Console\\Command\\GraphExportCommand::execute": [
+        "method:Qualimetrix\\Infrastructure\\Console\\Command\\GraphExportCommand::execute": [
             {
                 "rule": "maintainability.index",
                 "hash": "9e3325af341d41e1"
             }
         ],
-        "method:AiMessDetector\\Infrastructure\\Console\\Command\\HookInstallCommand::execute": [
+        "method:Qualimetrix\\Infrastructure\\Console\\Command\\HookInstallCommand::execute": [
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "202b4d1278c12064"
@@ -3287,7 +3287,7 @@
                 "hash": "18275d2adde44ddc"
             }
         ],
-        "method:AiMessDetector\\Infrastructure\\Console\\Command\\HookStatusCommand::execute": [
+        "method:Qualimetrix\\Infrastructure\\Console\\Command\\HookStatusCommand::execute": [
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "45506038fe1210f9"
@@ -3297,7 +3297,7 @@
                 "hash": "d1a829699e481934"
             }
         ],
-        "method:AiMessDetector\\Infrastructure\\Console\\Command\\RulesCommand::execute": [
+        "method:Qualimetrix\\Infrastructure\\Console\\Command\\RulesCommand::execute": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "6ce1ccf61d513686"
@@ -3307,19 +3307,19 @@
                 "hash": "1b5824d2b912f45a"
             }
         ],
-        "method:AiMessDetector\\Infrastructure\\Console\\FormatterContextFactory::create": [
+        "method:Qualimetrix\\Infrastructure\\Console\\FormatterContextFactory::create": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "1fa4b4456eb75642"
             }
         ],
-        "method:AiMessDetector\\Infrastructure\\Console\\GitScopeFilterConfig::__construct": [
+        "method:Qualimetrix\\Infrastructure\\Console\\GitScopeFilterConfig::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "4d1decd5bbaa8667"
             }
         ],
-        "method:AiMessDetector\\Infrastructure\\Console\\ResultPresenter::__construct": [
+        "method:Qualimetrix\\Infrastructure\\Console\\ResultPresenter::__construct": [
             {
                 "rule": "code-smell.constructor-overinjection",
                 "hash": "3cd46524d0354e30"
@@ -3329,19 +3329,19 @@
                 "hash": "86d92a88482d8d9e"
             }
         ],
-        "method:AiMessDetector\\Infrastructure\\Console\\ResultPresenter::presentResults": [
+        "method:Qualimetrix\\Infrastructure\\Console\\ResultPresenter::presentResults": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "490620276dfa1727"
             }
         ],
-        "method:AiMessDetector\\Infrastructure\\Console\\ResultPresenter::writeOutput": [
+        "method:Qualimetrix\\Infrastructure\\Console\\ResultPresenter::writeOutput": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "fb23749cb1941e79"
             }
         ],
-        "method:AiMessDetector\\Infrastructure\\Console\\RuntimeConfigurator::__construct": [
+        "method:Qualimetrix\\Infrastructure\\Console\\RuntimeConfigurator::__construct": [
             {
                 "rule": "code-smell.constructor-overinjection",
                 "hash": "83993711269e412b"
@@ -3351,7 +3351,7 @@
                 "hash": "eb6021b493b2a400"
             }
         ],
-        "method:AiMessDetector\\Infrastructure\\Console\\RuntimeConfigurator::applyExcludeHealth": [
+        "method:Qualimetrix\\Infrastructure\\Console\\RuntimeConfigurator::applyExcludeHealth": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "8a08169c9e478ac9"
@@ -3365,13 +3365,13 @@
                 "hash": "4d47fae3bf04dbbb"
             }
         ],
-        "method:AiMessDetector\\Infrastructure\\Console\\ViolationFilterOptions::__construct": [
+        "method:Qualimetrix\\Infrastructure\\Console\\ViolationFilterOptions::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "6dc8fd0dc8ffd800"
             }
         ],
-        "method:AiMessDetector\\Infrastructure\\Console\\ViolationFilterOrchestrator::filterAndReport": [
+        "method:Qualimetrix\\Infrastructure\\Console\\ViolationFilterOrchestrator::filterAndReport": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "e88a1c194e340a4e"
@@ -3393,13 +3393,13 @@
                 "hash": "6c3ff61e25b911c5"
             }
         ],
-        "method:AiMessDetector\\Infrastructure\\Console\\ViolationFilterPipeline::__construct": [
+        "method:Qualimetrix\\Infrastructure\\Console\\ViolationFilterPipeline::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "444bd17a789e973f"
             }
         ],
-        "method:AiMessDetector\\Infrastructure\\Console\\ViolationFilterPipeline::filter": [
+        "method:Qualimetrix\\Infrastructure\\Console\\ViolationFilterPipeline::filter": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "32eb673a36d8c584"
@@ -3413,7 +3413,7 @@
                 "hash": "a0a729f4dedb1735"
             }
         ],
-        "method:AiMessDetector\\Infrastructure\\Console\\ViolationFilterResult::__construct": [
+        "method:Qualimetrix\\Infrastructure\\Console\\ViolationFilterResult::__construct": [
             {
                 "rule": "code-smell.constructor-overinjection",
                 "hash": "4adabb40ab7a1055"
@@ -3423,7 +3423,7 @@
                 "hash": "7db71114ce6d7b9c"
             }
         ],
-        "method:AiMessDetector\\Infrastructure\\DependencyInjection\\CompilerPass\\RuleOptionsCompilerPass::resolveExtraDependencies": [
+        "method:Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\RuleOptionsCompilerPass::resolveExtraDependencies": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "9ac9c58560141de5"
@@ -3433,49 +3433,49 @@
                 "hash": "883ad03f493c488f"
             }
         ],
-        "method:AiMessDetector\\Infrastructure\\DependencyInjection\\Configurator\\AnalysisConfigurator::configure": [
+        "method:Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\AnalysisConfigurator::configure": [
             {
                 "rule": "maintainability.index",
                 "hash": "1d598de8917c4961"
             }
         ],
-        "method:AiMessDetector\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator::registerCli": [
+        "method:Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator::registerCli": [
             {
                 "rule": "maintainability.index",
                 "hash": "f5f0685ce2e4bd58"
             }
         ],
-        "method:AiMessDetector\\Infrastructure\\Git\\GitRepositoryLocator::findViaDirectoryTraversal": [
+        "method:Qualimetrix\\Infrastructure\\Git\\GitRepositoryLocator::findViaDirectoryTraversal": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "7d9c1299a9c1e3d1"
             }
         ],
-        "method:AiMessDetector\\Infrastructure\\Git\\GitScopeResolution::__construct": [
+        "method:Qualimetrix\\Infrastructure\\Git\\GitScopeResolution::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "48be11712ee5fe99"
             }
         ],
-        "method:AiMessDetector\\Infrastructure\\Parallel\\FileProcessingTask::__construct": [
+        "method:Qualimetrix\\Infrastructure\\Parallel\\FileProcessingTask::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "c52a8e220d8b62cf"
             }
         ],
-        "method:AiMessDetector\\Infrastructure\\Parallel\\Strategy\\AmphpParallelStrategy::processBatch": [
+        "method:Qualimetrix\\Infrastructure\\Parallel\\Strategy\\AmphpParallelStrategy::processBatch": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "05b54df7bec85d2d"
             }
         ],
-        "method:AiMessDetector\\Infrastructure\\Parallel\\Strategy\\StrategySelector::__construct": [
+        "method:Qualimetrix\\Infrastructure\\Parallel\\Strategy\\StrategySelector::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "ebf815473ae8963e"
             }
         ],
-        "method:AiMessDetector\\Infrastructure\\Parallel\\Strategy\\StrategySelector::select": [
+        "method:Qualimetrix\\Infrastructure\\Parallel\\Strategy\\StrategySelector::select": [
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "867694cf9846530d"
@@ -3489,61 +3489,61 @@
                 "hash": "7fdd93cb0fe2ad0a"
             }
         ],
-        "method:AiMessDetector\\Infrastructure\\Parallel\\Strategy\\WorkerCountDetector::detect": [
+        "method:Qualimetrix\\Infrastructure\\Parallel\\Strategy\\WorkerCountDetector::detect": [
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "f964a8394e090dae"
             }
         ],
-        "method:AiMessDetector\\Infrastructure\\Parallel\\WorkerBootstrap::buildCacheKey": [
+        "method:Qualimetrix\\Infrastructure\\Parallel\\WorkerBootstrap::buildCacheKey": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "ed48ad426a311fe9"
             }
         ],
-        "method:AiMessDetector\\Infrastructure\\Parallel\\WorkerBootstrap::createFileProcessor": [
+        "method:Qualimetrix\\Infrastructure\\Parallel\\WorkerBootstrap::createFileProcessor": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "00c75e64911c0b58"
             }
         ],
-        "method:AiMessDetector\\Infrastructure\\Parallel\\WorkerBootstrap::getFileProcessor": [
+        "method:Qualimetrix\\Infrastructure\\Parallel\\WorkerBootstrap::getFileProcessor": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "01efa842b915a383"
             }
         ],
-        "method:AiMessDetector\\Infrastructure\\Storage\\FileRecord::__construct": [
+        "method:Qualimetrix\\Infrastructure\\Storage\\FileRecord::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "a1939915e708d5f6"
             }
         ],
-        "method:AiMessDetector\\Infrastructure\\Storage\\InMemoryStorage::storeMetrics": [
+        "method:Qualimetrix\\Infrastructure\\Storage\\InMemoryStorage::storeMetrics": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "f0d8bf23df1c6dce"
             }
         ],
-        "method:AiMessDetector\\Infrastructure\\Storage\\SqliteStorage::storeMetrics": [
+        "method:Qualimetrix\\Infrastructure\\Storage\\SqliteStorage::storeMetrics": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "33cf0d1d1ce4531c"
             }
         ],
-        "method:AiMessDetector\\Infrastructure\\Storage\\StorageInterface::storeMetrics": [
+        "method:Qualimetrix\\Infrastructure\\Storage\\StorageInterface::storeMetrics": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "bd0a4612d781b5ac"
             }
         ],
-        "method:AiMessDetector\\Metrics\\CodeSmell\\CodeSmellLocation::__construct": [
+        "method:Qualimetrix\\Metrics\\CodeSmell\\CodeSmellLocation::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "0506663b3700f187"
             }
         ],
-        "method:AiMessDetector\\Metrics\\CodeSmell\\CodeSmellVisitor::containsCountCall": [
+        "method:Qualimetrix\\Metrics\\CodeSmell\\CodeSmellVisitor::containsCountCall": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "1d097c2a870c4278"
@@ -3557,7 +3557,7 @@
                 "hash": "112fcad3dde259b3"
             }
         ],
-        "method:AiMessDetector\\Metrics\\CodeSmell\\CodeSmellVisitor::enterNode": [
+        "method:Qualimetrix\\Metrics\\CodeSmell\\CodeSmellVisitor::enterNode": [
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "eadca411f59d5df8"
@@ -3567,13 +3567,13 @@
                 "hash": "af5930935c9ba8d6"
             }
         ],
-        "method:AiMessDetector\\Metrics\\CodeSmell\\CodeSmellVisitor::isBoolType": [
+        "method:Qualimetrix\\Metrics\\CodeSmell\\CodeSmellVisitor::isBoolType": [
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "dd9906dcea5eb2c9"
             }
         ],
-        "method:AiMessDetector\\Metrics\\CodeSmell\\CodeSmellVisitor::statementsContainChainSignal": [
+        "method:Qualimetrix\\Metrics\\CodeSmell\\CodeSmellVisitor::statementsContainChainSignal": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "4dd0f380de279969"
@@ -3583,13 +3583,13 @@
                 "hash": "4ef514b7c523ad2e"
             }
         ],
-        "method:AiMessDetector\\Metrics\\CodeSmell\\IdenticalSubExpressionVisitor::getOperatorSymbol": [
+        "method:Qualimetrix\\Metrics\\CodeSmell\\IdenticalSubExpressionVisitor::getOperatorSymbol": [
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "1351812f36d12e48"
             }
         ],
-        "method:AiMessDetector\\Metrics\\CodeSmell\\IdenticalSubExpressionVisitor::hasSideEffects": [
+        "method:Qualimetrix\\Metrics\\CodeSmell\\IdenticalSubExpressionVisitor::hasSideEffects": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "92bb4aba90316df9"
@@ -3603,7 +3603,7 @@
                 "hash": "12d547a610d335ec"
             }
         ],
-        "method:AiMessDetector\\Metrics\\CodeSmell\\IdenticalSubExpressionVisitor::nodesEqual": [
+        "method:Qualimetrix\\Metrics\\CodeSmell\\IdenticalSubExpressionVisitor::nodesEqual": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "f55dc5036fee1bcf"
@@ -3613,19 +3613,19 @@
                 "hash": "9305f8085ed7c0f0"
             }
         ],
-        "method:AiMessDetector\\Metrics\\CodeSmell\\ParameterCountVisitor::enterNode": [
+        "method:Qualimetrix\\Metrics\\CodeSmell\\ParameterCountVisitor::enterNode": [
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "b43c606a00f8debb"
             }
         ],
-        "method:AiMessDetector\\Metrics\\CodeSmell\\UnreachableCodeVisitor::enterNode": [
+        "method:Qualimetrix\\Metrics\\CodeSmell\\UnreachableCodeVisitor::enterNode": [
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "b3dad474d9dc2dca"
             }
         ],
-        "method:AiMessDetector\\Metrics\\Complexity\\CognitiveComplexityVisitor::enterNode": [
+        "method:Qualimetrix\\Metrics\\Complexity\\CognitiveComplexityVisitor::enterNode": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "9b00729eb1cb948c"
@@ -3639,7 +3639,7 @@
                 "hash": "60e1f51420a6c87b"
             }
         ],
-        "method:AiMessDetector\\Metrics\\Complexity\\CognitiveComplexityVisitor::getComplexityIncrement": [
+        "method:Qualimetrix\\Metrics\\Complexity\\CognitiveComplexityVisitor::getComplexityIncrement": [
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "5f6ddf7bd0e446d7"
@@ -3649,7 +3649,7 @@
                 "hash": "90346a937fdc2e64"
             }
         ],
-        "method:AiMessDetector\\Metrics\\Complexity\\CognitiveComplexityVisitor::isRecursiveCall": [
+        "method:Qualimetrix\\Metrics\\Complexity\\CognitiveComplexityVisitor::isRecursiveCall": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "2d6d7445edd85aef"
@@ -3663,7 +3663,7 @@
                 "hash": "dd96eed6ee4ccb10"
             }
         ],
-        "method:AiMessDetector\\Metrics\\Complexity\\CognitiveComplexityVisitor::leaveNode": [
+        "method:Qualimetrix\\Metrics\\Complexity\\CognitiveComplexityVisitor::leaveNode": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "357e50bf4e7d244e"
@@ -3677,7 +3677,7 @@
                 "hash": "5f19f37054f521e0"
             }
         ],
-        "method:AiMessDetector\\Metrics\\Complexity\\CyclomaticComplexityVisitor::enterNode": [
+        "method:Qualimetrix\\Metrics\\Complexity\\CyclomaticComplexityVisitor::enterNode": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "42aca057f15e91b2"
@@ -3691,25 +3691,25 @@
                 "hash": "0a950da009d23f24"
             }
         ],
-        "method:AiMessDetector\\Metrics\\Complexity\\CyclomaticComplexityVisitor::leaveNode": [
+        "method:Qualimetrix\\Metrics\\Complexity\\CyclomaticComplexityVisitor::leaveNode": [
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "0b50ea644a4b0cf3"
             }
         ],
-        "method:AiMessDetector\\Metrics\\Complexity\\NpathComplexityVisitor::calculateExprNpath": [
+        "method:Qualimetrix\\Metrics\\Complexity\\NpathComplexityVisitor::calculateExprNpath": [
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "850d0b7470558944"
             }
         ],
-        "method:AiMessDetector\\Metrics\\Complexity\\NpathComplexityVisitor::calculateStmtNpath": [
+        "method:Qualimetrix\\Metrics\\Complexity\\NpathComplexityVisitor::calculateStmtNpath": [
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "df47cb4475e83f3f"
             }
         ],
-        "method:AiMessDetector\\Metrics\\Complexity\\NpathComplexityVisitor::enterNode": [
+        "method:Qualimetrix\\Metrics\\Complexity\\NpathComplexityVisitor::enterNode": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "938fd3123658eeba"
@@ -3723,25 +3723,25 @@
                 "hash": "8e254d80c7116c78"
             }
         ],
-        "method:AiMessDetector\\Metrics\\Complexity\\NpathComplexityVisitor::leaveNode": [
+        "method:Qualimetrix\\Metrics\\Complexity\\NpathComplexityVisitor::leaveNode": [
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "7d073dd9503e847d"
             }
         ],
-        "method:AiMessDetector\\Metrics\\Complexity\\NpathComplexityVisitor::startMethod": [
+        "method:Qualimetrix\\Metrics\\Complexity\\NpathComplexityVisitor::startMethod": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "664b928117afe667"
             }
         ],
-        "method:AiMessDetector\\Metrics\\ComputedMetric\\ComputedMetricEvaluator::evaluateAtLevel": [
+        "method:Qualimetrix\\Metrics\\ComputedMetric\\ComputedMetricEvaluator::evaluateAtLevel": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "5d9f5a7bc446ba00"
             }
         ],
-        "method:AiMessDetector\\Metrics\\ComputedMetric\\ComputedMetricEvaluator::topologicalSort": [
+        "method:Qualimetrix\\Metrics\\ComputedMetric\\ComputedMetricEvaluator::topologicalSort": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "2df6bddd2db6e68f"
@@ -3755,7 +3755,7 @@
                 "hash": "9424e1e9b38bd086"
             }
         ],
-        "method:AiMessDetector\\Metrics\\Coupling\\ClassRankCollector::calculate": [
+        "method:Qualimetrix\\Metrics\\Coupling\\ClassRankCollector::calculate": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "4246db1a7c53be9b"
@@ -3769,7 +3769,7 @@
                 "hash": "e286f9c98016574d"
             }
         ],
-        "method:AiMessDetector\\Metrics\\Coupling\\ClassRankCollector::computePageRank": [
+        "method:Qualimetrix\\Metrics\\Coupling\\ClassRankCollector::computePageRank": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "fd61511b45036595"
@@ -3779,19 +3779,19 @@
                 "hash": "904880209a30129a"
             }
         ],
-        "method:AiMessDetector\\Metrics\\Halstead\\HalsteadCollector::collect": [
+        "method:Qualimetrix\\Metrics\\Halstead\\HalsteadCollector::collect": [
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "d6f4556038ef86c4"
             }
         ],
-        "method:AiMessDetector\\Metrics\\Halstead\\HalsteadMetrics::__construct": [
+        "method:Qualimetrix\\Metrics\\Halstead\\HalsteadMetrics::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "c92d4d80a1e16fab"
             }
         ],
-        "method:AiMessDetector\\Metrics\\Halstead\\HalsteadVisitor::enterNode": [
+        "method:Qualimetrix\\Metrics\\Halstead\\HalsteadVisitor::enterNode": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "c20d33aefcf125bb"
@@ -3809,31 +3809,31 @@
                 "hash": "dbeeb76b0d5feab9"
             }
         ],
-        "method:AiMessDetector\\Metrics\\Halstead\\HalsteadVisitor::getAssignOpName": [
+        "method:Qualimetrix\\Metrics\\Halstead\\HalsteadVisitor::getAssignOpName": [
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "377cc0504a561516"
             }
         ],
-        "method:AiMessDetector\\Metrics\\Halstead\\HalsteadVisitor::getBinaryOpName": [
+        "method:Qualimetrix\\Metrics\\Halstead\\HalsteadVisitor::getBinaryOpName": [
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "163915944342bcef"
             }
         ],
-        "method:AiMessDetector\\Metrics\\Halstead\\HalsteadVisitor::getCallOpName": [
+        "method:Qualimetrix\\Metrics\\Halstead\\HalsteadVisitor::getCallOpName": [
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "6ba2498831e5fa16"
             }
         ],
-        "method:AiMessDetector\\Metrics\\Halstead\\HalsteadVisitor::getControlFlowOpName": [
+        "method:Qualimetrix\\Metrics\\Halstead\\HalsteadVisitor::getControlFlowOpName": [
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "4ddffeedcea26a01"
             }
         ],
-        "method:AiMessDetector\\Metrics\\Halstead\\HalsteadVisitor::getOperandName": [
+        "method:Qualimetrix\\Metrics\\Halstead\\HalsteadVisitor::getOperandName": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "78ed1d1c8c52b9d0"
@@ -3847,31 +3847,31 @@
                 "hash": "8aed54b02298ba9f"
             }
         ],
-        "method:AiMessDetector\\Metrics\\Halstead\\HalsteadVisitor::getOtherOpName": [
+        "method:Qualimetrix\\Metrics\\Halstead\\HalsteadVisitor::getOtherOpName": [
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "5b8f0cffedf06e6c"
             }
         ],
-        "method:AiMessDetector\\Metrics\\Halstead\\HalsteadVisitor::getUnaryOpName": [
+        "method:Qualimetrix\\Metrics\\Halstead\\HalsteadVisitor::getUnaryOpName": [
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "1360cae067615871"
             }
         ],
-        "method:AiMessDetector\\Metrics\\Halstead\\HalsteadVisitor::leaveNode": [
+        "method:Qualimetrix\\Metrics\\Halstead\\HalsteadVisitor::leaveNode": [
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "80f5a6ac2e21d628"
             }
         ],
-        "method:AiMessDetector\\Metrics\\Security\\SecurityPatternVisitor::checkCommandInjection": [
+        "method:Qualimetrix\\Metrics\\Security\\SecurityPatternVisitor::checkCommandInjection": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "3ecc1b9ce73e4b42"
             }
         ],
-        "method:AiMessDetector\\Metrics\\Security\\SecurityPatternVisitor::checkSqlInjectionFuncCall": [
+        "method:Qualimetrix\\Metrics\\Security\\SecurityPatternVisitor::checkSqlInjectionFuncCall": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "f91ff8483d1ee9f7"
@@ -3885,7 +3885,7 @@
                 "hash": "555463cd550cfab2"
             }
         ],
-        "method:AiMessDetector\\Metrics\\Security\\SensitiveNameMatcher::checkExtraSensitivePatterns": [
+        "method:Qualimetrix\\Metrics\\Security\\SensitiveNameMatcher::checkExtraSensitivePatterns": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "47b1947a9439ce34"
@@ -3895,7 +3895,7 @@
                 "hash": "09ebb8c42f85a2dd"
             }
         ],
-        "method:AiMessDetector\\Metrics\\Size\\LocCollector::calculateMetrics": [
+        "method:Qualimetrix\\Metrics\\Size\\LocCollector::calculateMetrics": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "5bb7d6288daf546a"
@@ -3909,13 +3909,13 @@
                 "hash": "9dca339b5718cfc5"
             }
         ],
-        "method:AiMessDetector\\Metrics\\Structure\\InheritanceClassInfo::__construct": [
+        "method:Qualimetrix\\Metrics\\Structure\\InheritanceClassInfo::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "01720162aea67180"
             }
         ],
-        "method:AiMessDetector\\Metrics\\Structure\\InheritanceDepthVisitor::enterNode": [
+        "method:Qualimetrix\\Metrics\\Structure\\InheritanceDepthVisitor::enterNode": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "a600477ea5e02e65"
@@ -3925,7 +3925,7 @@
                 "hash": "49318d79d47c13d3"
             }
         ],
-        "method:AiMessDetector\\Metrics\\Structure\\LcomClassData::calculateLcom": [
+        "method:Qualimetrix\\Metrics\\Structure\\LcomClassData::calculateLcom": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "799592feb0c6b56f"
@@ -3939,7 +3939,7 @@
                 "hash": "89e5ff356a00a69c"
             }
         ],
-        "method:AiMessDetector\\Metrics\\Structure\\LcomVisitor::enterNode": [
+        "method:Qualimetrix\\Metrics\\Structure\\LcomVisitor::enterNode": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "0662e840b325735d"
@@ -3957,31 +3957,31 @@
                 "hash": "c804d3774dfca5a0"
             }
         ],
-        "method:AiMessDetector\\Metrics\\Structure\\MethodCountCollector::collect": [
+        "method:Qualimetrix\\Metrics\\Structure\\MethodCountCollector::collect": [
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "37c047bb5bced242"
             }
         ],
-        "method:AiMessDetector\\Metrics\\Structure\\MethodCountCollector::getClassesWithMetrics": [
+        "method:Qualimetrix\\Metrics\\Structure\\MethodCountCollector::getClassesWithMetrics": [
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "7705e95ef1530d33"
             }
         ],
-        "method:AiMessDetector\\Metrics\\Structure\\MethodCountCollector::getMetricDefinitions": [
+        "method:Qualimetrix\\Metrics\\Structure\\MethodCountCollector::getMetricDefinitions": [
             {
                 "rule": "maintainability.index",
                 "hash": "9d9fe2311a8bcfed"
             }
         ],
-        "method:AiMessDetector\\Metrics\\Structure\\MethodCountVisitor::countMethod": [
+        "method:Qualimetrix\\Metrics\\Structure\\MethodCountVisitor::countMethod": [
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "aa4bc0b6e960862c"
             }
         ],
-        "method:AiMessDetector\\Metrics\\Structure\\MethodCountVisitor::enterNode": [
+        "method:Qualimetrix\\Metrics\\Structure\\MethodCountVisitor::enterNode": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "4e963f06dbd606ca"
@@ -3999,13 +3999,13 @@
                 "hash": "e2b50f426556c00f"
             }
         ],
-        "method:AiMessDetector\\Metrics\\Structure\\TccLccClassData::countConnectedPairsBfs": [
+        "method:Qualimetrix\\Metrics\\Structure\\TccLccClassData::countConnectedPairsBfs": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "ed89ef9ba979e4a5"
             }
         ],
-        "method:AiMessDetector\\Metrics\\Structure\\TccLccVisitor::enterNode": [
+        "method:Qualimetrix\\Metrics\\Structure\\TccLccVisitor::enterNode": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "164698c3978c5da9"
@@ -4023,19 +4023,19 @@
                 "hash": "9e06023349ea1999"
             }
         ],
-        "method:AiMessDetector\\Metrics\\Structure\\UnusedPrivateCollector::addEntries": [
+        "method:Qualimetrix\\Metrics\\Structure\\UnusedPrivateCollector::addEntries": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "43a98200c3019e5d"
             }
         ],
-        "method:AiMessDetector\\Metrics\\Structure\\UnusedPrivateVisitor::enterClassLike": [
+        "method:Qualimetrix\\Metrics\\Structure\\UnusedPrivateVisitor::enterClassLike": [
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "fcf25571cbf22988"
             }
         ],
-        "method:AiMessDetector\\Metrics\\Structure\\UnusedPrivateVisitor::enterNode": [
+        "method:Qualimetrix\\Metrics\\Structure\\UnusedPrivateVisitor::enterNode": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "47f8f2d485645c73"
@@ -4049,7 +4049,7 @@
                 "hash": "d54dd42ca1146c93"
             }
         ],
-        "method:AiMessDetector\\Metrics\\Structure\\UnusedPrivateVisitor::trackUsages": [
+        "method:Qualimetrix\\Metrics\\Structure\\UnusedPrivateVisitor::trackUsages": [
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "ff92fddaefef9ca5"
@@ -4059,13 +4059,13 @@
                 "hash": "354e4b4d9af0605b"
             }
         ],
-        "method:AiMessDetector\\Reporting\\Debt\\RemediationTimeRegistry::getMinutesForViolation": [
+        "method:Qualimetrix\\Reporting\\Debt\\RemediationTimeRegistry::getMinutesForViolation": [
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "2484ff970b13c483"
             }
         ],
-        "method:AiMessDetector\\Reporting\\FormatterContext::__construct": [
+        "method:Qualimetrix\\Reporting\\FormatterContext::__construct": [
             {
                 "rule": "code-smell.constructor-overinjection",
                 "hash": "86ac3c5ee68e5fb5"
@@ -4075,7 +4075,7 @@
                 "hash": "016d4f5c5814a133"
             }
         ],
-        "method:AiMessDetector\\Reporting\\Formatter\\Html\\HtmlTreeBuilder::aggregateMetricsBottomUp": [
+        "method:Qualimetrix\\Reporting\\Formatter\\Html\\HtmlTreeBuilder::aggregateMetricsBottomUp": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "360e3cb0083748f6"
@@ -4089,7 +4089,7 @@
                 "hash": "5b7ac13d89f5e7ce"
             }
         ],
-        "method:AiMessDetector\\Reporting\\Formatter\\Html\\HtmlTreeBuilder::buildTree": [
+        "method:Qualimetrix\\Reporting\\Formatter\\Html\\HtmlTreeBuilder::buildTree": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "abe9fba7ca17db27"
@@ -4099,13 +4099,13 @@
                 "hash": "2b9e19ea4ef40519"
             }
         ],
-        "method:AiMessDetector\\Reporting\\Formatter\\Html\\HtmlTreeBuilder::ensureNamespaceChain": [
+        "method:Qualimetrix\\Reporting\\Formatter\\Html\\HtmlTreeBuilder::ensureNamespaceChain": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "6fcaea49cb7d2a5e"
             }
         ],
-        "method:AiMessDetector\\Reporting\\Formatter\\Html\\HtmlTreeBuilder::partitionViolations": [
+        "method:Qualimetrix\\Reporting\\Formatter\\Html\\HtmlTreeBuilder::partitionViolations": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "3f1022642052a7c0"
@@ -4115,49 +4115,49 @@
                 "hash": "20318880993ffc55"
             }
         ],
-        "method:AiMessDetector\\Reporting\\Formatter\\Json\\JsonFormatter::__construct": [
+        "method:Qualimetrix\\Reporting\\Formatter\\Json\\JsonFormatter::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "3fa0d8e38dcaf236"
             }
         ],
-        "method:AiMessDetector\\Reporting\\Formatter\\Json\\JsonHealthSection::format": [
+        "method:Qualimetrix\\Reporting\\Formatter\\Json\\JsonHealthSection::format": [
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "fe41358c96285a0f"
             }
         ],
-        "method:AiMessDetector\\Reporting\\Formatter\\Json\\JsonOffenderSection::formatWorstOffenders": [
+        "method:Qualimetrix\\Reporting\\Formatter\\Json\\JsonOffenderSection::formatWorstOffenders": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "330a877f5f51ab0e"
             }
         ],
-        "method:AiMessDetector\\Reporting\\Formatter\\MetricsJsonFormatter::format": [
+        "method:Qualimetrix\\Reporting\\Formatter\\MetricsJsonFormatter::format": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "63daa7b1d418c55d"
             }
         ],
-        "method:AiMessDetector\\Reporting\\Formatter\\Sarif\\SarifRuleCollector::getRuleDescription": [
+        "method:Qualimetrix\\Reporting\\Formatter\\Sarif\\SarifRuleCollector::getRuleDescription": [
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "bac0a085fc5063f7"
             }
         ],
-        "method:AiMessDetector\\Reporting\\Formatter\\Summary\\HealthBarRenderer::colorizeScore": [
+        "method:Qualimetrix\\Reporting\\Formatter\\Summary\\HealthBarRenderer::colorizeScore": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "9c207774801695cd"
             }
         ],
-        "method:AiMessDetector\\Reporting\\Formatter\\Summary\\HealthBarRenderer::formatScore": [
+        "method:Qualimetrix\\Reporting\\Formatter\\Summary\\HealthBarRenderer::formatScore": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "648a681fd72e46a2"
             }
         ],
-        "method:AiMessDetector\\Reporting\\Formatter\\Summary\\HealthBarRenderer::render": [
+        "method:Qualimetrix\\Reporting\\Formatter\\Summary\\HealthBarRenderer::render": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "b4f4675577a24ef4"
@@ -4179,13 +4179,13 @@
                 "hash": "f230c73382fa1987"
             }
         ],
-        "method:AiMessDetector\\Reporting\\Formatter\\Summary\\HealthBarRenderer::renderHealthBar": [
+        "method:Qualimetrix\\Reporting\\Formatter\\Summary\\HealthBarRenderer::renderHealthBar": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "df99b1c7369eada8"
             }
         ],
-        "method:AiMessDetector\\Reporting\\Formatter\\Summary\\HintRenderer::render": [
+        "method:Qualimetrix\\Reporting\\Formatter\\Summary\\HintRenderer::render": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "d7dc2c397afe880b"
@@ -4199,55 +4199,55 @@
                 "hash": "6ddfadb8be0cf9f7"
             }
         ],
-        "method:AiMessDetector\\Reporting\\Formatter\\Summary\\OffenderListRenderer::colorizeScore": [
+        "method:Qualimetrix\\Reporting\\Formatter\\Summary\\OffenderListRenderer::colorizeScore": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "9f92da8fcd6cd4b2"
             }
         ],
-        "method:AiMessDetector\\Reporting\\Formatter\\Summary\\OffenderListRenderer::renderOffenderList": [
+        "method:Qualimetrix\\Reporting\\Formatter\\Summary\\OffenderListRenderer::renderOffenderList": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "34bee6dc9e6410e6"
             }
         ],
-        "method:AiMessDetector\\Reporting\\Formatter\\Summary\\OffenderListRenderer::renderWorstClasses": [
+        "method:Qualimetrix\\Reporting\\Formatter\\Summary\\OffenderListRenderer::renderWorstClasses": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "ac1402ac3d623a76"
             }
         ],
-        "method:AiMessDetector\\Reporting\\Formatter\\Summary\\OffenderListRenderer::renderWorstNamespaces": [
+        "method:Qualimetrix\\Reporting\\Formatter\\Summary\\OffenderListRenderer::renderWorstNamespaces": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "7b8e3418d07a8c1b"
             }
         ],
-        "method:AiMessDetector\\Reporting\\Formatter\\Summary\\OffenderListRenderer::renderWorstOffender": [
+        "method:Qualimetrix\\Reporting\\Formatter\\Summary\\OffenderListRenderer::renderWorstOffender": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "021fecab7f2335a6"
             }
         ],
-        "method:AiMessDetector\\Reporting\\Formatter\\Summary\\SummaryFormatter::__construct": [
+        "method:Qualimetrix\\Reporting\\Formatter\\Summary\\SummaryFormatter::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "a84cca7a4e245969"
             }
         ],
-        "method:AiMessDetector\\Reporting\\Formatter\\Summary\\SummaryFormatter::format": [
+        "method:Qualimetrix\\Reporting\\Formatter\\Summary\\SummaryFormatter::format": [
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "27bb251a45edf937"
             }
         ],
-        "method:AiMessDetector\\Reporting\\Formatter\\Summary\\SummaryFormatter::renderHeader": [
+        "method:Qualimetrix\\Reporting\\Formatter\\Summary\\SummaryFormatter::renderHeader": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "e01539d357f8ed9f"
             }
         ],
-        "method:AiMessDetector\\Reporting\\Formatter\\Summary\\ViolationSummaryRenderer::render": [
+        "method:Qualimetrix\\Reporting\\Formatter\\Summary\\ViolationSummaryRenderer::render": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "c750e7ca18ebb69f"
@@ -4269,13 +4269,13 @@
                 "hash": "36fd8bb38906e982"
             }
         ],
-        "method:AiMessDetector\\Reporting\\Formatter\\Support\\DetailedViolationRenderer::renderFlat": [
+        "method:Qualimetrix\\Reporting\\Formatter\\Support\\DetailedViolationRenderer::renderFlat": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "2445661d4c09bb4d"
             }
         ],
-        "method:AiMessDetector\\Reporting\\Formatter\\Support\\DetailedViolationRenderer::renderGrouped": [
+        "method:Qualimetrix\\Reporting\\Formatter\\Support\\DetailedViolationRenderer::renderGrouped": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "aa5e115072b1b499"
@@ -4285,31 +4285,31 @@
                 "hash": "f385c9ea6b70b481"
             }
         ],
-        "method:AiMessDetector\\Reporting\\Formatter\\Support\\DetailedViolationRenderer::renderViolation": [
+        "method:Qualimetrix\\Reporting\\Formatter\\Support\\DetailedViolationRenderer::renderViolation": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "b54791076919586b"
             }
         ],
-        "method:AiMessDetector\\Reporting\\Health\\DecompositionItem::__construct": [
+        "method:Qualimetrix\\Reporting\\Health\\DecompositionItem::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "70fd517f675f5c56"
             }
         ],
-        "method:AiMessDetector\\Reporting\\Health\\HealthScore::__construct": [
+        "method:Qualimetrix\\Reporting\\Health\\HealthScore::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "d0b37926c8bfe097"
             }
         ],
-        "method:AiMessDetector\\Reporting\\Health\\NamespaceDrillDown::buildClassHealthScores": [
+        "method:Qualimetrix\\Reporting\\Health\\NamespaceDrillDown::buildClassHealthScores": [
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "7fde4a37d463f7e8"
             }
         ],
-        "method:AiMessDetector\\Reporting\\Health\\NamespaceDrillDown::buildSubtreeHealthScores": [
+        "method:Qualimetrix\\Reporting\\Health\\NamespaceDrillDown::buildSubtreeHealthScores": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "4927ab84879ec83f"
@@ -4319,7 +4319,7 @@
                 "hash": "44be88e24743e4c8"
             }
         ],
-        "method:AiMessDetector\\Reporting\\Health\\NamespaceDrillDown::buildWorstClasses": [
+        "method:Qualimetrix\\Reporting\\Health\\NamespaceDrillDown::buildWorstClasses": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "ac7afb1c225cc172"
@@ -4337,13 +4337,13 @@
                 "hash": "8064fd02ddb3f4e4"
             }
         ],
-        "method:AiMessDetector\\Reporting\\Health\\SummaryEnricher::buildHealthScores": [
+        "method:Qualimetrix\\Reporting\\Health\\SummaryEnricher::buildHealthScores": [
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "ef65ffaae6b9f5f0"
             }
         ],
-        "method:AiMessDetector\\Reporting\\Health\\SummaryEnricher::buildWorstOffenders": [
+        "method:Qualimetrix\\Reporting\\Health\\SummaryEnricher::buildWorstOffenders": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "e0f27ce6eb14a9b2"
@@ -4357,7 +4357,7 @@
                 "hash": "37ca1806e4826748"
             }
         ],
-        "method:AiMessDetector\\Reporting\\Health\\SummaryEnricher::countViolationsPerSymbol": [
+        "method:Qualimetrix\\Reporting\\Health\\SummaryEnricher::countViolationsPerSymbol": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "1076bfc73e387f66"
@@ -4367,7 +4367,7 @@
                 "hash": "312ef2715a571a46"
             }
         ],
-        "method:AiMessDetector\\Reporting\\Health\\WorstOffender::__construct": [
+        "method:Qualimetrix\\Reporting\\Health\\WorstOffender::__construct": [
             {
                 "rule": "code-smell.constructor-overinjection",
                 "hash": "c5a917aabb5cce2c"
@@ -4377,7 +4377,7 @@
                 "hash": "24d575535dfb997a"
             }
         ],
-        "method:AiMessDetector\\Reporting\\Report::__construct": [
+        "method:Qualimetrix\\Reporting\\Report::__construct": [
             {
                 "rule": "code-smell.constructor-overinjection",
                 "hash": "0cf4593461ba634f"
@@ -4387,19 +4387,19 @@
                 "hash": "65bcf7bd977588f1"
             }
         ],
-        "method:AiMessDetector\\Rules\\CodeSmell\\DataClassOptions::__construct": [
+        "method:Qualimetrix\\Rules\\CodeSmell\\DataClassOptions::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "77b94c0cc420a374"
             }
         ],
-        "method:AiMessDetector\\Rules\\CodeSmell\\DataClassOptions::fromArray": [
+        "method:Qualimetrix\\Rules\\CodeSmell\\DataClassOptions::fromArray": [
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "02ae91b47c6edafe"
             }
         ],
-        "method:AiMessDetector\\Rules\\CodeSmell\\DataClassRule::analyze": [
+        "method:Qualimetrix\\Rules\\CodeSmell\\DataClassRule::analyze": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "4cd89f50559314e4"
@@ -4417,7 +4417,7 @@
                 "hash": "6f8c0056a10cf80d"
             }
         ],
-        "method:AiMessDetector\\Rules\\CodeSmell\\GodClassOptions::__construct": [
+        "method:Qualimetrix\\Rules\\CodeSmell\\GodClassOptions::__construct": [
             {
                 "rule": "code-smell.constructor-overinjection",
                 "hash": "8ca4c68d84cefd71"
@@ -4427,7 +4427,7 @@
                 "hash": "b3f428513095c49a"
             }
         ],
-        "method:AiMessDetector\\Rules\\CodeSmell\\GodClassOptions::fromArray": [
+        "method:Qualimetrix\\Rules\\CodeSmell\\GodClassOptions::fromArray": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "dfe630c1b6b42292"
@@ -4437,7 +4437,7 @@
                 "hash": "c4073af5df003808"
             }
         ],
-        "method:AiMessDetector\\Rules\\CodeSmell\\GodClassRule::analyze": [
+        "method:Qualimetrix\\Rules\\CodeSmell\\GodClassRule::analyze": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "337ef3672d314c7a"
@@ -4455,73 +4455,73 @@
                 "hash": "dce6702f8c150207"
             }
         ],
-        "method:AiMessDetector\\Rules\\Complexity\\CognitiveComplexityOptions::fromArray": [
+        "method:Qualimetrix\\Rules\\Complexity\\CognitiveComplexityOptions::fromArray": [
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "3e341487305785a4"
             }
         ],
-        "method:AiMessDetector\\Rules\\Complexity\\ComplexityOptions::fromArray": [
+        "method:Qualimetrix\\Rules\\Complexity\\ComplexityOptions::fromArray": [
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "d7bd102381f4928e"
             }
         ],
-        "method:AiMessDetector\\Rules\\Complexity\\NpathComplexityOptions::fromArray": [
+        "method:Qualimetrix\\Rules\\Complexity\\NpathComplexityOptions::fromArray": [
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "0fc56d9b2640acab"
             }
         ],
-        "method:AiMessDetector\\Rules\\ComputedMetric\\ComputedMetricRule::checkLevel": [
+        "method:Qualimetrix\\Rules\\ComputedMetric\\ComputedMetricRule::checkLevel": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "303b668ec06cbd37"
             }
         ],
-        "method:AiMessDetector\\Rules\\ComputedMetric\\ComputedMetricRule::determineSeverity": [
+        "method:Qualimetrix\\Rules\\ComputedMetric\\ComputedMetricRule::determineSeverity": [
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "8f18e0518d2bb684"
             }
         ],
-        "method:AiMessDetector\\Rules\\Coupling\\CboRule::buildMessage": [
+        "method:Qualimetrix\\Rules\\Coupling\\CboRule::buildMessage": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "a8c901024efa1b10"
             }
         ],
-        "method:AiMessDetector\\Rules\\Coupling\\CboRule::buildRecommendation": [
+        "method:Qualimetrix\\Rules\\Coupling\\CboRule::buildRecommendation": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "0f53f52461363190"
             }
         ],
-        "method:AiMessDetector\\Rules\\Coupling\\CboRule::checkCbo": [
+        "method:Qualimetrix\\Rules\\Coupling\\CboRule::checkCbo": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "a11f8c2320a048f1"
             }
         ],
-        "method:AiMessDetector\\Rules\\Coupling\\CboRule::getTopDependencies": [
+        "method:Qualimetrix\\Rules\\Coupling\\CboRule::getTopDependencies": [
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "891c13d5044532b5"
             }
         ],
-        "method:AiMessDetector\\Rules\\Coupling\\DistanceOptions::__construct": [
+        "method:Qualimetrix\\Rules\\Coupling\\DistanceOptions::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "2af4cb8c63b207d1"
             }
         ],
-        "method:AiMessDetector\\Rules\\Coupling\\DistanceOptions::fromArray": [
+        "method:Qualimetrix\\Rules\\Coupling\\DistanceOptions::fromArray": [
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "32dd654b411693fa"
             }
         ],
-        "method:AiMessDetector\\Rules\\Coupling\\DistanceRule::analyze": [
+        "method:Qualimetrix\\Rules\\Coupling\\DistanceRule::analyze": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "ac0c3f541528e36b"
@@ -4539,37 +4539,37 @@
                 "hash": "6c039d66893c2493"
             }
         ],
-        "method:AiMessDetector\\Rules\\Coupling\\InstabilityRule::analyzeNamespaceLevel": [
+        "method:Qualimetrix\\Rules\\Coupling\\InstabilityRule::analyzeNamespaceLevel": [
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "3bb39e2952f0476c"
             }
         ],
-        "method:AiMessDetector\\Rules\\Coupling\\NamespaceCboOptions::__construct": [
+        "method:Qualimetrix\\Rules\\Coupling\\NamespaceCboOptions::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "ef082c40a5bf40e8"
             }
         ],
-        "method:AiMessDetector\\Rules\\Coupling\\NamespaceInstabilityOptions::__construct": [
+        "method:Qualimetrix\\Rules\\Coupling\\NamespaceInstabilityOptions::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "2d482898764d7b72"
             }
         ],
-        "method:AiMessDetector\\Rules\\Design\\TypeCoverageOptions::__construct": [
+        "method:Qualimetrix\\Rules\\Design\\TypeCoverageOptions::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "ce70742ec5acadff"
             }
         ],
-        "method:AiMessDetector\\Rules\\Design\\TypeCoverageOptions::fromArray": [
+        "method:Qualimetrix\\Rules\\Design\\TypeCoverageOptions::fromArray": [
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "8ffbe5dbdc85b4d6"
             }
         ],
-        "method:AiMessDetector\\Rules\\Design\\TypeCoverageRule::analyze": [
+        "method:Qualimetrix\\Rules\\Design\\TypeCoverageRule::analyze": [
             {
                 "rule": "complexity.cognitive",
                 "hash": "6d40b914ec467a9f"
@@ -4587,37 +4587,37 @@
                 "hash": "3aa10b1833c86ab7"
             }
         ],
-        "method:AiMessDetector\\Rules\\Duplication\\CodeDuplicationOptions::__construct": [
+        "method:Qualimetrix\\Rules\\Duplication\\CodeDuplicationOptions::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "d2d263b3473395ad"
             }
         ],
-        "method:AiMessDetector\\Rules\\Maintainability\\MaintainabilityOptions::__construct": [
+        "method:Qualimetrix\\Rules\\Maintainability\\MaintainabilityOptions::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "65b5b3842271819f"
             }
         ],
-        "method:AiMessDetector\\Rules\\Maintainability\\MaintainabilityRule::analyze": [
+        "method:Qualimetrix\\Rules\\Maintainability\\MaintainabilityRule::analyze": [
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "06ef1c0848b45db8"
             }
         ],
-        "method:AiMessDetector\\Rules\\Security\\HardcodedCredentialsRule::analyze": [
+        "method:Qualimetrix\\Rules\\Security\\HardcodedCredentialsRule::analyze": [
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "260840f9da2d5b83"
             }
         ],
-        "method:AiMessDetector\\Rules\\Size\\PropertyCountOptions::__construct": [
+        "method:Qualimetrix\\Rules\\Size\\PropertyCountOptions::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "04cbf11794a8dfbf"
             }
         ],
-        "method:AiMessDetector\\Rules\\Size\\PropertyCountRule::analyze": [
+        "method:Qualimetrix\\Rules\\Size\\PropertyCountRule::analyze": [
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "a2541b25e52caef4"
@@ -4627,37 +4627,37 @@
                 "hash": "c9ae45bc753acc50"
             }
         ],
-        "method:AiMessDetector\\Rules\\Structure\\LcomOptions::__construct": [
+        "method:Qualimetrix\\Rules\\Structure\\LcomOptions::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "78634836c27825b7"
             }
         ],
-        "method:AiMessDetector\\Rules\\Structure\\LcomRule::analyze": [
+        "method:Qualimetrix\\Rules\\Structure\\LcomRule::analyze": [
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "6eee8c1d1ff2809b"
             }
         ],
-        "method:AiMessDetector\\Rules\\Structure\\WmcOptions::__construct": [
+        "method:Qualimetrix\\Rules\\Structure\\WmcOptions::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "e62ae617f75a40b7"
             }
         ],
-        "method:AiMessDetector\\Rules\\Structure\\WmcRule::analyze": [
+        "method:Qualimetrix\\Rules\\Structure\\WmcRule::analyze": [
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "3cae38c7bc6bd6e8"
             }
         ],
-        "ns:AiMessDetector\\Analysis\\Aggregator": [
+        "ns:Qualimetrix\\Analysis\\Aggregator": [
             {
                 "rule": "computed.health",
                 "hash": "a38d90afdbcd3771"
             }
         ],
-        "ns:AiMessDetector\\Analysis\\Collection": [
+        "ns:Qualimetrix\\Analysis\\Collection": [
             {
                 "rule": "coupling.cbo",
                 "hash": "d8ddabcc6f2a56d7"
@@ -4667,25 +4667,25 @@
                 "hash": "a5b0e8bec1756049"
             }
         ],
-        "ns:AiMessDetector\\Analysis\\Collection\\Dependency\\Export": [
+        "ns:Qualimetrix\\Analysis\\Collection\\Dependency\\Export": [
             {
                 "rule": "computed.health",
                 "hash": "8c8a2a5159f74f12"
             }
         ],
-        "ns:AiMessDetector\\Analysis\\Collection\\Dependency\\Handler": [
+        "ns:Qualimetrix\\Analysis\\Collection\\Dependency\\Handler": [
             {
                 "rule": "coupling.instability",
                 "hash": "0b5d8059f654b1a3"
             }
         ],
-        "ns:AiMessDetector\\Analysis\\Collection\\Metric": [
+        "ns:Qualimetrix\\Analysis\\Collection\\Metric": [
             {
                 "rule": "coupling.distance",
                 "hash": "acb8f280fded92b8"
             }
         ],
-        "ns:AiMessDetector\\Analysis\\Duplication": [
+        "ns:Qualimetrix\\Analysis\\Duplication": [
             {
                 "rule": "computed.health",
                 "hash": "cd69c4266391655e"
@@ -4695,7 +4695,7 @@
                 "hash": "d4b79416c426c5fe"
             }
         ],
-        "ns:AiMessDetector\\Analysis\\Namespace_": [
+        "ns:Qualimetrix\\Analysis\\Namespace_": [
             {
                 "rule": "computed.health",
                 "hash": "6ccaab9de886ee61"
@@ -4705,7 +4705,7 @@
                 "hash": "141362cf806be15f"
             }
         ],
-        "ns:AiMessDetector\\Analysis\\Pipeline": [
+        "ns:Qualimetrix\\Analysis\\Pipeline": [
             {
                 "rule": "computed.health",
                 "hash": "44023f1c33fdff26"
@@ -4719,13 +4719,13 @@
                 "hash": "953ecdce6099e3bc"
             }
         ],
-        "ns:AiMessDetector\\Baseline": [
+        "ns:Qualimetrix\\Baseline": [
             {
                 "rule": "coupling.distance",
                 "hash": "ad6a96d80571a8f9"
             }
         ],
-        "ns:AiMessDetector\\Configuration": [
+        "ns:Qualimetrix\\Configuration": [
             {
                 "rule": "coupling.cbo",
                 "hash": "cec49a85a2a9b807"
@@ -4735,19 +4735,19 @@
                 "hash": "5b6ac0d0049645c9"
             }
         ],
-        "ns:AiMessDetector\\Configuration\\Pipeline": [
+        "ns:Qualimetrix\\Configuration\\Pipeline": [
             {
                 "rule": "coupling.distance",
                 "hash": "56666ba4c01aca75"
             }
         ],
-        "ns:AiMessDetector\\Configuration\\Pipeline\\Stage": [
+        "ns:Qualimetrix\\Configuration\\Pipeline\\Stage": [
             {
                 "rule": "computed.health",
                 "hash": "f670387cbc4a00d3"
             }
         ],
-        "ns:AiMessDetector\\Core\\ComputedMetric": [
+        "ns:Qualimetrix\\Core\\ComputedMetric": [
             {
                 "rule": "computed.health",
                 "hash": "3b68f06937f224d2"
@@ -4757,13 +4757,13 @@
                 "hash": "f1c4c944db1284e1"
             }
         ],
-        "ns:AiMessDetector\\Core\\Dependency": [
+        "ns:Qualimetrix\\Core\\Dependency": [
             {
                 "rule": "computed.health",
                 "hash": "70b202cbe3c21ab1"
             }
         ],
-        "ns:AiMessDetector\\Core\\Metric": [
+        "ns:Qualimetrix\\Core\\Metric": [
             {
                 "rule": "computed.health",
                 "hash": "c7c6a2f6983bae71"
@@ -4777,19 +4777,19 @@
                 "hash": "dd73222d1bbd9110"
             }
         ],
-        "ns:AiMessDetector\\Core\\Profiler": [
+        "ns:Qualimetrix\\Core\\Profiler": [
             {
                 "rule": "coupling.distance",
                 "hash": "f46958b011b06cba"
             }
         ],
-        "ns:AiMessDetector\\Core\\Rule": [
+        "ns:Qualimetrix\\Core\\Rule": [
             {
                 "rule": "computed.health",
                 "hash": "91a3e412021c3a47"
             }
         ],
-        "ns:AiMessDetector\\Core\\Symbol": [
+        "ns:Qualimetrix\\Core\\Symbol": [
             {
                 "rule": "computed.health",
                 "hash": "46e2c14f027362f1"
@@ -4803,25 +4803,25 @@
                 "hash": "1680aa10054e3886"
             }
         ],
-        "ns:AiMessDetector\\Core\\Util": [
+        "ns:Qualimetrix\\Core\\Util": [
             {
                 "rule": "coupling.distance",
                 "hash": "dcb22c23d1c19e8b"
             }
         ],
-        "ns:AiMessDetector\\Core\\Violation": [
+        "ns:Qualimetrix\\Core\\Violation": [
             {
                 "rule": "computed.health",
                 "hash": "dafbe3dc91280257"
             }
         ],
-        "ns:AiMessDetector\\Infrastructure\\Ast": [
+        "ns:Qualimetrix\\Infrastructure\\Ast": [
             {
                 "rule": "coupling.instability",
                 "hash": "5be72c3fbdf51555"
             }
         ],
-        "ns:AiMessDetector\\Infrastructure\\Console": [
+        "ns:Qualimetrix\\Infrastructure\\Console": [
             {
                 "rule": "computed.health",
                 "hash": "2d4d8c5b4e5e0a32"
@@ -4835,7 +4835,7 @@
                 "hash": "345e11b24e52a577"
             }
         ],
-        "ns:AiMessDetector\\Infrastructure\\Console\\Command": [
+        "ns:Qualimetrix\\Infrastructure\\Console\\Command": [
             {
                 "rule": "computed.health",
                 "hash": "54f1faa5785dc80a"
@@ -4849,13 +4849,13 @@
                 "hash": "8871a91561bbf1e4"
             }
         ],
-        "ns:AiMessDetector\\Infrastructure\\Console\\Progress": [
+        "ns:Qualimetrix\\Infrastructure\\Console\\Progress": [
             {
                 "rule": "coupling.distance",
                 "hash": "bad6afef796691ca"
             }
         ],
-        "ns:AiMessDetector\\Infrastructure\\DependencyInjection": [
+        "ns:Qualimetrix\\Infrastructure\\DependencyInjection": [
             {
                 "rule": "computed.health",
                 "hash": "178951ac7fe2d7a6"
@@ -4865,7 +4865,7 @@
                 "hash": "33f599fc0dabe517"
             }
         ],
-        "ns:AiMessDetector\\Infrastructure\\DependencyInjection\\CompilerPass": [
+        "ns:Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass": [
             {
                 "rule": "computed.health",
                 "hash": "b570618b3f921bb9"
@@ -4879,7 +4879,7 @@
                 "hash": "860dc187ae6fa738"
             }
         ],
-        "ns:AiMessDetector\\Infrastructure\\DependencyInjection\\Configurator": [
+        "ns:Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator": [
             {
                 "rule": "computed.health",
                 "hash": "8476dc9dc54e8934"
@@ -4893,7 +4893,7 @@
                 "hash": "e19e216e2c40856c"
             }
         ],
-        "ns:AiMessDetector\\Infrastructure\\Git": [
+        "ns:Qualimetrix\\Infrastructure\\Git": [
             {
                 "rule": "computed.health",
                 "hash": "e8b83a26a6604ffd"
@@ -4903,25 +4903,25 @@
                 "hash": "b053347cbb48ee18"
             }
         ],
-        "ns:AiMessDetector\\Infrastructure\\Logging": [
+        "ns:Qualimetrix\\Infrastructure\\Logging": [
             {
                 "rule": "coupling.distance",
                 "hash": "5a90d8b04f5c4011"
             }
         ],
-        "ns:AiMessDetector\\Infrastructure\\Storage": [
+        "ns:Qualimetrix\\Infrastructure\\Storage": [
             {
                 "rule": "coupling.instability",
                 "hash": "607c9b0e09832e8e"
             }
         ],
-        "ns:AiMessDetector\\Metrics": [
+        "ns:Qualimetrix\\Metrics": [
             {
                 "rule": "computed.health",
                 "hash": "88f4ecd23a48b990"
             }
         ],
-        "ns:AiMessDetector\\Metrics\\CodeSmell": [
+        "ns:Qualimetrix\\Metrics\\CodeSmell": [
             {
                 "rule": "computed.health",
                 "hash": "4ca8977707273d03"
@@ -4931,7 +4931,7 @@
                 "hash": "b5b7be73d21504dd"
             }
         ],
-        "ns:AiMessDetector\\Metrics\\Complexity": [
+        "ns:Qualimetrix\\Metrics\\Complexity": [
             {
                 "rule": "computed.health",
                 "hash": "0d56057c9c88f03a"
@@ -4941,13 +4941,13 @@
                 "hash": "2f5506a4dd4971e9"
             }
         ],
-        "ns:AiMessDetector\\Metrics\\ComputedMetric": [
+        "ns:Qualimetrix\\Metrics\\ComputedMetric": [
             {
                 "rule": "computed.health",
                 "hash": "234f2642cc7f098c"
             }
         ],
-        "ns:AiMessDetector\\Metrics\\Coupling": [
+        "ns:Qualimetrix\\Metrics\\Coupling": [
             {
                 "rule": "computed.health",
                 "hash": "975a56a51c823cc0"
@@ -4957,13 +4957,13 @@
                 "hash": "843448374bdef358"
             }
         ],
-        "ns:AiMessDetector\\Metrics\\Design": [
+        "ns:Qualimetrix\\Metrics\\Design": [
             {
                 "rule": "coupling.instability",
                 "hash": "f7ba7b3bb9f7c33a"
             }
         ],
-        "ns:AiMessDetector\\Metrics\\Halstead": [
+        "ns:Qualimetrix\\Metrics\\Halstead": [
             {
                 "rule": "computed.health",
                 "hash": "9a820fcf717c16eb"
@@ -4973,25 +4973,25 @@
                 "hash": "0105bc36ec8c0cb1"
             }
         ],
-        "ns:AiMessDetector\\Metrics\\Maintainability": [
+        "ns:Qualimetrix\\Metrics\\Maintainability": [
             {
                 "rule": "computed.health",
                 "hash": "7029f40e37702329"
             }
         ],
-        "ns:AiMessDetector\\Metrics\\Security": [
+        "ns:Qualimetrix\\Metrics\\Security": [
             {
                 "rule": "coupling.instability",
                 "hash": "3f4c2fb5778a35fe"
             }
         ],
-        "ns:AiMessDetector\\Metrics\\Size": [
+        "ns:Qualimetrix\\Metrics\\Size": [
             {
                 "rule": "coupling.instability",
                 "hash": "96f94813caf25f14"
             }
         ],
-        "ns:AiMessDetector\\Metrics\\Structure": [
+        "ns:Qualimetrix\\Metrics\\Structure": [
             {
                 "rule": "coupling.instability",
                 "hash": "a7ab758fc31baecd"
@@ -5001,7 +5001,7 @@
                 "hash": "f6bbd146ce9e5ef4"
             }
         ],
-        "ns:AiMessDetector\\Reporting": [
+        "ns:Qualimetrix\\Reporting": [
             {
                 "rule": "computed.health",
                 "hash": "7a641923ac388bc5"
@@ -5011,19 +5011,19 @@
                 "hash": "867291bf70d2e670"
             }
         ],
-        "ns:AiMessDetector\\Reporting\\Debt": [
+        "ns:Qualimetrix\\Reporting\\Debt": [
             {
                 "rule": "coupling.distance",
                 "hash": "d6faf11f036991bd"
             }
         ],
-        "ns:AiMessDetector\\Reporting\\Formatter": [
+        "ns:Qualimetrix\\Reporting\\Formatter": [
             {
                 "rule": "coupling.cbo",
                 "hash": "425ed9795775c2f6"
             }
         ],
-        "ns:AiMessDetector\\Reporting\\Formatter\\Html": [
+        "ns:Qualimetrix\\Reporting\\Formatter\\Html": [
             {
                 "rule": "computed.health",
                 "hash": "d42e13a0a64e383c"
@@ -5033,7 +5033,7 @@
                 "hash": "8e475cb0001c4d00"
             }
         ],
-        "ns:AiMessDetector\\Reporting\\Formatter\\Json": [
+        "ns:Qualimetrix\\Reporting\\Formatter\\Json": [
             {
                 "rule": "computed.health",
                 "hash": "2e8bcc5d562863c3"
@@ -5043,19 +5043,19 @@
                 "hash": "5ff9e5d37961af56"
             }
         ],
-        "ns:AiMessDetector\\Reporting\\Formatter\\Sarif": [
+        "ns:Qualimetrix\\Reporting\\Formatter\\Sarif": [
             {
                 "rule": "computed.health",
                 "hash": "78f30f2a6a38b9de"
             }
         ],
-        "ns:AiMessDetector\\Reporting\\Formatter\\Summary": [
+        "ns:Qualimetrix\\Reporting\\Formatter\\Summary": [
             {
                 "rule": "coupling.instability",
                 "hash": "8945237de5711277"
             }
         ],
-        "ns:AiMessDetector\\Reporting\\Formatter\\Support": [
+        "ns:Qualimetrix\\Reporting\\Formatter\\Support": [
             {
                 "rule": "computed.health",
                 "hash": "db06429d6b25205f"
@@ -5065,7 +5065,7 @@
                 "hash": "3d1683eecd858759"
             }
         ],
-        "ns:AiMessDetector\\Reporting\\Health": [
+        "ns:Qualimetrix\\Reporting\\Health": [
             {
                 "rule": "computed.health",
                 "hash": "f3e30fdc72cf4c4a"
@@ -5075,25 +5075,25 @@
                 "hash": "cf16348fa178883e"
             }
         ],
-        "ns:AiMessDetector\\Reporting\\Profile": [
+        "ns:Qualimetrix\\Reporting\\Profile": [
             {
                 "rule": "computed.health",
                 "hash": "266805cddae4ac31"
             }
         ],
-        "ns:AiMessDetector\\Rules": [
+        "ns:Qualimetrix\\Rules": [
             {
                 "rule": "computed.health",
                 "hash": "7cd9c2c01bccf9b5"
             }
         ],
-        "ns:AiMessDetector\\Rules\\Architecture": [
+        "ns:Qualimetrix\\Rules\\Architecture": [
             {
                 "rule": "computed.health",
                 "hash": "e9944e7beea20e65"
             }
         ],
-        "ns:AiMessDetector\\Rules\\CodeSmell": [
+        "ns:Qualimetrix\\Rules\\CodeSmell": [
             {
                 "rule": "computed.health",
                 "hash": "fed057913e29b7e3"
@@ -5107,7 +5107,7 @@
                 "hash": "4216d91f91f69f51"
             }
         ],
-        "ns:AiMessDetector\\Rules\\Complexity": [
+        "ns:Qualimetrix\\Rules\\Complexity": [
             {
                 "rule": "computed.health",
                 "hash": "655d167ce64d73fa"
@@ -5117,13 +5117,13 @@
                 "hash": "ec6425d24395af6c"
             }
         ],
-        "ns:AiMessDetector\\Rules\\ComputedMetric": [
+        "ns:Qualimetrix\\Rules\\ComputedMetric": [
             {
                 "rule": "computed.health",
                 "hash": "2e3a90d2cbb65237"
             }
         ],
-        "ns:AiMessDetector\\Rules\\Coupling": [
+        "ns:Qualimetrix\\Rules\\Coupling": [
             {
                 "rule": "computed.health",
                 "hash": "ed3b433b4d6316ce"
@@ -5133,25 +5133,25 @@
                 "hash": "d7abb4f63062717f"
             }
         ],
-        "ns:AiMessDetector\\Rules\\Design": [
+        "ns:Qualimetrix\\Rules\\Design": [
             {
                 "rule": "computed.health",
                 "hash": "217c1d46e9d98502"
             }
         ],
-        "ns:AiMessDetector\\Rules\\Duplication": [
+        "ns:Qualimetrix\\Rules\\Duplication": [
             {
                 "rule": "computed.health",
                 "hash": "cedc54e6923729f9"
             }
         ],
-        "ns:AiMessDetector\\Rules\\Maintainability": [
+        "ns:Qualimetrix\\Rules\\Maintainability": [
             {
                 "rule": "computed.health",
                 "hash": "ea63d8a8929f7bea"
             }
         ],
-        "ns:AiMessDetector\\Rules\\Security": [
+        "ns:Qualimetrix\\Rules\\Security": [
             {
                 "rule": "computed.health",
                 "hash": "59bfc9b062e6c1b5"
@@ -5161,7 +5161,7 @@
                 "hash": "2e90fe1382140820"
             }
         ],
-        "ns:AiMessDetector\\Rules\\Size": [
+        "ns:Qualimetrix\\Rules\\Size": [
             {
                 "rule": "computed.health",
                 "hash": "4a6eebc1847ed0f1"
@@ -5171,7 +5171,7 @@
                 "hash": "fcc607d58a52bb1e"
             }
         ],
-        "ns:AiMessDetector\\Rules\\Structure": [
+        "ns:Qualimetrix\\Rules\\Structure": [
             {
                 "rule": "computed.health",
                 "hash": "bf62b62231a024c8"

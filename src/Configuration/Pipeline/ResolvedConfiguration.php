@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Configuration\Pipeline;
+namespace Qualimetrix\Configuration\Pipeline;
 
-use AiMessDetector\Configuration\AnalysisConfiguration;
-use AiMessDetector\Configuration\PathsConfiguration;
+use Qualimetrix\Configuration\AnalysisConfiguration;
+use Qualimetrix\Configuration\PathsConfiguration;
 
 /**
  * Fully resolved configuration after pipeline processing.

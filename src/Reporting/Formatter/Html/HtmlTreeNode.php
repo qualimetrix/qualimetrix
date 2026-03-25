@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Reporting\Formatter\Html;
+namespace Qualimetrix\Reporting\Formatter\Html;
 
 /**
  * Internal mutable VO for tree construction.

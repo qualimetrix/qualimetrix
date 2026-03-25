@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Core\Dependency;
+namespace Qualimetrix\Core\Dependency;
 
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Violation\Location;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Violation\Location;
 
 /**
  * Represents a single dependency from one class to another.

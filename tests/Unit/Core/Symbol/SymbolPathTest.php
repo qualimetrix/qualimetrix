@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Core\Symbol;
+namespace Qualimetrix\Tests\Unit\Core\Symbol;
 
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Symbol\SymbolType;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Symbol\SymbolType;
 
 #[CoversClass(SymbolPath::class)]
 final class SymbolPathTest extends TestCase

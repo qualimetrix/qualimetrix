@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Configuration;
+namespace Qualimetrix\Tests\Unit\Configuration;
 
-use AiMessDetector\Configuration\RuleOptionsParser;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Configuration\RuleOptionsParser;
 
 #[CoversClass(RuleOptionsParser::class)]
 final class RuleOptionsParserTest extends TestCase

@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Reporting;
+namespace Qualimetrix\Tests\Unit\Reporting;
 
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Violation\Location;
-use AiMessDetector\Core\Violation\Severity;
-use AiMessDetector\Core\Violation\Violation;
-use AiMessDetector\Reporting\Report;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Violation\Location;
+use Qualimetrix\Core\Violation\Severity;
+use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Reporting\Report;
 
 #[CoversClass(Report::class)]
 final class ReportTest extends TestCase

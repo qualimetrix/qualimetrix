@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\Parallel\Strategy;
+namespace Qualimetrix\Infrastructure\Parallel\Strategy;
 
-use AiMessDetector\Analysis\Collection\Strategy\ExecutionStrategyInterface;
-use AiMessDetector\Analysis\Collection\Strategy\StrategySelectorInterface;
-use AiMessDetector\Configuration\ConfigurationProviderInterface;
-use AiMessDetector\Core\Metric\DerivedCollectorInterface;
-use AiMessDetector\Core\Metric\MetricCollectorInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use Qualimetrix\Analysis\Collection\Strategy\ExecutionStrategyInterface;
+use Qualimetrix\Analysis\Collection\Strategy\StrategySelectorInterface;
+use Qualimetrix\Configuration\ConfigurationProviderInterface;
+use Qualimetrix\Core\Metric\DerivedCollectorInterface;
+use Qualimetrix\Core\Metric\MetricCollectorInterface;
 
 /**
  * Selects and configures the best available execution strategy.

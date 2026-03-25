@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Reporting\Formatter;
+namespace Qualimetrix\Tests\Unit\Reporting\Formatter;
 
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Violation\Location;
-use AiMessDetector\Core\Violation\Severity;
-use AiMessDetector\Core\Violation\Violation;
-use AiMessDetector\Reporting\Formatter\GitLabCodeQualityFormatter;
-use AiMessDetector\Reporting\FormatterContext;
-use AiMessDetector\Reporting\GroupBy;
-use AiMessDetector\Reporting\ReportBuilder;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Violation\Location;
+use Qualimetrix\Core\Violation\Severity;
+use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Reporting\Formatter\GitLabCodeQualityFormatter;
+use Qualimetrix\Reporting\FormatterContext;
+use Qualimetrix\Reporting\GroupBy;
+use Qualimetrix\Reporting\ReportBuilder;
 
 #[CoversClass(GitLabCodeQualityFormatter::class)]
 final class GitLabCodeQualityFormatterTest extends TestCase

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Configuration;
+namespace Qualimetrix\Configuration;
 
 /**
  * Stores per-rule namespace exclusions and provides prefix-based matching.

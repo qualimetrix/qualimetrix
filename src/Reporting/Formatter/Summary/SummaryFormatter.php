@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Reporting\Formatter\Summary;
+namespace Qualimetrix\Reporting\Formatter\Summary;
 
-use AiMessDetector\Reporting\Filter\ViolationFilter;
-use AiMessDetector\Reporting\Formatter\FormatterInterface;
-use AiMessDetector\Reporting\Formatter\Support\AnsiColor;
-use AiMessDetector\Reporting\Formatter\Support\DetailedViolationRenderer;
-use AiMessDetector\Reporting\FormatterContext;
-use AiMessDetector\Reporting\GroupBy;
-use AiMessDetector\Reporting\Report;
+use Qualimetrix\Reporting\Filter\ViolationFilter;
+use Qualimetrix\Reporting\Formatter\FormatterInterface;
+use Qualimetrix\Reporting\Formatter\Support\AnsiColor;
+use Qualimetrix\Reporting\Formatter\Support\DetailedViolationRenderer;
+use Qualimetrix\Reporting\FormatterContext;
+use Qualimetrix\Reporting\GroupBy;
+use Qualimetrix\Reporting\Report;
 
 /**
  * Summary formatter -- default CLI output.
@@ -35,7 +35,7 @@ final class SummaryFormatter implements FormatterInterface
     {
         $color = new AnsiColor($context->useColor);
         $terminalWidth = $context->terminalWidth > 0 ? $context->terminalWidth : self::DEFAULT_TERMINAL_WIDTH;
-        $ascii = (bool) getenv('AIMD_ASCII');
+        $ascii = (bool) getenv('QMX_ASCII');
         $lines = [];
 
         $this->renderHeader($report, $context, $color, $lines);
@@ -95,7 +95,7 @@ final class SummaryFormatter implements FormatterInterface
     private function renderHeader(Report $report, FormatterContext $context, AnsiColor $color, array &$lines): void
     {
         $header = \sprintf(
-            'AI Mess Detector — %d file%s analyzed',
+            'Qualimetrix — %d file%s analyzed',
             $report->filesAnalyzed,
             $report->filesAnalyzed === 1 ? '' : 's',
         );

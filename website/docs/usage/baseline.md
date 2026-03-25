@@ -1,12 +1,12 @@
 # Baseline
 
-A baseline is a snapshot of all current violations in your project. Once you have a baseline, AIMD only reports **new** violations -- anything that was already there is silently ignored.
+A baseline is a snapshot of all current violations in your project. Once you have a baseline, Qualimetrix only reports **new** violations -- anything that was already there is silently ignored.
 
 ## Why use a baseline?
 
-When you add AIMD to an existing project, the first run may report hundreds of violations. You cannot fix them all at once. A baseline lets you:
+When you add Qualimetrix to an existing project, the first run may report hundreds of violations. You cannot fix them all at once. A baseline lets you:
 
-- **Start today** -- adopt AIMD without fixing every legacy issue
+- **Start today** -- adopt Qualimetrix without fixing every legacy issue
 - **Prevent new debt** -- every new violation is reported immediately
 - **Track progress** -- see how many old violations you have fixed over time
 
@@ -17,7 +17,7 @@ When you add AIMD to an existing project, the first run may report hundreds of v
 Run analysis with the `--generate-baseline` flag:
 
 ```bash
-bin/aimd check src/ --generate-baseline=baseline.json
+bin/qmx check src/ --generate-baseline=baseline.json
 ```
 
 This runs the full analysis and saves all violations to `baseline.json`. The file is a JSON document with stable hashes for each violation, so it works even when line numbers shift.
@@ -32,10 +32,10 @@ This runs the full analysis and saves all violations to `baseline.json`. The fil
 Pass the `--baseline` flag on subsequent runs:
 
 ```bash
-bin/aimd check src/ --baseline=baseline.json
+bin/qmx check src/ --baseline=baseline.json
 ```
 
-AIMD loads the baseline, runs the analysis, and only reports violations that are **not** in the baseline. If you introduced a new violation, you will see it. If you fixed an old one, it silently disappears from the baseline matches.
+Qualimetrix loads the baseline, runs the analysis, and only reports violations that are **not** in the baseline. If you introduced a new violation, you will see it. If you fixed an old one, it silently disappears from the baseline matches.
 
 ---
 
@@ -48,7 +48,7 @@ Each violation in the baseline is identified by:
 - **Symbol path** -- the class, method, or namespace where the violation occurs
 - **Content hash** -- a stable hash of the file contents
 
-When AIMD runs with a baseline, it matches current violations against baseline entries. If a match is found, the violation is filtered out.
+When Qualimetrix runs with a baseline, it matches current violations against baseline entries. If a match is found, the violation is filtered out.
 
 ---
 
@@ -57,7 +57,7 @@ When AIMD runs with a baseline, it matches current violations against baseline e
 Want to know how many old violations you have fixed? Use `--show-resolved`:
 
 ```bash
-bin/aimd check src/ --baseline=baseline.json --show-resolved
+bin/qmx check src/ --baseline=baseline.json --show-resolved
 ```
 
 This adds a summary line showing the count of resolved violations -- entries that exist in the baseline but no longer appear in the current analysis.
@@ -68,12 +68,12 @@ This adds a summary line showing the count of resolved violations -- entries tha
 
 A baseline entry becomes "stale" when the file it references no longer exists (e.g., a file was deleted or renamed).
 
-By default, AIMD reports an error when stale entries are found. You have two options:
+By default, Qualimetrix reports an error when stale entries are found. You have two options:
 
 ### Option 1: Ignore stale entries
 
 ```bash
-bin/aimd check src/ --baseline=baseline.json --baseline-ignore-stale
+bin/qmx check src/ --baseline=baseline.json --baseline-ignore-stale
 ```
 
 ### Option 2: Clean up the baseline
@@ -81,7 +81,7 @@ bin/aimd check src/ --baseline=baseline.json --baseline-ignore-stale
 Remove all stale entries permanently:
 
 ```bash
-bin/aimd baseline:cleanup baseline.json
+bin/qmx baseline:cleanup baseline.json
 ```
 
 !!! tip
@@ -89,7 +89,7 @@ bin/aimd baseline:cleanup baseline.json
 
 ---
 
-## Inline suppression with @aimd-ignore
+## Inline suppression with @qmx-ignore
 
 For cases where a violation is intentional and you do not want it in the baseline, you can suppress it directly in the code using docblock tags.
 
@@ -99,7 +99,7 @@ For cases where a violation is intentional and you do not want it in the baselin
 class LegacyProcessor
 {
     /**
-     * @aimd-ignore complexity.cyclomatic This method handles all legacy formats
+     * @qmx-ignore complexity.cyclomatic This method handles all legacy formats
      */
     public function process(array $data): array
     {
@@ -112,7 +112,7 @@ class LegacyProcessor
 
 ```php
 /**
- * @aimd-ignore * Generated code, do not analyze
+ * @qmx-ignore * Generated code, do not analyze
  */
 class GeneratedMapper
 {
@@ -127,7 +127,7 @@ Add a file-level docblock at the top of the file:
 ```php
 <?php
 /**
- * @aimd-ignore-file
+ * @qmx-ignore-file
  */
 
 class GeneratedCode
@@ -138,7 +138,7 @@ class GeneratedCode
 
 ### Suppress on the next line only
 
-Use `@aimd-ignore-next-line` in a comment to suppress a violation on the very next line:
+Use `@qmx-ignore-next-line` in a comment to suppress a violation on the very next line:
 
 ```php
 class CliApplication
@@ -147,7 +147,7 @@ class CliApplication
     {
         // process commands...
 
-        /** @aimd-ignore-next-line code-smell.exit CLI entry point */
+        /** @qmx-ignore-next-line code-smell.exit CLI entry point */
         exit(0);
     }
 }
@@ -157,29 +157,29 @@ This is useful for one-off suppressions where a docblock-level tag would be too 
 
 ### Suppression tag syntax
 
-| Tag                                      | Scope                               | Example                                                  |
-| ---------------------------------------- | ----------------------------------- | -------------------------------------------------------- |
-| `@aimd-ignore <rule> [reason]`           | The symbol this docblock belongs to | `@aimd-ignore complexity.cyclomatic Legacy code`         |
-| `@aimd-ignore * [reason]`                | All rules for this symbol           | `@aimd-ignore * Generated code`                          |
-| `@aimd-ignore-next-line <rule> [reason]` | The next line only                  | `@aimd-ignore-next-line code-smell.exit CLI entry point` |
-| `@aimd-ignore-file`                      | Entire file                         | `@aimd-ignore-file`                                      |
+| Tag                                     | Scope                               | Example                                                 |
+| --------------------------------------- | ----------------------------------- | ------------------------------------------------------- |
+| `@qmx-ignore <rule> [reason]`           | The symbol this docblock belongs to | `@qmx-ignore complexity.cyclomatic Legacy code`         |
+| `@qmx-ignore * [reason]`                | All rules for this symbol           | `@qmx-ignore * Generated code`                          |
+| `@qmx-ignore-next-line <rule> [reason]` | The next line only                  | `@qmx-ignore-next-line code-smell.exit CLI entry point` |
+| `@qmx-ignore-file`                      | Entire file                         | `@qmx-ignore-file`                                      |
 
-The rule name supports prefix matching: `@aimd-ignore complexity` suppresses all `complexity.*` rules.
+The rule name supports prefix matching: `@qmx-ignore complexity` suppresses all `complexity.*` rules.
 
 ### Viewing suppressed violations
 
 To see what was suppressed:
 
 ```bash
-bin/aimd check src/ --show-suppressed
+bin/qmx check src/ --show-suppressed
 ```
 
 ### Ignoring suppression tags
 
-To run analysis as if no `@aimd-ignore` tags existed:
+To run analysis as if no `@qmx-ignore` tags existed:
 
 ```bash
-bin/aimd check src/ --no-suppression
+bin/qmx check src/ --no-suppression
 ```
 
 ---
@@ -190,7 +190,7 @@ bin/aimd check src/ --no-suppression
 
 ```bash
 git add baseline.json
-git commit -m "chore: add AIMD baseline"
+git commit -m "chore: add Qualimetrix baseline"
 ```
 
 This ensures every team member and CI pipeline uses the same baseline.
@@ -200,9 +200,9 @@ This ensures every team member and CI pipeline uses the same baseline.
 After fixing a batch of violations, regenerate the baseline:
 
 ```bash
-bin/aimd check src/ --generate-baseline=baseline.json
+bin/qmx check src/ --generate-baseline=baseline.json
 git add baseline.json
-git commit -m "chore: update AIMD baseline (15 violations resolved)"
+git commit -m "chore: update Qualimetrix baseline (15 violations resolved)"
 ```
 
 ### 3. Use --show-resolved in CI
@@ -210,17 +210,17 @@ git commit -m "chore: update AIMD baseline (15 violations resolved)"
 Add `--show-resolved` to your CI pipeline to track progress:
 
 ```bash
-bin/aimd check src/ --baseline=baseline.json --show-resolved --no-progress
+bin/qmx check src/ --baseline=baseline.json --show-resolved --no-progress
 ```
 
 ### 4. Prefer baseline over inline suppression
 
-Use `@aimd-ignore` for intentional exceptions (e.g., generated code, known trade-offs). Use the baseline for legacy violations you plan to fix eventually.
+Use `@qmx-ignore` for intentional exceptions (e.g., generated code, known trade-offs). Use the baseline for legacy violations you plan to fix eventually.
 
 ### 5. Clean up stale entries after refactoring
 
 ```bash
-bin/aimd baseline:cleanup baseline.json
+bin/qmx baseline:cleanup baseline.json
 git add baseline.json
 git commit -m "chore: clean up stale baseline entries"
 ```

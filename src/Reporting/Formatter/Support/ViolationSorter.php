@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Reporting\Formatter\Support;
+namespace Qualimetrix\Reporting\Formatter\Support;
 
-use AiMessDetector\Core\Violation\Severity;
-use AiMessDetector\Core\Violation\Violation;
-use AiMessDetector\Reporting\GroupBy;
+use Qualimetrix\Core\Violation\Severity;
+use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Reporting\GroupBy;
 
 /**
  * Sorts violations based on GroupBy mode.

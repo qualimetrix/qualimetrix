@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Infrastructure\Storage;
+namespace Qualimetrix\Tests\Unit\Infrastructure\Storage;
 
-use AiMessDetector\Infrastructure\Storage\InMemoryStorage;
-use AiMessDetector\Infrastructure\Storage\SqliteStorage;
-use AiMessDetector\Infrastructure\Storage\StorageFactory;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Infrastructure\Storage\InMemoryStorage;
+use Qualimetrix\Infrastructure\Storage\SqliteStorage;
+use Qualimetrix\Infrastructure\Storage\StorageFactory;
 
 final class StorageFactoryTest extends TestCase
 {

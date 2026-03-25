@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Core\Metric;
+namespace Qualimetrix\Core\Metric;
 
-use AiMessDetector\Core\Dependency\DependencyGraphInterface;
+use Qualimetrix\Core\Dependency\DependencyGraphInterface;
 
 /**
  * Interface for collectors that compute metrics from global context.

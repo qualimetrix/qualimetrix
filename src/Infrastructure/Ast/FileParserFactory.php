@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\Ast;
+namespace Qualimetrix\Infrastructure\Ast;
 
-use AiMessDetector\Configuration\ConfigurationProviderInterface;
-use AiMessDetector\Core\Ast\FileParserInterface;
-use AiMessDetector\Infrastructure\Cache\CacheInterface;
-use AiMessDetector\Infrastructure\Cache\CacheKeyGenerator;
+use Qualimetrix\Configuration\ConfigurationProviderInterface;
+use Qualimetrix\Core\Ast\FileParserInterface;
+use Qualimetrix\Infrastructure\Cache\CacheInterface;
+use Qualimetrix\Infrastructure\Cache\CacheKeyGenerator;
 
 /**
  * Factory for creating file parsers based on runtime configuration.

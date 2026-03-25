@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Core\ComputedMetric;
+namespace Qualimetrix\Core\ComputedMetric;
 
 final class ComputedMetricDefinitionHolder
 {

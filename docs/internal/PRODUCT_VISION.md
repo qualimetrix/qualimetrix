@@ -1,12 +1,12 @@
-# AIMD Product Vision
+# Qualimetrix Product Vision
 
 **Updated:** 2026-03-15
 
 ---
 
-## What is AIMD?
+## What is Qualimetrix?
 
-AI Mess Detector is a CLI tool for static analysis of PHP code quality. It measures complexity, coupling, cohesion,
+Qualimetrix is a CLI tool for static analysis of PHP code quality. It measures complexity, coupling, cohesion,
 type safety, and maintainability — then tells you where the problems are and how bad they are.
 
 **Core promise:** Run one command, understand your code health. Know exactly where to invest refactoring effort.
@@ -23,7 +23,7 @@ type safety, and maintainability — then tells you where the problems are and h
 - **Context:** First run on a project, periodic check, pre-commit hook
 - **Needs:** Quick overview, not a wall of text. Plain language explanations, not metric jargon. Actionable drill-down
   into specific namespaces and classes
-- **Success metric:** User understands the state of their code within 10 seconds of running `aimd check`
+- **Success metric:** User understands the state of their code within 10 seconds of running `qmx check`
 
 **2. Tech Lead / Architect**
 
@@ -44,7 +44,7 @@ type safety, and maintainability — then tells you where the problems are and h
 **4. AI Agent (LLM-based coding assistant)**
 
 - **Job:** "What's wrong with this code and how do I plan a refactoring?"
-- **Context:** Agent runs AIMD to understand code health before making changes
+- **Context:** Agent runs Qualimetrix to understand code health before making changes
 - **Needs:** Structured, concise output (JSON) that fits in a context window. Enough context to prioritize, not so much
   it overwhelms. Drill-down capability for specific namespaces/classes
 - **Success metric:** Agent can build a refactoring plan from one JSON summary call + 1-2 drill-down calls
@@ -73,9 +73,9 @@ type safety, and maintainability — then tells you where the problems are and h
 
 ---
 
-## Key Questions AIMD Answers
+## Key Questions Qualimetrix Answers
 
-| Question                      | Who asks it                | How AIMD answers                                                            |
+| Question                      | Who asks it                | How Qualimetrix answers                                                     |
 | ----------------------------- | -------------------------- | --------------------------------------------------------------------------- |
 | "Where are my problems?"      | Developer, Tech Lead       | Health scores (0-100) per dimension + worst offenders ranked                |
 | "What should I fix first?"    | Developer, Tech Lead       | Worst namespaces/classes by health score + tech debt estimates              |
@@ -110,13 +110,13 @@ type safety, and maintainability — then tells you where the problems are and h
 
 ---
 
-## What AIMD is NOT
+## What Qualimetrix is NOT
 
-- **Not a type checker.** Use PHPStan or Psalm for type safety. AIMD measures type coverage as a metric, but doesn't do
+- **Not a type checker.** Use PHPStan or Psalm for type safety. Qualimetrix measures type coverage as a metric, but doesn't do
   type inference.
-- **Not a code formatter.** Use PHP-CS-Fixer or PHPCS for style. AIMD measures structural quality, not formatting.
-- **Not an auto-fixer.** Use Rector for automated refactoring. AIMD identifies where to refactor, not how.
-- **Not a security scanner.** AIMD detects basic security patterns (hardcoded credentials, SQL injection patterns) but
+- **Not a code formatter.** Use PHP-CS-Fixer or PHPCS for style. Qualimetrix measures structural quality, not formatting.
+- **Not an auto-fixer.** Use Rector for automated refactoring. Qualimetrix identifies where to refactor, not how.
+- **Not a security scanner.** Qualimetrix detects basic security patterns (hardcoded credentials, SQL injection patterns) but
   is not a replacement for dedicated tools (Psalm taint analysis, SonarQube SAST).
 
 See [PRODUCT_ROADMAP.md](PRODUCT_ROADMAP.md) for strategic positioning and feature roadmap.

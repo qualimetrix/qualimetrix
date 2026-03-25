@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Reporting;
+namespace Qualimetrix\Reporting;
 
 enum GroupBy: string
 {

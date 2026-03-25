@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\Console;
+namespace Qualimetrix\Infrastructure\Console;
 
-use AiMessDetector\Baseline\BaselineLoader;
-use AiMessDetector\Baseline\Filter\BaselineFilter;
-use AiMessDetector\Baseline\Suppression\SuppressionFilter;
-use AiMessDetector\Baseline\ViolationHasher;
-use AiMessDetector\Configuration\ConfigurationProviderInterface;
-use AiMessDetector\Core\Suppression\Suppression;
-use AiMessDetector\Core\Util\PathMatcher;
-use AiMessDetector\Core\Violation\Filter\PathExclusionFilter;
-use AiMessDetector\Core\Violation\Violation;
-use AiMessDetector\Infrastructure\Git\GitScopeFilter;
+use Qualimetrix\Baseline\BaselineLoader;
+use Qualimetrix\Baseline\Filter\BaselineFilter;
+use Qualimetrix\Baseline\Suppression\SuppressionFilter;
+use Qualimetrix\Baseline\ViolationHasher;
+use Qualimetrix\Configuration\ConfigurationProviderInterface;
+use Qualimetrix\Core\Suppression\Suppression;
+use Qualimetrix\Core\Util\PathMatcher;
+use Qualimetrix\Core\Violation\Filter\PathExclusionFilter;
+use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Infrastructure\Git\GitScopeFilter;
 
 /**
  * Pipeline that applies all violation filters in order:
@@ -31,7 +31,7 @@ final readonly class ViolationFilterPipeline
     /**
      * Loads per-file suppression tags into the suppression filter.
      *
-     * Must be called before filter() for @aimd-ignore tags to take effect.
+     * Must be called before filter() for @qmx-ignore tags to take effect.
      *
      * @param array<string, list<Suppression>> $suppressions Per-file suppression tags
      */

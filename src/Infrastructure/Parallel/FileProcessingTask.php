@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\Parallel;
+namespace Qualimetrix\Infrastructure\Parallel;
 
-use AiMessDetector\Analysis\Collection\FileProcessingResult;
-use AiMessDetector\Core\Metric\DerivedCollectorInterface;
-use AiMessDetector\Core\Metric\MetricCollectorInterface;
 use Amp\Cancellation;
 use Amp\Parallel\Worker\Task;
 use Amp\Sync\Channel;
+use Qualimetrix\Analysis\Collection\FileProcessingResult;
+use Qualimetrix\Core\Metric\DerivedCollectorInterface;
+use Qualimetrix\Core\Metric\MetricCollectorInterface;
 use SplFileInfo;
 
 /**

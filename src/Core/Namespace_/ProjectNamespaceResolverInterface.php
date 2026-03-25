@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Core\Namespace_;
+namespace Qualimetrix\Core\Namespace_;
 
 /**
  * Interface for resolving project namespace membership.

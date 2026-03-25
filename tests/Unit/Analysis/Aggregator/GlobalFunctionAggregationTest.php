@@ -2,20 +2,20 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Analysis\Aggregator;
+namespace Qualimetrix\Tests\Unit\Analysis\Aggregator;
 
-use AiMessDetector\Analysis\Aggregator\AggregationHelper;
-use AiMessDetector\Analysis\Aggregator\ClassToNamespaceAggregator;
-use AiMessDetector\Analysis\Aggregator\MethodToClassAggregator;
-use AiMessDetector\Analysis\Aggregator\NamespaceToProjectAggregator;
-use AiMessDetector\Analysis\Repository\InMemoryMetricRepository;
-use AiMessDetector\Core\Metric\MetricBag;
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Symbol\SymbolType;
-use AiMessDetector\Metrics\Complexity\CyclomaticComplexityCollector;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Aggregator\AggregationHelper;
+use Qualimetrix\Analysis\Aggregator\ClassToNamespaceAggregator;
+use Qualimetrix\Analysis\Aggregator\MethodToClassAggregator;
+use Qualimetrix\Analysis\Aggregator\NamespaceToProjectAggregator;
+use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
+use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Metrics\Complexity\CyclomaticComplexityCollector;
 
 /**
  * Tests that global functions (not in any class) are handled correctly

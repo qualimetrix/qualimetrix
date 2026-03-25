@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\Console\Command;
+namespace Qualimetrix\Infrastructure\Console\Command;
 
-use AiMessDetector\Infrastructure\Git\GitRepositoryLocator;
+use Qualimetrix\Infrastructure\Git\GitRepositoryLocator;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -13,7 +13,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(
     name: 'hook:install',
-    description: 'Install git pre-commit hook for AI Mess Detector',
+    description: 'Install git pre-commit hook for Qualimetrix',
 )]
 final class HookInstallCommand extends Command
 {
@@ -31,7 +31,7 @@ final class HookInstallCommand extends Command
      *
      * @phpstan-ignore classConstant.unused
      */
-    private const HOOK_MARKER = 'AI Mess Detector pre-commit hook';
+    private const HOOK_MARKER = 'Qualimetrix pre-commit hook';
 
     protected function configure(): void
     {
@@ -115,7 +115,7 @@ final class HookInstallCommand extends Command
 
         $output->writeln(\sprintf('Hook path: %s', $hookPath));
         $output->writeln('');
-        $output->writeln('The hook will run AI Mess Detector on staged PHP files before each commit.');
+        $output->writeln('The hook will run Qualimetrix on staged PHP files before each commit.');
         $output->writeln('To bypass the hook, use: git commit --no-verify');
 
         return self::SUCCESS;

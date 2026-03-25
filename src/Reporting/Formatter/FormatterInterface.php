@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Reporting\Formatter;
+namespace Qualimetrix\Reporting\Formatter;
 
-use AiMessDetector\Reporting\FormatterContext;
-use AiMessDetector\Reporting\GroupBy;
-use AiMessDetector\Reporting\Report;
+use Qualimetrix\Reporting\FormatterContext;
+use Qualimetrix\Reporting\GroupBy;
+use Qualimetrix\Reporting\Report;
 
 interface FormatterInterface
 {

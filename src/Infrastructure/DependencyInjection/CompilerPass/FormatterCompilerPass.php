@@ -2,19 +2,19 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\DependencyInjection\CompilerPass;
+namespace Qualimetrix\Infrastructure\DependencyInjection\CompilerPass;
 
-use AiMessDetector\Reporting\Formatter\FormatterRegistry;
+use Qualimetrix\Reporting\Formatter\FormatterRegistry;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
 
 /**
- * Collects all services tagged with 'aimd.formatter' and injects them into FormatterRegistry.
+ * Collects all services tagged with 'qmx.formatter' and injects them into FormatterRegistry.
  */
 final class FormatterCompilerPass implements CompilerPassInterface
 {
-    public const string TAG = 'aimd.formatter';
+    public const string TAG = 'qmx.formatter';
 
     public function process(ContainerBuilder $container): void
     {

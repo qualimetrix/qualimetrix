@@ -2,9 +2,8 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Metrics\Structure;
+namespace Qualimetrix\Metrics\Structure;
 
-use AiMessDetector\Metrics\ResettableVisitorInterface;
 use PhpParser\Node;
 use PhpParser\Node\Expr\FuncCall;
 use PhpParser\Node\Expr\MethodCall;
@@ -19,6 +18,7 @@ use PhpParser\Node\Stmt\Enum_;
 use PhpParser\Node\Stmt\Interface_;
 use PhpParser\Node\Stmt\Trait_;
 use PhpParser\NodeVisitorAbstract;
+use Qualimetrix\Metrics\ResettableVisitorInterface;
 
 /**
  * Visitor for calculating RFC (Response for a Class) metrics.

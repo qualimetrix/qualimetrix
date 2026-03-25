@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Analysis\Aggregator;
+namespace Qualimetrix\Analysis\Aggregator;
 
-use AiMessDetector\Core\Metric\AggregationStrategy;
-use AiMessDetector\Core\Metric\MetricBag;
-use AiMessDetector\Core\Metric\MetricCollectorInterface;
-use AiMessDetector\Core\Metric\MetricDefinition;
-use AiMessDetector\Core\Metric\MetricRepositoryInterface;
-use AiMessDetector\Core\Metric\SymbolLevel;
-use AiMessDetector\Core\Symbol\SymbolInfo;
-use AiMessDetector\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Metric\AggregationStrategy;
+use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Metric\MetricCollectorInterface;
+use Qualimetrix\Core\Metric\MetricDefinition;
+use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Metric\SymbolLevel;
+use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Symbol\SymbolType;
 
 final class AggregationHelper
 {

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Core\Metric;
+namespace Qualimetrix\Core\Metric;
 
 /**
  * Defines how metrics are aggregated when rolling up from child to parent symbols.

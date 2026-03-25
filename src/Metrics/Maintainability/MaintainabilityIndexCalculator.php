@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Metrics\Maintainability;
+namespace Qualimetrix\Metrics\Maintainability;
 
 /**
  * Calculates Maintainability Index (MI) from component metrics.

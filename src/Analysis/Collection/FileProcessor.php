@@ -2,20 +2,20 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Analysis\Collection;
+namespace Qualimetrix\Analysis\Collection;
 
-use AiMessDetector\Analysis\Collection\Metric\CompositeCollector;
-use AiMessDetector\Baseline\Suppression\SuppressionExtractor;
-use AiMessDetector\Core\Ast\FileParserInterface;
-use AiMessDetector\Core\Exception\ParseException;
-use AiMessDetector\Core\Metric\ClassMetricsProviderInterface;
-use AiMessDetector\Core\Metric\MethodMetricsProviderInterface;
-use AiMessDetector\Core\Metric\MetricBag;
-use AiMessDetector\Core\Suppression\Suppression;
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Util\PathNormalizer;
 use PhpParser\Node;
 use PhpParser\NodeFinder;
+use Qualimetrix\Analysis\Collection\Metric\CompositeCollector;
+use Qualimetrix\Baseline\Suppression\SuppressionExtractor;
+use Qualimetrix\Core\Ast\FileParserInterface;
+use Qualimetrix\Core\Exception\ParseException;
+use Qualimetrix\Core\Metric\ClassMetricsProviderInterface;
+use Qualimetrix\Core\Metric\MethodMetricsProviderInterface;
+use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Suppression\Suppression;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Util\PathNormalizer;
 use SplFileInfo;
 
 /**

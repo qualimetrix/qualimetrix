@@ -132,7 +132,7 @@ Aggregated metrics are named: `{metric}.{strategy}`
 - `DerivedCollectorInterface` — derived metrics (require other collectors)
 - `GlobalContextCollectorInterface` — use global context (dependency graph)
 
-**DI tags:** `aimd.collector`
+**DI tags:** `qmx.collector`
 
 ---
 
@@ -176,7 +176,7 @@ new MetricDefinition(
 5. [ ] Implement `collect()` — metric collection from visitor
 6. [ ] For class-level metrics: implement `ClassMetricsProviderInterface`
 7. [ ] For method-level metrics: implement `MethodMetricsProviderInterface`
-8. [ ] Add `aimd.collector` DI tag (automatically via autoconfiguration)
+8. [ ] Add `qmx.collector` DI tag (automatically via autoconfiguration)
 9. [ ] Write unit tests (including a test for getMetricDefinitions)
 10. [ ] Add value hints to `src/Reporting/Template/src/hints.js` (`METRIC_HINTS` map) — range-based interpretations for the HTML report
 11. [ ] Add "How to read the value" table to the corresponding `website/docs/rules/` page (both EN and RU)

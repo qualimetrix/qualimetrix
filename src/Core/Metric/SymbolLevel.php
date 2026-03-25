@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Core\Metric;
+namespace Qualimetrix\Core\Metric;
 
 /**
  * Represents the hierarchical level of a code symbol in the aggregation tree.

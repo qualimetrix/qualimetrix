@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Configuration\Discovery;
+namespace Qualimetrix\Tests\Unit\Configuration\Discovery;
 
-use AiMessDetector\Configuration\Discovery\ComposerReader;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Configuration\Discovery\ComposerReader;
 
 #[CoversClass(ComposerReader::class)]
 final class ComposerReaderTest extends TestCase

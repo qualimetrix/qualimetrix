@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Integration\Baseline;
+namespace Qualimetrix\Tests\Integration\Baseline;
 
-use AiMessDetector\Baseline\BaselineGenerator;
-use AiMessDetector\Baseline\BaselineLoader;
-use AiMessDetector\Baseline\BaselineWriter;
-use AiMessDetector\Baseline\Filter\BaselineFilter;
-use AiMessDetector\Baseline\ViolationHasher;
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Violation\Location;
-use AiMessDetector\Core\Violation\Severity;
-use AiMessDetector\Core\Violation\Violation;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Baseline\BaselineGenerator;
+use Qualimetrix\Baseline\BaselineLoader;
+use Qualimetrix\Baseline\BaselineWriter;
+use Qualimetrix\Baseline\Filter\BaselineFilter;
+use Qualimetrix\Baseline\ViolationHasher;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Violation\Location;
+use Qualimetrix\Core\Violation\Severity;
+use Qualimetrix\Core\Violation\Violation;
 
 /**
  * Integration test for baseline workflow.
@@ -32,7 +32,7 @@ final class BaselineWorkflowTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->tempDir = sys_get_temp_dir() . '/aimd_baseline_test_' . uniqid();
+        $this->tempDir = sys_get_temp_dir() . '/qmx_baseline_test_' . uniqid();
         mkdir($this->tempDir);
         $this->baselinePath = $this->tempDir . '/baseline.json';
     }

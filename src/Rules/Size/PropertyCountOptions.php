@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Rules\Size;
+namespace Qualimetrix\Rules\Size;
 
-use AiMessDetector\Core\Rule\RuleOptionsInterface;
-use AiMessDetector\Core\Violation\Severity;
-use AiMessDetector\Rules\Support\ThresholdParser;
+use Qualimetrix\Core\Rule\RuleOptionsInterface;
+use Qualimetrix\Core\Violation\Severity;
+use Qualimetrix\Rules\Support\ThresholdParser;
 
 /**
  * Options for the property count rule.

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Metrics;
+namespace Qualimetrix\Metrics;
 
 use PhpParser\Node;
 

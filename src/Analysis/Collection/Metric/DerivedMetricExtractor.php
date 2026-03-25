@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Analysis\Collection\Metric;
+namespace Qualimetrix\Analysis\Collection\Metric;
 
-use AiMessDetector\Core\Metric\MetricBag;
-use AiMessDetector\Core\Metric\MetricRepositoryInterface;
-use AiMessDetector\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**
  * Extracts derived metrics from file-level MetricBag

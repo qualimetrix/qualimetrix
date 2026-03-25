@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Reporting\Formatter;
+namespace Qualimetrix\Reporting\Formatter;
 
-use AiMessDetector\Core\Symbol\SymbolType;
-use AiMessDetector\Reporting\FormatterContext;
-use AiMessDetector\Reporting\GroupBy;
-use AiMessDetector\Reporting\Report;
+use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Reporting\FormatterContext;
+use Qualimetrix\Reporting\GroupBy;
+use Qualimetrix\Reporting\Report;
 
 /**
  * Exports all collected metrics as JSON (not just violations).
@@ -19,7 +19,7 @@ use AiMessDetector\Reporting\Report;
 final class MetricsJsonFormatter implements FormatterInterface
 {
     private const VERSION = '1.0.0';
-    private const PACKAGE = 'aimd';
+    private const PACKAGE = 'qmx';
 
     public function format(Report $report, FormatterContext $context): string
     {

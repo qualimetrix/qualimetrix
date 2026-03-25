@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Reporting\Debt;
+namespace Qualimetrix\Tests\Unit\Reporting\Debt;
 
-use AiMessDetector\Reporting\Debt\DebtSummary;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Reporting\Debt\DebtSummary;
 
 #[CoversClass(DebtSummary::class)]
 final class DebtSummaryTest extends TestCase

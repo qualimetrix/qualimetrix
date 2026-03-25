@@ -2,9 +2,8 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Metrics\Security;
+namespace Qualimetrix\Metrics\Security;
 
-use AiMessDetector\Metrics\ResettableVisitorInterface;
 use PhpParser\Node;
 use PhpParser\Node\Expr\Assign;
 use PhpParser\Node\Expr\FuncCall;
@@ -16,6 +15,7 @@ use PhpParser\Node\Stmt\ClassConst;
 use PhpParser\Node\Stmt\EnumCase;
 use PhpParser\Node\Stmt\Property;
 use PhpParser\NodeVisitorAbstract;
+use Qualimetrix\Metrics\ResettableVisitorInterface;
 
 /**
  * AST visitor that detects hardcoded credentials.

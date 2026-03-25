@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Analysis\Collection;
+namespace Qualimetrix\Analysis\Collection;
 
-use AiMessDetector\Core\Dependency\Dependency;
+use Qualimetrix\Core\Dependency\Dependency;
 
 /**
  * Complete output of the collection phase.

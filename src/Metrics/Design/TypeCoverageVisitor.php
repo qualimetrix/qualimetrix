@@ -2,12 +2,8 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Metrics\Design;
+namespace Qualimetrix\Metrics\Design;
 
-use AiMessDetector\Core\Metric\ClassWithMetrics;
-use AiMessDetector\Core\Metric\MetricBag;
-use AiMessDetector\Metrics\ResettableVisitorInterface;
-use AiMessDetector\Metrics\VisitorMethodTrackingTrait;
 use PhpParser\Node;
 use PhpParser\Node\Param;
 use PhpParser\Node\Stmt\Class_;
@@ -18,6 +14,10 @@ use PhpParser\Node\Stmt\Namespace_;
 use PhpParser\Node\Stmt\Property;
 use PhpParser\Node\Stmt\Trait_;
 use PhpParser\NodeVisitorAbstract;
+use Qualimetrix\Core\Metric\ClassWithMetrics;
+use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Metrics\ResettableVisitorInterface;
+use Qualimetrix\Metrics\VisitorMethodTrackingTrait;
 
 /**
  * Visitor for collecting type coverage metrics per class.

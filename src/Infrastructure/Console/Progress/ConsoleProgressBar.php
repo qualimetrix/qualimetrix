@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\Console\Progress;
+namespace Qualimetrix\Infrastructure\Console\Progress;
 
-use AiMessDetector\Core\Progress\ProgressReporter;
+use Qualimetrix\Core\Progress\ProgressReporter;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\OutputInterface;

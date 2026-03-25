@@ -1,21 +1,21 @@
 # Usage Scenarios
 
-AI Mess Detector fits into several development workflows. This page describes the most common scenarios and recommended configurations for each.
+Qualimetrix fits into several development workflows. This page describes the most common scenarios and recommended configurations for each.
 
 ---
 
 ## CI/CD Pipeline
 
-The most common scenario. AIMD runs on every push or pull request and blocks merges if quality standards are not met.
+The most common scenario. Qualimetrix runs on every push or pull request and blocks merges if quality standards are not met.
 
 **Recommended configuration:**
 
-- Use `only_rules` in your config file to pin the set of active rules. This prevents new rules from breaking your pipeline when you upgrade AIMD.
+- Use `only_rules` in your config file to pin the set of active rules. This prevents new rules from breaking your pipeline when you upgrade Qualimetrix.
 - The default `--fail-on=error` allows warnings without failing the build. Use `--fail-on=warning` if you want strict enforcement.
 - Use a [baseline](baseline.md) for legacy projects to focus on new violations only.
 - Use `--format=github` for inline annotations in GitHub PRs, or `--format=sarif` for the GitHub Security tab.
 
-**Example config (aimd.yaml):**
+**Example config (qmx.yaml):**
 
 ```yaml
 fail_on: error
@@ -35,18 +35,18 @@ rules:
 **Example GitHub Actions workflow:**
 
 ```yaml
-- name: Run AI Mess Detector
-  run: vendor/bin/aimd check src/ --format=github --no-progress
+- name: Run Qualimetrix
+  run: vendor/bin/qmx check src/ --format=github --no-progress
 ```
 
 Since `--fail-on=error` is the default, you don't need to specify it explicitly.
 
-### Upgrading AIMD in CI
+### Upgrading Qualimetrix in CI
 
-When upgrading AIMD to a new version, new rules may be added. If you use `only_rules`, new rules won't activate automatically. If you don't use `only_rules`, review the CHANGELOG for new rules and either:
+When upgrading Qualimetrix to a new version, new rules may be added. If you use `only_rules`, new rules won't activate automatically. If you don't use `only_rules`, review the CHANGELOG for new rules and either:
 
 - Add them to `disabled_rules` if you don't want them
-- Regenerate your baseline: `vendor/bin/aimd check src/ --generate-baseline=baseline.json`
+- Regenerate your baseline: `vendor/bin/qmx check src/ --generate-baseline=baseline.json`
 
 !!! tip
     Combining `only_rules` with a baseline gives you the most stable CI experience. You control exactly which rules run and which existing violations are ignored.
@@ -55,19 +55,19 @@ When upgrading AIMD to a new version, new rules may be added. If you use `only_r
 
 ## Pre-commit Hook
 
-Fast feedback loop during local development. AIMD checks only staged files before each commit.
+Fast feedback loop during local development. Qualimetrix checks only staged files before each commit.
 
 **Setup:**
 
 ```bash
-bin/aimd hook:install
+bin/qmx hook:install
 ```
 
 **How it works:**
 
 - Analyzes only staged PHP files (fast)
 - Blocks the commit if error-severity violations are found
-- Respects your project's `aimd.yaml` and baseline
+- Respects your project's `qmx.yaml` and baseline
 
 **Tips:**
 
@@ -82,15 +82,15 @@ bin/aimd hook:install
 
 ## AI-Assisted Development
 
-A developer (with or without an AI coding assistant) writes code, then runs AIMD to check quality before submitting for review.
+A developer (with or without an AI coding assistant) writes code, then runs Qualimetrix to check quality before submitting for review.
 
 **Workflow:**
 
 1. Write or generate code
-2. Run `bin/aimd check src/` to get a list of violations
+2. Run `bin/qmx check src/` to get a list of violations
 3. Review the results and decide what to fix, ignore, or suppress
 4. For issues worth fixing, either fix manually or delegate to your AI assistant with a specific instruction like "reduce cyclomatic complexity of method X by extracting helper methods"
-5. Re-run AIMD to verify fixes
+5. Re-run Qualimetrix to verify fixes
 
 **Tips:**
 
@@ -102,13 +102,13 @@ A developer (with or without an AI coding assistant) writes code, then runs AIMD
 
 ## Code Review
 
-AIMD annotates pull requests with quality findings, giving reviewers objective data alongside the code diff.
+Qualimetrix annotates pull requests with quality findings, giving reviewers objective data alongside the code diff.
 
 **GitHub -- inline annotations (recommended):**
 
 ```yaml
-- name: Run AI Mess Detector
-  run: vendor/bin/aimd check src/ --format=github --no-progress
+- name: Run Qualimetrix
+  run: vendor/bin/qmx check src/ --format=github --no-progress
 ```
 
 Violations appear as warning/error annotations directly on the changed lines in the PR diff. No extra setup required. Only errors cause the build to fail (the default).
@@ -116,8 +116,8 @@ Violations appear as warning/error annotations directly on the changed lines in 
 **GitHub -- Security tab:**
 
 ```yaml
-- name: Run AI Mess Detector
-  run: vendor/bin/aimd check src/ --format=sarif --no-progress > results.sarif
+- name: Run Qualimetrix
+  run: vendor/bin/qmx check src/ --format=sarif --no-progress > results.sarif
 
 - name: Upload SARIF
   uses: github/codeql-action/upload-sarif@v3
@@ -129,7 +129,7 @@ Violations appear as warning/error annotations directly on the changed lines in 
 
 ```yaml
 script:
-  - vendor/bin/aimd check src/ --format=gitlab --no-progress > gl-code-quality-report.json
+  - vendor/bin/qmx check src/ --format=gitlab --no-progress > gl-code-quality-report.json
 artifacts:
   reports:
     codequality: gl-code-quality-report.json
@@ -140,7 +140,7 @@ artifacts:
 To show violations only for changed files (not the entire project):
 
 ```bash
-vendor/bin/aimd check src/ --report=git:main..HEAD --format=github --no-progress
+vendor/bin/qmx check src/ --report=git:main..HEAD --format=github --no-progress
 ```
 
 !!! tip

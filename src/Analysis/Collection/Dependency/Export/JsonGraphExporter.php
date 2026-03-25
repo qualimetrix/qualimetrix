@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Analysis\Collection\Dependency\Export;
+namespace Qualimetrix\Analysis\Collection\Dependency\Export;
 
-use AiMessDetector\Core\Dependency\DependencyGraphInterface;
+use Qualimetrix\Core\Dependency\DependencyGraphInterface;
 
 /**
  * Exports dependency graphs to JSON format.
@@ -93,7 +93,7 @@ final class JsonGraphExporter implements GraphExporterInterface
         $result = [
             'meta' => [
                 'version' => '1.0.0',
-                'package' => 'aimd',
+                'package' => 'qmx',
                 'timestamp' => date('c'),
             ],
             'statistics' => [
@@ -120,9 +120,9 @@ final class JsonGraphExporter implements GraphExporterInterface
     /**
      * Filters classes based on include/exclude namespaces.
      *
-     * @param array<\AiMessDetector\Core\Symbol\SymbolPath> $classes
+     * @param array<\Qualimetrix\Core\Symbol\SymbolPath> $classes
      *
-     * @return array<\AiMessDetector\Core\Symbol\SymbolPath>
+     * @return array<\Qualimetrix\Core\Symbol\SymbolPath>
      */
     private function filterClasses(array $classes): array
     {
@@ -139,7 +139,7 @@ final class JsonGraphExporter implements GraphExporterInterface
         return $filtered;
     }
 
-    private function shouldIncludeClass(\AiMessDetector\Core\Symbol\SymbolPath $classPath): bool
+    private function shouldIncludeClass(\Qualimetrix\Core\Symbol\SymbolPath $classPath): bool
     {
         $namespace = $classPath->namespace ?? '';
 

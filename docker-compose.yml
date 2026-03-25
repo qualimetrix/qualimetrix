@@ -1,39 +1,39 @@
-# AI Mess Detector - Docker Compose Configuration
+# Qualimetrix - Docker Compose Configuration
 #
-# This file demonstrates multiple ways to run the AI Mess Detector using Docker.
+# This file demonstrates multiple ways to run the Qualimetrix using Docker.
 #
 # Usage:
 #   # Run analysis on src/ directory (default)
-#   docker-compose run --rm aimd
+#   docker-compose run --rm qmx
 #
 #   # Run analysis on specific path
-#   docker-compose run --rm aimd analyze lib/
+#   docker-compose run --rm qmx analyze lib/
 #
 #   # Generate baseline from current violations
-#   docker-compose run --rm --profile generate-baseline aimd
+#   docker-compose run --rm --profile generate-baseline qmx
 #
 #   # Output in SARIF format (for CI/CD integration)
-#   docker-compose run --rm --profile sarif aimd
+#   docker-compose run --rm --profile sarif qmx
 #
 #   # With custom configuration file
-#   docker-compose run --rm aimd analyze src/ --config=aimd.yaml
+#   docker-compose run --rm qmx analyze src/ --config=qmx.yaml
 #
 #   # Analyze with baseline file (if exists)
-#   docker-compose run --rm aimd analyze src/ --baseline=baseline.json
+#   docker-compose run --rm qmx analyze src/ --baseline=baseline.json
 #
 
 version: '3.9'
 
 services:
-  aimd:
+  qmx:
     # Build from local Dockerfile for development
-    # Or use: image: fractalizer/aimd:latest for pre-built image
+    # Or use: image: fractalizer/qmx:latest for pre-built image
     build:
       context: .
       dockerfile: Dockerfile
 
     # Service name - used in container naming
-    container_name: aimd-analyzer
+    container_name: qmx-analyzer
 
     # Remove container after execution
     # (you can add --rm flag in docker-compose run instead)
@@ -45,13 +45,13 @@ services:
       # Baseline file - if you want to persist it
       # Note: mount specific files for better isolation
       # - ./baseline.json:/app/baseline.json
-      # - ./aimd.yaml:/app/aimd.yaml
+      # - ./qmx.yaml:/app/qmx.yaml
 
     # Working directory (matches Dockerfile WORKDIR)
     working_dir: /app
 
     # Default command - analyze src/ directory
-    # Can be overridden: docker-compose run --rm aimd analyze lib/
+    # Can be overridden: docker-compose run --rm qmx analyze lib/
     command: analyze src/
 
     # Environment variables (optional, for future use)
@@ -62,12 +62,12 @@ services:
     #   PHP_MEMORY_LIMIT: "512M"
 
   # Profile: Generate baseline from current violations
-  # Usage: docker-compose run --rm --profile generate-baseline aimd
-  aimd-generate-baseline:
-    extends: aimd
+  # Usage: docker-compose run --rm --profile generate-baseline qmx
+  qmx-generate-baseline:
+    extends: qmx
     profiles:
       - generate-baseline
-    container_name: aimd-generate-baseline
+    container_name: qmx-generate-baseline
     command: analyze src/ --generate-baseline=baseline.json
     # Allow write access only to the baseline file
     volumes:
@@ -75,45 +75,45 @@ services:
       - ./baseline.json:/app/baseline.json
 
   # Profile: Output in SARIF format for GitHub/GitLab integration
-  # Usage: docker-compose run --rm --profile sarif aimd > results.sarif
-  aimd-sarif:
-    extends: aimd
+  # Usage: docker-compose run --rm --profile sarif qmx > results.sarif
+  qmx-sarif:
+    extends: qmx
     profiles:
       - sarif
-    container_name: aimd-sarif
+    container_name: qmx-sarif
     command: analyze src/ --format=sarif
 
   # Profile: Analyze with baseline file
-  # Usage: docker-compose run --rm --profile baseline aimd
-  aimd-baseline:
-    extends: aimd
+  # Usage: docker-compose run --rm --profile baseline qmx
+  qmx-baseline:
+    extends: qmx
     profiles:
       - baseline
-    container_name: aimd-baseline
+    container_name: qmx-baseline
     command: analyze src/ --baseline=baseline.json
     volumes:
       - .:/app:ro
       - ./baseline.json:/app/baseline.json
 
   # Profile: Run with custom configuration
-  # Usage: docker-compose run --rm --profile custom-config aimd
-  aimd-custom-config:
-    extends: aimd
+  # Usage: docker-compose run --rm --profile custom-config qmx
+  qmx-custom-config:
+    extends: qmx
     profiles:
       - custom-config
-    container_name: aimd-custom-config
-    command: analyze src/ --config=aimd.yaml
+    container_name: qmx-custom-config
+    command: analyze src/ --config=qmx.yaml
     volumes:
       - .:/app:ro
-      - ./aimd.yaml:/app/aimd.yaml
+      - ./qmx.yaml:/app/qmx.yaml
 
   # Profile: Interactive shell for debugging
-  # Usage: docker-compose run --rm --profile shell aimd
-  aimd-shell:
-    extends: aimd
+  # Usage: docker-compose run --rm --profile shell qmx
+  qmx-shell:
+    extends: qmx
     profiles:
       - shell
-    container_name: aimd-shell
+    container_name: qmx-shell
     entrypoint: sh
     stdin_open: true
     tty: true

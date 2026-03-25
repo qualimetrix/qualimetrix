@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Infrastructure\Cache;
+namespace Qualimetrix\Tests\Unit\Infrastructure\Cache;
 
-use AiMessDetector\Infrastructure\Cache\FileCache;
-use AiMessDetector\Infrastructure\Serializer\PhpSerializer;
-use AiMessDetector\Infrastructure\Serializer\SerializerInterface;
 use FilesystemIterator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Infrastructure\Cache\FileCache;
+use Qualimetrix\Infrastructure\Serializer\PhpSerializer;
+use Qualimetrix\Infrastructure\Serializer\SerializerInterface;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use stdClass;
@@ -23,7 +23,7 @@ final class FileCacheTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->cacheDir = sys_get_temp_dir() . '/aimd-cache-test-' . uniqid();
+        $this->cacheDir = sys_get_temp_dir() . '/qmx-cache-test-' . uniqid();
         $this->cache = new FileCache($this->cacheDir);
     }
 

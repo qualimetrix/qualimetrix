@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Core\Metric;
+namespace Qualimetrix\Tests\Unit\Core\Metric;
 
-use AiMessDetector\Core\Metric\MethodWithMetrics;
-use AiMessDetector\Core\Metric\MetricBag;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Metric\MethodWithMetrics;
+use Qualimetrix\Core\Metric\MetricBag;
 
 #[CoversClass(MethodWithMetrics::class)]
 final class MethodWithMetricsTest extends TestCase

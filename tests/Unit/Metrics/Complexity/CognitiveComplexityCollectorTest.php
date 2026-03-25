@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Metrics\Complexity;
+namespace Qualimetrix\Tests\Unit\Metrics\Complexity;
 
-use AiMessDetector\Core\Metric\AggregationStrategy;
-use AiMessDetector\Core\Metric\SymbolLevel;
-use AiMessDetector\Metrics\Complexity\CognitiveComplexityCollector;
-use AiMessDetector\Metrics\Complexity\CognitiveComplexityVisitor;
 use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Metric\AggregationStrategy;
+use Qualimetrix\Core\Metric\SymbolLevel;
+use Qualimetrix\Metrics\Complexity\CognitiveComplexityCollector;
+use Qualimetrix\Metrics\Complexity\CognitiveComplexityVisitor;
 use SplFileInfo;
 
 #[CoversClass(CognitiveComplexityCollector::class)]
@@ -491,7 +491,7 @@ PHP;
         self::assertContains(AggregationStrategy::Percentile95, $projectStrategies);
     }
 
-    private function collectMetrics(string $code): \AiMessDetector\Core\Metric\MetricBag
+    private function collectMetrics(string $code): \Qualimetrix\Core\Metric\MetricBag
     {
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($code) ?? [];

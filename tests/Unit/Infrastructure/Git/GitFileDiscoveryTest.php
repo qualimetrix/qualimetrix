@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Infrastructure\Git;
+namespace Qualimetrix\Tests\Unit\Infrastructure\Git;
 
-use AiMessDetector\Infrastructure\Git\GitClient;
-use AiMessDetector\Infrastructure\Git\GitFileDiscovery;
-use AiMessDetector\Infrastructure\Git\GitScope;
 use Generator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Infrastructure\Git\GitClient;
+use Qualimetrix\Infrastructure\Git\GitFileDiscovery;
+use Qualimetrix\Infrastructure\Git\GitScope;
 use RuntimeException;
 use SplFileInfo;
 use Symfony\Component\Process\Process;

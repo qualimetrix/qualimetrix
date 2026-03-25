@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Analysis\Duplication;
+namespace Qualimetrix\Tests\Unit\Analysis\Duplication;
 
-use AiMessDetector\Analysis\Duplication\DuplicationDetector;
-use AiMessDetector\Analysis\Duplication\NormalizedToken;
-use AiMessDetector\Analysis\Duplication\TokenNormalizer;
-use AiMessDetector\Configuration\ConfigurationProviderInterface;
-use AiMessDetector\Core\Duplication\DuplicateBlock;
-use AiMessDetector\Core\Duplication\DuplicateLocation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Duplication\DuplicationDetector;
+use Qualimetrix\Analysis\Duplication\NormalizedToken;
+use Qualimetrix\Analysis\Duplication\TokenNormalizer;
+use Qualimetrix\Configuration\ConfigurationProviderInterface;
+use Qualimetrix\Core\Duplication\DuplicateBlock;
+use Qualimetrix\Core\Duplication\DuplicateLocation;
 use SplFileInfo;
 
 #[CoversClass(DuplicationDetector::class)]
@@ -25,7 +25,7 @@ final class DuplicationDetectorTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->tmpDir = sys_get_temp_dir() . '/aimd_dup_test_' . uniqid();
+        $this->tmpDir = sys_get_temp_dir() . '/qmx_dup_test_' . uniqid();
         mkdir($this->tmpDir, 0777, true);
     }
 

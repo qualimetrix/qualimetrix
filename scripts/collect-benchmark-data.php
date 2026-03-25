@@ -9,11 +9,11 @@ declare(strict_types=1);
  *
  * Projects are sourced from:
  * - benchmarks/vendor/ — open-source projects (installed via benchmarks/composer.json)
- * - vendor/ — projects already available as AIMD dependencies
+ * - vendor/ — projects already available as Qualimetrix dependencies
  * - ~/PhpstormProjects/ — proprietary projects (local only)
  */
 
-$aimdBin = __DIR__ . '/../bin/aimd';
+$qmxBin = __DIR__ . '/../bin/qmx';
 $phpstormDir = dirname(__DIR__, 2);
 $benchmarkVendor = __DIR__ . '/../benchmarks/vendor';
 
@@ -35,8 +35,8 @@ $projects = [
     ['id' => 'guzzle', 'path' => "$benchmarkVendor/guzzlehttp/guzzle/src", 'type' => 'open-source', 'description' => 'Guzzle HTTP client'],
     ['id' => 'laravel-framework', 'path' => "$benchmarkVendor/laravel/framework/src", 'type' => 'open-source', 'description' => 'Laravel Framework'],
 
-    // AIMD itself
-    ['id' => 'aimd', 'path' => __DIR__ . '/../src', 'type' => 'open-source', 'description' => 'AI Mess Detector'],
+    // Qualimetrix itself
+    ['id' => 'qmx', 'path' => __DIR__ . '/../src', 'type' => 'open-source', 'description' => 'Qualimetrix'],
 
     // Proprietary — large
     ['id' => 'newlk', 'path' => "$phpstormDir/newlk/src", 'type' => 'proprietary', 'description' => 'Large proprietary app (~3100 files)'],
@@ -61,7 +61,7 @@ $outputFile = $argv[1] ?? __DIR__ . '/../docs/internal/benchmark-data.json';
 $results = [
     'version' => '1.0',
     'collected_at' => date('c'),
-    'aimd_version' => trim(shell_exec("$aimdBin --version 2>/dev/null") ?: 'unknown'),
+    'qmx_version' => trim(shell_exec("$qmxBin --version 2>/dev/null") ?: 'unknown'),
     'projects' => [],
 ];
 
@@ -79,7 +79,7 @@ foreach ($projects as $project) {
 
     $cmd = sprintf(
         'php -d memory_limit=2G %s check %s --format=metrics --workers=0 2>/dev/null',
-        escapeshellarg($aimdBin),
+        escapeshellarg($qmxBin),
         escapeshellarg($path),
     );
 

@@ -1,6 +1,6 @@
-# Исследование архитектуры с AIMD
+# Исследование архитектуры с Qualimetrix
 
-Это руководство описывает практические подходы к анализу архитектуры PHP-проектов с помощью AI Mess Detector. Оно основано на реальном анализе проектов: Doctrine ORM, Laravel, Symfony Console, Composer, PHP-Parser, Guzzle, Monolog и Flysystem.
+Это руководство описывает практические подходы к анализу архитектуры PHP-проектов с помощью Qualimetrix. Оно основано на реальном анализе проектов: Doctrine ORM, Laravel, Symfony Console, Composer, PHP-Parser, Guzzle, Monolog и Flysystem.
 
 ---
 
@@ -12,7 +12,7 @@
 ### Шаг 1: Общая картина
 
 ```bash
-bin/aimd check src/
+bin/qmx check src/
 ```
 
 Сводка показывает оценки здоровья по пяти измерениям (сложность, связность, зацепление, типизация, поддерживаемость), худшие пространства имён и худшие классы. Это подсказывает, куда смотреть в первую очередь.
@@ -23,7 +23,7 @@ bin/aimd check src/
 ### Шаг 2: Погружение в проблемные пространства имён
 
 ```bash
-bin/aimd check src/ --namespace=App\\Domain\\Order
+bin/qmx check src/ --namespace=App\\Domain\\Order
 ```
 
 Вид пространства имён показывает оценки здоровья по нему, дочерние пространства и худшие классы внутри. Ищите пространства имён с оценкой ниже 50 (Poor или Critical).
@@ -34,14 +34,14 @@ bin/aimd check src/ --namespace=App\\Domain\\Order
 ### Шаг 3: Исследование конкретных классов
 
 ```bash
-bin/aimd check src/ --class=App\\Domain\\Order\\OrderService --detail
+bin/qmx check src/ --class=App\\Domain\\Order\\OrderService --detail
 ```
 
 Флаг `--detail` показывает нарушения на уровне отдельных методов. Обратите внимание на разбивку «Техдолг по правилам», чтобы решить, какой **тип** рефакторинга приоритизировать.
 
 ### Шаг 4: Верификация по исходному коду
 
-AIMD указывает номера строк для каждого нарушения. Откройте отмеченные методы и прочитайте код. Метод с когнитивной сложностью 107 на строке 342 -- это то, к чему можно перейти сразу.
+Qualimetrix указывает номера строк для каждого нарушения. Откройте отмеченные методы и прочитайте код. Метод с когнитивной сложностью 107 на строке 342 -- это то, к чему можно перейти сразу.
 
 ---
 
@@ -54,19 +54,19 @@ AIMD указывает номера строк для каждого наруш
 1. **Начните с измерения зацепления:**
 
     ```bash
-    bin/aimd check src/ --only-rule=coupling
+    bin/qmx check src/ --only-rule=coupling
     ```
 
 2. **Проверьте циклические зависимости отдельно** -- это самые приоритетные проблемы зацепления:
 
     ```bash
-    bin/aimd check src/ --only-rule=architecture.circular-dependency
+    bin/qmx check src/ --only-rule=architecture.circular-dependency
     ```
 
 3. **Погрузитесь в худшие пространства имён** и посмотрите на нестабильность (I), абстрактность (A) и расстояние от главной последовательности (D):
 
     ```bash
-    bin/aimd check src/ --namespace=App\\Infrastructure
+    bin/qmx check src/ --namespace=App\\Infrastructure
     ```
 
 4. **Фокусируйтесь на ошибках CBO** (порог 20), а не предупреждениях (порог 14). Ошибки CBO указывают на классы, которые, вероятно, нуждаются в декомпозиции.
@@ -88,7 +88,7 @@ AIMD указывает номера строк для каждого наруш
 **Расстояние от главной последовательности** требует настройки пространств имён при анализе сторонних библиотек. Без этого вы можете получить ноль результатов:
 
 ```bash
-bin/aimd check vendor/doctrine/orm/src/ \
+bin/qmx check vendor/doctrine/orm/src/ \
   --rule-opt='coupling.distance:include_namespaces=Doctrine\ORM'
 ```
 
@@ -121,7 +121,7 @@ bin/aimd check vendor/doctrine/orm/src/ \
 ### Стратегия приоритизации
 
 ```bash
-bin/aimd check src/ --only-rule=complexity --detail
+bin/qmx check src/ --only-rule=complexity --detail
 ```
 
 1. В первую очередь -- **ошибки когнитивной сложности** (> 30)
@@ -154,7 +154,7 @@ bin/aimd check src/ --only-rule=complexity --detail
 ### Начните с обнаружения god-классов
 
 ```bash
-bin/aimd check src/ --only-rule=code-smell.god-class
+bin/qmx check src/ --only-rule=code-smell.god-class
 ```
 
 Обнаружение god-классов -- самое полезное правило, связанное со связностью. Для каждого обнаружения:
@@ -185,7 +185,7 @@ TCC (Tight Class Cohesion) измеряет, какая доля пар мето
 - Классах исключений (простые по дизайну)
 - Маленьких сервисных классах с чистым API
 
-Используйте `excludeReadonly: true` и `excludePromotedOnly: true` для кодовых баз с PHP 8.2+ DTO. Для классов исключений и интерфейсов подавляйте через `@aimd-ignore code-smell.data-class`.
+Используйте `excludeReadonly: true` и `excludePromotedOnly: true` для кодовых баз с PHP 8.2+ DTO. Для классов исключений и интерфейсов подавляйте через `@qmx-ignore code-smell.data-class`.
 
 ---
 
@@ -262,13 +262,13 @@ TCC (Tight Class Cohesion) измеряет, какая доля пар мето
 
 ```bash
 # Шаг 1: Обзорное сканирование
-bin/aimd check src/ --format=json --workers=0
+bin/qmx check src/ --format=json --workers=0
 
 # Шаг 2: Глубокое погружение в конкретное пространство имён
-bin/aimd check src/ --namespace=App\\Domain --format=json --workers=0
+bin/qmx check src/ --namespace=App\\Domain --format=json --workers=0
 
 # Шаг 3: Сырые метрики для индивидуального анализа
-bin/aimd check src/ --format=metrics --workers=0
+bin/qmx check src/ --format=metrics --workers=0
 ```
 
 ### Наиболее полезные поля JSON

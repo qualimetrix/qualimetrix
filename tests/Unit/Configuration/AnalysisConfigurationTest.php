@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Configuration;
+namespace Qualimetrix\Tests\Unit\Configuration;
 
-use AiMessDetector\Configuration\AnalysisConfiguration;
-use AiMessDetector\Core\Violation\Severity;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Configuration\AnalysisConfiguration;
+use Qualimetrix\Core\Violation\Severity;
 
 #[CoversClass(AnalysisConfiguration::class)]
 final class AnalysisConfigurationTest extends TestCase
@@ -17,7 +17,7 @@ final class AnalysisConfigurationTest extends TestCase
     {
         $config = new AnalysisConfiguration();
 
-        self::assertSame('.aimd-cache', $config->cacheDir);
+        self::assertSame('.qmx-cache', $config->cacheDir);
         self::assertTrue($config->cacheEnabled);
         self::assertSame('summary', $config->format);
         self::assertSame('chain', $config->namespaceStrategy);
@@ -34,7 +34,7 @@ final class AnalysisConfigurationTest extends TestCase
     {
         $config = AnalysisConfiguration::fromArray([]);
 
-        self::assertSame('.aimd-cache', $config->cacheDir);
+        self::assertSame('.qmx-cache', $config->cacheDir);
         self::assertTrue($config->cacheEnabled);
         self::assertSame('summary', $config->format);
     }
@@ -243,7 +243,7 @@ final class AnalysisConfigurationTest extends TestCase
         ]);
 
         // Falls back to defaults
-        self::assertSame('.aimd-cache', $config->cacheDir);
+        self::assertSame('.qmx-cache', $config->cacheDir);
         self::assertTrue($config->cacheEnabled);
         self::assertSame([], $config->aggregationPrefixes);
     }

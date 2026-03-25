@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\DependencyInjection\Configurator;
+namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Fixture;
+namespace Qualimetrix\Tests\Fixture;
 
 use DateTimeImmutable;
 

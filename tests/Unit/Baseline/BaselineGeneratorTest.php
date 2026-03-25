@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Baseline;
+namespace Qualimetrix\Tests\Unit\Baseline;
 
-use AiMessDetector\Baseline\BaselineGenerator;
-use AiMessDetector\Baseline\ViolationHasher;
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Violation\Location;
-use AiMessDetector\Core\Violation\Severity;
-use AiMessDetector\Core\Violation\Violation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Baseline\BaselineGenerator;
+use Qualimetrix\Baseline\ViolationHasher;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Violation\Location;
+use Qualimetrix\Core\Violation\Severity;
+use Qualimetrix\Core\Violation\Violation;
 
 #[CoversClass(BaselineGenerator::class)]
 final class BaselineGeneratorTest extends TestCase

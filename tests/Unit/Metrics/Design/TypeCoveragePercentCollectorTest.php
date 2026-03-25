@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Metrics\Design;
+namespace Qualimetrix\Tests\Unit\Metrics\Design;
 
-use AiMessDetector\Core\Metric\MetricBag;
-use AiMessDetector\Core\Metric\MetricName;
-use AiMessDetector\Core\Metric\SymbolLevel;
-use AiMessDetector\Metrics\Design\TypeCoveragePercentCollector;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Metric\MetricName;
+use Qualimetrix\Core\Metric\SymbolLevel;
+use Qualimetrix\Metrics\Design\TypeCoveragePercentCollector;
 
 #[CoversClass(TypeCoveragePercentCollector::class)]
 final class TypeCoveragePercentCollectorTest extends TestCase

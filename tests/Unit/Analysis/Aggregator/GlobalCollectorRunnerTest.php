@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Analysis\Aggregator;
+namespace Qualimetrix\Tests\Unit\Analysis\Aggregator;
 
-use AiMessDetector\Analysis\Aggregator\GlobalCollectorRunner;
-use AiMessDetector\Core\Dependency\DependencyGraphInterface;
-use AiMessDetector\Core\Metric\GlobalContextCollectorInterface;
-use AiMessDetector\Core\Metric\MetricRepositoryInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Aggregator\GlobalCollectorRunner;
+use Qualimetrix\Core\Dependency\DependencyGraphInterface;
+use Qualimetrix\Core\Metric\GlobalContextCollectorInterface;
+use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 
 #[CoversClass(GlobalCollectorRunner::class)]
 final class GlobalCollectorRunnerTest extends TestCase

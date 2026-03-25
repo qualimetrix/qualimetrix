@@ -2,19 +2,19 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Rules\Duplication;
+namespace Qualimetrix\Tests\Unit\Rules\Duplication;
 
-use AiMessDetector\Core\Duplication\DuplicateBlock;
-use AiMessDetector\Core\Duplication\DuplicateLocation;
-use AiMessDetector\Core\Metric\MetricRepositoryInterface;
-use AiMessDetector\Core\Rule\AnalysisContext;
-use AiMessDetector\Core\Rule\RuleCategory;
-use AiMessDetector\Core\Violation\Severity;
-use AiMessDetector\Rules\Duplication\CodeDuplicationOptions;
-use AiMessDetector\Rules\Duplication\CodeDuplicationRule;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Duplication\DuplicateBlock;
+use Qualimetrix\Core\Duplication\DuplicateLocation;
+use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Rule\RuleCategory;
+use Qualimetrix\Core\Violation\Severity;
+use Qualimetrix\Rules\Duplication\CodeDuplicationOptions;
+use Qualimetrix\Rules\Duplication\CodeDuplicationRule;
 
 #[CoversClass(CodeDuplicationRule::class)]
 #[CoversClass(CodeDuplicationOptions::class)]

@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Infrastructure\Rule;
+namespace Qualimetrix\Tests\Unit\Infrastructure\Rule;
 
-use AiMessDetector\Infrastructure\Rule\Exception\ConflictingCliAliasException;
-use AiMessDetector\Infrastructure\Rule\RuleRegistry;
-use AiMessDetector\Rules\Complexity\ComplexityRule;
-use AiMessDetector\Rules\Size\ClassCountRule;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Infrastructure\Rule\Exception\ConflictingCliAliasException;
+use Qualimetrix\Infrastructure\Rule\RuleRegistry;
+use Qualimetrix\Rules\Complexity\ComplexityRule;
+use Qualimetrix\Rules\Size\ClassCountRule;
 
 final class RuleRegistryTest extends TestCase
 {

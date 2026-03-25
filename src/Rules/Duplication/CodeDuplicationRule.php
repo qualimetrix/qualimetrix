@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Rules\Duplication;
+namespace Qualimetrix\Rules\Duplication;
 
-use AiMessDetector\Core\Duplication\DuplicateBlock;
-use AiMessDetector\Core\Rule\AnalysisContext;
-use AiMessDetector\Core\Rule\RuleCategory;
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Violation\Location;
-use AiMessDetector\Core\Violation\Severity;
-use AiMessDetector\Core\Violation\Violation;
-use AiMessDetector\Rules\AbstractRule;
+use Qualimetrix\Core\Duplication\DuplicateBlock;
+use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Rule\RuleCategory;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Violation\Location;
+use Qualimetrix\Core\Violation\Severity;
+use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Rules\AbstractRule;
 
 /**
  * Detects duplicated code blocks across files.

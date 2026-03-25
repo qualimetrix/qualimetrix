@@ -1,9 +1,9 @@
 # Output Formats
 
-AI Mess Detector supports 10 output formats. Choose the one that fits your workflow.
+Qualimetrix supports 10 output formats. Choose the one that fits your workflow.
 
 ```bash
-bin/aimd check src/ --format=<format>
+bin/qmx check src/ --format=<format>
 ```
 
 ---
@@ -24,7 +24,7 @@ Health-oriented overview showing project health scores, worst offenders, and vio
 **Example output:**
 
 ```
-AI Mess Detector — 45 files analyzed, 1.23s
+Qualimetrix — 45 files analyzed, 1.23s
 
   Complexity     ████████████████░░░░  78 Excellent
   Cohesion       ██████████████░░░░░░  68 Fair
@@ -50,23 +50,23 @@ Hint: Run with --namespace=App\\Service to drill down into the worst namespace
 
 ```bash
 # Show violations for a specific namespace subtree
-bin/aimd check src/ --namespace=App\\Service
+bin/qmx check src/ --namespace=App\\Service
 
 # Show violations for a specific class
-bin/aimd check src/ --class=App\\Service\\UserService
+bin/qmx check src/ --class=App\\Service\\UserService
 ```
 
 **Detail mode with `--detail`:**
 
 ```bash
 # Append grouped violation list (default limit: 200)
-bin/aimd check src/ --detail
+bin/qmx check src/ --detail
 
 # Show all violations (no limit)
-bin/aimd check src/ --detail=all
+bin/qmx check src/ --detail=all
 
 # Custom limit
-bin/aimd check src/ --detail=50
+bin/qmx check src/ --detail=50
 ```
 
 !!! note
@@ -100,8 +100,8 @@ src/Repository/OrderRepository.php:15: error[coupling.cbo.class]: CBO is 18, max
     `text-verbose` is deprecated. Use `--format=text --detail` instead, which provides the same grouped, multi-line violation output alongside the compact one-line format.
 
     ```bash
-    # Replaces: bin/aimd check src/ --format=text-verbose
-    bin/aimd check src/ --format=text --detail
+    # Replaces: bin/qmx check src/ --format=text-verbose
+    bin/qmx check src/ --format=text --detail
     ```
 
 ---
@@ -118,7 +118,7 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
 {
     "meta": {
         "version": "1.0.0",
-        "package": "aimd",
+        "package": "qmx",
         "timestamp": "2025-01-15T10:30:00+00:00"
     },
     "summary": {
@@ -200,19 +200,19 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
 
 ```bash
 # Control violation limit (default: 50)
-bin/aimd check src/ --format=json --format-opt=limit=100
+bin/qmx check src/ --format=json --format-opt=limit=100
 
 # Show all violations (no limit)
-bin/aimd check src/ --format=json --format-opt=violations=all
+bin/qmx check src/ --format=json --format-opt=violations=all
 
 # Control number of worst offenders (default: 10)
-bin/aimd check src/ --format=json --format-opt=top=20
+bin/qmx check src/ --format=json --format-opt=top=20
 ```
 
 **CI usage:**
 
 ```bash
-bin/aimd check src/ --format=json --no-progress > report.json
+bin/qmx check src/ --format=json --no-progress > report.json
 ```
 
 ---
@@ -228,7 +228,7 @@ Raw metric values for every symbol (file, class, method, namespace). Unlike `jso
 ```json
 {
     "version": "1.0.0",
-    "package": "aimd",
+    "package": "qmx",
     "timestamp": "2025-01-15T10:30:00+00:00",
     "symbols": [
         {
@@ -282,7 +282,7 @@ Raw metric values for every symbol (file, class, method, namespace). Unlike `jso
 **Usage:**
 
 ```bash
-bin/aimd check src/ --format=metrics --no-progress > metrics.json
+bin/qmx check src/ --format=metrics --no-progress > metrics.json
 ```
 
 !!! note
@@ -305,11 +305,11 @@ Checkstyle XML format. Widely supported by CI tools.
     <error line="42"
            severity="error"
            message="Cyclomatic complexity is 15, max allowed is 10"
-           source="aimd.complexity.cyclomatic.method"/>
+           source="qmx.complexity.cyclomatic.method"/>
     <error line="87"
            severity="warning"
            message="Class has 22 methods, max recommended is 20"
-           source="aimd.size.method-count.class"/>
+           source="qmx.size.method-count.class"/>
   </file>
 </checkstyle>
 ```
@@ -317,7 +317,7 @@ Checkstyle XML format. Widely supported by CI tools.
 **CI usage (Jenkins):**
 
 ```bash
-bin/aimd check src/ --format=checkstyle --no-progress > checkstyle.xml
+bin/qmx check src/ --format=checkstyle --no-progress > checkstyle.xml
 ```
 
 ---
@@ -338,7 +338,7 @@ SARIF (Static Analysis Results Interchange Format) 2.1.0. A standard for static 
         {
             "tool": {
                 "driver": {
-                    "name": "AI Mess Detector",
+                    "name": "Qualimetrix",
                     "version": "0.1.0",
                     "rules": [...]
                 }
@@ -372,8 +372,8 @@ SARIF (Static Analysis Results Interchange Format) 2.1.0. A standard for static 
 **CI usage (GitHub Actions):**
 
 ```yaml
-- name: Run AIMD
-  run: bin/aimd check src/ --format=sarif --no-progress > results.sarif
+- name: Run Qualimetrix
+  run: bin/qmx check src/ --format=sarif --no-progress > results.sarif
 
 - name: Upload SARIF to GitHub Security
   uses: github/codeql-action/upload-sarif@v3
@@ -412,10 +412,10 @@ GitLab Code Quality JSON format. Shows violations directly in Merge Request diff
 
 **Severity mapping:**
 
-| AIMD Severity | GitLab Severity |
-| ------------- | --------------- |
-| error         | critical        |
-| warning       | major           |
+| Qualimetrix Severity | GitLab Severity |
+| -------------------- | --------------- |
+| error                | critical        |
+| warning              | major           |
 
 **CI usage (GitLab CI):**
 
@@ -423,7 +423,7 @@ GitLab Code Quality JSON format. Shows violations directly in Merge Request diff
 code_quality:
   stage: test
   script:
-    - bin/aimd check src/ --format=gitlab --no-progress > gl-code-quality-report.json
+    - bin/qmx check src/ --format=gitlab --no-progress > gl-code-quality-report.json
   artifacts:
     reports:
       codequality: gl-code-quality-report.json
@@ -448,16 +448,16 @@ GitHub Actions workflow command format. Produces inline annotations that appear 
 
 **Severity mapping:**
 
-| AIMD Severity | GitHub Command |
-| ------------- | -------------- |
-| warning       | `::warning`    |
-| error         | `::error`      |
+| Qualimetrix Severity | GitHub Command |
+| -------------------- | -------------- |
+| warning              | `::warning`    |
+| error                | `::error`      |
 
 **CI usage (GitHub Actions):**
 
 ```yaml
-- name: Run AIMD
-  run: vendor/bin/aimd check src/ --format=github --no-progress
+- name: Run Qualimetrix
+  run: vendor/bin/qmx check src/ --format=github --no-progress
 ```
 
 Annotations appear directly on the changed lines in your pull request — no SARIF upload needed. Only errors cause a non-zero exit code by default.
@@ -484,14 +484,14 @@ Interactive treemap report with D3.js visualization. Generates a self-contained 
 **Usage:**
 
 ```bash
-bin/aimd check src/ --format=health -o report.html
+bin/qmx check src/ --format=health -o report.html
 ```
 
 **Example workflow:**
 
 ```bash
 # Generate and open the report
-bin/aimd check src/ --format=health -o report.html
+bin/qmx check src/ --format=health -o report.html
 open report.html  # macOS
 xdg-open report.html  # Linux
 ```

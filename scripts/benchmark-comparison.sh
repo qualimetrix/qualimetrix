@@ -1,5 +1,5 @@
 #!/bin/bash
-# Benchmark comparison: AIMD vs PHPMD vs PHPMetrics vs PDepend
+# Benchmark comparison: Qualimetrix vs PHPMD vs PHPMetrics vs PDepend
 # Usage: ./scripts/benchmark-comparison.sh [small|medium|large|all]
 
 set -euo pipefail
@@ -35,8 +35,8 @@ error() { echo -e "${RED}[ERROR]${NC} $1"; }
 clean_caches() {
     log "Cleaning caches..."
 
-    # AIMD cache
-    rm -rf "$PROJECT_ROOT/.aimd-cache" 2>/dev/null || true
+    # Qualimetrix cache
+    rm -rf "$PROJECT_ROOT/.qmx-cache" 2>/dev/null || true
     rm -f "$PROJECT_ROOT/.phpmd.result-cache.php" 2>/dev/null || true
 
     # System caches
@@ -64,11 +64,11 @@ run_benchmark() {
     start_time=$(python3 -c "import time; print(time.time())")
 
     case "$tool" in
-        "aimd-seq")
-            "$PROJECT_ROOT/bin/aimd" analyze "$path" --workers=0 --format=json > /dev/null 2>&1
+        "qmx-seq")
+            "$PROJECT_ROOT/bin/qmx" analyze "$path" --workers=0 --format=json > /dev/null 2>&1
             ;;
-        "aimd-par")
-            "$PROJECT_ROOT/bin/aimd" analyze "$path" --workers=4 --format=json > /dev/null 2>&1
+        "qmx-par")
+            "$PROJECT_ROOT/bin/qmx" analyze "$path" --workers=4 --format=json > /dev/null 2>&1
             ;;
         "phpmd")
             "$COMPOSER_BIN/phpmd" "$path" text cleancode,codesize,design --ignore-violations-on-exit > /dev/null 2>&1
@@ -107,7 +107,7 @@ benchmark_codebase() {
     local result_file="$RESULTS_DIR/benchmark_${name}_${TIMESTAMP}.csv"
     echo "tool,run,duration_sec" > "$result_file"
 
-    for tool in "aimd-seq" "aimd-par" "phpmd" "phpmetrics" "pdepend"; do
+    for tool in "qmx-seq" "qmx-par" "phpmd" "phpmetrics" "pdepend"; do
         log "Testing: $tool"
 
         for ((i=1; i<=runs; i++)); do
@@ -170,12 +170,12 @@ main() {
     echo ""
     echo "========================================"
     echo " PHP Analysis Tools Benchmark"
-    echo " AIMD vs PHPMD vs PHPMetrics vs PDepend"
+    echo " Qualimetrix vs PHPMD vs PHPMetrics vs PDepend"
     echo "========================================"
     echo ""
 
     # Check tools
-    for tool in "$PROJECT_ROOT/bin/aimd" "$COMPOSER_BIN/phpmd" "$COMPOSER_BIN/phpmetrics" "$COMPOSER_BIN/pdepend"; do
+    for tool in "$PROJECT_ROOT/bin/qmx" "$COMPOSER_BIN/phpmd" "$COMPOSER_BIN/phpmetrics" "$COMPOSER_BIN/pdepend"; do
         if [[ ! -x "$tool" ]]; then
             error "Tool not found: $tool"
             exit 1

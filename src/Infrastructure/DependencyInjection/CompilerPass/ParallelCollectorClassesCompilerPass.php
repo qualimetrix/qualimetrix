@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\DependencyInjection\CompilerPass;
+namespace Qualimetrix\Infrastructure\DependencyInjection\CompilerPass;
 
-use AiMessDetector\Infrastructure\Parallel\Strategy\StrategySelector;
+use Qualimetrix\Infrastructure\Parallel\Strategy\StrategySelector;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 

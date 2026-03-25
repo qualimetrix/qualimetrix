@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Baseline\Suppression;
+namespace Qualimetrix\Tests\Unit\Baseline\Suppression;
 
-use AiMessDetector\Baseline\Suppression\SuppressionExtractor;
-use AiMessDetector\Core\Suppression\SuppressionType;
 use PhpParser\Comment\Doc;
 use PhpParser\Node\Stmt\Class_;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Baseline\Suppression\SuppressionExtractor;
+use Qualimetrix\Core\Suppression\SuppressionType;
 
 #[CoversClass(SuppressionExtractor::class)]
 final class SuppressionExtractorTest extends TestCase
@@ -26,7 +26,7 @@ final class SuppressionExtractorTest extends TestCase
         $docComment = new Doc(
             <<<'DOC'
             /**
-             * @aimd-ignore complexity
+             * @qmx-ignore complexity
              */
             DOC,
             10,
@@ -50,7 +50,7 @@ final class SuppressionExtractorTest extends TestCase
         $docComment = new Doc(
             <<<'DOC'
             /**
-             * @aimd-ignore complexity Legacy code, refactoring planned
+             * @qmx-ignore complexity Legacy code, refactoring planned
              */
             DOC,
             10,
@@ -73,8 +73,8 @@ final class SuppressionExtractorTest extends TestCase
         $docComment = new Doc(
             <<<'DOC'
             /**
-             * @aimd-ignore complexity
-             * @aimd-ignore coupling
+             * @qmx-ignore complexity
+             * @qmx-ignore coupling
              */
             DOC,
             10,
@@ -98,7 +98,7 @@ final class SuppressionExtractorTest extends TestCase
         $docComment = new Doc(
             <<<'DOC'
             /**
-             * @aimd-ignore * Ignore all rules
+             * @qmx-ignore * Ignore all rules
              */
             DOC,
             10,
@@ -120,7 +120,7 @@ final class SuppressionExtractorTest extends TestCase
         $docComment = new Doc(
             <<<'DOC'
             /**
-             * @aimd-ignore-next-line complexity
+             * @qmx-ignore-next-line complexity
              */
             DOC,
             10,
@@ -142,7 +142,7 @@ final class SuppressionExtractorTest extends TestCase
         $docComment = new Doc(
             <<<'DOC'
             /**
-             * @aimd-ignore complexity.cyclomatic.method Complex logic
+             * @qmx-ignore complexity.cyclomatic.method Complex logic
              */
             DOC,
             10,
@@ -165,7 +165,7 @@ final class SuppressionExtractorTest extends TestCase
         $docComment = new Doc(
             <<<'DOC'
             /**
-             * @aimd-ignore code-smell.boolean-argument
+             * @qmx-ignore code-smell.boolean-argument
              */
             DOC,
             10,
@@ -218,7 +218,7 @@ final class SuppressionExtractorTest extends TestCase
         $docComment = new Doc(
             <<<'DOC'
             /**
-             * @aimd-ignore-file
+             * @qmx-ignore-file
              */
             DOC,
             1,
@@ -240,7 +240,7 @@ final class SuppressionExtractorTest extends TestCase
         $docComment = new Doc(
             <<<'DOC'
             /**
-             * @aimd-ignore complexity
+             * @qmx-ignore complexity
              */
             DOC,
             1,
@@ -260,7 +260,7 @@ final class SuppressionExtractorTest extends TestCase
         $docComment = new Doc(
             <<<'DOC'
             /**
-             * @aimd-ignore-file
+             * @qmx-ignore-file
              */
             DOC,
             1,
@@ -282,7 +282,7 @@ final class SuppressionExtractorTest extends TestCase
         $docComment = new Doc(
             <<<'DOC'
             /**
-             * @aimd-ignore-file complexity
+             * @qmx-ignore-file complexity
              */
             DOC,
             1,
@@ -307,7 +307,7 @@ final class SuppressionExtractorTest extends TestCase
             /**
              * Some description.
              *
-             * @aimd-ignore-next-line complexity
+             * @qmx-ignore-next-line complexity
              */
             DOC,
             startLine: 10,
@@ -331,7 +331,7 @@ final class SuppressionExtractorTest extends TestCase
         $docComment = new Doc(
             <<<'DOC'
             /**
-             * @aimd-ignore complexity
+             * @qmx-ignore complexity
              */
             DOC,
             10,
@@ -353,7 +353,7 @@ final class SuppressionExtractorTest extends TestCase
         $docComment = new Doc(
             <<<'DOC'
             /**
-             * @aimd-ignore-next-line complexity
+             * @qmx-ignore-next-line complexity
              */
             DOC,
             10,
@@ -375,7 +375,7 @@ final class SuppressionExtractorTest extends TestCase
         $docComment = new Doc(
             <<<'DOC'
             /**
-             * @aimd-ignore-file complexity
+             * @qmx-ignore-file complexity
              */
             DOC,
             1,
@@ -397,7 +397,7 @@ final class SuppressionExtractorTest extends TestCase
         $docComment = new Doc(
             <<<'DOC'
             /**
-             * @aimd-ignore-file-section complexity
+             * @qmx-ignore-file-section complexity
              */
             DOC,
             1,
@@ -417,7 +417,7 @@ final class SuppressionExtractorTest extends TestCase
         $docComment = new Doc(
             <<<'DOC'
             /**
-             * @aimd-ignore-file-section complexity
+             * @qmx-ignore-file-section complexity
              */
             DOC,
             1,
@@ -438,7 +438,7 @@ final class SuppressionExtractorTest extends TestCase
         $docComment = new Doc(
             <<<'DOC'
             /**
-             * @aimd-ignore-next-liner complexity
+             * @qmx-ignore-next-liner complexity
              */
             DOC,
             10,
@@ -458,7 +458,7 @@ final class SuppressionExtractorTest extends TestCase
         $docComment = new Doc(
             <<<'DOC'
             /**
-             * @aimd-ignore complexity Legacy code * needs refactoring
+             * @qmx-ignore complexity Legacy code * needs refactoring
              */
             DOC,
             10,
@@ -479,7 +479,7 @@ final class SuppressionExtractorTest extends TestCase
     {
         // Single-line docblock where reason runs into closing */
         $docComment = new Doc(
-            '/** @aimd-ignore complexity Some reason */',
+            '/** @qmx-ignore complexity Some reason */',
             10,
             10,
         );
@@ -499,9 +499,9 @@ final class SuppressionExtractorTest extends TestCase
         $docComment = new Doc(
             <<<'DOC'
             /**
-             * @aimd-ignore complexity
-             * @aimd-ignore-next-line coupling
-             * @aimd-ignore-file size
+             * @qmx-ignore complexity
+             * @qmx-ignore-next-line coupling
+             * @qmx-ignore-file size
              */
             DOC,
             10,

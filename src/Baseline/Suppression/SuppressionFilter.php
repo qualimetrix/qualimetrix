@@ -2,20 +2,20 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Baseline\Suppression;
+namespace Qualimetrix\Baseline\Suppression;
 
-use AiMessDetector\Core\Suppression\Suppression;
-use AiMessDetector\Core\Suppression\SuppressionType;
-use AiMessDetector\Core\Violation\Filter\ViolationFilterInterface;
-use AiMessDetector\Core\Violation\Violation;
+use Qualimetrix\Core\Suppression\Suppression;
+use Qualimetrix\Core\Suppression\SuppressionType;
+use Qualimetrix\Core\Violation\Filter\ViolationFilterInterface;
+use Qualimetrix\Core\Violation\Violation;
 
 /**
  * Filters violations based on suppression tags in code.
  *
  * Suppressions can be applied at:
- * - File level (@aimd-ignore-file) — suppresses all matching violations in file
- * - Symbol level (@aimd-ignore <rule>) — suppresses matching violations within the symbol's line range
- * - Line level (@aimd-ignore-next-line <rule>) — suppresses matching violations on next line only
+ * - File level (@qmx-ignore-file) — suppresses all matching violations in file
+ * - Symbol level (@qmx-ignore <rule>) — suppresses matching violations within the symbol's line range
+ * - Line level (@qmx-ignore-next-line <rule>) — suppresses matching violations on next line only
  */
 final class SuppressionFilter implements ViolationFilterInterface
 {

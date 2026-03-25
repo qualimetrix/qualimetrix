@@ -373,21 +373,21 @@ $query = "SELECT * FROM users WHERE id = " . $id;
 
 ### Recommendations
 
-For comprehensive security analysis with full taint tracking, use dedicated tools alongside AIMD:
+For comprehensive security analysis with full taint tracking, use dedicated tools alongside Qualimetrix:
 
 - **[PHPStan Security Advisories](https://github.com/phpstan/phpstan-security)** -- security-focused PHPStan extension
 - **[Psalm Taint Analysis](https://psalm.dev/docs/security_analysis/)** -- tracks tainted data through assignments, function calls, and returns
 - **[SonarQube](https://www.sonarqube.org/)** -- commercial tool with deep data-flow analysis
 - **[Snyk Code](https://snyk.io/product/snyk-code/)** -- AI-powered security scanning with taint tracking
 
-AIMD security rules are best used as a **first line of defense** to catch the most obvious patterns. They complement but do not replace dedicated security analysis tools.
+Qualimetrix security rules are best used as a **first line of defense** to catch the most obvious patterns. They complement but do not replace dedicated security analysis tools.
 
 ---
 
 ## Configuration
 
 ```yaml
-# aimd.yaml
+# qmx.yaml
 rules:
   security.hardcoded-credentials:
     enabled: true  # or false to disable
@@ -405,8 +405,8 @@ You can also disable via the CLI:
 
 ```bash
 # Disable a specific rule
-bin/aimd check src/ --disable-rule=security.hardcoded-credentials
+bin/qmx check src/ --disable-rule=security.hardcoded-credentials
 
 # Disable all security rules (prefix matching)
-bin/aimd check src/ --disable-rule=security
+bin/qmx check src/ --disable-rule=security
 ```

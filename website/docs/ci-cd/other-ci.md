@@ -1,10 +1,10 @@
 # Other CI Systems
 
-AI Mess Detector works with any CI system that can run PHP. This page shows how to set it up in the most popular ones.
+Qualimetrix works with any CI system that can run PHP. This page shows how to set it up in the most popular ones.
 
 ## GitLab CI
 
-GitLab has a built-in Code Quality widget that shows issues right in merge requests. AIMD supports the GitLab format natively.
+GitLab has a built-in Code Quality widget that shows issues right in merge requests. Qualimetrix supports the GitLab format natively.
 
 ```yaml
 # .gitlab-ci.yml
@@ -14,7 +14,7 @@ code_quality:
   before_script:
     - composer install --no-dev
   script:
-    - vendor/bin/aimd check src/ --format=gitlab > gl-code-quality-report.json
+    - vendor/bin/qmx check src/ --format=gitlab > gl-code-quality-report.json
   artifacts:
     reports:
       codequality: gl-code-quality-report.json
@@ -33,7 +33,7 @@ code_quality:
   before_script:
     - composer install --no-dev
   script:
-    - vendor/bin/aimd check src/ --format=gitlab --baseline=baseline.json > gl-code-quality-report.json
+    - vendor/bin/qmx check src/ --format=gitlab --baseline=baseline.json > gl-code-quality-report.json
   artifacts:
     reports:
       codequality: gl-code-quality-report.json
@@ -49,7 +49,7 @@ pipeline {
     stages {
         stage('Code Quality') {
             steps {
-                sh 'vendor/bin/aimd check src/ --format=checkstyle > checkstyle-result.xml'
+                sh 'vendor/bin/qmx check src/ --format=checkstyle > checkstyle-result.xml'
                 recordIssues tools: [checkStyle(pattern: 'checkstyle-result.xml')]
             }
         }
@@ -72,7 +72,7 @@ jobs:
     steps:
       - checkout
       - run: composer install --no-dev
-      - run: vendor/bin/aimd check src/
+      - run: vendor/bin/qmx check src/
 ```
 
 ### Storing Results as Artifacts
@@ -85,9 +85,9 @@ jobs:
     steps:
       - checkout
       - run: composer install --no-dev
-      - run: vendor/bin/aimd check src/ --format=json > aimd-results.json
+      - run: vendor/bin/qmx check src/ --format=json > qmx-results.json
       - store_artifacts:
-          path: aimd-results.json
+          path: qmx-results.json
           destination: code-quality
 ```
 
@@ -102,7 +102,7 @@ pipelines:
         image: php:8.4-cli
         script:
           - composer install --no-dev
-          - vendor/bin/aimd check src/
+          - vendor/bin/qmx check src/
 ```
 
 ### With Caching
@@ -117,7 +117,7 @@ pipelines:
           - composer
         script:
           - composer install --no-dev
-          - vendor/bin/aimd check src/
+          - vendor/bin/qmx check src/
 ```
 
 ## Generic CI (Any System)
@@ -133,7 +133,7 @@ composer install --no-dev
 ### 2. Run the Analysis
 
 ```bash
-vendor/bin/aimd check src/
+vendor/bin/qmx check src/
 ```
 
 ### 3. Choose the Right Format
@@ -151,7 +151,7 @@ Pick the output format that works best with your CI system:
 
 ### 4. Handle Exit Codes
 
-AIMD uses standard exit codes:
+Qualimetrix uses standard exit codes:
 
 | Exit Code | Meaning                        |
 | --------- | ------------------------------ |
@@ -159,30 +159,30 @@ AIMD uses standard exit codes:
 | `1`       | Warnings found (but no errors) |
 | `2`       | Errors found                   |
 
-Most CI systems treat a non-zero exit code as a failure. By default, AIMD uses `--fail-on=error`, so warnings are shown but don't cause failure. To also fail on warnings:
+Most CI systems treat a non-zero exit code as a failure. By default, Qualimetrix uses `--fail-on=error`, so warnings are shown but don't cause failure. To also fail on warnings:
 
 ```bash
-vendor/bin/aimd check src/ --fail-on=warning
+vendor/bin/qmx check src/ --fail-on=warning
 ```
 
 To continue the pipeline regardless of violations:
 
 ```bash
-vendor/bin/aimd check src/ || true
+vendor/bin/qmx check src/ || true
 ```
 
 ### 5. Use a Baseline for Legacy Projects
 
-If you are adding AIMD to a project that already has many issues, generate a baseline first:
+If you are adding Qualimetrix to a project that already has many issues, generate a baseline first:
 
 ```bash
-vendor/bin/aimd check src/ --generate-baseline=baseline.json
+vendor/bin/qmx check src/ --generate-baseline=baseline.json
 ```
 
 Then use it in CI to only report new violations:
 
 ```bash
-vendor/bin/aimd check src/ --baseline=baseline.json
+vendor/bin/qmx check src/ --baseline=baseline.json
 ```
 
 ### 6. Use a Config File
@@ -190,12 +190,12 @@ vendor/bin/aimd check src/ --baseline=baseline.json
 For consistent settings across local and CI environments, use a YAML config file:
 
 ```bash
-vendor/bin/aimd check src/ --config=aimd.yaml
+vendor/bin/qmx check src/ --config=qmx.yaml
 ```
 
 ## Tips
 
 - **Cache composer dependencies** in your CI system to speed up builds.
-- **Use `--no-dev`** when installing composer packages in CI -- AIMD does not need dev dependencies to run.
-- **Run AIMD in parallel with other checks** (PHPStan, PHP-CS-Fixer) to save time.
-- **Use a baseline** when introducing AIMD into an existing project so CI does not fail on pre-existing issues.
+- **Use `--no-dev`** when installing composer packages in CI -- Qualimetrix does not need dev dependencies to run.
+- **Run Qualimetrix in parallel with other checks** (PHPStan, PHP-CS-Fixer) to save time.
+- **Use a baseline** when introducing Qualimetrix into an existing project so CI does not fail on pre-existing issues.

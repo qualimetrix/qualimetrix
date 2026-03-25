@@ -2,9 +2,8 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Metrics\Structure;
+namespace Qualimetrix\Metrics\Structure;
 
-use AiMessDetector\Metrics\ResettableVisitorInterface;
 use PhpParser\Node;
 use PhpParser\Node\Expr\PropertyFetch;
 use PhpParser\Node\Expr\Variable;
@@ -14,6 +13,7 @@ use PhpParser\Node\Stmt\Enum_;
 use PhpParser\Node\Stmt\Interface_;
 use PhpParser\Node\Stmt\Property;
 use PhpParser\NodeVisitorAbstract;
+use Qualimetrix\Metrics\ResettableVisitorInterface;
 
 /**
  * Visitor for collecting method-property relationships for TCC/LCC calculation.

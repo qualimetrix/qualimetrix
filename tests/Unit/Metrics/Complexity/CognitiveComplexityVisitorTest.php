@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Metrics\Complexity;
+namespace Qualimetrix\Tests\Unit\Metrics\Complexity;
 
-use AiMessDetector\Metrics\Complexity\CognitiveComplexityVisitor;
 use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Metrics\Complexity\CognitiveComplexityVisitor;
 
 #[CoversClass(CognitiveComplexityVisitor::class)]
 final class CognitiveComplexityVisitorTest extends TestCase

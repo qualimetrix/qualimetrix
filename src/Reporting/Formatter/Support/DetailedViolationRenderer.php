@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Reporting\Formatter\Support;
+namespace Qualimetrix\Reporting\Formatter\Support;
 
-use AiMessDetector\Core\Violation\Severity;
-use AiMessDetector\Core\Violation\Violation;
-use AiMessDetector\Reporting\Debt\DebtCalculator;
-use AiMessDetector\Reporting\Debt\DebtSummary;
-use AiMessDetector\Reporting\FormatterContext;
-use AiMessDetector\Reporting\GroupBy;
 use LogicException;
+use Qualimetrix\Core\Violation\Severity;
+use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Reporting\Debt\DebtCalculator;
+use Qualimetrix\Reporting\Debt\DebtSummary;
+use Qualimetrix\Reporting\FormatterContext;
+use Qualimetrix\Reporting\GroupBy;
 
 /**
  * Renders detailed violation output shared by TextFormatter (--detail) and SummaryFormatter (--detail).

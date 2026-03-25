@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Core\Violation;
+namespace Qualimetrix\Core\Violation;
 
-use AiMessDetector\Core\Rule\RuleLevel;
-use AiMessDetector\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Rule\RuleLevel;
+use Qualimetrix\Core\Symbol\SymbolPath;
 
 final readonly class Violation
 {

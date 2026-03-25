@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Analysis\Collection\Dependency;
+namespace Qualimetrix\Analysis\Collection\Dependency;
 
-use AiMessDetector\Core\Dependency\Dependency;
-use AiMessDetector\Core\Dependency\DependencyType;
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Util\StringSet;
+use Qualimetrix\Core\Dependency\Dependency;
+use Qualimetrix\Core\Dependency\DependencyType;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Util\StringSet;
 
 /**
  * Builds a DependencyGraph from a collection of dependencies.

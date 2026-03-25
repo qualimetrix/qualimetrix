@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Baseline\Suppression;
+namespace Qualimetrix\Tests\Unit\Baseline\Suppression;
 
-use AiMessDetector\Baseline\Suppression\SuppressionFilter;
-use AiMessDetector\Core\Suppression\Suppression;
-use AiMessDetector\Core\Suppression\SuppressionType;
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Violation\Location;
-use AiMessDetector\Core\Violation\Severity;
-use AiMessDetector\Core\Violation\Violation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Baseline\Suppression\SuppressionFilter;
+use Qualimetrix\Core\Suppression\Suppression;
+use Qualimetrix\Core\Suppression\SuppressionType;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Violation\Location;
+use Qualimetrix\Core\Violation\Severity;
+use Qualimetrix\Core\Violation\Violation;
 
 #[CoversClass(SuppressionFilter::class)]
 final class SuppressionFilterTest extends TestCase

@@ -61,14 +61,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `--include-generated` to override automatic `@generated` file skipping
 - `--disable-rule=duplication` now skips the memory-intensive detection phase entirely (not just violations). Same for circular dependency detection
 - Violation messages improved: actionable recommendations, parameter names in boolean-argument, coupling direction in CBO, CCN divergence hints, top-5 dependencies in coupling violations
-- `bin/aimd graph:export --format=json` — dependency graph as aggregated JSON adjacency list
+- `bin/qmx graph:export --format=json` — dependency graph as aggregated JSON adjacency list
 - `composer benchmark:check` regression suite — validates health scores against 15 open-source projects
 - `llms.txt` and `llms-full.txt` — machine-readable documentation for AI coding agents
 
 ### Fixed
 - Metric algorithm corrections: cognitive complexity nesting in closures, cyclomatic complexity for `match` arms, NPath formulas aligned with Nejmeh/PMD standards, Maintainability Index class-level aggregation, WOC formula, RFC for traits/enums, abstractness formula for interfaces
 - Anonymous class isolation: methods inside anonymous classes no longer attributed to enclosing class (CCN, NPath, Halstead, ParameterCount, UnreachableCode visitors)
-- Suppression system (`@aimd-ignore`): fully wired into pipeline, `@aimd-ignore-next-line` scoped to single line, file-level regex fixed, symbol-level no longer leaks to file-level
+- Suppression system (`@qmx-ignore`): fully wired into pipeline, `@qmx-ignore-next-line` scoped to single line, file-level regex fixed, symbol-level no longer leaks to file-level
 - Output formatters: SARIF schema compliance (paths, locations, helpUri), Checkstyle/Text relative paths, GitLab project-level path, JSON NaN/Infinity handling
 - Configuration: `--config` now functional, `exclude_paths` accepted, YAML key normalization preserves rule IDs, deep merge for CLI overrides, `fromArray([])` applies defaults
 - Security rules: XSS and command injection detect superglobals in interpolated strings
@@ -87,7 +87,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - CLI command renamed from `analyze` to `check`, with aliases for backward compatibility
-- Canonical config file name is now `aimd.yaml`
+- Canonical config file name is now `qmx.yaml`
 - `exclude_paths` option for violation suppression by file path patterns
 - MkDocs Material documentation website (EN/RU)
 - Version derived from Composer/git tag instead of hardcoded constant
@@ -141,21 +141,21 @@ Initial release.
 - Output formats: Text, JSON, Checkstyle, SARIF, GitLab Code Quality
 - Parallel file processing via amphp/parallel
 - Git integration: `--staged`, `--diff`
-- Baseline support with `@aimd-ignore` suppression tags
+- Baseline support with `@qmx-ignore` suppression tags
 - AST caching, progress bar, PSR-3 logging
 - Git hook installation (`hook:install`, `hook:status`)
 - Symfony DI with autowiring and autoconfiguration
 - GitHub Actions workflow
 
-[Unreleased]: https://github.com/fractalizer/ai-mess-detector/compare/v0.7.0...HEAD
-[0.7.1]: https://github.com/fractalizer/ai-mess-detector/compare/v0.7.0...v0.7.1
-[0.7.0]: https://github.com/fractalizer/ai-mess-detector/compare/v0.6.0...v0.7.0
-[0.6.0]: https://github.com/fractalizer/ai-mess-detector/compare/v0.5.0...v0.6.0
-[0.5.0]: https://github.com/fractalizer/ai-mess-detector/compare/v0.4.0...v0.5.0
-[0.4.0]: https://github.com/fractalizer/ai-mess-detector/compare/v0.3.0...v0.4.0
-[0.3.0]: https://github.com/fractalizer/ai-mess-detector/compare/v0.2.2...v0.3.0
-[0.2.2]: https://github.com/fractalizer/ai-mess-detector/compare/v0.2.1...v0.2.2
-[0.2.1]: https://github.com/fractalizer/ai-mess-detector/compare/v0.2.0...v0.2.1
-[0.2.0]: https://github.com/fractalizer/ai-mess-detector/compare/v0.1.1...v0.2.0
-[0.1.1]: https://github.com/fractalizer/ai-mess-detector/compare/v0.1.0...v0.1.1
-[0.1.0]: https://github.com/fractalizer/ai-mess-detector/releases/tag/v0.1.0
+[Unreleased]: https://github.com/qualimetrix/qualimetrix/compare/v0.7.0...HEAD
+[0.7.1]: https://github.com/qualimetrix/qualimetrix/compare/v0.7.0...v0.7.1
+[0.7.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.6.0...v0.7.0
+[0.6.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.5.0...v0.6.0
+[0.5.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.4.0...v0.5.0
+[0.4.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.3.0...v0.4.0
+[0.3.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.2.2...v0.3.0
+[0.2.2]: https://github.com/qualimetrix/qualimetrix/compare/v0.2.1...v0.2.2
+[0.2.1]: https://github.com/qualimetrix/qualimetrix/compare/v0.2.0...v0.2.1
+[0.2.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.1.1...v0.2.0
+[0.1.1]: https://github.com/qualimetrix/qualimetrix/compare/v0.1.0...v0.1.1
+[0.1.0]: https://github.com/qualimetrix/qualimetrix/releases/tag/v0.1.0

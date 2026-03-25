@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Core\Suppression;
+namespace Qualimetrix\Core\Suppression;
 
 /**
  * Defines the scope of a suppression tag.

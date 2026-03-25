@@ -2,19 +2,19 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\DependencyInjection\CompilerPass;
+namespace Qualimetrix\Infrastructure\DependencyInjection\CompilerPass;
 
-use AiMessDetector\Analysis\RuleExecution\RuleExecutor;
+use Qualimetrix\Analysis\RuleExecution\RuleExecutor;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
 
 /**
- * Collects all services tagged with 'aimd.rule' and injects them into RuleExecutor.
+ * Collects all services tagged with 'qmx.rule' and injects them into RuleExecutor.
  */
 final class RuleCompilerPass implements CompilerPassInterface
 {
-    public const string TAG = 'aimd.rule';
+    public const string TAG = 'qmx.rule';
 
     public function process(ContainerBuilder $container): void
     {

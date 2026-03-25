@@ -1,11 +1,11 @@
 # Опции CLI
 
-AI Mess Detector предоставляет команду `analyze` для анализа кода и несколько вспомогательных команд для работы с baseline, git-хуками и визуализацией графа зависимостей.
+Qualimetrix предоставляет команду `analyze` для анализа кода и несколько вспомогательных команд для работы с baseline, git-хуками и визуализацией графа зависимостей.
 
 ## Команда analyze
 
 ```bash
-bin/aimd check [опции] [--] [<пути>...]
+bin/qmx check [опции] [--] [<пути>...]
 ```
 
 ### Аргумент paths
@@ -14,13 +14,13 @@ bin/aimd check [опции] [--] [<пути>...]
 
 ```bash
 # Анализ конкретных директорий
-bin/aimd check src/ lib/
+bin/qmx check src/ lib/
 
 # Анализ одного файла
-bin/aimd check src/Service/UserService.php
+bin/qmx check src/Service/UserService.php
 ```
 
-Если пути не указаны, AIMD автоматически определит их из секции `autoload` вашего `composer.json`.
+Если пути не указаны, Qualimetrix автоматически определит их из секции `autoload` вашего `composer.json`.
 
 ---
 
@@ -31,7 +31,7 @@ bin/aimd check src/Service/UserService.php
 Путь к YAML-файлу конфигурации:
 
 ```bash
-bin/aimd check src/ --config=aimd.yaml
+bin/qmx check src/ --config=qmx.yaml
 ```
 
 ### `--exclude`
@@ -39,18 +39,18 @@ bin/aimd check src/ --config=aimd.yaml
 Исключить директории из анализа. Можно указывать несколько раз:
 
 ```bash
-bin/aimd check src/ --exclude=src/Generated --exclude=src/Legacy
+bin/qmx check src/ --exclude=src/Generated --exclude=src/Legacy
 ```
 
 ### `--include-generated`
 
-По умолчанию AIMD автоматически пропускает файлы, содержащие аннотацию `@generated` в первых 2 КБ. Этот флаг переопределяет это поведение и включает сгенерированные файлы в анализ:
+По умолчанию Qualimetrix автоматически пропускает файлы, содержащие аннотацию `@generated` в первых 2 КБ. Этот флаг переопределяет это поведение и включает сгенерированные файлы в анализ:
 
 ```bash
-bin/aimd check src/ --include-generated
+bin/qmx check src/ --include-generated
 ```
 
-Также можно задать в `aimd.yaml`:
+Также можно задать в `qmx.yaml`:
 
 ```yaml
 include_generated: true
@@ -61,7 +61,7 @@ include_generated: true
 Подавить нарушения для файлов, соответствующих glob-паттерну. Файлы по-прежнему анализируются (их метрики учитываются при расчёте метрик пространства имён), но нарушения не выводятся. Можно указывать несколько раз:
 
 ```bash
-bin/aimd check src/ --exclude-path="src/Entity/*" --exclude-path="src/DTO/*"
+bin/qmx check src/ --exclude-path="src/Entity/*" --exclude-path="src/DTO/*"
 ```
 
 ---
@@ -73,8 +73,8 @@ bin/aimd check src/ --exclude-path="src/Entity/*" --exclude-path="src/DTO/*"
 Выбор формата вывода. По умолчанию: `summary`.
 
 ```bash
-bin/aimd check src/ --format=json
-bin/aimd check src/ --format=sarif
+bin/qmx check src/ --format=json
+bin/qmx check src/ --format=sarif
 ```
 
 Доступные форматы: `summary`, `text`, `text-verbose`, `json`, `metrics`, `checkstyle`, `sarif`, `gitlab`, `github`, `health`.
@@ -86,7 +86,7 @@ bin/aimd check src/ --format=sarif
 Группировка нарушений в выводе. Значение по умолчанию зависит от форматтера.
 
 ```bash
-bin/aimd check src/ --format=text-verbose --group-by=rule
+bin/qmx check src/ --format=text-verbose --group-by=rule
 ```
 
 Доступные значения: `none`, `file`, `rule`, `severity`.
@@ -96,7 +96,7 @@ bin/aimd check src/ --format=text-verbose --group-by=rule
 Передача специфичных для форматтера опций в формате key=value. Можно указывать несколько раз:
 
 ```bash
-bin/aimd check src/ --format-opt=key=value
+bin/qmx check src/ --format-opt=key=value
 ```
 
 **Опции формата JSON:**
@@ -108,8 +108,8 @@ bin/aimd check src/ --format-opt=key=value
 | `top=N`             | 10           | Количество худших нарушителей           |
 
 ```bash
-bin/aimd check src/ --format=json --format-opt=limit=100
-bin/aimd check src/ --format=json --format-opt=violations=all
+bin/qmx check src/ --format=json --format-opt=limit=100
+bin/qmx check src/ --format=json --format-opt=violations=all
 ```
 
 ### `--fail-on`
@@ -118,15 +118,15 @@ bin/aimd check src/ --format=json --format-opt=violations=all
 
 ```bash
 # Поведение по умолчанию: ошибка только при error, предупреждения допускаются
-bin/aimd check src/ --fail-on=error
+bin/qmx check src/ --fail-on=error
 
 # Ошибка и при warning (для строгого контроля качества)
-bin/aimd check src/ --fail-on=warning
+bin/qmx check src/ --fail-on=warning
 ```
 
 Предупреждения по-прежнему отображаются в выводе, но по умолчанию не приводят к ненулевому коду завершения. Используйте `--fail-on=warning`, если хотите, чтобы предупреждения также блокировали CI.
 
-Также можно задать в `aimd.yaml`:
+Также можно задать в `qmx.yaml`:
 
 ```yaml
 fail_on: error
@@ -138,15 +138,15 @@ fail_on: error
 
 ```bash
 # Исключить типизацию из оценки здоровья
-bin/aimd check src/ --exclude-health=typing
+bin/qmx check src/ --exclude-health=typing
 
 # Исключить несколько измерений
-bin/aimd check src/ --exclude-health=typing --exclude-health=maintainability
+bin/qmx check src/ --exclude-health=typing --exclude-health=maintainability
 ```
 
 Доступные измерения: `complexity`, `cohesion`, `coupling`, `typing`, `maintainability`.
 
-Также можно задать в `aimd.yaml`:
+Также можно задать в `qmx.yaml`:
 
 ```yaml
 exclude_health:
@@ -159,13 +159,13 @@ exclude_health:
 
 ```bash
 # Лимит по умолчанию (200 нарушений)
-bin/aimd check src/ --detail
+bin/qmx check src/ --detail
 
 # Показать все нарушения (без лимита)
-bin/aimd check src/ --detail=all
+bin/qmx check src/ --detail=all
 
 # Пользовательский лимит
-bin/aimd check src/ --detail=50
+bin/qmx check src/ --detail=50
 ```
 
 Автоматически включается при использовании `--namespace` или `--class`.
@@ -175,7 +175,7 @@ bin/aimd check src/ --detail=50
 Фильтрация вывода по конкретному поддереву пространства имён. Использует сопоставление по префиксу с учётом границ.
 
 ```bash
-bin/aimd check src/ --namespace=App\\Service
+bin/qmx check src/ --namespace=App\\Service
 ```
 
 Фильтрует нарушения и худших нарушителей по указанному пространству имён. Показывает оценки здоровья поддерева. Автоматически включает `--detail`.
@@ -187,7 +187,7 @@ bin/aimd check src/ --namespace=App\\Service
 Фильтрация вывода по конкретному классу с точным совпадением FQCN.
 
 ```bash
-bin/aimd check src/ --class=App\\Service\\UserService
+bin/qmx check src/ --class=App\\Service\\UserService
 ```
 
 Фильтрует нарушения по указанному классу. Автоматически включает `--detail`.
@@ -198,22 +198,22 @@ bin/aimd check src/ --class=App\\Service\\UserService
 
 ## Опции кэширования
 
-AIMD кэширует разобранные AST-деревья для ускорения повторных запусков.
+Qualimetrix кэширует разобранные AST-деревья для ускорения повторных запусков.
 
 ### `--no-cache`
 
 Полностью отключить кэширование:
 
 ```bash
-bin/aimd check src/ --no-cache
+bin/qmx check src/ --no-cache
 ```
 
 ### `--cache-dir`
 
-Указать директорию кэша. По умолчанию: `.aimd-cache`.
+Указать директорию кэша. По умолчанию: `.qmx-cache`.
 
 ```bash
-bin/aimd check src/ --cache-dir=/tmp/aimd-cache
+bin/qmx check src/ --cache-dir=/tmp/qmx-cache
 ```
 
 ### `--clear-cache`
@@ -221,7 +221,7 @@ bin/aimd check src/ --cache-dir=/tmp/aimd-cache
 Очистить кэш перед запуском анализа:
 
 ```bash
-bin/aimd check src/ --clear-cache
+bin/qmx check src/ --clear-cache
 ```
 
 ---
@@ -235,7 +235,7 @@ Baseline позволяет игнорировать известные нару
 Запустить анализ и сохранить все текущие нарушения в файл baseline:
 
 ```bash
-bin/aimd check src/ --generate-baseline=baseline.json
+bin/qmx check src/ --generate-baseline=baseline.json
 ```
 
 ### `--baseline`
@@ -243,7 +243,7 @@ bin/aimd check src/ --generate-baseline=baseline.json
 Отфильтровать нарушения, которые уже есть в файле baseline:
 
 ```bash
-bin/aimd check src/ --baseline=baseline.json
+bin/qmx check src/ --baseline=baseline.json
 ```
 
 ### `--show-resolved`
@@ -251,15 +251,15 @@ bin/aimd check src/ --baseline=baseline.json
 Показать, сколько нарушений из baseline были исправлены:
 
 ```bash
-bin/aimd check src/ --baseline=baseline.json --show-resolved
+bin/qmx check src/ --baseline=baseline.json --show-resolved
 ```
 
 ### `--baseline-ignore-stale`
 
-По умолчанию AIMD выдаёт ошибку, если baseline ссылается на файлы, которых больше не существует. Этот флаг позволяет молча игнорировать устаревшие записи:
+По умолчанию Qualimetrix выдаёт ошибку, если baseline ссылается на файлы, которых больше не существует. Этот флаг позволяет молча игнорировать устаревшие записи:
 
 ```bash
-bin/aimd check src/ --baseline=baseline.json --baseline-ignore-stale
+bin/qmx check src/ --baseline=baseline.json --baseline-ignore-stale
 ```
 
 ---
@@ -268,18 +268,18 @@ bin/aimd check src/ --baseline=baseline.json --baseline-ignore-stale
 
 ### `--show-suppressed`
 
-Показать нарушения, подавленные тегами `@aimd-ignore`:
+Показать нарушения, подавленные тегами `@qmx-ignore`:
 
 ```bash
-bin/aimd check src/ --show-suppressed
+bin/qmx check src/ --show-suppressed
 ```
 
 ### `--no-suppression`
 
-Игнорировать все теги `@aimd-ignore` и выводить все нарушения:
+Игнорировать все теги `@qmx-ignore` и выводить все нарушения:
 
 ```bash
-bin/aimd check src/ --no-suppression
+bin/qmx check src/ --no-suppression
 ```
 
 ---
@@ -293,8 +293,8 @@ bin/aimd check src/ --no-suppression
 Управление тем, какие файлы анализировать. Принимает git scope выражение:
 
 ```bash
-bin/aimd check src/ --analyze=git:staged          # только файлы из staging
-bin/aimd check src/ --analyze=git:main..HEAD       # только файлы, изменённые с main
+bin/qmx check src/ --analyze=git:staged          # только файлы из staging
+bin/qmx check src/ --analyze=git:main..HEAD       # только файлы, изменённые с main
 ```
 
 ### `--report`
@@ -302,8 +302,8 @@ bin/aimd check src/ --analyze=git:main..HEAD       # только файлы, и
 Управление тем, какие нарушения выводить. Анализирует весь проект, но показывает только нарушения из изменённых файлов:
 
 ```bash
-bin/aimd check src/ --report=git:main..HEAD
-bin/aimd check src/ --report=git:origin/develop..HEAD
+bin/qmx check src/ --report=git:main..HEAD
+bin/qmx check src/ --report=git:origin/develop..HEAD
 ```
 
 ### `--report-strict`
@@ -311,7 +311,7 @@ bin/aimd check src/ --report=git:origin/develop..HEAD
 В режиме diff показывать нарушения только из самих изменённых файлов. Без этого флага также выводятся нарушения из родительских пространств имён:
 
 ```bash
-bin/aimd check src/ --report=git:main..HEAD --report-strict
+bin/qmx check src/ --report=git:main..HEAD --report-strict
 ```
 
 ---
@@ -324,10 +324,10 @@ bin/aimd check src/ --report=git:main..HEAD --report-strict
 
 ```bash
 # Отключить параллельную обработку (однопоточный режим)
-bin/aimd check src/ --workers=0
+bin/qmx check src/ --workers=0
 
 # Использовать ровно 4 воркера
-bin/aimd check src/ --workers=4
+bin/qmx check src/ --workers=4
 ```
 
 !!! tip "Совет"
@@ -338,7 +338,7 @@ bin/aimd check src/ --workers=4
 Записывать отладочный лог в файл:
 
 ```bash
-bin/aimd check src/ --log-file=aimd.log
+bin/qmx check src/ --log-file=qmx.log
 ```
 
 ### `--log-level`
@@ -346,7 +346,7 @@ bin/aimd check src/ --log-file=aimd.log
 Установить минимальный уровень логирования. По умолчанию: `info`.
 
 ```bash
-bin/aimd check src/ --log-file=aimd.log --log-level=debug
+bin/qmx check src/ --log-file=qmx.log --log-level=debug
 ```
 
 Доступные уровни: `debug`, `info`, `warning`, `error`.
@@ -356,7 +356,7 @@ bin/aimd check src/ --log-file=aimd.log --log-level=debug
 Отключить прогресс-бар. Полезно в CI-пайплайнах:
 
 ```bash
-bin/aimd check src/ --no-progress
+bin/qmx check src/ --no-progress
 ```
 
 ---
@@ -372,10 +372,10 @@ bin/aimd check src/ --no-progress
 <!-- llms:skip-end -->
 
 # Показать сводку профилирования на экране
-bin/aimd check src/ --profile
+bin/qmx check src/ --profile
 
 # Сохранить профиль в файл
-bin/aimd check src/ --profile=profile.json
+bin/qmx check src/ --profile=profile.json
 ```
 
 ### `--profile-format`
@@ -383,7 +383,7 @@ bin/aimd check src/ --profile=profile.json
 Выбор формата экспорта профиля. По умолчанию: `json`.
 
 ```bash
-bin/aimd check src/ --profile=profile.json --profile-format=chrome-tracing
+bin/qmx check src/ --profile=profile.json --profile-format=chrome-tracing
 ```
 
 Доступные форматы: `json`, `chrome-tracing`.
@@ -401,13 +401,13 @@ bin/aimd check src/ --profile=profile.json --profile-format=chrome-tracing
 
 ```bash
 # Отключить одно правило
-bin/aimd check src/ --disable-rule=size.class-count
+bin/qmx check src/ --disable-rule=size.class-count
 
 # Отключить все правила сложности
-bin/aimd check src/ --disable-rule=complexity
+bin/qmx check src/ --disable-rule=complexity
 
 # Отключить несколько
-bin/aimd check src/ --disable-rule=complexity --disable-rule=design.lcom
+bin/qmx check src/ --disable-rule=complexity --disable-rule=design.lcom
 ```
 
 !!! tip "Оптимизация памяти"
@@ -419,10 +419,10 @@ bin/aimd check src/ --disable-rule=complexity --disable-rule=design.lcom
 
 ```bash
 # Запустить только правила сложности
-bin/aimd check src/ --only-rule=complexity
+bin/qmx check src/ --only-rule=complexity
 
 # Запустить два конкретных правила
-bin/aimd check src/ --only-rule=complexity.cyclomatic --only-rule=size.method-count
+bin/qmx check src/ --only-rule=complexity.cyclomatic --only-rule=size.method-count
 ```
 
 ### `--rule-opt`
@@ -430,8 +430,8 @@ bin/aimd check src/ --only-rule=complexity.cyclomatic --only-rule=size.method-co
 Переопределить опции правил из командной строки. Формат: `rule-name:option=value`. Можно указывать несколько раз:
 
 ```bash
-bin/aimd check src/ --rule-opt=complexity.cyclomatic:method.warning=15
-bin/aimd check src/ --rule-opt=complexity.cyclomatic:method.error=30
+bin/qmx check src/ --rule-opt=complexity.cyclomatic:method.warning=15
+bin/qmx check src/ --rule-opt=complexity.cyclomatic:method.error=30
 ```
 
 <!-- llms:skip-begin -->
@@ -553,7 +553,7 @@ bin/aimd check src/ --rule-opt=complexity.cyclomatic:method.error=30
 Удалить устаревшие записи (ссылки на файлы, которых больше нет) из файла baseline:
 
 ```bash
-bin/aimd baseline:cleanup baseline.json
+bin/qmx baseline:cleanup baseline.json
 ```
 
 ### graph:export
@@ -562,25 +562,25 @@ bin/aimd baseline:cleanup baseline.json
 
 ```bash
 # Экспорт в формате DOT (по умолчанию)
-bin/aimd graph:export src/ -o graph.dot
+bin/qmx graph:export src/ -o graph.dot
 
 # Экспорт в формате JSON (агрегированный список смежности с метаданными)
-bin/aimd graph:export src/ --format=json -o graph.json
+bin/qmx graph:export src/ --format=json -o graph.json
 
 # Экспорт в формате Mermaid
-bin/aimd graph:export src/ --format=mermaid -o graph.md
+bin/qmx graph:export src/ --format=mermaid -o graph.md
 
 # Фильтрация по пространству имён
-bin/aimd graph:export src/ --namespace=App\\Service --namespace=App\\Repository
+bin/qmx graph:export src/ --namespace=App\\Service --namespace=App\\Repository
 
 # Исключение пространств имён
-bin/aimd graph:export src/ --exclude-namespace=App\\Generated
+bin/qmx graph:export src/ --exclude-namespace=App\\Generated
 
 # Изменение направления графа
-bin/aimd graph:export src/ --direction=TB
+bin/qmx graph:export src/ --direction=TB
 
 # Отключение группировки по пространствам имён
-bin/aimd graph:export src/ --no-clusters
+bin/qmx graph:export src/ --no-clusters
 ```
 
 | Опция                    | Описание                                                       |
@@ -597,10 +597,10 @@ bin/aimd graph:export src/ --no-clusters
 Установить git-хук pre-commit:
 
 ```bash
-bin/aimd hook:install
+bin/qmx hook:install
 
 # Перезаписать существующий хук
-bin/aimd hook:install --force
+bin/qmx hook:install --force
 ```
 
 ### hook:status
@@ -608,7 +608,7 @@ bin/aimd hook:install --force
 Показать текущий статус хука pre-commit:
 
 ```bash
-bin/aimd hook:status
+bin/qmx hook:status
 ```
 
 ### hook:uninstall
@@ -616,10 +616,10 @@ bin/aimd hook:status
 Удалить хук pre-commit:
 
 ```bash
-bin/aimd hook:uninstall
+bin/qmx hook:uninstall
 
 # Восстановить оригинальный хук из резервной копии
-bin/aimd hook:uninstall --restore-backup
+bin/qmx hook:uninstall --restore-backup
 ```
 
 ### rules
@@ -628,10 +628,10 @@ bin/aimd hook:uninstall --restore-backup
 
 ```bash
 # Показать все правила
-bin/aimd rules
+bin/qmx rules
 
 # Фильтр по группе
-bin/aimd rules --group=complexity
+bin/qmx rules --group=complexity
 ```
 
 **Пример вывода:**

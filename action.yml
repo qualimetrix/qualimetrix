@@ -1,4 +1,4 @@
-name: 'AI Mess Detector'
+name: 'Qualimetrix'
 description: 'Static analysis for PHP code quality metrics'
 author: 'FractalizeR'
 
@@ -59,7 +59,7 @@ runs:
           echo "No composer.json found, skipping dependency installation"
         fi
 
-    - name: Run AI Mess Detector
+    - name: Run Qualimetrix
       id: analysis
       shell: bash
       working-directory: ${{ inputs.working-directory }}
@@ -80,19 +80,19 @@ runs:
         # Add format
         ARGS="$ARGS --format=${{ inputs.format }}"
 
-        # Determine AIMD binary location
-        if [ -f "vendor/bin/aimd" ]; then
-          AIMD_BIN="vendor/bin/aimd"
-        elif [ -f "bin/aimd" ]; then
-          AIMD_BIN="bin/aimd"
+        # Determine Qualimetrix binary location
+        if [ -f "vendor/bin/qmx" ]; then
+          QMX_BIN="vendor/bin/qmx"
+        elif [ -f "bin/qmx" ]; then
+          QMX_BIN="bin/qmx"
         else
-          echo "AIMD binary not found in project, installing globally..."
-          composer global require fractalizer/ai-mess-detector --no-progress --quiet || true
-          GLOBAL_BIN=$(composer global config bin-dir --absolute 2>/dev/null)/aimd
+          echo "Qualimetrix binary not found in project, installing globally..."
+          composer global require qualimetrix/qualimetrix --no-progress --quiet || true
+          GLOBAL_BIN=$(composer global config bin-dir --absolute 2>/dev/null)/qmx
           if [ -f "$GLOBAL_BIN" ]; then
-            AIMD_BIN="$GLOBAL_BIN"
+            QMX_BIN="$GLOBAL_BIN"
           else
-            echo "Error: Failed to find or install AIMD"
+            echo "Error: Failed to find or install Qualimetrix"
             exit 1
           fi
         fi
@@ -104,26 +104,26 @@ runs:
             OUTPUT_FILE="results.sarif"
             ;;
           json)
-            OUTPUT_FILE="aimd-results.json"
+            OUTPUT_FILE="qmx-results.json"
             ;;
           gitlab)
             OUTPUT_FILE="code-quality-report.json"
             ;;
         esac
 
-        echo "Running: $AIMD_BIN check $ARGS"
+        echo "Running: $QMX_BIN check $ARGS"
 
         # Run analysis and capture exit code
         set +e
         if [ -n "$OUTPUT_FILE" ]; then
           # For structured formats, write to file
-          $AIMD_BIN check $ARGS > "$OUTPUT_FILE" 2>&1
+          $QMX_BIN check $ARGS > "$OUTPUT_FILE" 2>&1
           EXIT_CODE=$?
           OUTPUT=$(cat "$OUTPUT_FILE")
           echo "Output written to: $OUTPUT_FILE"
         else
           # For text format, capture output
-          OUTPUT=$($AIMD_BIN check $ARGS 2>&1)
+          OUTPUT=$($QMX_BIN check $ARGS 2>&1)
           EXIT_CODE=$?
           echo "$OUTPUT"
         fi

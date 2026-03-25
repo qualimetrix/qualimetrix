@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Metrics\Halstead;
+namespace Qualimetrix\Metrics\Halstead;
 
-use AiMessDetector\Core\Metric\MethodWithMetrics;
-use AiMessDetector\Core\Metric\MetricBag;
-use AiMessDetector\Core\Metric\MetricName;
-use AiMessDetector\Metrics\ResettableVisitorInterface;
-use AiMessDetector\Metrics\VisitorMethodTrackingTrait;
 use PhpParser\Node;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Stmt;
 use PhpParser\NodeVisitorAbstract;
+use Qualimetrix\Core\Metric\MethodWithMetrics;
+use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Metric\MetricName;
+use Qualimetrix\Metrics\ResettableVisitorInterface;
+use Qualimetrix\Metrics\VisitorMethodTrackingTrait;
 
 /**
  * Halstead Complexity Metrics Visitor
@@ -21,7 +21,7 @@ use PhpParser\NodeVisitorAbstract;
  *
  * ## Methodology
  *
- * AIMD uses a **semantic approach** - counts only elements
+ * Qualimetrix uses a **semantic approach** - counts only elements
  * that carry semantic meaning (operations on data), ignoring
  * syntactic "noise" (brackets, commas, semicolons).
  *
@@ -57,7 +57,7 @@ use PhpParser\NodeVisitorAbstract;
  * - Difficulty: +75-220%
  * - Effort: +100-350%
  *
- * AIMD uses a semantic interpretation of Halstead's methodology (1977), measuring
+ * Qualimetrix uses a semantic interpretation of Halstead's methodology (1977), measuring
  * algorithmic complexity rather than syntactic density. The original paper
  * counted all tokens, but was designed for languages with minimal syntax noise.
  *

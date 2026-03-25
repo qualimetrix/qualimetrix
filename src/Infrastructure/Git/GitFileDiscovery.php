@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\Git;
+namespace Qualimetrix\Infrastructure\Git;
 
-use AiMessDetector\Analysis\Discovery\FileDiscoveryInterface;
 use Generator;
+use Qualimetrix\Analysis\Discovery\FileDiscoveryInterface;
 use RuntimeException;
 use SplFileInfo;
 

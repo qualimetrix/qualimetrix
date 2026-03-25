@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Configuration;
+namespace Qualimetrix\Configuration;
 
-use AiMessDetector\Core\Rule\RuleMatcher;
-use AiMessDetector\Core\Violation\Severity;
 use InvalidArgumentException;
+use Qualimetrix\Core\Rule\RuleMatcher;
+use Qualimetrix\Core\Violation\Severity;
 
 /**
  * Value object containing general analysis configuration (not rule-specific).
  */
 final readonly class AnalysisConfiguration
 {
-    public const string DEFAULT_CACHE_DIR = '.aimd-cache';
+    public const string DEFAULT_CACHE_DIR = '.qmx-cache';
     public const string DEFAULT_FORMAT = 'summary';
     public const string DEFAULT_NAMESPACE_STRATEGY = 'chain';
 

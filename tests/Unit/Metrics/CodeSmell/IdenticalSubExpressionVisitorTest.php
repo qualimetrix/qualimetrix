@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Metrics\CodeSmell;
+namespace Qualimetrix\Tests\Unit\Metrics\CodeSmell;
 
-use AiMessDetector\Metrics\CodeSmell\IdenticalSubExpressionCollector;
-use AiMessDetector\Metrics\CodeSmell\IdenticalSubExpressionFinding;
-use AiMessDetector\Metrics\CodeSmell\IdenticalSubExpressionVisitor;
 use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Metrics\CodeSmell\IdenticalSubExpressionCollector;
+use Qualimetrix\Metrics\CodeSmell\IdenticalSubExpressionFinding;
+use Qualimetrix\Metrics\CodeSmell\IdenticalSubExpressionVisitor;
 use SplFileInfo;
 
 #[CoversClass(IdenticalSubExpressionVisitor::class)]

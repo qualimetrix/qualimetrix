@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Integration\Profiler;
+namespace Qualimetrix\Tests\Integration\Profiler;
 
-use AiMessDetector\Core\Profiler\ProfilerHolder;
-use AiMessDetector\Infrastructure\Profiler\Profiler;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Profiler\ProfilerHolder;
+use Qualimetrix\Infrastructure\Profiler\Profiler;
 
 /**
  * Integration test for profiler functionality.
@@ -25,7 +25,7 @@ final class ProfilerIntegrationTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->tempDir = sys_get_temp_dir() . '/aimd_profiler_test_' . uniqid();
+        $this->tempDir = sys_get_temp_dir() . '/qmx_profiler_test_' . uniqid();
         mkdir($this->tempDir);
         $this->profilePath = $this->tempDir . '/profile.json';
 

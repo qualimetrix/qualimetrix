@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Analysis\Collection\Dependency\Handler;
+namespace Qualimetrix\Analysis\Collection\Dependency\Handler;
 
-use AiMessDetector\Analysis\Collection\Dependency\DependencyResolver;
-use AiMessDetector\Core\Dependency\Dependency;
-use AiMessDetector\Core\Dependency\DependencyType;
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Violation\Location;
+use Qualimetrix\Analysis\Collection\Dependency\DependencyResolver;
+use Qualimetrix\Core\Dependency\Dependency;
+use Qualimetrix\Core\Dependency\DependencyType;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Violation\Location;
 
 final class DependencyContext
 {

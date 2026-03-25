@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Core\Violation;
+namespace Qualimetrix\Tests\Unit\Core\Violation;
 
-use AiMessDetector\Core\Violation\Severity;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Violation\Severity;
 
 #[CoversClass(Severity::class)]
 final class SeverityTest extends TestCase

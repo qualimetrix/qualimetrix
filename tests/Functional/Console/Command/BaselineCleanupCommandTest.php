@@ -2,20 +2,20 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Functional\Console\Command;
+namespace Qualimetrix\Tests\Functional\Console\Command;
 
-use AiMessDetector\Baseline\BaselineGenerator;
-use AiMessDetector\Baseline\BaselineLoader;
-use AiMessDetector\Baseline\BaselineWriter;
-use AiMessDetector\Baseline\ViolationHasher;
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Violation\Location;
-use AiMessDetector\Core\Violation\Severity;
-use AiMessDetector\Core\Violation\Violation;
-use AiMessDetector\Infrastructure\Console\Command\BaselineCleanupCommand;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Baseline\BaselineGenerator;
+use Qualimetrix\Baseline\BaselineLoader;
+use Qualimetrix\Baseline\BaselineWriter;
+use Qualimetrix\Baseline\ViolationHasher;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Violation\Location;
+use Qualimetrix\Core\Violation\Severity;
+use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -28,7 +28,7 @@ final class BaselineCleanupCommandTest extends TestCase
     protected function setUp(): void
     {
         // Create temporary directory for test files
-        $this->tempDir = sys_get_temp_dir() . '/aimd-test-' . uniqid();
+        $this->tempDir = sys_get_temp_dir() . '/qmx-test-' . uniqid();
         mkdir($this->tempDir, 0777, true);
     }
 

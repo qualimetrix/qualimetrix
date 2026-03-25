@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Infrastructure\Console;
+namespace Qualimetrix\Tests\Unit\Infrastructure\Console;
 
-use AiMessDetector\Infrastructure\Console\CheckCommandDefinition;
-use AiMessDetector\Infrastructure\Rule\RuleRegistry;
-use AiMessDetector\Rules\Architecture\CircularDependencyRule;
-use AiMessDetector\Rules\Complexity\ComplexityRule;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Infrastructure\Console\CheckCommandDefinition;
+use Qualimetrix\Infrastructure\Rule\RuleRegistry;
+use Qualimetrix\Rules\Architecture\CircularDependencyRule;
+use Qualimetrix\Rules\Complexity\ComplexityRule;
 use Symfony\Component\Console\Command\Command;
 
 #[CoversClass(CheckCommandDefinition::class)]

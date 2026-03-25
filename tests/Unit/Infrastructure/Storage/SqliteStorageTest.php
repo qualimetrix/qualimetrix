@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Infrastructure\Storage;
+namespace Qualimetrix\Tests\Unit\Infrastructure\Storage;
 
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Symbol\SymbolType;
-use AiMessDetector\Infrastructure\Storage\FileRecord;
-use AiMessDetector\Infrastructure\Storage\SqliteStorage;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Infrastructure\Storage\FileRecord;
+use Qualimetrix\Infrastructure\Storage\SqliteStorage;
 
 final class SqliteStorageTest extends TestCase
 {

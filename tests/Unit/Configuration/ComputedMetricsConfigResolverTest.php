@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Configuration;
+namespace Qualimetrix\Tests\Unit\Configuration;
 
-use AiMessDetector\Configuration\ComputedMetricsConfigResolver;
-use AiMessDetector\Core\ComputedMetric\ComputedMetricDefinition;
-use AiMessDetector\Core\Symbol\SymbolType;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Configuration\ComputedMetricsConfigResolver;
+use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinition;
+use Qualimetrix\Core\Symbol\SymbolType;
 use RuntimeException;
 
 #[CoversClass(ComputedMetricsConfigResolver::class)]

@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Analysis\Collection;
+namespace Qualimetrix\Analysis\Collection;
 
-use AiMessDetector\Core\Dependency\Dependency;
-use AiMessDetector\Core\Metric\MetricBag;
-use AiMessDetector\Core\Suppression\Suppression;
-use AiMessDetector\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Dependency\Dependency;
+use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Suppression\Suppression;
+use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**
  * Result of processing a single file.

@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Reporting\Health;
+namespace Qualimetrix\Reporting\Health;
 
-use AiMessDetector\Core\ComputedMetric\ComputedMetricDefaults;
-use AiMessDetector\Core\Metric\MetricRepositoryInterface;
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Symbol\SymbolType;
-use AiMessDetector\Core\Violation\Violation;
+use Qualimetrix\Core\ComputedMetric\ComputedMetricDefaults;
+use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Violation\Violation;
 
 /**
  * Shared logic for namespace-level drill-down: health scores and worst classes.

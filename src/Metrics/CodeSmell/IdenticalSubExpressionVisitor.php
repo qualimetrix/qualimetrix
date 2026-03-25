@@ -2,9 +2,8 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Metrics\CodeSmell;
+namespace Qualimetrix\Metrics\CodeSmell;
 
-use AiMessDetector\Metrics\ResettableVisitorInterface;
 use PhpParser\Node;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Expr\BinaryOp;
@@ -12,6 +11,7 @@ use PhpParser\Node\Expr\Ternary;
 use PhpParser\Node\Stmt;
 use PhpParser\Node\Stmt\If_;
 use PhpParser\NodeVisitorAbstract;
+use Qualimetrix\Metrics\ResettableVisitorInterface;
 
 /**
  * Detects identical sub-expressions that indicate copy-paste errors or logic bugs.

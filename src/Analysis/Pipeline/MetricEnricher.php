@@ -2,25 +2,25 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Analysis\Pipeline;
+namespace Qualimetrix\Analysis\Pipeline;
 
-use AiMessDetector\Analysis\Aggregator\AggregationHelper;
-use AiMessDetector\Analysis\Aggregator\GlobalCollectorRunner;
-use AiMessDetector\Analysis\Aggregator\MetricAggregator;
-use AiMessDetector\Analysis\Collection\Dependency\CircularDependencyDetector;
-use AiMessDetector\Analysis\Collection\Metric\CompositeCollector;
-use AiMessDetector\Analysis\Duplication;
-use AiMessDetector\Configuration\ConfigurationProviderInterface;
-use AiMessDetector\Core\ComputedMetric\ComputedMetricDefinitionHolder;
-use AiMessDetector\Core\Dependency\DependencyGraphInterface;
-use AiMessDetector\Core\Metric\MetricDefinition;
-use AiMessDetector\Core\Metric\MetricRepositoryInterface;
-use AiMessDetector\Core\Profiler\ProfilerHolder;
-use AiMessDetector\Metrics\ComputedMetric\ComputedMetricEvaluator;
-use AiMessDetector\Rules\Architecture\CircularDependencyRule;
-use AiMessDetector\Rules\Duplication\CodeDuplicationRule;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use Qualimetrix\Analysis\Aggregator\AggregationHelper;
+use Qualimetrix\Analysis\Aggregator\GlobalCollectorRunner;
+use Qualimetrix\Analysis\Aggregator\MetricAggregator;
+use Qualimetrix\Analysis\Collection\Dependency\CircularDependencyDetector;
+use Qualimetrix\Analysis\Collection\Metric\CompositeCollector;
+use Qualimetrix\Analysis\Duplication;
+use Qualimetrix\Configuration\ConfigurationProviderInterface;
+use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinitionHolder;
+use Qualimetrix\Core\Dependency\DependencyGraphInterface;
+use Qualimetrix\Core\Metric\MetricDefinition;
+use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Profiler\ProfilerHolder;
+use Qualimetrix\Metrics\ComputedMetric\ComputedMetricEvaluator;
+use Qualimetrix\Rules\Architecture\CircularDependencyRule;
+use Qualimetrix\Rules\Duplication\CodeDuplicationRule;
 use SplFileInfo;
 
 /**

@@ -2,29 +2,29 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\DependencyInjection;
+namespace Qualimetrix\Infrastructure\DependencyInjection;
 
-use AiMessDetector\Configuration\Pipeline\Stage\ConfigurationStageInterface;
-use AiMessDetector\Core\Metric\DerivedCollectorInterface;
-use AiMessDetector\Core\Metric\GlobalContextCollectorInterface;
-use AiMessDetector\Core\Metric\MetricCollectorInterface;
-use AiMessDetector\Core\Rule\RuleInterface;
-use AiMessDetector\Infrastructure\DependencyInjection\CompilerPass\CollectorCompilerPass;
-use AiMessDetector\Infrastructure\DependencyInjection\CompilerPass\ConfigurationStageCompilerPass;
-use AiMessDetector\Infrastructure\DependencyInjection\CompilerPass\FormatterCompilerPass;
-use AiMessDetector\Infrastructure\DependencyInjection\CompilerPass\GlobalCollectorCompilerPass;
-use AiMessDetector\Infrastructure\DependencyInjection\CompilerPass\ParallelCollectorClassesCompilerPass;
-use AiMessDetector\Infrastructure\DependencyInjection\CompilerPass\RuleCompilerPass;
-use AiMessDetector\Infrastructure\DependencyInjection\CompilerPass\RuleOptionsCompilerPass;
-use AiMessDetector\Infrastructure\DependencyInjection\CompilerPass\RuleRegistryCompilerPass;
-use AiMessDetector\Infrastructure\DependencyInjection\Configurator\AnalysisConfigurator;
-use AiMessDetector\Infrastructure\DependencyInjection\Configurator\CollectorConfigurator;
-use AiMessDetector\Infrastructure\DependencyInjection\Configurator\ConfigurationConfigurator;
-use AiMessDetector\Infrastructure\DependencyInjection\Configurator\CoreServicesConfigurator;
-use AiMessDetector\Infrastructure\DependencyInjection\Configurator\OutputConfigurator;
-use AiMessDetector\Infrastructure\DependencyInjection\Configurator\ParserConfigurator;
-use AiMessDetector\Infrastructure\DependencyInjection\Configurator\RuleConfigurator;
-use AiMessDetector\Reporting\Formatter\FormatterInterface;
+use Qualimetrix\Configuration\Pipeline\Stage\ConfigurationStageInterface;
+use Qualimetrix\Core\Metric\DerivedCollectorInterface;
+use Qualimetrix\Core\Metric\GlobalContextCollectorInterface;
+use Qualimetrix\Core\Metric\MetricCollectorInterface;
+use Qualimetrix\Core\Rule\RuleInterface;
+use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\CollectorCompilerPass;
+use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ConfigurationStageCompilerPass;
+use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\FormatterCompilerPass;
+use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\GlobalCollectorCompilerPass;
+use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ParallelCollectorClassesCompilerPass;
+use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleCompilerPass;
+use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleOptionsCompilerPass;
+use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleRegistryCompilerPass;
+use Qualimetrix\Infrastructure\DependencyInjection\Configurator\AnalysisConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\Configurator\CollectorConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\Configurator\ConfigurationConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\Configurator\CoreServicesConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\Configurator\OutputConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\Configurator\ParserConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\Configurator\RuleConfigurator;
+use Qualimetrix\Reporting\Formatter\FormatterInterface;
 use Symfony\Component\DependencyInjection\Compiler\PassConfig;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 

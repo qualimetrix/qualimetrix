@@ -105,12 +105,12 @@ Export dependency graph in DOT or JSON format.
 
 ### Caching
 
-| Option          | Default       | Description                       |
-| --------------- | ------------- | --------------------------------- |
-| `--no-cache`    | false         | Disable caching                   |
-| `--cache-dir`   | `.aimd-cache` | Cache directory                   |
-| `--clear-cache` | false         | Clear cache before analysis       |
-| `--storage`     | `auto`        | Storage type (auto/sqlite/memory) |
+| Option          | Default      | Description                       |
+| --------------- | ------------ | --------------------------------- |
+| `--no-cache`    | false        | Disable caching                   |
+| `--cache-dir`   | `.qmx-cache` | Cache directory                   |
+| `--clear-cache` | false        | Clear cache before analysis       |
+| `--storage`     | `auto`       | Storage type (auto/sqlite/memory) |
 
 ### Git Integration
 
@@ -136,7 +136,7 @@ Export dependency graph in DOT or JSON format.
 | `--generate-baseline`     | Generate baseline from current violations |
 | `--show-resolved`         | Show count of resolved violations         |
 | `--baseline-ignore-stale` | Ignore stale entries (do not fail)        |
-| `--show-suppressed`       | Show suppressed violations (@aimd-ignore) |
+| `--show-suppressed`       | Show suppressed violations (@qmx-ignore)  |
 | `--no-suppression`        | Ignore suppression tags                   |
 
 ### Rules
@@ -149,7 +149,7 @@ Export dependency graph in DOT or JSON format.
 | `--only-rule`          | Run only the specified rule or group (prefix match) |
 | `--rule-opt`           | Rule option `RULE:OPTION=VALUE`                     |
 
-Full list of options available via `bin/aimd check --help`.
+Full list of options available via `bin/qmx check --help`.
 
 ## Progress Reporter
 
@@ -181,34 +181,34 @@ Analyzing src/...
 
 ```bash
 # Full project analysis
-bin/aimd check src/
+bin/qmx check src/
 
 # With config file
-bin/aimd check src/ --config=aimd.yaml
+bin/qmx check src/ --config=qmx.yaml
 
 # Different output formats
-bin/aimd check src/ --format=json
-bin/aimd check src/ --format=checkstyle
+bin/qmx check src/ --format=json
+bin/qmx check src/ --format=checkstyle
 
 # Pre-commit: staged files only
-bin/aimd check src/ --analyze=git:staged
+bin/qmx check src/ --analyze=git:staged
 
 # PR review: full analysis, report only for changes
-bin/aimd check src/ --report=git:main..HEAD
+bin/qmx check src/ --report=git:main..HEAD
 
 # With baseline
-bin/aimd check src/ --baseline=baseline.json
+bin/qmx check src/ --baseline=baseline.json
 
 # Generate baseline
-bin/aimd check src/ --generate-baseline=baseline.json
+bin/qmx check src/ --generate-baseline=baseline.json
 
 # Export dependency graph
-bin/aimd graph:export src/ --output=graph.dot
+bin/qmx graph:export src/ --output=graph.dot
 
 # Git hooks
-bin/aimd hook:install
-bin/aimd hook:status
-bin/aimd hook:uninstall
+bin/qmx hook:install
+bin/qmx hook:status
+bin/qmx hook:uninstall
 ```
 
 ## Definition of Done

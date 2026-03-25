@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Core\Metric;
+namespace Qualimetrix\Core\Metric;
 
 /**
  * Canonical metric name constants shared between collectors and rules.

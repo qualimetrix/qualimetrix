@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Core\Metric;
+namespace Qualimetrix\Core\Metric;
 
 /**
  * Marker interface for collectors that can be safely instantiated in parallel workers.

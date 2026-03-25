@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Rules\Security;
+namespace Qualimetrix\Rules\Security;
 
-use AiMessDetector\Core\Rule\RuleOptionsInterface;
-use AiMessDetector\Core\Violation\Severity;
+use Qualimetrix\Core\Rule\RuleOptionsInterface;
+use Qualimetrix\Core\Violation\Severity;
 
 /**
  * Options for the hardcoded credentials rule.

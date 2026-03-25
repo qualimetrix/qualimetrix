@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Rules\Security;
+namespace Qualimetrix\Rules\Security;
 
-use AiMessDetector\Core\Violation\Severity;
+use Qualimetrix\Core\Violation\Severity;
 
 /**
  * Detects potential command injection vulnerabilities.

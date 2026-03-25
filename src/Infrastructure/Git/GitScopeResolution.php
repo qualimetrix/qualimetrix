@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\Git;
+namespace Qualimetrix\Infrastructure\Git;
 
-use AiMessDetector\Analysis\Discovery\FileDiscoveryInterface;
+use Qualimetrix\Analysis\Discovery\FileDiscoveryInterface;
 
 /**
  * Result of resolving git scope from CLI input.

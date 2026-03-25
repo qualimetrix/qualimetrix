@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Infrastructure\Parallel\Strategy;
+namespace Qualimetrix\Tests\Unit\Infrastructure\Parallel\Strategy;
 
-use AiMessDetector\Infrastructure\Parallel\Strategy\SequentialStrategy;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Infrastructure\Parallel\Strategy\SequentialStrategy;
 use SplFileInfo;
 
 #[CoversClass(SequentialStrategy::class)]

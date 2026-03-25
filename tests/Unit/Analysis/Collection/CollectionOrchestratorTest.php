@@ -2,28 +2,28 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Analysis\Collection;
+namespace Qualimetrix\Tests\Unit\Analysis\Collection;
 
-use AiMessDetector\Analysis\Collection\CollectionOrchestrator;
-use AiMessDetector\Analysis\Collection\FileProcessingResult;
-use AiMessDetector\Analysis\Collection\FileProcessorInterface;
-use AiMessDetector\Analysis\Collection\Metric\CompositeCollector;
-use AiMessDetector\Analysis\Collection\Metric\DerivedMetricExtractor;
-use AiMessDetector\Analysis\Collection\Strategy\ExecutionStrategyInterface;
-use AiMessDetector\Analysis\Collection\Strategy\StrategySelectorInterface;
-use AiMessDetector\Analysis\Repository\InMemoryMetricRepository;
-use AiMessDetector\Core\Dependency\Dependency;
-use AiMessDetector\Core\Dependency\DependencyType;
-use AiMessDetector\Core\Metric\DerivedCollectorInterface;
-use AiMessDetector\Core\Metric\MetricBag;
-use AiMessDetector\Core\Progress\ProgressReporter;
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Violation\Location;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use Qualimetrix\Analysis\Collection\CollectionOrchestrator;
+use Qualimetrix\Analysis\Collection\FileProcessingResult;
+use Qualimetrix\Analysis\Collection\FileProcessorInterface;
+use Qualimetrix\Analysis\Collection\Metric\CompositeCollector;
+use Qualimetrix\Analysis\Collection\Metric\DerivedMetricExtractor;
+use Qualimetrix\Analysis\Collection\Strategy\ExecutionStrategyInterface;
+use Qualimetrix\Analysis\Collection\Strategy\StrategySelectorInterface;
+use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
+use Qualimetrix\Core\Dependency\Dependency;
+use Qualimetrix\Core\Dependency\DependencyType;
+use Qualimetrix\Core\Metric\DerivedCollectorInterface;
+use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Progress\ProgressReporter;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Violation\Location;
 use SplFileInfo;
 
 #[CoversClass(CollectionOrchestrator::class)]

@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\DependencyInjection\CompilerPass;
+namespace Qualimetrix\Infrastructure\DependencyInjection\CompilerPass;
 
-use AiMessDetector\Configuration\RuleOptionsFactory;
-use AiMessDetector\Core\Rule\RuleInterface;
-use AiMessDetector\Core\Rule\RuleOptionsInterface;
-use AiMessDetector\Infrastructure\Logging\DelegatingLogger;
 use Psr\Log\LoggerInterface;
+use Qualimetrix\Configuration\RuleOptionsFactory;
+use Qualimetrix\Core\Rule\RuleInterface;
+use Qualimetrix\Core\Rule\RuleOptionsInterface;
+use Qualimetrix\Infrastructure\Logging\DelegatingLogger;
 use ReflectionClass;
 use ReflectionNamedType;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;

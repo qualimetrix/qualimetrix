@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Analysis\Aggregator;
+namespace Qualimetrix\Tests\Unit\Analysis\Aggregator;
 
-use AiMessDetector\Analysis\Aggregator\GlobalCollectorSorter;
-use AiMessDetector\Analysis\Exception\CyclicDependencyException;
-use AiMessDetector\Core\Metric\GlobalContextCollectorInterface;
 use Generator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Aggregator\GlobalCollectorSorter;
+use Qualimetrix\Analysis\Exception\CyclicDependencyException;
+use Qualimetrix\Core\Metric\GlobalContextCollectorInterface;
 
 #[CoversClass(GlobalCollectorSorter::class)]
 #[CoversClass(CyclicDependencyException::class)]

@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Core\Util;
+namespace Qualimetrix\Tests\Unit\Core\Util;
 
-use AiMessDetector\Core\Util\PathMatcher;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Util\PathMatcher;
 
 #[CoversClass(PathMatcher::class)]
 final class PathMatcherTest extends TestCase

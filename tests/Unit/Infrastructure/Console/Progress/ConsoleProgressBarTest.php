@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Infrastructure\Console\Progress;
+namespace Qualimetrix\Tests\Unit\Infrastructure\Console\Progress;
 
-use AiMessDetector\Infrastructure\Console\Progress\ConsoleProgressBar;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Infrastructure\Console\Progress\ConsoleProgressBar;
 use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\Console\Output\OutputInterface;
 

@@ -2,24 +2,24 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Rules\Complexity;
+namespace Qualimetrix\Tests\Unit\Rules\Complexity;
 
-use AiMessDetector\Core\Metric\MetricBag;
-use AiMessDetector\Core\Metric\MetricRepositoryInterface;
-use AiMessDetector\Core\Rule\AnalysisContext;
-use AiMessDetector\Core\Rule\RuleCategory;
-use AiMessDetector\Core\Rule\RuleLevel;
-use AiMessDetector\Core\Symbol\SymbolInfo;
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Symbol\SymbolType;
-use AiMessDetector\Core\Violation\Severity;
-use AiMessDetector\Rules\Complexity\ClassCognitiveComplexityOptions;
-use AiMessDetector\Rules\Complexity\CognitiveComplexityOptions;
-use AiMessDetector\Rules\Complexity\CognitiveComplexityRule;
-use AiMessDetector\Rules\Complexity\MethodCognitiveComplexityOptions;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Rule\RuleCategory;
+use Qualimetrix\Core\Rule\RuleLevel;
+use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Violation\Severity;
+use Qualimetrix\Rules\Complexity\ClassCognitiveComplexityOptions;
+use Qualimetrix\Rules\Complexity\CognitiveComplexityOptions;
+use Qualimetrix\Rules\Complexity\CognitiveComplexityRule;
+use Qualimetrix\Rules\Complexity\MethodCognitiveComplexityOptions;
 
 #[CoversClass(CognitiveComplexityRule::class)]
 #[CoversClass(CognitiveComplexityOptions::class)]

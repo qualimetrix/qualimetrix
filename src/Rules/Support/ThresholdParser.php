@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Rules\Support;
+namespace Qualimetrix\Rules\Support;
 
 use InvalidArgumentException;
 

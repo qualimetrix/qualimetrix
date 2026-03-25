@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Baseline;
+namespace Qualimetrix\Baseline;
 
-use AiMessDetector\Core\Violation\Violation;
 use DateTimeImmutable;
+use Qualimetrix\Core\Violation\Violation;
 
 /**
  * Generates baseline from violations.

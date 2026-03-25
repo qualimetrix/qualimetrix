@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Analysis\Pipeline;
+namespace Qualimetrix\Analysis\Pipeline;
 
-use AiMessDetector\Analysis\Collection\Dependency\Cycle;
-use AiMessDetector\Core\Duplication\DuplicateBlock;
+use Qualimetrix\Analysis\Collection\Dependency\Cycle;
+use Qualimetrix\Core\Duplication\DuplicateBlock;
 
 /**
  * Holds the result of the metric enrichment phase.

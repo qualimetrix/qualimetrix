@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\Console;
+namespace Qualimetrix\Infrastructure\Console;
 
-use AiMessDetector\Baseline\Filter\BaselineFilter;
-use AiMessDetector\Core\Violation\Violation;
+use Qualimetrix\Baseline\Filter\BaselineFilter;
+use Qualimetrix\Core\Violation\Violation;
 
 /**
  * Result of the violation filter pipeline.

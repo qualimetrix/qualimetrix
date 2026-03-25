@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Analysis\Duplication;
+namespace Qualimetrix\Analysis\Duplication;
 
 /**
  * A normalized token for duplication detection.

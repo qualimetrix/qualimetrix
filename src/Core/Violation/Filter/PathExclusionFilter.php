@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Core\Violation\Filter;
+namespace Qualimetrix\Core\Violation\Filter;
 
-use AiMessDetector\Core\Util\PathMatcher;
-use AiMessDetector\Core\Violation\Violation;
+use Qualimetrix\Core\Util\PathMatcher;
+use Qualimetrix\Core\Violation\Violation;
 
 /**
  * Suppresses violations whose file path matches configured exclusion patterns.

@@ -2,25 +2,25 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Baseline\Suppression;
+namespace Qualimetrix\Baseline\Suppression;
 
-use AiMessDetector\Core\Suppression\Suppression;
-use AiMessDetector\Core\Suppression\SuppressionType;
 use PhpParser\Node;
+use Qualimetrix\Core\Suppression\Suppression;
+use Qualimetrix\Core\Suppression\SuppressionType;
 
 /**
  * Extracts suppression tags from docblock comments.
  *
  * Supported tags:
- * - @aimd-ignore <rule> [reason]
- * - @aimd-ignore-next-line <rule> [reason]
- * - @aimd-ignore-file [rule] [reason]
+ * - @qmx-ignore <rule> [reason]
+ * - @qmx-ignore-next-line <rule> [reason]
+ * - @qmx-ignore-file [rule] [reason]
  */
 final readonly class SuppressionExtractor
 {
-    private const PATTERN_SYMBOL = '/@aimd-ignore(?!-next-line|-file)(?![\w-])\s+([\w.*-]+)(?:[^\S\n\r]+([^\n\r]+))?/';
-    private const PATTERN_NEXT_LINE = '/@aimd-ignore-next-line(?![\w-])\s+([\w.*-]+)(?:[^\S\n\r]+([^\n\r]+))?/';
-    private const PATTERN_FILE = '/@aimd-ignore-file(?![\w-])(?:\s+([\w.*-]+)(?:[^\S\n\r]+([^\n\r]+))?)?/';
+    private const PATTERN_SYMBOL = '/@qmx-ignore(?!-next-line|-file)(?![\w-])\s+([\w.*-]+)(?:[^\S\n\r]+([^\n\r]+))?/';
+    private const PATTERN_NEXT_LINE = '/@qmx-ignore-next-line(?![\w-])\s+([\w.*-]+)(?:[^\S\n\r]+([^\n\r]+))?/';
+    private const PATTERN_FILE = '/@qmx-ignore-file(?![\w-])(?:\s+([\w.*-]+)(?:[^\S\n\r]+([^\n\r]+))?)?/';
 
     /**
      * Extracts suppression tags from node's docblock.
@@ -65,7 +65,7 @@ final readonly class SuppressionExtractor
             }
         }
 
-        // Extract symbol-level suppressions (plain @aimd-ignore, not -next-line or -file)
+        // Extract symbol-level suppressions (plain @qmx-ignore, not -next-line or -file)
         if (preg_match_all(self::PATTERN_SYMBOL, $text, $matches, \PREG_SET_ORDER)) {
             foreach ($matches as $match) {
                 $suppressions[] = new Suppression(
@@ -94,7 +94,7 @@ final readonly class SuppressionExtractor
         }
 
         $text = $docComment->getText();
-        if (!str_contains($text, '@aimd-ignore-file')) {
+        if (!str_contains($text, '@qmx-ignore-file')) {
             return [];
         }
 

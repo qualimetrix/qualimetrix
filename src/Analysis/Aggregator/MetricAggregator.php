@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Analysis\Aggregator;
+namespace Qualimetrix\Analysis\Aggregator;
 
-use AiMessDetector\Core\Metric\MetricDefinition;
-use AiMessDetector\Core\Metric\MetricRepositoryInterface;
-use AiMessDetector\Core\Metric\SymbolLevel;
-use AiMessDetector\Core\Profiler\ProfilerHolder;
+use Qualimetrix\Core\Metric\MetricDefinition;
+use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Metric\SymbolLevel;
+use Qualimetrix\Core\Profiler\ProfilerHolder;
 
 /**
  * Aggregates metrics from lower levels (Method, File) to higher levels (Class, Namespace, Project).

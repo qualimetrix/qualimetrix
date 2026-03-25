@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\DependencyInjection\CompilerPass;
+namespace Qualimetrix\Infrastructure\DependencyInjection\CompilerPass;
 
-use AiMessDetector\Infrastructure\Rule\RuleRegistry;
 use LogicException;
+use Qualimetrix\Infrastructure\Rule\RuleRegistry;
 use ReflectionClass;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -18,7 +18,7 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
  */
 final class RuleRegistryCompilerPass implements CompilerPassInterface
 {
-    public const string TAG = 'aimd.rule';
+    public const string TAG = 'qmx.rule';
 
     public function process(ContainerBuilder $container): void
     {

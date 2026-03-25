@@ -2,26 +2,26 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Infrastructure\Console;
+namespace Qualimetrix\Tests\Unit\Infrastructure\Console;
 
-use AiMessDetector\Configuration\AnalysisConfiguration;
-use AiMessDetector\Configuration\ComputedMetricsConfigResolver;
-use AiMessDetector\Configuration\ConfigurationProviderInterface;
-use AiMessDetector\Configuration\PathsConfiguration;
-use AiMessDetector\Configuration\Pipeline\ResolvedConfiguration;
-use AiMessDetector\Configuration\RuleOptionsFactory;
-use AiMessDetector\Core\ComputedMetric\ComputedMetricDefinitionHolder;
-use AiMessDetector\Core\Profiler\ProfilerHolder;
-use AiMessDetector\Infrastructure\Cache\CacheFactory;
-use AiMessDetector\Infrastructure\Console\Progress\ProgressReporterHolder;
-use AiMessDetector\Infrastructure\Console\RuntimeConfigurator;
-use AiMessDetector\Infrastructure\Logging\LoggerFactory;
-use AiMessDetector\Infrastructure\Logging\LoggerHolder;
-use AiMessDetector\Infrastructure\Rule\RuleRegistryInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Configuration\AnalysisConfiguration;
+use Qualimetrix\Configuration\ComputedMetricsConfigResolver;
+use Qualimetrix\Configuration\ConfigurationProviderInterface;
+use Qualimetrix\Configuration\PathsConfiguration;
+use Qualimetrix\Configuration\Pipeline\ResolvedConfiguration;
+use Qualimetrix\Configuration\RuleOptionsFactory;
+use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinitionHolder;
+use Qualimetrix\Core\Profiler\ProfilerHolder;
+use Qualimetrix\Infrastructure\Cache\CacheFactory;
+use Qualimetrix\Infrastructure\Console\Progress\ProgressReporterHolder;
+use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
+use Qualimetrix\Infrastructure\Logging\LoggerFactory;
+use Qualimetrix\Infrastructure\Logging\LoggerHolder;
+use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 

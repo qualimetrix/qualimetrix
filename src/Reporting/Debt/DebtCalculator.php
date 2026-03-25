@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Reporting\Debt;
+namespace Qualimetrix\Reporting\Debt;
 
-use AiMessDetector\Core\Violation\Violation;
+use Qualimetrix\Core\Violation\Violation;
 
 /**
  * Calculates technical debt summary from a list of violations.

@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Core\Violation\Filter;
+namespace Qualimetrix\Tests\Unit\Core\Violation\Filter;
 
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Util\PathMatcher;
-use AiMessDetector\Core\Violation\Filter\PathExclusionFilter;
-use AiMessDetector\Core\Violation\Location;
-use AiMessDetector\Core\Violation\Severity;
-use AiMessDetector\Core\Violation\Violation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Util\PathMatcher;
+use Qualimetrix\Core\Violation\Filter\PathExclusionFilter;
+use Qualimetrix\Core\Violation\Location;
+use Qualimetrix\Core\Violation\Severity;
+use Qualimetrix\Core\Violation\Violation;
 
 #[CoversClass(PathExclusionFilter::class)]
 final class PathExclusionFilterTest extends TestCase

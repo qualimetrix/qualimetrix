@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Infrastructure\Git;
+namespace Qualimetrix\Tests\Unit\Infrastructure\Git;
 
-use AiMessDetector\Infrastructure\Git\GitRepositoryLocator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Infrastructure\Git\GitRepositoryLocator;
 
 #[CoversClass(GitRepositoryLocator::class)]
 final class GitRepositoryLocatorTest extends TestCase

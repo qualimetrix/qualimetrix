@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Configuration;
+namespace Qualimetrix\Configuration;
 
 /**
  * Resolved paths for file discovery.

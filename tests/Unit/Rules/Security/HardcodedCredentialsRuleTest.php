@@ -2,20 +2,20 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Rules\Security;
+namespace Qualimetrix\Tests\Unit\Rules\Security;
 
-use AiMessDetector\Core\Metric\MetricBag;
-use AiMessDetector\Core\Metric\MetricRepositoryInterface;
-use AiMessDetector\Core\Rule\AnalysisContext;
-use AiMessDetector\Core\Rule\RuleCategory;
-use AiMessDetector\Core\Symbol\SymbolInfo;
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Violation\Severity;
-use AiMessDetector\Rules\Security\HardcodedCredentialsOptions;
-use AiMessDetector\Rules\Security\HardcodedCredentialsRule;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Rule\RuleCategory;
+use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Violation\Severity;
+use Qualimetrix\Rules\Security\HardcodedCredentialsOptions;
+use Qualimetrix\Rules\Security\HardcodedCredentialsRule;
 
 #[CoversClass(HardcodedCredentialsRule::class)]
 #[CoversClass(HardcodedCredentialsOptions::class)]
@@ -137,7 +137,7 @@ final class HardcodedCredentialsRuleTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
 
-        $options = $this->createStub(\AiMessDetector\Core\Rule\RuleOptionsInterface::class);
+        $options = $this->createStub(\Qualimetrix\Core\Rule\RuleOptionsInterface::class);
         new HardcodedCredentialsRule($options);
     }
 

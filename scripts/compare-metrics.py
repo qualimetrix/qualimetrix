@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Compare metric values between AIMD, pdepend, and phpmetrics
+Compare metric values between Qualimetrix, pdepend, and phpmetrics
 on a single PHP file or class.
 """
 
@@ -17,12 +17,12 @@ import tempfile
 PROJECT_ROOT = Path(__file__).parent.parent
 COMPOSER_BIN = Path.home() / ".composer/vendor/bin"
 
-def run_aimd(file_path: Path) -> Dict[str, Any]:
-    """Run AIMD and extract metrics."""
-    cmd = [str(PROJECT_ROOT / "bin/aimd"), "analyze", str(file_path), "--format=json"]
+def run_qmx(file_path: Path) -> Dict[str, Any]:
+    """Run Qualimetrix and extract metrics."""
+    cmd = [str(PROJECT_ROOT / "bin/qmx"), "analyze", str(file_path), "--format=json"]
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
-        # AIMD outputs to stderr on violations
+        # Qualimetrix outputs to stderr on violations
         output = result.stdout or result.stderr
         data = json.loads(output)
         return data
@@ -96,8 +96,8 @@ def compare_file(file_path: Path) -> None:
     print(f"{'='*70}\n")
 
     # Run all tools
-    print("Running AIMD...")
-    aimd_result = run_aimd(file_path)
+    print("Running Qualimetrix...")
+    qmx_result = run_qmx(file_path)
 
     print("Running pdepend...")
     pdepend_result = run_pdepend(file_path)
@@ -148,21 +148,21 @@ def compare_file(file_path: Path) -> None:
                         print(f"    {k}: {method[k]}")
 
     print("\n" + "="*70)
-    print("AIMD VIOLATIONS")
+    print("Qualimetrix VIOLATIONS")
     print("="*70)
-    if 'files' in aimd_result:
-        for file_data in aimd_result.get('files', []):
+    if 'files' in qmx_result:
+        for file_data in qmx_result.get('files', []):
             for violation in file_data.get('violations', []):
                 print(f"  {violation.get('rule')}: {violation.get('symbol')} = {violation.get('metricValue')}")
                 print(f"    {violation.get('description')}")
-    elif 'error' in aimd_result:
-        print(f"  Error: {aimd_result['error']}")
+    elif 'error' in qmx_result:
+        print(f"  Error: {qmx_result['error']}")
 
     # Comparison table
     print("\n" + "="*70)
     print("METRIC COMPARISON TABLE")
     print("="*70)
-    print(f"{'Metric':<25} {'AIMD':<15} {'pdepend':<15} {'phpmetrics':<15}")
+    print(f"{'Metric':<25} {'Qualimetrix':<15} {'pdepend':<15} {'phpmetrics':<15}")
     print("-"*70)
 
     # Extract specific metrics for comparison

@@ -1,4 +1,4 @@
-name: AI Mess Detector
+name: Qualimetrix
 
 on:
   push:
@@ -23,8 +23,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
 
-      - name: Run AI Mess Detector Action
-        id: aimd
+      - name: Run Qualimetrix Action
+        id: qmx
         uses: ./
         with:
           paths: 'src/'
@@ -35,17 +35,17 @@ jobs:
       - name: Show results
         if: always()
         run: |
-          echo "Exit code: ${{ steps.aimd.outputs.exit-code }}"
-          echo "Violations: ${{ steps.aimd.outputs.violations }}"
+          echo "Exit code: ${{ steps.qmx.outputs.exit-code }}"
+          echo "Violations: ${{ steps.qmx.outputs.violations }}"
 
       - name: Upload results (if failed)
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: aimd-action-results-${{ matrix.php-version }}
+          name: qmx-action-results-${{ matrix.php-version }}
           path: |
-            aimd-report.txt
-            aimd-results.json
+            qmx-report.txt
+            qmx-results.json
           retention-days: 7
           if-no-files-found: ignore
 
@@ -83,21 +83,21 @@ jobs:
       - name: Install dependencies
         run: composer install --no-progress --prefer-dist --optimize-autoloader
 
-      - name: Run AI Mess Detector
+      - name: Run Qualimetrix
         run: |
           if [ -f "baseline.json" ]; then
-            bin/aimd check src/ --baseline=baseline.json --baseline-ignore-stale
+            bin/qmx check src/ --baseline=baseline.json --baseline-ignore-stale
           else
-            bin/aimd check src/
+            bin/qmx check src/
           fi
 
       - name: Upload results (if failed)
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: aimd-direct-results-${{ matrix.php-version }}
+          name: qmx-direct-results-${{ matrix.php-version }}
           path: |
-            aimd-report.txt
-            aimd-results.json
+            qmx-report.txt
+            qmx-results.json
           retention-days: 7
           if-no-files-found: ignore

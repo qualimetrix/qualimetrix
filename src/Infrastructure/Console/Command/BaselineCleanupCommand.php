@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\Console\Command;
+namespace Qualimetrix\Infrastructure\Console\Command;
 
-use AiMessDetector\Baseline\Baseline;
-use AiMessDetector\Baseline\BaselineLoader;
-use AiMessDetector\Baseline\BaselineWriter;
+use Qualimetrix\Baseline\Baseline;
+use Qualimetrix\Baseline\BaselineLoader;
+use Qualimetrix\Baseline\BaselineWriter;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;

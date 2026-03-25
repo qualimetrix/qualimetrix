@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\DependencyInjection\Configurator;
+namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
-use AiMessDetector\Configuration\AnalysisConfiguration;
-use AiMessDetector\Configuration\ConfigurationHolder;
-use AiMessDetector\Configuration\ConfigurationProviderInterface;
-use AiMessDetector\Configuration\Pipeline\ConfigurationPipeline;
-use AiMessDetector\Configuration\RuleNamespaceExclusionProvider;
-use AiMessDetector\Configuration\RuleOptionsFactory;
+use Qualimetrix\Configuration\AnalysisConfiguration;
+use Qualimetrix\Configuration\ConfigurationHolder;
+use Qualimetrix\Configuration\ConfigurationProviderInterface;
+use Qualimetrix\Configuration\Pipeline\ConfigurationPipeline;
+use Qualimetrix\Configuration\RuleNamespaceExclusionProvider;
+use Qualimetrix\Configuration\RuleOptionsFactory;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -72,7 +72,7 @@ final class ConfigurationConfigurator implements ContainerConfiguratorInterface
         $loader = new PhpFileLoader($container, new FileLocator($this->srcDir));
 
         // Register ComposerReader (required by ComposerDiscoveryStage)
-        $container->register(\AiMessDetector\Configuration\Discovery\ComposerReader::class)
+        $container->register(\Qualimetrix\Configuration\Discovery\ComposerReader::class)
             ->setAutowired(true);
 
         // Auto-register all configuration stages from src/Configuration/Pipeline/Stage/*
@@ -82,7 +82,7 @@ final class ConfigurationConfigurator implements ContainerConfiguratorInterface
             ->setAutowired(true);
         $loader->registerClasses(
             $prototype,
-            'AiMessDetector\\Configuration\\Pipeline\\Stage\\',
+            'Qualimetrix\\Configuration\\Pipeline\\Stage\\',
             $this->srcDir . '/Configuration/Pipeline/Stage/*',
             $this->srcDir . '/Configuration/Pipeline/Stage/*Interface.php',
         );

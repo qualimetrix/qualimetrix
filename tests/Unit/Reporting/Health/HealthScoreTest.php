@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Reporting\Health;
+namespace Qualimetrix\Tests\Unit\Reporting\Health;
 
-use AiMessDetector\Reporting\Health\DecompositionItem;
-use AiMessDetector\Reporting\Health\HealthScore;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Reporting\Health\DecompositionItem;
+use Qualimetrix\Reporting\Health\HealthScore;
 
 #[CoversClass(HealthScore::class)]
 final class HealthScoreTest extends TestCase

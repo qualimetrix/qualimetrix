@@ -91,9 +91,9 @@ class ReportGenerator
 <!-- llms:skip-begin -->
 ### Implementation notes
 
-AIMD implements **bidirectional coupling** consistent with Chidamber & Kemerer (1994): CBO = |Ca ∪ Ce|, counting the number of **unique** classes that appear in either incoming or outgoing dependencies. If class A both uses and is used by class B, B is counted once (union semantics), not twice.
+Qualimetrix implements **bidirectional coupling** consistent with Chidamber & Kemerer (1994): CBO = |Ca ∪ Ce|, counting the number of **unique** classes that appear in either incoming or outgoing dependencies. If class A both uses and is used by class B, B is counted once (union semantics), not twice.
 
-- **Extended coupling types:** AIMD detects 14 types of coupling, going beyond C&K's original "methods or instance variables" definition. These include: class instantiation, static method calls, type hints (parameters, return types, properties), `catch` clauses, `instanceof` checks, class constants, attributes, `extends`/`implements`, and trait `use`.
+- **Extended coupling types:** Qualimetrix detects 14 types of coupling, going beyond C&K's original "methods or instance variables" definition. These include: class instantiation, static method calls, type hints (parameters, return types, properties), `catch` clauses, `instanceof` checks, class constants, attributes, `extends`/`implements`, and trait `use`.
 - **Union and intersection types:** Each type in a union (`A|B`) or intersection (`A&B`) type hint is counted as a separate coupling.
 - **Self-references excluded:** References to `self`, `static`, and `parent` within the same class are not counted as coupling.
 - **PHP built-in classes excluded:** Dependencies on classes from the PHP distribution (php-src) are excluded from CBO, Ca, and Ce — this includes core classes (`Exception`, `DateTime`, `Closure`), SPL (`ArrayIterator`, `SplFileInfo`), and bundled extensions (`PDO`, `DOMDocument`, `Random\Randomizer`, `CurlHandle`, etc.). Coupling to stable, PHP-maintained types does not increase architectural risk. Classes from PECL extensions (e.g., `Redis`, `Memcached`, `MongoDB\Driver\Manager`) are **not** excluded and count toward CBO as regular dependencies. Structural dependencies (`extends`) are always preserved for DIT calculations.
@@ -103,7 +103,7 @@ AIMD implements **bidirectional coupling** consistent with Chidamber & Kemerer (
 ### Configuration
 
 ```yaml
-# aimd.yaml
+# qmx.yaml
 rules:
   coupling.cbo:
     exclude_namespaces:
@@ -126,10 +126,10 @@ rules:
 ```
 
 ```bash
-bin/aimd check src/ --rule-opt="coupling.cbo:class.warning=18"
-bin/aimd check src/ --rule-opt="coupling.cbo:class.error=25"
-bin/aimd check src/ --rule-opt="coupling.cbo:namespace.min_class_count=5"
-bin/aimd check src/ --rule-opt="coupling.cbo:namespace.enabled=false"
+bin/qmx check src/ --rule-opt="coupling.cbo:class.warning=18"
+bin/qmx check src/ --rule-opt="coupling.cbo:class.error=25"
+bin/qmx check src/ --rule-opt="coupling.cbo:namespace.min_class_count=5"
+bin/qmx check src/ --rule-opt="coupling.cbo:namespace.enabled=false"
 ```
 
 ---
@@ -220,14 +220,14 @@ class DailyReportJob
 - **Accept instability when it makes sense.** Entry points like console commands, controllers, and cron jobs are naturally unstable (high Ce, low Ca). Consider disabling the rule for these or raising the threshold.
 
 !!! info "Deviation from original spec"
-    Robert C. Martin (1994) originally defined Instability only at the **package** (namespace) level. AIMD extends it to the class level for finer-grained analysis. The namespace-level instability is the canonical metric per Martin's specification; the class-level metric is an AIMD extension.
+    Robert C. Martin (1994) originally defined Instability only at the **package** (namespace) level. Qualimetrix extends it to the class level for finer-grained analysis. The namespace-level instability is the canonical metric per Martin's specification; the class-level metric is an Qualimetrix extension.
 
 <!-- llms:skip-end -->
 
 ### Configuration
 
 ```yaml
-# aimd.yaml
+# qmx.yaml
 rules:
   coupling.instability:
     exclude_namespaces:
@@ -249,9 +249,9 @@ rules:
 ```
 
 ```bash
-bin/aimd check src/ --rule-opt="coupling.instability:class.max_warning=0.9"
-bin/aimd check src/ --rule-opt="coupling.instability:class.max_error=1.0"
-bin/aimd check src/ --rule-opt="coupling.instability:namespace.min_class_count=5"
+bin/qmx check src/ --rule-opt="coupling.instability:class.max_warning=0.9"
+bin/qmx check src/ --rule-opt="coupling.instability:class.max_error=1.0"
+bin/qmx check src/ --rule-opt="coupling.instability:namespace.min_class_count=5"
 ```
 
 ---
@@ -333,7 +333,7 @@ This namespace is in the **Zone of Pain**: it is stable (hard to change without 
 ### Configuration
 
 ```yaml
-# aimd.yaml
+# qmx.yaml
 rules:
   coupling.distance:
     max_distance_warning: 0.4
@@ -355,9 +355,9 @@ rules:
 ```
 
 ```bash
-bin/aimd check src/ --rule-opt="coupling.distance:max_distance_warning=0.4"
-bin/aimd check src/ --rule-opt="coupling.distance:max_distance_error=0.6"
-bin/aimd check src/ --rule-opt="coupling.distance:min_class_count=5"
+bin/qmx check src/ --rule-opt="coupling.distance:max_distance_warning=0.4"
+bin/qmx check src/ --rule-opt="coupling.distance:max_distance_error=0.6"
+bin/qmx check src/ --rule-opt="coupling.distance:min_class_count=5"
 ```
 
 By default, project namespaces are auto-detected from `composer.json` (`autoload.psr-4`).
@@ -433,7 +433,7 @@ class DatabaseConnection
 <!-- llms:skip-begin -->
 ### Implementation notes
 
-AIMD uses the standard PageRank algorithm with the following parameters:
+Qualimetrix uses the standard PageRank algorithm with the following parameters:
 
 - **Damping factor:** 0.85
 - **Max iterations:** 100
@@ -441,14 +441,14 @@ AIMD uses the standard PageRank algorithm with the following parameters:
 
 Ranks are normalized so they sum to 1.0 across all project classes. Vendor classes are excluded from the graph. Isolated classes (no incoming or outgoing dependencies) receive the base rank of `(1 - d) / N`, where `d` is the damping factor and `N` is the total number of classes.
 
-**Sqrt scaling for project size:** Because ranks sum to 1.0, individual ClassRank values naturally decrease as the number of classes grows (dilution effect). To keep thresholds meaningful across different project sizes, AIMD applies a `sqrt(classCount / 100)` scaling factor: thresholds remain unchanged for a 100-class project, loosen for larger projects, and tighten for smaller ones.
+**Sqrt scaling for project size:** Because ranks sum to 1.0, individual ClassRank values naturally decrease as the number of classes grows (dilution effect). To keep thresholds meaningful across different project sizes, Qualimetrix applies a `sqrt(classCount / 100)` scaling factor: thresholds remain unchanged for a 100-class project, loosen for larger projects, and tighten for smaller ones.
 
 <!-- llms:skip-end -->
 
 ### Configuration
 
 ```yaml
-# aimd.yaml
+# qmx.yaml
 rules:
   coupling.class-rank:
     warning: 0.03
@@ -464,6 +464,6 @@ rules:
 ```
 
 ```bash
-bin/aimd check src/ --rule-opt="coupling.class-rank:warning=0.03"
-bin/aimd check src/ --rule-opt="coupling.class-rank:error=0.08"
+bin/qmx check src/ --rule-opt="coupling.class-rank:warning=0.03"
+bin/qmx check src/ --rule-opt="coupling.class-rank:error=0.08"
 ```

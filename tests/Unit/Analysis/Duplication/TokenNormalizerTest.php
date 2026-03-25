@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Analysis\Duplication;
+namespace Qualimetrix\Tests\Unit\Analysis\Duplication;
 
-use AiMessDetector\Analysis\Duplication\NormalizedToken;
-use AiMessDetector\Analysis\Duplication\TokenNormalizer;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Duplication\NormalizedToken;
+use Qualimetrix\Analysis\Duplication\TokenNormalizer;
 
 #[CoversClass(TokenNormalizer::class)]
 #[CoversClass(NormalizedToken::class)]

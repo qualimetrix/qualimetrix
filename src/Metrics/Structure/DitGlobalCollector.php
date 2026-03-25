@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Metrics\Structure;
+namespace Qualimetrix\Metrics\Structure;
 
-use AiMessDetector\Core\Dependency\DependencyGraphInterface;
-use AiMessDetector\Core\Dependency\DependencyType;
-use AiMessDetector\Core\Metric\GlobalContextCollectorInterface;
-use AiMessDetector\Core\Metric\MetricName;
-use AiMessDetector\Core\Metric\MetricRepositoryInterface;
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Dependency\DependencyGraphInterface;
+use Qualimetrix\Core\Dependency\DependencyType;
+use Qualimetrix\Core\Metric\GlobalContextCollectorInterface;
+use Qualimetrix\Core\Metric\MetricName;
+use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Symbol\SymbolType;
 use ReflectionClass;
 use ReflectionException;
 

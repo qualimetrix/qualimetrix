@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Configuration\Pipeline;
+namespace Qualimetrix\Tests\Unit\Configuration\Pipeline;
 
-use AiMessDetector\Configuration\Pipeline\ConfigurationContext;
-use AiMessDetector\Configuration\Pipeline\ConfigurationLayer;
-use AiMessDetector\Configuration\Pipeline\ConfigurationPipeline;
-use AiMessDetector\Configuration\Pipeline\Stage\ConfigurationStageInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Configuration\Pipeline\ConfigurationContext;
+use Qualimetrix\Configuration\Pipeline\ConfigurationLayer;
+use Qualimetrix\Configuration\Pipeline\ConfigurationPipeline;
+use Qualimetrix\Configuration\Pipeline\Stage\ConfigurationStageInterface;
 use Symfony\Component\Console\Input\ArrayInput;
 
 #[CoversClass(ConfigurationPipeline::class)]
@@ -100,7 +100,7 @@ final class ConfigurationPipelineTest extends TestCase
     {
         $pipeline = new ConfigurationPipeline();
 
-        $configFile = $this->createStage(20, 'config', new ConfigurationLayer('aimd.yaml', [
+        $configFile = $this->createStage(20, 'config', new ConfigurationLayer('qmx.yaml', [
             'rules' => [
                 'complexity' => ['warning' => 10],
             ],
@@ -119,7 +119,7 @@ final class ConfigurationPipelineTest extends TestCase
     {
         $pipeline = new ConfigurationPipeline();
 
-        $yamlStage = $this->createStage(20, 'config', new ConfigurationLayer('aimd.yaml', [
+        $yamlStage = $this->createStage(20, 'config', new ConfigurationLayer('qmx.yaml', [
             'disabled_rules' => ['complexity.cyclomatic', 'size.loc'],
         ]));
 
@@ -146,7 +146,7 @@ final class ConfigurationPipelineTest extends TestCase
     {
         $pipeline = new ConfigurationPipeline();
 
-        $yamlStage = $this->createStage(20, 'config', new ConfigurationLayer('aimd.yaml', [
+        $yamlStage = $this->createStage(20, 'config', new ConfigurationLayer('qmx.yaml', [
             'exclude_paths' => ['tests/', 'vendor/'],
         ]));
 
@@ -172,7 +172,7 @@ final class ConfigurationPipelineTest extends TestCase
     {
         $pipeline = new ConfigurationPipeline();
 
-        $yamlStage = $this->createStage(20, 'config', new ConfigurationLayer('aimd.yaml', [
+        $yamlStage = $this->createStage(20, 'config', new ConfigurationLayer('qmx.yaml', [
             'disabled_rules' => ['complexity.cyclomatic'],
         ]));
 
@@ -198,7 +198,7 @@ final class ConfigurationPipelineTest extends TestCase
     {
         $pipeline = new ConfigurationPipeline();
 
-        $yamlStage = $this->createStage(20, 'config', new ConfigurationLayer('aimd.yaml', [
+        $yamlStage = $this->createStage(20, 'config', new ConfigurationLayer('qmx.yaml', [
             'excludes' => ['vendor', 'tests'],
         ]));
 

@@ -54,7 +54,7 @@ __pycache__/
 
 # Test fixtures (generated)
 /tests/Fixtures/generated/
-.aimd-cache/
+.qmx-cache/
 
 # Demo/example files
 examples/

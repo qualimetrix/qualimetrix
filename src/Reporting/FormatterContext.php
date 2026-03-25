@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Reporting;
+namespace Qualimetrix\Reporting;
 
 /**
  * Context passed to formatters with rendering options.

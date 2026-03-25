@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\Storage;
+namespace Qualimetrix\Infrastructure\Storage;
 
 /**
  * Value object representing a file in the storage.

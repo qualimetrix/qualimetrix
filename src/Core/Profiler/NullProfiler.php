@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Core\Profiler;
+namespace Qualimetrix\Core\Profiler;
 
 /**
  * No-op profiler implementation for production use.

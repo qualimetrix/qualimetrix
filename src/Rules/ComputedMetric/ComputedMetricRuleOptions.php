@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Rules\ComputedMetric;
+namespace Qualimetrix\Rules\ComputedMetric;
 
-use AiMessDetector\Core\ComputedMetric\ComputedMetricDefinition;
-use AiMessDetector\Core\ComputedMetric\ComputedMetricDefinitionHolder;
-use AiMessDetector\Core\Rule\RuleOptionsInterface;
-use AiMessDetector\Core\Violation\Severity;
+use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinition;
+use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinitionHolder;
+use Qualimetrix\Core\Rule\RuleOptionsInterface;
+use Qualimetrix\Core\Violation\Severity;
 
 final readonly class ComputedMetricRuleOptions implements RuleOptionsInterface
 {

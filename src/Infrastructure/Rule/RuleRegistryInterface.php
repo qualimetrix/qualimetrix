@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\Rule;
+namespace Qualimetrix\Infrastructure\Rule;
 
-use AiMessDetector\Core\Rule\RuleInterface;
-use AiMessDetector\Infrastructure\Rule\Exception\ConflictingCliAliasException;
+use Qualimetrix\Core\Rule\RuleInterface;
+use Qualimetrix\Infrastructure\Rule\Exception\ConflictingCliAliasException;
 
 /**
  * Registry of available rules.

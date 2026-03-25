@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Baseline\Filter;
+namespace Qualimetrix\Baseline\Filter;
 
-use AiMessDetector\Baseline\Baseline;
-use AiMessDetector\Baseline\BaselineEntry;
-use AiMessDetector\Baseline\ViolationHasher;
-use AiMessDetector\Core\Violation\Filter\ViolationFilterInterface;
-use AiMessDetector\Core\Violation\Violation;
+use Qualimetrix\Baseline\Baseline;
+use Qualimetrix\Baseline\BaselineEntry;
+use Qualimetrix\Baseline\ViolationHasher;
+use Qualimetrix\Core\Violation\Filter\ViolationFilterInterface;
+use Qualimetrix\Core\Violation\Violation;
 
 /**
  * Filters out violations that exist in baseline.

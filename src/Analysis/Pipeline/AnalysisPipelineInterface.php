@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Analysis\Pipeline;
+namespace Qualimetrix\Analysis\Pipeline;
 
-use AiMessDetector\Analysis\Discovery\FileDiscoveryInterface;
+use Qualimetrix\Analysis\Discovery\FileDiscoveryInterface;
 
 /**
  * Main entry point for code analysis.

@@ -6,7 +6,7 @@ declare(strict_types=1);
 /**
  * Benchmark regression checker for health score formulas.
  *
- * Runs AIMD analysis on benchmark projects and compares project-level health scores
+ * Runs Qualimetrix analysis on benchmark projects and compares project-level health scores
  * against expected ranges defined in docs/internal/benchmark-baselines.json.
  *
  * Usage: php scripts/benchmark-regression.php [--update-baselines]
@@ -18,7 +18,7 @@ declare(strict_types=1);
  */
 
 $rootDir = dirname(__DIR__);
-$aimdBin = $rootDir . '/bin/aimd';
+$qmxBin = $rootDir . '/bin/qmx';
 $baselineFile = $rootDir . '/docs/internal/benchmark-baselines.json';
 
 // Parse arguments
@@ -65,7 +65,7 @@ foreach ($projects as $id => $config) {
     // Build command with optional disable-rules
     $cmd = sprintf(
         'php -d memory_limit=2G %s check %s --format=metrics --workers=0',
-        escapeshellarg($aimdBin),
+        escapeshellarg($qmxBin),
         escapeshellarg($path),
     );
 

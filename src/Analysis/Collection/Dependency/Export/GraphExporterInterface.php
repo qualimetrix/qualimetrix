@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Analysis\Collection\Dependency\Export;
+namespace Qualimetrix\Analysis\Collection\Dependency\Export;
 
-use AiMessDetector\Core\Dependency\DependencyGraphInterface;
+use Qualimetrix\Core\Dependency\DependencyGraphInterface;
 
 /**
  * Interface for exporting dependency graphs to various formats.

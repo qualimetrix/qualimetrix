@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Analysis\RuleExecution;
+namespace Qualimetrix\Analysis\RuleExecution;
 
-use AiMessDetector\Core\Rule\AnalysisContext;
-use AiMessDetector\Core\Rule\RuleInterface;
-use AiMessDetector\Core\Violation\Violation;
+use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Rule\RuleInterface;
+use Qualimetrix\Core\Violation\Violation;
 
 /**
  * Executes analysis rules with runtime filtering.

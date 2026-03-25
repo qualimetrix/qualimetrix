@@ -2,23 +2,23 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\Console\Command;
+namespace Qualimetrix\Infrastructure\Console\Command;
 
-use AiMessDetector\Analysis\Collection\Dependency\DependencyGraphBuilder;
-use AiMessDetector\Analysis\Collection\Dependency\DependencyVisitor;
-use AiMessDetector\Analysis\Collection\Dependency\Export\DotExporter;
-use AiMessDetector\Analysis\Collection\Dependency\Export\DotExporterOptions;
-use AiMessDetector\Analysis\Collection\Dependency\Export\GraphExporterInterface;
-use AiMessDetector\Analysis\Collection\Dependency\Export\JsonGraphExporter;
-use AiMessDetector\Analysis\Discovery\FileDiscoveryInterface;
-use AiMessDetector\Core\Ast\FileParserInterface;
-use AiMessDetector\Core\Dependency\Dependency;
-use AiMessDetector\Core\Exception\ParseException;
-use AiMessDetector\Infrastructure\Console\OutputHelper;
 use InvalidArgumentException;
 use PhpParser\NodeTraverser;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use Qualimetrix\Analysis\Collection\Dependency\DependencyGraphBuilder;
+use Qualimetrix\Analysis\Collection\Dependency\DependencyVisitor;
+use Qualimetrix\Analysis\Collection\Dependency\Export\DotExporter;
+use Qualimetrix\Analysis\Collection\Dependency\Export\DotExporterOptions;
+use Qualimetrix\Analysis\Collection\Dependency\Export\GraphExporterInterface;
+use Qualimetrix\Analysis\Collection\Dependency\Export\JsonGraphExporter;
+use Qualimetrix\Analysis\Discovery\FileDiscoveryInterface;
+use Qualimetrix\Core\Ast\FileParserInterface;
+use Qualimetrix\Core\Dependency\Dependency;
+use Qualimetrix\Core\Exception\ParseException;
+use Qualimetrix\Infrastructure\Console\OutputHelper;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;

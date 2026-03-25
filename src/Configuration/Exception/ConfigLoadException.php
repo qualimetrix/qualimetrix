@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Configuration\Exception;
+namespace Qualimetrix\Configuration\Exception;
 
 use RuntimeException;
 use Throwable;

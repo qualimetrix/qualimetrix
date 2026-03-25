@@ -2,27 +2,27 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Configuration\Pipeline\Stage;
+namespace Qualimetrix\Configuration\Pipeline\Stage;
 
-use AiMessDetector\Configuration\Exception\ConfigLoadException;
-use AiMessDetector\Configuration\KnownRuleNamesProviderInterface;
-use AiMessDetector\Configuration\Loader\ConfigLoaderInterface;
-use AiMessDetector\Configuration\Pipeline\ConfigurationContext;
-use AiMessDetector\Configuration\Pipeline\ConfigurationLayer;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use Qualimetrix\Configuration\Exception\ConfigLoadException;
+use Qualimetrix\Configuration\KnownRuleNamesProviderInterface;
+use Qualimetrix\Configuration\Loader\ConfigLoaderInterface;
+use Qualimetrix\Configuration\Pipeline\ConfigurationContext;
+use Qualimetrix\Configuration\Pipeline\ConfigurationLayer;
 
 /**
  * Loads configuration from config file (priority: 20).
  *
- * Searches for aimd.yaml or aimd.yml in working directory.
+ * Searches for qmx.yaml or qmx.yml in working directory.
  */
 final class ConfigFileStage implements ConfigurationStageInterface
 {
     private const int PRIORITY = 20;
 
     /** @var list<string> */
-    private const array CONFIG_FILE_NAMES = ['aimd.yaml', 'aimd.yml'];
+    private const array CONFIG_FILE_NAMES = ['qmx.yaml', 'qmx.yml'];
 
     public function __construct(
         private readonly ConfigLoaderInterface $loader,
@@ -62,7 +62,7 @@ final class ConfigFileStage implements ConfigurationStageInterface
      * Resolves the config file path.
      *
      * If an explicit path was provided via --config, uses that (throws on missing file).
-     * Otherwise, auto-detects aimd.yaml or aimd.yml in the working directory.
+     * Otherwise, auto-detects qmx.yaml or qmx.yml in the working directory.
      */
     private function resolveConfigPath(ConfigurationContext $context): ?string
     {

@@ -7,7 +7,7 @@ Three Options classes in `src/Rules/Coupling/` have nearly identical code for `e
 ## Files with Duplicate Code
 
 ### 1. NamespaceInstabilityOptions.php
-**File**: `/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Rules/Coupling/NamespaceInstabilityOptions.php`
+**File**: `/Users/fractalizer/PhpstormProjects/qualimetrix/src/Rules/Coupling/NamespaceInstabilityOptions.php`
 
 ```php
 public function __construct(
@@ -41,12 +41,12 @@ public function isNamespaceExcluded(string $namespace): bool
 ```
 
 ### 2. NamespaceCboOptions.php
-**File**: `/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Rules/Coupling/NamespaceCboOptions.php`
+**File**: `/Users/fractalizer/PhpstormProjects/qualimetrix/src/Rules/Coupling/NamespaceCboOptions.php`
 
 Same code structure (lines 39-45, 62-73) with identical `isNamespaceExcluded()` implementation.
 
 ### 3. DistanceOptions.php
-**File**: `/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Rules/Coupling/DistanceOptions.php`
+**File**: `/Users/fractalizer/PhpstormProjects/qualimetrix/src/Rules/Coupling/DistanceOptions.php`
 
 ```php
 // In fromArray() - lines 62-68
@@ -79,7 +79,7 @@ private function namespaceMatchesPrefix(string $namespace, string $prefix): bool
 ## Usage in Rules
 
 ### InstabilityRule.php
-**File**: `/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Rules/Coupling/InstabilityRule.php` (line 190)
+**File**: `/Users/fractalizer/PhpstormProjects/qualimetrix/src/Rules/Coupling/InstabilityRule.php` (line 190)
 
 ```php
 private function analyzeNamespaceLevel(AnalysisContext $context): array
@@ -97,7 +97,7 @@ private function analyzeNamespaceLevel(AnalysisContext $context): array
 ```
 
 ### CboRule.php
-**File**: `/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Rules/Coupling/CboRule.php` (line 170)
+**File**: `/Users/fractalizer/PhpstormProjects/qualimetrix/src/Rules/Coupling/CboRule.php` (line 170)
 
 ```php
 private function analyzeNamespaceLevel(AnalysisContext $context): array
@@ -115,7 +115,7 @@ private function analyzeNamespaceLevel(AnalysisContext $context): array
 ```
 
 ### DistanceRule.php
-**File**: `/Users/fractalizer/PhpstormProjects/ai-mess-detector/src/Rules/Coupling/DistanceRule.php` (lines 148-176)
+**File**: `/Users/fractalizer/PhpstormProjects/qualimetrix/src/Rules/Coupling/DistanceRule.php` (lines 148-176)
 
 Different approach — method in rule, not in options:
 

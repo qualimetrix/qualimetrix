@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Reporting\Health;
+namespace Qualimetrix\Reporting\Health;
 
-use AiMessDetector\Core\ComputedMetric\ComputedMetricDefaults;
-use AiMessDetector\Core\ComputedMetric\ComputedMetricDefinitionHolder;
-use AiMessDetector\Core\Metric\MetricName;
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Symbol\SymbolType;
-use AiMessDetector\Core\Violation\Violation;
-use AiMessDetector\Reporting\Debt\DebtCalculator;
-use AiMessDetector\Reporting\Report;
+use Qualimetrix\Core\ComputedMetric\ComputedMetricDefaults;
+use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinitionHolder;
+use Qualimetrix\Core\Metric\MetricName;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Reporting\Debt\DebtCalculator;
+use Qualimetrix\Reporting\Report;
 
 /**
  * Enriches a Report with health scores, worst offenders, and tech debt.
@@ -124,7 +124,7 @@ final readonly class SummaryEnricher
      */
     private function buildDecomposition(
         string $dimension,
-        \AiMessDetector\Core\Metric\MetricBag $projectMetrics,
+        \Qualimetrix\Core\Metric\MetricBag $projectMetrics,
     ): array {
         // Typing dimension needs special handling: compute percentages from raw sums
         if ($dimension === 'health.typing') {
@@ -163,7 +163,7 @@ final readonly class SummaryEnricher
     /**
      * @return list<DecompositionItem>
      */
-    private function buildTypingDecomposition(\AiMessDetector\Core\Metric\MetricBag $metrics): array
+    private function buildTypingDecomposition(\Qualimetrix\Core\Metric\MetricBag $metrics): array
     {
         $components = [
             ['label' => 'Parameter types', 'typed' => 'typeCoverage.paramTyped.sum', 'total' => 'typeCoverage.paramTotal.sum'],
@@ -207,7 +207,7 @@ final readonly class SummaryEnricher
         $overallDef = $defaults['health.overall'];
         $warnThreshold = $overallDef->warningThreshold ?? 50.0;
 
-        /** @var list<array{score: float, info: \AiMessDetector\Core\Symbol\SymbolInfo}> $candidates */
+        /** @var list<array{score: float, info: \Qualimetrix\Core\Symbol\SymbolInfo}> $candidates */
         $candidates = [];
 
         foreach ($report->metrics->all($symbolType) as $symbolInfo) {
@@ -283,7 +283,7 @@ final readonly class SummaryEnricher
     /**
      * @return array<string, float>
      */
-    private function getPerDimensionScores(\AiMessDetector\Core\Metric\MetricBag $metrics): array
+    private function getPerDimensionScores(\Qualimetrix\Core\Metric\MetricBag $metrics): array
     {
         $dimensions = ['complexity', 'cohesion', 'coupling', 'typing', 'maintainability', 'overall'];
         $scores = [];
@@ -377,7 +377,7 @@ final readonly class SummaryEnricher
     /**
      * @return array<string, int|float>
      */
-    private function getNotableMetrics(\AiMessDetector\Core\Metric\MetricBag $metrics, SymbolType $symbolType): array
+    private function getNotableMetrics(\Qualimetrix\Core\Metric\MetricBag $metrics, SymbolType $symbolType): array
     {
         $notable = [];
         $keys = $symbolType === SymbolType::Class_

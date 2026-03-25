@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Metrics\Maintainability;
+namespace Qualimetrix\Tests\Unit\Metrics\Maintainability;
 
-use AiMessDetector\Core\Metric\AggregationStrategy;
-use AiMessDetector\Core\Metric\MetricBag;
-use AiMessDetector\Core\Metric\SymbolLevel;
-use AiMessDetector\Metrics\Maintainability\MaintainabilityIndexCalculator;
-use AiMessDetector\Metrics\Maintainability\MaintainabilityIndexCollector;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Metric\AggregationStrategy;
+use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Metric\SymbolLevel;
+use Qualimetrix\Metrics\Maintainability\MaintainabilityIndexCalculator;
+use Qualimetrix\Metrics\Maintainability\MaintainabilityIndexCollector;
 
 #[CoversClass(MaintainabilityIndexCollector::class)]
 #[CoversClass(MaintainabilityIndexCalculator::class)]

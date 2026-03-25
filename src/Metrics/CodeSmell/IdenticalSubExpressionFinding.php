@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Metrics\CodeSmell;
+namespace Qualimetrix\Metrics\CodeSmell;
 
 /**
  * Represents a detected identical sub-expression finding.

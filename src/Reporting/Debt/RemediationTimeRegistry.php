@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Reporting\Debt;
+namespace Qualimetrix\Reporting\Debt;
 
-use AiMessDetector\Core\Violation\Violation;
+use Qualimetrix\Core\Violation\Violation;
 
 /**
  * Registry of estimated remediation times (in minutes) per rule.

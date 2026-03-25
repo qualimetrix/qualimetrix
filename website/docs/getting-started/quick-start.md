@@ -1,6 +1,6 @@
 # Quick Start
 
-Three ways to integrate AI Mess Detector into your project:
+Three ways to integrate Qualimetrix into your project:
 
 1. **Pre-commit Hook** — check before every commit
 2. **GitHub Action** — automatic checks in CI/CD
@@ -13,13 +13,13 @@ Three ways to integrate AI Mess Detector into your project:
 ### Install
 
 ```bash
-composer require --dev fractalizer/ai-mess-detector
+composer require --dev qualimetrix/qualimetrix
 ```
 
 ### Run the analysis
 
 ```bash
-vendor/bin/aimd check src/
+vendor/bin/qmx check src/
 ```
 
 <!-- llms:skip-begin -->
@@ -28,7 +28,7 @@ vendor/bin/aimd check src/
 The default output shows a health summary with scores by category:
 
 ```
-AI Mess Detector — 127 files analyzed, 2.3s
+Qualimetrix — 127 files analyzed, 2.3s
 
 Health ████████████████████░░░░░░░░░░ 67.2% Fair
 
@@ -56,7 +56,7 @@ Each category gets a label: **Excellent** (top quality), **Good** (solid), **Fai
 Investigate a specific namespace to see its classes and violations:
 
 ```bash
-vendor/bin/aimd check src/ --namespace='App\Service'
+vendor/bin/qmx check src/ --namespace='App\Service'
 ```
 
 ### See detailed violations
@@ -64,7 +64,7 @@ vendor/bin/aimd check src/ --namespace='App\Service'
 List individual violations with file paths, line numbers, and remediation hints:
 
 ```bash
-vendor/bin/aimd check src/ --detail
+vendor/bin/qmx check src/ --detail
 ```
 
 ### Generate an HTML report
@@ -72,7 +72,7 @@ vendor/bin/aimd check src/ --detail
 For a full interactive report with charts and drill-down navigation:
 
 ```bash
-vendor/bin/aimd check src/ --format=health -o report.html
+vendor/bin/qmx check src/ --format=health -o report.html
 ```
 
 Open `report.html` in your browser to explore the results.
@@ -105,7 +105,7 @@ Automatic checking of staged files before every commit.
 === "Built-in command"
 
     ```bash
-    vendor/bin/aimd hook:install
+    vendor/bin/qmx hook:install
     ```
 
 ### Usage
@@ -117,8 +117,8 @@ git add src/MyClass.php
 git commit -m "Add new feature"
 
 # Hook will run automatically:
-# Running AI Mess Detector on staged files...
-# AI Mess Detector passed.
+# Running Qualimetrix on staged files...
+# Qualimetrix passed.
 ```
 
 ### Bypassing the Hook
@@ -134,7 +134,7 @@ If the project already contains legacy code with violations:
 
 ```bash
 # Create a baseline for existing issues
-vendor/bin/aimd check src/ --generate-baseline=baseline.json
+vendor/bin/qmx check src/ --generate-baseline=baseline.json
 
 # Now the hook will ignore issues from the baseline
 git commit -m "Add feature"
@@ -161,13 +161,13 @@ name: Code Quality
 on: [push, pull_request]
 
 jobs:
-  aimd:
+  qmx:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Run AI Mess Detector
-        uses: fractalizer/ai-mess-detector@v1
+      - name: Run Qualimetrix
+        uses: qualimetrix/qualimetrix@v1
         with:
           paths: 'src/'
           baseline: 'baseline.json'
@@ -183,7 +183,7 @@ Run analysis in a container without installing PHP locally.
 ### Building the Image
 
 ```bash
-docker build -t aimd .
+docker build -t qmx .
 ```
 
 ### Usage
@@ -192,16 +192,16 @@ docker build -t aimd .
 <!-- llms:skip-end -->
 
 # Analyze the current directory
-docker run --rm -v $(pwd):/app aimd check src/
+docker run --rm -v $(pwd):/app qmx check src/
 
 # With baseline
-docker run --rm -v $(pwd):/app aimd check src/ --baseline=baseline.json
+docker run --rm -v $(pwd):/app qmx check src/ --baseline=baseline.json
 
 # With configuration
-docker run --rm -v $(pwd):/app aimd check src/ --config=aimd.yaml
+docker run --rm -v $(pwd):/app qmx check src/ --config=qmx.yaml
 
 # JSON output
-docker run --rm -v $(pwd):/app aimd check src/ --format=json
+docker run --rm -v $(pwd):/app qmx check src/ --format=json
 ```
 
 ### Docker Compose
@@ -209,8 +209,8 @@ docker run --rm -v $(pwd):/app aimd check src/ --format=json
 ```yaml
 # docker-compose.yml
 services:
-  aimd:
-    image: aimd:latest
+  qmx:
+    image: qmx:latest
     volumes:
       - .:/app:ro
       - ./baseline.json:/app/baseline.json
@@ -218,7 +218,7 @@ services:
 ```
 
 ```bash
-docker-compose run --rm aimd
+docker-compose run --rm qmx
 ```
 
 ### CI/CD with Docker
@@ -227,15 +227,15 @@ docker-compose run --rm aimd
 
     ```yaml
     # .gitlab-ci.yml
-    aimd:
+    qmx:
       stage: test
-      image: aimd:latest
+      image: qmx:latest
       script:
-        - aimd check src/ --baseline=baseline.json
+        - qmx check src/ --baseline=baseline.json
       artifacts:
         when: on_failure
         paths:
-          - aimd-results.json
+          - qmx-results.json
     ```
 
 === "Jenkins"
@@ -245,11 +245,11 @@ docker-compose run --rm aimd
     pipeline {
         agent any
         stages {
-            stage('AIMD Analysis') {
+            stage('Qualimetrix Analysis') {
                 steps {
                     script {
-                        docker.image('aimd:latest').inside('-v $WORKSPACE:/app') {
-                            sh 'aimd check src/ --baseline=baseline.json'
+                        docker.image('qmx:latest').inside('-v $WORKSPACE:/app') {
+                            sh 'qmx check src/ --baseline=baseline.json'
                         }
                     }
                 }
@@ -270,7 +270,7 @@ Suppress violations for files matching glob patterns. Useful for generated code,
 === "YAML Configuration"
 
     ```yaml
-    # aimd.yaml
+    # qmx.yaml
     exclude_paths:
       - src/Entity/*
       - src/DTO/*
@@ -279,7 +279,7 @@ Suppress violations for files matching glob patterns. Useful for generated code,
 === "CLI"
 
     ```bash
-    vendor/bin/aimd check src/ --exclude-path='src/Entity/*' --exclude-path='*/DTO/*'
+    vendor/bin/qmx check src/ --exclude-path='src/Entity/*' --exclude-path='*/DTO/*'
     ```
 
 CLI patterns are merged with those defined in the config file.
@@ -320,16 +320,16 @@ ls -la .git/hooks/pre-commit
 chmod +x .git/hooks/pre-commit
 ```
 
-**`aimd binary not found`:**
+**`qmx binary not found`:**
 
 ```bash
 composer install
-ls -la bin/aimd
+ls -la bin/qmx
 ```
 
 ### Docker Permission Issues
 
 ```bash
 # Linux with SELinux: add :z flag
-docker run --rm -v $(pwd):/app:z aimd check src/
+docker run --rm -v $(pwd):/app:z qmx check src/
 ```

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Analysis\Discovery;
+namespace Qualimetrix\Analysis\Discovery;
 
 use SplFileInfo;
 

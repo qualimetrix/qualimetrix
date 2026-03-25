@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Reporting\Health;
+namespace Qualimetrix\Reporting\Health;
 
-use AiMessDetector\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**
  * A namespace or class identified as a worst offender in the analysis.

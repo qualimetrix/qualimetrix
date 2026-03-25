@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Reporting\Filter;
+namespace Qualimetrix\Reporting\Filter;
 
-use AiMessDetector\Core\Violation\Violation;
-use AiMessDetector\Reporting\FormatterContext;
-use AiMessDetector\Reporting\Health\WorstOffender;
+use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Reporting\FormatterContext;
+use Qualimetrix\Reporting\Health\WorstOffender;
 
 /**
  * Filters violations and worst offenders by namespace/class context.

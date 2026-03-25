@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\DependencyInjection\Configurator;
+namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
-use AiMessDetector\Analysis\Collection\Dependency\DependencyResolver;
-use AiMessDetector\Analysis\Collection\Dependency\DependencyVisitor;
-use AiMessDetector\Analysis\Collection\Metric\CompositeCollector;
-use AiMessDetector\Configuration\ConfigurationProviderInterface;
-use AiMessDetector\Infrastructure\Logging\DelegatingLogger;
-use AiMessDetector\Infrastructure\Parallel\Strategy\AmphpParallelStrategy;
-use AiMessDetector\Infrastructure\Parallel\Strategy\SequentialStrategy;
-use AiMessDetector\Infrastructure\Parallel\Strategy\StrategySelector;
-use AiMessDetector\Infrastructure\Parallel\Strategy\WorkerCountDetector;
+use Qualimetrix\Analysis\Collection\Dependency\DependencyResolver;
+use Qualimetrix\Analysis\Collection\Dependency\DependencyVisitor;
+use Qualimetrix\Analysis\Collection\Metric\CompositeCollector;
+use Qualimetrix\Configuration\ConfigurationProviderInterface;
+use Qualimetrix\Infrastructure\Logging\DelegatingLogger;
+use Qualimetrix\Infrastructure\Parallel\Strategy\AmphpParallelStrategy;
+use Qualimetrix\Infrastructure\Parallel\Strategy\SequentialStrategy;
+use Qualimetrix\Infrastructure\Parallel\Strategy\StrategySelector;
+use Qualimetrix\Infrastructure\Parallel\Strategy\WorkerCountDetector;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -44,7 +44,7 @@ final class CollectorConfigurator implements ContainerConfiguratorInterface
         $prototype = (new Definition())->setAutoconfigured(true)->setAutowired(true);
         $loader->registerClasses(
             $prototype,
-            'AiMessDetector\\Metrics\\',
+            'Qualimetrix\\Metrics\\',
             $this->srcDir . '/Metrics/*',
             $this->srcDir . '/Metrics/{Abstract*.php,*Interface.php,*Visitor.php,*Trait.php,*ClassData.php,*Metrics.php,*Calculator.php}',
         );

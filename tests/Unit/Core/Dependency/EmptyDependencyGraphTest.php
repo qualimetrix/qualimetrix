@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Core\Dependency;
+namespace Qualimetrix\Tests\Unit\Core\Dependency;
 
-use AiMessDetector\Core\Dependency\DependencyGraphInterface;
-use AiMessDetector\Core\Dependency\EmptyDependencyGraph;
-use AiMessDetector\Core\Symbol\SymbolPath;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Dependency\DependencyGraphInterface;
+use Qualimetrix\Core\Dependency\EmptyDependencyGraph;
+use Qualimetrix\Core\Symbol\SymbolPath;
 
 #[CoversClass(EmptyDependencyGraph::class)]
 final class EmptyDependencyGraphTest extends TestCase

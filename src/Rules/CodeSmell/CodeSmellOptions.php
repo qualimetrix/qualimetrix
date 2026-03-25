@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Rules\CodeSmell;
+namespace Qualimetrix\Rules\CodeSmell;
 
-use AiMessDetector\Core\Rule\RuleOptionsInterface;
-use AiMessDetector\Core\Violation\Severity;
+use Qualimetrix\Core\Rule\RuleOptionsInterface;
+use Qualimetrix\Core\Violation\Severity;
 
 /**
  * Simple options for code smell rules.

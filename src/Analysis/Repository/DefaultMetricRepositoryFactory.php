@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Analysis\Repository;
+namespace Qualimetrix\Analysis\Repository;
 
-use AiMessDetector\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 
 /**
  * Default factory that creates InMemoryMetricRepository instances.

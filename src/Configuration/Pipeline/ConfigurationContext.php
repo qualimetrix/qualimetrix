@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Configuration\Pipeline;
+namespace Qualimetrix\Configuration\Pipeline;
 
 use Symfony\Component\Console\Input\InputInterface;
 

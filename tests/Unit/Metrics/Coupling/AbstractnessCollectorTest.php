@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Metrics\Coupling;
+namespace Qualimetrix\Tests\Unit\Metrics\Coupling;
 
-use AiMessDetector\Analysis\Collection\Dependency\DependencyGraph;
-use AiMessDetector\Analysis\Repository\InMemoryMetricRepository;
-use AiMessDetector\Core\Metric\MetricBag;
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Metrics\Coupling\AbstractnessCollector;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Collection\Dependency\DependencyGraph;
+use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
+use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Metrics\Coupling\AbstractnessCollector;
 
 #[CoversClass(AbstractnessCollector::class)]
 final class AbstractnessCollectorTest extends TestCase

@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Core\Suppression;
+namespace Qualimetrix\Core\Suppression;
 
-use AiMessDetector\Core\Rule\RuleMatcher;
+use Qualimetrix\Core\Rule\RuleMatcher;
 
 /**
  * Represents a suppression tag from docblock.
  *
- * Example: @aimd-ignore complexity Reason why it's ignored
+ * Example: @qmx-ignore complexity Reason why it's ignored
  */
 final readonly class Suppression
 {

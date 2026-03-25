@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Analysis\Collection\Dependency;
+namespace Qualimetrix\Tests\Unit\Analysis\Collection\Dependency;
 
-use AiMessDetector\Analysis\Collection\Dependency\Cycle;
-use AiMessDetector\Core\Symbol\SymbolPath;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Collection\Dependency\Cycle;
+use Qualimetrix\Core\Symbol\SymbolPath;
 
 #[CoversClass(Cycle::class)]
 final class CycleTest extends TestCase

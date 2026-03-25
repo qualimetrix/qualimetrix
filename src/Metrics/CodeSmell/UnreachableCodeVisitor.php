@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Metrics\CodeSmell;
+namespace Qualimetrix\Metrics\CodeSmell;
 
-use AiMessDetector\Core\Metric\MethodWithMetrics;
-use AiMessDetector\Core\Metric\MetricBag;
-use AiMessDetector\Metrics\ResettableVisitorInterface;
-use AiMessDetector\Metrics\VisitorMethodTrackingTrait;
 use PhpParser\Node;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Stmt;
 use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\Node\Stmt\Function_;
 use PhpParser\NodeVisitorAbstract;
+use Qualimetrix\Core\Metric\MethodWithMetrics;
+use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Metrics\ResettableVisitorInterface;
+use Qualimetrix\Metrics\VisitorMethodTrackingTrait;
 
 /**
  * Visitor for detecting unreachable code after terminal statements.

@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Metrics\Structure;
+namespace Qualimetrix\Tests\Unit\Metrics\Structure;
 
-use AiMessDetector\Metrics\Structure\TccLccClassData;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Metrics\Structure\TccLccClassData;
 
 #[CoversClass(TccLccClassData::class)]
 final class TccLccClassDataTest extends TestCase

@@ -16,7 +16,7 @@ Parsing PHP into AST is the most expensive operation. Caching avoids repeated pa
 | Level       | What is cached | Key depends on                           | When invalidated               |
 | ----------- | -------------- | ---------------------------------------- | ------------------------------ |
 | **AST**     | Parse result   | file + mtime + size + php-parser version | File change, php-parser update |
-| **Metrics** | File MetricBag | AST key + collectors                     | File change, aimd update       |
+| **Metrics** | File MetricBag | AST key + collectors                     | File change, qmx update        |
 
 **Priority:** AST caching is primary (80%+ of time). MetricBag caching is an additional optimization for incremental runs.
 
@@ -50,7 +50,7 @@ Generates cache key for a file.
 
 **Hashing:** `xxh128` (fast non-cryptographic hash)
 
-**Important:** For the AST cache, the aimd version is NOT included in the key — the AST does not depend on the tool version.
+**Important:** For the AST cache, the qmx version is NOT included in the key — the AST does not depend on the tool version.
 
 ### FileCache
 
@@ -79,7 +79,7 @@ This prevents race conditions during parallel writes from different workers.
 
 **Storage structure:**
 ```
-.aimd-cache/
+.qmx-cache/
 ├── ab/
 │   └── cdef1234567890abcdef.cache
 ├── 12/
@@ -152,29 +152,29 @@ Factory with runtime configuration awareness.
 
 ## Recommendations
 
-1. **CI/CD:** Cache `.aimd-cache` between builds
-2. **Git:** Add `.aimd-cache/` to `.gitignore`
+1. **CI/CD:** Cache `.qmx-cache` between builds
+2. **Git:** Add `.qmx-cache/` to `.gitignore`
 3. **Large changes:** Use `--clear-cache` after refactoring
 
 ## CLI Options
 
-| Option          | Description                            |
-| --------------- | -------------------------------------- |
-| `--no-cache`    | Disable caching                        |
-| `--cache-dir`   | Cache directory (default: .aimd-cache) |
-| `--clear-cache` | Clear cache before analysis            |
+| Option          | Description                           |
+| --------------- | ------------------------------------- |
+| `--no-cache`    | Disable caching                       |
+| `--cache-dir`   | Cache directory (default: .qmx-cache) |
+| `--clear-cache` | Clear cache before analysis           |
 
 ## Examples
 
 ```bash
 # Disable cache
-bin/aimd check src/ --no-cache
+bin/qmx check src/ --no-cache
 
 # Clear cache before analysis
-bin/aimd check src/ --clear-cache
+bin/qmx check src/ --clear-cache
 
 # Custom cache directory
-bin/aimd check src/ --cache-dir=/tmp/aimd-cache
+bin/qmx check src/ --cache-dir=/tmp/qmx-cache
 ```
 
 ## Definition of Done

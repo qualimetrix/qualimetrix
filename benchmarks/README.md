@@ -32,9 +32,9 @@ These projects serve as a reference corpus for:
 
 ### Self-analysis
 
-| ID   | Path   | Description             |
-| ---- | ------ | ----------------------- |
-| aimd | `src/` | AI Mess Detector itself |
+| ID  | Path   | Description        |
+| --- | ------ | ------------------ |
+| qmx | `src/` | Qualimetrix itself |
 
 ### Proprietary (local only, not in repo)
 
@@ -72,7 +72,7 @@ Output is written to `docs/internal/benchmark-data.json` by default.
 
 ## Regression Testing
 
-`composer benchmark:check` runs AIMD on all open-source benchmark projects and compares
+`composer benchmark:check` runs Qualimetrix on all open-source benchmark projects and compares
 project-level health scores against expected ranges in `docs/internal/benchmark-baselines.json`.
 
 - Exit code 0: all scores within ranges

@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Infrastructure\Console\Progress;
+namespace Qualimetrix\Tests\Unit\Infrastructure\Console\Progress;
 
-use AiMessDetector\Core\Progress\ProgressReporter;
-use AiMessDetector\Infrastructure\Console\Progress\DelegatingProgressReporter;
-use AiMessDetector\Infrastructure\Console\Progress\ProgressReporterHolder;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Progress\ProgressReporter;
+use Qualimetrix\Infrastructure\Console\Progress\DelegatingProgressReporter;
+use Qualimetrix\Infrastructure\Console\Progress\ProgressReporterHolder;
 
 final class DelegatingProgressReporterTest extends TestCase
 {

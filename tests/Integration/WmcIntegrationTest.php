@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Integration;
+namespace Qualimetrix\Tests\Integration;
 
-use AiMessDetector\Analysis\Aggregator\AggregationHelper;
-use AiMessDetector\Analysis\Aggregator\MetricAggregator;
-use AiMessDetector\Analysis\Repository\InMemoryMetricRepository;
-use AiMessDetector\Core\Metric\MetricBag;
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Symbol\SymbolType;
-use AiMessDetector\Metrics\Complexity\CyclomaticComplexityCollector;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Aggregator\AggregationHelper;
+use Qualimetrix\Analysis\Aggregator\MetricAggregator;
+use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
+use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Metrics\Complexity\CyclomaticComplexityCollector;
 
 /**
  * Integration test for WMC metric.

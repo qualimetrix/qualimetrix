@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Analysis\Namespace_;
+namespace Qualimetrix\Tests\Unit\Analysis\Namespace_;
 
-use AiMessDetector\Analysis\Namespace_\Psr4NamespaceDetector;
 use FilesystemIterator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Namespace_\Psr4NamespaceDetector;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
@@ -20,7 +20,7 @@ final class Psr4NamespaceDetectorTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->fixturesDir = sys_get_temp_dir() . '/aimd-psr4-test-' . uniqid();
+        $this->fixturesDir = sys_get_temp_dir() . '/qmx-psr4-test-' . uniqid();
         mkdir($this->fixturesDir, 0755, true);
     }
 

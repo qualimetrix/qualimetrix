@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Infrastructure\Storage;
+namespace Qualimetrix\Tests\Unit\Infrastructure\Storage;
 
-use AiMessDetector\Infrastructure\Storage\ChangeDetector;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Infrastructure\Storage\ChangeDetector;
 use SplFileInfo;
 
 final class ChangeDetectorTest extends TestCase

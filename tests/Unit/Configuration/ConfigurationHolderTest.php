@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Configuration;
+namespace Qualimetrix\Tests\Unit\Configuration;
 
-use AiMessDetector\Configuration\AnalysisConfiguration;
-use AiMessDetector\Configuration\ConfigurationHolder;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Configuration\AnalysisConfiguration;
+use Qualimetrix\Configuration\ConfigurationHolder;
 use RuntimeException;
 
 #[CoversClass(ConfigurationHolder::class)]

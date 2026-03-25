@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Reporting\Formatter\Json;
+namespace Qualimetrix\Reporting\Formatter\Json;
 
-use AiMessDetector\Core\Violation\Severity;
-use AiMessDetector\Core\Violation\Violation;
-use AiMessDetector\Reporting\Debt\RemediationTimeRegistry;
-use AiMessDetector\Reporting\FormatterContext;
+use Qualimetrix\Core\Violation\Severity;
+use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Reporting\Debt\RemediationTimeRegistry;
+use Qualimetrix\Reporting\FormatterContext;
 
 final class JsonViolationSection
 {

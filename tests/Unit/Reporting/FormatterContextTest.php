@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Reporting;
+namespace Qualimetrix\Tests\Unit\Reporting;
 
-use AiMessDetector\Reporting\FormatterContext;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Reporting\FormatterContext;
 
 #[CoversClass(FormatterContext::class)]
 final class FormatterContextTest extends TestCase
@@ -91,7 +91,7 @@ final class FormatterContextTest extends TestCase
     {
         $context = new FormatterContext(
             useColor: false,
-            groupBy: \AiMessDetector\Reporting\GroupBy::File,
+            groupBy: \Qualimetrix\Reporting\GroupBy::File,
             basePath: '/project',
             partialAnalysis: true,
             namespace: 'App\\Service',
@@ -105,7 +105,7 @@ final class FormatterContextTest extends TestCase
 
         self::assertSame(50, $result->detailLimit);
         self::assertFalse($result->useColor);
-        self::assertSame(\AiMessDetector\Reporting\GroupBy::File, $result->groupBy);
+        self::assertSame(\Qualimetrix\Reporting\GroupBy::File, $result->groupBy);
         self::assertSame('/project', $result->basePath);
         self::assertTrue($result->partialAnalysis);
         self::assertSame('App\\Service', $result->namespace);

@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Analysis\Duplication;
+namespace Qualimetrix\Analysis\Duplication;
 
-use AiMessDetector\Configuration\ConfigurationProviderInterface;
-use AiMessDetector\Core\Duplication\DuplicateBlock;
-use AiMessDetector\Core\Duplication\DuplicateLocation;
-use AiMessDetector\Core\Util\PathNormalizer;
+use Qualimetrix\Configuration\ConfigurationProviderInterface;
+use Qualimetrix\Core\Duplication\DuplicateBlock;
+use Qualimetrix\Core\Duplication\DuplicateLocation;
+use Qualimetrix\Core\Util\PathNormalizer;
 use SplFileInfo;
 
 /**

@@ -2,22 +2,22 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Analysis\RuleExecution;
+namespace Qualimetrix\Tests\Unit\Analysis\RuleExecution;
 
-use AiMessDetector\Analysis\RuleExecution\RuleExecutor;
-use AiMessDetector\Configuration\AnalysisConfiguration;
-use AiMessDetector\Configuration\ConfigurationHolder;
-use AiMessDetector\Configuration\RuleNamespaceExclusionProvider;
-use AiMessDetector\Core\Rule\AnalysisContext;
-use AiMessDetector\Core\Rule\RuleCategory;
-use AiMessDetector\Core\Rule\RuleInterface;
-use AiMessDetector\Core\Rule\RuleLevel;
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Violation\Location;
-use AiMessDetector\Core\Violation\Severity;
-use AiMessDetector\Core\Violation\Violation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\RuleExecution\RuleExecutor;
+use Qualimetrix\Configuration\AnalysisConfiguration;
+use Qualimetrix\Configuration\ConfigurationHolder;
+use Qualimetrix\Configuration\RuleNamespaceExclusionProvider;
+use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Rule\RuleCategory;
+use Qualimetrix\Core\Rule\RuleInterface;
+use Qualimetrix\Core\Rule\RuleLevel;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Violation\Location;
+use Qualimetrix\Core\Violation\Severity;
+use Qualimetrix\Core\Violation\Violation;
 
 #[CoversClass(RuleExecutor::class)]
 final class RuleExecutorTest extends TestCase
@@ -424,7 +424,7 @@ final class RuleExecutorTest extends TestCase
 
     private function createMinimalContext(): AnalysisContext
     {
-        $repository = $this->createStub(\AiMessDetector\Core\Metric\MetricRepositoryInterface::class);
+        $repository = $this->createStub(\Qualimetrix\Core\Metric\MetricRepositoryInterface::class);
         $repository->method('all')->willReturn([]);
 
         return new AnalysisContext($repository, []);

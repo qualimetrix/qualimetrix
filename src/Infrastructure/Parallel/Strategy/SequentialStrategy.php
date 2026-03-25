@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\Parallel\Strategy;
+namespace Qualimetrix\Infrastructure\Parallel\Strategy;
 
-use AiMessDetector\Analysis\Collection\Strategy\ExecutionStrategyInterface;
-use AiMessDetector\Core\Profiler\ProfilerHolder;
+use Qualimetrix\Analysis\Collection\Strategy\ExecutionStrategyInterface;
+use Qualimetrix\Core\Profiler\ProfilerHolder;
 use SplFileInfo;
 
 /**

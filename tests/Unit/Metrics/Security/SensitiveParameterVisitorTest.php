@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Metrics\Security;
+namespace Qualimetrix\Tests\Unit\Metrics\Security;
 
-use AiMessDetector\Metrics\Security\SensitiveParameterVisitor;
 use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Metrics\Security\SensitiveParameterVisitor;
 
 #[CoversClass(SensitiveParameterVisitor::class)]
 final class SensitiveParameterVisitorTest extends TestCase

@@ -1,17 +1,17 @@
 # Configuration
 
-AI Mess Detector works out of the box with sensible defaults. A configuration file lets you customize thresholds, disable rules, and exclude paths to fit your project.
+Qualimetrix works out of the box with sensible defaults. A configuration file lets you customize thresholds, disable rules, and exclude paths to fit your project.
 
 ---
 
 ## Configuration File
 
-Create a file named `aimd.yaml` in your project root. AI Mess Detector automatically looks for this file.
+Create a file named `qmx.yaml` in your project root. Qualimetrix automatically looks for this file.
 
 You can also specify a file explicitly:
 
 ```bash
-vendor/bin/aimd check src/ --config=my-config.yaml
+vendor/bin/qmx check src/ --config=my-config.yaml
 ```
 
 ---
@@ -28,7 +28,7 @@ paths:
 ```
 
 !!! note
-    If you pass paths as CLI arguments (e.g., `vendor/bin/aimd check src/ lib/`), they take precedence over the config file.
+    If you pass paths as CLI arguments (e.g., `vendor/bin/qmx check src/ lib/`), they take precedence over the config file.
 
 ### Exclude
 
@@ -240,10 +240,10 @@ Command-line options always take precedence over values in the configuration fil
 
 ```bash
 # Config says paths: [src/], but CLI overrides it
-vendor/bin/aimd check lib/
+vendor/bin/qmx check lib/
 
 # Add extra exclude paths on top of config
-vendor/bin/aimd check src/ --exclude-path='src/Generated/*'
+vendor/bin/qmx check src/ --exclude-path='src/Generated/*'
 ```
 
 This makes it easy to experiment without editing the config file.
