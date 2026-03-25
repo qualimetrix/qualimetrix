@@ -6,6 +6,7 @@ namespace AiMessDetector\Rules\Size;
 
 use AiMessDetector\Core\Rule\RuleOptionsInterface;
 use AiMessDetector\Core\Violation\Severity;
+use AiMessDetector\Rules\Support\ThresholdParser;
 
 /**
  * Options for MethodCountRule.
@@ -33,10 +34,12 @@ final readonly class MethodCountOptions implements RuleOptionsInterface
             return new self(enabled: false);
         }
 
+        $thresholds = ThresholdParser::parse($config, 'warning', 'error', 20, 30);
+
         return new self(
             enabled: (bool) ($config['enabled'] ?? true),
-            warning: (int) ($config['warning'] ?? 20),
-            error: (int) ($config['error'] ?? 30),
+            warning: (int) $thresholds['warning'],
+            error: (int) $thresholds['error'],
         );
     }
 

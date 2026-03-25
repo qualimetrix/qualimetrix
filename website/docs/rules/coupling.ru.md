@@ -115,6 +115,15 @@ rules:
       min_class_count: 5
 ```
 
+Сокращённая запись с `threshold`:
+
+```yaml
+rules:
+  coupling.cbo:
+    class:
+      threshold: 18   # warning=18, error=18
+```
+
 ```bash
 bin/aimd check src/ --rule-opt="coupling.cbo:class.warning=18"
 bin/aimd check src/ --rule-opt="coupling.cbo:class.error=25"
@@ -229,6 +238,15 @@ rules:
       min_class_count: 5
 ```
 
+Сокращённая запись с `threshold`:
+
+```yaml
+rules:
+  coupling.instability:
+    class:
+      threshold: 0.9   # warning=0.9, error=0.9
+```
+
 ```bash
 bin/aimd check src/ --rule-opt="coupling.instability:class.max_warning=0.9"
 bin/aimd check src/ --rule-opt="coupling.instability:class.max_error=1.0"
@@ -325,6 +343,14 @@ rules:
       - App\Infrastructure
     exclude_namespaces:
       - App\Tests
+```
+
+Сокращённая запись с `threshold`:
+
+```yaml
+rules:
+  coupling.distance:
+    threshold: 0.4   # warning=0.4, error=0.4
 ```
 
 ```bash
@@ -428,6 +454,14 @@ rules:
   coupling.class-rank:
     warning: 0.03
     error: 0.08
+```
+
+Сокращённая запись с `threshold`:
+
+```yaml
+rules:
+  coupling.class-rank:
+    threshold: 0.03   # warning=0.03, error=0.03
 ```
 
 ```bash

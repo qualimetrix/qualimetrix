@@ -159,10 +159,10 @@ AIMD uses standard exit codes:
 | `1`       | Warnings found (but no errors) |
 | `2`       | Errors found                   |
 
-Most CI systems treat a non-zero exit code as a failure. Use `--fail-on=error` to ignore warnings and only fail on errors:
+Most CI systems treat a non-zero exit code as a failure. By default, AIMD uses `--fail-on=error`, so warnings are shown but don't cause failure. To also fail on warnings:
 
 ```bash
-vendor/bin/aimd check src/ --fail-on=error
+vendor/bin/aimd check src/ --fail-on=warning
 ```
 
 To continue the pipeline regardless of violations:

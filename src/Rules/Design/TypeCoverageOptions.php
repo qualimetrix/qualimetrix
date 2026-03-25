@@ -6,6 +6,7 @@ namespace AiMessDetector\Rules\Design;
 
 use AiMessDetector\Core\Rule\RuleOptionsInterface;
 use AiMessDetector\Core\Violation\Severity;
+use AiMessDetector\Rules\Support\ThresholdParser;
 
 /**
  * Options for TypeCoverageRule.
@@ -38,14 +39,18 @@ final readonly class TypeCoverageOptions implements RuleOptionsInterface
             return new self(enabled: false);
         }
 
+        $paramThresholds = ThresholdParser::parse($config, 'param_warning', 'param_error', 80.0, 50.0, thresholdKey: 'param_threshold', legacyWarningKeys: ['paramWarning'], legacyErrorKeys: ['paramError']);
+        $returnThresholds = ThresholdParser::parse($config, 'return_warning', 'return_error', 80.0, 50.0, thresholdKey: 'return_threshold', legacyWarningKeys: ['returnWarning'], legacyErrorKeys: ['returnError']);
+        $propertyThresholds = ThresholdParser::parse($config, 'property_warning', 'property_error', 80.0, 50.0, thresholdKey: 'property_threshold', legacyWarningKeys: ['propertyWarning'], legacyErrorKeys: ['propertyError']);
+
         return new self(
             enabled: (bool) ($config['enabled'] ?? true),
-            paramWarning: (float) ($config['param_warning'] ?? $config['paramWarning'] ?? 80.0),
-            paramError: (float) ($config['param_error'] ?? $config['paramError'] ?? 50.0),
-            returnWarning: (float) ($config['return_warning'] ?? $config['returnWarning'] ?? 80.0),
-            returnError: (float) ($config['return_error'] ?? $config['returnError'] ?? 50.0),
-            propertyWarning: (float) ($config['property_warning'] ?? $config['propertyWarning'] ?? 80.0),
-            propertyError: (float) ($config['property_error'] ?? $config['propertyError'] ?? 50.0),
+            paramWarning: (float) $paramThresholds['warning'],
+            paramError: (float) $paramThresholds['error'],
+            returnWarning: (float) $returnThresholds['warning'],
+            returnError: (float) $returnThresholds['error'],
+            propertyWarning: (float) $propertyThresholds['warning'],
+            propertyError: (float) $propertyThresholds['error'],
         );
     }
 

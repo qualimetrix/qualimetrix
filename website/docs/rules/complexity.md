@@ -113,6 +113,15 @@ rules:
       enabled: true   # set to false to disable class-level check
 ```
 
+For a simple pass/fail threshold (all violations become errors):
+
+```yaml
+rules:
+  complexity.cyclomatic:
+    method:
+      threshold: 15   # equivalent to warning: 15, error: 15
+```
+
 ```bash
 # CLI overrides
 bin/aimd check src/ --rule-opt="complexity.cyclomatic:method.warning=15"
@@ -210,6 +219,15 @@ rules:
       error: 40
     class:
       max_warning: 40
+```
+
+For a simple pass/fail threshold:
+
+```yaml
+rules:
+  complexity.cognitive:
+    method:
+      threshold: 20   # warning=20, error=20 → all violations are errors
 ```
 
 ```bash
@@ -318,6 +336,15 @@ rules:
       enabled: false   # disabled by default
 ```
 
+For a simple pass/fail threshold:
+
+```yaml
+rules:
+  complexity.npath:
+    method:
+      threshold: 300   # warning=300, error=300 → all violations are errors
+```
+
 ```bash
 bin/aimd check src/ --rule-opt="complexity.npath:method.warning=300"
 bin/aimd check src/ --rule-opt="complexity.npath:class.enabled=true"
@@ -398,6 +425,14 @@ rules:
     warning: 60
     error: 100
     exclude_data_classes: true
+```
+
+For a simple pass/fail threshold:
+
+```yaml
+rules:
+  complexity.wmc:
+    threshold: 60     # warning=60, error=60 → all violations are errors
 ```
 
 ```bash

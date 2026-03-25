@@ -198,8 +198,8 @@ final class ResultPresenter
     /**
      * Determines exit code based on violation severity and failOn configuration.
      *
-     * When failOn is Severity::Error, only errors cause non-zero exit code (warnings are ignored).
-     * When failOn is null or Severity::Warning, current behavior is preserved.
+     * Default (null): only errors cause non-zero exit code (same as --fail-on=error).
+     * When failOn is Severity::Warning, warnings also cause non-zero exit code.
      *
      * @param list<Violation> $violations
      */
@@ -213,6 +213,9 @@ final class ResultPresenter
         if ($failOn === false) {
             return 0;
         }
+
+        // Default is --fail-on=error (null treated as Severity::Error)
+        $effectiveFailOn = $failOn ?? Severity::Error;
 
         $hasErrors = false;
         $hasWarnings = false;
@@ -231,7 +234,7 @@ final class ResultPresenter
             return Severity::Error->getExitCode();
         }
 
-        if ($hasWarnings && $failOn !== Severity::Error) {
+        if ($hasWarnings && $effectiveFailOn === Severity::Warning) {
             return Severity::Warning->getExitCode();
         }
 

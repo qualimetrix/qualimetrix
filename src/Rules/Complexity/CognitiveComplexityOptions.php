@@ -8,6 +8,7 @@ use AiMessDetector\Core\Rule\HierarchicalRuleOptionsInterface;
 use AiMessDetector\Core\Rule\LevelOptionsInterface;
 use AiMessDetector\Core\Rule\RuleLevel;
 use AiMessDetector\Core\Violation\Severity;
+use AiMessDetector\Rules\Support\ThresholdParser;
 use InvalidArgumentException;
 
 /**
@@ -36,12 +37,15 @@ final readonly class CognitiveComplexityOptions implements HierarchicalRuleOptio
         }
 
         // Handle legacy flat format: {enabled, warningThreshold, errorThreshold}
-        if (isset($config['warningThreshold']) || isset($config['errorThreshold'])) {
+        // Also supports threshold shorthand at top level
+        if (\array_key_exists('warningThreshold', $config) || \array_key_exists('errorThreshold', $config) || \array_key_exists('threshold', $config)) {
+            $thresholds = ThresholdParser::parse($config, 'warning', 'error', 15, 30, legacyWarningKeys: ['warningThreshold'], legacyErrorKeys: ['errorThreshold']);
+
             return new self(
                 method: new MethodCognitiveComplexityOptions(
                     enabled: (bool) ($config['enabled'] ?? true),
-                    warning: (int) ($config['warningThreshold'] ?? 15),
-                    error: (int) ($config['errorThreshold'] ?? 30),
+                    warning: (int) $thresholds['warning'],
+                    error: (int) $thresholds['error'],
                 ),
                 class: new ClassCognitiveComplexityOptions(enabled: false),
             );

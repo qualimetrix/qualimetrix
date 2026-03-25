@@ -6,6 +6,7 @@ namespace AiMessDetector\Rules\Structure;
 
 use AiMessDetector\Core\Rule\RuleOptionsInterface;
 use AiMessDetector\Core\Violation\Severity;
+use AiMessDetector\Rules\Support\ThresholdParser;
 
 /**
  * Options for WmcRule.
@@ -36,10 +37,12 @@ final readonly class WmcOptions implements RuleOptionsInterface
             return new self(enabled: false);
         }
 
+        $thresholds = ThresholdParser::parse($config, 'warning', 'error', 50, 80);
+
         return new self(
             enabled: (bool) ($config['enabled'] ?? true),
-            warning: (int) ($config['warning'] ?? 50),
-            error: (int) ($config['error'] ?? 80),
+            warning: (int) $thresholds['warning'],
+            error: (int) $thresholds['error'],
             excludeDataClasses: (bool) ($config['exclude_data_classes'] ?? $config['excludeDataClasses'] ?? false),
         );
     }

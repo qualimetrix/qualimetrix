@@ -278,10 +278,13 @@ aggregation:
 
 # Computed metrics (health scores)
 computed_metrics:
-  # Override default health score thresholds
+  # Override default health score thresholds (graduated)
   health.complexity:
     warning: 60
     error: 30
+  # Or use threshold shorthand (sets both warning=error=threshold)
+  health.cohesion:
+    threshold: 40
   # Disable a health score
   health.typing:
     enabled: false
@@ -326,8 +329,9 @@ Merges default computed metric definitions with user overrides from the `compute
 - `formula: string` — shorthand formula applied to all levels
 - `formulas: array<string, string>` — per-level formulas (`class`, `namespace`, `project`)
 - `levels: list<string>` — levels to evaluate at (default: `[namespace, project]` for new metrics)
-- `warning: float|null` — warning threshold
-- `error: float|null` — error threshold
+- `threshold: float|null` — sets both warning and error to the same value (cannot mix with `warning`/`error`)
+- `warning: float|null` — warning threshold (graduated mode)
+- `error: float|null` — error threshold (graduated mode)
 - `inverted: bool` — whether higher values are better (default: false for new metrics)
 - `enabled: false` — removes the metric entirely
 - `description: string` — human-readable description

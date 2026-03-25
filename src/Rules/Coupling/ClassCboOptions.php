@@ -6,6 +6,7 @@ namespace AiMessDetector\Rules\Coupling;
 
 use AiMessDetector\Core\Rule\LevelOptionsInterface;
 use AiMessDetector\Core\Violation\Severity;
+use AiMessDetector\Rules\Support\ThresholdParser;
 
 /**
  * Options for class-level CBO (Coupling Between Objects) checks.
@@ -33,10 +34,12 @@ final readonly class ClassCboOptions implements LevelOptionsInterface
             return new self();
         }
 
+        $thresholds = ThresholdParser::parse($config, 'warning', 'error', 14, 20);
+
         return new self(
             enabled: (bool) ($config['enabled'] ?? true),
-            warning: (int) ($config['warning'] ?? 14),
-            error: (int) ($config['error'] ?? 20),
+            warning: (int) $thresholds['warning'],
+            error: (int) $thresholds['error'],
         );
     }
 

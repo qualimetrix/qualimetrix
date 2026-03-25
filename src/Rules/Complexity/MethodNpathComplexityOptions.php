@@ -6,6 +6,7 @@ namespace AiMessDetector\Rules\Complexity;
 
 use AiMessDetector\Core\Rule\LevelOptionsInterface;
 use AiMessDetector\Core\Violation\Severity;
+use AiMessDetector\Rules\Support\ThresholdParser;
 
 /**
  * Options for method-level NPath complexity checks.
@@ -23,10 +24,12 @@ final readonly class MethodNpathComplexityOptions implements LevelOptionsInterfa
      */
     public static function fromArray(array $config): self
     {
+        $thresholds = ThresholdParser::parse($config, 'warning', 'error', 200, 1000);
+
         return new self(
             enabled: (bool) ($config['enabled'] ?? true),
-            warning: (int) ($config['warning'] ?? 200),
-            error: (int) ($config['error'] ?? 1000),
+            warning: (int) $thresholds['warning'],
+            error: (int) $thresholds['error'],
         );
     }
 

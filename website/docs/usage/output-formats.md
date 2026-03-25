@@ -457,10 +457,10 @@ GitHub Actions workflow command format. Produces inline annotations that appear 
 
 ```yaml
 - name: Run AIMD
-  run: vendor/bin/aimd check src/ --format=github --fail-on=error --no-progress
+  run: vendor/bin/aimd check src/ --format=github --no-progress
 ```
 
-Annotations appear directly on the changed lines in your pull request — no SARIF upload needed.
+Annotations appear directly on the changed lines in your pull request — no SARIF upload needed. Only errors cause a non-zero exit code by default.
 
 !!! tip
     Use `--format=github` for quick inline annotations. Use `--format=sarif` if you also want results in the GitHub Security tab.
@@ -526,4 +526,4 @@ All formats use the same exit codes:
 | 1         | At least one warning (but no errors)  |
 | 2         | At least one error-severity violation |
 
-With `--fail-on=error`, warnings no longer cause exit code 1 — only errors trigger a non-zero exit.
+By default (`--fail-on=error`), warnings no longer cause exit code 1 — only errors trigger a non-zero exit. Use `--fail-on=warning` for the stricter behavior where warnings also fail.

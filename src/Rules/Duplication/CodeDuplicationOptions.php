@@ -6,6 +6,7 @@ namespace AiMessDetector\Rules\Duplication;
 
 use AiMessDetector\Core\Rule\RuleOptionsInterface;
 use AiMessDetector\Core\Violation\Severity;
+use AiMessDetector\Rules\Support\ThresholdParser;
 
 /**
  * Options for the code duplication rule.
@@ -22,12 +23,14 @@ final readonly class CodeDuplicationOptions implements RuleOptionsInterface
 
     public static function fromArray(array $config): self
     {
+        $thresholds = ThresholdParser::parse($config, 'warning', 'error', 5, 50);
+
         return new self(
             enabled: (bool) ($config['enabled'] ?? true),
             min_lines: (int) ($config['min_lines'] ?? $config['minLines'] ?? 5),
             min_tokens: (int) ($config['min_tokens'] ?? $config['minTokens'] ?? 70),
-            warning: (int) ($config['warning'] ?? 5),
-            error: (int) ($config['error'] ?? 50),
+            warning: (int) $thresholds['warning'],
+            error: (int) $thresholds['error'],
         );
     }
 

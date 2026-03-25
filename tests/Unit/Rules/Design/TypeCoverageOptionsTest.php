@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AiMessDetector\Tests\Unit\Rules\Design;
 
 use AiMessDetector\Rules\Design\TypeCoverageOptions;
+use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -113,5 +114,33 @@ final class TypeCoverageOptionsTest extends TestCase
         self::assertNull($options->getPropertySeverity(90.0));
         self::assertNotNull($options->getPropertySeverity(70.0));
         self::assertNotNull($options->getPropertySeverity(30.0));
+    }
+
+    #[Test]
+    public function fromArray_perDimensionThresholdSetsBothValues(): void
+    {
+        $options = TypeCoverageOptions::fromArray([
+            'param_threshold' => 90.0,
+            'return_threshold' => 85.0,
+            'property_threshold' => 70.0,
+        ]);
+
+        self::assertSame(90.0, $options->paramWarning);
+        self::assertSame(90.0, $options->paramError);
+        self::assertSame(85.0, $options->returnWarning);
+        self::assertSame(85.0, $options->returnError);
+        self::assertSame(70.0, $options->propertyWarning);
+        self::assertSame(70.0, $options->propertyError);
+    }
+
+    #[Test]
+    public function fromArray_thresholdMixedWithWarningThrows(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        TypeCoverageOptions::fromArray([
+            'param_threshold' => 90.0,
+            'param_warning' => 80.0,
+        ]);
     }
 }

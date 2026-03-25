@@ -116,10 +116,10 @@ jobs:
         run: composer install --no-dev
 
       - name: Run AI Mess Detector
-        run: vendor/bin/aimd check src/ --format=github --fail-on=error --no-progress
+        run: vendor/bin/aimd check src/ --format=github --no-progress
 ```
 
-Нарушения отображаются как аннотации warning и error прямо на изменённых строках. Используйте `--fail-on=error`, чтобы предупреждения не приводили к падению сборки.
+Нарушения отображаются как аннотации warning и error прямо на изменённых строках. По умолчанию `--fail-on=error` — предупреждения не приводят к падению сборки. Добавьте `--fail-on=warning` для более строгого контроля.
 
 !!! tip
     Для одновременного получения инлайн-аннотаций И результатов во вкладке Security запустите AIMD дважды — один раз с `--format=github` и один раз с `--format=sarif`.
