@@ -27,11 +27,16 @@ final class DetailedViolationRenderer
     /**
      * Renders detailed violation output.
      *
-     * @param list<Violation> $violations
+     * Note: if $violations is empty, returns early with "no violations" message
+     * regardless of $allViolations content. Callers should not pass empty $violations
+     * with non-empty $allViolations.
+     *
+     * @param list<Violation> $violations Violations to display (may be truncated by --detail limit)
+     * @param list<Violation>|null $allViolations Full violation list for debt calculation (defaults to $violations)
      *
      * @return string Formatted detail block (without trailing newline)
      */
-    public function render(array $violations, FormatterContext $context): string
+    public function render(array $violations, FormatterContext $context, ?array $allViolations = null): string
     {
         $color = new AnsiColor($context->useColor);
         $lines = [];
@@ -59,9 +64,10 @@ final class DetailedViolationRenderer
             $this->renderGrouped($groups, $effectiveGroupBy, $color, $context, $lines);
         }
 
-        // Debt breakdown by rule
-        $debt = $this->debtCalculator->calculate($violations);
-        $lines[] = $this->renderDebtBreakdown($debt, $violations);
+        // Debt breakdown by rule (always use full violation list for accurate totals)
+        $debtViolations = $allViolations ?? $violations;
+        $debt = $this->debtCalculator->calculate($debtViolations);
+        $lines[] = $this->renderDebtBreakdown($debt, $debtViolations);
 
         return implode("\n", $lines);
     }

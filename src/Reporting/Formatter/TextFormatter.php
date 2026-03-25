@@ -89,7 +89,7 @@ final class TextFormatter implements FormatterInterface
         $lines = [];
 
         // Detailed violation list
-        $lines[] = $this->detailedRenderer->render($displayViolations, $context);
+        $lines[] = $this->detailedRenderer->render($displayViolations, $context, $violations);
 
         if (!$showAll) {
             $remaining = $totalCount - $limit;

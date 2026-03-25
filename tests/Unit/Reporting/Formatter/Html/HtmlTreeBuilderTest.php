@@ -818,4 +818,69 @@ final class HtmlTreeBuilderTest extends TestCase
         $classNode = $result['tree']['children'][0]['children'][0];
         self::assertSame('src/Service.php', $classNode['violations'][0]['file']);
     }
+
+    public function testTotalDebtMinutesUsesReportTechDebtWhenAvailable(): void
+    {
+        $metrics = new InMemoryMetricRepository();
+
+        $metrics->add(
+            SymbolPath::forProject(),
+            MetricBag::fromArray(['loc.sum' => 100, 'classes.count' => 1]),
+            '',
+            null,
+        );
+
+        $metrics->add(
+            SymbolPath::forNamespace('App'),
+            MetricBag::fromArray([]),
+            '',
+            null,
+        );
+
+        $metrics->add(
+            SymbolPath::forClass('App', 'Foo'),
+            MetricBag::fromArray(['ccn.sum' => 5]),
+            'src/Foo.php',
+            1,
+        );
+
+        // Class-level violation (30 min debt via RemediationTimeRegistry)
+        $classViolation = new Violation(
+            location: new Location('src/Foo.php', 10),
+            symbolPath: SymbolPath::forClass('App', 'Foo'),
+            ruleName: 'complexity.cyclomatic',
+            violationCode: 'complexity.cyclomatic',
+            message: 'Complex',
+            severity: Severity::Error,
+        );
+
+        // File-level violation — won't be partitioned into any node
+        $fileViolation = new Violation(
+            location: new Location('src/Foo.php', null),
+            symbolPath: SymbolPath::forFile('src/Foo.php'),
+            ruleName: 'size.loc',
+            violationCode: 'size.loc',
+            message: 'File too long',
+            severity: Severity::Warning,
+        );
+
+        // Report with techDebtMinutes = 50 (includes both violations)
+        $report = new \AiMessDetector\Reporting\Report(
+            violations: [$classViolation, $fileViolation],
+            filesAnalyzed: 1,
+            filesSkipped: 0,
+            duration: 0.1,
+            errorCount: 1,
+            warningCount: 1,
+            metrics: $metrics,
+            techDebtMinutes: 50,
+        );
+
+        $result = $this->builder->build($report, new FormatterContext());
+
+        // Both tree root and summary should show 50 (report's techDebtMinutes),
+        // not the bottom-up aggregation which misses file-level violations (30)
+        self::assertSame(50, $result['tree']['debtMinutes']);
+        self::assertSame(50, $result['summary']['totalDebtMinutes']);
+    }
 }

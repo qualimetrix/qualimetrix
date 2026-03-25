@@ -278,6 +278,38 @@ final class DetailedViolationRendererTest extends TestCase
         self::assertStringContainsString('1 violation', $output);
     }
 
+    public function testDebtBreakdownUsesAllViolationsWhenProvided(): void
+    {
+        $displayed = [
+            new Violation(
+                location: new Location('src/Foo.php', 10),
+                symbolPath: SymbolPath::forMethod('App', 'Foo', 'a'),
+                ruleName: 'complexity.cyclomatic',
+                violationCode: 'complexity.cyclomatic.method',
+                message: 'Complex',
+                severity: Severity::Error,
+            ),
+        ];
+
+        $extra = new Violation(
+            location: new Location('src/Bar.php', 5),
+            symbolPath: SymbolPath::forClass('App', 'Bar'),
+            ruleName: 'design.lcom',
+            violationCode: 'design.lcom',
+            message: 'LCOM high',
+            severity: Severity::Warning,
+        );
+
+        $allViolations = [...$displayed, $extra];
+
+        $context = new FormatterContext(useColor: false);
+        $output = $this->renderer->render($displayed, $context, $allViolations);
+
+        // Debt breakdown must include the rule from $allViolations, not just $displayed
+        self::assertStringContainsString('design.lcom', $output);
+        self::assertStringContainsString('complexity.cyclomatic', $output);
+    }
+
     public function testProjectLevelViolationGroupHeader(): void
     {
         $violations = [

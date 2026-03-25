@@ -501,4 +501,45 @@ final class TextFormatterTest extends TestCase
         self::assertStringContainsString('complexity.cyclomatic (1)', $output);
         self::assertStringNotContainsString('src/Foo.php (1', $output);
     }
+
+    public function testDebtBreakdownIncludesAllRulesWhenDetailLimitTruncates(): void
+    {
+        $builder = ReportBuilder::create()
+            ->filesAnalyzed(3)
+            ->filesSkipped(0)
+            ->duration(0.01);
+
+        // Add 2 violations of rule A (will be displayed within limit)
+        for ($i = 1; $i <= 2; $i++) {
+            $builder->addViolation(new Violation(
+                location: new Location("src/Foo{$i}.php", 10),
+                symbolPath: SymbolPath::forClass('App', "Foo{$i}"),
+                ruleName: 'complexity.cyclomatic',
+                violationCode: 'complexity.cyclomatic.method',
+                message: 'Complex',
+                severity: Severity::Error,
+            ));
+        }
+
+        // Add 1 violation of rule B (may be beyond detailLimit)
+        $builder->addViolation(new Violation(
+            location: new Location('src/Bar.php', 5),
+            symbolPath: SymbolPath::forClass('App', 'Bar'),
+            ruleName: 'design.lcom',
+            violationCode: 'design.lcom',
+            message: 'LCOM high',
+            severity: Severity::Warning,
+        ));
+
+        $report = $builder->build();
+
+        // Limit to 1 displayed violation, but debt breakdown must still show all rules
+        $context = new FormatterContext(useColor: false, detailLimit: 1);
+        $output = $this->formatter->format($report, $context);
+
+        self::assertStringContainsString('Technical debt by rule:', $output);
+        self::assertStringContainsString('complexity.cyclomatic', $output);
+        self::assertStringContainsString('design.lcom', $output);
+        self::assertStringContainsString('... and 2 more', $output);
+    }
 }
