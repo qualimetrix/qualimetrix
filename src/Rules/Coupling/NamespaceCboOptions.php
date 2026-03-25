@@ -11,7 +11,7 @@ use AiMessDetector\Rules\Support\ThresholdParser;
 /**
  * Options for namespace-level CBO (Coupling Between Objects) checks.
  *
- * CBO = Ca + Ce
+ * CBO = |Ca ∪ Ce|
  * - Low CBO (<14): weakly coupled
  * - Medium CBO (14-19): acceptable (warning)
  * - High CBO (>=20): tightly coupled (error)

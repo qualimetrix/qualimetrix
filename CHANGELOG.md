@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- CBO metric no longer counts PHP built-in classes (`Exception`, `DateTime`, `Iterator`, etc.) — only project and third-party dependencies contribute to coupling scores. Dependency graph exports (`graph:export`) are also affected
+
 ## [0.7.0] - 2026-03-25
 
 ### Changed
