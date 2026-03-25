@@ -93,7 +93,7 @@ final class HardcodedCredentialsRule extends AbstractRule
                 $message .= ' — use environment variables or a secrets manager';
 
                 $violations[] = new Violation(
-                    location: new Location($fileInfo->file, $line),
+                    location: new Location($fileInfo->file, $line, precise: true),
                     symbolPath: $fileInfo->symbolPath,
                     ruleName: $this->getName(),
                     violationCode: self::NAME,

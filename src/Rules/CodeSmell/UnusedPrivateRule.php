@@ -81,7 +81,7 @@ final class UnusedPrivateRule extends AbstractRule
                     $message = $name !== null ? \sprintf('%s `%s`', $label, $name) : $label;
 
                     $violations[] = new Violation(
-                        location: new Location($classInfo->file, $line),
+                        location: new Location($classInfo->file, $line, precise: true),
                         symbolPath: $classInfo->symbolPath,
                         ruleName: $this->getName(),
                         violationCode: $this->getName(),

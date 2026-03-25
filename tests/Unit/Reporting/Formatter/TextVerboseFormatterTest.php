@@ -100,10 +100,10 @@ final class TextVerboseFormatterTest extends TestCase
         self::assertStringContainsString('a.php (2 violations)', $output);
         self::assertStringContainsString('b.php (1 violation)', $output);
 
-        // Violations within groups show line-only location
-        self::assertStringContainsString(':5', $output);
-        self::assertStringContainsString(':10', $output);
-        self::assertStringContainsString(':20', $output);
+        // Non-precise violations don't show line numbers — only symbol names
+        self::assertStringContainsString('A2', $output);
+        self::assertStringContainsString('A1', $output);
+        self::assertStringContainsString('B', $output);
     }
 
     public function testFormatGroupedByRule(): void
@@ -139,10 +139,10 @@ final class TextVerboseFormatterTest extends TestCase
         $report = $this->buildMultiFileReport();
         $output = $this->formatter->format($report, $context);
 
-        // No file headers, but full file paths in violations
+        // No file headers, but full file paths in violations (without line numbers for non-precise)
         self::assertStringNotContainsString('a.php (2', $output);
-        self::assertStringContainsString('a.php:5', $output);
-        self::assertStringContainsString('b.php:20', $output);
+        self::assertStringContainsString('a.php', $output);
+        self::assertStringContainsString('b.php', $output);
     }
 
     public function testUsesHumanMessageWhenAvailable(): void

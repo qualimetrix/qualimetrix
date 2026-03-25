@@ -77,7 +77,7 @@ final class TextFormatterTest extends TestCase
 
         self::assertCount(4, $lines);
         self::assertSame(
-            'src/Service/UserService.php:42: error[cyclomatic-complexity]: Cyclomatic complexity of 25 exceeds threshold (UserService::calculateDiscount)',
+            'src/Service/UserService.php: error[cyclomatic-complexity]: Cyclomatic complexity of 25 exceeds threshold (UserService::calculateDiscount)',
             $lines[0],
         );
         self::assertSame('', $lines[1]);
@@ -117,8 +117,8 @@ final class TextFormatterTest extends TestCase
         $lines = explode("\n", rtrim($output, "\n"));
 
         self::assertCount(5, $lines);
-        self::assertStringStartsWith('src/Service/UserService.php:42: error[cyclomatic-complexity]:', $lines[0]);
-        self::assertStringStartsWith('src/Service/UserService.php:120: warning[cyclomatic-complexity]:', $lines[1]);
+        self::assertStringStartsWith('src/Service/UserService.php: error[cyclomatic-complexity]:', $lines[0]);
+        self::assertStringStartsWith('src/Service/UserService.php: warning[cyclomatic-complexity]:', $lines[1]);
         self::assertSame('', $lines[2]);
         self::assertSame('1 error(s), 1 warning(s) in 1 file(s)', $lines[3]);
         self::assertStringStartsWith('Technical debt:', $lines[4]);
@@ -206,14 +206,14 @@ final class TextFormatterTest extends TestCase
 
         $output = $this->formatter->format($report, $this->plainContext);
 
-        self::assertStringContainsString('src/functions.php:5: warning[cyclomatic-complexity]: Function has complexity of 20 (myComplexFunction)', $output);
+        self::assertStringContainsString('src/functions.php: warning[cyclomatic-complexity]: Function has complexity of 20 (myComplexFunction)', $output);
     }
 
     public function testOutputIsParseable(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
-                location: new Location('src/Foo.php', 10),
+                location: new Location('src/Foo.php', 10, precise: true),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
                 ruleName: 'test-rule',
                 violationCode: 'test-rule',
@@ -387,7 +387,7 @@ final class TextFormatterTest extends TestCase
         $context = new FormatterContext(useColor: false, basePath: '/home/user/project');
         $output = $this->formatter->format($report, $context);
 
-        self::assertStringContainsString('src/Service/UserService.php:42:', $output);
+        self::assertStringContainsString('src/Service/UserService.php:', $output);
         self::assertStringNotContainsString('/home/user/project/', $output);
     }
 

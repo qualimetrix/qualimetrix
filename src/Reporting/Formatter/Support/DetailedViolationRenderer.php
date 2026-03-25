@@ -129,9 +129,12 @@ final class DetailedViolationRenderer
             : $this->formatLineOnly($violation);
         $symbol = $violation->symbolPath->getSymbolName();
 
-        $line1 = \sprintf('  %s %s', $severity, $location);
+        $line1 = '  ' . $severity;
+        if ($location !== '') {
+            $line1 .= ' ' . $location;
+        }
         if ($symbol !== null && $symbol !== '') {
-            $line1 .= \sprintf('  %s', $symbol);
+            $line1 .= '  ' . $symbol;
         }
         $lines[] = $line1;
 
@@ -168,7 +171,7 @@ final class DetailedViolationRenderer
         $file = $context->relativizePath($violation->location->file);
         $line = $violation->location->line;
 
-        if ($line === null) {
+        if ($line === null || !$violation->location->precise) {
             return $file;
         }
 
@@ -179,7 +182,7 @@ final class DetailedViolationRenderer
     {
         $line = $violation->location->line;
 
-        return $line !== null && $line > 0 ? \sprintf(':%d', $line) : '';
+        return $line !== null && $violation->location->precise ? \sprintf('at line %d', $line) : '';
     }
 
     /**

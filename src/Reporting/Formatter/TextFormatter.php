@@ -118,7 +118,7 @@ final class TextFormatter implements FormatterInterface
         $symbol = $this->formatSymbol($violation);
 
         // Format: file:line: severity[rule]: message (symbol)
-        $location = $line !== null ? "{$file}:{$line}" : $file;
+        $location = $line !== null && $violation->location->precise ? "{$file}:{$line}" : $file;
 
         return \sprintf('%s: %s[%s]: %s%s', $location, $severity, $rule, $message, $symbol);
     }
