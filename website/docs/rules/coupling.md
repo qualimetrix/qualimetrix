@@ -18,9 +18,9 @@ CBO counts the total number of **other classes that this class is connected to**
 - This class **uses** another class (outgoing dependency, called "efferent coupling" or Ce), or
 - Another class **uses** this class (incoming dependency, called "afferent coupling" or Ca)
 
-CBO = Ca + Ce.
+CBO = |Ca ∪ Ce| (the number of unique classes in the union of both sets).
 
-For example, if `UserService` uses `UserRepository`, `Logger`, `Validator`, and `Mailer`, and is used by `UserController` and `AdminController`, its CBO = 4 + 2 = 6.
+For example, if `UserService` uses `UserRepository`, `Logger`, `Validator`, and `Mailer` (Ce = 4), and is used by `UserController` and `AdminController` (Ca = 2), its CBO = 6 (no overlap).
 
 **How to read the value:**
 
@@ -96,6 +96,7 @@ AIMD implements **bidirectional coupling** consistent with Chidamber & Kemerer (
 - **Extended coupling types:** AIMD detects 14 types of coupling, going beyond C&K's original "methods or instance variables" definition. These include: class instantiation, static method calls, type hints (parameters, return types, properties), `catch` clauses, `instanceof` checks, class constants, attributes, `extends`/`implements`, and trait `use`.
 - **Union and intersection types:** Each type in a union (`A|B`) or intersection (`A&B`) type hint is counted as a separate coupling.
 - **Self-references excluded:** References to `self`, `static`, and `parent` within the same class are not counted as coupling.
+- **PHP built-in classes excluded:** Dependencies on classes from the PHP distribution (php-src) are excluded from CBO, Ca, and Ce — this includes core classes (`Exception`, `DateTime`, `Closure`), SPL (`ArrayIterator`, `SplFileInfo`), and bundled extensions (`PDO`, `DOMDocument`, `Random\Randomizer`, `CurlHandle`, etc.). Coupling to stable, PHP-maintained types does not increase architectural risk. Classes from PECL extensions (e.g., `Redis`, `Memcached`, `MongoDB\Driver\Manager`) are **not** excluded and count toward CBO as regular dependencies. Structural dependencies (`extends`) are always preserved for DIT calculations.
 
 <!-- llms:skip-end -->
 

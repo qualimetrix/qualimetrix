@@ -208,12 +208,163 @@ final class DependencyGraphTest extends TestCase
         self::assertContains('', $nsStrings);
     }
 
-    private function dep(string $source, string $target): Dependency
+    #[Test]
+    public function build_excludesNonStructuralBuiltinDependencies(): void
+    {
+        $deps = [
+            $this->dep('App\\Foo', 'App\\Bar'),
+            $this->dep('App\\Foo', 'Exception', DependencyType::Catch_),
+            $this->dep('App\\Foo', 'DateTime', DependencyType::TypeHint),
+            $this->dep('App\\Foo', 'Iterator', DependencyType::Instanceof_),
+        ];
+
+        $graph = $this->builder->build($deps);
+
+        // Only App\Bar should remain (non-structural built-in deps filtered)
+        $allDeps = $graph->getAllDependencies();
+        self::assertCount(1, $allDeps);
+        self::assertSame('App\\Bar', $allDeps[0]->target->toString());
+
+        // Built-in classes should not appear in class list
+        $classNames = array_map(fn(SymbolPath $p) => $p->toString(), $graph->getAllClasses());
+        self::assertContains('App\\Foo', $classNames);
+        self::assertContains('App\\Bar', $classNames);
+        self::assertNotContains('Exception', $classNames);
+        self::assertNotContains('DateTime', $classNames);
+        self::assertNotContains('Iterator', $classNames);
+    }
+
+    #[Test]
+    public function build_preservesExtendsDependencyToBuiltinClass(): void
+    {
+        $deps = [
+            $this->dep('App\\MyException', 'RuntimeException', DependencyType::Extends),
+            $this->dep('App\\MyException', 'Throwable', DependencyType::Instanceof_),
+        ];
+
+        $graph = $this->builder->build($deps);
+
+        // extends preserved, instanceof filtered
+        self::assertCount(1, $graph->getAllDependencies());
+        self::assertSame(1, $graph->getClassCe(SymbolPath::fromClassFqn('App\\MyException')));
+
+        $classNames = array_map(fn(SymbolPath $p) => $p->toString(), $graph->getAllClasses());
+        self::assertContains('RuntimeException', $classNames);
+        self::assertNotContains('Throwable', $classNames);
+    }
+
+    #[Test]
+    public function build_excludesNamespacedPhpBuiltins(): void
+    {
+        $deps = [
+            $this->dep('App\\Foo', 'App\\Bar'),
+            $this->dep('App\\Foo', 'Random\\Randomizer', DependencyType::TypeHint),
+            $this->dep('App\\Foo', 'Dom\\Document', DependencyType::New_),
+            $this->dep('App\\Foo', 'Pdo\\Mysql', DependencyType::Extends),  // extends preserved
+        ];
+
+        $graph = $this->builder->build($deps);
+
+        // App\Bar and Pdo\Mysql (extends) remain, Random\Randomizer and Dom\Document filtered
+        self::assertCount(2, $graph->getAllDependencies());
+        self::assertSame(2, $graph->getClassCe(SymbolPath::fromClassFqn('App\\Foo')));
+    }
+
+    #[Test]
+    public function build_keepsUserClassesInGlobalNamespace(): void
+    {
+        // A class name that isn't a PHP built-in, even though it's in global namespace
+        $deps = [
+            $this->dep('App\\Foo', 'MyCustomGlobalClass'),
+        ];
+
+        $graph = $this->builder->build($deps);
+
+        self::assertCount(1, $graph->getAllDependencies());
+        self::assertSame(1, $graph->getClassCe(SymbolPath::fromClassFqn('App\\Foo')));
+    }
+
+    #[Test]
+    public function build_keepsNamespacedClassesEvenIfNameMatchesBuiltin(): void
+    {
+        // App\Exception is a user class, not PHP's built-in \Exception
+        $deps = [
+            $this->dep('App\\Foo', 'App\\Exception'),
+            $this->dep('App\\Foo', 'Vendor\\DateTime'),
+        ];
+
+        $graph = $this->builder->build($deps);
+
+        self::assertCount(2, $graph->getAllDependencies());
+        self::assertSame(2, $graph->getClassCe(SymbolPath::fromClassFqn('App\\Foo')));
+    }
+
+    #[Test]
+    public function build_excludesBuiltinFromCeCount(): void
+    {
+        $deps = [
+            $this->dep('App\\Foo', 'App\\Bar'),
+            $this->dep('App\\Foo', 'Exception', DependencyType::Catch_),
+            $this->dep('App\\Foo', 'RuntimeException', DependencyType::TypeHint),
+        ];
+
+        $graph = $this->builder->build($deps);
+
+        // Only App\Bar counts toward Ce
+        self::assertSame(1, $graph->getClassCe(SymbolPath::fromClassFqn('App\\Foo')));
+    }
+
+    #[Test]
+    public function build_excludesBuiltinFromNamespaceCe(): void
+    {
+        $deps = [
+            $this->dep('App\\Foo', 'Vendor\\Bar'),
+            $this->dep('App\\Foo', 'Exception', DependencyType::Catch_),
+            $this->dep('App\\Foo', 'Throwable', DependencyType::TypeHint),
+        ];
+
+        $graph = $this->builder->build($deps);
+
+        // Only Vendor\Bar counts toward App namespace Ce
+        self::assertSame(1, $graph->getNamespaceCe(SymbolPath::fromNamespaceFqn('App')));
+    }
+
+    #[Test]
+    public function build_keepsImplementsForUserDefinedInterface(): void
+    {
+        $deps = [
+            $this->dep('App\\Foo', 'App\\BarInterface', DependencyType::Implements),
+            $this->dep('App\\Foo', 'Vendor\\ContractInterface', DependencyType::Implements),
+        ];
+
+        $graph = $this->builder->build($deps);
+
+        self::assertCount(2, $graph->getAllDependencies());
+        self::assertSame(2, $graph->getClassCe(SymbolPath::fromClassFqn('App\\Foo')));
+    }
+
+    #[Test]
+    public function build_excludesBuiltinInterfaces(): void
+    {
+        $deps = [
+            $this->dep('App\\Foo', 'App\\Bar'),
+            $this->dep('App\\Foo', 'Countable', DependencyType::Implements),
+            $this->dep('App\\Foo', 'Serializable', DependencyType::Implements),
+            $this->dep('App\\Foo', 'Stringable', DependencyType::TypeHint),
+        ];
+
+        $graph = $this->builder->build($deps);
+
+        self::assertCount(1, $graph->getAllDependencies());
+        self::assertSame(1, $graph->getClassCe(SymbolPath::fromClassFqn('App\\Foo')));
+    }
+
+    private function dep(string $source, string $target, DependencyType $type = DependencyType::New_): Dependency
     {
         return new Dependency(
             SymbolPath::fromClassFqn($source),
             SymbolPath::fromClassFqn($target),
-            DependencyType::New_,
+            $type,
             new Location('/test.php', 1),
         );
     }

@@ -22,7 +22,7 @@ use AiMessDetector\Rules\AbstractRule;
 /**
  * Hierarchical rule that checks CBO (Coupling Between Objects) at class and namespace levels.
  *
- * CBO = Ca + Ce (afferent + efferent coupling)
+ * CBO = |Ca ∪ Ce| (union of afferent and efferent couplings)
  * - Low CBO (<14): weakly coupled, easy to test
  * - Medium CBO (14-19): acceptable (warning)
  * - High CBO (>=20): tightly coupled, hard to isolate (error)
