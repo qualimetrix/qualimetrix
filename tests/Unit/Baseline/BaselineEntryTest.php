@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Baseline;
+namespace Qualimetrix\Tests\Unit\Baseline;
 
-use AiMessDetector\Baseline\BaselineEntry;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Baseline\BaselineEntry;
 
 #[CoversClass(BaselineEntry::class)]
 final class BaselineEntryTest extends TestCase

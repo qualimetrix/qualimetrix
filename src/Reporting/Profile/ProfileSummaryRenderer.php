@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Reporting\Profile;
+namespace Qualimetrix\Reporting\Profile;
 
 /**
  * Formats profiling summary for console output.

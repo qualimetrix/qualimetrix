@@ -1,4 +1,4 @@
-# AIMD Product Roadmap
+# Qualimetrix Product Roadmap
 
 **Updated:** 2026-03-25
 **Based on:** [Competitive analysis](COMPETITOR_COMPARISON.md), cross-ecosystem research (SonarQube, ESLint, Semgrep,
@@ -18,7 +18,7 @@ RFC, ClassRank). Modern PHP 8.4 support while competitors degrade (pdepend crash
 PHP tool with parallel processing.
 
 ```
-What AIMD should own:              What to leave to others:
+What Qualimetrix should own:              What to leave to others:
 ─────────────────────────────────  ──────────────────────────────────────
 - OOP metrics (depth)              - Type inference (PHPStan/Psalm)
 - Code smells (breadth)            - Taint analysis (Psalm/SonarQube)
@@ -41,7 +41,7 @@ and Codex with convergent conclusions on top priorities.
 
 #### 1. Effort-Aware Prioritization
 
-- **Why it matters:** AIMD already finds hundreds of violations on a large project. The #1 user question is "what should
+- **Why it matters:** Qualimetrix already finds hundreds of violations on a large project. The #1 user question is "what should
   I fix first?" Right now, violations are sorted by severity, but a warning in a utility class nobody imports is less
   important than a warning in a class that 50 others depend on. This feature combines ClassRank (how central the class
   is), severity, and remediation time into a single impact score — answering "where does my refactoring hour buy the
@@ -51,13 +51,13 @@ and Codex with convergent conclusions on top priorities.
 - **All data already exists:** ClassRank, severity, remediation time — this is purely a reporting/sorting layer change
 - **Reference:** CodeScene hotspot analysis, SonarQube debt ratio
 - **Effort:** Low-Medium
-- **Value:** Very High — transforms AIMD from "here are your problems" to "here's what to fix first"
+- **Value:** Very High — transforms Qualimetrix from "here are your problems" to "here's what to fix first"
 - **Marketing angle:** Killer feature for messaging. Great CLI screenshot material: "from 300 warnings to top 10
   actions"
 
 #### 2. Analysis Presets
 
-- **Why it matters:** First-run experience is critical for adoption. Today a user runs `aimd check src/` and gets output
+- **Why it matters:** First-run experience is critical for adoption. Today a user runs `qmx check src/` and gets output
   with default thresholds that may be too strict for a legacy project or too lax for a greenfield one. Presets let users
   self-select their context in one flag, dramatically lowering the barrier to entry
 - **What changes:** Built-in named configurations: `--preset=strict` (greenfield, strict thresholds),
@@ -87,7 +87,7 @@ and Codex with convergent conclusions on top priorities.
 
 #### 4. Cognitive Complexity Breakdown
 
-- **Why it matters:** When AIMD says "cognitive complexity is 47", the developer's next question is "where exactly?"
+- **Why it matters:** When Qualimetrix says "cognitive complexity is 47", the developer's next question is "where exactly?"
   Currently they have to read the entire method and mentally compute contributions. A breakdown like "if+3 at line 12,
   nested for+4 at line 15, recursive call+1 at line 22" makes the violation immediately actionable — the developer knows
   exactly which constructs to extract or simplify. No PHP tool provides this level of detail
@@ -97,7 +97,7 @@ and Codex with convergent conclusions on top priorities.
 - **Reference:** SonarQube's inline annotation display
 - **Effort:** Medium
 - **Value:** Very High — unique in PHP ecosystem, dramatically improves actionability
-- **Marketing angle:** Strong differentiation. "AIMD doesn't just measure complexity — it explains it"
+- **Marketing angle:** Strong differentiation. "Qualimetrix doesn't just measure complexity — it explains it"
 
 ---
 
@@ -106,10 +106,10 @@ and Codex with convergent conclusions on top priorities.
 #### 5. Architecture Rules (deptrac replacement)
 
 - **Why it matters:** This is the single most important feature for the "replaces five tools" narrative. Deptrac is the
-  only tool in the replacement set that AIMD doesn't yet cover. With architecture rules, AIMD owns the full stack:
-  metrics + smells + duplication + architecture constraints. The dependency graph already exists — AIMD just needs a DSL
+  only tool in the replacement set that Qualimetrix doesn't yet cover. With architecture rules, Qualimetrix owns the full stack:
+  metrics + smells + duplication + architecture constraints. The dependency graph already exists — Qualimetrix just needs a DSL
   to express constraints on it
-- **What changes:** New `architecture:` section in `aimd.yml` with layer definitions (glob patterns → layer names) and
+- **What changes:** New `architecture:` section in `qmx.yml` with layer definitions (glob patterns → layer names) and
   rules (`Controller must not depend on Repository`). New rule `architecture.layer-violation`. Layer DSL parser +
   constraint evaluator
 - **Syntax (draft):**
@@ -123,21 +123,21 @@ and Codex with convergent conclusions on top priorities.
       - Controller must not depend on Repository
       - Repository must not depend on Controller
   ```
-- **Implementation:** AIMD already has the full dependency graph from `DependencyVisitor`. Need: layer DSL parser,
+- **Implementation:** Qualimetrix already has the full dependency graph from `DependencyVisitor`. Need: layer DSL parser,
   constraint evaluator, violation reporting with "found dependency X→Y via class Z"
 - **Reference:** deptrac (PHP), ArchUnit (Java), NetArchTest (.NET), Dependency Cruiser (JS)
 - **Effort:** Medium-High (DSL design is the hardest part; execution on existing graph is straightforward)
 - **Value:** Very High — completes the "one tool replaces five" promise
-- **Marketing angle:** Headline feature. "Drop deptrac from your CI — AIMD does it natively, 40x faster"
+- **Marketing angle:** Headline feature. "Drop deptrac from your CI — Qualimetrix does it natively, 40x faster"
 
 #### 6. Trend Analysis & Quality Gates
 
-- **Why it matters:** This is SonarQube's killer feature — and no PHP CLI tool has it. Today AIMD answers "how healthy
+- **Why it matters:** This is SonarQube's killer feature — and no PHP CLI tool has it. Today Qualimetrix answers "how healthy
   is your code now?" but can't answer "is it getting better or worse?" Quality gates that fail CI when metrics regress
-  are the single most effective way to prevent tech debt accumulation. This moves AIMD from "analysis tool" to "quality
+  are the single most effective way to prevent tech debt accumulation. This moves Qualimetrix from "analysis tool" to "quality
   platform"
-- **What changes:** SQLite database storing per-run metric snapshots (project-local or `~/.aimd/history.db`). New
-  `aimd trend` command showing metric trends over time. `aimd check --quality-gate=no-regression` failing CI if any key
+- **What changes:** SQLite database storing per-run metric snapshots (project-local or `~/.qmx/history.db`). New
+  `qmx trend` command showing metric trends over time. `qmx check --quality-gate=no-regression` failing CI if any key
   metric worsened. Sparkline-style trend indicators in text report
 - **Challenges:** Schema design for efficient queries, determining what "worsened" means (absolute vs relative),
   handling baseline resets, storage lifecycle
@@ -164,8 +164,8 @@ and Codex with convergent conclusions on top priorities.
 #### 8. Custom Rules API
 
 - **Why it matters:** Enterprise teams have domain-specific quality rules ("no direct DB queries outside Repository", "
-  all DTOs must be readonly"). Without a plugin API, they either fork AIMD or use a separate tool. A PHP plugin
-  interface (`implements RuleInterface`, autoloaded from configured path) makes AIMD extensible without forking —
+  all DTOs must be readonly"). Without a plugin API, they either fork Qualimetrix or use a separate tool. A PHP plugin
+  interface (`implements RuleInterface`, autoloaded from configured path) makes Qualimetrix extensible without forking —
   critical for enterprise adoption and community growth
 - **What changes:** PHP plugin interface (autoloaded from configured path), optionally YAML pattern rules for simple
   cases. Plugin discovery, API stability guarantees, documentation
@@ -196,7 +196,7 @@ and Codex with convergent conclusions on top priorities.
 
 #### 10. Tech Debt Breakdown
 
-- **Why it matters:** AIMD reports total tech debt as a single number ("4.2 hours"). But a tech lead planning a sprint
+- **Why it matters:** Qualimetrix reports total tech debt as a single number ("4.2 hours"). But a tech lead planning a sprint
   needs to know: "2.5 hours is complexity, 1 hour is coupling, 0.7 hours is code smells". Category breakdown makes debt
   actionable for sprint planning — you can assign "fix complexity debt" to one developer and "fix coupling debt" to
   another
@@ -228,7 +228,7 @@ and Codex with convergent conclusions on top priorities.
 - **Input:** Optional Clover XML coverage file (`--coverage=clover.xml`)
 - **Rule:** `complexity.crap`
 - **Concern:** Without coverage data, CRAP = CCN² — which adds no information beyond CCN itself. Value is conditional on
-  the user having coverage reports in their pipeline. This creates an external dependency that most AIMD users may not
+  the user having coverage reports in their pipeline. This creates an external dependency that most Qualimetrix users may not
   have
 - **Reference:** Alberto Savoia, crap4j; phpunit `--log-crap4j`
 - **Effort:** Medium
@@ -240,7 +240,7 @@ and Codex with convergent conclusions on top priorities.
   Color = health, size = ClassRank
 - **Concern:** Maximum wow on demo, but high risk of becoming useless on real projects. At 500+ nodes, force-directed
   graphs become unreadable without sophisticated filtering, clustering, and level-of-detail rendering. The UX work to
-  make this genuinely useful (not just pretty) is where the real effort lies. AIMD already exports DOT graphs —
+  make this genuinely useful (not just pretty) is where the real effort lies. Qualimetrix already exports DOT graphs —
   interactive browser version adds visual wow but limited analytical depth
 - **Reference:** NDepend dependency graph, CodeScene hotspot coupling map
 - **Effort:** Very High (layout + performance + filtering UX)
@@ -293,20 +293,20 @@ Items surfaced during expert evaluation that don't fit existing phases but deser
 
 ## Not Recommended
 
-| Item                            | Reason                                                                                                                                                                                                                              |
-| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Full taint analysis**         | Requires inter-procedural data-flow engine. Psalm and SonarQube have years of investment here. Not practical to compete.                                                                                                            |
-| **Type checking / null safety** | PHPStan and Psalm own this completely. Would require building a type inference engine.                                                                                                                                              |
-| **Auto-fixing**                 | Rector's domain. AIMD metrics (high CCN, low TCC) can't be auto-fixed — simplifying a complex method requires human judgment. Fundamentally different concern from analysis.                                                        |
-| **Naming convention rules**     | PHPCS/PHP-CS-Fixer handle this well. Low differentiation value.                                                                                                                                                                     |
-| **Framework-specific rules**    | Adds maintenance burden. AIMD is framework-agnostic by design. Configuration presets (strict/relaxed) are acceptable, but not framework-coupled rules.                                                                              |
-| **IDE plugins**                 | PhpStorm/VSCode plugins are separate products with their own lifecycle, API, review processes. AIMD already integrates via SARIF, GitHub Actions, GitLab Code Quality — the right integration surface for a CLI tool at this stage. |
+| Item                            | Reason                                                                                                                                                                                                                                     |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Full taint analysis**         | Requires inter-procedural data-flow engine. Psalm and SonarQube have years of investment here. Not practical to compete.                                                                                                                   |
+| **Type checking / null safety** | PHPStan and Psalm own this completely. Would require building a type inference engine.                                                                                                                                                     |
+| **Auto-fixing**                 | Rector's domain. Qualimetrix metrics (high CCN, low TCC) can't be auto-fixed — simplifying a complex method requires human judgment. Fundamentally different concern from analysis.                                                        |
+| **Naming convention rules**     | PHPCS/PHP-CS-Fixer handle this well. Low differentiation value.                                                                                                                                                                            |
+| **Framework-specific rules**    | Adds maintenance burden. Qualimetrix is framework-agnostic by design. Configuration presets (strict/relaxed) are acceptable, but not framework-coupled rules.                                                                              |
+| **IDE plugins**                 | PhpStorm/VSCode plugins are separate products with their own lifecycle, API, review processes. Qualimetrix already integrates via SARIF, GitHub Actions, GitLab Code Quality — the right integration surface for a CLI tool at this stage. |
 
 ---
 
 ## Success Metrics
 
-After Tiers 1–2, AIMD replaces: **phpmd + phpmetrics + phpcpd + deptrac** and offers capabilities no PHP tool has (
+After Tiers 1–2, Qualimetrix replaces: **phpmd + phpmetrics + phpcpd + deptrac** and offers capabilities no PHP tool has (
 effort-aware prioritization, cognitive complexity breakdown, architecture rules, quality gates).
 
 **Target value proposition:** "One tool. 40x faster. Deeper metrics. Quality gates. Replaces five tools."

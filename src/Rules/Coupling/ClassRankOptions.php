@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Rules\Coupling;
+namespace Qualimetrix\Rules\Coupling;
 
-use AiMessDetector\Core\Rule\RuleOptionsInterface;
-use AiMessDetector\Core\Violation\Severity;
-use AiMessDetector\Rules\Support\ThresholdParser;
+use Qualimetrix\Core\Rule\RuleOptionsInterface;
+use Qualimetrix\Core\Violation\Severity;
+use Qualimetrix\Rules\Support\ThresholdParser;
 
 /**
  * Configuration options for ClassRank rule.

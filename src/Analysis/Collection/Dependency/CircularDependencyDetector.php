@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Analysis\Collection\Dependency;
+namespace Qualimetrix\Analysis\Collection\Dependency;
 
-use AiMessDetector\Core\Dependency\DependencyGraphInterface;
-use AiMessDetector\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Dependency\DependencyGraphInterface;
+use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**
  * Detects circular dependencies using Tarjan's strongly connected components algorithm.

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Configuration\Loader;
+namespace Qualimetrix\Configuration\Loader;
 
-use AiMessDetector\Configuration\Exception\ConfigLoadException;
+use Qualimetrix\Configuration\Exception\ConfigLoadException;
 use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Yaml;
 

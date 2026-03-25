@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Commit-msg hook for AI Mess Detector
+# Commit-msg hook for Qualimetrix
 # Validates commit message format
 
 COMMIT_MSG_FILE=$1

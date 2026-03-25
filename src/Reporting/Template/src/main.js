@@ -1,5 +1,5 @@
 /**
- * AIMD HTML Report — Main Entry Point
+ * Qualimetrix HTML Report — Main Entry Point
  *
  * Reads embedded JSON data and renders the interactive treemap report.
  */
@@ -74,7 +74,7 @@ export function init() {
   computeSubtreeMetrics(treeData);
 
   // Auto-drill into single-child namespaces to skip unhelpful single-rectangle views
-  // e.g., <project> → AiMessDetector (single root ns) → show AiMessDetector's children directly
+  // e.g., <project> → Qualimetrix (single root ns) → show Qualimetrix's children directly
   let initialNode = treeData;
   while (initialNode.children && initialNode.children.length === 1
     && initialNode.children[0].children && initialNode.children[0].children.length > 0
@@ -691,7 +691,7 @@ function renderFooter(project) {
     hour: '2-digit', minute: '2-digit',
   });
 
-  footer.textContent = `Generated ${formatted} | AIMD ${project.aimdVersion}`;
+  footer.textContent = `Generated ${formatted} | Qualimetrix ${project.qmxVersion}`;
 }
 
 // Auto-init when DOM is ready

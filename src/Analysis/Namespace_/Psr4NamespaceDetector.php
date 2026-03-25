@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Analysis\Namespace_;
+namespace Qualimetrix\Analysis\Namespace_;
 
-use AiMessDetector\Core\Namespace_\NamespaceDetectorInterface;
+use Qualimetrix\Core\Namespace_\NamespaceDetectorInterface;
 use SplFileInfo;
 
 final class Psr4NamespaceDetector implements NamespaceDetectorInterface

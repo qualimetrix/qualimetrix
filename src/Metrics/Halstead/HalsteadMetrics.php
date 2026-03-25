@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Metrics\Halstead;
+namespace Qualimetrix\Metrics\Halstead;
 
 /**
  * Value object containing Halstead complexity metrics.

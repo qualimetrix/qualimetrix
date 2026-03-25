@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\Serializer;
+namespace Qualimetrix\Infrastructure\Serializer;
 
 use RuntimeException;
 

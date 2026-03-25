@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Analysis\Collection;
+namespace Qualimetrix\Analysis\Collection;
 
-use AiMessDetector\Core\Suppression\Suppression;
+use Qualimetrix\Core\Suppression\Suppression;
 
 /**
  * Result of the collection phase.

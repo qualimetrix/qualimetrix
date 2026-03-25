@@ -2,23 +2,23 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Reporting\Health;
+namespace Qualimetrix\Tests\Unit\Reporting\Health;
 
-use AiMessDetector\Core\Metric\MetricBag;
-use AiMessDetector\Core\Metric\MetricRepositoryInterface;
-use AiMessDetector\Core\Symbol\SymbolInfo;
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Symbol\SymbolType;
-use AiMessDetector\Core\Violation\Location;
-use AiMessDetector\Core\Violation\Severity;
-use AiMessDetector\Core\Violation\Violation;
-use AiMessDetector\Reporting\Debt\DebtCalculator;
-use AiMessDetector\Reporting\Debt\RemediationTimeRegistry;
-use AiMessDetector\Reporting\Health\MetricHintProvider;
-use AiMessDetector\Reporting\Health\SummaryEnricher;
-use AiMessDetector\Reporting\Report;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Violation\Location;
+use Qualimetrix\Core\Violation\Severity;
+use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Reporting\Debt\DebtCalculator;
+use Qualimetrix\Reporting\Debt\RemediationTimeRegistry;
+use Qualimetrix\Reporting\Health\MetricHintProvider;
+use Qualimetrix\Reporting\Health\SummaryEnricher;
+use Qualimetrix\Reporting\Report;
 
 #[CoversClass(SummaryEnricher::class)]
 final class SummaryEnricherTest extends TestCase

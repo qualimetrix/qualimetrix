@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Configuration;
+namespace Qualimetrix\Configuration;
 
-use AiMessDetector\Core\Rule\RuleInterface;
+use Qualimetrix\Core\Rule\RuleInterface;
 use ReflectionClass;
 
 /**

@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\Storage;
+namespace Qualimetrix\Infrastructure\Storage;
 
-use AiMessDetector\Core\Dependency\Dependency;
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Dependency\Dependency;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Symbol\SymbolType;
 
 /**
  * Storage interface for metrics and file metadata.

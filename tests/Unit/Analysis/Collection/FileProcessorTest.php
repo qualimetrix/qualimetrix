@@ -2,22 +2,8 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Analysis\Collection;
+namespace Qualimetrix\Tests\Unit\Analysis\Collection;
 
-use AiMessDetector\Analysis\Collection\Dependency\DependencyResolver;
-use AiMessDetector\Analysis\Collection\Dependency\DependencyVisitor;
-use AiMessDetector\Analysis\Collection\FileProcessor;
-use AiMessDetector\Analysis\Collection\Metric\CompositeCollector;
-use AiMessDetector\Core\Ast\FileParserInterface;
-use AiMessDetector\Core\Exception\ParseException;
-use AiMessDetector\Core\Metric\ClassMetricsProviderInterface;
-use AiMessDetector\Core\Metric\ClassWithMetrics;
-use AiMessDetector\Core\Metric\MethodMetricsProviderInterface;
-use AiMessDetector\Core\Metric\MethodWithMetrics;
-use AiMessDetector\Core\Metric\MetricBag;
-use AiMessDetector\Core\Metric\MetricCollectorInterface;
-use AiMessDetector\Core\Suppression\SuppressionType;
-use AiMessDetector\Core\Symbol\SymbolPath;
 use PhpParser\Comment\Doc;
 use PhpParser\Node;
 use PhpParser\NodeVisitorAbstract;
@@ -25,6 +11,20 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Collection\Dependency\DependencyResolver;
+use Qualimetrix\Analysis\Collection\Dependency\DependencyVisitor;
+use Qualimetrix\Analysis\Collection\FileProcessor;
+use Qualimetrix\Analysis\Collection\Metric\CompositeCollector;
+use Qualimetrix\Core\Ast\FileParserInterface;
+use Qualimetrix\Core\Exception\ParseException;
+use Qualimetrix\Core\Metric\ClassMetricsProviderInterface;
+use Qualimetrix\Core\Metric\ClassWithMetrics;
+use Qualimetrix\Core\Metric\MethodMetricsProviderInterface;
+use Qualimetrix\Core\Metric\MethodWithMetrics;
+use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Metric\MetricCollectorInterface;
+use Qualimetrix\Core\Suppression\SuppressionType;
+use Qualimetrix\Core\Symbol\SymbolPath;
 use SplFileInfo;
 
 #[CoversClass(FileProcessor::class)]
@@ -203,7 +203,7 @@ final class FileProcessorTest extends TestCase
 
         // Build AST: a class with a method containing an Expression with a docblock
         $docComment = new Doc(
-            "/** @aimd-ignore-next-line code-smell.exit */",
+            "/** @qmx-ignore-next-line code-smell.exit */",
             startLine: 10,
             endLine: 10,
         );
@@ -253,7 +253,7 @@ final class FileProcessorTest extends TestCase
                 return ['ccn'];
             }
 
-            /** @return list<\AiMessDetector\Core\Metric\MetricDefinition> */
+            /** @return list<\Qualimetrix\Core\Metric\MetricDefinition> */
             public function getMetricDefinitions(): array
             {
                 return [];
@@ -300,7 +300,7 @@ final class FileProcessorTest extends TestCase
                 return ['wmc'];
             }
 
-            /** @return list<\AiMessDetector\Core\Metric\MetricDefinition> */
+            /** @return list<\Qualimetrix\Core\Metric\MetricDefinition> */
             public function getMetricDefinitions(): array
             {
                 return [];

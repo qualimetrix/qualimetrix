@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Infrastructure\Parallel\Strategy;
+namespace Qualimetrix\Tests\Unit\Infrastructure\Parallel\Strategy;
 
-use AiMessDetector\Infrastructure\Parallel\Strategy\AmphpParallelStrategy;
-use AiMessDetector\Metrics\Maintainability\MaintainabilityIndexCollector;
-use AiMessDetector\Metrics\Size\LocCollector;
 use FilesystemIterator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use Qualimetrix\Infrastructure\Parallel\Strategy\AmphpParallelStrategy;
+use Qualimetrix\Metrics\Maintainability\MaintainabilityIndexCollector;
+use Qualimetrix\Metrics\Size\LocCollector;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
@@ -25,7 +25,7 @@ final class AmphpParallelStrategyTest extends TestCase
     protected function setUp(): void
     {
         $this->strategy = new AmphpParallelStrategy();
-        $this->tempDir = sys_get_temp_dir() . '/aimd-test-' . uniqid();
+        $this->tempDir = sys_get_temp_dir() . '/qmx-test-' . uniqid();
         mkdir($this->tempDir, 0755, true);
     }
 
@@ -139,8 +139,8 @@ final class AmphpParallelStrategyTest extends TestCase
     public function itSetsCollectorClasses(): void
     {
         $this->strategy->setCollectorClasses([
-            'AiMessDetector\Metrics\Complexity\CyclomaticComplexityCollector',
-            'AiMessDetector\Metrics\Size\LocCollector',
+            'Qualimetrix\Metrics\Complexity\CyclomaticComplexityCollector',
+            'Qualimetrix\Metrics\Size\LocCollector',
         ]);
 
         // We can't directly verify the private property, but method should not throw
@@ -160,7 +160,7 @@ final class AmphpParallelStrategyTest extends TestCase
     public function itSetsDerivedCollectorClasses(): void
     {
         $this->strategy->setDerivedCollectorClasses([
-            'AiMessDetector\Metrics\Maintainability\MaintainabilityIndexCollector',
+            'Qualimetrix\Metrics\Maintainability\MaintainabilityIndexCollector',
         ]);
 
         // We can't directly verify the private property, but method should not throw

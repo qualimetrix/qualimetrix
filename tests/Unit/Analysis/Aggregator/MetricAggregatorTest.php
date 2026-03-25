@@ -2,20 +2,20 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Analysis\Aggregator;
+namespace Qualimetrix\Tests\Unit\Analysis\Aggregator;
 
-use AiMessDetector\Analysis\Aggregator\AggregationHelper;
-use AiMessDetector\Analysis\Aggregator\MetricAggregator;
-use AiMessDetector\Analysis\Repository\InMemoryMetricRepository;
-use AiMessDetector\Core\Metric\MetricBag;
-use AiMessDetector\Core\Metric\MetricCollectorInterface;
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Metrics\Complexity\CyclomaticComplexityCollector;
-use AiMessDetector\Metrics\Size\ClassCountCollector;
-use AiMessDetector\Metrics\Size\LocCollector;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Aggregator\AggregationHelper;
+use Qualimetrix\Analysis\Aggregator\MetricAggregator;
+use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
+use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Metric\MetricCollectorInterface;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Metrics\Complexity\CyclomaticComplexityCollector;
+use Qualimetrix\Metrics\Size\ClassCountCollector;
+use Qualimetrix\Metrics\Size\LocCollector;
 
 #[CoversClass(MetricAggregator::class)]
 final class MetricAggregatorTest extends TestCase

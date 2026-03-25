@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Analysis\Collection\Metric;
+namespace Qualimetrix\Analysis\Collection\Metric;
 
-use AiMessDetector\Analysis\Collection\Dependency\DependencyVisitor;
-use AiMessDetector\Core\Metric\DerivedCollectorInterface;
-use AiMessDetector\Core\Metric\MetricBag;
-use AiMessDetector\Core\Metric\MetricCollectorInterface;
 use LogicException;
 use PhpParser\Node;
 use PhpParser\NodeTraverser;
+use Qualimetrix\Analysis\Collection\Dependency\DependencyVisitor;
+use Qualimetrix\Core\Metric\DerivedCollectorInterface;
+use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Metric\MetricCollectorInterface;
 use SplFileInfo;
 use Traversable;
 

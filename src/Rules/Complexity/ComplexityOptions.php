@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Rules\Complexity;
+namespace Qualimetrix\Rules\Complexity;
 
-use AiMessDetector\Core\Rule\HierarchicalRuleOptionsInterface;
-use AiMessDetector\Core\Rule\LevelOptionsInterface;
-use AiMessDetector\Core\Rule\RuleLevel;
-use AiMessDetector\Core\Violation\Severity;
-use AiMessDetector\Rules\Support\ThresholdParser;
 use InvalidArgumentException;
+use Qualimetrix\Core\Rule\HierarchicalRuleOptionsInterface;
+use Qualimetrix\Core\Rule\LevelOptionsInterface;
+use Qualimetrix\Core\Rule\RuleLevel;
+use Qualimetrix\Core\Violation\Severity;
+use Qualimetrix\Rules\Support\ThresholdParser;
 
 /**
  * Options for ComplexityRule (hierarchical).

@@ -1,11 +1,11 @@
-# AI Mess Detector - Docker Image
+# Qualimetrix - Docker Image
 # Multi-stage build for minimal image size
 
 # Build stage
 FROM php:8.4-cli-alpine AS builder
 
 LABEL maintainer="FractalizeR"
-LABEL description="AI Mess Detector - PHP Static Analysis Tool"
+LABEL description="Qualimetrix - PHP Static Analysis Tool"
 
 # Install composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
@@ -32,23 +32,23 @@ COPY . .
 FROM php:8.4-cli-alpine
 
 LABEL maintainer="FractalizeR"
-LABEL description="AI Mess Detector - PHP Static Analysis Tool"
+LABEL description="Qualimetrix - PHP Static Analysis Tool"
 
 # Install runtime dependencies (if any)
-# Currently AIMD only needs PHP CLI with no additional extensions
+# Currently Qualimetrix only needs PHP CLI with no additional extensions
 RUN apk add --no-cache git
 
 # Set working directory for analyzed projects
 WORKDIR /app
 
 # Copy application from builder
-COPY --from=builder /build /aimd
+COPY --from=builder /build /qmx
 
-# Add aimd to PATH
-ENV PATH="/aimd/bin:${PATH}"
+# Add qmx to PATH
+ENV PATH="/qmx/bin:${PATH}"
 
 # Set entrypoint
-ENTRYPOINT ["aimd"]
+ENTRYPOINT ["qmx"]
 
 # Default command - analyze current directory
 CMD ["analyze", "."]

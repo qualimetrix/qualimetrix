@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Analysis\Collection\Dependency\Export;
+namespace Qualimetrix\Analysis\Collection\Dependency\Export;
 
 /**
  * Configuration options for DotExporter.

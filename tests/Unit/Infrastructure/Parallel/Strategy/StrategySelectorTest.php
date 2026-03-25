@@ -2,21 +2,21 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Infrastructure\Parallel\Strategy;
+namespace Qualimetrix\Tests\Unit\Infrastructure\Parallel\Strategy;
 
-use AiMessDetector\Configuration\AnalysisConfiguration;
-use AiMessDetector\Configuration\ConfigurationProviderInterface;
-use AiMessDetector\Core\Metric\DerivedCollectorInterface;
-use AiMessDetector\Core\Metric\MetricCollectorInterface;
-use AiMessDetector\Infrastructure\Parallel\Strategy\AmphpParallelStrategy;
-use AiMessDetector\Infrastructure\Parallel\Strategy\SequentialStrategy;
-use AiMessDetector\Infrastructure\Parallel\Strategy\StrategySelector;
-use AiMessDetector\Infrastructure\Parallel\Strategy\WorkerCountDetector;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
+use Qualimetrix\Configuration\AnalysisConfiguration;
+use Qualimetrix\Configuration\ConfigurationProviderInterface;
+use Qualimetrix\Core\Metric\DerivedCollectorInterface;
+use Qualimetrix\Core\Metric\MetricCollectorInterface;
+use Qualimetrix\Infrastructure\Parallel\Strategy\AmphpParallelStrategy;
+use Qualimetrix\Infrastructure\Parallel\Strategy\SequentialStrategy;
+use Qualimetrix\Infrastructure\Parallel\Strategy\StrategySelector;
+use Qualimetrix\Infrastructure\Parallel\Strategy\WorkerCountDetector;
 use ReflectionProperty;
 
 #[CoversClass(StrategySelector::class)]
@@ -193,7 +193,7 @@ final class StrategySelectorTest extends TestCase
             workers: 4,
             projectRoot: '.', // relative
             cacheEnabled: true,
-            cacheDir: '.aimd-cache', // relative cache dir
+            cacheDir: '.qmx-cache', // relative cache dir
         );
         $this->configProvider->method('getConfiguration')->willReturn($config);
 
@@ -209,7 +209,7 @@ final class StrategySelectorTest extends TestCase
         self::assertIsString($cacheDir);
         self::assertStringStartsWith('/', $cacheDir);
         self::assertStringNotContainsString('/./', $cacheDir, 'Cache dir should use resolved root, not relative path');
-        self::assertStringEndsWith('/.aimd-cache', $cacheDir);
+        self::assertStringEndsWith('/.qmx-cache', $cacheDir);
     }
 
     #[Test]

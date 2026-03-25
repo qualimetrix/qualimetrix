@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\Parallel\Strategy;
+namespace Qualimetrix\Infrastructure\Parallel\Strategy;
 
-use AiMessDetector\Analysis\Collection\FileProcessingResult;
-use AiMessDetector\Analysis\Collection\Strategy\ExecutionStrategyInterface;
-use AiMessDetector\Analysis\Collection\Strategy\ParallelCapableInterface;
-use AiMessDetector\Core\Metric\DerivedCollectorInterface;
-use AiMessDetector\Core\Metric\MetricCollectorInterface;
-use AiMessDetector\Infrastructure\Parallel\FileProcessingTask;
 use Amp\Parallel\Worker\ContextWorkerPool;
 use Amp\Parallel\Worker\Execution;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use Qualimetrix\Analysis\Collection\FileProcessingResult;
+use Qualimetrix\Analysis\Collection\Strategy\ExecutionStrategyInterface;
+use Qualimetrix\Analysis\Collection\Strategy\ParallelCapableInterface;
+use Qualimetrix\Core\Metric\DerivedCollectorInterface;
+use Qualimetrix\Core\Metric\MetricCollectorInterface;
+use Qualimetrix\Infrastructure\Parallel\FileProcessingTask;
 use SplFileInfo;
 use Throwable;
 

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Metrics\Security;
+namespace Qualimetrix\Metrics\Security;
 
 /**
  * Determines if a variable/property/constant name refers to a credential.

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Core\ComputedMetric;
+namespace Qualimetrix\Core\ComputedMetric;
 
-use AiMessDetector\Core\Symbol\SymbolType;
 use InvalidArgumentException;
+use Qualimetrix\Core\Symbol\SymbolType;
 
 final readonly class ComputedMetricDefinition
 {

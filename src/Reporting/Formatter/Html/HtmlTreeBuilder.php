@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Reporting\Formatter\Html;
+namespace Qualimetrix\Reporting\Formatter\Html;
 
-use AiMessDetector\Core\ComputedMetric\ComputedMetricDefinitionHolder;
-use AiMessDetector\Core\Metric\MetricRepositoryInterface;
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Symbol\SymbolType;
-use AiMessDetector\Core\Violation\Violation;
-use AiMessDetector\Reporting\Debt\DebtCalculator;
-use AiMessDetector\Reporting\FormatterContext;
-use AiMessDetector\Reporting\Report;
 use Composer\InstalledVersions;
+use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinitionHolder;
+use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Reporting\Debt\DebtCalculator;
+use Qualimetrix\Reporting\FormatterContext;
+use Qualimetrix\Reporting\Report;
 
 /**
  * Builds the complete data structure for the HTML report.
@@ -532,7 +532,7 @@ final class HtmlTreeBuilder
         return [
             'name' => $projectName ?? InstalledVersions::getRootPackage()['name'] ?? 'unknown',
             'generatedAt' => gmdate('c'),
-            'aimdVersion' => InstalledVersions::getRootPackage()['pretty_version'] ?? 'dev',
+            'qmxVersion' => InstalledVersions::getRootPackage()['pretty_version'] ?? 'dev',
             'partialAnalysis' => $partialAnalysis,
         ];
     }

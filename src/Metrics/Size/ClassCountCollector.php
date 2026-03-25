@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Metrics\Size;
+namespace Qualimetrix\Metrics\Size;
 
-use AiMessDetector\Core\Metric\AggregationStrategy;
-use AiMessDetector\Core\Metric\MetricBag;
-use AiMessDetector\Core\Metric\MetricDefinition;
-use AiMessDetector\Core\Metric\MetricName;
-use AiMessDetector\Core\Metric\SymbolLevel;
-use AiMessDetector\Metrics\AbstractCollector;
 use Override;
 use PhpParser\Node;
+use Qualimetrix\Core\Metric\AggregationStrategy;
+use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Metric\MetricDefinition;
+use Qualimetrix\Core\Metric\MetricName;
+use Qualimetrix\Core\Metric\SymbolLevel;
+use Qualimetrix\Metrics\AbstractCollector;
 use SplFileInfo;
 
 /**

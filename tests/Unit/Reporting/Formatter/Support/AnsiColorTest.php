@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Reporting\Formatter\Support;
+namespace Qualimetrix\Tests\Unit\Reporting\Formatter\Support;
 
-use AiMessDetector\Reporting\Formatter\Support\AnsiColor;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Reporting\Formatter\Support\AnsiColor;
 
 #[CoversClass(AnsiColor::class)]
 final class AnsiColorTest extends TestCase

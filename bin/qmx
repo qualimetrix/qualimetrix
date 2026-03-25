@@ -3,17 +3,17 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector;
+namespace Qualimetrix;
 
-use AiMessDetector\Infrastructure\Console\Application;
-use AiMessDetector\Infrastructure\Console\Command\CheckCommand;
-use AiMessDetector\Infrastructure\Console\Command\BaselineCleanupCommand;
-use AiMessDetector\Infrastructure\Console\Command\GraphExportCommand;
-use AiMessDetector\Infrastructure\Console\Command\HookInstallCommand;
-use AiMessDetector\Infrastructure\Console\Command\HookStatusCommand;
-use AiMessDetector\Infrastructure\Console\Command\HookUninstallCommand;
-use AiMessDetector\Infrastructure\Console\Command\RulesCommand;
-use AiMessDetector\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Infrastructure\Console\Application;
+use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
+use Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand;
+use Qualimetrix\Infrastructure\Console\Command\GraphExportCommand;
+use Qualimetrix\Infrastructure\Console\Command\HookInstallCommand;
+use Qualimetrix\Infrastructure\Console\Command\HookStatusCommand;
+use Qualimetrix\Infrastructure\Console\Command\HookUninstallCommand;
+use Qualimetrix\Infrastructure\Console\Command\RulesCommand;
+use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 
 // Find autoloader
 $autoloadPaths = [
@@ -36,7 +36,7 @@ if (!$autoloaderFound) {
 }
 
 // Increase memory limit for large projects if current limit is below 512M.
-// Users can override with: php -d memory_limit=1G bin/aimd check ...
+// Users can override with: php -d memory_limit=1G bin/qmx check ...
 $currentLimit = ini_get('memory_limit');
 if ($currentLimit !== '-1') {
     $currentBytes = (int) $currentLimit;

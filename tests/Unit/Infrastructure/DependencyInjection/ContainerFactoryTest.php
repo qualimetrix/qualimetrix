@@ -2,66 +2,66 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Infrastructure\DependencyInjection;
+namespace Qualimetrix\Tests\Unit\Infrastructure\DependencyInjection;
 
-use AiMessDetector\Analysis\Collection\Metric\CompositeCollector;
-use AiMessDetector\Analysis\Pipeline\AnalysisPipelineInterface;
-use AiMessDetector\Configuration\AnalysisConfiguration;
-use AiMessDetector\Configuration\ConfigurationHolder;
-use AiMessDetector\Configuration\ConfigurationProviderInterface;
-use AiMessDetector\Configuration\RuleOptionsFactory;
-use AiMessDetector\Core\Namespace_\ProjectNamespaceResolverInterface;
-use AiMessDetector\Infrastructure\Cache\CacheInterface;
-use AiMessDetector\Infrastructure\Console\Command\CheckCommand;
-use AiMessDetector\Infrastructure\DependencyInjection\ContainerFactory;
-use AiMessDetector\Infrastructure\Rule\RuleRegistryInterface;
-use AiMessDetector\Metrics\Complexity\CognitiveComplexityCollector;
-use AiMessDetector\Metrics\Complexity\CyclomaticComplexityCollector;
-use AiMessDetector\Metrics\Complexity\NpathComplexityCollector;
-use AiMessDetector\Metrics\Halstead\HalsteadCollector;
-use AiMessDetector\Metrics\Maintainability\MaintainabilityIndexCollector;
-use AiMessDetector\Metrics\Size\ClassCountCollector;
-use AiMessDetector\Metrics\Size\LocCollector;
-use AiMessDetector\Metrics\Structure\InheritanceDepthCollector;
-use AiMessDetector\Metrics\Structure\LcomCollector;
-use AiMessDetector\Metrics\Structure\MethodCountCollector;
-use AiMessDetector\Metrics\Structure\RfcCollector;
-use AiMessDetector\Metrics\Structure\TccLccCollector;
-use AiMessDetector\Reporting\Formatter\FormatterRegistryInterface;
-use AiMessDetector\Rules\Architecture\CircularDependencyRule;
-use AiMessDetector\Rules\CodeSmell\BooleanArgumentRule;
-use AiMessDetector\Rules\CodeSmell\CountInLoopRule;
-use AiMessDetector\Rules\CodeSmell\DebugCodeRule;
-use AiMessDetector\Rules\CodeSmell\EmptyCatchRule;
-use AiMessDetector\Rules\CodeSmell\ErrorSuppressionRule;
-use AiMessDetector\Rules\CodeSmell\EvalRule;
-use AiMessDetector\Rules\CodeSmell\ExitRule;
-use AiMessDetector\Rules\CodeSmell\GotoRule;
-use AiMessDetector\Rules\CodeSmell\LongParameterListRule;
-use AiMessDetector\Rules\CodeSmell\SuperglobalsRule;
-use AiMessDetector\Rules\CodeSmell\UnreachableCodeRule;
-use AiMessDetector\Rules\Complexity\CognitiveComplexityRule;
-use AiMessDetector\Rules\Complexity\ComplexityRule;
-use AiMessDetector\Rules\Complexity\NpathComplexityRule;
-use AiMessDetector\Rules\Coupling\CboRule;
-use AiMessDetector\Rules\Coupling\ClassRankRule;
-use AiMessDetector\Rules\Coupling\DistanceRule;
-use AiMessDetector\Rules\Coupling\InstabilityRule;
-use AiMessDetector\Rules\Design\TypeCoverageRule;
-use AiMessDetector\Rules\Maintainability\MaintainabilityRule;
-use AiMessDetector\Rules\Security\CommandInjectionRule;
-use AiMessDetector\Rules\Security\SensitiveParameterRule;
-use AiMessDetector\Rules\Security\SqlInjectionRule;
-use AiMessDetector\Rules\Security\XssRule;
-use AiMessDetector\Rules\Size\ClassCountRule;
-use AiMessDetector\Rules\Size\MethodCountRule;
-use AiMessDetector\Rules\Size\PropertyCountRule;
-use AiMessDetector\Rules\Structure\InheritanceRule;
-use AiMessDetector\Rules\Structure\LcomRule;
-use AiMessDetector\Rules\Structure\NocRule;
-use AiMessDetector\Rules\Structure\WmcRule;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Collection\Metric\CompositeCollector;
+use Qualimetrix\Analysis\Pipeline\AnalysisPipelineInterface;
+use Qualimetrix\Configuration\AnalysisConfiguration;
+use Qualimetrix\Configuration\ConfigurationHolder;
+use Qualimetrix\Configuration\ConfigurationProviderInterface;
+use Qualimetrix\Configuration\RuleOptionsFactory;
+use Qualimetrix\Core\Namespace_\ProjectNamespaceResolverInterface;
+use Qualimetrix\Infrastructure\Cache\CacheInterface;
+use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
+use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
+use Qualimetrix\Metrics\Complexity\CognitiveComplexityCollector;
+use Qualimetrix\Metrics\Complexity\CyclomaticComplexityCollector;
+use Qualimetrix\Metrics\Complexity\NpathComplexityCollector;
+use Qualimetrix\Metrics\Halstead\HalsteadCollector;
+use Qualimetrix\Metrics\Maintainability\MaintainabilityIndexCollector;
+use Qualimetrix\Metrics\Size\ClassCountCollector;
+use Qualimetrix\Metrics\Size\LocCollector;
+use Qualimetrix\Metrics\Structure\InheritanceDepthCollector;
+use Qualimetrix\Metrics\Structure\LcomCollector;
+use Qualimetrix\Metrics\Structure\MethodCountCollector;
+use Qualimetrix\Metrics\Structure\RfcCollector;
+use Qualimetrix\Metrics\Structure\TccLccCollector;
+use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
+use Qualimetrix\Rules\Architecture\CircularDependencyRule;
+use Qualimetrix\Rules\CodeSmell\BooleanArgumentRule;
+use Qualimetrix\Rules\CodeSmell\CountInLoopRule;
+use Qualimetrix\Rules\CodeSmell\DebugCodeRule;
+use Qualimetrix\Rules\CodeSmell\EmptyCatchRule;
+use Qualimetrix\Rules\CodeSmell\ErrorSuppressionRule;
+use Qualimetrix\Rules\CodeSmell\EvalRule;
+use Qualimetrix\Rules\CodeSmell\ExitRule;
+use Qualimetrix\Rules\CodeSmell\GotoRule;
+use Qualimetrix\Rules\CodeSmell\LongParameterListRule;
+use Qualimetrix\Rules\CodeSmell\SuperglobalsRule;
+use Qualimetrix\Rules\CodeSmell\UnreachableCodeRule;
+use Qualimetrix\Rules\Complexity\CognitiveComplexityRule;
+use Qualimetrix\Rules\Complexity\ComplexityRule;
+use Qualimetrix\Rules\Complexity\NpathComplexityRule;
+use Qualimetrix\Rules\Coupling\CboRule;
+use Qualimetrix\Rules\Coupling\ClassRankRule;
+use Qualimetrix\Rules\Coupling\DistanceRule;
+use Qualimetrix\Rules\Coupling\InstabilityRule;
+use Qualimetrix\Rules\Design\TypeCoverageRule;
+use Qualimetrix\Rules\Maintainability\MaintainabilityRule;
+use Qualimetrix\Rules\Security\CommandInjectionRule;
+use Qualimetrix\Rules\Security\SensitiveParameterRule;
+use Qualimetrix\Rules\Security\SqlInjectionRule;
+use Qualimetrix\Rules\Security\XssRule;
+use Qualimetrix\Rules\Size\ClassCountRule;
+use Qualimetrix\Rules\Size\MethodCountRule;
+use Qualimetrix\Rules\Size\PropertyCountRule;
+use Qualimetrix\Rules\Structure\InheritanceRule;
+use Qualimetrix\Rules\Structure\LcomRule;
+use Qualimetrix\Rules\Structure\NocRule;
+use Qualimetrix\Rules\Structure\WmcRule;
 
 #[CoversClass(ContainerFactory::class)]
 final class ContainerFactoryTest extends TestCase
@@ -72,7 +72,7 @@ final class ContainerFactoryTest extends TestCase
     protected function setUp(): void
     {
         $this->factory = new ContainerFactory();
-        $this->tempDir = sys_get_temp_dir() . '/aimd_test_' . uniqid();
+        $this->tempDir = sys_get_temp_dir() . '/qmx_test_' . uniqid();
         mkdir($this->tempDir, 0777, true);
     }
 
@@ -372,19 +372,19 @@ final class ContainerFactoryTest extends TestCase
             SuperglobalsRule::class,
             UnreachableCodeRule::class,
             TypeCoverageRule::class,
-            \AiMessDetector\Rules\Security\HardcodedCredentialsRule::class,
+            \Qualimetrix\Rules\Security\HardcodedCredentialsRule::class,
             ClassRankRule::class,
             SqlInjectionRule::class,
             XssRule::class,
             CommandInjectionRule::class,
             SensitiveParameterRule::class,
-            \AiMessDetector\Rules\CodeSmell\UnusedPrivateRule::class,
-            \AiMessDetector\Rules\CodeSmell\IdenticalSubExpressionRule::class,
-            \AiMessDetector\Rules\Duplication\CodeDuplicationRule::class,
-            \AiMessDetector\Rules\ComputedMetric\ComputedMetricRule::class,
-            \AiMessDetector\Rules\CodeSmell\ConstructorOverinjectionRule::class,
-            \AiMessDetector\Rules\CodeSmell\DataClassRule::class,
-            \AiMessDetector\Rules\CodeSmell\GodClassRule::class,
+            \Qualimetrix\Rules\CodeSmell\UnusedPrivateRule::class,
+            \Qualimetrix\Rules\CodeSmell\IdenticalSubExpressionRule::class,
+            \Qualimetrix\Rules\Duplication\CodeDuplicationRule::class,
+            \Qualimetrix\Rules\ComputedMetric\ComputedMetricRule::class,
+            \Qualimetrix\Rules\CodeSmell\ConstructorOverinjectionRule::class,
+            \Qualimetrix\Rules\CodeSmell\DataClassRule::class,
+            \Qualimetrix\Rules\CodeSmell\GodClassRule::class,
         ];
 
         $registeredClasses = $registry->getClasses();

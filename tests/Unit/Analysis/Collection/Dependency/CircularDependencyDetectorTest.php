@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Analysis\Collection\Dependency;
+namespace Qualimetrix\Tests\Unit\Analysis\Collection\Dependency;
 
-use AiMessDetector\Analysis\Collection\Dependency\CircularDependencyDetector;
-use AiMessDetector\Analysis\Collection\Dependency\DependencyGraph;
-use AiMessDetector\Core\Dependency\Dependency;
-use AiMessDetector\Core\Dependency\DependencyType;
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Violation\Location;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Collection\Dependency\CircularDependencyDetector;
+use Qualimetrix\Analysis\Collection\Dependency\DependencyGraph;
+use Qualimetrix\Core\Dependency\Dependency;
+use Qualimetrix\Core\Dependency\DependencyType;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Violation\Location;
 
 #[CoversClass(CircularDependencyDetector::class)]
 final class CircularDependencyDetectorTest extends TestCase

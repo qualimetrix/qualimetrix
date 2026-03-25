@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Reporting\Formatter\Json;
+namespace Qualimetrix\Reporting\Formatter\Json;
 
 /**
  * Sanitizes numeric values for JSON encoding.

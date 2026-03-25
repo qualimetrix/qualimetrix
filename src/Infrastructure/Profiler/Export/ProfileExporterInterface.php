@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\Profiler\Export;
+namespace Qualimetrix\Infrastructure\Profiler\Export;
 
-use AiMessDetector\Core\Profiler\Span;
+use Qualimetrix\Core\Profiler\Span;
 
 /**
  * Interface for exporting profiling data in various formats.

@@ -111,7 +111,7 @@ After normalization, both methods produce the same token sequence -- variables a
 <!-- llms:skip-begin -->
 ### Implementation notes
 
-AIMD uses the **Rabin-Karp rolling hash** algorithm for efficient detection. The normalization step is key to finding "near-duplicates" that differ only in variable names, string values, or numeric constants. This approach is similar to tools like PMD CPD and Simian.
+Qualimetrix uses the **Rabin-Karp rolling hash** algorithm for efficient detection. The normalization step is key to finding "near-duplicates" that differ only in variable names, string values, or numeric constants. This approach is similar to tools like PMD CPD and Simian.
 
 Because function/method/class names are preserved during normalization, the detector will **not** flag two methods that call completely different APIs, even if their control flow structure is identical.
 
@@ -123,7 +123,7 @@ Because function/method/class names are preserved during normalization, the dete
 ### Configuration
 
 ```yaml
-# aimd.yaml
+# qmx.yaml
 rules:
   duplication.code-duplication:
     enabled: true
@@ -133,16 +133,16 @@ rules:
 
 ```bash
 # Increase minimum token threshold to reduce noise
-bin/aimd check src/ --rule-opt="duplication.code-duplication:min_tokens=100"
+bin/qmx check src/ --rule-opt="duplication.code-duplication:min_tokens=100"
 
 # Increase minimum line count
-bin/aimd check src/ --rule-opt="duplication.code-duplication:min_lines=10"
+bin/qmx check src/ --rule-opt="duplication.code-duplication:min_lines=10"
 ```
 
 You can also disable the rule entirely:
 
 ```bash
-bin/aimd check src/ --disable-rule=duplication
+bin/qmx check src/ --disable-rule=duplication
 ```
 
 !!! note "Memory usage"

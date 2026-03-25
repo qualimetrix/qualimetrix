@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Metrics\Design;
+namespace Qualimetrix\Tests\Unit\Metrics\Design;
 
-use AiMessDetector\Metrics\Design\TypeCoverageCollector;
-use AiMessDetector\Metrics\Design\TypeCoverageVisitor;
 use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Metrics\Design\TypeCoverageCollector;
+use Qualimetrix\Metrics\Design\TypeCoverageVisitor;
 use SplFileInfo;
 
 /**
@@ -200,7 +200,7 @@ PHP;
         );
     }
 
-    private function collectMetrics(string $code): \AiMessDetector\Core\Metric\MetricBag
+    private function collectMetrics(string $code): \Qualimetrix\Core\Metric\MetricBag
     {
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($code) ?? [];

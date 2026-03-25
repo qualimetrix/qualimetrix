@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Metrics\Maintainability;
+namespace Qualimetrix\Metrics\Maintainability;
 
-use AiMessDetector\Core\Metric\AggregationStrategy;
-use AiMessDetector\Core\Metric\DerivedCollectorInterface;
-use AiMessDetector\Core\Metric\MetricBag;
-use AiMessDetector\Core\Metric\MetricDefinition;
-use AiMessDetector\Core\Metric\MetricName;
-use AiMessDetector\Core\Metric\ParallelSafeCollectorInterface;
-use AiMessDetector\Core\Metric\SymbolLevel;
+use Qualimetrix\Core\Metric\AggregationStrategy;
+use Qualimetrix\Core\Metric\DerivedCollectorInterface;
+use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Metric\MetricDefinition;
+use Qualimetrix\Core\Metric\MetricName;
+use Qualimetrix\Core\Metric\ParallelSafeCollectorInterface;
+use Qualimetrix\Core\Metric\SymbolLevel;
 
 /**
  * Derived collector that calculates Maintainability Index.

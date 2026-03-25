@@ -2,18 +2,8 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Analysis\Collection\Dependency;
+namespace Qualimetrix\Analysis\Collection\Dependency;
 
-use AiMessDetector\Analysis\Collection\Dependency\Handler\CatchInstanceofHandler;
-use AiMessDetector\Analysis\Collection\Dependency\Handler\ClassLikeHandler;
-use AiMessDetector\Analysis\Collection\Dependency\Handler\DependencyContext;
-use AiMessDetector\Analysis\Collection\Dependency\Handler\InstantiationHandler;
-use AiMessDetector\Analysis\Collection\Dependency\Handler\MethodHandler;
-use AiMessDetector\Analysis\Collection\Dependency\Handler\NodeDependencyHandlerInterface;
-use AiMessDetector\Analysis\Collection\Dependency\Handler\PropertyHandler;
-use AiMessDetector\Analysis\Collection\Dependency\Handler\StaticAccessHandler;
-use AiMessDetector\Analysis\Collection\Dependency\Handler\TraitUseHandler;
-use AiMessDetector\Core\Dependency\Dependency;
 use PhpParser\Node;
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\Enum_;
@@ -23,6 +13,16 @@ use PhpParser\Node\Stmt\Namespace_;
 use PhpParser\Node\Stmt\Trait_;
 use PhpParser\Node\Stmt\Use_;
 use PhpParser\NodeVisitorAbstract;
+use Qualimetrix\Analysis\Collection\Dependency\Handler\CatchInstanceofHandler;
+use Qualimetrix\Analysis\Collection\Dependency\Handler\ClassLikeHandler;
+use Qualimetrix\Analysis\Collection\Dependency\Handler\DependencyContext;
+use Qualimetrix\Analysis\Collection\Dependency\Handler\InstantiationHandler;
+use Qualimetrix\Analysis\Collection\Dependency\Handler\MethodHandler;
+use Qualimetrix\Analysis\Collection\Dependency\Handler\NodeDependencyHandlerInterface;
+use Qualimetrix\Analysis\Collection\Dependency\Handler\PropertyHandler;
+use Qualimetrix\Analysis\Collection\Dependency\Handler\StaticAccessHandler;
+use Qualimetrix\Analysis\Collection\Dependency\Handler\TraitUseHandler;
+use Qualimetrix\Core\Dependency\Dependency;
 
 /**
  * Visitor that collects all class dependencies from AST.

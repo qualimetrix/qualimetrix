@@ -5,7 +5,7 @@ set -euo pipefail
 # Claude Code Web Environment Initialization Script
 # ============================================================================
 # Automatically installs tools and dependencies for the AI agent
-# to work with the AI Mess Detector PHP project.
+# to work with the Qualimetrix PHP project.
 #
 # Runs automatically on session start in Claude Code on the Web
 # via the SessionStart hook (.claude/settings.json).

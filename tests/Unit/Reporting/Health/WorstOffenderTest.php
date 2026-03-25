@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Reporting\Health;
+namespace Qualimetrix\Tests\Unit\Reporting\Health;
 
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Reporting\Health\WorstOffender;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Reporting\Health\WorstOffender;
 
 #[CoversClass(WorstOffender::class)]
 final class WorstOffenderTest extends TestCase

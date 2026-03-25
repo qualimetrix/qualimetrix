@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Infrastructure\Profiler\Export;
+namespace Qualimetrix\Tests\Unit\Infrastructure\Profiler\Export;
 
-use AiMessDetector\Core\Profiler\Span;
-use AiMessDetector\Infrastructure\Profiler\Export\JsonExporter;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Profiler\Span;
+use Qualimetrix\Infrastructure\Profiler\Export\JsonExporter;
 
 final class JsonExporterTest extends TestCase
 {

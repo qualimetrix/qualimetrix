@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Infrastructure\DependencyInjection\CompilerPass;
+namespace Qualimetrix\Tests\Unit\Infrastructure\DependencyInjection\CompilerPass;
 
-use AiMessDetector\Configuration\Pipeline\ConfigurationPipeline;
-use AiMessDetector\Configuration\Pipeline\Stage\DefaultsStage;
-use AiMessDetector\Infrastructure\DependencyInjection\CompilerPass\ConfigurationStageCompilerPass;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Configuration\Pipeline\ConfigurationPipeline;
+use Qualimetrix\Configuration\Pipeline\Stage\DefaultsStage;
+use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ConfigurationStageCompilerPass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
 

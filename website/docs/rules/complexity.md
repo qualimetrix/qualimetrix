@@ -81,7 +81,7 @@ function processOrder(Order $order): void
 <!-- llms:skip-begin -->
 ### Implementation notes
 
-AIMD uses an extended variant of Cyclomatic Complexity, sometimes called **CCN2+**. In addition to the standard decision points (if, elseif, while, for, foreach, case, catch, &&, ||, ?:), AIMD also counts:
+Qualimetrix uses an extended variant of Cyclomatic Complexity, sometimes called **CCN2+**. In addition to the standard decision points (if, elseif, while, for, foreach, case, catch, &&, ||, ?:), Qualimetrix also counts:
 
 - `??` (null coalescing operator) — +1
 - `?->` (nullsafe method call) — +1
@@ -95,14 +95,14 @@ This is a deliberate choice: all these constructs represent hidden branching. Fo
 **Closures and arrow functions:** Closures and arrow functions are measured as **separate units** — they do not add to the enclosing method's CCN. This matches how they are used in practice: as self-contained callable objects.
 
 !!! note "Comparing with other tools"
-    Because of these additional decision points, AIMD will report **higher CCN values** than phpmd or pdepend for code that uses null coalescing or nullsafe operators. This is not a bug — it reflects a stricter definition of complexity. The difference is most noticeable in code with chained `??` expressions.
+    Because of these additional decision points, Qualimetrix will report **higher CCN values** than phpmd or pdepend for code that uses null coalescing or nullsafe operators. This is not a bug — it reflects a stricter definition of complexity. The difference is most noticeable in code with chained `??` expressions.
 
 <!-- llms:skip-end -->
 
 ### Configuration
 
 ```yaml
-# aimd.yaml
+# qmx.yaml
 rules:
   complexity.cyclomatic:
     method:
@@ -124,10 +124,10 @@ rules:
 
 ```bash
 # CLI overrides
-bin/aimd check src/ --rule-opt="complexity.cyclomatic:method.warning=15"
-bin/aimd check src/ --rule-opt="complexity.cyclomatic:method.error=25"
-bin/aimd check src/ --rule-opt="complexity.cyclomatic:class.max_warning=40"
-bin/aimd check src/ --rule-opt="complexity.cyclomatic:class.enabled=false"
+bin/qmx check src/ --rule-opt="complexity.cyclomatic:method.warning=15"
+bin/qmx check src/ --rule-opt="complexity.cyclomatic:method.error=25"
+bin/qmx check src/ --rule-opt="complexity.cyclomatic:class.max_warning=40"
+bin/qmx check src/ --rule-opt="complexity.cyclomatic:class.enabled=false"
 ```
 
 ---
@@ -211,7 +211,7 @@ Notice how nesting makes the penalty grow. The deeply nested `if ($item->hasDisc
 ### Configuration
 
 ```yaml
-# aimd.yaml
+# qmx.yaml
 rules:
   complexity.cognitive:
     method:
@@ -231,8 +231,8 @@ rules:
 ```
 
 ```bash
-bin/aimd check src/ --rule-opt="complexity.cognitive:method.warning=20"
-bin/aimd check src/ --rule-opt="complexity.cognitive:method.error=40"
+bin/qmx check src/ --rule-opt="complexity.cognitive:method.warning=20"
+bin/qmx check src/ --rule-opt="complexity.cognitive:method.error=40"
 ```
 
 ---
@@ -306,27 +306,27 @@ Just 8 independent `if` statements already produce 256 paths.
 <!-- llms:skip-begin -->
 ### Implementation notes
 
-AIMD follows Nejmeh (1988) with PHP-specific extensions:
+Qualimetrix follows Nejmeh (1988) with PHP-specific extensions:
 
 - **Boolean operators in conditions:** Each `&&`/`||` in a condition adds 1 to that condition's path count. For example, `if ($a && $b || $c)` contributes 4 paths (base 2 + 2 operators).
 - **Ternary:** Contributes 2 base paths plus any complexity in sub-expressions.
 - **`??` (null coalescing):** Treated as +1 additional path, similar to a ternary.
 - **PHP-specific extensions:** `match`, `foreach`, `??`, and `?->` are all handled as path-generating constructs.
 
-**`match` expressions:** AIMD uses an **additive** approach, consistent with Nejmeh's original formula for `switch`:
+**`match` expressions:** Qualimetrix uses an **additive** approach, consistent with Nejmeh's original formula for `switch`:
 
 ```
 NPath(match) = 1 + sum of NPath(each arm body)
 ```
 
-Some other tools (notably pdepend) use a multiplicative approach for `match`, which can produce extreme values (millions) for methods with large `match` expressions. AIMD's additive approach yields practical, actionable values.
+Some other tools (notably pdepend) use a multiplicative approach for `match`, which can produce extreme values (millions) for methods with large `match` expressions. Qualimetrix's additive approach yields practical, actionable values.
 
 <!-- llms:skip-end -->
 
 ### Configuration
 
 ```yaml
-# aimd.yaml
+# qmx.yaml
 rules:
   complexity.npath:
     method:
@@ -346,8 +346,8 @@ rules:
 ```
 
 ```bash
-bin/aimd check src/ --rule-opt="complexity.npath:method.warning=300"
-bin/aimd check src/ --rule-opt="complexity.npath:class.enabled=true"
+bin/qmx check src/ --rule-opt="complexity.npath:method.warning=300"
+bin/qmx check src/ --rule-opt="complexity.npath:class.enabled=true"
 ```
 
 ---
@@ -412,14 +412,14 @@ class OrderProcessor
 <!-- llms:skip-begin -->
 ### Implementation notes
 
-WMC is calculated as the sum of [Cyclomatic Complexity](#cyclomatic-complexity) of all methods in a class. Since AIMD uses the CCN2+ variant (which counts `??` and `?->` as decision points), WMC values will be correspondingly higher than those reported by other tools.
+WMC is calculated as the sum of [Cyclomatic Complexity](#cyclomatic-complexity) of all methods in a class. Since Qualimetrix uses the CCN2+ variant (which counts `??` and `?->` as decision points), WMC values will be correspondingly higher than those reported by other tools.
 
 <!-- llms:skip-end -->
 
 ### Configuration
 
 ```yaml
-# aimd.yaml
+# qmx.yaml
 rules:
   complexity.wmc:
     warning: 60
@@ -436,6 +436,6 @@ rules:
 ```
 
 ```bash
-bin/aimd check src/ --rule-opt="complexity.wmc:warning=60"
-bin/aimd check src/ --rule-opt="complexity.wmc:error=100"
+bin/qmx check src/ --rule-opt="complexity.wmc:warning=60"
+bin/qmx check src/ --rule-opt="complexity.wmc:error=100"
 ```

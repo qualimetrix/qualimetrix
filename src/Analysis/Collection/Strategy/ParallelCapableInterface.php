@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Analysis\Collection\Strategy;
+namespace Qualimetrix\Analysis\Collection\Strategy;
 
 /**
  * Interface for execution strategies that support parallel execution.

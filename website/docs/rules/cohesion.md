@@ -154,12 +154,12 @@ LCC counts all 3 pairs (A-C are transitively connected through B): LCC = 3/3 = 1
 
 ## Implementation notes
 
-AIMD implements a **simplified variant** of the Bieman & Kang (1995) TCC/LCC specification:
+Qualimetrix implements a **simplified variant** of the Bieman & Kang (1995) TCC/LCC specification:
 
 - **Constructors and destructors** (`__construct`, `__destruct`) are excluded from the method set, per the B&K spec (these are setup/teardown, not behavioral methods).
 - **Enums are excluded** -- they cannot have instance properties, so TCC would always be 0.0, which is misleading.
 - **Interfaces are excluded** -- they have no method bodies, so property access cannot be measured.
-- **Only public methods** are considered. The original B&K paper specifies "visible methods" (public + protected); AIMD follows the stricter industry convention (public only), consistent with most tools (PHPMD, PHPMetrics).
+- **Only public methods** are considered. The original B&K paper specifies "visible methods" (public + protected); Qualimetrix follows the stricter industry convention (public only), consistent with most tools (PHPMD, PHPMetrics).
 - **Only direct `$this->property` access** is counted. B&K also defines "invocation trees" where a public method calling a private helper that accesses a property counts as indirect access. This is **not implemented** -- delegation through private methods is not tracked. This means TCC may be **underestimated** for classes that heavily use the delegation pattern.
 - **Static methods and abstract methods** are excluded -- they do not operate on instance state.
 - **Classes with 0 or 1 tracked public methods** default to TCC = 1.0 and LCC = 1.0 (a single-method class is trivially cohesive).
@@ -174,7 +174,7 @@ AIMD implements a **simplified variant** of the Bieman & Kang (1995) TCC/LCC spe
 TCC and LCC are collected as metrics and do not have configurable thresholds. They appear in the metrics JSON output:
 
 ```bash
-bin/aimd check src/ --format=metrics
+bin/qmx check src/ --format=metrics
 ```
 
 To use TCC/LCC for quality gates, you can process the metrics JSON output programmatically (e.g., in a CI pipeline script).

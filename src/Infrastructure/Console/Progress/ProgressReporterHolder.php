@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\Console\Progress;
+namespace Qualimetrix\Infrastructure\Console\Progress;
 
-use AiMessDetector\Core\Progress\NullProgressReporter;
-use AiMessDetector\Core\Progress\ProgressReporter;
+use Qualimetrix\Core\Progress\NullProgressReporter;
+use Qualimetrix\Core\Progress\ProgressReporter;
 
 /**
  * Holds the current progress reporter instance.

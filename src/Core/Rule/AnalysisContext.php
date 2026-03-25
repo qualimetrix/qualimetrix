@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Core\Rule;
+namespace Qualimetrix\Core\Rule;
 
-use AiMessDetector\Core\Dependency\CycleInterface;
-use AiMessDetector\Core\Dependency\DependencyGraphInterface;
-use AiMessDetector\Core\Duplication\DuplicateBlock;
-use AiMessDetector\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Dependency\CycleInterface;
+use Qualimetrix\Core\Dependency\DependencyGraphInterface;
+use Qualimetrix\Core\Duplication\DuplicateBlock;
+use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 
 final readonly class AnalysisContext
 {

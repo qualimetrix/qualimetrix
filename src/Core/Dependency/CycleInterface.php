@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Core\Dependency;
+namespace Qualimetrix\Core\Dependency;
 
-use AiMessDetector\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**
  * Interface for circular dependency cycles.

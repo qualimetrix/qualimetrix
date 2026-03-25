@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Baseline;
+namespace Qualimetrix\Tests\Unit\Baseline;
 
-use AiMessDetector\Baseline\Baseline;
-use AiMessDetector\Baseline\BaselineEntry;
-use AiMessDetector\Baseline\BaselineWriter;
 use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Baseline\Baseline;
+use Qualimetrix\Baseline\BaselineEntry;
+use Qualimetrix\Baseline\BaselineWriter;
 
 #[CoversClass(BaselineWriter::class)]
 final class BaselineWriterTest extends TestCase
@@ -20,7 +20,7 @@ final class BaselineWriterTest extends TestCase
     protected function setUp(): void
     {
         $this->writer = new BaselineWriter();
-        $this->tempDir = sys_get_temp_dir() . '/aimd_baseline_test_' . uniqid();
+        $this->tempDir = sys_get_temp_dir() . '/qmx_baseline_test_' . uniqid();
         mkdir($this->tempDir, 0755, true);
     }
 

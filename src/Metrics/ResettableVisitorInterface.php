@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Metrics;
+namespace Qualimetrix\Metrics;
 
 /**
  * Interface for visitors that need to reset state between files.

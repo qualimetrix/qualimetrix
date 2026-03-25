@@ -314,21 +314,21 @@ $query = "SELECT * FROM users WHERE id = " . $id;
 
 ### Рекомендации
 
-Для полноценного анализа безопасности с отслеживанием потоков данных используйте специализированные инструменты совместно с AIMD:
+Для полноценного анализа безопасности с отслеживанием потоков данных используйте специализированные инструменты совместно с Qualimetrix:
 
 - **[PHPStan Security Advisories](https://github.com/phpstan/phpstan-security)** -- расширение PHPStan для проверок безопасности
 - **[Psalm Taint Analysis](https://psalm.dev/docs/security_analysis/)** -- отслеживает «загрязненные» данные через присвоения, вызовы функций и возвращаемые значения
 - **[SonarQube](https://www.sonarqube.org/)** -- коммерческий инструмент с глубоким анализом потоков данных
 - **[Snyk Code](https://snyk.io/product/snyk-code/)** -- сканирование безопасности на основе AI с отслеживанием потоков данных
 
-Правила безопасности AIMD лучше всего использовать как **первую линию обороны** для обнаружения наиболее очевидных паттернов. Они дополняют, но не заменяют специализированные инструменты анализа безопасности.
+Правила безопасности Qualimetrix лучше всего использовать как **первую линию обороны** для обнаружения наиболее очевидных паттернов. Они дополняют, но не заменяют специализированные инструменты анализа безопасности.
 
 ---
 
 ## Конфигурация
 
 ```yaml
-# aimd.yaml
+# qmx.yaml
 rules:
   security.hardcoded-credentials:
     enabled: true  # или false для отключения
@@ -346,8 +346,8 @@ rules:
 
 ```bash
 # Отключить конкретное правило
-bin/aimd check src/ --disable-rule=security.hardcoded-credentials
+bin/qmx check src/ --disable-rule=security.hardcoded-credentials
 
 # Отключить все правила безопасности (сопоставление по префиксу)
-bin/aimd check src/ --disable-rule=security
+bin/qmx check src/ --disable-rule=security
 ```

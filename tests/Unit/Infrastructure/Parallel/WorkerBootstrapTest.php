@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Infrastructure\Parallel;
+namespace Qualimetrix\Tests\Unit\Infrastructure\Parallel;
 
-use AiMessDetector\Analysis\Collection\FileProcessorInterface;
-use AiMessDetector\Infrastructure\Ast\CachedFileParser;
-use AiMessDetector\Infrastructure\Ast\PhpFileParser;
-use AiMessDetector\Infrastructure\Parallel\WorkerBootstrap;
-use AiMessDetector\Metrics\Complexity\CyclomaticComplexityCollector;
-use AiMessDetector\Metrics\Maintainability\MaintainabilityIndexCollector;
-use AiMessDetector\Metrics\Size\LocCollector;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Collection\FileProcessorInterface;
+use Qualimetrix\Infrastructure\Ast\CachedFileParser;
+use Qualimetrix\Infrastructure\Ast\PhpFileParser;
+use Qualimetrix\Infrastructure\Parallel\WorkerBootstrap;
+use Qualimetrix\Metrics\Complexity\CyclomaticComplexityCollector;
+use Qualimetrix\Metrics\Maintainability\MaintainabilityIndexCollector;
+use Qualimetrix\Metrics\Size\LocCollector;
 use ReflectionClass;
 
 #[CoversClass(WorkerBootstrap::class)]
@@ -26,7 +26,7 @@ final class WorkerBootstrapTest extends TestCase
         WorkerBootstrap::reset();
 
         // Create temporary directory for cache
-        $this->tempCacheDir = sys_get_temp_dir() . '/aimd-test-cache-' . uniqid();
+        $this->tempCacheDir = sys_get_temp_dir() . '/qmx-test-cache-' . uniqid();
         @mkdir($this->tempCacheDir, 0755, true);
     }
 

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\Cache;
+namespace Qualimetrix\Infrastructure\Cache;
 
 /**
  * Simple cache interface for storing parsed AST.

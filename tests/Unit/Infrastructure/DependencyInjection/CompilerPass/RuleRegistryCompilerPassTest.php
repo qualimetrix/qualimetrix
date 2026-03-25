@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Infrastructure\DependencyInjection\CompilerPass;
+namespace Qualimetrix\Tests\Unit\Infrastructure\DependencyInjection\CompilerPass;
 
-use AiMessDetector\Infrastructure\DependencyInjection\CompilerPass\RuleRegistryCompilerPass;
-use AiMessDetector\Infrastructure\Rule\RuleRegistry;
-use AiMessDetector\Rules\Complexity\ComplexityRule;
-use AiMessDetector\Rules\Size\ClassCountRule;
 use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleRegistryCompilerPass;
+use Qualimetrix\Infrastructure\Rule\RuleRegistry;
+use Qualimetrix\Rules\Complexity\ComplexityRule;
+use Qualimetrix\Rules\Size\ClassCountRule;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 #[CoversClass(RuleRegistryCompilerPass::class)]

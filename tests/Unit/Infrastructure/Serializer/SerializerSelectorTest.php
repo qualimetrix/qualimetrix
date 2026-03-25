@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Infrastructure\Serializer;
+namespace Qualimetrix\Tests\Unit\Infrastructure\Serializer;
 
-use AiMessDetector\Infrastructure\Serializer\IgbinarySerializer;
-use AiMessDetector\Infrastructure\Serializer\PhpSerializer;
-use AiMessDetector\Infrastructure\Serializer\SerializerInterface;
-use AiMessDetector\Infrastructure\Serializer\SerializerSelector;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Infrastructure\Serializer\IgbinarySerializer;
+use Qualimetrix\Infrastructure\Serializer\PhpSerializer;
+use Qualimetrix\Infrastructure\Serializer\SerializerInterface;
+use Qualimetrix\Infrastructure\Serializer\SerializerSelector;
 use RuntimeException;
 
 #[CoversClass(SerializerSelector::class)]

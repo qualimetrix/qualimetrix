@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Infrastructure\DependencyInjection\CompilerPass;
+namespace Qualimetrix\Tests\Unit\Infrastructure\DependencyInjection\CompilerPass;
 
-use AiMessDetector\Infrastructure\DependencyInjection\CompilerPass\FormatterCompilerPass;
-use AiMessDetector\Reporting\Formatter\FormatterRegistry;
-use AiMessDetector\Reporting\Formatter\Json\JsonFormatter;
-use AiMessDetector\Reporting\Formatter\TextFormatter;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\FormatterCompilerPass;
+use Qualimetrix\Reporting\Formatter\FormatterRegistry;
+use Qualimetrix\Reporting\Formatter\Json\JsonFormatter;
+use Qualimetrix\Reporting\Formatter\TextFormatter;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
 

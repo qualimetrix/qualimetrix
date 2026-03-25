@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Analysis\Collection\Dependency\Handler;
+namespace Qualimetrix\Analysis\Collection\Dependency\Handler;
 
-use AiMessDetector\Core\Dependency\DependencyType;
 use PhpParser\Node;
 use PhpParser\Node\Expr\Instanceof_;
 use PhpParser\Node\Name;
 use PhpParser\Node\Stmt\Catch_;
+use Qualimetrix\Core\Dependency\DependencyType;
 
 final readonly class CatchInstanceofHandler implements NodeDependencyHandlerInterface
 {

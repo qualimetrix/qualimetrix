@@ -2,25 +2,25 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Rules\Coupling;
+namespace Qualimetrix\Tests\Unit\Rules\Coupling;
 
-use AiMessDetector\Core\Metric\MetricBag;
-use AiMessDetector\Core\Metric\MetricRepositoryInterface;
-use AiMessDetector\Core\Rule\AnalysisContext;
-use AiMessDetector\Core\Rule\RuleCategory;
-use AiMessDetector\Core\Rule\RuleLevel;
-use AiMessDetector\Core\Symbol\SymbolInfo;
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Symbol\SymbolType;
-use AiMessDetector\Core\Violation\Severity;
-use AiMessDetector\Rules\Coupling\ClassInstabilityOptions;
-use AiMessDetector\Rules\Coupling\InstabilityOptions;
-use AiMessDetector\Rules\Coupling\InstabilityRule;
-use AiMessDetector\Rules\Coupling\NamespaceInstabilityOptions;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Rule\RuleCategory;
+use Qualimetrix\Core\Rule\RuleLevel;
+use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Violation\Severity;
+use Qualimetrix\Rules\Coupling\ClassInstabilityOptions;
+use Qualimetrix\Rules\Coupling\InstabilityOptions;
+use Qualimetrix\Rules\Coupling\InstabilityRule;
+use Qualimetrix\Rules\Coupling\NamespaceInstabilityOptions;
 
 #[CoversClass(InstabilityRule::class)]
 #[CoversClass(InstabilityOptions::class)]
@@ -89,7 +89,7 @@ final class InstabilityRuleTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Expected');
 
-        $invalidOptions = $this->createStub(\AiMessDetector\Core\Rule\RuleOptionsInterface::class);
+        $invalidOptions = $this->createStub(\Qualimetrix\Core\Rule\RuleOptionsInterface::class);
         new InstabilityRule($invalidOptions);
     }
 

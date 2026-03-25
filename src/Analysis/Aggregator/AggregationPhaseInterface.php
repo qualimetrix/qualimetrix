@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Analysis\Aggregator;
+namespace Qualimetrix\Analysis\Aggregator;
 
-use AiMessDetector\Core\Metric\MetricDefinition;
-use AiMessDetector\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Metric\MetricDefinition;
+use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 
 interface AggregationPhaseInterface
 {

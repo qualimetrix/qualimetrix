@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Reporting\Formatter\Summary;
+namespace Qualimetrix\Reporting\Formatter\Summary;
 
-use AiMessDetector\Reporting\Filter\ViolationFilter;
-use AiMessDetector\Reporting\Formatter\Support\AnsiColor;
-use AiMessDetector\Reporting\FormatterContext;
-use AiMessDetector\Reporting\Health\NamespaceDrillDown;
-use AiMessDetector\Reporting\Health\WorstOffender;
-use AiMessDetector\Reporting\Report;
+use Qualimetrix\Reporting\Filter\ViolationFilter;
+use Qualimetrix\Reporting\Formatter\Support\AnsiColor;
+use Qualimetrix\Reporting\FormatterContext;
+use Qualimetrix\Reporting\Health\NamespaceDrillDown;
+use Qualimetrix\Reporting\Health\WorstOffender;
+use Qualimetrix\Reporting\Report;
 
 /**
  * Renders the worst namespaces and worst classes sections for the summary formatter.

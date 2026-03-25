@@ -2,41 +2,41 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Integration\Pipeline;
+namespace Qualimetrix\Tests\Integration\Pipeline;
 
-use AiMessDetector\Analysis\Aggregator\GlobalCollectorRunner;
-use AiMessDetector\Analysis\Aggregator\MetricAggregator;
-use AiMessDetector\Analysis\Collection\CollectionOrchestratorInterface;
-use AiMessDetector\Analysis\Collection\CollectionPhaseOutput;
-use AiMessDetector\Analysis\Collection\CollectionResult;
-use AiMessDetector\Analysis\Collection\Dependency\CircularDependencyDetector;
-use AiMessDetector\Analysis\Collection\Dependency\DependencyGraphBuilder;
-use AiMessDetector\Analysis\Collection\Metric\CompositeCollector;
-use AiMessDetector\Analysis\Discovery\FileDiscoveryInterface;
-use AiMessDetector\Analysis\Pipeline\AnalysisPipeline;
-use AiMessDetector\Analysis\Pipeline\MetricEnricher;
-use AiMessDetector\Analysis\Repository\DefaultMetricRepositoryFactory;
-use AiMessDetector\Analysis\Repository\InMemoryMetricRepository;
-use AiMessDetector\Analysis\RuleExecution\RuleExecutor;
-use AiMessDetector\Configuration\AnalysisConfiguration;
-use AiMessDetector\Configuration\ConfigurationProviderInterface;
-use AiMessDetector\Core\Dependency\Dependency;
-use AiMessDetector\Core\Dependency\DependencyGraphInterface;
-use AiMessDetector\Core\Dependency\DependencyType;
-use AiMessDetector\Core\Metric\MetricBag;
-use AiMessDetector\Core\Rule\AnalysisContext;
-use AiMessDetector\Core\Rule\RuleInterface;
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Symbol\SymbolType;
-use AiMessDetector\Core\Violation\Location;
-use AiMessDetector\Core\Violation\Violation;
-use AiMessDetector\Metrics\Coupling\CouplingCollector;
-use AiMessDetector\Rules\Architecture\CircularDependencyOptions;
-use AiMessDetector\Rules\Architecture\CircularDependencyRule;
 use ArrayIterator;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Aggregator\GlobalCollectorRunner;
+use Qualimetrix\Analysis\Aggregator\MetricAggregator;
+use Qualimetrix\Analysis\Collection\CollectionOrchestratorInterface;
+use Qualimetrix\Analysis\Collection\CollectionPhaseOutput;
+use Qualimetrix\Analysis\Collection\CollectionResult;
+use Qualimetrix\Analysis\Collection\Dependency\CircularDependencyDetector;
+use Qualimetrix\Analysis\Collection\Dependency\DependencyGraphBuilder;
+use Qualimetrix\Analysis\Collection\Metric\CompositeCollector;
+use Qualimetrix\Analysis\Discovery\FileDiscoveryInterface;
+use Qualimetrix\Analysis\Pipeline\AnalysisPipeline;
+use Qualimetrix\Analysis\Pipeline\MetricEnricher;
+use Qualimetrix\Analysis\Repository\DefaultMetricRepositoryFactory;
+use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
+use Qualimetrix\Analysis\RuleExecution\RuleExecutor;
+use Qualimetrix\Configuration\AnalysisConfiguration;
+use Qualimetrix\Configuration\ConfigurationProviderInterface;
+use Qualimetrix\Core\Dependency\Dependency;
+use Qualimetrix\Core\Dependency\DependencyGraphInterface;
+use Qualimetrix\Core\Dependency\DependencyType;
+use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Rule\RuleInterface;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Violation\Location;
+use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Metrics\Coupling\CouplingCollector;
+use Qualimetrix\Rules\Architecture\CircularDependencyOptions;
+use Qualimetrix\Rules\Architecture\CircularDependencyRule;
 use SplFileInfo;
 
 /**
@@ -249,7 +249,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         // CompositeCollector has no per-file collectors for this test
         $compositeCollector = new CompositeCollector([]);
 
-        $ruleExecutor = $this->createStub(\AiMessDetector\Analysis\RuleExecution\RuleExecutorInterface::class);
+        $ruleExecutor = $this->createStub(\Qualimetrix\Analysis\RuleExecution\RuleExecutorInterface::class);
         $ruleExecutor->method('execute')->willReturn([]);
 
         $pipeline = $this->createPipelineWithGlobalCollectors(
@@ -295,11 +295,11 @@ final class AnalysisPipelineIntegrationTest extends TestCase
      * Creates a pipeline with mocked discovery and collection that returns the given dependencies.
      */
     /**
-     * @param list<\AiMessDetector\Core\Dependency\Dependency> $dependencies
+     * @param list<\Qualimetrix\Core\Dependency\Dependency> $dependencies
      */
     private function createPipelineWithDependencies(
         array $dependencies,
-        \AiMessDetector\Analysis\RuleExecution\RuleExecutorInterface $ruleExecutor,
+        \Qualimetrix\Analysis\RuleExecution\RuleExecutorInterface $ruleExecutor,
         ?InMemoryMetricRepository $existingRepository = null,
     ): AnalysisPipeline {
         $discovery = $this->createStub(FileDiscoveryInterface::class);
@@ -342,11 +342,11 @@ final class AnalysisPipelineIntegrationTest extends TestCase
      * Creates a pipeline with specific global collectors.
      */
     /**
-     * @param list<\AiMessDetector\Core\Dependency\Dependency> $dependencies
+     * @param list<\Qualimetrix\Core\Dependency\Dependency> $dependencies
      */
     private function createPipelineWithGlobalCollectors(
         array $dependencies,
-        \AiMessDetector\Analysis\RuleExecution\RuleExecutorInterface $ruleExecutor,
+        \Qualimetrix\Analysis\RuleExecution\RuleExecutorInterface $ruleExecutor,
         GlobalCollectorRunner $globalCollectorRunner,
         CompositeCollector $compositeCollector,
         InMemoryMetricRepository $existingRepository,

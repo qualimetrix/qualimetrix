@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\Git;
+namespace Qualimetrix\Infrastructure\Git;
 
-use AiMessDetector\Core\Violation\Filter\ViolationFilterInterface;
-use AiMessDetector\Core\Violation\Violation;
+use Qualimetrix\Core\Violation\Filter\ViolationFilterInterface;
+use Qualimetrix\Core\Violation\Violation;
 
 /**
  * Filters violations to show only those in changed files.

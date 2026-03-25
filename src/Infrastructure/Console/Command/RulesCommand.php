@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\Console\Command;
+namespace Qualimetrix\Infrastructure\Console\Command;
 
-use AiMessDetector\Infrastructure\Rule\RuleRegistryInterface;
+use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -95,8 +95,8 @@ final class RulesCommand extends Command
         }
 
         $output->writeln('');
-        $output->writeln('<info>Usage:</info> bin/aimd check --disable-rule=<name> | --only-rule=<name>');
-        $output->writeln('        bin/aimd check --rule-opt=<name>:<option>=<value>');
+        $output->writeln('<info>Usage:</info> bin/qmx check --disable-rule=<name> | --only-rule=<name>');
+        $output->writeln('        bin/qmx check --rule-opt=<name>:<option>=<value>');
 
         return self::SUCCESS;
     }

@@ -68,13 +68,13 @@ $profiler->start('collection', 'pipeline');
 
 ```bash
 # Summary output to stderr
-bin/aimd check src/ --profile
+bin/qmx check src/ --profile
 
 # Export to JSON file
-bin/aimd check src/ --profile=profile.json
+bin/qmx check src/ --profile=profile.json
 
 # Export in Chrome Tracing format
-bin/aimd check src/ --profile=trace.json --profile-format=chrome-tracing
+bin/qmx check src/ --profile=trace.json --profile-format=chrome-tracing
 ```
 
 ### Summary Output

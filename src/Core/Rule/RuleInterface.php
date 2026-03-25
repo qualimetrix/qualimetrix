@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Core\Rule;
+namespace Qualimetrix\Core\Rule;
 
-use AiMessDetector\Core\Violation\Violation;
+use Qualimetrix\Core\Violation\Violation;
 
 interface RuleInterface
 {

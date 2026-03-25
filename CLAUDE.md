@@ -1,6 +1,6 @@
 # CLAUDE.md — Guide for AI Agents
 
-**AI Mess Detector** — a CLI tool for static analysis of PHP code
+**Qualimetrix** — a CLI tool for static analysis of PHP code
 
 ---
 
@@ -54,7 +54,7 @@ src/
 ├── Core/              # Contracts and primitives (no dependencies)
 ├── Metrics/           # Metric collectors (by category subdirs)
 ├── Rules/             # Analysis rules (by category subdirs)
-├── Baseline/          # Baseline support and @aimd-ignore suppression
+├── Baseline/          # Baseline support and @qmx-ignore suppression
 ├── Analysis/          # Pipeline orchestration, collection, aggregation
 ├── Reporting/         # Output formatters
 ├── Configuration/     # YAML config loading
@@ -86,7 +86,7 @@ Each domain has its own `README.md` with detailed structure, classes, and contra
 - **Profiler**: Internal span-based profiler for performance diagnostics
 - **Serialization**: Automatic selection of the best serializer (igbinary/PHP serialize)
 - **Git Integration**: Analysis of changed files only, staged files
-- **Baseline Support**: Ignoring known issues, @aimd-ignore tags
+- **Baseline Support**: Ignoring known issues, @qmx-ignore tags
 - **Multiple Formats**: Text, JSON, Metrics, Checkstyle, SARIF, GitLab Code Quality, Health
 - **Caching**: AST caching for faster repeated runs
 - **Progress Reporting**: Progress bar, PSR-3 logging
@@ -228,7 +228,7 @@ Standard Symfony practices are used: **autowiring** and **autoconfiguration**.
 
 **How rule registration works:**
 1. `registerClasses()` scans `src/Rules/**/*Rule.php`
-2. `registerForAutoconfiguration(RuleInterface::class)` adds the `aimd.rule` tag
+2. `registerForAutoconfiguration(RuleInterface::class)` adds the `qmx.rule` tag
 3. `RuleOptionsCompilerPass` automatically registers Options via `RuleOptionsFactory::create()`
 4. `RuleCompilerPass` collects all rules into `RuleExecutor`
 
@@ -284,16 +284,16 @@ composer test:js        # JS tests for HTML report (vitest)
 composer build:js       # Rebuild HTML report JS bundle
 
 # Basic analysis
-bin/aimd check src/
-bin/aimd check src/ --format=json --workers=0
+bin/qmx check src/
+bin/qmx check src/ --format=json --workers=0
 
 # Git integration
-bin/aimd check src/ --analyze=git:staged
-bin/aimd check src/ --report=git:main..HEAD
+bin/qmx check src/ --analyze=git:staged
+bin/qmx check src/ --report=git:main..HEAD
 
 # Baseline
-bin/aimd check src/ --baseline=baseline.json
-bin/aimd check src/ --generate-baseline=baseline.json
+bin/qmx check src/ --baseline=baseline.json
+bin/qmx check src/ --generate-baseline=baseline.json
 
 # Benchmarks (metric calibration against real projects)
 cd benchmarks && composer install
@@ -302,11 +302,11 @@ composer benchmark:check       # Regression check: health scores vs expected ran
 composer benchmark:update      # Recalibrate baseline ranges after formula changes
 
 # Hooks
-bin/aimd hook:install
-bin/aimd hook:status
+bin/qmx hook:install
+bin/qmx hook:status
 
 # Full list of options
-bin/aimd check --help
+bin/qmx check --help
 ```
 
 ---
@@ -378,7 +378,7 @@ Key rules:
 - [src/Analysis/README.md](src/Analysis/README.md) — orchestration
 - [src/Reporting/README.md](src/Reporting/README.md) — formatting
 - [src/Configuration/README.md](src/Configuration/README.md) — configuration
-- [src/Baseline/README.md](src/Baseline/README.md) — baseline support and @aimd-ignore suppression
+- [src/Baseline/README.md](src/Baseline/README.md) — baseline support and @qmx-ignore suppression
 - [src/Infrastructure/README.md](src/Infrastructure/README.md) — CLI, DI, caching
 
 ### Architecture Decision Records (in docs/adr/)

@@ -2,19 +2,19 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Integration\Configuration;
+namespace Qualimetrix\Tests\Integration\Configuration;
 
-use AiMessDetector\Configuration\Discovery\ComposerReader;
-use AiMessDetector\Configuration\Loader\YamlConfigLoader;
-use AiMessDetector\Configuration\Pipeline\ConfigurationContext;
-use AiMessDetector\Configuration\Pipeline\ConfigurationPipeline;
-use AiMessDetector\Configuration\Pipeline\Stage\CliStage;
-use AiMessDetector\Configuration\Pipeline\Stage\ComposerDiscoveryStage;
-use AiMessDetector\Configuration\Pipeline\Stage\ConfigFileStage;
-use AiMessDetector\Configuration\Pipeline\Stage\DefaultsStage;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Configuration\Discovery\ComposerReader;
+use Qualimetrix\Configuration\Loader\YamlConfigLoader;
+use Qualimetrix\Configuration\Pipeline\ConfigurationContext;
+use Qualimetrix\Configuration\Pipeline\ConfigurationPipeline;
+use Qualimetrix\Configuration\Pipeline\Stage\CliStage;
+use Qualimetrix\Configuration\Pipeline\Stage\ComposerDiscoveryStage;
+use Qualimetrix\Configuration\Pipeline\Stage\ConfigFileStage;
+use Qualimetrix\Configuration\Pipeline\Stage\DefaultsStage;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use Symfony\Component\Console\Input\ArrayInput;
@@ -43,7 +43,7 @@ final class ConfigurationPipelineIntegrationTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->tempDir = sys_get_temp_dir() . '/aimd-test-' . uniqid();
+        $this->tempDir = sys_get_temp_dir() . '/qmx-test-' . uniqid();
         mkdir($this->tempDir, 0755, true);
     }
 
@@ -110,7 +110,7 @@ final class ConfigurationPipelineIntegrationTest extends TestCase
         ];
         file_put_contents($this->tempDir . '/composer.json', json_encode($composerJson));
 
-        // 2. aimd.yaml (priority: 20)
+        // 2. qmx.yaml (priority: 20)
         $configYaml = <<<YAML
 paths:
   - lib/
@@ -118,7 +118,7 @@ paths:
 exclude:
   - cache/
 YAML;
-        file_put_contents($this->tempDir . '/aimd.yaml', $configYaml);
+        file_put_contents($this->tempDir . '/qmx.yaml', $configYaml);
 
         // 3. CLI arguments (priority: 30) — using InputDefinition
         $input = $this->createInputWithDefinition([
@@ -159,7 +159,7 @@ paths:
   - lib/
   - app/
 YAML;
-        file_put_contents($this->tempDir . '/aimd.yaml', $configYaml);
+        file_put_contents($this->tempDir . '/qmx.yaml', $configYaml);
 
         $input = $this->createInputWithDefinition([]);
         $context = new ConfigurationContext($input, $this->tempDir);
@@ -182,7 +182,7 @@ paths:
   - lib/
 format: json
 YAML;
-        file_put_contents($this->tempDir . '/aimd.yaml', $configYaml);
+        file_put_contents($this->tempDir . '/qmx.yaml', $configYaml);
 
         $input = $this->createInputWithDefinition([
             'paths' => ['override/'],
@@ -232,7 +232,7 @@ exclude:
   - build/
   - dist/
 YAML;
-        file_put_contents($this->tempDir . '/aimd.yaml', $configYaml);
+        file_put_contents($this->tempDir . '/qmx.yaml', $configYaml);
 
         $input = $this->createInputWithDefinition([]);
         $context = new ConfigurationContext($input, $this->tempDir);
@@ -252,14 +252,14 @@ YAML;
     }
 
     #[Test]
-    public function configFile_aimdYamlSupported(): void
+    public function configFile_qmxYamlSupported(): void
     {
-        // Arrange: Create aimd.yaml config file
+        // Arrange: Create qmx.yaml config file
         $configYaml = <<<YAML
 paths:
   - src-custom/
 YAML;
-        file_put_contents($this->tempDir . '/aimd.yaml', $configYaml);
+        file_put_contents($this->tempDir . '/qmx.yaml', $configYaml);
 
         $input = $this->createInputWithDefinition([]);
         $context = new ConfigurationContext($input, $this->tempDir);
@@ -296,7 +296,7 @@ exclude:
   - cache/
 format: json
 YAML;
-        file_put_contents($this->tempDir . '/aimd.yaml', $configYaml);
+        file_put_contents($this->tempDir . '/qmx.yaml', $configYaml);
 
         // 4. CLI (priority: 30) — excludes: ['temp']
         $input = $this->createInputWithDefinition([
@@ -317,7 +317,7 @@ YAML;
         self::assertContains('cache/', $excludes, 'excludes from config file');
         self::assertContains('temp/', $excludes, 'excludes from CLI');
         self::assertSame('json', $resolved->analysis->format, 'format from config file (overrides defaults)');
-        self::assertSame('.aimd-cache', $resolved->analysis->cacheDir, 'cache.dir defaults to .aimd-cache');
+        self::assertSame('.qmx-cache', $resolved->analysis->cacheDir, 'cache.dir defaults to .qmx-cache');
         self::assertTrue($resolved->analysis->cacheEnabled, 'cache.enabled defaults to true');
     }
 
@@ -330,7 +330,7 @@ onlyRules:
   - complexity.cyclomatic
   - size.loc
 YAML;
-        file_put_contents($this->tempDir . '/aimd.yaml', $configYaml);
+        file_put_contents($this->tempDir . '/qmx.yaml', $configYaml);
 
         $input = $this->createInputWithDefinition([
             '--only-rule' => ['coupling.cbo'],
@@ -381,7 +381,7 @@ rules:
     method:
       warning: 20
 YAML;
-        file_put_contents($this->tempDir . '/aimd.yaml', $configYaml);
+        file_put_contents($this->tempDir . '/qmx.yaml', $configYaml);
 
         $input = $this->createInputWithDefinition([]);
         $context = new ConfigurationContext($input, $this->tempDir);
@@ -406,7 +406,7 @@ YAML;
         $configYaml = <<<YAML
 format: json
 YAML;
-        file_put_contents($this->tempDir . '/aimd.yaml', $configYaml);
+        file_put_contents($this->tempDir . '/qmx.yaml', $configYaml);
 
         $input = $this->createInputWithDefinition([]);
         $context = new ConfigurationContext($input, $this->tempDir);
@@ -427,7 +427,7 @@ YAML;
         $configYaml = <<<YAML
 format: json
 YAML;
-        file_put_contents($this->tempDir . '/aimd.yaml', $configYaml);
+        file_put_contents($this->tempDir . '/qmx.yaml', $configYaml);
 
         $input = $this->createInputWithDefinition(['--format' => 'text']);
         $context = new ConfigurationContext($input, $this->tempDir);
@@ -449,7 +449,7 @@ YAML;
 cache:
   dir: custom-cache
 YAML;
-        file_put_contents($this->tempDir . '/aimd.yaml', $configYaml);
+        file_put_contents($this->tempDir . '/qmx.yaml', $configYaml);
 
         $input = $this->createInputWithDefinition([]);
         $context = new ConfigurationContext($input, $this->tempDir);
@@ -471,7 +471,7 @@ YAML;
 cache:
   dir: custom-cache
 YAML;
-        file_put_contents($this->tempDir . '/aimd.yaml', $configYaml);
+        file_put_contents($this->tempDir . '/qmx.yaml', $configYaml);
 
         $input = $this->createInputWithDefinition(['--cache-dir' => '/explicit/cache']);
         $context = new ConfigurationContext($input, $this->tempDir);

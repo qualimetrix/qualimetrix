@@ -81,16 +81,16 @@ Logger is passed to:
 
 ```bash
 # Verbose console output
-bin/aimd check src/ -v
+bin/qmx check src/ -v
 
 # Very verbose (debug level)
-bin/aimd check src/ -vvv
+bin/qmx check src/ -vvv
 
 # Log to file
-bin/aimd check src/ --log-file=/tmp/aimd.log
+bin/qmx check src/ --log-file=/tmp/qmx.log
 
 # Set log level
-bin/aimd check src/ --log-level=debug --log-file=/tmp/aimd.log
+bin/qmx check src/ --log-level=debug --log-file=/tmp/qmx.log
 ```
 
 ## Definition of Done

@@ -13,8 +13,8 @@ Primary actions that take source code as input and produce analysis results.
 These are the main user workflows, used frequently.
 
 ```
-bin/aimd check src/       # code → violations
-bin/aimd metrics src/     # code → raw metrics (planned)
+bin/qmx check src/       # code → violations
+bin/qmx metrics src/     # code → raw metrics (planned)
 ```
 
 ### Namespaced commands (`noun:verb`)
@@ -23,11 +23,11 @@ Management commands for specific subsystems or artifacts.
 Grouped by the noun — the object being managed.
 
 ```
-bin/aimd graph:export     # dependency graph management
-bin/aimd baseline:cleanup # baseline file management
-bin/aimd hook:install     # git hook management
-bin/aimd hook:status
-bin/aimd hook:uninstall
+bin/qmx graph:export     # dependency graph management
+bin/qmx baseline:cleanup # baseline file management
+bin/qmx hook:install     # git hook management
+bin/qmx hook:status
+bin/qmx hook:uninstall
 ```
 
 **Rule of thumb:** If the command operates on source code and produces analysis output → top-level.

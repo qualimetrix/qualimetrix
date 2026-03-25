@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Metrics\Structure;
+namespace Qualimetrix\Tests\Unit\Metrics\Structure;
 
-use AiMessDetector\Metrics\Structure\RfcVisitor;
 use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Metrics\Structure\RfcVisitor;
 
 #[CoversClass(RfcVisitor::class)]
 final class RfcVisitorTest extends TestCase

@@ -2,21 +2,21 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\DependencyInjection\CompilerPass;
+namespace Qualimetrix\Infrastructure\DependencyInjection\CompilerPass;
 
-use AiMessDetector\Analysis\Collection\Metric\CompositeCollector;
+use Qualimetrix\Analysis\Collection\Metric\CompositeCollector;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
 
 /**
- * Collects all services tagged with 'aimd.collector' and 'aimd.derived_collector'
+ * Collects all services tagged with 'qmx.collector' and 'qmx.derived_collector'
  * and injects them into CompositeCollector.
  */
 final class CollectorCompilerPass implements CompilerPassInterface
 {
-    public const string TAG = 'aimd.collector';
-    public const string TAG_DERIVED = 'aimd.derived_collector';
+    public const string TAG = 'qmx.collector';
+    public const string TAG_DERIVED = 'qmx.derived_collector';
 
     public function process(ContainerBuilder $container): void
     {

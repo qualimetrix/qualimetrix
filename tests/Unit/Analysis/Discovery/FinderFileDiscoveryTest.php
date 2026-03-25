@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Analysis\Discovery;
+namespace Qualimetrix\Tests\Unit\Analysis\Discovery;
 
-use AiMessDetector\Analysis\Discovery\FinderFileDiscovery;
 use FilesystemIterator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Discovery\FinderFileDiscovery;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
@@ -20,7 +20,7 @@ final class FinderFileDiscoveryTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->fixturesDir = sys_get_temp_dir() . '/aimd-test-' . uniqid();
+        $this->fixturesDir = sys_get_temp_dir() . '/qmx-test-' . uniqid();
         mkdir($this->fixturesDir, 0755, true);
     }
 

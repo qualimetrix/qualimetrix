@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Infrastructure\Serializer;
+namespace Qualimetrix\Tests\Unit\Infrastructure\Serializer;
 
-use AiMessDetector\Infrastructure\Serializer\PhpSerializer;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Infrastructure\Serializer\PhpSerializer;
 use RuntimeException;
 use stdClass;
 

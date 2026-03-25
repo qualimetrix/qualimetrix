@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\Console;
+namespace Qualimetrix\Infrastructure\Console;
 
 use Composer\InstalledVersions;
 use Symfony\Component\Console\Application as BaseApplication;
 
 /**
- * AI Mess Detector CLI application.
+ * Qualimetrix CLI application.
  */
 final class Application extends BaseApplication
 {
-    public const string NAME = 'AI Mess Detector';
+    public const string NAME = 'Qualimetrix';
 
     public function __construct()
     {

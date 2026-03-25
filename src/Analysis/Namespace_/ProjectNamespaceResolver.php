@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Analysis\Namespace_;
+namespace Qualimetrix\Analysis\Namespace_;
 
-use AiMessDetector\Core\Namespace_\ProjectNamespaceResolverInterface;
 use InvalidArgumentException;
+use Qualimetrix\Core\Namespace_\ProjectNamespaceResolverInterface;
 use RuntimeException;
 
 /**

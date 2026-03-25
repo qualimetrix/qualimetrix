@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Metrics;
+namespace Qualimetrix\Metrics;
 
-use AiMessDetector\Core\Metric\MetricBag;
-use AiMessDetector\Core\Metric\MetricCollectorInterface;
-use AiMessDetector\Core\Metric\MetricDefinition;
-use AiMessDetector\Core\Metric\ParallelSafeCollectorInterface;
 use PhpParser\Node;
 use PhpParser\NodeVisitorAbstract;
+use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Metric\MetricCollectorInterface;
+use Qualimetrix\Core\Metric\MetricDefinition;
+use Qualimetrix\Core\Metric\ParallelSafeCollectorInterface;
 use SplFileInfo;
 
 /**

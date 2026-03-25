@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Infrastructure\DependencyInjection\CompilerPass;
+namespace Qualimetrix\Tests\Unit\Infrastructure\DependencyInjection\CompilerPass;
 
-use AiMessDetector\Infrastructure\DependencyInjection\CompilerPass\CollectorCompilerPass;
-use AiMessDetector\Infrastructure\DependencyInjection\CompilerPass\ParallelCollectorClassesCompilerPass;
-use AiMessDetector\Infrastructure\Parallel\Strategy\StrategySelector;
-use AiMessDetector\Metrics\Complexity\CyclomaticComplexityCollector;
-use AiMessDetector\Metrics\Complexity\NpathComplexityCollector;
-use AiMessDetector\Metrics\Maintainability\MaintainabilityIndexCollector;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\CollectorCompilerPass;
+use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ParallelCollectorClassesCompilerPass;
+use Qualimetrix\Infrastructure\Parallel\Strategy\StrategySelector;
+use Qualimetrix\Metrics\Complexity\CyclomaticComplexityCollector;
+use Qualimetrix\Metrics\Complexity\NpathComplexityCollector;
+use Qualimetrix\Metrics\Maintainability\MaintainabilityIndexCollector;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 #[CoversClass(ParallelCollectorClassesCompilerPass::class)]

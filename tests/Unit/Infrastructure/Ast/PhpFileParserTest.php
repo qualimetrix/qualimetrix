@@ -2,10 +2,8 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Infrastructure\Ast;
+namespace Qualimetrix\Tests\Unit\Infrastructure\Ast;
 
-use AiMessDetector\Core\Exception\ParseException;
-use AiMessDetector\Infrastructure\Ast\PhpFileParser;
 use PhpParser\Node;
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\Declare_;
@@ -14,6 +12,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Constraint\IsType;
 use PHPUnit\Framework\NativeType;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Exception\ParseException;
+use Qualimetrix\Infrastructure\Ast\PhpFileParser;
 use RuntimeException;
 use SplFileInfo;
 

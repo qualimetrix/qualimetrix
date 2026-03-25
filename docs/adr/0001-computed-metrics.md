@@ -5,7 +5,7 @@
 
 ## Context
 
-AIMD collects 30+ raw metrics but provides no aggregate "how healthy is this code?" answer. When baselines suppress all violations, the violation-based view becomes empty — yet metrics still reveal code quality. No PHP competitor offers user-definable composite health metrics.
+Qualimetrix collects 30+ raw metrics but provides no aggregate "how healthy is this code?" answer. When baselines suppress all violations, the violation-based view becomes empty — yet metrics still reveal code quality. No PHP competitor offers user-definable composite health metrics.
 
 ## Decision
 

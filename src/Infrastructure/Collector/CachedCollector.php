@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\Collector;
+namespace Qualimetrix\Infrastructure\Collector;
 
-use AiMessDetector\Analysis\Collection\Metric\CollectionOutput;
-use AiMessDetector\Analysis\Collection\Metric\CompositeCollector;
-use AiMessDetector\Core\Metric\MetricBag;
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Infrastructure\Storage\ChangeDetector;
-use AiMessDetector\Infrastructure\Storage\FileRecord;
-use AiMessDetector\Infrastructure\Storage\StorageInterface;
 use PhpParser\Node;
+use Qualimetrix\Analysis\Collection\Metric\CollectionOutput;
+use Qualimetrix\Analysis\Collection\Metric\CompositeCollector;
+use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Infrastructure\Storage\ChangeDetector;
+use Qualimetrix\Infrastructure\Storage\FileRecord;
+use Qualimetrix\Infrastructure\Storage\StorageInterface;
 use SplFileInfo;
 
 /**

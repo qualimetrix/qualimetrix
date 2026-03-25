@@ -1,4 +1,4 @@
-# Documentation Index — AI Mess Detector
+# Documentation Index — Qualimetrix
 
 Complete documentation for the PHP static analysis tool. Choose the relevant category for quick information lookup.
 
@@ -10,13 +10,13 @@ Start here if you are new to the project or want to quickly integrate the tool.
 
 - **[Quick Start](../website/docs/getting-started/quick-start.md)** — three ways to quickly integrate (pre-commit hook, GitHub Action, Docker)
 - **[GitHub Action Integration](../website/docs/ci-cd/github-actions.md)** — detailed guide for CI/CD pipeline integration
-- **[Documentation website](https://fractalizer.github.io/php_ai_mess_detector/)** — user-facing documentation
+- **[Documentation website](https://qualimetrix.github.io/qualimetrix/)** — user-facing documentation
 
 ---
 
 ## Architecture & Design
 
-Understand the internals and design principles of AI Mess Detector.
+Understand the internals and design principles of Qualimetrix.
 
 - **[Architecture Overview](ARCHITECTURE.md)** — overall architecture, dependency graph, layer separation
 - **[Core Primitives](../src/Core/README.md)** — contracts, Value Objects, and Enums (Severity, SymbolPath, Violation, MetricBag, etc.)
@@ -114,8 +114,8 @@ composer cs-fix               # Fix code style
 composer check                # tests + phpstan + deptrac + cs-fix
 
 # Analyze your code
-bin/aimd check src/         # Run analysis
-bin/aimd check src/ --help  # See all options
+bin/qmx check src/         # Run analysis
+bin/qmx check src/ --help  # See all options
 ```
 
 ---

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Core\Ast;
+namespace Qualimetrix\Core\Ast;
 
-use AiMessDetector\Core\Exception\ParseException;
 use PhpParser\Node;
+use Qualimetrix\Core\Exception\ParseException;
 use SplFileInfo;
 
 interface FileParserInterface

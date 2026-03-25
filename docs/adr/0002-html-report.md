@@ -5,7 +5,7 @@
 
 ## Context
 
-AIMD produces text, JSON, and CI-oriented formats but no visual overview answering "where are the worst parts of my codebase?" phpmetrics offers HTML reports but with static tables and no drill-down. An interactive, explorable visualization with health scores is needed for sprint planning, architecture reviews, and stakeholder communication.
+Qualimetrix produces text, JSON, and CI-oriented formats but no visual overview answering "where are the worst parts of my codebase?" phpmetrics offers HTML reports but with static tables and no drill-down. An interactive, explorable visualization with health scores is needed for sprint planning, architecture reviews, and stakeholder communication.
 
 ## Decision
 

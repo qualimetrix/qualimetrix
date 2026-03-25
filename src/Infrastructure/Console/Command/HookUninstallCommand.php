@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\Console\Command;
+namespace Qualimetrix\Infrastructure\Console\Command;
 
-use AiMessDetector\Infrastructure\Git\GitRepositoryLocator;
+use Qualimetrix\Infrastructure\Git\GitRepositoryLocator;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -13,7 +13,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(
     name: 'hook:uninstall',
-    description: 'Uninstall git pre-commit hook for AI Mess Detector',
+    description: 'Uninstall git pre-commit hook for Qualimetrix',
 )]
 final class HookUninstallCommand extends Command
 {
@@ -26,7 +26,7 @@ final class HookUninstallCommand extends Command
     /**
      * Marker comment to identify our hook.
      */
-    private const HOOK_MARKER = 'AI Mess Detector pre-commit hook';
+    private const HOOK_MARKER = 'Qualimetrix pre-commit hook';
 
     protected function configure(): void
     {
@@ -80,7 +80,7 @@ final class HookUninstallCommand extends Command
         }
 
         if (!str_contains($content, self::HOOK_MARKER)) {
-            $output->writeln('<error>Pre-commit hook exists but is not an AI Mess Detector hook.</error>');
+            $output->writeln('<error>Pre-commit hook exists but is not an Qualimetrix hook.</error>');
             $output->writeln('Will not remove third-party hook. Remove it manually if needed.');
 
             return self::FAILURE;

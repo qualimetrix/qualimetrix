@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Core\Util;
+namespace Qualimetrix\Tests\Unit\Core\Util;
 
-use AiMessDetector\Core\Util\StringSet;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Util\StringSet;
 
 #[CoversClass(StringSet::class)]
 final class StringSetTest extends TestCase

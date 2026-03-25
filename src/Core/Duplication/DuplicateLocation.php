@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Core\Duplication;
+namespace Qualimetrix\Core\Duplication;
 
 /**
  * Represents a single location of a duplicated code block.

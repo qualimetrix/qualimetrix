@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Rules\Architecture;
+namespace Qualimetrix\Tests\Unit\Rules\Architecture;
 
-use AiMessDetector\Analysis\Collection\Dependency\Cycle;
-use AiMessDetector\Analysis\Repository\InMemoryMetricRepository;
-use AiMessDetector\Core\Rule\AnalysisContext;
-use AiMessDetector\Core\Rule\RuleCategory;
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Violation\Severity;
-use AiMessDetector\Rules\Architecture\CircularDependencyOptions;
-use AiMessDetector\Rules\Architecture\CircularDependencyRule;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Collection\Dependency\Cycle;
+use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
+use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Rule\RuleCategory;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Violation\Severity;
+use Qualimetrix\Rules\Architecture\CircularDependencyOptions;
+use Qualimetrix\Rules\Architecture\CircularDependencyRule;
 
 #[CoversClass(CircularDependencyRule::class)]
 final class CircularDependencyRuleTest extends TestCase

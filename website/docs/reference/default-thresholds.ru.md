@@ -1,6 +1,6 @@
 # Пороговые значения по умолчанию
 
-На этой странице перечислены пороговые значения по умолчанию для каждого правила AI Mess Detector. Когда метрика превышает порог **warning**, выдается предупреждение. Когда превышает порог **error** -- ошибка.
+На этой странице перечислены пороговые значения по умолчанию для каждого правила Qualimetrix. Когда метрика превышает порог **warning**, выдается предупреждение. Когда превышает порог **error** -- ошибка.
 
 ## Правила сложности (Complexity)
 
@@ -160,7 +160,7 @@ rules:
 
 ### С помощью YAML-файла конфигурации
 
-Создайте файл `aimd.yaml` в корне вашего проекта:
+Создайте файл `qmx.yaml` в корне вашего проекта:
 
 ```yaml
 rules:
@@ -188,7 +188,7 @@ rules:
 Затем запустите анализ с указанием файла конфигурации:
 
 ```bash
-vendor/bin/aimd check src/ --config=aimd.yaml
+vendor/bin/qmx check src/ --config=qmx.yaml
 ```
 
 ### Отключение правил
@@ -206,7 +206,7 @@ rules:
 Вы можете отключить все правила в группе через CLI:
 
 ```bash
-vendor/bin/aimd check src/ --disable-rule=code-smell
+vendor/bin/qmx check src/ --disable-rule=code-smell
 ```
 
 Это отключит все правила, ID которых начинается с `code-smell.`.
@@ -216,16 +216,16 @@ vendor/bin/aimd check src/ --disable-rule=code-smell
 Переопределяйте настройки из командной строки:
 
 ```bash
-vendor/bin/aimd check src/ --disable-rule=complexity.npath
+vendor/bin/qmx check src/ --disable-rule=complexity.npath
 ```
 
 ### Подавление отдельных нарушений
 
-Добавьте `@aimd-ignore` в docblock, чтобы подавить конкретное нарушение:
+Добавьте `@qmx-ignore` в docblock, чтобы подавить конкретное нарушение:
 
 ```php
 /**
- * @aimd-ignore complexity.cyclomatic
+ * @qmx-ignore complexity.cyclomatic
  */
 function complexButNecessary(): void
 {
@@ -237,6 +237,6 @@ function complexButNecessary(): void
 
 ```php
 /**
- * @aimd-ignore complexity
+ * @qmx-ignore complexity
  */
 ```

@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Configuration\Pipeline\Stage;
+namespace Qualimetrix\Configuration\Pipeline\Stage;
 
-use AiMessDetector\Configuration\Discovery\ComposerReader;
-use AiMessDetector\Configuration\Pipeline\ConfigurationContext;
-use AiMessDetector\Configuration\Pipeline\ConfigurationLayer;
+use Qualimetrix\Configuration\Discovery\ComposerReader;
+use Qualimetrix\Configuration\Pipeline\ConfigurationContext;
+use Qualimetrix\Configuration\Pipeline\ConfigurationLayer;
 
 /**
  * Auto-discovers paths from composer.json autoload (priority: 10).

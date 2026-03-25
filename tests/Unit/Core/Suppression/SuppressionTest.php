@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Core\Suppression;
+namespace Qualimetrix\Tests\Unit\Core\Suppression;
 
-use AiMessDetector\Core\Suppression\Suppression;
-use AiMessDetector\Core\Suppression\SuppressionType;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Suppression\Suppression;
+use Qualimetrix\Core\Suppression\SuppressionType;
 
 #[CoversClass(Suppression::class)]
 final class SuppressionTest extends TestCase

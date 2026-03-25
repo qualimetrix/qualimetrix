@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Reporting\Formatter\Sarif;
+namespace Qualimetrix\Reporting\Formatter\Sarif;
 
-use AiMessDetector\Core\Violation\Location;
-use AiMessDetector\Core\Violation\Violation;
-use AiMessDetector\Reporting\Formatter\FormatterInterface;
-use AiMessDetector\Reporting\FormatterContext;
-use AiMessDetector\Reporting\GroupBy;
-use AiMessDetector\Reporting\Report;
+use Qualimetrix\Core\Violation\Location;
+use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Reporting\Formatter\FormatterInterface;
+use Qualimetrix\Reporting\FormatterContext;
+use Qualimetrix\Reporting\GroupBy;
+use Qualimetrix\Reporting\Report;
 
 /**
  * Formats report as SARIF (Static Analysis Results Interchange Format) JSON.
@@ -38,7 +38,7 @@ final class SarifFormatter implements FormatterInterface
         $run = [
             'tool' => [
                 'driver' => [
-                    'name' => 'AI Mess Detector',
+                    'name' => 'Qualimetrix',
                     'version' => self::VERSION,
                     'informationUri' => SarifRuleCollector::INFORMATION_URI,
                     'rules' => $rules,

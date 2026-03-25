@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Core\Util;
+namespace Qualimetrix\Core\Util;
 
 use Countable;
 use IteratorAggregate;

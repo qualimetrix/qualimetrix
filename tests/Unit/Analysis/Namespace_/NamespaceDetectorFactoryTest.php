@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Analysis\Namespace_;
+namespace Qualimetrix\Tests\Unit\Analysis\Namespace_;
 
-use AiMessDetector\Analysis\Namespace_\ChainNamespaceDetector;
-use AiMessDetector\Analysis\Namespace_\NamespaceDetectorFactory;
-use AiMessDetector\Configuration\AnalysisConfiguration;
-use AiMessDetector\Configuration\ConfigurationHolder;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Namespace_\ChainNamespaceDetector;
+use Qualimetrix\Analysis\Namespace_\NamespaceDetectorFactory;
+use Qualimetrix\Configuration\AnalysisConfiguration;
+use Qualimetrix\Configuration\ConfigurationHolder;
 
 #[CoversClass(NamespaceDetectorFactory::class)]
 final class NamespaceDetectorFactoryTest extends TestCase

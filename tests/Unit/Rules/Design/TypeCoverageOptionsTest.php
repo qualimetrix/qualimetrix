@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Rules\Design;
+namespace Qualimetrix\Tests\Unit\Rules\Design;
 
-use AiMessDetector\Rules\Design\TypeCoverageOptions;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Rules\Design\TypeCoverageOptions;
 
 #[CoversClass(TypeCoverageOptions::class)]
 final class TypeCoverageOptionsTest extends TestCase

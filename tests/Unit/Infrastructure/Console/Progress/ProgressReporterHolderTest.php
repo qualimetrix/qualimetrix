@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Infrastructure\Console\Progress;
+namespace Qualimetrix\Tests\Unit\Infrastructure\Console\Progress;
 
-use AiMessDetector\Core\Progress\NullProgressReporter;
-use AiMessDetector\Infrastructure\Console\Progress\ProgressReporterHolder;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Progress\NullProgressReporter;
+use Qualimetrix\Infrastructure\Console\Progress\ProgressReporterHolder;
 
 final class ProgressReporterHolderTest extends TestCase
 {

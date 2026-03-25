@@ -2,25 +2,25 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Reporting\Formatter\Html;
+namespace Qualimetrix\Tests\Unit\Reporting\Formatter\Html;
 
-use AiMessDetector\Analysis\Repository\InMemoryMetricRepository;
-use AiMessDetector\Core\ComputedMetric\ComputedMetricDefinition;
-use AiMessDetector\Core\ComputedMetric\ComputedMetricDefinitionHolder;
-use AiMessDetector\Core\Metric\MetricBag;
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Symbol\SymbolType;
-use AiMessDetector\Core\Violation\Location;
-use AiMessDetector\Core\Violation\Severity;
-use AiMessDetector\Core\Violation\Violation;
-use AiMessDetector\Reporting\Debt\DebtCalculator;
-use AiMessDetector\Reporting\Debt\RemediationTimeRegistry;
-use AiMessDetector\Reporting\Formatter\Html\HtmlTreeBuilder;
-use AiMessDetector\Reporting\Formatter\Html\HtmlTreeNode;
-use AiMessDetector\Reporting\FormatterContext;
-use AiMessDetector\Reporting\ReportBuilder;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
+use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinition;
+use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinitionHolder;
+use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Violation\Location;
+use Qualimetrix\Core\Violation\Severity;
+use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Reporting\Debt\DebtCalculator;
+use Qualimetrix\Reporting\Debt\RemediationTimeRegistry;
+use Qualimetrix\Reporting\Formatter\Html\HtmlTreeBuilder;
+use Qualimetrix\Reporting\Formatter\Html\HtmlTreeNode;
+use Qualimetrix\Reporting\FormatterContext;
+use Qualimetrix\Reporting\ReportBuilder;
 
 #[CoversClass(HtmlTreeBuilder::class)]
 #[CoversClass(HtmlTreeNode::class)]
@@ -540,7 +540,7 @@ final class HtmlTreeBuilderTest extends TestCase
         $project = $result['project'];
         self::assertArrayHasKey('name', $project);
         self::assertArrayHasKey('generatedAt', $project);
-        self::assertArrayHasKey('aimdVersion', $project);
+        self::assertArrayHasKey('qmxVersion', $project);
         self::assertTrue($project['partialAnalysis']);
     }
 
@@ -865,7 +865,7 @@ final class HtmlTreeBuilderTest extends TestCase
         );
 
         // Report with techDebtMinutes = 50 (includes both violations)
-        $report = new \AiMessDetector\Reporting\Report(
+        $report = new \Qualimetrix\Reporting\Report(
             violations: [$classViolation, $fileViolation],
             filesAnalyzed: 1,
             filesSkipped: 0,

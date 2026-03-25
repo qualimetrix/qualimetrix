@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Fixtures\Ast;
+namespace Qualimetrix\Tests\Fixtures\Ast;
 
 final class ValidClass
 {

@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Configuration;
+namespace Qualimetrix\Configuration;
 
-use AiMessDetector\Core\ComputedMetric\ComputedMetricDefaults;
-use AiMessDetector\Core\ComputedMetric\ComputedMetricDefinition;
-use AiMessDetector\Core\Symbol\SymbolType;
 use InvalidArgumentException;
+use Qualimetrix\Core\ComputedMetric\ComputedMetricDefaults;
+use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinition;
+use Qualimetrix\Core\Symbol\SymbolType;
 use RuntimeException;
 use Symfony\Component\ExpressionLanguage\ExpressionFunction;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;

@@ -106,7 +106,7 @@ LCOM4 = number of connected components in the method graph.
 2. Edges = two methods share a property (`$this->property`) **or** one calls the other via `$this->method()`
 3. Count connected components (BFS)
 
-> **Note:** The original LCOM4 algorithm (Hitz & Montazeri, 1995) defines edges only through shared property access. AIMD extends this with method-call edges (`$this->method()`), which is the standard approach in modern tools (SonarQube, JDepend). Without method-call edges, a well-factored class that accesses properties through getters would appear to have poor cohesion.
+> **Note:** The original LCOM4 algorithm (Hitz & Montazeri, 1995) defines edges only through shared property access. Qualimetrix extends this with method-call edges (`$this->method()`), which is the standard approach in modern tools (SonarQube, JDepend). Without method-call edges, a well-factored class that accesses properties through getters would appear to have poor cohesion.
 
 ### Interpretation
 
@@ -155,7 +155,7 @@ Where RS (Response Set) includes:
   - Constructor calls (new SomeClass())
 ```
 
-> **Note:** The original RFC definition (Chidamber & Kemerer, 1994) only counted method calls. AIMD extends this to include global function calls, static calls, and constructor calls, which are common in PHP and represent real response set complexity. Internal calls (`$this->method()`, `self::`, `static::`, `parent::`) are excluded.
+> **Note:** The original RFC definition (Chidamber & Kemerer, 1994) only counted method calls. Qualimetrix extends this to include global function calls, static calls, and constructor calls, which are common in PHP and represent real response set complexity. Internal calls (`$this->method()`, `self::`, `static::`, `parent::`) are excluded.
 
 ### Components
 

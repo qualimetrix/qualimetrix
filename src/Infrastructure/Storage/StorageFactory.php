@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\Storage;
+namespace Qualimetrix\Infrastructure\Storage;
 
 /**
  * Factory for creating storage instances based on project size and configuration.
@@ -21,7 +21,7 @@ final class StorageFactory
     public function create(
         int $fileCount,
         ?string $configuredType = null,
-        string $cacheDir = '.aimd-cache',
+        string $cacheDir = '.qmx-cache',
     ): StorageInterface {
         // Explicit configuration
         if ($configuredType === 'sqlite') {

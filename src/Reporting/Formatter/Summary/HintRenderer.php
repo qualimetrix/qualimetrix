@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Reporting\Formatter\Summary;
+namespace Qualimetrix\Reporting\Formatter\Summary;
 
-use AiMessDetector\Reporting\Formatter\Support\AnsiColor;
-use AiMessDetector\Reporting\FormatterContext;
-use AiMessDetector\Reporting\Report;
+use Qualimetrix\Reporting\Formatter\Support\AnsiColor;
+use Qualimetrix\Reporting\FormatterContext;
+use Qualimetrix\Reporting\Report;
 
 /**
  * Renders contextual hints at the bottom of the summary output.

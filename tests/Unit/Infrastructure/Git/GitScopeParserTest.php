@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Infrastructure\Git;
+namespace Qualimetrix\Tests\Unit\Infrastructure\Git;
 
-use AiMessDetector\Infrastructure\Git\GitScope;
-use AiMessDetector\Infrastructure\Git\GitScopeParser;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Infrastructure\Git\GitScope;
+use Qualimetrix\Infrastructure\Git\GitScopeParser;
 
 #[CoversClass(GitScopeParser::class)]
 #[CoversClass(GitScope::class)]

@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Reporting\Formatter\Json;
+namespace Qualimetrix\Reporting\Formatter\Json;
 
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Reporting\FormatterContext;
-use AiMessDetector\Reporting\Health\DecompositionItem;
-use AiMessDetector\Reporting\Health\HealthScore;
-use AiMessDetector\Reporting\Health\HealthScoreResolver;
-use AiMessDetector\Reporting\Report;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Reporting\FormatterContext;
+use Qualimetrix\Reporting\Health\DecompositionItem;
+use Qualimetrix\Reporting\Health\HealthScore;
+use Qualimetrix\Reporting\Health\HealthScoreResolver;
+use Qualimetrix\Reporting\Report;
 
 final class JsonHealthSection
 {

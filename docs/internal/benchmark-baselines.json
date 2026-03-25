@@ -356,7 +356,7 @@
                 ]
             }
         },
-        "aimd": {
+        "qmx": {
             "path": "src",
             "expectations": {
                 "health.complexity": [

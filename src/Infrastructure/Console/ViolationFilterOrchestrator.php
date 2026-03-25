@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\Console;
+namespace Qualimetrix\Infrastructure\Console;
 
-use AiMessDetector\Analysis\Pipeline\AnalysisResult;
-use AiMessDetector\Infrastructure\Git\GitScopeResolution;
 use InvalidArgumentException;
+use Qualimetrix\Analysis\Pipeline\AnalysisResult;
+use Qualimetrix\Infrastructure\Git\GitScopeResolution;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -75,7 +75,7 @@ final readonly class ViolationFilterOrchestrator
 
         if ($input->getOption('show-suppressed') && $filterResult->suppressionFiltered > 0) {
             $output->writeln(\sprintf(
-                '<info>%d violations were suppressed by @aimd-ignore tags</info>',
+                '<info>%d violations were suppressed by @qmx-ignore tags</info>',
                 $filterResult->suppressionFiltered,
             ));
         }
@@ -111,7 +111,7 @@ final readonly class ViolationFilterOrchestrator
                 $filterResult->staleBaselineCount,
             ));
             $output->writeln(\sprintf(
-                '<comment>Run `bin/aimd baseline:cleanup %s` to remove them.</comment>',
+                '<comment>Run `bin/qmx baseline:cleanup %s` to remove them.</comment>',
                 $options->baselinePath ?? '',
             ));
 
@@ -126,7 +126,7 @@ final readonly class ViolationFilterOrchestrator
             $output->writeln(\sprintf('  - %s', $key));
         }
         $output->writeln('');
-        $output->writeln(\sprintf('Run `bin/aimd baseline:cleanup %s` to remove stale entries.', $options->baselinePath ?? ''));
+        $output->writeln(\sprintf('Run `bin/qmx baseline:cleanup %s` to remove stale entries.', $options->baselinePath ?? ''));
         $output->writeln('Or use --baseline-ignore-stale to continue anyway.');
 
         throw new InvalidArgumentException('Baseline contains stale entries');

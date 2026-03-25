@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Reporting\Formatter\Json;
+namespace Qualimetrix\Reporting\Formatter\Json;
 
-use AiMessDetector\Core\Violation\Severity;
-use AiMessDetector\Core\Violation\Violation;
-use AiMessDetector\Reporting\Debt\DebtCalculator;
-use AiMessDetector\Reporting\Filter\ViolationFilter;
-use AiMessDetector\Reporting\Formatter\FormatterInterface;
-use AiMessDetector\Reporting\FormatterContext;
-use AiMessDetector\Reporting\GroupBy;
-use AiMessDetector\Reporting\Report;
 use Composer\InstalledVersions;
+use Qualimetrix\Core\Violation\Severity;
+use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Reporting\Debt\DebtCalculator;
+use Qualimetrix\Reporting\Filter\ViolationFilter;
+use Qualimetrix\Reporting\Formatter\FormatterInterface;
+use Qualimetrix\Reporting\FormatterContext;
+use Qualimetrix\Reporting\GroupBy;
+use Qualimetrix\Reporting\Report;
 
 /**
  * Formats report as JSON with summary structure.
@@ -22,7 +22,7 @@ use Composer\InstalledVersions;
  */
 final class JsonFormatter implements FormatterInterface
 {
-    private const PACKAGE = 'aimd';
+    private const PACKAGE = 'qmx';
     private const DEFAULT_VIOLATION_LIMIT = 50;
     private const DEFAULT_TOP_OFFENDERS = 10;
 

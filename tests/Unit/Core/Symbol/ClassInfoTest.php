@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Core\Symbol;
+namespace Qualimetrix\Tests\Unit\Core\Symbol;
 
-use AiMessDetector\Core\Symbol\ClassInfo;
-use AiMessDetector\Core\Symbol\ClassType;
-use AiMessDetector\Core\Symbol\SymbolPath;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Symbol\ClassInfo;
+use Qualimetrix\Core\Symbol\ClassType;
+use Qualimetrix\Core\Symbol\SymbolPath;
 
 #[CoversClass(ClassInfo::class)]
 final class ClassInfoTest extends TestCase

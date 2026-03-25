@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Core\Util;
+namespace Qualimetrix\Core\Util;
 
 /**
  * Matches file paths against glob patterns.

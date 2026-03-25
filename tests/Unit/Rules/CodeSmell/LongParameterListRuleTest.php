@@ -2,22 +2,22 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Rules\CodeSmell;
+namespace Qualimetrix\Tests\Unit\Rules\CodeSmell;
 
-use AiMessDetector\Core\Metric\MetricBag;
-use AiMessDetector\Core\Metric\MetricRepositoryInterface;
-use AiMessDetector\Core\Rule\AnalysisContext;
-use AiMessDetector\Core\Rule\RuleCategory;
-use AiMessDetector\Core\Symbol\SymbolInfo;
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Symbol\SymbolType;
-use AiMessDetector\Core\Violation\Severity;
-use AiMessDetector\Rules\CodeSmell\LongParameterListOptions;
-use AiMessDetector\Rules\CodeSmell\LongParameterListRule;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Rule\RuleCategory;
+use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Violation\Severity;
+use Qualimetrix\Rules\CodeSmell\LongParameterListOptions;
+use Qualimetrix\Rules\CodeSmell\LongParameterListRule;
 
 #[CoversClass(LongParameterListRule::class)]
 #[CoversClass(LongParameterListOptions::class)]
@@ -68,7 +68,7 @@ final class LongParameterListRuleTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
 
-        new LongParameterListRule(new class implements \AiMessDetector\Core\Rule\RuleOptionsInterface {
+        new LongParameterListRule(new class implements \Qualimetrix\Core\Rule\RuleOptionsInterface {
             public static function fromArray(array $config): static
             {
                 return new static();

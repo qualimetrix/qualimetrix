@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Configuration;
+namespace Qualimetrix\Configuration;
 
-use AiMessDetector\Core\Rule\RuleOptionsInterface;
 use InvalidArgumentException;
+use Qualimetrix\Core\Rule\RuleOptionsInterface;
 use ReflectionClass;
 use ReflectionNamedType;
 use ReflectionParameter;

@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Infrastructure\Ast;
+namespace Qualimetrix\Tests\Unit\Infrastructure\Ast;
 
-use AiMessDetector\Core\Ast\FileParserInterface;
-use AiMessDetector\Infrastructure\Ast\CachedFileParser;
-use AiMessDetector\Infrastructure\Cache\CacheInterface;
-use AiMessDetector\Infrastructure\Cache\CacheKeyGenerator;
-use AiMessDetector\Infrastructure\Cache\FileCache;
 use FilesystemIterator;
 use PhpParser\Node\Stmt\Class_;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Ast\FileParserInterface;
+use Qualimetrix\Infrastructure\Ast\CachedFileParser;
+use Qualimetrix\Infrastructure\Cache\CacheInterface;
+use Qualimetrix\Infrastructure\Cache\CacheKeyGenerator;
+use Qualimetrix\Infrastructure\Cache\FileCache;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
@@ -26,8 +26,8 @@ final class CachedFileParserTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->tempFile = sys_get_temp_dir() . '/aimd-parser-test-' . uniqid() . '.php';
-        $this->cacheDir = sys_get_temp_dir() . '/aimd-cache-test-' . uniqid();
+        $this->tempFile = sys_get_temp_dir() . '/qmx-parser-test-' . uniqid() . '.php';
+        $this->cacheDir = sys_get_temp_dir() . '/qmx-cache-test-' . uniqid();
         file_put_contents($this->tempFile, '<?php class Test {}');
     }
 

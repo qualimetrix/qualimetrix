@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Rules\Support;
+namespace Qualimetrix\Tests\Unit\Rules\Support;
 
-use AiMessDetector\Rules\Support\ThresholdParser;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Rules\Support\ThresholdParser;
 
 final class ThresholdParserTest extends TestCase
 {

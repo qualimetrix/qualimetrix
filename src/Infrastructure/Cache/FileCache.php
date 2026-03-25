@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\Cache;
+namespace Qualimetrix\Infrastructure\Cache;
 
-use AiMessDetector\Infrastructure\Serializer\SerializerInterface;
-use AiMessDetector\Infrastructure\Serializer\SerializerSelector;
 use FilesystemIterator;
+use Qualimetrix\Infrastructure\Serializer\SerializerInterface;
+use Qualimetrix\Infrastructure\Serializer\SerializerSelector;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use Throwable;

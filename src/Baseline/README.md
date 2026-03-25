@@ -4,8 +4,8 @@
 
 The Baseline subsystem provides two mechanisms for ignoring known violations:
 
-1. **Baseline files** — a JSON snapshot of all current violations, used to adopt AIMD in legacy projects
-2. **Inline suppression** — `@aimd-ignore` tags in docblocks and comments for intentional exceptions
+1. **Baseline files** — a JSON snapshot of all current violations, used to adopt Qualimetrix in legacy projects
+2. **Inline suppression** — `@qmx-ignore` tags in docblocks and comments for intentional exceptions
 
 ## Structure
 
@@ -61,13 +61,13 @@ Produces stable hashes based on:
 
 ### Supported Tags
 
-| Tag                      | Scope             | SuppressionType |
-| ------------------------ | ----------------- | --------------- |
-| `@aimd-ignore <rule>`    | Symbol (docblock) | Symbol          |
-| `@aimd-ignore-next-line` | Next line only    | NextLine        |
-| `@aimd-ignore-file`      | Entire file       | File            |
+| Tag                     | Scope             | SuppressionType |
+| ----------------------- | ----------------- | --------------- |
+| `@qmx-ignore <rule>`    | Symbol (docblock) | Symbol          |
+| `@qmx-ignore-next-line` | Next line only    | NextLine        |
+| `@qmx-ignore-file`      | Entire file       | File            |
 
-Rule names support prefix matching: `@aimd-ignore complexity` suppresses all `complexity.*` rules.
+Rule names support prefix matching: `@qmx-ignore complexity` suppresses all `complexity.*` rules.
 
 ### How Suppression Is Wired
 

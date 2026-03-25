@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Rules\ComputedMetric;
+namespace Qualimetrix\Tests\Unit\Rules\ComputedMetric;
 
-use AiMessDetector\Core\ComputedMetric\ComputedMetricDefinition;
-use AiMessDetector\Core\ComputedMetric\ComputedMetricDefinitionHolder;
-use AiMessDetector\Core\Symbol\SymbolType;
-use AiMessDetector\Rules\ComputedMetric\ComputedMetricRuleOptions;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinition;
+use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinitionHolder;
+use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Rules\ComputedMetric\ComputedMetricRuleOptions;
 
 #[CoversClass(ComputedMetricRuleOptions::class)]
 final class ComputedMetricRuleOptionsTest extends TestCase

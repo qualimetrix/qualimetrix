@@ -1,10 +1,10 @@
-# AI Mess Detector
+# Qualimetrix
 
 **Быстрый инструмент статического анализа PHP**, ориентированный на метрики качества кода, анализ сложности и архитектурные проверки.
 
 ---
 
-## Почему AI Mess Detector?
+## Почему Qualimetrix?
 
 - **Быстрый** -- в 9 раз быстрее phpmd в последовательном режиме, до 39 раз с параллельными воркерами
 - **Глубокие ООП-метрики** -- цикломатическая и когнитивная сложность, LCOM4, TCC/LCC, RFC, Halstead, индекс сопровождаемости
@@ -17,16 +17,16 @@
 
 ```bash
 # Установка
-composer require --dev fractalizer/ai-mess-detector
+composer require --dev qualimetrix/qualimetrix
 
 # Анализ кода
-vendor/bin/aimd check src/
+vendor/bin/qmx check src/
 
 # Установка git pre-commit хука
-vendor/bin/aimd hook:install
+vendor/bin/qmx hook:install
 
 # Анализ только подготовленных файлов
-vendor/bin/aimd check src/ --analyze=git:staged
+vendor/bin/qmx check src/ --analyze=git:staged
 ```
 
 ## Доступные метрики
@@ -44,8 +44,8 @@ vendor/bin/aimd check src/ --analyze=git:staged
 
 ## Начало работы
 
-Перейдите к руководству [Быстрый старт](getting-started/quick-start.ru.md), чтобы интегрировать AI Mess Detector в ваш проект за несколько минут.
+Перейдите к руководству [Быстрый старт](getting-started/quick-start.ru.md), чтобы интегрировать Qualimetrix в ваш проект за несколько минут.
 
 ## Для AI-агентов
 
-Если вы AI-агент, используйте [llms.txt](llms.txt) для краткого обзора или [llms-full.txt](https://fractalizer.github.io/php_ai_mess_detector/llms-full.txt) для полной документации в одном файле.
+Если вы AI-агент, используйте [llms.txt](llms.txt) для краткого обзора или [llms-full.txt](https://qualimetrix.github.io/qualimetrix/llms-full.txt) для полной документации в одном файле.

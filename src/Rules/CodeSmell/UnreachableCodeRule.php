@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Rules\CodeSmell;
+namespace Qualimetrix\Rules\CodeSmell;
 
-use AiMessDetector\Core\Metric\MetricName;
-use AiMessDetector\Core\Rule\AnalysisContext;
-use AiMessDetector\Core\Rule\RuleCategory;
-use AiMessDetector\Core\Symbol\SymbolInfo;
-use AiMessDetector\Core\Symbol\SymbolType;
-use AiMessDetector\Core\Violation\Location;
-use AiMessDetector\Core\Violation\Violation;
-use AiMessDetector\Rules\AbstractRule;
+use Qualimetrix\Core\Metric\MetricName;
+use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Rule\RuleCategory;
+use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Violation\Location;
+use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Rules\AbstractRule;
 
 /**
  * Rule that detects unreachable code after terminal statements.

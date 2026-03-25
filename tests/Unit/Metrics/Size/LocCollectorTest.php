@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Metrics\Size;
+namespace Qualimetrix\Tests\Unit\Metrics\Size;
 
-use AiMessDetector\Core\Metric\AggregationStrategy;
-use AiMessDetector\Core\Metric\SymbolLevel;
-use AiMessDetector\Metrics\Size\LocCollector;
-use AiMessDetector\Metrics\Size\LocVisitor;
 use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Metric\AggregationStrategy;
+use Qualimetrix\Core\Metric\SymbolLevel;
+use Qualimetrix\Metrics\Size\LocCollector;
+use Qualimetrix\Metrics\Size\LocVisitor;
 use SplFileInfo;
 
 #[CoversClass(LocCollector::class)]
@@ -513,7 +513,7 @@ PHP;
         self::assertSame('Standalone', $classes[0]->class);
     }
 
-    private function collectMetrics(string $code): \AiMessDetector\Core\Metric\MetricBag
+    private function collectMetrics(string $code): \Qualimetrix\Core\Metric\MetricBag
     {
         // Create actual temp file
         $filePath = $this->tempDir . '/test_' . uniqid() . '.php';

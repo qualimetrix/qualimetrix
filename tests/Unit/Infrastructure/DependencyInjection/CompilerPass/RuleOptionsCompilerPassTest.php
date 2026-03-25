@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Infrastructure\DependencyInjection\CompilerPass;
+namespace Qualimetrix\Tests\Unit\Infrastructure\DependencyInjection\CompilerPass;
 
-use AiMessDetector\Configuration\RuleOptionsFactory;
-use AiMessDetector\Infrastructure\DependencyInjection\CompilerPass\RuleCompilerPass;
-use AiMessDetector\Infrastructure\DependencyInjection\CompilerPass\RuleOptionsCompilerPass;
-use AiMessDetector\Rules\Complexity\ComplexityOptions;
-use AiMessDetector\Rules\Complexity\ComplexityRule;
-use AiMessDetector\Rules\Size\ClassCountRule;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Configuration\RuleOptionsFactory;
+use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleCompilerPass;
+use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleOptionsCompilerPass;
+use Qualimetrix\Rules\Complexity\ComplexityOptions;
+use Qualimetrix\Rules\Complexity\ComplexityRule;
+use Qualimetrix\Rules\Size\ClassCountRule;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
 

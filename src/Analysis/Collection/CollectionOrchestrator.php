@@ -2,19 +2,19 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Analysis\Collection;
+namespace Qualimetrix\Analysis\Collection;
 
-use AiMessDetector\Analysis\Collection\Metric\DerivedMetricExtractor;
-use AiMessDetector\Analysis\Collection\Strategy\StrategySelectorInterface;
-use AiMessDetector\Core\Dependency\Dependency;
-use AiMessDetector\Core\Metric\MetricRepositoryInterface;
-use AiMessDetector\Core\Profiler\ProfilerHolder;
-use AiMessDetector\Core\Progress\NullProgressReporter;
-use AiMessDetector\Core\Progress\ProgressReporter;
-use AiMessDetector\Core\Suppression\Suppression;
-use AiMessDetector\Core\Symbol\SymbolPath;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use Qualimetrix\Analysis\Collection\Metric\DerivedMetricExtractor;
+use Qualimetrix\Analysis\Collection\Strategy\StrategySelectorInterface;
+use Qualimetrix\Core\Dependency\Dependency;
+use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Profiler\ProfilerHolder;
+use Qualimetrix\Core\Progress\NullProgressReporter;
+use Qualimetrix\Core\Progress\ProgressReporter;
+use Qualimetrix\Core\Suppression\Suppression;
+use Qualimetrix\Core\Symbol\SymbolPath;
 use SplFileInfo;
 
 /**

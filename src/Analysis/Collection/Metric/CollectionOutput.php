@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Analysis\Collection\Metric;
+namespace Qualimetrix\Analysis\Collection\Metric;
 
-use AiMessDetector\Core\Dependency\Dependency;
-use AiMessDetector\Core\Metric\MetricBag;
+use Qualimetrix\Core\Dependency\Dependency;
+use Qualimetrix\Core\Metric\MetricBag;
 
 /**
  * Output of a single file collection (metrics + dependencies).

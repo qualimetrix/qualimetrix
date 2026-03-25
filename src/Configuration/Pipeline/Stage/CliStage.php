@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Configuration\Pipeline\Stage;
+namespace Qualimetrix\Configuration\Pipeline\Stage;
 
-use AiMessDetector\Configuration\Pipeline\ConfigurationContext;
-use AiMessDetector\Configuration\Pipeline\ConfigurationLayer;
+use Qualimetrix\Configuration\Pipeline\ConfigurationContext;
+use Qualimetrix\Configuration\Pipeline\ConfigurationLayer;
 use Symfony\Component\Console\Input\InputInterface;
 
 /**

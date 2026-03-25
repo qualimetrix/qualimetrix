@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Rules\Coupling;
+namespace Qualimetrix\Rules\Coupling;
 
-use AiMessDetector\Core\Rule\HierarchicalRuleOptionsInterface;
-use AiMessDetector\Core\Rule\LevelOptionsInterface;
-use AiMessDetector\Core\Rule\RuleLevel;
-use AiMessDetector\Core\Violation\Severity;
 use InvalidArgumentException;
+use Qualimetrix\Core\Rule\HierarchicalRuleOptionsInterface;
+use Qualimetrix\Core\Rule\LevelOptionsInterface;
+use Qualimetrix\Core\Rule\RuleLevel;
+use Qualimetrix\Core\Violation\Severity;
 
 /**
  * Options for InstabilityRule (hierarchical).

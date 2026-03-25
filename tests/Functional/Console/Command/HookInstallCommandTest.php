@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Functional\Console\Command;
+namespace Qualimetrix\Tests\Functional\Console\Command;
 
-use AiMessDetector\Infrastructure\Console\Command\HookInstallCommand;
-use AiMessDetector\Infrastructure\Git\GitRepositoryLocator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Infrastructure\Console\Command\HookInstallCommand;
+use Qualimetrix\Infrastructure\Git\GitRepositoryLocator;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;
 
@@ -21,7 +21,7 @@ final class HookInstallCommandTest extends TestCase
     protected function setUp(): void
     {
         // Create temporary directory with fake git structure
-        $this->tempDir = sys_get_temp_dir() . '/aimd-test-' . uniqid();
+        $this->tempDir = sys_get_temp_dir() . '/qmx-test-' . uniqid();
         mkdir($this->tempDir, 0777, true);
 
         // Create .git/hooks directory
@@ -33,7 +33,7 @@ final class HookInstallCommandTest extends TestCase
         mkdir($scriptsDir, 0777, true);
         file_put_contents(
             $scriptsDir . '/pre-commit-hook.sh',
-            "#!/bin/bash\n# AI Mess Detector pre-commit hook\necho 'Running AI Mess Detector'\n",
+            "#!/bin/bash\n# Qualimetrix pre-commit hook\necho 'Running Qualimetrix'\n",
         );
 
         // Change to temp directory for test

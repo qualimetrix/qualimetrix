@@ -2,21 +2,21 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Metrics;
+namespace Qualimetrix\Tests\Unit\Metrics;
 
-use AiMessDetector\Analysis\Collection\Dependency\DependencyResolver;
-use AiMessDetector\Analysis\Collection\Dependency\DependencyVisitor;
-use AiMessDetector\Metrics\Complexity\CognitiveComplexityVisitor;
-use AiMessDetector\Metrics\Complexity\CyclomaticComplexityVisitor;
-use AiMessDetector\Metrics\Complexity\NpathComplexityVisitor;
-use AiMessDetector\Metrics\Design\TypeCoverageVisitor;
-use AiMessDetector\Metrics\Halstead\HalsteadVisitor;
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitorAbstract;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Collection\Dependency\DependencyResolver;
+use Qualimetrix\Analysis\Collection\Dependency\DependencyVisitor;
+use Qualimetrix\Metrics\Complexity\CognitiveComplexityVisitor;
+use Qualimetrix\Metrics\Complexity\CyclomaticComplexityVisitor;
+use Qualimetrix\Metrics\Complexity\NpathComplexityVisitor;
+use Qualimetrix\Metrics\Design\TypeCoverageVisitor;
+use Qualimetrix\Metrics\Halstead\HalsteadVisitor;
 
 /**
  * Regression tests for anonymous class context handling in visitors.
@@ -331,9 +331,9 @@ PHP;
     // ──────────────────────────────────────────────────────────────────
 
     /**
-     * @param list<\AiMessDetector\Core\Metric\MethodWithMetrics> $methods
+     * @param list<\Qualimetrix\Core\Metric\MethodWithMetrics> $methods
      */
-    private function findMethodByName(array $methods, string $name): ?\AiMessDetector\Core\Metric\MethodWithMetrics
+    private function findMethodByName(array $methods, string $name): ?\Qualimetrix\Core\Metric\MethodWithMetrics
     {
         foreach ($methods as $method) {
             if ($method->method === $name) {

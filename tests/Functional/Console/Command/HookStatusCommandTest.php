@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Functional\Console\Command;
+namespace Qualimetrix\Tests\Functional\Console\Command;
 
-use AiMessDetector\Infrastructure\Console\Command\HookStatusCommand;
-use AiMessDetector\Infrastructure\Git\GitRepositoryLocator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Infrastructure\Console\Command\HookStatusCommand;
+use Qualimetrix\Infrastructure\Git\GitRepositoryLocator;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;
 
@@ -21,7 +21,7 @@ final class HookStatusCommandTest extends TestCase
     protected function setUp(): void
     {
         // Create temporary directory with fake git structure
-        $this->tempDir = sys_get_temp_dir() . '/aimd-test-' . uniqid();
+        $this->tempDir = sys_get_temp_dir() . '/qmx-test-' . uniqid();
         mkdir($this->tempDir, 0777, true);
 
         // Create .git/hooks directory
@@ -68,7 +68,7 @@ final class HookStatusCommandTest extends TestCase
 
         // Add marker to indicate it's our hook
         $tempScript = $this->tempDir . '/temp-script.sh';
-        file_put_contents($tempScript, "#!/bin/bash\n# AI Mess Detector pre-commit hook\necho 'test'\n");
+        file_put_contents($tempScript, "#!/bin/bash\n# Qualimetrix pre-commit hook\necho 'test'\n");
         unlink($hookPath);
         symlink($tempScript, $hookPath);
         chmod($hookPath, 0755);
@@ -86,7 +86,7 @@ final class HookStatusCommandTest extends TestCase
         $output = $commandTester->getDisplay();
         $this->assertStringContainsString('INSTALLED', $output);
         $this->assertStringContainsString('Symlink', $output);
-        $this->assertStringContainsString('AI Mess Detector', $output);
+        $this->assertStringContainsString('Qualimetrix', $output);
     }
 
     #[Test]
@@ -94,7 +94,7 @@ final class HookStatusCommandTest extends TestCase
     {
         // Create hook as regular file
         $hookPath = $this->gitDir . '/hooks/pre-commit';
-        file_put_contents($hookPath, "#!/bin/bash\n# AI Mess Detector pre-commit hook\necho 'Running hook'\n");
+        file_put_contents($hookPath, "#!/bin/bash\n# Qualimetrix pre-commit hook\necho 'Running hook'\n");
         chmod($hookPath, 0755);
 
         $command = new HookStatusCommand(new GitRepositoryLocator());
@@ -110,7 +110,7 @@ final class HookStatusCommandTest extends TestCase
         $output = $commandTester->getDisplay();
         $this->assertStringContainsString('INSTALLED', $output);
         $this->assertStringContainsString('Copy', $output);
-        $this->assertStringContainsString('AI Mess Detector', $output);
+        $this->assertStringContainsString('Qualimetrix', $output);
     }
 
     #[Test]
@@ -142,7 +142,7 @@ final class HookStatusCommandTest extends TestCase
     {
         // Create non-executable hook
         $hookPath = $this->gitDir . '/hooks/pre-commit';
-        file_put_contents($hookPath, "#!/bin/bash\n# AI Mess Detector pre-commit hook\necho 'test'\n");
+        file_put_contents($hookPath, "#!/bin/bash\n# Qualimetrix pre-commit hook\necho 'test'\n");
         chmod($hookPath, 0644); // Not executable
 
         $command = new HookStatusCommand(new GitRepositoryLocator());
@@ -168,7 +168,7 @@ final class HookStatusCommandTest extends TestCase
         $hookPath = $this->gitDir . '/hooks/pre-commit';
         $backupPath = $hookPath . '.backup';
 
-        file_put_contents($hookPath, "#!/bin/bash\n# AI Mess Detector pre-commit hook\necho 'test'\n");
+        file_put_contents($hookPath, "#!/bin/bash\n# Qualimetrix pre-commit hook\necho 'test'\n");
         chmod($hookPath, 0755);
 
         file_put_contents($backupPath, "#!/bin/bash\necho 'backup'\n");

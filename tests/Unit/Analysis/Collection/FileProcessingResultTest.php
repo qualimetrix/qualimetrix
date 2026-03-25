@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Analysis\Collection;
+namespace Qualimetrix\Tests\Unit\Analysis\Collection;
 
-use AiMessDetector\Analysis\Collection\FileProcessingResult;
-use AiMessDetector\Core\Metric\MetricBag;
-use AiMessDetector\Core\Symbol\SymbolPath;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Collection\FileProcessingResult;
+use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Symbol\SymbolPath;
 
 #[CoversClass(FileProcessingResult::class)]
 final class FileProcessingResultTest extends TestCase

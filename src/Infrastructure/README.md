@@ -175,11 +175,11 @@ Configuration is set via mutable services AFTER container creation:
 - `RuleOptionsFactory::setCliOptions()` — rule options from CLI
 
 **Tags:**
-- `aimd.collector` — metric collectors
-- `aimd.global_collector` — global context collectors
-- `aimd.rule` — analysis rules (lazy)
-- `aimd.formatter` — output formatters
-- `aimd.configuration_stage` — configuration pipeline stages
+- `qmx.collector` — metric collectors
+- `qmx.global_collector` — global context collectors
+- `qmx.rule` — analysis rules (lazy)
+- `qmx.formatter` — output formatters
+- `qmx.configuration_stage` — configuration pipeline stages
 
 ### Lazy Services
 
@@ -191,11 +191,11 @@ Rules and their Options are made lazy via `->setLazy(true)`:
 ### CompilerPass
 
 **CollectorCompilerPass:**
-- Collects services with tag `aimd.collector`
+- Collects services with tag `qmx.collector`
 - Injects into `CompositeCollector`
 
 **GlobalCollectorCompilerPass:**
-- Collects services with tag `aimd.global_collector`
+- Collects services with tag `qmx.global_collector`
 - Injects into `GlobalCollectorRunner`
 
 **RuleOptionsCompilerPass:**
@@ -203,7 +203,7 @@ Rules and their Options are made lazy via `->setLazy(true)`:
 - Injects Options into the rule constructor
 
 **RuleCompilerPass:**
-- Collects services with tag `aimd.rule`
+- Collects services with tag `qmx.rule`
 - Injects into `RuleExecutor`
 
 **RuleRegistryCompilerPass:**
@@ -211,11 +211,11 @@ Rules and their Options are made lazy via `->setLazy(true)`:
 - Injects into `RuleRegistry` for CLI option discovery
 
 **FormatterCompilerPass:**
-- Collects services with tag `aimd.formatter`
+- Collects services with tag `qmx.formatter`
 - Registers in `FormatterRegistry`
 
 **ConfigurationStageCompilerPass:**
-- Collects services with tag `aimd.configuration_stage`
+- Collects services with tag `qmx.configuration_stage`
 - Injects into `ConfigurationPipeline` in priority order
 
 **Test coverage:** All 8 CompilerPasses have dedicated unit tests (`tests/Unit/Infrastructure/DependencyInjection/CompilerPass/`) covering service registration, tag handling, and edge cases.
@@ -263,7 +263,7 @@ Factory with runtime configuration awareness.
 
 ## Entry Point
 
-### bin/aimd
+### bin/qmx
 
 **Algorithm:**
 1. Finding autoloader
@@ -292,7 +292,7 @@ Factory with runtime configuration awareness.
 ## Definition of Done
 
 ### Core Infrastructure
-- `bin/aimd check src/` works
+- `bin/qmx check src/` works
 - Unified DI container assembles all dependencies
 - Lazy Rules are created with correct runtime options
 - FileParserFactory returns the correct implementation

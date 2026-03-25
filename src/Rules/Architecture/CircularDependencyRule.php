@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Rules\Architecture;
+namespace Qualimetrix\Rules\Architecture;
 
-use AiMessDetector\Core\Dependency\CycleInterface;
-use AiMessDetector\Core\Rule\AnalysisContext;
-use AiMessDetector\Core\Rule\RuleCategory;
-use AiMessDetector\Core\Violation\Location;
-use AiMessDetector\Core\Violation\Violation;
-use AiMessDetector\Rules\AbstractRule;
+use Qualimetrix\Core\Dependency\CycleInterface;
+use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Rule\RuleCategory;
+use Qualimetrix\Core\Violation\Location;
+use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Rules\AbstractRule;
 
 /**
  * Detects circular dependencies between classes.

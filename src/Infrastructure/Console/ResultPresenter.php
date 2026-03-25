@@ -2,19 +2,19 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\Console;
+namespace Qualimetrix\Infrastructure\Console;
 
-use AiMessDetector\Analysis\Pipeline\AnalysisResult;
-use AiMessDetector\Baseline\BaselineGenerator;
-use AiMessDetector\Baseline\BaselineWriter;
-use AiMessDetector\Configuration\AnalysisConfiguration;
-use AiMessDetector\Configuration\ConfigurationProviderInterface;
-use AiMessDetector\Core\Profiler\ProfilerHolder;
-use AiMessDetector\Core\Violation\Severity;
-use AiMessDetector\Core\Violation\Violation;
-use AiMessDetector\Reporting\Formatter\FormatterRegistryInterface;
-use AiMessDetector\Reporting\Health\SummaryEnricher;
-use AiMessDetector\Reporting\ReportBuilder;
+use Qualimetrix\Analysis\Pipeline\AnalysisResult;
+use Qualimetrix\Baseline\BaselineGenerator;
+use Qualimetrix\Baseline\BaselineWriter;
+use Qualimetrix\Configuration\AnalysisConfiguration;
+use Qualimetrix\Configuration\ConfigurationProviderInterface;
+use Qualimetrix\Core\Profiler\ProfilerHolder;
+use Qualimetrix\Core\Violation\Severity;
+use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
+use Qualimetrix\Reporting\Health\SummaryEnricher;
+use Qualimetrix\Reporting\ReportBuilder;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 

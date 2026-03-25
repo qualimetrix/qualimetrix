@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Metrics\Maintainability;
+namespace Qualimetrix\Tests\Unit\Metrics\Maintainability;
 
-use AiMessDetector\Metrics\Maintainability\MaintainabilityIndexCalculator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Metrics\Maintainability\MaintainabilityIndexCalculator;
 
 #[CoversClass(MaintainabilityIndexCalculator::class)]
 final class MaintainabilityIndexCalculatorTest extends TestCase

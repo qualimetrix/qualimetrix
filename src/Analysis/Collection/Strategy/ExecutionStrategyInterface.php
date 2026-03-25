@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Analysis\Collection\Strategy;
+namespace Qualimetrix\Analysis\Collection\Strategy;
 
-use AiMessDetector\Analysis\Collection\FileProcessingResult;
+use Qualimetrix\Analysis\Collection\FileProcessingResult;
 use SplFileInfo;
 
 /**

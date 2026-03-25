@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Metrics\Halstead;
+namespace Qualimetrix\Tests\Unit\Metrics\Halstead;
 
-use AiMessDetector\Metrics\Halstead\HalsteadMetrics;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Metrics\Halstead\HalsteadMetrics;
 
 #[CoversClass(HalsteadMetrics::class)]
 final class HalsteadMetricsTest extends TestCase

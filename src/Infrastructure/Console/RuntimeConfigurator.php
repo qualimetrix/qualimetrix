@@ -2,26 +2,26 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\Console;
+namespace Qualimetrix\Infrastructure\Console;
 
-use AiMessDetector\Configuration\AnalysisConfiguration;
-use AiMessDetector\Configuration\ComputedMetricsConfigResolver;
-use AiMessDetector\Configuration\ConfigurationProviderInterface;
-use AiMessDetector\Configuration\Pipeline\ResolvedConfiguration;
-use AiMessDetector\Configuration\RuleOptionsFactory;
-use AiMessDetector\Configuration\RuleOptionsParserFactory;
-use AiMessDetector\Core\ComputedMetric\ComputedMetricDefinition;
-use AiMessDetector\Core\ComputedMetric\ComputedMetricDefinitionHolder;
-use AiMessDetector\Core\Profiler\ProfilerHolder;
-use AiMessDetector\Core\Progress\NullProgressReporter;
-use AiMessDetector\Infrastructure\Cache\CacheFactory;
-use AiMessDetector\Infrastructure\Console\Progress\ConsoleProgressBar;
-use AiMessDetector\Infrastructure\Console\Progress\ProgressReporterHolder;
-use AiMessDetector\Infrastructure\Logging\LoggerFactory;
-use AiMessDetector\Infrastructure\Logging\LoggerHolder;
-use AiMessDetector\Infrastructure\Profiler\Profiler;
-use AiMessDetector\Infrastructure\Rule\RuleRegistryInterface;
 use Psr\Log\LogLevel;
+use Qualimetrix\Configuration\AnalysisConfiguration;
+use Qualimetrix\Configuration\ComputedMetricsConfigResolver;
+use Qualimetrix\Configuration\ConfigurationProviderInterface;
+use Qualimetrix\Configuration\Pipeline\ResolvedConfiguration;
+use Qualimetrix\Configuration\RuleOptionsFactory;
+use Qualimetrix\Configuration\RuleOptionsParserFactory;
+use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinition;
+use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinitionHolder;
+use Qualimetrix\Core\Profiler\ProfilerHolder;
+use Qualimetrix\Core\Progress\NullProgressReporter;
+use Qualimetrix\Infrastructure\Cache\CacheFactory;
+use Qualimetrix\Infrastructure\Console\Progress\ConsoleProgressBar;
+use Qualimetrix\Infrastructure\Console\Progress\ProgressReporterHolder;
+use Qualimetrix\Infrastructure\Logging\LoggerFactory;
+use Qualimetrix\Infrastructure\Logging\LoggerHolder;
+use Qualimetrix\Infrastructure\Profiler\Profiler;
+use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 

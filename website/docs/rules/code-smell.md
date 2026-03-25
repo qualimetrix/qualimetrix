@@ -516,7 +516,7 @@ class OrderProcessor
 ### Configuration
 
 ```yaml
-# aimd.yaml
+# qmx.yaml
 rules:
   code-smell.constructor-overinjection:
     warning: 8
@@ -524,7 +524,7 @@ rules:
 ```
 
 ```bash
-bin/aimd check src/ --rule-opt="code-smell.constructor-overinjection:warning=6"
+bin/qmx check src/ --rule-opt="code-smell.constructor-overinjection:warning=6"
 ```
 
 ---
@@ -594,7 +594,7 @@ readonly class UserDTO
 ### Configuration
 
 ```yaml
-# aimd.yaml
+# qmx.yaml
 rules:
   code-smell.data-class:
     woc_threshold: 80
@@ -661,7 +661,7 @@ class ApplicationManager
 ### Configuration
 
 ```yaml
-# aimd.yaml
+# qmx.yaml
 rules:
   code-smell.god-class:
     wmc_threshold: 47
@@ -739,7 +739,7 @@ public function createUser(
 ### Configuration
 
 ```yaml
-# aimd.yaml
+# qmx.yaml
 rules:
   code-smell.long-parameter-list:
     warning: 4
@@ -747,8 +747,8 @@ rules:
 ```
 
 ```bash
-bin/aimd check src/ --rule-opt="code-smell.long-parameter-list:warning=5"
-bin/aimd check src/ --rule-opt="code-smell.long-parameter-list:error=8"
+bin/qmx check src/ --rule-opt="code-smell.long-parameter-list:warning=5"
+bin/qmx check src/ --rule-opt="code-smell.long-parameter-list:error=8"
 ```
 
 ---
@@ -899,7 +899,7 @@ class OrderService
 
 - **Remove** the unused member if it is truly dead code.
 - **Change visibility** to `protected` or `public` if the member is used by subclasses or external code.
-- If the member is intentionally kept for future use, suppress the warning with `@aimd-ignore code-smell.unused-private`.
+- If the member is intentionally kept for future use, suppress the warning with `@qmx-ignore code-smell.unused-private`.
 
 ---
 
@@ -959,7 +959,7 @@ public function process(Order $order): string
 ### Configuration
 
 ```yaml
-# aimd.yaml
+# qmx.yaml
 rules:
   code-smell.unreachable-code:
     warning: 1
@@ -967,8 +967,8 @@ rules:
 ```
 
 ```bash
-bin/aimd check src/ --rule-opt="code-smell.unreachable-code:warning=1"
-bin/aimd check src/ --rule-opt="code-smell.unreachable-code:error=1"
+bin/qmx check src/ --rule-opt="code-smell.unreachable-code:warning=1"
+bin/qmx check src/ --rule-opt="code-smell.unreachable-code:error=1"
 ```
 
 ---
@@ -978,7 +978,7 @@ bin/aimd check src/ --rule-opt="code-smell.unreachable-code:error=1"
 All code smell rules share the same simple configuration -- just enable or disable:
 
 ```yaml
-# aimd.yaml
+# qmx.yaml
 rules:
   code-smell.boolean-argument:
     enabled: true
@@ -1031,8 +1031,8 @@ You can also disable individual rules via the `--disable-rule` CLI option:
 
 ```bash
 # Disable a specific rule
-bin/aimd check src/ --disable-rule=code-smell.exit
+bin/qmx check src/ --disable-rule=code-smell.exit
 
 # Disable all code smell rules at once (prefix matching)
-bin/aimd check src/ --disable-rule=code-smell
+bin/qmx check src/ --disable-rule=code-smell
 ```

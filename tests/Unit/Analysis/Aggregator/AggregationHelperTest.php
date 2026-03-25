@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Analysis\Aggregator;
+namespace Qualimetrix\Tests\Unit\Analysis\Aggregator;
 
-use AiMessDetector\Analysis\Aggregator\AggregationHelper;
-use AiMessDetector\Core\Metric\AggregationStrategy;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Aggregator\AggregationHelper;
+use Qualimetrix\Core\Metric\AggregationStrategy;
 
 #[CoversClass(AggregationHelper::class)]
 final class AggregationHelperTest extends TestCase

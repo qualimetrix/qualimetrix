@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Infrastructure\Logging;
+namespace Qualimetrix\Tests\Infrastructure\Logging;
 
-use AiMessDetector\Infrastructure\Logging\LoggerHolder;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use Qualimetrix\Infrastructure\Logging\LoggerHolder;
 
 final class LoggerHolderTest extends TestCase
 {

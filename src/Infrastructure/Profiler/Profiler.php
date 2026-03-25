@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\Profiler;
+namespace Qualimetrix\Infrastructure\Profiler;
 
-use AiMessDetector\Core\Profiler\ProfilerInterface;
-use AiMessDetector\Core\Profiler\Span;
-use AiMessDetector\Infrastructure\Profiler\Export\ChromeTracingExporter;
-use AiMessDetector\Infrastructure\Profiler\Export\JsonExporter;
-use AiMessDetector\Infrastructure\Profiler\Export\ProfileExporterInterface;
 use InvalidArgumentException;
+use Qualimetrix\Core\Profiler\ProfilerInterface;
+use Qualimetrix\Core\Profiler\Span;
+use Qualimetrix\Infrastructure\Profiler\Export\ChromeTracingExporter;
+use Qualimetrix\Infrastructure\Profiler\Export\JsonExporter;
+use Qualimetrix\Infrastructure\Profiler\Export\ProfileExporterInterface;
 
 /**
  * Main profiler implementation using a tree-based approach.

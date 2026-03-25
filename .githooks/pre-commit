@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Pre-commit hook for AI Mess Detector
+# Pre-commit hook for Qualimetrix
 # Runs code style and static analysis checks on changed files
 
 set -e

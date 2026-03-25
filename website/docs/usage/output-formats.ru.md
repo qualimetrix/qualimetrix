@@ -1,9 +1,9 @@
 # Форматы вывода
 
-AI Mess Detector поддерживает 10 форматов вывода. Выбирайте тот, который подходит для вашего рабочего процесса.
+Qualimetrix поддерживает 10 форматов вывода. Выбирайте тот, который подходит для вашего рабочего процесса.
 
 ```bash
-bin/aimd check src/ --format=<формат>
+bin/qmx check src/ --format=<формат>
 ```
 
 ---
@@ -24,7 +24,7 @@ bin/aimd check src/ --format=<формат>
 **Пример вывода:**
 
 ```
-AI Mess Detector — 45 files analyzed, 1.23s
+Qualimetrix — 45 files analyzed, 1.23s
 
   Complexity     ████████████████░░░░  78 Excellent
   Cohesion       ██████████████░░░░░░  68 Fair
@@ -50,23 +50,23 @@ Hint: Run with --namespace=App\\Service to drill down into the worst namespace
 
 ```bash
 # Показать нарушения для конкретного поддерева пространства имён
-bin/aimd check src/ --namespace=App\\Service
+bin/qmx check src/ --namespace=App\\Service
 
 # Показать нарушения для конкретного класса
-bin/aimd check src/ --class=App\\Service\\UserService
+bin/qmx check src/ --class=App\\Service\\UserService
 ```
 
 **Режим детализации с `--detail`:**
 
 ```bash
 # Добавить группированный список нарушений (лимит по умолчанию: 200)
-bin/aimd check src/ --detail
+bin/qmx check src/ --detail
 
 # Показать все нарушения (без лимита)
-bin/aimd check src/ --detail=all
+bin/qmx check src/ --detail=all
 
 # Пользовательский лимит
-bin/aimd check src/ --detail=50
+bin/qmx check src/ --detail=50
 ```
 
 !!! note
@@ -100,8 +100,8 @@ src/Repository/OrderRepository.php:15: error[coupling.cbo.class]: CBO is 18, max
     `text-verbose` устарел. Используйте вместо него `--format=text --detail`, который обеспечивает аналогичный группированный многострочный вывод нарушений.
 
     ```bash
-    # Замена: bin/aimd check src/ --format=text-verbose
-    bin/aimd check src/ --format=text --detail
+    # Замена: bin/qmx check src/ --format=text-verbose
+    bin/qmx check src/ --format=text --detail
     ```
 
 ---
@@ -118,7 +118,7 @@ src/Repository/OrderRepository.php:15: error[coupling.cbo.class]: CBO is 18, max
 {
     "meta": {
         "version": "1.0.0",
-        "package": "aimd",
+        "package": "qmx",
         "timestamp": "2025-01-15T10:30:00+00:00"
     },
     "summary": {
@@ -200,19 +200,19 @@ src/Repository/OrderRepository.php:15: error[coupling.cbo.class]: CBO is 18, max
 
 ```bash
 # Управление лимитом нарушений (по умолчанию: 50)
-bin/aimd check src/ --format=json --format-opt=limit=100
+bin/qmx check src/ --format=json --format-opt=limit=100
 
 # Показать все нарушения (без лимита)
-bin/aimd check src/ --format=json --format-opt=violations=all
+bin/qmx check src/ --format=json --format-opt=violations=all
 
 # Управление количеством худших нарушителей (по умолчанию: 10)
-bin/aimd check src/ --format=json --format-opt=top=20
+bin/qmx check src/ --format=json --format-opt=top=20
 ```
 
 **Использование в CI:**
 
 ```bash
-bin/aimd check src/ --format=json --no-progress > report.json
+bin/qmx check src/ --format=json --no-progress > report.json
 ```
 
 ---
@@ -228,7 +228,7 @@ bin/aimd check src/ --format=json --no-progress > report.json
 ```json
 {
     "version": "1.0.0",
-    "package": "aimd",
+    "package": "qmx",
     "timestamp": "2025-01-15T10:30:00+00:00",
     "symbols": [
         {
@@ -282,7 +282,7 @@ bin/aimd check src/ --format=json --no-progress > report.json
 **Использование:**
 
 ```bash
-bin/aimd check src/ --format=metrics --no-progress > metrics.json
+bin/qmx check src/ --format=metrics --no-progress > metrics.json
 ```
 
 !!! note
@@ -305,11 +305,11 @@ bin/aimd check src/ --format=metrics --no-progress > metrics.json
     <error line="42"
            severity="error"
            message="Cyclomatic complexity is 15, max allowed is 10"
-           source="aimd.complexity.cyclomatic.method"/>
+           source="qmx.complexity.cyclomatic.method"/>
     <error line="87"
            severity="warning"
            message="Class has 22 methods, max recommended is 20"
-           source="aimd.size.method-count.class"/>
+           source="qmx.size.method-count.class"/>
   </file>
 </checkstyle>
 ```
@@ -317,7 +317,7 @@ bin/aimd check src/ --format=metrics --no-progress > metrics.json
 **Использование в CI (Jenkins):**
 
 ```bash
-bin/aimd check src/ --format=checkstyle --no-progress > checkstyle.xml
+bin/qmx check src/ --format=checkstyle --no-progress > checkstyle.xml
 ```
 
 ---
@@ -338,7 +338,7 @@ SARIF (Static Analysis Results Interchange Format) 2.1.0. Стандартный
         {
             "tool": {
                 "driver": {
-                    "name": "AI Mess Detector",
+                    "name": "Qualimetrix",
                     "version": "0.1.0",
                     "rules": [...]
                 }
@@ -372,8 +372,8 @@ SARIF (Static Analysis Results Interchange Format) 2.1.0. Стандартный
 **Использование в CI (GitHub Actions):**
 
 ```yaml
-- name: Run AIMD
-  run: bin/aimd check src/ --format=sarif --no-progress > results.sarif
+- name: Run Qualimetrix
+  run: bin/qmx check src/ --format=sarif --no-progress > results.sarif
 
 - name: Upload SARIF to GitHub Security
   uses: github/codeql-action/upload-sarif@v3
@@ -412,10 +412,10 @@ SARIF (Static Analysis Results Interchange Format) 2.1.0. Стандартный
 
 **Маппинг уровней:**
 
-| Уровень AIMD | Уровень GitLab |
-| ------------ | -------------- |
-| error        | critical       |
-| warning      | major          |
+| Уровень Qualimetrix | Уровень GitLab |
+| ------------------- | -------------- |
+| error               | critical       |
+| warning             | major          |
 
 **Использование в CI (GitLab CI):**
 
@@ -423,7 +423,7 @@ SARIF (Static Analysis Results Interchange Format) 2.1.0. Стандартный
 code_quality:
   stage: test
   script:
-    - bin/aimd check src/ --format=gitlab --no-progress > gl-code-quality-report.json
+    - bin/qmx check src/ --format=gitlab --no-progress > gl-code-quality-report.json
   artifacts:
     reports:
       codequality: gl-code-quality-report.json
@@ -448,16 +448,16 @@ code_quality:
 
 **Маппинг уровней:**
 
-| Уровень AIMD | Команда GitHub |
-| ------------ | -------------- |
-| warning      | `::warning`    |
-| error        | `::error`      |
+| Уровень Qualimetrix | Команда GitHub |
+| ------------------- | -------------- |
+| warning             | `::warning`    |
+| error               | `::error`      |
 
 **Использование в CI (GitHub Actions):**
 
 ```yaml
-- name: Run AIMD
-  run: vendor/bin/aimd check src/ --format=github --no-progress
+- name: Run Qualimetrix
+  run: vendor/bin/qmx check src/ --format=github --no-progress
 ```
 
 Аннотации появляются прямо на изменённых строках вашего пулл-реквеста — загрузка SARIF не требуется. По умолчанию `--fail-on=error` — предупреждения не блокируют сборку.
@@ -484,14 +484,14 @@ code_quality:
 **Использование:**
 
 ```bash
-bin/aimd check src/ --format=health -o report.html
+bin/qmx check src/ --format=health -o report.html
 ```
 
 **Пример рабочего процесса:**
 
 ```bash
 # Сгенерировать и открыть отчёт
-bin/aimd check src/ --format=health -o report.html
+bin/qmx check src/ --format=health -o report.html
 open report.html  # macOS
 xdg-open report.html  # Linux
 ```

@@ -1,6 +1,6 @@
 # Rules Overview
 
-AI Mess Detector ships with a set of built-in rules that check your PHP code for common quality problems. Each rule looks at a specific aspect of your code -- complexity, size, coupling, design, maintainability, or common bad practices -- and reports violations when thresholds are exceeded.
+Qualimetrix ships with a set of built-in rules that check your PHP code for common quality problems. Each rule looks at a specific aspect of your code -- complexity, size, coupling, design, maintainability, or common bad practices -- and reports violations when thresholds are exceeded.
 
 ## Severity Levels
 
@@ -149,10 +149,10 @@ You can disable individual rules or entire groups:
 
 ```bash
 # Disable a single rule
-bin/aimd check src/ --disable-rule=complexity.npath
+bin/qmx check src/ --disable-rule=complexity.npath
 
 # Disable an entire group (prefix matching)
-bin/aimd check src/ --disable-rule=code-smell
+bin/qmx check src/ --disable-rule=code-smell
 ```
 
 ## Excluding Namespaces
@@ -168,7 +168,7 @@ rules:
 ```
 
 ```bash
-bin/aimd check src/ --rule-opt="complexity.cyclomatic:exclude_namespaces=App\Tests"
+bin/qmx check src/ --rule-opt="complexity.cyclomatic:exclude_namespaces=App\Tests"
 ```
 
 This is useful for test code, generated code, or legacy modules that you want to keep in metrics but exclude from violation reports for a specific rule.
@@ -178,11 +178,11 @@ This is useful for test code, generated code, or legacy modules that you want to
 Override any threshold via the command line:
 
 ```bash
-bin/aimd check src/ --rule-opt="complexity.cyclomatic:method.warning=15"
-bin/aimd check src/ --rule-opt="size.method-count:warning=25"
+bin/qmx check src/ --rule-opt="complexity.cyclomatic:method.warning=15"
+bin/qmx check src/ --rule-opt="size.method-count:warning=25"
 ```
 
-Or in your `aimd.yaml` configuration file:
+Or in your `qmx.yaml` configuration file:
 
 ```yaml
 rules:

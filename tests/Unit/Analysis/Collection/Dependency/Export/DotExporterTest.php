@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Analysis\Collection\Dependency\Export;
+namespace Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\Export;
 
-use AiMessDetector\Analysis\Collection\Dependency\DependencyGraph;
-use AiMessDetector\Analysis\Collection\Dependency\Export\DotExporter;
-use AiMessDetector\Analysis\Collection\Dependency\Export\DotExporterOptions;
-use AiMessDetector\Core\Dependency\Dependency;
-use AiMessDetector\Core\Dependency\DependencyType;
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Violation\Location;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Collection\Dependency\DependencyGraph;
+use Qualimetrix\Analysis\Collection\Dependency\Export\DotExporter;
+use Qualimetrix\Analysis\Collection\Dependency\Export\DotExporterOptions;
+use Qualimetrix\Core\Dependency\Dependency;
+use Qualimetrix\Core\Dependency\DependencyType;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Violation\Location;
 
 final class DotExporterTest extends TestCase
 {

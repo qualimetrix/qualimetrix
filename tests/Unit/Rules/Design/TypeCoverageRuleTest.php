@@ -2,20 +2,20 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Rules\Design;
+namespace Qualimetrix\Tests\Unit\Rules\Design;
 
-use AiMessDetector\Core\Metric\MetricBag;
-use AiMessDetector\Core\Metric\MetricRepositoryInterface;
-use AiMessDetector\Core\Rule\AnalysisContext;
-use AiMessDetector\Core\Rule\RuleCategory;
-use AiMessDetector\Core\Symbol\SymbolInfo;
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Violation\Severity;
-use AiMessDetector\Rules\Design\TypeCoverageOptions;
-use AiMessDetector\Rules\Design\TypeCoverageRule;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Rule\RuleCategory;
+use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Violation\Severity;
+use Qualimetrix\Rules\Design\TypeCoverageOptions;
+use Qualimetrix\Rules\Design\TypeCoverageRule;
 
 #[CoversClass(TypeCoverageRule::class)]
 #[CoversClass(TypeCoverageOptions::class)]
@@ -76,7 +76,7 @@ final class TypeCoverageRuleTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
 
-        new TypeCoverageRule(new class implements \AiMessDetector\Core\Rule\RuleOptionsInterface {
+        new TypeCoverageRule(new class implements \Qualimetrix\Core\Rule\RuleOptionsInterface {
             public static function fromArray(array $config): static
             {
                 return new static();

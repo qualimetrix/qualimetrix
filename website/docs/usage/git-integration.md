@@ -1,6 +1,6 @@
 # Git Integration
 
-AI Mess Detector integrates with Git to analyze only the code you have changed. This saves time and helps you catch issues before they reach the main branch.
+Qualimetrix integrates with Git to analyze only the code you have changed. This saves time and helps you catch issues before they reach the main branch.
 
 ## Why analyze only changed code?
 
@@ -8,7 +8,7 @@ Running a full analysis on a large codebase can take time. More importantly, a l
 
 - **Speed** -- analyze only the files you touched
 - **Focus** -- see only the violations you introduced
-- **Gradual adoption** -- start using AIMD without fixing every old issue first
+- **Gradual adoption** -- start using Qualimetrix without fixing every old issue first
 
 ---
 
@@ -18,10 +18,10 @@ The two most common scenarios:
 
 ```bash
 # Before committing: check staged files
-bin/aimd check src/ --analyze=git:staged
+bin/qmx check src/ --analyze=git:staged
 
 # Before merging: check what changed vs main
-bin/aimd check src/ --report=git:main..HEAD
+bin/qmx check src/ --report=git:main..HEAD
 ```
 
 ---
@@ -31,7 +31,7 @@ bin/aimd check src/ --report=git:main..HEAD
 The `--analyze=git:staged` option limits analysis to files added to Git's staging area (`git add`):
 
 ```bash
-bin/aimd check src/ --analyze=git:staged
+bin/qmx check src/ --analyze=git:staged
 ```
 
 Only PHP files that are currently staged for commit are analyzed. This is fast and gives you immediate feedback before committing.
@@ -41,27 +41,27 @@ Only PHP files that are currently staged for commit are analyzed. This is fast a
 Instead of running `--analyze=git:staged` manually, install a Git hook:
 
 ```bash
-bin/aimd hook:install
+bin/qmx hook:install
 ```
 
-This creates a `.git/hooks/pre-commit` script that automatically runs AIMD on staged files before each commit. If violations with severity `error` are found, the commit is blocked.
+This creates a `.git/hooks/pre-commit` script that automatically runs Qualimetrix on staged files before each commit. If violations with severity `error` are found, the commit is blocked.
 
 Check the hook status:
 
 ```bash
-bin/aimd hook:status
+bin/qmx hook:status
 ```
 
 Remove the hook:
 
 ```bash
-bin/aimd hook:uninstall
+bin/qmx hook:uninstall
 ```
 
-If you already had a pre-commit hook, AIMD backs it up. To restore it:
+If you already had a pre-commit hook, Qualimetrix backs it up. To restore it:
 
 ```bash
-bin/aimd hook:uninstall --restore-backup
+bin/qmx hook:uninstall --restore-backup
 ```
 
 !!! warning
@@ -75,23 +75,23 @@ The `--report` option shows only violations in files that changed compared to a 
 
 ```bash
 # Compare against main branch
-bin/aimd check src/ --report=git:main..HEAD
+bin/qmx check src/ --report=git:main..HEAD
 
 # Compare against a specific branch
-bin/aimd check src/ --report=git:origin/develop..HEAD
+bin/qmx check src/ --report=git:origin/develop..HEAD
 
 # Compare against a specific commit
-bin/aimd check src/ --report=git:abc1234..HEAD
+bin/qmx check src/ --report=git:abc1234..HEAD
 ```
 
 !!! note
-    With `--report`, AIMD still analyzes the full codebase (it needs complete metrics for namespace-level rules). It only *filters the output* to show violations from changed files.
+    With `--report`, Qualimetrix still analyzes the full codebase (it needs complete metrics for namespace-level rules). It only *filters the output* to show violations from changed files.
 
 ---
 
 ## --analyze vs --report
 
-AIMD has two separate scoping mechanisms:
+Qualimetrix has two separate scoping mechanisms:
 
 | Option      | Controls   | What it does                                  |
 | ----------- | ---------- | --------------------------------------------- |
@@ -100,14 +100,14 @@ AIMD has two separate scoping mechanisms:
 
 ### --analyze
 
-Limits the set of files that AIMD processes:
+Limits the set of files that Qualimetrix processes:
 
 ```bash
 # Only parse and analyze staged files
-bin/aimd check src/ --analyze=git:staged
+bin/qmx check src/ --analyze=git:staged
 ```
 
-This is faster because fewer files are parsed, but namespace-level and coupling metrics may be incomplete since AIMD does not see the full picture.
+This is faster because fewer files are parsed, but namespace-level and coupling metrics may be incomplete since Qualimetrix does not see the full picture.
 
 ### --report
 
@@ -115,7 +115,7 @@ Analyzes all files but filters the report to show only violations from changed f
 
 ```bash
 # Analyze everything, report only changed files
-bin/aimd check src/ --report=git:main..HEAD
+bin/qmx check src/ --report=git:main..HEAD
 ```
 
 This gives accurate metrics (the full codebase is analyzed) while only showing relevant violations.
@@ -126,7 +126,7 @@ You can combine them for fine-grained control:
 
 ```bash
 # Parse only changed files, report only changed files
-bin/aimd check src/ --analyze=git:main..HEAD --report=git:main..HEAD
+bin/qmx check src/ --analyze=git:main..HEAD --report=git:main..HEAD
 ```
 
 ### Which one to use?
@@ -141,12 +141,12 @@ bin/aimd check src/ --analyze=git:main..HEAD --report=git:main..HEAD
 
 ## --report-strict
 
-By default, when using `--diff` or `--report`, AIMD also shows violations from parent namespaces of the changed files. This is useful because adding a class to a namespace can push it over size limits.
+By default, when using `--diff` or `--report`, Qualimetrix also shows violations from parent namespaces of the changed files. This is useful because adding a class to a namespace can push it over size limits.
 
 If you want to see only violations from the changed files themselves:
 
 ```bash
-bin/aimd check src/ --report=git:main..HEAD --report-strict
+bin/qmx check src/ --report=git:main..HEAD --report-strict
 ```
 
 ---
@@ -174,7 +174,7 @@ Both `--analyze` and `--report` accept scope expressions:
 git add src/Service/UserService.php
 
 # 3. Check before committing
-bin/aimd check src/ --analyze=git:staged
+bin/qmx check src/ --analyze=git:staged
 
 # 4. If clean, commit
 git commit -m "refactor: simplify UserService"
@@ -184,31 +184,31 @@ Or automate it with the hook:
 
 ```bash
 # One-time setup
-bin/aimd hook:install
+bin/qmx hook:install
 
 # Now every commit is checked automatically
 git commit -m "refactor: simplify UserService"
-# AIMD runs automatically, blocks commit if errors found
+# Qualimetrix runs automatically, blocks commit if errors found
 ```
 
 ### Pull request review
 
 ```bash
 # On your feature branch, check against main
-bin/aimd check src/ --report=git:main..HEAD
+bin/qmx check src/ --report=git:main..HEAD
 
 # Strict mode: only violations in your changed files
-bin/aimd check src/ --report=git:main..HEAD --report-strict
+bin/qmx check src/ --report=git:main..HEAD --report-strict
 
 # With JSON output for CI
-bin/aimd check src/ --report=git:main..HEAD --format=json --no-progress
+bin/qmx check src/ --report=git:main..HEAD --format=json --no-progress
 ```
 
 ### CI pipeline (GitHub Actions)
 
 ```yaml
-- name: Run AIMD
-  run: bin/aimd check src/ --report=git:origin/main..HEAD --format=sarif --no-progress > results.sarif
+- name: Run Qualimetrix
+  run: bin/qmx check src/ --report=git:origin/main..HEAD --format=sarif --no-progress > results.sarif
 
 - name: Upload SARIF
   uses: github/codeql-action/upload-sarif@v3
@@ -221,7 +221,7 @@ bin/aimd check src/ --report=git:main..HEAD --format=json --no-progress
 ```yaml
 code_quality:
   script:
-    - bin/aimd check src/ --report=git:origin/main..HEAD --format=gitlab --no-progress > gl-code-quality-report.json
+    - bin/qmx check src/ --report=git:origin/main..HEAD --format=gitlab --no-progress > gl-code-quality-report.json
   artifacts:
     reports:
       codequality: gl-code-quality-report.json

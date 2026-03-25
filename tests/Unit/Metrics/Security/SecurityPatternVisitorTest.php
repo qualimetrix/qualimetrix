@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Metrics\Security;
+namespace Qualimetrix\Tests\Unit\Metrics\Security;
 
-use AiMessDetector\Metrics\Security\SecurityPatternVisitor;
 use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Metrics\Security\SecurityPatternVisitor;
 
 #[CoversClass(SecurityPatternVisitor::class)]
 final class SecurityPatternVisitorTest extends TestCase
@@ -449,7 +449,7 @@ PHP;
     }
 
     /**
-     * @return list<\AiMessDetector\Metrics\Security\SecurityPatternLocation>
+     * @return list<\Qualimetrix\Metrics\Security\SecurityPatternLocation>
      */
     private function analyze(string $code, string $type): array
     {

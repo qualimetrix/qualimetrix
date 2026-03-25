@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Analysis\Collection\Dependency\Export;
+namespace Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\Export;
 
-use AiMessDetector\Analysis\Collection\Dependency\DependencyGraph;
-use AiMessDetector\Analysis\Collection\Dependency\Export\JsonGraphExporter;
-use AiMessDetector\Core\Dependency\Dependency;
-use AiMessDetector\Core\Dependency\DependencyType;
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Violation\Location;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Collection\Dependency\DependencyGraph;
+use Qualimetrix\Analysis\Collection\Dependency\Export\JsonGraphExporter;
+use Qualimetrix\Core\Dependency\Dependency;
+use Qualimetrix\Core\Dependency\DependencyType;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Violation\Location;
 
 final class JsonGraphExporterTest extends TestCase
 {
@@ -45,7 +45,7 @@ final class JsonGraphExporterTest extends TestCase
         $data = $this->decode($exporter->export($graph));
 
         $this->assertSame('1.0.0', $data['meta']['version']);
-        $this->assertSame('aimd', $data['meta']['package']);
+        $this->assertSame('qmx', $data['meta']['package']);
         $this->assertArrayHasKey('timestamp', $data['meta']);
     }
 

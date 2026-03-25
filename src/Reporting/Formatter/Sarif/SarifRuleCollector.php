@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Reporting\Formatter\Sarif;
+namespace Qualimetrix\Reporting\Formatter\Sarif;
 
-use AiMessDetector\Core\Violation\Severity;
-use AiMessDetector\Core\Violation\Violation;
+use Qualimetrix\Core\Violation\Severity;
+use Qualimetrix\Core\Violation\Violation;
 
 /**
  * Collects and describes SARIF rule entries from a set of violations.
@@ -15,8 +15,8 @@ use AiMessDetector\Core\Violation\Violation;
  */
 final class SarifRuleCollector
 {
-    public const INFORMATION_URI = 'https://github.com/FractalizeR/php_ai_mess_detector';
-    private const DOCS_BASE_URI = 'https://aimd.dev/rules/';
+    public const INFORMATION_URI = 'https://github.com/qualimetrix/qualimetrix';
+    private const DOCS_BASE_URI = 'https://qualimetrix.github.io/qualimetrix/rules/';
 
     /** @var array<string, string> Maps rule category prefix to its docs page path segment */
     private const CATEGORY_DOCS_MAP = [
@@ -123,7 +123,7 @@ final class SarifRuleCollector
      * Returns the documentation URL for a rule, based on its category prefix.
      *
      * Maps known category prefixes (e.g. "complexity", "code-smell") to the
-     * corresponding page on the AIMD website. Falls back to the repository URL
+     * corresponding page on the Qualimetrix website. Falls back to the repository URL
      * for unknown or user-defined rule names.
      */
     public function getHelpUri(string $ruleName): string

@@ -12,16 +12,16 @@
 
 ## Composer (рекомендуется)
 
-Установите AI Mess Detector как dev-зависимость в вашем проекте:
+Установите Qualimetrix как dev-зависимость в вашем проекте:
 
 ```bash
-composer require --dev fractalizer/ai-mess-detector
+composer require --dev qualimetrix/qualimetrix
 ```
 
-После установки бинарный файл `aimd` доступен по пути:
+После установки бинарный файл `qmx` доступен по пути:
 
 ```bash
-vendor/bin/aimd
+vendor/bin/qmx
 ```
 
 ---
@@ -29,16 +29,16 @@ vendor/bin/aimd
 ## PHAR
 
 !!! note "Скоро"
-    Автономный PHAR-архив запланирован для будущих релизов. Это позволит запускать AI Mess Detector без добавления его в зависимости проекта.
+    Автономный PHAR-архив запланирован для будущих релизов. Это позволит запускать Qualimetrix без добавления его в зависимости проекта.
 
 ---
 
 ## Docker
 
-Запускайте AI Mess Detector в контейнере без локальной установки PHP:
+Запускайте Qualimetrix в контейнере без локальной установки PHP:
 
 ```bash
-docker run --rm -v $(pwd):/app aimd check src/
+docker run --rm -v $(pwd):/app qmx check src/
 ```
 
 Эта команда монтирует текущую директорию в контейнер и анализирует папку `src/`.
@@ -47,10 +47,10 @@ docker run --rm -v $(pwd):/app aimd check src/
 
 ```bash
 # Вывод в формате JSON
-docker run --rm -v $(pwd):/app aimd check src/ --format=json
+docker run --rm -v $(pwd):/app qmx check src/ --format=json
 
 # С базовой линией (baseline)
-docker run --rm -v $(pwd):/app aimd check src/ --baseline=baseline.json
+docker run --rm -v $(pwd):/app qmx check src/ --baseline=baseline.json
 ```
 
 ---
@@ -60,25 +60,25 @@ docker run --rm -v $(pwd):/app aimd check src/ --baseline=baseline.json
 === "Composer"
 
     ```bash
-    vendor/bin/aimd --version
+    vendor/bin/qmx --version
     ```
 
 === "Глобальная установка или bin-dir"
 
     ```bash
-    bin/aimd --version
+    bin/qmx --version
     ```
 
 === "Docker"
 
     ```bash
-    docker run --rm aimd --version
+    docker run --rm qmx --version
     ```
 
 Вы должны увидеть вывод вида:
 
 ```
-AI Mess Detector x.x.x
+Qualimetrix x.x.x
 ```
 
 ---

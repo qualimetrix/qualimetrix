@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Reporting\Formatter\Support;
+namespace Qualimetrix\Tests\Unit\Reporting\Formatter\Support;
 
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Violation\Location;
-use AiMessDetector\Core\Violation\Severity;
-use AiMessDetector\Core\Violation\Violation;
-use AiMessDetector\Reporting\Formatter\Support\ViolationSorter;
-use AiMessDetector\Reporting\GroupBy;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Violation\Location;
+use Qualimetrix\Core\Violation\Severity;
+use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Reporting\Formatter\Support\ViolationSorter;
+use Qualimetrix\Reporting\GroupBy;
 
 #[CoversClass(ViolationSorter::class)]
 final class ViolationSorterTest extends TestCase

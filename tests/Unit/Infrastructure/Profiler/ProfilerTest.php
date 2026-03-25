@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Infrastructure\Profiler;
+namespace Qualimetrix\Tests\Unit\Infrastructure\Profiler;
 
-use AiMessDetector\Infrastructure\Profiler\Profiler;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Infrastructure\Profiler\Profiler;
 
 final class ProfilerTest extends TestCase
 {

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Reporting\Health;
+namespace Qualimetrix\Reporting\Health;
 
 /**
  * Single source of truth for metric display metadata.

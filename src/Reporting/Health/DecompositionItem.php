@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Reporting\Health;
+namespace Qualimetrix\Reporting\Health;
 
 /**
  * One contributing metric in a health score breakdown.

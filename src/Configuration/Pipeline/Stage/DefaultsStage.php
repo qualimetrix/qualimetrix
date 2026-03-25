@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Configuration\Pipeline\Stage;
+namespace Qualimetrix\Configuration\Pipeline\Stage;
 
-use AiMessDetector\Configuration\Pipeline\ConfigurationContext;
-use AiMessDetector\Configuration\Pipeline\ConfigurationLayer;
+use Qualimetrix\Configuration\Pipeline\ConfigurationContext;
+use Qualimetrix\Configuration\Pipeline\ConfigurationLayer;
 
 /**
  * Default configuration values (priority: 0).
@@ -31,7 +31,7 @@ final class DefaultsStage implements ConfigurationStageInterface
         return new ConfigurationLayer('defaults', [
             'paths' => ['.'],
             'excludes' => ['vendor', 'node_modules', '.git'],
-            'cache.dir' => '.aimd-cache',
+            'cache.dir' => '.qmx-cache',
             'cache.enabled' => true,
             'format' => 'summary',
             'namespace.strategy' => 'chain',

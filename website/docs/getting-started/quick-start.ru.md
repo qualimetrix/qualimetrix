@@ -1,6 +1,6 @@
 # Быстрый старт
 
-Три способа интегрировать AI Mess Detector в ваш проект:
+Три способа интегрировать Qualimetrix в ваш проект:
 
 1. **Pre-commit хук** -- проверка перед каждым коммитом
 2. **GitHub Action** -- автоматические проверки в CI/CD
@@ -13,13 +13,13 @@
 ### Установка
 
 ```bash
-composer require --dev fractalizer/ai-mess-detector
+composer require --dev qualimetrix/qualimetrix
 ```
 
 ### Запуск анализа
 
 ```bash
-vendor/bin/aimd check src/
+vendor/bin/qmx check src/
 ```
 
 <!-- llms:skip-begin -->
@@ -28,7 +28,7 @@ vendor/bin/aimd check src/
 По умолчанию выводится сводка состояния проекта с оценками по категориям:
 
 ```
-AI Mess Detector — 127 files analyzed, 2.3s
+Qualimetrix — 127 files analyzed, 2.3s
 
 Health ████████████████████░░░░░░░░░░ 67.2% Fair
 
@@ -56,7 +56,7 @@ Hints: --detail to see violations (top 200) | --namespace='App\Service' to drill
 Изучите конкретное пространство имён, чтобы увидеть его классы и нарушения:
 
 ```bash
-vendor/bin/aimd check src/ --namespace='App\Service'
+vendor/bin/qmx check src/ --namespace='App\Service'
 ```
 
 ### Просмотр детальных нарушений
@@ -64,7 +64,7 @@ vendor/bin/aimd check src/ --namespace='App\Service'
 Вывод отдельных нарушений с путями к файлам, номерами строк и рекомендациями по исправлению:
 
 ```bash
-vendor/bin/aimd check src/ --detail
+vendor/bin/qmx check src/ --detail
 ```
 
 ### Генерация HTML-отчёта
@@ -72,7 +72,7 @@ vendor/bin/aimd check src/ --detail
 Для полного интерактивного отчёта с графиками и навигацией:
 
 ```bash
-vendor/bin/aimd check src/ --format=health -o report.html
+vendor/bin/qmx check src/ --format=health -o report.html
 ```
 
 Откройте `report.html` в браузере для изучения результатов.
@@ -105,7 +105,7 @@ vendor/bin/aimd check src/ --format=health -o report.html
 === "Встроенная команда"
 
     ```bash
-    vendor/bin/aimd hook:install
+    vendor/bin/qmx hook:install
     ```
 
 ### Использование
@@ -117,8 +117,8 @@ git add src/MyClass.php
 git commit -m "Add new feature"
 
 # Хук запустится автоматически:
-# Running AI Mess Detector on staged files...
-# AI Mess Detector passed.
+# Running Qualimetrix on staged files...
+# Qualimetrix passed.
 ```
 
 ### Пропуск проверки
@@ -134,7 +134,7 @@ git commit --no-verify -m "WIP: work in progress"
 
 ```bash
 # Создать базовую линию для существующих проблем
-vendor/bin/aimd check src/ --generate-baseline=baseline.json
+vendor/bin/qmx check src/ --generate-baseline=baseline.json
 
 # Теперь хук будет игнорировать проблемы из базовой линии
 git commit -m "Add feature"
@@ -161,13 +161,13 @@ name: Code Quality
 on: [push, pull_request]
 
 jobs:
-  aimd:
+  qmx:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Run AI Mess Detector
-        uses: fractalizer/ai-mess-detector@v1
+      - name: Run Qualimetrix
+        uses: qualimetrix/qualimetrix@v1
         with:
           paths: 'src/'
           baseline: 'baseline.json'
@@ -183,7 +183,7 @@ jobs:
 ### Сборка образа
 
 ```bash
-docker build -t aimd .
+docker build -t qmx .
 ```
 
 ### Использование
@@ -192,16 +192,16 @@ docker build -t aimd .
 <!-- llms:skip-end -->
 
 # Анализ текущей директории
-docker run --rm -v $(pwd):/app aimd check src/
+docker run --rm -v $(pwd):/app qmx check src/
 
 # С базовой линией
-docker run --rm -v $(pwd):/app aimd check src/ --baseline=baseline.json
+docker run --rm -v $(pwd):/app qmx check src/ --baseline=baseline.json
 
 # С конфигурацией
-docker run --rm -v $(pwd):/app aimd check src/ --config=aimd.yaml
+docker run --rm -v $(pwd):/app qmx check src/ --config=qmx.yaml
 
 # Вывод в формате JSON
-docker run --rm -v $(pwd):/app aimd check src/ --format=json
+docker run --rm -v $(pwd):/app qmx check src/ --format=json
 ```
 
 ### Docker Compose
@@ -209,8 +209,8 @@ docker run --rm -v $(pwd):/app aimd check src/ --format=json
 ```yaml
 # docker-compose.yml
 services:
-  aimd:
-    image: aimd:latest
+  qmx:
+    image: qmx:latest
     volumes:
       - .:/app:ro
       - ./baseline.json:/app/baseline.json
@@ -218,7 +218,7 @@ services:
 ```
 
 ```bash
-docker-compose run --rm aimd
+docker-compose run --rm qmx
 ```
 
 ### CI/CD с Docker
@@ -227,15 +227,15 @@ docker-compose run --rm aimd
 
     ```yaml
     # .gitlab-ci.yml
-    aimd:
+    qmx:
       stage: test
-      image: aimd:latest
+      image: qmx:latest
       script:
-        - aimd check src/ --baseline=baseline.json
+        - qmx check src/ --baseline=baseline.json
       artifacts:
         when: on_failure
         paths:
-          - aimd-results.json
+          - qmx-results.json
     ```
 
 === "Jenkins"
@@ -245,11 +245,11 @@ docker-compose run --rm aimd
     pipeline {
         agent any
         stages {
-            stage('AIMD Analysis') {
+            stage('Qualimetrix Analysis') {
                 steps {
                     script {
-                        docker.image('aimd:latest').inside('-v $WORKSPACE:/app') {
-                            sh 'aimd check src/ --baseline=baseline.json'
+                        docker.image('qmx:latest').inside('-v $WORKSPACE:/app') {
+                            sh 'qmx check src/ --baseline=baseline.json'
                         }
                     }
                 }
@@ -270,7 +270,7 @@ docker-compose run --rm aimd
 === "YAML-конфигурация"
 
     ```yaml
-    # aimd.yaml
+    # qmx.yaml
     exclude_paths:
       - src/Entity/*
       - src/DTO/*
@@ -279,7 +279,7 @@ docker-compose run --rm aimd
 === "CLI"
 
     ```bash
-    vendor/bin/aimd check src/ --exclude-path='src/Entity/*' --exclude-path='*/DTO/*'
+    vendor/bin/qmx check src/ --exclude-path='src/Entity/*' --exclude-path='*/DTO/*'
     ```
 
 CLI-паттерны объединяются с паттернами из конфигурационного файла.
@@ -320,16 +320,16 @@ ls -la .git/hooks/pre-commit
 chmod +x .git/hooks/pre-commit
 ```
 
-**`aimd binary not found`:**
+**`qmx binary not found`:**
 
 ```bash
 composer install
-ls -la bin/aimd
+ls -la bin/qmx
 ```
 
 ### Проблемы с правами в Docker
 
 ```bash
 # Linux с SELinux: добавьте флаг :z
-docker run --rm -v $(pwd):/app:z aimd check src/
+docker run --rm -v $(pwd):/app:z qmx check src/
 ```

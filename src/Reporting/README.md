@@ -87,11 +87,11 @@ Reporting/
 ### FormatterInterface
 
 ```php
-namespace AiMessDetector\Reporting\Formatter;
+namespace Qualimetrix\Reporting\Formatter;
 
-use AiMessDetector\Reporting\FormatterContext;
-use AiMessDetector\Reporting\GroupBy;
-use AiMessDetector\Reporting\Report;
+use Qualimetrix\Reporting\FormatterContext;
+use Qualimetrix\Reporting\GroupBy;
+use Qualimetrix\Reporting\Report;
 
 interface FormatterInterface
 {
@@ -147,7 +147,7 @@ enum GroupBy: string
 ### FormatterRegistryInterface
 
 ```php
-namespace AiMessDetector\Reporting\Formatter;
+namespace Qualimetrix\Reporting\Formatter;
 
 interface FormatterRegistryInterface
 {
@@ -240,7 +240,7 @@ One-screen health overview with worst offenders and contextual hints. Shows heal
 
 Supports `--namespace` and `--class` for drill-down (filtering worst offenders). Handles edge cases: partial analysis (no health scores), missing metrics, single file (no namespace section), zero violations, narrow terminals (no bars).
 
-ASCII fallback with `AIMD_ASCII=1` env variable.
+ASCII fallback with `QMX_ASCII=1` env variable.
 
 ### TextFormatter
 
@@ -266,20 +266,20 @@ Human-readable verbose output with:
 
 ```bash
 # Drill-down (mutually exclusive, works with summary/text/json)
-bin/aimd check src/ --namespace=App\\Service   # filter by namespace prefix (boundary-aware)
-bin/aimd check src/ --class=App\\Service\\UserService  # filter by exact FQCN
+bin/qmx check src/ --namespace=App\\Service   # filter by namespace prefix (boundary-aware)
+bin/qmx check src/ --class=App\\Service\\UserService  # filter by exact FQCN
 
 # Grouping (overrides formatter default)
-bin/aimd check src/ --group-by=file      # group by file
-bin/aimd check src/ --group-by=rule      # group by rule name
-bin/aimd check src/ --group-by=severity  # group by severity
-bin/aimd check src/ --group-by=none      # flat list
+bin/qmx check src/ --group-by=file      # group by file
+bin/qmx check src/ --group-by=rule      # group by rule name
+bin/qmx check src/ --group-by=severity  # group by severity
+bin/qmx check src/ --group-by=none      # flat list
 
 # Formatter-specific options
-bin/aimd check src/ --format-opt key=value
+bin/qmx check src/ --format-opt key=value
 
 # Disable colors
-bin/aimd check src/ --no-ansi
+bin/qmx check src/ --no-ansi
 ```
 
 ## Output Examples
@@ -287,7 +287,7 @@ bin/aimd check src/ --no-ansi
 ### SummaryFormatter (default)
 
 ```
-AI Mess Detector — 412 files analyzed, 3.2s
+Qualimetrix — 412 files analyzed, 3.2s
 
 Health █████████████████████░░░░░░░░░ 68% Fair
 
@@ -318,7 +318,7 @@ src/Service/UserService.php:120: warning[cyclomatic-complexity]: Cyclomatic comp
 ### TextVerboseFormatter (`--format=text-verbose`)
 
 ```
-AI Mess Detector Report
+Qualimetrix Report
 ──────────────────────────────────────────────────
 
 src/Service/UserService.php (2)
@@ -355,7 +355,7 @@ Summary-oriented JSON for AI agents, CI/CD, and programmatic consumption. Includ
 
 ```json
 {
-  "meta": { "version": "1.0.0", "package": "aimd", "timestamp": "..." },
+  "meta": { "version": "1.0.0", "package": "qmx", "timestamp": "..." },
   "summary": { "filesAnalyzed": 342, "violationCount": 47, "errorCount": 12, "warningCount": 35, "techDebtMinutes": 270, "debtPer1kLoc": 5.4 },
   "health": { "complexity": { "score": 65, "label": "Fair", "threshold": { "warning": 50, "error": 25 }, "decomposition": [...] } },
   "worstNamespaces": [{ "symbolPath": "App\\Payment", "healthOverall": 31, "reason": "low cohesion, high complexity" }],
@@ -394,11 +394,11 @@ SARIF 2.1.0 for GitHub Security, VS Code, Azure DevOps, JetBrains IDEs.
 
 ### Level Mapping
 
-| AIMD Severity | SARIF Level |
-| ------------- | ----------- |
-| Error         | `error`     |
-| Warning       | `warning`   |
-| Info          | `note`      |
+| Qualimetrix Severity | SARIF Level |
+| -------------------- | ----------- |
+| Error                | `error`     |
+| Warning              | `warning`   |
+| Info                 | `note`      |
 
 ### Related Locations
 
@@ -407,8 +407,8 @@ Violations with `relatedLocations` (e.g., code duplication violations pointing t
 ### GitHub Actions Integration
 
 ```yaml
-- name: Run AI Mess Detector
-  run: bin/aimd check src/ --format=sarif > results.sarif
+- name: Run Qualimetrix
+  run: bin/qmx check src/ --format=sarif > results.sarif
 
 - name: Upload SARIF results
   uses: github/codeql-action/upload-sarif@v2
@@ -428,11 +428,11 @@ Code Climate JSON for GitLab MR. Uses fingerprinting for tracking fixes.
 
 ### Severity Mapping
 
-| AIMD Severity | GitLab Severity |
-| ------------- | --------------- |
-| Error         | `critical`      |
-| Warning       | `major`         |
-| Info          | `minor`         |
+| Qualimetrix Severity | GitLab Severity |
+| -------------------- | --------------- |
+| Error                | `critical`      |
+| Warning              | `major`         |
+| Info                 | `minor`         |
 
 ### GitLab CI Integration
 
@@ -440,7 +440,7 @@ Code Climate JSON for GitLab MR. Uses fingerprinting for tracking fixes.
 code_quality:
   stage: test
   script:
-    - bin/aimd check src/ --format=gitlab > gl-code-quality-report.json
+    - bin/qmx check src/ --format=gitlab > gl-code-quality-report.json
   artifacts:
     reports:
       codequality: gl-code-quality-report.json
@@ -461,7 +461,7 @@ Exports raw metric values for all symbols (methods, classes, namespaces, files) 
 ```json
 {
   "version": "1.0.0",
-  "package": "aimd",
+  "package": "qmx",
   "timestamp": "2025-01-15T10:30:00+00:00",
   "symbols": [
     {
@@ -491,7 +491,7 @@ Exports raw metric values for all symbols (methods, classes, namespaces, files) 
 ### Usage
 
 ```bash
-bin/aimd check src/ --format=metrics > metrics.json
+bin/qmx check src/ --format=metrics > metrics.json
 ```
 
 ---
@@ -502,7 +502,7 @@ bin/aimd check src/ --format=metrics > metrics.json
 
 1. Create a `*Formatter.php` class in `src/Reporting/Formatter/`
 2. Implement `FormatterInterface` (methods: `format(Report, FormatterContext)`, `getName()`, `getDefaultGroupBy()`)
-3. Use it: `bin/aimd check src/ --format=myformat`
+3. Use it: `bin/qmx check src/ --format=myformat`
 
 **Automatic registration:** the class will be registered via `FormatterCompilerPass` — no need to modify `ContainerFactory`.
 
@@ -580,10 +580,10 @@ Self-contained interactive HTML report with D3.js treemap visualization. All CSS
 
 ```bash
 # Generate HTML report (recommended: save to file)
-bin/aimd check src/ --format=health --output=report.html
+bin/qmx check src/ --format=health --output=report.html
 
 # Also works with stdout (but warns on TTY)
-bin/aimd check src/ --format=health > report.html
+bin/qmx check src/ --format=health > report.html
 ```
 
 ### Architecture

@@ -2,32 +2,32 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Reporting\Formatter;
+namespace Qualimetrix\Tests\Unit\Reporting\Formatter;
 
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Violation\Location;
-use AiMessDetector\Core\Violation\Severity;
-use AiMessDetector\Core\Violation\Violation;
-use AiMessDetector\Reporting\Debt\DebtCalculator;
-use AiMessDetector\Reporting\Debt\RemediationTimeRegistry;
-use AiMessDetector\Reporting\Filter\ViolationFilter;
-use AiMessDetector\Reporting\Formatter\Summary\HealthBarRenderer;
-use AiMessDetector\Reporting\Formatter\Summary\HintRenderer;
-use AiMessDetector\Reporting\Formatter\Summary\OffenderListRenderer;
-use AiMessDetector\Reporting\Formatter\Summary\SummaryFormatter;
-use AiMessDetector\Reporting\Formatter\Summary\ViolationSummaryRenderer;
-use AiMessDetector\Reporting\Formatter\Support\DetailedViolationRenderer;
-use AiMessDetector\Reporting\FormatterContext;
-use AiMessDetector\Reporting\GroupBy;
-use AiMessDetector\Reporting\Health\DecompositionItem;
-use AiMessDetector\Reporting\Health\HealthScore;
-use AiMessDetector\Reporting\Health\HealthScoreResolver;
-use AiMessDetector\Reporting\Health\MetricHintProvider;
-use AiMessDetector\Reporting\Health\NamespaceDrillDown;
-use AiMessDetector\Reporting\Health\WorstOffender;
-use AiMessDetector\Reporting\Report;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Violation\Location;
+use Qualimetrix\Core\Violation\Severity;
+use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Reporting\Debt\DebtCalculator;
+use Qualimetrix\Reporting\Debt\RemediationTimeRegistry;
+use Qualimetrix\Reporting\Filter\ViolationFilter;
+use Qualimetrix\Reporting\Formatter\Summary\HealthBarRenderer;
+use Qualimetrix\Reporting\Formatter\Summary\HintRenderer;
+use Qualimetrix\Reporting\Formatter\Summary\OffenderListRenderer;
+use Qualimetrix\Reporting\Formatter\Summary\SummaryFormatter;
+use Qualimetrix\Reporting\Formatter\Summary\ViolationSummaryRenderer;
+use Qualimetrix\Reporting\Formatter\Support\DetailedViolationRenderer;
+use Qualimetrix\Reporting\FormatterContext;
+use Qualimetrix\Reporting\GroupBy;
+use Qualimetrix\Reporting\Health\DecompositionItem;
+use Qualimetrix\Reporting\Health\HealthScore;
+use Qualimetrix\Reporting\Health\HealthScoreResolver;
+use Qualimetrix\Reporting\Health\MetricHintProvider;
+use Qualimetrix\Reporting\Health\NamespaceDrillDown;
+use Qualimetrix\Reporting\Health\WorstOffender;
+use Qualimetrix\Reporting\Report;
 
 #[CoversClass(SummaryFormatter::class)]
 final class SummaryFormatterTest extends TestCase
@@ -70,7 +70,7 @@ final class SummaryFormatterTest extends TestCase
 
         $output = $this->formatter->format($report, $this->plainContext);
 
-        self::assertStringContainsString('AI Mess Detector', $output);
+        self::assertStringContainsString('Qualimetrix', $output);
         self::assertStringContainsString('42 files analyzed', $output);
         self::assertStringContainsString('1.5s', $output);
         self::assertStringContainsString('No violations found.', $output);
@@ -319,8 +319,8 @@ final class SummaryFormatterTest extends TestCase
 
     public function testAsciiMode(): void
     {
-        $originalEnv = getenv('AIMD_ASCII');
-        putenv('AIMD_ASCII=1');
+        $originalEnv = getenv('QMX_ASCII');
+        putenv('QMX_ASCII=1');
 
         try {
             $report = $this->createReport(
@@ -341,9 +341,9 @@ final class SummaryFormatterTest extends TestCase
             self::assertStringNotContainsString('░', $output);
         } finally {
             if ($originalEnv === false) {
-                putenv('AIMD_ASCII');
+                putenv('QMX_ASCII');
             } else {
-                putenv('AIMD_ASCII=' . $originalEnv);
+                putenv('QMX_ASCII=' . $originalEnv);
             }
         }
     }
@@ -972,7 +972,7 @@ final class SummaryFormatterTest extends TestCase
     public function testNamespaceFilterShowsNamespaceHealthScores(): void
     {
         $nsPath = SymbolPath::forNamespace('App\Service');
-        $nsMetrics = \AiMessDetector\Core\Metric\MetricBag::fromArray([
+        $nsMetrics = \Qualimetrix\Core\Metric\MetricBag::fromArray([
             'health.overall' => 45.0,
             'health.complexity' => 60.0,
             'health.cohesion' => 30.0,
@@ -982,18 +982,18 @@ final class SummaryFormatterTest extends TestCase
             'classCount' => 5,
         ]);
 
-        $metrics = $this->createMock(\AiMessDetector\Core\Metric\MetricRepositoryInterface::class);
+        $metrics = $this->createMock(\Qualimetrix\Core\Metric\MetricRepositoryInterface::class);
         $metrics->method('has')->willReturnCallback(
             static fn(SymbolPath $sp): bool => $sp->toCanonical() === $nsPath->toCanonical(),
         );
         $metrics->method('get')->willReturnCallback(
-            static fn(SymbolPath $sp): \AiMessDetector\Core\Metric\MetricBag => $sp->toCanonical() === $nsPath->toCanonical()
+            static fn(SymbolPath $sp): \Qualimetrix\Core\Metric\MetricBag => $sp->toCanonical() === $nsPath->toCanonical()
                 ? $nsMetrics
-                : new \AiMessDetector\Core\Metric\MetricBag(),
+                : new \Qualimetrix\Core\Metric\MetricBag(),
         );
         $metrics->method('all')->willReturnCallback(
-            static fn(\AiMessDetector\Core\Symbol\SymbolType $type): array => $type === \AiMessDetector\Core\Symbol\SymbolType::Namespace_
-                ? [new \AiMessDetector\Core\Symbol\SymbolInfo($nsPath, 'src/Service', 0)]
+            static fn(\Qualimetrix\Core\Symbol\SymbolType $type): array => $type === \Qualimetrix\Core\Symbol\SymbolType::Namespace_
+                ? [new \Qualimetrix\Core\Symbol\SymbolInfo($nsPath, 'src/Service', 0)]
                 : [],
         );
 
@@ -1025,32 +1025,32 @@ final class SummaryFormatterTest extends TestCase
     public function testNamespaceFilterBuildsWorstClassesFromMetrics(): void
     {
         $classPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classMetrics = \AiMessDetector\Core\Metric\MetricBag::fromArray([
+        $classMetrics = \Qualimetrix\Core\Metric\MetricBag::fromArray([
             'health.overall' => 25.0,
             'health.complexity' => 20.0,
             'health.cohesion' => 15.0,
         ]);
 
         $nsPath = SymbolPath::forNamespace('App\Service');
-        $nsMetrics = \AiMessDetector\Core\Metric\MetricBag::fromArray([
+        $nsMetrics = \Qualimetrix\Core\Metric\MetricBag::fromArray([
             'health.overall' => 40.0,
             'health.complexity' => 50.0,
         ]);
 
-        $metrics = $this->createMock(\AiMessDetector\Core\Metric\MetricRepositoryInterface::class);
+        $metrics = $this->createMock(\Qualimetrix\Core\Metric\MetricRepositoryInterface::class);
         $metrics->method('has')->willReturnCallback(
             static fn(SymbolPath $sp): bool => $sp->toCanonical() === $nsPath->toCanonical(),
         );
         $metrics->method('get')->willReturnCallback(
-            static fn(SymbolPath $sp): \AiMessDetector\Core\Metric\MetricBag => match ($sp->toCanonical()) {
+            static fn(SymbolPath $sp): \Qualimetrix\Core\Metric\MetricBag => match ($sp->toCanonical()) {
                 $nsPath->toCanonical() => $nsMetrics,
                 $classPath->toCanonical() => $classMetrics,
-                default => new \AiMessDetector\Core\Metric\MetricBag(),
+                default => new \Qualimetrix\Core\Metric\MetricBag(),
             },
         );
         $metrics->method('all')->willReturnCallback(
-            static fn(\AiMessDetector\Core\Symbol\SymbolType $type): array => $type === \AiMessDetector\Core\Symbol\SymbolType::Class_
-                ? [new \AiMessDetector\Core\Symbol\SymbolInfo($classPath, 'src/Service/UserService.php', 1)]
+            static fn(\Qualimetrix\Core\Symbol\SymbolType $type): array => $type === \Qualimetrix\Core\Symbol\SymbolType::Class_
+                ? [new \Qualimetrix\Core\Symbol\SymbolInfo($classPath, 'src/Service/UserService.php', 1)]
                 : [],
         );
 
@@ -1078,9 +1078,9 @@ final class SummaryFormatterTest extends TestCase
 
     public function testNamespaceFilterFallsBackToProjectWhenNoNsMetrics(): void
     {
-        $metrics = $this->createMock(\AiMessDetector\Core\Metric\MetricRepositoryInterface::class);
+        $metrics = $this->createMock(\Qualimetrix\Core\Metric\MetricRepositoryInterface::class);
         $metrics->method('has')->willReturn(false);
-        $metrics->method('get')->willReturn(new \AiMessDetector\Core\Metric\MetricBag());
+        $metrics->method('get')->willReturn(new \Qualimetrix\Core\Metric\MetricBag());
         $metrics->method('all')->willReturn([]);
 
         $report = new Report(

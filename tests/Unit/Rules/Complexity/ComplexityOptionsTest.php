@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Rules\Complexity;
+namespace Qualimetrix\Tests\Unit\Rules\Complexity;
 
-use AiMessDetector\Rules\Complexity\ComplexityOptions;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Rules\Complexity\ComplexityOptions;
 
 #[CoversClass(ComplexityOptions::class)]
 final class ComplexityOptionsTest extends TestCase

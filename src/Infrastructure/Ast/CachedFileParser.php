@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\Ast;
+namespace Qualimetrix\Infrastructure\Ast;
 
-use AiMessDetector\Core\Ast\FileParserInterface;
-use AiMessDetector\Infrastructure\Cache\CacheInterface;
-use AiMessDetector\Infrastructure\Cache\CacheKeyGenerator;
-use AiMessDetector\Infrastructure\Cache\CacheWriteException;
 use PhpParser\Node;
+use Qualimetrix\Core\Ast\FileParserInterface;
+use Qualimetrix\Infrastructure\Cache\CacheInterface;
+use Qualimetrix\Infrastructure\Cache\CacheKeyGenerator;
+use Qualimetrix\Infrastructure\Cache\CacheWriteException;
 use SplFileInfo;
 
 /**

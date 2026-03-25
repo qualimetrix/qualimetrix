@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Analysis\Namespace_;
+namespace Qualimetrix\Tests\Unit\Analysis\Namespace_;
 
-use AiMessDetector\Analysis\Namespace_\ProjectNamespaceResolver;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Namespace_\ProjectNamespaceResolver;
 use RuntimeException;
 
 #[CoversClass(ProjectNamespaceResolver::class)]
@@ -20,7 +20,7 @@ final class ProjectNamespaceResolverTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->tempDir = sys_get_temp_dir() . '/aimd_test_' . uniqid();
+        $this->tempDir = sys_get_temp_dir() . '/qmx_test_' . uniqid();
         mkdir($this->tempDir);
     }
 

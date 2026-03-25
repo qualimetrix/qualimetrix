@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Reporting\Health;
+namespace Qualimetrix\Reporting\Health;
 
-use AiMessDetector\Reporting\FormatterContext;
-use AiMessDetector\Reporting\Report;
+use Qualimetrix\Reporting\FormatterContext;
+use Qualimetrix\Reporting\Report;
 
 /**
  * Resolves health scores based on context (project/namespace/class level).

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Analysis\Collection\Dependency\Export;
+namespace Qualimetrix\Analysis\Collection\Dependency\Export;
 
-use AiMessDetector\Core\Dependency\DependencyGraphInterface;
-use AiMessDetector\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Dependency\DependencyGraphInterface;
+use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**
  * Exports dependency graphs to DOT format (Graphviz).

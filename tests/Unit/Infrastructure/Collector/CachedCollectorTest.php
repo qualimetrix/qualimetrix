@@ -2,21 +2,21 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Infrastructure\Collector;
+namespace Qualimetrix\Tests\Unit\Infrastructure\Collector;
 
-use AiMessDetector\Analysis\Collection\Metric\CollectionOutput;
-use AiMessDetector\Analysis\Collection\Metric\CompositeCollector;
-use AiMessDetector\Core\Dependency\Dependency;
-use AiMessDetector\Core\Dependency\DependencyType;
-use AiMessDetector\Core\Metric\MetricBag;
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Violation\Location;
-use AiMessDetector\Infrastructure\Collector\CachedCollector;
-use AiMessDetector\Infrastructure\Storage\ChangeDetector;
-use AiMessDetector\Infrastructure\Storage\FileRecord;
-use AiMessDetector\Infrastructure\Storage\InMemoryStorage;
-use AiMessDetector\Infrastructure\Storage\StorageInterface;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Collection\Metric\CollectionOutput;
+use Qualimetrix\Analysis\Collection\Metric\CompositeCollector;
+use Qualimetrix\Core\Dependency\Dependency;
+use Qualimetrix\Core\Dependency\DependencyType;
+use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Violation\Location;
+use Qualimetrix\Infrastructure\Collector\CachedCollector;
+use Qualimetrix\Infrastructure\Storage\ChangeDetector;
+use Qualimetrix\Infrastructure\Storage\FileRecord;
+use Qualimetrix\Infrastructure\Storage\InMemoryStorage;
+use Qualimetrix\Infrastructure\Storage\StorageInterface;
 use SplFileInfo;
 
 final class CachedCollectorTest extends TestCase

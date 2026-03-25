@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Baseline;
+namespace Qualimetrix\Baseline;
 
 /**
  * Represents a single violation entry in baseline.

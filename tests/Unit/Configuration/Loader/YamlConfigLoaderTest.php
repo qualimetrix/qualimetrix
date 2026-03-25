@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Configuration\Loader;
+namespace Qualimetrix\Tests\Unit\Configuration\Loader;
 
-use AiMessDetector\Configuration\Exception\ConfigLoadException;
-use AiMessDetector\Configuration\Loader\YamlConfigLoader;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Configuration\Exception\ConfigLoadException;
+use Qualimetrix\Configuration\Loader\YamlConfigLoader;
 
 #[CoversClass(YamlConfigLoader::class)]
 final class YamlConfigLoaderTest extends TestCase
@@ -18,7 +18,7 @@ final class YamlConfigLoaderTest extends TestCase
     protected function setUp(): void
     {
         $this->loader = new YamlConfigLoader();
-        $this->tempDir = sys_get_temp_dir() . '/aimd_test_' . uniqid();
+        $this->tempDir = sys_get_temp_dir() . '/qmx_test_' . uniqid();
         mkdir($this->tempDir, 0755, true);
     }
 
@@ -54,7 +54,7 @@ rules:
 
 cache:
   enabled: true
-  dir: .aimd-cache
+  dir: .qmx-cache
 
 format: text
 YAML);
@@ -69,7 +69,7 @@ YAML);
         self::assertSame(10, $config['rules']['cyclomatic-complexity']['warningThreshold']);
         self::assertSame(20, $config['rules']['cyclomatic-complexity']['errorThreshold']);
         self::assertTrue($config['cache']['enabled']);
-        self::assertSame('.aimd-cache', $config['cache']['dir']);
+        self::assertSame('.qmx-cache', $config['cache']['dir']);
         self::assertSame('text', $config['format']);
     }
 

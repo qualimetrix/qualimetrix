@@ -91,9 +91,9 @@ class ReportGenerator
 <!-- llms:skip-begin -->
 ### Особенности реализации
 
-AIMD реализует **двунаправленную связанность** в соответствии с Chidamber & Kemerer (1994): CBO = |Ca ∪ Ce|, подсчитывая количество **уникальных** классов, которые появляются во входящих или исходящих зависимостях. Если класс A одновременно использует и используется классом B, B считается один раз (семантика объединения множеств), а не два.
+Qualimetrix реализует **двунаправленную связанность** в соответствии с Chidamber & Kemerer (1994): CBO = |Ca ∪ Ce|, подсчитывая количество **уникальных** классов, которые появляются во входящих или исходящих зависимостях. Если класс A одновременно использует и используется классом B, B считается один раз (семантика объединения множеств), а не два.
 
-- **Расширенные типы связанности:** AIMD обнаруживает 14 типов связанности, выходя за рамки исходного определения C&K "методы или переменные экземпляра". Учитываются: создание экземпляров, вызовы статических методов, подсказки типов (параметры, типы возврата, свойства), блоки `catch`, проверки `instanceof`, константы классов, атрибуты, `extends`/`implements` и использование трейтов (`use`).
+- **Расширенные типы связанности:** Qualimetrix обнаруживает 14 типов связанности, выходя за рамки исходного определения C&K "методы или переменные экземпляра". Учитываются: создание экземпляров, вызовы статических методов, подсказки типов (параметры, типы возврата, свойства), блоки `catch`, проверки `instanceof`, константы классов, атрибуты, `extends`/`implements` и использование трейтов (`use`).
 - **Union- и intersection-типы:** Каждый тип в union (`A|B`) или intersection (`A&B`) подсказке типа считается отдельной связью.
 - **Само-ссылки исключены:** Обращения к `self`, `static` и `parent` внутри того же класса не считаются связанностью.
 - **Встроенные PHP-классы исключены:** Зависимости от классов из дистрибутива PHP (php-src) исключаются из CBO, Ca и Ce — включая базовые классы (`Exception`, `DateTime`, `Closure`), SPL (`ArrayIterator`, `SplFileInfo`) и встроенные расширения (`PDO`, `DOMDocument`, `Random\Randomizer`, `CurlHandle` и др.). Связанность со стабильными PHP-типами не увеличивает архитектурный риск. Классы из PECL-расширений (например, `Redis`, `Memcached`, `MongoDB\Driver\Manager`) **не** исключаются и учитываются в CBO как обычные зависимости. Структурные зависимости (`extends`) всегда сохраняются для расчёта DIT.
@@ -103,7 +103,7 @@ AIMD реализует **двунаправленную связанность*
 ### Настройка
 
 ```yaml
-# aimd.yaml
+# qmx.yaml
 rules:
   coupling.cbo:
     exclude_namespaces:
@@ -126,10 +126,10 @@ rules:
 ```
 
 ```bash
-bin/aimd check src/ --rule-opt="coupling.cbo:class.warning=18"
-bin/aimd check src/ --rule-opt="coupling.cbo:class.error=25"
-bin/aimd check src/ --rule-opt="coupling.cbo:namespace.min_class_count=5"
-bin/aimd check src/ --rule-opt="coupling.cbo:namespace.enabled=false"
+bin/qmx check src/ --rule-opt="coupling.cbo:class.warning=18"
+bin/qmx check src/ --rule-opt="coupling.cbo:class.error=25"
+bin/qmx check src/ --rule-opt="coupling.cbo:namespace.min_class_count=5"
+bin/qmx check src/ --rule-opt="coupling.cbo:namespace.enabled=false"
 ```
 
 ---
@@ -220,14 +220,14 @@ class DailyReportJob
 - **Принимайте нестабильность, когда она оправдана.** Точки входа -- консольные команды, контроллеры, cron-задачи -- естественно нестабильны (высокий Ce, низкий Ca). Рассмотрите отключение правила для них или повышение порога.
 
 !!! info "Отклонение от оригинальной спецификации"
-    Robert C. Martin (1994) изначально определял Instability только на уровне **пакетов** (пространств имён). AIMD расширяет её на уровень классов для более детального анализа. Instability на уровне пространств имён — каноническая метрика по спецификации Martin; на уровне классов — расширение AIMD.
+    Robert C. Martin (1994) изначально определял Instability только на уровне **пакетов** (пространств имён). Qualimetrix расширяет её на уровень классов для более детального анализа. Instability на уровне пространств имён — каноническая метрика по спецификации Martin; на уровне классов — расширение Qualimetrix.
 
 <!-- llms:skip-end -->
 
 ### Настройка
 
 ```yaml
-# aimd.yaml
+# qmx.yaml
 rules:
   coupling.instability:
     exclude_namespaces:
@@ -249,9 +249,9 @@ rules:
 ```
 
 ```bash
-bin/aimd check src/ --rule-opt="coupling.instability:class.max_warning=0.9"
-bin/aimd check src/ --rule-opt="coupling.instability:class.max_error=1.0"
-bin/aimd check src/ --rule-opt="coupling.instability:namespace.min_class_count=5"
+bin/qmx check src/ --rule-opt="coupling.instability:class.max_warning=0.9"
+bin/qmx check src/ --rule-opt="coupling.instability:class.max_error=1.0"
+bin/qmx check src/ --rule-opt="coupling.instability:namespace.min_class_count=5"
 ```
 
 ---
@@ -333,7 +333,7 @@ D = |A + I - 1|
 ### Настройка
 
 ```yaml
-# aimd.yaml
+# qmx.yaml
 rules:
   coupling.distance:
     max_distance_warning: 0.4
@@ -355,9 +355,9 @@ rules:
 ```
 
 ```bash
-bin/aimd check src/ --rule-opt="coupling.distance:max_distance_warning=0.4"
-bin/aimd check src/ --rule-opt="coupling.distance:max_distance_error=0.6"
-bin/aimd check src/ --rule-opt="coupling.distance:min_class_count=5"
+bin/qmx check src/ --rule-opt="coupling.distance:max_distance_warning=0.4"
+bin/qmx check src/ --rule-opt="coupling.distance:max_distance_error=0.6"
+bin/qmx check src/ --rule-opt="coupling.distance:min_class_count=5"
 ```
 
 По умолчанию пространства имён проекта автоматически определяются из `composer.json` (`autoload.psr-4`).
@@ -443,14 +443,14 @@ class PaymentService
 - **Ранги суммируются до 1.0** -- каждый ранг представляет долю "важности" класса в общем графе.
 - **Vendor-классы исключены** -- анализируются только классы проекта (присутствующие в репозитории метрик).
 - **Dangling-узлы** (классы без исходящих зависимостей) распределяют свой вес равномерно между всеми узлами.
-- **Масштабирование sqrt для размера проекта:** Поскольку ранги суммируются до 1.0, индивидуальные значения ClassRank естественно уменьшаются с ростом количества классов (эффект разбавления). Для сохранения осмысленности порогов при разных размерах проекта AIMD применяет масштабирующий коэффициент `sqrt(classCount / 100)`: пороги остаются неизменными для проекта из 100 классов, ослабляются для более крупных проектов и ужесточаются для меньших.
+- **Масштабирование sqrt для размера проекта:** Поскольку ранги суммируются до 1.0, индивидуальные значения ClassRank естественно уменьшаются с ростом количества классов (эффект разбавления). Для сохранения осмысленности порогов при разных размерах проекта Qualimetrix применяет масштабирующий коэффициент `sqrt(classCount / 100)`: пороги остаются неизменными для проекта из 100 классов, ослабляются для более крупных проектов и ужесточаются для меньших.
 
 <!-- llms:skip-end -->
 
 ### Настройка
 
 ```yaml
-# aimd.yaml
+# qmx.yaml
 rules:
   coupling.class-rank:
     warning: 0.03
@@ -466,6 +466,6 @@ rules:
 ```
 
 ```bash
-bin/aimd check src/ --rule-opt="coupling.class-rank:warning=0.03"
-bin/aimd check src/ --rule-opt="coupling.class-rank:error=0.08"
+bin/qmx check src/ --rule-opt="coupling.class-rank:warning=0.03"
+bin/qmx check src/ --rule-opt="coupling.class-rank:error=0.08"
 ```

@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Infrastructure\Git;
+namespace Qualimetrix\Tests\Unit\Infrastructure\Git;
 
-use AiMessDetector\Infrastructure\Git\ChangedFile;
-use AiMessDetector\Infrastructure\Git\ChangeStatus;
-use AiMessDetector\Infrastructure\Git\GitClient;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Infrastructure\Git\ChangedFile;
+use Qualimetrix\Infrastructure\Git\ChangeStatus;
+use Qualimetrix\Infrastructure\Git\GitClient;
 use ReflectionMethod;
 use RuntimeException;
 use Symfony\Component\Process\Process;

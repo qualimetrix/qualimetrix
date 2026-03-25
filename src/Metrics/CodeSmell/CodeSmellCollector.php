@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Metrics\CodeSmell;
+namespace Qualimetrix\Metrics\CodeSmell;
 
-use AiMessDetector\Core\Metric\MetricBag;
-use AiMessDetector\Metrics\AbstractCollector;
 use PhpParser\Node;
+use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Metrics\AbstractCollector;
 use SplFileInfo;
 
 /**

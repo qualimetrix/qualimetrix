@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\Cache;
+namespace Qualimetrix\Infrastructure\Cache;
 
-use AiMessDetector\Configuration\ConfigurationProviderInterface;
+use Qualimetrix\Configuration\ConfigurationProviderInterface;
 
 /**
  * Factory for creating cache instance based on runtime configuration.

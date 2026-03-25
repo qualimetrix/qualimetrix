@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Analysis\Collection\Dependency;
+namespace Qualimetrix\Tests\Unit\Analysis\Collection\Dependency;
 
-use AiMessDetector\Analysis\Collection\Dependency\DependencyResolver;
-use AiMessDetector\Analysis\Collection\Dependency\DependencyVisitor;
-use AiMessDetector\Core\Dependency\DependencyType;
 use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Collection\Dependency\DependencyResolver;
+use Qualimetrix\Analysis\Collection\Dependency\DependencyVisitor;
+use Qualimetrix\Core\Dependency\DependencyType;
 
 #[CoversClass(DependencyVisitor::class)]
 final class DependencyVisitorTest extends TestCase
@@ -525,7 +525,7 @@ PHP;
     }
 
     /**
-     * @return array<\AiMessDetector\Core\Dependency\Dependency>
+     * @return array<\Qualimetrix\Core\Dependency\Dependency>
      */
     private function analyze(string $code): array
     {

@@ -2,20 +2,20 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\Parallel;
+namespace Qualimetrix\Infrastructure\Parallel;
 
-use AiMessDetector\Analysis\Collection\Dependency\DependencyResolver;
-use AiMessDetector\Analysis\Collection\Dependency\DependencyVisitor;
-use AiMessDetector\Analysis\Collection\FileProcessor;
-use AiMessDetector\Analysis\Collection\FileProcessorInterface;
-use AiMessDetector\Analysis\Collection\Metric\CompositeCollector;
-use AiMessDetector\Core\Metric\DerivedCollectorInterface;
-use AiMessDetector\Core\Metric\MetricCollectorInterface;
-use AiMessDetector\Core\Metric\ParallelSafeCollectorInterface;
-use AiMessDetector\Infrastructure\Ast\CachedFileParser;
-use AiMessDetector\Infrastructure\Ast\PhpFileParser;
-use AiMessDetector\Infrastructure\Cache\CacheKeyGenerator;
-use AiMessDetector\Infrastructure\Cache\FileCache;
+use Qualimetrix\Analysis\Collection\Dependency\DependencyResolver;
+use Qualimetrix\Analysis\Collection\Dependency\DependencyVisitor;
+use Qualimetrix\Analysis\Collection\FileProcessor;
+use Qualimetrix\Analysis\Collection\FileProcessorInterface;
+use Qualimetrix\Analysis\Collection\Metric\CompositeCollector;
+use Qualimetrix\Core\Metric\DerivedCollectorInterface;
+use Qualimetrix\Core\Metric\MetricCollectorInterface;
+use Qualimetrix\Core\Metric\ParallelSafeCollectorInterface;
+use Qualimetrix\Infrastructure\Ast\CachedFileParser;
+use Qualimetrix\Infrastructure\Ast\PhpFileParser;
+use Qualimetrix\Infrastructure\Cache\CacheKeyGenerator;
+use Qualimetrix\Infrastructure\Cache\FileCache;
 use RuntimeException;
 
 /**

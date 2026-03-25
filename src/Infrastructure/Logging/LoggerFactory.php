@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\Logging;
+namespace Qualimetrix\Infrastructure\Logging;
 
 use Psr\Log\AbstractLogger;
 use Psr\Log\LoggerInterface;

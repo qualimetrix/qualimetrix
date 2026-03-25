@@ -2,19 +2,19 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Reporting\Formatter;
+namespace Qualimetrix\Tests\Unit\Reporting\Formatter;
 
-use AiMessDetector\Core\Metric\MetricBag;
-use AiMessDetector\Core\Metric\MetricRepositoryInterface;
-use AiMessDetector\Core\Symbol\SymbolInfo;
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Symbol\SymbolType;
-use AiMessDetector\Reporting\Formatter\MetricsJsonFormatter;
-use AiMessDetector\Reporting\FormatterContext;
-use AiMessDetector\Reporting\GroupBy;
-use AiMessDetector\Reporting\Report;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Reporting\Formatter\MetricsJsonFormatter;
+use Qualimetrix\Reporting\FormatterContext;
+use Qualimetrix\Reporting\GroupBy;
+use Qualimetrix\Reporting\Report;
 
 #[CoversClass(MetricsJsonFormatter::class)]
 final class MetricsJsonFormatterTest extends TestCase
@@ -52,7 +52,7 @@ final class MetricsJsonFormatterTest extends TestCase
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertSame('1.0.0', $data['version']);
-        self::assertSame('aimd', $data['package']);
+        self::assertSame('qmx', $data['package']);
         self::assertArrayHasKey('timestamp', $data);
         self::assertSame([], $data['symbols']);
         self::assertSame(1, $data['summary']['filesAnalyzed']);

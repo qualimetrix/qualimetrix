@@ -1,6 +1,6 @@
 # Интеграция с GitHub Actions
 
-AI Mess Detector предоставляет готовый GitHub Action для простой интеграции в ваши CI/CD-пайплайны.
+Qualimetrix предоставляет готовый GitHub Action для простой интеграции в ваши CI/CD-пайплайны.
 
 ## Быстрый старт
 
@@ -11,13 +11,13 @@ name: Code Quality
 on: [push, pull_request]
 
 jobs:
-  aimd:
+  qmx:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Run AI Mess Detector
-        uses: fractalizer/ai-mess-detector@v1
+      - name: Run Qualimetrix
+        uses: qualimetrix/qualimetrix@v1
         with:
           paths: 'src/'
           baseline: 'baseline.json'
@@ -46,8 +46,8 @@ jobs:
 ### С Baseline
 
 ```yaml
-- name: Run AI Mess Detector
-  uses: fractalizer/ai-mess-detector@v1
+- name: Run Qualimetrix
+  uses: qualimetrix/qualimetrix@v1
   with:
     paths: 'src/'
     baseline: 'baseline.json'
@@ -56,18 +56,18 @@ jobs:
 ### Несколько путей
 
 ```yaml
-- name: Run AI Mess Detector
-  uses: fractalizer/ai-mess-detector@v1
+- name: Run Qualimetrix
+  uses: qualimetrix/qualimetrix@v1
   with:
     paths: 'src/ lib/ app/'
-    config: 'aimd.yaml'
+    config: 'qmx.yaml'
 ```
 
 ### SARIF-вывод для вкладки Security в GitHub
 
 ```yaml
 jobs:
-  aimd:
+  qmx:
     runs-on: ubuntu-latest
     permissions:
       security-events: write
@@ -76,9 +76,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Run AI Mess Detector
-        id: aimd
-        uses: fractalizer/ai-mess-detector@v1
+      - name: Run Qualimetrix
+        id: qmx
+        uses: qualimetrix/qualimetrix@v1
         with:
           paths: 'src/'
           format: 'sarif'
@@ -89,11 +89,11 @@ jobs:
         if: always()
         with:
           sarif_file: results.sarif
-          category: aimd
+          category: qmx
 
       - name: Fail if violations found
-        if: steps.aimd.outputs.exit-code != '0'
-        run: exit ${{ steps.aimd.outputs.exit-code }}
+        if: steps.qmx.outputs.exit-code != '0'
+        run: exit ${{ steps.qmx.outputs.exit-code }}
 ```
 
 ### Инлайн-аннотации в PR (рекомендуется)
@@ -102,7 +102,7 @@ jobs:
 
 ```yaml
 jobs:
-  aimd:
+  qmx:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -115,20 +115,20 @@ jobs:
       - name: Install dependencies
         run: composer install --no-dev
 
-      - name: Run AI Mess Detector
-        run: vendor/bin/aimd check src/ --format=github --no-progress
+      - name: Run Qualimetrix
+        run: vendor/bin/qmx check src/ --format=github --no-progress
 ```
 
 Нарушения отображаются как аннотации warning и error прямо на изменённых строках. По умолчанию `--fail-on=error` — предупреждения не приводят к падению сборки. Добавьте `--fail-on=warning` для более строгого контроля.
 
 !!! tip
-    Для одновременного получения инлайн-аннотаций И результатов во вкладке Security запустите AIMD дважды — один раз с `--format=github` и один раз с `--format=sarif`.
+    Для одновременного получения инлайн-аннотаций И результатов во вкладке Security запустите Qualimetrix дважды — один раз с `--format=github` и один раз с `--format=sarif`.
 
 ### JSON-вывод с артефактами
 
 ```yaml
-- name: Run AI Mess Detector
-  uses: fractalizer/ai-mess-detector@v1
+- name: Run Qualimetrix
+  uses: qualimetrix/qualimetrix@v1
   with:
     paths: 'src/'
     format: 'json'
@@ -137,16 +137,16 @@ jobs:
   if: always()
   uses: actions/upload-artifact@v4
   with:
-    name: aimd-results
-    path: aimd-results.json
+    name: qmx-results
+    path: qmx-results.json
 ```
 
 ### Использование выходных параметров
 
 ```yaml
-- name: Run AI Mess Detector
-  id: aimd
-  uses: fractalizer/ai-mess-detector@v1
+- name: Run Qualimetrix
+  id: qmx
+  uses: qualimetrix/qualimetrix@v1
   with:
     paths: 'src/'
   continue-on-error: true
@@ -160,9 +160,9 @@ jobs:
         issue_number: context.issue.number,
         owner: context.repo.owner,
         repo: context.repo.repo,
-        body: `## AI Mess Detector Results\n\n` +
-              `Violations found: ${{ steps.aimd.outputs.violations }}\n` +
-              `Exit code: ${{ steps.aimd.outputs.exit-code }}`
+        body: `## Qualimetrix Results\n\n` +
+              `Violations found: ${{ steps.qmx.outputs.violations }}\n` +
+              `Exit code: ${{ steps.qmx.outputs.exit-code }}`
       })
 ```
 
@@ -170,7 +170,7 @@ jobs:
 
 ```yaml
 jobs:
-  aimd:
+  qmx:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -179,8 +179,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Run AI Mess Detector
-        uses: fractalizer/ai-mess-detector@v1
+      - name: Run Qualimetrix
+        uses: qualimetrix/qualimetrix@v1
         with:
           paths: 'src/'
           php-version: ${{ matrix.php-version }}
@@ -198,21 +198,21 @@ on:
     branches: [main, master, develop]
 
 jobs:
-  aimd-basic:
-    name: AI Mess Detector
+  qmx-basic:
+    name: Qualimetrix
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Run AI Mess Detector
-        uses: fractalizer/ai-mess-detector@v1
+      - name: Run Qualimetrix
+        uses: qualimetrix/qualimetrix@v1
         with:
           paths: 'src/'
           baseline: 'baseline.json'
           format: 'text'
 
-  aimd-sarif:
-    name: AI Mess Detector (SARIF)
+  qmx-sarif:
+    name: Qualimetrix (SARIF)
     runs-on: ubuntu-latest
     permissions:
       security-events: write
@@ -220,9 +220,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Run AI Mess Detector
-        id: aimd
-        uses: fractalizer/ai-mess-detector@v1
+      - name: Run Qualimetrix
+        id: qmx
+        uses: qualimetrix/qualimetrix@v1
         with:
           paths: 'src/'
           baseline: 'baseline.json'
@@ -234,11 +234,11 @@ jobs:
         if: always()
         with:
           sarif_file: results.sarif
-          category: aimd
+          category: qmx
 
       - name: Fail if violations found
-        if: steps.aimd.outputs.exit-code != '0'
-        run: exit ${{ steps.aimd.outputs.exit-code }}
+        if: steps.qmx.outputs.exit-code != '0'
+        run: exit ${{ steps.qmx.outputs.exit-code }}
 ```
 
 ## Интеграция с другими инструментами
@@ -263,28 +263,28 @@ jobs:
       - name: Run PHPStan
         run: vendor/bin/phpstan analyse
 
-      - name: Run AI Mess Detector
-        uses: fractalizer/ai-mess-detector@v1
+      - name: Run Qualimetrix
+        uses: qualimetrix/qualimetrix@v1
         with:
           paths: 'src/'
 ```
 
 ## Решение проблем
 
-### Action падает с ошибкой "AIMD binary not found"
+### Action падает с ошибкой "Qualimetrix binary not found"
 
-Action ищет AIMD в следующем порядке:
+Action ищет Qualimetrix в следующем порядке:
 
-1. `vendor/bin/aimd` -- если установлен как зависимость проекта
-2. `bin/aimd` -- если запускается в репозитории самого AIMD
+1. `vendor/bin/qmx` -- если установлен как зависимость проекта
+2. `bin/qmx` -- если запускается в репозитории самого Qualimetrix
 3. В крайнем случае -- глобальная установка через `composer global require`
 
-Убедитесь, что ваш `composer.json` содержит AIMD как dev-зависимость:
+Убедитесь, что ваш `composer.json` содержит Qualimetrix как dev-зависимость:
 
 ```json
 {
   "require-dev": {
-    "fractalizer/ai-mess-detector": "^1.0"
+    "qualimetrix/qualimetrix": "^1.0"
   }
 }
 ```

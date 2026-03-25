@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Analysis\Discovery;
+namespace Qualimetrix\Tests\Unit\Analysis\Discovery;
 
-use AiMessDetector\Analysis\Discovery\GeneratedFileFilter;
 use FilesystemIterator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Discovery\GeneratedFileFilter;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
@@ -21,7 +21,7 @@ final class GeneratedFileFilterTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->tempDir = sys_get_temp_dir() . '/aimd-generated-test-' . uniqid();
+        $this->tempDir = sys_get_temp_dir() . '/qmx-generated-test-' . uniqid();
         mkdir($this->tempDir, 0755, true);
     }
 

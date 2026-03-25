@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Infrastructure\Console;
+namespace Qualimetrix\Tests\Unit\Infrastructure\Console;
 
-use AiMessDetector\Infrastructure\Console\FilteredInputDefinition;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Infrastructure\Console\FilteredInputDefinition;
 use Symfony\Component\Console\Input\InputOption;
 
 #[CoversClass(FilteredInputDefinition::class)]

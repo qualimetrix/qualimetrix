@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\Cache;
+namespace Qualimetrix\Infrastructure\Cache;
 
 use RuntimeException;
 

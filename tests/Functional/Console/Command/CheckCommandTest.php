@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Functional\Console\Command;
+namespace Qualimetrix\Tests\Functional\Console\Command;
 
-use AiMessDetector\Infrastructure\Console\Command\CheckCommand;
-use AiMessDetector\Infrastructure\DependencyInjection\ContainerFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
+use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;
 
@@ -20,7 +20,7 @@ final class CheckCommandTest extends TestCase
     protected function setUp(): void
     {
         // Create temporary directory for test files
-        $this->tempDir = sys_get_temp_dir() . '/aimd-test-' . uniqid();
+        $this->tempDir = sys_get_temp_dir() . '/qmx-test-' . uniqid();
         mkdir($this->tempDir, 0777, true);
     }
 

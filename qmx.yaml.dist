@@ -1,9 +1,9 @@
-# AI Mess Detector - Default Configuration
-# Copy this file to aimd.yaml and customize as needed.
+# Qualimetrix - Default Configuration
+# Copy this file to qmx.yaml and customize as needed.
 
 # General settings
 cache:
-  dir: .aimd-cache
+  dir: .qmx-cache
   enabled: true
 
 format: text  # text, json, checkstyle

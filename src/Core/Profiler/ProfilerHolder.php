@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Core\Profiler;
+namespace Qualimetrix\Core\Profiler;
 
 /**
  * Synthetic service holder for global profiler access.

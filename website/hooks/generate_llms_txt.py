@@ -23,18 +23,18 @@ _generated = False
 SKIP_PAGES = {"changelog.md"}
 
 HEADER = """\
-# AI Mess Detector — Full Documentation
+# Qualimetrix — Full Documentation
 
 > This file is auto-generated from the website documentation.
-> It contains the complete reference for AI Mess Detector in a single file,
+> It contains the complete reference for Qualimetrix in a single file,
 > optimized for consumption by LLMs and AI coding agents.
 >
 > For a concise overview, see llms.txt instead.
-> For human-readable documentation, visit https://fractalizer.github.io/php_ai_mess_detector/
+> For human-readable documentation, visit https://qualimetrix.github.io/qualimetrix/
 
 """
 
-SITE_URL = "https://fractalizer.github.io/php_ai_mess_detector/"
+SITE_URL = "https://qualimetrix.github.io/qualimetrix/"
 
 
 def on_post_build(config: dict[str, Any], **kwargs: Any) -> None:

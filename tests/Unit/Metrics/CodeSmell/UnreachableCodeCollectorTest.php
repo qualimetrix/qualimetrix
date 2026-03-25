@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Metrics\CodeSmell;
+namespace Qualimetrix\Tests\Unit\Metrics\CodeSmell;
 
-use AiMessDetector\Core\Metric\AggregationStrategy;
-use AiMessDetector\Core\Metric\SymbolLevel;
-use AiMessDetector\Metrics\CodeSmell\UnreachableCodeCollector;
-use AiMessDetector\Metrics\CodeSmell\UnreachableCodeVisitor;
 use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Metric\AggregationStrategy;
+use Qualimetrix\Core\Metric\SymbolLevel;
+use Qualimetrix\Metrics\CodeSmell\UnreachableCodeCollector;
+use Qualimetrix\Metrics\CodeSmell\UnreachableCodeVisitor;
 use SplFileInfo;
 
 #[CoversClass(UnreachableCodeCollector::class)]
@@ -567,7 +567,7 @@ PHP;
         self::assertSame(1, $metrics->get('unreachableCode:App\GotoNoLabel::test'));
     }
 
-    private function collectMetrics(string $code): \AiMessDetector\Core\Metric\MetricBag
+    private function collectMetrics(string $code): \Qualimetrix\Core\Metric\MetricBag
     {
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($code) ?? [];

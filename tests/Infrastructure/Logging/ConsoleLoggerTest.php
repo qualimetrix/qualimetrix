@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Infrastructure\Logging;
+namespace Qualimetrix\Tests\Infrastructure\Logging;
 
-use AiMessDetector\Infrastructure\Logging\ConsoleLogger;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LogLevel;
+use Qualimetrix\Infrastructure\Logging\ConsoleLogger;
 use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\Console\Output\OutputInterface;
 

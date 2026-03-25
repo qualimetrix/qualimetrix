@@ -2,19 +2,19 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Reporting\Formatter;
+namespace Qualimetrix\Tests\Unit\Reporting\Formatter;
 
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Violation\Location;
-use AiMessDetector\Core\Violation\Severity;
-use AiMessDetector\Core\Violation\Violation;
-use AiMessDetector\Reporting\Formatter\Sarif\SarifFormatter;
-use AiMessDetector\Reporting\Formatter\Sarif\SarifRuleCollector;
-use AiMessDetector\Reporting\FormatterContext;
-use AiMessDetector\Reporting\GroupBy;
-use AiMessDetector\Reporting\ReportBuilder;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Violation\Location;
+use Qualimetrix\Core\Violation\Severity;
+use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Reporting\Formatter\Sarif\SarifFormatter;
+use Qualimetrix\Reporting\Formatter\Sarif\SarifRuleCollector;
+use Qualimetrix\Reporting\FormatterContext;
+use Qualimetrix\Reporting\GroupBy;
+use Qualimetrix\Reporting\ReportBuilder;
 
 #[CoversClass(SarifFormatter::class)]
 final class SarifFormatterTest extends TestCase
@@ -64,9 +64,9 @@ final class SarifFormatterTest extends TestCase
         // Verify tool information
         $run = $data['runs'][0];
         self::assertArrayHasKey('tool', $run);
-        self::assertSame('AI Mess Detector', $run['tool']['driver']['name']);
+        self::assertSame('Qualimetrix', $run['tool']['driver']['name']);
         self::assertSame('0.1.0', $run['tool']['driver']['version']);
-        self::assertSame('https://github.com/FractalizeR/php_ai_mess_detector', $run['tool']['driver']['informationUri']);
+        self::assertSame('https://github.com/qualimetrix/qualimetrix', $run['tool']['driver']['informationUri']);
 
         // Empty report should have no rules and no results
         self::assertSame([], $run['tool']['driver']['rules']);
@@ -564,11 +564,11 @@ final class SarifFormatterTest extends TestCase
         }
 
         // Known categories map to their docs page
-        self::assertSame('https://aimd.dev/rules/complexity/', $rulesByCode['complexity.cyclomatic']['helpUri']);
-        self::assertSame('https://aimd.dev/rules/code-smell/', $rulesByCode['code-smell.boolean-argument']['helpUri']);
+        self::assertSame('https://qualimetrix.github.io/qualimetrix/rules/complexity/', $rulesByCode['complexity.cyclomatic']['helpUri']);
+        self::assertSame('https://qualimetrix.github.io/qualimetrix/rules/code-smell/', $rulesByCode['code-smell.boolean-argument']['helpUri']);
 
         // Unknown category falls back to repository URL
-        self::assertSame('https://github.com/FractalizeR/php_ai_mess_detector', $rulesByCode['unknown-rule']['helpUri']);
+        self::assertSame('https://github.com/qualimetrix/qualimetrix', $rulesByCode['unknown-rule']['helpUri']);
     }
 
     public function testRuleDescriptionUsesViolationCodeNotRuleName(): void

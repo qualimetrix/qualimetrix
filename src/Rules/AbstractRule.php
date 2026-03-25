@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Rules;
+namespace Qualimetrix\Rules;
 
-use AiMessDetector\Core\Rule\RuleCategory;
-use AiMessDetector\Core\Rule\RuleInterface;
-use AiMessDetector\Core\Rule\RuleOptionsInterface;
 use InvalidArgumentException;
+use Qualimetrix\Core\Rule\RuleCategory;
+use Qualimetrix\Core\Rule\RuleInterface;
+use Qualimetrix\Core\Rule\RuleOptionsInterface;
 
 /**
  * Base class for all analysis rules.

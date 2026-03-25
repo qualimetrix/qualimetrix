@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Core\Progress;
+namespace Qualimetrix\Core\Progress;
 
 /**
  * No-op progress reporter.

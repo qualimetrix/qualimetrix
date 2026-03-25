@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Metrics\Security;
+namespace Qualimetrix\Tests\Unit\Metrics\Security;
 
-use AiMessDetector\Metrics\Security\HardcodedCredentialsVisitor;
-use AiMessDetector\Metrics\Security\SensitiveNameMatcher;
 use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Metrics\Security\HardcodedCredentialsVisitor;
+use Qualimetrix\Metrics\Security\SensitiveNameMatcher;
 
 #[CoversClass(HardcodedCredentialsVisitor::class)]
 final class HardcodedCredentialsVisitorTest extends TestCase

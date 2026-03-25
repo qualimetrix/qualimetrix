@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Infrastructure\Logging;
+namespace Qualimetrix\Tests\Infrastructure\Logging;
 
-use AiMessDetector\Infrastructure\Logging\DelegatingLogger;
-use AiMessDetector\Infrastructure\Logging\LoggerHolder;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
+use Qualimetrix\Infrastructure\Logging\DelegatingLogger;
+use Qualimetrix\Infrastructure\Logging\LoggerHolder;
 use Stringable;
 
 final class DelegatingLoggerTest extends TestCase

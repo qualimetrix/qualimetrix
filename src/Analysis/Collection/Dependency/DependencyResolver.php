@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Analysis\Collection\Dependency;
+namespace Qualimetrix\Analysis\Collection\Dependency;
 
 use PhpParser\Node\Name;
 use PhpParser\Node\Stmt\GroupUse;

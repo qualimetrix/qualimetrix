@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Baseline;
+namespace Qualimetrix\Baseline;
 
-use AiMessDetector\Core\Violation\Violation;
+use Qualimetrix\Core\Violation\Violation;
 
 /**
  * Generates stable hashes for violations to track them in baseline.

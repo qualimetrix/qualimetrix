@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Reporting\Health;
+namespace Qualimetrix\Tests\Unit\Reporting\Health;
 
-use AiMessDetector\Reporting\Health\MetricHintProvider;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Reporting\Health\MetricHintProvider;
 
 #[CoversClass(MetricHintProvider::class)]
 final class MetricHintProviderTest extends TestCase

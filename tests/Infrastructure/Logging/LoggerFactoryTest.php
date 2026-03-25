@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Infrastructure\Logging;
+namespace Qualimetrix\Tests\Infrastructure\Logging;
 
-use AiMessDetector\Infrastructure\Logging\LoggerFactory;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LogLevel;
 use Psr\Log\NullLogger;
+use Qualimetrix\Infrastructure\Logging\LoggerFactory;
 use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -17,7 +17,7 @@ final class LoggerFactoryTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->tempDir = sys_get_temp_dir() . '/aimd_test_' . uniqid();
+        $this->tempDir = sys_get_temp_dir() . '/qmx_test_' . uniqid();
         if (!is_dir($this->tempDir)) {
             mkdir($this->tempDir, 0755, true);
         }

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Infrastructure\Profiler;
+namespace Qualimetrix\Tests\Unit\Infrastructure\Profiler;
 
-use AiMessDetector\Core\Profiler\Span;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Profiler\Span;
 
 final class SpanTest extends TestCase
 {

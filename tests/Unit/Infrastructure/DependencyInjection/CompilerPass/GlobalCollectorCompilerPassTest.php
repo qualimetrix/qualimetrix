@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Infrastructure\DependencyInjection\CompilerPass;
+namespace Qualimetrix\Tests\Unit\Infrastructure\DependencyInjection\CompilerPass;
 
-use AiMessDetector\Analysis\Aggregator\GlobalCollectorRunner;
-use AiMessDetector\Infrastructure\DependencyInjection\CompilerPass\GlobalCollectorCompilerPass;
-use AiMessDetector\Metrics\Coupling\CouplingCollector;
-use AiMessDetector\Metrics\Structure\NocCollector;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Aggregator\GlobalCollectorRunner;
+use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\GlobalCollectorCompilerPass;
+use Qualimetrix\Metrics\Coupling\CouplingCollector;
+use Qualimetrix\Metrics\Structure\NocCollector;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
 

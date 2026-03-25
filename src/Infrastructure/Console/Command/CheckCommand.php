@@ -2,23 +2,23 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\Console\Command;
+namespace Qualimetrix\Infrastructure\Console\Command;
 
-use AiMessDetector\Analysis\Pipeline\AnalysisPipelineInterface;
-use AiMessDetector\Configuration\Exception\ConfigLoadException;
-use AiMessDetector\Configuration\Pipeline\ConfigurationContext;
-use AiMessDetector\Configuration\Pipeline\ConfigurationPipeline;
-use AiMessDetector\Configuration\Pipeline\ResolvedConfiguration;
-use AiMessDetector\Infrastructure\Cache\CacheFactory;
-use AiMessDetector\Infrastructure\Console\CheckCommandDefinition;
-use AiMessDetector\Infrastructure\Console\FilteredInputDefinition;
-use AiMessDetector\Infrastructure\Console\ResultPresenter;
-use AiMessDetector\Infrastructure\Console\RuntimeConfigurator;
-use AiMessDetector\Infrastructure\Console\ViolationFilterOrchestrator;
-use AiMessDetector\Infrastructure\Git\GitScopeResolver;
-use AiMessDetector\Infrastructure\Rule\Exception\ConflictingCliAliasException;
-use AiMessDetector\Infrastructure\Rule\RuleRegistryInterface;
 use InvalidArgumentException;
+use Qualimetrix\Analysis\Pipeline\AnalysisPipelineInterface;
+use Qualimetrix\Configuration\Exception\ConfigLoadException;
+use Qualimetrix\Configuration\Pipeline\ConfigurationContext;
+use Qualimetrix\Configuration\Pipeline\ConfigurationPipeline;
+use Qualimetrix\Configuration\Pipeline\ResolvedConfiguration;
+use Qualimetrix\Infrastructure\Cache\CacheFactory;
+use Qualimetrix\Infrastructure\Console\CheckCommandDefinition;
+use Qualimetrix\Infrastructure\Console\FilteredInputDefinition;
+use Qualimetrix\Infrastructure\Console\ResultPresenter;
+use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
+use Qualimetrix\Infrastructure\Console\ViolationFilterOrchestrator;
+use Qualimetrix\Infrastructure\Git\GitScopeResolver;
+use Qualimetrix\Infrastructure\Rule\Exception\ConflictingCliAliasException;
+use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputDefinition;
@@ -55,7 +55,7 @@ final class CheckCommand extends Command
     {
         $this->hiddenOptionNames = CheckCommandDefinition::addOptions($this, $this->ruleRegistry);
         $this->setHelp(
-            'Run <info>bin/aimd rules</info> to see all available rules and their options.' . "\n"
+            'Run <info>bin/qmx rules</info> to see all available rules and their options.' . "\n"
             . 'Use <info>--rule-opt=rule-name:option=value</info> to set rule-specific thresholds.',
         );
     }
@@ -228,7 +228,7 @@ final class CheckCommand extends Command
      *
      * @param list<string> $paths
      */
-    private function runAnalysis(array $paths, \AiMessDetector\Analysis\Discovery\FileDiscoveryInterface $fileDiscovery): \AiMessDetector\Analysis\Pipeline\AnalysisResult
+    private function runAnalysis(array $paths, \Qualimetrix\Analysis\Discovery\FileDiscoveryInterface $fileDiscovery): \Qualimetrix\Analysis\Pipeline\AnalysisResult
     {
         return $this->analyzer->analyze($paths, $fileDiscovery);
     }

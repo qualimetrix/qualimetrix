@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Configuration;
+namespace Qualimetrix\Tests\Unit\Configuration;
 
-use AiMessDetector\Configuration\RuleNamespaceExclusionProvider;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Configuration\RuleNamespaceExclusionProvider;
 
 #[CoversClass(RuleNamespaceExclusionProvider::class)]
 final class RuleNamespaceExclusionProviderTest extends TestCase

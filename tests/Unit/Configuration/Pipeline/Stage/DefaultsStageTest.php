@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Configuration\Pipeline\Stage;
+namespace Qualimetrix\Tests\Unit\Configuration\Pipeline\Stage;
 
-use AiMessDetector\Configuration\Pipeline\ConfigurationContext;
-use AiMessDetector\Configuration\Pipeline\Stage\DefaultsStage;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Configuration\Pipeline\ConfigurationContext;
+use Qualimetrix\Configuration\Pipeline\Stage\DefaultsStage;
 use Symfony\Component\Console\Input\ArrayInput;
 
 #[CoversClass(DefaultsStage::class)]
@@ -43,7 +43,7 @@ final class DefaultsStageTest extends TestCase
         self::assertSame('defaults', $layer->source);
         self::assertSame(['.'], $layer->values['paths']);
         self::assertSame(['vendor', 'node_modules', '.git'], $layer->values['excludes']);
-        self::assertSame('.aimd-cache', $layer->values['cache.dir']);
+        self::assertSame('.qmx-cache', $layer->values['cache.dir']);
         self::assertTrue($layer->values['cache.enabled']);
         self::assertSame('summary', $layer->values['format']);
         self::assertSame('chain', $layer->values['namespace.strategy']);

@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Configuration;
+namespace Qualimetrix\Tests\Unit\Configuration;
 
-use AiMessDetector\Configuration\RuleNamespaceExclusionProvider;
-use AiMessDetector\Configuration\RuleOptionsFactory;
-use AiMessDetector\Tests\Fixture\TestRuleOptions;
-use AiMessDetector\Tests\Fixture\TestRuleOptionsNoConstructor;
-use AiMessDetector\Tests\Fixture\TestRuleOptionsWithRequiredParams;
-use AiMessDetector\Tests\Fixture\TestRuleOptionsWithUnionType;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Configuration\RuleNamespaceExclusionProvider;
+use Qualimetrix\Configuration\RuleOptionsFactory;
+use Qualimetrix\Tests\Fixture\TestRuleOptions;
+use Qualimetrix\Tests\Fixture\TestRuleOptionsNoConstructor;
+use Qualimetrix\Tests\Fixture\TestRuleOptionsWithRequiredParams;
+use Qualimetrix\Tests\Fixture\TestRuleOptionsWithUnionType;
 use RuntimeException;
 use stdClass;
 

@@ -2,20 +2,20 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Reporting\Formatter;
+namespace Qualimetrix\Tests\Unit\Reporting\Formatter;
 
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Violation\Location;
-use AiMessDetector\Core\Violation\Severity;
-use AiMessDetector\Core\Violation\Violation;
-use AiMessDetector\Reporting\Formatter\CheckstyleFormatter;
-use AiMessDetector\Reporting\FormatterContext;
-use AiMessDetector\Reporting\GroupBy;
-use AiMessDetector\Reporting\Report;
-use AiMessDetector\Reporting\ReportBuilder;
 use DOMDocument;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Violation\Location;
+use Qualimetrix\Core\Violation\Severity;
+use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Reporting\Formatter\CheckstyleFormatter;
+use Qualimetrix\Reporting\FormatterContext;
+use Qualimetrix\Reporting\GroupBy;
+use Qualimetrix\Reporting\Report;
+use Qualimetrix\Reporting\ReportBuilder;
 
 #[CoversClass(CheckstyleFormatter::class)]
 final class CheckstyleFormatterTest extends TestCase
@@ -112,7 +112,7 @@ final class CheckstyleFormatterTest extends TestCase
         self::assertSame('42', $error1->getAttribute('line'));
         self::assertSame('error', $error1->getAttribute('severity'));
         self::assertSame('Cyclomatic complexity of 25 exceeds threshold', $error1->getAttribute('message'));
-        self::assertSame('aimd.cyclomatic-complexity', $error1->getAttribute('source'));
+        self::assertSame('qmx.cyclomatic-complexity', $error1->getAttribute('source'));
 
         // Second error
         $error2 = $errors->item(1);
@@ -202,7 +202,7 @@ final class CheckstyleFormatterTest extends TestCase
         // Line defaults to 1 for namespace-level violations without explicit line
         self::assertTrue($error->hasAttribute('line'));
         self::assertSame('1', $error->getAttribute('line'));
-        self::assertSame('aimd.namespace-size', $error->getAttribute('source'));
+        self::assertSame('qmx.namespace-size', $error->getAttribute('source'));
     }
 
     public function testFormatEscapesXmlSpecialCharacters(): void
@@ -257,8 +257,8 @@ final class CheckstyleFormatterTest extends TestCase
 
         $output = $this->formatter->format($report, new FormatterContext());
 
-        self::assertStringContainsString('source="aimd.complexity.method"', $output);
-        self::assertStringNotContainsString('source="aimd.complexity"', $output);
+        self::assertStringContainsString('source="qmx.complexity.method"', $output);
+        self::assertStringNotContainsString('source="qmx.complexity"', $output);
     }
 
     private function parseXml(string $output): DOMDocument

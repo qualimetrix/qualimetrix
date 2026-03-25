@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Infrastructure\Cache;
+namespace Qualimetrix\Tests\Unit\Infrastructure\Cache;
 
-use AiMessDetector\Infrastructure\Cache\CacheKeyGenerator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Infrastructure\Cache\CacheKeyGenerator;
 use SplFileInfo;
 
 #[CoversClass(CacheKeyGenerator::class)]
@@ -19,7 +19,7 @@ final class CacheKeyGeneratorTest extends TestCase
     protected function setUp(): void
     {
         $this->generator = new CacheKeyGenerator();
-        $this->tempFile = sys_get_temp_dir() . '/aimd-cache-test-' . uniqid() . '.php';
+        $this->tempFile = sys_get_temp_dir() . '/qmx-cache-test-' . uniqid() . '.php';
         file_put_contents($this->tempFile, '<?php class Test {}');
     }
 

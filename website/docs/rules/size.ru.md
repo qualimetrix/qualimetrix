@@ -41,7 +41,7 @@
 | `error`   | `30`         | Количество методов для ошибки         |
 
 ```yaml
-# aimd.yaml
+# qmx.yaml
 rules:
   size.method-count:
     warning: 20
@@ -57,8 +57,8 @@ rules:
 ```
 
 ```bash
-bin/aimd check src/ --rule-opt="size.method-count:warning=25"
-bin/aimd check src/ --rule-opt="size.method-count:error=40"
+bin/qmx check src/ --rule-opt="size.method-count:warning=25"
+bin/qmx check src/ --rule-opt="size.method-count:error=40"
 ```
 
 <!-- llms:skip-begin -->
@@ -151,7 +151,7 @@ class OrderService
 | `error`   | `25`         | Количество классов для ошибки         |
 
 ```yaml
-# aimd.yaml
+# qmx.yaml
 rules:
   size.class-count:
     warning: 15
@@ -167,8 +167,8 @@ rules:
 ```
 
 ```bash
-bin/aimd check src/ --rule-opt="size.class-count:warning=20"
-bin/aimd check src/ --rule-opt="size.class-count:error=30"
+bin/qmx check src/ --rule-opt="size.class-count:warning=20"
+bin/qmx check src/ --rule-opt="size.class-count:error=30"
 ```
 
 <!-- llms:skip-begin -->
@@ -246,7 +246,7 @@ App\Service\                  # 28 классов -- слишком много!
 | `excludePromotedOnly` | `true`       | Пропускать классы, где все свойства -- promoted-параметры конструктора |
 
 ```yaml
-# aimd.yaml
+# qmx.yaml
 rules:
   size.property-count:
     warning: 15
@@ -264,8 +264,8 @@ rules:
 ```
 
 ```bash
-bin/aimd check src/ --rule-opt="size.property-count:warning=18"
-bin/aimd check src/ --rule-opt="size.property-count:error=25"
+bin/qmx check src/ --rule-opt="size.property-count:warning=18"
+bin/qmx check src/ --rule-opt="size.property-count:error=25"
 ```
 
 <!-- llms:skip-begin -->

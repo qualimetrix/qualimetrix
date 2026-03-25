@@ -1,6 +1,6 @@
 # Default Thresholds Reference
 
-This page lists the default thresholds for every rule in AI Mess Detector. When a metric exceeds the **warning** threshold, a warning is reported. When it exceeds the **error** threshold, an error is reported.
+This page lists the default thresholds for every rule in Qualimetrix. When a metric exceeds the **warning** threshold, a warning is reported. When it exceeds the **error** threshold, an error is reported.
 
 ## Complexity Rules
 
@@ -145,7 +145,7 @@ Rules that detect potential security vulnerabilities.
 
 ### Using a YAML Config File
 
-Create an `aimd.yaml` file in your project root:
+Create an `qmx.yaml` file in your project root:
 
 ```yaml
 rules:
@@ -211,7 +211,7 @@ computed_metrics:
 Then run the analysis with the config file:
 
 ```bash
-vendor/bin/aimd check src/ --config=aimd.yaml
+vendor/bin/qmx check src/ --config=qmx.yaml
 ```
 
 ### Disabling Rules
@@ -229,7 +229,7 @@ rules:
 You can disable all rules in a group via the CLI:
 
 ```bash
-vendor/bin/aimd check src/ --disable-rule=code-smell
+vendor/bin/qmx check src/ --disable-rule=code-smell
 ```
 
 This disables all rules whose ID starts with `code-smell.`.
@@ -239,16 +239,16 @@ This disables all rules whose ID starts with `code-smell.`.
 Override thresholds from the command line:
 
 ```bash
-vendor/bin/aimd check src/ --disable-rule=complexity.npath
+vendor/bin/qmx check src/ --disable-rule=complexity.npath
 ```
 
 ### Suppressing Individual Violations
 
-Add `@aimd-ignore` in a docblock to suppress a specific violation:
+Add `@qmx-ignore` in a docblock to suppress a specific violation:
 
 ```php
 /**
- * @aimd-ignore complexity.cyclomatic
+ * @qmx-ignore complexity.cyclomatic
  */
 function complexButNecessary(): void
 {
@@ -260,6 +260,6 @@ You can also suppress all rules in a group:
 
 ```php
 /**
- * @aimd-ignore complexity
+ * @qmx-ignore complexity
  */
 ```

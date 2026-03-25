@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Fixture;
+namespace Qualimetrix\Tests\Fixture;
 
 /**
  * RFC-008 Test Fixture: Data class entity with only getters/setters.

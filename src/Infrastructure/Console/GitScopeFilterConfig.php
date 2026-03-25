@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\Console;
+namespace Qualimetrix\Infrastructure\Console;
 
-use AiMessDetector\Infrastructure\Git\GitClient;
-use AiMessDetector\Infrastructure\Git\GitScope;
+use Qualimetrix\Infrastructure\Git\GitClient;
+use Qualimetrix\Infrastructure\Git\GitScope;
 
 /**
  * Configuration for git scope filtering of violations.

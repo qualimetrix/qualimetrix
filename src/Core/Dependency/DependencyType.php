@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Core\Dependency;
+namespace Qualimetrix\Core\Dependency;
 
 /**
  * Enumerates all possible types of dependencies between classes/types.

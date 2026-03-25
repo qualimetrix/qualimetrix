@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Reporting\Formatter\Summary;
+namespace Qualimetrix\Reporting\Formatter\Summary;
 
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Reporting\Formatter\Support\AnsiColor;
-use AiMessDetector\Reporting\FormatterContext;
-use AiMessDetector\Reporting\Health\DecompositionItem;
-use AiMessDetector\Reporting\Health\HealthScore;
-use AiMessDetector\Reporting\Health\HealthScoreResolver;
-use AiMessDetector\Reporting\Report;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Reporting\Formatter\Support\AnsiColor;
+use Qualimetrix\Reporting\FormatterContext;
+use Qualimetrix\Reporting\Health\DecompositionItem;
+use Qualimetrix\Reporting\Health\HealthScore;
+use Qualimetrix\Reporting\Health\HealthScoreResolver;
+use Qualimetrix\Reporting\Report;
 
 /**
  * Renders health bars and dimension scores for the summary formatter.

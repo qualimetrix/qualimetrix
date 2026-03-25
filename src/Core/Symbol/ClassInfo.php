@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Core\Symbol;
+namespace Qualimetrix\Core\Symbol;
 
 final readonly class ClassInfo
 {

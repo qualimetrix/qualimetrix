@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Analysis\Collection\Dependency;
+namespace Qualimetrix\Analysis\Collection\Dependency;
 
-use AiMessDetector\Core\Dependency\Dependency;
-use AiMessDetector\Core\Dependency\DependencyGraphInterface;
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Util\StringSet;
+use Qualimetrix\Core\Dependency\Dependency;
+use Qualimetrix\Core\Dependency\DependencyGraphInterface;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Util\StringSet;
 
 /**
  * In-memory implementation of DependencyGraphInterface.

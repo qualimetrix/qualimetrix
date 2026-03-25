@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Analysis\Collection;
+namespace Qualimetrix\Tests\Unit\Analysis\Collection;
 
-use AiMessDetector\Analysis\Collection\CollectionResult;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Collection\CollectionResult;
 
 #[CoversClass(CollectionResult::class)]
 final class CollectionResultTest extends TestCase

@@ -2,31 +2,31 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Analysis\Pipeline;
+namespace Qualimetrix\Tests\Unit\Analysis\Pipeline;
 
-use AiMessDetector\Analysis\Aggregator\GlobalCollectorRunner;
-use AiMessDetector\Analysis\Collection\CollectionOrchestratorInterface;
-use AiMessDetector\Analysis\Collection\CollectionPhaseOutput;
-use AiMessDetector\Analysis\Collection\CollectionResult;
-use AiMessDetector\Analysis\Collection\Metric\CompositeCollector;
-use AiMessDetector\Analysis\Discovery\FileDiscoveryInterface;
-use AiMessDetector\Analysis\Pipeline\AnalysisPipeline;
-use AiMessDetector\Analysis\Pipeline\MetricEnricher;
-use AiMessDetector\Analysis\Repository\DefaultMetricRepositoryFactory;
-use AiMessDetector\Analysis\RuleExecution\RuleExecutorInterface;
-use AiMessDetector\Configuration\AnalysisConfiguration;
-use AiMessDetector\Configuration\ConfigurationProviderInterface;
-use AiMessDetector\Core\Dependency\Dependency;
-use AiMessDetector\Core\Dependency\DependencyType;
-use AiMessDetector\Core\Metric\MetricRepositoryInterface;
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Violation\Location;
 use ArrayIterator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use Qualimetrix\Analysis\Aggregator\GlobalCollectorRunner;
+use Qualimetrix\Analysis\Collection\CollectionOrchestratorInterface;
+use Qualimetrix\Analysis\Collection\CollectionPhaseOutput;
+use Qualimetrix\Analysis\Collection\CollectionResult;
+use Qualimetrix\Analysis\Collection\Metric\CompositeCollector;
+use Qualimetrix\Analysis\Discovery\FileDiscoveryInterface;
+use Qualimetrix\Analysis\Pipeline\AnalysisPipeline;
+use Qualimetrix\Analysis\Pipeline\MetricEnricher;
+use Qualimetrix\Analysis\Repository\DefaultMetricRepositoryFactory;
+use Qualimetrix\Analysis\RuleExecution\RuleExecutorInterface;
+use Qualimetrix\Configuration\AnalysisConfiguration;
+use Qualimetrix\Configuration\ConfigurationProviderInterface;
+use Qualimetrix\Core\Dependency\Dependency;
+use Qualimetrix\Core\Dependency\DependencyType;
+use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Violation\Location;
 use SplFileInfo;
 
 #[CoversClass(AnalysisPipeline::class)]

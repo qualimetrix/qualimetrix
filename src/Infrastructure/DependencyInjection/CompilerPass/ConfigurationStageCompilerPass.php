@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\DependencyInjection\CompilerPass;
+namespace Qualimetrix\Infrastructure\DependencyInjection\CompilerPass;
 
-use AiMessDetector\Configuration\Pipeline\ConfigurationPipeline;
+use Qualimetrix\Configuration\Pipeline\ConfigurationPipeline;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
@@ -14,7 +14,7 @@ use Symfony\Component\DependencyInjection\Reference;
  */
 final class ConfigurationStageCompilerPass implements CompilerPassInterface
 {
-    public const string TAG = 'aimd.configuration_stage';
+    public const string TAG = 'qmx.configuration_stage';
 
     public function process(ContainerBuilder $container): void
     {

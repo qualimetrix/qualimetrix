@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Analysis\Collection\Dependency;
+namespace Qualimetrix\Analysis\Collection\Dependency;
 
-use AiMessDetector\Core\Dependency\CycleInterface;
-use AiMessDetector\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Dependency\CycleInterface;
+use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**
  * Represents a circular dependency in the dependency graph.

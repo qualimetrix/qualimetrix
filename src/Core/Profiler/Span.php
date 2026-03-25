@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Core\Profiler;
+namespace Qualimetrix\Core\Profiler;
 
 /**
  * Mutable recording object representing a profiling span (time interval).

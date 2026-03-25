@@ -1,6 +1,6 @@
 # Website Documentation Guide
 
-This document defines the structure and style rules for the AI Mess Detector documentation website (`website/docs/`).
+This document defines the structure and style rules for the Qualimetrix documentation website (`website/docs/`).
 
 ---
 
@@ -66,7 +66,7 @@ Content: which variant/algorithm is used, how it differs, why the choice was mad
 {Always show YAML first, then CLI:}
 
     ```yaml
-    # aimd.yaml
+    # qmx.yaml
     rules:
       group.rule-name:
         warning: 10
@@ -74,7 +74,7 @@ Content: which variant/algorithm is used, how it differs, why the choice was mad
     ```
 
     ```bash
-    bin/aimd check src/ --rule-opt="group.rule-name:warning=10"
+    bin/qmx check src/ --rule-opt="group.rule-name:warning=10"
     ```
 ```
 

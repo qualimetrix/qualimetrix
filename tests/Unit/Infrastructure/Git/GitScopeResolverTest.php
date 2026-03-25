@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Infrastructure\Git;
+namespace Qualimetrix\Tests\Unit\Infrastructure\Git;
 
-use AiMessDetector\Configuration\AnalysisConfiguration;
-use AiMessDetector\Configuration\PathsConfiguration;
-use AiMessDetector\Configuration\Pipeline\ResolvedConfiguration;
-use AiMessDetector\Infrastructure\Git\GitFileDiscovery;
-use AiMessDetector\Infrastructure\Git\GitScopeResolver;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Configuration\AnalysisConfiguration;
+use Qualimetrix\Configuration\PathsConfiguration;
+use Qualimetrix\Configuration\Pipeline\ResolvedConfiguration;
+use Qualimetrix\Infrastructure\Git\GitFileDiscovery;
+use Qualimetrix\Infrastructure\Git\GitScopeResolver;
 use ReflectionProperty;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputDefinition;

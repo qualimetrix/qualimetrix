@@ -1,4 +1,4 @@
-# AI Mess Detector
+# Qualimetrix
 
 Static analysis tool for PHP code quality metrics.
 
@@ -16,16 +16,16 @@ Static analysis tool for PHP code quality metrics.
 
 ```bash
 # Install
-composer require --dev fractalizer/ai-mess-detector
+composer require --dev qualimetrix/qualimetrix
 
 # Analyze
-bin/aimd check src/
+bin/qmx check src/
 
 # With specific format
-bin/aimd check src/ --format=json
+bin/qmx check src/ --format=json
 
 # Pre-commit hook
-bin/aimd hook:install
+bin/qmx hook:install
 ```
 
 ## Output Formats
@@ -40,7 +40,7 @@ bin/aimd hook:install
 
 ## Configuration
 
-Create `aimd.yaml`:
+Create `qmx.yaml`:
 
 ```yaml
 rules:
@@ -56,27 +56,27 @@ rules:
 Or use CLI options:
 
 ```bash
-bin/aimd check src/ --cyclomatic-warning=10 --cyclomatic-error=20
+bin/qmx check src/ --cyclomatic-warning=10 --cyclomatic-error=20
 ```
 
 ## Git Integration
 
 ```bash
 # Analyze staged files only
-bin/aimd check src/ --analyze=git:staged
+bin/qmx check src/ --analyze=git:staged
 
 # Show violations in changed files
-bin/aimd check src/ --report=git:main..HEAD
+bin/qmx check src/ --report=git:main..HEAD
 ```
 
 ## Baseline Support
 
 ```bash
 # Generate baseline for existing violations
-bin/aimd check src/ --generate-baseline=baseline.json
+bin/qmx check src/ --generate-baseline=baseline.json
 
 # Use baseline
-bin/aimd check src/ --baseline=baseline.json
+bin/qmx check src/ --baseline=baseline.json
 ```
 
 ## Documentation
@@ -85,8 +85,8 @@ bin/aimd check src/ --baseline=baseline.json
 - [Architecture](docs/ARCHITECTURE.md)
 - [GitHub Action](docs/GITHUB_ACTION.md)
 - [Changelog](CHANGELOG.md)
-- [llms.txt](https://fractalizer.github.io/php_ai_mess_detector/llms.txt) — concise reference for AI agents
-- [llms-full.txt](https://fractalizer.github.io/php_ai_mess_detector/llms-full.txt) — complete documentation in a single file
+- [llms.txt](https://qualimetrix.github.io/qualimetrix/llms.txt) — concise reference for AI agents
+- [llms-full.txt](https://qualimetrix.github.io/qualimetrix/llms-full.txt) — complete documentation in a single file
 
 ## Requirements
 

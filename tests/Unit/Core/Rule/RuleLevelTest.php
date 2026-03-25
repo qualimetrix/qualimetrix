@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Core\Rule;
+namespace Qualimetrix\Tests\Unit\Core\Rule;
 
-use AiMessDetector\Core\Rule\RuleLevel;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Rule\RuleLevel;
 
 #[CoversClass(RuleLevel::class)]
 final class RuleLevelTest extends TestCase

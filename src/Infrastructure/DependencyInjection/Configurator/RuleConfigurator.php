@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\DependencyInjection\Configurator;
+namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
-use AiMessDetector\Infrastructure\Rule\RuleRegistry;
-use AiMessDetector\Infrastructure\Rule\RuleRegistryInterface;
+use Qualimetrix\Infrastructure\Rule\RuleRegistry;
+use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -56,7 +56,7 @@ final class RuleConfigurator implements ContainerConfiguratorInterface
 
         $loader->registerClasses(
             $prototype,
-            'AiMessDetector\\Rules\\',
+            'Qualimetrix\\Rules\\',
             $this->srcDir . '/Rules/**/*Rule.php',
             $this->srcDir . '/Rules/AbstractRule.php',
         );

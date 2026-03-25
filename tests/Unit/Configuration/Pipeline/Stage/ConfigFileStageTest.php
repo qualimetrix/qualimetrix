@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Configuration\Pipeline\Stage;
+namespace Qualimetrix\Tests\Configuration\Pipeline\Stage;
 
-use AiMessDetector\Configuration\Exception\ConfigLoadException;
-use AiMessDetector\Configuration\Loader\ConfigLoaderInterface;
-use AiMessDetector\Configuration\Pipeline\ConfigurationContext;
-use AiMessDetector\Configuration\Pipeline\Stage\ConfigFileStage;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Configuration\Exception\ConfigLoadException;
+use Qualimetrix\Configuration\Loader\ConfigLoaderInterface;
+use Qualimetrix\Configuration\Pipeline\ConfigurationContext;
+use Qualimetrix\Configuration\Pipeline\Stage\ConfigFileStage;
 use Symfony\Component\Console\Input\ArrayInput;
 
 #[CoversClass(ConfigFileStage::class)]
@@ -62,12 +62,12 @@ final class ConfigFileStageTest extends TestCase
     #[Test]
     public function loadsAimdYamlWhenExists(): void
     {
-        touch($this->tempDir . '/aimd.yaml');
+        touch($this->tempDir . '/qmx.yaml');
 
         $loader = $this->createMock(ConfigLoaderInterface::class);
         $loader->expects(self::once())
             ->method('load')
-            ->with($this->tempDir . '/aimd.yaml')
+            ->with($this->tempDir . '/qmx.yaml')
             ->willReturn(['paths' => ['src']]);
 
         $stage = new ConfigFileStage($loader);
@@ -76,14 +76,14 @@ final class ConfigFileStageTest extends TestCase
         $layer = $stage->apply($context);
 
         self::assertNotNull($layer);
-        self::assertSame('aimd.yaml', $layer->source);
+        self::assertSame('qmx.yaml', $layer->source);
         self::assertSame(['src'], $layer->values['paths']);
     }
 
     #[Test]
     public function normalizesNestedConfigToDotNotation(): void
     {
-        touch($this->tempDir . '/aimd.yaml');
+        touch($this->tempDir . '/qmx.yaml');
 
         $loader = $this->createStub(ConfigLoaderInterface::class);
         $loader->method('load')->willReturn([
@@ -110,7 +110,7 @@ final class ConfigFileStageTest extends TestCase
     #[Test]
     public function normalizesAllSupportedFields(): void
     {
-        touch($this->tempDir . '/aimd.yaml');
+        touch($this->tempDir . '/qmx.yaml');
 
         $loader = $this->createStub(ConfigLoaderInterface::class);
         $loader->method('load')->willReturn([
@@ -161,7 +161,7 @@ final class ConfigFileStageTest extends TestCase
     #[Test]
     public function normalizesExcludePathsFromConfig(): void
     {
-        touch($this->tempDir . '/aimd.yaml');
+        touch($this->tempDir . '/qmx.yaml');
 
         $loader = $this->createStub(ConfigLoaderInterface::class);
         $loader->method('load')->willReturn([
@@ -180,12 +180,12 @@ final class ConfigFileStageTest extends TestCase
     #[Test]
     public function loadsAimdYmlWhenYamlDoesNotExist(): void
     {
-        touch($this->tempDir . '/aimd.yml');
+        touch($this->tempDir . '/qmx.yml');
 
         $loader = $this->createMock(ConfigLoaderInterface::class);
         $loader->expects(self::once())
             ->method('load')
-            ->with($this->tempDir . '/aimd.yml')
+            ->with($this->tempDir . '/qmx.yml')
             ->willReturn(['paths' => ['lib']]);
 
         $stage = new ConfigFileStage($loader);
@@ -194,21 +194,21 @@ final class ConfigFileStageTest extends TestCase
         $layer = $stage->apply($context);
 
         self::assertNotNull($layer);
-        self::assertSame('aimd.yml', $layer->source);
+        self::assertSame('qmx.yml', $layer->source);
         self::assertSame(['lib'], $layer->values['paths']);
     }
 
     #[Test]
     public function prefersYamlOverYml(): void
     {
-        // Both files exist — aimd.yaml should be preferred
-        touch($this->tempDir . '/aimd.yaml');
-        touch($this->tempDir . '/aimd.yml');
+        // Both files exist — qmx.yaml should be preferred
+        touch($this->tempDir . '/qmx.yaml');
+        touch($this->tempDir . '/qmx.yml');
 
         $loader = $this->createMock(ConfigLoaderInterface::class);
         $loader->expects(self::once())
             ->method('load')
-            ->with($this->tempDir . '/aimd.yaml')
+            ->with($this->tempDir . '/qmx.yaml')
             ->willReturn(['paths' => ['src']]);
 
         $stage = new ConfigFileStage($loader);
@@ -217,7 +217,7 @@ final class ConfigFileStageTest extends TestCase
         $layer = $stage->apply($context);
 
         self::assertNotNull($layer);
-        self::assertSame('aimd.yaml', $layer->source);
+        self::assertSame('qmx.yaml', $layer->source);
     }
 
     #[Test]
@@ -246,7 +246,7 @@ final class ConfigFileStageTest extends TestCase
     public function explicitConfigPathOverridesAutoDetection(): void
     {
         // Create both auto-detected and explicit config files
-        touch($this->tempDir . '/aimd.yaml');
+        touch($this->tempDir . '/qmx.yaml');
         $customConfig = $this->tempDir . '/custom.yaml';
         touch($customConfig);
 
@@ -285,7 +285,7 @@ final class ConfigFileStageTest extends TestCase
     #[Test]
     public function autoDetectsWhenNoExplicitConfigPath(): void
     {
-        // No aimd.yaml, no explicit path — should return null
+        // No qmx.yaml, no explicit path — should return null
         $loader = $this->createMock(ConfigLoaderInterface::class);
         $loader->expects(self::never())->method('load');
 

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Reporting\Debt;
+namespace Qualimetrix\Reporting\Debt;
 
 /**
  * Value Object representing aggregated technical debt information.

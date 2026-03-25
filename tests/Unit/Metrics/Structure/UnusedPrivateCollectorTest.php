@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Metrics\Structure;
+namespace Qualimetrix\Tests\Unit\Metrics\Structure;
 
-use AiMessDetector\Core\Metric\MetricBag;
-use AiMessDetector\Metrics\Structure\UnusedPrivateClassData;
-use AiMessDetector\Metrics\Structure\UnusedPrivateCollector;
-use AiMessDetector\Metrics\Structure\UnusedPrivateVisitor;
 use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Metrics\Structure\UnusedPrivateClassData;
+use Qualimetrix\Metrics\Structure\UnusedPrivateCollector;
+use Qualimetrix\Metrics\Structure\UnusedPrivateVisitor;
 use SplFileInfo;
 
 #[CoversClass(UnusedPrivateCollector::class)]

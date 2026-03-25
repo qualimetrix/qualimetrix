@@ -1,61 +1,61 @@
-# AI Mess Detector
+# Qualimetrix
 
 > Fast PHP static analysis tool for code quality metrics. Requires PHP 8.4+.
-> Install: `composer require --dev fractalizer/ai-mess-detector`
-> Run: `vendor/bin/aimd check src/`
+> Install: `composer require --dev qualimetrix/qualimetrix`
+> Run: `vendor/bin/qmx check src/`
 
-AI Mess Detector (AIMD) analyzes PHP code and reports quality violations across complexity, coupling, cohesion, maintainability, size, design, architecture, code smells, and security.
+Qualimetrix (Qualimetrix) analyzes PHP code and reports quality violations across complexity, coupling, cohesion, maintainability, size, design, architecture, code smells, and security.
 
 Key commands:
 
 ```
-vendor/bin/aimd check src/                              # health summary (default)
-vendor/bin/aimd check src/ --detail                     # summary + violation list
-vendor/bin/aimd check src/ --format=text                # full violation report grouped by file
-vendor/bin/aimd check src/ --format=metrics             # raw metric values for all symbols
-vendor/bin/aimd check src/ --format=json                # structured JSON output
-vendor/bin/aimd check src/ --format=health -o report.html  # interactive HTML report
-vendor/bin/aimd check src/ --analyze=git:staged         # staged files only
-vendor/bin/aimd check src/ --namespace='App\Service'    # drill down into namespace
-vendor/bin/aimd check src/ --disable-rule=complexity    # disable rule group
-vendor/bin/aimd check src/ --only-rule=coupling.cbo     # run specific rule
-vendor/bin/aimd check src/ --baseline=baseline.json     # ignore known violations
-vendor/bin/aimd check src/ --generate-baseline=b.json   # generate baseline
-vendor/bin/aimd rules                                   # list all rules with options
-vendor/bin/aimd graph:export src/ -o graph.dot          # dependency graph
-vendor/bin/aimd hook:install                            # pre-commit hook
+vendor/bin/qmx check src/                              # health summary (default)
+vendor/bin/qmx check src/ --detail                     # summary + violation list
+vendor/bin/qmx check src/ --format=text                # full violation report grouped by file
+vendor/bin/qmx check src/ --format=metrics             # raw metric values for all symbols
+vendor/bin/qmx check src/ --format=json                # structured JSON output
+vendor/bin/qmx check src/ --format=health -o report.html  # interactive HTML report
+vendor/bin/qmx check src/ --analyze=git:staged         # staged files only
+vendor/bin/qmx check src/ --namespace='App\Service'    # drill down into namespace
+vendor/bin/qmx check src/ --disable-rule=complexity    # disable rule group
+vendor/bin/qmx check src/ --only-rule=coupling.cbo     # run specific rule
+vendor/bin/qmx check src/ --baseline=baseline.json     # ignore known violations
+vendor/bin/qmx check src/ --generate-baseline=b.json   # generate baseline
+vendor/bin/qmx rules                                   # list all rules with options
+vendor/bin/qmx graph:export src/ -o graph.dot          # dependency graph
+vendor/bin/qmx hook:install                            # pre-commit hook
 ```
 
 Output formats: `summary` (default), `text`, `metrics`, `json`, `health` (HTML), `sarif`, `checkstyle`, `gitlab`, `github`.
 
 Rule groups: `complexity`, `coupling`, `size`, `design`, `maintainability`, `cohesion`, `architecture`, `duplication`, `code-smell`, `security`.
 
-Configuration: `aimd.yaml` (auto-discovered) or `--config=path`. Suppression: `@aimd-ignore` / `@aimd-ignore-next-line` in docblocks or comments.
+Configuration: `qmx.yaml` (auto-discovered) or `--config=path`. Suppression: `@qmx-ignore` / `@qmx-ignore-next-line` in docblocks or comments.
 
 ## Docs
 
-- [llms-full.txt](https://fractalizer.github.io/php_ai_mess_detector/llms-full.txt): Complete documentation in a single file — all rules, CLI options, configuration, output formats
-- [Quick Start](https://fractalizer.github.io/php_ai_mess_detector/getting-started/quick-start/): Installation, first analysis, pre-commit hook, GitHub Action, Docker
-- [Configuration](https://fractalizer.github.io/php_ai_mess_detector/getting-started/configuration/): YAML config format, rule options, exclude paths
-- [CLI Options](https://fractalizer.github.io/php_ai_mess_detector/usage/cli-options/): All command-line flags and options
-- [Rules Overview](https://fractalizer.github.io/php_ai_mess_detector/rules/): All rules with IDs, default thresholds, and descriptions
-- [Output Formats](https://fractalizer.github.io/php_ai_mess_detector/usage/output-formats/): Format details, examples, and formatter-specific options
-- [Git Integration](https://fractalizer.github.io/php_ai_mess_detector/usage/git-integration/): Staged files, diff analysis, report scoping
-- [Baseline](https://fractalizer.github.io/php_ai_mess_detector/usage/baseline/): Ignoring known violations, baseline management
-- [Default Thresholds](https://fractalizer.github.io/php_ai_mess_detector/reference/default-thresholds/): Complete threshold reference table
-- [GitHub Actions](https://fractalizer.github.io/php_ai_mess_detector/ci-cd/github-actions/): CI/CD integration guide
+- [llms-full.txt](https://qualimetrix.github.io/qualimetrix/llms-full.txt): Complete documentation in a single file — all rules, CLI options, configuration, output formats
+- [Quick Start](https://qualimetrix.github.io/qualimetrix/getting-started/quick-start/): Installation, first analysis, pre-commit hook, GitHub Action, Docker
+- [Configuration](https://qualimetrix.github.io/qualimetrix/getting-started/configuration/): YAML config format, rule options, exclude paths
+- [CLI Options](https://qualimetrix.github.io/qualimetrix/usage/cli-options/): All command-line flags and options
+- [Rules Overview](https://qualimetrix.github.io/qualimetrix/rules/): All rules with IDs, default thresholds, and descriptions
+- [Output Formats](https://qualimetrix.github.io/qualimetrix/usage/output-formats/): Format details, examples, and formatter-specific options
+- [Git Integration](https://qualimetrix.github.io/qualimetrix/usage/git-integration/): Staged files, diff analysis, report scoping
+- [Baseline](https://qualimetrix.github.io/qualimetrix/usage/baseline/): Ignoring known violations, baseline management
+- [Default Thresholds](https://qualimetrix.github.io/qualimetrix/reference/default-thresholds/): Complete threshold reference table
+- [GitHub Actions](https://qualimetrix.github.io/qualimetrix/ci-cd/github-actions/): CI/CD integration guide
 
 ## Optional
 
-- [Complexity Rules](https://fractalizer.github.io/php_ai_mess_detector/rules/complexity/): CCN, Cognitive, NPath, WMC — thresholds and configuration
-- [Coupling Rules](https://fractalizer.github.io/php_ai_mess_detector/rules/coupling/): CBO, Instability, Distance, ClassRank
-- [Size Rules](https://fractalizer.github.io/php_ai_mess_detector/rules/size/): Method count, class count, property count
-- [Design Rules](https://fractalizer.github.io/php_ai_mess_detector/rules/design/): LCOM, DIT, NOC, type coverage
-- [Maintainability Rules](https://fractalizer.github.io/php_ai_mess_detector/rules/maintainability/): Maintainability Index
-- [Cohesion](https://fractalizer.github.io/php_ai_mess_detector/rules/cohesion/): TCC/LCC metrics
-- [Architecture Rules](https://fractalizer.github.io/php_ai_mess_detector/rules/architecture/): Circular dependency detection
-- [Code Smell Rules](https://fractalizer.github.io/php_ai_mess_detector/rules/code-smell/): Boolean args, eval, goto, god class, data class, unused private, etc.
-- [Security Rules](https://fractalizer.github.io/php_ai_mess_detector/rules/security/): SQL injection, XSS, command injection, hardcoded credentials
-- [Duplication Rules](https://fractalizer.github.io/php_ai_mess_detector/rules/duplication/): Code duplication detection
-- [Other CI Systems](https://fractalizer.github.io/php_ai_mess_detector/ci-cd/other-ci/): GitLab CI, Jenkins, Bitbucket Pipelines
-- [Usage Scenarios](https://fractalizer.github.io/php_ai_mess_detector/usage/usage-scenarios/): Common workflows and use cases
+- [Complexity Rules](https://qualimetrix.github.io/qualimetrix/rules/complexity/): CCN, Cognitive, NPath, WMC — thresholds and configuration
+- [Coupling Rules](https://qualimetrix.github.io/qualimetrix/rules/coupling/): CBO, Instability, Distance, ClassRank
+- [Size Rules](https://qualimetrix.github.io/qualimetrix/rules/size/): Method count, class count, property count
+- [Design Rules](https://qualimetrix.github.io/qualimetrix/rules/design/): LCOM, DIT, NOC, type coverage
+- [Maintainability Rules](https://qualimetrix.github.io/qualimetrix/rules/maintainability/): Maintainability Index
+- [Cohesion](https://qualimetrix.github.io/qualimetrix/rules/cohesion/): TCC/LCC metrics
+- [Architecture Rules](https://qualimetrix.github.io/qualimetrix/rules/architecture/): Circular dependency detection
+- [Code Smell Rules](https://qualimetrix.github.io/qualimetrix/rules/code-smell/): Boolean args, eval, goto, god class, data class, unused private, etc.
+- [Security Rules](https://qualimetrix.github.io/qualimetrix/rules/security/): SQL injection, XSS, command injection, hardcoded credentials
+- [Duplication Rules](https://qualimetrix.github.io/qualimetrix/rules/duplication/): Code duplication detection
+- [Other CI Systems](https://qualimetrix.github.io/qualimetrix/ci-cd/other-ci/): GitLab CI, Jenkins, Bitbucket Pipelines
+- [Usage Scenarios](https://qualimetrix.github.io/qualimetrix/usage/usage-scenarios/): Common workflows and use cases

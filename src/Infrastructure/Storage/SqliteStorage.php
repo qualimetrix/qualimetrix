@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Infrastructure\Storage;
+namespace Qualimetrix\Infrastructure\Storage;
 
-use AiMessDetector\Core\Dependency\Dependency;
-use AiMessDetector\Core\Dependency\DependencyType;
-use AiMessDetector\Core\Symbol\SymbolPath;
-use AiMessDetector\Core\Symbol\SymbolType;
-use AiMessDetector\Core\Violation\Location;
 use Generator;
 use PDO;
+use Qualimetrix\Core\Dependency\Dependency;
+use Qualimetrix\Core\Dependency\DependencyType;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Violation\Location;
 use RuntimeException;
 use Throwable;
 
@@ -22,7 +22,7 @@ final class SqliteStorage implements StorageInterface
     private readonly PDO $pdo;
     private readonly string $dbPath;
 
-    public function __construct(string $dbPath = '.aimd-cache/metrics.db')
+    public function __construct(string $dbPath = '.qmx-cache/metrics.db')
     {
         $this->dbPath = $dbPath;
         $dir = \dirname($dbPath);

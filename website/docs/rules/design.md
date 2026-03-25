@@ -92,7 +92,7 @@ This class has LCOM = 2. The profile methods and the financial methods use compl
 <!-- llms:skip-begin -->
 ### Implementation notes
 
-AIMD uses the **LCOM4** algorithm (Hitz & Montazeri, 1995), which is graph-based:
+Qualimetrix uses the **LCOM4** algorithm (Hitz & Montazeri, 1995), which is graph-based:
 
 1. Build a graph where each instance method is a node (static methods are excluded)
 2. Add an edge between two methods if they share a property (`$this->property`) or one calls the other (`$this->method()`)
@@ -101,17 +101,17 @@ AIMD uses the **LCOM4** algorithm (Hitz & Montazeri, 1995), which is graph-based
 This is the most widely accepted LCOM variant in modern literature. A value of 1 means all methods are interconnected — the class is cohesive.
 
 !!! info "Deviation from original spec"
-    The original LCOM4 (Hitz & Montazeri, 1995) defines edges only through shared property access. AIMD extends this with method-call edges (`$this->method()`), following the standard approach used by modern tools (SonarQube, JDepend). Without this extension, a well-factored class that accesses properties through getters would appear to have poor cohesion.
+    The original LCOM4 (Hitz & Montazeri, 1995) defines edges only through shared property access. Qualimetrix extends this with method-call edges (`$this->method()`), following the standard approach used by modern tools (SonarQube, JDepend). Without this extension, a well-factored class that accesses properties through getters would appear to have poor cohesion.
 
 !!! note "Comparing with other tools"
-    phpmetrics uses the **Henderson-Sellers LCOM** formula, which produces values on a completely different scale (0.0 to 1.0+). These values are **not comparable** with AIMD's LCOM4. A class that scores LCOM=2 in AIMD might show LCOM=0.8 in phpmetrics — both indicate low cohesion, but the numbers mean different things.
+    phpmetrics uses the **Henderson-Sellers LCOM** formula, which produces values on a completely different scale (0.0 to 1.0+). These values are **not comparable** with Qualimetrix's LCOM4. A class that scores LCOM=2 in Qualimetrix might show LCOM=0.8 in phpmetrics — both indicate low cohesion, but the numbers mean different things.
 
 <!-- llms:skip-end -->
 
 ### Configuration
 
 ```yaml
-# aimd.yaml
+# qmx.yaml
 rules:
   design.lcom:
     warning: 4
@@ -121,10 +121,10 @@ rules:
 ```
 
 ```bash
-bin/aimd check src/ --rule-opt="design.lcom:warning=4"
-bin/aimd check src/ --rule-opt="design.lcom:error=6"
-bin/aimd check src/ --rule-opt="design.lcom:min_methods=5"
-bin/aimd check src/ --rule-opt="design.lcom:exclude_readonly=false"
+bin/qmx check src/ --rule-opt="design.lcom:warning=4"
+bin/qmx check src/ --rule-opt="design.lcom:error=6"
+bin/qmx check src/ --rule-opt="design.lcom:min_methods=5"
+bin/qmx check src/ --rule-opt="design.lcom:exclude_readonly=false"
 ```
 
 ---
@@ -203,7 +203,7 @@ class CreateOrderHandler extends BaseHandler { /* ... */ }
 ### Configuration
 
 ```yaml
-# aimd.yaml
+# qmx.yaml
 rules:
   design.noc:
     warning: 12
@@ -211,8 +211,8 @@ rules:
 ```
 
 ```bash
-bin/aimd check src/ --rule-opt="design.noc:warning=12"
-bin/aimd check src/ --rule-opt="design.noc:error=20"
+bin/qmx check src/ --rule-opt="design.noc:warning=12"
+bin/qmx check src/ --rule-opt="design.noc:error=20"
 ```
 
 ---
@@ -309,7 +309,7 @@ To understand `UserEntity`, you need to read all 7 classes in the chain.
 ### Configuration
 
 ```yaml
-# aimd.yaml
+# qmx.yaml
 rules:
   design.inheritance:
     warning: 5
@@ -317,8 +317,8 @@ rules:
 ```
 
 ```bash
-bin/aimd check src/ --rule-opt="design.inheritance:warning=5"
-bin/aimd check src/ --rule-opt="design.inheritance:error=7"
+bin/qmx check src/ --rule-opt="design.inheritance:warning=5"
+bin/qmx check src/ --rule-opt="design.inheritance:error=7"
 ```
 
 ---
@@ -412,7 +412,7 @@ class LegacyService
 ### Configuration
 
 ```yaml
-# aimd.yaml
+# qmx.yaml
 rules:
   design.type-coverage:
     param_warning: 80
@@ -424,6 +424,6 @@ rules:
 ```
 
 ```bash
-bin/aimd check src/ --rule-opt="design.type-coverage:param_warning=90"
-bin/aimd check src/ --rule-opt="design.type-coverage:param_error=60"
+bin/qmx check src/ --rule-opt="design.type-coverage:param_warning=90"
+bin/qmx check src/ --rule-opt="design.type-coverage:param_error=60"
 ```

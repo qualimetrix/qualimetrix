@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Baseline;
+namespace Qualimetrix\Tests\Unit\Baseline;
 
-use AiMessDetector\Baseline\Baseline;
-use AiMessDetector\Baseline\BaselineEntry;
 use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Baseline\Baseline;
+use Qualimetrix\Baseline\BaselineEntry;
 
 #[CoversClass(Baseline::class)]
 final class BaselineTest extends TestCase

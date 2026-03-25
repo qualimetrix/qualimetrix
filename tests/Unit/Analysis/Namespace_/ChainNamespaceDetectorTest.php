@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace AiMessDetector\Tests\Unit\Analysis\Namespace_;
+namespace Qualimetrix\Tests\Unit\Analysis\Namespace_;
 
-use AiMessDetector\Analysis\Namespace_\ChainNamespaceDetector;
-use AiMessDetector\Core\Namespace_\NamespaceDetectorInterface;
 use Generator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Namespace_\ChainNamespaceDetector;
+use Qualimetrix\Core\Namespace_\NamespaceDetectorInterface;
 use RuntimeException;
 use SplFileInfo;
 
