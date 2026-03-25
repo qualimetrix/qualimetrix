@@ -46,12 +46,20 @@ final class HtmlTreeBuilder
         $this->attachViolations($nodesByPath, $violationsByNode, $context);
 
         // 3. Compute debt per node
-        $this->computeDebt($violationsByNode, $nodesByPath, $report->violations);
+        $this->computeDebt($violationsByNode, $nodesByPath);
 
         // 4. Compute violationCountTotal bottom-up
         $this->computeViolationCountTotal($root);
 
-        // 5. Build summary
+        // 5. Override root debt with report-level total when available.
+        // Bottom-up aggregation misses file-level/project-level violations
+        // that aren't partitioned into tree nodes. Report's techDebtMinutes
+        // (set by SummaryEnricher) covers all violations.
+        if ($report->techDebtMinutes > 0) {
+            $root->debtMinutes = $report->techDebtMinutes;
+        }
+
+        // 6. Build summary
         $summary = $this->buildSummary($report, $root, $nodesByPath);
 
         // 6. Build computed metric definitions
@@ -439,12 +447,10 @@ final class HtmlTreeBuilder
      *
      * @param array<string, list<Violation>> $violationsByNode
      * @param array<string, HtmlTreeNode> $nodesByPath
-     * @param list<Violation> $allViolations
      */
     private function computeDebt(
         array $violationsByNode,
         array $nodesByPath,
-        array $allViolations,
     ): void {
         foreach ($violationsByNode as $nodePath => $violations) {
             if (!isset($nodesByPath[$nodePath])) {

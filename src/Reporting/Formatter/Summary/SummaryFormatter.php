@@ -63,7 +63,7 @@ final class SummaryFormatter implements FormatterInterface
 
                 $lines[] = '';
                 $lines[] = $color->bold('Violations');
-                $lines[] = $this->detailedRenderer->render($displayViolations, $context);
+                $lines[] = $this->detailedRenderer->render($displayViolations, $context, $filteredViolations);
 
                 if (!$showAll) {
                     $remaining = $totalCount - $limit;
