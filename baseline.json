@@ -1,1970 +1,1946 @@
 {
     "version": 5,
-    "generated": "2026-03-18T16:36:29+00:00",
-    "count": 967,
-    "violationCount": 967,
-    "symbolCount": 654,
+    "generated": "2026-03-25T15:27:25+00:00",
+    "count": 975,
+    "violationCount": 975,
+    "symbolCount": 652,
     "violations": {
         "class:Qualimetrix\\Analysis\\Aggregator\\AggregationHelper": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "ca23168089c36d34"
+                "hash": "0a0dc08d1befd5ff"
             },
             {
                 "rule": "complexity.wmc",
-                "hash": "c598f67fe85e2d69"
+                "hash": "c95a9151135188d0"
             },
             {
                 "rule": "computed.health",
-                "hash": "c69deade27b05a5d"
+                "hash": "94c01f418bf555b1"
             }
         ],
         "class:Qualimetrix\\Analysis\\Aggregator\\ClassToNamespaceAggregator": [
             {
                 "rule": "computed.health",
-                "hash": "67f03f8969deb287"
+                "hash": "7b246c22a2b2a68a"
             },
             {
                 "rule": "coupling.instability",
-                "hash": "a26183f7abb6d4a2"
+                "hash": "4aed56cebc4518d1"
             }
         ],
         "class:Qualimetrix\\Analysis\\Aggregator\\GlobalCollectorRunner": [
             {
                 "rule": "code-smell.data-class",
-                "hash": "68e7a011dcd317db"
+                "hash": "6e5f947a33da032a"
             }
         ],
         "class:Qualimetrix\\Analysis\\Aggregator\\MethodToClassAggregator": [
             {
                 "rule": "computed.health",
-                "hash": "45fc681d765fe171"
+                "hash": "1ca2300686210e3a"
             },
             {
                 "rule": "coupling.instability",
-                "hash": "516b91de15aaaa01"
+                "hash": "ccb24226fdfa192a"
             }
         ],
         "class:Qualimetrix\\Analysis\\Aggregator\\MetricAggregator": [
             {
                 "rule": "coupling.instability",
-                "hash": "fc7de0d5650bd5d8"
+                "hash": "44369ba6cd2e344e"
             }
         ],
         "class:Qualimetrix\\Analysis\\Aggregator\\NamespaceToProjectAggregator": [
             {
                 "rule": "computed.health",
-                "hash": "743cec8b5eafb9e1"
+                "hash": "b1693d62bd67c92c"
             },
             {
                 "rule": "coupling.instability",
-                "hash": "77b2a76439c2a2a6"
+                "hash": "8c9f0ecffeaae82b"
             }
         ],
         "class:Qualimetrix\\Analysis\\Collection\\CollectionOrchestrator": [
             {
                 "rule": "computed.health",
-                "hash": "77775ec588ec6236"
+                "hash": "753eb7d7196247a7"
             },
             {
                 "rule": "coupling.cbo",
-                "hash": "a19008e0d104574d"
+                "hash": "7f098cf1e5b5e7b2"
             },
             {
                 "rule": "coupling.instability",
-                "hash": "9ee54dcf29ab6ccc"
+                "hash": "8a0dc28fbeb6aaf0"
             }
         ],
         "class:Qualimetrix\\Analysis\\Collection\\Dependency\\CircularDependencyDetector": [
             {
                 "rule": "computed.health",
-                "hash": "a76f73a063fc21d5"
+                "hash": "923593723b5dca27"
             }
         ],
         "class:Qualimetrix\\Analysis\\Collection\\Dependency\\DependencyGraph": [
             {
                 "rule": "computed.health",
-                "hash": "b36b1ad4ffd77e1a"
+                "hash": "ad8b785c4bf14ab0"
             }
         ],
         "class:Qualimetrix\\Analysis\\Collection\\Dependency\\DependencyVisitor": [
             {
                 "rule": "coupling.cbo",
-                "hash": "eac2a2d866920e60"
+                "hash": "e62bf102d87b6ef5"
             }
         ],
         "class:Qualimetrix\\Analysis\\Collection\\Dependency\\Export\\DotExporter": [
             {
                 "rule": "computed.health",
-                "hash": "39ccdf4b0e4db2d3"
+                "hash": "e91c66bbbdb783ad"
             },
             {
                 "rule": "coupling.instability",
-                "hash": "dda527dd3999df08"
+                "hash": "1f37c27bc42e56c4"
             },
             {
                 "rule": "design.lcom",
-                "hash": "e0b1964bb6472b1d"
+                "hash": "566c980acf5d5c38"
             }
         ],
         "class:Qualimetrix\\Analysis\\Collection\\Dependency\\Export\\JsonGraphExporter": [
             {
                 "rule": "design.lcom",
-                "hash": "1a68a93d778dfa51"
+                "hash": "809b0a34dfeac0bd"
             }
         ],
         "class:Qualimetrix\\Analysis\\Collection\\Dependency\\Handler\\CatchInstanceofHandler": [
             {
                 "rule": "coupling.instability",
-                "hash": "19db9b9b30e16653"
+                "hash": "9208ba40c325479b"
             }
         ],
         "class:Qualimetrix\\Analysis\\Collection\\Dependency\\Handler\\ClassLikeHandler": [
             {
                 "rule": "coupling.instability",
-                "hash": "e7c0d12d0e3d1cfb"
+                "hash": "624cfd8f4c4fdee3"
             }
         ],
         "class:Qualimetrix\\Analysis\\Collection\\Dependency\\Handler\\DependencyContext": [
             {
                 "rule": "coupling.cbo",
-                "hash": "1f9d6937eaa25795"
+                "hash": "bd36100f722356c6"
             }
         ],
         "class:Qualimetrix\\Analysis\\Collection\\Dependency\\Handler\\InstantiationHandler": [
             {
                 "rule": "coupling.instability",
-                "hash": "62095eb8d81bb689"
+                "hash": "3e19f1559699d86b"
             }
         ],
         "class:Qualimetrix\\Analysis\\Collection\\Dependency\\Handler\\MethodHandler": [
             {
                 "rule": "coupling.instability",
-                "hash": "34e0ce5b2428c3c7"
+                "hash": "9aff78243e163b77"
             }
         ],
         "class:Qualimetrix\\Analysis\\Collection\\Dependency\\Handler\\PropertyHandler": [
             {
                 "rule": "coupling.instability",
-                "hash": "a97a13d544448c71"
+                "hash": "45c43326127600a1"
             }
         ],
         "class:Qualimetrix\\Analysis\\Collection\\Dependency\\Handler\\StaticAccessHandler": [
             {
                 "rule": "coupling.instability",
-                "hash": "dcee8f1a91cf1800"
+                "hash": "96da515771f6695c"
             }
         ],
         "class:Qualimetrix\\Analysis\\Collection\\Dependency\\Handler\\TraitUseHandler": [
             {
                 "rule": "coupling.instability",
-                "hash": "36693312a11a8b34"
+                "hash": "ca96fcca571acf5a"
             }
         ],
         "class:Qualimetrix\\Analysis\\Collection\\FileProcessor": [
             {
                 "rule": "computed.health",
-                "hash": "6471c7ca091cd378"
+                "hash": "21ae4a1891090555"
             },
             {
                 "rule": "coupling.cbo",
-                "hash": "b161c345e07a91b6"
+                "hash": "68c24d87ffdd2f74"
             },
             {
                 "rule": "coupling.instability",
-                "hash": "c5c026c817cde8e6"
-            }
-        ],
-        "class:Qualimetrix\\Analysis\\Collection\\Metric\\CompositeCollector": [
-            {
-                "rule": "coupling.cbo",
-                "hash": "939a662f58ed870e"
+                "hash": "4b4576f52d9c748a"
             }
         ],
         "class:Qualimetrix\\Analysis\\Duplication\\DuplicationDetector": [
             {
                 "rule": "complexity.wmc",
-                "hash": "1e8e45f38eb89726"
-            }
-        ],
-        "class:Qualimetrix\\Analysis\\Namespace_\\ChainNamespaceDetector": [
-            {
-                "rule": "coupling.instability",
-                "hash": "7a6975e0335b9050"
+                "hash": "6905df96e85c9d3c"
             }
         ],
         "class:Qualimetrix\\Analysis\\Namespace_\\NamespaceDetectorFactory": [
             {
                 "rule": "coupling.instability",
-                "hash": "d1f14413993dfab4"
+                "hash": "6f3ff6c89176c541"
             }
         ],
         "class:Qualimetrix\\Analysis\\Pipeline\\AnalysisPipeline": [
             {
                 "rule": "computed.health",
-                "hash": "c5575310f59621b1"
+                "hash": "80739481832a59fe"
             },
             {
                 "rule": "coupling.cbo",
-                "hash": "39485b4f1b252a9f"
+                "hash": "a970fcfa69738a7d"
             },
             {
                 "rule": "coupling.instability",
-                "hash": "269ea2850443950f"
+                "hash": "369252d6faf89a00"
             }
         ],
         "class:Qualimetrix\\Analysis\\Pipeline\\MetricEnricher": [
             {
                 "rule": "computed.health",
-                "hash": "88f7ec4e9622b7d0"
+                "hash": "a7774017971164e0"
             },
             {
                 "rule": "coupling.cbo",
-                "hash": "4b6df4294b9394da"
+                "hash": "1c7ebfdc1fab0288"
             },
             {
                 "rule": "coupling.instability",
-                "hash": "8ec141eb0d106731"
+                "hash": "e57e00a04e5c6643"
             }
         ],
         "class:Qualimetrix\\Configuration\\ComputedMetricsConfigResolver": [
             {
                 "rule": "complexity.wmc",
-                "hash": "269f5aa24db54dd2"
+                "hash": "cc24ef08339a1689"
             }
         ],
         "class:Qualimetrix\\Configuration\\ConfigurationProviderInterface": [
             {
                 "rule": "coupling.cbo",
-                "hash": "977fdcf379f957ae"
+                "hash": "3dca5d5ab556d285"
             }
         ],
         "class:Qualimetrix\\Configuration\\Loader\\YamlConfigLoader": [
             {
                 "rule": "coupling.instability",
-                "hash": "1541283b79fb7df7"
+                "hash": "f9a8128544f9277d"
             }
         ],
         "class:Qualimetrix\\Configuration\\Pipeline\\Stage\\CliStage": [
             {
                 "rule": "computed.health",
-                "hash": "488e75f500885118"
+                "hash": "9aebed2c0034c80b"
             },
             {
                 "rule": "design.lcom",
-                "hash": "a4301aa00aa42c7a"
+                "hash": "2afb0152745ac73e"
             }
         ],
         "class:Qualimetrix\\Configuration\\Pipeline\\Stage\\ComposerDiscoveryStage": [
             {
                 "rule": "design.lcom",
-                "hash": "e109752e52918158"
+                "hash": "6f3cb5adcba94446"
             }
         ],
         "class:Qualimetrix\\Configuration\\Pipeline\\Stage\\ConfigFileStage": [
             {
                 "rule": "computed.health",
-                "hash": "bc23b3ecfe3f3606"
+                "hash": "bcbf0b5c31468961"
             },
             {
                 "rule": "design.lcom",
-                "hash": "786bf6a8e78e0a69"
+                "hash": "1f36f844dfad77b3"
             }
         ],
         "class:Qualimetrix\\Configuration\\Pipeline\\Stage\\DefaultsStage": [
             {
                 "rule": "design.lcom",
-                "hash": "6c92d085de8b9128"
+                "hash": "656bc2fb672c8148"
             }
         ],
         "class:Qualimetrix\\Configuration\\RuleOptionsFactory": [
             {
                 "rule": "complexity.wmc",
-                "hash": "f0f8da8c331efca0"
+                "hash": "5e292a28f4e18172"
             }
         ],
         "class:Qualimetrix\\Core\\ComputedMetric\\ComputedMetricDefinition": [
             {
                 "rule": "computed.health",
-                "hash": "49e6497866acc225"
+                "hash": "9a1e0c74bee9e9c2"
             }
         ],
         "class:Qualimetrix\\Core\\Dependency\\DependencyGraphInterface": [
             {
                 "rule": "coupling.cbo",
-                "hash": "ca96e74ac57f56d0"
+                "hash": "88fdcd6d9f988996"
             },
             {
                 "rule": "coupling.class-rank",
-                "hash": "34108a66b254bfd6"
+                "hash": "3fb067dd6c60be59"
+            }
+        ],
+        "class:Qualimetrix\\Core\\Dependency\\DependencyType": [
+            {
+                "rule": "coupling.cbo",
+                "hash": "eed1b893263a7d82"
             }
         ],
         "class:Qualimetrix\\Core\\Dependency\\EmptyDependencyGraph": [
             {
                 "rule": "computed.health",
-                "hash": "0930312d381c0416"
+                "hash": "c92e2958be2677a0"
             }
         ],
         "class:Qualimetrix\\Core\\Metric\\AggregationStrategy": [
             {
                 "rule": "coupling.cbo",
-                "hash": "80df367cbb36dddb"
+                "hash": "897fb2ca4d321da8"
             }
         ],
         "class:Qualimetrix\\Core\\Metric\\ClassWithMetrics": [
             {
                 "rule": "computed.health",
-                "hash": "1883f0bb3a91502c"
+                "hash": "a4fabf15c7cdd972"
             }
         ],
         "class:Qualimetrix\\Core\\Metric\\DataBag": [
             {
                 "rule": "coupling.class-rank",
-                "hash": "4053f8978e06757d"
+                "hash": "13c644c303159028"
             }
         ],
         "class:Qualimetrix\\Core\\Metric\\MethodWithMetrics": [
             {
                 "rule": "computed.health",
-                "hash": "4d44307882b91c52"
+                "hash": "3123c90bc470588f"
             }
         ],
         "class:Qualimetrix\\Core\\Metric\\MetricBag": [
             {
                 "rule": "coupling.cbo",
-                "hash": "a42fe3f4211f28fa"
+                "hash": "8b2c78590b19f18b"
             },
             {
                 "rule": "coupling.class-rank",
-                "hash": "8f84f604a1c3edeb"
+                "hash": "6ebfff17e2c9512b"
             }
         ],
         "class:Qualimetrix\\Core\\Metric\\MetricDefinition": [
             {
                 "rule": "coupling.cbo",
-                "hash": "759654f695b8ca08"
+                "hash": "f0c6baa6580b2c48"
             }
         ],
         "class:Qualimetrix\\Core\\Metric\\MetricName": [
             {
                 "rule": "coupling.cbo",
-                "hash": "734084407df58773"
+                "hash": "3f863069eb49d7f2"
             }
         ],
         "class:Qualimetrix\\Core\\Metric\\MetricRepositoryInterface": [
             {
                 "rule": "coupling.cbo",
-                "hash": "7f17157f6f17cb7f"
+                "hash": "90d7a5a48612b294"
             },
             {
                 "rule": "coupling.class-rank",
-                "hash": "bb22cfa745ddee95"
+                "hash": "9bcb20b7c673a015"
             }
         ],
         "class:Qualimetrix\\Core\\Metric\\SymbolLevel": [
             {
                 "rule": "coupling.cbo",
-                "hash": "1b5c8f8defa1a753"
+                "hash": "e70a29feff7f3c8e"
             }
         ],
         "class:Qualimetrix\\Core\\Profiler\\NullProfiler": [
             {
                 "rule": "computed.health",
-                "hash": "05a3b67c5218ef06"
+                "hash": "2ee18e3feb6bc4d0"
             },
             {
                 "rule": "design.lcom",
-                "hash": "bf7bf47a814f3cdf"
+                "hash": "64a54eef36edb1ff"
             }
         ],
         "class:Qualimetrix\\Core\\Profiler\\ProfilerHolder": [
             {
                 "rule": "coupling.cbo",
-                "hash": "7365bb340bec5c8b"
+                "hash": "fd4558eefc47430b"
             }
         ],
         "class:Qualimetrix\\Core\\Progress\\NullProgressReporter": [
             {
                 "rule": "design.lcom",
-                "hash": "8e2592088b61c313"
+                "hash": "38b5a97a3ee6697c"
             }
         ],
         "class:Qualimetrix\\Core\\Rule\\AnalysisContext": [
             {
                 "rule": "coupling.cbo",
-                "hash": "59a8a4ef5d5f92d9"
+                "hash": "d41fb808e577e2a8"
             }
         ],
         "class:Qualimetrix\\Core\\Rule\\LevelOptionsInterface": [
             {
                 "rule": "coupling.cbo",
-                "hash": "2cfe2a6beca9cbf5"
+                "hash": "7d7da2f009de6eb8"
             }
         ],
         "class:Qualimetrix\\Core\\Rule\\RuleCategory": [
             {
                 "rule": "coupling.cbo",
-                "hash": "a91d259e74d50e17"
+                "hash": "b8b0a50cc21855de"
             }
         ],
         "class:Qualimetrix\\Core\\Rule\\RuleOptionsInterface": [
             {
                 "rule": "coupling.cbo",
-                "hash": "0d45d5e0d4156584"
+                "hash": "0780e531f14aeafa"
             },
             {
                 "rule": "coupling.class-rank",
-                "hash": "64074ed33f0abaef"
+                "hash": "e8572d39e094d303"
             }
         ],
         "class:Qualimetrix\\Core\\Symbol\\SymbolPath": [
             {
                 "rule": "complexity.wmc",
-                "hash": "86de0a91a24c1c6b"
+                "hash": "ec35e7347c177dd2"
             },
             {
                 "rule": "coupling.cbo",
-                "hash": "c8d6bbccfe0ffe4b"
+                "hash": "d4078c91e7f9b970"
             },
             {
                 "rule": "coupling.class-rank",
-                "hash": "573abb68e0dc2f9d"
+                "hash": "4ba28ff3a9ce3710"
             }
         ],
         "class:Qualimetrix\\Core\\Symbol\\SymbolType": [
             {
                 "rule": "coupling.cbo",
-                "hash": "8db9b913321cb804"
+                "hash": "82259ee9fb726423"
             },
             {
                 "rule": "coupling.class-rank",
-                "hash": "b3ac413d5b549103"
+                "hash": "5560e0a537dee844"
             }
         ],
         "class:Qualimetrix\\Core\\Violation\\Location": [
             {
                 "rule": "coupling.cbo",
-                "hash": "5aa7d8a98be5909b"
+                "hash": "4e141df425a7df55"
+            },
+            {
+                "rule": "coupling.class-rank",
+                "hash": "79f6f3c6484db557"
             }
         ],
         "class:Qualimetrix\\Core\\Violation\\Severity": [
             {
                 "rule": "coupling.cbo",
-                "hash": "39ed751ac499196b"
+                "hash": "bf3142975ddf3f74"
             },
             {
                 "rule": "coupling.class-rank",
-                "hash": "79eaafe5c3f5694b"
+                "hash": "d52d62bb61099ff8"
             }
         ],
         "class:Qualimetrix\\Core\\Violation\\Violation": [
             {
                 "rule": "computed.health",
-                "hash": "fd8792ef9950bffa"
+                "hash": "6f41b84f00a1d13f"
             },
             {
                 "rule": "coupling.cbo",
-                "hash": "faa3af1a1b2e6198"
+                "hash": "cf15ddbbdf291a40"
             },
             {
                 "rule": "coupling.class-rank",
-                "hash": "6a0a3b0cef394832"
+                "hash": "a5e0aefe7fe7df1b"
             }
         ],
         "class:Qualimetrix\\Infrastructure\\Ast\\FileParserFactory": [
             {
                 "rule": "coupling.instability",
-                "hash": "a907a82b9dc646c9"
+                "hash": "79c9a599bbbf1557"
             }
         ],
         "class:Qualimetrix\\Infrastructure\\Cache\\CacheFactory": [
             {
                 "rule": "code-smell.data-class",
-                "hash": "ae82f61cd8f61d16"
-            }
-        ],
-        "class:Qualimetrix\\Infrastructure\\Cache\\FileCache": [
-            {
-                "rule": "coupling.instability",
-                "hash": "ac42b345822c9e19"
+                "hash": "7a2562945a3fbe93"
             }
         ],
         "class:Qualimetrix\\Infrastructure\\Console\\CheckCommandDefinition": [
             {
                 "rule": "coupling.instability",
-                "hash": "41e015f0ef4de54e"
+                "hash": "0b333431b1fe92b9"
             }
         ],
         "class:Qualimetrix\\Infrastructure\\Console\\Command\\BaselineCleanupCommand": [
             {
                 "rule": "coupling.instability",
-                "hash": "a7e23559a8970058"
+                "hash": "23585d64441223c8"
             },
             {
                 "rule": "design.lcom",
-                "hash": "eab6b549eec7b63f"
+                "hash": "e1548e625e750f12"
             }
         ],
         "class:Qualimetrix\\Infrastructure\\Console\\Command\\CheckCommand": [
             {
                 "rule": "computed.health",
-                "hash": "24d5d55ba376d526"
+                "hash": "487ac40fb92de0e8"
             },
             {
                 "rule": "coupling.cbo",
-                "hash": "c0202a02339e87f0"
+                "hash": "0c47acef1075ab5f"
             },
             {
                 "rule": "coupling.instability",
-                "hash": "5acc19f6fab8db31"
+                "hash": "de51b1fe8ae1b34e"
             }
         ],
         "class:Qualimetrix\\Infrastructure\\Console\\Command\\GraphExportCommand": [
             {
                 "rule": "computed.health",
-                "hash": "8317fd730a8b2b96"
+                "hash": "abc44404b81f4ef4"
             },
             {
                 "rule": "coupling.cbo",
-                "hash": "1a61a4c3f1d98b3e"
+                "hash": "10059134660bb5bb"
             },
             {
                 "rule": "coupling.instability",
-                "hash": "77cf3b243ea3a979"
+                "hash": "fc9d0b900f777377"
             },
             {
                 "rule": "design.lcom",
-                "hash": "e6bd38ef419b0c9b"
+                "hash": "38bc162d0fa59e63"
             }
         ],
         "class:Qualimetrix\\Infrastructure\\Console\\Command\\HookInstallCommand": [
             {
                 "rule": "code-smell.unused-private",
-                "hash": "86577a11e19b4965"
+                "hash": "8813cad37a022143"
             },
             {
                 "rule": "coupling.instability",
-                "hash": "81057bf10a53bddb"
+                "hash": "f78c9111606eeeb0"
             },
             {
                 "rule": "design.lcom",
-                "hash": "39b41acd9fcc12ed"
+                "hash": "177b8a169caef274"
             }
         ],
         "class:Qualimetrix\\Infrastructure\\Console\\Command\\HookStatusCommand": [
             {
                 "rule": "coupling.instability",
-                "hash": "c226b70f1835308a"
+                "hash": "fc8723f06fa74430"
             }
         ],
         "class:Qualimetrix\\Infrastructure\\Console\\Command\\HookUninstallCommand": [
             {
                 "rule": "computed.health",
-                "hash": "786458727a89a1c9"
+                "hash": "13461ef7a15b960f"
             },
             {
                 "rule": "coupling.instability",
-                "hash": "633a5c193cbfd0d5"
+                "hash": "dfc8b022da5cbfb3"
             },
             {
                 "rule": "design.lcom",
-                "hash": "202f1a7678a77da6"
+                "hash": "a011d9d872d86456"
             }
         ],
         "class:Qualimetrix\\Infrastructure\\Console\\Command\\RulesCommand": [
             {
                 "rule": "coupling.instability",
-                "hash": "3f975545dff252df"
+                "hash": "36464a0a2c9a4e51"
             },
             {
                 "rule": "design.lcom",
-                "hash": "3a8e0d31be830761"
+                "hash": "36128b071fed8cb1"
             }
         ],
         "class:Qualimetrix\\Infrastructure\\Console\\FormatterContextFactory": [
             {
                 "rule": "computed.health",
-                "hash": "e9df59c8f828b422"
-            },
-            {
-                "rule": "coupling.instability",
-                "hash": "bf69e422ea6116ea"
+                "hash": "b4c4fe6106f38d03"
             }
         ],
         "class:Qualimetrix\\Infrastructure\\Console\\Progress\\ConsoleProgressBar": [
             {
                 "rule": "code-smell.data-class",
-                "hash": "da2c8677f1f7ee86"
+                "hash": "4fa359bcb2b3b137"
             },
             {
                 "rule": "coupling.instability",
-                "hash": "bfc0862a5eaa4bdf"
+                "hash": "feca0546e37167de"
             }
         ],
         "class:Qualimetrix\\Infrastructure\\Console\\ResultPresenter": [
             {
                 "rule": "coupling.cbo",
-                "hash": "395591f9c9cb9daf"
+                "hash": "50715b29baa643a1"
             },
             {
                 "rule": "coupling.instability",
-                "hash": "183f1fb9db2ee53f"
+                "hash": "7226c476fc48db05"
             },
             {
                 "rule": "design.lcom",
-                "hash": "b2cd11110fad418d"
+                "hash": "353ec74d3c982b21"
             }
         ],
         "class:Qualimetrix\\Infrastructure\\Console\\RuntimeConfigurator": [
             {
                 "rule": "computed.health",
-                "hash": "494ae19e62e9997a"
+                "hash": "a660ca6d24139154"
             },
             {
                 "rule": "coupling.cbo",
-                "hash": "6b72950758bf3ed4"
+                "hash": "f140cf948fb65499"
             },
             {
                 "rule": "coupling.instability",
-                "hash": "22abeace3201ec74"
+                "hash": "3cda43fa124422b9"
             }
         ],
         "class:Qualimetrix\\Infrastructure\\Console\\ViolationFilterOrchestrator": [
             {
                 "rule": "coupling.instability",
-                "hash": "fbd0e75b9a1ae5c8"
+                "hash": "2ab6e2d438ad3c02"
             }
         ],
         "class:Qualimetrix\\Infrastructure\\Console\\ViolationFilterPipeline": [
             {
                 "rule": "coupling.instability",
-                "hash": "4e48def925d71d04"
+                "hash": "f41b3bd1128ab00e"
             }
         ],
         "class:Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\ConfigurationStageCompilerPass": [
             {
                 "rule": "coupling.instability",
-                "hash": "c67bdce5a3a829d2"
+                "hash": "28327f290a878740"
             }
         ],
         "class:Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\FormatterCompilerPass": [
             {
                 "rule": "coupling.instability",
-                "hash": "a98acbd4530ed688"
+                "hash": "88bd0ee8943aa72e"
             }
         ],
         "class:Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\GlobalCollectorCompilerPass": [
             {
                 "rule": "coupling.instability",
-                "hash": "eaf831b1d0d124f8"
+                "hash": "fad54e9a333ef9d1"
             }
         ],
         "class:Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\ParallelCollectorClassesCompilerPass": [
             {
                 "rule": "coupling.instability",
-                "hash": "e14b34fdf80b8970"
+                "hash": "f4d747c89a00c63f"
             }
         ],
         "class:Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\RuleOptionsCompilerPass": [
             {
                 "rule": "coupling.instability",
-                "hash": "3f1c9b6716bea60f"
-            }
-        ],
-        "class:Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\RuleRegistryCompilerPass": [
-            {
-                "rule": "coupling.instability",
-                "hash": "0eb6ce8fc54b7857"
+                "hash": "3876d67b1bf8bcdd"
             }
         ],
         "class:Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\AnalysisConfigurator": [
             {
                 "rule": "computed.health",
-                "hash": "bccd5db209d7d40e"
+                "hash": "f669a9b18a3fc40b"
             },
             {
                 "rule": "coupling.cbo",
-                "hash": "d4fd33bb3d4fd066"
+                "hash": "808bacd639d8fd8b"
             },
             {
                 "rule": "coupling.instability",
-                "hash": "027f56a136c3afac"
+                "hash": "80fbc0e7f04b0b45"
             }
         ],
         "class:Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\CollectorConfigurator": [
             {
                 "rule": "coupling.cbo",
-                "hash": "fae6531acb3da9f0"
+                "hash": "fdaf1855c4ae4ab7"
             },
             {
                 "rule": "coupling.instability",
-                "hash": "d6f94c52fa9d43aa"
+                "hash": "ec95a2d3bf25fbc9"
             }
         ],
         "class:Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\ConfigurationConfigurator": [
             {
                 "rule": "coupling.instability",
-                "hash": "d692dde650b46774"
+                "hash": "ee498dccc3f1b246"
             }
         ],
         "class:Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\CoreServicesConfigurator": [
             {
                 "rule": "coupling.instability",
-                "hash": "2bae9c4cea69c174"
+                "hash": "c75902c5758044de"
             }
         ],
         "class:Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator": [
             {
                 "rule": "coupling.cbo",
-                "hash": "2af4ebc142f9cbc8"
+                "hash": "fa4bee38e49fc869"
             },
             {
                 "rule": "coupling.instability",
-                "hash": "413828243ca5323f"
+                "hash": "9c23123bc648f2b0"
             }
         ],
         "class:Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\ParserConfigurator": [
             {
                 "rule": "coupling.cbo",
-                "hash": "c4f9cef29b46cdd2"
+                "hash": "efdc475d6c2e1bc5"
             },
             {
                 "rule": "coupling.instability",
-                "hash": "a1d0eb4407367d56"
+                "hash": "77503726ec7207ed"
             }
         ],
         "class:Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\RuleConfigurator": [
             {
                 "rule": "coupling.instability",
-                "hash": "3403a4f667fec574"
+                "hash": "a0983b0fefedfe00"
             }
         ],
         "class:Qualimetrix\\Infrastructure\\DependencyInjection\\ContainerFactory": [
             {
                 "rule": "coupling.cbo",
-                "hash": "da778f284963983a"
+                "hash": "2bd854197cc36e75"
             }
         ],
         "class:Qualimetrix\\Infrastructure\\Git\\ChangedFile": [
             {
                 "rule": "computed.health",
-                "hash": "94064a14b9c3b476"
-            }
-        ],
-        "class:Qualimetrix\\Infrastructure\\Git\\GitFileDiscovery": [
-            {
-                "rule": "coupling.instability",
-                "hash": "7e7b7b2ac34312be"
+                "hash": "d8967c0f97871e33"
             }
         ],
         "class:Qualimetrix\\Infrastructure\\Git\\GitScopeFilter": [
             {
                 "rule": "coupling.instability",
-                "hash": "dbb1d4e55c3f50f5"
+                "hash": "307e470d4e015759"
             }
         ],
         "class:Qualimetrix\\Infrastructure\\Git\\GitScopeResolver": [
             {
                 "rule": "coupling.instability",
-                "hash": "be6893321ed08d76"
-            }
-        ],
-        "class:Qualimetrix\\Infrastructure\\Logging\\ConsoleLogger": [
-            {
-                "rule": "coupling.instability",
-                "hash": "aeab24e0e2d2fd29"
+                "hash": "4d9712c0900374d6"
             }
         ],
         "class:Qualimetrix\\Infrastructure\\Logging\\DelegatingLogger": [
             {
                 "rule": "design.type-coverage",
-                "hash": "490923ac04db24ce"
+                "hash": "807a00a54dcf1a0d"
             }
         ],
         "class:Qualimetrix\\Infrastructure\\Logging\\FileLogger": [
             {
-                "rule": "coupling.instability",
-                "hash": "c78250e83f7462d3"
-            },
-            {
                 "rule": "design.type-coverage",
-                "hash": "80b15e5c3cadf293"
+                "hash": "68160c97b32af643"
             }
         ],
         "class:Qualimetrix\\Infrastructure\\Parallel\\FileProcessingTask": [
             {
                 "rule": "coupling.instability",
-                "hash": "1af24a712d9a4082"
-            }
-        ],
-        "class:Qualimetrix\\Infrastructure\\Parallel\\Strategy\\AmphpParallelStrategy": [
-            {
-                "rule": "coupling.instability",
-                "hash": "78df6b5e5120faab"
+                "hash": "5438b2cdda9f72a6"
             }
         ],
         "class:Qualimetrix\\Infrastructure\\Parallel\\Strategy\\StrategySelector": [
             {
                 "rule": "computed.health",
-                "hash": "343a807622158c98"
+                "hash": "1c6967c29c369696"
             }
         ],
         "class:Qualimetrix\\Infrastructure\\Parallel\\WorkerBootstrap": [
             {
                 "rule": "coupling.instability",
-                "hash": "b089ce248e305439"
+                "hash": "84238bc1f5daeca9"
             }
         ],
         "class:Qualimetrix\\Infrastructure\\Profiler\\Profiler": [
             {
                 "rule": "coupling.instability",
-                "hash": "c439953b30b6c14b"
+                "hash": "29c592b33ce9a56d"
             }
         ],
         "class:Qualimetrix\\Infrastructure\\Serializer\\IgbinarySerializer": [
             {
                 "rule": "computed.health",
-                "hash": "1cdf4fab3f614245"
+                "hash": "ec59137e085362d1"
             }
         ],
         "class:Qualimetrix\\Infrastructure\\Serializer\\PhpSerializer": [
             {
                 "rule": "computed.health",
-                "hash": "09655925da89bcdb"
-            }
-        ],
-        "class:Qualimetrix\\Infrastructure\\Serializer\\SerializerSelector": [
-            {
-                "rule": "coupling.instability",
-                "hash": "ec2b2da0ee02ccd2"
+                "hash": "3371b17478868ebb"
             }
         ],
         "class:Qualimetrix\\Infrastructure\\Storage\\InMemoryStorage": [
             {
                 "rule": "complexity.wmc",
-                "hash": "6bd798fb87886026"
+                "hash": "8d0332c8a6626c95"
             },
             {
                 "rule": "coupling.instability",
-                "hash": "47897835455e06f9"
+                "hash": "59c0f6f5ad555ed6"
             }
         ],
         "class:Qualimetrix\\Infrastructure\\Storage\\SqliteStorage": [
             {
                 "rule": "complexity.wmc",
-                "hash": "570769edd83cf801"
+                "hash": "8742f41935478a2b"
             },
             {
                 "rule": "coupling.instability",
-                "hash": "f66845ee746b3d52"
+                "hash": "0516178c717405f0"
             }
         ],
         "class:Qualimetrix\\Metrics\\AbstractCollector": [
             {
                 "rule": "coupling.cbo",
-                "hash": "3016630e581926f2"
+                "hash": "aec50d768be5e36a"
             },
             {
                 "rule": "design.noc",
-                "hash": "7b83b1aa2172636c"
+                "hash": "81b8b7195734c532"
             }
         ],
         "class:Qualimetrix\\Metrics\\CodeSmell\\CodeSmellCollector": [
             {
                 "rule": "design.lcom",
-                "hash": "ed687610ab36749a"
+                "hash": "7d3b90fa0cc9d710"
             }
         ],
         "class:Qualimetrix\\Metrics\\CodeSmell\\CodeSmellVisitor": [
             {
                 "rule": "complexity.wmc",
-                "hash": "da260281392ed27c"
+                "hash": "e4230bf7e81aaff0"
             },
             {
                 "rule": "coupling.cbo",
-                "hash": "5b172a80bfe6fac8"
+                "hash": "5606b6fe86470b0f"
             },
             {
                 "rule": "coupling.instability",
-                "hash": "ee74a2f139bd62d3"
+                "hash": "c389fc69ce54c976"
             }
         ],
         "class:Qualimetrix\\Metrics\\CodeSmell\\IdenticalSubExpressionCollector": [
             {
                 "rule": "design.lcom",
-                "hash": "c616994a5b16cfcc"
+                "hash": "8054b792eb2b23f1"
             }
         ],
         "class:Qualimetrix\\Metrics\\CodeSmell\\IdenticalSubExpressionVisitor": [
             {
                 "rule": "complexity.wmc",
-                "hash": "22b6d3abc2d23e15"
+                "hash": "8b19698a31194ab3"
             },
             {
                 "rule": "coupling.cbo",
-                "hash": "8ffa4fe05b067e14"
+                "hash": "1913764ff5a1ebe6"
             },
             {
                 "rule": "coupling.instability",
-                "hash": "1a912c25fe1b01f4"
+                "hash": "352f30427caa9afd"
             }
         ],
         "class:Qualimetrix\\Metrics\\CodeSmell\\ParameterCountCollector": [
             {
                 "rule": "design.lcom",
-                "hash": "cd1bf1ee7d5d8a32"
+                "hash": "5adeabe5821b47f1"
             }
         ],
         "class:Qualimetrix\\Metrics\\CodeSmell\\ParameterCountVisitor": [
             {
                 "rule": "coupling.instability",
-                "hash": "b52073612e4a226d"
+                "hash": "77ee3b035b569fa5"
             }
         ],
         "class:Qualimetrix\\Metrics\\CodeSmell\\UnreachableCodeCollector": [
             {
                 "rule": "design.lcom",
-                "hash": "e2b8381ae79937bc"
+                "hash": "3a861b47287f0654"
             }
         ],
         "class:Qualimetrix\\Metrics\\CodeSmell\\UnreachableCodeVisitor": [
             {
                 "rule": "coupling.cbo",
-                "hash": "e34e832160758501"
+                "hash": "e64cced414f3619e"
             },
             {
                 "rule": "coupling.instability",
-                "hash": "8da540ac3492c185"
+                "hash": "1729bed4e7aa4bda"
             }
         ],
         "class:Qualimetrix\\Metrics\\Complexity\\CognitiveComplexityCollector": [
             {
                 "rule": "design.lcom",
-                "hash": "9b84307fada92305"
+                "hash": "715f40d6ef13344c"
             }
         ],
         "class:Qualimetrix\\Metrics\\Complexity\\CognitiveComplexityVisitor": [
             {
                 "rule": "complexity.wmc",
-                "hash": "74c657c1f1b864d4"
+                "hash": "c3a6ec79f1c75e3f"
             },
             {
                 "rule": "coupling.cbo",
-                "hash": "2356a14da8283c9e"
+                "hash": "8b51bc884f5e0aad"
             },
             {
                 "rule": "coupling.instability",
-                "hash": "e879d320096230ab"
+                "hash": "f096bb23070cde84"
             }
         ],
         "class:Qualimetrix\\Metrics\\Complexity\\CyclomaticComplexityCollector": [
             {
                 "rule": "design.lcom",
-                "hash": "844a3b899cad28bd"
+                "hash": "2c22a00b67682a75"
             }
         ],
         "class:Qualimetrix\\Metrics\\Complexity\\CyclomaticComplexityVisitor": [
             {
                 "rule": "coupling.cbo",
-                "hash": "439a8627556cca73"
+                "hash": "1890a1361bb1aa4a"
             },
             {
                 "rule": "coupling.instability",
-                "hash": "42713f9c33d8db5d"
+                "hash": "14351c6a0078dcf0"
             }
         ],
         "class:Qualimetrix\\Metrics\\Complexity\\NpathComplexityCollector": [
             {
                 "rule": "design.lcom",
-                "hash": "4207a5f7e1b4e22d"
+                "hash": "469e0324ef192e2d"
             }
         ],
         "class:Qualimetrix\\Metrics\\Complexity\\NpathComplexityVisitor": [
             {
                 "rule": "complexity.wmc",
-                "hash": "6381a240bafe93e4"
+                "hash": "d3335059a897b7e6"
             },
             {
                 "rule": "coupling.cbo",
-                "hash": "8662a6d9c311b8c1"
+                "hash": "cd43430655816088"
             },
             {
                 "rule": "coupling.instability",
-                "hash": "4fb04a6bf54ac56b"
+                "hash": "af0cc0b38017e440"
             }
         ],
         "class:Qualimetrix\\Metrics\\ComputedMetric\\ComputedMetricEvaluator": [
             {
                 "rule": "coupling.instability",
-                "hash": "490a5c95e1b75a39"
+                "hash": "97f54a4d08f8ab0c"
             }
         ],
         "class:Qualimetrix\\Metrics\\Coupling\\AbstractnessCollector": [
             {
                 "rule": "computed.health",
-                "hash": "d2d7d8d3444b0001"
+                "hash": "5375a43f7041a793"
             },
             {
                 "rule": "design.lcom",
-                "hash": "8ae81181c83481a6"
+                "hash": "b4adfe3c8d186c70"
             }
         ],
         "class:Qualimetrix\\Metrics\\Coupling\\ClassRankCollector": [
             {
                 "rule": "computed.health",
-                "hash": "e6dde17c61ac95ac"
+                "hash": "89292a4c16c1d45b"
             },
             {
                 "rule": "design.lcom",
-                "hash": "86d33313264d573c"
+                "hash": "86c63ac0120ab6b3"
             }
         ],
         "class:Qualimetrix\\Metrics\\Coupling\\CouplingCollector": [
             {
                 "rule": "computed.health",
-                "hash": "184b14373b5026da"
+                "hash": "c17345fe97253159"
             },
             {
                 "rule": "design.lcom",
-                "hash": "79fe7c31f89c6489"
+                "hash": "398ddb36f942eb15"
             }
         ],
         "class:Qualimetrix\\Metrics\\Coupling\\DistanceCollector": [
             {
                 "rule": "computed.health",
-                "hash": "92b40b46e418dfd0"
+                "hash": "ff864ffee455768a"
             },
             {
                 "rule": "design.lcom",
-                "hash": "479facb36b19a0b4"
+                "hash": "4a4f0ff06479a12b"
             }
         ],
         "class:Qualimetrix\\Metrics\\Design\\TypeCoverageCollector": [
             {
                 "rule": "design.lcom",
-                "hash": "23598ff520e76384"
+                "hash": "50ff50338467d8cc"
             }
         ],
         "class:Qualimetrix\\Metrics\\Design\\TypeCoveragePercentCollector": [
             {
                 "rule": "computed.health",
-                "hash": "bb176ee1120a99f9"
+                "hash": "96c4e5771eac6e86"
             },
             {
                 "rule": "design.lcom",
-                "hash": "22e39861193df8e7"
+                "hash": "f93fc9291b1c92af"
             }
         ],
         "class:Qualimetrix\\Metrics\\Design\\TypeCoverageVisitor": [
             {
                 "rule": "coupling.cbo",
-                "hash": "b96ba7c5a68b5f1c"
+                "hash": "33cecaaac01bbb57"
             },
             {
                 "rule": "coupling.instability",
-                "hash": "490a6ca4611af403"
+                "hash": "eeef4ce79c927dbe"
             }
         ],
         "class:Qualimetrix\\Metrics\\Halstead\\HalsteadCollector": [
             {
                 "rule": "design.lcom",
-                "hash": "97d05d3b3abece45"
+                "hash": "0db3e7a942f47169"
             }
         ],
         "class:Qualimetrix\\Metrics\\Halstead\\HalsteadVisitor": [
             {
                 "rule": "complexity.wmc",
-                "hash": "6822078512091203"
+                "hash": "f118761b3aba623f"
             },
             {
                 "rule": "coupling.cbo",
-                "hash": "d912ee507c17b0d4"
+                "hash": "f799f52e4862027a"
             },
             {
                 "rule": "coupling.instability",
-                "hash": "21b22c3725bd46ed"
+                "hash": "0c47beba80536379"
             }
         ],
         "class:Qualimetrix\\Metrics\\Maintainability\\MaintainabilityIndexCollector": [
             {
                 "rule": "design.lcom",
-                "hash": "c630798659181eb5"
+                "hash": "e1e23468d2e72a56"
             }
         ],
         "class:Qualimetrix\\Metrics\\ResettableVisitorInterface": [
             {
                 "rule": "coupling.cbo",
-                "hash": "ffd8249708d98138"
+                "hash": "9946e5416afb658f"
             },
             {
                 "rule": "coupling.class-rank",
-                "hash": "51a2edd0accf93d5"
+                "hash": "8cdb3fdf86b5b221"
             }
         ],
         "class:Qualimetrix\\Metrics\\Security\\HardcodedCredentialsCollector": [
             {
                 "rule": "design.lcom",
-                "hash": "4b84d742372d4a88"
+                "hash": "f1bc17472fb179b6"
             }
         ],
         "class:Qualimetrix\\Metrics\\Security\\HardcodedCredentialsVisitor": [
             {
                 "rule": "complexity.wmc",
-                "hash": "b43d9352c3fcb377"
+                "hash": "004b362d1c3be6a4"
             },
             {
                 "rule": "coupling.cbo",
-                "hash": "546d807122015f9a"
+                "hash": "f264eb8ef8ce6b28"
             },
             {
                 "rule": "coupling.instability",
-                "hash": "70d6c8d890a65b41"
+                "hash": "ae83943d7b44f721"
             }
         ],
         "class:Qualimetrix\\Metrics\\Security\\SecurityPatternCollector": [
             {
                 "rule": "design.lcom",
-                "hash": "6f36bedfc383a9ad"
+                "hash": "08b4e981bdb3c07c"
             }
         ],
         "class:Qualimetrix\\Metrics\\Security\\SecurityPatternVisitor": [
             {
                 "rule": "complexity.wmc",
-                "hash": "7dc675ef281eefc3"
+                "hash": "db38886f7b15be8e"
             },
             {
                 "rule": "coupling.cbo",
-                "hash": "5eebdc04b2483547"
+                "hash": "d768a42b9591a3c6"
             },
             {
                 "rule": "coupling.instability",
-                "hash": "980b96cb79860514"
+                "hash": "dd9b57bf6bd74cf6"
             }
         ],
         "class:Qualimetrix\\Metrics\\Security\\SensitiveParameterCollector": [
             {
                 "rule": "design.lcom",
-                "hash": "a0f786fb68373633"
+                "hash": "d5fdf28b577ddc31"
             }
         ],
         "class:Qualimetrix\\Metrics\\Security\\SensitiveParameterVisitor": [
             {
                 "rule": "coupling.instability",
-                "hash": "0e070eb704a0ae34"
+                "hash": "1fe791248cf00e72"
             }
         ],
         "class:Qualimetrix\\Metrics\\Size\\ClassCountCollector": [
             {
                 "rule": "design.lcom",
-                "hash": "029fad264aa916e0"
+                "hash": "888a3560fbb1c75d"
             }
         ],
         "class:Qualimetrix\\Metrics\\Size\\ClassCountVisitor": [
             {
                 "rule": "coupling.instability",
-                "hash": "ab6634182c9024c9"
+                "hash": "d1f3d8d0574fcd1c"
             }
         ],
         "class:Qualimetrix\\Metrics\\Size\\LocCollector": [
             {
                 "rule": "design.lcom",
-                "hash": "fe33f8dcd06bbdc3"
+                "hash": "d6973d6aba062bc2"
             }
         ],
         "class:Qualimetrix\\Metrics\\Size\\LocVisitor": [
             {
                 "rule": "coupling.instability",
-                "hash": "109e357ffc55576a"
+                "hash": "6d8bc3e1b46af2ee"
             }
         ],
         "class:Qualimetrix\\Metrics\\Structure\\ClassRfcData": [
             {
                 "rule": "code-smell.data-class",
-                "hash": "abcd8e0a93770742"
+                "hash": "99f7d78a21d8af20"
             }
         ],
         "class:Qualimetrix\\Metrics\\Structure\\DitGlobalCollector": [
             {
                 "rule": "computed.health",
-                "hash": "3bae944d69de9c88"
+                "hash": "f02fc2fd79ce876b"
             },
             {
                 "rule": "design.lcom",
-                "hash": "8ee97cffe3f15cf8"
+                "hash": "f720f5f6e89e5f27"
             }
         ],
         "class:Qualimetrix\\Metrics\\Structure\\InheritanceDepthCollector": [
             {
                 "rule": "computed.health",
-                "hash": "53727db99f8316c2"
+                "hash": "fea30e5cf68b21c6"
             },
             {
                 "rule": "design.lcom",
-                "hash": "a5130db94c7a5f53"
+                "hash": "e8d5724618aafb56"
             }
         ],
         "class:Qualimetrix\\Metrics\\Structure\\InheritanceDepthVisitor": [
             {
                 "rule": "coupling.instability",
-                "hash": "6666cf8aafc1d227"
+                "hash": "167cf489731009ef"
             }
         ],
         "class:Qualimetrix\\Metrics\\Structure\\LcomCollector": [
             {
                 "rule": "design.lcom",
-                "hash": "77082e225dcc0259"
+                "hash": "869911de3658544b"
             }
         ],
         "class:Qualimetrix\\Metrics\\Structure\\LcomVisitor": [
             {
                 "rule": "coupling.instability",
-                "hash": "fd493aa268de4241"
+                "hash": "9f2bf6cb2ccc67f7"
             }
         ],
         "class:Qualimetrix\\Metrics\\Structure\\MethodCountCollector": [
             {
                 "rule": "computed.health",
-                "hash": "7e4226990e673895"
+                "hash": "c1b71483f773506b"
             },
             {
                 "rule": "design.lcom",
-                "hash": "07917f73ff4a38a1"
+                "hash": "360bfbfc01e4d1dd"
             }
         ],
         "class:Qualimetrix\\Metrics\\Structure\\MethodCountMetrics": [
             {
                 "rule": "code-smell.data-class",
-                "hash": "d8f75fd557fddf10"
+                "hash": "ea0208b07105afd9"
             },
             {
                 "rule": "computed.health",
-                "hash": "0ec8df7f069700d6"
+                "hash": "c4d7e246a9a4ff21"
             },
             {
                 "rule": "design.lcom",
-                "hash": "a737d1d6ece2c2f8"
+                "hash": "fdd85905d3225cbc"
             },
             {
                 "rule": "size.property-count",
-                "hash": "0347c2a3fe102085"
+                "hash": "1b68b92481baf1aa"
             }
         ],
         "class:Qualimetrix\\Metrics\\Structure\\MethodCountVisitor": [
             {
                 "rule": "complexity.wmc",
-                "hash": "1742bda80745661c"
+                "hash": "7a22608590b89abc"
             },
             {
                 "rule": "coupling.cbo",
-                "hash": "147eeba80d568f71"
+                "hash": "8e68fc7b80c5f296"
             },
             {
                 "rule": "coupling.instability",
-                "hash": "462922d4ae93c3ee"
+                "hash": "7e7eb27a0c8de4dd"
             }
         ],
         "class:Qualimetrix\\Metrics\\Structure\\NocCollector": [
             {
                 "rule": "computed.health",
-                "hash": "8128c55bea45299c"
+                "hash": "9be1aebc674e8948"
             },
             {
                 "rule": "design.lcom",
-                "hash": "a1b1841df957c68c"
+                "hash": "1a2dccfb3eea2325"
             }
         ],
         "class:Qualimetrix\\Metrics\\Structure\\RfcCollector": [
             {
                 "rule": "design.lcom",
-                "hash": "4bcf4618213f5ae4"
+                "hash": "ddac31f61409209a"
             }
         ],
         "class:Qualimetrix\\Metrics\\Structure\\RfcVisitor": [
             {
                 "rule": "complexity.wmc",
-                "hash": "d342dd6f3ed8816e"
+                "hash": "e210c721b89b8e9e"
             },
             {
                 "rule": "coupling.cbo",
-                "hash": "9021890667318229"
+                "hash": "8d3081cab4622fe8"
             },
             {
                 "rule": "coupling.instability",
-                "hash": "698f4afece3d17f8"
+                "hash": "0193658db7680920"
             }
         ],
         "class:Qualimetrix\\Metrics\\Structure\\TccLccClassData": [
             {
                 "rule": "design.lcom",
-                "hash": "3d3c6fe5dd5e97aa"
+                "hash": "045d122be64c076f"
             }
         ],
         "class:Qualimetrix\\Metrics\\Structure\\TccLccCollector": [
             {
                 "rule": "design.lcom",
-                "hash": "ff4fa456399da0f2"
+                "hash": "e32e9838b7b271a1"
             }
         ],
         "class:Qualimetrix\\Metrics\\Structure\\TccLccVisitor": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "409ceb6d65d6726d"
+                "hash": "922742ec8ff42f97"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "8ae5f08118fd1ced"
+                "hash": "ec1133c88d8cb3b9"
             },
             {
                 "rule": "complexity.wmc",
-                "hash": "e0cccf17de3513a9"
+                "hash": "3a736ebf760a932a"
             },
             {
                 "rule": "coupling.cbo",
-                "hash": "68debe32e4a56675"
+                "hash": "3196d80c4cf30c3f"
             },
             {
                 "rule": "coupling.instability",
-                "hash": "9012356feaf05c88"
+                "hash": "d162d20be69462de"
             }
         ],
         "class:Qualimetrix\\Metrics\\Structure\\UnusedPrivateClassData": [
             {
                 "rule": "computed.health",
-                "hash": "3a784b6e310f3bd7"
+                "hash": "86b70d44e506788f"
             }
         ],
         "class:Qualimetrix\\Metrics\\Structure\\UnusedPrivateCollector": [
             {
                 "rule": "computed.health",
-                "hash": "0963cb42b3fc5a47"
+                "hash": "c0be3d902603fafb"
             },
             {
                 "rule": "design.lcom",
-                "hash": "f74431b20640db17"
+                "hash": "aaec133f0f9a65d6"
             }
         ],
         "class:Qualimetrix\\Metrics\\Structure\\UnusedPrivateVisitor": [
             {
                 "rule": "complexity.wmc",
-                "hash": "ce650322f76fc7d4"
+                "hash": "6b125e5e392d861d"
             },
             {
                 "rule": "coupling.cbo",
-                "hash": "7566903d8be11daa"
+                "hash": "ee4cd4cdcdbcbf4a"
             },
             {
                 "rule": "coupling.instability",
-                "hash": "7934169d2f538b59"
+                "hash": "29f97ad36e2e9f1d"
             }
         ],
         "class:Qualimetrix\\Reporting\\FormatterContext": [
             {
                 "rule": "coupling.cbo",
-                "hash": "7475877b956d855a"
+                "hash": "9746eefa2abcf7ef"
             }
         ],
         "class:Qualimetrix\\Reporting\\Formatter\\CheckstyleFormatter": [
             {
                 "rule": "design.lcom",
-                "hash": "bc5d5a0895e13e06"
+                "hash": "e34c54d5ac141521"
             }
         ],
         "class:Qualimetrix\\Reporting\\Formatter\\FormatterInterface": [
             {
                 "rule": "coupling.cbo",
-                "hash": "701794ac1ff9e452"
+                "hash": "4f120911619e3fc5"
             }
         ],
         "class:Qualimetrix\\Reporting\\Formatter\\GitLabCodeQualityFormatter": [
             {
                 "rule": "design.lcom",
-                "hash": "46d417299116a1c9"
+                "hash": "1c1cee59a3806113"
             }
         ],
         "class:Qualimetrix\\Reporting\\Formatter\\GithubActionsFormatter": [
             {
                 "rule": "design.lcom",
-                "hash": "014d25f308238bec"
+                "hash": "951aa931c1987d75"
             }
         ],
         "class:Qualimetrix\\Reporting\\Formatter\\Html\\HtmlFormatter": [
             {
                 "rule": "design.lcom",
-                "hash": "61358f57cb4e52bd"
+                "hash": "a14ff0a1761f0dba"
             }
         ],
         "class:Qualimetrix\\Reporting\\Formatter\\Html\\HtmlTreeBuilder": [
             {
                 "rule": "complexity.wmc",
-                "hash": "bdd102b578e230e5"
+                "hash": "50249fb408694913"
             },
             {
                 "rule": "computed.health",
-                "hash": "9fe61cf0a8267f7e"
+                "hash": "bdb8dd57691186f3"
             },
             {
                 "rule": "coupling.instability",
-                "hash": "995e06372777bbc7"
+                "hash": "6f68e9e321db9fac"
             }
         ],
         "class:Qualimetrix\\Reporting\\Formatter\\Json\\JsonFormatter": [
             {
                 "rule": "design.lcom",
-                "hash": "a1dcf2fd7c03f34a"
+                "hash": "c0b188ae0d1a7aab"
             }
         ],
         "class:Qualimetrix\\Reporting\\Formatter\\Json\\JsonHealthSection": [
             {
                 "rule": "coupling.instability",
-                "hash": "947807ed9019c40f"
+                "hash": "2f87f4984259ccb0"
             }
         ],
         "class:Qualimetrix\\Reporting\\Formatter\\Json\\JsonOffenderSection": [
             {
                 "rule": "coupling.instability",
-                "hash": "ab9c8459e7d085bd"
+                "hash": "7678ac6fd3541681"
             }
         ],
         "class:Qualimetrix\\Reporting\\Formatter\\Json\\JsonViolationSection": [
             {
                 "rule": "coupling.instability",
-                "hash": "f12cdf59452bd8c4"
+                "hash": "bc6b469ea2fbd4b9"
             },
             {
                 "rule": "design.lcom",
-                "hash": "2f6d57ee6472e241"
+                "hash": "55b2a0d82cec27f1"
             }
         ],
         "class:Qualimetrix\\Reporting\\Formatter\\Sarif\\SarifFormatter": [
             {
                 "rule": "design.lcom",
-                "hash": "da6ba6981b765f9c"
+                "hash": "51d5bbc02024fcb0"
             }
         ],
         "class:Qualimetrix\\Reporting\\Formatter\\Summary\\HealthBarRenderer": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "42f18376de71b76c"
+                "hash": "d802a7ada430a891"
             },
             {
                 "rule": "computed.health",
-                "hash": "db3a940581731d81"
+                "hash": "6b4389bc6ea4907b"
             },
             {
                 "rule": "coupling.instability",
-                "hash": "03022ddebae6305b"
+                "hash": "587c5b5d44caa844"
             }
         ],
         "class:Qualimetrix\\Reporting\\Formatter\\Summary\\HintRenderer": [
             {
                 "rule": "coupling.instability",
-                "hash": "99ca1ac6bad1a23f"
+                "hash": "4476beca68de5506"
             }
         ],
         "class:Qualimetrix\\Reporting\\Formatter\\Summary\\SummaryFormatter": [
             {
                 "rule": "design.lcom",
-                "hash": "1b1afcd58ba753f3"
+                "hash": "e0bf63fd4d21dd89"
             }
         ],
         "class:Qualimetrix\\Reporting\\Formatter\\Summary\\ViolationSummaryRenderer": [
             {
                 "rule": "coupling.instability",
-                "hash": "15d8c3a4af40b38d"
+                "hash": "8818443650923213"
             }
         ],
         "class:Qualimetrix\\Reporting\\Formatter\\Support\\DetailedViolationRenderer": [
             {
                 "rule": "computed.health",
-                "hash": "c770230a2478dc86"
+                "hash": "8ff355743165b4c5"
             }
         ],
         "class:Qualimetrix\\Reporting\\Formatter\\TextFormatter": [
             {
                 "rule": "coupling.instability",
-                "hash": "1569c4bacd3fd9a3"
+                "hash": "9bbb2bdca9beec0f"
             },
             {
                 "rule": "design.lcom",
-                "hash": "90304465dd694720"
+                "hash": "0767e35192e250e7"
             }
         ],
         "class:Qualimetrix\\Reporting\\GroupBy": [
             {
                 "rule": "coupling.cbo",
-                "hash": "9ff86764496b543f"
+                "hash": "119e07dfed3e161e"
             },
             {
                 "rule": "coupling.class-rank",
-                "hash": "4bbb03859cfe5eba"
+                "hash": "378a97200d74904a"
             }
         ],
         "class:Qualimetrix\\Reporting\\Health\\MetricHintProvider": [
             {
                 "rule": "code-smell.god-class",
-                "hash": "2a3ec8bf541b8136"
+                "hash": "c9070ac77d63d625"
             },
             {
                 "rule": "computed.health",
-                "hash": "2a493e2b672605b5"
+                "hash": "4fcfb858a42e4535"
             },
             {
                 "rule": "design.lcom",
-                "hash": "67a07df9960dda84"
+                "hash": "0c9d4c2886e00445"
             }
         ],
         "class:Qualimetrix\\Reporting\\Health\\NamespaceDrillDown": [
             {
                 "rule": "complexity.wmc",
-                "hash": "158b3b1902ba58e2"
+                "hash": "ff8b1746460fd584"
             }
         ],
         "class:Qualimetrix\\Reporting\\Health\\SummaryEnricher": [
             {
                 "rule": "complexity.wmc",
-                "hash": "d6ceada1d7df96e3"
+                "hash": "5409babe14b009ef"
             },
             {
                 "rule": "computed.health",
-                "hash": "ad64ca3819e22082"
+                "hash": "5547f460ede1db2f"
             },
             {
                 "rule": "computed.health",
-                "hash": "bc2bf05237dc9c7a"
+                "hash": "dce7a700a7761a07"
             },
             {
                 "rule": "coupling.cbo",
-                "hash": "678acad9532952ff"
+                "hash": "de4040d13917e263"
             },
             {
                 "rule": "coupling.instability",
-                "hash": "3c87f39cf38f5d8a"
+                "hash": "9a7a5662640f1d39"
             }
         ],
         "class:Qualimetrix\\Reporting\\Profile\\ProfileSummaryRenderer": [
             {
                 "rule": "computed.health",
-                "hash": "2018b050a55d879d"
+                "hash": "f272a4e22bf2683d"
             }
         ],
         "class:Qualimetrix\\Reporting\\Report": [
             {
                 "rule": "coupling.cbo",
-                "hash": "13e32bf946554da5"
+                "hash": "8e9375d92fba287f"
             }
         ],
         "class:Qualimetrix\\Reporting\\ReportBuilder": [
             {
                 "rule": "coupling.instability",
-                "hash": "55dda43df7944e5e"
+                "hash": "398ecd4a6cdb31e4"
             }
         ],
         "class:Qualimetrix\\Rules\\AbstractRule": [
             {
                 "rule": "coupling.cbo",
-                "hash": "38120222b31d375d"
+                "hash": "0e05daab3cc4ab03"
             },
             {
                 "rule": "design.noc",
-                "hash": "6ed1b37583231af2"
+                "hash": "fad5ac022f3821ea"
             }
         ],
         "class:Qualimetrix\\Rules\\Architecture\\CircularDependencyOptions": [
             {
                 "rule": "computed.health",
-                "hash": "82e81963fac6c721"
+                "hash": "d02097bed8bfcb12"
             }
         ],
         "class:Qualimetrix\\Rules\\Architecture\\CircularDependencyRule": [
             {
                 "rule": "coupling.instability",
-                "hash": "5c4f89d96236c705"
+                "hash": "4a0b1e5258d7a384"
             },
             {
                 "rule": "design.lcom",
-                "hash": "b574e3db50fc6875"
+                "hash": "c85f9f157e19fac7"
             }
         ],
         "class:Qualimetrix\\Rules\\CodeSmell\\AbstractCodeSmellRule": [
             {
                 "rule": "coupling.cbo",
-                "hash": "3060c1ccc61078c8"
+                "hash": "a1aef0a4c8a46327"
             },
             {
                 "rule": "design.lcom",
-                "hash": "5fbc606dde13f212"
+                "hash": "7681feb15c912ae7"
             }
         ],
         "class:Qualimetrix\\Rules\\CodeSmell\\BooleanArgumentRule": [
             {
                 "rule": "computed.health",
-                "hash": "76eebdbcbe1e0a69"
+                "hash": "9d9b4447ec59756d"
             }
         ],
         "class:Qualimetrix\\Rules\\CodeSmell\\ConstructorOverinjectionOptions": [
             {
                 "rule": "computed.health",
-                "hash": "fd11d55250dbb6f9"
+                "hash": "4e22d6127f8ab421"
             }
         ],
         "class:Qualimetrix\\Rules\\CodeSmell\\ConstructorOverinjectionRule": [
             {
                 "rule": "design.lcom",
-                "hash": "461f1e107384a113"
+                "hash": "883b1b27f59f35e0"
             }
         ],
         "class:Qualimetrix\\Rules\\CodeSmell\\CountInLoopRule": [
             {
                 "rule": "computed.health",
-                "hash": "02f4474e50a2aa8e"
+                "hash": "ee2fcb90c925c374"
             }
         ],
         "class:Qualimetrix\\Rules\\CodeSmell\\DataClassRule": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "3b23f6d9718f987c"
+                "hash": "6a9583a6b6cc7e5a"
             }
         ],
         "class:Qualimetrix\\Rules\\CodeSmell\\DebugCodeRule": [
             {
                 "rule": "computed.health",
-                "hash": "128827d669515fd4"
+                "hash": "37871af987230153"
             }
         ],
         "class:Qualimetrix\\Rules\\CodeSmell\\EmptyCatchRule": [
             {
                 "rule": "computed.health",
-                "hash": "12baa2a9d78624bc"
+                "hash": "cf6172ac033e5977"
             }
         ],
         "class:Qualimetrix\\Rules\\CodeSmell\\ErrorSuppressionRule": [
             {
                 "rule": "computed.health",
-                "hash": "3663733348b6e324"
+                "hash": "ee73365ea5ae473b"
             }
         ],
         "class:Qualimetrix\\Rules\\CodeSmell\\EvalRule": [
             {
                 "rule": "computed.health",
-                "hash": "c7ea5fa01d643842"
+                "hash": "8958821c1583109a"
             }
         ],
         "class:Qualimetrix\\Rules\\CodeSmell\\ExitRule": [
             {
                 "rule": "computed.health",
-                "hash": "72a592c34d364eab"
+                "hash": "acb69402be7027df"
             }
         ],
         "class:Qualimetrix\\Rules\\CodeSmell\\GodClassRule": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "bad28794900f6188"
+                "hash": "1c2aa27e91e182c9"
             }
         ],
         "class:Qualimetrix\\Rules\\CodeSmell\\GotoRule": [
             {
                 "rule": "computed.health",
-                "hash": "0b38f8f96944eb0c"
+                "hash": "9b34140cc0fa640c"
             }
         ],
         "class:Qualimetrix\\Rules\\CodeSmell\\LongParameterListOptions": [
             {
                 "rule": "computed.health",
-                "hash": "6be5435be36b43db"
+                "hash": "f62e7125a57ed0a9"
             }
         ],
         "class:Qualimetrix\\Rules\\CodeSmell\\LongParameterListRule": [
             {
                 "rule": "design.lcom",
-                "hash": "83a7a14b5f0e78e0"
+                "hash": "0c184eba8b61c737"
             }
         ],
         "class:Qualimetrix\\Rules\\CodeSmell\\SuperglobalsRule": [
             {
                 "rule": "computed.health",
-                "hash": "ec0817c148f164fa"
+                "hash": "b542851223848442"
             }
         ],
         "class:Qualimetrix\\Rules\\CodeSmell\\UnreachableCodeOptions": [
             {
                 "rule": "computed.health",
-                "hash": "a1148665752ae13f"
+                "hash": "3f25f6d3bfd05e63"
             }
         ],
         "class:Qualimetrix\\Rules\\CodeSmell\\UnreachableCodeRule": [
             {
                 "rule": "design.lcom",
-                "hash": "4f9b5fda17da8664"
+                "hash": "7aff777078bd96fe"
             }
         ],
         "class:Qualimetrix\\Rules\\Complexity\\ClassCognitiveComplexityOptions": [
             {
                 "rule": "computed.health",
-                "hash": "ceb272034fd29f0a"
+                "hash": "b5ed71ab6e3fdf37"
             }
         ],
         "class:Qualimetrix\\Rules\\Complexity\\ClassComplexityOptions": [
             {
                 "rule": "computed.health",
-                "hash": "8e0c18ecaa273aa5"
+                "hash": "feaccedf7d94df42"
             }
         ],
         "class:Qualimetrix\\Rules\\Complexity\\ClassNpathComplexityOptions": [
             {
                 "rule": "computed.health",
-                "hash": "9bb60ca18be91f8d"
+                "hash": "8f2403ae006eaccc"
             }
         ],
         "class:Qualimetrix\\Rules\\Complexity\\CognitiveComplexityOptions": [
             {
                 "rule": "coupling.instability",
-                "hash": "e5cc3f9b6cd294c8"
+                "hash": "9f459260ef8f8795"
             }
         ],
         "class:Qualimetrix\\Rules\\Complexity\\CognitiveComplexityRule": [
             {
                 "rule": "design.lcom",
-                "hash": "ffdfa3ce340e39e6"
+                "hash": "590226cdec6c98cd"
             }
         ],
         "class:Qualimetrix\\Rules\\Complexity\\ComplexityOptions": [
             {
                 "rule": "coupling.instability",
-                "hash": "468750757ffa1927"
+                "hash": "599b8aa7699239c3"
             }
         ],
         "class:Qualimetrix\\Rules\\Complexity\\ComplexityRule": [
             {
                 "rule": "computed.health",
-                "hash": "57aeaea39bde73e0"
+                "hash": "9be605317ec87214"
             },
             {
                 "rule": "design.lcom",
-                "hash": "afe39aa901e4a51a"
+                "hash": "a5c887f0b0c8f12c"
             }
         ],
         "class:Qualimetrix\\Rules\\Complexity\\MethodCognitiveComplexityOptions": [
             {
                 "rule": "computed.health",
-                "hash": "23dc5951203af8cc"
+                "hash": "34303af6d81593cd"
             }
         ],
         "class:Qualimetrix\\Rules\\Complexity\\MethodComplexityOptions": [
             {
                 "rule": "computed.health",
-                "hash": "a6eac76525496421"
+                "hash": "943182a8abb3a43d"
             }
         ],
         "class:Qualimetrix\\Rules\\Complexity\\MethodNpathComplexityOptions": [
             {
                 "rule": "computed.health",
-                "hash": "a2b442a93a893033"
+                "hash": "f422046a7100f855"
             }
         ],
         "class:Qualimetrix\\Rules\\Complexity\\NpathComplexityOptions": [
             {
                 "rule": "coupling.instability",
-                "hash": "00c90db985ff92c0"
+                "hash": "2fd1780bd06c3802"
             }
         ],
         "class:Qualimetrix\\Rules\\Complexity\\NpathComplexityRule": [
             {
                 "rule": "design.lcom",
-                "hash": "481165abd5ce7475"
+                "hash": "2fb1d3a7be44082b"
             }
         ],
         "class:Qualimetrix\\Rules\\ComputedMetric\\ComputedMetricRule": [
             {
                 "rule": "design.lcom",
-                "hash": "e629cc6ca949e576"
+                "hash": "04b6b9fa75f2115a"
             }
         ],
         "class:Qualimetrix\\Rules\\ComputedMetric\\ComputedMetricRuleOptions": [
             {
                 "rule": "computed.health",
-                "hash": "0ecfa508c2e6302e"
+                "hash": "9d83410fab499c0c"
             }
         ],
         "class:Qualimetrix\\Rules\\Coupling\\CboOptions": [
             {
                 "rule": "coupling.instability",
-                "hash": "ffb7ae371517ba8a"
+                "hash": "3055185a0ce7a159"
             }
         ],
         "class:Qualimetrix\\Rules\\Coupling\\CboRule": [
             {
                 "rule": "code-smell.god-class",
-                "hash": "9010bb66d4be7bdc"
+                "hash": "7a50928db535804b"
             },
             {
                 "rule": "complexity.wmc",
-                "hash": "5b7c4aefcc59518f"
+                "hash": "eb683b35355208f6"
             },
             {
                 "rule": "computed.health",
-                "hash": "74bc13e039524e36"
+                "hash": "6cc9ebef017aaf15"
             },
             {
                 "rule": "coupling.cbo",
-                "hash": "700d25ed6c56d50e"
+                "hash": "bf1f8c6d5df3ada9"
             },
             {
                 "rule": "design.lcom",
-                "hash": "d06b69119cc7f055"
+                "hash": "12d4a922c7cdec43"
             }
         ],
         "class:Qualimetrix\\Rules\\Coupling\\ClassCboOptions": [
             {
                 "rule": "computed.health",
-                "hash": "b151b86147198146"
+                "hash": "757456285ba82f01"
             }
         ],
         "class:Qualimetrix\\Rules\\Coupling\\ClassInstabilityOptions": [
             {
                 "rule": "computed.health",
-                "hash": "43aac50deab46bbf"
+                "hash": "ed9e18f7d9400f1f"
             }
         ],
         "class:Qualimetrix\\Rules\\Coupling\\ClassRankOptions": [
             {
                 "rule": "computed.health",
-                "hash": "c29bbdab02d05f56"
+                "hash": "7345976ef2c5ae35"
             }
         ],
         "class:Qualimetrix\\Rules\\Coupling\\ClassRankRule": [
             {
                 "rule": "design.lcom",
-                "hash": "a5de0ee67a3cd841"
+                "hash": "69ab79eb98d1ca28"
             }
         ],
         "class:Qualimetrix\\Rules\\Coupling\\DistanceOptions": [
             {
                 "rule": "computed.health",
-                "hash": "7b9d29c1e93d4eef"
+                "hash": "eb656e2692d92fac"
             }
         ],
         "class:Qualimetrix\\Rules\\Coupling\\DistanceRule": [
             {
                 "rule": "design.lcom",
-                "hash": "372753e322b15810"
+                "hash": "cdae35abe819dcce"
             }
         ],
         "class:Qualimetrix\\Rules\\Coupling\\InstabilityOptions": [
             {
                 "rule": "coupling.instability",
-                "hash": "17031a73d6125dc4"
+                "hash": "afd6632e7490de0f"
             }
         ],
         "class:Qualimetrix\\Rules\\Coupling\\InstabilityRule": [
             {
                 "rule": "design.lcom",
-                "hash": "b7b9dc0a46e26623"
+                "hash": "bd7f64fbe0e32aec"
             }
         ],
         "class:Qualimetrix\\Rules\\Coupling\\NamespaceCboOptions": [
             {
                 "rule": "computed.health",
-                "hash": "8ffbbea0ddc5fa7c"
+                "hash": "3ac422d38a8c6f88"
             }
         ],
         "class:Qualimetrix\\Rules\\Coupling\\NamespaceInstabilityOptions": [
             {
                 "rule": "computed.health",
-                "hash": "8e9e4b5d689dab45"
+                "hash": "bb0a5ffa5ab5aa87"
             }
         ],
         "class:Qualimetrix\\Rules\\Design\\TypeCoverageOptions": [
             {
                 "rule": "computed.health",
-                "hash": "4c7627a337862ecf"
+                "hash": "4ebb6e327e8910a7"
             }
         ],
         "class:Qualimetrix\\Rules\\Duplication\\CodeDuplicationOptions": [
             {
                 "rule": "computed.health",
-                "hash": "d70ef550d3c25b5c"
+                "hash": "ddd72c1126109e11"
             }
         ],
         "class:Qualimetrix\\Rules\\Duplication\\CodeDuplicationRule": [
             {
                 "rule": "coupling.instability",
-                "hash": "780cac7eebedbe13"
+                "hash": "2208838d075b5344"
             },
             {
                 "rule": "design.lcom",
-                "hash": "513232a220cdd547"
+                "hash": "015348c829a6b31f"
             }
         ],
         "class:Qualimetrix\\Rules\\Maintainability\\MaintainabilityOptions": [
             {
                 "rule": "computed.health",
-                "hash": "9cc801a5d8ef91c0"
+                "hash": "56c6ce7c241a7550"
             }
         ],
         "class:Qualimetrix\\Rules\\Security\\CommandInjectionRule": [
             {
                 "rule": "computed.health",
-                "hash": "d23acc1cba28ce81"
+                "hash": "32976f25d117ab17"
             }
         ],
         "class:Qualimetrix\\Rules\\Security\\SqlInjectionRule": [
             {
                 "rule": "computed.health",
-                "hash": "9c44fb77280a70e8"
+                "hash": "4b6bcbc94fc1d697"
             }
         ],
         "class:Qualimetrix\\Rules\\Security\\XssRule": [
             {
                 "rule": "computed.health",
-                "hash": "6d3d382bf87b5176"
+                "hash": "b7af907c3b2368c3"
             }
         ],
         "class:Qualimetrix\\Rules\\Size\\ClassCountOptions": [
             {
                 "rule": "computed.health",
-                "hash": "14852ea14e9e6f06"
+                "hash": "fd91d18535555ab9"
             }
         ],
         "class:Qualimetrix\\Rules\\Size\\MethodCountOptions": [
             {
                 "rule": "computed.health",
-                "hash": "0bd7ac46f915713c"
+                "hash": "9487a79c98087581"
             }
         ],
         "class:Qualimetrix\\Rules\\Size\\PropertyCountOptions": [
             {
                 "rule": "computed.health",
-                "hash": "bd882fa3fa2816e1"
+                "hash": "a998c6cfa75fa08b"
             }
         ],
         "class:Qualimetrix\\Rules\\Structure\\InheritanceOptions": [
             {
                 "rule": "computed.health",
-                "hash": "43f0b593cc12aa9d"
+                "hash": "357f5e2eb425be16"
             }
         ],
         "class:Qualimetrix\\Rules\\Structure\\LcomOptions": [
             {
                 "rule": "computed.health",
-                "hash": "68ab760fc49db07b"
+                "hash": "cad69cc156826426"
             }
         ],
         "class:Qualimetrix\\Rules\\Structure\\NocOptions": [
             {
                 "rule": "computed.health",
-                "hash": "75a8991765858832"
+                "hash": "359e9a59bf0fcecd"
             }
         ],
         "class:Qualimetrix\\Rules\\Structure\\WmcOptions": [
             {
                 "rule": "computed.health",
-                "hash": "92b9365a6b482f80"
+                "hash": "1bde3090c4d3f17e"
             }
         ],
         "class:Qualimetrix\\Rules\\Structure\\WmcRule": [
             {
                 "rule": "design.lcom",
-                "hash": "49bab8ebedd1aaf5"
+                "hash": "0c64723813859b3e"
+            }
+        ],
+        "class:Qualimetrix\\Rules\\Support\\ThresholdParser": [
+            {
+                "rule": "complexity.cognitive",
+                "hash": "59fa3c60cff8cc69"
+            },
+            {
+                "rule": "computed.health",
+                "hash": "5ff19ebc1bae63cf"
+            },
+            {
+                "rule": "computed.health",
+                "hash": "76a9af811d231ef8"
+            },
+            {
+                "rule": "coupling.cbo",
+                "hash": "1b0bdbf5ef5cd015"
+            },
+            {
+                "rule": "coupling.class-rank",
+                "hash": "3fe4cf5bf7332891"
             }
         ],
         "file:src/Analysis/Aggregator/AggregationHelper.php": [
@@ -2085,6 +2061,12 @@
             {
                 "rule": "security.hardcoded-credentials",
                 "hash": "72fc252e015e3284"
+            }
+        ],
+        "file:src/Core/Violation/Location.php": [
+            {
+                "rule": "code-smell.boolean-argument",
+                "hash": "e6acee50dc42416e"
             }
         ],
         "file:src/Infrastructure/Ast/CachedFileParser.php": [
@@ -2661,6 +2643,10 @@
             {
                 "rule": "code-smell.boolean-argument",
                 "hash": "e6acee50dc42416e"
+            },
+            {
+                "rule": "duplication.code-duplication",
+                "hash": "94c57dbd29c8268f"
             }
         ],
         "file:src/Rules/Maintainability/MaintainabilityRule.php": [
@@ -2760,2425 +2746,2467 @@
         "method:Qualimetrix\\Analysis\\Aggregator\\AggregationHelper::applyAggregations": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "6bf5ad7b4513c631"
+                "hash": "d1dd17d8f6e55e8b"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "98e7acb2155dc357"
+                "hash": "66f02865c71ce827"
             }
         ],
         "method:Qualimetrix\\Analysis\\Aggregator\\AggregationHelper::applyStrategy": [
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "0912effba8177261"
+                "hash": "0c685a95efd238be"
             }
         ],
         "method:Qualimetrix\\Analysis\\Aggregator\\AggregationHelper::collectNamespaceMetricValues": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "96efee59a23a1895"
+                "hash": "449f6656d2e0242d"
             },
             {
                 "rule": "complexity.cognitive",
-                "hash": "ee182879f41e12bc"
+                "hash": "035843ef3b357099"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "971f7aaeee2896e0"
+                "hash": "072d81f09eedfcb6"
             },
             {
                 "rule": "complexity.npath",
-                "hash": "77bc10c245321694"
+                "hash": "2bf6d6e8089aa1b6"
             },
             {
                 "rule": "maintainability.index",
-                "hash": "d6ce2e498d917252"
+                "hash": "86fd9363bafb3ace"
             }
         ],
         "method:Qualimetrix\\Analysis\\Aggregator\\GlobalCollectorSorter::sort": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "8c364587b0cb917a"
+                "hash": "49429c3e7ca2132e"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "70afc0c08e068afa"
+                "hash": "fca248c09cadec2f"
             },
             {
                 "rule": "complexity.npath",
-                "hash": "2f5ba159e5ce62b0"
+                "hash": "b6356bbfd0487b11"
             }
         ],
         "method:Qualimetrix\\Analysis\\Aggregator\\NamespaceToProjectAggregator::aggregate": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "c9eb3c95f08b15f1"
+                "hash": "afafb61f4ad64f60"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "1b4f8dcc1407644b"
+                "hash": "a4aecec2d0c9b9cd"
             }
         ],
         "method:Qualimetrix\\Analysis\\Collection\\CollectionOrchestrator::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "9ce3d75a0dc6353e"
+                "hash": "1ae157170ca9119f"
             }
         ],
         "method:Qualimetrix\\Analysis\\Collection\\Dependency\\CircularDependencyDetector::findPath": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "f3090a54ae6d61d5"
+                "hash": "67dedac96b04840f"
             }
         ],
         "method:Qualimetrix\\Analysis\\Collection\\Dependency\\CircularDependencyDetector::strongConnect": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "b40cce14cdb26c24"
+                "hash": "913849201d0b4149"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "93b92f11f81f8f5c"
+                "hash": "3eb6f997f8e5c314"
             }
         ],
         "method:Qualimetrix\\Analysis\\Collection\\Dependency\\DependencyGraph::__construct": [
             {
                 "rule": "code-smell.constructor-overinjection",
-                "hash": "bd7df4da414a310a"
+                "hash": "0bc39f49b0709550"
             },
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "bab1a19516ca4b6c"
+                "hash": "65695a0f113df170"
             }
         ],
         "method:Qualimetrix\\Analysis\\Collection\\Dependency\\DependencyVisitor::enterNode": [
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "c4aa4c96bb0fe1ac"
+                "hash": "7fed5ffe34e6c9fe"
             },
             {
                 "rule": "complexity.npath",
-                "hash": "92b44c631b100b62"
+                "hash": "a457c4d6f506be29"
             }
         ],
         "method:Qualimetrix\\Analysis\\Collection\\Dependency\\Export\\DotExporterOptions::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "041f6b235653f0d3"
+                "hash": "bcd2644f003b1e58"
             }
         ],
         "method:Qualimetrix\\Analysis\\Collection\\Dependency\\Handler\\StaticAccessHandler::processStaticAccess": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "2b0e5f59de255bd1"
+                "hash": "b0528c9352546336"
             }
         ],
         "method:Qualimetrix\\Analysis\\Collection\\Dependency\\Handler\\TypeDependencyHelper::processType": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "6fc984dd870611e5"
+                "hash": "c054f8f666d0b6b4"
             }
         ],
         "method:Qualimetrix\\Analysis\\Collection\\FileProcessingResult::__construct": [
             {
                 "rule": "code-smell.constructor-overinjection",
-                "hash": "5ee6fed99f1fb5aa"
+                "hash": "990da7a09a23a8cb"
             },
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "1225f795330757f1"
+                "hash": "fd1da90c4a88fdea"
             }
         ],
         "method:Qualimetrix\\Analysis\\Collection\\FileProcessingResult::success": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "377c0b7a0b011e61"
+                "hash": "a3064ac8c3e75c96"
             }
         ],
         "method:Qualimetrix\\Analysis\\Collection\\FileProcessor::extractMethodMetrics": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "434f8cd61fc2ecda"
+                "hash": "78f8a6dda787616c"
             }
         ],
         "method:Qualimetrix\\Analysis\\Collection\\Metric\\CompositeCollector::sortDerivedCollectors": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "8fd9553de727b60c"
+                "hash": "4851cb776699eace"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "53a62e75d7ff960b"
+                "hash": "b1e3dcb0e5dc629e"
             },
             {
                 "rule": "complexity.npath",
-                "hash": "8352975c580a4191"
+                "hash": "b69de5790301d81b"
             }
         ],
         "method:Qualimetrix\\Analysis\\Collection\\Metric\\DerivedMetricExtractor::extract": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "4363eeedee5a0fe5"
+                "hash": "80efcfc6f1532b09"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "0783d5d54f62c46f"
+                "hash": "08d2cbc9c437dca3"
             },
             {
                 "rule": "complexity.npath",
-                "hash": "35b13958ff31fadb"
+                "hash": "98afb2108eae3f87"
             }
         ],
         "method:Qualimetrix\\Analysis\\Discovery\\FinderFileDiscovery::discover": [
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "a1b1b6ec0110f883"
+                "hash": "a06c8e7ba1d443a8"
             }
         ],
         "method:Qualimetrix\\Analysis\\Duplication\\DuplicationDetector::detect": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "727084a15e8056b8"
+                "hash": "708a6e0d8c060e05"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "0274f325dcd02b27"
+                "hash": "1d456da32147dd87"
             },
             {
                 "rule": "complexity.npath",
-                "hash": "6591849aae650033"
+                "hash": "2c977429f2047062"
             }
         ],
         "method:Qualimetrix\\Analysis\\Duplication\\DuplicationDetector::extendMatch": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "db166e864d175a2f"
+                "hash": "66b34e2303809030"
             }
         ],
         "method:Qualimetrix\\Analysis\\Duplication\\DuplicationDetector::findDuplicateBlocks": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "9865637e9f48f6ea"
+                "hash": "a54f1432f8948d47"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "e8706e8568f07f68"
+                "hash": "9fb816ed018470d4"
             }
         ],
         "method:Qualimetrix\\Analysis\\Duplication\\DuplicationDetector::pairKey": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "a77b1ac2172d0bc4"
+                "hash": "7074e2053948fc9c"
             }
         ],
         "method:Qualimetrix\\Analysis\\Duplication\\DuplicationDetector::tokensMatch": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "be40f59687287150"
+                "hash": "918f862cec38b7ec"
             }
         ],
         "method:Qualimetrix\\Analysis\\Namespace_\\Psr4NamespaceDetector::detect": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "b1d909a73ebef3d7"
+                "hash": "aef0fb1698dfde1b"
             }
         ],
         "method:Qualimetrix\\Analysis\\Namespace_\\Psr4NamespaceDetector::loadMapping": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "2bc8b27c2b889e3e"
+                "hash": "81b1a77c5179c709"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "188f8e55b55b3400"
+                "hash": "fe3ff99682776f9f"
             },
             {
                 "rule": "complexity.npath",
-                "hash": "2b091051b150db46"
+                "hash": "60a0c480f16b51d4"
             }
         ],
         "method:Qualimetrix\\Analysis\\Namespace_\\TokenizerNamespaceDetector::extractNamespace": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "351b51234873441c"
+                "hash": "a2716d90c0b3f29a"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "4f76c8fef2464939"
+                "hash": "92b8d0553f9475dc"
             }
         ],
         "method:Qualimetrix\\Analysis\\Pipeline\\AnalysisPipeline::__construct": [
             {
                 "rule": "code-smell.constructor-overinjection",
-                "hash": "741ea990f3e6b588"
+                "hash": "18da9d4437767c32"
             },
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "114cd6a1255d55ab"
+                "hash": "d435e8ffca3ccc00"
             }
         ],
         "method:Qualimetrix\\Analysis\\Pipeline\\AnalysisPipeline::analyze": [
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "27760585d82440d7"
+                "hash": "e59a4faaba47404d"
             },
             {
                 "rule": "maintainability.index",
-                "hash": "820664c59d73a102"
+                "hash": "8114dfb3d4c8719f"
             }
         ],
         "method:Qualimetrix\\Analysis\\Pipeline\\AnalysisResult::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "d22d7b9b1dbcb2d2"
+                "hash": "d20062ec7bae8281"
             }
         ],
         "method:Qualimetrix\\Analysis\\Pipeline\\MetricEnricher::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "5f2ea6159ed4e1fe"
+                "hash": "679722b21541971e"
             }
         ],
         "method:Qualimetrix\\Analysis\\Pipeline\\MetricEnricher::enrich": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "c38e6351a03dbf18"
+                "hash": "6fbe817c85f27aff"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "9fc585dc815d2948"
+                "hash": "b9f940bd7e3b1c35"
             },
             {
                 "rule": "maintainability.index",
-                "hash": "b58d297bdc1c1999"
+                "hash": "263b59de9d395390"
             }
         ],
         "method:Qualimetrix\\Analysis\\Repository\\InMemoryMetricRepository::add": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "4b2ba7745cb4f9aa"
+                "hash": "92f48d679d4cb572"
             }
         ],
         "method:Qualimetrix\\Analysis\\Repository\\InMemoryMetricRepository::mergeWith": [
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "169964b3f07dc2cb"
+                "hash": "4b81956029153fd4"
             }
         ],
         "method:Qualimetrix\\Baseline\\Suppression\\SuppressionExtractor::extract": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "8146f4056e761bf4"
+                "hash": "a091fa39a9c24175"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "3bbce5ea043462f6"
+                "hash": "971424ad2f36fd96"
             }
         ],
         "method:Qualimetrix\\Baseline\\Suppression\\SuppressionFilter::shouldInclude": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "2ea00238d204711e"
+                "hash": "388a0ee2efc5b565"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "222bce5e67b5451b"
+                "hash": "8d167a8151a2716b"
             }
         ],
         "method:Qualimetrix\\Configuration\\ComputedMetricsConfigResolver::createDefinition": [
             {
-                "rule": "complexity.cognitive",
-                "hash": "9f157e144c2e9b9c"
-            },
-            {
                 "rule": "complexity.cyclomatic",
-                "hash": "806d8d55f0d75371"
+                "hash": "ca19b6fdd206fdee"
             }
         ],
         "method:Qualimetrix\\Configuration\\ComputedMetricsConfigResolver::mergeDefinition": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "b85befe7b01a7c6e"
+                "hash": "1949099153ce587b"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "a0de173c3768a7d2"
+                "hash": "df6f28abec1077d5"
             }
         ],
         "method:Qualimetrix\\Configuration\\Loader\\YamlConfigLoader::validateStructure": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "a0786e9ba9b15b5e"
+                "hash": "c40c9a083b638876"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "12cbcbfd0be2fd07"
+                "hash": "492eb22a8d338856"
             },
             {
                 "rule": "complexity.npath",
-                "hash": "1cb82490b642cc21"
+                "hash": "7dd56c44739bdc11"
             }
         ],
         "method:Qualimetrix\\Configuration\\Pipeline\\ResolvedConfiguration::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "987b9f2437505b28"
+                "hash": "1fb6d59e123985e5"
             }
         ],
         "method:Qualimetrix\\Configuration\\Pipeline\\Stage\\ConfigFileStage::normalizeConfigData": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "7e644f77dc825649"
+                "hash": "8acb256b3ab6d68d"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "f0b133e9ec44c1fa"
+                "hash": "d66fc9d95bfd0c08"
             },
             {
                 "rule": "complexity.npath",
-                "hash": "e942abed9f4fb552"
+                "hash": "121fa11cff19db58"
             }
         ],
         "method:Qualimetrix\\Configuration\\Pipeline\\Stage\\ConfigFileStage::warnAboutUnknownRuleNames": [
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "755ae40b398352b7"
+                "hash": "2e700c7b51784085"
             }
         ],
         "method:Qualimetrix\\Configuration\\RuleOptionsFactory::validateNumericFields": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "8fd396e97f66ac75"
+                "hash": "df5961aef4ddd3e8"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "3ee5001c51b50a43"
+                "hash": "73356576c91014ed"
             }
         ],
         "method:Qualimetrix\\Core\\ComputedMetric\\ComputedMetricDefinition::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "2211379dfe8e03ce"
+                "hash": "c78100e12bc4cc24"
             }
         ],
         "method:Qualimetrix\\Core\\Dependency\\Dependency::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "805c566afafa1890"
+                "hash": "e9ad0ba3eba4f93e"
             }
         ],
         "method:Qualimetrix\\Core\\Dependency\\DependencyType::description": [
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "8e016447d816a647"
+                "hash": "67cbd05f66690098"
             }
         ],
         "method:Qualimetrix\\Core\\Metric\\ClassWithMetrics::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "9a8e086e2a14ed18"
+                "hash": "d8690946d5fd2ccc"
             }
         ],
         "method:Qualimetrix\\Core\\Metric\\MethodWithMetrics::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "67e46f48fa425b47"
+                "hash": "3f3371a4cc5cd020"
             }
         ],
         "method:Qualimetrix\\Core\\Metric\\MetricRepositoryInterface::add": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "cd9ebc6418a203be"
+                "hash": "18ddb2ffcf9d3eb8"
             }
         ],
         "method:Qualimetrix\\Core\\Profiler\\Span::__construct": [
             {
                 "rule": "code-smell.constructor-overinjection",
-                "hash": "7ade452c0a9f357f"
+                "hash": "e814babe9045db2e"
             },
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "fb653f6f3b191701"
+                "hash": "5f30cc3f8d188c80"
             }
         ],
         "method:Qualimetrix\\Core\\Rule\\AnalysisContext::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "859d06b44cc1fb61"
+                "hash": "b97b82798c473a12"
             }
         ],
         "method:Qualimetrix\\Core\\Suppression\\Suppression::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "49151fa61c70e96c"
+                "hash": "02970712fd9e5da6"
             }
         ],
         "method:Qualimetrix\\Core\\Symbol\\ClassInfo::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "c90a69c68cede446"
+                "hash": "e54a0993ad604467"
             }
         ],
         "method:Qualimetrix\\Core\\Symbol\\MethodInfo::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "c87b8271abbeb1c9"
+                "hash": "dbdaf73ab31a93b7"
             }
         ],
         "method:Qualimetrix\\Core\\Symbol\\SymbolPath::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "62ca5cfd24e8fbdd"
+                "hash": "59230c7b1f88b22b"
             }
         ],
         "method:Qualimetrix\\Core\\Symbol\\SymbolPath::getType": [
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "35a951e67d33147e"
+                "hash": "04449ce559a551fe"
             }
         ],
         "method:Qualimetrix\\Core\\Symbol\\SymbolPath::toString": [
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "58821f839f4cf4be"
+                "hash": "d978667a8015fc7c"
             }
         ],
         "method:Qualimetrix\\Core\\Violation\\Violation::__construct": [
             {
                 "rule": "code-smell.constructor-overinjection",
-                "hash": "a8f016e601ab1832"
+                "hash": "8b8cc1976915a53c"
             },
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "6a7a4258c1d1e1c4"
+                "hash": "c5876fad39e16854"
             }
         ],
         "method:Qualimetrix\\Infrastructure\\Ast\\FileParserFactory::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "3bbfb19e41ad3686"
+                "hash": "041f7541e8bc820f"
             }
         ],
         "method:Qualimetrix\\Infrastructure\\Console\\Command\\CheckCommand::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "bfe4c377c219c9ba"
+                "hash": "6d5d644efd824215"
             }
         ],
         "method:Qualimetrix\\Infrastructure\\Console\\Command\\GraphExportCommand::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "3610e08b5c2cf77e"
+                "hash": "44c960c009904090"
             }
         ],
         "method:Qualimetrix\\Infrastructure\\Console\\Command\\GraphExportCommand::execute": [
             {
                 "rule": "maintainability.index",
-                "hash": "9e3325af341d41e1"
+                "hash": "6782eb29e9201d3a"
             }
         ],
         "method:Qualimetrix\\Infrastructure\\Console\\Command\\HookInstallCommand::execute": [
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "202b4d1278c12064"
+                "hash": "fd60a14d1059b8df"
             },
             {
                 "rule": "complexity.npath",
-                "hash": "18275d2adde44ddc"
+                "hash": "37bf26f7e3c1a037"
             }
         ],
         "method:Qualimetrix\\Infrastructure\\Console\\Command\\HookStatusCommand::execute": [
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "45506038fe1210f9"
+                "hash": "6cb4a57b523bdd38"
             },
             {
                 "rule": "maintainability.index",
-                "hash": "d1a829699e481934"
+                "hash": "1a537850b8b6a2fa"
             }
         ],
         "method:Qualimetrix\\Infrastructure\\Console\\Command\\RulesCommand::execute": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "6ce1ccf61d513686"
+                "hash": "ef71f77b2057c7ff"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "1b5824d2b912f45a"
+                "hash": "b586e09567ab6df2"
             }
         ],
         "method:Qualimetrix\\Infrastructure\\Console\\FormatterContextFactory::create": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "1fa4b4456eb75642"
+                "hash": "5add5cf78f84d3dd"
             }
         ],
         "method:Qualimetrix\\Infrastructure\\Console\\GitScopeFilterConfig::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "4d1decd5bbaa8667"
+                "hash": "e2ec275aa9732c4b"
             }
         ],
         "method:Qualimetrix\\Infrastructure\\Console\\ResultPresenter::__construct": [
             {
                 "rule": "code-smell.constructor-overinjection",
-                "hash": "3cd46524d0354e30"
+                "hash": "674480cd25aa52a9"
             },
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "86d92a88482d8d9e"
+                "hash": "8d68246df4f1ff8c"
+            }
+        ],
+        "method:Qualimetrix\\Infrastructure\\Console\\ResultPresenter::determineExitCode": [
+            {
+                "rule": "complexity.cyclomatic",
+                "hash": "c6d7b96b1047dafa"
             }
         ],
         "method:Qualimetrix\\Infrastructure\\Console\\ResultPresenter::presentResults": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "490620276dfa1727"
+                "hash": "384f4370ab897edd"
             }
         ],
         "method:Qualimetrix\\Infrastructure\\Console\\ResultPresenter::writeOutput": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "fb23749cb1941e79"
+                "hash": "724e09a199a77501"
             }
         ],
         "method:Qualimetrix\\Infrastructure\\Console\\RuntimeConfigurator::__construct": [
             {
                 "rule": "code-smell.constructor-overinjection",
-                "hash": "83993711269e412b"
+                "hash": "b76cef341312a69a"
             },
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "eb6021b493b2a400"
+                "hash": "1587bca1e3b53abe"
             }
         ],
         "method:Qualimetrix\\Infrastructure\\Console\\RuntimeConfigurator::applyExcludeHealth": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "8a08169c9e478ac9"
+                "hash": "254dd964f94082ad"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "785d80adb4fc29e0"
+                "hash": "c860af2c8bd468ef"
             },
             {
                 "rule": "complexity.npath",
-                "hash": "4d47fae3bf04dbbb"
+                "hash": "a3c81623d981ec4d"
             }
         ],
         "method:Qualimetrix\\Infrastructure\\Console\\ViolationFilterOptions::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "6dc8fd0dc8ffd800"
+                "hash": "da3f4c7adcfaadc2"
             }
         ],
         "method:Qualimetrix\\Infrastructure\\Console\\ViolationFilterOrchestrator::filterAndReport": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "e88a1c194e340a4e"
+                "hash": "7536d432c286b282"
             },
             {
                 "rule": "complexity.cognitive",
-                "hash": "60fe12cf2696e247"
+                "hash": "b1d688d4c6ee741a"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "e5c888b559c9ca99"
+                "hash": "0d3970d2cb6d5bd4"
             },
             {
                 "rule": "complexity.npath",
-                "hash": "46a76e4e7c37d206"
+                "hash": "3a584dc2444dfb03"
             },
             {
                 "rule": "maintainability.index",
-                "hash": "6c3ff61e25b911c5"
+                "hash": "ae1d43e20d9936be"
             }
         ],
         "method:Qualimetrix\\Infrastructure\\Console\\ViolationFilterPipeline::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "444bd17a789e973f"
+                "hash": "0c9e274db804b2dd"
             }
         ],
         "method:Qualimetrix\\Infrastructure\\Console\\ViolationFilterPipeline::filter": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "32eb673a36d8c584"
+                "hash": "fa1ed77169fda36d"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "d3522e1589e7886e"
+                "hash": "e0f048383e5c65e8"
             },
             {
                 "rule": "maintainability.index",
-                "hash": "a0a729f4dedb1735"
+                "hash": "01c82655b89ac536"
             }
         ],
         "method:Qualimetrix\\Infrastructure\\Console\\ViolationFilterResult::__construct": [
             {
                 "rule": "code-smell.constructor-overinjection",
-                "hash": "4adabb40ab7a1055"
+                "hash": "565f92f0668d9bb5"
             },
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "7db71114ce6d7b9c"
+                "hash": "8852f0a92e45422f"
             }
         ],
         "method:Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\RuleOptionsCompilerPass::resolveExtraDependencies": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "9ac9c58560141de5"
+                "hash": "85680d23ba50a1e3"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "883ad03f493c488f"
+                "hash": "a4f77862892a8a35"
             }
         ],
         "method:Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\AnalysisConfigurator::configure": [
             {
                 "rule": "maintainability.index",
-                "hash": "1d598de8917c4961"
+                "hash": "8c79eaabdd6957eb"
             }
         ],
         "method:Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator::registerCli": [
             {
                 "rule": "maintainability.index",
-                "hash": "f5f0685ce2e4bd58"
+                "hash": "05af04993f7b5af5"
             }
         ],
         "method:Qualimetrix\\Infrastructure\\Git\\GitRepositoryLocator::findViaDirectoryTraversal": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "7d9c1299a9c1e3d1"
+                "hash": "ef7a0d3c0a8a2ce9"
             }
         ],
         "method:Qualimetrix\\Infrastructure\\Git\\GitScopeResolution::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "48be11712ee5fe99"
+                "hash": "12f796a54ce78475"
             }
         ],
         "method:Qualimetrix\\Infrastructure\\Parallel\\FileProcessingTask::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "c52a8e220d8b62cf"
+                "hash": "6f83dac73cbddc59"
             }
         ],
         "method:Qualimetrix\\Infrastructure\\Parallel\\Strategy\\AmphpParallelStrategy::processBatch": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "05b54df7bec85d2d"
+                "hash": "19cb6631a2862d2a"
             }
         ],
         "method:Qualimetrix\\Infrastructure\\Parallel\\Strategy\\StrategySelector::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "ebf815473ae8963e"
+                "hash": "488af36652302c05"
             }
         ],
         "method:Qualimetrix\\Infrastructure\\Parallel\\Strategy\\StrategySelector::select": [
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "867694cf9846530d"
+                "hash": "52f17653ae9960d2"
             },
             {
                 "rule": "complexity.npath",
-                "hash": "3af39ced380d8949"
+                "hash": "4df8bdb0c1aa027c"
             },
             {
                 "rule": "maintainability.index",
-                "hash": "7fdd93cb0fe2ad0a"
+                "hash": "2c08236913aceaf4"
             }
         ],
         "method:Qualimetrix\\Infrastructure\\Parallel\\Strategy\\WorkerCountDetector::detect": [
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "f964a8394e090dae"
+                "hash": "dca946ceaadbd9d6"
             }
         ],
         "method:Qualimetrix\\Infrastructure\\Parallel\\WorkerBootstrap::buildCacheKey": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "ed48ad426a311fe9"
+                "hash": "f685c55223308b61"
             }
         ],
         "method:Qualimetrix\\Infrastructure\\Parallel\\WorkerBootstrap::createFileProcessor": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "00c75e64911c0b58"
+                "hash": "d08bb96a678c7839"
             }
         ],
         "method:Qualimetrix\\Infrastructure\\Parallel\\WorkerBootstrap::getFileProcessor": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "01efa842b915a383"
+                "hash": "a1cf580d068fa032"
             }
         ],
         "method:Qualimetrix\\Infrastructure\\Storage\\FileRecord::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "a1939915e708d5f6"
+                "hash": "504643bf60e36199"
             }
         ],
         "method:Qualimetrix\\Infrastructure\\Storage\\InMemoryStorage::storeMetrics": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "f0d8bf23df1c6dce"
+                "hash": "8b3993af3a1fa15d"
             }
         ],
         "method:Qualimetrix\\Infrastructure\\Storage\\SqliteStorage::storeMetrics": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "33cf0d1d1ce4531c"
+                "hash": "f8c6bcef02153f72"
             }
         ],
         "method:Qualimetrix\\Infrastructure\\Storage\\StorageInterface::storeMetrics": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "bd0a4612d781b5ac"
+                "hash": "7ab42a9f032abd83"
             }
         ],
         "method:Qualimetrix\\Metrics\\CodeSmell\\CodeSmellLocation::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "0506663b3700f187"
+                "hash": "5651353e212b3e14"
             }
         ],
         "method:Qualimetrix\\Metrics\\CodeSmell\\CodeSmellVisitor::containsCountCall": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "1d097c2a870c4278"
+                "hash": "23d4eae846d89e94"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "71bd43ce79f77852"
+                "hash": "9530c7db68f377a3"
             },
             {
                 "rule": "complexity.npath",
-                "hash": "112fcad3dde259b3"
+                "hash": "ed0af56331a26064"
             }
         ],
         "method:Qualimetrix\\Metrics\\CodeSmell\\CodeSmellVisitor::enterNode": [
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "eadca411f59d5df8"
+                "hash": "c97949f0ab99cf7d"
             },
             {
                 "rule": "complexity.npath",
-                "hash": "af5930935c9ba8d6"
+                "hash": "26635fb323be2c7c"
             }
         ],
         "method:Qualimetrix\\Metrics\\CodeSmell\\CodeSmellVisitor::isBoolType": [
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "dd9906dcea5eb2c9"
+                "hash": "ca8509b6dca9d91f"
             }
         ],
         "method:Qualimetrix\\Metrics\\CodeSmell\\CodeSmellVisitor::statementsContainChainSignal": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "4dd0f380de279969"
+                "hash": "e6de16ef6456f3b7"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "4ef514b7c523ad2e"
+                "hash": "76d8f7009e8db1ef"
             }
         ],
         "method:Qualimetrix\\Metrics\\CodeSmell\\IdenticalSubExpressionVisitor::getOperatorSymbol": [
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "1351812f36d12e48"
+                "hash": "cd958a969ca6d81d"
             }
         ],
         "method:Qualimetrix\\Metrics\\CodeSmell\\IdenticalSubExpressionVisitor::hasSideEffects": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "92bb4aba90316df9"
+                "hash": "211b25bb95e2212f"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "a5e3f11bf54c8060"
+                "hash": "75d02e5920098836"
             },
             {
                 "rule": "complexity.npath",
-                "hash": "12d547a610d335ec"
+                "hash": "8f024e42daac4d51"
             }
         ],
         "method:Qualimetrix\\Metrics\\CodeSmell\\IdenticalSubExpressionVisitor::nodesEqual": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "f55dc5036fee1bcf"
+                "hash": "9259cb888b59863d"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "9305f8085ed7c0f0"
+                "hash": "4d16638f75b9fc6b"
             }
         ],
         "method:Qualimetrix\\Metrics\\CodeSmell\\ParameterCountVisitor::enterNode": [
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "b43c606a00f8debb"
+                "hash": "5e5b22e416785388"
             }
         ],
         "method:Qualimetrix\\Metrics\\CodeSmell\\UnreachableCodeVisitor::enterNode": [
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "b3dad474d9dc2dca"
+                "hash": "93f50ff02579084e"
             }
         ],
         "method:Qualimetrix\\Metrics\\Complexity\\CognitiveComplexityVisitor::enterNode": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "9b00729eb1cb948c"
+                "hash": "4bf1296f96889f45"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "35871ca92362f4c0"
+                "hash": "a104f816527b9c1f"
             },
             {
                 "rule": "complexity.npath",
-                "hash": "60e1f51420a6c87b"
+                "hash": "91891721d5bc59e6"
             }
         ],
         "method:Qualimetrix\\Metrics\\Complexity\\CognitiveComplexityVisitor::getComplexityIncrement": [
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "5f6ddf7bd0e446d7"
+                "hash": "1fa899311ea9d21c"
             },
             {
                 "rule": "complexity.npath",
-                "hash": "90346a937fdc2e64"
+                "hash": "7722b12f7b34fe80"
             }
         ],
         "method:Qualimetrix\\Metrics\\Complexity\\CognitiveComplexityVisitor::isRecursiveCall": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "2d6d7445edd85aef"
+                "hash": "dbe394f03e5f9a52"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "d32038dfcd9ab601"
+                "hash": "6e9e0e1084788828"
             },
             {
                 "rule": "complexity.npath",
-                "hash": "dd96eed6ee4ccb10"
+                "hash": "acc786115af3fe1f"
             }
         ],
         "method:Qualimetrix\\Metrics\\Complexity\\CognitiveComplexityVisitor::leaveNode": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "357e50bf4e7d244e"
+                "hash": "8fce34cb2f93c5db"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "6c66c65e50066a66"
+                "hash": "2ceb6f0e7b9087a8"
             },
             {
                 "rule": "complexity.npath",
-                "hash": "5f19f37054f521e0"
+                "hash": "dd8986031e037fcf"
             }
         ],
         "method:Qualimetrix\\Metrics\\Complexity\\CyclomaticComplexityVisitor::enterNode": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "42aca057f15e91b2"
+                "hash": "709206b890f31b71"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "b8dbd7e6d1f5092b"
+                "hash": "3bd19a6287b63e01"
             },
             {
                 "rule": "complexity.npath",
-                "hash": "0a950da009d23f24"
+                "hash": "c818ece954831cbd"
             }
         ],
         "method:Qualimetrix\\Metrics\\Complexity\\CyclomaticComplexityVisitor::leaveNode": [
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "0b50ea644a4b0cf3"
+                "hash": "ffad37f9211f62ed"
             }
         ],
         "method:Qualimetrix\\Metrics\\Complexity\\NpathComplexityVisitor::calculateExprNpath": [
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "850d0b7470558944"
+                "hash": "7861c53625e0bdeb"
             }
         ],
         "method:Qualimetrix\\Metrics\\Complexity\\NpathComplexityVisitor::calculateStmtNpath": [
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "df47cb4475e83f3f"
+                "hash": "d0aacc70de9449c6"
             }
         ],
         "method:Qualimetrix\\Metrics\\Complexity\\NpathComplexityVisitor::enterNode": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "938fd3123658eeba"
+                "hash": "302e4c04868cf480"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "53d010fee158b173"
+                "hash": "fc0ddd13242572f5"
             },
             {
                 "rule": "complexity.npath",
-                "hash": "8e254d80c7116c78"
+                "hash": "37d860724847f231"
             }
         ],
         "method:Qualimetrix\\Metrics\\Complexity\\NpathComplexityVisitor::leaveNode": [
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "7d073dd9503e847d"
+                "hash": "95b8f15ff6329516"
             }
         ],
         "method:Qualimetrix\\Metrics\\Complexity\\NpathComplexityVisitor::startMethod": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "664b928117afe667"
+                "hash": "2747a2036e013c43"
             }
         ],
         "method:Qualimetrix\\Metrics\\ComputedMetric\\ComputedMetricEvaluator::evaluateAtLevel": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "5d9f5a7bc446ba00"
+                "hash": "56f18a7f14b3904f"
             }
         ],
         "method:Qualimetrix\\Metrics\\ComputedMetric\\ComputedMetricEvaluator::topologicalSort": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "2df6bddd2db6e68f"
+                "hash": "7da427c98c38736f"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "9f71ba6b00d46f02"
+                "hash": "efa5b83a3a0be1dd"
             },
             {
                 "rule": "complexity.npath",
-                "hash": "9424e1e9b38bd086"
+                "hash": "fc987f519e654116"
             }
         ],
         "method:Qualimetrix\\Metrics\\Coupling\\ClassRankCollector::calculate": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "4246db1a7c53be9b"
+                "hash": "af1247db6f4d53ca"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "6b9d90eb5f26cec8"
+                "hash": "9355e80f924855bb"
             },
             {
                 "rule": "complexity.npath",
-                "hash": "e286f9c98016574d"
+                "hash": "03be56d7f4ac1cb3"
             }
         ],
         "method:Qualimetrix\\Metrics\\Coupling\\ClassRankCollector::computePageRank": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "fd61511b45036595"
+                "hash": "6979985fb1f8c7ad"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "904880209a30129a"
+                "hash": "a7455cc12e465f7c"
             }
         ],
         "method:Qualimetrix\\Metrics\\Halstead\\HalsteadCollector::collect": [
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "d6f4556038ef86c4"
+                "hash": "baba6d3704e20377"
             }
         ],
         "method:Qualimetrix\\Metrics\\Halstead\\HalsteadMetrics::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "c92d4d80a1e16fab"
+                "hash": "db4b11d44a68f845"
             }
         ],
         "method:Qualimetrix\\Metrics\\Halstead\\HalsteadVisitor::enterNode": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "c20d33aefcf125bb"
+                "hash": "8589371f04efcf5f"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "19f190f6bedd0eff"
+                "hash": "48039bd56d66e2ba"
             },
             {
                 "rule": "complexity.npath",
-                "hash": "122a5a742168417e"
+                "hash": "26fdeaa0f0b4af29"
             },
             {
                 "rule": "maintainability.index",
-                "hash": "dbeeb76b0d5feab9"
+                "hash": "e579d8050040a668"
             }
         ],
         "method:Qualimetrix\\Metrics\\Halstead\\HalsteadVisitor::getAssignOpName": [
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "377cc0504a561516"
+                "hash": "4cb1cc1556f8e94b"
             }
         ],
         "method:Qualimetrix\\Metrics\\Halstead\\HalsteadVisitor::getBinaryOpName": [
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "163915944342bcef"
+                "hash": "b32e40c06ae1d539"
             }
         ],
         "method:Qualimetrix\\Metrics\\Halstead\\HalsteadVisitor::getCallOpName": [
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "6ba2498831e5fa16"
+                "hash": "2bf2125ad769336c"
             }
         ],
         "method:Qualimetrix\\Metrics\\Halstead\\HalsteadVisitor::getControlFlowOpName": [
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "4ddffeedcea26a01"
+                "hash": "c64926cec0b5822e"
             }
         ],
         "method:Qualimetrix\\Metrics\\Halstead\\HalsteadVisitor::getOperandName": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "78ed1d1c8c52b9d0"
+                "hash": "474a839d9c7de9d2"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "e8e52b2ec29f5a70"
+                "hash": "0bed234dd16b7cb7"
             },
             {
                 "rule": "complexity.npath",
-                "hash": "8aed54b02298ba9f"
+                "hash": "a876f358f5053827"
             }
         ],
         "method:Qualimetrix\\Metrics\\Halstead\\HalsteadVisitor::getOtherOpName": [
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "5b8f0cffedf06e6c"
+                "hash": "af749b2e0509b76f"
             }
         ],
         "method:Qualimetrix\\Metrics\\Halstead\\HalsteadVisitor::getUnaryOpName": [
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "1360cae067615871"
+                "hash": "f618c4f99e3d012a"
             }
         ],
         "method:Qualimetrix\\Metrics\\Halstead\\HalsteadVisitor::leaveNode": [
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "80f5a6ac2e21d628"
+                "hash": "a03b4329826e8779"
             }
         ],
         "method:Qualimetrix\\Metrics\\Security\\SecurityPatternVisitor::checkCommandInjection": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "3ecc1b9ce73e4b42"
+                "hash": "ed4eb47491b0e60b"
             }
         ],
         "method:Qualimetrix\\Metrics\\Security\\SecurityPatternVisitor::checkSqlInjectionFuncCall": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "f91ff8483d1ee9f7"
+                "hash": "e1ec411a0d8de5e5"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "f227ffddf3f8d9dc"
+                "hash": "6e566195f95029dd"
             },
             {
                 "rule": "complexity.npath",
-                "hash": "555463cd550cfab2"
+                "hash": "dc86ef2072d69a72"
             }
         ],
         "method:Qualimetrix\\Metrics\\Security\\SensitiveNameMatcher::checkExtraSensitivePatterns": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "47b1947a9439ce34"
+                "hash": "6319b0a7349130ad"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "09ebb8c42f85a2dd"
+                "hash": "b5ec5b5f51c16776"
             }
         ],
         "method:Qualimetrix\\Metrics\\Size\\LocCollector::calculateMetrics": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "5bb7d6288daf546a"
+                "hash": "16b0cd88dd864582"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "16873cfb7daaaf62"
+                "hash": "b1f0d58c91c1438a"
             },
             {
                 "rule": "complexity.npath",
-                "hash": "9dca339b5718cfc5"
+                "hash": "b9a14296a640df0e"
             }
         ],
         "method:Qualimetrix\\Metrics\\Structure\\InheritanceClassInfo::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "01720162aea67180"
+                "hash": "d2d58ba9c87e9a01"
             }
         ],
         "method:Qualimetrix\\Metrics\\Structure\\InheritanceDepthVisitor::enterNode": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "a600477ea5e02e65"
+                "hash": "21a089aff5b4fec0"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "49318d79d47c13d3"
+                "hash": "ecc9f7cca6472ed6"
             }
         ],
         "method:Qualimetrix\\Metrics\\Structure\\LcomClassData::calculateLcom": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "799592feb0c6b56f"
+                "hash": "85bbfd477b0629ac"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "cabcdf4e756a5765"
+                "hash": "12b499069f39ca1a"
             },
             {
                 "rule": "complexity.npath",
-                "hash": "89e5ff356a00a69c"
+                "hash": "dfb9ec01c034202e"
             }
         ],
         "method:Qualimetrix\\Metrics\\Structure\\LcomVisitor::enterNode": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "0662e840b325735d"
+                "hash": "afe27167250d425f"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "063c9aa9eadffacd"
+                "hash": "0da8cc9f6fe49aa3"
             },
             {
                 "rule": "complexity.npath",
-                "hash": "1b38c7f311de7d54"
+                "hash": "73881094377ec0b5"
             },
             {
                 "rule": "maintainability.index",
-                "hash": "c804d3774dfca5a0"
+                "hash": "bd7cdb2c621e89c6"
             }
         ],
         "method:Qualimetrix\\Metrics\\Structure\\MethodCountCollector::collect": [
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "37c047bb5bced242"
+                "hash": "c647df713484a13e"
             }
         ],
         "method:Qualimetrix\\Metrics\\Structure\\MethodCountCollector::getClassesWithMetrics": [
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "7705e95ef1530d33"
+                "hash": "d929fdd3c378cb08"
             }
         ],
         "method:Qualimetrix\\Metrics\\Structure\\MethodCountCollector::getMetricDefinitions": [
             {
                 "rule": "maintainability.index",
-                "hash": "9d9fe2311a8bcfed"
+                "hash": "efaea0827c427646"
             }
         ],
         "method:Qualimetrix\\Metrics\\Structure\\MethodCountVisitor::countMethod": [
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "aa4bc0b6e960862c"
+                "hash": "40c1db42a603c168"
             }
         ],
         "method:Qualimetrix\\Metrics\\Structure\\MethodCountVisitor::enterNode": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "4e963f06dbd606ca"
+                "hash": "8d48e29bc880ae5d"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "92d3e6c5b830c8ee"
+                "hash": "7e681981cb143a75"
             },
             {
                 "rule": "complexity.npath",
-                "hash": "17c5fe4376a5be12"
+                "hash": "e0d3415c18960ce1"
             },
             {
                 "rule": "maintainability.index",
-                "hash": "e2b50f426556c00f"
+                "hash": "56a1ccfa7731c588"
             }
         ],
         "method:Qualimetrix\\Metrics\\Structure\\TccLccClassData::countConnectedPairsBfs": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "ed89ef9ba979e4a5"
+                "hash": "b45cd0323d10d514"
             }
         ],
         "method:Qualimetrix\\Metrics\\Structure\\TccLccVisitor::enterNode": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "164698c3978c5da9"
+                "hash": "b604f8d4a84f492c"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "ffa1c2e4034eb3ea"
+                "hash": "be0604ef6c4f43a7"
             },
             {
                 "rule": "complexity.npath",
-                "hash": "027b0c274da48e00"
+                "hash": "43adbc355739d664"
             },
             {
                 "rule": "maintainability.index",
-                "hash": "9e06023349ea1999"
+                "hash": "30f6bd5ddb16574a"
             }
         ],
         "method:Qualimetrix\\Metrics\\Structure\\UnusedPrivateCollector::addEntries": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "43a98200c3019e5d"
+                "hash": "248c5827256b2c20"
             }
         ],
         "method:Qualimetrix\\Metrics\\Structure\\UnusedPrivateVisitor::enterClassLike": [
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "fcf25571cbf22988"
+                "hash": "a22c8a37a4c9ba5f"
             }
         ],
         "method:Qualimetrix\\Metrics\\Structure\\UnusedPrivateVisitor::enterNode": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "47f8f2d485645c73"
+                "hash": "1475178242cda723"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "aa05e6decac563e6"
+                "hash": "703e47cfb7b1b5b0"
             },
             {
                 "rule": "complexity.npath",
-                "hash": "d54dd42ca1146c93"
+                "hash": "a1356fa84ee19a85"
             }
         ],
         "method:Qualimetrix\\Metrics\\Structure\\UnusedPrivateVisitor::trackUsages": [
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "ff92fddaefef9ca5"
+                "hash": "f87e5924b90fba12"
             },
             {
                 "rule": "complexity.npath",
-                "hash": "354e4b4d9af0605b"
+                "hash": "9c60fa56c40bd22f"
             }
         ],
         "method:Qualimetrix\\Reporting\\Debt\\RemediationTimeRegistry::getMinutesForViolation": [
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "2484ff970b13c483"
+                "hash": "b8ee26f1fd8f0002"
             }
         ],
         "method:Qualimetrix\\Reporting\\FormatterContext::__construct": [
             {
                 "rule": "code-smell.constructor-overinjection",
-                "hash": "86ac3c5ee68e5fb5"
+                "hash": "63d91f80166e49ed"
             },
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "016d4f5c5814a133"
+                "hash": "d26d2e9843358c6a"
             }
         ],
         "method:Qualimetrix\\Reporting\\Formatter\\Html\\HtmlTreeBuilder::aggregateMetricsBottomUp": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "360e3cb0083748f6"
+                "hash": "5a1951359b78515c"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "6ed176f1580cf519"
+                "hash": "480ec58bd838be9e"
             },
             {
                 "rule": "complexity.npath",
-                "hash": "5b7ac13d89f5e7ce"
+                "hash": "d31f69def6997182"
             }
         ],
         "method:Qualimetrix\\Reporting\\Formatter\\Html\\HtmlTreeBuilder::buildTree": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "abe9fba7ca17db27"
+                "hash": "5173789263889fb5"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "2b9e19ea4ef40519"
+                "hash": "9aa8e1409b937850"
             }
         ],
         "method:Qualimetrix\\Reporting\\Formatter\\Html\\HtmlTreeBuilder::ensureNamespaceChain": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "6fcaea49cb7d2a5e"
+                "hash": "004adc4029ab8a1b"
             }
         ],
         "method:Qualimetrix\\Reporting\\Formatter\\Html\\HtmlTreeBuilder::partitionViolations": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "3f1022642052a7c0"
+                "hash": "ec201234877095e3"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "20318880993ffc55"
+                "hash": "fc7a8bd9baa0a091"
             }
         ],
         "method:Qualimetrix\\Reporting\\Formatter\\Json\\JsonFormatter::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "3fa0d8e38dcaf236"
+                "hash": "64b679be33a95c5e"
             }
         ],
         "method:Qualimetrix\\Reporting\\Formatter\\Json\\JsonHealthSection::format": [
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "fe41358c96285a0f"
+                "hash": "85c6b6cdf6ca5950"
             }
         ],
         "method:Qualimetrix\\Reporting\\Formatter\\Json\\JsonOffenderSection::formatWorstOffenders": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "330a877f5f51ab0e"
+                "hash": "5609bbae11c21f2a"
             }
         ],
         "method:Qualimetrix\\Reporting\\Formatter\\MetricsJsonFormatter::format": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "63daa7b1d418c55d"
+                "hash": "61e2d6ad311905b3"
             }
         ],
         "method:Qualimetrix\\Reporting\\Formatter\\Sarif\\SarifRuleCollector::getRuleDescription": [
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "bac0a085fc5063f7"
+                "hash": "4f8b02176d4c163b"
             }
         ],
         "method:Qualimetrix\\Reporting\\Formatter\\Summary\\HealthBarRenderer::colorizeScore": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "9c207774801695cd"
+                "hash": "2eb313ec67db33d1"
             }
         ],
         "method:Qualimetrix\\Reporting\\Formatter\\Summary\\HealthBarRenderer::formatScore": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "648a681fd72e46a2"
+                "hash": "8ff6dd01e15d5b79"
             }
         ],
         "method:Qualimetrix\\Reporting\\Formatter\\Summary\\HealthBarRenderer::render": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "b4f4675577a24ef4"
+                "hash": "e9ffbf88d90dd352"
             },
             {
                 "rule": "complexity.cognitive",
-                "hash": "5e60b56645b0962f"
+                "hash": "fdf5f1cc62b1842b"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "83ce48dc9d6a80b1"
+                "hash": "a30557e1a9c0b7d6"
             },
             {
                 "rule": "complexity.npath",
-                "hash": "0daa4d09d2486f0b"
+                "hash": "f897f6dff43b90e1"
             },
             {
                 "rule": "maintainability.index",
-                "hash": "f230c73382fa1987"
+                "hash": "6f4e76388ca773ab"
             }
         ],
         "method:Qualimetrix\\Reporting\\Formatter\\Summary\\HealthBarRenderer::renderHealthBar": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "df99b1c7369eada8"
+                "hash": "aa7cc365fdec87b4"
             }
         ],
         "method:Qualimetrix\\Reporting\\Formatter\\Summary\\HintRenderer::render": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "d7dc2c397afe880b"
+                "hash": "f1a50a5768a55d58"
             },
             {
                 "rule": "complexity.cognitive",
-                "hash": "ab55d09257e80180"
+                "hash": "60e8c34cdf489e75"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "6ddfadb8be0cf9f7"
+                "hash": "ba2c83d6ec09d245"
             }
         ],
         "method:Qualimetrix\\Reporting\\Formatter\\Summary\\OffenderListRenderer::colorizeScore": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "9f92da8fcd6cd4b2"
+                "hash": "3eb1051988edb835"
             }
         ],
         "method:Qualimetrix\\Reporting\\Formatter\\Summary\\OffenderListRenderer::renderOffenderList": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "34bee6dc9e6410e6"
+                "hash": "424931fc7756217b"
             }
         ],
         "method:Qualimetrix\\Reporting\\Formatter\\Summary\\OffenderListRenderer::renderWorstClasses": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "ac1402ac3d623a76"
+                "hash": "2be97e835fecbc3d"
             }
         ],
         "method:Qualimetrix\\Reporting\\Formatter\\Summary\\OffenderListRenderer::renderWorstNamespaces": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "7b8e3418d07a8c1b"
+                "hash": "077c1c5dd83db118"
             }
         ],
         "method:Qualimetrix\\Reporting\\Formatter\\Summary\\OffenderListRenderer::renderWorstOffender": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "021fecab7f2335a6"
+                "hash": "d77e64cb0ae2680f"
             }
         ],
         "method:Qualimetrix\\Reporting\\Formatter\\Summary\\SummaryFormatter::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "a84cca7a4e245969"
+                "hash": "2a28fdf99dd4fcc0"
             }
         ],
         "method:Qualimetrix\\Reporting\\Formatter\\Summary\\SummaryFormatter::format": [
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "27bb251a45edf937"
+                "hash": "2a20d59c5dd47658"
             }
         ],
         "method:Qualimetrix\\Reporting\\Formatter\\Summary\\SummaryFormatter::renderHeader": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "e01539d357f8ed9f"
+                "hash": "ab8bef254f77c2fc"
             }
         ],
         "method:Qualimetrix\\Reporting\\Formatter\\Summary\\ViolationSummaryRenderer::render": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "c750e7ca18ebb69f"
+                "hash": "445c918ad7b9a9b6"
             },
             {
                 "rule": "complexity.cognitive",
-                "hash": "d07ef31f26508a47"
+                "hash": "327095e74d2dc2c9"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "3b84a4ae1d3711b3"
+                "hash": "cd31431711c92337"
             },
             {
                 "rule": "complexity.npath",
-                "hash": "e6333fd42f371390"
+                "hash": "7f3b51a6f4a5a55e"
             },
             {
                 "rule": "maintainability.index",
-                "hash": "36fd8bb38906e982"
+                "hash": "2b5b60cb22395674"
             }
         ],
         "method:Qualimetrix\\Reporting\\Formatter\\Support\\DetailedViolationRenderer::renderFlat": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "2445661d4c09bb4d"
+                "hash": "557cb5da45ec931e"
             }
         ],
         "method:Qualimetrix\\Reporting\\Formatter\\Support\\DetailedViolationRenderer::renderGrouped": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "aa5e115072b1b499"
+                "hash": "a5cc10133d2c4c4e"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "f385c9ea6b70b481"
+                "hash": "ee0184efc8708bad"
             }
         ],
         "method:Qualimetrix\\Reporting\\Formatter\\Support\\DetailedViolationRenderer::renderViolation": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "b54791076919586b"
+                "hash": "20250cf26ad1d02d"
             }
         ],
         "method:Qualimetrix\\Reporting\\Health\\DecompositionItem::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "70fd517f675f5c56"
+                "hash": "d0d5c35968066020"
             }
         ],
         "method:Qualimetrix\\Reporting\\Health\\HealthScore::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "d0b37926c8bfe097"
+                "hash": "87ec7882c6e4a878"
             }
         ],
         "method:Qualimetrix\\Reporting\\Health\\NamespaceDrillDown::buildClassHealthScores": [
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "7fde4a37d463f7e8"
+                "hash": "fc97080870bc1077"
             }
         ],
         "method:Qualimetrix\\Reporting\\Health\\NamespaceDrillDown::buildSubtreeHealthScores": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "4927ab84879ec83f"
+                "hash": "deefe2d3efab4978"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "44be88e24743e4c8"
+                "hash": "27785b8f767d0f9d"
             }
         ],
         "method:Qualimetrix\\Reporting\\Health\\NamespaceDrillDown::buildWorstClasses": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "ac7afb1c225cc172"
+                "hash": "6dd62ba99664654c"
             },
             {
                 "rule": "complexity.cognitive",
-                "hash": "63c81b7ef7ee8d6f"
+                "hash": "98d68be3b06183f2"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "584a2e1ff0bb8c4f"
+                "hash": "5e8ca88a60838479"
             },
             {
                 "rule": "maintainability.index",
-                "hash": "8064fd02ddb3f4e4"
+                "hash": "0007d71791dfdd63"
             }
         ],
         "method:Qualimetrix\\Reporting\\Health\\SummaryEnricher::buildHealthScores": [
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "ef65ffaae6b9f5f0"
+                "hash": "a64e39fc22960a20"
             }
         ],
         "method:Qualimetrix\\Reporting\\Health\\SummaryEnricher::buildWorstOffenders": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "e0f27ce6eb14a9b2"
+                "hash": "28d317853add05c7"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "d8e539902bf8a77e"
+                "hash": "d4ba55c8b38a9c24"
             },
             {
                 "rule": "maintainability.index",
-                "hash": "37ca1806e4826748"
+                "hash": "dd4e32badc6f8c3b"
             }
         ],
         "method:Qualimetrix\\Reporting\\Health\\SummaryEnricher::countViolationsPerSymbol": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "1076bfc73e387f66"
+                "hash": "dfc20a03eaaeca6a"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "312ef2715a571a46"
+                "hash": "70cd99c5fad504fc"
             }
         ],
         "method:Qualimetrix\\Reporting\\Health\\WorstOffender::__construct": [
             {
                 "rule": "code-smell.constructor-overinjection",
-                "hash": "c5a917aabb5cce2c"
+                "hash": "befd6c3d471aea4e"
             },
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "24d575535dfb997a"
+                "hash": "632ad6a17af08e09"
             }
         ],
         "method:Qualimetrix\\Reporting\\Report::__construct": [
             {
                 "rule": "code-smell.constructor-overinjection",
-                "hash": "0cf4593461ba634f"
+                "hash": "676ddd7e8d45a272"
             },
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "65bcf7bd977588f1"
+                "hash": "e041ecf1435f6c6d"
             }
         ],
         "method:Qualimetrix\\Rules\\CodeSmell\\DataClassOptions::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "77b94c0cc420a374"
+                "hash": "690070f1a2024f16"
             }
         ],
         "method:Qualimetrix\\Rules\\CodeSmell\\DataClassOptions::fromArray": [
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "02ae91b47c6edafe"
+                "hash": "56d3bc5cd68573d2"
             }
         ],
         "method:Qualimetrix\\Rules\\CodeSmell\\DataClassRule::analyze": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "4cd89f50559314e4"
+                "hash": "33ae882bc97bb36a"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "512cf93ad89b518f"
+                "hash": "921f8c231d0483c8"
             },
             {
                 "rule": "complexity.npath",
-                "hash": "652c669578b0ea1f"
+                "hash": "ee75ef0a057ea986"
             },
             {
                 "rule": "maintainability.index",
-                "hash": "6f8c0056a10cf80d"
+                "hash": "c6d200f5cc9909ea"
             }
         ],
         "method:Qualimetrix\\Rules\\CodeSmell\\GodClassOptions::__construct": [
             {
                 "rule": "code-smell.constructor-overinjection",
-                "hash": "8ca4c68d84cefd71"
+                "hash": "08cb662898cf26d2"
             },
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "b3f428513095c49a"
+                "hash": "d840646246ddc704"
             }
         ],
         "method:Qualimetrix\\Rules\\CodeSmell\\GodClassOptions::fromArray": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "dfe630c1b6b42292"
+                "hash": "d20f07a106b5d145"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "c4073af5df003808"
+                "hash": "a18cf84805b7b17d"
             }
         ],
         "method:Qualimetrix\\Rules\\CodeSmell\\GodClassRule::analyze": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "337ef3672d314c7a"
+                "hash": "6f399a243a32bffc"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "cda8dcebaac09db6"
+                "hash": "a5b3578f6d2864a3"
             },
             {
                 "rule": "complexity.npath",
-                "hash": "bb6d5d3f155f1550"
+                "hash": "11aeb4bdb1505228"
             },
             {
                 "rule": "maintainability.index",
-                "hash": "dce6702f8c150207"
+                "hash": "06c371b3b4c84bf7"
             }
         ],
         "method:Qualimetrix\\Rules\\Complexity\\CognitiveComplexityOptions::fromArray": [
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "3e341487305785a4"
+                "hash": "f73886dead8338a4"
             }
         ],
         "method:Qualimetrix\\Rules\\Complexity\\ComplexityOptions::fromArray": [
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "d7bd102381f4928e"
+                "hash": "850b25badbc60b61"
             }
         ],
         "method:Qualimetrix\\Rules\\Complexity\\NpathComplexityOptions::fromArray": [
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "0fc56d9b2640acab"
+                "hash": "0f3409e3f622256f"
             }
         ],
         "method:Qualimetrix\\Rules\\ComputedMetric\\ComputedMetricRule::checkLevel": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "303b668ec06cbd37"
+                "hash": "e04b264323d314d5"
             }
         ],
         "method:Qualimetrix\\Rules\\ComputedMetric\\ComputedMetricRule::determineSeverity": [
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "8f18e0518d2bb684"
+                "hash": "3d622a773c14c95d"
             }
         ],
         "method:Qualimetrix\\Rules\\Coupling\\CboRule::buildMessage": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "a8c901024efa1b10"
+                "hash": "90d911d30adcaaa8"
             }
         ],
         "method:Qualimetrix\\Rules\\Coupling\\CboRule::buildRecommendation": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "0f53f52461363190"
+                "hash": "13636f9629b2a360"
             }
         ],
         "method:Qualimetrix\\Rules\\Coupling\\CboRule::checkCbo": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "a11f8c2320a048f1"
+                "hash": "7950df97a1ad51d4"
             }
         ],
         "method:Qualimetrix\\Rules\\Coupling\\CboRule::getTopDependencies": [
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "891c13d5044532b5"
+                "hash": "9d935b008d5379ed"
             }
         ],
         "method:Qualimetrix\\Rules\\Coupling\\DistanceOptions::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "2af4cb8c63b207d1"
+                "hash": "88cbf9d2f07ffd0f"
             }
         ],
         "method:Qualimetrix\\Rules\\Coupling\\DistanceOptions::fromArray": [
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "32dd654b411693fa"
+                "hash": "33952850307282fa"
             }
         ],
         "method:Qualimetrix\\Rules\\Coupling\\DistanceRule::analyze": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "ac0c3f541528e36b"
+                "hash": "3af732de89eb1137"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "ed0febe37364a2a4"
+                "hash": "a26e8fbf6ec9bbd1"
             },
             {
                 "rule": "complexity.npath",
-                "hash": "cd083771da875d46"
+                "hash": "5171c04130ad1f29"
             },
             {
                 "rule": "maintainability.index",
-                "hash": "6c039d66893c2493"
+                "hash": "8efec4d01d7b9d81"
             }
         ],
         "method:Qualimetrix\\Rules\\Coupling\\InstabilityRule::analyzeNamespaceLevel": [
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "3bb39e2952f0476c"
+                "hash": "01c8f0c59810148d"
             }
         ],
         "method:Qualimetrix\\Rules\\Coupling\\NamespaceCboOptions::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "ef082c40a5bf40e8"
+                "hash": "7e1696cb32aa964b"
             }
         ],
         "method:Qualimetrix\\Rules\\Coupling\\NamespaceInstabilityOptions::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "2d482898764d7b72"
+                "hash": "ca1078c78dab96ae"
             }
         ],
         "method:Qualimetrix\\Rules\\Design\\TypeCoverageOptions::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "ce70742ec5acadff"
-            }
-        ],
-        "method:Qualimetrix\\Rules\\Design\\TypeCoverageOptions::fromArray": [
-            {
-                "rule": "complexity.cyclomatic",
-                "hash": "8ffbe5dbdc85b4d6"
+                "hash": "2a4927e9a46a3e28"
             }
         ],
         "method:Qualimetrix\\Rules\\Design\\TypeCoverageRule::analyze": [
             {
                 "rule": "complexity.cognitive",
-                "hash": "6d40b914ec467a9f"
+                "hash": "a88682467a76e9df"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "9033b03057564e8f"
+                "hash": "4c073041449638c4"
             },
             {
                 "rule": "complexity.npath",
-                "hash": "f433c74a93b610a4"
+                "hash": "2b62f7160fd1695d"
             },
             {
                 "rule": "maintainability.index",
-                "hash": "3aa10b1833c86ab7"
+                "hash": "de0f9101277c8fc0"
             }
         ],
         "method:Qualimetrix\\Rules\\Duplication\\CodeDuplicationOptions::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "d2d263b3473395ad"
+                "hash": "799c8824adf9796f"
             }
         ],
         "method:Qualimetrix\\Rules\\Maintainability\\MaintainabilityOptions::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "65b5b3842271819f"
+                "hash": "a2a988e8da0c852e"
             }
         ],
         "method:Qualimetrix\\Rules\\Maintainability\\MaintainabilityRule::analyze": [
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "06ef1c0848b45db8"
+                "hash": "b9b4d3fe2e8157a4"
             }
         ],
         "method:Qualimetrix\\Rules\\Security\\HardcodedCredentialsRule::analyze": [
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "260840f9da2d5b83"
+                "hash": "07699721e846c035"
             }
         ],
         "method:Qualimetrix\\Rules\\Size\\PropertyCountOptions::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "04cbf11794a8dfbf"
+                "hash": "fdaa450f6ada4219"
             }
         ],
         "method:Qualimetrix\\Rules\\Size\\PropertyCountRule::analyze": [
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "a2541b25e52caef4"
+                "hash": "20aae06919015c8d"
             },
             {
                 "rule": "complexity.npath",
-                "hash": "c9ae45bc753acc50"
+                "hash": "478182c4581e1755"
             }
         ],
         "method:Qualimetrix\\Rules\\Structure\\LcomOptions::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "78634836c27825b7"
+                "hash": "c64a472675415949"
             }
         ],
         "method:Qualimetrix\\Rules\\Structure\\LcomRule::analyze": [
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "6eee8c1d1ff2809b"
+                "hash": "de1b5ed6d0161c38"
             }
         ],
         "method:Qualimetrix\\Rules\\Structure\\WmcOptions::__construct": [
             {
                 "rule": "code-smell.long-parameter-list",
-                "hash": "e62ae617f75a40b7"
+                "hash": "6b0aaa6ddfc0ff29"
             }
         ],
         "method:Qualimetrix\\Rules\\Structure\\WmcRule::analyze": [
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "3cae38c7bc6bd6e8"
+                "hash": "be72121ebbe49e36"
+            }
+        ],
+        "method:Qualimetrix\\Rules\\Support\\ThresholdParser::parse": [
+            {
+                "rule": "code-smell.long-parameter-list",
+                "hash": "52c98df02ca2049b"
+            },
+            {
+                "rule": "complexity.cognitive",
+                "hash": "25de180dd9fea613"
+            },
+            {
+                "rule": "complexity.cyclomatic",
+                "hash": "62069fdd29d17420"
+            },
+            {
+                "rule": "complexity.npath",
+                "hash": "012c3534d7c2c83e"
+            },
+            {
+                "rule": "maintainability.index",
+                "hash": "1dfcd85963b70cd9"
             }
         ],
         "ns:Qualimetrix\\Analysis\\Aggregator": [
             {
                 "rule": "computed.health",
-                "hash": "a38d90afdbcd3771"
+                "hash": "29284bfea54409b9"
             }
         ],
         "ns:Qualimetrix\\Analysis\\Collection": [
             {
                 "rule": "coupling.cbo",
-                "hash": "d8ddabcc6f2a56d7"
+                "hash": "3c85a4421f15b40b"
             },
             {
                 "rule": "coupling.instability",
-                "hash": "a5b0e8bec1756049"
+                "hash": "3c11423ea5ce0dd5"
             }
         ],
         "ns:Qualimetrix\\Analysis\\Collection\\Dependency\\Export": [
             {
                 "rule": "computed.health",
-                "hash": "8c8a2a5159f74f12"
+                "hash": "64fce074e5736858"
             }
         ],
         "ns:Qualimetrix\\Analysis\\Collection\\Dependency\\Handler": [
             {
                 "rule": "coupling.instability",
-                "hash": "0b5d8059f654b1a3"
+                "hash": "b8048437c4b8f6dc"
             }
         ],
         "ns:Qualimetrix\\Analysis\\Collection\\Metric": [
             {
                 "rule": "coupling.distance",
-                "hash": "acb8f280fded92b8"
+                "hash": "5c49c7b9e53085ec"
             }
         ],
         "ns:Qualimetrix\\Analysis\\Duplication": [
             {
                 "rule": "computed.health",
-                "hash": "cd69c4266391655e"
+                "hash": "c6a47c325e9d4bc5"
             },
             {
                 "rule": "coupling.distance",
-                "hash": "d4b79416c426c5fe"
+                "hash": "2b2c4db020f77050"
             }
         ],
         "ns:Qualimetrix\\Analysis\\Namespace_": [
             {
                 "rule": "computed.health",
-                "hash": "6ccaab9de886ee61"
+                "hash": "e97592909edf580f"
             },
             {
-                "rule": "coupling.instability",
-                "hash": "141362cf806be15f"
+                "rule": "coupling.distance",
+                "hash": "0e1d04f9dc65beb3"
             }
         ],
         "ns:Qualimetrix\\Analysis\\Pipeline": [
             {
                 "rule": "computed.health",
-                "hash": "44023f1c33fdff26"
+                "hash": "e160b66cfb0c2855"
             },
             {
                 "rule": "coupling.cbo",
-                "hash": "a138afa4ac07f86b"
+                "hash": "ae1e607e102fa95b"
             },
             {
                 "rule": "coupling.instability",
-                "hash": "953ecdce6099e3bc"
+                "hash": "906e8bbfd46f67c4"
             }
         ],
         "ns:Qualimetrix\\Baseline": [
             {
                 "rule": "coupling.distance",
-                "hash": "ad6a96d80571a8f9"
+                "hash": "b6800d66c840dc5a"
             }
         ],
         "ns:Qualimetrix\\Configuration": [
             {
                 "rule": "coupling.cbo",
-                "hash": "cec49a85a2a9b807"
+                "hash": "7d42351ef1bb4bb1"
             },
             {
                 "rule": "coupling.distance",
-                "hash": "5b6ac0d0049645c9"
+                "hash": "fc34e4fa0848644d"
             }
         ],
         "ns:Qualimetrix\\Configuration\\Pipeline": [
             {
                 "rule": "coupling.distance",
-                "hash": "56666ba4c01aca75"
+                "hash": "7c2a016d8f759aaf"
             }
         ],
         "ns:Qualimetrix\\Configuration\\Pipeline\\Stage": [
             {
                 "rule": "computed.health",
-                "hash": "f670387cbc4a00d3"
+                "hash": "adb919abb11f23a3"
             }
         ],
         "ns:Qualimetrix\\Core\\ComputedMetric": [
             {
                 "rule": "computed.health",
-                "hash": "3b68f06937f224d2"
+                "hash": "0dbda80f01d185e5"
             },
             {
                 "rule": "coupling.distance",
-                "hash": "f1c4c944db1284e1"
+                "hash": "22a3f459b94c356e"
             }
         ],
         "ns:Qualimetrix\\Core\\Dependency": [
             {
                 "rule": "computed.health",
-                "hash": "70b202cbe3c21ab1"
+                "hash": "a69b917014bb9608"
             }
         ],
         "ns:Qualimetrix\\Core\\Metric": [
             {
                 "rule": "computed.health",
-                "hash": "c7c6a2f6983bae71"
+                "hash": "86be501a75df9a82"
             },
             {
                 "rule": "coupling.cbo",
-                "hash": "21c3ac7ee5e63b7d"
+                "hash": "2402b7e9f5eb3e78"
             },
             {
                 "rule": "coupling.distance",
-                "hash": "dd73222d1bbd9110"
+                "hash": "a8d27ec9fe6fc2c7"
             }
         ],
         "ns:Qualimetrix\\Core\\Profiler": [
             {
                 "rule": "coupling.distance",
-                "hash": "f46958b011b06cba"
+                "hash": "9c710845d64d1f2d"
             }
         ],
         "ns:Qualimetrix\\Core\\Rule": [
             {
                 "rule": "computed.health",
-                "hash": "91a3e412021c3a47"
+                "hash": "3de45970ebe77dc7"
             }
         ],
         "ns:Qualimetrix\\Core\\Symbol": [
             {
                 "rule": "computed.health",
-                "hash": "46e2c14f027362f1"
+                "hash": "c4f13abb34fa6802"
             },
             {
                 "rule": "coupling.cbo",
-                "hash": "ab0f081f2a2f2160"
+                "hash": "0350925763a33ccc"
             },
             {
                 "rule": "coupling.distance",
-                "hash": "1680aa10054e3886"
+                "hash": "9e7d2a72ed73cf07"
             }
         ],
         "ns:Qualimetrix\\Core\\Util": [
             {
                 "rule": "coupling.distance",
-                "hash": "dcb22c23d1c19e8b"
+                "hash": "d9d0f9c963f78202"
             }
         ],
         "ns:Qualimetrix\\Core\\Violation": [
             {
                 "rule": "computed.health",
-                "hash": "dafbe3dc91280257"
+                "hash": "a5814fa223b719ef"
             }
         ],
         "ns:Qualimetrix\\Infrastructure\\Ast": [
             {
                 "rule": "coupling.instability",
-                "hash": "5be72c3fbdf51555"
+                "hash": "6906e9111e64c6d8"
+            }
+        ],
+        "ns:Qualimetrix\\Infrastructure\\Cache": [
+            {
+                "rule": "coupling.distance",
+                "hash": "e7688f7b86b43203"
             }
         ],
         "ns:Qualimetrix\\Infrastructure\\Console": [
             {
                 "rule": "computed.health",
-                "hash": "2d4d8c5b4e5e0a32"
+                "hash": "110a9e2fd205cbe9"
             },
             {
                 "rule": "coupling.cbo",
-                "hash": "fec890655fc24362"
+                "hash": "c36a3c7292cd382c"
             },
             {
                 "rule": "coupling.instability",
-                "hash": "345e11b24e52a577"
+                "hash": "a2d4465cdc90f459"
             }
         ],
         "ns:Qualimetrix\\Infrastructure\\Console\\Command": [
             {
                 "rule": "computed.health",
-                "hash": "54f1faa5785dc80a"
+                "hash": "99b6fc6c3761b6d4"
             },
             {
                 "rule": "coupling.cbo",
-                "hash": "41586a05712592b5"
+                "hash": "91ee191d2d3f022f"
             },
             {
                 "rule": "coupling.instability",
-                "hash": "8871a91561bbf1e4"
+                "hash": "4d5766e4f3c69fb2"
             }
         ],
         "ns:Qualimetrix\\Infrastructure\\Console\\Progress": [
             {
                 "rule": "coupling.distance",
-                "hash": "bad6afef796691ca"
+                "hash": "069a29c91237b6c1"
             }
         ],
         "ns:Qualimetrix\\Infrastructure\\DependencyInjection": [
             {
                 "rule": "computed.health",
-                "hash": "178951ac7fe2d7a6"
+                "hash": "11100cfc4a79f9ae"
             },
             {
                 "rule": "computed.health",
-                "hash": "33f599fc0dabe517"
+                "hash": "f8a0c7128ab03377"
             }
         ],
         "ns:Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass": [
             {
                 "rule": "computed.health",
-                "hash": "b570618b3f921bb9"
+                "hash": "b27abf7a8f4d03d7"
             },
             {
                 "rule": "coupling.cbo",
-                "hash": "f673369011dfe711"
+                "hash": "4e7cb3541fb5ea57"
             },
             {
                 "rule": "coupling.instability",
-                "hash": "860dc187ae6fa738"
+                "hash": "4db4f36269ec9838"
             }
         ],
         "ns:Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator": [
             {
                 "rule": "computed.health",
-                "hash": "8476dc9dc54e8934"
+                "hash": "e15978dd820f7e4e"
             },
             {
                 "rule": "coupling.cbo",
-                "hash": "bf04e6175aece5bb"
+                "hash": "030b4a421729036e"
             },
             {
                 "rule": "coupling.instability",
-                "hash": "e19e216e2c40856c"
+                "hash": "65f7dffc385ed2fd"
             }
         ],
         "ns:Qualimetrix\\Infrastructure\\Git": [
             {
                 "rule": "computed.health",
-                "hash": "e8b83a26a6604ffd"
+                "hash": "012dd7ffbcfa0798"
             },
             {
                 "rule": "coupling.distance",
-                "hash": "b053347cbb48ee18"
+                "hash": "a070d5cccaaabb7e"
             }
         ],
         "ns:Qualimetrix\\Infrastructure\\Logging": [
             {
                 "rule": "coupling.distance",
-                "hash": "5a90d8b04f5c4011"
+                "hash": "223d063f87e0e34b"
+            }
+        ],
+        "ns:Qualimetrix\\Infrastructure\\Serializer": [
+            {
+                "rule": "coupling.distance",
+                "hash": "eee69c75fe3b1ffa"
             }
         ],
         "ns:Qualimetrix\\Infrastructure\\Storage": [
             {
                 "rule": "coupling.instability",
-                "hash": "607c9b0e09832e8e"
+                "hash": "55e58c45711e9f5b"
             }
         ],
         "ns:Qualimetrix\\Metrics": [
             {
                 "rule": "computed.health",
-                "hash": "88f4ecd23a48b990"
+                "hash": "6d3af3a2f3c8c131"
             }
         ],
         "ns:Qualimetrix\\Metrics\\CodeSmell": [
             {
                 "rule": "computed.health",
-                "hash": "4ca8977707273d03"
+                "hash": "d1c7a8dc5f61eaa3"
             },
             {
                 "rule": "coupling.instability",
-                "hash": "b5b7be73d21504dd"
+                "hash": "cb96fb7fed9476b6"
             }
         ],
         "ns:Qualimetrix\\Metrics\\Complexity": [
             {
                 "rule": "computed.health",
-                "hash": "0d56057c9c88f03a"
+                "hash": "deceb745963545e4"
             },
             {
                 "rule": "coupling.instability",
-                "hash": "2f5506a4dd4971e9"
+                "hash": "fb1a1f0bf42e03cd"
             }
         ],
         "ns:Qualimetrix\\Metrics\\ComputedMetric": [
             {
                 "rule": "computed.health",
-                "hash": "234f2642cc7f098c"
+                "hash": "9901ba9a3f8682c1"
             }
         ],
         "ns:Qualimetrix\\Metrics\\Coupling": [
             {
                 "rule": "computed.health",
-                "hash": "975a56a51c823cc0"
+                "hash": "dcf6ecb47e6f1f0b"
             },
             {
                 "rule": "coupling.instability",
-                "hash": "843448374bdef358"
+                "hash": "8ccb5744745b1ab7"
             }
         ],
         "ns:Qualimetrix\\Metrics\\Design": [
             {
                 "rule": "coupling.instability",
-                "hash": "f7ba7b3bb9f7c33a"
+                "hash": "40595a813789b403"
             }
         ],
         "ns:Qualimetrix\\Metrics\\Halstead": [
             {
                 "rule": "computed.health",
-                "hash": "9a820fcf717c16eb"
+                "hash": "9984955693f69d64"
             },
             {
                 "rule": "coupling.instability",
-                "hash": "0105bc36ec8c0cb1"
+                "hash": "7b8e7ac8c5c2f7de"
             }
         ],
         "ns:Qualimetrix\\Metrics\\Maintainability": [
             {
                 "rule": "computed.health",
-                "hash": "7029f40e37702329"
+                "hash": "a0eddab3634679fd"
             }
         ],
         "ns:Qualimetrix\\Metrics\\Security": [
             {
                 "rule": "coupling.instability",
-                "hash": "3f4c2fb5778a35fe"
+                "hash": "7b6c7d337e1d0363"
             }
         ],
         "ns:Qualimetrix\\Metrics\\Size": [
             {
                 "rule": "coupling.instability",
-                "hash": "96f94813caf25f14"
+                "hash": "a0dcf00ded72d7c5"
             }
         ],
         "ns:Qualimetrix\\Metrics\\Structure": [
             {
                 "rule": "coupling.instability",
-                "hash": "a7ab758fc31baecd"
+                "hash": "56304823e154bbeb"
             },
             {
                 "rule": "size.class-count",
-                "hash": "f6bbd146ce9e5ef4"
+                "hash": "a0be1a2d829058b4"
             }
         ],
         "ns:Qualimetrix\\Reporting": [
             {
                 "rule": "computed.health",
-                "hash": "7a641923ac388bc5"
+                "hash": "f0a3cffd64f47bf7"
             },
             {
                 "rule": "coupling.distance",
-                "hash": "867291bf70d2e670"
+                "hash": "51b3d2cf1d7d62d2"
             }
         ],
         "ns:Qualimetrix\\Reporting\\Debt": [
             {
                 "rule": "coupling.distance",
-                "hash": "d6faf11f036991bd"
-            }
-        ],
-        "ns:Qualimetrix\\Reporting\\Formatter": [
-            {
-                "rule": "coupling.cbo",
-                "hash": "425ed9795775c2f6"
+                "hash": "53235b8750418f99"
             }
         ],
         "ns:Qualimetrix\\Reporting\\Formatter\\Html": [
             {
                 "rule": "computed.health",
-                "hash": "d42e13a0a64e383c"
+                "hash": "eb3c974c0e5874e7"
             },
             {
                 "rule": "coupling.instability",
-                "hash": "8e475cb0001c4d00"
+                "hash": "562e923e1d50ab3f"
             }
         ],
         "ns:Qualimetrix\\Reporting\\Formatter\\Json": [
             {
                 "rule": "computed.health",
-                "hash": "2e8bcc5d562863c3"
+                "hash": "cc9a7ed0f06036de"
             },
             {
                 "rule": "coupling.instability",
-                "hash": "5ff9e5d37961af56"
+                "hash": "7bc7c9b7b9d1d8bc"
             }
         ],
         "ns:Qualimetrix\\Reporting\\Formatter\\Sarif": [
             {
                 "rule": "computed.health",
-                "hash": "78f30f2a6a38b9de"
+                "hash": "04ba49795fe54550"
             }
         ],
         "ns:Qualimetrix\\Reporting\\Formatter\\Summary": [
             {
                 "rule": "coupling.instability",
-                "hash": "8945237de5711277"
+                "hash": "819988da9e5c97c1"
             }
         ],
         "ns:Qualimetrix\\Reporting\\Formatter\\Support": [
             {
                 "rule": "computed.health",
-                "hash": "db06429d6b25205f"
+                "hash": "07827ed6305c6934"
             },
             {
                 "rule": "coupling.distance",
-                "hash": "3d1683eecd858759"
+                "hash": "f5c35d15e8754078"
             }
         ],
         "ns:Qualimetrix\\Reporting\\Health": [
             {
                 "rule": "computed.health",
-                "hash": "f3e30fdc72cf4c4a"
+                "hash": "49c4a2f2d196b8d7"
             },
             {
                 "rule": "coupling.distance",
-                "hash": "cf16348fa178883e"
+                "hash": "593a3baaba1a4644"
             }
         ],
         "ns:Qualimetrix\\Reporting\\Profile": [
             {
                 "rule": "computed.health",
-                "hash": "266805cddae4ac31"
+                "hash": "26ba99a2918c7157"
             }
         ],
         "ns:Qualimetrix\\Rules": [
             {
                 "rule": "computed.health",
-                "hash": "7cd9c2c01bccf9b5"
+                "hash": "6c63830822e40c38"
             }
         ],
         "ns:Qualimetrix\\Rules\\Architecture": [
             {
                 "rule": "computed.health",
-                "hash": "e9944e7beea20e65"
+                "hash": "6bd2bccb6dea92f3"
             }
         ],
         "ns:Qualimetrix\\Rules\\CodeSmell": [
             {
                 "rule": "computed.health",
-                "hash": "fed057913e29b7e3"
+                "hash": "2e88952b3b019988"
             },
             {
                 "rule": "coupling.instability",
-                "hash": "3ab38e4f2fae696f"
+                "hash": "403807585abfe07a"
             },
             {
                 "rule": "size.class-count",
-                "hash": "4216d91f91f69f51"
+                "hash": "a571f8fc25a227aa"
             }
         ],
         "ns:Qualimetrix\\Rules\\Complexity": [
             {
                 "rule": "computed.health",
-                "hash": "655d167ce64d73fa"
+                "hash": "9cff6931f7d06178"
             },
             {
                 "rule": "coupling.instability",
-                "hash": "ec6425d24395af6c"
+                "hash": "308ecb824c0450e7"
             }
         ],
         "ns:Qualimetrix\\Rules\\ComputedMetric": [
             {
                 "rule": "computed.health",
-                "hash": "2e3a90d2cbb65237"
+                "hash": "adc75344a9a4ec80"
             }
         ],
         "ns:Qualimetrix\\Rules\\Coupling": [
             {
                 "rule": "computed.health",
-                "hash": "ed3b433b4d6316ce"
+                "hash": "76dd589c45d3dc9c"
             },
             {
                 "rule": "coupling.instability",
-                "hash": "d7abb4f63062717f"
+                "hash": "36b983c2e352f9c6"
             }
         ],
         "ns:Qualimetrix\\Rules\\Design": [
             {
                 "rule": "computed.health",
-                "hash": "217c1d46e9d98502"
+                "hash": "e05171736ecb2d72"
             }
         ],
         "ns:Qualimetrix\\Rules\\Duplication": [
             {
                 "rule": "computed.health",
-                "hash": "cedc54e6923729f9"
+                "hash": "3dfa0ac0094e8adf"
             }
         ],
         "ns:Qualimetrix\\Rules\\Maintainability": [
             {
                 "rule": "computed.health",
-                "hash": "ea63d8a8929f7bea"
+                "hash": "095837bd92a84c9a"
             }
         ],
         "ns:Qualimetrix\\Rules\\Security": [
             {
                 "rule": "computed.health",
-                "hash": "59bfc9b062e6c1b5"
+                "hash": "3d7cd26090d1a83e"
             },
             {
                 "rule": "coupling.instability",
-                "hash": "2e90fe1382140820"
+                "hash": "228a6dc9e705a786"
             }
         ],
         "ns:Qualimetrix\\Rules\\Size": [
             {
                 "rule": "computed.health",
-                "hash": "4a6eebc1847ed0f1"
+                "hash": "011e2a2b28a6c294"
             },
             {
                 "rule": "coupling.instability",
-                "hash": "fcc607d58a52bb1e"
+                "hash": "a2d6b4640d8cf4fd"
             }
         ],
         "ns:Qualimetrix\\Rules\\Structure": [
             {
                 "rule": "computed.health",
-                "hash": "bf62b62231a024c8"
+                "hash": "58c4cbb447c41977"
             },
             {
                 "rule": "coupling.instability",
-                "hash": "765f0f80c7327b50"
+                "hash": "b25dac256651356c"
+            }
+        ],
+        "ns:Qualimetrix\\Rules\\Support": [
+            {
+                "rule": "computed.health",
+                "hash": "4e1077dcadfb5cab"
+            },
+            {
+                "rule": "computed.health",
+                "hash": "7fbc9249a2235a40"
+            },
+            {
+                "rule": "computed.health",
+                "hash": "b8a1e66974c6f1be"
+            },
+            {
+                "rule": "computed.health",
+                "hash": "cacee408228ff2a1"
             }
         ]
     }
