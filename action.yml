@@ -1,6 +1,6 @@
 name: 'Qualimetrix'
 description: 'Static analysis for PHP code quality metrics'
-author: 'Qualimetrix'
+author: 'FractalizeR'
 
 branding:
   icon: 'check-circle'
