@@ -69,6 +69,7 @@ final class FormatterContextFactory
 
         $terminalWidth = (new \Symfony\Component\Console\Terminal())->getWidth() ?: 80;
         $detailLimit = $this->parseDetailOption($input, $namespaceFilter, $classFilter);
+        $topIssuesLimit = $this->parseTopOption($input);
 
         return new FormatterContext(
             useColor: $output->isDecorated(),
@@ -81,6 +82,7 @@ final class FormatterContextFactory
             terminalWidth: $terminalWidth,
             detailLimit: $detailLimit,
             isGroupByExplicit: $isGroupByExplicit,
+            topIssuesLimit: $topIssuesLimit,
         );
     }
 
@@ -118,5 +120,24 @@ final class FormatterContextFactory
         $parsed = filter_var($detailValue, \FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
 
         return $parsed !== false ? $parsed : self::DEFAULT_DETAIL_LIMIT;
+    }
+
+    /**
+     * Parses --top option into a top issues limit.
+     *
+     * Returns default 10 when not set. Returns 0 to disable.
+     */
+    private function parseTopOption(InputInterface $input): int
+    {
+        /** @var string|null $topValue */
+        $topValue = $input->getOption('top');
+
+        if ($topValue === null) {
+            return FormatterContext::DEFAULT_TOP_ISSUES_LIMIT;
+        }
+
+        $parsed = filter_var($topValue, \FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
+
+        return $parsed !== false ? $parsed : FormatterContext::DEFAULT_TOP_ISSUES_LIMIT;
     }
 }
