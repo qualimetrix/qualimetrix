@@ -18,6 +18,8 @@ use Qualimetrix\Reporting\Debt\DebtCalculator;
 use Qualimetrix\Reporting\Debt\RemediationTimeRegistry;
 use Qualimetrix\Reporting\Health\MetricHintProvider;
 use Qualimetrix\Reporting\Health\SummaryEnricher;
+use Qualimetrix\Reporting\Impact\ClassRankResolver;
+use Qualimetrix\Reporting\Impact\ImpactCalculator;
 use Qualimetrix\Reporting\Report;
 
 #[CoversClass(SummaryEnricher::class)]
@@ -27,9 +29,11 @@ final class SummaryEnricherTest extends TestCase
 
     protected function setUp(): void
     {
+        $registry = new RemediationTimeRegistry();
         $this->enricher = new SummaryEnricher(
-            new DebtCalculator(new RemediationTimeRegistry()),
+            new DebtCalculator($registry),
             new MetricHintProvider(),
+            new ImpactCalculator(new ClassRankResolver(), $registry),
         );
     }
 

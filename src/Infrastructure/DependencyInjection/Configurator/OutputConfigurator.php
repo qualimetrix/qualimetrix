@@ -102,6 +102,16 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
             $this->srcDir . '/Reporting/Health/{HealthScore.php,WorstOffender.php,DecompositionItem.php}',
         );
 
+        // Auto-register impact calculation services from src/Reporting/Impact/
+        // Exclude VOs (RankedIssue)
+        $impactPrototype = (new Definition())->setAutoconfigured(true)->setAutowired(true);
+        $loader->registerClasses(
+            $impactPrototype,
+            'Qualimetrix\\Reporting\\Impact\\',
+            $this->srcDir . '/Reporting/Impact/*',
+            $this->srcDir . '/Reporting/Impact/RankedIssue.php',
+        );
+
         // ViolationFilter (shared filtering logic for formatters)
         $container->register(ViolationFilter::class);
 

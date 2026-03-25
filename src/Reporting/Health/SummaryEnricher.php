@@ -11,6 +11,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Reporting\Debt\DebtCalculator;
+use Qualimetrix\Reporting\Impact\ImpactCalculator;
 use Qualimetrix\Reporting\Report;
 
 /**
@@ -24,6 +25,7 @@ final readonly class SummaryEnricher
     public function __construct(
         private DebtCalculator $debtCalculator,
         private MetricHintProvider $hintProvider,
+        private ImpactCalculator $impactCalculator,
     ) {}
 
     public function enrich(Report $report, bool $partialAnalysis = false): Report
@@ -44,6 +46,8 @@ final readonly class SummaryEnricher
             ? round($debtSummary->totalMinutes / ((float) $totalLoc / 1000), 1)
             : null;
 
+        $topIssues = $this->impactCalculator->computeTopIssues($report->violations, $report->metrics);
+
         return new Report(
             violations: $report->violations,
             filesAnalyzed: $report->filesAnalyzed,
@@ -57,6 +61,7 @@ final readonly class SummaryEnricher
             worstClasses: $worstClasses,
             techDebtMinutes: $debtSummary->totalMinutes,
             debtPer1kLoc: $debtPer1kLoc,
+            topIssues: $topIssues,
         );
     }
 

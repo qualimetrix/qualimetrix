@@ -17,6 +17,7 @@ use Qualimetrix\Reporting\Formatter\Summary\HealthBarRenderer;
 use Qualimetrix\Reporting\Formatter\Summary\HintRenderer;
 use Qualimetrix\Reporting\Formatter\Summary\OffenderListRenderer;
 use Qualimetrix\Reporting\Formatter\Summary\SummaryFormatter;
+use Qualimetrix\Reporting\Formatter\Summary\TopIssuesRenderer;
 use Qualimetrix\Reporting\Formatter\Summary\ViolationSummaryRenderer;
 use Qualimetrix\Reporting\Formatter\Support\DetailedViolationRenderer;
 use Qualimetrix\Reporting\FormatterContext;
@@ -47,6 +48,7 @@ final class SummaryFormatterTest extends TestCase
             new DetailedViolationRenderer($debtCalculator),
             new HealthBarRenderer(new HealthScoreResolver($namespaceDrillDown)),
             $offenderListRenderer,
+            new TopIssuesRenderer(),
             $violationFilter,
             new ViolationSummaryRenderer($violationFilter, $registry),
             new HintRenderer($offenderListRenderer),
@@ -253,6 +255,8 @@ final class SummaryFormatterTest extends TestCase
         self::assertStringContainsString('run full analysis', $output);
         // Health bars should NOT be shown
         self::assertStringNotContainsString('72%', $output);
+        // Top issues should NOT be shown in partial analysis
+        self::assertStringNotContainsString('Top issues by impact', $output);
     }
 
     public function testFormatMissingMetrics(): void
