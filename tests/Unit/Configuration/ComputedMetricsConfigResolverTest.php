@@ -265,6 +265,60 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         self::assertNotContains(SymbolType::Class_, $custom->levels);
     }
 
+    public function testThresholdShorthandSetsBothValues(): void
+    {
+        $result = $this->resolver->resolve([
+            'health.complexity' => [
+                'threshold' => 45.0,
+            ],
+        ]);
+
+        $complexity = $this->findByName($result, 'health.complexity');
+        self::assertNotNull($complexity);
+        self::assertSame(45.0, $complexity->warningThreshold);
+        self::assertSame(45.0, $complexity->errorThreshold);
+    }
+
+    public function testThresholdNullFallsBackToDefaults(): void
+    {
+        $result = $this->resolver->resolve([
+            'health.complexity' => [
+                'threshold' => null,
+            ],
+        ]);
+
+        $complexity = $this->findByName($result, 'health.complexity');
+        self::assertNotNull($complexity);
+        // Should keep defaults, not set both to null
+        self::assertSame(50.0, $complexity->warningThreshold);
+        self::assertSame(25.0, $complexity->errorThreshold);
+    }
+
+    public function testThresholdMixedWithWarningThrows(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Cannot mix "threshold"');
+
+        $this->resolver->resolve([
+            'health.complexity' => [
+                'threshold' => 45.0,
+                'warning' => 60.0,
+            ],
+        ]);
+    }
+
+    public function testThresholdMixedWithErrorThrows(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        $this->resolver->resolve([
+            'health.complexity' => [
+                'threshold' => 45.0,
+                'error' => 30.0,
+            ],
+        ]);
+    }
+
     /**
      * @param list<ComputedMetricDefinition> $definitions
      */

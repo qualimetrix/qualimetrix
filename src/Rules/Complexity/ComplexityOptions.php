@@ -8,6 +8,7 @@ use AiMessDetector\Core\Rule\HierarchicalRuleOptionsInterface;
 use AiMessDetector\Core\Rule\LevelOptionsInterface;
 use AiMessDetector\Core\Rule\RuleLevel;
 use AiMessDetector\Core\Violation\Severity;
+use AiMessDetector\Rules\Support\ThresholdParser;
 use InvalidArgumentException;
 
 /**
@@ -36,12 +37,15 @@ final readonly class ComplexityOptions implements HierarchicalRuleOptionsInterfa
         }
 
         // Handle legacy flat format: {enabled, warningThreshold, errorThreshold}
-        if (isset($config['warningThreshold']) || isset($config['errorThreshold'])) {
+        // Also supports threshold shorthand at top level
+        if (\array_key_exists('warningThreshold', $config) || \array_key_exists('errorThreshold', $config) || \array_key_exists('threshold', $config)) {
+            $thresholds = ThresholdParser::parse($config, 'warning', 'error', 10, 20, legacyWarningKeys: ['warningThreshold'], legacyErrorKeys: ['errorThreshold']);
+
             return new self(
                 method: new MethodComplexityOptions(
                     enabled: (bool) ($config['enabled'] ?? true),
-                    warning: (int) ($config['warningThreshold'] ?? 10),
-                    error: (int) ($config['errorThreshold'] ?? 20),
+                    warning: (int) $thresholds['warning'],
+                    error: (int) $thresholds['error'],
                 ),
                 class: new ClassComplexityOptions(enabled: false),
             );

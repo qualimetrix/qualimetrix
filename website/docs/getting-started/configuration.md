@@ -86,6 +86,32 @@ rules:
 
 This means: report a **warning** when a method's cyclomatic complexity reaches 15, and an **error** when it reaches 25.
 
+**Threshold shorthand:**
+
+If you want a single pass/fail threshold (all violations become errors), use the `threshold` key:
+
+```yaml
+rules:
+  complexity.cyclomatic:
+    method:
+      threshold: 15    # warning=15, error=15 → all violations are errors
+
+  size.method-count:
+    threshold: 25      # same as warning: 25, error: 25
+```
+
+This is useful in CI where you want a simple pass/fail cutoff without graduated warnings. You cannot mix `threshold` with explicit `warning`/`error` keys in the same rule level.
+
+For type coverage, dedicated shorthand keys are available:
+
+```yaml
+rules:
+  design.type-coverage:
+    param_threshold: 90
+    return_threshold: 90
+    property_threshold: 80
+```
+
 **Exclude namespaces from a rule:**
 
 Any rule can exclude specific namespaces using prefix matching. Violations from matching namespaces are suppressed:
@@ -136,10 +162,12 @@ Equivalent CLI: `--only-rule=complexity.cyclomatic --only-rule=complexity.cognit
 Control which severity levels cause a non-zero exit code:
 
 ```yaml
-fail_on: error    # Only fail on errors (warnings exit 0)
-# fail_on: warning  # Fail on warnings too (default)
+fail_on: error    # Only fail on errors (default)
+# fail_on: warning  # Fail on warnings too
 # fail_on: none     # Never fail on violations
 ```
+
+The default is `error`: warnings are shown in the output but do not cause a non-zero exit code. Use `fail_on: warning` if you want warnings to also fail the build.
 
 ### Exclude Health
 
@@ -182,7 +210,7 @@ exclude_paths:
 include_generated: false
 
 format: summary
-fail_on: error
+fail_on: error        # default — warnings shown but don't fail the build
 
 exclude_health:
   - typing

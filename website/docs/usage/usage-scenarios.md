@@ -11,7 +11,7 @@ The most common scenario. AIMD runs on every push or pull request and blocks mer
 **Recommended configuration:**
 
 - Use `only_rules` in your config file to pin the set of active rules. This prevents new rules from breaking your pipeline when you upgrade AIMD.
-- Use `--fail-on=error` to allow warnings without failing the build. This gives you a gradual adoption path.
+- The default `--fail-on=error` allows warnings without failing the build. Use `--fail-on=warning` if you want strict enforcement.
 - Use a [baseline](baseline.md) for legacy projects to focus on new violations only.
 - Use `--format=github` for inline annotations in GitHub PRs, or `--format=sarif` for the GitHub Security tab.
 
@@ -36,8 +36,10 @@ rules:
 
 ```yaml
 - name: Run AI Mess Detector
-  run: vendor/bin/aimd check src/ --format=github --fail-on=error --no-progress
+  run: vendor/bin/aimd check src/ --format=github --no-progress
 ```
+
+Since `--fail-on=error` is the default, you don't need to specify it explicitly.
 
 ### Upgrading AIMD in CI
 
@@ -71,7 +73,7 @@ bin/aimd hook:install
 
 - If a commit is blocked, you can fix the issues or skip the hook with `git commit --no-verify`
 - The hook uses `--analyze=git:staged` automatically
-- Consider using `--fail-on=error` in the hook config to allow warnings through
+- The default `--fail-on=error` means warnings pass through; use `--fail-on=warning` for stricter enforcement
 
 !!! note
     The hook analyzes only the staged version of each file. If you stage partial changes (`git add -p`), the hook checks exactly what will be committed.
@@ -106,10 +108,10 @@ AIMD annotates pull requests with quality findings, giving reviewers objective d
 
 ```yaml
 - name: Run AI Mess Detector
-  run: vendor/bin/aimd check src/ --format=github --fail-on=error --no-progress
+  run: vendor/bin/aimd check src/ --format=github --no-progress
 ```
 
-Violations appear as warning/error annotations directly on the changed lines in the PR diff. No extra setup required.
+Violations appear as warning/error annotations directly on the changed lines in the PR diff. No extra setup required. Only errors cause the build to fail (the default).
 
 **GitHub -- Security tab:**
 
@@ -148,9 +150,9 @@ vendor/bin/aimd check src/ --report=git:main..HEAD --format=github --no-progress
 
 ## Comparison
 
-| Scenario    | Recommended format             | Key options                               |
-| ----------- | ------------------------------ | ----------------------------------------- |
-| CI/CD       | `github` or `sarif`            | `--fail-on=error`, `only_rules` in config |
-| Pre-commit  | `text` (default)               | Automatic via `hook:install`              |
-| AI-assisted | `text` or `json`               | `--report=git:main..HEAD`                 |
-| Code review | `github`, `sarif`, or `gitlab` | `--report=git:main..HEAD`                 |
+| Scenario    | Recommended format             | Key options                                            |
+| ----------- | ------------------------------ | ------------------------------------------------------ |
+| CI/CD       | `github` or `sarif`            | `only_rules` in config, `--fail-on=warning` for strict |
+| Pre-commit  | `text` (default)               | Automatic via `hook:install`                           |
+| AI-assisted | `text` or `json`               | `--report=git:main..HEAD`                              |
+| Code review | `github`, `sarif`, or `gitlab` | `--report=git:main..HEAD`                              |

@@ -6,6 +6,7 @@ namespace AiMessDetector\Rules\Coupling;
 
 use AiMessDetector\Core\Rule\RuleOptionsInterface;
 use AiMessDetector\Core\Violation\Severity;
+use AiMessDetector\Rules\Support\ThresholdParser;
 
 /**
  * Configuration options for ClassRank rule.
@@ -34,10 +35,12 @@ final readonly class ClassRankOptions implements RuleOptionsInterface
             return new self(enabled: false);
         }
 
+        $thresholds = ThresholdParser::parse($config, 'warning', 'error', 0.02, 0.05);
+
         return new self(
             enabled: (bool) ($config['enabled'] ?? true),
-            warning: (float) ($config['warning'] ?? 0.02),
-            error: (float) ($config['error'] ?? 0.05),
+            warning: (float) $thresholds['warning'],
+            error: (float) $thresholds['error'],
         );
     }
 

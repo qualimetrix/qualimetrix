@@ -6,6 +6,7 @@ namespace AiMessDetector\Rules\Structure;
 
 use AiMessDetector\Core\Rule\RuleOptionsInterface;
 use AiMessDetector\Core\Violation\Severity;
+use AiMessDetector\Rules\Support\ThresholdParser;
 
 /**
  * Configuration options for NOC (Number of Children) rule.
@@ -37,10 +38,12 @@ final readonly class NocOptions implements RuleOptionsInterface
             return new self(enabled: false);
         }
 
+        $thresholds = ThresholdParser::parse($config, 'warning', 'error', 10, 15);
+
         return new self(
             enabled: (bool) ($config['enabled'] ?? true),
-            warning: (int) ($config['warning'] ?? 10),
-            error: (int) ($config['error'] ?? 15),
+            warning: (int) $thresholds['warning'],
+            error: (int) $thresholds['error'],
         );
     }
 

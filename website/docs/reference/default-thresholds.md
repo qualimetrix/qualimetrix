@@ -170,6 +170,44 @@ rules:
     error: 15
 ```
 
+### Threshold Shorthand
+
+If you want a single pass/fail cutoff where all violations are errors, use the `threshold` key instead of separate `warning`/`error`:
+
+```yaml
+rules:
+  complexity.cyclomatic:
+    method:
+      threshold: 15    # equivalent to warning: 15, error: 15
+
+  size.method-count:
+    threshold: 25
+
+  coupling.cbo:
+    class:
+      threshold: 18
+```
+
+This sets both `warning` and `error` to the same value, so every violation at this level is an error. Useful in CI where you want a simple pass/fail threshold. You cannot mix `threshold` with explicit `warning`/`error` keys in the same rule level.
+
+For type coverage, dedicated shorthand keys are available:
+
+```yaml
+rules:
+  design.type-coverage:
+    param_threshold: 90
+    return_threshold: 90
+    property_threshold: 80
+```
+
+Computed metrics (health scores) also support `threshold`:
+
+```yaml
+computed_metrics:
+  health.complexity:
+    threshold: 50      # score below 50 → error
+```
+
 Then run the analysis with the config file:
 
 ```bash

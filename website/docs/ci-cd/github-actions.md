@@ -116,10 +116,10 @@ jobs:
         run: composer install --no-dev
 
       - name: Run AI Mess Detector
-        run: vendor/bin/aimd check src/ --format=github --fail-on=error --no-progress
+        run: vendor/bin/aimd check src/ --format=github --no-progress
 ```
 
-Violations appear as warning and error annotations directly on the changed lines. Use `--fail-on=error` to allow warnings without failing the build.
+Violations appear as warning and error annotations directly on the changed lines. By default, only errors cause a non-zero exit code — warnings are shown but don't fail the build.
 
 !!! tip
     For both inline annotations AND Security tab results, run AIMD twice — once with `--format=github` and once with `--format=sarif`.

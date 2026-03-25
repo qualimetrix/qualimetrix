@@ -6,6 +6,7 @@ namespace AiMessDetector\Rules\CodeSmell;
 
 use AiMessDetector\Core\Rule\RuleOptionsInterface;
 use AiMessDetector\Core\Violation\Severity;
+use AiMessDetector\Rules\Support\ThresholdParser;
 
 /**
  * Options for ConstructorOverinjectionRule.
@@ -33,10 +34,12 @@ final readonly class ConstructorOverinjectionOptions implements RuleOptionsInter
             return new self(enabled: false);
         }
 
+        $thresholds = ThresholdParser::parse($config, 'warning', 'error', 8, 12);
+
         return new self(
             enabled: (bool) ($config['enabled'] ?? true),
-            warning: (int) ($config['warning'] ?? 8),
-            error: (int) ($config['error'] ?? 12),
+            warning: (int) $thresholds['warning'],
+            error: (int) $thresholds['error'],
         );
     }
 

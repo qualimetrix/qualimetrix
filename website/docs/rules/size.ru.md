@@ -48,6 +48,14 @@ rules:
     error: 30
 ```
 
+Сокращённая запись с `threshold`:
+
+```yaml
+rules:
+  size.method-count:
+    threshold: 25   # warning=25, error=25 → все нарушения — ошибки
+```
+
 ```bash
 bin/aimd check src/ --rule-opt="size.method-count:warning=25"
 bin/aimd check src/ --rule-opt="size.method-count:error=40"
@@ -150,6 +158,14 @@ rules:
     error: 25
 ```
 
+Сокращённая запись с `threshold`:
+
+```yaml
+rules:
+  size.class-count:
+    threshold: 20   # warning=20, error=20
+```
+
 ```bash
 bin/aimd check src/ --rule-opt="size.class-count:warning=20"
 bin/aimd check src/ --rule-opt="size.class-count:error=30"
@@ -237,6 +253,14 @@ rules:
     error: 20
     exclude_readonly: true
     exclude_promoted_only: true
+```
+
+Сокращённая запись с `threshold`:
+
+```yaml
+rules:
+  size.property-count:
+    threshold: 15   # warning=15, error=15
 ```
 
 ```bash

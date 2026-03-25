@@ -7,6 +7,7 @@ namespace AiMessDetector\Configuration;
 use AiMessDetector\Core\ComputedMetric\ComputedMetricDefaults;
 use AiMessDetector\Core\ComputedMetric\ComputedMetricDefinition;
 use AiMessDetector\Core\Symbol\SymbolType;
+use InvalidArgumentException;
 use RuntimeException;
 use Symfony\Component\ExpressionLanguage\ExpressionFunction;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
@@ -119,6 +120,8 @@ final class ComputedMetricsConfigResolver
             $levels = array_values(array_map($this->mapLevel(...), $overrides['levels']));
         }
 
+        $thresholds = $this->resolveThresholdOverrides($overrides, $base->warningThreshold, $base->errorThreshold);
+
         return new ComputedMetricDefinition(
             name: $base->name,
             formulas: $formulas,
@@ -129,12 +132,8 @@ final class ComputedMetricsConfigResolver
             inverted: isset($overrides['inverted']) && \is_bool($overrides['inverted'])
                 ? $overrides['inverted']
                 : $base->inverted,
-            warningThreshold: \array_key_exists('warning', $overrides)
-                ? $this->resolveThreshold($overrides['warning'])
-                : $base->warningThreshold,
-            errorThreshold: \array_key_exists('error', $overrides)
-                ? $this->resolveThreshold($overrides['error'])
-                : $base->errorThreshold,
+            warningThreshold: $thresholds['warningThreshold'],
+            errorThreshold: $thresholds['errorThreshold'],
         );
     }
 
@@ -167,6 +166,8 @@ final class ComputedMetricsConfigResolver
             $levels = array_values(array_map($this->mapLevel(...), $config['levels']));
         }
 
+        $thresholds = $this->resolveThresholdOverrides($config, null, null);
+
         return new ComputedMetricDefinition(
             name: $name,
             formulas: $formulas,
@@ -175,12 +176,8 @@ final class ComputedMetricsConfigResolver
                 : '',
             levels: $levels,
             inverted: isset($config['inverted']) && $config['inverted'] === true,
-            warningThreshold: \array_key_exists('warning', $config)
-                ? $this->resolveThreshold($config['warning'])
-                : null,
-            errorThreshold: \array_key_exists('error', $config)
-                ? $this->resolveThreshold($config['error'])
-                : null,
+            warningThreshold: $thresholds['warningThreshold'],
+            errorThreshold: $thresholds['errorThreshold'],
         );
     }
 
@@ -417,6 +414,43 @@ final class ComputedMetricsConfigResolver
             SymbolType::Project => 'project',
             default => $level->value,
         };
+    }
+
+    /**
+     * Resolves threshold overrides from config, supporting both 'threshold' shorthand
+     * and explicit 'warning'/'error' keys with mutual exclusion.
+     *
+     * @param array<string, mixed> $config
+     *
+     * @return array{warningThreshold: ?float, errorThreshold: ?float}
+     */
+    private function resolveThresholdOverrides(array $config, ?float $defaultWarning, ?float $defaultError): array
+    {
+        $hasThreshold = \array_key_exists('threshold', $config);
+        $hasWarning = \array_key_exists('warning', $config);
+        $hasError = \array_key_exists('error', $config);
+
+        if ($hasThreshold && ($hasWarning || $hasError)) {
+            throw new InvalidArgumentException(
+                'Cannot mix "threshold" with "warning"/"error". Use either "threshold" alone (simple mode) or "warning"/"error" (graduated mode).',
+            );
+        }
+
+        if ($hasThreshold) {
+            $value = $this->resolveThreshold($config['threshold']);
+
+            // threshold: null means "not set" — fall back to defaults (consistent with ThresholdParser)
+            if ($value === null) {
+                return ['warningThreshold' => $defaultWarning, 'errorThreshold' => $defaultError];
+            }
+
+            return ['warningThreshold' => $value, 'errorThreshold' => $value];
+        }
+
+        return [
+            'warningThreshold' => $hasWarning ? $this->resolveThreshold($config['warning']) : $defaultWarning,
+            'errorThreshold' => $hasError ? $this->resolveThreshold($config['error']) : $defaultError,
+        ];
     }
 
     private function resolveThreshold(mixed $value): ?float

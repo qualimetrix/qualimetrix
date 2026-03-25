@@ -6,6 +6,7 @@ namespace AiMessDetector\Rules\Maintainability;
 
 use AiMessDetector\Core\Rule\RuleOptionsInterface;
 use AiMessDetector\Core\Violation\Severity;
+use AiMessDetector\Rules\Support\ThresholdParser;
 
 /**
  * Options for MaintainabilityRule.
@@ -36,10 +37,12 @@ final readonly class MaintainabilityOptions implements RuleOptionsInterface
             return new self(enabled: false);
         }
 
+        $thresholds = ThresholdParser::parse($config, 'warning', 'error', 40.0, 20.0);
+
         return new self(
             enabled: (bool) ($config['enabled'] ?? true),
-            warning: (float) ($config['warning'] ?? 40.0),
-            error: (float) ($config['error'] ?? 20.0),
+            warning: (float) $thresholds['warning'],
+            error: (float) $thresholds['error'],
             excludeTests: (bool) ($config['exclude_tests'] ?? $config['excludeTests'] ?? true),
             minLoc: (int) ($config['min_loc'] ?? $config['minLoc'] ?? 10),
         );

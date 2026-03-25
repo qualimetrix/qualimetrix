@@ -6,6 +6,7 @@ namespace AiMessDetector\Rules\Coupling;
 
 use AiMessDetector\Core\Rule\LevelOptionsInterface;
 use AiMessDetector\Core\Violation\Severity;
+use AiMessDetector\Rules\Support\ThresholdParser;
 
 /**
  * Options for class-level instability checks.
@@ -32,10 +33,12 @@ final readonly class ClassInstabilityOptions implements LevelOptionsInterface
             return new self();
         }
 
+        $thresholds = ThresholdParser::parse($config, 'max_warning', 'max_error', 0.8, 0.95, legacyWarningKeys: ['maxWarning'], legacyErrorKeys: ['maxError']);
+
         return new self(
             enabled: (bool) ($config['enabled'] ?? true),
-            maxWarning: (float) ($config['max_warning'] ?? $config['maxWarning'] ?? 0.8),
-            maxError: (float) ($config['max_error'] ?? $config['maxError'] ?? 0.95),
+            maxWarning: (float) $thresholds['warning'],
+            maxError: (float) $thresholds['error'],
         );
     }
 

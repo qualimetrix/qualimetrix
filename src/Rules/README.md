@@ -94,7 +94,7 @@ Checks cyclomatic complexity of methods and classes.
 **Method-level:** Checks CCN of individual methods (default: 10/20)
 **Class-level:** Checks the maximum CCN of class methods (default: 30/50)
 
-**Configuration:**
+**Configuration (graduated mode):**
 ```yaml
 rules:
   complexity.cyclomatic:
@@ -104,6 +104,14 @@ rules:
     class:
       max_warning: 30
       max_error: 50
+```
+
+**Configuration (threshold shorthand — sets both warning=error):**
+```yaml
+rules:
+  complexity.cyclomatic:
+    method:
+      threshold: 15   # all violations at 15+ are errors
 ```
 
 **CLI:** `--cyclomatic-warning=10 --cyclomatic-error=20 --cyclomatic-class-warning=30 --cyclomatic-class-error=50`

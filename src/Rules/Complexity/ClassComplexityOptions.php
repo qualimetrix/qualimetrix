@@ -6,6 +6,7 @@ namespace AiMessDetector\Rules\Complexity;
 
 use AiMessDetector\Core\Rule\LevelOptionsInterface;
 use AiMessDetector\Core\Violation\Severity;
+use AiMessDetector\Rules\Support\ThresholdParser;
 
 /**
  * Options for class-level complexity checks.
@@ -30,10 +31,12 @@ final readonly class ClassComplexityOptions implements LevelOptionsInterface
             return new self();
         }
 
+        $thresholds = ThresholdParser::parse($config, 'max_warning', 'max_error', 30, 50, legacyWarningKeys: ['maxWarning'], legacyErrorKeys: ['maxError']);
+
         return new self(
             enabled: (bool) ($config['enabled'] ?? true),
-            maxWarning: (int) ($config['max_warning'] ?? $config['maxWarning'] ?? 30),
-            maxError: (int) ($config['max_error'] ?? $config['maxError'] ?? 50),
+            maxWarning: (int) $thresholds['warning'],
+            maxError: (int) $thresholds['error'],
         );
     }
 

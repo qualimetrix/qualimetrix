@@ -6,6 +6,7 @@ namespace AiMessDetector\Rules\Structure;
 
 use AiMessDetector\Core\Rule\RuleOptionsInterface;
 use AiMessDetector\Core\Violation\Severity;
+use AiMessDetector\Rules\Support\ThresholdParser;
 
 /**
  * Options for InheritanceRule.
@@ -34,10 +35,12 @@ final readonly class InheritanceOptions implements RuleOptionsInterface
             return new self(enabled: false);
         }
 
+        $thresholds = ThresholdParser::parse($config, 'warning', 'error', 4, 6);
+
         return new self(
             enabled: (bool) ($config['enabled'] ?? true),
-            warning: (int) ($config['warning'] ?? 4),
-            error: (int) ($config['error'] ?? 6),
+            warning: (int) $thresholds['warning'],
+            error: (int) $thresholds['error'],
         );
     }
 

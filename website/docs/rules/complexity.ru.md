@@ -113,6 +113,15 @@ rules:
       enabled: true   # set to false to disable class-level check
 ```
 
+Сокращённая запись с `threshold` — единый порог для CI:
+
+```yaml
+rules:
+  complexity.cyclomatic:
+    method:
+      threshold: 15   # warning=15, error=15 → все нарушения — ошибки
+```
+
 ```bash
 # CLI overrides
 bin/aimd check src/ --rule-opt="complexity.cyclomatic:method.warning=15"
@@ -210,6 +219,15 @@ rules:
       error: 40
     class:
       max_warning: 40
+```
+
+Сокращённая запись с `threshold`:
+
+```yaml
+rules:
+  complexity.cognitive:
+    method:
+      threshold: 20   # warning=20, error=20
 ```
 
 ```bash
@@ -318,6 +336,15 @@ rules:
       enabled: false   # disabled by default
 ```
 
+Сокращённая запись с `threshold`:
+
+```yaml
+rules:
+  complexity.npath:
+    method:
+      threshold: 500   # warning=500, error=500
+```
+
 ```bash
 bin/aimd check src/ --rule-opt="complexity.npath:method.warning=300"
 bin/aimd check src/ --rule-opt="complexity.npath:class.enabled=true"
@@ -398,6 +425,14 @@ rules:
     warning: 60
     error: 100
     exclude_data_classes: true
+```
+
+Сокращённая запись с `threshold`:
+
+```yaml
+rules:
+  complexity.wmc:
+    threshold: 60   # warning=60, error=60
 ```
 
 ```bash

@@ -6,6 +6,7 @@ namespace AiMessDetector\Rules\Structure;
 
 use AiMessDetector\Core\Rule\RuleOptionsInterface;
 use AiMessDetector\Core\Violation\Severity;
+use AiMessDetector\Rules\Support\ThresholdParser;
 
 /**
  * Options for LcomRule.
@@ -36,10 +37,12 @@ final readonly class LcomOptions implements RuleOptionsInterface
             return new self(enabled: false);
         }
 
+        $thresholds = ThresholdParser::parse($config, 'warning', 'error', 3, 5);
+
         return new self(
             enabled: (bool) ($config['enabled'] ?? true),
-            warning: (int) ($config['warning'] ?? 3),
-            error: (int) ($config['error'] ?? 5),
+            warning: (int) $thresholds['warning'],
+            error: (int) $thresholds['error'],
             excludeReadonly: (bool) ($config['exclude_readonly'] ?? $config['excludeReadonly'] ?? true),
             minMethods: (int) ($config['min_methods'] ?? $config['minMethods'] ?? 3),
         );

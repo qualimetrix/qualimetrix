@@ -36,7 +36,7 @@ final readonly class AnalysisConfiguration
      * @param list<string> $excludePaths Path patterns to suppress violations for
      * @param int|null $workers Number of parallel workers (null = auto-detect, 1 = sequential)
      * @param string $projectRoot Project root directory (for parallel workers)
-     * @param Severity|false|null $failOn Minimum severity to trigger non-zero exit code (null = default/warning, false = none/never fail)
+     * @param Severity|false|null $failOn Minimum severity to trigger non-zero exit code (null = default/error, false = none/never fail)
      * @param list<string> $excludeHealth Health dimensions to exclude from scoring (e.g., 'typing', 'complexity')
      * @param bool $includeGenerated Whether to include files marked with @generated annotation
      */

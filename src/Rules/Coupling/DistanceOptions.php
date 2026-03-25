@@ -6,6 +6,7 @@ namespace AiMessDetector\Rules\Coupling;
 
 use AiMessDetector\Core\Rule\RuleOptionsInterface;
 use AiMessDetector\Core\Violation\Severity;
+use AiMessDetector\Rules\Support\ThresholdParser;
 
 /**
  * Options for DistanceRule.
@@ -57,10 +58,12 @@ final readonly class DistanceOptions implements RuleOptionsInterface
             $includeNamespaces = array_values($includeKey);
         }
 
+        $thresholds = ThresholdParser::parse($config, 'max_distance_warning', 'max_distance_error', 0.3, 0.5, legacyWarningKeys: ['maxDistanceWarning'], legacyErrorKeys: ['maxDistanceError']);
+
         return new self(
             enabled: (bool) ($config['enabled'] ?? true),
-            maxDistanceWarning: (float) ($config['max_distance_warning'] ?? $config['maxDistanceWarning'] ?? 0.3),
-            maxDistanceError: (float) ($config['max_distance_error'] ?? $config['maxDistanceError'] ?? 0.5),
+            maxDistanceWarning: (float) $thresholds['warning'],
+            maxDistanceError: (float) $thresholds['error'],
             includeNamespaces: $includeNamespaces,
             minClassCount: (int) ($config['min_class_count'] ?? $config['minClassCount'] ?? 3),
         );

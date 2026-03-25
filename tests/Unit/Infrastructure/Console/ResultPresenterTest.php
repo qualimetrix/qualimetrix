@@ -190,11 +190,23 @@ final class ResultPresenterTest extends TestCase
     }
 
     #[Test]
-    public function presentResultsReturnsExitCode1ForWarningsWithoutFailOn(): void
+    public function presentResultsReturnsExitCode0ForWarningsWithoutFailOn(): void
     {
+        // Default fail-on is error, so warnings alone don't cause non-zero exit
         $exitCode = $this->presentWithViolationsAndFailOn(
             [self::createViolation(Severity::Warning)],
             null,
+        );
+
+        self::assertSame(0, $exitCode);
+    }
+
+    #[Test]
+    public function presentResultsReturnsExitCode1ForWarningsWithFailOnWarning(): void
+    {
+        $exitCode = $this->presentWithViolationsAndFailOn(
+            [self::createViolation(Severity::Warning)],
+            Severity::Warning,
         );
 
         self::assertSame(1, $exitCode);

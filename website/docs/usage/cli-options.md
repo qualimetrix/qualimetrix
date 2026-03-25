@@ -114,22 +114,25 @@ bin/aimd check src/ --format=json --format-opt=violations=all
 
 ### `--fail-on`
 
-Set the minimum severity that causes a non-zero exit code. Default: all severities cause failure.
+Set the minimum severity that causes a non-zero exit code. Default: `error`.
 
 ```bash
-# Only fail on errors, allow warnings
-bin/aimd check src/ --fail-on=error
+# Default behavior: only errors cause non-zero exit code
+bin/aimd check src/
 
-# Explicit: fail on warnings too (default behavior)
+# Also fail on warnings
 bin/aimd check src/ --fail-on=warning
+
+# Never fail on violations
+bin/aimd check src/ --fail-on=none
 ```
 
-This is useful in CI to adopt AIMD gradually — start with `--fail-on=error` and tighten to `--fail-on=warning` once warnings are resolved.
+By default, warnings are shown in the output but do not cause CI failure. Use `--fail-on=warning` to also fail on warnings.
 
 Can also be set in `aimd.yaml`:
 
 ```yaml
-fail_on: error
+fail_on: warning   # also fail on warnings
 ```
 
 ### `--exclude-health`
