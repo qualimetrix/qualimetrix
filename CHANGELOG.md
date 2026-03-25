@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-03-25
+
 ### Changed
 - CBO metric no longer counts PHP built-in classes (`Exception`, `DateTime`, `Iterator`, etc.) — only project and third-party dependencies contribute to coupling scores. Dependency graph exports (`graph:export`) are also affected
 
@@ -146,6 +148,7 @@ Initial release.
 - GitHub Actions workflow
 
 [Unreleased]: https://github.com/fractalizer/ai-mess-detector/compare/v0.7.0...HEAD
+[0.7.1]: https://github.com/fractalizer/ai-mess-detector/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/fractalizer/ai-mess-detector/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/fractalizer/ai-mess-detector/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/fractalizer/ai-mess-detector/compare/v0.4.0...v0.5.0
