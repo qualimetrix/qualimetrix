@@ -2,6 +2,8 @@
 
 Static analysis tool for PHP code quality metrics.
 
+**[Documentation](https://qualimetrix.github.io/qualimetrix/)** | [Quick Start](https://qualimetrix.github.io/qualimetrix/getting-started/quick-start/) | [llms.txt](https://qualimetrix.github.io/qualimetrix/llms.txt)
+
 ## Features
 
 - **Complexity Metrics**: Cyclomatic (CCN), Cognitive, NPATH
