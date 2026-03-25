@@ -156,7 +156,7 @@ The raw MI value (0-171 scale) is normalized to a **0-100 scale**: `max(0, MI x 
 
 **Scope:** MI is calculated per method, then aggregated to class/namespace/project level using average and minimum values.
 
-**Health score mapping:** The `health.maintainability` dimension stretches the MI natural range (typically 70--85 for normal code) into a wider health range. The formula `clamp((MI_avg - 40) x 1.667, 0, 100)` maps MI=40 to health 0 and MI=100 to health 100, producing more differentiated health scores.
+**Health score mapping:** The `health.maintainability` dimension uses a penalty-based formula that considers MI average (base quality), MI 5th percentile (main differentiator for outlier methods), and MI minimum (extreme outliers). This multi-term approach produces good discrimination across projects — from well-maintained libraries (score ~95) to complex frameworks (score ~48). See [Health Scores](../reference/health-scores.md) for details and customization options.
 
 !!! note "LOC input"
     Qualimetrix uses LLOC (logical lines -- the number of statements) for the MI formula, which aligns with the original Oman-Hagemeister paper. Some tools use physical LOC (including blank lines and comments) or ELOC (executable lines), which produces different results. LLOC gives the most stable and meaningful values because it is not affected by formatting or comment density.
