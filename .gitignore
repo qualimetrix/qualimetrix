@@ -48,8 +48,9 @@ Thumbs.db
 /_site/
 website/site/
 
-# Python venv (MkDocs)
+# Python venv and cache (MkDocs)
 /.venv/
+__pycache__/
 
 # Test fixtures (generated)
 /tests/Fixtures/generated/

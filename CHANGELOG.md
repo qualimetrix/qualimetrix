@@ -7,10 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-03-25
+
 ### Changed
 - `--fail-on` now defaults to `error` — warnings are shown in output but don't cause non-zero exit code. Use `--fail-on=warning` or `fail_on: warning` in config for the old behavior
 - `threshold` shorthand for rule configuration — sets both warning and error to the same value, making all violations errors at that threshold
 - Health score labels renamed to industry-standard terminology: `Excellent` / `Good` / `Fair` / `Poor` / `Critical` (was `Strong` / `Good` / `Acceptable` / `Weak` / `Critical`)
+- Line numbers shown only for violations with precise locations (method/class level), not for file-level violations
+
+### Fixed
+- Technical debt breakdown now calculated from all violations, not just the truncated display list
 
 ### Breaking
 - Default `--fail-on` changed from `warning` to `error`. CI pipelines relying on exit code 1 for warnings must add `--fail-on=warning` explicitly
@@ -136,7 +142,9 @@ Initial release.
 - Symfony DI with autowiring and autoconfiguration
 - GitHub Actions workflow
 
-[Unreleased]: https://github.com/fractalizer/ai-mess-detector/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/fractalizer/ai-mess-detector/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/fractalizer/ai-mess-detector/compare/v0.6.0...v0.7.0
+[0.6.0]: https://github.com/fractalizer/ai-mess-detector/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/fractalizer/ai-mess-detector/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/fractalizer/ai-mess-detector/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/fractalizer/ai-mess-detector/compare/v0.2.2...v0.3.0
