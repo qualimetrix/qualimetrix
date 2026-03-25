@@ -89,7 +89,7 @@ final class SummaryFormatterTest extends TestCase
                     symbolPath: SymbolPath::forNamespace('App'),
                     file: null,
                     healthOverall: 30.0,
-                    label: 'Weak',
+                    label: 'Poor',
                     reason: 'test',
                     violationCount: 1,
                     classCount: 1,
@@ -100,7 +100,7 @@ final class SummaryFormatterTest extends TestCase
                     symbolPath: SymbolPath::forClass('App', 'Foo'),
                     file: 'src/Foo.php',
                     healthOverall: 30.0,
-                    label: 'Weak',
+                    label: 'Poor',
                     reason: 'test',
                     violationCount: 1,
                     classCount: 0,
@@ -124,9 +124,9 @@ final class SummaryFormatterTest extends TestCase
             filesAnalyzed: 100,
             duration: 5.0,
             healthScores: [
-                'overall' => new HealthScore('overall', 72.0, 'Strong', 50.0, 30.0),
-                'complexity' => new HealthScore('complexity', 85.0, 'Strong', 50.0, 25.0),
-                'cohesion' => new HealthScore('cohesion', 40.0, 'Weak', 50.0, 25.0, [
+                'overall' => new HealthScore('overall', 72.0, 'Excellent', 50.0, 30.0),
+                'complexity' => new HealthScore('complexity', 85.0, 'Excellent', 50.0, 25.0),
+                'cohesion' => new HealthScore('cohesion', 40.0, 'Poor', 50.0, 25.0, [
                     new DecompositionItem('tcc.avg', 'TCC (avg)', 0.3, 'above 0.5', 'higher_is_better', 'methods share few common fields'),
                 ]),
             ],
@@ -136,7 +136,7 @@ final class SummaryFormatterTest extends TestCase
 
         self::assertStringContainsString('Health', $output);
         self::assertStringContainsString('72%', $output);
-        self::assertStringContainsString('Strong', $output);
+        self::assertStringContainsString('Excellent', $output);
         self::assertStringContainsString('Complexity', $output);
         self::assertStringContainsString('85%', $output);
         self::assertStringContainsString('Cohesion', $output);
@@ -166,7 +166,7 @@ final class SummaryFormatterTest extends TestCase
                     symbolPath: SymbolPath::forNamespace('App\Service'),
                     file: null,
                     healthOverall: 35.0,
-                    label: 'Weak',
+                    label: 'Poor',
                     reason: 'high complexity, low cohesion',
                     violationCount: 15,
                     classCount: 8,
@@ -238,7 +238,7 @@ final class SummaryFormatterTest extends TestCase
             filesAnalyzed: 5,
             duration: 0.5,
             healthScores: [
-                'overall' => new HealthScore('overall', 72.0, 'Strong', 50.0, 30.0),
+                'overall' => new HealthScore('overall', 72.0, 'Excellent', 50.0, 30.0),
             ],
         );
 
@@ -328,8 +328,8 @@ final class SummaryFormatterTest extends TestCase
                 filesAnalyzed: 10,
                 duration: 0.5,
                 healthScores: [
-                    'overall' => new HealthScore('overall', 72.0, 'Strong', 50.0, 30.0),
-                    'complexity' => new HealthScore('complexity', 85.0, 'Strong', 50.0, 25.0),
+                    'overall' => new HealthScore('overall', 72.0, 'Excellent', 50.0, 30.0),
+                    'complexity' => new HealthScore('complexity', 85.0, 'Excellent', 50.0, 25.0),
                 ],
             );
 
@@ -377,14 +377,14 @@ final class SummaryFormatterTest extends TestCase
             filesAnalyzed: 10,
             duration: 0.5,
             healthScores: [
-                'overall' => new HealthScore('overall', 72.0, 'Strong', 50.0, 30.0),
+                'overall' => new HealthScore('overall', 72.0, 'Excellent', 50.0, 30.0),
             ],
             worstNamespaces: [
                 new WorstOffender(
                     symbolPath: SymbolPath::forNamespace('App\Service'),
                     file: null,
                     healthOverall: 35.0,
-                    label: 'Weak',
+                    label: 'Poor',
                     reason: 'high complexity',
                     violationCount: 5,
                     classCount: 3,
@@ -404,7 +404,7 @@ final class SummaryFormatterTest extends TestCase
             symbolPath: SymbolPath::forNamespace('App\Payment\Gateway'),
             file: null,
             healthOverall: 30.0,
-            label: 'Weak',
+            label: 'Poor',
             reason: 'test',
             violationCount: 3,
             classCount: 2,
@@ -425,7 +425,7 @@ final class SummaryFormatterTest extends TestCase
             filesAnalyzed: 50,
             duration: 1.0,
             healthScores: [
-                'overall' => new HealthScore('overall', 72.0, 'Strong', 50.0, 30.0),
+                'overall' => new HealthScore('overall', 72.0, 'Excellent', 50.0, 30.0),
             ],
             worstNamespaces: [$offenderMatch, $offenderNoMatch],
         );
@@ -543,7 +543,7 @@ final class SummaryFormatterTest extends TestCase
             symbolPath: SymbolPath::forClass('App\Service', 'OrderService'),
             file: 'src/Service/OrderService.php',
             healthOverall: 30.0,
-            label: 'Weak',
+            label: 'Poor',
             reason: 'test',
             violationCount: 3,
             classCount: 0,
@@ -554,7 +554,7 @@ final class SummaryFormatterTest extends TestCase
             filesAnalyzed: 10,
             duration: 0.5,
             healthScores: [
-                'overall' => new HealthScore('overall', 72.0, 'Strong', 50.0, 30.0),
+                'overall' => new HealthScore('overall', 72.0, 'Excellent', 50.0, 30.0),
             ],
             worstClasses: [$offenderMatch, $offenderNoMatch],
         );
@@ -575,7 +575,7 @@ final class SummaryFormatterTest extends TestCase
                 symbolPath: SymbolPath::forNamespace('App\Ns' . $i),
                 file: null,
                 healthOverall: 20.0 + $i * 5,
-                label: 'Weak',
+                label: 'Poor',
                 reason: 'test',
                 violationCount: $i + 1,
                 classCount: $i + 2,
@@ -587,7 +587,7 @@ final class SummaryFormatterTest extends TestCase
             filesAnalyzed: 50,
             duration: 1.0,
             healthScores: [
-                'overall' => new HealthScore('overall', 60.0, 'Acceptable', 50.0, 30.0),
+                'overall' => new HealthScore('overall', 60.0, 'Fair', 50.0, 30.0),
             ],
             worstNamespaces: $offenders,
         );
@@ -613,7 +613,7 @@ final class SummaryFormatterTest extends TestCase
                 symbolPath: SymbolPath::forNamespace('App\Ns' . $i),
                 file: null,
                 healthOverall: 20.0 + $i * 5,
-                label: 'Weak',
+                label: 'Poor',
                 reason: 'test',
                 violationCount: 1,
                 classCount: 1,
@@ -625,7 +625,7 @@ final class SummaryFormatterTest extends TestCase
             filesAnalyzed: 50,
             duration: 1.0,
             healthScores: [
-                'overall' => new HealthScore('overall', 60.0, 'Acceptable', 50.0, 30.0),
+                'overall' => new HealthScore('overall', 60.0, 'Fair', 50.0, 30.0),
             ],
             worstNamespaces: $offenders,
         );
@@ -725,7 +725,7 @@ final class SummaryFormatterTest extends TestCase
             filesAnalyzed: 10,
             duration: 0.5,
             healthScores: [
-                'overall' => new HealthScore('overall', 50.0, 'Weak', 50.0, 30.0),
+                'overall' => new HealthScore('overall', 50.0, 'Poor', 50.0, 30.0),
             ],
         );
 
@@ -745,7 +745,7 @@ final class SummaryFormatterTest extends TestCase
             filesAnalyzed: 10,
             duration: 0.5,
             healthScores: [
-                'overall' => new HealthScore('overall', 50.1, 'Acceptable', 50.0, 30.0),
+                'overall' => new HealthScore('overall', 50.1, 'Fair', 50.0, 30.0),
             ],
         );
 
@@ -764,7 +764,7 @@ final class SummaryFormatterTest extends TestCase
             filesAnalyzed: 10,
             duration: 0.5,
             healthScores: [
-                'overall' => new HealthScore('overall', 30.0, 'Weak', 50.0, 30.0),
+                'overall' => new HealthScore('overall', 30.0, 'Poor', 50.0, 30.0),
             ],
         );
 
@@ -1006,8 +1006,8 @@ final class SummaryFormatterTest extends TestCase
             warningCount: 0,
             metrics: $metrics,
             healthScores: [
-                'overall' => new HealthScore('overall', 72.0, 'Acceptable', 50.0, 30.0),
-                'complexity' => new HealthScore('complexity', 85.0, 'Strong', 50.0, 25.0),
+                'overall' => new HealthScore('overall', 72.0, 'Fair', 50.0, 30.0),
+                'complexity' => new HealthScore('complexity', 85.0, 'Excellent', 50.0, 25.0),
             ],
         );
 
@@ -1063,7 +1063,7 @@ final class SummaryFormatterTest extends TestCase
             warningCount: 0,
             metrics: $metrics,
             healthScores: [
-                'overall' => new HealthScore('overall', 72.0, 'Acceptable', 50.0, 30.0),
+                'overall' => new HealthScore('overall', 72.0, 'Fair', 50.0, 30.0),
             ],
             worstClasses: [],
         );
@@ -1092,7 +1092,7 @@ final class SummaryFormatterTest extends TestCase
             warningCount: 0,
             metrics: $metrics,
             healthScores: [
-                'overall' => new HealthScore('overall', 72.0, 'Acceptable', 50.0, 30.0),
+                'overall' => new HealthScore('overall', 72.0, 'Fair', 50.0, 30.0),
             ],
         );
 

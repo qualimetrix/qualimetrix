@@ -18,7 +18,7 @@ bin/aimd check src/
 The summary view shows overall health scores across five dimensions (complexity, cohesion, coupling, typing, maintainability), the worst namespaces, and the worst classes. This tells you where to look first.
 
 !!! tip
-    Health score labels (Strong / Good / Acceptable / Weak / Critical) communicate severity at a glance. But compare the **numeric scores**, not just labels -- six projects scoring "Acceptable" might range from 45 to 68.
+    Health score labels (Excellent / Good / Fair / Poor / Critical) communicate severity at a glance. But compare the **numeric scores**, not just labels -- six projects scoring "Fair" might range from 45 to 68.
 
 ### Step 2: Drill Into Problem Namespaces
 
@@ -26,7 +26,7 @@ The summary view shows overall health scores across five dimensions (complexity,
 bin/aimd check src/ --namespace=App\\Domain\\Order
 ```
 
-The namespace view shows per-namespace health, child namespaces, and the worst classes within that scope. Look for namespaces with health below 50 (Weak or Critical).
+The namespace view shows per-namespace health, child namespaces, and the worst classes within that scope. Look for namespaces with health below 50 (Poor or Critical).
 
 !!! note
     You may see two scores: a **rolled-up** score (including sub-namespaces) and a **direct** score (only classes directly in that namespace). A namespace with rolled-up 79.7% but direct 39.5% means the direct classes are problematic, while sub-namespaces are fine.
@@ -303,10 +303,10 @@ Use instability and abstractness from the metrics JSON to map your architecture:
 
 **Do not treat violation count as a priority metric.** A class with 65 "long-parameter-list" warnings is less urgent than a class with 5 complexity errors.
 
-**Do not ignore health score dimensions.** A class scoring "Strong" on complexity but "Critical" on cohesion needs a different refactoring approach than one that is "Critical" on complexity.
+**Do not ignore health score dimensions.** A class scoring "Excellent" on complexity but "Critical" on cohesion needs a different refactoring approach than one that is "Critical" on complexity.
 
 **Do not compare ClassRank values across projects** of different sizes. PageRank dilutes as the graph grows.
 
-**Do not rely solely on overall health.** Drill into the per-dimension scores. A project with "Acceptable" overall health might have "Critical" complexity hidden by "Strong" typing.
+**Do not rely solely on overall health.** Drill into the per-dimension scores. A project with "Fair" overall health might have "Critical" complexity hidden by "Excellent" typing.
 
 <!-- llms:skip-end -->

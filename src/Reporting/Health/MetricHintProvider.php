@@ -541,7 +541,7 @@ final class MetricHintProvider
         $goodThreshold = $warnThreshold + $range * 0.3;
 
         if ($score > $strongThreshold) {
-            return 'Strong';
+            return 'Excellent';
         }
 
         if ($score > $goodThreshold) {
@@ -549,11 +549,11 @@ final class MetricHintProvider
         }
 
         if ($score > $warnThreshold) {
-            return 'Acceptable';
+            return 'Fair';
         }
 
         if ($score > $errThreshold) {
-            return 'Weak';
+            return 'Poor';
         }
 
         return 'Critical';

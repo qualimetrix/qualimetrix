@@ -289,13 +289,13 @@ bin/aimd check src/ --no-ansi
 ```
 AI Mess Detector — 412 files analyzed, 3.2s
 
-Health █████████████████████░░░░░░░░░ 68% Acceptable
+Health █████████████████████░░░░░░░░░ 68% Fair
 
-  Complexity      ████████████████░░░░░░░░░░░░░░ 54% Acceptable
-  Cohesion        ███████████████████░░░░░░░░░░░ 63% Acceptable
-  Coupling        ███████████████████░░░░░░░░░░░ 62% Acceptable
-  Typing          ██████████████████████████████ 99% Acceptable
-  Maintainability ██████████████████████░░░░░░░░ 74% Acceptable
+  Complexity      ████████████████░░░░░░░░░░░░░░ 54% Fair
+  Cohesion        ███████████████████░░░░░░░░░░░ 63% Fair
+  Coupling        ███████████████████░░░░░░░░░░░ 62% Fair
+  Typing          ██████████████████████████████ 99% Fair
+  Maintainability ██████████████████████░░░░░░░░ 74% Fair
 
 Worst namespaces
   46 App\Metrics\Halstead (3 classes, 29 violations) — high coupling, high complexity
@@ -357,7 +357,7 @@ Summary-oriented JSON for AI agents, CI/CD, and programmatic consumption. Includ
 {
   "meta": { "version": "1.0.0", "package": "aimd", "timestamp": "..." },
   "summary": { "filesAnalyzed": 342, "violationCount": 47, "errorCount": 12, "warningCount": 35, "techDebtMinutes": 270, "debtPer1kLoc": 5.4 },
-  "health": { "complexity": { "score": 65, "label": "Acceptable", "threshold": { "warning": 50, "error": 25 }, "decomposition": [...] } },
+  "health": { "complexity": { "score": 65, "label": "Fair", "threshold": { "warning": 50, "error": 25 }, "decomposition": [...] } },
   "worstNamespaces": [{ "symbolPath": "App\\Payment", "healthOverall": 31, "reason": "low cohesion, high complexity" }],
   "worstClasses": [{ "symbolPath": "App\\Payment\\PaymentService", "file": "src/...", "healthOverall": 28, "metrics": {...} }],
   "violations": [{ "file": "src/...", "line": 42, "symbol": "...", "namespace": "App\\Service", "rule": "complexity.cyclomatic", "code": "complexity.cyclomatic.method", "severity": "error", "message": "...", "metricValue": 15, "threshold": 10 }]
