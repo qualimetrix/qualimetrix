@@ -23,3 +23,7 @@
 /CLAUDE.md              export-ignore
 /baseline.json          export-ignore
 /profile.json           export-ignore
+/.claude/               export-ignore
+/.serena/               export-ignore
+/benchmarks/            export-ignore
+/website/               export-ignore
