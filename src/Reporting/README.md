@@ -39,6 +39,10 @@ Reporting/
 │   ├── HealthScore.php                    # VO: one health dimension (complexity, cohesion, etc.)
 │   ├── WorstOffender.php                  # VO: a namespace or class ranked by health
 │   └── DecompositionItem.php              # VO: one contributing metric in a health score breakdown
+├── Impact/                                # Effort-aware prioritization
+│   ├── RankedIssue.php                    # VO: violation ranked by impact score
+│   ├── ClassRankResolver.php              # Resolves classRank for any violation (method/class/namespace/file)
+│   └── ImpactCalculator.php               # Computes impact = classRank × severityWeight × debtMinutes
 ├── Filter/
 │   └── ViolationFilter.php                # Shared violation/offender filtering by namespace/class context
 ├── Profile/
@@ -65,7 +69,8 @@ Reporting/
     │   ├── HealthBarRenderer.php          # Renders ANSI health bars for console output
     │   ├── OffenderListRenderer.php       # Renders worst offender lists for console output
     │   ├── ViolationSummaryRenderer.php   # Renders violation count summary with severity breakdown and tech debt
-    │   └── HintRenderer.php              # Renders contextual hints at the bottom of summary output
+    │   ├── HintRenderer.php              # Renders contextual hints at the bottom of summary output
+    │   └── TopIssuesRenderer.php          # Renders "Top issues by impact" section
     ├── Json/
     │   ├── JsonFormatter.php              # Summary-oriented JSON (health, worst offenders, violations)
     │   ├── JsonSanitizer.php              # Sanitizes metric values (NaN/INF → null) for JSON output
@@ -194,6 +199,7 @@ final readonly class Report
         public array $worstClasses = [],       // list<WorstOffender>
         public int $techDebtMinutes = 0,
         public ?float $debtPer1kLoc = null,    // debt density (min/kLOC), null if no LOC data
+        public array $topIssues = [],          // list<RankedIssue> — top violations by impact
     ) {}
 
     public function isEmpty(): bool;
@@ -210,7 +216,7 @@ Enriches a base `Report` with health scores, worst offenders, and tech debt. Cal
 ```php
 final readonly class SummaryEnricher
 {
-    public function __construct(DebtCalculator $debtCalculator, MetricHintProvider $hintProvider);
+    public function __construct(DebtCalculator $debtCalculator, MetricHintProvider $hintProvider, ImpactCalculator $impactCalculator);
     public function enrich(Report $report): Report;
 }
 ```
@@ -529,6 +535,7 @@ $report->worstNamespaces  // list<WorstOffender> — worst namespaces by health
 $report->worstClasses     // list<WorstOffender> — worst classes by health
 $report->techDebtMinutes  // int — total remediation time
 $report->debtPer1kLoc     // ?float — debt density (minutes per 1K LOC)
+$report->topIssues        // list<RankedIssue> — top violations by impact score
 ```
 
 ## Formatter Comparison

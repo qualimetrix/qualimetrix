@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Effort-aware prioritization: "Top issues by impact" section in summary and JSON output. Violations ranked by `classRank × severity × remediation time` — answering "what should I fix first?" New `--top=N` option (default 10, `--top=0` to disable)
+
 ## [0.7.1] - 2026-03-25
 
 ### Changed
