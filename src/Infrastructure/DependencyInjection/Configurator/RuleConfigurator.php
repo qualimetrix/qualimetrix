@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
+use Qualimetrix\Configuration\KnownRuleNamesProviderInterface;
+use Qualimetrix\Infrastructure\Rule\KnownRuleNamesAdapter;
 use Qualimetrix\Infrastructure\Rule\RuleRegistry;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Symfony\Component\Config\FileLocator;
@@ -71,5 +73,12 @@ final class RuleConfigurator implements ContainerConfiguratorInterface
 
         $container->setAlias(RuleRegistryInterface::class, RuleRegistry::class)
             ->setPublic(true);
+
+        // KnownRuleNamesAdapter will have rule classes injected by RuleRegistryCompilerPass
+        $container->register(KnownRuleNamesAdapter::class)
+            ->setArguments(['$ruleClasses' => []])
+            ->setPublic(false);
+
+        $container->setAlias(KnownRuleNamesProviderInterface::class, KnownRuleNamesAdapter::class);
     }
 }
