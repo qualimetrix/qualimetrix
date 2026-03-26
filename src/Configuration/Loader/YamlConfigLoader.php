@@ -34,6 +34,10 @@ final class YamlConfigLoader implements ConfigLoaderInterface
         'fail_on',
         'computedMetrics',
         'computed_metrics',
+        'excludeHealth',
+        'exclude_health',
+        'includeGenerated',
+        'include_generated',
     ];
 
     public function load(string $path): array

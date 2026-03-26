@@ -1,0 +1,4 @@
+# CI preset — for continuous integration environments.
+# Ensures only errors (not warnings) cause non-zero exit codes.
+
+failOn: error

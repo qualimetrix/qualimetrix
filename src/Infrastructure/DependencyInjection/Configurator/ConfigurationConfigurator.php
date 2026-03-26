@@ -75,6 +75,10 @@ final class ConfigurationConfigurator implements ContainerConfiguratorInterface
         $container->register(\Qualimetrix\Configuration\Discovery\ComposerReader::class)
             ->setAutowired(true);
 
+        // Register PresetResolver (required by PresetStage)
+        $container->register(\Qualimetrix\Configuration\Preset\PresetResolver::class)
+            ->setAutowired(true);
+
         // Auto-register all configuration stages from src/Configuration/Pipeline/Stage/*
         // Classes implementing ConfigurationStageInterface will be auto-tagged via registerForAutoconfiguration
         $prototype = (new Definition())
