@@ -1,9 +1,9 @@
 {
     "version": 5,
-    "generated": "2026-03-25T15:27:25+00:00",
-    "count": 975,
-    "violationCount": 975,
-    "symbolCount": 652,
+    "generated": "2026-03-26T08:46:57+00:00",
+    "count": 989,
+    "violationCount": 989,
+    "symbolCount": 663,
     "violations": {
         "class:Qualimetrix\\Analysis\\Aggregator\\AggregationHelper": [
             {
@@ -1421,6 +1421,12 @@
                 "hash": "e0bf63fd4d21dd89"
             }
         ],
+        "class:Qualimetrix\\Reporting\\Formatter\\Summary\\TopIssuesRenderer": [
+            {
+                "rule": "coupling.instability",
+                "hash": "98175f3439dcdcd9"
+            }
+        ],
         "class:Qualimetrix\\Reporting\\Formatter\\Summary\\ViolationSummaryRenderer": [
             {
                 "rule": "coupling.instability",
@@ -1493,6 +1499,24 @@
             {
                 "rule": "coupling.instability",
                 "hash": "9a7a5662640f1d39"
+            }
+        ],
+        "class:Qualimetrix\\Reporting\\Impact\\ClassRankIndex": [
+            {
+                "rule": "computed.health",
+                "hash": "ce2b2bdb5c285d67"
+            }
+        ],
+        "class:Qualimetrix\\Reporting\\Impact\\ClassRankResolver": [
+            {
+                "rule": "coupling.instability",
+                "hash": "89a431430c4ba754"
+            }
+        ],
+        "class:Qualimetrix\\Reporting\\Impact\\ImpactCalculator": [
+            {
+                "rule": "coupling.instability",
+                "hash": "c867c9758acaf4c6"
             }
         ],
         "class:Qualimetrix\\Reporting\\Profile\\ProfileSummaryRenderer": [
@@ -2131,6 +2155,12 @@
                 "hash": "e6acee50dc42416e"
             }
         ],
+        "file:src/Infrastructure/DependencyInjection/Configurator/OutputConfigurator.php": [
+            {
+                "rule": "duplication.code-duplication",
+                "hash": "94c57dbd29c8268f"
+            }
+        ],
         "file:src/Infrastructure/Git/GitRepositoryLocator.php": [
             {
                 "rule": "code-smell.error-suppression",
@@ -2313,6 +2343,10 @@
             {
                 "rule": "code-smell.boolean-argument",
                 "hash": "e6acee50dc42416e"
+            },
+            {
+                "rule": "duplication.code-duplication",
+                "hash": "94c57dbd29c8268f"
             }
         ],
         "file:src/Reporting/Formatter/Json/JsonOffenderSection.php": [
@@ -4235,6 +4269,18 @@
                 "hash": "ab8bef254f77c2fc"
             }
         ],
+        "method:Qualimetrix\\Reporting\\Formatter\\Summary\\TopIssuesRenderer::render": [
+            {
+                "rule": "code-smell.long-parameter-list",
+                "hash": "9b314f717ac3aeb1"
+            }
+        ],
+        "method:Qualimetrix\\Reporting\\Formatter\\Summary\\TopIssuesRenderer::renderIssue": [
+            {
+                "rule": "code-smell.long-parameter-list",
+                "hash": "38ad724e90f7f450"
+            }
+        ],
         "method:Qualimetrix\\Reporting\\Formatter\\Summary\\ViolationSummaryRenderer::render": [
             {
                 "rule": "code-smell.long-parameter-list",
@@ -4363,6 +4409,32 @@
             {
                 "rule": "code-smell.long-parameter-list",
                 "hash": "632ad6a17af08e09"
+            }
+        ],
+        "method:Qualimetrix\\Reporting\\Impact\\ClassRankResolver::buildIndex": [
+            {
+                "rule": "complexity.cognitive",
+                "hash": "89099e820cd0839c"
+            },
+            {
+                "rule": "complexity.cyclomatic",
+                "hash": "dcf58212851394cd"
+            },
+            {
+                "rule": "complexity.npath",
+                "hash": "7a78ca67164dfb1f"
+            }
+        ],
+        "method:Qualimetrix\\Reporting\\Impact\\ClassRankResolver::resolve": [
+            {
+                "rule": "complexity.cyclomatic",
+                "hash": "9cedaaa66a99fff2"
+            }
+        ],
+        "method:Qualimetrix\\Reporting\\Impact\\RankedIssue::__construct": [
+            {
+                "rule": "code-smell.long-parameter-list",
+                "hash": "85726f3b5045045f"
             }
         ],
         "method:Qualimetrix\\Reporting\\Report::__construct": [
@@ -5083,6 +5155,12 @@
             {
                 "rule": "coupling.distance",
                 "hash": "593a3baaba1a4644"
+            }
+        ],
+        "ns:Qualimetrix\\Reporting\\Impact": [
+            {
+                "rule": "computed.health",
+                "hash": "8cfc63c6a45d4149"
             }
         ],
         "ns:Qualimetrix\\Reporting\\Profile": [
