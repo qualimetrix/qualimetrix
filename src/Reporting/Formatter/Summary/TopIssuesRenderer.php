@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Formatter\Summary;
 
+use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Reporting\Debt\DebtSummary;
 use Qualimetrix\Reporting\Formatter\Support\AnsiColor;
 use Qualimetrix\Reporting\FormatterContext;
@@ -59,25 +61,63 @@ final class TopIssuesRenderer
             : $color->yellow($severity);
 
         $score = $this->formatScore($issue->impactScore);
-        $symbol = $violation->symbolPath->toString();
         $debt = DebtSummary::formatMinutes($issue->debtMinutes);
 
-        $file = $context->relativizePath($violation->location->file);
-        $line = $violation->location->line;
-        $locationStr = $line !== null ? \sprintf('%s:%d', $file, $line) : $file;
+        $locationStr = $this->formatLocation($violation, $context);
+
+        $detail = \sprintf('%s: %s%s', $violation->violationCode, $violation->getDisplayMessage(), $this->formatSymbol($violation));
+
+        $indent = str_repeat(' ', \strlen((string) $rank) + 8);
 
         $lines[] = \sprintf(
-            '  %s. [%s] %s  %s',
+            '  %s. [%s] %s  %s  %s',
             $color->bold((string) $rank),
             $severityFormatted,
             $color->bold($score),
-            $symbol,
-        );
-        $lines[] = \sprintf(
-            '         %s  %s',
-            $color->dim($locationStr),
+            $locationStr,
             $color->dim(\sprintf('[%s]', $debt)),
         );
+        $lines[] = \sprintf(
+            '%s%s',
+            $indent,
+            $color->dim($detail),
+        );
+    }
+
+    private function formatLocation(Violation $violation, FormatterContext $context): string
+    {
+        if ($violation->location->isNone()) {
+            return '[project]';
+        }
+
+        $file = $context->relativizePath($violation->location->file);
+        $line = $violation->location->line;
+
+        return $line !== null && $violation->location->precise
+            ? \sprintf('%s:%d', $file, $line)
+            : $file;
+    }
+
+    private function formatSymbol(Violation $violation): string
+    {
+        $symbolPath = $violation->symbolPath;
+        $type = $symbolPath->getType();
+
+        if ($type === SymbolType::Method || $type === SymbolType::Function_) {
+            $symbolName = $symbolPath->getSymbolName();
+
+            return $symbolName !== null && $symbolName !== ''
+                ? \sprintf(' (%s)', $symbolName)
+                : '';
+        }
+
+        if ($type === SymbolType::Namespace_) {
+            $namespace = $symbolPath->toString();
+
+            return $namespace !== '' ? \sprintf(' (namespace: %s)', $namespace) : '';
+        }
+
+        return '';
     }
 
     /**

@@ -24,7 +24,7 @@ final class HtmlTreeNode
     /** @var array<string, int|float|null> */
     public array $metrics = [];
 
-    /** @var list<array{ruleName: string, violationCode: string, message: string, severity: string, metricValue: int|float|null, symbolPath: string, file: string, line: int|null}> */
+    /** @var list<array{ruleName: string, violationCode: string, message: string, recommendation: ?string, severity: string, metricValue: int|float|null, symbolPath: string, file: string, line: int|null}> */
     public array $violations = [];
 
     public int $violationCountTotal = 0;

@@ -430,6 +430,7 @@ final class HtmlTreeBuilder
                     'ruleName' => $violation->ruleName,
                     'violationCode' => $violation->violationCode,
                     'message' => $violation->message,
+                    'recommendation' => $violation->recommendation,
                     'severity' => $violation->severity->value,
                     'metricValue' => $metricValue,
                     'symbolPath' => $violation->symbolPath->toString(),
