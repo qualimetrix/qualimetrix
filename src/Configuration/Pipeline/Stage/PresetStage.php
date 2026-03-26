@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Configuration\Pipeline\Stage;
 
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
+use Qualimetrix\Configuration\KnownRuleNamesProviderInterface;
 use Qualimetrix\Configuration\Loader\ConfigLoaderInterface;
 use Qualimetrix\Configuration\Pipeline\ConfigDataNormalizer;
 use Qualimetrix\Configuration\Pipeline\ConfigurationContext;
 use Qualimetrix\Configuration\Pipeline\ConfigurationLayer;
-use Qualimetrix\Configuration\Pipeline\ConfigurationPipeline;
+use Qualimetrix\Configuration\Pipeline\ConfigurationMerger;
+use Qualimetrix\Configuration\Pipeline\RuleNameValidator;
 use Qualimetrix\Configuration\Preset\PresetResolver;
 
 /**
@@ -26,6 +30,8 @@ final class PresetStage implements ConfigurationStageInterface
     public function __construct(
         private readonly ConfigLoaderInterface $loader,
         private readonly PresetResolver $resolver,
+        private readonly ?KnownRuleNamesProviderInterface $knownRuleNamesProvider = null,
+        private readonly LoggerInterface $logger = new NullLogger(),
     ) {}
 
     public function priority(): int
@@ -112,44 +118,16 @@ final class PresetStage implements ConfigurationStageInterface
         foreach ($presetNames as $name) {
             $path = $this->resolver->resolve($name, $workingDirectory);
             $data = $this->loader->load($path);
+
+            if ($this->knownRuleNamesProvider !== null) {
+                RuleNameValidator::warnAboutUnknownRuleNames($data, "preset:{$name}", $this->knownRuleNamesProvider, $this->logger);
+            }
+
             $normalized = ConfigDataNormalizer::normalize($data);
 
-            $merged = $this->mergeIntoLayer($merged, $normalized);
+            $merged = ConfigurationMerger::merge($merged, $normalized);
         }
 
         return $merged;
-    }
-
-    /**
-     * Merges a preset's normalized config into the accumulated layer.
-     *
-     * - MERGEABLE_LIST_KEYS: union semantics (accumulate values)
-     * - 'rules': deep merge (associative arrays merged recursively, lists replaced)
-     * - Everything else: override
-     *
-     * @param array<string, mixed> $base
-     * @param array<string, mixed> $overlay
-     *
-     * @return array<string, mixed>
-     */
-    private function mergeIntoLayer(array $base, array $overlay): array
-    {
-        foreach ($overlay as $key => $value) {
-            if (\is_array($value) && isset($base[$key]) && \is_array($base[$key])) {
-                if (\in_array($key, ConfigurationPipeline::MERGEABLE_LIST_KEYS, true)) {
-                    $base[$key] = array_values(array_unique(array_merge($base[$key], $value)));
-                    continue;
-                }
-
-                if ($key === 'rules') {
-                    $base[$key] = ConfigurationPipeline::deepMergeAssociative($base[$key], $value);
-                    continue;
-                }
-            }
-
-            $base[$key] = $value;
-        }
-
-        return $base;
     }
 }

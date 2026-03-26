@@ -16,11 +16,6 @@ use Qualimetrix\Configuration\Pipeline\Stage\ConfigurationStageInterface;
  */
 final class ConfigurationPipeline implements ConfigurationPipelineInterface
 {
-    /**
-     * Keys whose values should be merged (union) across stages rather than replaced.
-     */
-    public const array MERGEABLE_LIST_KEYS = ['disabled_rules', 'exclude_paths', 'excludes', 'exclude_health'];
-
     /** @var list<ConfigurationStageInterface> */
     private array $stages = [];
 
@@ -41,25 +36,7 @@ final class ConfigurationPipeline implements ConfigurationPipelineInterface
             $layer = $stage->apply($context);
             if ($layer !== null) {
                 $appliedSources[] = $layer->source;
-                // Merge strategy per key type:
-                // - MERGEABLE_LIST_KEYS: union semantics (accumulate values)
-                // - 'rules': deep merge (later stage overrides individual rule options)
-                // - everything else: override
-                foreach ($layer->values as $key => $value) {
-                    if (\is_array($value) && isset($merged[$key]) && \is_array($merged[$key])) {
-                        if (\in_array($key, self::MERGEABLE_LIST_KEYS, true)) {
-                            $merged[$key] = array_values(array_unique(array_merge($merged[$key], $value)));
-                            continue;
-                        }
-
-                        if ($key === 'rules') {
-                            $merged[$key] = self::deepMergeAssociative($merged[$key], $value);
-                            continue;
-                        }
-                    }
-
-                    $merged[$key] = $value;
-                }
+                $merged = ConfigurationMerger::merge($merged, $layer->values);
             }
         }
 
@@ -126,32 +103,6 @@ final class ConfigurationPipeline implements ConfigurationPipelineInterface
         }
 
         return array_values(array_filter($value, is_string(...)));
-    }
-
-    /**
-     * Deep-merges two associative arrays, replacing list-arrays entirely.
-     *
-     * Unlike array_replace_recursive, this correctly handles list-valued options
-     * (e.g., exclude_namespaces): lists are replaced, not merged by index.
-     *
-     * @param array<array-key, mixed> $base
-     * @param array<array-key, mixed> $overlay
-     *
-     * @return array<array-key, mixed>
-     */
-    public static function deepMergeAssociative(array $base, array $overlay): array
-    {
-        foreach ($overlay as $key => $value) {
-            if (\is_array($value) && isset($base[$key]) && \is_array($base[$key])
-                && !array_is_list($value)
-            ) {
-                $base[$key] = self::deepMergeAssociative($base[$key], $value);
-            } else {
-                $base[$key] = $value;
-            }
-        }
-
-        return $base;
     }
 
     /**
