@@ -193,9 +193,48 @@ format: summary   # Default
 
 ---
 
+## Presets
+
+<!-- llms:skip-begin -->
+Presets are named configuration bundles that apply predefined settings — thresholds, disabled rules, fail behavior — in a single flag. Instead of manually tuning dozens of options, pick a preset that matches your project's maturity.
+<!-- llms:skip-end -->
+
+| Preset   | Description                                                       |
+| -------- | ----------------------------------------------------------------- |
+| `strict` | Tight thresholds for greenfield projects. Sets `fail_on: warning` |
+| `legacy` | Relaxed thresholds for legacy codebases. Disables noisy rules     |
+| `ci`     | Explicit CI mode. Sets `fail_on: error`                           |
+
+```bash
+# Use a single preset
+vendor/bin/qmx check src/ --preset=strict
+
+# Combine multiple presets
+vendor/bin/qmx check src/ --preset=strict,ci
+
+# Use a custom preset file
+vendor/bin/qmx check src/ --preset=./my-preset.yaml
+```
+
+<!-- llms:skip-begin -->
+**Priority order:** Presets are applied after `composer.json` discovery but before `qmx.yaml`. Your config file always overrides preset values.
+
+**Multiple presets:** When combining presets, they are merged left-to-right — later presets override earlier ones, except list keys like `disabled_rules` which accumulate. For example, `--preset=legacy,ci` gives you legacy thresholds with CI fail behavior.
+
+!!! warning
+    `only_rules` is **not** accumulated across presets — the last preset's `only_rules` completely replaces any earlier one. This is intentional: `only_rules` is a restrictive filter, and union would widen the scope.
+
+**Custom presets:** Any YAML file with the same structure as `qmx.yaml` can be used as a preset. Pass the file path instead of a built-in name.
+<!-- llms:skip-end -->
+
+---
+
 ## Full Example
 
 ```yaml
+# Or start with a preset and customize:
+# vendor/bin/qmx check src/ --preset=strict
+
 paths:
   - src/
 

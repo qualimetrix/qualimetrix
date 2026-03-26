@@ -66,6 +66,31 @@ bin/qmx check src/ --exclude-path="src/Entity/*" --exclude-path="src/DTO/*"
 
 ---
 
+## Опции пресетов
+
+### `--preset`
+
+Применить именованный пресет или пользовательский YAML-файл. Можно указывать несколько раз или через запятую:
+
+```bash
+# Встроенные пресеты
+bin/qmx check src/ --preset=strict
+bin/qmx check src/ --preset=legacy
+
+# Комбинирование пресетов (объединяются слева направо)
+bin/qmx check src/ --preset=strict,ci
+bin/qmx check src/ --preset=strict --preset=ci
+
+# Пользовательский файл пресета
+bin/qmx check src/ --preset=./my-preset.yaml
+```
+
+Доступные встроенные пресеты: `strict`, `legacy`, `ci`.
+
+Пресеты применяются после автоопределения `composer.json`, но до `qmx.yaml`, поэтому ваш файл конфигурации всегда имеет приоритет. Подробности смотрите в разделе [Конфигурация > Пресеты](../getting-started/configuration.ru.md#пресеты).
+
+---
+
 ## Опции вывода
 
 ### `--format`, `-f`
