@@ -30,6 +30,8 @@ Configuration/
 │   ├── ConfigurationContext.php            # Context (input + workDir)
 │   ├── ConfigurationLayer.php              # Configuration layer
 │   ├── ConfigDataNormalizer.php            # YAML → dot-notation normalizer
+│   ├── ConfigurationMerger.php            # Layered config merge logic
+│   ├── RuleNameValidator.php              # Unknown rule name warnings
 │   ├── ResolvedConfiguration.php           # Final configuration
 │   └── Stage/
 │       ├── ConfigurationStageInterface.php # Stage contract

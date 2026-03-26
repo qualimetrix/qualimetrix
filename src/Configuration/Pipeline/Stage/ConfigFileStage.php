@@ -12,6 +12,7 @@ use Qualimetrix\Configuration\Loader\ConfigLoaderInterface;
 use Qualimetrix\Configuration\Pipeline\ConfigDataNormalizer;
 use Qualimetrix\Configuration\Pipeline\ConfigurationContext;
 use Qualimetrix\Configuration\Pipeline\ConfigurationLayer;
+use Qualimetrix\Configuration\Pipeline\RuleNameValidator;
 
 /**
  * Loads configuration from config file (priority: 20).
@@ -103,15 +104,7 @@ final class ConfigFileStage implements ConfigurationStageInterface
     }
 
     /**
-     * Warns about unknown rule names in the "rules:" config section.
-     *
-     * Emits a PSR-3 warning for each rule name that does not match any registered rule.
-     * Matching follows the same prefix logic as CLI --disable-rule / --only-rule:
-     * exact match, prefix match ("complexity" matches "complexity.cyclomatic"), and
-     * reverse prefix match ("complexity.cyclomatic.method" refines "complexity.cyclomatic").
-     *
-     * @param array<string, mixed> $data raw config data (before normalization)
-     * @param string $configSource filename for warning messages
+     * @param array<string, mixed> $data
      */
     private function warnAboutUnknownRuleNames(array $data, string $configSource): void
     {
@@ -119,32 +112,6 @@ final class ConfigFileStage implements ConfigurationStageInterface
             return;
         }
 
-        $rulesSection = $data['rules'] ?? null;
-        if (!\is_array($rulesSection) || $rulesSection === []) {
-            return;
-        }
-
-        $knownNames = $this->knownRuleNamesProvider->getKnownRuleNames();
-
-        foreach (array_keys($rulesSection) as $configuredName) {
-            $name = (string) $configuredName;
-            $matched = false;
-            foreach ($knownNames as $known) {
-                if ($name === $known
-                    || str_starts_with($known, $name . '.')
-                    || str_starts_with($name, $known . '.')
-                ) {
-                    $matched = true;
-                    break;
-                }
-            }
-
-            if (!$matched) {
-                $this->logger->warning(
-                    'Unknown rule name "{rule}" in config file "{source}" — does not match any registered rule.',
-                    ['rule' => $name, 'source' => $configSource],
-                );
-            }
-        }
+        RuleNameValidator::warnAboutUnknownRuleNames($data, $configSource, $this->knownRuleNamesProvider, $this->logger);
     }
 }

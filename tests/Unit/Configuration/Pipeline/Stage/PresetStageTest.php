@@ -7,6 +7,8 @@ namespace Qualimetrix\Tests\Unit\Configuration\Pipeline\Stage;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
+use Qualimetrix\Configuration\KnownRuleNamesProviderInterface;
 use Qualimetrix\Configuration\Loader\ConfigLoaderInterface;
 use Qualimetrix\Configuration\Pipeline\ConfigurationContext;
 use Qualimetrix\Configuration\Pipeline\Stage\PresetStage;
@@ -351,6 +353,55 @@ final class PresetStageTest extends TestCase
 
         self::assertNotNull($layer);
         self::assertSame('preset:strict,ci', $layer->source);
+    }
+
+    #[Test]
+    public function presetWithUnknownRuleName_emitsWarning(): void
+    {
+        $loader = $this->createStub(ConfigLoaderInterface::class);
+        $loader->method('load')->willReturn([
+            'rules' => ['nonexistent.rule' => ['warning' => 10]],
+        ]);
+
+        $provider = $this->createStub(KnownRuleNamesProviderInterface::class);
+        $provider->method('getKnownRuleNames')->willReturn(['complexity.cyclomatic']);
+
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects(self::once())
+            ->method('warning')
+            ->with(
+                self::stringContains('Unknown rule name'),
+                self::equalTo(['rule' => 'nonexistent.rule', 'source' => 'preset:strict']),
+            );
+
+        $stage = new PresetStage($loader, $this->resolver, $provider, $logger);
+        $context = new ConfigurationContext(
+            $this->createPresetInput(['strict']),
+            $this->tempDir,
+        );
+
+        $stage->apply($context);
+    }
+
+    #[Test]
+    public function presetWithoutKnownRuleNamesProvider_noWarning(): void
+    {
+        $loader = $this->createStub(ConfigLoaderInterface::class);
+        $loader->method('load')->willReturn([
+            'rules' => ['nonexistent.rule' => ['warning' => 10]],
+        ]);
+
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects(self::never())->method('warning');
+
+        // No provider (null) — no validation
+        $stage = new PresetStage($loader, $this->resolver, null, $logger);
+        $context = new ConfigurationContext(
+            $this->createPresetInput(['strict']),
+            $this->tempDir,
+        );
+
+        $stage->apply($context);
     }
 
     /**
