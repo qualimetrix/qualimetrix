@@ -322,7 +322,7 @@ function renderViolationsTable(node) {
   table.className = 'violations-table';
 
   const thead = document.createElement('thead');
-  thead.innerHTML = '<tr><th>Rule</th><th>Severity</th><th>Message</th><th>Line</th></tr>';
+  thead.innerHTML = '<tr><th>Rule</th><th>File</th><th>Severity</th><th>Message</th><th>Line</th></tr>';
   table.appendChild(thead);
 
   const tbody = document.createElement('tbody');
@@ -330,15 +330,17 @@ function renderViolationsTable(node) {
   const sorted = [...node.violations].sort((a, b) => {
     // Errors first
     if (a.severity !== b.severity) return a.severity === 'error' ? -1 : 1;
-    return a.ruleName.localeCompare(b.ruleName);
+    return (a.violationCode || a.ruleName).localeCompare(b.violationCode || b.ruleName);
   });
 
   for (const v of sorted) {
     const tr = document.createElement('tr');
     tr.className = `violation-${v.severity}`;
-    tr.innerHTML = `<td>${escapeHtml(v.ruleName)}</td>` +
+    const message = v.recommendation || v.message;
+    tr.innerHTML = `<td>${escapeHtml(v.violationCode || v.ruleName)}</td>` +
+      `<td>${escapeHtml(v.file || '')}</td>` +
       `<td>${escapeHtml(v.severity)}</td>` +
-      `<td>${escapeHtml(v.message)}</td>` +
+      `<td>${escapeHtml(message)}</td>` +
       `<td>${v.line ?? ''}</td>`;
     tbody.appendChild(tr);
   }
