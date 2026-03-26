@@ -352,6 +352,10 @@ The project maintains a `CHANGELOG.md` following the [Keep a Changelog](https://
 1. Rename `## [Unreleased]` to `## [X.Y.Z] - YYYY-MM-DD`
 2. Add a fresh empty `## [Unreleased]` section above it
 3. Update the comparison links at the bottom of the file
+4. Commit: `chore: release vX.Y.Z`
+5. Tag and push: `git tag vX.Y.Z && git push origin vX.Y.Z`
+6. CI workflow (`.github/workflows/release.yml`) creates a GitHub Release automatically, extracting notes from CHANGELOG
+7. Monitor CI runs on the tag to confirm all checks pass — the release should be green
 
 ---
 
