@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-03-26
+
 ### Changed
 - Effort-aware prioritization: "Top issues by impact" section in summary and JSON output. Violations ranked by `classRank × severity × remediation time` — answering "what should I fix first?" New `--top=N` option (default 10, `--top=0` to disable)
 
@@ -150,7 +152,8 @@ Initial release.
 - Symfony DI with autowiring and autoconfiguration
 - GitHub Actions workflow
 
-[Unreleased]: https://github.com/qualimetrix/qualimetrix/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/qualimetrix/qualimetrix/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/qualimetrix/qualimetrix/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.5.0...v0.6.0
