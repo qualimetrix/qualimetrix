@@ -66,6 +66,31 @@ bin/qmx check src/ --exclude-path="src/Entity/*" --exclude-path="src/DTO/*"
 
 ---
 
+## Preset options
+
+### `--preset`
+
+Apply a named preset or a custom YAML file. Can be repeated or comma-separated:
+
+```bash
+# Built-in presets
+bin/qmx check src/ --preset=strict
+bin/qmx check src/ --preset=legacy
+
+# Combine presets (merged left-to-right)
+bin/qmx check src/ --preset=strict,ci
+bin/qmx check src/ --preset=strict --preset=ci
+
+# Custom preset file
+bin/qmx check src/ --preset=./my-preset.yaml
+```
+
+Available built-in presets: `strict`, `legacy`, `ci`.
+
+Presets are applied after `composer.json` auto-detection but before `qmx.yaml`, so your config file always takes precedence. See [Configuration > Presets](../getting-started/configuration.md#presets) for details.
+
+---
+
 ## Output options
 
 ### `--format`, `-f`
