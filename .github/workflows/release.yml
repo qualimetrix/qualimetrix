@@ -1,0 +1,65 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Extract version from tag
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Extract release notes from CHANGELOG.md
+        id: notes
+        run: |
+          version="${{ steps.version.outputs.version }}"
+
+          # Extract section between ## [version] and the next ## [
+          notes=$(awk -v ver="$version" '
+            /^## \[/ {
+              if (found) exit
+              if ($0 ~ "\\[" ver "\\]") { found=1; next }
+            }
+            found { print }
+          ' CHANGELOG.md)
+
+          # Trim leading/trailing blank lines
+          notes=$(echo "$notes" | sed -e '/./,$!d' -e :a -e '/^\n*$/{$d;N;ba;}')
+
+          if [ -z "$notes" ]; then
+            echo "::warning::No changelog entry found for version $version"
+            notes="No changelog entry found for this version."
+          fi
+
+          # Write to file for gh release
+          echo "$notes" > /tmp/release-notes.md
+
+      - name: Detect pre-release
+        id: prerelease
+        run: |
+          if [[ "${{ steps.version.outputs.version }}" =~ (alpha|beta|rc|dev) ]]; then
+            echo "flag=--prerelease" >> "$GITHUB_OUTPUT"
+          else
+            echo "flag=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --title "$GITHUB_REF_NAME" \
+            --notes-file /tmp/release-notes.md \
+            ${{ steps.prerelease.outputs.flag }}
