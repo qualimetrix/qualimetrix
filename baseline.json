@@ -1,9 +1,9 @@
 {
     "version": 5,
-    "generated": "2026-03-26T08:46:57+00:00",
-    "count": 989,
-    "violationCount": 989,
-    "symbolCount": 663,
+    "generated": "2026-03-26T18:39:01+00:00",
+    "count": 993,
+    "violationCount": 993,
+    "symbolCount": 666,
     "violations": {
         "class:Qualimetrix\\Analysis\\Aggregator\\AggregationHelper": [
             {
@@ -233,6 +233,12 @@
                 "hash": "f9a8128544f9277d"
             }
         ],
+        "class:Qualimetrix\\Configuration\\Pipeline\\RuleNameValidator": [
+            {
+                "rule": "computed.health",
+                "hash": "f813de2c0c689c1e"
+            }
+        ],
         "class:Qualimetrix\\Configuration\\Pipeline\\Stage\\CliStage": [
             {
                 "rule": "computed.health",
@@ -263,6 +269,12 @@
             {
                 "rule": "design.lcom",
                 "hash": "656bc2fb672c8148"
+            }
+        ],
+        "class:Qualimetrix\\Configuration\\Pipeline\\Stage\\PresetStage": [
+            {
+                "rule": "design.lcom",
+                "hash": "bd03a4d98bee1b47"
             }
         ],
         "class:Qualimetrix\\Configuration\\RuleOptionsFactory": [
@@ -659,6 +671,12 @@
                 "hash": "3876d67b1bf8bcdd"
             }
         ],
+        "class:Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\RuleRegistryCompilerPass": [
+            {
+                "rule": "coupling.instability",
+                "hash": "a92fc8edff86b3c3"
+            }
+        ],
         "class:Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\AnalysisConfigurator": [
             {
                 "rule": "computed.health",
@@ -684,6 +702,10 @@
             }
         ],
         "class:Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\ConfigurationConfigurator": [
+            {
+                "rule": "coupling.cbo",
+                "hash": "e13be49c411cf287"
+            },
             {
                 "rule": "coupling.instability",
                 "hash": "ee498dccc3f1b246"
@@ -2057,7 +2079,7 @@
                 "hash": "e6acee50dc42416e"
             }
         ],
-        "file:src/Configuration/Pipeline/Stage/ConfigFileStage.php": [
+        "file:src/Configuration/Pipeline/ConfigDataNormalizer.php": [
             {
                 "rule": "duplication.code-duplication",
                 "hash": "94c57dbd29c8268f"
@@ -3141,24 +3163,20 @@
                 "hash": "1fb6d59e123985e5"
             }
         ],
-        "method:Qualimetrix\\Configuration\\Pipeline\\Stage\\ConfigFileStage::normalizeConfigData": [
+        "method:Qualimetrix\\Configuration\\Pipeline\\RuleNameValidator::warnAboutUnknownRuleNames": [
             {
-                "rule": "complexity.cognitive",
-                "hash": "8acb256b3ab6d68d"
+                "rule": "code-smell.long-parameter-list",
+                "hash": "af2e4efb00ab0ad7"
             },
             {
                 "rule": "complexity.cyclomatic",
-                "hash": "d66fc9d95bfd0c08"
-            },
-            {
-                "rule": "complexity.npath",
-                "hash": "121fa11cff19db58"
+                "hash": "806879567fcf08c7"
             }
         ],
-        "method:Qualimetrix\\Configuration\\Pipeline\\Stage\\ConfigFileStage::warnAboutUnknownRuleNames": [
+        "method:Qualimetrix\\Configuration\\Pipeline\\Stage\\PresetStage::__construct": [
             {
-                "rule": "complexity.cyclomatic",
-                "hash": "2e700c7b51784085"
+                "rule": "code-smell.long-parameter-list",
+                "hash": "13c085471512d837"
             }
         ],
         "method:Qualimetrix\\Configuration\\RuleOptionsFactory::validateNumericFields": [
@@ -4821,6 +4839,10 @@
             {
                 "rule": "computed.health",
                 "hash": "adb919abb11f23a3"
+            },
+            {
+                "rule": "coupling.instability",
+                "hash": "c6f46c257c7afe78"
             }
         ],
         "ns:Qualimetrix\\Core\\ComputedMetric": [
