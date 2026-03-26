@@ -1,0 +1,84 @@
+# Legacy preset — for legacy projects with high technical debt.
+# Relaxes thresholds ~2x compared to defaults.
+# Disables noise-heavy rules to focus on critical issues.
+
+rules:
+  complexity.cyclomatic:
+    method:
+      warning: 20
+      error: 40
+    class:
+      maxWarning: 60
+      maxError: 100
+  complexity.cognitive:
+    method:
+      warning: 30
+      error: 60
+    class:
+      maxWarning: 60
+      maxError: 100
+  complexity.npath:
+    method:
+      warning: 500
+      error: 2000
+  complexity.wmc:
+    warning: 80
+    error: 120
+  size.method-count:
+    warning: 30
+    error: 50
+  size.class-count:
+    warning: 25
+    error: 40
+  size.property-count:
+    warning: 25
+    error: 35
+  maintainability.index:
+    warning: 25
+    error: 10
+  design.lcom:
+    warning: 5
+    error: 8
+  design.noc:
+    warning: 15
+    error: 25
+  design.inheritance:
+    warning: 6
+    error: 8
+  coupling.cbo:
+    class:
+      warning: 20
+      error: 30
+    namespace:
+      warning: 20
+      error: 30
+  coupling.instability:
+    class:
+      maxWarning: 0.95
+      maxError: 1.0
+    namespace:
+      maxWarning: 0.95
+      maxError: 1.0
+  coupling.distance:
+    maxDistanceWarning: 0.5
+    maxDistanceError: 0.7
+  code-smell.constructor-overinjection:
+    warning: 12
+    error: 18
+  code-smell.long-parameter-list:
+    warning: 6
+    error: 10
+  design.type-coverage:
+    paramWarning: 30
+    paramError: 10
+    returnWarning: 30
+    returnError: 10
+    propertyWarning: 30
+    propertyError: 10
+
+disabledRules:
+  - code-smell.boolean-argument
+  - code-smell.data-class
+  - code-smell.god-class
+  - code-smell.superglobals
+  - code-smell.error-suppression

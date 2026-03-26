@@ -1,0 +1,78 @@
+# Strict preset — for greenfield projects with high quality standards.
+# Tightens thresholds ~30-50% compared to defaults.
+
+failOn: warning
+
+rules:
+  complexity.cyclomatic:
+    method:
+      warning: 7
+      error: 15
+    class:
+      maxWarning: 20
+      maxError: 35
+  complexity.cognitive:
+    method:
+      warning: 10
+      error: 20
+    class:
+      maxWarning: 20
+      maxError: 35
+  complexity.npath:
+    method:
+      warning: 100
+      error: 500
+  complexity.wmc:
+    warning: 35
+    error: 60
+  size.method-count:
+    warning: 15
+    error: 20
+  size.class-count:
+    warning: 10
+    error: 18
+  size.property-count:
+    warning: 10
+    error: 15
+  maintainability.index:
+    warning: 50
+    error: 30
+  design.lcom:
+    warning: 2
+    error: 3
+  design.noc:
+    warning: 7
+    error: 10
+  design.inheritance:
+    warning: 3
+    error: 5
+  coupling.cbo:
+    class:
+      warning: 10
+      error: 16
+    namespace:
+      warning: 10
+      error: 16
+  coupling.instability:
+    class:
+      maxWarning: 0.7
+      maxError: 0.9
+    namespace:
+      maxWarning: 0.7
+      maxError: 0.9
+  coupling.distance:
+    maxDistanceWarning: 0.2
+    maxDistanceError: 0.4
+  code-smell.constructor-overinjection:
+    warning: 6
+    error: 10
+  code-smell.long-parameter-list:
+    warning: 3
+    error: 5
+  design.type-coverage:
+    paramWarning: 90
+    paramError: 70
+    returnWarning: 90
+    returnError: 70
+    propertyWarning: 90
+    propertyError: 70

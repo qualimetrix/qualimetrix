@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Analysis presets: `--preset=strict|legacy|ci` for one-flag configuration. Multiple presets can be combined (`--preset=strict,ci`). Custom preset files supported via path (`--preset=./team.yaml`)
+- `rules` key now uses deep merge across pipeline stages — partial rule overrides in `qmx.yaml` no longer replace entire preset rule configurations
+
 ## [0.8.0] - 2026-03-26
 
 ### Changed

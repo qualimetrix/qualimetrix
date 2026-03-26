@@ -4,9 +4,10 @@
 
 Configuration is responsible for managing analysis settings. It supports:
 - **Configuration Pipeline** — extensible pipeline with priority-based stages
+- **Analysis Presets** — built-in named configurations (`--preset=strict,ci`)
 - Zero-config experience — auto-detection of paths from `composer.json`
 - Typed options for each rule
-- Config merging: defaults -> composer.json -> config file -> CLI options
+- Config merging: defaults -> composer.json -> presets -> config file -> CLI options
 - Extensible loading (YAML, PHP)
 
 ## Structure
@@ -28,13 +29,21 @@ Configuration/
 │   ├── ConfigurationPipeline.php           # Implementation
 │   ├── ConfigurationContext.php            # Context (input + workDir)
 │   ├── ConfigurationLayer.php              # Configuration layer
+│   ├── ConfigDataNormalizer.php            # YAML → dot-notation normalizer
 │   ├── ResolvedConfiguration.php           # Final configuration
 │   └── Stage/
 │       ├── ConfigurationStageInterface.php # Stage contract
 │       ├── DefaultsStage.php               # Priority 0: defaults
 │       ├── ComposerDiscoveryStage.php      # Priority 10: composer.json
+│       ├── PresetStage.php                 # Priority 15: --preset
 │       ├── ConfigFileStage.php             # Priority 20: qmx.yaml
 │       └── CliStage.php                    # Priority 30: CLI options
+│
+├── Preset/                       # Analysis Presets
+│   ├── PresetResolver.php        # Resolves preset name → file path
+│   ├── strict.yaml               # Greenfield: tight thresholds
+│   ├── legacy.yaml               # Legacy: relaxed thresholds
+│   └── ci.yaml                   # CI: error-only exit codes
 │
 ├── Discovery/
 │   └── ComposerReader.php         # PSR-4 path extraction
@@ -57,16 +66,16 @@ automatically detecting paths from `composer.json`.
 ### Architecture
 
 ```
-+-------------------------------------------------------------+
-|                 ConfigurationPipeline                        |
-+-------------------------------------------------------------+
-|  +-----------+  +-------------+  +------------+  +-------+  |
-|  | Defaults  |->|  Composer   |->| ConfigFile |->|  CLI  |  |
-|  | (pri: 0)  |  |  (pri: 10)  |  | (pri: 20)  |  |(pri:30)| |
-|  +-----------+  +-------------+  +------------+  +-------+  |
-|                                                              |
-|  ConfigurationContext -> [Layers] -> ResolvedConfiguration   |
-+-------------------------------------------------------------+
++--------------------------------------------------------------------------+
+|                        ConfigurationPipeline                             |
++--------------------------------------------------------------------------+
+|  +---------+ +---------+ +--------+ +----------+ +-----+                 |
+|  |Defaults |>|Composer |>| Preset |>|ConfigFile|>| CLI |                 |
+|  |(pri: 0) | |(pri: 10)| |(pri:15)| |(pri: 20) | |(30) |                 |
+|  +---------+ +---------+ +--------+ +----------+ +-----+                 |
+|                                                                          |
+|  ConfigurationContext -> [Layers] -> ResolvedConfiguration               |
++--------------------------------------------------------------------------+
 ```
 
 ### Stages
@@ -75,6 +84,7 @@ automatically detecting paths from `composer.json`.
 | ------------------------ | -------- | ------------- | ----------------------------------------------------------------------------- |
 | `DefaultsStage`          | 0        | hardcoded     | Defaults: `paths=['.']`, `excludes=['vendor','node_modules','.git']`          |
 | `ComposerDiscoveryStage` | 10       | composer.json | Extracts PSR-4 autoload paths                                                 |
+| `PresetStage`            | 15       | `--preset`    | Named presets: `strict`, `legacy`, `ci` (or custom YAML files)                |
 | `ConfigFileStage`        | 20       | qmx.yaml      | Loads config file                                                             |
 | `CliStage`               | 30       | CLI           | Parses `--exclude`, `--exclude-path`, `--format`, `--cache-*`, paths argument |
 
@@ -138,6 +148,8 @@ final readonly class EnvironmentStage implements ConfigurationStageInterface
 CLI options            # Highest priority
      |
 Config file            # qmx.yaml
+     |
+Presets                # --preset=strict,ci
      |
 Defaults               # Default values in *Options classes
 ```
@@ -342,6 +354,47 @@ Merges default computed metric definitions with user overrides from the `compute
 
 ---
 
+## Analysis Presets
+
+Presets are named configurations that provide sensible defaults for common scenarios.
+Multiple presets can be combined: `--preset=strict,ci`.
+
+### Built-in Presets
+
+| Preset   | Axis        | Description                                                        |
+| -------- | ----------- | ------------------------------------------------------------------ |
+| `strict` | Severity    | Greenfield projects: ~30-50% tighter thresholds, `failOn: warning` |
+| `legacy` | Severity    | Legacy projects: ~2x relaxed thresholds, noisy rules disabled      |
+| `ci`     | Environment | CI pipelines: `failOn: error`                                      |
+
+### Usage
+
+```bash
+# Single preset
+bin/qmx check src/ --preset=strict
+
+# Multiple presets (merged left to right)
+bin/qmx check src/ --preset=strict,ci
+
+# Custom preset file
+bin/qmx check src/ --preset=./team-preset.yaml
+
+# Mix built-in and custom
+bin/qmx check src/ --preset=legacy,./overrides.yaml
+```
+
+### Priority
+
+Presets sit at priority 15 in the pipeline — they override defaults but are overridden
+by `qmx.yaml` and CLI options. This means presets are "starting points" that users can customize.
+
+### Custom Presets
+
+Custom preset files use the same YAML format as `qmx.yaml`. Specify a file path
+(relative to working directory or absolute) via `--preset=./path/to/preset.yaml`.
+
+---
+
 ## CLI Options
 
 ### Short Aliases
@@ -503,6 +556,8 @@ Setting structure:
     - [x] ComposerDiscoveryStage (priority: 10)
     - [x] ConfigFileStage (priority: 20)
     - [x] CliStage (priority: 30)
+    - [x] PresetStage (priority: 15)
+    - [x] ConfigDataNormalizer (shared YAML normalization)
     - [x] ConfigurationPipeline
     - [x] ConfigurationStageCompilerPass
     - [x] Integration tests

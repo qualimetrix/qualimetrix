@@ -26,6 +26,7 @@ final class CheckCommandDefinition
      */
     public static function addOptions(Command $command, RuleRegistryInterface $ruleRegistry): array
     {
+        self::addPresetOptions($command);
         self::addPathArgument($command);
         self::addFileOptions($command);
         self::addOutputOptions($command);
@@ -41,6 +42,17 @@ final class CheckCommandDefinition
         self::addGenericRuleOptions($command);
 
         return $ruleOptionNames;
+    }
+
+    private static function addPresetOptions(Command $command): void
+    {
+        $command->addOption(
+            'preset',
+            null,
+            InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
+            'Apply a named preset (strict, legacy, ci) or path to preset file (can be repeated or comma-separated)',
+            [],
+        );
     }
 
     private static function addPathArgument(Command $command): void

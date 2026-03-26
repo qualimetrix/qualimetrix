@@ -91,6 +91,7 @@ Each domain has its own `README.md` with detailed structure, classes, and contra
 - **Caching**: AST caching for faster repeated runs
 - **Progress Reporting**: Progress bar, PSR-3 logging
 - **Technical Debt**: Remediation time estimation, debt summary in reports
+- **Analysis Presets**: Built-in presets (`--preset=strict|legacy|ci`), composable, custom presets via YAML files
 - **Git Hooks**: Automatic pre-commit checks
 
 ---
@@ -286,6 +287,11 @@ composer build:js       # Rebuild HTML report JS bundle
 # Basic analysis
 bin/qmx check src/
 bin/qmx check src/ --format=json --workers=0
+
+# Presets
+bin/qmx check src/ --preset=strict          # Greenfield: tight thresholds
+bin/qmx check src/ --preset=legacy           # Legacy: relaxed thresholds
+bin/qmx check src/ --preset=strict,ci        # Combine multiple presets
 
 # Git integration
 bin/qmx check src/ --analyze=git:staged
