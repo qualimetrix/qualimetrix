@@ -212,6 +212,7 @@ deptrac:
       - Core
     Infra.Rule:
       - Core
+      - Configuration
     Infra.Git:
       - Core
       - Configuration
