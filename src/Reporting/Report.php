@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Reporting;
 
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Namespace_\NamespaceTree;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Reporting\Health\HealthScore;
@@ -37,6 +38,7 @@ final readonly class Report
         public int $techDebtMinutes = 0,
         public ?float $debtPer1kLoc = null,
         public array $topIssues = [],
+        public ?NamespaceTree $namespaceTree = null,
     ) {}
 
     /**

@@ -13,6 +13,7 @@ use Qualimetrix\Analysis\Aggregator\MethodToClassAggregator;
 use Qualimetrix\Analysis\Aggregator\NamespaceToProjectAggregator;
 use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Namespace_\NamespaceTree;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Metrics\Complexity\CyclomaticComplexityCollector;
@@ -168,7 +169,8 @@ final class GlobalFunctionAggregationTest extends TestCase
         $classToNamespace = new ClassToNamespaceAggregator();
         $classToNamespace->aggregate($repository, $definitions);
 
-        $namespaceToProject = new NamespaceToProjectAggregator();
+        $tree = new NamespaceTree($repository->getNamespaces());
+        $namespaceToProject = new NamespaceToProjectAggregator($tree);
         $namespaceToProject->aggregate($repository, $definitions);
 
         $projectBag = $repository->get(SymbolPath::forProject());

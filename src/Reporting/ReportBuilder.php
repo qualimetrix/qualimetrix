@@ -6,6 +6,7 @@ namespace Qualimetrix\Reporting;
 
 use InvalidArgumentException;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Namespace_\NamespaceTree;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
 
@@ -23,6 +24,7 @@ final class ReportBuilder
     private int $filesSkipped = 0;
     private float $duration = 0.0;
     private ?MetricRepositoryInterface $metrics = null;
+    private ?NamespaceTree $namespaceTree = null;
 
     /**
      * Creates a new builder instance.
@@ -115,6 +117,16 @@ final class ReportBuilder
     }
 
     /**
+     * Sets the canonical namespace tree from the analysis pipeline.
+     */
+    public function namespaceTree(?NamespaceTree $tree): self
+    {
+        $this->namespaceTree = $tree;
+
+        return $this;
+    }
+
+    /**
      * Builds the Report instance.
      */
     public function build(): Report
@@ -137,6 +149,7 @@ final class ReportBuilder
             errorCount: $errorCount,
             warningCount: $warningCount,
             metrics: $this->metrics,
+            namespaceTree: $this->namespaceTree,
         );
     }
 }

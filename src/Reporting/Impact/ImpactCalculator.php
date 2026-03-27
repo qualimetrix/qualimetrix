@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Reporting\Impact;
 
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Namespace_\NamespaceTree;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Reporting\Debt\RemediationTimeRegistry;
@@ -36,13 +37,13 @@ final readonly class ImpactCalculator
      *
      * @return list<RankedIssue>
      */
-    public function computeTopIssues(array $violations, MetricRepositoryInterface $metrics): array
+    public function computeTopIssues(array $violations, MetricRepositoryInterface $metrics, ?NamespaceTree $tree = null): array
     {
         if ($violations === []) {
             return [];
         }
 
-        $index = $this->classRankResolver->buildIndex($metrics);
+        $index = $this->classRankResolver->buildIndex($metrics, $tree);
         $medianFallback = $index->getMedianRank();
         $ranked = [];
 

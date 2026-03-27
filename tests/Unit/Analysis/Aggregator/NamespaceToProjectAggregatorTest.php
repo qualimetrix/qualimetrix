@@ -14,6 +14,7 @@ use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricDefinition;
 use Qualimetrix\Core\Metric\SymbolLevel;
+use Qualimetrix\Core\Namespace_\NamespaceTree;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Metrics\Maintainability\MaintainabilityIndexCollector;
 
@@ -106,7 +107,8 @@ final class NamespaceToProjectAggregatorTest extends TestCase
             ),
         ];
 
-        $aggregator = new NamespaceToProjectAggregator();
+        $tree = new NamespaceTree(['App\\Service', 'App\\Repository']);
+        $aggregator = new NamespaceToProjectAggregator($tree);
         $aggregator->aggregate($repository, $definitions);
 
         $projectMetrics = $repository->get(SymbolPath::forProject());

@@ -39,10 +39,10 @@ final class MetricAggregator
      *
      * Returns a NamespaceTree built from leaf namespaces discovered during aggregation.
      */
-    public function aggregate(MetricRepositoryInterface $repository): NamespaceTree
+    public function aggregate(MetricRepositoryInterface $repository, ?NamespaceTree $existingTree = null): NamespaceTree
     {
         if ($this->definitions === []) {
-            return new NamespaceTree([]);
+            return $existingTree ?? new NamespaceTree([]);
         }
 
         $profiler = ProfilerHolder::get();
@@ -55,13 +55,15 @@ final class MetricAggregator
             $profiler->stop('aggregation.methods_to_classes');
         }
 
-        // Class→namespace aggregation: after this phase, repository contains leaf namespaces
+        // Class→namespace aggregation: runs even during re-aggregation because
+        // global collectors add new class-level metrics that need namespace rollup.
         $profiler->start('aggregation.to_namespaces', 'aggregation');
         (new ClassToNamespaceAggregator())->aggregate($repository, $this->definitions);
         $profiler->stop('aggregation.to_namespaces');
 
-        // Build the namespace tree from leaf namespaces
-        $tree = new NamespaceTree($repository->getNamespaces());
+        // Reuse pre-built tree when available (re-aggregation pass) to avoid
+        // rebuilding from contaminated repository that already contains parent namespaces.
+        $tree = $existingTree ?? new NamespaceTree($repository->getNamespaces());
 
         // Namespace hierarchy: aggregate leaf metrics into parent namespaces
         $profiler->start('aggregation.namespace_hierarchy', 'aggregation');

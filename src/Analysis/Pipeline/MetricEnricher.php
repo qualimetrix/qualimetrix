@@ -112,7 +112,7 @@ final class MetricEnricher
         if ($this->globalDefinitions !== []) {
             $profiler?->start('aggregation.global', 'pipeline');
             $globalAggregator = new MetricAggregator($this->globalDefinitions);
-            $globalAggregator->aggregate($repository); // Ignore returned tree — primary tree already captured
+            $globalAggregator->aggregate($repository, $namespaceTree); // Reuse existing tree
             $profiler?->stop('aggregation.global');
         }
 

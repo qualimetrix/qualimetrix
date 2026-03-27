@@ -74,6 +74,7 @@ final class ResultPresenter
             ->filesSkipped($analysisResult->filesSkipped)
             ->duration($analysisResult->duration)
             ->metrics($analysisResult->metrics)
+            ->namespaceTree($analysisResult->namespaceTree)
             ->build();
         $report = $this->summaryEnricher->enrich($report, $partialAnalysis);
         $formattedOutput = $formatter->format($report, $context);
