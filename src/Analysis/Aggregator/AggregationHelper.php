@@ -358,4 +358,65 @@ final class AggregationHelper
 
         return new AggregationValues($values, $weights);
     }
+
+    /**
+     * Builds a map of file path to namespace based on class/method/function symbols.
+     *
+     * @return array<string, string> file path => namespace
+     */
+    public static function buildFileToNamespaceMap(MetricRepositoryInterface $repository): array
+    {
+        $map = [];
+
+        foreach ($repository->all(SymbolType::Class_) as $classInfo) {
+            $namespace = $classInfo->symbolPath->namespace;
+
+            if ($namespace !== null) {
+                $map[$classInfo->file] = $namespace;
+            }
+        }
+
+        foreach ($repository->all(SymbolType::Method) as $methodInfo) {
+            $namespace = $methodInfo->symbolPath->namespace;
+
+            if ($namespace !== null && !isset($map[$methodInfo->file])) {
+                $map[$methodInfo->file] = $namespace;
+            }
+        }
+
+        foreach ($repository->all(SymbolType::Function_) as $funcInfo) {
+            $namespace = $funcInfo->symbolPath->namespace;
+
+            if ($namespace !== null && !isset($map[$funcInfo->file])) {
+                $map[$funcInfo->file] = $namespace;
+            }
+        }
+
+        return $map;
+    }
+
+    /**
+     * Builds a map of namespace to list of File symbols.
+     *
+     * @param array<string, string> $fileToNamespace
+     *
+     * @return array<string, list<SymbolInfo>>
+     */
+    public static function buildNamespaceToFileSymbolsMap(
+        MetricRepositoryInterface $repository,
+        array $fileToNamespace,
+    ): array {
+        $map = [];
+
+        foreach ($repository->all(SymbolType::File) as $fileInfo) {
+            $filePath = $fileInfo->file;
+
+            if (isset($fileToNamespace[$filePath])) {
+                $namespace = $fileToNamespace[$filePath];
+                $map[$namespace][] = $fileInfo;
+            }
+        }
+
+        return $map;
+    }
 }

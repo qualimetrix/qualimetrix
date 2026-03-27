@@ -7,12 +7,17 @@ namespace Qualimetrix\Analysis\Aggregator;
 use Qualimetrix\Core\Metric\MetricDefinition;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Metric\SymbolLevel;
+use Qualimetrix\Core\Namespace_\NamespaceTree;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 
 final class NamespaceToProjectAggregator implements AggregationPhaseInterface
 {
+    public function __construct(
+        private readonly ?NamespaceTree $tree = null,
+    ) {}
+
     /**
      * @param list<MetricDefinition> $definitions
      */
@@ -76,7 +81,9 @@ final class NamespaceToProjectAggregator implements AggregationPhaseInterface
 
             // Only aggregate leaf namespaces (those with class/method/function symbols)
             // to avoid double-counting parent namespaces whose I/A/D are derived from children.
-            $leafNamespaces = $this->getLeafNamespaces($repository);
+            $leafNamespaces = $this->tree !== null
+                ? $this->tree->getLeaves()
+                : $this->getLeafNamespaces($repository);
 
             foreach ($leafNamespaces as $namespace) {
                 $nsBag = $repository->get(SymbolPath::forNamespace($namespace));
@@ -109,7 +116,7 @@ final class NamespaceToProjectAggregator implements AggregationPhaseInterface
     /**
      * Returns namespaces that have direct class/method/function symbols (leaf namespaces).
      *
-     * Parent namespaces created by NamespaceHierarchyAggregator are excluded
+     * Parent namespaces created by TreeAwareNamespaceAggregator are excluded
      * because their I/A/D metrics are derived from children and would cause double-counting.
      *
      * @return list<string>

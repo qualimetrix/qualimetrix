@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Aggregator;
 use Qualimetrix\Core\Metric\MetricDefinition;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Metric\SymbolLevel;
+use Qualimetrix\Core\Namespace_\NamespaceTree;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
 
 /**
@@ -35,29 +36,43 @@ final class MetricAggregator
 
     /**
      * Aggregates metrics and stores results in the repository.
+     *
+     * Returns a NamespaceTree built from leaf namespaces discovered during aggregation.
      */
-    public function aggregate(MetricRepositoryInterface $repository): void
+    public function aggregate(MetricRepositoryInterface $repository): NamespaceTree
     {
         if ($this->definitions === []) {
-            return;
+            return new NamespaceTree([]);
         }
 
         $profiler = ProfilerHolder::get();
 
         // Skip method→class phase when no method-level definitions exist
         // (e.g., during re-aggregation of global collector metrics).
-        $phases = [];
         if ($this->hasMethodLevelDefinitions()) {
-            $phases['aggregation.methods_to_classes'] = new MethodToClassAggregator();
+            $profiler->start('aggregation.methods_to_classes', 'aggregation');
+            (new MethodToClassAggregator())->aggregate($repository, $this->definitions);
+            $profiler->stop('aggregation.methods_to_classes');
         }
-        $phases['aggregation.to_namespaces'] = new ClassToNamespaceAggregator();
-        $phases['aggregation.namespace_hierarchy'] = new NamespaceHierarchyAggregator();
-        $phases['aggregation.to_project'] = new NamespaceToProjectAggregator();
 
-        foreach ($phases as $spanName => $phase) {
-            $profiler->start($spanName, 'aggregation');
-            $phase->aggregate($repository, $this->definitions);
-            $profiler->stop($spanName);
-        }
+        // Class→namespace aggregation: after this phase, repository contains leaf namespaces
+        $profiler->start('aggregation.to_namespaces', 'aggregation');
+        (new ClassToNamespaceAggregator())->aggregate($repository, $this->definitions);
+        $profiler->stop('aggregation.to_namespaces');
+
+        // Build the namespace tree from leaf namespaces
+        $tree = new NamespaceTree($repository->getNamespaces());
+
+        // Namespace hierarchy: aggregate leaf metrics into parent namespaces
+        $profiler->start('aggregation.namespace_hierarchy', 'aggregation');
+        (new TreeAwareNamespaceAggregator($tree))->aggregate($repository, $this->definitions);
+        $profiler->stop('aggregation.namespace_hierarchy');
+
+        // Project-level aggregation
+        $profiler->start('aggregation.to_project', 'aggregation');
+        (new NamespaceToProjectAggregator($tree))->aggregate($repository, $this->definitions);
+        $profiler->stop('aggregation.to_project');
+
+        return $tree;
     }
 }

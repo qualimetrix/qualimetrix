@@ -90,7 +90,7 @@ final class MetricEnricher
 
         $profiler?->start('aggregation', 'pipeline');
         $aggregator = new MetricAggregator($this->allDefinitions);
-        $aggregator->aggregate($repository);
+        $namespaceTree = $aggregator->aggregate($repository);
         $profiler?->stop('aggregation');
 
         $aggregationTime = microtime(true) - $phaseStartTime;
@@ -112,7 +112,7 @@ final class MetricEnricher
         if ($this->globalDefinitions !== []) {
             $profiler?->start('aggregation.global', 'pipeline');
             $globalAggregator = new MetricAggregator($this->globalDefinitions);
-            $globalAggregator->aggregate($repository);
+            $globalAggregator->aggregate($repository); // Ignore returned tree — primary tree already captured
             $profiler?->stop('aggregation.global');
         }
 
@@ -144,6 +144,6 @@ final class MetricEnricher
             ]);
         }
 
-        return new EnrichmentResult($cycles, $duplicateBlocks);
+        return new EnrichmentResult($namespaceTree, $cycles, $duplicateBlocks);
     }
 }

@@ -8,9 +8,7 @@ use Qualimetrix\Core\Metric\MetricDefinition;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Metric\SymbolLevel;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
-use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Symbol\SymbolType;
 
 final class ClassToNamespaceAggregator implements AggregationPhaseInterface
 {
@@ -31,8 +29,8 @@ final class ClassToNamespaceAggregator implements AggregationPhaseInterface
         }
 
         $profiler->start('aggregation.to_namespaces.build_map', 'aggregation');
-        $fileToNamespace = $this->buildFileToNamespaceMap($repository);
-        $namespaceToFileSymbols = $this->buildNamespaceToFileSymbolsMap($repository, $fileToNamespace);
+        $fileToNamespace = AggregationHelper::buildFileToNamespaceMap($repository);
+        $namespaceToFileSymbols = AggregationHelper::buildNamespaceToFileSymbolsMap($repository, $fileToNamespace);
         $profiler->stop('aggregation.to_namespaces.build_map');
 
         $profiler->start('aggregation.to_namespaces.process', 'aggregation');
@@ -67,64 +65,4 @@ final class ClassToNamespaceAggregator implements AggregationPhaseInterface
         $profiler->stop('aggregation.to_namespaces.process');
     }
 
-    /**
-     * Builds a map of file path to namespace based on class/method symbols.
-     *
-     * @return array<string, string> file path => namespace
-     */
-    private function buildFileToNamespaceMap(MetricRepositoryInterface $repository): array
-    {
-        $map = [];
-
-        foreach ($repository->all(SymbolType::Class_) as $classInfo) {
-            $namespace = $classInfo->symbolPath->namespace;
-
-            if ($namespace !== null) {
-                $map[$classInfo->file] = $namespace;
-            }
-        }
-
-        foreach ($repository->all(SymbolType::Method) as $methodInfo) {
-            $namespace = $methodInfo->symbolPath->namespace;
-
-            if ($namespace !== null && !isset($map[$methodInfo->file])) {
-                $map[$methodInfo->file] = $namespace;
-            }
-        }
-
-        foreach ($repository->all(SymbolType::Function_) as $funcInfo) {
-            $namespace = $funcInfo->symbolPath->namespace;
-
-            if ($namespace !== null && !isset($map[$funcInfo->file])) {
-                $map[$funcInfo->file] = $namespace;
-            }
-        }
-
-        return $map;
-    }
-
-    /**
-     * Builds a map of namespace to list of File symbols.
-     *
-     * @param array<string, string> $fileToNamespace
-     *
-     * @return array<string, list<SymbolInfo>>
-     */
-    private function buildNamespaceToFileSymbolsMap(
-        MetricRepositoryInterface $repository,
-        array $fileToNamespace,
-    ): array {
-        $map = [];
-
-        foreach ($repository->all(SymbolType::File) as $fileInfo) {
-            $filePath = $fileInfo->file;
-
-            if (isset($fileToNamespace[$filePath])) {
-                $namespace = $fileToNamespace[$filePath];
-                $map[$namespace][] = $fileInfo;
-            }
-        }
-
-        return $map;
-    }
 }

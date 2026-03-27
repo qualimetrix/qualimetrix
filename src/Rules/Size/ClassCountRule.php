@@ -77,6 +77,12 @@ final class ClassCountRule extends AbstractRule
         $violations = [];
 
         foreach ($context->metrics->all(SymbolType::Namespace_) as $namespaceInfo) {
+            // Skip parent namespaces — only analyze leaf namespaces
+            $namespace = $namespaceInfo->symbolPath->namespace;
+            if ($namespace !== null && $context->namespaceTree !== null && !$context->namespaceTree->isLeaf($namespace)) {
+                continue;
+            }
+
             $metrics = $context->metrics->get($namespaceInfo->symbolPath);
 
             // Get aggregated classCount (sum from all files in namespace)

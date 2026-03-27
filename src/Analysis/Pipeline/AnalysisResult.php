@@ -6,6 +6,7 @@ namespace Qualimetrix\Analysis\Pipeline;
 
 use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Namespace_\NamespaceTree;
 use Qualimetrix\Core\Suppression\Suppression;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
@@ -23,6 +24,7 @@ final readonly class AnalysisResult
         public float $duration,
         public MetricRepositoryInterface $metrics,
         public array $suppressions = [],
+        public ?NamespaceTree $namespaceTree = null,
     ) {}
 
     public function hasErrors(): bool
@@ -92,6 +94,7 @@ final readonly class AnalysisResult
             duration: max($this->duration, $other->duration),
             metrics: $mergedMetrics,
             suppressions: $mergedSuppressions,
+            namespaceTree: $this->namespaceTree ?? $other->namespaceTree,
         );
     }
 
