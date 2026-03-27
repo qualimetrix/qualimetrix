@@ -74,7 +74,11 @@ final class NamespaceToProjectAggregator implements AggregationPhaseInterface
                 $nsValues[$def->name] = [];
             }
 
-            foreach ($repository->getNamespaces() as $namespace) {
+            // Only aggregate leaf namespaces (those with class/method/function symbols)
+            // to avoid double-counting parent namespaces whose I/A/D are derived from children.
+            $leafNamespaces = $this->getLeafNamespaces($repository);
+
+            foreach ($leafNamespaces as $namespace) {
                 $nsBag = $repository->get(SymbolPath::forNamespace($namespace));
 
                 foreach ($namespaceCollectedDefs as $def) {
@@ -100,5 +104,35 @@ final class NamespaceToProjectAggregator implements AggregationPhaseInterface
         $projectPath = SymbolPath::forProject();
         $repository->add($projectPath, $projectBag, $firstFile, null);
         $profiler->stop('aggregation.to_project.process');
+    }
+
+    /**
+     * Returns namespaces that have direct class/method/function symbols (leaf namespaces).
+     *
+     * Parent namespaces created by NamespaceHierarchyAggregator are excluded
+     * because their I/A/D metrics are derived from children and would cause double-counting.
+     *
+     * @return list<string>
+     */
+    private function getLeafNamespaces(MetricRepositoryInterface $repository): array
+    {
+        $allNamespaces = $repository->getNamespaces();
+        $parentSet = [];
+
+        // A namespace is a parent if another namespace starts with it + "\"
+        foreach ($allNamespaces as $ns) {
+            $lastSlash = strrpos($ns, '\\');
+
+            while ($lastSlash !== false) {
+                $parentNs = substr($ns, 0, $lastSlash);
+                $parentSet[$parentNs] = true;
+                $lastSlash = strrpos($parentNs, '\\');
+            }
+        }
+
+        return array_values(array_filter(
+            $allNamespaces,
+            static fn(string $ns): bool => !isset($parentSet[$ns]),
+        ));
     }
 }
