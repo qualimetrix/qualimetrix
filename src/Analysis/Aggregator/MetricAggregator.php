@@ -51,6 +51,7 @@ final class MetricAggregator
             $phases['aggregation.methods_to_classes'] = new MethodToClassAggregator();
         }
         $phases['aggregation.to_namespaces'] = new ClassToNamespaceAggregator();
+        $phases['aggregation.namespace_hierarchy'] = new NamespaceHierarchyAggregator();
         $phases['aggregation.to_project'] = new NamespaceToProjectAggregator();
 
         foreach ($phases as $spanName => $phase) {

@@ -156,11 +156,14 @@ final class DependencyGraphTest extends TestCase
         $graph = $this->builder->build($deps);
         $namespaces = array_map(fn(SymbolPath $p) => $p->namespace ?? '', $graph->getAllNamespaces());
 
-        self::assertCount(4, $namespaces);
+        // 4 leaf namespaces + 2 parent namespaces (App, Vendor)
+        self::assertCount(6, $namespaces);
         self::assertContains('App\\Service', $namespaces);
         self::assertContains('App\\Domain', $namespaces);
         self::assertContains('Vendor\\Package', $namespaces);
         self::assertContains('Vendor\\Other', $namespaces);
+        self::assertContains('App', $namespaces);
+        self::assertContains('Vendor', $namespaces);
     }
 
     #[Test]
@@ -357,6 +360,124 @@ final class DependencyGraphTest extends TestCase
 
         self::assertCount(1, $graph->getAllDependencies());
         self::assertSame(1, $graph->getClassCe(SymbolPath::fromClassFqn('App\\Foo')));
+    }
+
+    // ---------------------------------------------------------------
+    // Parent namespace Ce/Ca tests
+    // ---------------------------------------------------------------
+
+    #[Test]
+    public function parent_namespace_ce_deps_between_children_are_internal(): void
+    {
+        $deps = [
+            $this->dep('A\\X\\Foo', 'A\\Y\\Bar'),
+        ];
+
+        $graph = $this->builder->build($deps);
+
+        // Both A\X and A\Y are children of A — dependency is internal to A
+        self::assertSame(0, $graph->getNamespaceCe(SymbolPath::fromNamespaceFqn('A')));
+    }
+
+    #[Test]
+    public function parent_namespace_ce_external_deps_cross_boundary(): void
+    {
+        $deps = [
+            $this->dep('A\\X\\Foo', 'B\\Bar'),
+        ];
+
+        $graph = $this->builder->build($deps);
+
+        // A\X\Foo depends on B\Bar — crosses A boundary
+        self::assertSame(1, $graph->getNamespaceCe(SymbolPath::fromNamespaceFqn('A')));
+    }
+
+    #[Test]
+    public function parent_namespace_ca_external_deps_cross_boundary(): void
+    {
+        $deps = [
+            $this->dep('B\\Bar', 'A\\X\\Foo'),
+        ];
+
+        $graph = $this->builder->build($deps);
+
+        // B\Bar depends on A\X\Foo — A gets Ca=1
+        self::assertSame(1, $graph->getNamespaceCa(SymbolPath::fromNamespaceFqn('A')));
+    }
+
+    #[Test]
+    public function parent_namespace_mixed_internal_and_external_deps(): void
+    {
+        $deps = [
+            // Internal to A — should NOT count
+            $this->dep('A\\X\\Foo', 'A\\Y\\Bar'),
+            $this->dep('A\\Y\\Bar', 'A\\X\\Baz'),
+            // External — should count for Ce(A)
+            $this->dep('A\\X\\Foo', 'B\\Qux'),
+            $this->dep('A\\Y\\Bar', 'C\\Quux'),
+            // External — should count for Ca(A)
+            $this->dep('D\\Service', 'A\\X\\Foo'),
+        ];
+
+        $graph = $this->builder->build($deps);
+
+        // Ce(A) = 2 unique external targets: B\Qux, C\Quux
+        self::assertSame(2, $graph->getNamespaceCe(SymbolPath::fromNamespaceFqn('A')));
+        // Ca(A) = 1 unique external source: D\Service
+        self::assertSame(1, $graph->getNamespaceCa(SymbolPath::fromNamespaceFqn('A')));
+    }
+
+    #[Test]
+    public function parent_namespace_deep_nesting_propagates_ce(): void
+    {
+        $deps = [
+            $this->dep('A\\B\\C\\Foo', 'D\\E\\Bar'),
+        ];
+
+        $graph = $this->builder->build($deps);
+
+        // The dependency crosses boundaries for both parent A and parent A\B
+        self::assertSame(1, $graph->getNamespaceCe(SymbolPath::fromNamespaceFqn('A')));
+        self::assertSame(1, $graph->getNamespaceCe(SymbolPath::fromNamespaceFqn('A\\B')));
+        // Leaf namespace A\B\C also gets Ce=1
+        self::assertSame(1, $graph->getNamespaceCe(SymbolPath::fromNamespaceFqn('A\\B\\C')));
+    }
+
+    #[Test]
+    public function leaf_namespace_ce_ca_not_affected_by_parent_ns_addition(): void
+    {
+        $deps = [
+            // Cross-namespace leaf dep: A\X -> B\Y
+            $this->dep('A\\X\\Foo', 'B\\Y\\Bar'),
+            // Internal to A parent (but cross leaf namespaces)
+            $this->dep('A\\X\\Baz', 'A\\Z\\Qux'),
+        ];
+
+        $graph = $this->builder->build($deps);
+
+        // Leaf namespace Ce/Ca should reflect their own leaf-level semantics
+        // A\X has 2 outgoing external deps (B\Y\Bar and A\Z\Qux are both outside A\X)
+        self::assertSame(2, $graph->getNamespaceCe(SymbolPath::fromNamespaceFqn('A\\X')));
+        // B\Y has Ca=1 (from A\X\Foo)
+        self::assertSame(1, $graph->getNamespaceCa(SymbolPath::fromNamespaceFqn('B\\Y')));
+        // A\Z has Ca=1 (from A\X\Baz)
+        self::assertSame(1, $graph->getNamespaceCa(SymbolPath::fromNamespaceFqn('A\\Z')));
+    }
+
+    #[Test]
+    public function parent_namespace_with_all_internal_deps_has_zero_coupling(): void
+    {
+        $deps = [
+            $this->dep('A\\X\\Foo', 'A\\Y\\Bar'),
+            $this->dep('A\\Y\\Bar', 'A\\Z\\Baz'),
+            $this->dep('A\\Z\\Baz', 'A\\X\\Foo'),
+        ];
+
+        $graph = $this->builder->build($deps);
+
+        // All deps are internal to A — no boundary crossing
+        self::assertSame(0, $graph->getNamespaceCe(SymbolPath::fromNamespaceFqn('A')));
+        self::assertSame(0, $graph->getNamespaceCa(SymbolPath::fromNamespaceFqn('A')));
     }
 
     private function dep(string $source, string $target, DependencyType $type = DependencyType::New_): Dependency

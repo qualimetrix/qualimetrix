@@ -84,9 +84,25 @@ final class DependencyGraphBuilder
             $canonicalNamespaceMap[$nsPath->toCanonical()] = $nsPath;
         }
 
-        // Precompute namespace Ce/Ca
+        // Discover parent namespaces from leaf namespaces
+        $parentNamespaces = $this->discoverParentNamespaces($namespaceMap);
+        foreach ($parentNamespaces as $nsPath) {
+            $canonicalNamespaceMap[$nsPath->toCanonical()] = $nsPath;
+        }
+
+        // Precompute namespace Ce/Ca (leaf namespaces)
         $namespaceCe = $this->computeNamespaceCe($dependencies, $canonicalNamespaceMap);
         $namespaceCa = $this->computeNamespaceCa($dependencies, $canonicalNamespaceMap);
+
+        // Compute Ce/Ca for parent namespaces (prefix-based internal/external semantics)
+        if ($parentNamespaces !== []) {
+            $this->computeParentNamespaceCouplings(
+                $dependencies,
+                $parentNamespaces,
+                $namespaceCe,
+                $namespaceCa,
+            );
+        }
 
         // Precompute class-level Ce/Ca (unique targets/sources per class)
         $classCe = $this->computeClassCe($bySource);
@@ -199,6 +215,114 @@ final class DependencyGraphBuilder
         }
 
         return $result;
+    }
+
+    /**
+     * Discovers parent namespaces from leaf namespaces.
+     *
+     * For each leaf namespace like "App\Service\User", generates parent
+     * SymbolPaths "App\Service" and "App" (if not already leaf namespaces).
+     *
+     * @param array<string, SymbolPath> $leafNamespaceMap raw namespace string => SymbolPath
+     *
+     * @return array<string, SymbolPath> raw namespace string => SymbolPath (parents only, excluding existing leaves)
+     */
+    private function discoverParentNamespaces(array $leafNamespaceMap): array
+    {
+        $parents = [];
+
+        foreach ($leafNamespaceMap as $ns => $nsPath) {
+            $lastSlash = strrpos($ns, '\\');
+
+            while ($lastSlash !== false) {
+                $parentNs = substr($ns, 0, $lastSlash);
+
+                // Already discovered as parent — ancestors already handled
+                if (isset($parents[$parentNs])) {
+                    break;
+                }
+
+                // Add as parent even if it's a leaf: when a leaf namespace also has
+                // child namespaces, it needs prefix-based Ce/Ca (package-level semantics)
+                // instead of the default exact-match leaf Ce/Ca.
+                $parents[$parentNs] = SymbolPath::forNamespace($parentNs);
+
+                // If it's a leaf, its own ancestors will be discovered during
+                // its own iteration, so stop climbing here.
+                if (isset($leafNamespaceMap[$parentNs])) {
+                    break;
+                }
+
+                $lastSlash = strrpos($parentNs, '\\');
+            }
+        }
+
+        return $parents;
+    }
+
+    /**
+     * Computes Ce/Ca for parent namespaces using prefix-based boundary semantics.
+     *
+     * For a parent namespace P, a dependency is external if one side is inside P
+     * (namespace equals P or starts with P\) and the other side is outside P.
+     * Dependencies between child namespaces of the same parent are internal.
+     *
+     * @param array<Dependency> $dependencies
+     * @param array<string, SymbolPath> $parentNamespaces raw namespace string => SymbolPath
+     * @param array<string, StringSet> $namespaceCe modified in place
+     * @param array<string, StringSet> $namespaceCa modified in place
+     */
+    private function computeParentNamespaceCouplings(
+        array $dependencies,
+        array $parentNamespaces,
+        array &$namespaceCe,
+        array &$namespaceCa,
+    ): void {
+        // Build prefix list: "App\Service" => "App\Service\"
+        $parentPrefixes = [];
+        $parentCanonicals = [];
+
+        foreach ($parentNamespaces as $ns => $nsPath) {
+            $canonical = $nsPath->toCanonical();
+            $parentPrefixes[$ns] = $ns . '\\';
+            $parentCanonicals[$ns] = $canonical;
+            $namespaceCe[$canonical] = new StringSet();
+            $namespaceCa[$canonical] = new StringSet();
+        }
+
+        foreach ($dependencies as $dep) {
+            $sourceNs = $dep->source->namespace;
+            $targetNs = $dep->target->namespace;
+
+            if ($sourceNs === null || $targetNs === null) {
+                continue;
+            }
+
+            // Same leaf namespace — internal for ALL ancestors, skip
+            if ($sourceNs === $targetNs) {
+                continue;
+            }
+
+            foreach ($parentPrefixes as $parentNs => $prefix) {
+                $sourceInside = $sourceNs === $parentNs || str_starts_with($sourceNs, $prefix);
+                $targetInside = $targetNs === $parentNs || str_starts_with($targetNs, $prefix);
+
+                // Both inside or both outside — not a boundary crossing for this parent
+                if ($sourceInside === $targetInside) {
+                    continue;
+                }
+
+                $canonical = $parentCanonicals[$parentNs];
+
+                if ($sourceInside) {
+                    // Efferent: source inside parent, target outside
+                    $namespaceCe[$canonical] = $namespaceCe[$canonical]->add($dep->target->toCanonical());
+                } else {
+                    // Afferent: target inside parent, source outside
+                    $namespaceCa[$canonical] = $namespaceCa[$canonical]->add($dep->source->toCanonical());
+                }
+            }
+        }
     }
 
     /**
