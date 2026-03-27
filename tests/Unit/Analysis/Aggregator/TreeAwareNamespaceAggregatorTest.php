@@ -135,6 +135,50 @@ final class TreeAwareNamespaceAggregatorTest extends TestCase
     }
 
     #[Test]
+    public function parent_with_own_symbols_includes_them_in_aggregation(): void
+    {
+        $repository = new InMemoryMetricRepository();
+
+        // App has its own class (2 classes direct)
+        $repository->add(
+            SymbolPath::forClass('App', 'Bootstrap'),
+            (new MetricBag())->with('ccn.sum', 3),
+            'src/Bootstrap.php',
+            1,
+        );
+        $repository->add(
+            SymbolPath::forClass('App', 'Kernel'),
+            (new MetricBag())->with('ccn.sum', 7),
+            'src/Kernel.php',
+            1,
+        );
+        $this->addFileSymbol($repository, 'src/Bootstrap.php', ['classCount' => 1]);
+        $this->addFileSymbol($repository, 'src/Kernel.php', ['classCount' => 1]);
+        $this->addNamespaceBag($repository, 'App', ['ccn.sum' => 10.0]);
+
+        // App\Service has its own class
+        $this->addClassWithCcn($repository, 'App\\Service', 'UserService', 'src/Service/UserService.php', 5);
+        $this->addFileSymbol($repository, 'src/Service/UserService.php', ['classCount' => 1]);
+        $this->addNamespaceBag($repository, 'App\\Service', ['ccn.sum' => 5.0]);
+
+        // App is a parent (has child App\Service) but ALSO has own symbols
+        $tree = new NamespaceTree(['App', 'App\\Service']);
+        $definitions = $this->createDefinitions();
+
+        $aggregator = new TreeAwareNamespaceAggregator($tree);
+        $aggregator->aggregate($repository, $definitions);
+
+        $appMetrics = $repository->get(SymbolPath::forNamespace('App'));
+
+        // App should include its own classes (2) + App\Service classes (1) = 3
+        self::assertEquals(3, $appMetrics->get('classCount.sum'));
+        // CCN sum: 3 + 7 + 5 = 15
+        self::assertEquals(15, $appMetrics->get('ccn.sum'));
+        // Symbol counts: 3 classes total (Bootstrap, Kernel, UserService)
+        self::assertSame(3, $appMetrics->get('symbolClassCount'));
+    }
+
+    #[Test]
     public function no_parent_namespaces_does_nothing(): void
     {
         $repository = new InMemoryMetricRepository();

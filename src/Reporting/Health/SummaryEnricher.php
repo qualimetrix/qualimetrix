@@ -35,7 +35,7 @@ final readonly class SummaryEnricher
             return $report;
         }
 
-        $tree = new NamespaceTree($report->metrics->getNamespaces());
+        $tree = $report->namespaceTree ?? new NamespaceTree($report->metrics->getNamespaces());
 
         $healthScores = $this->buildHealthScores($report);
         $worstNamespaces = $this->buildWorstOffenders($report, SymbolType::Namespace_, self::DEFAULT_TOP_NAMESPACES, $tree);
@@ -49,7 +49,7 @@ final readonly class SummaryEnricher
             ? round($debtSummary->totalMinutes / ((float) $totalLoc / 1000), 1)
             : null;
 
-        $topIssues = $this->impactCalculator->computeTopIssues($report->violations, $report->metrics);
+        $topIssues = $this->impactCalculator->computeTopIssues($report->violations, $report->metrics, $tree);
 
         return new Report(
             violations: $report->violations,
@@ -65,6 +65,7 @@ final readonly class SummaryEnricher
             techDebtMinutes: $debtSummary->totalMinutes,
             debtPer1kLoc: $debtPer1kLoc,
             topIssues: $topIssues,
+            namespaceTree: $tree,
         );
     }
 

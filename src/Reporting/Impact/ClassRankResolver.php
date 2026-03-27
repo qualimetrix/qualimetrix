@@ -27,7 +27,7 @@ final readonly class ClassRankResolver
      * - namespace → max classRank among classes in that namespace (prefix-aware)
      * - median classRank across all classes (for fallback when classRank is unavailable)
      */
-    public function buildIndex(MetricRepositoryInterface $metrics): ClassRankIndex
+    public function buildIndex(MetricRepositoryInterface $metrics, ?NamespaceTree $tree = null): ClassRankIndex
     {
         /** @var array<string, float> $fileIndex file path → max classRank */
         $fileIndex = [];
@@ -36,7 +36,7 @@ final readonly class ClassRankResolver
         /** @var list<float> $allRanks all classRank values for median calculation */
         $allRanks = [];
 
-        $tree = new NamespaceTree($metrics->getNamespaces());
+        $tree = $tree ?? new NamespaceTree($metrics->getNamespaces());
 
         foreach ($metrics->all(SymbolType::Class_) as $symbolInfo) {
             if ($symbolInfo->symbolPath->type === null) {

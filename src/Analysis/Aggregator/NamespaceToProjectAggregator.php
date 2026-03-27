@@ -15,7 +15,7 @@ use Qualimetrix\Core\Symbol\SymbolType;
 final class NamespaceToProjectAggregator implements AggregationPhaseInterface
 {
     public function __construct(
-        private readonly ?NamespaceTree $tree = null,
+        private readonly NamespaceTree $tree,
     ) {}
 
     /**
@@ -81,9 +81,7 @@ final class NamespaceToProjectAggregator implements AggregationPhaseInterface
 
             // Only aggregate leaf namespaces (those with class/method/function symbols)
             // to avoid double-counting parent namespaces whose I/A/D are derived from children.
-            $leafNamespaces = $this->tree !== null
-                ? $this->tree->getLeaves()
-                : $this->getLeafNamespaces($repository);
+            $leafNamespaces = $this->tree->getLeaves();
 
             foreach ($leafNamespaces as $namespace) {
                 $nsBag = $repository->get(SymbolPath::forNamespace($namespace));
@@ -113,33 +111,4 @@ final class NamespaceToProjectAggregator implements AggregationPhaseInterface
         $profiler->stop('aggregation.to_project.process');
     }
 
-    /**
-     * Returns namespaces that have direct class/method/function symbols (leaf namespaces).
-     *
-     * Parent namespaces created by TreeAwareNamespaceAggregator are excluded
-     * because their I/A/D metrics are derived from children and would cause double-counting.
-     *
-     * @return list<string>
-     */
-    private function getLeafNamespaces(MetricRepositoryInterface $repository): array
-    {
-        $allNamespaces = $repository->getNamespaces();
-        $parentSet = [];
-
-        // A namespace is a parent if another namespace starts with it + "\"
-        foreach ($allNamespaces as $ns) {
-            $lastSlash = strrpos($ns, '\\');
-
-            while ($lastSlash !== false) {
-                $parentNs = substr($ns, 0, $lastSlash);
-                $parentSet[$parentNs] = true;
-                $lastSlash = strrpos($parentNs, '\\');
-            }
-        }
-
-        return array_values(array_filter(
-            $allNamespaces,
-            static fn(string $ns): bool => !isset($parentSet[$ns]),
-        ));
-    }
 }
