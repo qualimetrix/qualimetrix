@@ -11,13 +11,18 @@
   <header>
     <nav id="breadcrumb"></nav>
     <div id="controls">
+      <div id="view-tabs" role="tablist">
+        <button class="view-tab active" data-view="treemap" role="tab" aria-selected="true" aria-controls="treemap">Treemap</button>
+        <button class="view-tab" data-view="martin" role="tab" aria-selected="false" aria-controls="martin-diagram">Martin Diagram</button>
+      </div>
       <select id="metric-selector"></select>
       <input id="search" type="text" placeholder="Search namespaces and classes...">
     </div>
   </header>
   <div id="partial-warning" style="display:none"></div>
   <main id="split-layout">
-    <div id="treemap"></div>
+    <div id="treemap" role="tabpanel"></div>
+    <div id="martin-diagram" role="tabpanel" style="display:none"></div>
     <div id="resize-handle"></div>
     <div id="detail-panel">
       <div id="detail-sidebar">

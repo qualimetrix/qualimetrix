@@ -20,6 +20,9 @@ export default defineConfig({
         'd3-color',
         'd3-interpolate',
         'd3-transition',
+        'd3-axis',
+        'd3-format',
+        'd3-shape',
       ],
       output: {
         globals: {
@@ -29,6 +32,9 @@ export default defineConfig({
           'd3-color': 'd3',
           'd3-interpolate': 'd3',
           'd3-transition': 'd3',
+          'd3-axis': 'd3',
+          'd3-format': 'd3',
+          'd3-shape': 'd3',
         },
       },
     },

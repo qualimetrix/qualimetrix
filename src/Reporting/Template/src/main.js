@@ -1,7 +1,8 @@
 /**
  * Qualimetrix HTML Report — Main Entry Point
  *
- * Reads embedded JSON data and renders the interactive treemap report.
+ * Reads embedded JSON data and renders the interactive report.
+ * Supports two views: Treemap and Martin Diagram (Instability/Abstractness scatter).
  */
 
 import { hierarchy, treemap, treemapSquarify } from 'd3-hierarchy';
@@ -13,6 +14,7 @@ import { createSearchHandler } from './search.js';
 import { renderDetail, setNavigateTo } from './detail.js';
 import { computeSubtreeMetrics } from './subtree.js';
 import { initHints } from './hints.js';
+import { renderMartinDiagram, cleanupTooltip as cleanupMartinTooltip } from './martin-diagram.js';
 
 /** @type {import('./types').ReportData} */
 let DATA;
@@ -31,6 +33,9 @@ let colorScale;
 
 /** @type {HTMLElement|null} Tooltip element */
 let tooltip = null;
+
+/** @type {string} Current view: 'treemap' or 'martin' */
+let currentView = 'treemap';
 
 /** Debounce timer for resize */
 let resizeTimer = null;
@@ -92,7 +97,8 @@ export function init() {
   initMetricSelector(DATA.computedMetricDefinitions);
   initBreadcrumb();
   initSearch();
-  initHashNavigation(treeData, navigateTo, initialNode);
+  initViewTabs();
+  initHashNavigation(treeData, navigateTo, initialNode, switchView);
   setNavigateTo(navigateTo);
   renderTreemap(currentNode);
   updateBreadcrumb(currentNode);
@@ -107,7 +113,7 @@ export function init() {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(() => {
       if (treemapNode) {
-        renderTreemap(treemapNode);
+        renderActiveView(treemapNode);
       }
     }, 150);
   });
@@ -158,7 +164,7 @@ function initBreadcrumb() {
     const target = path === '' ? treeData : findNode(treeData, path);
     if (target) {
       navigateTo(target);
-      const hash = generateHash(target);
+      const hash = generateHash(target, currentView);
       if (hash) {
         window.location.hash = hash;
       } else {
@@ -254,6 +260,11 @@ function renderTreemap(node) {
     const div = document.createElement('div');
     div.className = 'node';
     div.setAttribute('data-path', sourceNode.path || '');
+    div.setAttribute('data-testid', `treemap-node-${sourceNode.name}`);
+    div.setAttribute('data-type', sourceNode.type || '');
+    div.setAttribute('data-name', sourceNode.name || '');
+    div.setAttribute('role', 'button');
+    div.setAttribute('aria-label', sourceNode.name);
 
     // Position
     div.style.left = child.x0 + 'px';
@@ -316,11 +327,11 @@ function renderTreemap(node) {
       if (sourceNode.children && sourceNode.children.length > 0 && sourceNode.type !== 'class') {
         // Drill down into namespace
         navigateTo(sourceNode);
-        window.location.hash = generateHash(sourceNode);
+        window.location.hash = generateHash(sourceNode, currentView);
       } else {
         // Select class — show detail
         selectNode(sourceNode);
-        window.location.hash = generateHash(sourceNode);
+        window.location.hash = generateHash(sourceNode, currentView);
       }
     });
 
@@ -340,6 +351,9 @@ function renderLeafNode(container, node, width, height) {
   const div = document.createElement('div');
   div.className = 'node';
   div.setAttribute('data-path', node.path || '');
+  div.setAttribute('data-testid', `treemap-node-${node.name}`);
+  div.setAttribute('data-type', node.type || '');
+  div.setAttribute('data-name', node.name || '');
   div.style.left = '0px';
   div.style.top = '0px';
   div.style.width = width + 'px';
@@ -399,7 +413,7 @@ function navigateTo(node) {
   if (currentNode === node) return;
   currentNode = node;
   treemapNode = node;
-  renderTreemap(node);
+  renderActiveView(node);
   renderDetail(node, DATA.summary, currentMetric);
   updateBreadcrumb(node);
 }
@@ -625,22 +639,29 @@ function animateColorTransition() {
 // Resizable split panel
 // ---------------------------------------------------------------------------
 
+function getActiveViewEl() {
+  return currentView === 'martin'
+    ? document.getElementById('martin-diagram')
+    : document.getElementById('treemap');
+}
+
 function initResizeHandle() {
   const handle = document.getElementById('resize-handle');
-  const treemapEl = document.getElementById('treemap');
   const detailEl = document.getElementById('detail-panel');
   const layout = document.getElementById('split-layout');
 
-  if (!handle || !treemapEl || !detailEl || !layout) return;
+  if (!handle || !detailEl || !layout) return;
 
   let isDragging = false;
   let startY = 0;
-  let startTreemapHeight = 0;
+  let startHeight = 0;
 
   handle.addEventListener('mousedown', (e) => {
+    const viewEl = getActiveViewEl();
+    if (!viewEl) return;
     isDragging = true;
     startY = e.clientY;
-    startTreemapHeight = treemapEl.getBoundingClientRect().height;
+    startHeight = viewEl.getBoundingClientRect().height;
     handle.classList.add('dragging');
     document.body.style.cursor = 'row-resize';
     document.body.style.userSelect = 'none';
@@ -650,16 +671,19 @@ function initResizeHandle() {
   document.addEventListener('mousemove', (e) => {
     if (!isDragging) return;
 
+    const viewEl = getActiveViewEl();
+    if (!viewEl) return;
+
     const delta = e.clientY - startY;
     const layoutHeight = layout.getBoundingClientRect().height;
     const handleHeight = handle.getBoundingClientRect().height;
-    const newTreemapHeight = Math.max(100, Math.min(
+    const newHeight = Math.max(100, Math.min(
       layoutHeight - handleHeight - 100,
-      startTreemapHeight + delta,
+      startHeight + delta,
     ));
 
-    treemapEl.style.flex = 'none';
-    treemapEl.style.height = newTreemapHeight + 'px';
+    viewEl.style.flex = 'none';
+    viewEl.style.height = newHeight + 'px';
     detailEl.style.flex = '1';
   });
 
@@ -670,11 +694,126 @@ function initResizeHandle() {
     document.body.style.cursor = '';
     document.body.style.userSelect = '';
 
-    // Re-render treemap with new dimensions
+    // Re-render active view with new dimensions
     if (treemapNode) {
-      renderTreemap(treemapNode);
+      renderActiveView(treemapNode);
     }
   });
+}
+
+// ---------------------------------------------------------------------------
+// View switching (Treemap / Martin Diagram)
+// ---------------------------------------------------------------------------
+
+/**
+ * Initializes the view tab buttons.
+ */
+function initViewTabs() {
+  const tabs = document.getElementById('view-tabs');
+  if (!tabs) return;
+
+  tabs.addEventListener('click', (e) => {
+    const btn = e.target.closest('.view-tab');
+    if (!btn) return;
+
+    const view = btn.getAttribute('data-view');
+    if (view && view !== currentView) {
+      switchView(view);
+      // Update hash to reflect the view
+      if (treemapNode) {
+        const hash = generateHash(treemapNode, currentView);
+        if (hash) {
+          window.location.hash = hash;
+        } else {
+          history.pushState(null, '', window.location.pathname + window.location.search);
+        }
+      }
+    }
+  });
+}
+
+/**
+ * Switches between treemap and Martin diagram views.
+ *
+ * @param {string} view - 'treemap' or 'martin'
+ */
+function switchView(view) {
+  if (view === currentView) return;
+  currentView = view;
+
+  const treemapEl = document.getElementById('treemap');
+  const martinEl = document.getElementById('martin-diagram');
+  const metricSel = document.getElementById('metric-selector');
+  const searchEl = document.getElementById('search');
+
+  if (treemapEl) {
+    treemapEl.style.display = view === 'treemap' ? '' : 'none';
+    // Reset drag-resize inline styles so flex layout takes over
+    if (view === 'treemap') {
+      treemapEl.style.removeProperty('flex');
+      treemapEl.style.removeProperty('height');
+    }
+  }
+  if (martinEl) {
+    martinEl.style.display = view === 'martin' ? '' : 'none';
+    if (view === 'martin') {
+      martinEl.style.removeProperty('flex');
+      martinEl.style.removeProperty('height');
+    }
+  }
+
+  // Clean up Martin diagram tooltip when leaving that view
+  if (view !== 'martin') {
+    cleanupMartinTooltip();
+  }
+
+  // Metric selector and search are only relevant for treemap
+  if (metricSel) metricSel.style.display = view === 'treemap' ? '' : 'none';
+  if (searchEl) searchEl.style.display = view === 'treemap' ? '' : 'none';
+
+  // Update tab active state and ARIA
+  const tabs = document.querySelectorAll('.view-tab');
+  for (const tab of tabs) {
+    const isActive = tab.getAttribute('data-view') === view;
+    tab.classList.toggle('active', isActive);
+    tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+  }
+
+  // Render the active view
+  if (treemapNode) {
+    renderActiveView(treemapNode);
+  }
+}
+
+/**
+ * Renders the currently active view for the given node.
+ *
+ * @param {object} node - Tree node to render
+ */
+function renderActiveView(node) {
+  if (currentView === 'martin') {
+    const container = document.getElementById('martin-diagram');
+    if (container) {
+      renderMartinDiagram(node, container, {
+        onDrillDown: (ns) => {
+          navigateTo(ns);
+          window.location.hash = generateHash(ns, 'martin');
+        },
+        onSwitchToTreemap: (ns) => {
+          switchView('treemap');
+          navigateTo(ns);
+          window.location.hash = generateHash(ns, 'treemap');
+        },
+        onSelect: (ns) => {
+          currentNode = ns;
+          renderDetail(ns, DATA.summary, currentMetric);
+          updateBreadcrumb(ns);
+        },
+      });
+    }
+  } else {
+    renderTreemap(node);
+  }
 }
 
 // ---------------------------------------------------------------------------
