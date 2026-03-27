@@ -1,8 +1,12 @@
 /**
  * URL hash navigation for deep linking.
  *
- * Format: #ns:App/Payment (namespace), #cl:App/Payment/Processor (class)
- * Backslash \ → / in hash, standard encodeURIComponent for special chars.
+ * Formats:
+ *   #ns:App/Payment       — treemap view, navigate to namespace
+ *   #cl:App/Payment/Proc  — treemap view, navigate to class
+ *   #md:App/Payment       — Martin diagram view, navigate to namespace
+ *
+ * Backslash \ -> / in hash, standard encodeURIComponent for special chars.
  */
 
 import { findNode } from './tree.js';
@@ -10,8 +14,8 @@ import { findNode } from './tree.js';
 /**
  * Parses a URL hash into a navigation target.
  *
- * @param {string} hash - URL hash (e.g., '#ns:App/Payment')
- * @returns {{ type: 'namespace'|'class'|null, path: string }|null}
+ * @param {string} hash - URL hash (e.g., '#ns:App/Payment' or '#md:App/Payment')
+ * @returns {{ type: 'namespace'|'class'|null, path: string, view: 'treemap'|'martin' }|null}
  */
 export function parseHash(hash) {
   if (!hash || hash === '#') return null;
@@ -22,15 +26,31 @@ export function parseHash(hash) {
   if (colonIndex === -1) return null;
 
   const prefix = withoutHash.substring(0, colonIndex);
-  const encodedPath = withoutHash.substring(colonIndex + 1);
+  const rest = withoutHash.substring(colonIndex + 1);
 
+  let decodedPath;
+  try {
+    decodedPath = decodeURIComponent(rest).replace(/\//g, '\\');
+  } catch {
+    return null; // Malformed percent-encoding
+  }
+
+  // Martin diagram: #md:App/Payment or #md: (root)
+  if (prefix === 'md') {
+    return {
+      type: decodedPath ? 'namespace' : null,
+      path: decodedPath,
+      view: 'martin',
+    };
+  }
+
+  // Treemap: #ns:App/Payment or #cl:App/Payment/Proc
   if (prefix !== 'ns' && prefix !== 'cl') return null;
-
-  const decodedPath = decodeURIComponent(encodedPath).replace(/\//g, '\\');
 
   return {
     type: prefix === 'ns' ? 'namespace' : 'class',
     path: decodedPath,
+    view: 'treemap',
   };
 }
 
@@ -38,16 +58,29 @@ export function parseHash(hash) {
  * Generates a URL hash for a tree node.
  *
  * @param {object} node - Tree node
- * @returns {string} URL hash (e.g., '#ns:App/Payment')
+ * @param {string} [view='treemap'] - Current view ('treemap' or 'martin')
+ * @returns {string} URL hash
  */
-export function generateHash(node) {
-  if (!node || !node.path || node.type === 'project' || node.type === 'other') {
+export function generateHash(node, view = 'treemap') {
+  if (!node || node.type === 'other') {
     return '';
   }
 
-  const prefix = node.type === 'class' ? 'cl' : 'ns';
-  const encodedPath = encodeURIComponent(node.path.replace(/\\/g, '/'));
+  // For Martin view, always generate a hash (even for root/project nodes)
+  if (view === 'martin') {
+    const encodedPath = node.path
+      ? encodeURIComponent(node.path.replace(/\\/g, '/'))
+      : '';
+    return `#md:${encodedPath}`;
+  }
 
+  // Treemap: no hash for root/project
+  if (!node.path || node.type === 'project') {
+    return '';
+  }
+
+  const encodedPath = encodeURIComponent(node.path.replace(/\\/g, '/'));
+  const prefix = node.type === 'class' ? 'cl' : 'ns';
   return `#${prefix}:${encodedPath}`;
 }
 
@@ -56,20 +89,30 @@ export function generateHash(node) {
  *
  * @param {object} rootNode - Root tree node
  * @param {function} navigateTo - Callback to navigate to a node
- * @param {object} [defaultNode] - Node to navigate to when hash is empty (browser back to root)
+ * @param {object} [defaultNode] - Node to navigate to when hash is empty
+ * @param {function} [switchView] - Callback to switch view ('treemap' or 'martin')
  */
-export function initHashNavigation(rootNode, navigateTo, defaultNode) {
+export function initHashNavigation(rootNode, navigateTo, defaultNode, switchView) {
   function handleHash() {
     const parsed = parseHash(window.location.hash);
     if (!parsed) {
-      // Empty hash — navigate to default node (e.g., browser back to root)
+      if (switchView) switchView('treemap');
       if (defaultNode) navigateTo(defaultNode);
       return;
     }
 
-    const node = findNode(rootNode, parsed.path);
-    if (node) {
-      navigateTo(node);
+    if (switchView && parsed.view) {
+      switchView(parsed.view);
+    }
+
+    if (!parsed.path) {
+      // Root view (e.g., #md: with empty path)
+      if (defaultNode) navigateTo(defaultNode);
+    } else {
+      const node = findNode(rootNode, parsed.path);
+      if (node) {
+        navigateTo(node);
+      }
     }
   }
 
