@@ -6,6 +6,7 @@ namespace Qualimetrix\Reporting\Impact;
 
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Namespace_\NamespaceTree;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\Violation;
@@ -35,6 +36,8 @@ final readonly class ClassRankResolver
         /** @var list<float> $allRanks all classRank values for median calculation */
         $allRanks = [];
 
+        $tree = new NamespaceTree($metrics->getNamespaces());
+
         foreach ($metrics->all(SymbolType::Class_) as $symbolInfo) {
             if ($symbolInfo->symbolPath->type === null) {
                 continue;
@@ -62,17 +65,18 @@ final readonly class ClassRankResolver
 
             // Namespace index — populate for exact namespace and all parent namespaces
             $ns = $symbolInfo->symbolPath->namespace ?? '';
-            while ($ns !== '') {
+            if ($ns !== '') {
                 if (!isset($nsIndex[$ns]) || $rank > $nsIndex[$ns]) {
                     $nsIndex[$ns] = $rank;
                 }
 
-                $lastSlash = strrpos($ns, '\\');
-                $ns = $lastSlash !== false ? substr($ns, 0, $lastSlash) : '';
-            }
-
-            // Also handle global namespace
-            if (($symbolInfo->symbolPath->namespace ?? '') === '') {
+                foreach ($tree->getAncestors($ns) as $ancestor) {
+                    if (!isset($nsIndex[$ancestor]) || $rank > $nsIndex[$ancestor]) {
+                        $nsIndex[$ancestor] = $rank;
+                    }
+                }
+            } else {
+                // Handle global namespace
                 if (!isset($nsIndex['']) || $rank > $nsIndex['']) {
                     $nsIndex[''] = $rank;
                 }

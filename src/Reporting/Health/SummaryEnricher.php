@@ -7,6 +7,7 @@ namespace Qualimetrix\Reporting\Health;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefaults;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinitionHolder;
 use Qualimetrix\Core\Metric\MetricName;
+use Qualimetrix\Core\Namespace_\NamespaceTree;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\Violation;
@@ -34,9 +35,11 @@ final readonly class SummaryEnricher
             return $report;
         }
 
+        $tree = new NamespaceTree($report->metrics->getNamespaces());
+
         $healthScores = $this->buildHealthScores($report);
-        $worstNamespaces = $this->buildWorstOffenders($report, SymbolType::Namespace_, self::DEFAULT_TOP_NAMESPACES);
-        $worstClasses = $this->buildWorstOffenders($report, SymbolType::Class_, self::DEFAULT_TOP_CLASSES);
+        $worstNamespaces = $this->buildWorstOffenders($report, SymbolType::Namespace_, self::DEFAULT_TOP_NAMESPACES, $tree);
+        $worstClasses = $this->buildWorstOffenders($report, SymbolType::Class_, self::DEFAULT_TOP_CLASSES, $tree);
         $debtSummary = $this->debtCalculator->calculate($report->violations);
 
         // Compute debt density (minutes per 1K LOC)
@@ -204,7 +207,7 @@ final readonly class SummaryEnricher
     /**
      * @return list<WorstOffender>
      */
-    private function buildWorstOffenders(Report $report, SymbolType $symbolType, int $limit): array
+    private function buildWorstOffenders(Report $report, SymbolType $symbolType, int $limit, NamespaceTree $tree): array
     {
         \assert($report->metrics !== null);
 
@@ -241,7 +244,7 @@ final readonly class SummaryEnricher
         usort($candidates, static fn(array $a, array $b): int => $a['score'] <=> $b['score']
                 ?: $a['info']->symbolPath->toCanonical() <=> $b['info']->symbolPath->toCanonical());
 
-        $violationCounts = $this->countViolationsPerSymbol($report->violations, $symbolType);
+        $violationCounts = $this->countViolationsPerSymbol($report->violations, $symbolType, $tree);
 
         $offenders = [];
 
@@ -346,7 +349,7 @@ final readonly class SummaryEnricher
      *
      * @return array<string, int>
      */
-    private function countViolationsPerSymbol(array $violations, SymbolType $symbolType): array
+    private function countViolationsPerSymbol(array $violations, SymbolType $symbolType, NamespaceTree $tree): array
     {
         $counts = [];
 
@@ -363,15 +366,19 @@ final readonly class SummaryEnricher
                     $counts[$key] = ($counts[$key] ?? 0) + 1;
                 }
             } elseif ($symbolType === SymbolType::Namespace_) {
-                // Count violations by namespace, walking up the hierarchy
+                // Count violations by namespace, walking up the hierarchy via NamespaceTree
                 $ns = $violation->symbolPath->namespace;
 
-                while ($ns !== null && $ns !== '') {
+                if ($ns !== null && $ns !== '') {
                     $nsPath = SymbolPath::forNamespace($ns);
                     $key = $nsPath->toCanonical();
                     $counts[$key] = ($counts[$key] ?? 0) + 1;
-                    $lastSlash = strrpos($ns, '\\');
-                    $ns = $lastSlash !== false ? substr($ns, 0, $lastSlash) : null;
+
+                    foreach ($tree->getAncestors($ns) as $ancestor) {
+                        $ancestorPath = SymbolPath::forNamespace($ancestor);
+                        $key = $ancestorPath->toCanonical();
+                        $counts[$key] = ($counts[$key] ?? 0) + 1;
+                    }
                 }
             }
         }

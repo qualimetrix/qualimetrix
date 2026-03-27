@@ -8,6 +8,7 @@ use Qualimetrix\Core\Dependency\CycleInterface;
 use Qualimetrix\Core\Dependency\DependencyGraphInterface;
 use Qualimetrix\Core\Duplication\DuplicateBlock;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Namespace_\NamespaceTree;
 
 final readonly class AnalysisContext
 {
@@ -22,6 +23,7 @@ final readonly class AnalysisContext
         public ?DependencyGraphInterface $dependencyGraph = null,
         public array $cycles = [],
         public array $duplicateBlocks = [],
+        public ?NamespaceTree $namespaceTree = null,
     ) {}
 
     /**

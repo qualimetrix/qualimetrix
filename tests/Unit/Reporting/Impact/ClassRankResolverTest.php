@@ -81,6 +81,8 @@ final class ClassRankResolverTest extends TestCase
     {
         $metrics = $this->createStub(MetricRepositoryInterface::class);
 
+        $metrics->method('getNamespaces')->willReturn(['App\Service']);
+
         $metrics->method('all')->willReturn([
             new SymbolInfo(SymbolPath::forClass('App\Service', 'UserService'), 'src/UserService.php', 1),
             new SymbolInfo(SymbolPath::forClass('App\Service', 'OrderService'), 'src/OrderService.php', 1),
@@ -109,6 +111,8 @@ final class ClassRankResolverTest extends TestCase
     {
         $metrics = $this->createStub(MetricRepositoryInterface::class);
 
+        $metrics->method('getNamespaces')->willReturn(['App\Service', 'App\Service\Sub']);
+
         $metrics->method('all')->willReturn([
             new SymbolInfo(SymbolPath::forClass('App\Service', 'UserService'), 'src/UserService.php', 1),
             new SymbolInfo(SymbolPath::forClass('App\Service\Sub', 'DeepService'), 'src/Sub/DeepService.php', 1),
@@ -134,6 +138,8 @@ final class ClassRankResolverTest extends TestCase
     public function resolveForFileViolationReturnsMaxClassRankInFile(): void
     {
         $metrics = $this->createStub(MetricRepositoryInterface::class);
+
+        $metrics->method('getNamespaces')->willReturn(['App']);
 
         $metrics->method('all')->willReturn([
             new SymbolInfo(SymbolPath::forClass('App', 'ClassA'), 'src/target.php', 1),

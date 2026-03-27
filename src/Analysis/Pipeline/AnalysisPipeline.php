@@ -129,6 +129,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
             $graph,
             $enrichmentResult->cycles,
             $enrichmentResult->duplicateBlocks,
+            $enrichmentResult->namespaceTree,
         );
         $violations = $this->ruleExecutor->execute($context);
         $profiler?->stop('rules');
@@ -158,6 +159,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
             duration: $duration,
             metrics: $repository,
             suppressions: $collectionResult->suppressions,
+            namespaceTree: $enrichmentResult->namespaceTree,
         );
     }
 }

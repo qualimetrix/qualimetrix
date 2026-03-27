@@ -6,6 +6,7 @@ namespace Qualimetrix\Analysis\Collection\Dependency;
 
 use Qualimetrix\Core\Dependency\Dependency;
 use Qualimetrix\Core\Dependency\DependencyType;
+use Qualimetrix\Core\Namespace_\NamespaceTree;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Util\StringSet;
 
@@ -85,7 +86,11 @@ final class DependencyGraphBuilder
         }
 
         // Discover parent namespaces from leaf namespaces
-        $parentNamespaces = $this->discoverParentNamespaces($namespaceMap);
+        $tree = new NamespaceTree(array_keys($namespaceMap));
+        $parentNamespaces = [];
+        foreach ($tree->getParentNamespaces() as $parentNs) {
+            $parentNamespaces[$parentNs] = SymbolPath::forNamespace($parentNs);
+        }
         foreach ($parentNamespaces as $nsPath) {
             $canonicalNamespaceMap[$nsPath->toCanonical()] = $nsPath;
         }
@@ -215,49 +220,6 @@ final class DependencyGraphBuilder
         }
 
         return $result;
-    }
-
-    /**
-     * Discovers parent namespaces from leaf namespaces.
-     *
-     * For each leaf namespace like "App\Service\User", generates parent
-     * SymbolPaths "App\Service" and "App" (if not already leaf namespaces).
-     *
-     * @param array<string, SymbolPath> $leafNamespaceMap raw namespace string => SymbolPath
-     *
-     * @return array<string, SymbolPath> raw namespace string => SymbolPath (parents only, excluding existing leaves)
-     */
-    private function discoverParentNamespaces(array $leafNamespaceMap): array
-    {
-        $parents = [];
-
-        foreach ($leafNamespaceMap as $ns => $nsPath) {
-            $lastSlash = strrpos($ns, '\\');
-
-            while ($lastSlash !== false) {
-                $parentNs = substr($ns, 0, $lastSlash);
-
-                // Already discovered as parent — ancestors already handled
-                if (isset($parents[$parentNs])) {
-                    break;
-                }
-
-                // Add as parent even if it's a leaf: when a leaf namespace also has
-                // child namespaces, it needs prefix-based Ce/Ca (package-level semantics)
-                // instead of the default exact-match leaf Ce/Ca.
-                $parents[$parentNs] = SymbolPath::forNamespace($parentNs);
-
-                // If it's a leaf, its own ancestors will be discovered during
-                // its own iteration, so stop climbing here.
-                if (isset($leafNamespaceMap[$parentNs])) {
-                    break;
-                }
-
-                $lastSlash = strrpos($parentNs, '\\');
-            }
-        }
-
-        return $parents;
     }
 
     /**
