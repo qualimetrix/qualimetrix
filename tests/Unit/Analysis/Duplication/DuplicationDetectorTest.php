@@ -205,6 +205,37 @@ PHP;
         self::assertNotEmpty($blocks, 'Should detect duplication within the same file');
     }
 
+    public function testSameFileSelfDuplicationIsNotReported(): void
+    {
+        // Create a file with a large repetitive array constant where different
+        // token windows can hash-match but extend to the same line range
+        $code = "<?php\nclass Foo {\n    private const LIST = [\n";
+        for ($i = 0; $i < 50; $i++) {
+            $code .= "        'Class{$i}' => true,\n";
+        }
+        $code .= "    ];\n}\n";
+
+        $file = $this->createFile('repetitive_array.php', $code);
+
+        $detector = $this->createDetector(minTokens: 30, minLines: 5);
+        $blocks = $detector->detect([$file]);
+
+        // No block should have two identical locations (same file + same line range)
+        foreach ($blocks as $block) {
+            $locations = $block->locations;
+            if (\count($locations) === 2) {
+                $isSelfDuplicate = $locations[0]->file === $locations[1]->file
+                    && $locations[0]->startLine === $locations[1]->startLine
+                    && $locations[0]->endLine === $locations[1]->endLine;
+
+                self::assertFalse(
+                    $isSelfDuplicate,
+                    'A block should not be reported as a duplicate of itself',
+                );
+            }
+        }
+    }
+
     public function testEmptyFileList(): void
     {
         $detector = $this->createDetector();
