@@ -96,67 +96,35 @@ final class CodeSmellVisitor extends NodeVisitorAbstract implements ResettableVi
 
     public function enterNode(Node $node): ?int
     {
+        // Context tracking (always runs, independent of smell detection)
         if ($node instanceof ClassMethod || $node instanceof Function_) {
-            $name = $node->name->toLowerString();
-            $this->methodStack[] = $name;
+            $this->methodStack[] = $node->name->toLowerString();
+            $this->checkBooleanArgument($node);
+        } elseif ($node instanceof Closure || $node instanceof ArrowFunction) {
+            $this->checkBooleanArgument($node);
         }
 
         if ($node instanceof Foreach_) {
             $this->foreachDepth++;
         }
 
+        // Smell detection — node types are mutually exclusive, no early returns needed
         if ($node instanceof Goto_) {
             $this->addLocation('goto', $node);
-
-            return null;
-        }
-
-        if ($node instanceof Eval_) {
+        } elseif ($node instanceof Eval_) {
             $this->addLocation('eval', $node);
-
-            return null;
-        }
-
-        if ($node instanceof Exit_) {
+        } elseif ($node instanceof Exit_) {
             $this->addLocation('exit', $node);
-
-            return null;
-        }
-
-        if ($node instanceof TryCatch) {
+        } elseif ($node instanceof TryCatch) {
             $this->checkEmptyCatches($node);
-
-            return null;
-        }
-
-        if ($node instanceof FuncCall) {
+        } elseif ($node instanceof FuncCall) {
             $this->checkDebugFunction($node);
-
-            return null;
-        }
-
-        if ($node instanceof ErrorSuppress) {
+        } elseif ($node instanceof ErrorSuppress) {
             $this->addLocation('error_suppression', $node);
-
-            return null;
-        }
-
-        if ($node instanceof For_ || $node instanceof While_ || $node instanceof Do_) {
+        } elseif ($node instanceof For_ || $node instanceof While_ || $node instanceof Do_) {
             $this->checkCountInLoop($node);
-
-            return null;
-        }
-
-        if ($node instanceof Variable) {
+        } elseif ($node instanceof Variable) {
             $this->checkSuperglobal($node);
-
-            return null;
-        }
-
-        if ($node instanceof ClassMethod || $node instanceof Function_ || $node instanceof Closure || $node instanceof ArrowFunction) {
-            $this->checkBooleanArgument($node);
-
-            return null;
         }
 
         return null;
