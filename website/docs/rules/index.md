@@ -48,6 +48,8 @@ These rules check class cohesion, inheritance depth, and structural problems.
 | [Inheritance Depth](design.md) | `design.inheritance`   | How deep the inheritance chain is                   | 4               | 6             |
 | [NOC](design.md)               | `design.noc`           | Number of classes inheriting from this one          | 10              | 15            |
 | [Type Coverage](design.md)     | `design.type-coverage` | Percentage of typed parameters, returns, properties | 80% (below)     | 50% (below)   |
+| [Data Class](design.md)        | `design.data-class`    | High public surface but low complexity              | Warning         | --            |
+| [God Class](design.md)         | `design.god-class`     | Overly complex, large classes with low cohesion     | 3+ criteria     | all criteria  |
 
 [Read more about Design rules --&gt;](design.md)
 
@@ -123,8 +125,6 @@ These rules detect common bad practices that are almost always wrong, regardless
 | [Unreachable Code](code-smell.md)           | `code-smell.unreachable-code`          | Code after return/throw/exit statements                         |
 | [Identical Sub-expression](code-smell.md)   | `code-smell.identical-subexpression`   | Identical operands, duplicate conditions, same ternary branches |
 | [Constructor Over-injection](code-smell.md) | `code-smell.constructor-overinjection` | Too many constructor dependencies                               |
-| [Data Class](code-smell.md)                 | `design.data-class`                    | High public surface but low complexity (getter/setter classes)  |
-| [God Class](code-smell.md)                  | `design.god-class`                     | Overly complex, large classes with low cohesion                 |
 | [Unused Private](code-smell.md)             | `code-smell.unused-private`            | Unused private methods, properties, constants                   |
 
 [Read more about Code Smell rules --&gt;](code-smell.md)

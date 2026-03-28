@@ -36,6 +36,7 @@ Reporting/
 │   ├── SummaryEnricher.php                # Enriches Report with health scores, worst offenders, tech debt
 │   ├── MetricHintProvider.php             # Single source of truth for metric display metadata
 │   ├── NamespaceDrillDown.php             # Shared logic for namespace-level drill-down
+│   ├── HealthReasonBuilder.php            # Builds human-readable reasons for health score dimensions
 │   ├── HealthScore.php                    # VO: one health dimension (complexity, cohesion, etc.)
 │   ├── WorstOffender.php                  # VO: a namespace or class ranked by health
 │   └── DecompositionItem.php              # VO: one contributing metric in a health score breakdown
@@ -83,7 +84,10 @@ Reporting/
     ├── Html/
     │   ├── HtmlFormatter.php              # Interactive HTML report with D3 treemap
     │   ├── HtmlTreeBuilder.php            # Builds namespace tree from MetricRepository
-    │   └── HtmlTreeNode.php               # Internal VO for tree construction
+    │   ├── HtmlTreeNode.php               # Internal VO for tree construction
+    │   ├── HtmlDebtCalculator.php         # Computes and aggregates technical debt for HTML reports
+    │   ├── HtmlMetricAggregator.php       # Bottom-up metric aggregation for HTML tree
+    │   └── HtmlViolationPartitioner.php   # Partitions violations by file/class for HTML tree
     └── GitLabCodeQualityFormatter.php      # GitLab Code Climate JSON
 ```
 

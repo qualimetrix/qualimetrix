@@ -278,7 +278,7 @@ The aggregator has been decomposed into individual phases, each implementing `Ag
 - **ClassToNamespaceAggregator** — applies strategies from `aggregations[Namespace_]`
 - **NamespaceToProjectAggregator** — aggregates across all namespaces; handles both class-collected metrics (promoted from namespace via `aggregations[Project_]`) and namespace-collected metrics (e.g., `distance`, `abstractness`, `ce.p95`) that already exist at namespace level and are aggregated directly to project level
 
-`MetricAggregator` is now a thin orchestrator that runs these phases in order. `AggregationHelper` provides shared static helper methods used by the phases.
+`MetricAggregator` is now a thin orchestrator that runs these phases in order. `AggregationHelper` provides shared static helper methods (extracted and refactored for reuse across phases) used by the aggregation phases.
 
 **Naming convention:** `{metric}.{strategy}` (e.g.: `ccn.sum`, `ccn.avg`, `loc.sum`)
 

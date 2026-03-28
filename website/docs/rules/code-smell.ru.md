@@ -529,152 +529,6 @@ bin/qmx check src/ --rule-opt="code-smell.constructor-overinjection:warning=6"
 
 ---
 
-## Класс данных (Data Class)
-
-**Идентификатор правила:** `design.data-class`
-**Серьезность:** Warning
-
-<!-- llms:skip-begin -->
-### Что измеряет
-
-Обнаруживает классы с высокой публичной поверхностью (WOC -- Weight of Class, % публичных методов), но низкой сложностью (WMC -- Weighted Methods per Class). Такие классы в основном предоставляют данные через геттеры/сеттеры без инкапсуляции значимого поведения. Основано на метриках Lanza & Marinescu.
-
-Намеренные DTO исключаются: readonly-классы, классы только с promoted properties и классы, помеченные как data-классы, не вызывают предупреждений.
-
-<!-- llms:skip-end -->
-
-### Пороговые значения
-
-| Метрика         | Условие  | По умолчанию |
-| --------------- | -------- | ------------ |
-| WOC             | ≥ порога | 80%          |
-| WMC             | ≤ порога | 10           |
-| Минимум методов | ≥        | 3            |
-
-<!-- llms:skip-begin -->
-### Пример
-
-```php
-// Помечается: высокая публичная поверхность, низкая сложность, не readonly
-class UserProfile
-{
-    private string $name;
-    private string $email;
-    private string $phone;
-
-    public function getName(): string { return $this->name; }
-    public function setName(string $name): void { $this->name = $name; }
-    public function getEmail(): string { return $this->email; }
-    public function setEmail(string $email): void { $this->email = $email; }
-    public function getPhone(): string { return $this->phone; }
-    public function setPhone(string $phone): void { $this->phone = $phone; }
-}
-
-// Не помечается: намеренный DTO (readonly)
-readonly class UserDTO
-{
-    public function __construct(
-        public string $name,
-        public string $email,
-    ) {}
-}
-```
-
-<!-- llms:skip-end -->
-
-<!-- llms:skip-begin -->
-### Как исправить
-
-1. **Инкапсулируйте поведение** -- перенесите операции, использующие эти данные, внутрь самого класса.
-2. **Превратите в DTO** -- если класс намеренно является только данными, сделайте его `readonly` для выражения намерения.
-3. **Объедините с потребителем** -- если класс только хранит данные для другого класса, рассмотрите встраивание.
-
-<!-- llms:skip-end -->
-
-### Конфигурация
-
-```yaml
-# qmx.yaml
-rules:
-  design.data-class:
-    woc_threshold: 80
-    wmc_threshold: 10
-    min_methods: 3
-    exclude_readonly: true
-    exclude_promoted_only: true
-```
-
----
-
-## God Class (Божественный класс)
-
-**Идентификатор правила:** `design.god-class`
-**Серьезность:** Warning (3+ критерия) / Error (все оцениваемые критерии)
-
-<!-- llms:skip-begin -->
-### Что измеряет
-
-Обнаруживает God-классы -- чрезмерно сложные, крупные классы с низкой связностью. Использует мульти-критериальный подход Lanza & Marinescu: класс помечается, когда он соответствует минимум `minCriteria` из до 4 оцениваемых критериев.
-
-Критерии (всего 4):
-
-| Критерий  | Условие  | По умолчанию | Описание                                |
-| --------- | -------- | ------------ | --------------------------------------- |
-| WMC       | ≥ порога | 47           | Взвешенные методы класса                |
-| LCOM4     | ≥ порога | 3            | Недостаток связности                    |
-| TCC       | < порога | 0.33         | Тесная связность класса (инвертировано) |
-| Class LOC | ≥ порога | 300          | Физические строки кода                  |
-
-Недостающие метрики уменьшают количество оцениваемых критериев. Если оцениваемых критериев меньше `minCriteria`, нарушение не создаётся.
-
-<!-- llms:skip-end -->
-
-<!-- llms:skip-begin -->
-### Пример
-
-```php
-// Помечается: высокий WMC, высокий LCOM, низкий TCC, большой размер
-class ApplicationManager
-{
-    // 400+ LOC, 25 методов, обрабатывает:
-    // - аутентификацию пользователей
-    // - управление сессиями
-    // - маршрутизацию запросов
-    // - форматирование ответов
-    // - обработку ошибок
-    // - логирование
-    // - кеширование
-}
-```
-
-<!-- llms:skip-end -->
-
-<!-- llms:skip-begin -->
-### Как исправить
-
-1. **Извлеките классы по ответственности** -- определите кластеры методов, работающих с одними данными, и выделите их в отдельные классы.
-2. **Применяйте принцип единственной ответственности** -- каждый класс должен иметь одну причину для изменения.
-3. **Используйте композицию** -- замените иерархии наследования составными объектами.
-
-<!-- llms:skip-end -->
-
-### Конфигурация
-
-```yaml
-# qmx.yaml
-rules:
-  design.god-class:
-    wmc_threshold: 47
-    lcom_threshold: 3
-    tcc_threshold: 0.33
-    class_loc_threshold: 300
-    min_criteria: 3
-    min_methods: 3
-    exclude_readonly: true
-```
-
----
-
 ## Длинный список параметров (Long Parameter List)
 
 **Идентификатор правила:** `code-smell.long-parameter-list`
@@ -982,12 +836,6 @@ bin/qmx check src/ --rule-opt="code-smell.unreachable-code:error=1"
 rules:
   code-smell.boolean-argument:
     enabled: true
-  design.data-class:
-    woc_threshold: 80
-    wmc_threshold: 10
-    min_methods: 3
-    exclude_readonly: true
-    exclude_promoted_only: true
   code-smell.debug-code:
     enabled: true
   code-smell.empty-catch:
@@ -996,14 +844,6 @@ rules:
     enabled: false    # выключить, если есть легитимное использование eval
   code-smell.exit:
     enabled: true
-  design.god-class:
-    wmc_threshold: 47
-    lcom_threshold: 3
-    tcc_threshold: 0.33
-    class_loc_threshold: 300
-    min_criteria: 3
-    min_methods: 3
-    exclude_readonly: true
   code-smell.goto:
     enabled: true
   code-smell.superglobals:

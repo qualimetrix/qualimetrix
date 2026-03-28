@@ -113,6 +113,8 @@ Infrastructure/
     ├── GitScopeFilterConfig.php       # Git scope filter config VO
     ├── RuntimeConfigurator.php        # Runtime DI configuration
     ├── ResultPresenter.php            # Output presentation
+    ├── BaselinePresenter.php          # Baseline file generation presentation
+    ├── ExitCodeResolver.php           # Determines CLI exit code from violations
     ├── ProfilePresenter.php           # Handles profiling output: summary to stderr or export to file
     ├── FormatterContextFactory.php    # Creates FormatterContext from CLI input options
     ├── CheckCommandDefinition.php     # Command option definitions
