@@ -39,6 +39,14 @@ final class LcomClassData
      */
     private array $staticMethods = [];
 
+    /**
+     * Whether any non-trivial method body was found.
+     *
+     * A class where all methods are trivial (empty body, return null/scalar/constant)
+     * gets LCOM=1 to avoid misleading high values for Null Objects and similar patterns.
+     */
+    private bool $hasNonTrivialMethod = false;
+
     public function __construct(
         public readonly ?string $namespace = null,
         public readonly string $className = '',
@@ -69,6 +77,28 @@ final class LcomClassData
     public function markStatic(string $method): void
     {
         $this->staticMethods[$method] = true;
+    }
+
+    public function markNonTrivial(): void
+    {
+        $this->hasNonTrivialMethod = true;
+    }
+
+    /**
+     * Whether all methods in this class have trivial bodies.
+     *
+     * A trivial method is one with an empty body or that simply returns
+     * null, a scalar, or a constant. Classes with only trivial methods
+     * (e.g., Null Objects) should get LCOM=1 instead of N disconnected components.
+     */
+    public function hasOnlyTrivialMethods(): bool
+    {
+        return !$this->hasNonTrivialMethod && $this->getMethodCount() > 0;
+    }
+
+    public function getMethodCount(): int
+    {
+        return \count($this->methods);
     }
 
     /**
