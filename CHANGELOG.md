@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Breaking
+- Rule IDs `code-smell.god-class` and `code-smell.data-class` renamed to `design.god-class` and `design.data-class`. Update configuration files, baselines, and `@qmx-ignore` annotations accordingly
+
+### Changed
+- Decomposed 13 large classes into focused components for better maintainability
+
 ## [0.9.2] - 2026-03-26
 
 ### Fixed

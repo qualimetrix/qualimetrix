@@ -72,7 +72,7 @@ Collectors **do not interpret** metrics — they only collect them. Interpretati
 - **[CodeSmell/](CodeSmell/README.md)** — Code pattern detectors (goto, eval, debug code, parameter count, unreachable code, identical sub-expressions, etc.)
 - **[Design/](Design/)** — Type coverage metrics, type coverage percentage (derived)
 - **[ComputedMetric/](ComputedMetric/)** — Computed metric evaluator (health scores via Expression Language)
-- **[Security/](Security/)** — Hardcoded credentials, security pattern detection (SQL injection, XSS, command injection), sensitive parameter detection
+- **[Security/](Security/)** — Hardcoded credentials, security pattern detection (SQL injection, XSS, command injection), sensitive parameter detection. Pattern detectors: `CommandInjectionDetector`, `SqlInjectionDetector`, `XssDetector`, `SuperglobalAnalyzer` (extracted from SecurityPatternVisitor)
 
 ---
 

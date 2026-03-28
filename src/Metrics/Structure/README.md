@@ -316,6 +316,18 @@ class PayPalGateway extends PaymentGateway { }  // +1
 
 ---
 
+## Unused Private Detection
+
+**Collector:** `UnusedPrivateCollector`
+**Provides:** `unusedPrivateMethods`, `unusedPrivateProperties`
+**Level:** Class
+
+Helper classes:
+- `TraitUsageResolver` — resolves trait usages for unused private detection
+- `UsageTrackingTrait` — shared trait for tracking method/property/constant usage
+
+---
+
 ## Aggregation
 
 All class-level metrics are aggregated upward:

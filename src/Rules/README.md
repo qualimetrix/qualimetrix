@@ -31,6 +31,9 @@ Rules are analysis rule implementations for static analysis. Rules are **complet
 | **design.lcom**                          | Design          | Simple                          | Lack of Cohesion (LCOM4)        | warning: 3, error: 5                  |
 | **design.noc**                           | Design          | Simple                          | Number of Children              | warning: 10, error: 15                |
 | **design.inheritance**                   | Design          | Simple                          | Depth of Inheritance Tree (DIT) | warning: 4, error: 6                  |
+| **design.type-coverage**                 | Design          | Simple                          | Type declaration coverage       | param/return/property: 80%/50%        |
+| **design.data-class**                    | Design          | Simple                          | Data Class detection            | wocThreshold: 80, wmcThreshold: 10    |
+| **design.god-class**                     | Design          | Simple                          | God Class detection (L&M)       | wmc: 47, lcom: 3, tcc: 0.33, loc: 300 |
 | **coupling.instability**                 | Coupling        | Hierarchical (Class, Namespace) | Instability (Ca/Ce)             | warning: 0.8, error: 0.95             |
 | **coupling.cbo**                         | Coupling        | Hierarchical (Class, Namespace) | Coupling Between Objects        | warning: ..., error: ...              |
 | **coupling.distance**                    | Coupling        | Simple                          | Distance from Main Sequence     | warning: 0.3, error: 0.5              |
@@ -45,12 +48,9 @@ Rules are analysis rule implementations for static analysis. Rules are **complet
 | **code-smell.exit**                      | CodeSmell       | Simple                          | exit/die usage                  | enabled: true                         |
 | **code-smell.goto**                      | CodeSmell       | Simple                          | goto statements                 | enabled: true                         |
 | **code-smell.constructor-overinjection** | CodeSmell       | Simple                          | Constructor over-injection      | warning: 8, error: 12                 |
-| **design.data-class**                    | CodeSmell       | Simple                          | Data Class detection            | wocThreshold: 80, wmcThreshold: 10    |
-| **design.god-class**                     | CodeSmell       | Simple                          | God Class detection (L&M)       | wmc: 47, lcom: 3, tcc: 0.33, loc: 300 |
 | **code-smell.long-parameter-list**       | CodeSmell       | Simple                          | Long parameter lists            | warning: 4, error: 6                  |
 | **code-smell.superglobals**              | CodeSmell       | Simple                          | Direct superglobal access       | enabled: true                         |
 | **code-smell.unreachable-code**          | CodeSmell       | Simple                          | Unreachable code detection      | warning: 1, error: 2                  |
-| **design.type-coverage**                 | Design          | Simple                          | Type declaration coverage       | param/return/property: 80%/50%        |
 | **security.hardcoded-credentials**       | Security        | Simple                          | Hardcoded credentials           | enabled: true                         |
 | **security.sql-injection**               | Security        | Simple                          | SQL injection patterns          | enabled: true                         |
 | **security.xss**                         | Security        | Simple                          | XSS patterns                    | enabled: true                         |

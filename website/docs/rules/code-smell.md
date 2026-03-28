@@ -529,152 +529,6 @@ bin/qmx check src/ --rule-opt="code-smell.constructor-overinjection:warning=6"
 
 ---
 
-## Data Class
-
-**Rule ID:** `design.data-class`
-**Severity:** Warning
-
-<!-- llms:skip-begin -->
-### What it measures
-
-Detects classes with high public surface (WOC -- Weight of Class, % of public methods) but low complexity (WMC -- Weighted Methods per Class). Such classes mostly expose data through getters/setters without encapsulating meaningful behavior. Based on Lanza & Marinescu metrics.
-
-Intentional DTOs are excluded: readonly classes, promoted-properties-only classes, and classes marked as data classes via `isDataClass` are not flagged.
-
-<!-- llms:skip-end -->
-
-### Thresholds
-
-| Metric          | Condition   | Default |
-| --------------- | ----------- | ------- |
-| WOC             | ≥ threshold | 80%     |
-| WMC             | ≤ threshold | 10      |
-| Minimum methods | ≥           | 3       |
-
-<!-- llms:skip-begin -->
-### Example
-
-```php
-// Flagged: high public surface, low complexity, not readonly
-class UserProfile
-{
-    private string $name;
-    private string $email;
-    private string $phone;
-
-    public function getName(): string { return $this->name; }
-    public function setName(string $name): void { $this->name = $name; }
-    public function getEmail(): string { return $this->email; }
-    public function setEmail(string $email): void { $this->email = $email; }
-    public function getPhone(): string { return $this->phone; }
-    public function setPhone(string $phone): void { $this->phone = $phone; }
-}
-
-// Not flagged: intentional DTO (readonly)
-readonly class UserDTO
-{
-    public function __construct(
-        public string $name,
-        public string $email,
-    ) {}
-}
-```
-
-<!-- llms:skip-end -->
-
-<!-- llms:skip-begin -->
-### How to fix
-
-1. **Encapsulate behavior** -- move operations that use this data into the class itself.
-2. **Convert to a DTO** -- if the class is intentionally just data, make it `readonly` to signal intent.
-3. **Merge with its consumer** -- if a class only holds data for another class, consider inlining it.
-
-<!-- llms:skip-end -->
-
-### Configuration
-
-```yaml
-# qmx.yaml
-rules:
-  design.data-class:
-    woc_threshold: 80
-    wmc_threshold: 10
-    min_methods: 3
-    exclude_readonly: true
-    exclude_promoted_only: true
-```
-
----
-
-## God Class
-
-**Rule ID:** `design.god-class`
-**Severity:** Warning (3+ criteria) / Error (all evaluable criteria)
-
-<!-- llms:skip-begin -->
-### What it measures
-
-Detects God Classes -- overly complex, large classes with low cohesion. Uses Lanza & Marinescu's multi-criteria approach: a class is flagged when it matches at least `minCriteria` out of up to 4 evaluable criteria.
-
-Criteria (4 total):
-
-| Criterion | Condition   | Default | Source                          |
-| --------- | ----------- | ------- | ------------------------------- |
-| WMC       | ≥ threshold | 47      | Weighted Methods per Class      |
-| LCOM4     | ≥ threshold | 3       | Lack of Cohesion                |
-| TCC       | < threshold | 0.33    | Tight Class Cohesion (inverted) |
-| Class LOC | ≥ threshold | 300     | Physical lines of code          |
-
-Missing metrics reduce the evaluable count (e.g., if TCC is unavailable, 3 criteria are evaluated). If fewer criteria are evaluable than `minCriteria`, no violation is raised.
-
-<!-- llms:skip-end -->
-
-<!-- llms:skip-begin -->
-### Example
-
-```php
-// Flagged: high WMC, high LCOM, low TCC, large size
-class ApplicationManager
-{
-    // 400+ LOC, 25 methods, handles:
-    // - user authentication
-    // - session management
-    // - request routing
-    // - response formatting
-    // - error handling
-    // - logging
-    // - caching
-}
-```
-
-<!-- llms:skip-end -->
-
-<!-- llms:skip-begin -->
-### How to fix
-
-1. **Extract classes by responsibility** -- identify method clusters that work on the same data and extract them into separate classes.
-2. **Apply Single Responsibility Principle** -- each class should have one reason to change.
-3. **Use composition** -- replace inheritance hierarchies with composed objects.
-
-<!-- llms:skip-end -->
-
-### Configuration
-
-```yaml
-# qmx.yaml
-rules:
-  design.god-class:
-    wmc_threshold: 47
-    lcom_threshold: 3
-    tcc_threshold: 0.33
-    class_loc_threshold: 300
-    min_criteria: 3
-    min_methods: 3
-    exclude_readonly: true
-```
-
----
-
 ## Long Parameter List
 
 **Rule ID:** `code-smell.long-parameter-list`
@@ -982,12 +836,6 @@ All code smell rules share the same simple configuration -- just enable or disab
 rules:
   code-smell.boolean-argument:
     enabled: true
-  design.data-class:
-    woc_threshold: 80
-    wmc_threshold: 10
-    min_methods: 3
-    exclude_readonly: true
-    exclude_promoted_only: true
   code-smell.debug-code:
     enabled: true
   code-smell.empty-catch:
@@ -996,14 +844,6 @@ rules:
     enabled: false    # disable if you have legitimate eval usage
   code-smell.exit:
     enabled: true
-  design.god-class:
-    wmc_threshold: 47
-    lcom_threshold: 3
-    tcc_threshold: 0.33
-    class_loc_threshold: 300
-    min_criteria: 3
-    min_methods: 3
-    exclude_readonly: true
   code-smell.goto:
     enabled: true
   code-smell.superglobals:

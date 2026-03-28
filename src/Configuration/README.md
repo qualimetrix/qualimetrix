@@ -18,11 +18,14 @@ Configuration/
 ├── PathsConfiguration.php         # VO for paths and excludes
 ├── ConfigurationHolder.php        # Runtime configuration holder
 ├── RuleOptionsFactory.php         # Factory for creating rule options
+├── RuleOptionsRegistry.php        # Mutable storage for rule options (config file, CLI)
 ├── RuleNamespaceExclusionProvider.php  # Per-rule namespace exclusion storage
 ├── RuleOptionsParser.php          # CLI options parser for rules
 ├── RuleOptionsParserFactory.php   # Factory for creating RuleOptionsParser with CLI aliases
 ├── ConfigurationProviderInterface.php  # Interface for runtime config access
 ├── ComputedMetricsConfigResolver.php  # Merges defaults with YAML overrides, validates formulas
+├── ComputedMetricFormulaValidator.php # Validates formula syntax, coverage, circular deps, references
+├── HealthFormulaExcluder.php      # Filters excluded health dimensions, rebuilds health.overall formula
 │
 ├── Pipeline/                      # Configuration Pipeline (RFC-002)
 │   ├── ConfigurationPipelineInterface.php  # Pipeline contract
