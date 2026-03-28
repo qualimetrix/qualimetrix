@@ -9,6 +9,7 @@ use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Core\Metric\GlobalContextCollectorInterface;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 use ReflectionClass;
@@ -28,88 +29,6 @@ use ReflectionException;
 final class DitGlobalCollector implements GlobalContextCollectorInterface
 {
     private const NAME = 'dit-global';
-
-    /**
-     * Standard PHP classes considered root (DIT stops here).
-     * Kept in sync with InheritanceDepthCollector::STANDARD_PHP_CLASSES.
-     *
-     * @var array<string, true>
-     */
-    private const STANDARD_PHP_CLASSES = [
-        'stdClass' => true,
-        'Exception' => true,
-        'Error' => true,
-        'RuntimeException' => true,
-        'LogicException' => true,
-        'InvalidArgumentException' => true,
-        'OutOfBoundsException' => true,
-        'OutOfRangeException' => true,
-        'OverflowException' => true,
-        'UnderflowException' => true,
-        'LengthException' => true,
-        'DomainException' => true,
-        'RangeException' => true,
-        'UnexpectedValueException' => true,
-        'BadMethodCallException' => true,
-        'BadFunctionCallException' => true,
-        'ArrayObject' => true,
-        'ArrayIterator' => true,
-        'Iterator' => true,
-        'IteratorAggregate' => true,
-        'Countable' => true,
-        'Serializable' => true,
-        'Throwable' => true,
-        'Generator' => true,
-        'Closure' => true,
-        'DateTime' => true,
-        'DateTimeImmutable' => true,
-        'DateTimeInterface' => true,
-        'DateInterval' => true,
-        'DatePeriod' => true,
-        'DateTimeZone' => true,
-        'SplFileInfo' => true,
-        'SplFileObject' => true,
-        'SplTempFileObject' => true,
-        'DirectoryIterator' => true,
-        'RecursiveDirectoryIterator' => true,
-        'FilterIterator' => true,
-        'RecursiveFilterIterator' => true,
-        'RecursiveIteratorIterator' => true,
-        'ReflectionClass' => true,
-        'ReflectionMethod' => true,
-        'ReflectionProperty' => true,
-        'ReflectionParameter' => true,
-        'ReflectionFunction' => true,
-        'PDO' => true,
-        'PDOStatement' => true,
-        'PDOException' => true,
-        'JsonException' => true,
-        'TypeError' => true,
-        'ArgumentCountError' => true,
-        'ArithmeticError' => true,
-        'DivisionByZeroError' => true,
-        'ParseError' => true,
-        'CompileError' => true,
-        'ValueError' => true,
-        'Random\\Engine' => true,
-        'Random\\Randomizer' => true,
-        'IntlException' => true,
-        'JsonSerializable' => true,
-        'Stringable' => true,
-        'ArrayAccess' => true,
-        'SplStack' => true,
-        'SplQueue' => true,
-        'SplHeap' => true,
-        'SplMinHeap' => true,
-        'SplMaxHeap' => true,
-        'SplDoublyLinkedList' => true,
-        'SplFixedArray' => true,
-        'SplPriorityQueue' => true,
-        'WeakReference' => true,
-        'Fiber' => true,
-        'UnitEnum' => true,
-        'BackedEnum' => true,
-    ];
 
     public function getName(): string
     {
@@ -244,7 +163,7 @@ final class DitGlobalCollector implements GlobalContextCollectorInterface
     {
         $normalized = ltrim($fqn, '\\');
 
-        return isset(self::STANDARD_PHP_CLASSES[$normalized]);
+        return PhpBuiltinClassRegistry::isBuiltin($normalized);
     }
 
     /**
