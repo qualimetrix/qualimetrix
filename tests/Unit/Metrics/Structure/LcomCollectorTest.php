@@ -834,6 +834,95 @@ PHP;
         self::assertNull($metrics->get('lcom:App\Color'));
     }
 
+    public function testNullObjectPatternReturnsLcomOne(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class NullLogger
+{
+    public function log(string $message): void {}
+    public function warning(string $message): void {}
+    public function error(string $message): void {}
+    public function debug(string $message): void {}
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // All methods have empty bodies (trivial) => LCOM 1, not 4
+        self::assertSame(1, $metrics->get('lcom:App\NullLogger'));
+    }
+
+    public function testTrivialReturnMethodsGetLcomOne(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class NullCache
+{
+    public function get(string $key): ?string { return null; }
+    public function has(string $key): bool { return false; }
+    public function set(string $key, string $value): void {}
+    public function delete(string $key): bool { return true; }
+    public function getMultiple(array $keys): array { return []; }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // All methods are trivial (return null/scalar/constant/empty array or empty body)
+        self::assertSame(1, $metrics->get('lcom:App\NullCache'));
+    }
+
+    public function testClassWithMixedTrivialAndNonTrivialMethodsGetsCalculatedLcom(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Service
+{
+    private int $count = 0;
+
+    public function increment(): void { $this->count++; }
+    public function reset(): void {}
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // One non-trivial method exists => normal LCOM calculation
+        // increment uses $count, reset is empty but class is not all-trivial
+        // increment and reset are disconnected => LCOM 2
+        self::assertSame(2, $metrics->get('lcom:App\Service'));
+    }
+
+    public function testNonEmptyArrayReturnIsNotTrivial(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Config
+{
+    public function getDefaults(): array { return ['debug' => false]; }
+    public function getTypes(): array { return ['string', 'int']; }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // return [non-empty-array] is NOT trivial — methods are disconnected => LCOM 2
+        self::assertSame(2, $metrics->get('lcom:App\Config'));
+    }
+
     public function testDynamicPropertyAccessIgnored(): void
     {
         $code = <<<'PHP'

@@ -62,7 +62,8 @@ final class LcomCollector extends AbstractCollector implements ClassMetricsProvi
         \assert($this->visitor instanceof LcomVisitor);
 
         foreach ($this->visitor->getClassData() as $classFqn => $classData) {
-            $lcom = $classData->calculateLcom();
+            $lcom = $this->adjustedLcom($classData);
+
             $bag = $bag->with(MetricName::STRUCTURE_LCOM . ':' . $classFqn, $lcom);
         }
 
@@ -79,7 +80,9 @@ final class LcomCollector extends AbstractCollector implements ClassMetricsProvi
         $result = [];
 
         foreach ($this->visitor->getClassData() as $classData) {
-            $bag = (new MetricBag())->with(MetricName::STRUCTURE_LCOM, $classData->calculateLcom());
+            $lcom = $this->adjustedLcom($classData);
+
+            $bag = (new MetricBag())->with(MetricName::STRUCTURE_LCOM, $lcom);
 
             $result[] = new ClassWithMetrics(
                 namespace: $classData->namespace,
@@ -90,6 +93,20 @@ final class LcomCollector extends AbstractCollector implements ClassMetricsProvi
         }
 
         return $result;
+    }
+
+    /**
+     * Returns LCOM adjusted for trivial classes (null objects, stubs).
+     *
+     * Classes where ALL methods are trivial (empty, return constant/null)
+     * get LCOM=1 instead of the calculated value, since they lack cohesion
+     * by design, not by poor structure.
+     */
+    private function adjustedLcom(LcomClassData $classData): int
+    {
+        $lcom = $classData->calculateLcom();
+
+        return ($lcom > 1 && $classData->hasOnlyTrivialMethods()) ? 1 : $lcom;
     }
 
     /**
