@@ -13,15 +13,18 @@ use Qualimetrix\Baseline\BaselineLoader;
 use Qualimetrix\Baseline\BaselineWriter;
 use Qualimetrix\Baseline\Suppression\SuppressionFilter;
 use Qualimetrix\Baseline\ViolationHasher;
+use Qualimetrix\Configuration\ComputedMetricFormulaValidator;
 use Qualimetrix\Configuration\ComputedMetricsConfigResolver;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
+use Qualimetrix\Configuration\HealthFormulaExcluder;
 use Qualimetrix\Configuration\Loader\ConfigLoaderInterface;
 use Qualimetrix\Configuration\Loader\YamlConfigLoader;
 use Qualimetrix\Configuration\Pipeline\ConfigurationPipeline;
-use Qualimetrix\Configuration\RuleOptionsFactory;
+use Qualimetrix\Configuration\RuleOptionsRegistry;
 use Qualimetrix\Core\Ast\FileParserInterface;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
 use Qualimetrix\Infrastructure\Cache\CacheFactory;
+use Qualimetrix\Infrastructure\Console\BaselinePresenter;
 use Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\Console\Command\GraphExportCommand;
@@ -29,6 +32,7 @@ use Qualimetrix\Infrastructure\Console\Command\HookInstallCommand;
 use Qualimetrix\Infrastructure\Console\Command\HookStatusCommand;
 use Qualimetrix\Infrastructure\Console\Command\HookUninstallCommand;
 use Qualimetrix\Infrastructure\Console\Command\RulesCommand;
+use Qualimetrix\Infrastructure\Console\ExitCodeResolver;
 use Qualimetrix\Infrastructure\Console\FormatterContextFactory;
 use Qualimetrix\Infrastructure\Console\ProfilePresenter;
 use Qualimetrix\Infrastructure\Console\Progress\ProgressReporterHolder;
@@ -165,14 +169,27 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(ProgressReporterHolder::class),
                 new Reference(ProfilerHolder::class),
                 new Reference(ConfigurationProviderInterface::class),
-                new Reference(RuleOptionsFactory::class),
+                new Reference(RuleOptionsRegistry::class),
                 new Reference(RuleRegistryInterface::class),
                 new Reference(CacheFactory::class),
                 new Reference(ComputedMetricsConfigResolver::class),
+                new Reference(HealthFormulaExcluder::class),
             ]);
 
+        // HealthFormulaExcluder for exclude-health formula rebuilding
+        $container->register(HealthFormulaExcluder::class)
+            ->setArguments([
+                new Reference(DelegatingLogger::class),
+            ]);
+
+        // ComputedMetricFormulaValidator (validates expression syntax, references, circular deps)
+        $container->register(ComputedMetricFormulaValidator::class);
+
         // ComputedMetricsConfigResolver
-        $container->register(ComputedMetricsConfigResolver::class);
+        $container->register(ComputedMetricsConfigResolver::class)
+            ->setArguments([
+                new Reference(ComputedMetricFormulaValidator::class),
+            ]);
 
         // ProfileSummaryRenderer (stateless, no dependencies)
         $container->register(ProfileSummaryRenderer::class);
@@ -187,16 +204,29 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         // FormatterContextFactory (pure logic, no dependencies)
         $container->register(FormatterContextFactory::class);
 
-        // ResultPresenter for formatting/output of results and profiler export
+        // ExitCodeResolver for determining process exit code from violations
+        $container->register(ExitCodeResolver::class)
+            ->setArguments([
+                new Reference(ConfigurationProviderInterface::class),
+            ]);
+
+        // BaselinePresenter for baseline generation
+        $container->register(BaselinePresenter::class)
+            ->setArguments([
+                new Reference(BaselineGenerator::class),
+                new Reference(BaselineWriter::class),
+                new Reference(ConfigurationProviderInterface::class),
+            ]);
+
+        // ResultPresenter for formatting/output of analysis results
         $container->register(ResultPresenter::class)
             ->setArguments([
                 new Reference(FormatterRegistryInterface::class),
                 new Reference(ProfilerHolder::class),
-                new Reference(BaselineGenerator::class),
-                new Reference(BaselineWriter::class),
                 new Reference(ConfigurationProviderInterface::class),
                 new Reference(SummaryEnricher::class),
                 new Reference(ProfilePresenter::class),
+                new Reference(ExitCodeResolver::class),
                 new Reference(FormatterContextFactory::class),
             ]);
 
@@ -216,6 +246,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(ConfigurationPipeline::class),
                 new Reference(RuntimeConfigurator::class),
                 new Reference(ResultPresenter::class),
+                new Reference(BaselinePresenter::class),
             ])
             ->setPublic(true);
 

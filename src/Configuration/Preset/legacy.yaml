@@ -78,7 +78,7 @@ rules:
 
 disabledRules:
   - code-smell.boolean-argument
-  - code-smell.data-class
-  - code-smell.god-class
+  - design.data-class
+  - design.god-class
   - code-smell.superglobals
   - code-smell.error-suppression

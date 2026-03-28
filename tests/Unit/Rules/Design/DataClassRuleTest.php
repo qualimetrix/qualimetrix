@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Unit\Rules\CodeSmell;
+namespace Qualimetrix\Tests\Unit\Rules\Design;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
@@ -13,8 +13,8 @@ use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Severity;
-use Qualimetrix\Rules\CodeSmell\DataClassOptions;
-use Qualimetrix\Rules\CodeSmell\DataClassRule;
+use Qualimetrix\Rules\Design\DataClassOptions;
+use Qualimetrix\Rules\Design\DataClassRule;
 
 #[CoversClass(DataClassRule::class)]
 #[CoversClass(DataClassOptions::class)]
@@ -58,7 +58,7 @@ final class DataClassRuleTest extends TestCase
     {
         $rule = new DataClassRule(new DataClassOptions());
 
-        self::assertSame('code-smell.data-class', $rule->getName());
+        self::assertSame('design.data-class', $rule->getName());
     }
 
     public function testGetDescription(): void
@@ -75,7 +75,7 @@ final class DataClassRuleTest extends TestCase
     {
         $rule = new DataClassRule(new DataClassOptions());
 
-        self::assertSame(RuleCategory::CodeSmell, $rule->getCategory());
+        self::assertSame(RuleCategory::Design, $rule->getCategory());
     }
 
     public function testRequires(): void
@@ -261,8 +261,8 @@ final class DataClassRuleTest extends TestCase
         self::assertStringContainsString('WMC=5', $violations[0]->message);
         self::assertStringContainsString('threshold 10', $violations[0]->message);
         self::assertSame(90, $violations[0]->metricValue);
-        self::assertSame('code-smell.data-class', $violations[0]->ruleName);
-        self::assertSame('code-smell.data-class', $violations[0]->violationCode);
+        self::assertSame('design.data-class', $violations[0]->ruleName);
+        self::assertSame('design.data-class', $violations[0]->violationCode);
     }
 
     public function testLowWoc(): void

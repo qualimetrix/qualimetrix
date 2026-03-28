@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Unit\Rules\CodeSmell;
+namespace Qualimetrix\Tests\Unit\Rules\Design;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
@@ -14,8 +14,8 @@ use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\Severity;
-use Qualimetrix\Rules\CodeSmell\GodClassOptions;
-use Qualimetrix\Rules\CodeSmell\GodClassRule;
+use Qualimetrix\Rules\Design\GodClassOptions;
+use Qualimetrix\Rules\Design\GodClassRule;
 
 #[CoversClass(GodClassRule::class)]
 #[CoversClass(GodClassOptions::class)]
@@ -25,7 +25,7 @@ final class GodClassRuleTest extends TestCase
     {
         $rule = new GodClassRule(new GodClassOptions());
 
-        self::assertSame('code-smell.god-class', $rule->getName());
+        self::assertSame('design.god-class', $rule->getName());
     }
 
     public function testGetDescription(): void
@@ -39,7 +39,7 @@ final class GodClassRuleTest extends TestCase
     {
         $rule = new GodClassRule(new GodClassOptions());
 
-        self::assertSame(RuleCategory::CodeSmell, $rule->getCategory());
+        self::assertSame(RuleCategory::Design, $rule->getCategory());
     }
 
     public function testRequires(): void
@@ -161,8 +161,8 @@ final class GodClassRuleTest extends TestCase
         self::assertCount(1, $violations);
         self::assertSame(Severity::Error, $violations[0]->severity);
         self::assertSame(4, $violations[0]->metricValue);
-        self::assertSame('code-smell.god-class', $violations[0]->ruleName);
-        self::assertSame('code-smell.god-class', $violations[0]->violationCode);
+        self::assertSame('design.god-class', $violations[0]->ruleName);
+        self::assertSame('design.god-class', $violations[0]->violationCode);
     }
 
     public function testThreeOfFourCriteriaMet(): void

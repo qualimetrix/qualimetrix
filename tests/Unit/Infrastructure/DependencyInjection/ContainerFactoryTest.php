@@ -11,7 +11,7 @@ use Qualimetrix\Analysis\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Configuration\AnalysisConfiguration;
 use Qualimetrix\Configuration\ConfigurationHolder;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
-use Qualimetrix\Configuration\RuleOptionsFactory;
+use Qualimetrix\Configuration\RuleOptionsRegistry;
 use Qualimetrix\Core\Namespace_\ProjectNamespaceResolverInterface;
 use Qualimetrix\Infrastructure\Cache\CacheInterface;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
@@ -177,11 +177,11 @@ final class ContainerFactoryTest extends TestCase
     {
         $container = $this->factory->create();
 
-        // Get RuleOptionsFactory and configure it
-        $ruleOptionsFactory = $container->get(RuleOptionsFactory::class);
-        self::assertInstanceOf(RuleOptionsFactory::class, $ruleOptionsFactory);
+        // Get RuleOptionsRegistry and configure it
+        $ruleOptionsRegistry = $container->get(RuleOptionsRegistry::class);
+        self::assertInstanceOf(RuleOptionsRegistry::class, $ruleOptionsRegistry);
 
-        $ruleOptionsFactory->setCliOptions('cyclomatic-complexity', [
+        $ruleOptionsRegistry->setCliOptions('cyclomatic-complexity', [
             'warningThreshold' => 20,
             'errorThreshold' => 40,
         ]);
@@ -383,8 +383,8 @@ final class ContainerFactoryTest extends TestCase
             \Qualimetrix\Rules\Duplication\CodeDuplicationRule::class,
             \Qualimetrix\Rules\ComputedMetric\ComputedMetricRule::class,
             \Qualimetrix\Rules\CodeSmell\ConstructorOverinjectionRule::class,
-            \Qualimetrix\Rules\CodeSmell\DataClassRule::class,
-            \Qualimetrix\Rules\CodeSmell\GodClassRule::class,
+            \Qualimetrix\Rules\Design\DataClassRule::class,
+            \Qualimetrix\Rules\Design\GodClassRule::class,
         ];
 
         $registeredClasses = $registry->getClasses();

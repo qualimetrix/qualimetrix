@@ -154,7 +154,7 @@ Cohesion metrics help you find classes that try to do too much and should be spl
 ### Start with God Class Detection
 
 ```bash
-bin/qmx check src/ --only-rule=code-smell.god-class
+bin/qmx check src/ --only-rule=design.god-class
 ```
 
 God class detection is the most actionable cohesion-related rule. For each finding:
@@ -185,7 +185,7 @@ The data class rule has a higher false-positive rate than god class detection, e
 - Exception classes (simple by design)
 - Small service classes with clean APIs
 
-Use `excludeReadonly: true` and `excludePromotedOnly: true` for codebases with PHP 8.2+ DTOs. For exception classes and interfaces, suppress with `@qmx-ignore code-smell.data-class`.
+Use `excludeReadonly: true` and `excludePromotedOnly: true` for codebases with PHP 8.2+ DTOs. For exception classes and interfaces, suppress with `@qmx-ignore design.data-class`.
 
 ---
 

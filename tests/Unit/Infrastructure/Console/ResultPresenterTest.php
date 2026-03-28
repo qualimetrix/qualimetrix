@@ -10,9 +10,6 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Pipeline\AnalysisResult;
 use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
-use Qualimetrix\Baseline\BaselineGenerator;
-use Qualimetrix\Baseline\BaselineWriter;
-use Qualimetrix\Baseline\ViolationHasher;
 use Qualimetrix\Configuration\AnalysisConfiguration;
 use Qualimetrix\Configuration\ConfigurationHolder;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
@@ -22,6 +19,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Infrastructure\Console\ExitCodeResolver;
 use Qualimetrix\Infrastructure\Console\ProfilePresenter;
 use Qualimetrix\Infrastructure\Console\ResultPresenter;
 use Qualimetrix\Reporting\Debt\DebtCalculator;
@@ -43,18 +41,18 @@ final class ResultPresenterTest extends TestCase
 
     protected function setUp(): void
     {
+        $configProvider = $this->createStub(ConfigurationProviderInterface::class);
         $this->presenter = new ResultPresenter(
             formatterRegistry: $this->createStub(FormatterRegistryInterface::class),
             profilerHolder: new ProfilerHolder(),
-            baselineGenerator: new BaselineGenerator(new ViolationHasher()),
-            baselineWriter: new BaselineWriter(),
-            configurationProvider: $this->createStub(ConfigurationProviderInterface::class),
+            configurationProvider: $configProvider,
             summaryEnricher: new SummaryEnricher(
                 new DebtCalculator(new RemediationTimeRegistry()),
                 new MetricHintProvider(),
                 new ImpactCalculator(new ClassRankResolver(), new RemediationTimeRegistry()),
             ),
             profilePresenter: new ProfilePresenter(new ProfilerHolder()),
+            exitCodeResolver: new ExitCodeResolver($configProvider),
         );
     }
 
@@ -85,8 +83,6 @@ final class ResultPresenterTest extends TestCase
         $presenter = new ResultPresenter(
             formatterRegistry: $registry,
             profilerHolder: new ProfilerHolder(),
-            baselineGenerator: new BaselineGenerator(new ViolationHasher()),
-            baselineWriter: new BaselineWriter(),
             configurationProvider: $configHolder,
             summaryEnricher: new SummaryEnricher(
                 new DebtCalculator(new RemediationTimeRegistry()),
@@ -94,6 +90,7 @@ final class ResultPresenterTest extends TestCase
                 new ImpactCalculator(new ClassRankResolver(), new RemediationTimeRegistry()),
             ),
             profilePresenter: new ProfilePresenter(new ProfilerHolder()),
+            exitCodeResolver: new ExitCodeResolver($configHolder),
         );
 
         $input = $this->createStub(InputInterface::class);
@@ -308,8 +305,6 @@ final class ResultPresenterTest extends TestCase
         $presenter = new ResultPresenter(
             formatterRegistry: $registry,
             profilerHolder: new ProfilerHolder(),
-            baselineGenerator: new BaselineGenerator(new ViolationHasher()),
-            baselineWriter: new BaselineWriter(),
             configurationProvider: $configHolder,
             summaryEnricher: new SummaryEnricher(
                 new DebtCalculator(new RemediationTimeRegistry()),
@@ -317,6 +312,7 @@ final class ResultPresenterTest extends TestCase
                 new ImpactCalculator(new ClassRankResolver(), new RemediationTimeRegistry()),
             ),
             profilePresenter: new ProfilePresenter(new ProfilerHolder()),
+            exitCodeResolver: new ExitCodeResolver($configHolder),
         );
 
         $input = $this->createStub(InputInterface::class);
@@ -360,8 +356,6 @@ final class ResultPresenterTest extends TestCase
         $presenter = new ResultPresenter(
             formatterRegistry: $registry,
             profilerHolder: new ProfilerHolder(),
-            baselineGenerator: new BaselineGenerator(new ViolationHasher()),
-            baselineWriter: new BaselineWriter(),
             configurationProvider: $configHolder,
             summaryEnricher: new SummaryEnricher(
                 new DebtCalculator(new RemediationTimeRegistry()),
@@ -369,6 +363,7 @@ final class ResultPresenterTest extends TestCase
                 new ImpactCalculator(new ClassRankResolver(), new RemediationTimeRegistry()),
             ),
             profilePresenter: new ProfilePresenter(new ProfilerHolder()),
+            exitCodeResolver: new ExitCodeResolver($configHolder),
         );
 
         $input = $this->createStub(InputInterface::class);

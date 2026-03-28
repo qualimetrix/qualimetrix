@@ -154,7 +154,7 @@ bin/qmx check src/ --only-rule=complexity --detail
 ### Начните с обнаружения god-классов
 
 ```bash
-bin/qmx check src/ --only-rule=code-smell.god-class
+bin/qmx check src/ --only-rule=design.god-class
 ```
 
 Обнаружение god-классов -- самое полезное правило, связанное со связностью. Для каждого обнаружения:
@@ -185,7 +185,7 @@ TCC (Tight Class Cohesion) измеряет, какая доля пар мето
 - Классах исключений (простые по дизайну)
 - Маленьких сервисных классах с чистым API
 
-Используйте `excludeReadonly: true` и `excludePromotedOnly: true` для кодовых баз с PHP 8.2+ DTO. Для классов исключений и интерфейсов подавляйте через `@qmx-ignore code-smell.data-class`.
+Используйте `excludeReadonly: true` и `excludePromotedOnly: true` для кодовых баз с PHP 8.2+ DTO. Для классов исключений и интерфейсов подавляйте через `@qmx-ignore design.data-class`.
 
 ---
 

@@ -46,7 +46,7 @@ final class CollectorConfigurator implements ContainerConfiguratorInterface
             $prototype,
             'Qualimetrix\\Metrics\\',
             $this->srcDir . '/Metrics/*',
-            $this->srcDir . '/Metrics/{Abstract*.php,*Interface.php,*Visitor.php,*Trait.php,*ClassData.php,*Metrics.php,*Calculator.php}',
+            $this->srcDir . '/Metrics/{Abstract*.php,*Interface.php,*Visitor.php,*Trait.php,*ClassData.php,*Metrics.php,*Calculator.php,*Detector.php,*Analyzer.php,*Resolver.php}',
         );
 
         // Auto-register global context collectors from src/Metrics/Coupling/*

@@ -92,8 +92,8 @@ final class FullPipelineIntegrationTest extends TestCase
 
         // Disabled rules from legacy are preserved (union semantics)
         self::assertContains('code-smell.boolean-argument', $resolved->analysis->disabledRules);
-        self::assertContains('code-smell.data-class', $resolved->analysis->disabledRules);
-        self::assertContains('code-smell.god-class', $resolved->analysis->disabledRules);
+        self::assertContains('design.data-class', $resolved->analysis->disabledRules);
+        self::assertContains('design.god-class', $resolved->analysis->disabledRules);
     }
 
     #[Test]
@@ -107,7 +107,7 @@ final class FullPipelineIntegrationTest extends TestCase
 
         // Legacy preset disables these rules
         self::assertContains('code-smell.boolean-argument', $resolved->analysis->disabledRules);
-        self::assertContains('code-smell.data-class', $resolved->analysis->disabledRules);
+        self::assertContains('design.data-class', $resolved->analysis->disabledRules);
 
         // Config file adds its own disabled rule (union semantics)
         self::assertContains('complexity.npath', $resolved->analysis->disabledRules);

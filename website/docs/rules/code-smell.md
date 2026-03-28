@@ -531,7 +531,7 @@ bin/qmx check src/ --rule-opt="code-smell.constructor-overinjection:warning=6"
 
 ## Data Class
 
-**Rule ID:** `code-smell.data-class`
+**Rule ID:** `design.data-class`
 **Severity:** Warning
 
 <!-- llms:skip-begin -->
@@ -596,7 +596,7 @@ readonly class UserDTO
 ```yaml
 # qmx.yaml
 rules:
-  code-smell.data-class:
+  design.data-class:
     woc_threshold: 80
     wmc_threshold: 10
     min_methods: 3
@@ -608,7 +608,7 @@ rules:
 
 ## God Class
 
-**Rule ID:** `code-smell.god-class`
+**Rule ID:** `design.god-class`
 **Severity:** Warning (3+ criteria) / Error (all evaluable criteria)
 
 <!-- llms:skip-begin -->
@@ -663,7 +663,7 @@ class ApplicationManager
 ```yaml
 # qmx.yaml
 rules:
-  code-smell.god-class:
+  design.god-class:
     wmc_threshold: 47
     lcom_threshold: 3
     tcc_threshold: 0.33
@@ -982,7 +982,7 @@ All code smell rules share the same simple configuration -- just enable or disab
 rules:
   code-smell.boolean-argument:
     enabled: true
-  code-smell.data-class:
+  design.data-class:
     woc_threshold: 80
     wmc_threshold: 10
     min_methods: 3
@@ -996,7 +996,7 @@ rules:
     enabled: false    # disable if you have legitimate eval usage
   code-smell.exit:
     enabled: true
-  code-smell.god-class:
+  design.god-class:
     wmc_threshold: 47
     lcom_threshold: 3
     tcc_threshold: 0.33

@@ -123,8 +123,8 @@ These rules detect common bad practices that are almost always wrong, regardless
 | [Unreachable Code](code-smell.md)           | `code-smell.unreachable-code`          | Code after return/throw/exit statements                         |
 | [Identical Sub-expression](code-smell.md)   | `code-smell.identical-subexpression`   | Identical operands, duplicate conditions, same ternary branches |
 | [Constructor Over-injection](code-smell.md) | `code-smell.constructor-overinjection` | Too many constructor dependencies                               |
-| [Data Class](code-smell.md)                 | `code-smell.data-class`                | High public surface but low complexity (getter/setter classes)  |
-| [God Class](code-smell.md)                  | `code-smell.god-class`                 | Overly complex, large classes with low cohesion                 |
+| [Data Class](code-smell.md)                 | `design.data-class`                    | High public surface but low complexity (getter/setter classes)  |
+| [God Class](code-smell.md)                  | `design.god-class`                     | Overly complex, large classes with low cohesion                 |
 | [Unused Private](code-smell.md)             | `code-smell.unused-private`            | Unused private methods, properties, constants                   |
 
 [Read more about Code Smell rules --&gt;](code-smell.md)

@@ -10,6 +10,7 @@ use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Configuration\Pipeline\ConfigurationPipeline;
 use Qualimetrix\Configuration\RuleNamespaceExclusionProvider;
 use Qualimetrix\Configuration\RuleOptionsFactory;
+use Qualimetrix\Configuration\RuleOptionsRegistry;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -38,18 +39,25 @@ final class ConfigurationConfigurator implements ContainerConfiguratorInterface
      */
     private function registerConfigurationHolder(ContainerBuilder $container): void
     {
-        // RuleNamespaceExclusionProvider - shared between RuleOptionsFactory and RuleExecutor
+        // RuleNamespaceExclusionProvider - shared between RuleOptionsRegistry and RuleExecutor
         $exclusionProvider = new RuleNamespaceExclusionProvider();
         $container->register(RuleNamespaceExclusionProvider::class)
             ->setSynthetic(true)
             ->setPublic(true);
         $container->set(RuleNamespaceExclusionProvider::class, $exclusionProvider);
 
-        // RuleOptionsFactory - mutable, can be configured with CLI options at runtime
+        // RuleOptionsRegistry - mutable storage, can be configured with CLI options at runtime
+        $registry = new RuleOptionsRegistry($exclusionProvider);
+        $container->register(RuleOptionsRegistry::class)
+            ->setSynthetic(true)
+            ->setPublic(true);
+        $container->set(RuleOptionsRegistry::class, $registry);
+
+        // RuleOptionsFactory - stateless factory that reads from the registry
         $container->register(RuleOptionsFactory::class)
             ->setSynthetic(true)
             ->setPublic(true);
-        $container->set(RuleOptionsFactory::class, new RuleOptionsFactory($exclusionProvider));
+        $container->set(RuleOptionsFactory::class, new RuleOptionsFactory($registry));
 
         // ConfigurationHolder - mutable, configured at runtime with merged config
         $configProvider = new ConfigurationHolder();

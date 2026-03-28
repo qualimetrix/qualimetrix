@@ -818,8 +818,8 @@ final class SummaryFormatterTest extends TestCase
                 new Violation(
                     location: new Location('a.php', 1),
                     symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
-                    ruleName: 'code-smell.god-class',
-                    violationCode: 'code-smell.god-class',
+                    ruleName: 'design.god-class',
+                    violationCode: 'design.god-class',
                     message: 'God class',
                     severity: Severity::Error,
                 ),
