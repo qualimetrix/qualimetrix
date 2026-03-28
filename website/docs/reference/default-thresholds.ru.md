@@ -93,8 +93,8 @@
 | Правило                    | ID                                     | Warning                                            | Error     | Статус   |
 | -------------------------- | -------------------------------------- | -------------------------------------------------- | --------- | -------- |
 | Constructor Over-injection | `code-smell.constructor-overinjection` | 8 params                                           | 12 params | включено |
-| Data Class                 | `code-smell.data-class`                | WOC ≥ 80%, WMC ≤ 10                                | —         | включено |
-| God Class                  | `code-smell.god-class`                 | WMC ≥ 47, TCC < 0.33, LCOM ≥ 3, LOC ≥ 300 (3 of 4) | —         | включено |
+| Data Class                 | `design.data-class`                    | WOC ≥ 80%, WMC ≤ 10                                | —         | включено |
+| God Class                  | `design.god-class`                     | WMC ≥ 47, TCC < 0.33, LCOM ≥ 3, LOC ≥ 300 (3 of 4) | —         | включено |
 | Boolean Argument           | `code-smell.boolean-argument`          | —                                                  | —         | включено |
 | count() in Loop            | `code-smell.count-in-loop`             | —                                                  | —         | включено |
 | Debug Code                 | `code-smell.debug-code`                | —                                                  | всегда    | включено |

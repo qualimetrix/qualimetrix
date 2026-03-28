@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Configuration\RuleNamespaceExclusionProvider;
 use Qualimetrix\Configuration\RuleOptionsFactory;
+use Qualimetrix\Configuration\RuleOptionsRegistry;
 use Qualimetrix\Tests\Fixture\TestRuleOptions;
 use Qualimetrix\Tests\Fixture\TestRuleOptionsNoConstructor;
 use Qualimetrix\Tests\Fixture\TestRuleOptionsWithRequiredParams;
@@ -18,13 +19,16 @@ use RuntimeException;
 use stdClass;
 
 #[CoversClass(RuleOptionsFactory::class)]
+#[CoversClass(RuleOptionsRegistry::class)]
 final class RuleOptionsFactoryTest extends TestCase
 {
+    private RuleOptionsRegistry $registry;
     private RuleOptionsFactory $factory;
 
     protected function setUp(): void
     {
-        $this->factory = new RuleOptionsFactory();
+        $this->registry = new RuleOptionsRegistry();
+        $this->factory = new RuleOptionsFactory($this->registry);
     }
 
     public function testCreateWithDefaults(): void
@@ -41,7 +45,7 @@ final class RuleOptionsFactoryTest extends TestCase
 
     public function testCreateWithConfigFileOptions(): void
     {
-        $this->factory->setConfigFileOptions([
+        $this->registry->setConfigFileOptions([
             'test-rule' => [
                 'warning_threshold' => 15,
                 'error_threshold' => 30,
@@ -61,8 +65,8 @@ final class RuleOptionsFactoryTest extends TestCase
 
     public function testCreateWithCliOptions(): void
     {
-        $this->factory->addCliOption('test-rule', 'warningThreshold', 25);
-        $this->factory->addCliOption('test-rule', 'countNullsafe', false);
+        $this->registry->addCliOption('test-rule', 'warningThreshold', 25);
+        $this->registry->addCliOption('test-rule', 'countNullsafe', false);
 
         /** @var TestRuleOptions $options */
         $options = $this->factory->create('test-rule', TestRuleOptions::class);
@@ -76,13 +80,13 @@ final class RuleOptionsFactoryTest extends TestCase
 
     public function testCliOptionsOverrideConfigFile(): void
     {
-        $this->factory->setConfigFileOptions([
+        $this->registry->setConfigFileOptions([
             'test-rule' => [
                 'warning_threshold' => 15,
             ],
         ]);
 
-        $this->factory->addCliOption('test-rule', 'warningThreshold', 25);
+        $this->registry->addCliOption('test-rule', 'warningThreshold', 25);
 
         /** @var TestRuleOptions $options */
         $options = $this->factory->create('test-rule', TestRuleOptions::class);
@@ -94,7 +98,7 @@ final class RuleOptionsFactoryTest extends TestCase
 
     public function testSetCliOptions(): void
     {
-        $this->factory->setCliOptions('test-rule', [
+        $this->registry->setCliOptions('test-rule', [
             'warningThreshold' => 50,
             'errorThreshold' => 100,
         ]);
@@ -109,22 +113,22 @@ final class RuleOptionsFactoryTest extends TestCase
 
     public function testGetConfigFileOptions(): void
     {
-        $this->factory->setConfigFileOptions([
+        $this->registry->setConfigFileOptions([
             'rule-a' => ['enabled' => false],
             'rule-b' => ['enabled' => true],
         ]);
 
-        $options = $this->factory->getConfigFileOptions();
+        $options = $this->registry->getConfigFileOptions();
 
         self::assertSame(['rule-a' => ['enabled' => false], 'rule-b' => ['enabled' => true]], $options);
     }
 
     public function testGetCliOptions(): void
     {
-        $this->factory->addCliOption('rule-a', 'opt1', 'value1');
-        $this->factory->addCliOption('rule-b', 'opt2', 'value2');
+        $this->registry->addCliOption('rule-a', 'opt1', 'value1');
+        $this->registry->addCliOption('rule-b', 'opt2', 'value2');
 
-        $options = $this->factory->getCliOptions();
+        $options = $this->registry->getCliOptions();
 
         self::assertSame([
             'rule-a' => ['opt1' => 'value1'],
@@ -134,13 +138,13 @@ final class RuleOptionsFactoryTest extends TestCase
 
     public function testReset(): void
     {
-        $this->factory->setConfigFileOptions(['rule' => ['opt' => 'val']]);
-        $this->factory->addCliOption('rule', 'opt2', 'val2');
+        $this->registry->setConfigFileOptions(['rule' => ['opt' => 'val']]);
+        $this->registry->addCliOption('rule', 'opt2', 'val2');
 
-        $this->factory->reset();
+        $this->registry->reset();
 
-        self::assertSame([], $this->factory->getConfigFileOptions());
-        self::assertSame([], $this->factory->getCliOptions());
+        self::assertSame([], $this->registry->getConfigFileOptions());
+        self::assertSame([], $this->registry->getCliOptions());
     }
 
     public function testCreateThrowsForNonExistentClass(): void
@@ -163,7 +167,7 @@ final class RuleOptionsFactoryTest extends TestCase
 
     public function testNormalizesSnakeCaseKeys(): void
     {
-        $this->factory->setConfigFileOptions([
+        $this->registry->setConfigFileOptions([
             'test-rule' => [
                 'warning_threshold' => 15,
                 'count_nullsafe' => false,
@@ -180,7 +184,7 @@ final class RuleOptionsFactoryTest extends TestCase
 
     public function testNormalizesKebabCaseKeys(): void
     {
-        $this->factory->setConfigFileOptions([
+        $this->registry->setConfigFileOptions([
             'test-rule' => [
                 'warning-threshold' => 15,
                 'count-nullsafe' => false,
@@ -198,11 +202,11 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itExpandsDotNotationInCliOptions(): void
     {
-        $this->factory->addCliOption('test-rule', 'method.warning', 5);
-        $this->factory->addCliOption('test-rule', 'method.error', 10);
-        $this->factory->addCliOption('test-rule', 'class.enabled', false);
+        $this->registry->addCliOption('test-rule', 'method.warning', 5);
+        $this->registry->addCliOption('test-rule', 'method.error', 10);
+        $this->registry->addCliOption('test-rule', 'class.enabled', false);
 
-        $cliOptions = $this->factory->getCliOptions();
+        $cliOptions = $this->registry->getCliOptions();
 
         self::assertArrayHasKey('test-rule', $cliOptions);
         self::assertSame([
@@ -215,7 +219,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itHandlesNestedConfigFileOptions(): void
     {
-        $this->factory->setConfigFileOptions([
+        $this->registry->setConfigFileOptions([
             'test-rule' => [
                 'enabled' => true,
                 'nested' => [
@@ -226,7 +230,7 @@ final class RuleOptionsFactoryTest extends TestCase
             ],
         ]);
 
-        $options = $this->factory->getConfigFileOptions();
+        $options = $this->registry->getConfigFileOptions();
 
         self::assertArrayHasKey('test-rule', $options);
         self::assertIsArray($options['test-rule']['nested']);
@@ -236,14 +240,14 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itDeepMergesNestedArrays(): void
     {
-        $this->factory->setConfigFileOptions([
+        $this->registry->setConfigFileOptions([
             'test-rule' => [
                 'warning_threshold' => 15,
                 'enabled' => true,
             ],
         ]);
 
-        $this->factory->setCliOptions('test-rule', [
+        $this->registry->setCliOptions('test-rule', [
             'errorThreshold' => 25,
             'countNullsafe' => false,
         ]);
@@ -261,8 +265,8 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itHandlesEmptyConfigArrays(): void
     {
-        $this->factory->setConfigFileOptions([]);
-        $this->factory->setCliOptions('test-rule', []);
+        $this->registry->setConfigFileOptions([]);
+        $this->registry->setCliOptions('test-rule', []);
 
         /** @var TestRuleOptions $options */
         $options = $this->factory->create('test-rule', TestRuleOptions::class);
@@ -277,14 +281,14 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itOverridesArrayValuesInMerge(): void
     {
-        $this->factory->setConfigFileOptions([
+        $this->registry->setConfigFileOptions([
             'test-rule' => [
                 'warning_threshold' => 5,
             ],
         ]);
 
         // CLI completely overrides config value (not merges)
-        $this->factory->addCliOption('test-rule', 'warningThreshold', 50);
+        $this->registry->addCliOption('test-rule', 'warningThreshold', 50);
 
         /** @var TestRuleOptions $options */
         $options = $this->factory->create('test-rule', TestRuleOptions::class);
@@ -295,7 +299,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itNormalizesMixedCaseKeys(): void
     {
-        $this->factory->setConfigFileOptions([
+        $this->registry->setConfigFileOptions([
             'test-rule' => [
                 'Warning_Threshold' => 12,
                 'error-threshold' => 24,
@@ -314,11 +318,11 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itHandlesMultiLevelDotNotation(): void
     {
-        $this->factory->addCliOption('test-rule', 'level1.level2.level3', 'deep');
-        $this->factory->addCliOption('test-rule', 'level1.level2.other', 'value');
+        $this->registry->addCliOption('test-rule', 'level1.level2.level3', 'deep');
+        $this->registry->addCliOption('test-rule', 'level1.level2.other', 'value');
 
         // The factory stores raw dot notation, expansion happens during create()
-        $cliOptions = $this->factory->getCliOptions();
+        $cliOptions = $this->registry->getCliOptions();
 
         self::assertArrayHasKey('test-rule', $cliOptions);
         self::assertSame('deep', $cliOptions['test-rule']['level1.level2.level3']);
@@ -328,7 +332,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itHandlesBooleanStringValues(): void
     {
-        $this->factory->setConfigFileOptions([
+        $this->registry->setConfigFileOptions([
             'test-rule' => [
                 'enabled' => 'true', // string instead of bool
                 'count_nullsafe' => '0', // string instead of bool
@@ -346,7 +350,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itHandlesNullValues(): void
     {
-        $this->factory->setConfigFileOptions([
+        $this->registry->setConfigFileOptions([
             'test-rule' => [
                 'warning_threshold' => null,
             ],
@@ -362,7 +366,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itPreservesZeroValues(): void
     {
-        $this->factory->setConfigFileOptions([
+        $this->registry->setConfigFileOptions([
             'test-rule' => [
                 'warning_threshold' => 0,
                 'error_threshold' => 0,
@@ -380,7 +384,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itHandlesFloatValues(): void
     {
-        $this->factory->setConfigFileOptions([
+        $this->registry->setConfigFileOptions([
             'test-rule' => [
                 'warning_threshold' => 10.5,
                 'error_threshold' => 20.7,
@@ -398,7 +402,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itMergesPartialConfigFileOptions(): void
     {
-        $this->factory->setConfigFileOptions([
+        $this->registry->setConfigFileOptions([
             'test-rule' => [
                 'enabled' => false, // only override enabled
             ],
@@ -416,13 +420,13 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itHandlesMultipleRulesIndependently(): void
     {
-        $this->factory->setConfigFileOptions([
+        $this->registry->setConfigFileOptions([
             'rule-a' => ['warning_threshold' => 5],
             'rule-b' => ['warning_threshold' => 15],
         ]);
 
-        $this->factory->addCliOption('rule-a', 'errorThreshold', 10);
-        $this->factory->addCliOption('rule-b', 'errorThreshold', 30);
+        $this->registry->addCliOption('rule-a', 'errorThreshold', 10);
+        $this->registry->addCliOption('rule-b', 'errorThreshold', 30);
 
         /** @var TestRuleOptions $optionsA */
         $optionsA = $this->factory->create('rule-a', TestRuleOptions::class);
@@ -439,11 +443,11 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itHandlesCliOptionsAddedIncrementally(): void
     {
-        $this->factory->addCliOption('test-rule', 'option1', 'value1');
-        $this->factory->addCliOption('test-rule', 'option2', 'value2');
-        $this->factory->addCliOption('test-rule', 'option3', 'value3');
+        $this->registry->addCliOption('test-rule', 'option1', 'value1');
+        $this->registry->addCliOption('test-rule', 'option2', 'value2');
+        $this->registry->addCliOption('test-rule', 'option3', 'value3');
 
-        $cliOptions = $this->factory->getCliOptions();
+        $cliOptions = $this->registry->getCliOptions();
 
         self::assertArrayHasKey('test-rule', $cliOptions);
         self::assertCount(3, $cliOptions['test-rule']);
@@ -455,8 +459,8 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itOverwritesCliOptionWhenAddedTwice(): void
     {
-        $this->factory->addCliOption('test-rule', 'warningThreshold', 5);
-        $this->factory->addCliOption('test-rule', 'warningThreshold', 15);
+        $this->registry->addCliOption('test-rule', 'warningThreshold', 5);
+        $this->registry->addCliOption('test-rule', 'warningThreshold', 15);
 
         /** @var TestRuleOptions $options */
         $options = $this->factory->create('test-rule', TestRuleOptions::class);
@@ -467,12 +471,12 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itReplacesCliOptionsWhenUsingSetCliOptions(): void
     {
-        $this->factory->addCliOption('test-rule', 'option1', 'old');
-        $this->factory->setCliOptions('test-rule', [
+        $this->registry->addCliOption('test-rule', 'option1', 'old');
+        $this->registry->setCliOptions('test-rule', [
             'option2' => 'new',
         ]);
 
-        $cliOptions = $this->factory->getCliOptions();
+        $cliOptions = $this->registry->getCliOptions();
 
         self::assertArrayNotHasKey('option1', $cliOptions['test-rule']);
         self::assertArrayHasKey('option2', $cliOptions['test-rule']);
@@ -482,14 +486,14 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itHandlesEmptyStringKeys(): void
     {
-        $this->factory->setConfigFileOptions([
+        $this->registry->setConfigFileOptions([
             'test-rule' => [
                 '' => 'empty-key-value',
                 'valid_key' => 'valid-value',
             ],
         ]);
 
-        $options = $this->factory->getConfigFileOptions();
+        $options = $this->registry->getConfigFileOptions();
 
         self::assertArrayHasKey('test-rule', $options);
         self::assertSame('empty-key-value', $options['test-rule']['']);
@@ -499,13 +503,13 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itNormalizesNumericStringKeys(): void
     {
-        $this->factory->setConfigFileOptions([
+        $this->registry->setConfigFileOptions([
             'test-rule' => [
                 '123_value' => 'numeric-start',
             ],
         ]);
 
-        $normalized = $this->factory->getConfigFileOptions();
+        $normalized = $this->registry->getConfigFileOptions();
 
         // Key normalization should handle numeric prefixes
         self::assertArrayHasKey('test-rule', $normalized);
@@ -514,10 +518,10 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itHandlesDotNotationWithSingleKey(): void
     {
-        $this->factory->addCliOption('test-rule', 'simpleKey', 'value');
-        $this->factory->addCliOption('test-rule', 'nested.key', 'nested-value');
+        $this->registry->addCliOption('test-rule', 'simpleKey', 'value');
+        $this->registry->addCliOption('test-rule', 'nested.key', 'nested-value');
 
-        $cliOptions = $this->factory->getCliOptions();
+        $cliOptions = $this->registry->getCliOptions();
 
         self::assertSame('value', $cliOptions['test-rule']['simpleKey']);
         self::assertSame('nested-value', $cliOptions['test-rule']['nested.key']);
@@ -527,13 +531,13 @@ final class RuleOptionsFactoryTest extends TestCase
     public function itCreatesNestedStructureFromDotNotationDuringMerge(): void
     {
         // When create() is called, dot notation should expand
-        $this->factory->setConfigFileOptions([
+        $this->registry->setConfigFileOptions([
             'test-rule' => [
                 'enabled' => true,
             ],
         ]);
 
-        $this->factory->addCliOption('test-rule', 'warningThreshold', 99);
+        $this->registry->addCliOption('test-rule', 'warningThreshold', 99);
 
         /** @var TestRuleOptions $options */
         $options = $this->factory->create('test-rule', TestRuleOptions::class);
@@ -545,14 +549,14 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itHandlesArrayMergeWithScalarOverwrite(): void
     {
-        $this->factory->setConfigFileOptions([
+        $this->registry->setConfigFileOptions([
             'test-rule' => [
                 'warning_threshold' => 5,
             ],
         ]);
 
         // Overwrite with different type (should work)
-        $this->factory->addCliOption('test-rule', 'warningThreshold', '25');
+        $this->registry->addCliOption('test-rule', 'warningThreshold', '25');
 
         /** @var TestRuleOptions $options */
         $options = $this->factory->create('test-rule', TestRuleOptions::class);
@@ -563,7 +567,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itPreservesCamelCaseKeysFromConfigFile(): void
     {
-        $this->factory->setConfigFileOptions([
+        $this->registry->setConfigFileOptions([
             'test-rule' => [
                 'warningThreshold' => 8, // already camelCase
                 'errorThreshold' => 16,
@@ -580,7 +584,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itHandlesConfigWithOnlyDisabledFlag(): void
     {
-        $this->factory->setConfigFileOptions([
+        $this->registry->setConfigFileOptions([
             'test-rule' => [
                 'enabled' => false,
             ],
@@ -598,7 +602,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itHandlesEmptyRuleNameInConfig(): void
     {
-        $this->factory->setConfigFileOptions([
+        $this->registry->setConfigFileOptions([
             '' => [
                 'warning_threshold' => 5,
             ],
@@ -614,35 +618,35 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itResetsClearsAllState(): void
     {
-        $this->factory->setConfigFileOptions([
+        $this->registry->setConfigFileOptions([
             'rule1' => ['opt1' => 'val1'],
             'rule2' => ['opt2' => 'val2'],
         ]);
 
-        $this->factory->addCliOption('rule1', 'cliOpt', 'cliVal');
-        $this->factory->addCliOption('rule3', 'cliOpt2', 'cliVal2');
+        $this->registry->addCliOption('rule1', 'cliOpt', 'cliVal');
+        $this->registry->addCliOption('rule3', 'cliOpt2', 'cliVal2');
 
-        self::assertNotEmpty($this->factory->getConfigFileOptions());
-        self::assertNotEmpty($this->factory->getCliOptions());
+        self::assertNotEmpty($this->registry->getConfigFileOptions());
+        self::assertNotEmpty($this->registry->getCliOptions());
 
-        $this->factory->reset();
+        $this->registry->reset();
 
-        self::assertEmpty($this->factory->getConfigFileOptions());
-        self::assertEmpty($this->factory->getCliOptions());
+        self::assertEmpty($this->registry->getConfigFileOptions());
+        self::assertEmpty($this->registry->getCliOptions());
     }
 
     #[Test]
     public function itMergesPriorityCorrectly(): void
     {
         // Setup: defaults (10, 20) → config (15, 25) → CLI (warningThreshold=30)
-        $this->factory->setConfigFileOptions([
+        $this->registry->setConfigFileOptions([
             'test-rule' => [
                 'warning_threshold' => 15,
                 'error_threshold' => 25,
             ],
         ]);
 
-        $this->factory->addCliOption('test-rule', 'warningThreshold', 30);
+        $this->registry->addCliOption('test-rule', 'warningThreshold', 30);
 
         /** @var TestRuleOptions $options */
         $options = $this->factory->create('test-rule', TestRuleOptions::class);
@@ -684,7 +688,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itMergesConfigWithTypeBasedDefaults(): void
     {
-        $this->factory->setConfigFileOptions([
+        $this->registry->setConfigFileOptions([
             'test-rule' => [
                 'enabled' => false,
                 'threshold' => 100,
@@ -709,12 +713,12 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itOverridesTypeBasedDefaultsWithCliOptions(): void
     {
-        $this->factory->addCliOption('test-rule', 'enabled', false);
-        $this->factory->addCliOption('test-rule', 'threshold', 50);
-        $this->factory->addCliOption('test-rule', 'ratio', 0.5);
-        $this->factory->addCliOption('test-rule', 'name', 'cli-name');
-        $this->factory->addCliOption('test-rule', 'items', ['a', 'b', 'c']);
-        $this->factory->addCliOption('test-rule', 'optional', 'value');
+        $this->registry->addCliOption('test-rule', 'enabled', false);
+        $this->registry->addCliOption('test-rule', 'threshold', 50);
+        $this->registry->addCliOption('test-rule', 'ratio', 0.5);
+        $this->registry->addCliOption('test-rule', 'name', 'cli-name');
+        $this->registry->addCliOption('test-rule', 'items', ['a', 'b', 'c']);
+        $this->registry->addCliOption('test-rule', 'optional', 'value');
 
         /** @var TestRuleOptionsWithRequiredParams $options */
         $options = $this->factory->create('test-rule', TestRuleOptionsWithRequiredParams::class);
@@ -743,13 +747,13 @@ final class RuleOptionsFactoryTest extends TestCase
     public function itExpandsDeepDotNotationInCliOptions(): void
     {
         // Test actual expansion during create() call
-        $this->factory->addCliOption('complexity', 'method.warning', 5);
-        $this->factory->addCliOption('complexity', 'method.error', 10);
-        $this->factory->addCliOption('complexity', 'class.warning', 15);
-        $this->factory->addCliOption('complexity', 'class.error', 20);
+        $this->registry->addCliOption('complexity', 'method.warning', 5);
+        $this->registry->addCliOption('complexity', 'method.error', 10);
+        $this->registry->addCliOption('complexity', 'class.warning', 15);
+        $this->registry->addCliOption('complexity', 'class.error', 20);
 
         // Before expansion, options are stored as-is
-        $cliOptions = $this->factory->getCliOptions();
+        $cliOptions = $this->registry->getCliOptions();
         self::assertArrayHasKey('complexity', $cliOptions);
         self::assertArrayHasKey('method.warning', $cliOptions['complexity']);
         self::assertArrayHasKey('method.error', $cliOptions['complexity']);
@@ -761,10 +765,10 @@ final class RuleOptionsFactoryTest extends TestCase
     public function itHandlesDotNotationCollisionsCorrectly(): void
     {
         // Test that dot notation expansion handles collisions
-        $this->factory->addCliOption('test-rule', 'nested.key1', 'value1');
-        $this->factory->addCliOption('test-rule', 'nested.key2', 'value2');
+        $this->registry->addCliOption('test-rule', 'nested.key1', 'value1');
+        $this->registry->addCliOption('test-rule', 'nested.key2', 'value2');
 
-        $cliOptions = $this->factory->getCliOptions();
+        $cliOptions = $this->registry->getCliOptions();
 
         self::assertArrayHasKey('test-rule', $cliOptions);
         self::assertSame('value1', $cliOptions['test-rule']['nested.key1']);
@@ -774,33 +778,33 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itResetsCliOptionsWithoutAffectingConfigFileOptions(): void
     {
-        $this->factory->setConfigFileOptions([
+        $this->registry->setConfigFileOptions([
             'test-rule' => ['warning_threshold' => 15],
         ]);
-        $this->factory->addCliOption('test-rule', 'errorThreshold', 30);
-        $this->factory->addCliOption('other-rule', 'enabled', false);
+        $this->registry->addCliOption('test-rule', 'errorThreshold', 30);
+        $this->registry->addCliOption('other-rule', 'enabled', false);
 
-        self::assertNotEmpty($this->factory->getCliOptions());
+        self::assertNotEmpty($this->registry->getCliOptions());
 
-        $this->factory->resetCliOptions();
+        $this->registry->resetCliOptions();
 
-        self::assertEmpty($this->factory->getCliOptions());
+        self::assertEmpty($this->registry->getCliOptions());
         // Config file options preserved
-        self::assertSame(['test-rule' => ['warning_threshold' => 15]], $this->factory->getConfigFileOptions());
+        self::assertSame(['test-rule' => ['warning_threshold' => 15]], $this->registry->getConfigFileOptions());
     }
 
     #[Test]
     public function cliOptionsDoNotLeakBetweenRunsAfterReset(): void
     {
         // Simulate first run
-        $this->factory->setCliOptions('test-rule', ['warningThreshold' => 50]);
+        $this->registry->setCliOptions('test-rule', ['warningThreshold' => 50]);
 
         /** @var TestRuleOptions $options1 */
         $options1 = $this->factory->create('test-rule', TestRuleOptions::class);
         self::assertSame(50, $options1->warningThreshold);
 
         // Reset between runs
-        $this->factory->resetCliOptions();
+        $this->registry->resetCliOptions();
 
         // Second run without CLI options — should use defaults
         /** @var TestRuleOptions $options2 */
@@ -812,7 +816,7 @@ final class RuleOptionsFactoryTest extends TestCase
     public function itNormalizesScalarFalseRuleConfig(): void
     {
         // YAML: `rules: { test-rule: false }` arrives as scalar false
-        $this->factory->setConfigFileOptions([
+        $this->registry->setConfigFileOptions([
             'test-rule' => false,
         ]);
 
@@ -829,7 +833,7 @@ final class RuleOptionsFactoryTest extends TestCase
     public function itNormalizesScalarTrueRuleConfig(): void
     {
         // YAML: `rules: { test-rule: true }` arrives as scalar true
-        $this->factory->setConfigFileOptions([
+        $this->registry->setConfigFileOptions([
             'test-rule' => true,
         ]);
 
@@ -844,7 +848,7 @@ final class RuleOptionsFactoryTest extends TestCase
     public function itNormalizesScalarNullRuleConfig(): void
     {
         // YAML: `rules: { test-rule: ~ }` arrives as null
-        $this->factory->setConfigFileOptions([
+        $this->registry->setConfigFileOptions([
             'test-rule' => null,
         ]);
 
@@ -861,9 +865,9 @@ final class RuleOptionsFactoryTest extends TestCase
     public function itHandlesDeepNestedDotNotationLevels(): void
     {
         // Test very deep nesting: a.b.c.d.e
-        $this->factory->addCliOption('test-rule', 'a.b.c.d.e', 'deep-value');
+        $this->registry->addCliOption('test-rule', 'a.b.c.d.e', 'deep-value');
 
-        $cliOptions = $this->factory->getCliOptions();
+        $cliOptions = $this->registry->getCliOptions();
 
         self::assertArrayHasKey('test-rule', $cliOptions);
         self::assertSame('deep-value', $cliOptions['test-rule']['a.b.c.d.e']);
@@ -872,7 +876,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itThrowsWhenNumericFieldContainsNonNumericString(): void
     {
-        $this->factory->setConfigFileOptions([
+        $this->registry->setConfigFileOptions([
             'test-rule' => [
                 'warning_threshold' => 'not_a_number',
             ],
@@ -887,7 +891,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itThrowsWhenErrorThresholdIsNonNumericString(): void
     {
-        $this->factory->setConfigFileOptions([
+        $this->registry->setConfigFileOptions([
             'test-rule' => [
                 'error_threshold' => 'invalid',
             ],
@@ -902,7 +906,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itAcceptsNumericStringForThresholdFields(): void
     {
-        $this->factory->setConfigFileOptions([
+        $this->registry->setConfigFileOptions([
             'test-rule' => [
                 'warning_threshold' => '15',
                 'error_threshold' => '30',
@@ -920,7 +924,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itAcceptsFloatStringForThresholdFields(): void
     {
-        $this->factory->setConfigFileOptions([
+        $this->registry->setConfigFileOptions([
             'test-rule' => [
                 'warning_threshold' => '10.5',
             ],
@@ -936,7 +940,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function itIncludesRuleNameInNumericValidationError(): void
     {
-        $this->factory->setConfigFileOptions([
+        $this->registry->setConfigFileOptions([
             'complexity.cyclomatic' => [
                 'error_threshold' => 'not_a_number',
             ],
@@ -953,7 +957,7 @@ final class RuleOptionsFactoryTest extends TestCase
     #[Test]
     public function createExtractsExcludeNamespacesSnakeCase(): void
     {
-        $this->factory->setConfigFileOptions([
+        $this->registry->setConfigFileOptions([
             'test.rule' => [
                 'exclude_namespaces' => ['App\\Tests', 'App\\Legacy'],
                 'warningThreshold' => 5,
@@ -962,14 +966,14 @@ final class RuleOptionsFactoryTest extends TestCase
 
         $this->factory->create('test.rule', TestRuleOptions::class);
 
-        $provider = $this->factory->getExclusionProvider();
+        $provider = $this->registry->getExclusionProvider();
         self::assertSame(['App\\Tests', 'App\\Legacy'], $provider->getExclusions('test.rule'));
     }
 
     #[Test]
     public function createExtractsExcludeNamespacesCamelCase(): void
     {
-        $this->factory->setConfigFileOptions([
+        $this->registry->setConfigFileOptions([
             'test.rule' => [
                 'excludeNamespaces' => ['App\\Tests'],
             ],
@@ -977,14 +981,14 @@ final class RuleOptionsFactoryTest extends TestCase
 
         $this->factory->create('test.rule', TestRuleOptions::class);
 
-        $provider = $this->factory->getExclusionProvider();
+        $provider = $this->registry->getExclusionProvider();
         self::assertSame(['App\\Tests'], $provider->getExclusions('test.rule'));
     }
 
     #[Test]
     public function createExtractsExcludeNamespacesStringCoercedToArray(): void
     {
-        $this->factory->setConfigFileOptions([
+        $this->registry->setConfigFileOptions([
             'test.rule' => [
                 'exclude_namespaces' => 'App\\Tests',
             ],
@@ -992,14 +996,14 @@ final class RuleOptionsFactoryTest extends TestCase
 
         $this->factory->create('test.rule', TestRuleOptions::class);
 
-        $provider = $this->factory->getExclusionProvider();
+        $provider = $this->registry->getExclusionProvider();
         self::assertSame(['App\\Tests'], $provider->getExclusions('test.rule'));
     }
 
     #[Test]
     public function createRemovesExcludeNamespacesFromOptionsBeforeFromArray(): void
     {
-        $this->factory->setConfigFileOptions([
+        $this->registry->setConfigFileOptions([
             'test.rule' => [
                 'exclude_namespaces' => ['App\\Tests'],
                 'warningThreshold' => 7,
@@ -1010,22 +1014,23 @@ final class RuleOptionsFactoryTest extends TestCase
 
         self::assertInstanceOf(TestRuleOptions::class, $options);
         self::assertSame(7, $options->warningThreshold);
-        self::assertSame(['App\\Tests'], $this->factory->getExclusionProvider()->getExclusions('test.rule'));
+        self::assertSame(['App\\Tests'], $this->registry->getExclusionProvider()->getExclusions('test.rule'));
     }
 
     #[Test]
     public function resetClearsExclusionProvider(): void
     {
         $provider = new RuleNamespaceExclusionProvider();
-        $factory = new RuleOptionsFactory($provider);
+        $registry = new RuleOptionsRegistry($provider);
+        $factory = new RuleOptionsFactory($registry);
 
-        $factory->setConfigFileOptions([
+        $registry->setConfigFileOptions([
             'test.rule' => ['exclude_namespaces' => ['App\\Tests']],
         ]);
         $factory->create('test.rule', TestRuleOptions::class);
         self::assertSame(['App\\Tests'], $provider->getExclusions('test.rule'));
 
-        $factory->reset();
+        $registry->reset();
         self::assertSame([], $provider->getExclusions('test.rule'));
     }
 }

@@ -11,6 +11,7 @@ use Qualimetrix\Configuration\Pipeline\ConfigurationContext;
 use Qualimetrix\Configuration\Pipeline\ConfigurationPipeline;
 use Qualimetrix\Configuration\Pipeline\ResolvedConfiguration;
 use Qualimetrix\Infrastructure\Cache\CacheFactory;
+use Qualimetrix\Infrastructure\Console\BaselinePresenter;
 use Qualimetrix\Infrastructure\Console\CheckCommandDefinition;
 use Qualimetrix\Infrastructure\Console\FilteredInputDefinition;
 use Qualimetrix\Infrastructure\Console\ResultPresenter;
@@ -47,6 +48,7 @@ final class CheckCommand extends Command
         private readonly ConfigurationPipeline $configurationPipeline,
         private readonly RuntimeConfigurator $runtimeConfigurator,
         private readonly ResultPresenter $resultPresenter,
+        private readonly BaselinePresenter $baselinePresenter,
     ) {
         parent::__construct();
     }
@@ -186,7 +188,7 @@ final class CheckCommand extends Command
         $filterResult = $this->violationFilterOrchestrator->filterAndReport($result, $input, $output, $scopeResolution);
         $filteredViolations = $filterResult->violations;
 
-        $baselineGenerated = $this->resultPresenter->generateBaselineIfRequested($result->violations, $input, $output);
+        $baselineGenerated = $this->baselinePresenter->generateBaselineIfRequested($result->violations, $input, $output);
 
         $partialAnalysis = $scopeResolution->analyzeScope !== null;
         $exitCode = $this->resultPresenter->presentResults($filteredViolations, $result, $input, $output, $partialAnalysis, $baselineGenerated);

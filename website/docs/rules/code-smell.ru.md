@@ -531,7 +531,7 @@ bin/qmx check src/ --rule-opt="code-smell.constructor-overinjection:warning=6"
 
 ## Класс данных (Data Class)
 
-**Идентификатор правила:** `code-smell.data-class`
+**Идентификатор правила:** `design.data-class`
 **Серьезность:** Warning
 
 <!-- llms:skip-begin -->
@@ -596,7 +596,7 @@ readonly class UserDTO
 ```yaml
 # qmx.yaml
 rules:
-  code-smell.data-class:
+  design.data-class:
     woc_threshold: 80
     wmc_threshold: 10
     min_methods: 3
@@ -608,7 +608,7 @@ rules:
 
 ## God Class (Божественный класс)
 
-**Идентификатор правила:** `code-smell.god-class`
+**Идентификатор правила:** `design.god-class`
 **Серьезность:** Warning (3+ критерия) / Error (все оцениваемые критерии)
 
 <!-- llms:skip-begin -->
@@ -663,7 +663,7 @@ class ApplicationManager
 ```yaml
 # qmx.yaml
 rules:
-  code-smell.god-class:
+  design.god-class:
     wmc_threshold: 47
     lcom_threshold: 3
     tcc_threshold: 0.33
@@ -982,7 +982,7 @@ bin/qmx check src/ --rule-opt="code-smell.unreachable-code:error=1"
 rules:
   code-smell.boolean-argument:
     enabled: true
-  code-smell.data-class:
+  design.data-class:
     woc_threshold: 80
     wmc_threshold: 10
     min_methods: 3
@@ -996,7 +996,7 @@ rules:
     enabled: false    # выключить, если есть легитимное использование eval
   code-smell.exit:
     enabled: true
-  code-smell.god-class:
+  design.god-class:
     wmc_threshold: 47
     lcom_threshold: 3
     tcc_threshold: 0.33

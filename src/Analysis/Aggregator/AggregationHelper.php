@@ -109,23 +109,7 @@ final class AggregationHelper
      */
     private static function calculatePercentile95(array $values): float
     {
-        sort($values);
-        $count = \count($values);
-
-        if ($count === 1) {
-            return (float) $values[0];
-        }
-
-        $index = 0.95 * ($count - 1);
-        $lower = (int) floor($index);
-        $upper = (int) ceil($index);
-        $fraction = $index - $lower;
-
-        if ($lower === $upper) {
-            return (float) $values[$lower];
-        }
-
-        return $values[$lower] + $fraction * ($values[$upper] - $values[$lower]);
+        return self::calculatePercentile($values, 0.95);
     }
 
     /**
@@ -135,6 +119,17 @@ final class AggregationHelper
      */
     private static function calculatePercentile5(array $values): float
     {
+        return self::calculatePercentile($values, 0.05);
+    }
+
+    /**
+     * Calculates the given percentile using linear interpolation.
+     *
+     * @param list<int|float> $values Non-empty list of values
+     * @param float $percentile Percentile to calculate (0.0–1.0)
+     */
+    private static function calculatePercentile(array $values, float $percentile): float
+    {
         sort($values);
         $count = \count($values);
 
@@ -142,7 +137,7 @@ final class AggregationHelper
             return (float) $values[0];
         }
 
-        $index = 0.05 * ($count - 1);
+        $index = $percentile * ($count - 1);
         $lower = (int) floor($index);
         $upper = (int) ceil($index);
         $fraction = $index - $lower;
@@ -266,7 +261,31 @@ final class AggregationHelper
             $weights[$definition->name] = [];
         }
 
-        // Collect from class/method symbols
+        self::collectFromClassSymbols($repository, $symbolInfos, $definitions, $values, $weights);
+        self::collectFromFunctions($repository, $symbolInfos, $definitions, $values, $weights);
+        self::collectFromFileSymbols($repository, $fileSymbols, $definitions, $values, $weights);
+
+        return new AggregationValues($values, $weights);
+    }
+
+    /**
+     * Collects metric values from class symbols (method-collected and class-collected metrics).
+     *
+     * For method-collected metrics, reads aggregated values (.sum or .avg fallback) from class level.
+     * For class-collected metrics, reads raw values directly from the class bag.
+     *
+     * @param list<SymbolInfo> $symbolInfos
+     * @param list<MetricDefinition> $definitions
+     * @param array<string, list<int|float>> $values
+     * @param array<string, list<float>> $weights
+     */
+    private static function collectFromClassSymbols(
+        MetricRepositoryInterface $repository,
+        array $symbolInfos,
+        array $definitions,
+        array &$values,
+        array &$weights,
+    ): void {
         foreach ($symbolInfos as $info) {
             $path = $info->symbolPath;
             $bag = $repository->get($path);
@@ -310,10 +329,26 @@ final class AggregationHelper
                 }
             }
         }
+    }
 
-        // Collect from standalone functions (type === null, member !== null).
-        // Functions have no parent class, so no pre-aggregated .sum/.avg exists.
-        // Read raw metric values directly from the function's bag.
+    /**
+     * Collects metric values from standalone functions.
+     *
+     * Functions have no parent class, so no pre-aggregated .sum/.avg exists.
+     * Reads raw metric values directly from the function's bag.
+     *
+     * @param list<SymbolInfo> $symbolInfos
+     * @param list<MetricDefinition> $definitions
+     * @param array<string, list<int|float>> $values
+     * @param array<string, list<float>> $weights
+     */
+    private static function collectFromFunctions(
+        MetricRepositoryInterface $repository,
+        array $symbolInfos,
+        array $definitions,
+        array &$values,
+        array &$weights,
+    ): void {
         foreach ($symbolInfos as $info) {
             $path = $info->symbolPath;
 
@@ -336,8 +371,25 @@ final class AggregationHelper
                 }
             }
         }
+    }
 
-        // Collect from file symbols
+    /**
+     * Collects metric values from file symbols.
+     *
+     * Only reads File-collected metrics from file-level bags.
+     *
+     * @param list<SymbolInfo> $fileSymbols
+     * @param list<MetricDefinition> $definitions
+     * @param array<string, list<int|float>> $values
+     * @param array<string, list<float>> $weights
+     */
+    private static function collectFromFileSymbols(
+        MetricRepositoryInterface $repository,
+        array $fileSymbols,
+        array $definitions,
+        array &$values,
+        array &$weights,
+    ): void {
         foreach ($fileSymbols as $fileInfo) {
             $bag = $repository->get($fileInfo->symbolPath);
 
@@ -355,8 +407,6 @@ final class AggregationHelper
                 }
             }
         }
-
-        return new AggregationValues($values, $weights);
     }
 
     /**

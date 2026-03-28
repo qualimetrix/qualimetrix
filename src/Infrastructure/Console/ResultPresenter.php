@@ -5,12 +5,9 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console;
 
 use Qualimetrix\Analysis\Pipeline\AnalysisResult;
-use Qualimetrix\Baseline\BaselineGenerator;
-use Qualimetrix\Baseline\BaselineWriter;
 use Qualimetrix\Configuration\AnalysisConfiguration;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
-use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
 use Qualimetrix\Reporting\Health\SummaryEnricher;
@@ -19,18 +16,17 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
- * Handles formatting, output of analysis results and profiler export.
+ * Handles formatting and output of analysis results.
  */
 final class ResultPresenter
 {
     public function __construct(
         private readonly FormatterRegistryInterface $formatterRegistry,
         private readonly ProfilerHolder $profilerHolder,
-        private readonly BaselineGenerator $baselineGenerator,
-        private readonly BaselineWriter $baselineWriter,
         private readonly ConfigurationProviderInterface $configurationProvider,
         private readonly SummaryEnricher $summaryEnricher,
         private readonly ProfilePresenter $profilePresenter,
+        private readonly ExitCodeResolver $exitCodeResolver,
         private readonly FormatterContextFactory $formatterContextFactory = new FormatterContextFactory(),
     ) {}
 
@@ -89,7 +85,7 @@ final class ResultPresenter
             return 0;
         }
 
-        return $this->determineExitCode($violations);
+        return $this->exitCodeResolver->resolve($violations);
     }
 
     /**
@@ -98,36 +94,6 @@ final class ResultPresenter
     public function presentProfile(InputInterface $input, OutputInterface $output): void
     {
         $this->profilePresenter->present($input, $output);
-    }
-
-    /**
-     * Generates baseline file if requested.
-     *
-     * Returns true when a baseline was successfully written, false when skipped.
-     *
-     * @param list<Violation> $violations
-     */
-    public function generateBaselineIfRequested(
-        array $violations,
-        InputInterface $input,
-        OutputInterface $output,
-    ): bool {
-        $generateBaselinePath = $input->getOption('generate-baseline');
-        if (!\is_string($generateBaselinePath) || $generateBaselinePath === '') {
-            return false;
-        }
-
-        $baseline = $this->baselineGenerator->generate($violations);
-        $projectRoot = $this->configurationProvider->getConfiguration()->projectRoot;
-        $this->baselineWriter->write($baseline, $generateBaselinePath, $projectRoot);
-
-        $output->writeln(\sprintf(
-            '<info>Baseline with %d violations written to %s</info>',
-            $baseline->count(),
-            $generateBaselinePath,
-        ));
-
-        return true;
     }
 
     /**
@@ -194,51 +160,5 @@ final class ResultPresenter
         }
 
         return false;
-    }
-
-    /**
-     * Determines exit code based on violation severity and failOn configuration.
-     *
-     * Default (null): only errors cause non-zero exit code (same as --fail-on=error).
-     * When failOn is Severity::Warning, warnings also cause non-zero exit code.
-     *
-     * @param list<Violation> $violations
-     */
-    private function determineExitCode(array $violations): int
-    {
-        $failOn = $this->configurationProvider->hasConfiguration()
-            ? $this->configurationProvider->getConfiguration()->failOn
-            : null;
-
-        // --fail-on=none: never fail on violations
-        if ($failOn === false) {
-            return 0;
-        }
-
-        // Default is --fail-on=error (null treated as Severity::Error)
-        $effectiveFailOn = $failOn ?? Severity::Error;
-
-        $hasErrors = false;
-        $hasWarnings = false;
-
-        foreach ($violations as $violation) {
-            if ($violation->severity === Severity::Error) {
-                $hasErrors = true;
-                break;
-            }
-            if ($violation->severity === Severity::Warning) {
-                $hasWarnings = true;
-            }
-        }
-
-        if ($hasErrors) {
-            return Severity::Error->getExitCode();
-        }
-
-        if ($hasWarnings && $effectiveFailOn === Severity::Warning) {
-            return Severity::Warning->getExitCode();
-        }
-
-        return 0;
     }
 }

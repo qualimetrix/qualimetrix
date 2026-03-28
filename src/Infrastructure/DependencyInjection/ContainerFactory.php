@@ -38,7 +38,7 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
  * - All analysis services (Analyzer, Collectors, Rules, etc.)
  *
  * Runtime configuration is handled through ConfigurationProviderInterface and
- * RuleOptionsFactory, which can be configured after container creation but
+ * RuleOptionsRegistry, which can be configured after container creation but
  * before rules are instantiated (rules are lazy-loaded).
  *
  * Service registration is delegated to dedicated configurators, each responsible
@@ -53,7 +53,7 @@ final class ContainerFactory
      * The container is created with default configuration. Runtime configuration
      * (from CLI or config file) should be set through:
      * - ConfigurationProviderInterface::setConfiguration()
-     * - RuleOptionsFactory::setCliOptions()
+     * - RuleOptionsRegistry::setCliOptions()
      *
      * These must be called BEFORE rules are used (e.g., before Analyzer::analyze()).
      */

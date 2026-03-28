@@ -45,8 +45,8 @@ Rules are analysis rule implementations for static analysis. Rules are **complet
 | **code-smell.exit**                      | CodeSmell       | Simple                          | exit/die usage                  | enabled: true                         |
 | **code-smell.goto**                      | CodeSmell       | Simple                          | goto statements                 | enabled: true                         |
 | **code-smell.constructor-overinjection** | CodeSmell       | Simple                          | Constructor over-injection      | warning: 8, error: 12                 |
-| **code-smell.data-class**                | CodeSmell       | Simple                          | Data Class detection            | wocThreshold: 80, wmcThreshold: 10    |
-| **code-smell.god-class**                 | CodeSmell       | Simple                          | God Class detection (L&M)       | wmc: 47, lcom: 3, tcc: 0.33, loc: 300 |
+| **design.data-class**                    | CodeSmell       | Simple                          | Data Class detection            | wocThreshold: 80, wmcThreshold: 10    |
+| **design.god-class**                     | CodeSmell       | Simple                          | God Class detection (L&M)       | wmc: 47, lcom: 3, tcc: 0.33, loc: 300 |
 | **code-smell.long-parameter-list**       | CodeSmell       | Simple                          | Long parameter lists            | warning: 4, error: 6                  |
 | **code-smell.superglobals**              | CodeSmell       | Simple                          | Direct superglobal access       | enabled: true                         |
 | **code-smell.unreachable-code**          | CodeSmell       | Simple                          | Unreachable code detection      | warning: 1, error: 2                  |

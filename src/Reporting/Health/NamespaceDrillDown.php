@@ -17,9 +17,13 @@ use Qualimetrix\Core\Violation\Violation;
  */
 final readonly class NamespaceDrillDown
 {
+    private HealthReasonBuilder $reasonBuilder;
+
     public function __construct(
         private MetricHintProvider $hintProvider,
-    ) {}
+    ) {
+        $this->reasonBuilder = new HealthReasonBuilder($this->hintProvider);
+    }
 
     /**
      * Builds subtree health scores by weighted-averaging health from all
@@ -154,7 +158,7 @@ final readonly class NamespaceDrillDown
                 }
             }
 
-            $reason = $this->buildReason($dimensionScores);
+            $reason = $this->reasonBuilder->buildReason($dimensionScores);
 
             $notableMetrics = [];
             if ($includeNotableMetrics) {
@@ -184,40 +188,6 @@ final readonly class NamespaceDrillDown
                 ?: $a->symbolPath->toCanonical() <=> $b->symbolPath->toCanonical());
 
         return $offenders;
-    }
-
-    /**
-     * Builds a human-readable reason string from dimension scores.
-     *
-     * @param array<string, float> $dimensionScores
-     */
-    public function buildReason(array $dimensionScores): string
-    {
-        if ($dimensionScores === []) {
-            return '';
-        }
-
-        $defaults = ComputedMetricDefaults::getDefaults();
-        $ranked = [];
-
-        foreach ($dimensionScores as $dim => $score) {
-            $defKey = 'health.' . $dim;
-            $warnThreshold = isset($defaults[$defKey]) ? ($defaults[$defKey]->warningThreshold ?? 50.0) : 50.0;
-            $delta = $score - $warnThreshold;
-            $ranked[] = ['dim' => $dim, 'delta' => $delta];
-        }
-
-        usort($ranked, static fn(array $a, array $b): int => $a['delta'] <=> $b['delta']);
-
-        $reasons = [];
-        foreach (\array_slice($ranked, 0, 2) as $item) {
-            if ($item['delta'] >= 0) {
-                continue;
-            }
-            $reasons[] = $this->hintProvider->getHealthDimensionLabel($item['dim'], true);
-        }
-
-        return implode(', ', $reasons);
     }
 
     /**

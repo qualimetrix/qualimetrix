@@ -33,13 +33,26 @@ final readonly class NamespaceTree
      */
     public function __construct(array $leafNamespaces)
     {
-        $children = [];
-        /** @var array<string, true> child→parent edge deduplication */
-        $edgeSeen = [];
-        $parent = [];
+        $allNodes = self::registerInputNamespaces($leafNamespaces);
+        [$children, $parent, $allNodes] = self::buildAncestorChain($allNodes);
+
+        $this->leafSet = self::computeLeafSet($allNodes, $children);
+        $this->children = $children;
+        $this->parent = $parent;
+        $this->allNodes = $allNodes;
+    }
+
+    /**
+     * Deduplicates and registers input namespaces, skipping empty strings.
+     *
+     * @param list<string> $leafNamespaces
+     *
+     * @return array<string, true>
+     */
+    private static function registerInputNamespaces(array $leafNamespaces): array
+    {
         $allNodes = [];
 
-        // Register all input namespaces (deduplicate)
         foreach ($leafNamespaces as $ns) {
             if ($ns === '') {
                 continue;
@@ -48,7 +61,25 @@ final readonly class NamespaceTree
             $allNodes[$ns] = true;
         }
 
-        // Discover parents by walking up each namespace
+        return $allNodes;
+    }
+
+    /**
+     * Walks up parent chains from each namespace, discovering intermediate parents
+     * and building parent→child relationships.
+     *
+     * @param array<string, true> $allNodes Initial set of known namespaces
+     *
+     * @return array{array<string, list<string>>, array<string, string>, array<string, true>}
+     *                                                                                        [children, parent, allNodes (expanded with discovered ancestors)]
+     */
+    private static function buildAncestorChain(array $allNodes): array
+    {
+        $children = [];
+        /** @var array<string, true> child→parent edge deduplication */
+        $edgeSeen = [];
+        $parent = [];
+
         foreach ($allNodes as $ns => $_) {
             $child = $ns;
             $lastSlash = strrpos($child, '\\');
@@ -77,7 +108,19 @@ final readonly class NamespaceTree
             }
         }
 
-        // A leaf is a node with no children
+        return [$children, $parent, $allNodes];
+    }
+
+    /**
+     * Computes which nodes are leaves (nodes with no children in the tree).
+     *
+     * @param array<string, true> $allNodes
+     * @param array<string, list<string>> $children
+     *
+     * @return array<string, true>
+     */
+    private static function computeLeafSet(array $allNodes, array $children): array
+    {
         $leafSet = [];
 
         foreach ($allNodes as $ns => $_) {
@@ -86,10 +129,7 @@ final readonly class NamespaceTree
             }
         }
 
-        $this->leafSet = $leafSet;
-        $this->children = $children;
-        $this->parent = $parent;
-        $this->allNodes = $allNodes;
+        return $leafSet;
     }
 
     /**

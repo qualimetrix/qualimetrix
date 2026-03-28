@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Rules\Design;
 
+use LogicException;
+use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\RuleCategory;
+use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
@@ -85,94 +88,108 @@ final class TypeCoverageRule extends AbstractRule
         foreach ($context->metrics->all(SymbolType::Class_) as $classInfo) {
             $metrics = $context->metrics->get($classInfo->symbolPath);
 
-            // Check parameter type coverage
-            $paramTotal = $metrics->get(MetricName::TYPE_COVERAGE_PARAM_TOTAL);
-            if ($paramTotal !== null && (int) $paramTotal > 0) {
-                $paramCoverage = (float) ($metrics->get(MetricName::TYPE_COVERAGE_PARAM) ?? 0.0);
-                $paramSeverity = $this->options->getParamSeverity($paramCoverage);
+            $location = new Location($classInfo->file, $classInfo->line);
 
-                if ($paramSeverity !== null) {
-                    $threshold = $paramSeverity === Severity::Error
-                        ? $this->options->paramError
-                        : $this->options->paramWarning;
+            $paramViolation = $this->checkCoverage(
+                $metrics,
+                $classInfo->symbolPath,
+                $location,
+                MetricName::TYPE_COVERAGE_PARAM_TOTAL,
+                MetricName::TYPE_COVERAGE_PARAM,
+                'Parameter',
+                $this->options->paramWarning,
+                $this->options->paramError,
+            );
 
-                    $violations[] = new Violation(
-                        location: new Location($classInfo->file, $classInfo->line),
-                        symbolPath: $classInfo->symbolPath,
-                        ruleName: $this->getName(),
-                        violationCode: self::NAME . '.param',
-                        message: \sprintf(
-                            'Parameter type coverage is %.1f%% (minimum: %.1f%%). Add type declarations to method parameters',
-                            $paramCoverage,
-                            $threshold,
-                        ),
-                        severity: $paramSeverity,
-                        metricValue: $paramCoverage,
-                        recommendation: \sprintf('Parameter type coverage: %.1f%% (threshold: %.1f%%) — missing type declarations', $paramCoverage, $threshold),
-                        threshold: $threshold,
-                    );
-                }
+            if ($paramViolation !== null) {
+                $violations[] = $paramViolation;
             }
 
-            // Check return type coverage
-            $returnTotal = $metrics->get(MetricName::TYPE_COVERAGE_RETURN_TOTAL);
-            if ($returnTotal !== null && (int) $returnTotal > 0) {
-                $returnCoverage = (float) ($metrics->get(MetricName::TYPE_COVERAGE_RETURN) ?? 0.0);
-                $returnSeverity = $this->options->getReturnSeverity($returnCoverage);
+            $returnViolation = $this->checkCoverage(
+                $metrics,
+                $classInfo->symbolPath,
+                $location,
+                MetricName::TYPE_COVERAGE_RETURN_TOTAL,
+                MetricName::TYPE_COVERAGE_RETURN,
+                'Return',
+                $this->options->returnWarning,
+                $this->options->returnError,
+            );
 
-                if ($returnSeverity !== null) {
-                    $threshold = $returnSeverity === Severity::Error
-                        ? $this->options->returnError
-                        : $this->options->returnWarning;
-
-                    $violations[] = new Violation(
-                        location: new Location($classInfo->file, $classInfo->line),
-                        symbolPath: $classInfo->symbolPath,
-                        ruleName: $this->getName(),
-                        violationCode: self::NAME . '.return',
-                        message: \sprintf(
-                            'Return type coverage is %.1f%% (minimum: %.1f%%). Add return type declarations to methods',
-                            $returnCoverage,
-                            $threshold,
-                        ),
-                        severity: $returnSeverity,
-                        metricValue: $returnCoverage,
-                        recommendation: \sprintf('Return type coverage: %.1f%% (threshold: %.1f%%) — missing type declarations', $returnCoverage, $threshold),
-                        threshold: $threshold,
-                    );
-                }
+            if ($returnViolation !== null) {
+                $violations[] = $returnViolation;
             }
 
-            // Check property type coverage
-            $propertyTotal = $metrics->get(MetricName::TYPE_COVERAGE_PROPERTY_TOTAL);
-            if ($propertyTotal !== null && (int) $propertyTotal > 0) {
-                $propertyCoverage = (float) ($metrics->get(MetricName::TYPE_COVERAGE_PROPERTY) ?? 0.0);
-                $propertySeverity = $this->options->getPropertySeverity($propertyCoverage);
+            $propertyViolation = $this->checkCoverage(
+                $metrics,
+                $classInfo->symbolPath,
+                $location,
+                MetricName::TYPE_COVERAGE_PROPERTY_TOTAL,
+                MetricName::TYPE_COVERAGE_PROPERTY,
+                'Property',
+                $this->options->propertyWarning,
+                $this->options->propertyError,
+            );
 
-                if ($propertySeverity !== null) {
-                    $threshold = $propertySeverity === Severity::Error
-                        ? $this->options->propertyError
-                        : $this->options->propertyWarning;
-
-                    $violations[] = new Violation(
-                        location: new Location($classInfo->file, $classInfo->line),
-                        symbolPath: $classInfo->symbolPath,
-                        ruleName: $this->getName(),
-                        violationCode: self::NAME . '.property',
-                        message: \sprintf(
-                            'Property type coverage is %.1f%% (minimum: %.1f%%). Add type declarations to properties',
-                            $propertyCoverage,
-                            $threshold,
-                        ),
-                        severity: $propertySeverity,
-                        metricValue: $propertyCoverage,
-                        recommendation: \sprintf('Property type coverage: %.1f%% (threshold: %.1f%%) — missing type declarations', $propertyCoverage, $threshold),
-                        threshold: $threshold,
-                    );
-                }
+            if ($propertyViolation !== null) {
+                $violations[] = $propertyViolation;
             }
         }
 
         return $violations;
+    }
+
+    private function checkCoverage(
+        MetricBag $metrics,
+        SymbolPath $symbolPath,
+        Location $location,
+        string $totalMetric,
+        string $coverageMetric,
+        string $label,
+        float $warningThreshold,
+        float $errorThreshold,
+    ): ?Violation {
+        $total = $metrics->get($totalMetric);
+
+        if ($total === null || (int) $total <= 0) {
+            return null;
+        }
+
+        $coverage = (float) ($metrics->get($coverageMetric) ?? 0.0);
+
+        if ($coverage < $errorThreshold) {
+            $severity = Severity::Error;
+            $threshold = $errorThreshold;
+        } elseif ($coverage < $warningThreshold) {
+            $severity = Severity::Warning;
+            $threshold = $warningThreshold;
+        } else {
+            return null;
+        }
+
+        [$code, $hint] = match ($label) {
+            'Parameter' => ['param', 'Add type declarations to method parameters'],
+            'Return' => ['return', 'Add return type declarations to methods'],
+            'Property' => ['property', 'Add type declarations to properties'],
+            default => throw new LogicException(\sprintf('Unknown coverage label: %s', $label)),
+        };
+
+        return new Violation(
+            location: $location,
+            symbolPath: $symbolPath,
+            ruleName: $this->getName(),
+            violationCode: self::NAME . '.' . $code,
+            message: \sprintf(
+                '%s type coverage is %.1f%% (minimum: %.1f%%). %s',
+                $label,
+                $coverage,
+                $threshold,
+                $hint,
+            ),
+            severity: $severity,
+            metricValue: $coverage,
+            recommendation: \sprintf('%s type coverage: %.1f%% (threshold: %.1f%%) — missing type declarations', $label, $coverage, $threshold),
+            threshold: $threshold,
+        );
     }
 }

@@ -123,8 +123,8 @@ Qualimetrix содержит набор встроенных правил для
 | [Недостижимый код](code-smell.ru.md)                  | `code-smell.unreachable-code`          | Код после return/throw/exit                                                       |
 | [Идентичные подвыражения](code-smell.ru.md)           | `code-smell.identical-subexpression`   | Одинаковые операнды, дублирующиеся условия, идентичные ветки тернарного оператора |
 | [Избыточная инъекция в конструктор](code-smell.ru.md) | `code-smell.constructor-overinjection` | Слишком много зависимостей в конструкторе                                         |
-| [Data-класс](code-smell.ru.md)                        | `code-smell.data-class`                | Высокая публичная поверхность при низкой сложности (классы-геттеры/сеттеры)       |
-| [God-класс](code-smell.ru.md)                         | `code-smell.god-class`                 | Чрезмерно сложные, большие классы с низкой связностью                             |
+| [Data-класс](code-smell.ru.md)                        | `design.data-class`                    | Высокая публичная поверхность при низкой сложности (классы-геттеры/сеттеры)       |
+| [God-класс](code-smell.ru.md)                         | `design.god-class`                     | Чрезмерно сложные, большие классы с низкой связностью                             |
 | [Неиспользуемый private](code-smell.ru.md)            | `code-smell.unused-private`            | Неиспользуемые приватные методы, свойства, константы                              |
 
 [Подробнее о правилах запахов кода --&gt;](code-smell.ru.md)

@@ -7,19 +7,21 @@ namespace Qualimetrix\Tests\Unit\Configuration;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Configuration\ComputedMetricFormulaValidator;
 use Qualimetrix\Configuration\ComputedMetricsConfigResolver;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinition;
 use Qualimetrix\Core\Symbol\SymbolType;
 use RuntimeException;
 
 #[CoversClass(ComputedMetricsConfigResolver::class)]
+#[CoversClass(ComputedMetricFormulaValidator::class)]
 final class ComputedMetricsConfigResolverTest extends TestCase
 {
     private ComputedMetricsConfigResolver $resolver;
 
     protected function setUp(): void
     {
-        $this->resolver = new ComputedMetricsConfigResolver();
+        $this->resolver = new ComputedMetricsConfigResolver(new ComputedMetricFormulaValidator());
     }
 
     public function testResolveWithEmptyConfigReturns6Defaults(): void

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Rules\CodeSmell;
+namespace Qualimetrix\Rules\Design;
 
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Rule\AnalysisContext;
@@ -22,7 +22,7 @@ use Qualimetrix\Rules\AbstractRule;
  */
 final class DataClassRule extends AbstractRule
 {
-    public const string NAME = 'code-smell.data-class';
+    public const string NAME = 'design.data-class';
 
     public function getName(): string
     {
@@ -36,7 +36,7 @@ final class DataClassRule extends AbstractRule
 
     public function getCategory(): RuleCategory
     {
-        return RuleCategory::CodeSmell;
+        return RuleCategory::Design;
     }
 
     /**

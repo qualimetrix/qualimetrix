@@ -9,7 +9,6 @@ use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinitionHolder;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
-use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Reporting\Debt\DebtCalculator;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\Report;
@@ -19,14 +18,27 @@ use Qualimetrix\Reporting\Report;
  *
  * Constructs a hierarchical tree of namespaces and classes with metrics,
  * violations, and debt information attached to each node.
+ *
+ * Delegates to focused helpers:
+ * - {@see HtmlViolationPartitioner} — violation partitioning and attachment
+ * - {@see HtmlMetricAggregator} — bottom-up metric aggregation
+ * - {@see HtmlDebtCalculator} — debt computation and aggregation
  */
 final class HtmlTreeBuilder
 {
     private const string NO_NAMESPACE_LABEL = '(no namespace)';
 
+    private readonly HtmlViolationPartitioner $violationPartitioner;
+    private readonly HtmlMetricAggregator $metricAggregator;
+    private readonly HtmlDebtCalculator $htmlDebtCalculator;
+
     public function __construct(
         private readonly DebtCalculator $debtCalculator,
-    ) {}
+    ) {
+        $this->violationPartitioner = new HtmlViolationPartitioner();
+        $this->metricAggregator = new HtmlMetricAggregator();
+        $this->htmlDebtCalculator = new HtmlDebtCalculator($this->debtCalculator);
+    }
 
     /**
      * Builds the complete data structure for the HTML report.
@@ -42,14 +54,14 @@ final class HtmlTreeBuilder
 
         // 2. Attach violations to tree nodes
         $nodesByPath = $this->indexNodes($root);
-        $violationsByNode = $this->partitionViolations($report->violations, $nodesByPath);
-        $this->attachViolations($nodesByPath, $violationsByNode, $context);
+        $violationsByNode = $this->violationPartitioner->partition($report->violations, $nodesByPath);
+        $this->violationPartitioner->attach($nodesByPath, $violationsByNode, $context);
 
         // 3. Compute debt per node
-        $this->computeDebt($violationsByNode, $nodesByPath);
+        $this->htmlDebtCalculator->computeDebt($violationsByNode, $nodesByPath);
 
-        // 4. Compute violationCountTotal bottom-up
-        $this->computeViolationCountTotal($root);
+        // 4. Compute violationCountTotal and aggregate debt bottom-up
+        $this->htmlDebtCalculator->aggregateBottomUp($root);
 
         // 5. Override root debt with report-level total when available.
         // Bottom-up aggregation misses file-level/project-level violations
@@ -62,10 +74,10 @@ final class HtmlTreeBuilder
         // 6. Build summary
         $summary = $this->buildSummary($report, $root, $nodesByPath);
 
-        // 6. Build computed metric definitions
+        // 7. Build computed metric definitions
         $definitions = $this->buildComputedMetricDefinitions();
 
-        // 7. Build project metadata
+        // 8. Build project metadata
         $project = $this->buildProjectMetadata($partialAnalysis, $projectName);
 
         return [
@@ -136,7 +148,7 @@ final class HtmlTreeBuilder
         }
 
         // Aggregate metrics bottom-up for intermediate namespace nodes
-        $this->aggregateMetricsBottomUp($root);
+        $this->metricAggregator->aggregateBottomUp($root);
 
         return $root;
     }
@@ -204,9 +216,6 @@ final class HtmlTreeBuilder
     /**
      * Builds an index of file path -> LOC value from file-level metrics.
      *
-     * Class-level MetricBags don't contain LOC (it's a file-level metric),
-     * so we need this index to assign LOC to class nodes.
-     *
      * @return array<string, int|float>
      */
     private function buildFileLocIndex(MetricRepositoryInterface $metrics): array
@@ -251,70 +260,6 @@ final class HtmlTreeBuilder
     }
 
     /**
-     * Aggregates metrics bottom-up for intermediate namespace nodes.
-     *
-     * - loc.sum: summed from children
-     * - health.*: weighted average by loc.sum (so larger modules weigh more)
-     */
-    private function aggregateMetricsBottomUp(HtmlTreeNode $node): void
-    {
-        // Recurse into children first (post-order)
-        foreach ($node->children as $child) {
-            $this->aggregateMetricsBottomUp($child);
-        }
-
-        if ($node->children === []) {
-            return;
-        }
-
-        // Aggregate loc.sum
-        if (!isset($node->metrics['loc.sum'])) {
-            $sum = 0;
-            $hasValue = false;
-
-            foreach ($node->children as $child) {
-                $childLoc = $child->metrics['loc.sum'] ?? null;
-                if ($childLoc !== null) {
-                    $sum += $childLoc;
-                    $hasValue = true;
-                }
-            }
-
-            if ($hasValue) {
-                $node->metrics['loc.sum'] = $sum;
-            }
-        }
-
-        // Aggregate health.* scores via LOC-weighted average
-        $healthKeys = ['health.overall', 'health.complexity', 'health.cohesion',
-            'health.coupling', 'health.typing', 'health.maintainability'];
-
-        foreach ($healthKeys as $key) {
-            if (isset($node->metrics[$key])) {
-                continue; // Already has this metric from the repository
-            }
-
-            $weightedSum = 0.0;
-            $totalWeight = 0.0;
-
-            foreach ($node->children as $child) {
-                $score = $child->metrics[$key] ?? null;
-                if ($score === null) {
-                    continue;
-                }
-
-                $weight = (float) ($child->metrics['loc.sum'] ?? 1);
-                $weightedSum += $score * $weight;
-                $totalWeight += $weight;
-            }
-
-            if ($totalWeight > 0) {
-                $node->metrics[$key] = $weightedSum / $totalWeight;
-            }
-        }
-    }
-
-    /**
      * Builds an index of all tree nodes by their path.
      *
      * @return array<string, HtmlTreeNode>
@@ -337,157 +282,6 @@ final class HtmlTreeBuilder
         foreach ($node->children as $child) {
             $this->indexNodesRecursive($child, $index);
         }
-    }
-
-    /**
-     * Partitions violations by tree node path.
-     *
-     * Method-level violations are attached to the parent class node.
-     * Class-level violations are attached to the class node.
-     * Namespace-level violations are attached to the namespace node.
-     * File-level / unresolvable violations are skipped.
-     *
-     * @param list<Violation> $violations
-     * @param array<string, HtmlTreeNode> $nodesByPath
-     *
-     * @return array<string, list<Violation>> node path -> violations
-     */
-    private function partitionViolations(array $violations, array $nodesByPath): array
-    {
-        /** @var array<string, list<Violation>> $result */
-        $result = [];
-
-        foreach ($violations as $violation) {
-            $symbolPath = $violation->symbolPath;
-            $type = $symbolPath->getType();
-
-            $nodePath = match ($type) {
-                SymbolType::Method, SymbolType::Function_ => $this->resolveClassPath($symbolPath),
-                SymbolType::Class_ => $symbolPath->toString(),
-                SymbolType::Namespace_ => $symbolPath->namespace ?? '',
-                default => null,
-            };
-
-            if ($nodePath === null || !isset($nodesByPath[$nodePath])) {
-                // Try attaching to namespace for method/class violations whose class node doesn't exist
-                if ($type === SymbolType::Method || $type === SymbolType::Class_) {
-                    $nsPath = $symbolPath->namespace ?? '';
-                    if ($nsPath !== '' && isset($nodesByPath[$nsPath])) {
-                        $result[$nsPath][] = $violation;
-
-                        continue;
-                    }
-                }
-
-                continue;
-            }
-
-            $result[$nodePath][] = $violation;
-        }
-
-        return $result;
-    }
-
-    /**
-     * Resolves a method/function SymbolPath to its parent class path string.
-     */
-    private function resolveClassPath(SymbolPath $symbolPath): ?string
-    {
-        if ($symbolPath->type === null) {
-            return null;
-        }
-
-        $classPath = SymbolPath::forClass($symbolPath->namespace ?? '', $symbolPath->type);
-
-        return $classPath->toString();
-    }
-
-    /**
-     * Attaches formatted violation data to tree nodes.
-     *
-     * @param array<string, HtmlTreeNode> $nodesByPath
-     * @param array<string, list<Violation>> $violationsByNode
-     */
-    private function attachViolations(
-        array $nodesByPath,
-        array $violationsByNode,
-        FormatterContext $context,
-    ): void {
-        foreach ($violationsByNode as $nodePath => $violations) {
-            if (!isset($nodesByPath[$nodePath])) {
-                continue;
-            }
-
-            $node = $nodesByPath[$nodePath];
-
-            foreach ($violations as $violation) {
-                $metricValue = $violation->metricValue;
-                if ($metricValue !== null && \is_float($metricValue) && (is_nan($metricValue) || is_infinite($metricValue))) {
-                    $metricValue = null;
-                }
-
-                $node->violations[] = [
-                    'ruleName' => $violation->ruleName,
-                    'violationCode' => $violation->violationCode,
-                    'message' => $violation->message,
-                    'recommendation' => $violation->recommendation,
-                    'severity' => $violation->severity->value,
-                    'metricValue' => $metricValue,
-                    'symbolPath' => $violation->symbolPath->toString(),
-                    'file' => $violation->location->isNone()
-                        ? ''
-                        : $context->relativizePath($violation->location->file),
-                    'line' => $violation->location->line,
-                ];
-            }
-        }
-    }
-
-    /**
-     * Computes debt per node from partitioned violations.
-     *
-     * @param array<string, list<Violation>> $violationsByNode
-     * @param array<string, HtmlTreeNode> $nodesByPath
-     */
-    private function computeDebt(
-        array $violationsByNode,
-        array $nodesByPath,
-    ): void {
-        foreach ($violationsByNode as $nodePath => $violations) {
-            if (!isset($nodesByPath[$nodePath])) {
-                continue;
-            }
-
-            $debt = $this->debtCalculator->calculate($violations);
-            $nodesByPath[$nodePath]->debtMinutes = $debt->totalMinutes;
-        }
-    }
-
-    /**
-     * Computes violationCountTotal bottom-up (post-order traversal).
-     */
-    private function computeViolationCountTotal(HtmlTreeNode $node): int
-    {
-        $total = \count($node->violations);
-
-        foreach ($node->children as $child) {
-            $total += $this->computeViolationCountTotal($child);
-        }
-
-        $node->violationCountTotal = $total;
-
-        // Also aggregate debt bottom-up
-        if ($node->children !== []) {
-            $debtSum = 0;
-            foreach ($node->children as $child) {
-                $debtSum += $child->debtMinutes;
-            }
-            // Node's own debt is already set from its own violations.
-            // Add children's debt.
-            $node->debtMinutes += $debtSum;
-        }
-
-        return $total;
     }
 
     /**

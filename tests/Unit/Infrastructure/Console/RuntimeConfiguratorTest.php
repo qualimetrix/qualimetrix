@@ -9,11 +9,13 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Configuration\AnalysisConfiguration;
+use Qualimetrix\Configuration\ComputedMetricFormulaValidator;
 use Qualimetrix\Configuration\ComputedMetricsConfigResolver;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
+use Qualimetrix\Configuration\HealthFormulaExcluder;
 use Qualimetrix\Configuration\PathsConfiguration;
 use Qualimetrix\Configuration\Pipeline\ResolvedConfiguration;
-use Qualimetrix\Configuration\RuleOptionsFactory;
+use Qualimetrix\Configuration\RuleOptionsRegistry;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinitionHolder;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
 use Qualimetrix\Infrastructure\Cache\CacheFactory;
@@ -26,32 +28,35 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 #[CoversClass(RuntimeConfigurator::class)]
+#[CoversClass(HealthFormulaExcluder::class)]
 final class RuntimeConfiguratorTest extends TestCase
 {
     private ConfigurationProviderInterface&MockObject $configProvider;
-    private RuleOptionsFactory $ruleOptionsFactory;
+    private RuleOptionsRegistry $ruleOptionsRegistry;
     private RuntimeConfigurator $configurator;
 
     protected function setUp(): void
     {
         $loggerFactory = new LoggerFactory();
+        $loggerHolder = new LoggerHolder();
 
         $this->configProvider = $this->createMock(ConfigurationProviderInterface::class);
-        $this->ruleOptionsFactory = new RuleOptionsFactory();
+        $this->ruleOptionsRegistry = new RuleOptionsRegistry();
 
         $ruleRegistry = $this->createStub(RuleRegistryInterface::class);
         $ruleRegistry->method('getClasses')->willReturn([]);
 
         $this->configurator = new RuntimeConfigurator(
             $loggerFactory,
-            new LoggerHolder(),
+            $loggerHolder,
             new ProgressReporterHolder(),
             new ProfilerHolder(),
             $this->configProvider,
-            $this->ruleOptionsFactory,
+            $this->ruleOptionsRegistry,
             $ruleRegistry,
             new CacheFactory($this->configProvider),
-            new ComputedMetricsConfigResolver(),
+            new ComputedMetricsConfigResolver(new ComputedMetricFormulaValidator()),
+            new HealthFormulaExcluder(new \Psr\Log\NullLogger()),
         );
     }
 
@@ -79,7 +84,7 @@ final class RuntimeConfiguratorTest extends TestCase
         $this->configurator->configure($resolved1, $input1, $this->createOutput());
 
         // Verify CLI options were set
-        self::assertArrayHasKey('complexity.cyclomatic', $this->ruleOptionsFactory->getCliOptions());
+        self::assertArrayHasKey('complexity.cyclomatic', $this->ruleOptionsRegistry->getCliOptions());
 
         // Second configure call: no CLI options
         $resolved2 = new ResolvedConfiguration(
@@ -94,7 +99,7 @@ final class RuntimeConfiguratorTest extends TestCase
 
         // CLI options from first run should not persist
         self::assertEmpty(
-            $this->ruleOptionsFactory->getCliOptions(),
+            $this->ruleOptionsRegistry->getCliOptions(),
             'CLI options from first configure() call should not leak into second call',
         );
     }
@@ -127,7 +132,7 @@ final class RuntimeConfiguratorTest extends TestCase
         // Verify exclusions were set (create() is called lazily, so trigger it)
         // The factory stores config but doesn't call create() yet — exclusions are populated during create().
         // To verify the reset behavior, we manually check the provider after reset.
-        $provider = $this->ruleOptionsFactory->getExclusionProvider();
+        $provider = $this->ruleOptionsRegistry->getExclusionProvider();
 
         // Simulate what happens when create() populates the provider
         $provider->setExclusions('coupling.cbo', ['App\\Tests']);

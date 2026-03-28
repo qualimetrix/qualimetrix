@@ -50,8 +50,8 @@ final class RemediationTimeRegistry
 
         // Code smell
         'code-smell.constructor-overinjection' => 60,
-        'code-smell.data-class' => 30,
-        'code-smell.god-class' => 120,
+        'design.data-class' => 30,
+        'design.god-class' => 120,
         'code-smell.boolean-argument' => 10,
         'code-smell.debug-code' => 5,
         'code-smell.empty-catch' => 10,

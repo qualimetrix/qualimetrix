@@ -15,21 +15,14 @@ use RuntimeException;
  * Factory for creating RuleOptions instances with merged configuration.
  *
  * Priority: defaults → config file → CLI options
+ *
+ * Reads option values from RuleOptionsRegistry (storage concern)
+ * and performs merging, normalization, and validation (creation concern).
  */
 final class RuleOptionsFactory
 {
-    /**
-     * @var array<string, mixed> Rule options from config file (values may be arrays or scalars)
-     */
-    private array $configFileOptions = [];
-
-    /**
-     * @var array<string, array<string, mixed>> Rule options from CLI
-     */
-    private array $cliOptions = [];
-
     public function __construct(
-        private readonly RuleNamespaceExclusionProvider $exclusionProvider = new RuleNamespaceExclusionProvider(),
+        private readonly RuleOptionsRegistry $registry,
     ) {}
 
     /**
@@ -58,12 +51,14 @@ final class RuleOptionsFactory
         $defaults = $this->extractDefaults($reflection);
 
         // 2. Merge with config file options (normalize scalars to arrays)
-        $fileOptions = $this->normalizeScalarConfig($this->configFileOptions[$ruleName] ?? []);
+        $configFileOptions = $this->registry->getConfigFileOptions();
+        $fileOptions = $this->normalizeScalarConfig($configFileOptions[$ruleName] ?? []);
         $merged = $this->deepMerge($defaults, $this->normalizeKeys($fileOptions));
 
         // 3. Merge with CLI options (highest priority)
         // Expand dot notation (e.g., 'method.warning' => ['method' => ['warning' => ...]])
-        $cliRuleOptions = $this->expandDotNotation($this->cliOptions[$ruleName] ?? []);
+        $cliOptions = $this->registry->getCliOptions();
+        $cliRuleOptions = $this->expandDotNotation($cliOptions[$ruleName] ?? []);
         $merged = $this->deepMerge($merged, $cliRuleOptions);
 
         // 4. Extract and store exclude_namespaces at framework level
@@ -74,87 +69,6 @@ final class RuleOptionsFactory
 
         // 6. Create instance using fromArray
         return $optionsClass::fromArray($merged);
-    }
-
-    /**
-     * Sets rule options from config file.
-     *
-     * Values may be arrays (normal config), or scalars (e.g. `false` to disable a rule).
-     * Scalar values are normalized to arrays in create().
-     *
-     * @param array<string, mixed> $options
-     */
-    public function setConfigFileOptions(array $options): void
-    {
-        $this->configFileOptions = $options;
-    }
-
-    /**
-     * Gets rule options from config file.
-     *
-     * @return array<string, mixed>
-     */
-    public function getConfigFileOptions(): array
-    {
-        return $this->configFileOptions;
-    }
-
-    /**
-     * Adds a CLI option for a specific rule.
-     */
-    public function addCliOption(string $ruleName, string $option, mixed $value): void
-    {
-        if (!isset($this->cliOptions[$ruleName])) {
-            $this->cliOptions[$ruleName] = [];
-        }
-
-        $this->cliOptions[$ruleName][$option] = $value;
-    }
-
-    /**
-     * Sets multiple CLI options for a rule.
-     *
-     * @param array<string, mixed> $options
-     */
-    public function setCliOptions(string $ruleName, array $options): void
-    {
-        $this->cliOptions[$ruleName] = $options;
-    }
-
-    /**
-     * Gets all CLI options.
-     *
-     * @return array<string, array<string, mixed>>
-     */
-    public function getCliOptions(): array
-    {
-        return $this->cliOptions;
-    }
-
-    /**
-     * Resets CLI options only, preserving config file options.
-     *
-     * Must be called between runs to prevent options from a previous run
-     * leaking into the next one.
-     */
-    public function resetCliOptions(): void
-    {
-        $this->cliOptions = [];
-    }
-
-    /**
-     * Clears all options (useful for testing).
-     */
-    public function reset(): void
-    {
-        $this->configFileOptions = [];
-        $this->cliOptions = [];
-        $this->exclusionProvider->reset();
-    }
-
-    public function getExclusionProvider(): RuleNamespaceExclusionProvider
-    {
-        return $this->exclusionProvider;
     }
 
     /**
@@ -180,7 +94,7 @@ final class RuleOptionsFactory
         }
 
         if ($prefixes !== []) {
-            $this->exclusionProvider->setExclusions($ruleName, $prefixes);
+            $this->registry->getExclusionProvider()->setExclusions($ruleName, $prefixes);
         }
     }
 
@@ -280,7 +194,6 @@ final class RuleOptionsFactory
 
         return $result;
     }
-
 
     /**
      * Expands dot notation keys into nested arrays.

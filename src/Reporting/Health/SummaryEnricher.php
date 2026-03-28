@@ -23,11 +23,15 @@ final readonly class SummaryEnricher
     private const int DEFAULT_TOP_NAMESPACES = 10;
     private const int DEFAULT_TOP_CLASSES = 10;
 
+    private HealthReasonBuilder $reasonBuilder;
+
     public function __construct(
         private DebtCalculator $debtCalculator,
         private MetricHintProvider $hintProvider,
         private ImpactCalculator $impactCalculator,
-    ) {}
+    ) {
+        $this->reasonBuilder = new HealthReasonBuilder($this->hintProvider);
+    }
 
     public function enrich(Report $report, bool $partialAnalysis = false): Report
     {
@@ -261,7 +265,7 @@ final readonly class SummaryEnricher
             );
 
             $perDimensionScores = $this->getPerDimensionScores($metrics);
-            $reason = $this->buildReason($perDimensionScores);
+            $reason = $this->reasonBuilder->buildReason($perDimensionScores);
 
             $symbolCanonical = $symbolInfo->symbolPath->toCanonical();
             $violationCount = $violationCounts[$symbolCanonical] ?? 0;
@@ -306,43 +310,6 @@ final readonly class SummaryEnricher
         }
 
         return $scores;
-    }
-
-    /**
-     * @param array<string, float> $dimensionScores
-     */
-    private function buildReason(array $dimensionScores): string
-    {
-        if ($dimensionScores === []) {
-            return '';
-        }
-
-        $defaults = ComputedMetricDefaults::getDefaults();
-        $ranked = [];
-
-        foreach ($dimensionScores as $dim => $score) {
-            $defKey = 'health.' . $dim;
-            $warnThreshold = isset($defaults[$defKey]) ? $defaults[$defKey]->warningThreshold : 50.0;
-            // How far below the warning threshold (negative = bad)
-            $delta = $score - $warnThreshold;
-            $ranked[] = ['dim' => $dim, 'delta' => $delta, 'score' => $score];
-        }
-
-        // Sort by delta ascending (worst first)
-        usort($ranked, static fn(array $a, array $b): int => $a['delta'] <=> $b['delta']);
-
-        $reasons = [];
-
-        foreach (\array_slice($ranked, 0, 2) as $item) {
-            if ($item['delta'] > 0) {
-                // Above warning threshold — not a problem
-                continue;
-            }
-
-            $reasons[] = $this->hintProvider->getHealthDimensionLabel($item['dim'], true);
-        }
-
-        return implode(', ', $reasons);
     }
 
     /**
