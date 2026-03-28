@@ -41,7 +41,8 @@ Core/
 │   ├── SymbolInfo.php
 │   ├── MethodInfo.php
 │   ├── ClassInfo.php
-│   └── ClassType.php
+│   ├── ClassType.php
+│   └── PhpBuiltinClassRegistry.php        # Single source of truth for PHP built-in classes
 ├── Ast/
 │   └── FileParserInterface.php
 ├── Namespace_/

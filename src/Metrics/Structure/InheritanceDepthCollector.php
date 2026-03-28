@@ -13,6 +13,7 @@ use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricDefinition;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Metric\SymbolLevel;
+use Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry;
 use Qualimetrix\Metrics\AbstractCollector;
 use ReflectionClass;
 use ReflectionException;
@@ -34,87 +35,6 @@ use SplFileInfo;
 final class InheritanceDepthCollector extends AbstractCollector implements ClassMetricsProviderInterface
 {
     private const NAME = 'inheritance-depth';
-
-    /**
-     * Standard PHP classes that are considered root (DIT = 0 when extending them).
-     *
-     * @var array<string, true>
-     */
-    private const STANDARD_PHP_CLASSES = [
-        'stdClass' => true,
-        'Exception' => true,
-        'Error' => true,
-        'RuntimeException' => true,
-        'LogicException' => true,
-        'InvalidArgumentException' => true,
-        'OutOfBoundsException' => true,
-        'OutOfRangeException' => true,
-        'OverflowException' => true,
-        'UnderflowException' => true,
-        'LengthException' => true,
-        'DomainException' => true,
-        'RangeException' => true,
-        'UnexpectedValueException' => true,
-        'BadMethodCallException' => true,
-        'BadFunctionCallException' => true,
-        'ArrayObject' => true,
-        'ArrayIterator' => true,
-        'Iterator' => true,
-        'IteratorAggregate' => true,
-        'Countable' => true,
-        'Serializable' => true,
-        'Throwable' => true,
-        'Generator' => true,
-        'Closure' => true,
-        'DateTime' => true,
-        'DateTimeImmutable' => true,
-        'DateTimeInterface' => true,
-        'DateInterval' => true,
-        'DatePeriod' => true,
-        'DateTimeZone' => true,
-        'SplFileInfo' => true,
-        'SplFileObject' => true,
-        'SplTempFileObject' => true,
-        'DirectoryIterator' => true,
-        'RecursiveDirectoryIterator' => true,
-        'FilterIterator' => true,
-        'RecursiveFilterIterator' => true,
-        'RecursiveIteratorIterator' => true,
-        'ReflectionClass' => true,
-        'ReflectionMethod' => true,
-        'ReflectionProperty' => true,
-        'ReflectionParameter' => true,
-        'ReflectionFunction' => true,
-        'PDO' => true,
-        'PDOStatement' => true,
-        'PDOException' => true,
-        'JsonException' => true,
-        'TypeError' => true,
-        'ArgumentCountError' => true,
-        'ArithmeticError' => true,
-        'DivisionByZeroError' => true,
-        'ParseError' => true,
-        'CompileError' => true,
-        'ValueError' => true,
-        'Random\\Engine' => true,
-        'Random\\Randomizer' => true,
-        'IntlException' => true,
-        'JsonSerializable' => true,
-        'Stringable' => true,
-        'ArrayAccess' => true,
-        'SplStack' => true,
-        'SplQueue' => true,
-        'SplHeap' => true,
-        'SplMinHeap' => true,
-        'SplMaxHeap' => true,
-        'SplDoublyLinkedList' => true,
-        'SplFixedArray' => true,
-        'SplPriorityQueue' => true,
-        'WeakReference' => true,
-        'Fiber' => true,
-        'UnitEnum' => true,
-        'BackedEnum' => true,
-    ];
 
     public function __construct()
     {
@@ -231,10 +151,7 @@ final class InheritanceDepthCollector extends AbstractCollector implements Class
         // Remove leading backslash if present
         $normalized = ltrim($fqn, '\\');
 
-        // Direct match covers both unqualified names (e.g. "Exception")
-        // and FQNs (e.g. "RuntimeException"). Namespaced names like
-        // "App\Exception" won't match, preventing false positives.
-        return isset(self::STANDARD_PHP_CLASSES[$normalized]);
+        return PhpBuiltinClassRegistry::isBuiltin($normalized);
     }
 
     /**
