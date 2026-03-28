@@ -235,6 +235,24 @@ final class DuplicationDetector
                     $startLineB = $tokensB[$offsetB]->line;
                     $endLineB = $tokensB[$offsetB + $matchLength - 1]->line;
 
+                    // Skip self-duplication: same file, overlapping or adjacent line ranges.
+                    // Repetitive structures (large constant arrays) produce many matching token
+                    // windows at different offsets that map to overlapping or touching line ranges.
+                    if ($fileIdxA === $fileIdxB) {
+                        $totalSize = ($endLineA - $startLineA + 1) + ($endLineB - $startLineB + 1);
+                        $unionSpan = max($endLineA, $endLineB) - min($startLineA, $startLineB) + 1;
+
+                        // totalSize >= unionSpan means ranges overlap or touch (gap <= 0).
+                        // This catches self-duplication from repetitive data structures where
+                        // matching token windows in different parts of the same structure produce
+                        // overlapping or immediately adjacent line ranges.
+                        // Truly separated blocks (like two identical functions with a blank line
+                        // gap between them) have totalSize < unionSpan and are not filtered.
+                        if ($totalSize >= $unionSpan) {
+                            continue;
+                        }
+                    }
+
                     $lineCount = max($endLineA - $startLineA + 1, $endLineB - $startLineB + 1);
 
                     if ($lineCount < $this->minLines) {
