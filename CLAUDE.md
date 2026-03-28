@@ -329,6 +329,17 @@ bin/qmx check --help
 
 **Commit granularity:** Split large changes into logical commits when it improves changelog readability. Each commit should represent one coherent change (e.g., separate "rename command" from "update documentation"). Avoid monolithic commits that bundle unrelated changes — they make changelogs harder to generate and git history harder to navigate.
 
+### Self-Analysis: Interpreting Results
+
+Run `bin/qmx check src/` after modifying metric collection or aggregation logic to catch regressions.
+
+**How to interpret violations:**
+- **Invariant test failure** (e.g., parent.sum ≠ Σ children): **Bug** — fix immediately, add regression test
+- **Golden file test failure after intentional algorithm change**: Update expected values in `tests/Integration/Metrics/GoldenFileAggregationTest.php` after verifying new values are correct
+- **Coupling violations** (high CBO, circular dependencies): **Architecture issue** — evaluate refactoring vs. threshold adjustment
+- **Complexity violations** (CCN > threshold): **Code quality signal** — normal for complex algorithms, investigate only if unexpected
+- **Health score regression** vs `composer benchmark:check`: May indicate **formula bug** if changes touched computed metrics
+
 ---
 
 ## Changelog
