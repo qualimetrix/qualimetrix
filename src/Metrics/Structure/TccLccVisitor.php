@@ -35,20 +35,13 @@ use Qualimetrix\Metrics\ResettableVisitorInterface;
  */
 final class TccLccVisitor extends NodeVisitorAbstract implements ResettableVisitorInterface
 {
+    use ClassVisitorStackTrait;
+
     /**
      * @var array<string, TccLccClassData>
      *                                     Class FQN => TCC/LCC data
      */
     private array $classData = [];
-
-    private ?string $currentNamespace = null;
-
-    /**
-     * Stack of class contexts (to handle nested/anonymous classes).
-     *
-     * @var list<string|null>
-     */
-    private array $classStack = [];
 
     /**
      * Stack of method contexts (to handle methods inside anonymous classes).
@@ -61,8 +54,7 @@ final class TccLccVisitor extends NodeVisitorAbstract implements ResettableVisit
     public function reset(): void
     {
         $this->classData = [];
-        $this->currentNamespace = null;
-        $this->classStack = [];
+        $this->resetClassVisitorStack();
         $this->methodStack = [];
     }
 
@@ -78,7 +70,7 @@ final class TccLccVisitor extends NodeVisitorAbstract implements ResettableVisit
     {
         // Track namespace
         if ($node instanceof Node\Stmt\Namespace_) {
-            $this->currentNamespace = $node->name?->toString() ?? '';
+            $this->handleNamespaceEnter($node);
 
             return null;
         }
@@ -90,13 +82,13 @@ final class TccLccVisitor extends NodeVisitorAbstract implements ResettableVisit
             // Skip Enum_ — enums cannot have instance properties, so TCC will always
             // be 0.0, which is misleading. Consistent with LCOM exclusion.
             if ($node instanceof Interface_ || $node instanceof Enum_) {
-                $this->classStack[] = null;
+                $this->pushClass(null);
 
                 return null;
             }
 
             $className = $this->extractClassLikeName($node);
-            $this->classStack[] = $className;
+            $this->pushClass($className);
 
             // Only create data for named classes
             if ($className !== null) {
@@ -199,12 +191,12 @@ final class TccLccVisitor extends NodeVisitorAbstract implements ResettableVisit
 
         // Exit class-like scope
         if ($this->isClassLikeNode($node)) {
-            array_pop($this->classStack);
+            $this->popClass();
         }
 
         // Exit namespace scope
         if ($node instanceof Node\Stmt\Namespace_) {
-            $this->currentNamespace = null;
+            $this->handleNamespaceLeave();
         }
 
         return null;
@@ -223,45 +215,6 @@ final class TccLccVisitor extends NodeVisitorAbstract implements ResettableVisit
     }
 
     /**
-     * Returns current class name or null if inside anonymous class or no class.
-     */
-    private function getCurrentClass(): ?string
-    {
-        if ($this->classStack === []) {
-            return null;
-        }
-
-        return $this->classStack[array_key_last($this->classStack)];
-    }
-
-    /**
-     * Extract property name from PropertyFetch node.
-     */
-    private function extractPropertyName(PropertyFetch $node): ?string
-    {
-        if ($node->name instanceof Node\Identifier) {
-            return $node->name->toString();
-        }
-
-        // Dynamic property access like $this->$var - skip
-        return null;
-    }
-
-    /**
-     * Extracts class name from class-like nodes.
-     * Returns null for anonymous classes or non-class-like nodes.
-     *
-     * Note: Interface_ and Enum_ are filtered out before this method is called.
-     */
-    private function extractClassLikeName(Node $node): ?string
-    {
-        return match (true) {
-            $node instanceof Class_ && $node->name !== null => $node->name->toString(),
-            default => null,
-        };
-    }
-
-    /**
      * Checks if node is a class-like type for TCC/LCC calculation.
      */
     private function isClassLikeNode(Node $node): bool
@@ -269,14 +222,5 @@ final class TccLccVisitor extends NodeVisitorAbstract implements ResettableVisit
         return $node instanceof Class_
             || $node instanceof Interface_
             || $node instanceof Enum_;
-    }
-
-    private function buildClassFqn(string $className): string
-    {
-        if ($this->currentNamespace !== null && $this->currentNamespace !== '') {
-            return $this->currentNamespace . '\\' . $className;
-        }
-
-        return $className;
     }
 }
