@@ -237,6 +237,12 @@ final class HardcodedCredentialsVisitor extends NodeVisitorAbstract implements R
             return false;
         }
 
+        // Dot-notation identifiers (e.g., 'security.hardcodedCredentials') are config keys
+        // or metric names, not credentials.
+        if ($this->isDotNotationIdentifier($value)) {
+            return false;
+        }
+
         // Human-readable sentences (translations, error messages) are not credentials.
         // A string with multiple spaces and sufficient length is likely a message, not a secret.
         if ($this->isHumanReadableMessage($value)) {
@@ -244,6 +250,16 @@ final class HardcodedCredentialsVisitor extends NodeVisitorAbstract implements R
         }
 
         return true;
+    }
+
+    /**
+     * Check if value is a dot-notation identifier (e.g., 'security.hardcodedCredentials',
+     * 'app.database.host'). These are typically configuration keys or metric names,
+     * not credentials.
+     */
+    private function isDotNotationIdentifier(string $value): bool
+    {
+        return (bool) preg_match('/^[a-zA-Z_]\w*(\.[a-zA-Z_]\w*)+$/', $value);
     }
 
     /**

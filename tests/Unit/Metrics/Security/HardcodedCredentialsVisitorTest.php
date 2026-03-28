@@ -201,6 +201,37 @@ final class HardcodedCredentialsVisitorTest extends TestCase
             'expectedCount' => 1,
             'expectedPattern' => 'variable',
         ];
+
+        // --- Dot-notation identifiers (should NOT detect) ---
+
+        yield 'dot-notation metric name in class constant' => [
+            'code' => '<?php class MetricName { const SECURITY_HARDCODED_CREDENTIALS = "security.hardcodedCredentials"; }',
+            'expectedCount' => 0,
+        ];
+
+        yield 'dot-notation config key in class constant' => [
+            'code' => '<?php class Config { const DB_PASSWORD = "database.connection.host"; }',
+            'expectedCount' => 0,
+        ];
+
+        yield 'dot-notation config path in class constant' => [
+            'code' => '<?php class Config { const SECRET = "app.config.secretManager"; }',
+            'expectedCount' => 0,
+        ];
+
+        // --- Real credentials should still be flagged ---
+
+        yield 'API key with prefix is flagged' => [
+            'code' => '<?php class Config { const API_KEY = "sk-1234567890abcdef"; }',
+            'expectedCount' => 1,
+            'expectedPattern' => 'class_const',
+        ];
+
+        yield 'actual password is flagged' => [
+            'code' => "<?php class Config { const PASSWORD = 'myS3cretPa\$\$word'; }",
+            'expectedCount' => 1,
+            'expectedPattern' => 'class_const',
+        ];
     }
 
     public function testReset(): void
