@@ -124,7 +124,7 @@ final class NpathComplexityRuleTest extends TestCase
 
         self::assertCount(1, $violations);
         self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertSame('NPath complexity (execution paths) is 250, exceeds threshold of 200. Reduce branching or extract methods', $violations[0]->message);
+        self::assertSame('NPath complexity (execution paths) is 250 (moderate), exceeds threshold of 200. Reduce branching or extract methods', $violations[0]->message);
         self::assertSame(250, $violations[0]->metricValue);
         self::assertSame('complexity.npath', $violations[0]->ruleName);
         self::assertSame(RuleLevel::Method, $violations[0]->level);
@@ -195,7 +195,7 @@ final class NpathComplexityRuleTest extends TestCase
 
         self::assertCount(1, $violations);
         self::assertSame(Severity::Warning, $violations[0]->severity);
-        self::assertStringContainsString('Maximum method NPath complexity is 600, exceeds threshold of 500', $violations[0]->message);
+        self::assertStringContainsString('Maximum method NPath complexity is 600 (moderate), exceeds threshold of 500', $violations[0]->message);
         self::assertSame(600, $violations[0]->metricValue);
         self::assertSame(RuleLevel::Class_, $violations[0]->level);
     }
@@ -290,7 +290,7 @@ final class NpathComplexityRuleTest extends TestCase
         $violations = $rule->analyzeLevel(RuleLevel::Method, $context);
 
         self::assertCount(1, $violations);
-        self::assertSame('NPath complexity (execution paths) is > 1M, exceeds threshold of 1000. Reduce branching or extract methods', $violations[0]->message);
+        self::assertSame('NPath complexity (execution paths) is > 1M (extreme), exceeds threshold of 1000. Reduce branching or extract methods', $violations[0]->message);
         self::assertSame(2_500_000, $violations[0]->metricValue);
     }
 
@@ -477,6 +477,97 @@ final class NpathComplexityRuleTest extends TestCase
         self::assertTrue($options->enabled);
         self::assertSame(400, $options->maxWarning);
         self::assertSame(800, $options->maxError);
+    }
+
+    // Severity category label tests
+
+    #[DataProvider('categoryLabelDataProvider')]
+    public function testMethodViolationCategoryLabel(int $npath, string $expectedCategory): void
+    {
+        $rule = new NpathComplexityRule(
+            new NpathComplexityOptions(
+                method: new MethodNpathComplexityOptions(
+                    warning: 1,
+                    error: 2,
+                ),
+            ),
+        );
+
+        $symbolPath = SymbolPath::forMethod('App', 'Test', 'method');
+        $methodInfo = new SymbolInfo($symbolPath, 'test.php', 1);
+
+        $metricBag = (new MetricBag())->with('npath', $npath);
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturn([$methodInfo]);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyzeLevel(RuleLevel::Method, $context);
+
+        self::assertCount(1, $violations);
+        self::assertStringContainsString(\sprintf('(%s)', $expectedCategory), $violations[0]->message);
+    }
+
+    #[DataProvider('categoryLabelDataProvider')]
+    public function testClassViolationCategoryLabel(int $npath, string $expectedCategory): void
+    {
+        $rule = new NpathComplexityRule(
+            new NpathComplexityOptions(
+                class: new ClassNpathComplexityOptions(
+                    enabled: true,
+                    maxWarning: 1,
+                    maxError: 2,
+                ),
+            ),
+        );
+
+        $symbolPath = SymbolPath::forClass('App', 'Test');
+        $classInfo = new SymbolInfo($symbolPath, 'test.php', 1);
+
+        $metricBag = (new MetricBag())->with('npath.max', $npath);
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturn([$classInfo]);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyzeLevel(RuleLevel::Class_, $context);
+
+        self::assertCount(1, $violations);
+        self::assertStringContainsString(\sprintf('(%s)', $expectedCategory), $violations[0]->message);
+    }
+
+    /**
+     * @return iterable<string, array{int, string}>
+     */
+    public static function categoryLabelDataProvider(): iterable
+    {
+        // Boundary: 1000 → moderate (<=1000)
+        yield 'at 1000 boundary → moderate' => [1000, 'moderate'];
+        // Boundary: 1001 → high (>1000)
+        yield 'at 1001 boundary → high' => [1001, 'high'];
+        // Mid-range high
+        yield 'at 5000 → high' => [5000, 'high'];
+        // Boundary: 10000 → high (<=10000)
+        yield 'at 10000 boundary → high' => [10000, 'high'];
+        // Boundary: 10001 → very high (>10000)
+        yield 'at 10001 boundary → very high' => [10001, 'very high'];
+        // Mid-range very high
+        yield 'at 500000 → very high' => [500_000, 'very high'];
+        // Boundary: 1000000 → very high (<=1000000)
+        yield 'at 1000000 boundary → very high' => [1_000_000, 'very high'];
+        // Boundary: 1000001 → extreme (>1000000)
+        yield 'at 1000001 boundary → extreme' => [1_000_001, 'extreme'];
+        // Well above extreme
+        yield 'at 5000000 → extreme' => [5_000_000, 'extreme'];
+        // Low values
+        yield 'at 100 → moderate' => [100, 'moderate'];
+        yield 'at 1 → moderate' => [1, 'moderate'];
     }
 
     public function testClassOptionsDefaultMaxWarningIs500(): void
