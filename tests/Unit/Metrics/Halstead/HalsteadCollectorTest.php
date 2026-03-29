@@ -94,6 +94,48 @@ PHP;
         self::assertGreaterThan(0, $volume);
     }
 
+    public function testSimpleAddMethodWithExactHalsteadValues(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Exact
+{
+    public function add(int $a, int $b): int
+    {
+        return $a + $b;
+    }
+}
+PHP;
+
+        $halstead = $this->collectHalsteadMetrics($code, 'App\Exact::add');
+
+        // Type hints (int params, :int return) are NOT counted per HalsteadVisitor policy.
+        // Operators: return, + → n1=2, N1=2
+        // Operands: $a, $b (unique=2, total=4: params + body references)
+        self::assertSame(2, $halstead->n1, 'Expected 2 unique operators (return, +)');
+        self::assertSame(2, $halstead->N1, 'Expected 2 total operators');
+        self::assertSame(2, $halstead->n2, 'Expected 2 unique operands ($a, $b)');
+        self::assertSame(4, $halstead->N2, 'Expected 4 total operands (params + body)');
+
+        // n = n1 + n2 = 4 (vocabulary)
+        self::assertSame(4, $halstead->vocabulary());
+        // N = N1 + N2 = 6 (length)
+        self::assertSame(6, $halstead->length());
+        // V = N * log2(n) = 6 * log2(4) = 6 * 2.0 = 12.0
+        self::assertEqualsWithDelta(12.0, $halstead->volume(), 0.001);
+        // D = (n1/2) * (N2/n2) = (2/2) * (4/2) = 2.0
+        self::assertEqualsWithDelta(2.0, $halstead->difficulty(), 0.001);
+        // E = D * V = 2.0 * 12.0 = 24.0
+        self::assertEqualsWithDelta(24.0, $halstead->effort(), 0.001);
+        // B = V / 3000 = 12.0 / 3000 = 0.004
+        self::assertEqualsWithDelta(0.004, $halstead->bugs(), 0.0001);
+        // T = E / 18 = 24.0 / 18 ≈ 1.3333
+        self::assertEqualsWithDelta(1.3333, $halstead->time(), 0.001);
+    }
+
     public function testMethodWithMultipleOperators(): void
     {
         $code = <<<'PHP'

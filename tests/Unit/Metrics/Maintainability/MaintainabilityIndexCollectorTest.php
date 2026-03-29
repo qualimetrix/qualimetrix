@@ -92,6 +92,43 @@ final class MaintainabilityIndexCollectorTest extends TestCase
         self::assertLessThan(80, $mi);
     }
 
+    public function testCalculateWithKnownValuesAndMethodLoc(): void
+    {
+        // Hand-calculate MI for known inputs:
+        // Volume=8.0 (simple `return $a + $b`), CCN=1, LOC=1
+        // MI_raw = 171 - 5.2*ln(8.0) - 0.23*1 - 16.2*ln(1)
+        // ln(8.0) = 2.07944, ln(1) = 0
+        // MI_raw = 171 - 10.813 - 0.23 - 0 = 159.957
+        // MI_normalized = 159.957 * 100 / 171 = 93.54
+        $sourceBag = (new MetricBag())
+            ->with('halstead.volume', 8.0)
+            ->with('ccn', 1)
+            ->with('methodLoc', 1);
+
+        $result = $this->collector->calculate($sourceBag);
+
+        self::assertTrue($result->has('mi'));
+        self::assertEqualsWithDelta(93.54, $result->get('mi'), 0.1);
+    }
+
+    public function testCalculateWithModerateComplexityKnownValues(): void
+    {
+        // Volume=100, CCN=5, LOC=20
+        // MI_raw = 171 - 5.2*ln(100) - 0.23*5 - 16.2*ln(20)
+        // ln(100) = 4.60517, ln(20) = 2.99573
+        // MI_raw = 171 - 23.947 - 1.15 - 48.531 = 97.372
+        // MI_normalized = 97.372 * 100 / 171 = 56.94
+        $sourceBag = (new MetricBag())
+            ->with('halstead.volume', 100.0)
+            ->with('ccn', 5)
+            ->with('methodLoc', 20);
+
+        $result = $this->collector->calculate($sourceBag);
+
+        self::assertTrue($result->has('mi'));
+        self::assertEqualsWithDelta(56.94, $result->get('mi'), 0.2);
+    }
+
     public function testGetMetricDefinitions(): void
     {
         $definitions = $this->collector->getMetricDefinitions();

@@ -272,6 +272,195 @@ class ComplexClass {
         $this->assertSame(0, $commandTester2->getStatusCode(), "Baseline should suppress all violations. Output:\n" . $output);
     }
 
+    #[Test]
+    public function itSupportsCheckstyleFormat(): void
+    {
+        $testFile = $this->tempDir . '/SimpleClass.php';
+        file_put_contents($testFile, '<?php class SimpleClass { public function method(): int { return 42; } }');
+
+        $commandTester = $this->createCommandTester();
+        $commandTester->execute([
+            'paths' => [$this->tempDir],
+            '--format' => 'checkstyle',
+            '--no-progress' => true,
+            '--disable-rule' => ['computed.health'],
+        ]);
+
+        $this->assertSame(0, $commandTester->getStatusCode());
+        $output = $commandTester->getDisplay();
+        $this->assertStringContainsString('<?xml', $output);
+        $this->assertStringContainsString('<checkstyle', $output);
+    }
+
+    #[Test]
+    public function itSupportsSarifFormat(): void
+    {
+        $testFile = $this->tempDir . '/SimpleClass.php';
+        file_put_contents($testFile, '<?php class SimpleClass { public function method(): int { return 42; } }');
+
+        $commandTester = $this->createCommandTester();
+        $commandTester->execute([
+            'paths' => [$this->tempDir],
+            '--format' => 'sarif',
+            '--no-progress' => true,
+            '--disable-rule' => ['computed.health'],
+        ]);
+
+        $this->assertSame(0, $commandTester->getStatusCode());
+        $output = $commandTester->getDisplay();
+        $json = json_decode($output, true);
+        $this->assertIsArray($json);
+        $this->assertArrayHasKey('$schema', $json);
+        $this->assertSame('2.1.0', $json['version']);
+        $this->assertArrayHasKey('runs', $json);
+    }
+
+    #[Test]
+    public function itSupportsGitlabFormat(): void
+    {
+        $testFile = $this->tempDir . '/SimpleClass.php';
+        file_put_contents($testFile, '<?php class SimpleClass { public function method(): int { return 42; } }');
+
+        $commandTester = $this->createCommandTester();
+        $commandTester->execute([
+            'paths' => [$this->tempDir],
+            '--format' => 'gitlab',
+            '--no-progress' => true,
+            '--disable-rule' => ['computed.health'],
+        ]);
+
+        $this->assertSame(0, $commandTester->getStatusCode());
+        $output = $commandTester->getDisplay();
+        // GitLab format outputs a JSON array (empty when no violations)
+        $json = json_decode($output, true);
+        $this->assertIsArray($json);
+    }
+
+    #[Test]
+    public function itSupportsHealthFormat(): void
+    {
+        $testFile = $this->tempDir . '/SimpleClass.php';
+        file_put_contents($testFile, '<?php class SimpleClass { public function method(): int { return 42; } }');
+
+        $commandTester = $this->createCommandTester();
+        $commandTester->execute([
+            'paths' => [$this->tempDir],
+            '--format' => 'health',
+            '--no-progress' => true,
+            '--disable-rule' => ['computed.health'],
+        ]);
+
+        $this->assertSame(0, $commandTester->getStatusCode());
+        $output = $commandTester->getDisplay();
+        $this->assertStringContainsString('Health Report', $output);
+    }
+
+    #[Test]
+    public function itSupportsSummaryFormat(): void
+    {
+        $testFile = $this->tempDir . '/SimpleClass.php';
+        file_put_contents($testFile, '<?php class SimpleClass { public function method(): int { return 42; } }');
+
+        $commandTester = $this->createCommandTester();
+        $commandTester->execute([
+            'paths' => [$this->tempDir],
+            '--format' => 'summary',
+            '--no-progress' => true,
+            '--disable-rule' => ['computed.health'],
+        ]);
+
+        $this->assertSame(0, $commandTester->getStatusCode());
+        $output = $commandTester->getDisplay();
+        // Summary format shows file count and violation summary
+        $this->assertStringContainsString('1 file', $output);
+    }
+
+    #[Test]
+    public function itSupportsGithubActionsFormat(): void
+    {
+        // GitHub Actions format only produces output when there are violations
+        $testFile = $this->tempDir . '/SimpleClass.php';
+        file_put_contents($testFile, '<?php class SimpleClass { public function method(): int { return 42; } }');
+
+        $commandTester = $this->createCommandTester();
+        $commandTester->execute([
+            'paths' => [$this->tempDir],
+            '--format' => 'github',
+            '--no-progress' => true,
+            '--disable-rule' => ['computed.health'],
+        ]);
+
+        // No violations -> empty output, exit code 0
+        $this->assertSame(0, $commandTester->getStatusCode());
+    }
+
+    #[Test]
+    public function itSupportsGithubActionsFormatWithViolations(): void
+    {
+        $complexCode = '<?php
+class ComplexClass {
+    public function complexMethod($a, $b, $c) {
+        if ($a > 0) {
+            if ($b > 0) {
+                if ($c > 0) {
+                    for ($i = 0; $i < 10; $i++) {
+                        if ($i % 2 == 0) {
+                            echo "even";
+                        } else {
+                            echo "odd";
+                        }
+                    }
+                }
+            }
+        }
+        return $a + $b + $c;
+    }
+}';
+        $testFile = $this->tempDir . '/ComplexClass.php';
+        file_put_contents($testFile, $complexCode);
+
+        $commandTester = $this->createCommandTester();
+        $commandTester->execute([
+            'paths' => [$this->tempDir],
+            '--format' => 'github',
+            '--no-progress' => true,
+        ]);
+
+        $this->assertContains($commandTester->getStatusCode(), [1, 2]);
+        $output = $commandTester->getDisplay();
+        // GitHub Actions format uses ::warning or ::error prefix
+        $this->assertMatchesRegularExpression('/::(warning|error)\s/', $output);
+    }
+
+    #[Test]
+    public function itRunsHealthFormatWithComputedMetrics(): void
+    {
+        // End-to-end test: full pipeline with health scores computed
+        $testFile = $this->tempDir . '/SimpleClass.php';
+        file_put_contents($testFile, '<?php
+namespace App;
+
+class SimpleClass {
+    private int $value;
+
+    public function getValue(): int { return $this->value; }
+    public function setValue(int $v): void { $this->value = $v; }
+}');
+
+        $commandTester = $this->createCommandTester();
+        $commandTester->execute([
+            'paths' => [$this->tempDir],
+            '--format' => 'health',
+            '--no-progress' => true,
+            // Do NOT disable computed.health — test full pipeline
+        ]);
+
+        $output = $commandTester->getDisplay();
+        $this->assertStringContainsString('Health Report', $output);
+        // Health dimensions should be present
+        $this->assertMatchesRegularExpression('/Complexity|Cohesion|Coupling|Maintainability|Overall/i', $output);
+    }
+
     /**
      * Creates a CommandTester for CheckCommand from DI container.
      */
