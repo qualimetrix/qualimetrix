@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace Qualimetrix\Rules\Duplication;
 
 use Qualimetrix\Core\Rule\RuleOptionsInterface;
+use Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Rules\Support\ThresholdParser;
 
 /**
  * Options for the code duplication rule.
  */
-final readonly class CodeDuplicationOptions implements RuleOptionsInterface
+final readonly class CodeDuplicationOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface
 {
     public function __construct(
         public bool $enabled = true,
@@ -50,5 +51,16 @@ final readonly class CodeDuplicationOptions implements RuleOptionsInterface
         }
 
         return null;
+    }
+
+    public function withOverride(int|float|null $warning, int|float|null $error): static
+    {
+        return new static(
+            enabled: $this->enabled,
+            min_lines: $this->min_lines,
+            min_tokens: $this->min_tokens,
+            warning: $warning !== null ? (int) $warning : $this->warning,
+            error: $error !== null ? (int) $error : $this->error,
+        );
     }
 }

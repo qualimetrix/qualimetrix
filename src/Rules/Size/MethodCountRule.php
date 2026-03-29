@@ -85,10 +85,12 @@ final class MethodCountRule extends AbstractRule
             }
 
             $methodCountValue = (int) $methodCount;
-            $severity = $this->options->getSeverity($methodCountValue);
+            /** @var MethodCountOptions $effectiveOptions */
+            $effectiveOptions = $this->getEffectiveOptions($context, $this->options, $classInfo->file, $classInfo->line ?? 1);
+            $severity = $effectiveOptions->getSeverity($methodCountValue);
 
             if ($severity !== null) {
-                $threshold = $severity === Severity::Error ? $this->options->error : $this->options->warning;
+                $threshold = $severity === Severity::Error ? $effectiveOptions->error : $effectiveOptions->warning;
 
                 $violations[] = new Violation(
                     location: new Location($classInfo->file, $classInfo->line),

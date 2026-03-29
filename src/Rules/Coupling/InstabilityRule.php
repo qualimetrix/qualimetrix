@@ -151,12 +151,15 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
             }
 
             $instabilityValue = (float) $instability;
-            $severity = $classOptions->getSeverity($instabilityValue);
+
+            /** @var ClassInstabilityOptions $effectiveClassOptions */
+            $effectiveClassOptions = $this->getEffectiveOptions($context, $classOptions, $classInfo->file, $classInfo->line ?? 1);
+            $severity = $effectiveClassOptions->getSeverity($instabilityValue);
 
             if ($severity !== null) {
                 $ce = (int) ($metrics->get(MetricName::COUPLING_CE) ?? 0);
 
-                $threshold = $severity === Severity::Error ? $classOptions->maxError : $classOptions->maxWarning;
+                $threshold = $severity === Severity::Error ? $effectiveClassOptions->maxError : $effectiveClassOptions->maxWarning;
 
                 $violations[] = new Violation(
                     location: new Location($classInfo->file, $classInfo->line),
@@ -210,13 +213,16 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
             }
 
             $instabilityValue = (float) $instability;
-            $severity = $namespaceOptions->getSeverity($instabilityValue);
+
+            /** @var NamespaceInstabilityOptions $effectiveNsOptions */
+            $effectiveNsOptions = $this->getEffectiveOptions($context, $namespaceOptions, $nsInfo->file, $nsInfo->line ?? 1);
+            $severity = $effectiveNsOptions->getSeverity($instabilityValue);
 
             if ($severity !== null) {
                 $ca = (int) ($metrics->get(MetricName::COUPLING_CA) ?? 0);
                 $ce = (int) ($metrics->get(MetricName::COUPLING_CE) ?? 0);
 
-                $threshold = $severity === Severity::Error ? $namespaceOptions->maxError : $namespaceOptions->maxWarning;
+                $threshold = $severity === Severity::Error ? $effectiveNsOptions->maxError : $effectiveNsOptions->maxWarning;
 
                 $violations[] = new Violation(
                     location: new Location($nsInfo->file, $nsInfo->line),

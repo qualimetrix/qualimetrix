@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace Qualimetrix\Rules\Complexity;
 
 use Qualimetrix\Core\Rule\LevelOptionsInterface;
+use Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Rules\Support\ThresholdParser;
 
 /**
  * Options for class-level NPath complexity checks (max NPath among methods).
  */
-final readonly class ClassNpathComplexityOptions implements LevelOptionsInterface
+final readonly class ClassNpathComplexityOptions implements LevelOptionsInterface, ThresholdAwareOptionsInterface
 {
     public function __construct(
         public bool $enabled = false,
@@ -49,5 +50,14 @@ final readonly class ClassNpathComplexityOptions implements LevelOptionsInterfac
         }
 
         return null;
+    }
+
+    public function withOverride(int|float|null $warning, int|float|null $error): static
+    {
+        return new static(
+            enabled: $this->enabled,
+            maxWarning: $warning !== null ? (int) $warning : $this->maxWarning,
+            maxError: $error !== null ? (int) $error : $this->maxError,
+        );
     }
 }

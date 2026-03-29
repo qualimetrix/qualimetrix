@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Rules\CodeSmell;
 
 use Qualimetrix\Core\Rule\RuleOptionsInterface;
+use Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Rules\Support\ThresholdParser;
 
@@ -17,7 +18,7 @@ use Qualimetrix\Rules\Support\ThresholdParser;
  * - 8+ parameters: warning, consider using a parameter object or splitting responsibilities
  * - 12+ parameters: error, definitely needs refactoring
  */
-final readonly class ConstructorOverinjectionOptions implements RuleOptionsInterface
+final readonly class ConstructorOverinjectionOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface
 {
     public function __construct(
         public bool $enabled = true,
@@ -59,5 +60,14 @@ final readonly class ConstructorOverinjectionOptions implements RuleOptionsInter
         }
 
         return null;
+    }
+
+    public function withOverride(int|float|null $warning, int|float|null $error): static
+    {
+        return new static(
+            enabled: $this->enabled,
+            warning: $warning !== null ? (int) $warning : $this->warning,
+            error: $error !== null ? (int) $error : $this->error,
+        );
     }
 }

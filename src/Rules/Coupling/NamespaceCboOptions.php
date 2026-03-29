@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Rules\Coupling;
 
 use Qualimetrix\Core\Rule\LevelOptionsInterface;
+use Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Rules\Support\ThresholdParser;
 
@@ -16,7 +17,7 @@ use Qualimetrix\Rules\Support\ThresholdParser;
  * - Medium CBO (14-19): acceptable (warning)
  * - High CBO (>=20): tightly coupled (error)
  */
-final readonly class NamespaceCboOptions implements LevelOptionsInterface
+final readonly class NamespaceCboOptions implements LevelOptionsInterface, ThresholdAwareOptionsInterface
 {
     public function __construct(
         public bool $enabled = true,
@@ -62,5 +63,15 @@ final readonly class NamespaceCboOptions implements LevelOptionsInterface
         }
 
         return null;
+    }
+
+    public function withOverride(int|float|null $warning, int|float|null $error): static
+    {
+        return new static(
+            enabled: $this->enabled,
+            warning: $warning !== null ? (int) $warning : $this->warning,
+            error: $error !== null ? (int) $error : $this->error,
+            minClassCount: $this->minClassCount,
+        );
     }
 }

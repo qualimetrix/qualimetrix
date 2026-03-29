@@ -14,6 +14,8 @@ use Qualimetrix\Core\Profiler\ProfilerHolder;
 use Qualimetrix\Core\Progress\NullProgressReporter;
 use Qualimetrix\Core\Progress\ProgressReporter;
 use Qualimetrix\Core\Suppression\Suppression;
+use Qualimetrix\Core\Suppression\ThresholdDiagnostic;
+use Qualimetrix\Core\Suppression\ThresholdOverride;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use SplFileInfo;
 
@@ -66,6 +68,10 @@ final class CollectionOrchestrator implements CollectionOrchestratorInterface
         $allDependencies = [];
         /** @var array<string, list<Suppression>> $allSuppressions */
         $allSuppressions = [];
+        /** @var array<string, list<ThresholdOverride>> $allThresholdOverrides */
+        $allThresholdOverrides = [];
+        /** @var array<string, list<ThresholdDiagnostic>> $allThresholdDiagnostics */
+        $allThresholdDiagnostics = [];
 
         foreach ($results as $result) {
             $this->progress->setMessage('Registering ' . basename($result->filePath));
@@ -83,6 +89,16 @@ final class CollectionOrchestrator implements CollectionOrchestratorInterface
                 if ($result->suppressions !== []) {
                     $allSuppressions[$result->filePath] = $result->suppressions;
                 }
+
+                // Collect threshold overrides from result
+                if ($result->thresholdOverrides !== []) {
+                    $allThresholdOverrides[$result->filePath] = $result->thresholdOverrides;
+                }
+
+                // Collect threshold diagnostics from result
+                if ($result->thresholdDiagnostics !== []) {
+                    $allThresholdDiagnostics[$result->filePath] = $result->thresholdDiagnostics;
+                }
             } else {
                 $this->logger->warning('Failed to process file', [
                     'file' => $result->filePath,
@@ -98,7 +114,7 @@ final class CollectionOrchestrator implements CollectionOrchestratorInterface
         $this->progress->finish();
 
         return new CollectionPhaseOutput(
-            new CollectionResult($filesAnalyzed, $filesSkipped, $allSuppressions),
+            new CollectionResult($filesAnalyzed, $filesSkipped, $allSuppressions, $allThresholdOverrides, $allThresholdDiagnostics),
             $allDependencies,
         );
     }

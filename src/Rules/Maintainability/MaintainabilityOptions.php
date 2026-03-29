@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Rules\Maintainability;
 
 use Qualimetrix\Core\Rule\RuleOptionsInterface;
+use Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Rules\Support\ThresholdParser;
 
@@ -18,7 +19,7 @@ use Qualimetrix\Rules\Support\ThresholdParser;
  *
  * Note: Lower MI is worse, so thresholds work in reverse.
  */
-final readonly class MaintainabilityOptions implements RuleOptionsInterface
+final readonly class MaintainabilityOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface
 {
     public function __construct(
         public bool $enabled = true,
@@ -72,5 +73,16 @@ final readonly class MaintainabilityOptions implements RuleOptionsInterface
         }
 
         return null;
+    }
+
+    public function withOverride(int|float|null $warning, int|float|null $error): static
+    {
+        return new static(
+            enabled: $this->enabled,
+            warning: $warning !== null ? (float) $warning : $this->warning,
+            error: $error !== null ? (float) $error : $this->error,
+            excludeTests: $this->excludeTests,
+            minLoc: $this->minLoc,
+        );
     }
 }

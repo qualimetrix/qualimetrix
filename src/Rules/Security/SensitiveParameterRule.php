@@ -72,7 +72,7 @@ final class SensitiveParameterRule extends AbstractRule
                 continue;
             }
 
-            $severity = $this->options->getSeverity(\count($entries));
+            $severity = $this->getEffectiveSeverity($context, $this->options, $fileInfo->file, $fileInfo->line ?? 1, \count($entries));
             if ($severity === null) {
                 continue;
             }

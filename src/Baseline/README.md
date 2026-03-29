@@ -22,10 +22,11 @@ Baseline/
 │   └── BaselineFilter.php    # ViolationFilterInterface: filters violations present in baseline
 │
 └── Suppression/
-    ├── SuppressionType.php       # Enum: Symbol, NextLine, File
-    ├── Suppression.php           # VO: parsed suppression tag (rule, reason, line, type)
-    ├── SuppressionExtractor.php  # Extracts suppression tags from AST node docblocks
-    └── SuppressionFilter.php     # ViolationFilterInterface: filters violations by suppression tags
+    ├── SuppressionType.php              # Enum: Symbol, NextLine, File
+    ├── Suppression.php                  # VO: parsed suppression tag (rule, reason, line, type)
+    ├── SuppressionExtractor.php         # Extracts suppression tags from AST node docblocks
+    ├── SuppressionFilter.php            # ViolationFilterInterface: filters violations by suppression tags
+    └── ThresholdOverrideExtractor.php   # Extracts @qmx-threshold annotations from AST node docblocks
 ```
 
 ## Baseline Workflow
@@ -80,6 +81,46 @@ Rule names support prefix matching: `@qmx-ignore complexity` suppresses all `com
 - **File-level**: suppresses all matching violations in the file
 - **Symbol-level**: suppresses matching violations at or after the suppression line
 - **Next-line**: suppresses matching violations on the exact next line only
+
+## Threshold Overrides
+
+### @qmx-threshold Annotation
+
+Allows per-class or per-method threshold overrides without fully suppressing the rule.
+
+| Annotation       | Effect             | Metrics computed? | Violation possible? |
+| ---------------- | ------------------ | ----------------- | ------------------- |
+| (none)           | Default thresholds | Yes               | Yes                 |
+| `@qmx-threshold` | Custom thresholds  | Yes               | Yes (if exceeded)   |
+| `@qmx-ignore`    | Suppressed         | Yes               | No (filtered out)   |
+
+### Syntax
+
+```php
+/**
+ * @qmx-threshold coupling.cbo 30                         // Shorthand: both warning and error = 30
+ * @qmx-threshold complexity.cyclomatic warning=15 error=25 // Explicit
+ * @qmx-threshold complexity.cyclomatic warning=15          // Partial: override warning only
+ * @qmx-threshold coupling.instability 0.8                  // Float thresholds supported
+ * @qmx-threshold complexity 20                             // Prefix: matches all complexity.* rules
+ * @qmx-threshold * 30                                      // Wildcard: all rules
+ */
+class ContainerFactory { ... }
+```
+
+### How Threshold Overrides Are Wired
+
+1. **FileProcessor** uses `ThresholdOverrideExtractor` to extract `@qmx-threshold` tags during AST traversal
+2. Extracted overrides are carried in `CollectionResult` alongside suppressions
+3. `AnalysisPipeline` passes overrides to `AnalysisContext`
+4. During rule execution, rules call `getEffectiveSeverity()` or `getEffectiveOptions()` (from `AbstractRule`), which applies the override before checking thresholds
+5. Unlike `@qmx-ignore` (post-rule filter), overrides are applied **during** rule execution
+
+### Scope
+
+- `@qmx-threshold` on a **class** docblock: applies to all methods within that class
+- `@qmx-threshold` on a **method** docblock: applies to that specific method only
+- Method-level override takes precedence over class-level (first match wins)
 
 ## Related Documents
 

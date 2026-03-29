@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Rules\Complexity;
 
 use Qualimetrix\Core\Rule\LevelOptionsInterface;
+use Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Rules\Support\ThresholdParser;
 
@@ -13,7 +14,7 @@ use Qualimetrix\Rules\Support\ThresholdParser;
  *
  * Checks maximum cognitive complexity among class methods.
  */
-final readonly class ClassCognitiveComplexityOptions implements LevelOptionsInterface
+final readonly class ClassCognitiveComplexityOptions implements LevelOptionsInterface, ThresholdAwareOptionsInterface
 {
     public function __construct(
         public bool $enabled = true,
@@ -51,5 +52,14 @@ final readonly class ClassCognitiveComplexityOptions implements LevelOptionsInte
         }
 
         return null;
+    }
+
+    public function withOverride(int|float|null $warning, int|float|null $error): static
+    {
+        return new static(
+            enabled: $this->enabled,
+            maxWarning: $warning !== null ? (int) $warning : $this->maxWarning,
+            maxError: $error !== null ? (int) $error : $this->maxError,
+        );
     }
 }

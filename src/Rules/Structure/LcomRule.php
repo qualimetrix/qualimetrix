@@ -79,12 +79,14 @@ final class LcomRule extends AbstractRule
             }
 
             $lcomValue = (int) $lcom;
-            $severity = $this->options->getSeverity($lcomValue);
+            /** @var LcomOptions $effectiveOptions */
+            $effectiveOptions = $this->getEffectiveOptions($context, $this->options, $classInfo->file, $classInfo->line ?? 1);
+            $severity = $effectiveOptions->getSeverity($lcomValue);
 
             if ($severity !== null) {
                 $threshold = $severity === Severity::Error
-                    ? $this->options->error
-                    : $this->options->warning;
+                    ? $effectiveOptions->error
+                    : $effectiveOptions->warning;
 
                 $violations[] = new Violation(
                     location: new Location($classInfo->file, $classInfo->line),

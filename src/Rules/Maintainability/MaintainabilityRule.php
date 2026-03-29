@@ -80,12 +80,14 @@ final class MaintainabilityRule extends AbstractRule
             }
 
             $miValue = (float) $mi;
-            $severity = $this->options->getSeverity($miValue);
+            /** @var MaintainabilityOptions $effectiveOptions */
+            $effectiveOptions = $this->getEffectiveOptions($context, $this->options, $methodInfo->file, $methodInfo->line ?? 1);
+            $severity = $effectiveOptions->getSeverity($miValue);
 
             if ($severity !== null) {
                 $threshold = $severity === Severity::Error
-                    ? $this->options->error
-                    : $this->options->warning;
+                    ? $effectiveOptions->error
+                    : $effectiveOptions->warning;
 
                 $violations[] = new Violation(
                     location: new Location($methodInfo->file, $methodInfo->line),

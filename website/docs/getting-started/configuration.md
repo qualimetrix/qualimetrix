@@ -133,6 +133,22 @@ rules:
 
 This is useful when certain namespaces (e.g., tests, generated code, legacy modules) should not trigger violations for a specific rule, while still being analyzed for metrics.
 
+**Per-symbol threshold overrides with `@qmx-threshold`:**
+
+In addition to project-wide thresholds in YAML, you can override thresholds for individual classes or methods using `@qmx-threshold` annotations directly in source code:
+
+```php
+/**
+ * @qmx-threshold complexity.cyclomatic method.warning=20 method.error=40
+ */
+class ComplexStateMachine
+{
+    // Methods in this class use higher complexity thresholds
+}
+```
+
+See [Baseline > @qmx-threshold](../usage/baseline.md#per-symbol-threshold-overrides-with-qmx-threshold) for full syntax and examples.
+
 ### Disabled Rules
 
 Disable specific rules or entire groups:

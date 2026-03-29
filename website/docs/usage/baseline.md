@@ -184,6 +184,54 @@ bin/qmx check src/ --no-suppression
 
 ---
 
+## Per-symbol threshold overrides with @qmx-threshold
+
+Sometimes a class or method legitimately needs different thresholds than the project default. Instead of suppressing the violation entirely with `@qmx-ignore`, you can override specific thresholds using `@qmx-threshold` annotations.
+
+### Override a threshold for a class
+
+```php
+/**
+ * @qmx-threshold complexity.cyclomatic method.warning=20 method.error=40
+ */
+class ComplexStateMachine
+{
+    // Methods in this class use higher complexity thresholds
+}
+```
+
+### Override a threshold for a method
+
+```php
+class OrderProcessor
+{
+    /**
+     * @qmx-threshold complexity.cyclomatic warning=25 error=50
+     * @qmx-threshold complexity.npath warning=500 error=2000
+     */
+    public function processLegacyOrder(array $data): Order
+    {
+        // This method handles many legacy edge cases
+    }
+}
+```
+
+### Syntax
+
+```
+@qmx-threshold <rule> <option>=<value> [<option>=<value> ...]
+```
+
+- The rule name supports the same dotted format as configuration (`complexity.cyclomatic`, `coupling.cbo`, etc.)
+- Options use the same keys as YAML configuration and `--rule-opt` CLI flag
+- Multiple `@qmx-threshold` tags can be used on the same symbol for different rules
+- Threshold overrides are scoped to the annotated symbol only -- they do not propagate to child symbols
+
+!!! tip
+    Use `@qmx-threshold` when a violation is expected but you still want Qualimetrix to enforce _some_ limit. Use `@qmx-ignore` when you want to suppress the violation entirely.
+
+---
+
 ## Best practices
 
 ### 1. Commit the baseline

@@ -16,6 +16,11 @@ use Qualimetrix\Analysis\RuleExecution\RuleExecutorInterface;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
 use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Suppression\ThresholdDiagnostic;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Violation\Location;
+use Qualimetrix\Core\Violation\Severity;
+use Qualimetrix\Core\Violation\Violation;
 
 /**
  * Main analysis pipeline orchestrator.
@@ -130,8 +135,16 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
             $enrichmentResult->cycles,
             $enrichmentResult->duplicateBlocks,
             $enrichmentResult->namespaceTree,
+            $collectionResult->thresholdOverrides,
         );
         $violations = $this->ruleExecutor->execute($context);
+
+        // Convert threshold annotation diagnostics to violations
+        $diagnosticViolations = self::buildDiagnosticViolations($collectionResult->thresholdDiagnostics);
+        if ($diagnosticViolations !== []) {
+            $violations = array_merge($violations, $diagnosticViolations);
+        }
+
         $profiler?->stop('rules');
 
         $analysisTime = microtime(true) - $phaseStartTime;
@@ -161,5 +174,32 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
             suppressions: $collectionResult->suppressions,
             namespaceTree: $enrichmentResult->namespaceTree,
         );
+    }
+
+    /**
+     * Converts threshold annotation diagnostics to warning-level violations.
+     *
+     * @param array<string, list<ThresholdDiagnostic>> $diagnosticsByFile
+     *
+     * @return list<Violation>
+     */
+    private static function buildDiagnosticViolations(array $diagnosticsByFile): array
+    {
+        $violations = [];
+
+        foreach ($diagnosticsByFile as $file => $diagnostics) {
+            foreach ($diagnostics as $diagnostic) {
+                $violations[] = new Violation(
+                    location: new Location($file, $diagnostic->line, precise: true),
+                    symbolPath: SymbolPath::forFile($file),
+                    ruleName: 'annotation.invalid-threshold',
+                    violationCode: 'annotation.invalid-threshold',
+                    message: $diagnostic->message,
+                    severity: Severity::Warning,
+                );
+            }
+        }
+
+        return $violations;
     }
 }

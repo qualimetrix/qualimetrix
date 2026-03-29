@@ -75,12 +75,14 @@ final class WmcRule extends AbstractRule
             }
 
             $wmcValue = (int) $wmc;
-            $severity = $this->options->getSeverity($wmcValue);
+            /** @var WmcOptions $effectiveOptions */
+            $effectiveOptions = $this->getEffectiveOptions($context, $this->options, $classInfo->file, $classInfo->line ?? 1);
+            $severity = $effectiveOptions->getSeverity($wmcValue);
 
             if ($severity !== null) {
                 $threshold = $severity === Severity::Error
-                    ? $this->options->error
-                    : $this->options->warning;
+                    ? $effectiveOptions->error
+                    : $effectiveOptions->warning;
 
                 $methodCount = $metrics->get(MetricName::STRUCTURE_METHOD_COUNT);
                 $recommendation = $this->buildRecommendation($wmcValue, $threshold, $methodCount !== null ? (int) $methodCount : null);

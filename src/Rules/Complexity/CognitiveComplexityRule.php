@@ -137,10 +137,13 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
             }
 
             $cognitiveValue = (int) $cognitive;
-            $severity = $methodOptions->getSeverity($cognitiveValue);
+
+            /** @var MethodCognitiveComplexityOptions $effectiveMethodOptions */
+            $effectiveMethodOptions = $this->getEffectiveOptions($context, $methodOptions, $methodInfo->file, $methodInfo->line ?? 1);
+            $severity = $effectiveMethodOptions->getSeverity($cognitiveValue);
 
             if ($severity !== null) {
-                $threshold = $severity === Severity::Error ? $methodOptions->error : $methodOptions->warning;
+                $threshold = $severity === Severity::Error ? $effectiveMethodOptions->error : $effectiveMethodOptions->warning;
 
                 $violations[] = new Violation(
                     location: new Location($methodInfo->file, $methodInfo->line),
@@ -179,10 +182,13 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
             }
 
             $maxCognitiveValue = (int) $maxCognitive;
-            $severity = $classOptions->getSeverity($maxCognitiveValue);
+
+            /** @var ClassCognitiveComplexityOptions $effectiveClassOptions */
+            $effectiveClassOptions = $this->getEffectiveOptions($context, $classOptions, $classInfo->file, $classInfo->line ?? 1);
+            $severity = $effectiveClassOptions->getSeverity($maxCognitiveValue);
 
             if ($severity !== null) {
-                $threshold = $severity === Severity::Error ? $classOptions->maxError : $classOptions->maxWarning;
+                $threshold = $severity === Severity::Error ? $effectiveClassOptions->maxError : $effectiveClassOptions->maxWarning;
 
                 $violations[] = new Violation(
                     location: new Location($classInfo->file, $classInfo->line),

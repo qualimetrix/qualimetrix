@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Rules\Coupling;
 
 use Qualimetrix\Core\Rule\RuleOptionsInterface;
+use Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Rules\Support\ThresholdParser;
 
@@ -18,7 +19,7 @@ use Qualimetrix\Rules\Support\ThresholdParser;
  * - Warning: 0.02 (class has notably high importance in the graph)
  * - Error: 0.05 (class is a critical hub, high change impact)
  */
-final readonly class ClassRankOptions implements RuleOptionsInterface
+final readonly class ClassRankOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface
 {
     public function __construct(
         public bool $enabled = true,
@@ -67,5 +68,14 @@ final readonly class ClassRankOptions implements RuleOptionsInterface
         }
 
         return null;
+    }
+
+    public function withOverride(int|float|null $warning, int|float|null $error): static
+    {
+        return new static(
+            enabled: $this->enabled,
+            warning: $warning !== null ? (float) $warning : $this->warning,
+            error: $error !== null ? (float) $error : $this->error,
+        );
     }
 }
