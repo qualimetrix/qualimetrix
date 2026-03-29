@@ -7,23 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-03-29
+
 ### Breaking
-- Rule IDs `code-smell.god-class` and `code-smell.data-class` renamed to `design.god-class` and `design.data-class`. Update configuration files, baselines, and `@qmx-ignore` annotations accordingly
-- `--format=health` now produces a text table of health scores (previously produced HTML). Use `--format=html` for the interactive HTML report
+- Rule IDs `code-smell.god-class` and `code-smell.data-class` renamed to `design.god-class` and `design.data-class`
+- `--format=health` now produces a text table (was HTML). Use `--format=html` for the interactive HTML report
 
 ### Changed
-- Decomposed 13 large classes into focused components for better maintainability
-- New `--format=health` text formatter: tabular health scores with dimensions, status labels, thresholds, and decomposition details
-- NPath violations now include severity categories (low/moderate/high/very high/extreme) for easier triage
-- VO constructor exemption for `code-smell.long-parameter-list` rule — constructors in value objects use relaxed thresholds (`vo-warning`, `vo-error`)
-- LCOM4: stateless methods (no property access) are grouped together, reducing false positives on utility classes
-- Duplication violations now include a content preview hint showing the first tokens of the duplicated block
-- `--group-by=class` and `--group-by=namespace` options for JSON output — group violations by class or namespace
-- Violation density metric (`violationDensity`: violations per 100 LOC) in worst offender entries
-- Worst contributors per health dimension in `--format=health` output, configurable via `--format-opt=contributors=N`
-- Full dependency graph loaded for `--analyze=git:*` modes — coupling metrics (CBO, instability) are now correct even in partial analysis
-- Framework CBO distinction: new `cbo_app` and `ce_framework` metrics separate application coupling from framework coupling
-- `@qmx-threshold` annotations for per-class/method threshold overrides directly in source code
+- `@qmx-threshold` annotations for per-class/method threshold overrides in source code
+- Framework CBO distinction: `cbo_app` and `ce_framework` metrics separate application from framework coupling
+- Full dependency graph in `--analyze=git:*` modes — coupling metrics now correct in partial analysis
+- `--group-by=class|namespace` for JSON output
+- Worst contributors per health dimension in `--format=health`, configurable via `--format-opt=contributors=N`
+- Violation density metric (`violationDensity`: violations per 100 LOC) in worst offenders
+- NPath violations include severity categories (low/moderate/high/very high/extreme)
+- VO constructor exemption for `long-parameter-list` — relaxed thresholds (`vo-warning`, `vo-error`)
+- LCOM4: stateless methods grouped together, reducing false positives on utility classes
+- Duplication violations include content preview hint
+- Martin Diagram view in HTML report with parent-namespace instability/abstractness/distance
+- NamespaceTree: canonical namespace hierarchy replaces flat aggregator
+- Warn when `@qmx-threshold` targets rules that don't support overrides
+- Decomposed 13 large classes into focused components (SRP)
+
+### Fixed
+- Health: complexity contributors always empty; recalibrated formulas for per-method aggregation
+- Metrics: namespace `.max`/`.avg`/`.p95` now aggregated from raw method values, not pre-aggregated class values
+- Reporting: aggregation suffixes stripped from metric keys in health text; uppercase metric keys fixed
+- Git: absolute path mismatch in `GitScopeFilter` for `--analyze=git:*`
+- Security: hardcoded credentials no longer flag dot-notation identifiers (e.g., `config.database.host`)
+- Duplication: self-duplication for overlapping/adjacent ranges in same file eliminated
+- Removed dead weighted average from aggregation, dead `GitFileDiscovery` class
 
 ## [0.9.2] - 2026-03-26
 
@@ -187,7 +200,8 @@ Initial release.
 - Symfony DI with autowiring and autoconfiguration
 - GitHub Actions workflow
 
-[Unreleased]: https://github.com/qualimetrix/qualimetrix/compare/v0.9.2...HEAD
+[Unreleased]: https://github.com/qualimetrix/qualimetrix/compare/v0.10.0...HEAD
+[0.10.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.9.2...v0.10.0
 [0.9.2]: https://github.com/qualimetrix/qualimetrix/compare/v0.9.1...v0.9.2
 [0.9.1]: https://github.com/qualimetrix/qualimetrix/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.8.0...v0.9.0
