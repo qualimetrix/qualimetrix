@@ -25,8 +25,12 @@ use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Core\Dependency\Dependency;
 use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Suppression\ThresholdOverride;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
+use Qualimetrix\Core\Violation\Severity;
+use Qualimetrix\Rules\Complexity\ComplexityRule;
+use Qualimetrix\Rules\Design\GodClassRule;
 use SplFileInfo;
 
 #[CoversClass(AnalysisPipeline::class)]
@@ -266,6 +270,102 @@ final class AnalysisPipelineTest extends TestCase
 
         $pipeline = $this->createPipeline(configurationProvider: $configProvider);
 
+        $result = $pipeline->analyze('/path/to/src');
+
+        self::assertSame([], $result->violations);
+    }
+
+    #[Test]
+    public function itWarnsWhenThresholdAnnotationTargetsUnsupportedRule(): void
+    {
+        $this->defaultDiscovery->method('discover')->willReturn(new ArrayIterator([]));
+
+        $overrides = [
+            'src/Foo.php' => [
+                new ThresholdOverride('design.god-class', 50.0, 100.0, 10, 50),
+            ],
+        ];
+
+        $this->collectionOrchestrator->method('collect')->willReturn(
+            new CollectionPhaseOutput(
+                new CollectionResult(1, 0, thresholdOverrides: $overrides),
+                [],
+            ),
+        );
+
+        // GodClassRule doesn't support ThresholdAwareOptionsInterface
+        $godClassRule = new GodClassRule(GodClassRule::getOptionsClass()::fromArray([]));
+        // ComplexityRule supports it
+        $complexityRule = new ComplexityRule(ComplexityRule::getOptionsClass()::fromArray([]));
+
+        $ruleExecutor = $this->createStub(RuleExecutorInterface::class);
+        $ruleExecutor->method('execute')->willReturn([]);
+        $ruleExecutor->method('getAllRules')->willReturn([$godClassRule, $complexityRule]);
+
+        $pipeline = $this->createPipeline(ruleExecutor: $ruleExecutor);
+        $result = $pipeline->analyze('/path/to/src');
+
+        // Should have a warning violation for the unsupported rule
+        self::assertCount(1, $result->violations);
+        self::assertSame('annotation.unsupported-threshold', $result->violations[0]->ruleName);
+        self::assertSame(Severity::Warning, $result->violations[0]->severity);
+        self::assertStringContainsString('design.god-class', $result->violations[0]->message);
+        self::assertStringContainsString('does not support', $result->violations[0]->message);
+    }
+
+    #[Test]
+    public function itDoesNotWarnForSupportedThresholdOverride(): void
+    {
+        $this->defaultDiscovery->method('discover')->willReturn(new ArrayIterator([]));
+
+        $overrides = [
+            'src/Foo.php' => [
+                new ThresholdOverride('complexity.cyclomatic', 15.0, 25.0, 10, 50),
+            ],
+        ];
+
+        $this->collectionOrchestrator->method('collect')->willReturn(
+            new CollectionPhaseOutput(
+                new CollectionResult(1, 0, thresholdOverrides: $overrides),
+                [],
+            ),
+        );
+
+        $complexityRule = new ComplexityRule(ComplexityRule::getOptionsClass()::fromArray([]));
+
+        $ruleExecutor = $this->createStub(RuleExecutorInterface::class);
+        $ruleExecutor->method('execute')->willReturn([]);
+        $ruleExecutor->method('getAllRules')->willReturn([$complexityRule]);
+
+        $pipeline = $this->createPipeline(ruleExecutor: $ruleExecutor);
+        $result = $pipeline->analyze('/path/to/src');
+
+        self::assertSame([], $result->violations);
+    }
+
+    #[Test]
+    public function itDoesNotWarnForWildcardThresholdOverride(): void
+    {
+        $this->defaultDiscovery->method('discover')->willReturn(new ArrayIterator([]));
+
+        $overrides = [
+            'src/Foo.php' => [
+                new ThresholdOverride('*', 15.0, 25.0, 10, 50),
+            ],
+        ];
+
+        $this->collectionOrchestrator->method('collect')->willReturn(
+            new CollectionPhaseOutput(
+                new CollectionResult(1, 0, thresholdOverrides: $overrides),
+                [],
+            ),
+        );
+
+        $ruleExecutor = $this->createStub(RuleExecutorInterface::class);
+        $ruleExecutor->method('execute')->willReturn([]);
+        $ruleExecutor->method('getAllRules')->willReturn([]);
+
+        $pipeline = $this->createPipeline(ruleExecutor: $ruleExecutor);
         $result = $pipeline->analyze('/path/to/src');
 
         self::assertSame([], $result->violations);
