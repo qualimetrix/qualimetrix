@@ -32,7 +32,7 @@ final class ParameterCountCollectorTest extends TestCase
 
     public function testProvides(): void
     {
-        self::assertSame(['parameterCount'], $this->collector->provides());
+        self::assertSame(['parameterCount', 'isVoConstructor'], $this->collector->provides());
     }
 
     public function testMethodWithNoParameters(): void
@@ -233,7 +233,7 @@ PHP;
     {
         $definitions = $this->collector->getMetricDefinitions();
 
-        self::assertCount(1, $definitions);
+        self::assertCount(2, $definitions);
 
         $definition = $definitions[0];
         self::assertSame('parameterCount', $definition->name);
@@ -258,6 +258,11 @@ PHP;
         self::assertContains(AggregationStrategy::Max, $projectStrategies);
         self::assertContains(AggregationStrategy::Average, $projectStrategies);
         self::assertContains(AggregationStrategy::Percentile95, $projectStrategies);
+
+        // Check isVoConstructor metric definition
+        $voDefinition = $definitions[1];
+        self::assertSame('isVoConstructor', $voDefinition->name);
+        self::assertSame(SymbolLevel::Method, $voDefinition->collectedAt);
     }
 
     public function testInterfaceMethod(): void
@@ -294,6 +299,246 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         self::assertSame(3, $metrics->get('parameterCount:App\AbstractHandler::handle'));
+    }
+
+    public function testVoConstructorReadonlyClassAllPromotedEmptyBody(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App\Dto;
+
+readonly class UserDto
+{
+    public function __construct(
+        public string $name,
+        public string $email,
+        public int $age,
+        public bool $active,
+    ) {}
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(4, $metrics->get('parameterCount:App\Dto\UserDto::__construct'));
+        self::assertSame(1, $metrics->get('isVoConstructor:App\Dto\UserDto::__construct'));
+    }
+
+    public function testVoConstructorFinalReadonlyClass(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App\Dto;
+
+final readonly class Point
+{
+    public function __construct(
+        public float $x,
+        public float $y,
+        public float $z,
+    ) {}
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(1, $metrics->get('isVoConstructor:App\Dto\Point::__construct'));
+    }
+
+    public function testNotVoConstructorNonReadonlyClass(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App\Service;
+
+class UserService
+{
+    public function __construct(
+        private readonly string $name,
+        private readonly int $age,
+    ) {}
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(2, $metrics->get('parameterCount:App\Service\UserService::__construct'));
+        self::assertNull($metrics->get('isVoConstructor:App\Service\UserService::__construct'));
+    }
+
+    public function testNotVoConstructorMixedPromotedAndNonPromoted(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App\Dto;
+
+readonly class MixedDto
+{
+    public function __construct(
+        public string $name,
+        string $temporary,
+    ) {}
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertNull($metrics->get('isVoConstructor:App\Dto\MixedDto::__construct'));
+    }
+
+    public function testNotVoConstructorWithBodyLogic(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App\Dto;
+
+readonly class ValidatedDto
+{
+    public function __construct(
+        public string $name,
+        public int $age,
+    ) {
+        assert($age >= 0);
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertNull($metrics->get('isVoConstructor:App\Dto\ValidatedDto::__construct'));
+    }
+
+    public function testNotVoConstructorWithParentCall(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App\Dto;
+
+readonly class ChildDto
+{
+    public function __construct(
+        public string $name,
+        public int $age,
+    ) {
+        parent::__construct();
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertNull($metrics->get('isVoConstructor:App\Dto\ChildDto::__construct'));
+    }
+
+    public function testVoConstructorWithDefaultValues(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App\Dto;
+
+readonly class ConfigDto
+{
+    public function __construct(
+        public string $name = 'default',
+        public int $timeout = 30,
+        public bool $debug = false,
+    ) {}
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(1, $metrics->get('isVoConstructor:App\Dto\ConfigDto::__construct'));
+    }
+
+    public function testVoDetectionOnlyAppliesToConstruct(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App\Dto;
+
+readonly class SomeDto
+{
+    public function __construct(
+        public string $name,
+    ) {}
+
+    public function process(string $a, string $b): void {}
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(1, $metrics->get('isVoConstructor:App\Dto\SomeDto::__construct'));
+        self::assertNull($metrics->get('isVoConstructor:App\Dto\SomeDto::process'));
+    }
+
+    public function testAbstractReadonlyClassVoConstructor(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App\Dto;
+
+abstract readonly class BaseDto
+{
+    public function __construct(
+        public string $id,
+        public string $type,
+    ) {}
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(1, $metrics->get('isVoConstructor:App\Dto\BaseDto::__construct'));
+    }
+
+    public function testReadonlyClassNoConstructor(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App\Dto;
+
+readonly class EmptyDto
+{
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // No constructor means no parameterCount and no voConstructor metrics
+        self::assertNull($metrics->get('parameterCount:App\Dto\EmptyDto::__construct'));
+        self::assertNull($metrics->get('isVoConstructor:App\Dto\EmptyDto::__construct'));
+    }
+
+    public function testReadonlyClassEmptyConstructor(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App\Dto;
+
+readonly class NoParamDto
+{
+    public function __construct() {}
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(0, $metrics->get('parameterCount:App\Dto\NoParamDto::__construct'));
+        // Zero-param constructor is not a VO constructor (no promoted properties)
+        self::assertNull($metrics->get('isVoConstructor:App\Dto\NoParamDto::__construct'));
     }
 
     public function testAnonymousClassInsideNamedClass(): void

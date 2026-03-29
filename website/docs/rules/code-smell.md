@@ -542,12 +542,36 @@ Detects methods and functions with too many parameters. A long parameter list ma
 
 ### Thresholds
 
+**Standard thresholds** (methods and functions):
+
 | Value | Severity | Meaning                              |
 | ----- | -------- | ------------------------------------ |
 | 4     | Warning  | Consider grouping parameters         |
 | 6+    | Error    | Too many parameters, refactor needed |
 
+**VO constructor thresholds** (readonly class, all promoted, empty body):
+
+| Value | Severity | Meaning                                 |
+| ----- | -------- | --------------------------------------- |
+| 8     | Warning  | Consider splitting the value object     |
+| 12+   | Error    | Too many fields, split the value object |
+
 <!-- llms:skip-begin -->
+
+#### Value Object constructor exemption
+
+Readonly classes with constructor parameter promotion (PHP 8.2+) are treated as Value Objects.
+A `readonly class` with 6 promoted properties and no body logic is valid design — it's a typed
+data container, not a sign of poor decomposition. These constructors use separate, higher thresholds.
+
+**VO detection criteria** (all must be true):
+
+1. Class has the `readonly` modifier
+2. All constructor parameters are promoted properties (have visibility modifier)
+3. Constructor body is empty (no statements)
+
+When **any** condition is not met, standard thresholds apply.
+
 ### Example
 
 ```php
@@ -562,6 +586,22 @@ public function createUser(
     string $zipCode,
 ): User {
     // ...
+}
+```
+
+```php
+// OK: readonly VO with promoted properties uses higher thresholds
+final readonly class CreateUserRequest
+{
+    public function __construct(
+        public string $name,
+        public string $email,
+        public string $phone,
+        public string $address,
+        public string $city,
+        public string $country,
+        public string $zipCode,  // 7 params — below vo-warning=8
+    ) {}
 }
 ```
 
@@ -596,13 +636,17 @@ public function createUser(
 # qmx.yaml
 rules:
   code-smell.long-parameter-list:
-    warning: 4
+    warning: 4        # standard methods/functions
     error: 6
+    vo-warning: 8     # readonly VO constructors
+    vo-error: 12
 ```
 
 ```bash
 bin/qmx check src/ --rule-opt="code-smell.long-parameter-list:warning=5"
 bin/qmx check src/ --rule-opt="code-smell.long-parameter-list:error=8"
+bin/qmx check src/ --rule-opt="code-smell.long-parameter-list:vo-warning=10"
+bin/qmx check src/ --rule-opt="code-smell.long-parameter-list:vo-error=15"
 ```
 
 ---

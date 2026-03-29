@@ -542,12 +542,37 @@ bin/qmx check src/ --rule-opt="code-smell.constructor-overinjection:warning=6"
 
 ### Пороговые значения
 
+**Стандартные пороги** (методы и функции):
+
 | Значение | Серьёзность | Что означает                                    |
 | -------- | ----------- | ----------------------------------------------- |
 | 4        | Warning     | Стоит сгруппировать параметры                   |
 | 6+       | Error       | Слишком много параметров, необходим рефакторинг |
 
+**Пороги для VO конструкторов** (readonly класс, все promoted, пустое тело):
+
+| Значение | Серьёзность | Что означает                                |
+| -------- | ----------- | ------------------------------------------- |
+| 8        | Warning     | Стоит разделить value object                |
+| 12+      | Error       | Слишком много полей, разделите value object |
+
 <!-- llms:skip-begin -->
+
+#### Исключение для конструкторов Value Object
+
+Readonly классы с promoted-параметрами конструктора (PHP 8.2+) рассматриваются как Value Objects.
+`readonly class` с 6 promoted-свойствами и без логики в теле — это корректный дизайн, типизированный
+контейнер данных, а не признак плохой декомпозиции. Для таких конструкторов используются отдельные,
+повышенные пороговые значения.
+
+**Критерии определения VO** (все должны быть истинны):
+
+1. Класс имеет модификатор `readonly`
+2. Все параметры конструктора — promoted-свойства (имеют модификатор видимости)
+3. Тело конструктора пустое (нет операторов)
+
+Если **любое** условие не выполнено, применяются стандартные пороги.
+
 ### Пример
 
 ```php
@@ -562,6 +587,22 @@ public function createUser(
     string $zipCode,
 ): User {
     // ...
+}
+```
+
+```php
+// OK: readonly VO с promoted-свойствами использует повышенные пороги
+final readonly class CreateUserRequest
+{
+    public function __construct(
+        public string $name,
+        public string $email,
+        public string $phone,
+        public string $address,
+        public string $city,
+        public string $country,
+        public string $zipCode,  // 7 параметров — ниже vo-warning=8
+    ) {}
 }
 ```
 
@@ -596,13 +637,17 @@ public function createUser(
 # qmx.yaml
 rules:
   code-smell.long-parameter-list:
-    warning: 4
+    warning: 4        # стандартные методы/функции
     error: 6
+    vo-warning: 8     # readonly VO конструкторы
+    vo-error: 12
 ```
 
 ```bash
 bin/qmx check src/ --rule-opt="code-smell.long-parameter-list:warning=5"
 bin/qmx check src/ --rule-opt="code-smell.long-parameter-list:error=8"
+bin/qmx check src/ --rule-opt="code-smell.long-parameter-list:vo-warning=10"
+bin/qmx check src/ --rule-opt="code-smell.long-parameter-list:vo-error=15"
 ```
 
 ---

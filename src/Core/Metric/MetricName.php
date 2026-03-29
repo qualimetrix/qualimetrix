@@ -31,6 +31,8 @@ final class MetricName
     public const string COUPLING_DISTANCE = 'distance';
     public const string COUPLING_CLASS_RANK = 'classRank';
     public const string COUPLING_CE_PACKAGES = 'ce_packages';
+    public const string COUPLING_CBO_APP = 'cbo_app';
+    public const string COUPLING_CE_FRAMEWORK = 'ce_framework';
 
     // -- Design --------------------------------------------------------------
 
@@ -111,6 +113,7 @@ final class MetricName
     // -- Code Smell ----------------------------------------------------------
 
     public const string CODE_SMELL_PARAMETER_COUNT = 'parameterCount';
+    public const string CODE_SMELL_IS_VO_CONSTRUCTOR = 'isVoConstructor';
     public const string CODE_SMELL_UNREACHABLE_CODE = 'unreachableCode';
     public const string CODE_SMELL_UNREACHABLE_CODE_FIRST_LINE = 'unreachableCode.firstLine';
 

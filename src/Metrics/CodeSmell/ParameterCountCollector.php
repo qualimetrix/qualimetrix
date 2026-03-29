@@ -41,7 +41,10 @@ final class ParameterCountCollector extends AbstractCollector implements MethodM
      */
     public function provides(): array
     {
-        return [MetricName::CODE_SMELL_PARAMETER_COUNT];
+        return [
+            MetricName::CODE_SMELL_PARAMETER_COUNT,
+            MetricName::CODE_SMELL_IS_VO_CONSTRUCTOR,
+        ];
     }
 
     /**
@@ -55,6 +58,10 @@ final class ParameterCountCollector extends AbstractCollector implements MethodM
 
         foreach ($this->visitor->getParameterCounts() as $fqn => $count) {
             $bag = $bag->with(MetricName::CODE_SMELL_PARAMETER_COUNT . ':' . $fqn, $count);
+        }
+
+        foreach ($this->visitor->getVoConstructors() as $fqn => $_) {
+            $bag = $bag->with(MetricName::CODE_SMELL_IS_VO_CONSTRUCTOR . ':' . $fqn, 1);
         }
 
         return $bag;
@@ -96,6 +103,12 @@ final class ParameterCountCollector extends AbstractCollector implements MethodM
                         AggregationStrategy::Percentile95,
                     ],
                 ],
+            ),
+            // Boolean flag (0/1) for VO constructor detection — no aggregation needed
+            new MetricDefinition(
+                name: MetricName::CODE_SMELL_IS_VO_CONSTRUCTOR,
+                collectedAt: SymbolLevel::Method,
+                aggregations: [],
             ),
         ];
     }

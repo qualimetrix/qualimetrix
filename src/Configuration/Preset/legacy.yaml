@@ -68,6 +68,8 @@ rules:
   code-smell.long-parameter-list:
     warning: 6
     error: 10
+    vo-warning: 12
+    vo-error: 18
   design.type-coverage:
     paramWarning: 30
     paramError: 10

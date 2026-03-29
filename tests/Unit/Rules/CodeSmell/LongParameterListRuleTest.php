@@ -48,7 +48,7 @@ final class LongParameterListRuleTest extends TestCase
     {
         $rule = new LongParameterListRule(new LongParameterListOptions());
 
-        self::assertSame(['parameterCount'], $rule->requires());
+        self::assertSame(['parameterCount', 'isVoConstructor'], $rule->requires());
     }
 
     public function testGetOptionsClass(): void
@@ -59,7 +59,12 @@ final class LongParameterListRuleTest extends TestCase
     public function testGetCliAliases(): void
     {
         self::assertSame(
-            ['long-parameter-list-warning' => 'warning', 'long-parameter-list-error' => 'error'],
+            [
+                'long-parameter-list-warning' => 'warning',
+                'long-parameter-list-error' => 'error',
+                'long-parameter-list-vo-warning' => 'vo-warning',
+                'long-parameter-list-vo-error' => 'vo-error',
+            ],
             LongParameterListRule::getCliAliases(),
         );
     }
@@ -273,5 +278,310 @@ final class LongParameterListRuleTest extends TestCase
         $options = LongParameterListOptions::fromArray([]);
 
         self::assertFalse($options->isEnabled());
+    }
+
+    // -- VO Constructor Tests ------------------------------------------------
+
+    public function testOptionsDefaultVoThresholds(): void
+    {
+        $options = new LongParameterListOptions();
+
+        self::assertSame(8, $options->voWarning);
+        self::assertSame(12, $options->voError);
+    }
+
+    public function testOptionsFromArrayVoThresholds(): void
+    {
+        $options = LongParameterListOptions::fromArray([
+            'warning' => 4,
+            'error' => 6,
+            'vo-warning' => 10,
+            'vo-error' => 15,
+        ]);
+
+        self::assertSame(10, $options->voWarning);
+        self::assertSame(15, $options->voError);
+    }
+
+    public function testOptionsFromArrayVoDefaultsWhenNotSpecified(): void
+    {
+        $options = LongParameterListOptions::fromArray([
+            'warning' => 3,
+            'error' => 5,
+        ]);
+
+        self::assertSame(8, $options->voWarning);
+        self::assertSame(12, $options->voError);
+    }
+
+    public function testGetVoSeverityBelowWarning(): void
+    {
+        $options = new LongParameterListOptions(voWarning: 8, voError: 12);
+
+        self::assertNull($options->getVoSeverity(7));
+    }
+
+    public function testGetVoSeverityAtWarning(): void
+    {
+        $options = new LongParameterListOptions(voWarning: 8, voError: 12);
+
+        self::assertSame(Severity::Warning, $options->getVoSeverity(8));
+    }
+
+    public function testGetVoSeverityBetweenWarningAndError(): void
+    {
+        $options = new LongParameterListOptions(voWarning: 8, voError: 12);
+
+        self::assertSame(Severity::Warning, $options->getVoSeverity(10));
+    }
+
+    public function testGetVoSeverityAtError(): void
+    {
+        $options = new LongParameterListOptions(voWarning: 8, voError: 12);
+
+        self::assertSame(Severity::Error, $options->getVoSeverity(12));
+    }
+
+    public function testVoConstructorBelowVoThresholdNoViolation(): void
+    {
+        $rule = new LongParameterListRule(new LongParameterListOptions(
+            warning: 4,
+            error: 6,
+            voWarning: 8,
+            voError: 12,
+        ));
+
+        $symbolPath = SymbolPath::forMethod('App\Dto', 'UserDto', '__construct');
+        $methodInfo = new SymbolInfo($symbolPath, 'src/Dto/UserDto.php', 10);
+
+        // 7 params in VO constructor — below vo-warning=8, but above regular warning=4
+        $metricBag = (new MetricBag())
+            ->with('parameterCount', 7)
+            ->with('isVoConstructor', 1);
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Method ? [$methodInfo] : []);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+
+        self::assertSame([], $rule->analyze($context));
+    }
+
+    public function testVoConstructorAtVoWarningThreshold(): void
+    {
+        $rule = new LongParameterListRule(new LongParameterListOptions(
+            warning: 4,
+            error: 6,
+            voWarning: 8,
+            voError: 12,
+        ));
+
+        $symbolPath = SymbolPath::forMethod('App\Dto', 'UserDto', '__construct');
+        $methodInfo = new SymbolInfo($symbolPath, 'src/Dto/UserDto.php', 10);
+
+        $metricBag = (new MetricBag())
+            ->with('parameterCount', 8)
+            ->with('isVoConstructor', 1);
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Method ? [$methodInfo] : []);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyze($context);
+
+        self::assertCount(1, $violations);
+        self::assertSame(Severity::Warning, $violations[0]->severity);
+        self::assertStringContainsString('VO constructor', $violations[0]->message);
+        self::assertStringContainsString('promoted parameters', $violations[0]->message);
+        self::assertSame(8, $violations[0]->metricValue);
+        self::assertSame(8, $violations[0]->threshold);
+    }
+
+    public function testVoConstructorAtVoErrorThreshold(): void
+    {
+        $rule = new LongParameterListRule(new LongParameterListOptions(
+            warning: 4,
+            error: 6,
+            voWarning: 8,
+            voError: 12,
+        ));
+
+        $symbolPath = SymbolPath::forMethod('App\Dto', 'UserDto', '__construct');
+        $methodInfo = new SymbolInfo($symbolPath, 'src/Dto/UserDto.php', 10);
+
+        $metricBag = (new MetricBag())
+            ->with('parameterCount', 13)
+            ->with('isVoConstructor', 1);
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Method ? [$methodInfo] : []);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyze($context);
+
+        self::assertCount(1, $violations);
+        self::assertSame(Severity::Error, $violations[0]->severity);
+        self::assertStringContainsString('VO constructor', $violations[0]->message);
+        self::assertSame(13, $violations[0]->metricValue);
+        self::assertSame(12, $violations[0]->threshold);
+    }
+
+    public function testNonVoConstructorStillUsesStandardThresholds(): void
+    {
+        $rule = new LongParameterListRule(new LongParameterListOptions(
+            warning: 4,
+            error: 6,
+            voWarning: 8,
+            voError: 12,
+        ));
+
+        $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', '__construct');
+        $methodInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+
+        // 5 params in non-VO constructor — above warning=4, below error=6
+        $metricBag = (new MetricBag())
+            ->with('parameterCount', 5);
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Method ? [$methodInfo] : []);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyze($context);
+
+        self::assertCount(1, $violations);
+        self::assertSame(Severity::Warning, $violations[0]->severity);
+        self::assertStringContainsString('Method has 5 parameters', $violations[0]->message);
+        self::assertSame(4, $violations[0]->threshold);
+    }
+
+    public function testRequiresIncludesVoConstructorMetric(): void
+    {
+        $rule = new LongParameterListRule(new LongParameterListOptions());
+
+        self::assertContains('isVoConstructor', $rule->requires());
+    }
+
+    public function testGetCliAliasesIncludesVoOptions(): void
+    {
+        $aliases = LongParameterListRule::getCliAliases();
+
+        self::assertArrayHasKey('long-parameter-list-vo-warning', $aliases);
+        self::assertArrayHasKey('long-parameter-list-vo-error', $aliases);
+        self::assertSame('vo-warning', $aliases['long-parameter-list-vo-warning']);
+        self::assertSame('vo-error', $aliases['long-parameter-list-vo-error']);
+    }
+
+    #[DataProvider('voThresholdDataProvider')]
+    public function testVoThresholdBoundaries(
+        int $parameterCount,
+        int $voWarning,
+        int $voError,
+        ?Severity $expectedSeverity,
+    ): void {
+        $rule = new LongParameterListRule(new LongParameterListOptions(
+            warning: 4,
+            error: 6,
+            voWarning: $voWarning,
+            voError: $voError,
+        ));
+
+        $symbolPath = SymbolPath::forMethod('App\Dto', 'TestDto', '__construct');
+        $methodInfo = new SymbolInfo($symbolPath, 'test.php', 10);
+
+        $metricBag = (new MetricBag())
+            ->with('parameterCount', $parameterCount)
+            ->with('isVoConstructor', 1);
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Method ? [$methodInfo] : []);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyze($context);
+
+        if ($expectedSeverity === null) {
+            self::assertCount(0, $violations);
+        } else {
+            self::assertCount(1, $violations);
+            self::assertSame($expectedSeverity, $violations[0]->severity);
+        }
+    }
+
+    /**
+     * @return iterable<string, array{int, int, int, ?Severity}>
+     */
+    public static function voThresholdDataProvider(): iterable
+    {
+        yield 'vo below warning' => [7, 8, 12, null];
+        yield 'vo at warning' => [8, 8, 12, Severity::Warning];
+        yield 'vo above warning, below error' => [10, 8, 12, Severity::Warning];
+        yield 'vo at error' => [12, 8, 12, Severity::Error];
+        yield 'vo above error' => [15, 8, 12, Severity::Error];
+    }
+
+    // -- Threshold shorthand tests (regression for VO reuse bug) ----------------
+
+    public function testThresholdShorthandKeepsVoDefaults(): void
+    {
+        $options = LongParameterListOptions::fromArray([
+            'threshold' => 5,
+        ]);
+
+        self::assertTrue($options->isEnabled());
+        self::assertSame(5, $options->warning);
+        self::assertSame(5, $options->error);
+        // VO thresholds must remain at defaults, not be overwritten by 'threshold'
+        self::assertSame(8, $options->voWarning);
+        self::assertSame(12, $options->voError);
+    }
+
+    public function testThresholdShorthandWithExplicitVoWarning(): void
+    {
+        $options = LongParameterListOptions::fromArray([
+            'threshold' => 5,
+            'vo-warning' => 10,
+        ]);
+
+        self::assertSame(5, $options->warning);
+        self::assertSame(5, $options->error);
+        self::assertSame(10, $options->voWarning);
+        self::assertSame(12, $options->voError);
+    }
+
+    public function testVoThresholdShorthand(): void
+    {
+        $options = LongParameterListOptions::fromArray([
+            'threshold' => 5,
+            'vo-threshold' => 10,
+        ]);
+
+        self::assertSame(5, $options->warning);
+        self::assertSame(5, $options->error);
+        self::assertSame(10, $options->voWarning);
+        self::assertSame(10, $options->voError);
+    }
+
+    public function testThresholdShorthandCannotMixWithVoWarningAndVoThreshold(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        LongParameterListOptions::fromArray([
+            'vo-threshold' => 10,
+            'vo-warning' => 8,
+        ]);
     }
 }
