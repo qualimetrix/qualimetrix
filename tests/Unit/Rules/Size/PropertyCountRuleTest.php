@@ -182,13 +182,97 @@ final class PropertyCountRuleTest extends TestCase
         self::assertSame(Severity::Error, $violations[0]->severity);
     }
 
+    public function testReadonlyClassIsExcludedByDefault(): void
+    {
+        $rule = new PropertyCountRule(new PropertyCountOptions(
+            warning: 10,
+            error: 15,
+            excludeReadonly: true,
+        ));
+
+        $context = $this->createContext(propertyCount: 12, isReadonly: 1);
+        $violations = $rule->analyze($context);
+
+        self::assertCount(0, $violations, 'Readonly class should be excluded when excludeReadonly is true');
+    }
+
+    public function testReadonlyClassNotExcludedWhenFilterDisabled(): void
+    {
+        $rule = new PropertyCountRule(new PropertyCountOptions(
+            warning: 10,
+            error: 15,
+            excludeReadonly: false,
+        ));
+
+        $context = $this->createContext(propertyCount: 12, isReadonly: 1);
+        $violations = $rule->analyze($context);
+
+        self::assertCount(1, $violations, 'Readonly class should NOT be excluded when excludeReadonly is false');
+        self::assertSame(Severity::Warning, $violations[0]->severity);
+    }
+
+    public function testPromotedOnlyClassIsExcludedByDefault(): void
+    {
+        $rule = new PropertyCountRule(new PropertyCountOptions(
+            warning: 10,
+            error: 15,
+            excludePromotedOnly: true,
+        ));
+
+        $context = $this->createContext(propertyCount: 12, isPromotedOnly: 1);
+        $violations = $rule->analyze($context);
+
+        self::assertCount(0, $violations, 'Promoted-only class should be excluded when excludePromotedOnly is true');
+    }
+
+    public function testPromotedOnlyClassNotExcludedWhenFilterDisabled(): void
+    {
+        $rule = new PropertyCountRule(new PropertyCountOptions(
+            warning: 10,
+            error: 15,
+            excludePromotedOnly: false,
+        ));
+
+        $context = $this->createContext(propertyCount: 12, isPromotedOnly: 1);
+        $violations = $rule->analyze($context);
+
+        self::assertCount(1, $violations, 'Promoted-only class should NOT be excluded when excludePromotedOnly is false');
+        self::assertSame(Severity::Warning, $violations[0]->severity);
+    }
+
+    public function testBothFiltersDisabledProducesViolations(): void
+    {
+        $rule = new PropertyCountRule(new PropertyCountOptions(
+            warning: 10,
+            error: 15,
+            excludeReadonly: false,
+            excludePromotedOnly: false,
+        ));
+
+        // Readonly + promoted-only class
+        $context = $this->createContext(propertyCount: 12, isReadonly: 1, isPromotedOnly: 1);
+        $violations = $rule->analyze($context);
+
+        self::assertCount(1, $violations, 'Both filters disabled should produce violations');
+    }
+
     private function createContext(
         int $propertyCount,
         string $namespace = 'App',
         string $class = 'TestClass',
+        ?int $isReadonly = null,
+        ?int $isPromotedOnly = null,
     ): AnalysisContext {
         $bag = (new MetricBag())
             ->with('propertyCount', $propertyCount);
+
+        if ($isReadonly !== null) {
+            $bag = $bag->with('isReadonly', $isReadonly);
+        }
+
+        if ($isPromotedOnly !== null) {
+            $bag = $bag->with('isPromotedPropertiesOnly', $isPromotedOnly);
+        }
 
         $symbolPath = SymbolPath::forClass($namespace, $class);
         $symbolInfo = new SymbolInfo(

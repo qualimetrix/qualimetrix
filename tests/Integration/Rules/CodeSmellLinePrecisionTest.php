@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Unit\Rules\CodeSmell;
+namespace Qualimetrix\Tests\Integration\Rules;
 
 use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
