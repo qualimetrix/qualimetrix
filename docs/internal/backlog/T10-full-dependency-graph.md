@@ -19,7 +19,7 @@ analyzed files. This makes afferent couplings (Ca) invisible, causing:
 ```
 CheckCommand
   → GitScopeResolver.resolve()
-    → GitFileDiscovery (returns ONLY scoped files)
+    → GitScopeResolver (returns ONLY scoped files)
   → AnalysisPipeline.analyze(paths, discovery)
     → discovery.discover(paths) → iterable<SplFileInfo>  ← ONLY SCOPED FILES
     → CollectionOrchestrator.collect(files, repository)   ← PARSES ONLY SCOPED

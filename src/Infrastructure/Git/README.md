@@ -45,16 +45,6 @@ Parses strings in format `git:staged`, `git:main..HEAD` into a `GitScope` object
 - `parse(string $scope): ?GitScope` — parse scope string
 - `isValid(string $scope): bool` — check scope validity
 
-### GitFileDiscovery
-
-`FileDiscoveryInterface` implementation for `--analyze=git:...`.
-
-**Behavior:**
-- Gets list of changed files via `GitClient`
-- Filters only PHP files (*.php)
-- Excludes deleted files
-- Verifies files are within specified paths
-
 ### GitScopeFilter
 
 `ViolationFilterInterface` implementation for `--report=git:...`.
@@ -118,7 +108,6 @@ fi
 
 - `GitClient` with support for all scope formats (staged, HEAD, two-dot, three-dot)
 - `GitScopeParser` parses git:... syntax
-- `GitFileDiscovery` implements `FileDiscoveryInterface`
 - `GitScopeFilter` filters violations by scope
 - CLI options `--analyze`, `--report` work
 - `--report-strict` disables parent namespaces
