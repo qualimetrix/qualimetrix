@@ -105,6 +105,66 @@ final class CodeDuplicationRuleTest extends TestCase
     }
 
     #[Test]
+    public function duplicateBlockWithHintIncludesHintInMessage(): void
+    {
+        $rule = new CodeDuplicationRule(new CodeDuplicationOptions());
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $context = new AnalysisContext(
+            $repository,
+            duplicateBlocks: [
+                new DuplicateBlock(
+                    locations: [
+                        new DuplicateLocation('src/A.php', 10, 25),
+                        new DuplicateLocation('src/B.php', 30, 45),
+                    ],
+                    lines: 16,
+                    tokens: 80,
+                    hint: 'function processItems($items) { $result = [];',
+                ),
+            ],
+        );
+
+        $violations = $rule->analyze($context);
+
+        self::assertCount(1, $violations);
+        self::assertStringContainsString(
+            ': "function processItems($items) { $result = [];"',
+            $violations[0]->message,
+        );
+        self::assertStringContainsString('src/B.php:30-45', $violations[0]->message);
+    }
+
+    #[Test]
+    public function duplicateBlockWithoutHintOmitsHintFromMessage(): void
+    {
+        $rule = new CodeDuplicationRule(new CodeDuplicationOptions());
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $context = new AnalysisContext(
+            $repository,
+            duplicateBlocks: [
+                new DuplicateBlock(
+                    locations: [
+                        new DuplicateLocation('src/A.php', 10, 25),
+                        new DuplicateLocation('src/B.php', 30, 45),
+                    ],
+                    lines: 16,
+                    tokens: 80,
+                    hint: null,
+                ),
+            ],
+        );
+
+        $violations = $rule->analyze($context);
+
+        self::assertCount(1, $violations);
+        // No hint means no quotes in the message
+        self::assertStringNotContainsString('"', $violations[0]->message);
+        self::assertStringContainsString('(16 lines, 2 occurrences) — also at', $violations[0]->message);
+    }
+
+    #[Test]
     public function largeDuplicateIsError(): void
     {
         $rule = new CodeDuplicationRule(new CodeDuplicationOptions());

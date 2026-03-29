@@ -119,19 +119,22 @@ final class DuplicationDetector
         // Pass 2: Re-tokenize only files with matching hashes
         /** @var array<int, list<NormalizedToken>> $fileTokens fileIdx → tokens */
         $fileTokens = [];
+        /** @var array<int, string> $fileSources fileIdx → source content (for hint extraction) */
+        $fileSources = [];
         foreach ($neededFileIndices as $fileIdx => $_) {
             $source = @file_get_contents($filePaths[$fileIdx]);
             if ($source === false) {
                 continue;
             }
             $fileTokens[$fileIdx] = $this->normalizer->normalize($source);
+            $fileSources[$fileIdx] = $source;
         }
 
         // Find and extend duplicate blocks
-        $rawBlocks = $this->findDuplicateBlocks($hashIndex, $fileTokens, $filePaths);
+        $rawBlocks = $this->findDuplicateBlocks($hashIndex, $fileTokens, $filePaths, $fileSources);
 
         // Free large structures before dedup sort
-        unset($hashIndex, $fileTokens);
+        unset($hashIndex, $fileTokens, $fileSources);
 
         // Filter and deduplicate
         return $this->filterAndDeduplicate($rawBlocks);
@@ -182,11 +185,13 @@ final class DuplicationDetector
      * @param array<int, list<int>> $hashIndex hash → list of packed positions
      * @param array<int, list<NormalizedToken>> $fileTokens fileIdx → tokens
      * @param list<string> $filePaths fileIdx → realPath
+     * @param array<int, string> $fileSources fileIdx → source content (for hint extraction)
      *
      * @return list<DuplicateBlock>
      */
-    private function findDuplicateBlocks(array $hashIndex, array $fileTokens, array $filePaths): array
+    private function findDuplicateBlocks(array $hashIndex, array $fileTokens, array $filePaths, array $fileSources): array
     {
+        $hintExtractor = new ContentHintExtractor();
         $blocks = [];
         /** @var array<string, true> $seen Track processed pairs to avoid duplicates */
         $seen = [];
@@ -259,6 +264,11 @@ final class DuplicationDetector
                         continue;
                     }
 
+                    // Extract content hint from the first location's source
+                    $hint = isset($fileSources[$fileIdxA])
+                        ? $hintExtractor->extract($fileSources[$fileIdxA], $startLineA, $endLineA)
+                        : null;
+
                     $blocks[] = new DuplicateBlock(
                         locations: [
                             new DuplicateLocation($filePaths[$fileIdxA], $startLineA, $endLineA),
@@ -266,6 +276,7 @@ final class DuplicationDetector
                         ],
                         lines: $lineCount,
                         tokens: $matchLength,
+                        hint: $hint,
                     );
                 }
             }

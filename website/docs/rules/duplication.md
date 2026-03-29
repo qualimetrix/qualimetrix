@@ -120,6 +120,18 @@ Because function/method/class names are preserved during normalization, the dete
 
 <!-- llms:skip-end -->
 
+### Content preview hints
+
+Duplication violations include a content preview showing the first tokens of the duplicated block. This helps you quickly identify which code is duplicated without navigating to the file:
+
+```
+src/Service/OrderService.php:10-25: Duplicated block (16 lines, 120 tokens)
+  Preview: public function calculate ( $_ ) { $_ = 0.0 ; foreach ( ...
+  Also in: src/Service/InvoiceService.php:15-30
+```
+
+The preview uses normalized tokens (variables replaced with `$_`, strings with `'_'`), matching the internal representation used for detection.
+
 ### Configuration
 
 ```yaml
