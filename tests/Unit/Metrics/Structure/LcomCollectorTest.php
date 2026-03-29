@@ -903,7 +903,7 @@ PHP;
         self::assertSame(2, $metrics->get('lcom:App\Service'));
     }
 
-    public function testNonEmptyArrayReturnIsNotTrivial(): void
+    public function testNonEmptyArrayOfConstantsReturnIsTrivialAndStateless(): void
     {
         $code = <<<'PHP'
 <?php
@@ -919,8 +919,9 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        // return [non-empty-array] is NOT trivial — methods are disconnected => LCOM 2
-        self::assertSame(2, $metrics->get('lcom:App\Config'));
+        // Both methods return arrays of constants — they are stateless constants,
+        // merged into one virtual node => LCOM 1
+        self::assertSame(1, $metrics->get('lcom:App\Config'));
     }
 
     public function testDynamicPropertyAccessIgnored(): void
@@ -986,6 +987,392 @@ PHP;
 
         // Both methodA and methodB access $sharedProp => connected => LCOM 1
         self::assertSame(1, $metrics->get('lcom:App\OuterClass'));
+    }
+
+    // ──────────────────────────────────────────────────────────────────
+    // Stateless method grouping tests
+    // ──────────────────────────────────────────────────────────────────
+
+    public function testStatelessMethodsGroupedReducesLcom(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Rule
+{
+    private $config;
+
+    public function getName(): string { return 'foo'; }
+    public function getDescription(): string { return 'bar'; }
+    public function analyze(): void { $this->config; }
+    public function validate(): void { $this->config; }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // getName and getDescription are stateless constants => merged into 1 virtual node
+        // analyze and validate share $config => 1 component
+        // Virtual node not connected to stateful group => LCOM 2
+        // Without grouping: LCOM would be 4 (getName, getDescription each separate + analyze/validate)
+        // Was 4, now 2
+        self::assertSame(2, $metrics->get('lcom:App\Rule'));
+    }
+
+    public function testAllStatelessMethodsGiveLcomOne(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class MetadataOnly
+{
+    public function getName(): string { return 'test'; }
+    public function getDescription(): string { return 'desc'; }
+    public function priority(): int { return 1; }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // All methods are stateless constants => merged into 1 virtual node => LCOM 1
+        self::assertSame(1, $metrics->get('lcom:App\MetadataOnly'));
+    }
+
+    public function testNoStatelessMethodsBehaviorUnchanged(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class AllStateful
+{
+    private $a;
+    private $b;
+
+    public function methodA(): void { $this->a = 1; }
+    public function methodB(): void { $this->b = 1; }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // No stateless methods — standard LCOM calculation: 2 disconnected groups
+        self::assertSame(2, $metrics->get('lcom:App\AllStateful'));
+    }
+
+    public function testGetterAccessingPropertyNotStateless(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class WithGetter
+{
+    private $name;
+    private $other;
+
+    public function getName(): string { return $this->name; }
+    public function getOther(): string { return $this->other; }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // Both methods access properties => NOT stateless => LCOM 2
+        self::assertSame(2, $metrics->get('lcom:App\WithGetter'));
+    }
+
+    public function testMethodCallingInstanceMethodNotStateless(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class WithDelegation
+{
+    private $data;
+
+    public function process(): string { return $this->format(); }
+    public function format(): string { return $this->data; }
+    public function getName(): string { return 'test'; }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // process calls $this->format() => NOT stateless (has method call)
+        // format accesses $data => NOT stateless
+        // getName returns constant => stateless
+        // process->format share edge, both connected with data => 1 component
+        // getName merged into virtual stateless node => separate component
+        // LCOM = 2 (stateful group + stateless virtual)
+        self::assertSame(2, $metrics->get('lcom:App\WithDelegation'));
+    }
+
+    public function testStaticCallsDoNotMakeMethodStateful(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class WithStaticCall
+{
+    public function getName(): string
+    {
+        return 'test';
+    }
+
+    public function getLabel(): string
+    {
+        return self::DEFAULT_LABEL;
+    }
+
+    private const DEFAULT_LABEL = 'default';
+
+    public static function factory(): self
+    {
+        return new self();
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // getName: returns scalar => stateless
+        // getLabel: returns self::X => stateless
+        // factory: static => excluded from graph
+        // Both stateless merged into 1 virtual node => LCOM 1
+        self::assertSame(1, $metrics->get('lcom:App\WithStaticCall'));
+    }
+
+    public function testOneStatelessWithTwoDisconnectedStatefulGroups(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class ThreeGroups
+{
+    private $db;
+    private $cache;
+
+    public function getName(): string { return 'service'; }
+    public function query(): void { $this->db = 1; }
+    public function cache(): void { $this->cache = 1; }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // getName is stateless => virtual node (1)
+        // query uses $db (1), cache uses $cache (1) => 2 disconnected stateful
+        // Total: 3 components
+        self::assertSame(3, $metrics->get('lcom:App\ThreeGroups'));
+    }
+
+    public function testStatefulMethodCallingStatelessConnectsToVirtualNode(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class WithStatelessCall
+{
+    private $data;
+
+    public function getName(): string { return 'test'; }
+    public function getDescription(): string { return 'desc'; }
+
+    public function process(): void
+    {
+        $name = $this->getName();
+        $this->data = $name;
+    }
+
+    public function read(): void
+    {
+        $this->data;
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // getName, getDescription: stateless => merged into virtual node
+        // process: calls $this->getName() => edge to virtual node; accesses $data
+        // read: accesses $data => connected to process via shared $data
+        // process -> virtual (via method call), process -> read (via $data)
+        // All in one component => LCOM 1
+        self::assertSame(1, $metrics->get('lcom:App\WithStatelessCall'));
+    }
+
+    public function testReturnSelfConstantIsStateless(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class WithConstants
+{
+    public const NAME = 'test';
+    public const TYPE = 'service';
+
+    public function getName(): string { return self::NAME; }
+    public function getType(): string { return static::TYPE; }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // Both methods return class constants => stateless, merged => LCOM 1
+        self::assertSame(1, $metrics->get('lcom:App\WithConstants'));
+    }
+
+    public function testReturnArrayOfConstantsIsStateless(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class WithConstantArray
+{
+    public function getOptions(): array
+    {
+        return [self::KEY => 'value', 'other' => true];
+    }
+
+    public function getDefaults(): array
+    {
+        return ['a', 'b', 'c'];
+    }
+
+    private const KEY = 'key';
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // Both methods return arrays of constants => stateless, merged => LCOM 1
+        self::assertSame(1, $metrics->get('lcom:App\WithConstantArray'));
+    }
+
+    public function testMethodAccessingPropertyViaCallNotStateless(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class WithPropertyViaCall
+{
+    private $config;
+
+    public function getValue(): string
+    {
+        return $this->config->get('key');
+    }
+
+    public function getName(): string { return 'test'; }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // getValue accesses $this->config (property access) => NOT stateless
+        // getName returns constant => stateless => virtual node
+        // Two components => LCOM 2
+        self::assertSame(2, $metrics->get('lcom:App\WithPropertyViaCall'));
+    }
+
+    public function testStatelessMethodCallingAnotherStatelessMergesInternally(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class StatelessCalling
+{
+    private $data;
+
+    public function getLabel(): string { return 'label'; }
+    public function getFullLabel(): string { return 'full-label'; }
+    public function process(): void { $this->data = 1; }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // getLabel and getFullLabel: both stateless => merged into virtual
+        // process: accesses $data => separate
+        // LCOM = 2 (virtual + process)
+        self::assertSame(2, $metrics->get('lcom:App\StatelessCalling'));
+    }
+
+    public function testExistingTrivialClassExemptionStillWorks(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class AllTrivial
+{
+    public function a(): void {}
+    public function b(): void { return; }
+    public function c(): ?string { return null; }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // All methods are trivial AND all are stateless => LCOM 1
+        // (both the trivial exemption and stateless grouping would produce LCOM 1)
+        self::assertSame(1, $metrics->get('lcom:App\AllTrivial'));
+    }
+
+    public function testMatchReturningDifferentConstantsIsNotStateless(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class WithMatch
+{
+    private $type;
+
+    public function getLabel(): string
+    {
+        return match($this->type) {
+            'a' => 'Alpha',
+            'b' => 'Beta',
+            default => 'Unknown',
+        };
+    }
+
+    public function getName(): string { return 'test'; }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // getLabel: accesses $this->type => NOT stateless (has property access)
+        // getName: returns constant => stateless
+        // LCOM = 2
+        self::assertSame(2, $metrics->get('lcom:App\WithMatch'));
     }
 
     private function collectMetrics(string $code): MetricBag
