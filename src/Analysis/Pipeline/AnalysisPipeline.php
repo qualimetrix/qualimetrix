@@ -16,7 +16,11 @@ use Qualimetrix\Analysis\RuleExecution\RuleExecutorInterface;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
 use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Rule\HierarchicalRuleOptionsInterface;
+use Qualimetrix\Core\Rule\RuleMatcher;
+use Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Core\Suppression\ThresholdDiagnostic;
+use Qualimetrix\Core\Suppression\ThresholdOverride;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
@@ -141,8 +145,15 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
 
         // Convert threshold annotation diagnostics to violations
         $diagnosticViolations = self::buildDiagnosticViolations($collectionResult->thresholdDiagnostics);
-        if ($diagnosticViolations !== []) {
-            $violations = array_merge($violations, $diagnosticViolations);
+
+        // Warn about @qmx-threshold annotations targeting rules that don't support overrides
+        $unsupportedViolations = $this->buildUnsupportedOverrideViolations(
+            $collectionResult->thresholdOverrides,
+        );
+
+        $extraViolations = array_merge($diagnosticViolations, $unsupportedViolations);
+        if ($extraViolations !== []) {
+            $violations = array_merge($violations, $extraViolations);
         }
 
         $profiler?->stop('rules');
@@ -174,6 +185,114 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
             suppressions: $collectionResult->suppressions,
             namespaceTree: $enrichmentResult->namespaceTree,
         );
+    }
+
+    /**
+     * Builds warnings for threshold override annotations targeting unsupported rules.
+     *
+     * Rules like design.god-class have multi-threshold Options that don't implement
+     * ThresholdAwareOptionsInterface. Annotations targeting them are silently ignored
+     * at runtime — this method emits explicit warnings so users know.
+     *
+     * @param array<string, list<ThresholdOverride>> $overridesByFile
+     *
+     * @return list<Violation>
+     */
+    private function buildUnsupportedOverrideViolations(array $overridesByFile): array
+    {
+        if ($overridesByFile === []) {
+            return [];
+        }
+
+        $supportedRules = $this->collectThresholdSupportedRuleNames();
+
+        if ($supportedRules === []) {
+            return [];
+        }
+
+        $violations = [];
+
+        foreach ($overridesByFile as $file => $overrides) {
+            foreach ($overrides as $override) {
+                if ($override->rulePattern === '*') {
+                    continue;
+                }
+
+                if (!$this->overrideMatchesSupportedRule($override, $supportedRules)) {
+                    $violations[] = new Violation(
+                        location: new Location($file, $override->line, precise: true),
+                        symbolPath: SymbolPath::forFile($file),
+                        ruleName: 'annotation.unsupported-threshold',
+                        violationCode: 'annotation.unsupported-threshold',
+                        message: \sprintf(
+                            "Rule '%s' does not support @qmx-threshold overrides; annotation ignored",
+                            $override->rulePattern,
+                        ),
+                        severity: Severity::Warning,
+                    );
+                }
+            }
+        }
+
+        return $violations;
+    }
+
+    /**
+     * Collects names of active rules that support threshold overrides.
+     *
+     * @return list<string>
+     */
+    private function collectThresholdSupportedRuleNames(): array
+    {
+        $supported = [];
+
+        foreach ($this->ruleExecutor->getAllRules() as $rule) {
+            if ($this->ruleSupportsThresholdOverrides($rule::getOptionsClass())) {
+                $supported[] = $rule->getName();
+            }
+        }
+
+        return $supported;
+    }
+
+    /**
+     * @param class-string $optionsClass
+     */
+    private function ruleSupportsThresholdOverrides(string $optionsClass): bool
+    {
+        if (is_subclass_of($optionsClass, ThresholdAwareOptionsInterface::class)) {
+            return true;
+        }
+
+        if (!is_subclass_of($optionsClass, HierarchicalRuleOptionsInterface::class)) {
+            return false;
+        }
+
+        // Hierarchical rules delegate to level-specific options that may support overrides
+        $options = $optionsClass::fromArray([]);
+        \assert($options instanceof HierarchicalRuleOptionsInterface);
+
+        foreach ($options->getSupportedLevels() as $level) {
+            if ($options->forLevel($level) instanceof ThresholdAwareOptionsInterface) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param list<string> $supportedRules
+     */
+    private function overrideMatchesSupportedRule(ThresholdOverride $override, array $supportedRules): bool
+    {
+        foreach ($supportedRules as $ruleName) {
+            if (RuleMatcher::matches($override->rulePattern, $ruleName)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

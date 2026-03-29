@@ -32,6 +32,13 @@ interface RuleExecutorInterface
     public function getActiveRules(): array;
 
     /**
+     * Returns all registered rules (before filtering by disabled/only rules).
+     *
+     * @return list<RuleInterface>
+     */
+    public function getAllRules(): array;
+
+    /**
      * Returns count of all registered rules (before filtering).
      */
     public function getTotalRulesCount(): int;

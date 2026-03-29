@@ -79,6 +79,11 @@ final class RuleExecutor implements RuleExecutorInterface
         );
     }
 
+    public function getAllRules(): array
+    {
+        return $this->allRules;
+    }
+
     public function getTotalRulesCount(): int
     {
         return \count($this->allRules);
