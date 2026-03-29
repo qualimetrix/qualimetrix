@@ -52,7 +52,7 @@ final class CodeDuplicationRule extends AbstractRule
         $violations = [];
 
         foreach ($context->duplicateBlocks as $block) {
-            $violations[] = $this->createViolation($block);
+            $violations[] = $this->createViolation($context, $block);
         }
 
         return $violations;
@@ -63,7 +63,7 @@ final class CodeDuplicationRule extends AbstractRule
         return CodeDuplicationOptions::class;
     }
 
-    private function createViolation(DuplicateBlock $block): Violation
+    private function createViolation(AnalysisContext $context, DuplicateBlock $block): Violation
     {
         $primary = $block->primaryLocation();
         $related = $block->relatedLocations();
@@ -73,14 +73,19 @@ final class CodeDuplicationRule extends AbstractRule
             $related,
         ));
 
+        $hintPart = $block->hint !== null
+            ? \sprintf(': "%s"', $block->hint)
+            : '';
+
         $message = \sprintf(
-            'Duplicated code block (%d lines, %d occurrences) — also at %s',
+            'Duplicated code block (%d lines, %d occurrences)%s — also at %s',
             $block->lines,
             $block->occurrences(),
+            $hintPart,
             $otherLocations,
         );
 
-        $severity = $this->options->getSeverity($block->lines);
+        $severity = $this->getEffectiveSeverity($context, $this->options, $primary->file, $primary->startLine, $block->lines);
 
         // Build related locations for SARIF support
         $relatedViolationLocations = array_map(

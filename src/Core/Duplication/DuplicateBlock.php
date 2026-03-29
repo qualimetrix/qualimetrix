@@ -21,11 +21,13 @@ final readonly class DuplicateBlock
      * @param list<DuplicateLocation> $locations At least 2 locations (sorted deterministically)
      * @param int $lines Number of lines in the duplicated block
      * @param int $tokens Number of tokens in the duplicated block
+     * @param string|null $hint Short content preview (~80 chars) of the duplicated code
      */
     public function __construct(
         array $locations,
         public int $lines,
         public int $tokens,
+        public ?string $hint = null,
     ) {
         if (\count($locations) < 2) {
             throw new InvalidArgumentException(
