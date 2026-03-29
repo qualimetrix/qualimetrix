@@ -75,4 +75,20 @@ final class CheckCommandDefinitionTest extends TestCase
         self::assertNotContains('workers', $ruleOptionNames);
         self::assertNotContains('disable-rule', $ruleOptionNames);
     }
+
+    #[Test]
+    public function allOptionIsRegisteredAsValueNone(): void
+    {
+        $command = new Command('test');
+        $registry = new RuleRegistry([]);
+
+        CheckCommandDefinition::addOptions($command, $registry);
+
+        $definition = $command->getDefinition();
+
+        self::assertTrue($definition->hasOption('all'));
+
+        $option = $definition->getOption('all');
+        self::assertFalse($option->acceptValue(), '--all should be VALUE_NONE (boolean flag)');
+    }
 }

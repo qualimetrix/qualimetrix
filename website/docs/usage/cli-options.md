@@ -114,7 +114,7 @@ Group violations in the output. Default depends on the formatter.
 bin/qmx check src/ --format=text-verbose --group-by=rule
 ```
 
-Available values: `none`, `file`, `rule`, `severity`.
+Available values: `none`, `file`, `rule`, `severity`, `class`, `namespace`.
 
 ### `--format-opt`
 
@@ -197,6 +197,20 @@ bin/qmx check src/ --detail=50
 ```
 
 Auto-enabled when `--namespace` or `--class` is used.
+
+### `--all`
+
+Show all violations without truncation. This is a shorthand for `--format-opt=violations=all --detail=all`.
+
+```bash
+# Show all violations in JSON format
+bin/qmx check src/ --format=json --all
+
+# Show all violations in summary format
+bin/qmx check src/ --all
+```
+
+Cannot be combined with `--format-opt=violations=N` (numeric limit) — this produces a clear error. Combining `--all` with `--format-opt=violations=all` is allowed (they are synonyms).
 
 ### `--namespace`
 
@@ -560,6 +574,8 @@ Many rules have dedicated CLI flags for quick threshold adjustments:
 | `--god-class-exclude-readonly`          | design.god-class                     | excludeReadonly     |
 | `--long-parameter-list-warning=N`       | code-smell.long-parameter-list       | warning             |
 | `--long-parameter-list-error=N`         | code-smell.long-parameter-list       | error               |
+| `--long-parameter-list-vo-warning=N`    | code-smell.long-parameter-list       | vo-warning          |
+| `--long-parameter-list-vo-error=N`      | code-smell.long-parameter-list       | vo-error            |
 | `--unreachable-code-warning=N`          | code-smell.unreachable-code          | warning             |
 | `--unreachable-code-error=N`            | code-smell.unreachable-code          | error               |
 
