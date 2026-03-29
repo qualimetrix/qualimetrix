@@ -286,12 +286,34 @@ final class HealthTextFormatter implements FormatterInterface
 
             foreach ($contributor->metricValues as $key => $value) {
                 $formattedValue = \is_float($value) ? \sprintf('%.1f', $value) : (string) $value;
-                $metricParts[] = \sprintf('%s=%s', strtoupper($key), $formattedValue);
+                $displayKey = strtoupper(self::stripAggregationSuffix($key));
+                $metricParts[] = \sprintf('%s=%s', $displayKey, $formattedValue);
             }
 
             $metricsStr = implode('  ', $metricParts);
             $lines[] = \sprintf('      %-30s %s', $contributor->className, $color->dim($metricsStr));
         }
+    }
+
+    /**
+     * Strips aggregation suffixes (.sum, .avg, .max, etc.) from metric keys for display.
+     */
+    private static function stripAggregationSuffix(string $key): string
+    {
+        $pos = strrpos($key, '.');
+
+        if ($pos === false) {
+            return $key;
+        }
+
+        $suffix = substr($key, $pos + 1);
+        $aggregationSuffixes = ['sum', 'avg', 'max', 'min', 'count', 'p95', 'p5'];
+
+        if (\in_array($suffix, $aggregationSuffixes, true)) {
+            return substr($key, 0, $pos);
+        }
+
+        return $key;
     }
 
     private function colorizeScore(string $text, HealthScore $hs, AnsiColor $color): string
