@@ -52,7 +52,7 @@ final class NamespaceToProjectAggregator implements AggregationPhaseInterface
         $profiler->stop('aggregation.to_project.collect_symbols');
 
         $profiler->start('aggregation.to_project.process', 'aggregation');
-        $aggregationValues = AggregationHelper::collectNamespaceMetricValues(
+        $metricValues = AggregationHelper::collectNamespaceMetricValues(
             $repository,
             $allSymbolInfos,
             $allFileSymbols,
@@ -60,10 +60,9 @@ final class NamespaceToProjectAggregator implements AggregationPhaseInterface
         );
 
         $projectBag = AggregationHelper::applyAggregations(
-            $aggregationValues->values,
+            $metricValues,
             $projectDefinitions,
             SymbolLevel::Project,
-            $aggregationValues->weights,
         );
         // Collect namespace-collected metrics (e.g., distance) from namespace bags.
         // These are stored directly on namespace SymbolPaths, not on class/file symbols.

@@ -20,13 +20,11 @@ final class AggregationHelper
      *
      * @param array<string, list<int|float>> $metricValues
      * @param list<MetricDefinition> $definitions
-     * @param array<string, list<float>>|null $metricWeights parallel weights for weighted average
      */
     public static function applyAggregations(
         array $metricValues,
         array $definitions,
         SymbolLevel $targetLevel,
-        ?array $metricWeights = null,
     ): MetricBag {
         $bag = new MetricBag();
 
@@ -37,26 +35,20 @@ final class AggregationHelper
                 continue;
             }
 
-            $weights = $metricWeights[$definition->name] ?? null;
             $strategies = $definition->getStrategiesForLevel($targetLevel);
 
             foreach ($strategies as $strategy) {
-                $aggregatedValue = self::applyStrategy($strategy, $values, $weights);
+                $aggregatedValue = self::applyStrategy($strategy, $values);
                 $aggregatedName = $definition->aggregatedName($strategy);
                 $bag = $bag->with($aggregatedName, $aggregatedValue);
             }
 
-            // Auto-store count alongside Average for weighted average at higher levels.
-            // At Method→Class level ($weights=null): count = number of methods.
-            // At Class→Namespace level: for method-collected metrics, values come from
-            // raw method symbols (not class bags), so count = number of methods directly.
+            // Auto-store count alongside Average so higher levels know the sample size.
             if (\in_array(AggregationStrategy::Average, $strategies, true)
                 && !\in_array(AggregationStrategy::Count, $strategies, true)
             ) {
                 $countName = $definition->aggregatedName(AggregationStrategy::Count);
-                $weightSum = $weights !== null ? array_sum($weights) : 0.0;
-                $count = $weightSum > 0.0 ? (int) $weightSum : \count($values);
-                $bag = $bag->with($countName, $count);
+                $bag = $bag->with($countName, \count($values));
             }
         }
 
@@ -67,28 +59,11 @@ final class AggregationHelper
      * Applies a single aggregation strategy to a list of values.
      *
      * @param list<int|float> $values
-     * @param list<float>|null $weights parallel weights for weighted average (same length as $values)
      */
-    public static function applyStrategy(AggregationStrategy $strategy, array $values, ?array $weights = null): int|float
+    public static function applyStrategy(AggregationStrategy $strategy, array $values): int|float
     {
         if ($values === []) {
             return 0;
-        }
-
-        if ($strategy === AggregationStrategy::Average && $weights !== null) {
-            $totalWeight = array_sum($weights);
-
-            if ($totalWeight <= 0.0) {
-                return array_sum($values) / \count($values);
-            }
-
-            $weightedSum = 0.0;
-
-            foreach ($values as $i => $value) {
-                $weightedSum += $value * ($weights[$i] ?? 1.0);
-            }
-
-            return $weightedSum / $totalWeight;
         }
 
         return match ($strategy) {
@@ -244,27 +219,27 @@ final class AggregationHelper
      * @param list<SymbolInfo> $symbolInfos Class/Method/Function symbols
      * @param list<SymbolInfo> $fileSymbols File symbols for this namespace
      * @param list<MetricDefinition> $definitions
+     *
+     * @return array<string, list<int|float>> metric name => values
      */
     public static function collectNamespaceMetricValues(
         MetricRepositoryInterface $repository,
         array $symbolInfos,
         array $fileSymbols,
         array $definitions,
-    ): AggregationValues {
+    ): array {
         $values = [];
-        $weights = [];
 
         foreach ($definitions as $definition) {
             $values[$definition->name] = [];
-            $weights[$definition->name] = [];
         }
 
-        self::collectFromMethods($repository, $symbolInfos, $definitions, $values, $weights);
-        self::collectFromClassSymbols($repository, $symbolInfos, $definitions, $values, $weights);
-        self::collectFromFunctions($repository, $symbolInfos, $definitions, $values, $weights);
-        self::collectFromFileSymbols($repository, $fileSymbols, $definitions, $values, $weights);
+        self::collectFromMethods($repository, $symbolInfos, $definitions, $values);
+        self::collectFromClassSymbols($repository, $symbolInfos, $definitions, $values);
+        self::collectFromFunctions($repository, $symbolInfos, $definitions, $values);
+        self::collectFromFileSymbols($repository, $fileSymbols, $definitions, $values);
 
-        return new AggregationValues($values, $weights);
+        return $values;
     }
 
     /**
@@ -277,14 +252,12 @@ final class AggregationHelper
      * @param list<SymbolInfo> $symbolInfos
      * @param list<MetricDefinition> $definitions
      * @param array<string, list<int|float>> $values
-     * @param array<string, list<float>> $weights
      */
     private static function collectFromMethods(
         MetricRepositoryInterface $repository,
         array $symbolInfos,
         array $definitions,
         array &$values,
-        array &$weights,
     ): void {
         foreach ($symbolInfos as $info) {
             $path = $info->symbolPath;
@@ -305,7 +278,6 @@ final class AggregationHelper
 
                 if ($value !== null) {
                     $values[$definition->name][] = $value;
-                    $weights[$definition->name][] = 1.0;
                 }
             }
         }
@@ -319,14 +291,12 @@ final class AggregationHelper
      * @param list<SymbolInfo> $symbolInfos
      * @param list<MetricDefinition> $definitions
      * @param array<string, list<int|float>> $values
-     * @param array<string, list<float>> $weights
      */
     private static function collectFromClassSymbols(
         MetricRepositoryInterface $repository,
         array $symbolInfos,
         array $definitions,
         array &$values,
-        array &$weights,
     ): void {
         foreach ($symbolInfos as $info) {
             $path = $info->symbolPath;
@@ -347,7 +317,6 @@ final class AggregationHelper
 
                 if ($value !== null) {
                     $values[$definition->name][] = $value;
-                    $weights[$definition->name][] = 1.0;
                 }
             }
         }
@@ -362,14 +331,12 @@ final class AggregationHelper
      * @param list<SymbolInfo> $symbolInfos
      * @param list<MetricDefinition> $definitions
      * @param array<string, list<int|float>> $values
-     * @param array<string, list<float>> $weights
      */
     private static function collectFromFunctions(
         MetricRepositoryInterface $repository,
         array $symbolInfos,
         array $definitions,
         array &$values,
-        array &$weights,
     ): void {
         foreach ($symbolInfos as $info) {
             $path = $info->symbolPath;
@@ -389,7 +356,6 @@ final class AggregationHelper
 
                 if ($value !== null) {
                     $values[$definition->name][] = $value;
-                    $weights[$definition->name][] = 1.0;
                 }
             }
         }
@@ -403,14 +369,12 @@ final class AggregationHelper
      * @param list<SymbolInfo> $fileSymbols
      * @param list<MetricDefinition> $definitions
      * @param array<string, list<int|float>> $values
-     * @param array<string, list<float>> $weights
      */
     private static function collectFromFileSymbols(
         MetricRepositoryInterface $repository,
         array $fileSymbols,
         array $definitions,
         array &$values,
-        array &$weights,
     ): void {
         foreach ($fileSymbols as $fileInfo) {
             $bag = $repository->get($fileInfo->symbolPath);
@@ -425,7 +389,6 @@ final class AggregationHelper
 
                 if ($value !== null) {
                     $values[$definition->name][] = $value;
-                    $weights[$definition->name][] = 1.0;
                 }
             }
         }
