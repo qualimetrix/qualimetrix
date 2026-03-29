@@ -92,6 +92,22 @@ final class CommandInjectionRuleTest extends TestCase
         self::assertSame(30, $violations[1]->location->line);
     }
 
+    public function testSuperglobalIncludedInViolationMessage(): void
+    {
+        $rule = new CommandInjectionRule(new SecurityPatternOptions());
+
+        $context = $this->createContext(
+            (new MetricBag())
+                ->withEntry('security.command_injection', ['line' => 20, 'superglobal' => '_REQUEST']),
+        );
+
+        $violations = $rule->analyze($context);
+
+        self::assertCount(1, $violations);
+        self::assertStringContainsString('($_REQUEST)', $violations[0]->message);
+        self::assertStringContainsString('command injection', $violations[0]->message);
+    }
+
     public function testConstructorRejectsWrongOptionsType(): void
     {
         $this->expectException(InvalidArgumentException::class);
