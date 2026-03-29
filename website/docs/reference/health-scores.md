@@ -53,6 +53,9 @@ Formulas are written in [Symfony Expression Language](https://symfony.com/doc/cu
 
 Penalizes high average CCN and cognitive complexity, plus square-root-scaled penalties for outlier methods (max values at class level, p95 at namespace level). Well-structured code with simple methods scores near 100.
 
+!!! info "Interface methods are included in aggregation"
+    Interface methods have minimal complexity (CCN=1, cognitive=0, NPath=1) and are included in namespace-level `.avg` and `.p95` calculations. Projects with many interfaces may see lower average complexity than expected. This is by design — interfaces are part of the codebase — but means adding interfaces can slightly improve complexity scores without changing actual logic.
+
 ### Cohesion
 
 Blends TCC (Tight Class Cohesion) and LCOM4. TCC is square-root-scaled to reward incremental improvement. Classes with few methods (< 6) get a lenient TCC default. Pure methods (no property access) are accounted for to avoid false penalties.
