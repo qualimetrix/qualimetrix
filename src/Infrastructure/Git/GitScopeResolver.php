@@ -105,7 +105,7 @@ final class GitScopeResolver
     /**
      * Resolves relative file paths for the analyze scope.
      *
-     * Reuses the same logic as GitFileDiscovery to determine which files are in scope,
+     * Determines which files are in scope based on git changes,
      * and returns them as relative paths (via PathNormalizer::relativize()) to match
      * the format used in Violation->location->file.
      *

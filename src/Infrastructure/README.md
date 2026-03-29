@@ -51,7 +51,6 @@ Infrastructure/
 │   ├── GitScope.php
 │   ├── ChangedFile.php
 │   ├── ChangeStatus.php
-│   ├── GitFileDiscovery.php
 │   ├── GitScopeFilter.php
 │   ├── GitScopeResolver.php          # Resolves git scope from CLI options
 │   └── GitScopeResolution.php        # Resolution result VO
