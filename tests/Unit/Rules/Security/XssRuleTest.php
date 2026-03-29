@@ -92,6 +92,22 @@ final class XssRuleTest extends TestCase
         self::assertSame(12, $violations[1]->location->line);
     }
 
+    public function testSuperglobalIncludedInViolationMessage(): void
+    {
+        $rule = new XssRule(new SecurityPatternOptions());
+
+        $context = $this->createContext(
+            (new MetricBag())
+                ->withEntry('security.xss', ['line' => 8, 'superglobal' => '_POST']),
+        );
+
+        $violations = $rule->analyze($context);
+
+        self::assertCount(1, $violations);
+        self::assertStringContainsString('($_POST)', $violations[0]->message);
+        self::assertStringContainsString('XSS', $violations[0]->message);
+    }
+
     public function testConstructorRejectsWrongOptionsType(): void
     {
         $this->expectException(InvalidArgumentException::class);

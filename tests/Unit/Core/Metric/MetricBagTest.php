@@ -6,6 +6,7 @@ namespace Qualimetrix\Tests\Unit\Core\Metric;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Metric\DataBag;
 use Qualimetrix\Core\Metric\MetricBag;
 
 #[CoversClass(MetricBag::class)]
@@ -133,5 +134,181 @@ final class MetricBagTest extends TestCase
         $bag = MetricBag::fromArray([]);
 
         self::assertSame([], $bag->all());
+    }
+
+    // --- withEntry / entries / entryCount / dataBag ---
+
+    public function testWithEntryAndEntries(): void
+    {
+        $bag = (new MetricBag())
+            ->withEntry('findings', ['line' => 10, 'type' => 'error'])
+            ->withEntry('findings', ['line' => 20, 'type' => 'warning']);
+
+        $entries = $bag->entries('findings');
+
+        self::assertCount(2, $entries);
+        self::assertSame(10, $entries[0]['line']);
+        self::assertSame(20, $entries[1]['line']);
+    }
+
+    public function testWithEntryReturnsNewInstance(): void
+    {
+        $original = new MetricBag();
+        $modified = $original->withEntry('key', ['line' => 1]);
+
+        self::assertNotSame($original, $modified);
+        self::assertSame([], $original->entries('key'));
+        self::assertCount(1, $modified->entries('key'));
+    }
+
+    public function testEntryCount(): void
+    {
+        $bag = (new MetricBag())
+            ->withEntry('findings', ['line' => 10])
+            ->withEntry('findings', ['line' => 20])
+            ->withEntry('other', ['line' => 30]);
+
+        self::assertSame(2, $bag->entryCount('findings'));
+        self::assertSame(1, $bag->entryCount('other'));
+        self::assertSame(0, $bag->entryCount('nonexistent'));
+    }
+
+    public function testEntriesReturnsEmptyForNonexistentKey(): void
+    {
+        $bag = new MetricBag();
+
+        self::assertSame([], $bag->entries('nonexistent'));
+    }
+
+    public function testDataBagReturnsDataBagInstance(): void
+    {
+        $bag = (new MetricBag())
+            ->withEntry('key', ['line' => 1]);
+
+        $dataBag = $bag->dataBag();
+
+        self::assertInstanceOf(DataBag::class, $dataBag);
+        self::assertSame(1, $dataBag->count('key'));
+    }
+
+    public function testDataBagIsEmptyForNewBag(): void
+    {
+        $bag = new MetricBag();
+
+        self::assertTrue($bag->dataBag()->isEmpty());
+    }
+
+    // --- toStorageArray / fromStorageArray roundtrip ---
+
+    public function testToStorageArrayWithMetricsOnly(): void
+    {
+        $bag = (new MetricBag())
+            ->with('complexity', 5)
+            ->with('loc', 100);
+
+        $storage = $bag->toStorageArray();
+
+        self::assertSame(['complexity' => 5, 'loc' => 100], $storage);
+        self::assertArrayNotHasKey('__entries', $storage);
+    }
+
+    public function testToStorageArrayWithEntries(): void
+    {
+        $bag = (new MetricBag())
+            ->with('complexity', 5)
+            ->withEntry('findings', ['line' => 10]);
+
+        $storage = $bag->toStorageArray();
+
+        self::assertSame(5, $storage['complexity']);
+        self::assertArrayHasKey('__entries', $storage);
+        self::assertCount(1, $storage['__entries']['findings']);
+    }
+
+    public function testFromStorageArrayRoundtrip(): void
+    {
+        $original = (new MetricBag())
+            ->with('complexity', 5)
+            ->with('loc', 100.5)
+            ->withEntry('findings', ['line' => 10, 'type' => 'error'])
+            ->withEntry('findings', ['line' => 20, 'type' => 'warning'])
+            ->withEntry('other', ['line' => 30]);
+
+        $storage = $original->toStorageArray();
+        $restored = MetricBag::fromStorageArray($storage);
+
+        // Metrics preserved
+        self::assertSame(5, $restored->get('complexity'));
+        self::assertSame(100.5, $restored->get('loc'));
+
+        // Entries preserved
+        self::assertSame(2, $restored->entryCount('findings'));
+        self::assertSame(1, $restored->entryCount('other'));
+        self::assertSame(10, $restored->entries('findings')[0]['line']);
+    }
+
+    public function testFromStorageArrayWithMetricsOnly(): void
+    {
+        $restored = MetricBag::fromStorageArray(['complexity' => 5, 'loc' => 100]);
+
+        self::assertSame(5, $restored->get('complexity'));
+        self::assertSame(100, $restored->get('loc'));
+        self::assertTrue($restored->dataBag()->isEmpty());
+    }
+
+    public function testFromStorageArrayWithEmptyArray(): void
+    {
+        $restored = MetricBag::fromStorageArray([]);
+
+        self::assertSame([], $restored->all());
+        self::assertTrue($restored->dataBag()->isEmpty());
+    }
+
+    // --- withEntry preserves metrics ---
+
+    public function testWithEntryPreservesExistingMetrics(): void
+    {
+        $bag = (new MetricBag())
+            ->with('complexity', 5)
+            ->withEntry('findings', ['line' => 10]);
+
+        self::assertSame(5, $bag->get('complexity'));
+        self::assertCount(1, $bag->entries('findings'));
+    }
+
+    // --- merge preserves entries ---
+
+    public function testMergePreservesEntries(): void
+    {
+        $bag1 = (new MetricBag())
+            ->with('a', 1)
+            ->withEntry('findings', ['line' => 10]);
+
+        $bag2 = (new MetricBag())
+            ->with('b', 2)
+            ->withEntry('findings', ['line' => 20]);
+
+        $merged = $bag1->merge($bag2);
+
+        self::assertSame(1, $merged->get('a'));
+        self::assertSame(2, $merged->get('b'));
+        self::assertSame(2, $merged->entryCount('findings'));
+    }
+
+    // --- serialize/unserialize with entries ---
+
+    public function testSerializeAndUnserializeWithEntries(): void
+    {
+        $bag = (new MetricBag())
+            ->with('complexity', 5)
+            ->withEntry('findings', ['line' => 10, 'type' => 'error']);
+
+        $serialized = serialize($bag);
+        /** @var MetricBag $unserialized */
+        $unserialized = unserialize($serialized);
+
+        self::assertSame(5, $unserialized->get('complexity'));
+        self::assertSame(1, $unserialized->entryCount('findings'));
+        self::assertSame(10, $unserialized->entries('findings')[0]['line']);
     }
 }

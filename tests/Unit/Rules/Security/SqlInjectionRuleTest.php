@@ -94,6 +94,22 @@ final class SqlInjectionRuleTest extends TestCase
         self::assertSame(42, $violations[2]->location->line);
     }
 
+    public function testSuperglobalIncludedInViolationMessage(): void
+    {
+        $rule = new SqlInjectionRule(new SecurityPatternOptions());
+
+        $context = $this->createContext(
+            (new MetricBag())
+                ->withEntry('security.sql_injection', ['line' => 15, 'superglobal' => '_GET']),
+        );
+
+        $violations = $rule->analyze($context);
+
+        self::assertCount(1, $violations);
+        self::assertStringContainsString('($_GET)', $violations[0]->message);
+        self::assertStringContainsString('SQL injection', $violations[0]->message);
+    }
+
     public function testOptionsFromArray(): void
     {
         $options = SecurityPatternOptions::fromArray(['enabled' => false]);
