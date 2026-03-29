@@ -6,11 +6,13 @@ namespace Qualimetrix\Metrics\Structure;
 
 use PhpParser\Node;
 use PhpParser\Node\Expr\Array_;
+use PhpParser\Node\Expr\ClassConstFetch;
 use PhpParser\Node\Expr\ConstFetch;
 use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Expr\PropertyFetch;
 use PhpParser\Node\Expr\Variable;
 use PhpParser\Node\Identifier;
+use PhpParser\Node\Name;
 use PhpParser\Node\Scalar;
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\ClassMethod;
@@ -113,6 +115,10 @@ final class LcomVisitor extends NodeVisitorAbstract implements ResettableVisitor
                         $this->classData[$fqn]->markStatic($methodName);
                     }
 
+                    if ($this->isStatelessConstant($node)) {
+                        $this->classData[$fqn]->markStatelessConstant($methodName);
+                    }
+
                     if (!$this->isMethodTrivial($node)) {
                         $this->classData[$fqn]->markNonTrivial();
                     }
@@ -204,7 +210,8 @@ final class LcomVisitor extends NodeVisitorAbstract implements ResettableVisitor
     /**
      * Determines whether a method body is trivial.
      *
-     * Trivial methods: empty body, or a single return of null/scalar/constant/empty array.
+     * Trivial methods: empty body, or a single return of null/scalar/constant/empty array/
+     * class constant (self::X, static::X).
      * Classes where ALL methods are trivial (e.g., Null Objects) get LCOM=1
      * to avoid misleadingly high LCOM values.
      */
@@ -215,8 +222,53 @@ final class LcomVisitor extends NodeVisitorAbstract implements ResettableVisitor
             return true;
         }
 
+        return $this->hasConstantBody($node);
+    }
+
+    /**
+     * Determines whether a method is a stateless constant.
+     *
+     * A stateless constant method has:
+     * - A body that is empty or a single return of a constant expression
+     * - No property access or instance method calls will be detected by AST traversal
+     *
+     * The classification is based purely on the method body shape. The actual absence
+     * of property/method-call edges is verified in LcomClassData::isEffectivelyStateless().
+     *
+     * Note: shares the body-shape check with isMethodTrivial() via hasConstantBody(),
+     * but applies different guard conditions — abstract/static methods are excluded here
+     * because they are already handled separately in the LCOM graph.
+     */
+    private function isStatelessConstant(ClassMethod $node): bool
+    {
+        // Abstract methods are excluded from LCOM graph entirely
+        if ($node->isAbstract()) {
+            return false;
+        }
+
+        // Static methods are already excluded from LCOM, no need to classify
+        if ($node->isStatic()) {
+            return false;
+        }
+
+        // Empty body or null stmts — stateless
+        if ($node->stmts === null || $node->stmts === []) {
+            return true;
+        }
+
+        return $this->hasConstantBody($node);
+    }
+
+    /**
+     * Whether a method body consists of a single return of a constant expression (or is empty after filtering Nops).
+     *
+     * Shared by isMethodTrivial() and isStatelessConstant() — both need to detect
+     * the same body shape, but apply different pre-conditions (guard clauses).
+     */
+    private function hasConstantBody(ClassMethod $node): bool
+    {
         // Filter out Nop statements (standalone comments like "// No-op")
-        $stmts = array_values(array_filter($node->stmts, static fn(Node $s) => !$s instanceof Nop));
+        $stmts = array_values(array_filter($node->stmts ?? [], static fn(Node $s) => !$s instanceof Nop));
 
         if ($stmts === []) {
             return true;
@@ -237,9 +289,54 @@ final class LcomVisitor extends NodeVisitorAbstract implements ResettableVisitor
             return true;
         }
 
-        // return <scalar>, return null/true/false, return []
-        return $stmt->expr instanceof Scalar
-            || $stmt->expr instanceof ConstFetch
-            || ($stmt->expr instanceof Array_ && $stmt->expr->items === []);
+        return $this->isConstantExpression($stmt->expr);
+    }
+
+    /**
+     * Whether an expression is a constant (no instance state access).
+     *
+     * Recognizes: scalars, null/true/false, class constants (self::X, static::X),
+     * and arrays of constant expressions.
+     */
+    private function isConstantExpression(Node\Expr $expr): bool
+    {
+        // Scalar literals (int, float, string)
+        if ($expr instanceof Scalar) {
+            return true;
+        }
+
+        // Named constants: null, true, false, and user-defined constants (e.g., PHP_INT_MAX).
+        // Intentionally accepts all ConstFetch nodes — any named constant is stateless
+        // (no instance state access), so the broader match is correct for LCOM purposes.
+        if ($expr instanceof ConstFetch) {
+            return true;
+        }
+
+        // self::NAME, static::NAME
+        if ($expr instanceof ClassConstFetch
+            && $expr->class instanceof Name
+            && \in_array($expr->class->toLowerString(), ['self', 'static'], true)
+        ) {
+            return true;
+        }
+
+        // Array of constant expressions (including empty array)
+        if ($expr instanceof Array_) {
+            foreach ($expr->items as $item) {
+                if ($item === null) {
+                    continue;
+                }
+                if ($item->key !== null && !$this->isConstantExpression($item->key)) {
+                    return false;
+                }
+                if (!$this->isConstantExpression($item->value)) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        return false;
     }
 }

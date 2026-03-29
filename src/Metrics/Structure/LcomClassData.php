@@ -40,6 +40,18 @@ final class LcomClassData
     private array $staticMethods = [];
 
     /**
+     * Set of stateless constant methods (grouped into a virtual node in LCOM graph).
+     *
+     * A method is "stateless constant" if it has no property access, no instance method calls,
+     * and its body is a single return of a scalar, constant, class constant, or array of those.
+     * These methods (e.g., getName(), getDescription()) are effectively metadata and should
+     * not each form a separate connected component.
+     *
+     * @var array<string, true>
+     */
+    private array $statelessMethods = [];
+
+    /**
      * Whether any non-trivial method body was found.
      *
      * A class where all methods are trivial (empty body, return null/scalar/constant)
@@ -84,6 +96,19 @@ final class LcomClassData
         $this->hasNonTrivialMethod = true;
     }
 
+    public function markStatelessConstant(string $method): void
+    {
+        $this->statelessMethods[$method] = true;
+    }
+
+    /**
+     * Whether a method was classified as a stateless constant during AST traversal.
+     */
+    public function isStatelessConstant(string $method): bool
+    {
+        return isset($this->statelessMethods[$method]);
+    }
+
     /**
      * Whether all methods in this class have trivial bodies.
      *
@@ -117,6 +142,8 @@ final class LcomClassData
         return array_keys($this->propertyAccesses[$methodName] ?? []);
     }
 
+    private const VIRTUAL_STATELESS_NODE = '__stateless__';
+
     /**
      * Calculate LCOM4 (Lack of Cohesion of Methods).
      *
@@ -124,6 +151,8 @@ final class LcomClassData
      * - Vertices = methods
      * - Edges = (m1, m2) if m1 and m2 share a property OR one calls the other via $this->
      * - Static methods are excluded from the graph
+     * - Stateless constant methods are merged into a single virtual node to reduce
+     *   false positives from interface-mandated metadata methods (e.g., getName())
      *
      * @return int Number of connected components (1 = perfectly cohesive)
      */
@@ -144,6 +173,122 @@ final class LcomClassData
             return 1;
         }
 
+        // Classify methods: stateless constant methods that have no property access
+        // AND no instance method calls are merged into a virtual node.
+        // Note: only methods already marked by the visitor AND confirmed to have no
+        // property access / method calls in the collected data are treated as stateless.
+        $statelessInGraph = [];
+        $statefulMethods = [];
+
+        foreach ($methods as $method) {
+            if ($this->isEffectivelyStateless($method)) {
+                $statelessInGraph[$method] = true;
+            } else {
+                $statefulMethods[] = $method;
+            }
+        }
+
+        // If no stateless methods, proceed with standard algorithm
+        if ($statelessInGraph === []) {
+            return $this->calculateComponents($methods);
+        }
+
+        // Build the merged vertex set: replace all stateless methods with one virtual node
+        $mergedMethods = $statefulMethods;
+        $mergedMethods[] = self::VIRTUAL_STATELESS_NODE;
+
+        if (\count($mergedMethods) === 1) {
+            return 1;
+        }
+
+        $mergedMethodSet = array_flip($mergedMethods);
+
+        // Build adjacency list on merged graph
+        $adjacency = [];
+        foreach ($mergedMethods as $method) {
+            $adjacency[$method] = [];
+        }
+
+        // Add shared-property edges (only between stateful methods, since stateless have no properties)
+        $statefulCount = \count($statefulMethods);
+        for ($i = 0; $i < $statefulCount - 1; ++$i) {
+            for ($j = $i + 1; $j < $statefulCount; ++$j) {
+                $m1 = $statefulMethods[$i];
+                $m2 = $statefulMethods[$j];
+
+                if ($this->shareProperty($m1, $m2)) {
+                    $adjacency[$m1][] = $m2;
+                    $adjacency[$m2][] = $m1;
+                }
+            }
+        }
+
+        // Add method-call edges, redirecting stateless methods to the virtual node
+        foreach ($this->methodCalls as $caller => $callees) {
+            $resolvedCaller = isset($statelessInGraph[$caller]) ? self::VIRTUAL_STATELESS_NODE : $caller;
+            if (!isset($mergedMethodSet[$resolvedCaller])) {
+                continue;
+            }
+            foreach ($callees as $callee => $_) {
+                $resolvedCallee = isset($statelessInGraph[$callee]) ? self::VIRTUAL_STATELESS_NODE : $callee;
+                if (!isset($mergedMethodSet[$resolvedCallee]) || $resolvedCaller === $resolvedCallee) {
+                    continue;
+                }
+                $adjacency[$resolvedCaller][] = $resolvedCallee;
+                $adjacency[$resolvedCallee][] = $resolvedCaller;
+            }
+        }
+
+        // Count connected components using BFS
+        $visited = [];
+        $components = 0;
+
+        foreach ($mergedMethods as $method) {
+            if (isset($visited[$method])) {
+                continue;
+            }
+
+            ++$components;
+            $this->bfs($method, $adjacency, $visited);
+        }
+
+        return $components;
+    }
+
+    /**
+     * Whether a method is effectively stateless in the LCOM graph.
+     *
+     * A method is effectively stateless if it was marked as a stateless constant
+     * during AST traversal (trivial body returning a constant) AND has no property
+     * access and no instance method calls in the collected data.
+     */
+    private function isEffectivelyStateless(string $method): bool
+    {
+        if (!isset($this->statelessMethods[$method])) {
+            return false;
+        }
+
+        // Double-check: no property access collected
+        if (isset($this->propertyAccesses[$method]) && $this->propertyAccesses[$method] !== []) {
+            return false;
+        }
+
+        // Double-check: no instance method calls collected
+        if (isset($this->methodCalls[$method]) && $this->methodCalls[$method] !== []) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Standard LCOM4 calculation without stateless grouping.
+     *
+     * @param list<string> $methods
+     */
+    private function calculateComponents(array $methods): int
+    {
+        $count = \count($methods);
         $methodSet = array_flip($methods);
 
         // Build adjacency list
@@ -187,7 +332,6 @@ final class LcomClassData
                 continue;
             }
 
-            // Start new component
             ++$components;
             $this->bfs($method, $adjacency, $visited);
         }
