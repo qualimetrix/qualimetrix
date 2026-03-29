@@ -7,10 +7,8 @@ namespace Qualimetrix\Tests\Unit\Reporting\Health;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
-use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
@@ -25,6 +23,7 @@ use Qualimetrix\Reporting\Report;
 #[CoversClass(SummaryEnricher::class)]
 final class SummaryEnricherTest extends TestCase
 {
+    use MetricRepositoryTestHelper;
     private SummaryEnricher $enricher;
 
     protected function setUp(): void
@@ -618,55 +617,4 @@ final class SummaryEnricherTest extends TestCase
         );
     }
 
-    /**
-     * @param list<SymbolInfo> $namespaces
-     * @param array<string, MetricBag> $namespaceMetrics
-     * @param list<SymbolInfo> $classes
-     * @param array<string, MetricBag> $classMetrics
-     */
-    private function createMetricRepository(
-        MetricBag $projectMetrics,
-        array $namespaces = [],
-        array $namespaceMetrics = [],
-        array $classes = [],
-        array $classMetrics = [],
-    ): MetricRepositoryInterface {
-        $mock = $this->createMock(MetricRepositoryInterface::class);
-
-        $mock->method('get')
-            ->willReturnCallback(function (SymbolPath $symbol) use ($projectMetrics, $namespaceMetrics, $classMetrics): MetricBag {
-                $canonical = $symbol->toCanonical();
-
-                if ($symbol->getType() === SymbolType::Project) {
-                    return $projectMetrics;
-                }
-
-                if (isset($namespaceMetrics[$canonical])) {
-                    return $namespaceMetrics[$canonical];
-                }
-
-                if (isset($classMetrics[$canonical])) {
-                    return $classMetrics[$canonical];
-                }
-
-                return new MetricBag();
-            });
-
-        $mock->method('all')
-            ->willReturnCallback(function (SymbolType $type) use ($namespaces, $classes): iterable {
-                return match ($type) {
-                    SymbolType::Namespace_ => $namespaces,
-                    SymbolType::Class_ => $classes,
-                    default => [],
-                };
-            });
-
-        $mock->method('getNamespaces')
-            ->willReturn(array_map(
-                static fn(SymbolInfo $info): string => $info->symbolPath->toString(),
-                $namespaces,
-            ));
-
-        return $mock;
-    }
 }
