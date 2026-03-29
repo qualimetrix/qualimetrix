@@ -105,14 +105,28 @@ final class OffenderListRenderer
     {
         $topN = $this->getTopN($context);
 
+        $offenders = $this->rankOffenders($offenders, $context);
+
         foreach (\array_slice($offenders, 0, $topN) as $offender) {
             $this->renderWorstOffender($offender, $color, $lines, $showClassCount);
         }
 
         $remaining = \count($offenders) - $topN;
         if ($remaining > 0) {
-            $lines[] = $color->dim(\sprintf('  +%d more (use --format=health or --format-opt=top=%d)', $remaining, \count($offenders)));
+            $lines[] = $color->dim(\sprintf('  +%d more (use --format=html or --format-opt=top=%d)', $remaining, \count($offenders)));
         }
+    }
+
+    /**
+     * Re-ranks offenders when rank-by=density is requested.
+     *
+     * @param list<WorstOffender> $offenders
+     *
+     * @return list<WorstOffender>
+     */
+    private function rankOffenders(array $offenders, FormatterContext $context): array
+    {
+        return WorstOffender::rankByDensity($offenders, $context->getOption('rank-by', 'count'));
     }
 
     private function getTopN(FormatterContext $context): int
@@ -144,6 +158,9 @@ final class OffenderListRenderer
         }
         if ($offender->violationCount > 0) {
             $meta[] = \sprintf('%d violations', $offender->violationCount);
+        }
+        if ($offender->violationDensity !== null && $offender->violationDensity > 0.0) {
+            $meta[] = \sprintf('%.1f/100 LOC', $offender->violationDensity);
         }
 
         $metaStr = $meta !== [] ? $color->dim(' (' . implode(', ', $meta) . ')') : '';

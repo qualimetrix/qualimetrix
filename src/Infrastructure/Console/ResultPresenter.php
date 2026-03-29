@@ -34,14 +34,16 @@ final class ResultPresenter
      * Outputs formatted results and returns exit code.
      *
      * @param list<Violation> $violations
+     * @param list<string>|null $scopeFilePaths Relative paths in scope for scoped reporting
      */
     public function presentResults(
         array $violations,
         AnalysisResult $analysisResult,
         InputInterface $input,
         OutputInterface $output,
-        bool $partialAnalysis = false,
         bool $baselineGenerated = false,
+        bool $scopedReporting = false,
+        ?array $scopeFilePaths = null,
     ): int {
         $profiler = $this->profilerHolder->get();
         $profiler->start('reporting', 'pipeline');
@@ -61,7 +63,7 @@ final class ResultPresenter
         }
 
         $formatter = $this->formatterRegistry->get($format);
-        $context = $this->formatterContextFactory->create($input, $output, $formatter, $partialAnalysis);
+        $context = $this->formatterContextFactory->create($input, $output, $formatter, $scopedReporting, $scopeFilePaths);
 
         // Build and output report with filtered violations
         $report = ReportBuilder::create()
@@ -72,7 +74,7 @@ final class ResultPresenter
             ->metrics($analysisResult->metrics)
             ->namespaceTree($analysisResult->namespaceTree)
             ->build();
-        $report = $this->summaryEnricher->enrich($report, $partialAnalysis);
+        $report = $this->summaryEnricher->enrich($report, $scopeFilePaths);
         $formattedOutput = $formatter->format($report, $context);
 
         $this->writeOutput($formattedOutput, $format, $input, $output);
@@ -143,7 +145,7 @@ final class ResultPresenter
         }
 
         // TTY warning for HTML output to stdout
-        if ($format === 'health' && $this->isOutputTty($output)) {
+        if ($format === 'html' && $this->isOutputTty($output)) {
             $output->writeln(
                 '<comment>HTML output is best saved to a file. Use --output=report.html</comment>',
                 OutputInterface::OUTPUT_NORMAL | OutputInterface::VERBOSITY_NORMAL,

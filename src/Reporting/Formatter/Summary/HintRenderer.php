@@ -28,8 +28,8 @@ final class HintRenderer
             $hints[] = '--detail to see violations (top 200)';
         }
 
-        if ($context->partialAnalysis) {
-            $hints[] = 'run full analysis for project health overview';
+        if ($context->scopedReporting) {
+            $hints[] = 'scoped analysis — violations filtered to changed files only';
         }
 
         if ($report->healthScores !== [] && $context->class === null) {
@@ -49,7 +49,7 @@ final class HintRenderer
             }
         }
 
-        $hints[] = '--format=health -o report.html for full report';
+        $hints[] = '--format=html -o report.html for full report';
 
         $lines[] = $color->dim('Hints: ' . implode(' | ', $hints));
     }

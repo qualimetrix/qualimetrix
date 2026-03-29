@@ -27,7 +27,7 @@ final class HtmlFormatter implements FormatterInterface
     public function format(Report $report, FormatterContext $context): string
     {
         $builder = new HtmlTreeBuilder($this->debtCalculator);
-        $data = $builder->build($report, $context, $context->partialAnalysis);
+        $data = $builder->build($report, $context, $context->scopedReporting);
         $data['hints'] = $this->hintProvider->exportForHtml();
 
         $json = json_encode(
@@ -51,7 +51,7 @@ final class HtmlFormatter implements FormatterInterface
 
     public function getName(): string
     {
-        return 'health';
+        return 'html';
     }
 
     public function getDefaultGroupBy(): GroupBy

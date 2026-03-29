@@ -233,7 +233,7 @@ final class SummaryFormatterTest extends TestCase
         self::assertStringContainsString('Tech debt: 1h 30min', $output);
     }
 
-    public function testFormatPartialAnalysis(): void
+    public function testFormatScopedReporting(): void
     {
         $report = $this->createReport(
             violations: [],
@@ -244,19 +244,15 @@ final class SummaryFormatterTest extends TestCase
             ],
         );
 
-        $context = new FormatterContext(useColor: false, partialAnalysis: true, terminalWidth: 120);
+        $context = new FormatterContext(useColor: false, scopedReporting: true, terminalWidth: 120);
         $output = $this->formatter->format($report, $context);
 
-        // Warning shown
-        self::assertStringContainsString('Health scores unavailable in partial analysis mode', $output);
-        // Header annotated
-        self::assertStringContainsString('(partial)', $output);
-        // Hint to run full analysis
-        self::assertStringContainsString('run full analysis', $output);
-        // Health bars should NOT be shown
-        self::assertStringNotContainsString('72%', $output);
-        // Top issues should NOT be shown in partial analysis
-        self::assertStringNotContainsString('Top issues by impact', $output);
+        // Header annotated with scoped label
+        self::assertStringContainsString('(scoped)', $output);
+        // Health bars ARE shown (full graph is always available)
+        self::assertStringContainsString('72%', $output);
+        // Hint about scoped analysis
+        self::assertStringContainsString('scoped analysis', $output);
     }
 
     public function testFormatMissingMetrics(): void
@@ -669,17 +665,17 @@ final class SummaryFormatterTest extends TestCase
 
         $output = $this->formatter->format($report, $this->plainContext);
 
-        self::assertStringContainsString('--format=health', $output);
+        self::assertStringContainsString('--format=html', $output);
     }
 
-    public function testPartialAnalysisHintForFullRun(): void
+    public function testScopedReportingHint(): void
     {
         $report = $this->createReport(violations: [], filesAnalyzed: 5, duration: 0.5);
 
-        $context = new FormatterContext(useColor: false, partialAnalysis: true, terminalWidth: 120);
+        $context = new FormatterContext(useColor: false, scopedReporting: true, terminalWidth: 120);
         $output = $this->formatter->format($report, $context);
 
-        self::assertStringContainsString('run full analysis', $output);
+        self::assertStringContainsString('scoped analysis', $output);
     }
 
     public function testHeaderAnnotatedWithNamespaceFilter(): void

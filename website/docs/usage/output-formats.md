@@ -192,6 +192,24 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
             "complexity.cyclomatic": 2,
             "coupling.cbo": 1
         }
+    },
+    "violationGroups": {}
+}
+```
+
+The `worstNamespaces` and `worstClasses` entries include a `violationDensity` field -- violations per 100 lines of code -- providing a size-normalized view of code quality.
+
+When using `--group-by=class` or `--group-by=namespace`, violations are organized into a `violationGroups` object keyed by class FQCN or namespace. Each group contains its violations array and summary counts:
+
+```json
+{
+    "violationGroups": {
+        "App\\Service\\UserService": {
+            "violations": [...],
+            "errorCount": 2,
+            "warningCount": 1,
+            "violationDensity": 3.5
+        }
     }
 }
 ```
@@ -203,10 +221,15 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
 bin/qmx check src/ --format=json --format-opt=limit=100
 
 # Show all violations (no limit)
-bin/qmx check src/ --format=json --format-opt=violations=all
+bin/qmx check src/ --format=json --all
+# Or equivalently: --format-opt=violations=all
 
 # Control number of worst offenders (default: 10)
 bin/qmx check src/ --format=json --format-opt=top=20
+
+# Group violations by class or namespace
+bin/qmx check src/ --format=json --group-by=class
+bin/qmx check src/ --format=json --group-by=namespace
 ```
 
 **CI usage:**
@@ -469,6 +492,37 @@ Annotations appear directly on the changed lines in your pull request — no SAR
 
 ## health
 
+Text table of health scores for terminal output. Shows each dimension with its score, status label, thresholds, and decomposition details.
+
+**When to use:** Quick health check from CLI, AI agent workflows, pipeline diagnostics.
+
+**Key features:**
+
+- Tabular display of all health dimensions (complexity, cohesion, coupling, typing, maintainability)
+- Status labels with color coding (green/yellow/red)
+- Threshold visibility (warning and error levels)
+- Decomposition breakdown for each dimension
+- Supports `--namespace` and `--class` drill-down
+
+**Worst contributors per dimension:**
+
+The health output includes worst contributors for each dimension -- the classes or namespaces that drag down each health score the most. Control the number of contributors shown with `--format-opt=contributors=N` (default: 3):
+
+```bash
+bin/qmx check src/ --format=health --format-opt=contributors=5
+```
+
+**Usage:**
+
+```bash
+bin/qmx check src/ --format=health
+bin/qmx check src/ --format=health --namespace='App\Service'
+```
+
+---
+
+## html
+
 Interactive treemap report with D3.js visualization. Generates a self-contained single HTML file with namespace/class hierarchy.
 
 **When to use:** Project-wide visualization, stakeholder reports, team reviews.
@@ -484,20 +538,20 @@ Interactive treemap report with D3.js visualization. Generates a self-contained 
 **Usage:**
 
 ```bash
-bin/qmx check src/ --format=health -o report.html
+bin/qmx check src/ --format=html -o report.html
 ```
 
 **Example workflow:**
 
 ```bash
 # Generate and open the report
-bin/qmx check src/ --format=health -o report.html
+bin/qmx check src/ --format=html -o report.html
 open report.html  # macOS
 xdg-open report.html  # Linux
 ```
 
 !!! note
-    The `-o` (output) flag is recommended with `health` format. Without it, HTML content is written to stdout.
+    The `-o` (output) flag is recommended with `html` format. Without it, HTML content is written to stdout.
 
 ---
 
@@ -514,7 +568,8 @@ xdg-open report.html  # Linux
 | `sarif`        | No          | Yes       | Built-in                     | GitHub, VS Code, JetBrains |
 | `gitlab`       | No          | Yes       | Flat list                    | GitLab MR widget           |
 | `github`       | No          | No        | Flat list                    | GitHub Actions annotations |
-| `health`       | Interactive | No        | Treemap hierarchy            | Reports, reviews           |
+| `health`       | Good        | No        | Health dimensions            | Quick checks, CI           |
+| `html`         | Interactive | No        | Treemap hierarchy            | Reports, reviews           |
 
 ### Exit codes
 
