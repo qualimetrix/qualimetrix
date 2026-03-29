@@ -275,7 +275,7 @@ Aggregates metrics by hierarchy levels based on `MetricDefinition` from collecto
 The aggregator has been decomposed into individual phases, each implementing `AggregationPhaseInterface`:
 
 - **MethodToClassAggregator** — applies strategies from `aggregations[Class_]` (result: `ccn.sum`, `ccn.avg`, `ccn.max`)
-- **ClassToNamespaceAggregator** — applies strategies from `aggregations[Namespace_]`
+- **ClassToNamespaceAggregator** — applies strategies from `aggregations[Namespace_]`. For method-collected metrics (CCN, Cognitive, NPath, MI), namespace-level aggregation reads raw method-level values directly (not class-level sums), so `.max`/`.avg`/`.p95` reflect per-method statistics
 - **NamespaceToProjectAggregator** — aggregates across all namespaces; handles both class-collected metrics (promoted from namespace via `aggregations[Project_]`) and namespace-collected metrics (e.g., `distance`, `abstractness`, `ce.p95`) that already exist at namespace level and are aggregated directly to project level
 
 `MetricAggregator` is now a thin orchestrator that runs these phases in order. `AggregationHelper` provides shared static helper methods (extracted and refactored for reuse across phases) used by the aggregation phases.
