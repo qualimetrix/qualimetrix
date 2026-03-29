@@ -33,12 +33,15 @@ final class NamespaceToProjectAggregatorTest extends TestCase
             'src/Service/UserService.php',
             10,
         );
+        $this->addMethodsWithMi($repository, 'App\\Service', 'UserService', 'src/Service/UserService.php', 10, 80.0);
+
         $repository->add(
             SymbolPath::forClass('App\\Service', 'OrderService'),
             (new MetricBag())->with('mi.avg', 60.0)->with('mi.count', 2)->with('mi.min', 50.0),
             'src/Service/OrderService.php',
             10,
         );
+        $this->addMethodsWithMi($repository, 'App\\Service', 'OrderService', 'src/Service/OrderService.php', 2, 60.0);
 
         // Namespace App\Repository: 1 class, 8 methods
         $repository->add(
@@ -47,6 +50,7 @@ final class NamespaceToProjectAggregatorTest extends TestCase
             'src/Repository/UserRepository.php',
             10,
         );
+        $this->addMethodsWithMi($repository, 'App\\Repository', 'UserRepository', 'src/Repository/UserRepository.php', 8, 90.0);
 
         $collector = new MaintainabilityIndexCollector();
         $aggregator = new MetricAggregator($collector->getMetricDefinitions());
@@ -59,7 +63,7 @@ final class NamespaceToProjectAggregatorTest extends TestCase
         self::assertEqualsWithDelta(82.0, $projectMetrics->get('mi.avg'), 0.01);
         // Total method count = 20
         self::assertSame(20, $projectMetrics->get('mi.count'));
-        // Min is computed from collected values (.avg fallback) = min([80, 60, 90]) = 60.0
+        // Min is computed from raw method-level values = min(80..., 60..., 90...) = 60.0
         self::assertEqualsWithDelta(60.0, $projectMetrics->get('mi.min'), 0.01);
     }
 
@@ -115,5 +119,23 @@ final class NamespaceToProjectAggregatorTest extends TestCase
 
         // distance.avg = (0.3 + 0.1) / 2 = 0.2
         self::assertEqualsWithDelta(0.2, $projectMetrics->get('distance.avg'), 0.001);
+    }
+
+    private function addMethodsWithMi(
+        InMemoryMetricRepository $repository,
+        string $namespace,
+        string $class,
+        string $file,
+        int $count,
+        float $miValue,
+    ): void {
+        for ($i = 1; $i <= $count; $i++) {
+            $repository->add(
+                SymbolPath::forMethod($namespace, $class, "m{$i}"),
+                (new MetricBag())->with('mi', $miValue),
+                $file,
+                $i * 10,
+            );
+        }
     }
 }

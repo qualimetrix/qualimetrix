@@ -230,22 +230,29 @@ final class GoldenFileAggregationTest extends TestCase
     #[Test]
     public function testClassLevelCoupling(): void
     {
-        // UserRepository: cbo=3
+        // UserRepository: cbo=3 (implements UserRepositoryInterface + used by UserService, OrderService)
+        // ca=2 (UserService, OrderService), ce=1 (UserRepositoryInterface), instability=1/3
         $m = self::$repository->get(SymbolPath::forClass('GoldenMetrics\App\Repository', 'UserRepository'));
         self::assertSame(3, $m->get('cbo'), 'UserRepository cbo');
-        self::assertNotNull($m->get('ca'), 'UserRepository ca exists');
-        self::assertNotNull($m->get('ce'), 'UserRepository ce exists');
-        self::assertNotNull($m->get('instability'), 'UserRepository instability exists');
+        self::assertSame(2, $m->get('ca'), 'UserRepository ca');
+        self::assertSame(1, $m->get('ce'), 'UserRepository ce');
+        self::assertEqualsWithDelta(1 / 3, $m->get('instability'), 0.001, 'UserRepository instability');
 
-        // UserService
+        // UserService: cbo=1 (depends on UserRepository)
+        // ca=0 (nobody depends on it), ce=1 (UserRepository), instability=1.0
         $m = self::$repository->get(SymbolPath::forClass('GoldenMetrics\App\Service', 'UserService'));
-        self::assertNotNull($m->get('cbo'), 'UserService cbo exists');
-        self::assertNotNull($m->get('instability'), 'UserService instability exists');
+        self::assertSame(1, $m->get('cbo'), 'UserService cbo');
+        self::assertSame(0, $m->get('ca'), 'UserService ca');
+        self::assertSame(1, $m->get('ce'), 'UserService ce');
+        self::assertEqualsWithDelta(1.0, $m->get('instability'), 0.001, 'UserService instability');
 
-        // OrderService
+        // OrderService: cbo=1 (depends on UserRepository)
+        // ca=0 (nobody depends on it), ce=1 (UserRepository), instability=1.0
         $m = self::$repository->get(SymbolPath::forClass('GoldenMetrics\App\Service', 'OrderService'));
-        self::assertNotNull($m->get('cbo'), 'OrderService cbo exists');
-        self::assertNotNull($m->get('instability'), 'OrderService instability exists');
+        self::assertSame(1, $m->get('cbo'), 'OrderService cbo');
+        self::assertSame(0, $m->get('ca'), 'OrderService ca');
+        self::assertSame(1, $m->get('ce'), 'OrderService ce');
+        self::assertEqualsWithDelta(1.0, $m->get('instability'), 0.001, 'OrderService instability');
     }
 
     // ──────────────────────────────────────────────────────────────────
@@ -311,7 +318,7 @@ final class GoldenFileAggregationTest extends TestCase
         // GoldenMetrics\App\Repository
         $m = self::$repository->get(SymbolPath::forNamespace('GoldenMetrics\App\Repository'));
         self::assertSame(15, $m->get('ccn.sum'), 'Repository ccn.sum');
-        self::assertSame(8, $m->get('ccn.max'), 'Repository ccn.max');
+        self::assertSame(4, $m->get('ccn.max'), 'Repository ccn.max');
         self::assertSame(8, $m->get('symbolMethodCount'), 'Repository symbolMethodCount');
         self::assertSame(2, $m->get('symbolClassCount'), 'Repository symbolClassCount');
         self::assertEqualsWithDelta(0.5, $m->get('abstractness'), 0.01, 'Repository abstractness');
@@ -320,7 +327,7 @@ final class GoldenFileAggregationTest extends TestCase
         // GoldenMetrics\App\Service\Auth
         $m = self::$repository->get(SymbolPath::forNamespace('GoldenMetrics\App\Service\Auth'));
         self::assertSame(11, $m->get('ccn.sum'), 'Auth ccn.sum');
-        self::assertSame(6, $m->get('ccn.max'), 'Auth ccn.max');
+        self::assertSame(3, $m->get('ccn.max'), 'Auth ccn.max');
         self::assertSame(5, $m->get('symbolMethodCount'), 'Auth symbolMethodCount');
         self::assertSame(2, $m->get('symbolClassCount'), 'Auth symbolClassCount');
         self::assertSame(133, $m->get('loc.sum'), 'Auth loc.sum');
@@ -336,8 +343,8 @@ final class GoldenFileAggregationTest extends TestCase
         // GoldenMetrics\App\Service — has own classes (UserService, OrderService) + child Auth
         $m = self::$repository->get(SymbolPath::forNamespace('GoldenMetrics\App\Service'));
         self::assertSame(29, $m->get('ccn.sum'), 'Service ccn.sum');
-        self::assertSame(12, $m->get('ccn.max'), 'Service ccn.max');
-        self::assertEqualsWithDelta(7.25, $m->get('ccn.avg'), 0.01, 'Service ccn.avg');
+        self::assertSame(5, $m->get('ccn.max'), 'Service ccn.max');
+        self::assertEqualsWithDelta(2.4167, $m->get('ccn.avg'), 0.01, 'Service ccn.avg');
         self::assertSame(12, $m->get('symbolMethodCount'), 'Service symbolMethodCount');
         self::assertSame(4, $m->get('symbolClassCount'), 'Service symbolClassCount');
         self::assertSame(301, $m->get('loc.sum'), 'Service loc.sum');
@@ -353,8 +360,8 @@ final class GoldenFileAggregationTest extends TestCase
         // GoldenMetrics\App — root parent with no own classes, aggregates all children
         $m = self::$repository->get(SymbolPath::forNamespace('GoldenMetrics\App'));
         self::assertSame(44, $m->get('ccn.sum'), 'App ccn.sum');
-        self::assertSame(12, $m->get('ccn.max'), 'App ccn.max');
-        self::assertEqualsWithDelta(6.285714285714286, $m->get('ccn.avg'), 0.01, 'App ccn.avg');
+        self::assertSame(5, $m->get('ccn.max'), 'App ccn.max');
+        self::assertEqualsWithDelta(2.2, $m->get('ccn.avg'), 0.01, 'App ccn.avg');
         self::assertSame(20, $m->get('symbolMethodCount'), 'App symbolMethodCount');
         self::assertSame(7, $m->get('symbolClassCount'), 'App symbolClassCount');
         self::assertSame(453, $m->get('loc.sum'), 'App loc.sum');
@@ -389,8 +396,8 @@ final class GoldenFileAggregationTest extends TestCase
     {
         $m = self::$repository->get(SymbolPath::forProject());
         self::assertSame(46, $m->get('ccn.sum'), 'project ccn.sum');
-        self::assertSame(12, $m->get('ccn.max'), 'project ccn.max');
-        self::assertEqualsWithDelta(5.75, $m->get('ccn.avg'), 0.01, 'project ccn.avg');
+        self::assertSame(5, $m->get('ccn.max'), 'project ccn.max');
+        self::assertEqualsWithDelta(2.1905, $m->get('ccn.avg'), 0.01, 'project ccn.avg');
         self::assertSame(482, $m->get('loc.sum'), 'project loc.sum');
         self::assertSame(7, $m->get('classCount.sum'), 'project classCount.sum (excludes interfaces)');
         self::assertSame(1, $m->get('interfaceCount.sum'), 'project interfaceCount.sum');

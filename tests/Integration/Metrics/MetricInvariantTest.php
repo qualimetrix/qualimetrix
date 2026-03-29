@@ -247,11 +247,12 @@ final class MetricInvariantTest extends TestCase
                 foreach (self::$repository->forNamespace($subtreeNs) as $symbolInfo) {
                     $type = $symbolInfo->symbolPath->getType();
 
-                    if ($type === SymbolType::Class_) {
-                        $classBag = self::$repository->get($symbolInfo->symbolPath);
-                        $classCcn = $classBag->get('ccn.sum');
-                        if ($classCcn !== null) {
-                            $sourceMaxCcn = max($sourceMaxCcn, $classCcn);
+                    // ccn.max at namespace = max of raw method/function CCN values
+                    if ($type === SymbolType::Method) {
+                        $methodBag = self::$repository->get($symbolInfo->symbolPath);
+                        $methodCcn = $methodBag->get('ccn');
+                        if ($methodCcn !== null) {
+                            $sourceMaxCcn = max($sourceMaxCcn, $methodCcn);
                             $hasSources = true;
                         }
                     } elseif ($type === SymbolType::Function_) {
@@ -269,7 +270,7 @@ final class MetricInvariantTest extends TestCase
                 self::assertSame(
                     $nsCcnMax,
                     $sourceMaxCcn,
-                    "NS '{$ns}': ccn.max ({$nsCcnMax}) must equal max source ccn ({$sourceMaxCcn}) in subtree",
+                    "NS '{$ns}': ccn.max ({$nsCcnMax}) must equal max method/function ccn ({$sourceMaxCcn}) in subtree",
                 );
             }
         }
@@ -470,38 +471,38 @@ final class MetricInvariantTest extends TestCase
                 continue;
             }
 
-            // Count the number of aggregation sources in the subtree
+            // Count the number of methods+functions in the subtree (ccn.avg is per-method)
             $allNamespaces = [$ns, ...self::$namespaceTree->getDescendants($ns)];
-            $sourceCount = 0;
+            $methodCount = 0;
 
             foreach ($allNamespaces as $subtreeNs) {
                 foreach (self::$repository->forNamespace($subtreeNs) as $symbolInfo) {
                     $type = $symbolInfo->symbolPath->getType();
-                    if ($type === SymbolType::Class_) {
-                        $classBag = self::$repository->get($symbolInfo->symbolPath);
-                        if ($classBag->get('ccn.sum') !== null) {
-                            $sourceCount++;
+                    if ($type === SymbolType::Method) {
+                        $methodBag = self::$repository->get($symbolInfo->symbolPath);
+                        if ($methodBag->get('ccn') !== null) {
+                            $methodCount++;
                         }
                     } elseif ($type === SymbolType::Function_) {
                         $fnBag = self::$repository->get($symbolInfo->symbolPath);
                         if ($fnBag->get('ccn') !== null) {
-                            $sourceCount++;
+                            $methodCount++;
                         }
                     }
                 }
             }
 
-            if ($sourceCount === 0) {
+            if ($methodCount === 0) {
                 continue;
             }
 
-            $expectedAvg = $ccnSum / $sourceCount;
+            $expectedAvg = $ccnSum / $methodCount;
             self::assertEqualsWithDelta(
                 $expectedAvg,
                 $ccnAvg,
                 self::DELTA,
-                "NS '{$ns}': ccn.avg ({$ccnAvg}) must equal ccn.sum / sourceCount "
-                . "({$ccnSum} / {$sourceCount} = {$expectedAvg})",
+                "NS '{$ns}': ccn.avg ({$ccnAvg}) must equal ccn.sum / methodCount "
+                . "({$ccnSum} / {$methodCount} = {$expectedAvg})",
             );
         }
     }
@@ -621,10 +622,10 @@ final class MetricInvariantTest extends TestCase
     // ──────────────────────────────────────────────────────────────────
 
     /**
-     * Checks if the namespace belongs to the fixture set (prefix GoldenMetrics\).
+     * Checks if the namespace belongs to the fixture set (prefix GoldenMetrics\) or is the global namespace.
      */
     private function isFixtureNamespace(string $ns): bool
     {
-        return str_starts_with($ns, self::FIXTURE_NS_PREFIX);
+        return $ns === '' || str_starts_with($ns, self::FIXTURE_NS_PREFIX);
     }
 }

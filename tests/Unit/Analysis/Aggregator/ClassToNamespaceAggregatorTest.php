@@ -103,62 +103,78 @@ final class ClassToNamespaceAggregatorTest extends TestCase
     }
 
     #[Test]
-    public function itAggregatesNonAdditiveMethodMetricsViaWeightedAverageFallback(): void
+    public function itAggregatesNonAdditiveMethodMetricsFromRawMethodValues(): void
     {
         $repository = new InMemoryMetricRepository();
 
-        // Class with 10 methods, MI avg=80 — weighs more than class with 2 methods
+        // Class with 10 methods, MI avg=80
         $class1 = SymbolPath::forClass('App\\Service', 'UserService');
         $repository->add($class1, (new MetricBag())
             ->with('mi.avg', 80.0)
             ->with('mi.count', 10)
             ->with('mi.min', 70.0), 'src/Service/UserService.php', 10);
 
+        // Add 10 method symbols with mi=80 each
+        for ($i = 1; $i <= 10; $i++) {
+            $this->addMethod($repository, 'App\\Service', 'UserService', "method{$i}", 'src/Service/UserService.php', 'mi', 80.0);
+        }
+
+        // Class with 2 methods, MI avg=60
         $class2 = SymbolPath::forClass('App\\Service', 'OrderService');
         $repository->add($class2, (new MetricBag())
             ->with('mi.avg', 60.0)
             ->with('mi.count', 2)
             ->with('mi.min', 50.0), 'src/Service/OrderService.php', 10);
 
+        // Add 2 method symbols with mi=60 each
+        $this->addMethod($repository, 'App\\Service', 'OrderService', 'method1', 'src/Service/OrderService.php', 'mi', 60.0);
+        $this->addMethod($repository, 'App\\Service', 'OrderService', 'method2', 'src/Service/OrderService.php', 'mi', 60.0);
+
         $collector = new MaintainabilityIndexCollector();
         $aggregator = new MetricAggregator($collector->getMetricDefinitions());
         $aggregator->aggregate($repository);
 
         $nsMetrics = $repository->get(SymbolPath::forNamespace('App\\Service'));
 
-        // Weighted average: (80*10 + 60*2) / (10+2) = 920/12 ≈ 76.67
+        // Average from raw method values: (80*10 + 60*2) / 12 = 920/12 ≈ 76.67
         self::assertEqualsWithDelta(76.67, $nsMetrics->get('mi.avg'), 0.01);
-        // mi.count at namespace = total method count = 12 (stored as int)
+        // mi.count = total method count = 12
         self::assertSame(12, $nsMetrics->get('mi.count'));
-        // Namespace mi.min = min of [80.0, 60.0] = 60.0
+        // mi.min = min of all method values = 60.0
         self::assertEqualsWithDelta(60.0, $nsMetrics->get('mi.min'), 0.01);
     }
 
     #[Test]
-    public function itFallsBackToPlainAverageWhenCountMissing(): void
+    public function itAggregatesMethodMetricsEvenWhenClassLevelCountMissing(): void
     {
         $repository = new InMemoryMetricRepository();
 
-        // Legacy data without .count — should fall back to plain average (weight=1.0)
+        // Class-level data without .count — but method symbols exist
         $class1 = SymbolPath::forClass('App\\Service', 'UserService');
         $repository->add($class1, (new MetricBag())
             ->with('mi.avg', 80.0)
             ->with('mi.min', 70.0), 'src/Service/UserService.php', 10);
+
+        // 1 method with mi=80
+        $this->addMethod($repository, 'App\\Service', 'UserService', 'handle', 'src/Service/UserService.php', 'mi', 80.0);
 
         $class2 = SymbolPath::forClass('App\\Service', 'OrderService');
         $repository->add($class2, (new MetricBag())
             ->with('mi.avg', 60.0)
             ->with('mi.min', 50.0), 'src/Service/OrderService.php', 10);
 
+        // 1 method with mi=60
+        $this->addMethod($repository, 'App\\Service', 'OrderService', 'process', 'src/Service/OrderService.php', 'mi', 60.0);
+
         $collector = new MaintainabilityIndexCollector();
         $aggregator = new MetricAggregator($collector->getMetricDefinitions());
         $aggregator->aggregate($repository);
 
         $nsMetrics = $repository->get(SymbolPath::forNamespace('App\\Service'));
 
-        // Without .count, weight=1.0 each → plain average: (80+60)/2 = 70
+        // Average from raw method values: (80+60)/2 = 70
         self::assertEqualsWithDelta(70.0, $nsMetrics->get('mi.avg'), 0.01);
-        // mi.count = 2 (fallback weight=1.0 per class, sum of weights = 2)
+        // mi.count = 2 (from number of method symbols)
         self::assertSame(2, $nsMetrics->get('mi.count'));
     }
 
@@ -167,12 +183,17 @@ final class ClassToNamespaceAggregatorTest extends TestCase
     {
         $repository = new InMemoryMetricRepository();
 
-        // Single class with 5 methods — weighted average should equal the class avg
+        // Single class with 5 methods, all mi=85
         $class1 = SymbolPath::forClass('App\\Single', 'OnlyService');
         $repository->add($class1, (new MetricBag())
             ->with('mi.avg', 85.0)
             ->with('mi.count', 5)
             ->with('mi.min', 75.0), 'src/Single/OnlyService.php', 10);
+
+        // Add 5 method symbols with mi=85 each
+        for ($i = 1; $i <= 5; $i++) {
+            $this->addMethod($repository, 'App\\Single', 'OnlyService', "method{$i}", 'src/Single/OnlyService.php', 'mi', 85.0);
+        }
 
         $collector = new MaintainabilityIndexCollector();
         $aggregator = new MetricAggregator($collector->getMetricDefinitions());
@@ -180,28 +201,37 @@ final class ClassToNamespaceAggregatorTest extends TestCase
 
         $nsMetrics = $repository->get(SymbolPath::forNamespace('App\\Single'));
 
-        // Single class: weighted avg = 85.0 (trivially)
+        // All methods have mi=85, so avg = 85.0
         self::assertEqualsWithDelta(85.0, $nsMetrics->get('mi.avg'), 0.01);
         self::assertSame(5, $nsMetrics->get('mi.count'));
-        // min is computed from collected values (.avg fallback) = min([85.0]) = 85.0
+        // min of all method values = 85.0
         self::assertEqualsWithDelta(85.0, $nsMetrics->get('mi.min'), 0.01);
     }
 
     #[Test]
-    public function itPrefersSumOverAverageForAdditiveMethodMetrics(): void
+    public function itAggregatesAdditiveMethodMetricsFromRawMethodValues(): void
     {
         $repository = new InMemoryMetricRepository();
 
-        // Two classes with both Sum and Average at class level — Sum should be preferred
+        // UserService: 4 methods with ccn [5,5,5,5] → sum=20
         $class1 = SymbolPath::forClass('App\\Service', 'UserService');
         $repository->add($class1, (new MetricBag())
             ->with('ccn.sum', 20.0)
             ->with('ccn.avg', 5.0), 'src/Service/UserService.php', 10);
 
+        for ($i = 1; $i <= 4; $i++) {
+            $this->addMethod($repository, 'App\\Service', 'UserService', "method{$i}", 'src/Service/UserService.php', 'ccn', 5.0);
+        }
+
+        // OrderService: 3 methods with ccn [10,10,10] → sum=30
         $class2 = SymbolPath::forClass('App\\Service', 'OrderService');
         $repository->add($class2, (new MetricBag())
             ->with('ccn.sum', 30.0)
             ->with('ccn.avg', 10.0), 'src/Service/OrderService.php', 10);
+
+        for ($i = 1; $i <= 3; $i++) {
+            $this->addMethod($repository, 'App\\Service', 'OrderService', "method{$i}", 'src/Service/OrderService.php', 'ccn', 10.0);
+        }
 
         $definition = new MetricDefinition(
             name: 'ccn',
@@ -216,29 +246,38 @@ final class ClassToNamespaceAggregatorTest extends TestCase
 
         $nsMetrics = $repository->get(SymbolPath::forNamespace('App\\Service'));
 
-        // Sum is preferred: namespace ccn.sum = sum of class sums = 50
+        // ccn.sum = sum of all 7 method values = 5*4 + 10*3 = 50
         self::assertEqualsWithDelta(50.0, $nsMetrics->get('ccn.sum'), 0.01);
-        // namespace ccn.avg = average of class sums = 25 (not average of class averages)
-        self::assertEqualsWithDelta(25.0, $nsMetrics->get('ccn.avg'), 0.01);
+        // ccn.avg = average of all 7 method values = 50/7 ≈ 7.14
+        self::assertEqualsWithDelta(50.0 / 7, $nsMetrics->get('ccn.avg'), 0.01);
     }
 
     #[Test]
-    public function itAdditiveMetricsAreUnaffectedByWeights(): void
+    public function itAdditiveMetricsAggregateFromMethodValuesRegardlessOfClassWeights(): void
     {
         $repository = new InMemoryMetricRepository();
 
-        // Additive metrics (CCN with Sum) use weight=1.0 — Sum/Max/Min are unaffected
+        // UserService: 4 methods with ccn [5,5,5,5] → sum=20
         $class1 = SymbolPath::forClass('App\\Service', 'UserService');
         $repository->add($class1, (new MetricBag())
             ->with('ccn.sum', 20.0)
             ->with('ccn.avg', 5.0)
             ->with('ccn.count', 4), 'src/Service/UserService.php', 10);
 
+        for ($i = 1; $i <= 4; $i++) {
+            $this->addMethod($repository, 'App\\Service', 'UserService', "method{$i}", 'src/Service/UserService.php', 'ccn', 5.0);
+        }
+
+        // OrderService: 3 methods with ccn [10,10,10] → sum=30
         $class2 = SymbolPath::forClass('App\\Service', 'OrderService');
         $repository->add($class2, (new MetricBag())
             ->with('ccn.sum', 30.0)
             ->with('ccn.avg', 10.0)
             ->with('ccn.count', 3), 'src/Service/OrderService.php', 10);
+
+        for ($i = 1; $i <= 3; $i++) {
+            $this->addMethod($repository, 'App\\Service', 'OrderService', "method{$i}", 'src/Service/OrderService.php', 'ccn', 10.0);
+        }
 
         $definition = new MetricDefinition(
             name: 'ccn',
@@ -253,10 +292,10 @@ final class ClassToNamespaceAggregatorTest extends TestCase
 
         $nsMetrics = $repository->get(SymbolPath::forNamespace('App\\Service'));
 
-        // Sum uses .sum values (not .avg), weight=1.0 → Sum unaffected
+        // ccn.sum = sum of all 7 method values = 50
         self::assertEqualsWithDelta(50.0, $nsMetrics->get('ccn.sum'), 0.01);
-        // Average of .sum values with weight=1.0 → plain average: (20+30)/2 = 25
-        self::assertEqualsWithDelta(25.0, $nsMetrics->get('ccn.avg'), 0.01);
+        // ccn.avg = average of all 7 method values = 50/7 ≈ 7.14
+        self::assertEqualsWithDelta(50.0 / 7, $nsMetrics->get('ccn.avg'), 0.01);
     }
 
     #[Test]
@@ -323,5 +362,58 @@ final class ClassToNamespaceAggregatorTest extends TestCase
         // Explicit Count strategy: count = 2
         self::assertEqualsWithDelta(2.0, $bag->get('test.count'), 0.01);
         self::assertEqualsWithDelta(15.0, $bag->get('test.avg'), 0.01);
+    }
+
+    #[Test]
+    public function itUsesRawMethodValuesNotClassBagForNamespaceAggregation(): void
+    {
+        $repository = new InMemoryMetricRepository();
+
+        // Class bag has ccn.sum=999 (stale/incorrect value)
+        // but raw method values are [2, 3] → correct sum=5
+        $class = SymbolPath::forClass('App\\Service', 'Svc');
+        $repository->add($class, (new MetricBag())
+            ->with('ccn.sum', 999)
+            ->with('ccn.avg', 499.5)
+            ->with('ccn.max', 999)
+            ->with('ccn.count', 2), 'src/Service/Svc.php', 10);
+
+        $this->addMethod($repository, 'App\\Service', 'Svc', 'doA', 'src/Service/Svc.php', 'ccn', 2);
+        $this->addMethod($repository, 'App\\Service', 'Svc', 'doB', 'src/Service/Svc.php', 'ccn', 3);
+
+        $definition = new MetricDefinition(
+            name: 'ccn',
+            collectedAt: SymbolLevel::Method,
+            aggregations: [
+                SymbolLevel::Class_->value => [AggregationStrategy::Sum, AggregationStrategy::Average, AggregationStrategy::Max],
+                SymbolLevel::Namespace_->value => [AggregationStrategy::Sum, AggregationStrategy::Average, AggregationStrategy::Max],
+            ],
+        );
+        $aggregator = new MetricAggregator([$definition]);
+        $aggregator->aggregate($repository);
+
+        $nsMetrics = $repository->get(SymbolPath::forNamespace('App\\Service'));
+
+        // Namespace must use raw method values [2, 3], NOT class bag ccn.sum=999
+        self::assertEqualsWithDelta(5.0, $nsMetrics->get('ccn.sum'), 0.01, 'sum from raw methods');
+        self::assertEqualsWithDelta(2.5, $nsMetrics->get('ccn.avg'), 0.01, 'avg from raw methods');
+        self::assertSame(3, (int) $nsMetrics->get('ccn.max'), 'max from raw methods');
+    }
+
+    private function addMethod(
+        InMemoryMetricRepository $repository,
+        string $namespace,
+        string $class,
+        string $method,
+        string $file,
+        string $metric,
+        int|float $value,
+    ): void {
+        $repository->add(
+            SymbolPath::forMethod($namespace, $class, $method),
+            (new MetricBag())->with($metric, $value),
+            $file,
+            1,
+        );
     }
 }
