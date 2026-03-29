@@ -70,8 +70,6 @@ final class ClassRankRule extends AbstractRule
         // - 1600 classes: thresholds / 4 (catches more hubs)
         // - 25 classes: thresholds * 2 (avoids false positives)
         $scaleFactor = self::computeScaleFactor($classCount);
-        $scaledWarning = $this->options->warning / $scaleFactor;
-        $scaledError = $this->options->error / $scaleFactor;
 
         $violations = [];
 

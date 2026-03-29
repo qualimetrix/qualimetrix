@@ -15,6 +15,7 @@ use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Metrics\Coupling\ClassRankCollector;
 
@@ -76,8 +77,8 @@ final class ClassRankCollectorTest extends TestCase
 
         $this->collector->calculate($graph, $repository);
 
-        // No classes in repository — nothing to check
-        $this->expectNotToPerformAssertions();
+        $classes = iterator_to_array($repository->all(SymbolType::Class_));
+        self::assertSame([], $classes, 'Empty graph should produce no class-level metrics');
     }
 
     #[Test]

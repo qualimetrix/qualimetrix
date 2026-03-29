@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Configuration\Pipeline\Stage;
+namespace Qualimetrix\Tests\Unit\Configuration\Pipeline\Stage;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
