@@ -24,6 +24,7 @@ final readonly class SummaryEnricher
     private const int DEFAULT_TOP_CLASSES = 10;
 
     private HealthReasonBuilder $reasonBuilder;
+    private ContributorRanker $contributorRanker;
 
     public function __construct(
         private DebtCalculator $debtCalculator,
@@ -31,19 +32,23 @@ final readonly class SummaryEnricher
         private ImpactCalculator $impactCalculator,
     ) {
         $this->reasonBuilder = new HealthReasonBuilder($this->hintProvider);
+        $this->contributorRanker = new ContributorRanker($this->hintProvider);
     }
 
-    public function enrich(Report $report, bool $partialAnalysis = false): Report
+    /**
+     * @param list<string>|null $scopeFilePaths Relative file paths in scope (null = no filtering)
+     */
+    public function enrich(Report $report, ?array $scopeFilePaths = null): Report
     {
-        if ($partialAnalysis || $report->metrics === null) {
+        if ($report->metrics === null) {
             return $report;
         }
 
         $tree = $report->namespaceTree ?? new NamespaceTree($report->metrics->getNamespaces());
 
         $healthScores = $this->buildHealthScores($report);
-        $worstNamespaces = $this->buildWorstOffenders($report, SymbolType::Namespace_, self::DEFAULT_TOP_NAMESPACES, $tree);
-        $worstClasses = $this->buildWorstOffenders($report, SymbolType::Class_, self::DEFAULT_TOP_CLASSES, $tree);
+        $worstNamespaces = $this->buildWorstOffenders($report, SymbolType::Namespace_, self::DEFAULT_TOP_NAMESPACES, $tree, $scopeFilePaths);
+        $worstClasses = $this->buildWorstOffenders($report, SymbolType::Class_, self::DEFAULT_TOP_CLASSES, $tree, $scopeFilePaths);
         $debtSummary = $this->debtCalculator->calculate($report->violations);
 
         // Compute debt density (minutes per 1K LOC)
@@ -99,6 +104,11 @@ final readonly class SummaryEnricher
             $errThreshold = $definition->errorThreshold ?? 25.0;
 
             $decomposition = $this->buildDecomposition($dimension, $projectMetrics);
+            $contributors = $this->contributorRanker->rank(
+                $dimension,
+                $report->metrics,
+                $report->metrics->all(SymbolType::Class_),
+            );
 
             $dimensionName = str_replace('health.', '', $dimension);
             $healthScores[$dimensionName] = new HealthScore(
@@ -108,6 +118,7 @@ final readonly class SummaryEnricher
                 warningThreshold: $warnThreshold,
                 errorThreshold: $errThreshold,
                 decomposition: $decomposition,
+                worstContributors: $contributors,
             );
         }
 
@@ -210,15 +221,25 @@ final readonly class SummaryEnricher
     }
 
     /**
+     * @param list<string>|null $scopeFilePaths Relative file paths in scope (null = no filtering)
+     *
      * @return list<WorstOffender>
      */
-    private function buildWorstOffenders(Report $report, SymbolType $symbolType, int $limit, NamespaceTree $tree): array
+    private function buildWorstOffenders(Report $report, SymbolType $symbolType, int $limit, NamespaceTree $tree, ?array $scopeFilePaths = null): array
     {
         \assert($report->metrics !== null);
 
         $defaults = ComputedMetricDefaults::getDefaults();
         $overallDef = $defaults['health.overall'];
         $warnThreshold = $overallDef->warningThreshold ?? 50.0;
+
+        // Build set of namespaces that contain scoped files for namespace-level filtering
+        $scopeNamespaces = null;
+        $scopeFileSet = null;
+        if ($scopeFilePaths !== null) {
+            $scopeFileSet = array_flip($scopeFilePaths);
+            $scopeNamespaces = $this->buildScopeNamespaces($report, $scopeFilePaths, $tree);
+        }
 
         /** @var list<array{score: float, info: \Qualimetrix\Core\Symbol\SymbolInfo}> $candidates */
         $candidates = [];
@@ -239,6 +260,20 @@ final readonly class SummaryEnricher
 
                 if ($classCountInNs === 0) {
                     continue;
+                }
+            }
+
+            // Scope filtering: only include symbols from scoped files
+            if ($scopeFilePaths !== null) {
+                if ($symbolType === SymbolType::Class_ && $symbolInfo->file !== null) {
+                    if (!isset($scopeFileSet[$symbolInfo->file])) {
+                        continue;
+                    }
+                } elseif ($symbolType === SymbolType::Namespace_ && $scopeNamespaces !== null) {
+                    $ns = $symbolInfo->symbolPath->namespace ?? $symbolInfo->symbolPath->toString();
+                    if (!isset($scopeNamespaces[$ns])) {
+                        continue;
+                    }
                 }
             }
 
@@ -277,6 +312,12 @@ final readonly class SummaryEnricher
 
             $notableMetrics = $this->getNotableMetrics($metrics, $symbolType);
 
+            $density = WorstOffender::computeViolationDensity(
+                $violationCount,
+                $metrics,
+                $symbolType === SymbolType::Namespace_ ? 'loc.sum' : MetricName::SIZE_CLASS_LOC,
+            );
+
             $offenders[] = new WorstOffender(
                 symbolPath: $symbolInfo->symbolPath,
                 file: $file,
@@ -287,10 +328,50 @@ final readonly class SummaryEnricher
                 classCount: $classCount,
                 metrics: $notableMetrics,
                 healthScores: $perDimensionScores,
+                violationDensity: $density,
             );
         }
 
         return $offenders;
+    }
+
+    /**
+     * Builds a set of namespaces that contain at least one scoped file.
+     *
+     * Includes both the direct namespace and all ancestor namespaces,
+     * so that parent namespace offenders are also shown when a child file is in scope.
+     *
+     * @param list<string> $scopeFilePaths
+     *
+     * @return array<string, true>
+     */
+    private function buildScopeNamespaces(Report $report, array $scopeFilePaths, NamespaceTree $tree): array
+    {
+        \assert($report->metrics !== null);
+
+        $scopeFileSet = array_flip($scopeFilePaths);
+        $namespaces = [];
+
+        // Walk all classes to find which namespaces contain scoped files
+        foreach ($report->metrics->all(SymbolType::Class_) as $classInfo) {
+            if ($classInfo->file === null || !isset($scopeFileSet[$classInfo->file])) {
+                continue;
+            }
+
+            $ns = $classInfo->symbolPath->namespace;
+            if ($ns === null || $ns === '') {
+                continue;
+            }
+
+            $namespaces[$ns] = true;
+
+            // Include all ancestor namespaces
+            foreach ($tree->getAncestors($ns) as $ancestor) {
+                $namespaces[$ancestor] = true;
+            }
+        }
+
+        return $namespaces;
     }
 
     /**
