@@ -260,6 +260,11 @@ final class HealthTextFormatterTest extends TestCase
     public function testFormatShowsContributors(): void
     {
         $report = $this->createReportWithHealthScores([
+            'complexity' => new HealthScore('complexity', 42.0, 'Poor', 50.0, 30.0, [
+                new DecompositionItem('ccn.avg', 'CCN avg', 8.5, '1-3', 'lower_is_better', ''),
+            ], [
+                new HealthContributor('HeavyService', 'class:App\\HeavyService', ['ccn.sum' => 45, 'cognitive.sum' => 30]),
+            ]),
             'cohesion' => new HealthScore('cohesion', 46.7, 'Poor', 50.0, 30.0, [
                 new DecompositionItem('tcc.avg', 'TCC', 0.35, 'above 0.5', 'higher_is_better', ''),
             ], [
@@ -274,6 +279,14 @@ final class HealthTextFormatterTest extends TestCase
         $output = $this->formatter->format($report, $context);
 
         self::assertStringContainsString('Worst contributors:', $output);
+
+        // Complexity: aggregation suffixes stripped (ccn.sum → CCN, cognitive.sum → COGNITIVE)
+        self::assertStringContainsString('HeavyService', $output);
+        self::assertStringContainsString('CCN=45', $output);
+        self::assertStringContainsString('COGNITIVE=30', $output);
+        self::assertStringNotContainsString('CCN.SUM', $output);
+
+        // Cohesion: keys without suffixes stay as-is
         self::assertStringContainsString('ComputedMetricDefinition', $output);
         self::assertStringContainsString('TCC=0.3', $output);
         self::assertStringContainsString('LCOM=5', $output);
