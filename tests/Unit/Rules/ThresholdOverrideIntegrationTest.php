@@ -419,10 +419,9 @@ final class ThresholdOverrideIntegrationTest extends TestCase
         $instance = $reflection->newInstanceArgs($args);
         \assert($instance instanceof ThresholdAwareOptionsInterface);
 
-        // Call withOverride with null (should preserve everything)
+        // Part 1: withOverride(null, null) must preserve all properties
         $overridden = $instance->withOverride(null, null);
 
-        // Every public property should be identical
         foreach ($reflection->getProperties(ReflectionProperty::IS_PUBLIC) as $prop) {
             self::assertSame(
                 $prop->getValue($instance),
@@ -430,6 +429,22 @@ final class ThresholdOverrideIntegrationTest extends TestCase
                 "{$className}::\${$prop->getName()} must be preserved by withOverride(null, null)",
             );
         }
+
+        // Part 2: withOverride(value, value) must actually change threshold properties
+        $overridden = $instance->withOverride(111, 222);
+        $changedCount = 0;
+
+        foreach ($reflection->getProperties(ReflectionProperty::IS_PUBLIC) as $prop) {
+            if ($prop->getValue($instance) !== $prop->getValue($overridden)) {
+                ++$changedCount;
+            }
+        }
+
+        self::assertGreaterThanOrEqual(
+            1,
+            $changedCount,
+            "{$className}: withOverride(111, 222) must change at least one property",
+        );
     }
 
     /**
