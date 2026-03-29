@@ -30,7 +30,9 @@ final class JsonOffenderSection
         FormatterContext $context,
         int $topN,
     ): array {
-        return $this->formatWorstOffenders($offenders, $context, $topN, showClassCount: true);
+        $ranked = $this->rankOffenders($offenders, $context);
+
+        return $this->formatWorstOffenders($ranked, $context, $topN, showClassCount: true);
     }
 
     /**
@@ -53,7 +55,8 @@ final class JsonOffenderSection
                 $report->violations,
                 includeNotableMetrics: true,
             );
-            $sliced = \array_slice($nsClasses, 0, $topN);
+            $ranked = $this->rankOffenders($nsClasses, $context);
+            $sliced = \array_slice($ranked, 0, $topN);
 
             $result = [];
             foreach ($sliced as $offender) {
@@ -63,6 +66,7 @@ final class JsonOffenderSection
                     'label' => $offender->label,
                     'reason' => $offender->reason,
                     'violationCount' => $offender->violationCount,
+                    'violationDensity' => $offender->violationDensity,
                     'file' => $offender->file !== null
                         ? $context->relativizePath($offender->file)
                         : null,
@@ -74,8 +78,10 @@ final class JsonOffenderSection
             return $result;
         }
 
+        $ranked = $this->rankOffenders($report->worstClasses, $context);
+
         return $this->formatWorstOffenders(
-            $report->worstClasses,
+            $ranked,
             $context,
             $topN,
             showClassCount: false,
@@ -104,6 +110,7 @@ final class JsonOffenderSection
                 'label' => $offender->label,
                 'reason' => $offender->reason,
                 'violationCount' => $offender->violationCount,
+                'violationDensity' => $offender->violationDensity,
             ];
 
             if ($showClassCount) {
@@ -121,5 +128,17 @@ final class JsonOffenderSection
         }
 
         return $result;
+    }
+
+    /**
+     * Re-ranks offenders when rank-by=density is requested.
+     *
+     * @param list<WorstOffender> $offenders
+     *
+     * @return list<WorstOffender>
+     */
+    private function rankOffenders(array $offenders, FormatterContext $context): array
+    {
+        return WorstOffender::rankByDensity($offenders, $context->getOption('rank-by', 'count'));
     }
 }

@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Health;
 
+use Generator;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefaults;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\Violation;
@@ -18,11 +20,13 @@ use Qualimetrix\Core\Violation\Violation;
 final readonly class NamespaceDrillDown
 {
     private HealthReasonBuilder $reasonBuilder;
+    private ContributorRanker $contributorRanker;
 
     public function __construct(
         private MetricHintProvider $hintProvider,
     ) {
         $this->reasonBuilder = new HealthReasonBuilder($this->hintProvider);
+        $this->contributorRanker = new ContributorRanker($this->hintProvider);
     }
 
     /**
@@ -86,12 +90,19 @@ final readonly class NamespaceDrillDown
             $errThreshold = $definition->errorThreshold ?? 25.0;
             $dimensionName = str_replace('health.', '', $dimension);
 
+            $contributors = $this->contributorRanker->rank(
+                $dimension,
+                $metrics,
+                $this->filterClassesByNamespace($metrics, $namespace),
+            );
+
             $healthScores[$dimensionName] = new HealthScore(
                 name: $dimensionName,
                 score: $avg,
                 label: $this->hintProvider->getScoreLabel($avg, $warnThreshold, $errThreshold),
                 warningThreshold: $warnThreshold,
                 errorThreshold: $errThreshold,
+                worstContributors: $contributors,
             );
         }
 
@@ -171,16 +182,25 @@ final readonly class NamespaceDrillDown
             }
 
             $canonical = $symbolInfo->symbolPath->toCanonical();
+            $violationCount = $violationCounts[$canonical] ?? 0;
+
+            $density = WorstOffender::computeViolationDensity(
+                $violationCount,
+                $classMetrics,
+                \Qualimetrix\Core\Metric\MetricName::SIZE_CLASS_LOC,
+            );
+
             $offenders[] = new WorstOffender(
                 symbolPath: $symbolInfo->symbolPath,
                 file: $symbolInfo->file,
                 healthOverall: $scoreValue,
                 label: $label,
                 reason: $reason,
-                violationCount: $violationCounts[$canonical] ?? 0,
+                violationCount: $violationCount,
                 classCount: 0,
                 metrics: $notableMetrics,
                 healthScores: $dimensionScores,
+                violationDensity: $density,
             );
         }
 
@@ -243,6 +263,20 @@ final readonly class NamespaceDrillDown
         }
 
         return $healthScores;
+    }
+
+    /**
+     * @return Generator<SymbolInfo>
+     */
+    private function filterClassesByNamespace(MetricRepositoryInterface $metrics, string $namespace): Generator
+    {
+        foreach ($metrics->all(SymbolType::Class_) as $symbolInfo) {
+            $classNs = $symbolInfo->symbolPath->namespace ?? '';
+
+            if ($this->matchesNamespace($classNs, $namespace)) {
+                yield $symbolInfo;
+            }
+        }
     }
 
     private function matchesNamespace(string $subject, string $prefix): bool
