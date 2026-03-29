@@ -44,7 +44,10 @@ final class LongParameterListRule extends AbstractRule
      */
     public function requires(): array
     {
-        return [MetricName::CODE_SMELL_PARAMETER_COUNT];
+        return [
+            MetricName::CODE_SMELL_PARAMETER_COUNT,
+            MetricName::CODE_SMELL_IS_VO_CONSTRUCTOR,
+        ];
     }
 
     /**
@@ -63,6 +66,8 @@ final class LongParameterListRule extends AbstractRule
         return [
             'long-parameter-list-warning' => 'warning',
             'long-parameter-list-error' => 'error',
+            'long-parameter-list-vo-warning' => 'vo-warning',
+            'long-parameter-list-vo-error' => 'vo-error',
         ];
     }
 
@@ -103,13 +108,40 @@ final class LongParameterListRule extends AbstractRule
         }
 
         $parameterCountValue = (int) $parameterCount;
-        $severity = $options->getSeverity($parameterCountValue);
+        $isVoConstructor = $metrics->get(MetricName::CODE_SMELL_IS_VO_CONSTRUCTOR) === 1;
+
+        // VO constructors use relaxed thresholds since many promoted properties is valid design
+        if ($isVoConstructor) {
+            $severity = $options->getVoSeverity($parameterCountValue);
+
+            if ($severity === null) {
+                return null;
+            }
+
+            $threshold = $severity === Severity::Error ? $options->voError : $options->voWarning;
+
+            return new Violation(
+                location: new Location($symbolInfo->file, $symbolInfo->line),
+                symbolPath: $symbolInfo->symbolPath,
+                ruleName: $this->getName(),
+                violationCode: self::NAME,
+                message: \sprintf('VO constructor has %d promoted parameters, exceeds threshold of %d. Consider splitting the value object', $parameterCountValue, $threshold),
+                severity: $severity,
+                metricValue: $parameterCountValue,
+                recommendation: \sprintf('Parameters: %d (VO threshold: %d) — consider splitting the value object', $parameterCountValue, $threshold),
+                threshold: $threshold,
+            );
+        }
+
+        /** @var LongParameterListOptions $effectiveOptions */
+        $effectiveOptions = $this->getEffectiveOptions($context, $options, $symbolInfo->file, $symbolInfo->line ?? 1);
+        $severity = $effectiveOptions->getSeverity($parameterCountValue);
 
         if ($severity === null) {
             return null;
         }
 
-        $threshold = $severity === Severity::Error ? $options->error : $options->warning;
+        $threshold = $severity === Severity::Error ? $effectiveOptions->error : $effectiveOptions->warning;
         $kind = $symbolType === SymbolType::Function_ ? 'Function' : 'Method';
 
         return new Violation(

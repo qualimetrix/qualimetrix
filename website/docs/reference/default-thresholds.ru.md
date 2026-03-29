@@ -90,24 +90,24 @@
 
 Эти правила обнаруживают конкретные паттерны, которые обычно являются плохой практикой. У большинства нет числовых порогов -- они либо находят паттерн, либо нет. Два правила (Long Parameter List и Unreachable Code) используют числовые пороги.
 
-| Правило                    | ID                                     | Warning                                            | Error     | Статус   |
-| -------------------------- | -------------------------------------- | -------------------------------------------------- | --------- | -------- |
-| Constructor Over-injection | `code-smell.constructor-overinjection` | 8 params                                           | 12 params | включено |
-| Data Class                 | `design.data-class`                    | WOC ≥ 80%, WMC ≤ 10                                | —         | включено |
-| God Class                  | `design.god-class`                     | WMC ≥ 47, TCC < 0.33, LCOM ≥ 3, LOC ≥ 300 (3 of 4) | —         | включено |
-| Boolean Argument           | `code-smell.boolean-argument`          | —                                                  | —         | включено |
-| count() in Loop            | `code-smell.count-in-loop`             | —                                                  | —         | включено |
-| Debug Code                 | `code-smell.debug-code`                | —                                                  | всегда    | включено |
-| Empty Catch                | `code-smell.empty-catch`               | —                                                  | всегда    | включено |
-| Error Suppression          | `code-smell.error-suppression`         | всегда                                             | —         | включено |
-| eval()                     | `code-smell.eval`                      | —                                                  | всегда    | включено |
-| exit()/die()               | `code-smell.exit`                      | всегда                                             | —         | включено |
-| goto                       | `code-smell.goto`                      | —                                                  | всегда    | включено |
-| Superglobals               | `code-smell.superglobals`              | всегда                                             | —         | включено |
-| Long Parameter List        | `code-smell.long-parameter-list`       | 4 params                                           | 6 params  | включено |
-| Unreachable Code           | `code-smell.unreachable-code`          | 1                                                  | 2         | включено |
-| Unused Private             | `code-smell.unused-private`            | всегда                                             | —         | включено |
-| Identical Sub-expression   | `code-smell.identical-subexpression`   | всегда                                             | —         | включено |
+| Правило                    | ID                                     | Warning                                            | Error             | Статус   |
+| -------------------------- | -------------------------------------- | -------------------------------------------------- | ----------------- | -------- |
+| Constructor Over-injection | `code-smell.constructor-overinjection` | 8 params                                           | 12 params         | включено |
+| Data Class                 | `design.data-class`                    | WOC ≥ 80%, WMC ≤ 10                                | —                 | включено |
+| God Class                  | `design.god-class`                     | WMC ≥ 47, TCC < 0.33, LCOM ≥ 3, LOC ≥ 300 (3 of 4) | —                 | включено |
+| Boolean Argument           | `code-smell.boolean-argument`          | —                                                  | —                 | включено |
+| count() in Loop            | `code-smell.count-in-loop`             | —                                                  | —                 | включено |
+| Debug Code                 | `code-smell.debug-code`                | —                                                  | всегда            | включено |
+| Empty Catch                | `code-smell.empty-catch`               | —                                                  | всегда            | включено |
+| Error Suppression          | `code-smell.error-suppression`         | всегда                                             | —                 | включено |
+| eval()                     | `code-smell.eval`                      | —                                                  | всегда            | включено |
+| exit()/die()               | `code-smell.exit`                      | всегда                                             | —                 | включено |
+| goto                       | `code-smell.goto`                      | —                                                  | всегда            | включено |
+| Superglobals               | `code-smell.superglobals`              | всегда                                             | —                 | включено |
+| Long Parameter List        | `code-smell.long-parameter-list`       | 4 params (VO: 8)                                   | 6 params (VO: 12) | включено |
+| Unreachable Code           | `code-smell.unreachable-code`          | 1                                                  | 2                 | включено |
+| Unused Private             | `code-smell.unused-private`            | всегда                                             | —                 | включено |
+| Identical Sub-expression   | `code-smell.identical-subexpression`   | всегда                                             | —                 | включено |
 
 ## Правила дупликации (Duplication)
 
