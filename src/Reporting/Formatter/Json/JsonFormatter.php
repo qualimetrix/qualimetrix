@@ -10,6 +10,7 @@ use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Reporting\Debt\DebtCalculator;
 use Qualimetrix\Reporting\Filter\ViolationFilter;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
+use Qualimetrix\Reporting\Formatter\Support\ViolationSorter;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Reporting\Report;
@@ -57,17 +58,17 @@ final class JsonFormatter implements FormatterInterface
             ],
             'summary' => $this->buildSummary($report, $filteredViolations, $isDrillDown),
             'health' => $this->healthSection->format($report, $context),
-            'worstNamespaces' => $context->partialAnalysis ? [] : $this->offenderSection->formatNamespaces(
+            'worstNamespaces' => $this->offenderSection->formatNamespaces(
                 $report->worstNamespaces,
                 $context,
                 $topN,
             ),
-            'worstClasses' => $context->partialAnalysis ? [] : $this->offenderSection->formatClasses(
+            'worstClasses' => $this->offenderSection->formatClasses(
                 $report,
                 $context,
                 $topN,
             ),
-            'topIssues' => $context->partialAnalysis ? [] : $this->formatTopIssues($report, $context),
+            'topIssues' => $this->formatTopIssues($report, $context),
             'violations' => $this->violationSection->format($outputViolations, $context),
             'violationsMeta' => [
                 'total' => \count($filteredViolations),
@@ -77,6 +78,14 @@ final class JsonFormatter implements FormatterInterface
                 'byRule' => $this->violationSection->countByRule($filteredViolations),
             ],
         ];
+
+        // Add violationGroups when group-by is active (not None)
+        if ($context->groupBy !== GroupBy::None) {
+            $data['violationGroups'] = $this->buildViolationGroups(
+                $outputViolations,
+                $context,
+            );
+        }
 
         return json_encode($data, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR);
     }
@@ -207,6 +216,32 @@ final class JsonFormatter implements FormatterInterface
             'techDebtMinutes' => $report->techDebtMinutes,
             'debtPer1kLoc' => $report->debtPer1kLoc,
         ];
+    }
+
+    /**
+     * Builds grouped violation structure sorted by count descending.
+     *
+     * @param list<Violation> $violations Already limited violations
+     *
+     * @return array<string, array{count: int, violations: list<array<string, mixed>>}>
+     */
+    private function buildViolationGroups(array $violations, FormatterContext $context): array
+    {
+        $groups = ViolationSorter::group($violations, $context->groupBy);
+
+        $result = [];
+
+        foreach ($groups as $key => $groupViolations) {
+            $result[$key] = [
+                'count' => \count($groupViolations),
+                'violations' => $this->violationSection->format($groupViolations, $context),
+            ];
+        }
+
+        // Sort by count descending (worst first)
+        uasort($result, static fn(array $a, array $b): int => $b['count'] <=> $a['count']);
+
+        return $result;
     }
 
     /**

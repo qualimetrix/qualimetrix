@@ -98,11 +98,116 @@ final class ViolationSorterTest extends TestCase
         self::assertSame([$v2], $groups['warning']);
     }
 
+    public function testSortClassNameGroupByClassThenSeverityThenLine(): void
+    {
+        $v1 = $this->violationWithSymbol('a.php', 5, Severity::Warning, 'complexity', 'App\B', 'ClassB');
+        $v2 = $this->violationWithSymbol('b.php', 1, Severity::Error, 'complexity', 'App\A', 'ClassA');
+        $v3 = $this->violationWithSymbol('a.php', 3, Severity::Error, 'complexity', 'App\A', 'ClassA');
+
+        $sorted = ViolationSorter::sort([$v1, $v2, $v3], GroupBy::ClassName);
+
+        // ClassA first (alphabetically), then ClassB
+        self::assertSame([$v3, $v2, $v1], $sorted);
+    }
+
+    public function testSortNamespaceNameGroupByNamespaceThenSeverityThenLine(): void
+    {
+        $v1 = $this->violationWithSymbol('a.php', 5, Severity::Warning, 'complexity', 'App\Service', 'Foo');
+        $v2 = $this->violationWithSymbol('b.php', 1, Severity::Error, 'complexity', 'App\Model', 'Bar');
+        $v3 = $this->violationWithSymbol('a.php', 3, Severity::Error, 'complexity', 'App\Model', 'Baz');
+
+        $sorted = ViolationSorter::sort([$v1, $v2, $v3], GroupBy::NamespaceName);
+
+        // App\Model first, then App\Service
+        self::assertSame([$v3, $v2, $v1], $sorted);
+    }
+
+    public function testGroupByClassName(): void
+    {
+        $v1 = $this->violationWithSymbol('a.php', 1, Severity::Error, 'complexity', 'App', 'ClassA');
+        $v2 = $this->violationWithSymbol('a.php', 5, Severity::Warning, 'complexity', 'App', 'ClassA');
+        $v3 = $this->violationWithSymbol('b.php', 2, Severity::Error, 'complexity', 'App', 'ClassB');
+
+        $groups = ViolationSorter::group([$v1, $v2, $v3], GroupBy::ClassName);
+
+        self::assertCount(2, $groups);
+        self::assertArrayHasKey('App\ClassA', $groups);
+        self::assertArrayHasKey('App\ClassB', $groups);
+        self::assertSame([$v1, $v2], $groups['App\ClassA']);
+        self::assertSame([$v3], $groups['App\ClassB']);
+    }
+
+    public function testGroupByClassNameFallsBackToFileForNamespaceLevelViolation(): void
+    {
+        $v1 = new Violation(
+            location: new Location('src/Service.php', 1),
+            symbolPath: SymbolPath::forNamespace('App\Service'),
+            ruleName: 'size',
+            violationCode: 'size.namespace',
+            message: 'msg',
+            severity: Severity::Error,
+        );
+
+        $groups = ViolationSorter::group([$v1], GroupBy::ClassName);
+
+        // Namespace-level violation has no class — falls back to file path
+        self::assertArrayHasKey('src/Service.php', $groups);
+    }
+
+    public function testGroupByNamespaceName(): void
+    {
+        $v1 = $this->violationWithSymbol('a.php', 1, Severity::Error, 'complexity', 'App\Service', 'Foo');
+        $v2 = $this->violationWithSymbol('b.php', 2, Severity::Warning, 'complexity', 'App\Service', 'Bar');
+        $v3 = $this->violationWithSymbol('c.php', 3, Severity::Error, 'complexity', 'App\Model', 'Baz');
+
+        $groups = ViolationSorter::group([$v1, $v2, $v3], GroupBy::NamespaceName);
+
+        self::assertCount(2, $groups);
+        self::assertArrayHasKey('App\Service', $groups);
+        self::assertArrayHasKey('App\Model', $groups);
+        self::assertSame([$v1, $v2], $groups['App\Service']);
+        self::assertSame([$v3], $groups['App\Model']);
+    }
+
+    public function testGroupByNamespaceNameUsesGlobalForEmptyNamespace(): void
+    {
+        $v1 = new Violation(
+            location: new Location('a.php', 1),
+            symbolPath: SymbolPath::forClass('', 'GlobalClass'),
+            ruleName: 'test',
+            violationCode: 'test',
+            message: 'msg',
+            severity: Severity::Warning,
+        );
+
+        $groups = ViolationSorter::group([$v1], GroupBy::NamespaceName);
+
+        self::assertArrayHasKey('<global>', $groups);
+    }
+
     private function violation(string $file, int $line, Severity $severity, string $ruleName): Violation
     {
         return new Violation(
             location: new Location($file, $line),
             symbolPath: SymbolPath::forClass('App', 'MyClass'),
+            ruleName: $ruleName,
+            violationCode: $ruleName . '.method',
+            message: 'msg',
+            severity: $severity,
+        );
+    }
+
+    private function violationWithSymbol(
+        string $file,
+        int $line,
+        Severity $severity,
+        string $ruleName,
+        string $namespace,
+        string $class,
+    ): Violation {
+        return new Violation(
+            location: new Location($file, $line),
+            symbolPath: SymbolPath::forClass($namespace, $class),
             ruleName: $ruleName,
             violationCode: $ruleName . '.method',
             message: 'msg',

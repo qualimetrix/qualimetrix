@@ -265,7 +265,7 @@ final class JsonFormatterTest extends TestCase
         self::assertSame([], $data['health']['cohesion']['decomposition']);
     }
 
-    public function testPartialAnalysisHealthIsNull(): void
+    public function testScopedReportingStillShowsHealth(): void
     {
         $report = new Report(
             violations: [],
@@ -279,11 +279,13 @@ final class JsonFormatterTest extends TestCase
             ],
         );
 
-        $context = new FormatterContext(partialAnalysis: true);
+        $context = new FormatterContext(scopedReporting: true, scopeFilePaths: ['/src/Foo.php']);
         $output = $this->formatter->format($report, $context);
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
-        self::assertNull($data['health']);
+        // Health is always shown now — full graph is always available
+        self::assertNotNull($data['health']);
+        self::assertArrayHasKey('complexity', $data['health']);
     }
 
     public function testWorstNamespaces(): void
@@ -951,7 +953,7 @@ final class JsonFormatterTest extends TestCase
         self::assertSame('src/Foo.php', $data['worstClasses'][0]['file']);
     }
 
-    public function testPartialAnalysisExplicitlyEmptiesOffenders(): void
+    public function testScopedReportingShowsOffenders(): void
     {
         $report = new Report(
             violations: [],
@@ -968,14 +970,13 @@ final class JsonFormatterTest extends TestCase
             ],
         );
 
-        $context = new FormatterContext(partialAnalysis: true);
+        $context = new FormatterContext(scopedReporting: true, scopeFilePaths: ['/src/Foo.php']);
         $output = $this->formatter->format($report, $context);
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
-        // Partial analysis: offenders explicitly suppressed even if prefilled
-        self::assertNull($data['health']);
-        self::assertSame([], $data['worstNamespaces']);
-        self::assertSame([], $data['worstClasses']);
+        // Scoped reporting: offenders and health are always shown (full graph available)
+        self::assertNotEmpty($data['worstNamespaces']);
+        self::assertNotEmpty($data['worstClasses']);
     }
 
     public function testNanMetricValueSortedCorrectly(): void
@@ -1295,5 +1296,305 @@ final class JsonFormatterTest extends TestCase
 
         self::assertCount(3, $data['violations']);
         self::assertSame(3, $data['violationsMeta']['shown']);
+    }
+
+    public function testGroupByNoneDoesNotIncludeViolationGroups(): void
+    {
+        $report = ReportBuilder::create()
+            ->addViolation(new Violation(
+                location: new Location('src/A.php', 10),
+                symbolPath: SymbolPath::forClass('App', 'A'),
+                ruleName: 'test',
+                violationCode: 'test',
+                message: 'Test',
+                severity: Severity::Warning,
+            ))
+            ->filesAnalyzed(1)
+            ->filesSkipped(0)
+            ->duration(0.1)
+            ->build();
+
+        $context = new FormatterContext(groupBy: GroupBy::None);
+        $output = $this->formatter->format($report, $context);
+        $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
+
+        self::assertArrayNotHasKey('violationGroups', $data);
+        self::assertArrayHasKey('violations', $data);
+    }
+
+    public function testGroupByClassNameIncludesViolationGroups(): void
+    {
+        $report = ReportBuilder::create()
+            ->addViolation(new Violation(
+                location: new Location('src/Service/UserService.php', 42),
+                symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
+                ruleName: 'complexity.cyclomatic',
+                violationCode: 'complexity.cyclomatic.method',
+                message: 'Too complex',
+                severity: Severity::Error,
+            ))
+            ->addViolation(new Violation(
+                location: new Location('src/Service/UserService.php', 120),
+                symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'process'),
+                ruleName: 'complexity.cyclomatic',
+                violationCode: 'complexity.cyclomatic.method',
+                message: 'Also complex',
+                severity: Severity::Warning,
+            ))
+            ->addViolation(new Violation(
+                location: new Location('src/Model/Order.php', 15),
+                symbolPath: SymbolPath::forClass('App\Model', 'Order'),
+                ruleName: 'size.class-count',
+                violationCode: 'size.class-count',
+                message: 'Too large',
+                severity: Severity::Warning,
+            ))
+            ->filesAnalyzed(2)
+            ->filesSkipped(0)
+            ->duration(0.1)
+            ->build();
+
+        $context = new FormatterContext(
+            groupBy: GroupBy::ClassName,
+            isGroupByExplicit: true,
+            options: ['violations' => 'all'],
+        );
+        $output = $this->formatter->format($report, $context);
+        $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
+
+        // Flat violations are always present
+        self::assertArrayHasKey('violations', $data);
+        self::assertCount(3, $data['violations']);
+
+        // Grouped violations are present
+        self::assertArrayHasKey('violationGroups', $data);
+        self::assertArrayHasKey('App\Service\UserService', $data['violationGroups']);
+        self::assertArrayHasKey('App\Model\Order', $data['violationGroups']);
+
+        $userServiceGroup = $data['violationGroups']['App\Service\UserService'];
+        self::assertSame(2, $userServiceGroup['count']);
+        self::assertCount(2, $userServiceGroup['violations']);
+
+        $orderGroup = $data['violationGroups']['App\Model\Order'];
+        self::assertSame(1, $orderGroup['count']);
+        self::assertCount(1, $orderGroup['violations']);
+    }
+
+    public function testGroupByNamespaceNameIncludesViolationGroups(): void
+    {
+        $report = ReportBuilder::create()
+            ->addViolation(new Violation(
+                location: new Location('src/Service/UserService.php', 42),
+                symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
+                ruleName: 'complexity.cyclomatic',
+                violationCode: 'complexity.cyclomatic.method',
+                message: 'Too complex',
+                severity: Severity::Error,
+            ))
+            ->addViolation(new Violation(
+                location: new Location('src/Model/Order.php', 15),
+                symbolPath: SymbolPath::forClass('App\Model', 'Order'),
+                ruleName: 'size.class-count',
+                violationCode: 'size.class-count',
+                message: 'Too large',
+                severity: Severity::Warning,
+            ))
+            ->addViolation(new Violation(
+                location: new Location('src/Model/Product.php', 20),
+                symbolPath: SymbolPath::forClass('App\Model', 'Product'),
+                ruleName: 'size.class-count',
+                violationCode: 'size.class-count',
+                message: 'Also large',
+                severity: Severity::Warning,
+            ))
+            ->filesAnalyzed(3)
+            ->filesSkipped(0)
+            ->duration(0.1)
+            ->build();
+
+        $context = new FormatterContext(
+            groupBy: GroupBy::NamespaceName,
+            isGroupByExplicit: true,
+            options: ['violations' => 'all'],
+        );
+        $output = $this->formatter->format($report, $context);
+        $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
+
+        self::assertArrayHasKey('violationGroups', $data);
+        self::assertArrayHasKey('App\Service', $data['violationGroups']);
+        self::assertArrayHasKey('App\Model', $data['violationGroups']);
+
+        // App\Model has 2 violations — sorted first (worst first)
+        $keys = array_keys($data['violationGroups']);
+        self::assertSame('App\Model', $keys[0]);
+        self::assertSame('App\Service', $keys[1]);
+
+        self::assertSame(2, $data['violationGroups']['App\Model']['count']);
+        self::assertSame(1, $data['violationGroups']['App\Service']['count']);
+    }
+
+    public function testGroupByFileIncludesViolationGroups(): void
+    {
+        $report = ReportBuilder::create()
+            ->addViolation(new Violation(
+                location: new Location('src/A.php', 10),
+                symbolPath: SymbolPath::forClass('App', 'A'),
+                ruleName: 'test',
+                violationCode: 'test',
+                message: 'Test A',
+                severity: Severity::Warning,
+            ))
+            ->addViolation(new Violation(
+                location: new Location('src/B.php', 20),
+                symbolPath: SymbolPath::forClass('App', 'B'),
+                ruleName: 'test',
+                violationCode: 'test',
+                message: 'Test B',
+                severity: Severity::Warning,
+            ))
+            ->filesAnalyzed(2)
+            ->filesSkipped(0)
+            ->duration(0.1)
+            ->build();
+
+        $context = new FormatterContext(
+            groupBy: GroupBy::File,
+            isGroupByExplicit: true,
+            options: ['violations' => 'all'],
+        );
+        $output = $this->formatter->format($report, $context);
+        $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
+
+        self::assertArrayHasKey('violationGroups', $data);
+        self::assertCount(2, $data['violationGroups']);
+    }
+
+    public function testViolationGroupsBuiltFromTruncatedList(): void
+    {
+        $builder = ReportBuilder::create()
+            ->filesAnalyzed(1)
+            ->filesSkipped(0)
+            ->duration(0.1);
+
+        // Add 5 violations to ClassA, 3 to ClassB
+        for ($i = 0; $i < 5; $i++) {
+            $builder->addViolation(new Violation(
+                location: new Location('src/A.php', $i + 1),
+                symbolPath: SymbolPath::forClass('App', 'A'),
+                ruleName: 'test',
+                violationCode: 'test',
+                message: "Violation A{$i}",
+                severity: Severity::Warning,
+            ));
+        }
+
+        for ($i = 0; $i < 3; $i++) {
+            $builder->addViolation(new Violation(
+                location: new Location('src/B.php', $i + 1),
+                symbolPath: SymbolPath::forClass('App', 'B'),
+                ruleName: 'test',
+                violationCode: 'test',
+                message: "Violation B{$i}",
+                severity: Severity::Warning,
+            ));
+        }
+
+        $report = $builder->build();
+
+        // Limit to 4 violations — groups should be built from the truncated list
+        $context = new FormatterContext(
+            groupBy: GroupBy::ClassName,
+            isGroupByExplicit: true,
+            options: ['violations' => '4'],
+        );
+        $output = $this->formatter->format($report, $context);
+        $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
+
+        self::assertCount(4, $data['violations']);
+        self::assertSame(8, $data['violationsMeta']['total']);
+        self::assertTrue($data['violationsMeta']['truncated']);
+
+        // Groups are built from the 4 shown violations
+        $totalGrouped = 0;
+        foreach ($data['violationGroups'] as $group) {
+            $totalGrouped += $group['count'];
+        }
+        self::assertSame(4, $totalGrouped);
+    }
+
+    public function testViolationGroupsEmptyWhenNoViolations(): void
+    {
+        $report = ReportBuilder::create()
+            ->filesAnalyzed(1)
+            ->filesSkipped(0)
+            ->duration(0.1)
+            ->build();
+
+        $context = new FormatterContext(
+            groupBy: GroupBy::ClassName,
+            isGroupByExplicit: true,
+        );
+        $output = $this->formatter->format($report, $context);
+        $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
+
+        self::assertArrayHasKey('violationGroups', $data);
+        self::assertSame([], $data['violationGroups']);
+    }
+
+    public function testViolationGroupsSortedByCountDescending(): void
+    {
+        $builder = ReportBuilder::create()
+            ->filesAnalyzed(1)
+            ->filesSkipped(0)
+            ->duration(0.1);
+
+        // 1 violation for ClassA
+        $builder->addViolation(new Violation(
+            location: new Location('src/A.php', 1),
+            symbolPath: SymbolPath::forClass('App', 'A'),
+            ruleName: 'test',
+            violationCode: 'test',
+            message: 'Test',
+            severity: Severity::Warning,
+        ));
+
+        // 3 violations for ClassB
+        for ($i = 0; $i < 3; $i++) {
+            $builder->addViolation(new Violation(
+                location: new Location('src/B.php', $i + 1),
+                symbolPath: SymbolPath::forClass('App', 'B'),
+                ruleName: 'test',
+                violationCode: 'test',
+                message: "Test B{$i}",
+                severity: Severity::Warning,
+            ));
+        }
+
+        // 2 violations for ClassC
+        for ($i = 0; $i < 2; $i++) {
+            $builder->addViolation(new Violation(
+                location: new Location('src/C.php', $i + 1),
+                symbolPath: SymbolPath::forClass('App', 'C'),
+                ruleName: 'test',
+                violationCode: 'test',
+                message: "Test C{$i}",
+                severity: Severity::Warning,
+            ));
+        }
+
+        $report = $builder->build();
+        $context = new FormatterContext(
+            groupBy: GroupBy::ClassName,
+            isGroupByExplicit: true,
+            options: ['violations' => 'all'],
+        );
+        $output = $this->formatter->format($report, $context);
+        $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
+
+        $keys = array_keys($data['violationGroups']);
+        // ClassB (3) first, then ClassC (2), then ClassA (1)
+        self::assertSame('App\B', $keys[0]);
+        self::assertSame('App\C', $keys[1]);
+        self::assertSame('App\A', $keys[2]);
     }
 }
