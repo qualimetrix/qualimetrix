@@ -11,6 +11,7 @@ final readonly class HealthScore
 {
     /**
      * @param list<DecompositionItem> $decomposition
+     * @param list<HealthContributor> $worstContributors
      */
     public function __construct(
         public string $name,
@@ -19,5 +20,6 @@ final readonly class HealthScore
         public float $warningThreshold,
         public float $errorThreshold,
         public array $decomposition = [],
+        public array $worstContributors = [],
     ) {}
 }

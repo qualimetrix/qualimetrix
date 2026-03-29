@@ -534,6 +534,32 @@ final class MetricHintProvider
         ));
     }
 
+    /**
+     * Returns decomposition inputs with class-level metric keys and directions.
+     *
+     * Used to identify worst contributors per health dimension. Each entry
+     * contains the class-level metric key (altKey or key) and direction.
+     *
+     * @return list<array{classKey: string, label: string, direction: string}>
+     */
+    public function getDecompositionForClasses(string $healthDimension): array
+    {
+        $inputs = self::HEALTH_INPUTS[$healthDimension] ?? [];
+        $result = [];
+
+        foreach ($inputs as $input) {
+            // Use altKey (class-level metric) when available, fall back to key
+            $classKey = $input['altKey'] ?? $input['key'];
+            $result[] = [
+                'classKey' => $classKey,
+                'label' => $input['label'],
+                'direction' => $input['direction'],
+            ];
+        }
+
+        return $result;
+    }
+
     public function getScoreLabel(float $score, float $warnThreshold, float $errThreshold): string
     {
         $range = 100 - $warnThreshold;

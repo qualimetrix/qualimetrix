@@ -7,6 +7,7 @@ namespace Qualimetrix\Reporting\Formatter\Json;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\Health\DecompositionItem;
+use Qualimetrix\Reporting\Health\HealthContributor;
 use Qualimetrix\Reporting\Health\HealthScore;
 use Qualimetrix\Reporting\Health\HealthScoreResolver;
 use Qualimetrix\Reporting\Report;
@@ -25,10 +26,6 @@ final class JsonHealthSection
      */
     public function format(Report $report, FormatterContext $context): ?array
     {
-        if ($context->partialAnalysis) {
-            return null;
-        }
-
         $healthScores = $this->healthResolver->resolve($report, $context);
         if ($healthScores === []) {
             if ($context->namespace !== null) {
@@ -62,7 +59,7 @@ final class JsonHealthSection
      */
     private function formatHealthScores(array $healthScores, FormatterContext $context): ?array
     {
-        if ($context->partialAnalysis || $healthScores === []) {
+        if ($healthScores === []) {
             return null;
         }
 
@@ -85,7 +82,31 @@ final class JsonHealthSection
                     ],
                     $hs->decomposition,
                 ),
+                'worstContributors' => array_map(
+                    fn(HealthContributor $c): array => [
+                        'className' => $c->className,
+                        'symbolPath' => $c->symbolPath,
+                        'metrics' => $this->sanitizeMetricValues($c->metricValues),
+                    ],
+                    $hs->worstContributors,
+                ),
             ];
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param array<string, float|int> $values
+     *
+     * @return array<string, float|int|null>
+     */
+    private function sanitizeMetricValues(array $values): array
+    {
+        $result = [];
+
+        foreach ($values as $key => $value) {
+            $result[$key] = \is_float($value) ? $this->sanitizer->sanitizeFloat($value) : $value;
         }
 
         return $result;
