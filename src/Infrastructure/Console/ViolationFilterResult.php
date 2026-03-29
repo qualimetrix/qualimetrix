@@ -22,8 +22,9 @@ final readonly class ViolationFilterResult
         public int $suppressionFiltered,
         public int $pathExclusionFiltered,
         public int $gitScopeFiltered,
-        public ?BaselineFilter $baselineFilter,
-        public array $staleBaselineKeys,
-        public int $staleBaselineCount,
+        public int $analyzeScopeFiltered = 0,
+        public ?BaselineFilter $baselineFilter = null,
+        public array $staleBaselineKeys = [],
+        public int $staleBaselineCount = 0,
     ) {}
 }

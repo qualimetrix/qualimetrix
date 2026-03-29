@@ -41,16 +41,11 @@ final class SummaryFormatter implements FormatterInterface
 
         $this->renderHeader($report, $context, $color, $lines);
 
-        if ($context->partialAnalysis) {
-            $this->renderPartialAnalysisWarning($color, $lines);
-            $this->violationSummaryRenderer->render($report, $context, $color, $lines);
-        } else {
-            $this->healthBarRenderer->render($report, $context, $color, $terminalWidth, $ascii, $lines);
-            $this->offenderListRenderer->renderWorstNamespaces($report, $color, $context, $lines);
-            $this->offenderListRenderer->renderWorstClasses($report, $color, $context, $lines);
-            $this->topIssuesRenderer->render($report, $context, $color, $lines);
-            $this->violationSummaryRenderer->render($report, $context, $color, $lines);
-        }
+        $this->healthBarRenderer->render($report, $context, $color, $terminalWidth, $ascii, $lines);
+        $this->offenderListRenderer->renderWorstNamespaces($report, $color, $context, $lines);
+        $this->offenderListRenderer->renderWorstClasses($report, $color, $context, $lines);
+        $this->topIssuesRenderer->render($report, $context, $color, $lines);
+        $this->violationSummaryRenderer->render($report, $context, $color, $lines);
 
         $this->hintRenderer->render($report, $context, $color, $lines);
 
@@ -102,8 +97,11 @@ final class SummaryFormatter implements FormatterInterface
             $report->filesAnalyzed === 1 ? '' : 's',
         );
 
-        if ($context->partialAnalysis) {
-            $header .= ' (partial)';
+        if ($context->scopedReporting) {
+            $scopeCount = $context->scopeFilePaths !== null ? \count($context->scopeFilePaths) : null;
+            $header .= $scopeCount !== null
+                ? \sprintf(' (%d in scope)', $scopeCount)
+                : ' (scoped)';
         }
 
         if ($context->namespace !== null) {
@@ -118,12 +116,4 @@ final class SummaryFormatter implements FormatterInterface
         $lines[] = '';
     }
 
-    /**
-     * @param list<string> $lines
-     */
-    private function renderPartialAnalysisWarning(AnsiColor $color, array &$lines): void
-    {
-        $lines[] = $color->yellow('⚠ Health scores unavailable in partial analysis mode');
-        $lines[] = '';
-    }
 }

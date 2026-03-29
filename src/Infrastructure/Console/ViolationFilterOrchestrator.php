@@ -53,6 +53,7 @@ final readonly class ViolationFilterOrchestrator
             disableSuppression: (bool) $input->getOption('no-suppression'),
             excludePaths: $cliExcludePaths,
             gitScope: $gitScope,
+            scopeFilePaths: $scopeResolution->scopeFilePaths,
         );
 
         $filterResult = $this->violationFilterPipeline->filter($result->violations, $options);
@@ -85,16 +86,6 @@ final readonly class ViolationFilterOrchestrator
                 '<info>%d violation(s) suppressed by path exclusion patterns</info>',
                 $filterResult->pathExclusionFiltered,
             ));
-        }
-
-        if (
-            $gitScope !== null
-            && $gitScope->analyzeScope !== null
-            && $filterResult->violations !== []
-        ) {
-            $output->writeln(
-                '<comment>Note: Aggregated metrics not available in partial analysis mode.</comment>',
-            );
         }
 
         return $filterResult;

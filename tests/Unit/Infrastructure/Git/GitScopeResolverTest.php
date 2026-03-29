@@ -7,10 +7,10 @@ namespace Qualimetrix\Tests\Unit\Infrastructure\Git;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Discovery\FinderFileDiscovery;
 use Qualimetrix\Configuration\AnalysisConfiguration;
 use Qualimetrix\Configuration\PathsConfiguration;
 use Qualimetrix\Configuration\Pipeline\ResolvedConfiguration;
-use Qualimetrix\Infrastructure\Git\GitFileDiscovery;
 use Qualimetrix\Infrastructure\Git\GitScopeResolver;
 use ReflectionProperty;
 use Symfony\Component\Console\Input\ArrayInput;
@@ -71,7 +71,7 @@ final class GitScopeResolverTest extends TestCase
     }
 
     #[Test]
-    public function itPassesExcludesToGitFileDiscovery(): void
+    public function itAlwaysUsesFinderFileDiscoveryWithExcludes(): void
     {
         $projectRoot = \dirname(__DIR__, 4); // repo root
 
@@ -91,9 +91,38 @@ final class GitScopeResolverTest extends TestCase
         $resolver = new GitScopeResolver();
         $result = $resolver->resolve($input, $resolved);
 
-        self::assertInstanceOf(GitFileDiscovery::class, $result->fileDiscovery);
+        // Always uses FinderFileDiscovery for full project collection
+        self::assertInstanceOf(FinderFileDiscovery::class, $result->fileDiscovery);
 
         $excludedDirsProperty = new ReflectionProperty($result->fileDiscovery, 'excludedDirs');
         self::assertSame(['vendor', 'tests'], $excludedDirsProperty->getValue($result->fileDiscovery));
+
+        // scopeFilePaths populated for analyze scope
+        self::assertNotNull($result->scopeFilePaths);
+        self::assertIsArray($result->scopeFilePaths);
+    }
+
+    #[Test]
+    public function itReturnsFindDiscoveryForFullAnalysis(): void
+    {
+        $resolved = new ResolvedConfiguration(
+            paths: new PathsConfiguration(['src']),
+            analysis: new AnalysisConfiguration(projectRoot: '/some/project'),
+            ruleOptions: [],
+        );
+
+        $definition = new InputDefinition([
+            new InputOption('analyze', null, InputOption::VALUE_REQUIRED),
+            new InputOption('report', null, InputOption::VALUE_REQUIRED),
+        ]);
+
+        $input = new ArrayInput([], $definition);
+
+        $resolver = new GitScopeResolver();
+        $result = $resolver->resolve($input, $resolved);
+
+        self::assertInstanceOf(FinderFileDiscovery::class, $result->fileDiscovery);
+        // No scope filter for full analysis
+        self::assertNull($result->scopeFilePaths);
     }
 }

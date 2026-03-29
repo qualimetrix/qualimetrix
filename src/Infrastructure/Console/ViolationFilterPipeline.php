@@ -130,12 +130,25 @@ final readonly class ViolationFilterPipeline
             $gitScopeFiltered = $beforeCount - \count($violations);
         }
 
+        // 5. Analyze scope filter — keep only violations for files in scope
+        $analyzeScopeFiltered = 0;
+        if ($options->scopeFilePaths !== null) {
+            $scopeSet = array_flip($options->scopeFilePaths);
+            $beforeCount = \count($violations);
+            $violations = array_values(array_filter(
+                $violations,
+                static fn(Violation $v) => !$v->location->isNone() && isset($scopeSet[$v->location->file]),
+            ));
+            $analyzeScopeFiltered = $beforeCount - \count($violations);
+        }
+
         return new ViolationFilterResult(
             violations: $violations,
             baselineFiltered: $baselineFiltered,
             suppressionFiltered: $suppressionFiltered,
             pathExclusionFiltered: $pathExclusionFiltered,
             gitScopeFiltered: $gitScopeFiltered,
+            analyzeScopeFiltered: $analyzeScopeFiltered,
             baselineFilter: $baselineFilter,
             staleBaselineKeys: $staleKeys,
             staleBaselineCount: $staleCount,

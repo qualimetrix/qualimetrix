@@ -45,7 +45,7 @@ final class HtmlTreeBuilder
      *
      * @return array<string, mixed> JSON-ready structure with keys: project, tree, summary, computedMetricDefinitions
      */
-    public function build(Report $report, FormatterContext $context, bool $partialAnalysis = false): array
+    public function build(Report $report, FormatterContext $context, bool $scopedReporting = false): array
     {
         // 1. Build the tree from metrics
         $projectNameOpt = $context->getOption('project-name');
@@ -78,7 +78,7 @@ final class HtmlTreeBuilder
         $definitions = $this->buildComputedMetricDefinitions();
 
         // 8. Build project metadata
-        $project = $this->buildProjectMetadata($partialAnalysis, $projectName);
+        $project = $this->buildProjectMetadata($scopedReporting, $projectName);
 
         return [
             'project' => $project,
@@ -322,13 +322,13 @@ final class HtmlTreeBuilder
      *
      * @return array<string, mixed>
      */
-    private function buildProjectMetadata(bool $partialAnalysis, ?string $projectName = null): array
+    private function buildProjectMetadata(bool $scopedReporting, ?string $projectName = null): array
     {
         return [
             'name' => $projectName ?? InstalledVersions::getRootPackage()['name'] ?? 'unknown',
             'generatedAt' => gmdate('c'),
             'qmxVersion' => InstalledVersions::getRootPackage()['pretty_version'] ?? 'dev',
-            'partialAnalysis' => $partialAnalysis,
+            'scopedReporting' => $scopedReporting,
         ];
     }
 

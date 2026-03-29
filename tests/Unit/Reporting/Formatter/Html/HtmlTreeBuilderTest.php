@@ -527,7 +527,7 @@ final class HtmlTreeBuilderTest extends TestCase
         self::assertStringContainsString('\\u003C', $json);
     }
 
-    public function testBuildProjectMetadata(): void
+    public function testBuildProjectMetadataWithScopedReporting(): void
     {
         $report = ReportBuilder::create()
             ->filesAnalyzed(1)
@@ -535,16 +535,16 @@ final class HtmlTreeBuilderTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $result = $this->builder->build($report, new FormatterContext(), partialAnalysis: true);
+        $result = $this->builder->build($report, new FormatterContext(), scopedReporting: true);
 
         $project = $result['project'];
         self::assertArrayHasKey('name', $project);
         self::assertArrayHasKey('generatedAt', $project);
         self::assertArrayHasKey('qmxVersion', $project);
-        self::assertTrue($project['partialAnalysis']);
+        self::assertTrue($project['scopedReporting']);
     }
 
-    public function testBuildPartialAnalysisFalseByDefault(): void
+    public function testBuildScopedReportingFalseByDefault(): void
     {
         $report = ReportBuilder::create()
             ->filesAnalyzed(1)
@@ -554,7 +554,7 @@ final class HtmlTreeBuilderTest extends TestCase
 
         $result = $this->builder->build($report, new FormatterContext());
 
-        self::assertFalse($result['project']['partialAnalysis']);
+        self::assertFalse($result['project']['scopedReporting']);
     }
 
     public function testBuildComputedMetricDefinitions(): void

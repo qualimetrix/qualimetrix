@@ -7,6 +7,8 @@ namespace Qualimetrix\Infrastructure\Git;
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Discovery\FinderFileDiscovery;
 use Qualimetrix\Configuration\Pipeline\ResolvedConfiguration;
+use Qualimetrix\Core\Util\PathNormalizer;
+use RuntimeException;
 use Symfony\Component\Console\Input\InputInterface;
 
 /**
@@ -31,9 +33,14 @@ final class GitScopeResolver
             $gitClient = new GitClient($resolved->analysis->projectRoot);
         }
 
-        $fileDiscovery = $analyzeScope !== null && $gitClient !== null
-            ? new GitFileDiscovery($gitClient, $analyzeScope, $resolved->paths->excludes)
-            : new FinderFileDiscovery($resolved->paths->excludes);
+        // Always use FinderFileDiscovery for full project collection.
+        // When analyze scope is set, resolve scoped file paths separately for violation filtering.
+        $fileDiscovery = new FinderFileDiscovery($resolved->paths->excludes);
+
+        $scopeFilePaths = null;
+        if ($analyzeScope !== null && $gitClient !== null) {
+            $scopeFilePaths = $this->resolveScopeFilePaths($gitClient, $analyzeScope, $paths, $resolved->paths->excludes);
+        }
 
         return new GitScopeResolution(
             paths: $paths,
@@ -41,6 +48,7 @@ final class GitScopeResolver
             gitClient: $gitClient,
             analyzeScope: $analyzeScope,
             reportScope: $reportScope,
+            scopeFilePaths: $scopeFilePaths,
         );
     }
 
@@ -92,5 +100,103 @@ final class GitScopeResolver
 
         // Implicit: if analyze scope is set, report scope equals analyze scope
         return $analyzeScope;
+    }
+
+    /**
+     * Resolves relative file paths for the analyze scope.
+     *
+     * Reuses the same logic as GitFileDiscovery to determine which files are in scope,
+     * and returns them as relative paths (via PathNormalizer::relativize()) to match
+     * the format used in Violation->location->file.
+     *
+     * @param list<string> $paths Analysis paths
+     * @param list<string> $excludes Directories to exclude
+     *
+     * @return list<string> Relative paths of in-scope files
+     */
+    private function resolveScopeFilePaths(GitClient $gitClient, GitScope $scope, array $paths, array $excludes): array
+    {
+        if (!$gitClient->isRepository()) {
+            throw new RuntimeException('Git integration requires a git repository');
+        }
+
+        $changedFiles = $gitClient->getChangedFiles($scope->ref);
+        $repoRoot = $gitClient->getRoot();
+
+        $scopeFiles = [];
+
+        foreach ($changedFiles as $changed) {
+            if ($changed->isDeleted()) {
+                continue;
+            }
+
+            if (!$changed->isPhp()) {
+                continue;
+            }
+
+            if (!$this->isInPaths($changed->path, $paths)) {
+                continue;
+            }
+
+            if ($this->isInExcludedDir($changed->path, $excludes)) {
+                continue;
+            }
+
+            $fullPath = $repoRoot . '/' . $changed->path;
+
+            if (!file_exists($fullPath)) {
+                continue;
+            }
+
+            $scopeFiles[] = PathNormalizer::relativize($fullPath);
+        }
+
+        sort($scopeFiles);
+
+        return $scopeFiles;
+    }
+
+    /**
+     * Checks if a file path matches any of the specified paths.
+     *
+     * @param list<string> $paths
+     */
+    private function isInPaths(string $file, array $paths): bool
+    {
+        if ($paths === []) {
+            return true;
+        }
+
+        foreach ($paths as $path) {
+            $normalizedPath = ltrim($path, './');
+
+            if ($normalizedPath === '') {
+                return true;
+            }
+
+            if ($file === $normalizedPath || str_starts_with($file, rtrim($normalizedPath, '/') . '/')) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Checks if a file path is inside any of the excluded directories.
+     *
+     * @param list<string> $excludes
+     */
+    private function isInExcludedDir(string $file, array $excludes): bool
+    {
+        foreach ($excludes as $dir) {
+            $normalizedDir = rtrim($dir, '/') . '/';
+
+            if (str_starts_with($file, $normalizedDir)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
