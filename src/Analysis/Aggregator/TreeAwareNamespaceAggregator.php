@@ -78,7 +78,7 @@ final class TreeAwareNamespaceAggregator implements AggregationPhaseInterface
                 continue;
             }
 
-            $aggregationValues = AggregationHelper::collectNamespaceMetricValues(
+            $metricValues = AggregationHelper::collectNamespaceMetricValues(
                 $repository,
                 $allSymbolInfos,
                 $allFileSymbols,
@@ -86,10 +86,9 @@ final class TreeAwareNamespaceAggregator implements AggregationPhaseInterface
             );
 
             $bag = AggregationHelper::applyAggregations(
-                $aggregationValues->values,
+                $metricValues,
                 $namespaceDefinitions,
                 SymbolLevel::Namespace_,
-                $aggregationValues->weights,
             );
             $bag = AggregationHelper::addSymbolCounts($bag, $allSymbolInfos);
 

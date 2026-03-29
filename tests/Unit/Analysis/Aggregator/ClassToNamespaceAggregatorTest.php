@@ -299,26 +299,6 @@ final class ClassToNamespaceAggregatorTest extends TestCase
     }
 
     #[Test]
-    public function applyStrategyWithWeightsComputesWeightedAverage(): void
-    {
-        // Direct unit test for AggregationHelper::applyStrategy with weights
-        $values = [80.0, 60.0];
-        $weights = [10.0, 2.0];
-
-        $result = AggregationHelper::applyStrategy(AggregationStrategy::Average, $values, $weights);
-
-        // (80*10 + 60*2) / 12 = 76.666...
-        self::assertEqualsWithDelta(76.67, $result, 0.01);
-
-        // Non-Average strategies ignore weights
-        $sum = AggregationHelper::applyStrategy(AggregationStrategy::Sum, $values, $weights);
-        self::assertEqualsWithDelta(140.0, $sum, 0.01);
-
-        $max = AggregationHelper::applyStrategy(AggregationStrategy::Max, $values, $weights);
-        self::assertEqualsWithDelta(80.0, $max, 0.01);
-    }
-
-    #[Test]
     public function applyAggregationsAutoStoresCountAlongsideAverage(): void
     {
         $definition = new MetricDefinition(
