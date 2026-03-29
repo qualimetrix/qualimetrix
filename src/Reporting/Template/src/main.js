@@ -62,12 +62,12 @@ export function init() {
     .getPropertyValue('--color-neutral').trim() || '#ffffff';
   colorScale = createColorScale(neutralColor);
 
-  // Show partial analysis warning if needed
-  if (DATA.project.partialAnalysis) {
+  // Show scoped reporting notice if needed
+  if (DATA.project.scopedReporting) {
     const warning = document.getElementById('partial-warning');
     if (warning) {
       const fileCount = DATA.summary.totalFiles;
-      warning.textContent = `Partial analysis: only ${fileCount} files analyzed. Health scores and aggregated metrics may be incomplete.`;
+      warning.textContent = `Scoped analysis: ${fileCount} files analyzed. Violations filtered to changed files only.`;
       warning.style.display = 'block';
     }
   }
