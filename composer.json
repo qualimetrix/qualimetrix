@@ -75,6 +75,7 @@
         "benchmark:update": "php scripts/benchmark-regression.php --update-baselines",
         "selfcheck": "php bin/qmx check src/ --baseline=baseline.json --baseline-ignore-stale --fail-on=none",
         "check": [
+            "@cs-check",
             "@test",
             "@phpstan",
             "@deptrac",
@@ -94,7 +95,7 @@
         "benchmark:check": "Run benchmark regression check for health score formulas",
         "benchmark:update": "Update benchmark baselines with current scores (±10 margin)",
         "selfcheck": "Run Qualimetrix on its own source code",
-        "check": "Run all checks: tests, phpstan, deptrac, selfcheck"
+        "check": "Run all checks: cs-check, tests, phpstan, deptrac, selfcheck"
     },
     "config": {
         "sort-packages": true,
