@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Unit\Analysis\Collector;
+namespace Qualimetrix\Tests\Unit\Analysis\Collection\Metric;
 
 use ArrayIterator;
 use Generator;
