@@ -148,4 +148,28 @@ final class ConfigDataNormalizerTest extends TestCase
 
         self::assertSame([], $result);
     }
+
+    #[Test]
+    public function normalizesCouplingFrameworkNamespaces(): void
+    {
+        $result = ConfigDataNormalizer::normalize([
+            'coupling' => [
+                'frameworkNamespaces' => ['Symfony', 'PhpParser', 'Psr'],
+            ],
+        ]);
+
+        self::assertSame(['Symfony', 'PhpParser', 'Psr'], $result['coupling.framework_namespaces']);
+    }
+
+    #[Test]
+    public function normalizesCouplingFrameworkNamespacesSnakeCase(): void
+    {
+        $result = ConfigDataNormalizer::normalize([
+            'coupling' => [
+                'framework_namespaces' => ['Symfony'],
+            ],
+        ]);
+
+        self::assertSame(['Symfony'], $result['coupling.framework_namespaces']);
+    }
 }

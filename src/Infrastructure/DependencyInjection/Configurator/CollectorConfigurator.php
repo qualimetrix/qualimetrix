@@ -8,11 +8,13 @@ use Qualimetrix\Analysis\Collection\Dependency\DependencyResolver;
 use Qualimetrix\Analysis\Collection\Dependency\DependencyVisitor;
 use Qualimetrix\Analysis\Collection\Metric\CompositeCollector;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
+use Qualimetrix\Core\Coupling\FrameworkNamespacesHolder;
 use Qualimetrix\Infrastructure\Logging\DelegatingLogger;
 use Qualimetrix\Infrastructure\Parallel\Strategy\AmphpParallelStrategy;
 use Qualimetrix\Infrastructure\Parallel\Strategy\SequentialStrategy;
 use Qualimetrix\Infrastructure\Parallel\Strategy\StrategySelector;
 use Qualimetrix\Infrastructure\Parallel\Strategy\WorkerCountDetector;
+use Qualimetrix\Metrics\Coupling\CouplingCollector;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -49,8 +51,13 @@ final class CollectorConfigurator implements ContainerConfiguratorInterface
             $this->srcDir . '/Metrics/{Abstract*.php,*Interface.php,*Visitor.php,*Trait.php,*ClassData.php,*Metrics.php,*Calculator.php,*Detector.php,*Analyzer.php,*Resolver.php}',
         );
 
-        // Auto-register global context collectors from src/Metrics/Coupling/*
-        // (These implement GlobalContextCollectorInterface and are auto-tagged)
+        // FrameworkNamespacesHolder — shared between RuntimeConfigurator and CouplingCollector
+        $container->register(FrameworkNamespacesHolder::class)
+            ->setPublic(true);
+
+        // CouplingCollector needs FrameworkNamespacesHolder (set at runtime by RuntimeConfigurator)
+        $container->getDefinition(CouplingCollector::class)
+            ->setArgument('$frameworkNamespacesHolder', new Reference(FrameworkNamespacesHolder::class));
 
         // DependencyResolver for resolving class names to FQN
         $container->register(DependencyResolver::class);

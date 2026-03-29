@@ -8,16 +8,20 @@ Coupling metrics measure dependencies between components. All collectors in this
 
 **Collector:** `CouplingCollector`
 **Type:** `GlobalContextCollectorInterface`
-**Provides:** `ca`, `ce`, `instability`
+**Provides:** `ca`, `ce`, `cbo`, `instability`, `ce_packages`, `cbo_app`, `ce_framework`
 **Level:** Class
 
 ### Metrics
 
-| Metric        | Description                               | Formula             |
-| ------------- | ----------------------------------------- | ------------------- |
-| `ca`          | Afferent Coupling — incoming dependencies | count(dependents)   |
-| `ce`          | Efferent Coupling — outgoing dependencies | count(dependencies) |
-| `instability` | Class instability (Qualimetrix extension) | Ce / (Ca + Ce)      |
+| Metric         | Description                                           | Formula                           |
+| -------------- | ----------------------------------------------------- | --------------------------------- |
+| `ca`           | Afferent Coupling — incoming dependencies             | count(dependents)                 |
+| `ce`           | Efferent Coupling — outgoing dependencies             | count(dependencies)               |
+| `cbo`          | Coupling Between Objects (C&K) — all dependencies     | \|Ca ∪ Ce\|                       |
+| `instability`  | Class instability (Qualimetrix extension)             | Ce / (Ca + Ce)                    |
+| `ce_packages`  | Distinct external top-level namespaces in Ce          | count(distinct external packages) |
+| `cbo_app`      | Application-only CBO (excludes framework deps)        | \|Ca_app ∪ Ce_app\|               |
+| `ce_framework` | Framework efferent coupling (outgoing framework deps) | count(framework Ce targets)       |
 
 > **Note:** Robert C. Martin (1994) originally defined Instability only at the **package** (namespace) level. Qualimetrix extends it to the class level for finer-grained analysis. The namespace-level instability is the canonical metric per Martin's specification.
 
@@ -32,6 +36,35 @@ Coupling metrics measure dependencies between components. All collectors in this
 **Stable classes (I ~ 0):** Used by many, depend on few. Difficult to change.
 
 **Unstable classes (I ~ 1):** Used by few, depend on many. Easy to change.
+
+### Framework CBO Distinction
+
+The `cbo_app` and `ce_framework` metrics separate framework coupling (structural, can't be eliminated without changing framework) from application coupling (architectural, should be minimized).
+
+**Configuration:**
+
+```yaml
+# qmx.yaml
+coupling:
+  framework-namespaces:
+    - Symfony
+    - PhpParser
+    - Psr
+    - Amp
+```
+
+**Namespace matching:** Boundary-aware prefix matching — `Psr` matches `Psr\Log\LoggerInterface` but NOT `PsrExtended\Custom`.
+
+**Partition property:** `Ce = Ce_app + Ce_framework` (outgoing dependencies partition cleanly).
+
+When no `framework-namespaces` are configured, `cbo_app` = `cbo` and `ce_framework` = 0.
+
+**CBO rule scope:** The `coupling.cbo` rule supports a `scope` option:
+
+```yaml
+coupling.cbo:
+  scope: application  # 'all' (default, uses CBO) | 'application' (uses CBO_APP)
+```
 
 ---
 

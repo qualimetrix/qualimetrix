@@ -273,6 +273,15 @@ rules:
     warning: 2
     error: 3
 
+# Coupling settings
+coupling:
+  # Framework namespace prefixes for CBO_APP/CE_FRAMEWORK metrics
+  # Boundary-aware: 'Psr' matches 'Psr\Log' but NOT 'PsrExtended\Custom'
+  framework-namespaces:
+    - Symfony
+    - PhpParser
+    - Psr
+
 # Caching
 cache:
   enabled: true

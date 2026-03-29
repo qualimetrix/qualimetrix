@@ -22,6 +22,7 @@ use Qualimetrix\Configuration\Loader\YamlConfigLoader;
 use Qualimetrix\Configuration\Pipeline\ConfigurationPipeline;
 use Qualimetrix\Configuration\RuleOptionsRegistry;
 use Qualimetrix\Core\Ast\FileParserInterface;
+use Qualimetrix\Core\Coupling\FrameworkNamespacesHolder;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
 use Qualimetrix\Infrastructure\Cache\CacheFactory;
 use Qualimetrix\Infrastructure\Console\BaselinePresenter;
@@ -174,6 +175,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(CacheFactory::class),
                 new Reference(ComputedMetricsConfigResolver::class),
                 new Reference(HealthFormulaExcluder::class),
+                new Reference(FrameworkNamespacesHolder::class),
             ]);
 
         // HealthFormulaExcluder for exclude-health formula rebuilding

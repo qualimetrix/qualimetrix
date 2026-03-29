@@ -108,6 +108,7 @@ rules:
   coupling.cbo:
     exclude_namespaces:
       - App\Core\ValueObject
+    scope: application  # 'all' (default) or 'application' (uses CBO_APP)
     class:
       warning: 18
       error: 25
@@ -130,7 +131,48 @@ bin/qmx check src/ --rule-opt="coupling.cbo:class.warning=18"
 bin/qmx check src/ --rule-opt="coupling.cbo:class.error=25"
 bin/qmx check src/ --rule-opt="coupling.cbo:namespace.min_class_count=5"
 bin/qmx check src/ --rule-opt="coupling.cbo:namespace.enabled=false"
+bin/qmx check src/ --rule-opt="coupling.cbo:scope=application"
 ```
+
+### Framework CBO distinction
+
+By default, CBO counts **all** dependencies equally: importing 50 `PhpParser\Node\*` types counts the same as depending on 50 application services. But framework coupling is structural (can't be eliminated without changing framework), while application coupling is architectural (should be minimized).
+
+Qualimetrix provides two supplementary metrics to distinguish them:
+
+| Metric         | Formula                                   | Purpose                   |
+| -------------- | ----------------------------------------- | ------------------------- |
+| `cbo_app`      | Ca_app + Ce_app (framework deps excluded) | Application-only coupling |
+| `ce_framework` | Count of efferent framework dependencies  | Informational             |
+
+**Configuration:**
+
+```yaml
+# qmx.yaml
+coupling:
+  framework-namespaces:
+    - Symfony
+    - PhpParser
+    - Psr
+    - Amp
+```
+
+Namespace matching is boundary-aware: `Psr` matches `Psr\Log\LoggerInterface` but NOT `PsrExtended\Custom`.
+
+**Using with the CBO rule:**
+
+Set `scope: application` to make the CBO rule check `cbo_app` instead of `cbo`:
+
+```yaml
+rules:
+  coupling.cbo:
+    scope: application
+    class:
+      warning: 10   # tighter thresholds make sense for app-only coupling
+      error: 15
+```
+
+When no `framework-namespaces` are configured, `cbo_app` equals `cbo` (no effect).
 
 ---
 

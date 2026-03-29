@@ -13,6 +13,8 @@ use Qualimetrix\Configuration\Pipeline\ResolvedConfiguration;
 use Qualimetrix\Configuration\RuleOptionsParserFactory;
 use Qualimetrix\Configuration\RuleOptionsRegistry;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinitionHolder;
+use Qualimetrix\Core\Coupling\FrameworkNamespaces;
+use Qualimetrix\Core\Coupling\FrameworkNamespacesHolder;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
 use Qualimetrix\Core\Progress\NullProgressReporter;
 use Qualimetrix\Infrastructure\Cache\CacheFactory;
@@ -42,6 +44,7 @@ final class RuntimeConfigurator
         private readonly CacheFactory $cacheFactory,
         private readonly ComputedMetricsConfigResolver $computedMetricsResolver,
         private readonly HealthFormulaExcluder $healthFormulaExcluder,
+        private readonly FrameworkNamespacesHolder $frameworkNamespacesHolder,
     ) {}
 
     /**
@@ -57,6 +60,7 @@ final class RuntimeConfigurator
         $this->ruleOptionsRegistry->getExclusionProvider()->reset();
         $this->cacheFactory->reset();
         ComputedMetricDefinitionHolder::reset();
+        $this->frameworkNamespacesHolder->reset();
 
         $this->configureLogger($input, $output);
         $this->configureProgressReporter($input, $output);
@@ -82,6 +86,13 @@ final class RuntimeConfigurator
 
         // Configure runtime providers
         $this->configureRuntime($resolved->analysis, $ruleOptions);
+
+        // Set framework namespaces for CBO_APP/CE_FRAMEWORK metrics
+        if ($resolved->analysis->frameworkNamespaces !== []) {
+            $this->frameworkNamespacesHolder->set(
+                new FrameworkNamespaces($resolved->analysis->frameworkNamespaces),
+            );
+        }
 
         // Resolve computed metrics definitions, apply exclude-health, and store in holder
         $definitions = $this->computedMetricsResolver->resolve($resolved->computedMetrics);

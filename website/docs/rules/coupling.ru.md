@@ -108,6 +108,7 @@ rules:
   coupling.cbo:
     exclude_namespaces:
       - App\Core\ValueObject
+    scope: application  # 'all' (по умолчанию) или 'application' (использует CBO_APP)
     class:
       warning: 18
       error: 25
@@ -130,7 +131,48 @@ bin/qmx check src/ --rule-opt="coupling.cbo:class.warning=18"
 bin/qmx check src/ --rule-opt="coupling.cbo:class.error=25"
 bin/qmx check src/ --rule-opt="coupling.cbo:namespace.min_class_count=5"
 bin/qmx check src/ --rule-opt="coupling.cbo:namespace.enabled=false"
+bin/qmx check src/ --rule-opt="coupling.cbo:scope=application"
 ```
+
+### Разделение фреймворк/приложение
+
+По умолчанию CBO считает **все** зависимости одинаково: импорт 50 типов `PhpParser\Node\*` весит столько же, сколько зависимость от 50 сервисов приложения. Но фреймворковая связанность — структурная (нельзя убрать без смены фреймворка), а прикладная — архитектурная (должна минимизироваться).
+
+Qualimetrix предоставляет две дополнительные метрики:
+
+| Метрика        | Формула                                            | Назначение                    |
+| -------------- | -------------------------------------------------- | ----------------------------- |
+| `cbo_app`      | Ca_app + Ce_app (зависимости фреймворка исключены) | Только прикладная связанность |
+| `ce_framework` | Количество исходящих зависимостей на фреймворк     | Информационная                |
+
+**Настройка:**
+
+```yaml
+# qmx.yaml
+coupling:
+  framework-namespaces:
+    - Symfony
+    - PhpParser
+    - Psr
+    - Amp
+```
+
+Сопоставление с учётом границ: `Psr` совпадает с `Psr\Log\LoggerInterface`, но НЕ с `PsrExtended\Custom`.
+
+**Использование с правилом CBO:**
+
+Установите `scope: application`, чтобы правило CBO проверяло `cbo_app` вместо `cbo`:
+
+```yaml
+rules:
+  coupling.cbo:
+    scope: application
+    class:
+      warning: 10   # более строгие пороги для прикладной связанности
+      error: 15
+```
+
+Если `framework-namespaces` не указаны, `cbo_app` равен `cbo` (без эффекта).
 
 ---
 

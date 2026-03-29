@@ -17,6 +17,7 @@ use Qualimetrix\Configuration\PathsConfiguration;
 use Qualimetrix\Configuration\Pipeline\ResolvedConfiguration;
 use Qualimetrix\Configuration\RuleOptionsRegistry;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinitionHolder;
+use Qualimetrix\Core\Coupling\FrameworkNamespacesHolder;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
 use Qualimetrix\Infrastructure\Cache\CacheFactory;
 use Qualimetrix\Infrastructure\Console\Progress\ProgressReporterHolder;
@@ -33,6 +34,7 @@ final class RuntimeConfiguratorTest extends TestCase
 {
     private ConfigurationProviderInterface&MockObject $configProvider;
     private RuleOptionsRegistry $ruleOptionsRegistry;
+    private FrameworkNamespacesHolder $frameworkNamespacesHolder;
     private RuntimeConfigurator $configurator;
 
     protected function setUp(): void
@@ -42,6 +44,7 @@ final class RuntimeConfiguratorTest extends TestCase
 
         $this->configProvider = $this->createMock(ConfigurationProviderInterface::class);
         $this->ruleOptionsRegistry = new RuleOptionsRegistry();
+        $this->frameworkNamespacesHolder = new FrameworkNamespacesHolder();
 
         $ruleRegistry = $this->createStub(RuleRegistryInterface::class);
         $ruleRegistry->method('getClasses')->willReturn([]);
@@ -57,6 +60,7 @@ final class RuntimeConfiguratorTest extends TestCase
             new CacheFactory($this->configProvider),
             new ComputedMetricsConfigResolver(new ComputedMetricFormulaValidator()),
             new HealthFormulaExcluder(new \Psr\Log\NullLogger()),
+            $this->frameworkNamespacesHolder,
         );
     }
 
@@ -311,6 +315,64 @@ final class RuntimeConfiguratorTest extends TestCase
         );
 
         return $input;
+    }
+
+    #[Test]
+    public function configureSetsFrameworkNamespacesFromConfig(): void
+    {
+        $resolved = new ResolvedConfiguration(
+            paths: PathsConfiguration::defaults(),
+            analysis: new AnalysisConfiguration(frameworkNamespaces: ['Symfony', 'Doctrine']),
+            ruleOptions: [],
+        );
+
+        $input = $this->createCliInput([]);
+
+        $this->configurator->configure($resolved, $input, $this->createOutput());
+
+        $namespaces = $this->frameworkNamespacesHolder->get();
+        self::assertFalse($namespaces->isEmpty());
+        self::assertTrue($namespaces->isFramework('Symfony\\Component\\Console'));
+        self::assertTrue($namespaces->isFramework('Doctrine\\ORM\\EntityManager'));
+        self::assertFalse($namespaces->isFramework('App\\Service\\UserService'));
+    }
+
+    #[Test]
+    public function resetClearsFrameworkNamespacesBetweenConfigureCalls(): void
+    {
+        // First configure: set framework namespaces
+        $resolved1 = new ResolvedConfiguration(
+            paths: PathsConfiguration::defaults(),
+            analysis: new AnalysisConfiguration(frameworkNamespaces: ['Symfony']),
+            ruleOptions: [],
+        );
+
+        $this->configProvider
+            ->expects($this->exactly(2))
+            ->method('setConfiguration');
+        $this->configProvider
+            ->expects($this->exactly(2))
+            ->method('setRuleOptions');
+
+        $this->configurator->configure($resolved1, $this->createCliInput([]), $this->createOutput());
+
+        self::assertFalse($this->frameworkNamespacesHolder->get()->isEmpty());
+        self::assertTrue($this->frameworkNamespacesHolder->get()->isFramework('Symfony\\Console'));
+
+        // Second configure: no framework namespaces
+        $resolved2 = new ResolvedConfiguration(
+            paths: PathsConfiguration::defaults(),
+            analysis: new AnalysisConfiguration(),
+            ruleOptions: [],
+        );
+
+        $this->configurator->configure($resolved2, $this->createCliInput([]), $this->createOutput());
+
+        // Framework namespaces from first run should be cleared
+        self::assertTrue(
+            $this->frameworkNamespacesHolder->get()->isEmpty(),
+            'Framework namespaces from first configure() call should not leak into second call',
+        );
     }
 
     #[Test]

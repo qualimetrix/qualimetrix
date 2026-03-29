@@ -243,7 +243,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         );
 
         // Create the real CouplingCollector as a global collector
-        $couplingCollector = new CouplingCollector();
+        $couplingCollector = new CouplingCollector(new \Qualimetrix\Core\Coupling\FrameworkNamespacesHolder());
         $globalCollectorRunner = new GlobalCollectorRunner([$couplingCollector]);
 
         // CompositeCollector has no per-file collectors for this test
