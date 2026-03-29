@@ -85,7 +85,8 @@ Health scores appear in several output formats:
 
 - **Summary format** (`--format=summary`, default) — progress bars with color coding and labels
 - **JSON format** (`--format=json`) — `healthScores` array in the output object
-- **HTML format** (`--format=health`) — interactive treemap colored by selected health dimension
+- **Health format** (`--format=health`) — text table of health dimensions with scores, status, and decomposition
+- **HTML format** (`--format=html`) — interactive treemap colored by selected health dimension
 
 See [Output Formats](../usage/output-formats.md) for details.
 

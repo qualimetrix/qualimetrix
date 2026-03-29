@@ -192,6 +192,24 @@ src/Repository/OrderRepository.php:15: error[coupling.cbo.class]: CBO is 18, max
             "complexity.cyclomatic": 2,
             "coupling.cbo": 1
         }
+    },
+    "violationGroups": {}
+}
+```
+
+Записи `worstNamespaces` и `worstClasses` включают поле `violationDensity` -- количество нарушений на 100 строк кода -- для нормализованной по размеру оценки качества кода.
+
+При использовании `--group-by=class` или `--group-by=namespace` нарушения организуются в объект `violationGroups`, где ключами являются FQCN класса или пространство имён. Каждая группа содержит массив нарушений и сводные счётчики:
+
+```json
+{
+    "violationGroups": {
+        "App\\Service\\UserService": {
+            "violations": [...],
+            "errorCount": 2,
+            "warningCount": 1,
+            "violationDensity": 3.5
+        }
     }
 }
 ```
@@ -203,10 +221,15 @@ src/Repository/OrderRepository.php:15: error[coupling.cbo.class]: CBO is 18, max
 bin/qmx check src/ --format=json --format-opt=limit=100
 
 # Показать все нарушения (без лимита)
-bin/qmx check src/ --format=json --format-opt=violations=all
+bin/qmx check src/ --format=json --all
+# Или эквивалентно: --format-opt=violations=all
 
 # Управление количеством худших нарушителей (по умолчанию: 10)
 bin/qmx check src/ --format=json --format-opt=top=20
+
+# Группировка нарушений по классу или пространству имён
+bin/qmx check src/ --format=json --group-by=class
+bin/qmx check src/ --format=json --group-by=namespace
 ```
 
 **Использование в CI:**
@@ -469,6 +492,37 @@ code_quality:
 
 ## health
 
+Текстовая таблица оценок здоровья для терминального вывода. Показывает каждое измерение с оценкой, статусом, порогами и деталями декомпозиции.
+
+**Когда использовать:** Быстрая проверка здоровья из CLI, рабочие процессы AI-агентов, диагностика пайплайнов.
+
+**Основные возможности:**
+
+- Табличное отображение всех измерений здоровья (сложность, связность, связанность, типизация, сопровождаемость)
+- Цветовая индикация статуса (зелёный/жёлтый/красный)
+- Видимость порогов (предупреждение и ошибка)
+- Декомпозиция по каждому измерению
+- Поддержка drill-down через `--namespace` и `--class`
+
+**Худшие участники по измерениям:**
+
+Вывод health включает худших участников для каждого измерения -- классы или пространства имён, которые больше всего снижают каждую оценку здоровья. Управляйте количеством отображаемых участников через `--format-opt=contributors=N` (по умолчанию: 3):
+
+```bash
+bin/qmx check src/ --format=health --format-opt=contributors=5
+```
+
+**Использование:**
+
+```bash
+bin/qmx check src/ --format=health
+bin/qmx check src/ --format=health --namespace='App\Service'
+```
+
+---
+
+## html
+
 Интерактивный отчёт в виде treemap с визуализацией D3.js. Генерирует самодостаточный HTML-файл с иерархией пространств имён и классов.
 
 **Когда использовать:** Визуализация всего проекта, отчёты для заинтересованных сторон, командные ревью.
@@ -484,20 +538,20 @@ code_quality:
 **Использование:**
 
 ```bash
-bin/qmx check src/ --format=health -o report.html
+bin/qmx check src/ --format=html -o report.html
 ```
 
 **Пример рабочего процесса:**
 
 ```bash
 # Сгенерировать и открыть отчёт
-bin/qmx check src/ --format=health -o report.html
+bin/qmx check src/ --format=html -o report.html
 open report.html  # macOS
 xdg-open report.html  # Linux
 ```
 
 !!! note
-    Флаг `-o` (output) рекомендуется при использовании формата `health`. Без него HTML-содержимое выводится в stdout.
+    Флаг `-o` (output) рекомендуется при использовании формата `html`. Без него HTML-содержимое выводится в stdout.
 
 ---
 
@@ -514,7 +568,8 @@ xdg-open report.html  # Linux
 | `sarif`        | Нет           | Да          | Встроенная                     | GitHub, VS Code, JetBrains |
 | `gitlab`       | Нет           | Да          | Плоский список                 | GitLab MR виджет           |
 | `github`       | Нет           | Нет         | Плоский список                 | GitHub Actions аннотации   |
-| `health`       | Интерактивная | Нет         | Иерархия treemap               | Отчёты, ревью              |
+| `health`       | Хорошая       | Нет         | Измерения здоровья             | Быстрые проверки, CI       |
+| `html`         | Интерактивная | Нет         | Иерархия treemap               | Отчёты, ревью              |
 
 ### Коды выхода
 

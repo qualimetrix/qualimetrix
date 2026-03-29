@@ -29,7 +29,7 @@ final class HtmlFormatterTest extends TestCase
 
     public function testGetNameReturnsHtml(): void
     {
-        self::assertSame('health', $this->formatter->getName());
+        self::assertSame('html', $this->formatter->getName());
     }
 
     public function testGetDefaultGroupByReturnsNone(): void
@@ -119,7 +119,7 @@ final class HtmlFormatterTest extends TestCase
         self::assertStringNotContainsString('"<project>"', $output);
     }
 
-    public function testFormatPartialAnalysis(): void
+    public function testFormatScopedReporting(): void
     {
         $report = ReportBuilder::create()
             ->filesAnalyzed(3)
@@ -127,10 +127,10 @@ final class HtmlFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $context = new FormatterContext(partialAnalysis: true);
+        $context = new FormatterContext(scopedReporting: true);
         $output = $this->formatter->format($report, $context);
 
-        self::assertStringContainsString('"partialAnalysis":true', $output);
+        self::assertStringContainsString('"scopedReporting":true', $output);
     }
 
     public function testFormatWithNullMetrics(): void

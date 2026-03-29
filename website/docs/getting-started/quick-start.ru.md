@@ -44,7 +44,7 @@ Worst namespaces
 
 45 violations (12 errors, 33 warnings) | Tech debt: 2d 4h (8.5 min/kLOC)
 
-Hints: --detail to see violations (top 200) | --namespace='App\Service' to drill down | --format=health -o report.html for full report
+Hints: --detail to see violations (top 200) | --namespace='App\Service' to drill down | --format=html -o report.html for full report
 ```
 
 Каждая категория получает метку: **Excellent** (отлично), **Good** (хорошо), **Fair** (есть куда расти), **Poor** (требует внимания) или **Critical** (необходимы действия). Секция "Worst namespaces" показывает, на чём стоит сосредоточиться в первую очередь.
@@ -72,7 +72,7 @@ vendor/bin/qmx check src/ --detail
 Для полного интерактивного отчёта с графиками и навигацией:
 
 ```bash
-vendor/bin/qmx check src/ --format=health -o report.html
+vendor/bin/qmx check src/ --format=html -o report.html
 ```
 
 Откройте `report.html` в браузере для изучения результатов.

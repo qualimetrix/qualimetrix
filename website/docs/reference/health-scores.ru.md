@@ -102,10 +102,16 @@ Qualimetrix — 45 files analyzed, 1.23s
 bin/qmx check src/ --format=json
 ```
 
+**health** — текстовая таблица оценок здоровья в терминале:
+
+```bash
+bin/qmx check src/ --format=health
+```
+
 **html** — интерактивный отчёт с drill-down по пространствам имён и классам:
 
 ```bash
-bin/qmx check src/ --format=health -o report.html
+bin/qmx check src/ --format=html -o report.html
 ```
 
 Подробнее о форматах вывода — в разделе [Форматы вывода](../usage/output-formats.md).
