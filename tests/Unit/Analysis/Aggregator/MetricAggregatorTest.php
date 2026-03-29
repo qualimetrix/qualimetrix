@@ -56,9 +56,9 @@ final class MetricAggregatorTest extends TestCase
         $nsMetrics = $repository->get(SymbolPath::forNamespace('App\\Service'));
         self::assertInstanceOf(MetricBag::class, $nsMetrics);
         self::assertSame(2, $nsMetrics->get('symbolMethodCount'));
-        self::assertSame(8, (int) $nsMetrics->get('ccn.sum')); // Sum of class ccn.sum
-        self::assertEquals(8.0, $nsMetrics->get('ccn.avg')); // Avg of class ccn.sum (only one class with sum 8)
-        self::assertSame(8, (int) $nsMetrics->get('ccn.max'));
+        self::assertSame(8, (int) $nsMetrics->get('ccn.sum')); // Sum of method values: 5 + 3
+        self::assertEquals(4.0, $nsMetrics->get('ccn.avg')); // Avg of method values: (5 + 3) / 2
+        self::assertSame(5, (int) $nsMetrics->get('ccn.max')); // Max of method values: max(5, 3)
     }
 
     #[Test]

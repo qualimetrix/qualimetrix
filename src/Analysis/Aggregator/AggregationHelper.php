@@ -48,8 +48,8 @@ final class AggregationHelper
 
             // Auto-store count alongside Average for weighted average at higher levels.
             // At Method→Class level ($weights=null): count = number of methods.
-            // At Class→Namespace level ($weights present): count = sum of class-level method counts,
-            // giving the total number of methods across all classes in the namespace.
+            // At Class→Namespace level: for method-collected metrics, values come from
+            // raw method symbols (not class bags), so count = number of methods directly.
             if (\in_array(AggregationStrategy::Average, $strategies, true)
                 && !\in_array(AggregationStrategy::Count, $strategies, true)
             ) {
@@ -236,12 +236,10 @@ final class AggregationHelper
     /**
      * Collects metric values for namespace/project aggregation.
      *
-     * For Method-collected metrics, reads from Class level (ccn.sum, ccn.avg, etc.)
+     * For Method-collected metrics, reads raw values from method symbols directly.
+     * This ensures .max, .avg, .p95 reflect per-method statistics (not per-class sums).
      * For Class-collected metrics, reads directly from Class level.
      * For File-collected metrics, reads directly from File level.
-     *
-     * Also collects weights for weighted average: when reading .avg fallback,
-     * the corresponding .count is used as weight (falls back to 1.0 for backward compatibility).
      *
      * @param list<SymbolInfo> $symbolInfos Class/Method/Function symbols
      * @param list<SymbolInfo> $fileSymbols File symbols for this namespace
@@ -261,6 +259,7 @@ final class AggregationHelper
             $weights[$definition->name] = [];
         }
 
+        self::collectFromMethods($repository, $symbolInfos, $definitions, $values, $weights);
         self::collectFromClassSymbols($repository, $symbolInfos, $definitions, $values, $weights);
         self::collectFromFunctions($repository, $symbolInfos, $definitions, $values, $weights);
         self::collectFromFileSymbols($repository, $fileSymbols, $definitions, $values, $weights);
@@ -269,9 +268,52 @@ final class AggregationHelper
     }
 
     /**
-     * Collects metric values from class symbols (method-collected and class-collected metrics).
+     * Collects raw metric values from method symbols (class methods).
      *
-     * For method-collected metrics, reads aggregated values (.sum or .avg fallback) from class level.
+     * For method-collected metrics, reads the raw per-method values directly.
+     * This ensures namespace-level .max, .avg, .p95 reflect per-method statistics
+     * (e.g., ccn.max = highest single method complexity) rather than per-class sums.
+     *
+     * @param list<SymbolInfo> $symbolInfos
+     * @param list<MetricDefinition> $definitions
+     * @param array<string, list<int|float>> $values
+     * @param array<string, list<float>> $weights
+     */
+    private static function collectFromMethods(
+        MetricRepositoryInterface $repository,
+        array $symbolInfos,
+        array $definitions,
+        array &$values,
+        array &$weights,
+    ): void {
+        foreach ($symbolInfos as $info) {
+            $path = $info->symbolPath;
+
+            // Only class methods (type set, member set); standalone functions handled separately
+            if ($path->type === null || $path->member === null) {
+                continue;
+            }
+
+            $bag = $repository->get($path);
+
+            foreach ($definitions as $definition) {
+                if ($definition->collectedAt !== SymbolLevel::Method) {
+                    continue;
+                }
+
+                $value = $bag->get($definition->name);
+
+                if ($value !== null) {
+                    $values[$definition->name][] = $value;
+                    $weights[$definition->name][] = 1.0;
+                }
+            }
+        }
+    }
+
+    /**
+     * Collects metric values from class symbols (class-collected metrics only).
+     *
      * For class-collected metrics, reads raw values directly from the class bag.
      *
      * @param list<SymbolInfo> $symbolInfos
@@ -288,44 +330,24 @@ final class AggregationHelper
     ): void {
         foreach ($symbolInfos as $info) {
             $path = $info->symbolPath;
+
+            // Must be a class symbol (not method/function)
+            if ($path->type === null || $path->member !== null) {
+                continue;
+            }
+
             $bag = $repository->get($path);
 
             foreach ($definitions as $definition) {
-                // Must be a class symbol (not method) for class/method-level metrics
-                if ($path->type === null || $path->member !== null) {
+                if ($definition->collectedAt !== SymbolLevel::Class_) {
                     continue;
                 }
 
-                // For method-collected metrics, read aggregated values from class level.
-                // Sum is preferred for additive metrics (CCN, LOC) — total per class
-                // feeds into namespace-level aggregation. For non-additive metrics (MI)
-                // that only have Average at class level, fall back to Average.
-                if ($definition->collectedAt === SymbolLevel::Method) {
-                    $sumValue = $bag->get($definition->aggregatedName(AggregationStrategy::Sum));
+                $value = $bag->get($definition->name);
 
-                    if ($sumValue !== null) {
-                        $values[$definition->name][] = $sumValue;
-                        $weights[$definition->name][] = 1.0;
-                    } else {
-                        $avgValue = $bag->get($definition->aggregatedName(AggregationStrategy::Average));
-
-                        if ($avgValue !== null) {
-                            $values[$definition->name][] = $avgValue;
-                            // Use .count as weight for weighted average; fall back to 1.0
-                            $count = $bag->get($definition->aggregatedName(AggregationStrategy::Count));
-                            $weights[$definition->name][] = $count !== null && $count > 0 ? (float) $count : 1.0;
-                        }
-                    }
-                }
-
-                // For Class-collected metrics, read directly from class
-                if ($definition->collectedAt === SymbolLevel::Class_) {
-                    $value = $bag->get($definition->name);
-
-                    if ($value !== null) {
-                        $values[$definition->name][] = $value;
-                        $weights[$definition->name][] = 1.0;
-                    }
+                if ($value !== null) {
+                    $values[$definition->name][] = $value;
+                    $weights[$definition->name][] = 1.0;
                 }
             }
         }

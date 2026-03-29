@@ -24,9 +24,11 @@ final class TreeAwareNamespaceAggregatorTest extends TestCase
     {
         $repository = new InMemoryMetricRepository();
 
-        // Simulate class symbols in two leaf namespaces
+        // Simulate class symbols in two leaf namespaces (with method-level raw values)
         $this->addClassWithCcn($repository, 'App\\Service', 'UserService', 'src/Service/UserService.php', 5);
+        $this->addMethodMetric($repository, 'App\\Service', 'UserService', 'handle', 'src/Service/UserService.php', 'ccn', 5);
         $this->addClassWithCcn($repository, 'App\\Domain', 'Entity', 'src/Domain/Entity.php', 3);
+        $this->addMethodMetric($repository, 'App\\Domain', 'Entity', 'init', 'src/Domain/Entity.php', 'ccn', 3);
 
         // Add file symbols with classCount (File-level metric)
         $this->addFileSymbol($repository, 'src/Service/UserService.php', ['classCount' => 1]);
@@ -100,12 +102,10 @@ final class TreeAwareNamespaceAggregatorTest extends TestCase
 
         // Sum from both classes: 12 + 10 = 22
         self::assertEquals(22, $parentMetrics->get('ccn.sum'));
-        // Weighted average: (12*1 + 10*1) / 2 = 11 (each class contributes its .sum)
-        // Actually: collectNamespaceMetricValues reads ccn.sum from classes → [12, 10]
-        // Then applies Average → (12 + 10) / 2 = 11
-        self::assertEqualsWithDelta(11.0, $parentMetrics->get('ccn.avg'), 0.01);
-        // Max: max(12, 10) = 12
-        self::assertEquals(12, $parentMetrics->get('ccn.max'));
+        // Average computed from raw method values: (2 + 4 + 6 + 10) / 4 = 5.5
+        self::assertEqualsWithDelta(5.5, $parentMetrics->get('ccn.avg'), 0.01);
+        // Max from raw method values: max(2, 4, 6, 10) = 10
+        self::assertEquals(10, $parentMetrics->get('ccn.max'));
     }
 
     #[Test]
@@ -114,6 +114,7 @@ final class TreeAwareNamespaceAggregatorTest extends TestCase
         $repository = new InMemoryMetricRepository();
 
         $this->addClassWithCcn($repository, 'A\\B\\C', 'Foo', 'src/A/B/C/Foo.php', 4);
+        $this->addMethodMetric($repository, 'A\\B\\C', 'Foo', 'run', 'src/A/B/C/Foo.php', 'ccn', 4);
         $this->addFileSymbol($repository, 'src/A/B/C/Foo.php', ['classCount' => 1]);
         $this->addNamespaceBag($repository, 'A\\B\\C', ['ccn.sum' => 4.0]);
 
@@ -139,25 +140,28 @@ final class TreeAwareNamespaceAggregatorTest extends TestCase
     {
         $repository = new InMemoryMetricRepository();
 
-        // App has its own class (2 classes direct)
+        // App has its own classes (2 classes direct) with method-level raw values
         $repository->add(
             SymbolPath::forClass('App', 'Bootstrap'),
             (new MetricBag())->with('ccn.sum', 3),
             'src/Bootstrap.php',
             1,
         );
+        $this->addMethodMetric($repository, 'App', 'Bootstrap', 'boot', 'src/Bootstrap.php', 'ccn', 3);
         $repository->add(
             SymbolPath::forClass('App', 'Kernel'),
             (new MetricBag())->with('ccn.sum', 7),
             'src/Kernel.php',
             1,
         );
+        $this->addMethodMetric($repository, 'App', 'Kernel', 'handle', 'src/Kernel.php', 'ccn', 7);
         $this->addFileSymbol($repository, 'src/Bootstrap.php', ['classCount' => 1]);
         $this->addFileSymbol($repository, 'src/Kernel.php', ['classCount' => 1]);
         $this->addNamespaceBag($repository, 'App', ['ccn.sum' => 10.0]);
 
         // App\Service has its own class
         $this->addClassWithCcn($repository, 'App\\Service', 'UserService', 'src/Service/UserService.php', 5);
+        $this->addMethodMetric($repository, 'App\\Service', 'UserService', 'execute', 'src/Service/UserService.php', 'ccn', 5);
         $this->addFileSymbol($repository, 'src/Service/UserService.php', ['classCount' => 1]);
         $this->addNamespaceBag($repository, 'App\\Service', ['ccn.sum' => 5.0]);
 
