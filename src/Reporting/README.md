@@ -81,6 +81,8 @@ Reporting/
     ├── Sarif/
     │   ├── SarifFormatter.php             # SARIF 2.1.0
     │   └── SarifRuleCollector.php         # Collects rule metadata for SARIF tool component
+    ├── Health/
+    │   └── HealthTextFormatter.php         # Text-based health report with scores and decomposition
     ├── Html/
     │   ├── HtmlFormatter.php              # Interactive HTML report with D3 treemap
     │   ├── HtmlTreeBuilder.php            # Builds namespace tree from MetricRepository
@@ -131,7 +133,8 @@ final readonly class FormatterContext
         public GroupBy $groupBy = GroupBy::None,
         public array $options = [],        // from --format-opt key=value
         public string $basePath = '',      // for relativizing file paths
-        public bool $partialAnalysis = false, // git:staged or similar partial mode
+        public bool $scopedReporting = false, // scoped reporting (e.g., --analyze=git:staged)
+        public ?array $scopeFilePaths = null, // relative paths in scope for filtering
         public ?string $namespace = null,  // --namespace filter (boundary-aware prefix)
         public ?string $class = null,      // --class filter (exact FQCN match)
     ) {}
@@ -248,7 +251,7 @@ final class MetricHintProvider
 
 One-screen health overview with worst offenders and contextual hints. Shows health bars for 6 dimensions (complexity, cohesion, coupling, typing, maintainability, overall), top-3 worst namespaces/classes, violation summary, and actionable hints.
 
-Supports `--namespace` and `--class` for drill-down (filtering worst offenders). Handles edge cases: partial analysis (no health scores), missing metrics, single file (no namespace section), zero violations, narrow terminals (no bars).
+Supports `--namespace` and `--class` for drill-down (filtering worst offenders). Handles edge cases: scoped reporting (violations filtered to changed files), missing metrics, single file (no namespace section), zero violations, narrow terminals (no bars).
 
 ASCII fallback with `QMX_ASCII=1` env variable.
 
@@ -313,7 +316,7 @@ Worst namespaces
 
 1251 violations (384 errors, 867 warnings) | Tech debt: 63d 5h 35min
 
-Hints: --format=text to see all violations | --namespace="App\Metrics\Halstead" to drill down | --format=health -o report.html for full report
+Hints: --format=text to see all violations | --namespace="App\Metrics\Halstead" to drill down | --format=html -o report.html for full report
 ```
 
 ### TextFormatter (`--format=text`)
@@ -345,17 +348,18 @@ Files: 1 analyzed, 0 skipped | Errors: 1 | Warnings: 1 | Time: 0.23s
 
 ## Implemented Formats
 
-| Format       | Name           | Description                                    | Integration                |
-| ------------ | -------------- | ---------------------------------------------- | -------------------------- |
-| Summary      | `summary`      | **Default.** Health overview + worst offenders | CLI                        |
-| Text         | `text`         | Compact human-readable text output             | CLI                        |
-| Text Verbose | `text-verbose` | Detailed text output with sorting by severity  | CLI                        |
-| JSON         | `json`         | Summary-oriented JSON (health + violations)    | AI agents, CI/CD           |
-| Checkstyle   | `checkstyle`   | Checkstyle XML for CI systems                  | Jenkins, SonarQube         |
-| SARIF        | `sarif`        | SARIF 2.1.0 for static analysis                | GitHub, VS Code, JetBrains |
-| GitLab       | `gitlab`       | Code Climate JSON for GitLab MR                | GitLab CI                  |
-| Metrics      | `metrics`      | Raw metric values for all symbols              | Dashboards, cross-tool     |
-| Health       | `health`       | Interactive treemap report with D3.js          | Browser, CI artifacts      |
+| Format       | Name           | Description                                                   | Integration                |
+| ------------ | -------------- | ------------------------------------------------------------- | -------------------------- |
+| Summary      | `summary`      | **Default.** Health overview + worst offenders                | CLI                        |
+| Text         | `text`         | Compact human-readable text output                            | CLI                        |
+| Text Verbose | `text-verbose` | Detailed text output with sorting by severity                 | CLI                        |
+| JSON         | `json`         | Summary-oriented JSON (health + violations)                   | AI agents, CI/CD           |
+| Checkstyle   | `checkstyle`   | Checkstyle XML for CI systems                                 | Jenkins, SonarQube         |
+| SARIF        | `sarif`        | SARIF 2.1.0 for static analysis                               | GitHub, VS Code, JetBrains |
+| GitLab       | `gitlab`       | Code Climate JSON for GitLab MR                               | GitLab CI                  |
+| Metrics      | `metrics`      | Raw metric values for all symbols                             | Dashboards, cross-tool     |
+| Health       | `health`       | Text table of health dimensions with scores and decomposition | CLI                        |
+| Html         | `html`         | Interactive treemap report with D3.js                         | Browser, CI artifacts      |
 
 ## JsonFormatter
 
@@ -544,17 +548,17 @@ $report->topIssues        // list<RankedIssue> — top violations by impact scor
 
 ## Formatter Comparison
 
-| Characteristic          | Summary | Text   | Text Verbose | JSON    | Checkstyle        | SARIF        | GitLab | Metrics | Health          |
-| ----------------------- | ------- | ------ | ------------ | ------- | ----------------- | ------------ | ------ | ------- | --------------- |
-| **ANSI Colors**         | Yes     | Yes    | Yes          | No      | No                | No           | No     | No      | No              |
-| **Health overview**     | Yes     | No     | No           | No      | No                | No           | No     | No      | Yes             |
-| **Grouping**            | No      | No     | Yes (file)   | No      | No                | No           | No     | No      | No              |
-| **Readability**         | High    | High   | High         | No      | No                | No           | No     | No      | Visual          |
-| **CI/CD integration**   | No      | No     | No           | Generic | Jenkins/SonarQube | GitHub/Azure | GitLab | Custom  | CI artifacts    |
-| **IDE support**         | No      | No     | No           | No      | Limited           | VS Code/JB   | No     | No      | No              |
-| **PHPMD compatibility** | No      | Full   | No           | No      | Full              | No           | No     | No      | No              |
-| **Fingerprinting**      | No      | No     | No           | No      | No                | No           | Yes    | No      | No              |
-| **Output**              | STDOUT  | STDOUT | STDOUT       | STDOUT  | STDOUT            | STDOUT       | STDOUT | STDOUT  | File (--output) |
+| Characteristic          | Summary | Text   | Text Verbose | JSON    | Checkstyle        | SARIF        | GitLab | Metrics | Health | Html            |
+| ----------------------- | ------- | ------ | ------------ | ------- | ----------------- | ------------ | ------ | ------- | ------ | --------------- |
+| **ANSI Colors**         | Yes     | Yes    | Yes          | No      | No                | No           | No     | No      | Yes    | No              |
+| **Health overview**     | Yes     | No     | No           | No      | No                | No           | No     | No      | Yes    | Yes             |
+| **Grouping**            | No      | No     | Yes (file)   | No      | No                | No           | No     | No      | No     | No              |
+| **Readability**         | High    | High   | High         | No      | No                | No           | No     | No      | High   | Visual          |
+| **CI/CD integration**   | No      | No     | No           | Generic | Jenkins/SonarQube | GitHub/Azure | GitLab | Custom  | No     | CI artifacts    |
+| **IDE support**         | No      | No     | No           | No      | Limited           | VS Code/JB   | No     | No      | No     | No              |
+| **PHPMD compatibility** | No      | Full   | No           | No      | Full              | No           | No     | No      | No     | No              |
+| **Fingerprinting**      | No      | No     | No           | No      | No                | No           | Yes    | No      | No     | No              |
+| **Output**              | STDOUT  | STDOUT | STDOUT       | STDOUT  | STDOUT            | STDOUT       | STDOUT | STDOUT  | STDOUT | File (--output) |
 
 ### Choosing the Right Format
 
@@ -568,11 +572,22 @@ $report->topIssues        // list<RankedIssue> — top violations by impact scor
 - **VS Code** -> `sarif`
 - **JetBrains IDE** -> `sarif`
 - **Custom dashboards / metrics analysis** -> `metrics`
-- **Visual exploration / stakeholder reports** -> `health`
+- **Health scores (terminal)** -> `health`
+- **Visual exploration / stakeholder reports** -> `html`
+
+## HealthTextFormatter
+
+**Name:** `health` | **Default grouping:** `none`
+
+Text-based health report for terminal output. Renders a table of health dimensions with scores, status labels, and threshold info, followed by decomposition details showing each contributing metric. Supports ANSI colors and adapts to narrow terminals.
+
+Supports `--namespace` and `--class` for drill-down (filtering to specific scope).
+
+---
 
 ## HtmlFormatter
 
-**Name:** `health`
+**Name:** `html`
 
 Self-contained interactive HTML report with D3.js treemap visualization. All CSS, JS, and data are embedded in a single file — works offline, easy to share.
 
@@ -591,10 +606,10 @@ Self-contained interactive HTML report with D3.js treemap visualization. All CSS
 
 ```bash
 # Generate HTML report (recommended: save to file)
-bin/qmx check src/ --format=health --output=report.html
+bin/qmx check src/ --format=html --output=report.html
 
 # Also works with stdout (but warns on TTY)
-bin/qmx check src/ --format=health > report.html
+bin/qmx check src/ --format=html > report.html
 ```
 
 ### Architecture

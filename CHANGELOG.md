@@ -9,9 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 - Rule IDs `code-smell.god-class` and `code-smell.data-class` renamed to `design.god-class` and `design.data-class`. Update configuration files, baselines, and `@qmx-ignore` annotations accordingly
+- `--format=health` now produces a text table of health scores (previously produced HTML). Use `--format=html` for the interactive HTML report
 
 ### Changed
 - Decomposed 13 large classes into focused components for better maintainability
+- New `--format=health` text formatter: tabular health scores with dimensions, status labels, thresholds, and decomposition details
+- NPath violations now include severity categories (low/moderate/high/very high/extreme) for easier triage
+- VO constructor exemption for `code-smell.long-parameter-list` rule — constructors in value objects use relaxed thresholds (`vo-warning`, `vo-error`)
+- LCOM4: stateless methods (no property access) are grouped together, reducing false positives on utility classes
+- Duplication violations now include a content preview hint showing the first tokens of the duplicated block
+- `--group-by=class` and `--group-by=namespace` options for JSON output — group violations by class or namespace
+- Violation density metric (`violationDensity`: violations per 100 LOC) in worst offender entries
+- Worst contributors per health dimension in `--format=health` output, configurable via `--format-opt=contributors=N`
+- Full dependency graph loaded for `--analyze=git:*` modes — coupling metrics (CBO, instability) are now correct even in partial analysis
+- Framework CBO distinction: new `cbo_app` and `ce_framework` metrics separate application coupling from framework coupling
+- `@qmx-threshold` annotations for per-class/method threshold overrides directly in source code
 
 ## [0.9.2] - 2026-03-26
 
