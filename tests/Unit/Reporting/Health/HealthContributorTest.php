@@ -41,12 +41,12 @@ final class HealthContributorTest extends TestCase
         $contributor = new HealthContributor(
             className: 'UserService',
             symbolPath: 'class:App\\Service\\UserService',
-            metricValues: ['ccn' => 15, 'cognitive' => 12],
+            metricValues: ['ccn.sum' => 15, 'cognitive.sum' => 12],
         );
 
         self::assertSame('UserService', $contributor->className);
         self::assertSame('class:App\\Service\\UserService', $contributor->symbolPath);
-        self::assertSame(['ccn' => 15, 'cognitive' => 12], $contributor->metricValues);
+        self::assertSame(['ccn.sum' => 15, 'cognitive.sum' => 12], $contributor->metricValues);
     }
 
     public function testComplexityContributorsRankedByHighestCcn(): void
@@ -68,9 +68,9 @@ final class HealthContributorTest extends TestCase
         self::assertSame('MedComplexity', $contributors[1]->className);
         self::assertSame('LowComplexity', $contributors[2]->className);
 
-        // Check metric values are included
-        self::assertSame(25, $contributors[0]->metricValues['ccn']);
-        self::assertSame(20, $contributors[0]->metricValues['cognitive']);
+        // Check metric values are included (class-level keys are aggregated: ccn.sum, cognitive.sum)
+        self::assertSame(25, $contributors[0]->metricValues['ccn.sum']);
+        self::assertSame(20, $contributors[0]->metricValues['cognitive.sum']);
     }
 
     public function testCohesionContributorsRankedByLowestTcc(): void
@@ -153,8 +153,8 @@ final class HealthContributorTest extends TestCase
         ];
 
         $classMetrics = [
-            'class:App\\HasCcn' => MetricBag::fromArray(['ccn' => 10, 'cognitive' => 5]),
-            'class:App\\NoCcn' => MetricBag::fromArray(['cognitive' => 3]), // no ccn
+            'class:App\\HasCcn' => MetricBag::fromArray(['ccn.sum' => 10, 'cognitive.sum' => 5]),
+            'class:App\\NoCcn' => MetricBag::fromArray(['cognitive.sum' => 3]), // no ccn.sum
         ];
 
         $metrics = $this->createMetricRepository(
@@ -244,13 +244,13 @@ final class HealthContributorTest extends TestCase
             $bag = [];
 
             if (isset($spec['ccn'])) {
-                $bag['ccn'] = $spec['ccn'];
+                $bag['ccn.sum'] = $spec['ccn'];
                 $dimensionMetrics['health.complexity'] ??= 50.0;
                 $dimensionMetrics['ccn.avg'] ??= 5.0;
             }
 
             if (isset($spec['cognitive'])) {
-                $bag['cognitive'] = $spec['cognitive'];
+                $bag['cognitive.sum'] = $spec['cognitive'];
             }
 
             if (isset($spec['tcc'])) {
