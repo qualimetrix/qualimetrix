@@ -245,8 +245,8 @@ const hintsFixture = {
   healthDecomposition: {
     'health.complexity': {
       inputs: [
-        { key: 'ccn.avg', altKey: 'ccn', label: 'CCN avg', ideal: '1-3', direction: 'lower' },
-        { key: 'cognitive.avg', altKey: 'cognitive', label: 'Cognitive avg', ideal: '0-4', direction: 'lower' },
+        { key: 'ccn.avg', altKey: 'ccn.sum', label: 'CCN avg', ideal: '1-3', direction: 'lower' },
+        { key: 'cognitive.avg', altKey: 'cognitive.sum', label: 'Cognitive avg', ideal: '0-4', direction: 'lower' },
         { key: 'ccn.p95', altKey: null, label: 'CCN p95', ideal: '≤5', direction: 'lower' },
         { key: 'cognitive.p95', altKey: null, label: 'Cognitive p95', ideal: '≤6', direction: 'lower' },
       ],
