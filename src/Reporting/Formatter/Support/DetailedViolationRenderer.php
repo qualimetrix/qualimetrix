@@ -105,6 +105,18 @@ final class DetailedViolationRenderer
                 ),
                 GroupBy::Rule => \sprintf('%s (%d)', $color->bold($key !== '' ? $key : '<unknown>'), $count),
                 GroupBy::Severity => \sprintf('%s (%d)', $this->formatSeverityLabel($key, $color), $count),
+                GroupBy::ClassName => \sprintf(
+                    '%s (%d %s)',
+                    $color->bold($key !== '' ? $key : '<unknown>'),
+                    $count,
+                    $count === 1 ? 'violation' : 'violations',
+                ),
+                GroupBy::NamespaceName => \sprintf(
+                    '%s (%d %s)',
+                    $color->bold($key !== '' ? $key : '<global>'),
+                    $count,
+                    $count === 1 ? 'violation' : 'violations',
+                ),
                 GroupBy::None => throw new LogicException('GroupBy::None is handled by renderFlat()'),
             };
 

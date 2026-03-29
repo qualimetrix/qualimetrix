@@ -28,6 +28,8 @@ final class ViolationSorter
             GroupBy::File => self::byFileSeverityLine(...),
             GroupBy::Rule => self::byRuleSeverityFileLine(...),
             GroupBy::Severity => self::bySeverityFileLine(...),
+            GroupBy::ClassName => self::byClassSeverityLine(...),
+            GroupBy::NamespaceName => self::byNamespaceSeverityLine(...),
         });
 
         return $violations;
@@ -50,6 +52,8 @@ final class ViolationSorter
                 GroupBy::File => $violation->location->file,
                 GroupBy::Rule => $violation->ruleName,
                 GroupBy::Severity => $violation->severity->value,
+                GroupBy::ClassName => self::extractClassName($violation),
+                GroupBy::NamespaceName => self::extractNamespaceName($violation),
             };
 
             $groups[$key][] = $violation;
@@ -78,6 +82,49 @@ final class ViolationSorter
             ?: self::severityOrder($a->severity) <=> self::severityOrder($b->severity)
             ?: $a->location->file <=> $b->location->file
             ?: ($a->location->line ?? 0) <=> ($b->location->line ?? 0);
+    }
+
+    private static function byClassSeverityLine(Violation $a, Violation $b): int
+    {
+        return self::extractClassName($a) <=> self::extractClassName($b)
+            ?: self::severityOrder($a->severity) <=> self::severityOrder($b->severity)
+            ?: $a->location->file <=> $b->location->file
+            ?: ($a->location->line ?? 0) <=> ($b->location->line ?? 0);
+    }
+
+    private static function byNamespaceSeverityLine(Violation $a, Violation $b): int
+    {
+        return self::extractNamespaceName($a) <=> self::extractNamespaceName($b)
+            ?: self::severityOrder($a->severity) <=> self::severityOrder($b->severity)
+            ?: $a->location->file <=> $b->location->file
+            ?: ($a->location->line ?? 0) <=> ($b->location->line ?? 0);
+    }
+
+    /**
+     * Extracts the FQCN for grouping. Falls back to file path if no class context.
+     */
+    private static function extractClassName(Violation $violation): string
+    {
+        $sp = $violation->symbolPath;
+        $ns = $sp->namespace ?? '';
+        $type = $sp->type;
+
+        if ($type !== null) {
+            return $ns !== '' ? $ns . '\\' . $type : $type;
+        }
+
+        // File-level violation without class context — group under file path
+        return $violation->location->file;
+    }
+
+    /**
+     * Extracts the namespace for grouping. Falls back to '<global>' if no namespace.
+     */
+    private static function extractNamespaceName(Violation $violation): string
+    {
+        $ns = $violation->symbolPath->namespace ?? '';
+
+        return $ns !== '' ? $ns : '<global>';
     }
 
     private static function severityOrder(Severity $severity): int

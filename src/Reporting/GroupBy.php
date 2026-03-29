@@ -10,4 +10,6 @@ enum GroupBy: string
     case File = 'file';
     case Rule = 'rule';
     case Severity = 'severity';
+    case ClassName = 'class';
+    case NamespaceName = 'namespace';
 }
