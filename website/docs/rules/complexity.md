@@ -252,12 +252,14 @@ This makes NPath grow very fast. It reflects the true testing burden: to fully t
 
 **How to read the value:**
 
-| NPath     | Interpretation                             |
-| --------- | ------------------------------------------ |
-| 1--20     | Simple, few execution paths                |
-| 21--200   | Moderate path count                        |
-| 201--1000 | Many execution paths, testing becomes hard |
-| 1000+     | Explosive path count -- split the method   |
+| NPath             | Label     | Interpretation                           |
+| ----------------- | --------- | ---------------------------------------- |
+| 1--1,000          | moderate  | Minor refactoring (extract 1--2 methods) |
+| 1,001--10,000     | high      | Significant refactoring needed           |
+| 10,001--1,000,000 | very high | Major restructuring required             |
+| > 1,000,000       | extreme   | Fundamental redesign needed              |
+
+The category label is included in violation messages (e.g., "NPath complexity is 36120 (very high)") to help prioritize without memorizing the NPath scale.
 
 <!-- llms:skip-end -->
 

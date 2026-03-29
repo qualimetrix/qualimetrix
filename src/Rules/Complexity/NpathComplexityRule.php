@@ -123,6 +123,21 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
     }
 
     /**
+     * Returns a human-readable severity category for the given NPath value.
+     *
+     * Categories are based on absolute NPath values, independent of configured thresholds.
+     */
+    private function getCategoryLabel(int $npath): string
+    {
+        return match (true) {
+            $npath > 1_000_000 => 'extreme',
+            $npath > 10_000 => 'very high',
+            $npath > 1_000 => 'high',
+            default => 'moderate',
+        };
+    }
+
+    /**
      * @return list<Violation>
      */
     private function analyzeMethodLevel(AnalysisContext $context): array
@@ -141,18 +156,22 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
             }
 
             $npathValue = (int) $npath;
-            $severity = $methodOptions->getSeverity($npathValue);
+
+            /** @var MethodNpathComplexityOptions $effectiveMethodOptions */
+            $effectiveMethodOptions = $this->getEffectiveOptions($context, $methodOptions, $methodInfo->file, $methodInfo->line ?? 1);
+            $severity = $effectiveMethodOptions->getSeverity($npathValue);
 
             if ($severity !== null) {
                 $displayValue = $npathValue >= self::MAX_DISPLAY ? '> 1M' : (string) $npathValue;
-                $threshold = $severity === Severity::Error ? $methodOptions->error : $methodOptions->warning;
+                $categoryLabel = $this->getCategoryLabel($npathValue);
+                $threshold = $severity === Severity::Error ? $effectiveMethodOptions->error : $effectiveMethodOptions->warning;
 
                 $violations[] = new Violation(
                     location: new Location($methodInfo->file, $methodInfo->line),
                     symbolPath: $methodInfo->symbolPath,
                     ruleName: $this->getName(),
                     violationCode: self::NAME . '.method',
-                    message: \sprintf('NPath complexity (execution paths) is %s, exceeds threshold of %s. Reduce branching or extract methods', $displayValue, $threshold),
+                    message: \sprintf('NPath complexity (execution paths) is %s (%s), exceeds threshold of %s. Reduce branching or extract methods', $displayValue, $categoryLabel, $threshold),
                     severity: $severity,
                     metricValue: $npathValue,
                     level: RuleLevel::Method,
@@ -184,18 +203,22 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
             }
 
             $maxNpathValue = (int) $maxNpath;
-            $severity = $classOptions->getSeverity($maxNpathValue);
+
+            /** @var ClassNpathComplexityOptions $effectiveClassOptions */
+            $effectiveClassOptions = $this->getEffectiveOptions($context, $classOptions, $classInfo->file, $classInfo->line ?? 1);
+            $severity = $effectiveClassOptions->getSeverity($maxNpathValue);
 
             if ($severity !== null) {
                 $displayValue = $maxNpathValue >= self::MAX_DISPLAY ? '> 1M' : (string) $maxNpathValue;
-                $threshold = $severity === Severity::Error ? $classOptions->maxError : $classOptions->maxWarning;
+                $categoryLabel = $this->getCategoryLabel($maxNpathValue);
+                $threshold = $severity === Severity::Error ? $effectiveClassOptions->maxError : $effectiveClassOptions->maxWarning;
 
                 $violations[] = new Violation(
                     location: new Location($classInfo->file, $classInfo->line),
                     symbolPath: $classInfo->symbolPath,
                     ruleName: $this->getName(),
                     violationCode: self::NAME . '.class',
-                    message: \sprintf('Maximum method NPath complexity is %s, exceeds threshold of %s. Refactor the most complex methods', $displayValue, $threshold),
+                    message: \sprintf('Maximum method NPath complexity is %s (%s), exceeds threshold of %s. Refactor the most complex methods', $displayValue, $categoryLabel, $threshold),
                     severity: $severity,
                     metricValue: $maxNpathValue,
                     level: RuleLevel::Class_,
