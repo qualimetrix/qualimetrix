@@ -570,6 +570,105 @@ final class NpathComplexityRuleTest extends TestCase
         yield 'at 1 → moderate' => [1, 'moderate'];
     }
 
+    public function testClassLevelLargeNpathDisplayFormat(): void
+    {
+        $rule = new NpathComplexityRule(
+            new NpathComplexityOptions(
+                class: new ClassNpathComplexityOptions(
+                    enabled: true,
+                    maxWarning: 500,
+                    maxError: 1000,
+                ),
+            ),
+        );
+
+        $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
+        $classInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 5);
+
+        $metricBag = (new MetricBag())->with('npath.max', 2_500_000); // > 1M
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturn([$classInfo]);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyzeLevel(RuleLevel::Class_, $context);
+
+        self::assertCount(1, $violations);
+        self::assertSame(
+            'Maximum method NPath complexity is > 1M (extreme), exceeds threshold of 1000. Refactor the most complex methods',
+            $violations[0]->message,
+        );
+        self::assertSame(2_500_000, $violations[0]->metricValue);
+    }
+
+    public function testMethodViolationRecommendationUsesDisplayValue(): void
+    {
+        $rule = new NpathComplexityRule(
+            new NpathComplexityOptions(
+                method: new MethodNpathComplexityOptions(
+                    warning: 200,
+                    error: 1000,
+                ),
+            ),
+        );
+
+        $symbolPath = SymbolPath::forMethod('App', 'Test', 'method');
+        $methodInfo = new SymbolInfo($symbolPath, 'test.php', 1);
+
+        $metricBag = (new MetricBag())->with('npath', 1_500_000);
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturn([$methodInfo]);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyzeLevel(RuleLevel::Method, $context);
+
+        self::assertCount(1, $violations);
+        self::assertSame(
+            'NPath complexity: > 1M (threshold: 1000) — explosive number of execution paths',
+            $violations[0]->recommendation,
+        );
+    }
+
+    public function testClassViolationRecommendationUsesDisplayValue(): void
+    {
+        $rule = new NpathComplexityRule(
+            new NpathComplexityOptions(
+                class: new ClassNpathComplexityOptions(
+                    enabled: true,
+                    maxWarning: 500,
+                    maxError: 1000,
+                ),
+            ),
+        );
+
+        $symbolPath = SymbolPath::forClass('App', 'Test');
+        $classInfo = new SymbolInfo($symbolPath, 'test.php', 1);
+
+        $metricBag = (new MetricBag())->with('npath.max', 1_500_000);
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturn([$classInfo]);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyzeLevel(RuleLevel::Class_, $context);
+
+        self::assertCount(1, $violations);
+        self::assertSame(
+            'Max NPath complexity: > 1M (threshold: 1000) — explosive number of execution paths',
+            $violations[0]->recommendation,
+        );
+    }
+
     public function testClassOptionsDefaultMaxWarningIs500(): void
     {
         $options = new ClassNpathComplexityOptions();
