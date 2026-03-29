@@ -41,6 +41,9 @@ final class ConfigDataNormalizer
         ['aggregation.prefixes', 'aggregation.prefixes'],
         ['aggregation.autoDepth', 'aggregation.auto_depth'],
 
+        // Coupling section
+        ['coupling.frameworkNamespaces|coupling.framework_namespaces', 'coupling.framework_namespaces'],
+
         // Dual-naming (camelCase | snake_case)
         ['computedMetrics|computed_metrics', 'computed_metrics'],
         ['excludeHealth|exclude_health', 'exclude_health'],

@@ -51,7 +51,7 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
      */
     public function requires(): array
     {
-        return [MetricName::COUPLING_CBO, MetricName::COUPLING_CA, MetricName::COUPLING_CE];
+        return [MetricName::COUPLING_CBO, MetricName::COUPLING_CA, MetricName::COUPLING_CE, MetricName::COUPLING_CBO_APP, MetricName::COUPLING_CE_FRAMEWORK];
     }
 
     /**
@@ -132,18 +132,25 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
         }
         $classOptions = $this->options->class;
 
+        // Determine which metric to use based on scope
+        $isAppScope = $classOptions->scope === 'application';
+        $metricName = $isAppScope
+            ? MetricName::COUPLING_CBO_APP
+            : MetricName::COUPLING_CBO;
+
         $violations = [];
 
         foreach ($context->metrics->all(SymbolType::Class_) as $classInfo) {
             $metrics = $context->metrics->get($classInfo->symbolPath);
 
-            $cbo = $metrics->get(MetricName::COUPLING_CBO);
+            $cbo = $metrics->get($metricName);
             if ($cbo === null) {
                 continue;
             }
 
             $cboValue = (int) $cbo;
-            $violation = $this->checkCbo($cboValue, $classInfo, $metrics, $classOptions, RuleLevel::Class_, $context->dependencyGraph);
+            $ceFramework = $isAppScope ? (int) ($metrics->get(MetricName::COUPLING_CE_FRAMEWORK) ?? 0) : null;
+            $violation = $this->checkCbo($cboValue, $classInfo, $metrics, $classOptions, RuleLevel::Class_, $context, $context->dependencyGraph, $isAppScope, $ceFramework);
             if ($violation !== null) {
                 $violations[] = $violation;
             }
@@ -179,7 +186,7 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
             }
 
             $cboValue = (int) $cbo;
-            $violation = $this->checkCbo($cboValue, $nsInfo, $metrics, $namespaceOptions, RuleLevel::Namespace_);
+            $violation = $this->checkCbo($cboValue, $nsInfo, $metrics, $namespaceOptions, RuleLevel::Namespace_, $context);
             if ($violation !== null) {
                 $violations[] = $violation;
             }
@@ -197,8 +204,13 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
         MetricBag $metrics,
         ClassCboOptions|NamespaceCboOptions $options,
         RuleLevel $level,
+        AnalysisContext $context,
         ?DependencyGraphInterface $dependencyGraph = null,
+        bool $isAppScope = false,
+        ?int $ceFramework = null,
     ): ?Violation {
+        /** @var ClassCboOptions|NamespaceCboOptions $options */
+        $options = $this->getEffectiveOptions($context, $options, $symbolInfo->file, $symbolInfo->line ?? 1);
         $ca = (int) ($metrics->get(MetricName::COUPLING_CA) ?? 0);
         $ce = (int) ($metrics->get(MetricName::COUPLING_CE) ?? 0);
 
@@ -210,11 +222,11 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
                 symbolPath: $symbolInfo->symbolPath,
                 ruleName: $this->getName(),
                 violationCode: $violationCode,
-                message: $this->buildMessage($cbo, $ca, $ce, $options->error),
+                message: $this->buildMessage($cbo, $ca, $ce, $options->error, $isAppScope, $ceFramework),
                 severity: Severity::Error,
                 metricValue: (float) $cbo,
                 level: $level,
-                recommendation: $this->buildRecommendation($cbo, $ca, $ce, $options->error, $symbolInfo->symbolPath, $dependencyGraph),
+                recommendation: $this->buildRecommendation($cbo, $ca, $ce, $options->error, $symbolInfo->symbolPath, $dependencyGraph, $isAppScope),
                 threshold: $options->error,
             );
         }
@@ -225,11 +237,11 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
                 symbolPath: $symbolInfo->symbolPath,
                 ruleName: $this->getName(),
                 violationCode: $violationCode,
-                message: $this->buildMessage($cbo, $ca, $ce, $options->warning),
+                message: $this->buildMessage($cbo, $ca, $ce, $options->warning, $isAppScope, $ceFramework),
                 severity: Severity::Warning,
                 metricValue: (float) $cbo,
                 level: $level,
-                recommendation: $this->buildRecommendation($cbo, $ca, $ce, $options->warning, $symbolInfo->symbolPath, $dependencyGraph),
+                recommendation: $this->buildRecommendation($cbo, $ca, $ce, $options->warning, $symbolInfo->symbolPath, $dependencyGraph, $isAppScope),
                 threshold: $options->warning,
             );
         }
@@ -239,30 +251,43 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
 
     /**
      * Determines coupling direction and builds a direction-aware violation message.
+     *
+     * When $isAppScope is true, labels the metric as "CBO_APP" and appends
+     * framework exclusion count so users understand the decomposition.
      */
-    private function buildMessage(int $cbo, int $ca, int $ce, int $threshold): string
+    private function buildMessage(int $cbo, int $ca, int $ce, int $threshold, bool $isAppScope = false, ?int $ceFramework = null): string
     {
         $direction = $this->getCouplingDirection($ca, $ce);
+        $label = $isAppScope ? 'CBO_APP' : 'CBO';
+        $frameworkSuffix = $isAppScope && $ceFramework !== null
+            ? \sprintf(', framework: %d classes excluded', $ceFramework)
+            : '';
 
         return match ($direction) {
             'efferent' => \sprintf(
-                'Efferent coupling too high: depends on %d classes (CBO: %d, threshold: %d)',
+                'Efferent coupling too high: depends on %d classes (%s: %d, threshold: %d%s)',
                 $ce,
+                $label,
                 $cbo,
                 $threshold,
+                $frameworkSuffix,
             ),
             'afferent' => \sprintf(
-                'Afferent coupling too high: %d classes depend on this (CBO: %d, threshold: %d)',
+                'Afferent coupling too high: %d classes depend on this (%s: %d, threshold: %d%s)',
                 $ca,
+                $label,
                 $cbo,
                 $threshold,
+                $frameworkSuffix,
             ),
             default => \sprintf(
-                'Coupling too high: %d inbound + %d outbound (CBO: %d, threshold: %d)',
+                'Coupling too high: %d inbound + %d outbound (%s: %d, threshold: %d%s)',
                 $ca,
                 $ce,
+                $label,
                 $cbo,
                 $threshold,
+                $frameworkSuffix,
             ),
         };
     }
@@ -277,22 +302,27 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
         int $threshold,
         ?SymbolPath $symbolPath = null,
         ?DependencyGraphInterface $dependencyGraph = null,
+        bool $isAppScope = false,
     ): string {
         $direction = $this->getCouplingDirection($ca, $ce);
+        $label = $isAppScope ? 'CBO_APP' : 'CBO';
 
         $base = match ($direction) {
             'efferent' => \sprintf(
-                'CBO: %d (threshold: %d) — extract dependencies to reduce outbound coupling',
+                '%s: %d (threshold: %d) — extract dependencies to reduce outbound coupling',
+                $label,
                 $cbo,
                 $threshold,
             ),
             'afferent' => \sprintf(
-                'CBO: %d (threshold: %d) — this class is a coupling magnet, consider if it is a healthy abstraction point',
+                '%s: %d (threshold: %d) — this class is a coupling magnet, consider if it is a healthy abstraction point',
+                $label,
                 $cbo,
                 $threshold,
             ),
             default => \sprintf(
-                'CBO: %d (threshold: %d) — reduce both inbound and outbound coupling',
+                '%s: %d (threshold: %d) — reduce both inbound and outbound coupling',
+                $label,
                 $cbo,
                 $threshold,
             ),

@@ -39,6 +39,7 @@ final readonly class AnalysisConfiguration
      * @param Severity|false|null $failOn Minimum severity to trigger non-zero exit code (null = default/error, false = none/never fail)
      * @param list<string> $excludeHealth Health dimensions to exclude from scoring (e.g., 'typing', 'complexity')
      * @param bool $includeGenerated Whether to include files marked with @generated annotation
+     * @param list<string> $frameworkNamespaces Framework namespace prefixes for CBO_APP/CE_FRAMEWORK metrics
      */
     public function __construct(
         public string $cacheDir = self::DEFAULT_CACHE_DIR,
@@ -56,6 +57,7 @@ final readonly class AnalysisConfiguration
         public Severity|false|null $failOn = null,
         public array $excludeHealth = [],
         public bool $includeGenerated = false,
+        public array $frameworkNamespaces = [],
     ) {}
 
     /**
@@ -81,6 +83,7 @@ final readonly class AnalysisConfiguration
             failOn: self::getFailOn($config, 'fail_on'),
             excludeHealth: self::getStringList($config, 'exclude_health'),
             includeGenerated: self::getBool($config, 'include_generated', false),
+            frameworkNamespaces: self::getStringList($config, 'coupling.framework_namespaces'),
         );
     }
 
@@ -113,6 +116,9 @@ final readonly class AnalysisConfiguration
                 ? self::getStringList($overrides, 'exclude_health')
                 : $this->excludeHealth,
             includeGenerated: self::getBool($overrides, 'include_generated', $this->includeGenerated),
+            frameworkNamespaces: self::hasNestedValue($overrides, 'coupling.framework_namespaces')
+                ? self::getStringList($overrides, 'coupling.framework_namespaces')
+                : $this->frameworkNamespaces,
         );
     }
 

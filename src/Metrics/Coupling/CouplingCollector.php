@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Metrics\Coupling;
 
+use Qualimetrix\Core\Coupling\FrameworkNamespacesHolder;
 use Qualimetrix\Core\Dependency\DependencyGraphInterface;
 use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\GlobalContextCollectorInterface;
@@ -12,6 +13,7 @@ use Qualimetrix\Core\Metric\MetricDefinition;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Metric\SymbolLevel;
+use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**
  * Computes coupling metrics from the dependency graph.
@@ -21,11 +23,17 @@ use Qualimetrix\Core\Metric\SymbolLevel;
  * - ce: Efferent Coupling (outgoing dependencies)
  * - cbo: Coupling Between Objects (union of coupled classes, per C&K)
  * - instability: I = Ce / (Ca + Ce), range [0, 1]
+ * - cbo_app: Application-only CBO (excludes framework dependencies)
+ * - ce_framework: Count of framework efferent dependencies
  *
  * Computes metrics for both classes and namespaces.
  */
 final class CouplingCollector implements GlobalContextCollectorInterface
 {
+    public function __construct(
+        private readonly FrameworkNamespacesHolder $frameworkNamespacesHolder,
+    ) {}
+
     public function getName(): string
     {
         return 'coupling';
@@ -38,7 +46,15 @@ final class CouplingCollector implements GlobalContextCollectorInterface
 
     public function provides(): array
     {
-        return [MetricName::COUPLING_CA, MetricName::COUPLING_CE, MetricName::COUPLING_CBO, MetricName::COUPLING_INSTABILITY, MetricName::COUPLING_CE_PACKAGES];
+        return [
+            MetricName::COUPLING_CA,
+            MetricName::COUPLING_CE,
+            MetricName::COUPLING_CBO,
+            MetricName::COUPLING_INSTABILITY,
+            MetricName::COUPLING_CE_PACKAGES,
+            MetricName::COUPLING_CBO_APP,
+            MetricName::COUPLING_CE_FRAMEWORK,
+        ];
     }
 
     public function getMetricDefinitions(): array
@@ -99,6 +115,40 @@ final class CouplingCollector implements GlobalContextCollectorInterface
                     ],
                 ],
             ),
+            new MetricDefinition(
+                name: MetricName::COUPLING_CBO_APP,
+                collectedAt: SymbolLevel::Class_,
+                aggregations: [
+                    SymbolLevel::Namespace_->value => [
+                        AggregationStrategy::Sum,
+                        AggregationStrategy::Average,
+                        AggregationStrategy::Max,
+                        AggregationStrategy::Percentile95,
+                    ],
+                    SymbolLevel::Project->value => [
+                        AggregationStrategy::Sum,
+                        AggregationStrategy::Average,
+                        AggregationStrategy::Max,
+                        AggregationStrategy::Percentile95,
+                    ],
+                ],
+            ),
+            new MetricDefinition(
+                name: MetricName::COUPLING_CE_FRAMEWORK,
+                collectedAt: SymbolLevel::Class_,
+                aggregations: [
+                    SymbolLevel::Namespace_->value => [
+                        AggregationStrategy::Sum,
+                        AggregationStrategy::Average,
+                        AggregationStrategy::Max,
+                    ],
+                    SymbolLevel::Project->value => [
+                        AggregationStrategy::Sum,
+                        AggregationStrategy::Average,
+                        AggregationStrategy::Max,
+                    ],
+                ],
+            ),
         ];
     }
 
@@ -106,23 +156,29 @@ final class CouplingCollector implements GlobalContextCollectorInterface
         DependencyGraphInterface $graph,
         MetricRepositoryInterface $repository,
     ): void {
+        $frameworkNamespaces = $this->frameworkNamespacesHolder->get();
+
         // Compute class-level metrics
-        $this->computeClassMetrics($graph, $repository);
+        $this->computeClassMetrics($graph, $repository, $frameworkNamespaces);
 
         // Compute namespace-level metrics
         $this->computeNamespaceMetrics($graph, $repository);
     }
 
     /**
-     * Computes Ca, Ce, CBO, Instability for each class in the graph.
+     * Computes Ca, Ce, CBO, Instability, CBO_APP, CE_FRAMEWORK for each class in the graph.
      *
      * CBO (Coupling Between Objects) per Chidamber & Kemerer is the count of
      * uniquely coupled classes — the union of incoming and outgoing dependencies.
      * If A→B and B→A, CBO(A) = 1, not 2.
+     *
+     * CBO_APP excludes dependencies on configured framework namespaces.
+     * CE_FRAMEWORK counts only efferent dependencies to framework namespaces.
      */
     private function computeClassMetrics(
         DependencyGraphInterface $graph,
         MetricRepositoryInterface $repository,
+        \Qualimetrix\Core\Coupling\FrameworkNamespaces $frameworkNamespaces,
     ): void {
         foreach ($graph->getAllClasses() as $symbolPath) {
             // Skip classes not in the repository (e.g. vendor/external classes)
@@ -135,16 +191,36 @@ final class CouplingCollector implements GlobalContextCollectorInterface
 
             // CBO = |union of Ce targets and Ca sources| (C&K definition)
             $coupledClasses = [];
+            // CBO_APP = CBO excluding framework classes
+            $coupledAppClasses = [];
+            // CE_FRAMEWORK = count of unique framework efferent dependencies
+            $frameworkCeTargets = [];
 
             foreach ($graph->getClassDependencies($symbolPath) as $dep) {
-                $coupledClasses[$dep->target->toCanonical()] = true;
+                $targetCanonical = $dep->target->toCanonical();
+                $coupledClasses[$targetCanonical] = true;
+
+                if ($this->isFrameworkSymbol($dep->target, $frameworkNamespaces)) {
+                    $frameworkCeTargets[$targetCanonical] = true;
+                } else {
+                    $coupledAppClasses[$targetCanonical] = true;
+                }
             }
 
             foreach ($graph->getClassDependents($symbolPath) as $dep) {
-                $coupledClasses[$dep->source->toCanonical()] = true;
+                $sourceCanonical = $dep->source->toCanonical();
+                $coupledClasses[$sourceCanonical] = true;
+
+                // Afferent from framework is unlikely (framework classes aren't scanned),
+                // but handle correctly anyway
+                if (!$this->isFrameworkSymbol($dep->source, $frameworkNamespaces)) {
+                    $coupledAppClasses[$sourceCanonical] = true;
+                }
             }
 
             $cbo = \count($coupledClasses);
+            $cboApp = \count($coupledAppClasses);
+            $ceFramework = \count($frameworkCeTargets);
             $instability = $this->computeInstability($ca, $ce);
 
             // Count distinct top-level namespaces (vendor packages) among efferent deps,
@@ -167,7 +243,9 @@ final class CouplingCollector implements GlobalContextCollectorInterface
                 ->with(MetricName::COUPLING_CE, $ce)
                 ->with(MetricName::COUPLING_CBO, $cbo)
                 ->with(MetricName::COUPLING_INSTABILITY, $instability)
-                ->with(MetricName::COUPLING_CE_PACKAGES, $cePackages);
+                ->with(MetricName::COUPLING_CE_PACKAGES, $cePackages)
+                ->with(MetricName::COUPLING_CBO_APP, $cboApp)
+                ->with(MetricName::COUPLING_CE_FRAMEWORK, $ceFramework);
 
             $repository->add($symbolPath, $metrics, '', 0);
         }
@@ -235,6 +313,30 @@ final class CouplingCollector implements GlobalContextCollectorInterface
         }
 
         return $coupled;
+    }
+
+    /**
+     * Checks if a SymbolPath represents a framework class.
+     */
+    private function isFrameworkSymbol(
+        SymbolPath $symbolPath,
+        \Qualimetrix\Core\Coupling\FrameworkNamespaces $frameworkNamespaces,
+    ): bool {
+        if ($frameworkNamespaces->isEmpty()) {
+            return false;
+        }
+
+        // Build the FQCN from namespace and type for matching
+        $namespace = $symbolPath->namespace ?? '';
+        $type = $symbolPath->type ?? '';
+
+        if ($namespace === '' && $type === '') {
+            return false;
+        }
+
+        $fqcn = $namespace !== '' ? $namespace . '\\' . $type : $type;
+
+        return $frameworkNamespaces->isFramework($fqcn);
     }
 
     /**

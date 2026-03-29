@@ -60,7 +60,7 @@ final class CboRuleTest extends TestCase
     {
         $rule = new CboRule(new CboOptions());
 
-        self::assertSame(['cbo', 'ca', 'ce'], $rule->requires());
+        self::assertSame(['cbo', 'ca', 'ce', 'cbo_app', 'ce_framework'], $rule->requires());
     }
 
     public function testGetOptionsClass(): void
@@ -903,5 +903,169 @@ final class CboRuleTest extends TestCase
         yield 'above warning, below error' => [18, 14, 20, Severity::Warning];
         yield 'at error threshold' => [20, 14, 20, Severity::Error];
         yield 'above error threshold' => [25, 14, 20, Severity::Error];
+    }
+
+    // Scope tests
+
+    public function testScopeApplicationUsesCboApp(): void
+    {
+        $rule = new CboRule(
+            new CboOptions(
+                class: new ClassCboOptions(
+                    warning: 5,
+                    error: 10,
+                    scope: 'application',
+                ),
+            ),
+        );
+
+        $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
+        $classInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+
+        // CBO = 15 (above error), CBO_APP = 3 (below warning)
+        // With scope=application, should use CBO_APP → no violation
+        $metricBag = (new MetricBag())
+            ->with('cbo', 15)
+            ->with('cbo_app', 3)
+            ->with('ca', 5)
+            ->with('ce', 10);
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturn([$classInfo]);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyzeLevel(RuleLevel::Class_, $context);
+
+        self::assertCount(0, $violations);
+    }
+
+    public function testScopeApplicationGeneratesWarningFromCboApp(): void
+    {
+        $rule = new CboRule(
+            new CboOptions(
+                class: new ClassCboOptions(
+                    warning: 5,
+                    error: 10,
+                    scope: 'application',
+                ),
+            ),
+        );
+
+        $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
+        $classInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+
+        // CBO = 30, CBO_APP = 7 (between warning=5 and error=10), CE_FRAMEWORK = 23
+        $metricBag = (new MetricBag())
+            ->with('cbo', 30)
+            ->with('cbo_app', 7)
+            ->with('ca', 5)
+            ->with('ce', 25)
+            ->with('ce_framework', 23);
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturn([$classInfo]);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyzeLevel(RuleLevel::Class_, $context);
+
+        self::assertCount(1, $violations);
+        self::assertSame(Severity::Warning, $violations[0]->severity);
+        self::assertSame(7.0, $violations[0]->metricValue);
+        // Message should reference CBO_APP metric name
+        self::assertStringContainsString('CBO_APP', $violations[0]->message);
+        // Message should use CBO_APP label and show framework exclusion count
+        self::assertStringContainsString('CBO_APP: 7', $violations[0]->message);
+        self::assertStringContainsString('framework: 23 classes excluded', $violations[0]->message);
+    }
+
+    public function testScopeAllDefaultUsesCbo(): void
+    {
+        // Default scope is 'all', should use CBO
+        $rule = new CboRule(
+            new CboOptions(
+                class: new ClassCboOptions(
+                    warning: 5,
+                    error: 10,
+                ),
+            ),
+        );
+
+        $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
+        $classInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+
+        // CBO = 15 (above error), CBO_APP = 3 (below warning)
+        // Default scope=all should use CBO → error
+        $metricBag = (new MetricBag())
+            ->with('cbo', 15)
+            ->with('cbo_app', 3)
+            ->with('ca', 5)
+            ->with('ce', 10);
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturn([$classInfo]);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyzeLevel(RuleLevel::Class_, $context);
+
+        self::assertCount(1, $violations);
+        self::assertSame(Severity::Error, $violations[0]->severity);
+        self::assertSame(15.0, $violations[0]->metricValue);
+    }
+
+    // Scope options parsing tests
+
+    public function testClassCboOptionsParsesScope(): void
+    {
+        $options = ClassCboOptions::fromArray([
+            'scope' => 'application',
+        ]);
+
+        self::assertSame('application', $options->scope);
+    }
+
+    public function testClassCboOptionsDefaultsToScopeAll(): void
+    {
+        $options = ClassCboOptions::fromArray([]);
+
+        self::assertSame('all', $options->scope);
+    }
+
+    public function testClassCboOptionsInvalidScopeDefaultsToAll(): void
+    {
+        $options = ClassCboOptions::fromArray([
+            'scope' => 'invalid',
+        ]);
+
+        self::assertSame('all', $options->scope);
+    }
+
+    public function testCboOptionsTopLevelScopePropagates(): void
+    {
+        $options = CboOptions::fromArray([
+            'scope' => 'application',
+        ]);
+
+        self::assertSame('application', $options->class->scope);
+    }
+
+    public function testCboOptionsClassLevelScopeOverridesTopLevel(): void
+    {
+        $options = CboOptions::fromArray([
+            'scope' => 'application',
+            'class' => [
+                'scope' => 'all',
+            ],
+        ]);
+
+        self::assertSame('all', $options->class->scope);
     }
 }

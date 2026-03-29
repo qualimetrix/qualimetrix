@@ -43,6 +43,11 @@ final readonly class CboOptions implements HierarchicalRuleOptionsInterface
             ? $config['namespace']
             : [];
 
+        // Allow scope to be set at top level and propagate to class config
+        if (isset($config['scope']) && !isset($classConfig['scope'])) {
+            $classConfig['scope'] = $config['scope'];
+        }
+
         return new self(
             class: ClassCboOptions::fromArray($classConfig),
             namespace: NamespaceCboOptions::fromArray($namespaceConfig),

@@ -9,6 +9,8 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Collection\Dependency\DependencyGraphBuilder;
 use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
+use Qualimetrix\Core\Coupling\FrameworkNamespaces;
+use Qualimetrix\Core\Coupling\FrameworkNamespacesHolder;
 use Qualimetrix\Core\Dependency\Dependency;
 use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Core\Metric\AggregationStrategy;
@@ -26,7 +28,7 @@ final class CouplingCollectorTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->collector = new CouplingCollector();
+        $this->collector = new CouplingCollector(new FrameworkNamespacesHolder());
         $this->graphBuilder = new DependencyGraphBuilder();
     }
 
@@ -45,15 +47,15 @@ final class CouplingCollectorTest extends TestCase
     #[Test]
     public function provides_returnsCouplingMetrics(): void
     {
-        self::assertSame(['ca', 'ce', 'cbo', 'instability', 'ce_packages'], $this->collector->provides());
+        self::assertSame(['ca', 'ce', 'cbo', 'instability', 'ce_packages', 'cbo_app', 'ce_framework'], $this->collector->provides());
     }
 
     #[Test]
-    public function getMetricDefinitions_returnsFourDefinitions(): void
+    public function getMetricDefinitions_returnsSevenDefinitions(): void
     {
         $definitions = $this->collector->getMetricDefinitions();
 
-        self::assertCount(5, $definitions);
+        self::assertCount(7, $definitions);
 
         // ca metric
         $ca = $definitions[0];
@@ -109,6 +111,32 @@ final class CouplingCollectorTest extends TestCase
         self::assertSame(
             [AggregationStrategy::Average, AggregationStrategy::Max, AggregationStrategy::Percentile95],
             $cePackages->getStrategiesForLevel(SymbolLevel::Project),
+        );
+
+        // cbo_app metric
+        $cboApp = $definitions[5];
+        self::assertSame('cbo_app', $cboApp->name);
+        self::assertSame(SymbolLevel::Class_, $cboApp->collectedAt);
+        self::assertSame(
+            [AggregationStrategy::Sum, AggregationStrategy::Average, AggregationStrategy::Max, AggregationStrategy::Percentile95],
+            $cboApp->getStrategiesForLevel(SymbolLevel::Namespace_),
+        );
+        self::assertSame(
+            [AggregationStrategy::Sum, AggregationStrategy::Average, AggregationStrategy::Max, AggregationStrategy::Percentile95],
+            $cboApp->getStrategiesForLevel(SymbolLevel::Project),
+        );
+
+        // ce_framework metric
+        $ceFramework = $definitions[6];
+        self::assertSame('ce_framework', $ceFramework->name);
+        self::assertSame(SymbolLevel::Class_, $ceFramework->collectedAt);
+        self::assertSame(
+            [AggregationStrategy::Sum, AggregationStrategy::Average, AggregationStrategy::Max],
+            $ceFramework->getStrategiesForLevel(SymbolLevel::Namespace_),
+        );
+        self::assertSame(
+            [AggregationStrategy::Sum, AggregationStrategy::Average, AggregationStrategy::Max],
+            $ceFramework->getStrategiesForLevel(SymbolLevel::Project),
         );
     }
 
@@ -579,6 +607,188 @@ final class CouplingCollectorTest extends TestCase
         $barMetrics = $repository->get($barPath);
 
         self::assertSame(0, $barMetrics->get('ce_packages'));
+    }
+
+    // Framework CBO tests
+
+    #[Test]
+    public function calculate_cboAppExcludesFrameworkDeps(): void
+    {
+        // Configure framework namespaces
+        $holder = new FrameworkNamespacesHolder();
+        $holder->set(new FrameworkNamespaces(['Symfony', 'PhpParser', 'Psr']));
+        $collector = new CouplingCollector($holder);
+
+        // App\Service depends on Symfony\Console, PhpParser\Node, App\Repository
+        $deps = [
+            $this->dep('App\\Service', 'Symfony\\Component\\Console'),
+            $this->dep('App\\Service', 'PhpParser\\Node'),
+            $this->dep('App\\Service', 'App\\Repository'),
+            $this->dep('App\\Controller', 'App\\Service'),
+        ];
+
+        $graph = $this->graphBuilder->build($deps);
+        $repository = new InMemoryMetricRepository();
+        $this->registerClass($repository, 'App\\Service');
+        $this->registerClass($repository, 'App\\Repository');
+        $this->registerClass($repository, 'App\\Controller');
+
+        $collector->calculate($graph, $repository);
+
+        $servicePath = SymbolPath::forClass('App', 'Service');
+        $serviceMetrics = $repository->get($servicePath);
+
+        // CBO = |{Symfony\Console, PhpParser\Node, App\Repository, App\Controller}| = 4
+        self::assertSame(4, $serviceMetrics->get('cbo'));
+        // CBO_APP = |{App\Repository, App\Controller}| = 2 (framework deps excluded)
+        self::assertSame(2, $serviceMetrics->get('cbo_app'));
+        // CE_FRAMEWORK = 2 (Symfony\Console, PhpParser\Node)
+        self::assertSame(2, $serviceMetrics->get('ce_framework'));
+    }
+
+    #[Test]
+    public function calculate_cboAppEqualsCboWhenNoFrameworkConfig(): void
+    {
+        // No framework namespaces configured (default)
+        $deps = [
+            $this->dep('App\\Service', 'Symfony\\Console'),
+            $this->dep('App\\Service', 'App\\Repository'),
+        ];
+
+        $graph = $this->graphBuilder->build($deps);
+        $repository = new InMemoryMetricRepository();
+        $this->registerClass($repository, 'App\\Service');
+        $this->registerClass($repository, 'App\\Repository');
+
+        $this->collector->calculate($graph, $repository);
+
+        $servicePath = SymbolPath::forClass('App', 'Service');
+        $serviceMetrics = $repository->get($servicePath);
+
+        // When no framework namespaces configured, CBO_APP = CBO
+        self::assertSame($serviceMetrics->get('cbo'), $serviceMetrics->get('cbo_app'));
+        self::assertSame(0, $serviceMetrics->get('ce_framework'));
+    }
+
+    #[Test]
+    public function calculate_ceFrameworkCountsOnlyEfferentFrameworkDeps(): void
+    {
+        $holder = new FrameworkNamespacesHolder();
+        $holder->set(new FrameworkNamespaces(['Symfony']));
+        $collector = new CouplingCollector($holder);
+
+        // App\Service depends on 3 Symfony classes
+        $deps = [
+            $this->dep('App\\Service', 'Symfony\\Console\\Command'),
+            $this->dep('App\\Service', 'Symfony\\HttpFoundation\\Request'),
+            $this->dep('App\\Service', 'Symfony\\DI\\Container'),
+            $this->dep('App\\Service', 'App\\Repository'),
+        ];
+
+        $graph = $this->graphBuilder->build($deps);
+        $repository = new InMemoryMetricRepository();
+        $this->registerClass($repository, 'App\\Service');
+        $this->registerClass($repository, 'App\\Repository');
+
+        $collector->calculate($graph, $repository);
+
+        $servicePath = SymbolPath::forClass('App', 'Service');
+        $serviceMetrics = $repository->get($servicePath);
+
+        self::assertSame(3, $serviceMetrics->get('ce_framework'));
+    }
+
+    #[Test]
+    public function calculate_frameworkPrefixBoundaryAware(): void
+    {
+        $holder = new FrameworkNamespacesHolder();
+        $holder->set(new FrameworkNamespaces(['Psr']));
+        $collector = new CouplingCollector($holder);
+
+        // Psr\Log should match, PsrExtended\Custom should NOT match
+        $deps = [
+            $this->dep('App\\Service', 'Psr\\Log\\LoggerInterface'),
+            $this->dep('App\\Service', 'PsrExtended\\Custom\\Class_'),
+        ];
+
+        $graph = $this->graphBuilder->build($deps);
+        $repository = new InMemoryMetricRepository();
+        $this->registerClass($repository, 'App\\Service');
+
+        $collector->calculate($graph, $repository);
+
+        $servicePath = SymbolPath::forClass('App', 'Service');
+        $serviceMetrics = $repository->get($servicePath);
+
+        // CBO = 2 (both deps), CBO_APP = 1 (only PsrExtended), CE_FRAMEWORK = 1 (only Psr\Log)
+        self::assertSame(2, $serviceMetrics->get('cbo'));
+        self::assertSame(1, $serviceMetrics->get('cbo_app'));
+        self::assertSame(1, $serviceMetrics->get('ce_framework'));
+    }
+
+    #[Test]
+    public function calculate_cePartitionsCleanly(): void
+    {
+        // Verify: Ce = Ce_app + Ce_framework (outgoing dependencies partition cleanly)
+        $holder = new FrameworkNamespacesHolder();
+        $holder->set(new FrameworkNamespaces(['Symfony', 'PhpParser']));
+        $collector = new CouplingCollector($holder);
+
+        $deps = [
+            $this->dep('App\\Service', 'Symfony\\Console'),
+            $this->dep('App\\Service', 'PhpParser\\Node'),
+            $this->dep('App\\Service', 'App\\Repository'),
+            $this->dep('App\\Service', 'App\\Model'),
+        ];
+
+        $graph = $this->graphBuilder->build($deps);
+        $repository = new InMemoryMetricRepository();
+        $this->registerClass($repository, 'App\\Service');
+        $this->registerClass($repository, 'App\\Repository');
+        $this->registerClass($repository, 'App\\Model');
+
+        $collector->calculate($graph, $repository);
+
+        $servicePath = SymbolPath::forClass('App', 'Service');
+        $serviceMetrics = $repository->get($servicePath);
+
+        $ce = $serviceMetrics->get('ce');
+        $ceFramework = $serviceMetrics->get('ce_framework');
+        // Ce_app (non-framework efferent) = Ce - Ce_framework
+        self::assertSame(4, $ce);
+        self::assertSame(2, $ceFramework);
+        // Note: CBO_APP also includes afferent app deps, so it's not just Ce - Ce_framework
+    }
+
+    #[Test]
+    public function calculate_bidirectionalWithFramework(): void
+    {
+        // A→FrameworkClass — Ce_framework=1, but framework is not scanned
+        // so Ca from framework doesn't exist. CBO_APP should exclude framework.
+        $holder = new FrameworkNamespacesHolder();
+        $holder->set(new FrameworkNamespaces(['Symfony']));
+        $collector = new CouplingCollector($holder);
+
+        $deps = [
+            $this->dep('App\\Service', 'Symfony\\Console'),
+            $this->dep('App\\Other', 'App\\Service'),
+        ];
+
+        $graph = $this->graphBuilder->build($deps);
+        $repository = new InMemoryMetricRepository();
+        $this->registerClass($repository, 'App\\Service');
+        $this->registerClass($repository, 'App\\Other');
+
+        $collector->calculate($graph, $repository);
+
+        $servicePath = SymbolPath::forClass('App', 'Service');
+        $serviceMetrics = $repository->get($servicePath);
+
+        // CBO = |{Symfony\Console, App\Other}| = 2
+        self::assertSame(2, $serviceMetrics->get('cbo'));
+        // CBO_APP = |{App\Other}| = 1 (framework excluded)
+        self::assertSame(1, $serviceMetrics->get('cbo_app'));
+        self::assertSame(1, $serviceMetrics->get('ce_framework'));
     }
 
     private function dep(string $source, string $target): Dependency

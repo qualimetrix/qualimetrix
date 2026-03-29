@@ -459,4 +459,57 @@ final class AnalysisConfigurationTest extends TestCase
 
         self::assertFalse($merged->failOn);
     }
+
+    // Framework namespaces tests
+
+    public function testDefaultFrameworkNamespacesEmpty(): void
+    {
+        $config = new AnalysisConfiguration();
+
+        self::assertSame([], $config->frameworkNamespaces);
+    }
+
+    public function testFromArrayParsesFrameworkNamespaces(): void
+    {
+        $config = AnalysisConfiguration::fromArray([
+            'coupling.framework_namespaces' => ['Symfony', 'PhpParser', 'Psr'],
+        ]);
+
+        self::assertSame(['Symfony', 'PhpParser', 'Psr'], $config->frameworkNamespaces);
+    }
+
+    public function testFromArrayParsesNestedFrameworkNamespaces(): void
+    {
+        $config = AnalysisConfiguration::fromArray([
+            'coupling' => [
+                'framework_namespaces' => ['Symfony', 'Psr'],
+            ],
+        ]);
+
+        self::assertSame(['Symfony', 'Psr'], $config->frameworkNamespaces);
+    }
+
+    public function testMergeFrameworkNamespacesOverrides(): void
+    {
+        $base = new AnalysisConfiguration(
+            frameworkNamespaces: ['Symfony'],
+        );
+
+        $merged = $base->merge([
+            'coupling.framework_namespaces' => ['PhpParser', 'Psr'],
+        ]);
+
+        self::assertSame(['PhpParser', 'Psr'], $merged->frameworkNamespaces);
+    }
+
+    public function testMergeFrameworkNamespacesPreservesWhenNotInOverrides(): void
+    {
+        $base = new AnalysisConfiguration(
+            frameworkNamespaces: ['Symfony', 'Psr'],
+        );
+
+        $merged = $base->merge(['format' => 'json']);
+
+        self::assertSame(['Symfony', 'Psr'], $merged->frameworkNamespaces);
+    }
 }
