@@ -275,8 +275,8 @@ final class HealthTextFormatterTest extends TestCase
 
         self::assertStringContainsString('Worst contributors:', $output);
         self::assertStringContainsString('ComputedMetricDefinition', $output);
-        self::assertStringContainsString('tcc=0.3', $output);
-        self::assertStringContainsString('lcom=5', $output);
+        self::assertStringContainsString('TCC=0.3', $output);
+        self::assertStringContainsString('LCOM=5', $output);
         self::assertStringContainsString('FormulaParser', $output);
         self::assertStringContainsString('ExpressionValidator', $output);
     }

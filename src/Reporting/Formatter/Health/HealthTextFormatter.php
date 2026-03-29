@@ -286,7 +286,7 @@ final class HealthTextFormatter implements FormatterInterface
 
             foreach ($contributor->metricValues as $key => $value) {
                 $formattedValue = \is_float($value) ? \sprintf('%.1f', $value) : (string) $value;
-                $metricParts[] = \sprintf('%s=%s', $key, $formattedValue);
+                $metricParts[] = \sprintf('%s=%s', strtoupper($key), $formattedValue);
             }
 
             $metricsStr = implode('  ', $metricParts);
