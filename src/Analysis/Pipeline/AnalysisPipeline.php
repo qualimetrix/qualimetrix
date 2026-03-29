@@ -206,10 +206,6 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
 
         $supportedRules = $this->collectThresholdSupportedRuleNames();
 
-        if ($supportedRules === []) {
-            return [];
-        }
-
         $violations = [];
 
         foreach ($overridesByFile as $file => $overrides) {
