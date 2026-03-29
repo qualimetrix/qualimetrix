@@ -53,7 +53,7 @@ final class GitScopeFilterTest extends TestCase
         $filter = new GitScopeFilter($gitClient, new GitScope('staged'));
 
         $violation = new Violation(
-            location: new Location($this->tempDir . '/src/Service.php', 10),
+            location: new Location('src/Service.php', 10),
             symbolPath: SymbolPath::forClass('App\\Service', 'UserService'),
             ruleName: 'complexity',
             violationCode: 'complexity',
@@ -76,7 +76,7 @@ final class GitScopeFilterTest extends TestCase
         $filter = new GitScopeFilter($gitClient, new GitScope('staged'));
 
         $violation = new Violation(
-            location: new Location($this->tempDir . '/src/Controller.php', 10),
+            location: new Location('src/Controller.php', 10),
             symbolPath: SymbolPath::forClass('App\\Controller', 'HomeController'),
             ruleName: 'complexity',
             violationCode: 'complexity',
@@ -100,7 +100,7 @@ final class GitScopeFilterTest extends TestCase
 
         // Violation for parent namespace
         $violation = new Violation(
-            location: new Location($this->tempDir . '/src/Service/Aggregated.php', null),
+            location: new Location('src/Service/Aggregated.php', null),
             symbolPath: SymbolPath::forNamespace('App\\Service'),
             ruleName: 'size',
             violationCode: 'size',
@@ -128,7 +128,7 @@ final class GitScopeFilterTest extends TestCase
 
         // Violation for parent namespace
         $violation = new Violation(
-            location: new Location($this->tempDir . '/src/Service/Aggregated.php', null),
+            location: new Location('src/Service/Aggregated.php', null),
             symbolPath: SymbolPath::forNamespace('App\\Service'),
             ruleName: 'size',
             violationCode: 'size',
@@ -157,7 +157,7 @@ final class GitScopeFilterTest extends TestCase
         $filter = new GitScopeFilter($gitClient, new GitScope('staged'));
 
         $violation = new Violation(
-            location: new Location($this->tempDir . '/src/Service.php', 10),
+            location: new Location('src/Service.php', 10),
             symbolPath: SymbolPath::forClass('App\\Service', 'UserService'),
             ruleName: 'complexity',
             violationCode: 'complexity',
@@ -180,8 +180,8 @@ final class GitScopeFilterTest extends TestCase
         $filter = new GitScopeFilter($gitClient, new GitScope('staged'));
 
         $violation = new Violation(
-            location: new Location($this->tempDir . '/README.md', 10),
-            symbolPath: SymbolPath::forFile($this->tempDir . '/README.md'),
+            location: new Location('README.md', 10),
+            symbolPath: SymbolPath::forFile('README.md'),
             ruleName: 'complexity',
             violationCode: 'complexity',
             message: 'Too complex',
@@ -215,7 +215,7 @@ final class GitScopeFilterTest extends TestCase
 
         foreach ($namespaces as $namespace) {
             $violation = new Violation(
-                location: new Location($this->tempDir . '/some/file.php', null),
+                location: new Location('some/file.php', null),
                 symbolPath: SymbolPath::forNamespace($namespace),
                 ruleName: 'size',
                 violationCode: 'size',
@@ -244,7 +244,7 @@ final class GitScopeFilterTest extends TestCase
 
         // Violation in the changed file should be included
         $violation = new Violation(
-            location: new Location($this->tempDir . '/src/legacy.php', 10),
+            location: new Location('src/legacy.php', 10),
             symbolPath: SymbolPath::forClass('', 'LegacyClass'),
             ruleName: 'complexity',
             violationCode: 'complexity',
@@ -279,7 +279,7 @@ final class GitScopeFilterTest extends TestCase
 
         $violations = [
             new Violation(
-                location: new Location($this->tempDir . '/src/Service.php', 10),
+                location: new Location('src/Service.php', 10),
                 symbolPath: SymbolPath::forClass('App', 'Service'),
                 ruleName: 'complexity',
                 violationCode: 'complexity',
@@ -287,7 +287,7 @@ final class GitScopeFilterTest extends TestCase
                 severity: Severity::Warning,
             ),
             new Violation(
-                location: new Location($this->tempDir . '/src/Controller.php', 20),
+                location: new Location('src/Controller.php', 20),
                 symbolPath: SymbolPath::forClass('App', 'Controller'),
                 ruleName: 'size',
                 violationCode: 'size',
@@ -295,7 +295,7 @@ final class GitScopeFilterTest extends TestCase
                 severity: Severity::Warning,
             ),
             new Violation(
-                location: new Location($this->tempDir . '/src/Repository.php', 30),
+                location: new Location('src/Repository.php', 30),
                 symbolPath: SymbolPath::forClass('App', 'Repository'),
                 ruleName: 'coupling',
                 violationCode: 'coupling',
@@ -332,7 +332,7 @@ final class GitScopeFilterTest extends TestCase
 
         // Service.php was changed in main..HEAD, should be included
         $violation = new Violation(
-            location: new Location($this->tempDir . '/src/Service.php', 10),
+            location: new Location('src/Service.php', 10),
             symbolPath: SymbolPath::forClass('App\\Service', 'UserService'),
             ruleName: 'complexity',
             violationCode: 'complexity',
@@ -346,7 +346,7 @@ final class GitScopeFilterTest extends TestCase
         // However, it shares namespace 'App' with Service.php which is in 'App\Service'
         // So we need to check with a different namespace
         $baseViolation = new Violation(
-            location: new Location($this->tempDir . '/src/Base.php', 10),
+            location: new Location('src/Base.php', 10),
             symbolPath: SymbolPath::forClass('App', 'Base'),
             ruleName: 'complexity',
             violationCode: 'complexity',
@@ -376,7 +376,7 @@ final class GitScopeFilterTest extends TestCase
         $filter = new GitScopeFilter($gitClient, new GitScope('staged'));
 
         $violation = new Violation(
-            location: new Location($this->tempDir . '/src/Deleted.php', 10),
+            location: new Location('src/Deleted.php', 10),
             symbolPath: SymbolPath::forClass('App', 'Deleted'),
             ruleName: 'complexity',
             violationCode: 'complexity',
@@ -402,8 +402,8 @@ final class GitScopeFilterTest extends TestCase
 
         // File-level violation - should match by file path
         $violation = new Violation(
-            location: new Location($this->tempDir . '/src/Service.php', null),
-            symbolPath: SymbolPath::forFile($this->tempDir . '/src/Service.php'),
+            location: new Location('src/Service.php', null),
+            symbolPath: SymbolPath::forFile('src/Service.php'),
             ruleName: 'size',
             violationCode: 'size',
             message: 'File too large',
@@ -438,7 +438,7 @@ PHP;
         $filter = new GitScopeFilter($gitClient, new GitScope('staged'));
 
         $violation = new Violation(
-            location: new Location($this->tempDir . '/some/file.php', null),
+            location: new Location('some/file.php', null),
             symbolPath: SymbolPath::forNamespace('App\\Complex\\Nested'),
             ruleName: 'size',
             violationCode: 'size',
@@ -475,7 +475,7 @@ PHP;
         $filter = new GitScopeFilter($gitClient, new GitScope('staged'));
 
         $violation = new Violation(
-            location: new Location($this->tempDir . '/some/file.php', null),
+            location: new Location('some/file.php', null),
             symbolPath: SymbolPath::forNamespace('App\\Bracketed'),
             ruleName: 'size',
             violationCode: 'size',
