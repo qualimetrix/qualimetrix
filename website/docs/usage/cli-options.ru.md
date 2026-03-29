@@ -114,7 +114,7 @@ bin/qmx check src/ --format=sarif
 bin/qmx check src/ --format=text-verbose --group-by=rule
 ```
 
-Доступные значения: `none`, `file`, `rule`, `severity`.
+Доступные значения: `none`, `file`, `rule`, `severity`, `class`, `namespace`.
 
 ### `--format-opt`
 
@@ -194,6 +194,20 @@ bin/qmx check src/ --detail=50
 ```
 
 Автоматически включается при использовании `--namespace` или `--class`.
+
+### `--all`
+
+Показать все нарушения без усечения. Сокращение для `--format-opt=violations=all --detail=all`.
+
+```bash
+# Все нарушения в формате JSON
+bin/qmx check src/ --format=json --all
+
+# Все нарушения в формате summary
+bin/qmx check src/ --all
+```
+
+Не может быть объединён с `--format-opt=violations=N` (числовой лимит) — это вызовет ошибку. Совместное использование `--all` с `--format-opt=violations=all` допустимо (они синонимы).
 
 ### `--namespace`
 
@@ -557,6 +571,8 @@ bin/qmx check src/ --rule-opt=complexity.cyclomatic:method.error=30
 | `--god-class-exclude-readonly`          | design.god-class                     | excludeReadonly     |
 | `--long-parameter-list-warning=N`       | code-smell.long-parameter-list       | warning             |
 | `--long-parameter-list-error=N`         | code-smell.long-parameter-list       | error               |
+| `--long-parameter-list-vo-warning=N`    | code-smell.long-parameter-list       | vo-warning          |
+| `--long-parameter-list-vo-error=N`      | code-smell.long-parameter-list       | vo-error            |
 | `--unreachable-code-warning=N`          | code-smell.unreachable-code          | warning             |
 | `--unreachable-code-error=N`            | code-smell.unreachable-code          | error               |
 

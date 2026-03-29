@@ -103,7 +103,7 @@ final class CheckCommandDefinition
                 'format',
                 'f',
                 InputOption::VALUE_REQUIRED,
-                'Output format (summary, text, json, checkstyle, sarif, gitlab, github, metrics, health). Default: summary',
+                'Output format (summary, text, json, checkstyle, sarif, gitlab, github, metrics, health, html). Default: summary',
             )
             ->addOption(
                 'output',
@@ -279,7 +279,7 @@ final class CheckCommandDefinition
                 'group-by',
                 null,
                 InputOption::VALUE_REQUIRED,
-                'Group violations by: none, file, rule, severity (default: formatter-specific)',
+                'Group violations by: none, file, rule, severity, class, namespace (default: formatter-specific)',
             )
             ->addOption(
                 'format-opt',
@@ -300,6 +300,12 @@ final class CheckCommandDefinition
                 null,
                 InputOption::VALUE_REQUIRED,
                 'Number of top impact issues to show (default 10, 0 to disable)',
+            )
+            ->addOption(
+                'all',
+                null,
+                InputOption::VALUE_NONE,
+                'Show all violations without truncation (alias for --format-opt=violations=all --detail=all)',
             );
     }
 

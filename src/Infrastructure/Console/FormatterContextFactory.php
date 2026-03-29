@@ -19,11 +19,15 @@ final class FormatterContextFactory
 {
     private const int DEFAULT_DETAIL_LIMIT = 200;
 
+    /**
+     * @param list<string>|null $scopeFilePaths Relative paths in scope for scoped reporting
+     */
     public function create(
         InputInterface $input,
         OutputInterface $output,
         FormatterInterface $formatter,
-        bool $partialAnalysis = false,
+        bool $scopedReporting = false,
+        ?array $scopeFilePaths = null,
     ): FormatterContext {
         // Resolve group-by: explicit CLI option or formatter default
         /** @var string|null $groupByValue */
@@ -57,6 +61,20 @@ final class FormatterContextFactory
             $options[substr($opt, 0, $eqPos)] = substr($opt, $eqPos + 1);
         }
 
+        // Handle --all flag: alias for --format-opt=violations=all --detail=all
+        $allFlag = (bool) $input->getOption('all');
+        if ($allFlag) {
+            $existingViolations = $options['violations'] ?? '';
+            // Conflict: --all with explicit numeric violations limit
+            if ($existingViolations !== '' && $existingViolations !== 'all') {
+                throw new InvalidArgumentException(
+                    'Conflicting options: --all cannot be combined with --format-opt=violations=N. '
+                    . 'Use either --all (show everything) or --format-opt=violations=N (explicit limit)',
+                );
+            }
+            $options['violations'] = 'all';
+        }
+
         // Parse --namespace and --class (mutually exclusive)
         /** @var string|null $namespaceFilter */
         $namespaceFilter = $input->getOption('namespace');
@@ -71,12 +89,18 @@ final class FormatterContextFactory
         $detailLimit = $this->parseDetailOption($input, $namespaceFilter, $classFilter);
         $topIssuesLimit = $this->parseTopOption($input);
 
+        // --all implies unlimited detail
+        if ($allFlag) {
+            $detailLimit = 0;
+        }
+
         return new FormatterContext(
             useColor: $output->isDecorated(),
             groupBy: $groupBy,
             options: $options,
             basePath: getcwd() ?: '.',
-            partialAnalysis: $partialAnalysis,
+            scopedReporting: $scopedReporting,
+            scopeFilePaths: $scopeFilePaths,
             namespace: $namespaceFilter,
             class: $classFilter,
             terminalWidth: $terminalWidth,
