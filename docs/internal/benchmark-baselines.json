@@ -1,6 +1,6 @@
 {
     "version": 1,
-    "updated_at": "2026-03-17",
+    "updated_at": "2026-03-29",
     "description": "Expected health score ranges for benchmark projects. Used by scripts\/benchmark-regression.php to detect formula regressions.",
     "projects": {
         "flysystem": {
@@ -15,7 +15,7 @@
                     79
                 ],
                 "health.coupling": [
-                    81,
+                    80,
                     100
                 ],
                 "health.maintainability": [
@@ -32,24 +32,24 @@
             "path": "benchmarks\/vendor\/symfony\/console",
             "expectations": {
                 "health.complexity": [
-                    55,
-                    76
+                    72,
+                    92
                 ],
                 "health.cohesion": [
                     66,
                     87
                 ],
                 "health.coupling": [
-                    53,
-                    74
+                    58,
+                    79
                 ],
                 "health.maintainability": [
-                    61,
-                    82
+                    68,
+                    89
                 ],
                 "health.overall": [
-                    63,
-                    84
+                    69,
+                    90
                 ]
             }
         },
@@ -57,24 +57,24 @@
             "path": "benchmarks\/vendor\/symfony\/dependency-injection",
             "expectations": {
                 "health.complexity": [
-                    37,
-                    58
+                    49,
+                    70
                 ],
                 "health.cohesion": [
                     66,
                     87
                 ],
                 "health.coupling": [
-                    39,
-                    60
+                    43,
+                    64
                 ],
                 "health.maintainability": [
-                    37,
-                    58
+                    50,
+                    71
                 ],
                 "health.overall": [
-                    51,
-                    72
+                    55,
+                    76
                 ]
             }
         },
@@ -82,24 +82,24 @@
             "path": "benchmarks\/vendor\/symfony\/http-foundation",
             "expectations": {
                 "health.complexity": [
-                    59,
-                    80
+                    74,
+                    95
                 ],
                 "health.cohesion": [
-                    66,
-                    87
-                ],
-                "health.coupling": [
-                    68,
-                    89
-                ],
-                "health.maintainability": [
                     67,
                     88
                 ],
+                "health.coupling": [
+                    71,
+                    92
+                ],
+                "health.maintainability": [
+                    72,
+                    93
+                ],
                 "health.overall": [
-                    68,
-                    89
+                    73,
+                    94
                 ]
             }
         },
@@ -107,24 +107,24 @@
             "path": "benchmarks\/vendor\/symfony\/http-kernel",
             "expectations": {
                 "health.complexity": [
-                    58,
-                    79
+                    68,
+                    89
                 ],
                 "health.cohesion": [
                     65,
                     86
                 ],
                 "health.coupling": [
-                    61,
-                    82
+                    71,
+                    92
                 ],
                 "health.maintainability": [
-                    49,
-                    70
+                    65,
+                    86
                 ],
                 "health.overall": [
-                    63,
-                    84
+                    69,
+                    90
                 ]
             }
         },
@@ -132,24 +132,24 @@
             "path": "benchmarks\/vendor\/symfony\/routing",
             "expectations": {
                 "health.complexity": [
-                    51,
-                    72
+                    63,
+                    83
                 ],
                 "health.cohesion": [
                     56,
                     76
                 ],
                 "health.coupling": [
-                    70,
-                    91
+                    71,
+                    92
                 ],
                 "health.maintainability": [
-                    48,
-                    68
+                    59,
+                    80
                 ],
                 "health.overall": [
-                    61,
-                    82
+                    65,
+                    86
                 ]
             }
         },
@@ -157,24 +157,24 @@
             "path": "benchmarks\/vendor\/phpunit\/phpunit\/src",
             "expectations": {
                 "health.complexity": [
-                    76,
-                    97
+                    79,
+                    99
                 ],
                 "health.cohesion": [
                     63,
                     84
                 ],
                 "health.coupling": [
-                    50,
-                    71
+                    49,
+                    70
                 ],
                 "health.maintainability": [
-                    63,
-                    84
+                    83,
+                    100
                 ],
                 "health.overall": [
-                    68,
-                    88
+                    72,
+                    92
                 ]
             }
         },
@@ -185,24 +185,24 @@
             ],
             "expectations": {
                 "health.complexity": [
-                    66,
-                    87
+                    79,
+                    100
                 ],
                 "health.cohesion": [
-                    43,
-                    64
+                    45,
+                    66
                 ],
                 "health.coupling": [
-                    33,
-                    53
+                    34,
+                    55
                 ],
                 "health.maintainability": [
-                    76,
-                    97
+                    84,
+                    100
                 ],
                 "health.overall": [
-                    59,
-                    80
+                    64,
+                    85
                 ]
             }
         },
@@ -210,24 +210,24 @@
             "path": "benchmarks\/vendor\/doctrine\/orm\/src",
             "expectations": {
                 "health.complexity": [
-                    53,
-                    74
+                    68,
+                    88
                 ],
                 "health.cohesion": [
                     72,
                     93
                 ],
                 "health.coupling": [
-                    48,
-                    69
+                    49,
+                    70
                 ],
                 "health.maintainability": [
-                    56,
-                    77
+                    59,
+                    80
                 ],
                 "health.overall": [
-                    62,
-                    83
+                    65,
+                    86
                 ]
             }
         },
@@ -235,24 +235,24 @@
             "path": "benchmarks\/vendor\/doctrine\/dbal\/src",
             "expectations": {
                 "health.complexity": [
-                    61,
-                    82
+                    82,
+                    100
                 ],
                 "health.cohesion": [
                     56,
                     77
                 ],
                 "health.coupling": [
-                    53,
-                    74
-                ],
-                "health.maintainability": [
                     52,
                     73
                 ],
+                "health.maintainability": [
+                    74,
+                    95
+                ],
                 "health.overall": [
-                    61,
-                    82
+                    70,
+                    91
                 ]
             }
         },
@@ -260,24 +260,24 @@
             "path": "benchmarks\/vendor\/composer\/composer\/src",
             "expectations": {
                 "health.complexity": [
-                    28,
-                    49
+                    53,
+                    74
                 ],
                 "health.cohesion": [
                     62,
                     83
                 ],
                 "health.coupling": [
-                    22,
-                    43
+                    25,
+                    46
                 ],
                 "health.maintainability": [
-                    40,
-                    61
+                    50,
+                    71
                 ],
                 "health.overall": [
-                    42,
-                    63
+                    50,
+                    71
                 ]
             }
         },
@@ -285,24 +285,24 @@
             "path": "benchmarks\/vendor\/monolog\/monolog\/src",
             "expectations": {
                 "health.complexity": [
-                    71,
-                    92
+                    79,
+                    100
                 ],
                 "health.cohesion": [
                     64,
                     85
                 ],
                 "health.coupling": [
-                    46,
-                    67
+                    50,
+                    71
                 ],
                 "health.maintainability": [
-                    60,
-                    81
-                ],
-                "health.overall": [
                     65,
                     86
+                ],
+                "health.overall": [
+                    68,
+                    89
                 ]
             }
         },
@@ -310,24 +310,24 @@
             "path": "benchmarks\/vendor\/guzzlehttp\/guzzle\/src",
             "expectations": {
                 "health.complexity": [
-                    50,
-                    71
+                    71,
+                    92
                 ],
                 "health.cohesion": [
                     67,
                     88
                 ],
                 "health.coupling": [
-                    80,
+                    83,
                     100
                 ],
                 "health.maintainability": [
-                    58,
-                    79
+                    61,
+                    82
                 ],
                 "health.overall": [
-                    64,
-                    85
+                    70,
+                    91
                 ]
             }
         },
@@ -335,24 +335,24 @@
             "path": "benchmarks\/vendor\/laravel\/framework\/src",
             "expectations": {
                 "health.complexity": [
-                    58,
-                    79
+                    75,
+                    96
                 ],
                 "health.cohesion": [
                     57,
                     78
                 ],
                 "health.coupling": [
-                    43,
-                    64
+                    45,
+                    66
                 ],
                 "health.maintainability": [
                     78,
                     99
                 ],
                 "health.overall": [
-                    51,
-                    72
+                    59,
+                    80
                 ]
             }
         },
@@ -360,24 +360,24 @@
             "path": "src",
             "expectations": {
                 "health.complexity": [
-                    65,
-                    86
+                    74,
+                    95
                 ],
                 "health.cohesion": [
-                    57,
-                    78
+                    58,
+                    79
                 ],
                 "health.coupling": [
-                    42,
-                    63
+                    43,
+                    64
                 ],
                 "health.maintainability": [
-                    56,
-                    77
+                    63,
+                    84
                 ],
                 "health.overall": [
-                    61,
-                    82
+                    64,
+                    85
                 ]
             }
         }

@@ -22,10 +22,10 @@ final class ComputedMetricDefaults
                     // Defaults: ccn=1 (baseline for methodless classes), cognitive=0 (no penalty).
                     'class' => 'clamp(100 - max((ccn__avg ?? 1) - 4, 0) * 2.0 - max((cognitive__avg ?? 0) - 5, 0) * 2.0 - max((ccn__max ?? 0) - 10, 0) ** 0.5 * 2.0 - max((cognitive__max ?? 0) - 10, 0) ** 0.5 * 2.0, 0, 100)',
                     // Namespace: avg (base quality) + p95 (main differentiator) + sqrt(max) (extreme outliers).
-                    // Calibrated against 11 benchmarks: Flysystem→100, PHPUnit→87, Qualimetrix→76, Doctrine→64, Composer→39.
-                    'namespace' => 'clamp(100 - max((ccn__sum ?? 0) / max(symbolMethodCount, 1) - 3, 0) * 1.5 - max((cognitive__sum ?? 0) / max(symbolMethodCount, 1) - 4, 0) * 1.5 - max((ccn__p95 ?? 0) - 25, 0) ** 0.5 * 2.0 - max((cognitive__p95 ?? 0) - 20, 0) ** 0.5 * 2.0 - max((ccn__max ?? 0) - 80, 0) ** 0.5 * 0.4, 0, 100)',
+                    // p95/max thresholds calibrated for per-method values (not per-class sums).
+                    'namespace' => 'clamp(100 - max((ccn__sum ?? 0) / max(symbolMethodCount, 1) - 3, 0) * 1.5 - max((cognitive__sum ?? 0) / max(symbolMethodCount, 1) - 4, 0) * 1.5 - max((ccn__p95 ?? 0) - 5, 0) ** 0.5 * 3.0 - max((cognitive__p95 ?? 0) - 6, 0) ** 0.5 * 3.0 - max((ccn__max ?? 0) - 20, 0) ** 0.5 * 0.8, 0, 100)',
                     // Project: same structure as namespace, explicit to avoid inherited formula drift.
-                    'project' => 'clamp(100 - max((ccn__sum ?? 0) / max(symbolMethodCount, 1) - 3, 0) * 1.5 - max((cognitive__sum ?? 0) / max(symbolMethodCount, 1) - 4, 0) * 1.5 - max((ccn__p95 ?? 0) - 25, 0) ** 0.5 * 2.0 - max((cognitive__p95 ?? 0) - 20, 0) ** 0.5 * 2.0 - max((ccn__max ?? 0) - 80, 0) ** 0.5 * 0.4, 0, 100)',
+                    'project' => 'clamp(100 - max((ccn__sum ?? 0) / max(symbolMethodCount, 1) - 3, 0) * 1.5 - max((cognitive__sum ?? 0) / max(symbolMethodCount, 1) - 4, 0) * 1.5 - max((ccn__p95 ?? 0) - 5, 0) ** 0.5 * 3.0 - max((cognitive__p95 ?? 0) - 6, 0) ** 0.5 * 3.0 - max((ccn__max ?? 0) - 20, 0) ** 0.5 * 0.8, 0, 100)',
                 ],
                 description: 'Complexity health score (0-100, higher is better)',
                 levels: [SymbolType::Class_, SymbolType::Namespace_, SymbolType::Project],
@@ -85,10 +85,10 @@ final class ComputedMetricDefaults
                     // MI=85→100, MI=75/min=50→85, MI=65/min=30→57.
                     'class' => 'clamp(100 - max(85 - (mi__avg ?? 75), 0) * 1.5 - max(50 - (mi__min ?? 50), 0) ** 0.5 * 3.0, 0, 100)',
                     // avg (base quality) + p5 (main differentiator) + dampened min (extreme outliers).
-                    // Calibrated against 13 benchmarks: Flysystem→100, PHPUnit→73, Sf-DI→48, Composer→51.
-                    'namespace' => 'clamp(100 - max(82 - (mi__avg ?? 75), 0) * 2.0 - max(65 - (mi__p5 ?? 65), 0) ** 0.5 * 6.0 - max(40 - (mi__min ?? 40), 0) ** 0.4 * 2.0, 0, 100)',
+                    // p5/min thresholds calibrated for per-method MI values (not class-level averages).
+                    'namespace' => 'clamp(100 - max(82 - (mi__avg ?? 75), 0) * 2.0 - max(55 - (mi__p5 ?? 55), 0) ** 0.5 * 4.5 - max(5 - (mi__min ?? 5), 0) ** 0.4 * 1.5, 0, 100)',
                     // Project: same structure as namespace, explicit to avoid inherited formula drift.
-                    'project' => 'clamp(100 - max(82 - (mi__avg ?? 75), 0) * 2.0 - max(65 - (mi__p5 ?? 65), 0) ** 0.5 * 6.0 - max(40 - (mi__min ?? 40), 0) ** 0.4 * 2.0, 0, 100)',
+                    'project' => 'clamp(100 - max(82 - (mi__avg ?? 75), 0) * 2.0 - max(55 - (mi__p5 ?? 55), 0) ** 0.5 * 4.5 - max(5 - (mi__min ?? 5), 0) ** 0.4 * 1.5, 0, 100)',
                 ],
                 description: 'Maintainability health score (0-100, higher is better)',
                 levels: [SymbolType::Class_, SymbolType::Namespace_, SymbolType::Project],

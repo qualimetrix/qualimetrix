@@ -319,12 +319,12 @@ Metrics are aggregated **upward** through the symbol hierarchy: Method → Class
 Each level aggregates only from its **direct children** (flat aggregation):
 
 - **Class** metrics = aggregated from its methods (e.g., `ccn.sum` = sum of all method CCN values)
-- **Namespace** metrics = aggregated from its direct classes (not from nested namespaces)
+- **Namespace** metrics = aggregated from methods/classes directly in the namespace (not from nested namespaces). For method-collected metrics (CCN, Cognitive, NPath, MI), `.max`/`.avg`/`.p95` reflect per-method values.
 - **Project** metrics = aggregated from all namespaces
 
 This means namespace metrics describe the namespace **as an organizational unit**, not its entire subtree.
-For example, `App\Payment` with `ccn.avg = 25` reflects only classes directly in `App\Payment`,
-not classes in `App\Payment\Gateway` or other sub-namespaces.
+For example, `App\Payment` with `ccn.avg = 4` reflects only methods in classes directly in `App\Payment`,
+not methods in `App\Payment\Gateway` or other sub-namespaces.
 
 **Hierarchical (subtree) aggregation** — recursive roll-up across nested namespaces — is not part of the
 core metric system. It is a presentation concern, computed on the client side (e.g., JS in the HTML report)
