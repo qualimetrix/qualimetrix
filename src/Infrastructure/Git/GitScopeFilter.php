@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Git;
 
+use Qualimetrix\Core\Util\PathNormalizer;
 use Qualimetrix\Core\Violation\Filter\ViolationFilterInterface;
 use Qualimetrix\Core\Violation\Violation;
 
@@ -69,10 +70,11 @@ final class GitScopeFilter implements ViolationFilterInterface
                 continue;
             }
 
-            $fullPath = $repoRoot . '/' . $file->path;
-            $this->changedPaths[$fullPath] = true;
+            // Use git-relative path for matching against violation paths
+            $this->changedPaths[PathNormalizer::relativize($file->path)] = true;
 
-            // Extract namespace from file
+            // Extract namespace from file (needs absolute path for file_exists/reading)
+            $fullPath = $repoRoot . '/' . $file->path;
             if (file_exists($fullPath)) {
                 $namespace = $this->extractNamespace($fullPath);
                 if ($namespace !== null) {
