@@ -111,13 +111,16 @@ final class ConstructorOverinjectionRule extends AbstractRule
         }
 
         $parameterCountValue = (int) $parameterCount;
-        $severity = $options->getSeverity($parameterCountValue);
+
+        /** @var ConstructorOverinjectionOptions $effectiveOptions */
+        $effectiveOptions = $this->getEffectiveOptions($context, $options, $symbolInfo->file, $symbolInfo->line ?? 1);
+        $severity = $effectiveOptions->getSeverity($parameterCountValue);
 
         if ($severity === null) {
             return null;
         }
 
-        $threshold = $severity === Severity::Error ? $options->error : $options->warning;
+        $threshold = $severity === Severity::Error ? $effectiveOptions->error : $effectiveOptions->warning;
         $className = $symbolInfo->symbolPath->type;
 
         return new Violation(

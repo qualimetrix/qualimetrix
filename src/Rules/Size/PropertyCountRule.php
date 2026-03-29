@@ -93,15 +93,17 @@ final class PropertyCountRule extends AbstractRule
             }
 
             $propertyCountValue = (int) $propertyCount;
-            $severity = $this->options->getSeverity($propertyCountValue);
+            /** @var PropertyCountOptions $effectiveOptions */
+            $effectiveOptions = $this->getEffectiveOptions($context, $this->options, $classInfo->file, $classInfo->line ?? 1);
+            $severity = $effectiveOptions->getSeverity($propertyCountValue);
 
             if ($severity === null) {
                 continue;
             }
 
             $threshold = $severity === Severity::Error
-                ? $this->options->error
-                : $this->options->warning;
+                ? $effectiveOptions->error
+                : $effectiveOptions->warning;
 
             $violations[] = new Violation(
                 location: new Location($classInfo->file, $classInfo->line),

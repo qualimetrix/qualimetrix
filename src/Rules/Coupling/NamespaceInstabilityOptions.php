@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Rules\Coupling;
 
 use Qualimetrix\Core\Rule\LevelOptionsInterface;
+use Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Rules\Support\ThresholdParser;
 
@@ -15,7 +16,7 @@ use Qualimetrix\Rules\Support\ThresholdParser;
  * - 0: maximally stable (only incoming dependencies)
  * - 1: maximally unstable (only outgoing dependencies)
  */
-final readonly class NamespaceInstabilityOptions implements LevelOptionsInterface
+final readonly class NamespaceInstabilityOptions implements LevelOptionsInterface, ThresholdAwareOptionsInterface
 {
     public function __construct(
         public bool $enabled = true,
@@ -61,5 +62,15 @@ final readonly class NamespaceInstabilityOptions implements LevelOptionsInterfac
         }
 
         return null;
+    }
+
+    public function withOverride(int|float|null $warning, int|float|null $error): static
+    {
+        return new static(
+            enabled: $this->enabled,
+            maxWarning: $warning !== null ? (float) $warning : $this->maxWarning,
+            maxError: $error !== null ? (float) $error : $this->maxError,
+            minClassCount: $this->minClassCount,
+        );
     }
 }

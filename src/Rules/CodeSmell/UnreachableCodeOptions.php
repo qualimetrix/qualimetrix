@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Rules\CodeSmell;
 
 use Qualimetrix\Core\Rule\RuleOptionsInterface;
+use Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Rules\Support\ThresholdParser;
 
@@ -15,7 +16,7 @@ use Qualimetrix\Rules\Support\ThresholdParser;
  * - warning: 1 (any unreachable code triggers a warning)
  * - error: 2 (2+ unreachable statements trigger an error)
  */
-final readonly class UnreachableCodeOptions implements RuleOptionsInterface
+final readonly class UnreachableCodeOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface
 {
     public function __construct(
         public bool $enabled = true,
@@ -57,5 +58,14 @@ final readonly class UnreachableCodeOptions implements RuleOptionsInterface
         }
 
         return null;
+    }
+
+    public function withOverride(int|float|null $warning, int|float|null $error): static
+    {
+        return new static(
+            enabled: $this->enabled,
+            warning: $warning !== null ? (int) $warning : $this->warning,
+            error: $error !== null ? (int) $error : $this->error,
+        );
     }
 }

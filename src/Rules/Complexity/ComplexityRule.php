@@ -144,10 +144,13 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
             }
 
             $ccnValue = (int) $ccn;
-            $severity = $methodOptions->getSeverity($ccnValue);
+
+            /** @var MethodComplexityOptions $effectiveMethodOptions */
+            $effectiveMethodOptions = $this->getEffectiveOptions($context, $methodOptions, $methodInfo->file, $methodInfo->line ?? 1);
+            $severity = $effectiveMethodOptions->getSeverity($ccnValue);
 
             if ($severity !== null) {
-                $threshold = $severity === Severity::Error ? $methodOptions->error : $methodOptions->warning;
+                $threshold = $severity === Severity::Error ? $effectiveMethodOptions->error : $effectiveMethodOptions->warning;
                 $recommendation = $this->buildMethodRecommendation($ccnValue, $threshold, $metrics);
 
                 $violations[] = new Violation(
@@ -210,10 +213,13 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
             }
 
             $maxCcnValue = (int) $maxCcn;
-            $severity = $classOptions->getSeverity($maxCcnValue);
+
+            /** @var ClassComplexityOptions $effectiveClassOptions */
+            $effectiveClassOptions = $this->getEffectiveOptions($context, $classOptions, $classInfo->file, $classInfo->line ?? 1);
+            $severity = $effectiveClassOptions->getSeverity($maxCcnValue);
 
             if ($severity !== null) {
-                $threshold = $severity === Severity::Error ? $classOptions->maxError : $classOptions->maxWarning;
+                $threshold = $severity === Severity::Error ? $effectiveClassOptions->maxError : $effectiveClassOptions->maxWarning;
 
                 $violations[] = new Violation(
                     location: new Location($classInfo->file, $classInfo->line),

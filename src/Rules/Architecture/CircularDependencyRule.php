@@ -64,7 +64,7 @@ final class CircularDependencyRule extends AbstractRule
         $violations = [];
 
         foreach ($context->cycles as $cycle) {
-            $severity = $this->options->getSeverity($cycle->getSize());
+            $severity = $this->getEffectiveSeverity($context, $this->options, '', 1, $cycle->getSize());
             if ($severity === null) {
                 continue; // Cycle too large or filtered out
             }

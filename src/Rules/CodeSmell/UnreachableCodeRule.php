@@ -102,7 +102,7 @@ final class UnreachableCodeRule extends AbstractRule
         }
 
         $unreachableCountValue = (int) $unreachableCount;
-        $severity = $options->getSeverity($unreachableCountValue);
+        $severity = $this->getEffectiveSeverity($context, $options, $symbolInfo->file, $symbolInfo->line ?? 1, $unreachableCountValue);
 
         if ($severity === null) {
             return null;

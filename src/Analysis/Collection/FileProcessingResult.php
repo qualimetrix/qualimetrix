@@ -7,6 +7,8 @@ namespace Qualimetrix\Analysis\Collection;
 use Qualimetrix\Core\Dependency\Dependency;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Suppression\Suppression;
+use Qualimetrix\Core\Suppression\ThresholdDiagnostic;
+use Qualimetrix\Core\Suppression\ThresholdOverride;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**
@@ -26,6 +28,8 @@ final class FileProcessingResult
      * @param string|null $error Error message (null on success)
      * @param list<Dependency> $dependencies Dependencies collected from the file
      * @param list<Suppression> $suppressions Suppression tags extracted from the file
+     * @param list<ThresholdOverride> $thresholdOverrides Threshold overrides extracted from the file
+     * @param list<ThresholdDiagnostic> $thresholdDiagnostics Diagnostics for invalid @qmx-threshold annotations
      */
     private function __construct(
         public readonly string $filePath,
@@ -36,6 +40,8 @@ final class FileProcessingResult
         public readonly ?string $error,
         public readonly array $dependencies = [],
         public readonly array $suppressions = [],
+        public readonly array $thresholdOverrides = [],
+        public readonly array $thresholdDiagnostics = [],
     ) {}
 
     /**
@@ -47,6 +53,8 @@ final class FileProcessingResult
      * @param array<string, array{symbolPath: SymbolPath, metrics: MetricBag, line: int}> $classMetrics
      * @param list<Dependency> $dependencies Dependencies collected from the file
      * @param list<Suppression> $suppressions Suppression tags extracted from the file
+     * @param list<ThresholdOverride> $thresholdOverrides Threshold overrides extracted from the file
+     * @param list<ThresholdDiagnostic> $thresholdDiagnostics Diagnostics for invalid @qmx-threshold annotations
      */
     public static function success(
         string $filePath,
@@ -55,6 +63,8 @@ final class FileProcessingResult
         array $classMetrics = [],
         array $dependencies = [],
         array $suppressions = [],
+        array $thresholdOverrides = [],
+        array $thresholdDiagnostics = [],
     ): self {
         return new self(
             filePath: $filePath,
@@ -65,6 +75,8 @@ final class FileProcessingResult
             error: null,
             dependencies: $dependencies,
             suppressions: $suppressions,
+            thresholdOverrides: $thresholdOverrides,
+            thresholdDiagnostics: $thresholdDiagnostics,
         );
     }
 

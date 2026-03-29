@@ -115,13 +115,15 @@ final class DistanceRule extends AbstractRule
             }
 
             $distanceValue = (float) $distance;
-            $severity = $this->options->getSeverity($distanceValue);
+            /** @var DistanceOptions $effectiveOptions */
+            $effectiveOptions = $this->getEffectiveOptions($context, $this->options, $nsInfo->file, $nsInfo->line ?? 1);
+            $severity = $effectiveOptions->getSeverity($distanceValue);
 
             if ($severity !== null) {
                 $abstractness = (float) ($metrics->get(MetricName::COUPLING_ABSTRACTNESS) ?? 0.0);
                 $instability = (float) ($metrics->get(MetricName::COUPLING_INSTABILITY) ?? 0.0);
 
-                $threshold = $severity === Severity::Error ? $this->options->maxDistanceError : $this->options->maxDistanceWarning;
+                $threshold = $severity === Severity::Error ? $effectiveOptions->maxDistanceError : $effectiveOptions->maxDistanceWarning;
 
                 $violations[] = new Violation(
                     location: new Location($nsInfo->file, $nsInfo->line),

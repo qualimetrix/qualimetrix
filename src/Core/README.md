@@ -33,6 +33,7 @@ Core/
 │   ├── HierarchicalRuleInterface.php      # Multi-level rules
 │   ├── HierarchicalRuleOptionsInterface.php
 │   ├── LevelOptionsInterface.php          # Level-specific options
+│   ├── ThresholdAwareOptionsInterface.php # Options that support @qmx-threshold overrides
 │   ├── RuleLevel.php                      # Rule level enum
 │   └── RuleMatcher.php                    # Prefix matching utility
 ├── Symbol/
@@ -78,7 +79,8 @@ Core/
 │   └── ComputedMetricDefinitionHolder.php # Static runtime holder for resolved definitions
 ├── Suppression/
 │   ├── Suppression.php                    # VO: suppression tag from docblock (@qmx-ignore)
-│   └── SuppressionType.php                # Enum: suppression scope (symbol/next-line/file)
+│   ├── SuppressionType.php                # Enum: suppression scope (symbol/next-line/file)
+│   └── ThresholdOverride.php              # VO: threshold override from docblock (@qmx-threshold)
 ├── Util/
 │   ├── StringSet.php                      # Immutable set of unique strings
 │   └── PathMatcher.php                    # Glob pattern matching for file paths
@@ -390,6 +392,13 @@ Options for a specific level of a hierarchical rule.
 - `isEnabled(): bool` — whether this level is enabled
 - `getSeverity(int|float $value): ?Severity` — severity for the given metric value
 
+### ThresholdAwareOptionsInterface
+
+Interface for options that support `@qmx-threshold` overrides. Implemented by options with warning/error thresholds. Options without thresholds (boolean rules) do not implement this.
+
+**Methods:**
+- `withOverride(int|float|null $warning, int|float|null $error): static` — returns a copy with overridden thresholds (null keeps original)
+
 ### RuleLevel (Enum)
 
 Levels of code hierarchy at which rules can operate.
@@ -685,6 +694,25 @@ Defines the scope of a suppression tag.
 | `Symbol`   | Suppress at symbol level (class/method docblock) |
 | `NextLine` | Suppress the next line only                      |
 | `File`     | Suppress all matching violations in entire file  |
+
+### ThresholdOverride
+
+Value Object representing a `@qmx-threshold` annotation from a docblock. Allows per-symbol threshold overrides.
+
+**Syntaxes:**
+- Shorthand: `@qmx-threshold complexity.cyclomatic 15` (sets both warning and error)
+- Explicit: `@qmx-threshold complexity.cyclomatic warning=15 error=25`
+- Partial: `@qmx-threshold complexity.cyclomatic warning=15` (override warning only)
+
+**Fields:**
+- `rulePattern: string` — rule name or prefix (supports `RuleMatcher`)
+- `warning: int|float|null` — warning threshold override (null = keep default)
+- `error: int|float|null` — error threshold override (null = keep default)
+- `line: int` — docblock line (for scope matching)
+- `endLine: ?int` — symbol end line (scope)
+
+**Methods:**
+- `matches(string $ruleName): bool` — checks if override applies to a rule (supports wildcard `*`, prefix matching, and exact matching via `RuleMatcher`)
 
 ---
 

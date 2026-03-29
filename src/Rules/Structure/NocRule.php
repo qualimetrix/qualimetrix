@@ -70,12 +70,14 @@ final class NocRule extends AbstractRule
             }
 
             $nocValue = (int) $noc;
-            $severity = $this->options->getSeverity($nocValue);
+            /** @var NocOptions $effectiveOptions */
+            $effectiveOptions = $this->getEffectiveOptions($context, $this->options, $classInfo->file, $classInfo->line ?? 1);
+            $severity = $effectiveOptions->getSeverity($nocValue);
 
             if ($severity !== null) {
                 $threshold = $severity === Severity::Error
-                    ? $this->options->error
-                    : $this->options->warning;
+                    ? $effectiveOptions->error
+                    : $effectiveOptions->warning;
 
                 $violations[] = new Violation(
                     location: new Location($classInfo->file, $classInfo->line),

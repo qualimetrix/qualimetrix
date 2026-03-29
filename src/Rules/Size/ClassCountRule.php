@@ -92,10 +92,12 @@ final class ClassCountRule extends AbstractRule
                 continue;
             }
 
-            $severity = $this->options->getSeverity($classCount);
+            /** @var ClassCountOptions $effectiveOptions */
+            $effectiveOptions = $this->getEffectiveOptions($context, $this->options, $namespaceInfo->file, $namespaceInfo->line ?? 1);
+            $severity = $effectiveOptions->getSeverity($classCount);
 
             if ($severity !== null) {
-                $threshold = $severity === Severity::Error ? $this->options->error : $this->options->warning;
+                $threshold = $severity === Severity::Error ? $effectiveOptions->error : $effectiveOptions->warning;
 
                 $violations[] = new Violation(
                     location: new Location($namespaceInfo->file),

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Rules\Size;
 
 use Qualimetrix\Core\Rule\RuleOptionsInterface;
+use Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Rules\Support\ThresholdParser;
 
@@ -17,7 +18,7 @@ use Qualimetrix\Rules\Support\ThresholdParser;
  * - 20-30 methods: warning, class may be doing too much
  * - > 30 methods: error, class should be split
  */
-final readonly class MethodCountOptions implements RuleOptionsInterface
+final readonly class MethodCountOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface
 {
     public function __construct(
         public bool $enabled = true,
@@ -59,5 +60,14 @@ final readonly class MethodCountOptions implements RuleOptionsInterface
         }
 
         return null;
+    }
+
+    public function withOverride(int|float|null $warning, int|float|null $error): static
+    {
+        return new static(
+            enabled: $this->enabled,
+            warning: $warning !== null ? (int) $warning : $this->warning,
+            error: $error !== null ? (int) $error : $this->error,
+        );
     }
 }

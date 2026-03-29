@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Rules\Coupling;
 
 use Qualimetrix\Core\Rule\RuleOptionsInterface;
+use Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Rules\Support\ThresholdParser;
 
@@ -22,7 +23,7 @@ use Qualimetrix\Rules\Support\ThresholdParser;
  * - Use `exclude_namespaces` (universal per-rule option) to exclude specific namespaces
  * - External dependencies (not matching project namespaces) are always excluded
  */
-final readonly class DistanceOptions implements RuleOptionsInterface
+final readonly class DistanceOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface
 {
     /**
      * @param bool $enabled Enable distance rule
@@ -87,5 +88,16 @@ final readonly class DistanceOptions implements RuleOptionsInterface
         }
 
         return null;
+    }
+
+    public function withOverride(int|float|null $warning, int|float|null $error): static
+    {
+        return new static(
+            enabled: $this->enabled,
+            maxDistanceWarning: $warning !== null ? (float) $warning : $this->maxDistanceWarning,
+            maxDistanceError: $error !== null ? (float) $error : $this->maxDistanceError,
+            includeNamespaces: $this->includeNamespaces,
+            minClassCount: $this->minClassCount,
+        );
     }
 }

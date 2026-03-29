@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Rules\Structure;
 
 use Qualimetrix\Core\Rule\RuleOptionsInterface;
+use Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Rules\Support\ThresholdParser;
 
@@ -19,7 +20,7 @@ use Qualimetrix\Rules\Support\ThresholdParser;
  *
  * @see https://pdepend.org/documentation/software-metrics/weighted-method-count.html
  */
-final readonly class WmcOptions implements RuleOptionsInterface
+final readonly class WmcOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface
 {
     public function __construct(
         public bool $enabled = true,
@@ -68,5 +69,15 @@ final readonly class WmcOptions implements RuleOptionsInterface
         }
 
         return null;
+    }
+
+    public function withOverride(int|float|null $warning, int|float|null $error): static
+    {
+        return new static(
+            enabled: $this->enabled,
+            warning: $warning !== null ? (int) $warning : $this->warning,
+            error: $error !== null ? (int) $error : $this->error,
+            excludeDataClasses: $this->excludeDataClasses,
+        );
     }
 }

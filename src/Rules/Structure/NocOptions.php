@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Rules\Structure;
 
 use Qualimetrix\Core\Rule\RuleOptionsInterface;
+use Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Rules\Support\ThresholdParser;
 
@@ -21,7 +22,7 @@ use Qualimetrix\Rules\Support\ThresholdParser;
  * - Warning: 10 (many direct children, changes affect many classes)
  * - Error: 15 (too many children, consider using interfaces or composition)
  */
-final readonly class NocOptions implements RuleOptionsInterface
+final readonly class NocOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface
 {
     public function __construct(
         public bool $enabled = true,
@@ -68,5 +69,14 @@ final readonly class NocOptions implements RuleOptionsInterface
         }
 
         return null;
+    }
+
+    public function withOverride(int|float|null $warning, int|float|null $error): static
+    {
+        return new static(
+            enabled: $this->enabled,
+            warning: $warning !== null ? (int) $warning : $this->warning,
+            error: $error !== null ? (int) $error : $this->error,
+        );
     }
 }
