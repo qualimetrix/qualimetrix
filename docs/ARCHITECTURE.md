@@ -132,4 +132,10 @@ composer test      # unit/integration tests
 2. Implement `FormatterInterface`
 3. **Done** — automatic registration via DI
 
+### Add a New Config Option
+
+1. Add a constant to `src/Configuration/ConfigSchema.php` (e.g., `public const MY_OPTION = 'my.option'`)
+2. Add an entry to `ConfigSchema::ENTRIES` (if YAML-configurable)
+3. Add handling in the appropriate consumer (`AnalysisConfiguration`, pipeline stage, etc.)
+
 **Details** — in the README.md of the corresponding directory.

@@ -213,6 +213,72 @@ format: summary   # По умолчанию
 # format: html
 ```
 
+### Кэширование (cache)
+
+Управление кэшированием AST для ускорения повторных запусков:
+
+```yaml
+cache:
+  enabled: true         # По умолчанию: true
+  dir: .qmx-cache       # По умолчанию: .qmx-cache
+```
+
+Эквивалент в CLI: `--no-cache` для отключения, `--cache-dir=DIR` для изменения директории.
+
+### Параллельная обработка (parallel)
+
+Количество параллельных воркеров для анализа файлов:
+
+```yaml
+parallel:
+  workers: 4     # Фиксированное количество воркеров
+  # workers: 0   # Отключить параллелизм (однопоточный режим)
+```
+
+По умолчанию Qualimetrix автоматически определяет оптимальное количество воркеров по числу ядер CPU. Эквивалент в CLI: `--workers=4`
+
+!!! tip "Совет"
+    Используйте `workers: 0` для отладки или в окружениях без `ext-parallel`.
+
+### Определение неймспейсов (namespace)
+
+Стратегия определения соответствия неймспейсов и директорий:
+
+```yaml
+namespace:
+  strategy: chain          # По умолчанию: chain (сначала psr4, затем tokenizer)
+  # strategy: psr4         # Только PSR-4 (требует composer.json)
+  # strategy: tokenizer    # Парсинг неймспейса из PHP-токенов
+  composer_json: composer.json   # Путь к composer.json для PSR-4
+```
+
+### Связанность (coupling)
+
+Настройка префиксов неймспейсов фреймворка для метрики CBO (Coupling Between Objects). Зависимости от неймспейсов фреймворка отслеживаются отдельно как `cbo_app` и `ce_framework`:
+
+```yaml
+coupling:
+  framework-namespaces:
+    - Symfony
+    - Doctrine
+    - Psr
+    - Illuminate
+```
+
+Если `framework-namespaces` не указаны, `cbo_app` равен `cbo` (без эффекта).
+
+### Агрегация (aggregation)
+
+Управление группировкой неймспейсов для агрегированных метрик:
+
+```yaml
+aggregation:
+  prefixes:
+    - App\Domain
+    - App\Infrastructure
+  auto_depth: 2    # Автоопределение глубины группировки
+```
+
 ---
 
 ## Пресеты
@@ -272,6 +338,18 @@ include_generated: false
 
 format: summary
 fail_on: error
+
+cache:
+  enabled: true
+  dir: .qmx-cache
+
+parallel:
+  workers: 4
+
+coupling:
+  framework-namespaces:
+    - Symfony
+    - Doctrine
 
 exclude_health:
   - typing
