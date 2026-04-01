@@ -147,13 +147,14 @@ public function analyze(AnalysisContext $context): array {
 ### 3. Pipeline Phase Separation
 
 ```
-Collection (parallel) -> Aggregation -> Analysis -> Reporting
-     |                      |            |           |
-  MetricBag[]        AggregatedMetrics  Violation[]  Output
+Discovery -> Collection (parallel) -> Aggregation -> RuleExecution -> Reporting
+                |                        |              |               |
+             MetricBag[]          AggregatedMetrics  Violation[]      Output
 ```
 
+- **Discovery** — finding PHP files for analysis
 - **Collection** — the only parallelizable phase (85-95% of total time)
-- **Aggregation/Analysis/Reporting** — sequential, fast
+- **Aggregation/RuleExecution/Reporting** — sequential, fast
 - **Duplication detection** is memory-intensive (stores tokens of all matching files). Automatically skipped when `duplication.code-duplication` rule is disabled via `--disable-rule`. Same for `architecture.circular-dependency`
 
 ### 4. SymbolPath for Identification

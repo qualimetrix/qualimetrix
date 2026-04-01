@@ -162,6 +162,8 @@ Place admonitions immediately after the section they relate to, not grouped at t
 
 ## When to Update Documentation
 
+### Website documentation
+
 | Change type                 | Pages to update                                             |
 | --------------------------- | ----------------------------------------------------------- |
 | Rule added/changed/removed  | `rules/{group}.md` + `reference/default-thresholds.md`      |
@@ -173,3 +175,20 @@ Place admonitions immediately after the section they relate to, not grouped at t
 | Configuration option added  | `getting-started/configuration.md` + `usage/cli-options.md` |
 | CI/CD integration changed   | `ci-cd/`                                                    |
 | Default thresholds changed  | `reference/default-thresholds.md` + `rules/{group}.md`      |
+
+### Internal documentation
+
+| Change type                            | Files to update                                                      |
+| -------------------------------------- | -------------------------------------------------------------------- |
+| Rule added/changed/removed             | `src/Rules/README.md` + `CLAUDE.md` (feature list)                   |
+| Metric collector added/changed         | `src/Metrics/README.md`                                              |
+| CLI alias added for a rule             | `src/Configuration/README.md` (CLI aliases table)                    |
+| Pipeline phase changed                 | `src/Analysis/README.md` + `docs/ARCHITECTURE.md` + `CLAUDE.md`      |
+| DI registration mechanism changed      | `CLAUDE.md` (§ Symfony DI) + `docs/ARCHITECTURE.md` (link to CLAUDE) |
+| Formatter added/changed                | `src/Reporting/README.md`                                            |
+| Configuration pipeline stage added     | `src/Configuration/README.md`                                        |
+| Baseline/suppression mechanism changed | `src/Baseline/README.md`                                             |
+
+**Note:** `DocumentationConsistencyTest` automatically validates rule names in `default-thresholds.md`,
+CLI aliases in `Configuration/README.md`, and YAML examples in `README.md` against source code.
+If you add a rule or CLI alias, the test will catch missing documentation.
