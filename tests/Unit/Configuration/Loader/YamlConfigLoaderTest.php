@@ -256,7 +256,7 @@ YAML);
         file_put_contents($path, 'disabled_rules: not_a_list');
 
         $this->expectException(ConfigLoadException::class);
-        $this->expectExceptionMessage('"disabled_rules" must be a list');
+        $this->expectExceptionMessage('"disabledRules" must be a list');
 
         $this->loader->load($path);
     }
@@ -302,7 +302,7 @@ YAML);
         file_put_contents($path, 'exclude_paths: not_a_list');
 
         $this->expectException(ConfigLoadException::class);
-        $this->expectExceptionMessage('"exclude_paths" must be a list');
+        $this->expectExceptionMessage('"excludePaths" must be a list');
 
         $this->loader->load($path);
     }
@@ -358,6 +358,34 @@ YAML);
         self::assertArrayHasKey('excludePaths', $config);
         self::assertSame(['size.method-count'], $config['disabledRules']);
         self::assertSame(['vendor'], $config['excludePaths']);
+    }
+
+    public function testLoadAcceptsParallelSection(): void
+    {
+        $path = $this->tempDir . '/config.yaml';
+        file_put_contents($path, <<<'YAML'
+parallel:
+  workers: 4
+YAML);
+
+        $config = $this->loader->load($path);
+
+        self::assertSame(4, $config['parallel']['workers']);
+    }
+
+    public function testLoadAcceptsCouplingSection(): void
+    {
+        $path = $this->tempDir . '/config.yaml';
+        file_put_contents($path, <<<'YAML'
+coupling:
+  framework_namespaces:
+    - Symfony
+    - Doctrine
+YAML);
+
+        $config = $this->loader->load($path);
+
+        self::assertSame(['Symfony', 'Doctrine'], $config['coupling']['frameworkNamespaces']);
     }
 
     public function testLoadPreservesMultipleRuleNamesWithMixedFormats(): void
