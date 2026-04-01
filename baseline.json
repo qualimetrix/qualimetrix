@@ -1,9 +1,9 @@
 {
     "version": 5,
-    "generated": "2026-03-29T09:44:26+00:00",
-    "count": 1043,
-    "violationCount": 1043,
-    "symbolCount": 696,
+    "generated": "2026-04-01T15:01:58+00:00",
+    "count": 1048,
+    "violationCount": 1048,
+    "symbolCount": 698,
     "violations": {
         "class:Qualimetrix\\Analysis\\Aggregator\\AggregationHelper": [
             {
@@ -1703,6 +1703,10 @@
         ],
         "class:Qualimetrix\\Rules\\Complexity\\CognitiveComplexityRule": [
             {
+                "rule": "computed.health",
+                "hash": "6480259ec064bd8e"
+            },
+            {
                 "rule": "design.lcom",
                 "hash": "590226cdec6c98cd"
             }
@@ -1748,6 +1752,10 @@
             }
         ],
         "class:Qualimetrix\\Rules\\Complexity\\NpathComplexityRule": [
+            {
+                "rule": "computed.health",
+                "hash": "fd4d4e4d671a88e0"
+            },
             {
                 "rule": "design.lcom",
                 "hash": "2fb1d3a7be44082b"
@@ -2153,12 +2161,6 @@
                 "hash": "e6acee50dc42416e"
             }
         ],
-        "file:src/Infrastructure/Git/GitFileDiscovery.php": [
-            {
-                "rule": "duplication.code-duplication",
-                "hash": "94c57dbd29c8268f"
-            }
-        ],
         "file:src/Infrastructure/Git/GitRepositoryLocator.php": [
             {
                 "rule": "code-smell.error-suppression",
@@ -2244,6 +2246,16 @@
             }
         ],
         "file:src/Metrics/Complexity/CyclomaticComplexityVisitor.php": [
+            {
+                "rule": "duplication.code-duplication",
+                "hash": "94c57dbd29c8268f"
+            }
+        ],
+        "file:src/Metrics/Complexity/NpathComplexityVisitor.php": [
+            {
+                "rule": "code-smell.boolean-argument",
+                "hash": "e6acee50dc42416e"
+            },
             {
                 "rule": "duplication.code-duplication",
                 "hash": "94c57dbd29c8268f"
@@ -2781,22 +2793,6 @@
                 "hash": "e6acee50dc42416e"
             }
         ],
-        "method:Qualimetrix\\Analysis\\Aggregator\\AggregationHelper::applyAggregations": [
-            {
-                "rule": "code-smell.long-parameter-list",
-                "hash": "d1dd17d8f6e55e8b"
-            },
-            {
-                "rule": "complexity.cyclomatic",
-                "hash": "66f02865c71ce827"
-            }
-        ],
-        "method:Qualimetrix\\Analysis\\Aggregator\\AggregationHelper::applyStrategy": [
-            {
-                "rule": "complexity.cyclomatic",
-                "hash": "0c685a95efd238be"
-            }
-        ],
         "method:Qualimetrix\\Analysis\\Aggregator\\AggregationHelper::collectFromClassSymbols": [
             {
                 "rule": "code-smell.long-parameter-list",
@@ -2849,10 +2845,6 @@
             {
                 "rule": "complexity.cyclomatic",
                 "hash": "a4aecec2d0c9b9cd"
-            },
-            {
-                "rule": "maintainability.index",
-                "hash": "f433d31e022c4c35"
             }
         ],
         "method:Qualimetrix\\Analysis\\Aggregator\\TreeAwareNamespaceAggregator::aggregate": [
@@ -3803,6 +3795,10 @@
             {
                 "rule": "complexity.npath",
                 "hash": "91891721d5bc59e6"
+            },
+            {
+                "rule": "maintainability.index",
+                "hash": "eb370641bf806078"
             }
         ],
         "method:Qualimetrix\\Metrics\\Complexity\\CognitiveComplexityVisitor::getComplexityIncrement": [
@@ -3813,6 +3809,12 @@
             {
                 "rule": "complexity.npath",
                 "hash": "7722b12f7b34fe80"
+            }
+        ],
+        "method:Qualimetrix\\Metrics\\Complexity\\CognitiveComplexityVisitor::getNodeTypeLabel": [
+            {
+                "rule": "complexity.cyclomatic",
+                "hash": "0ffba13660f56f4d"
             }
         ],
         "method:Qualimetrix\\Metrics\\Complexity\\CognitiveComplexityVisitor::isRecursiveCall": [
@@ -3887,6 +3889,22 @@
             {
                 "rule": "complexity.npath",
                 "hash": "37d860724847f231"
+            },
+            {
+                "rule": "maintainability.index",
+                "hash": "9adfadea49455016"
+            }
+        ],
+        "method:Qualimetrix\\Metrics\\Complexity\\NpathComplexityVisitor::getExprTypeLabel": [
+            {
+                "rule": "complexity.cyclomatic",
+                "hash": "1822d68aadae0742"
+            }
+        ],
+        "method:Qualimetrix\\Metrics\\Complexity\\NpathComplexityVisitor::getStmtTypeLabel": [
+            {
+                "rule": "complexity.cyclomatic",
+                "hash": "2e12e07f79cf104a"
             }
         ],
         "method:Qualimetrix\\Metrics\\Complexity\\NpathComplexityVisitor::leaveNode": [
@@ -4973,6 +4991,12 @@
             {
                 "rule": "coupling.instability",
                 "hash": "9e1479279e61dafa"
+            }
+        ],
+        "ns:Qualimetrix\\Analysis": [
+            {
+                "rule": "coupling.instability",
+                "hash": "7e5302fe2fda70cc"
             }
         ],
         "ns:Qualimetrix\\Analysis\\Aggregator": [
