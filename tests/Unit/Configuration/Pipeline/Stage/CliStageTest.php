@@ -211,6 +211,21 @@ final class CliStageTest extends TestCase
     }
 
     #[Test]
+    public function extractsMemoryLimitOption(): void
+    {
+        $definition = new InputDefinition([
+            new InputOption('memory-limit', null, InputOption::VALUE_REQUIRED),
+        ]);
+        $input = new ArrayInput(['--memory-limit' => '1G'], $definition);
+        $context = new ConfigurationContext($input, '/tmp');
+
+        $layer = $this->stage->apply($context);
+
+        self::assertNotNull($layer);
+        self::assertSame('1G', $layer->values['memory_limit']);
+    }
+
+    #[Test]
     public function combinesMultipleOptions(): void
     {
         $definition = new InputDefinition([

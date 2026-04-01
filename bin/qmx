@@ -35,25 +35,6 @@ if (!$autoloaderFound) {
     exit(1);
 }
 
-// Increase memory limit for large projects if current limit is below 512M.
-// Users can override with: php -d memory_limit=1G bin/qmx check ...
-$currentLimit = ini_get('memory_limit');
-if ($currentLimit !== '-1') {
-    $currentBytes = (int) $currentLimit;
-    $suffix = strtolower(substr($currentLimit, -1));
-    if ($suffix === 'g') {
-        $currentBytes = (int) $currentLimit * 1024 * 1024 * 1024;
-    } elseif ($suffix === 'm') {
-        $currentBytes = (int) $currentLimit * 1024 * 1024;
-    } elseif ($suffix === 'k') {
-        $currentBytes = (int) $currentLimit * 1024;
-    }
-
-    if ($currentBytes < 512 * 1024 * 1024) {
-        ini_set('memory_limit', '512M');
-    }
-}
-
 // Create single container with default configuration
 // Runtime configuration (CLI options, config file) will be applied
 // through ConfigurationProvider and RuleOptionsFactory before analysis
