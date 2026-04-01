@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Project `qmx.yaml` for self-analysis with tuned coupling thresholds and `exclude_namespaces` for Core value objects
+- `qmx.yaml.example` — comprehensive annotated example with documentation links, default values, and all available options (replaces `qmx.yaml.dist`)
+- `parallel` section in config file for setting worker count (was CLI-only via `--workers`)
+
+### Fixed
+- `coupling` section in config file was rejected as unknown key
+
 ## [0.11.1] - 2026-04-01
 
 ### Changed
