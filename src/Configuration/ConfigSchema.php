@@ -5,101 +5,104 @@ declare(strict_types=1);
 namespace Qualimetrix\Configuration;
 
 /**
- * Single source of truth for all valid configuration keys.
+ * Single source of truth for all configuration keys.
  *
- * Defines the mapping between YAML config structure and internal flat
- * dot-notation keys, plus type constraints for root-level keys.
+ * Every config key used anywhere in the pipeline is defined here as a constant.
+ * The ENTRIES array unifies YAML-to-flat-key mappings with root key type constraints.
  *
- * Both YamlConfigLoader (validation) and ConfigDataNormalizer (normalization)
- * derive their behavior from this schema, eliminating duplicated key lists.
+ * Consumers (YamlConfigLoader, ConfigDataNormalizer, AnalysisConfiguration,
+ * DefaultsStage, CliStage, ConfigurationMerger, ConfigurationPipeline)
+ * all reference these constants instead of string literals.
  *
- * Root key types:
- * - 'section'  — must be an associative array (e.g., cache, namespace)
- * - 'list'     — must be a sequential array (e.g., paths, disabled_rules)
- * - 'scalar'   — string, int, bool, etc. (e.g., format, fail_on)
- * - 'mixed'    — can be either array or scalar (e.g., rules, computed_metrics)
+ * Adding a new config option:
+ * 1. Add a constant below
+ * 2. Add an entry to ENTRIES (if YAML-configurable)
+ * 3. Add handling in the appropriate consumer
  */
 final class ConfigSchema
 {
+    // -------------------------------------------------------------------------
+    // Result keys (flat dot-notation, used after normalization)
+    // -------------------------------------------------------------------------
+
+    public const string PATHS = 'paths';
+    public const string EXCLUDES = 'excludes';
+    public const string FORMAT = 'format';
+    public const string RULES = 'rules';
+    public const string DISABLED_RULES = 'disabled_rules';
+    public const string ONLY_RULES = 'only_rules';
+    public const string EXCLUDE_PATHS = 'exclude_paths';
+    public const string FAIL_ON = 'fail_on';
+    public const string CACHE_DIR = 'cache.dir';
+    public const string CACHE_ENABLED = 'cache.enabled';
+    public const string NAMESPACE_STRATEGY = 'namespace.strategy';
+    public const string NAMESPACE_COMPOSER_JSON = 'namespace.composer_json';
+    public const string AGGREGATION_PREFIXES = 'aggregation.prefixes';
+    public const string AGGREGATION_AUTO_DEPTH = 'aggregation.auto_depth';
+    public const string PARALLEL_WORKERS = 'parallel.workers';
+    public const string COUPLING_FRAMEWORK_NAMESPACES = 'coupling.framework_namespaces';
+    public const string COMPUTED_METRICS = 'computed_metrics';
+    public const string EXCLUDE_HEALTH = 'exclude_health';
+    public const string INCLUDE_GENERATED = 'include_generated';
+    public const string MEMORY_LIMIT = 'memory_limit';
+
+    /** Internal key: set by DefaultsStage only, not YAML-configurable. */
+    public const string PROJECT_ROOT = 'project_root';
+
+    // -------------------------------------------------------------------------
+    // Root key types
+    // -------------------------------------------------------------------------
+
+    private const string LIST = 'list';
+    private const string SCALAR = 'scalar';
+    private const string MIXED = 'mixed';
+
     /**
-     * Root key type constraints (camelCase, post-normalization).
+     * Unified config entries: [sourcePath, resultKey, rootKeyType].
      *
-     * @var array<string, string>
-     */
-    private const ROOT_KEY_TYPES = [
-        // Sections (must be associative arrays)
-        'cache' => 'section',
-        'namespace' => 'section',
-        'aggregation' => 'section',
-        'coupling' => 'section',
-        'parallel' => 'section',
-
-        // Lists (must be sequential arrays)
-        'paths' => 'list',
-        'exclude' => 'list',
-        'disabledRules' => 'list',
-        'onlyRules' => 'list',
-        'excludePaths' => 'list',
-        'excludeHealth' => 'list',
-
-        // Mixed (array with special structure)
-        'rules' => 'mixed',
-        'computedMetrics' => 'mixed',
-        'computed_metrics' => 'mixed',
-
-        // Scalars (string, int, bool)
-        'format' => 'scalar',
-        'failOn' => 'scalar',
-        'memoryLimit' => 'scalar',
-        'memory_limit' => 'scalar',
-        'includeGenerated' => 'scalar',
-        'include_generated' => 'scalar',
-    ];
-
-    /**
-     * Mapping definitions: [sourceKeyPath, resultKey].
-     *
-     * Source key path can be:
+     * Source key path (camelCase, post-loader-normalization):
      * - 'key'           — top-level key
-     * - 'section.key'   — nested key (dot = nesting level)
+     * - 'section.key'   — nested key (dot = nesting level; root is auto-typed as section)
      * - 'keyA|keyB'     — alternative keys (first found wins)
      *
-     * @var list<array{string, string}>
+     * Root key type:
+     * - 'list'    — must be a sequential array (paths, disabled_rules, etc.)
+     * - 'scalar'  — string, int, bool (format, fail_on, etc.)
+     * - 'mixed'   — array with special structure (rules, computed_metrics)
+     * - null      — sub-key of a section (root is auto-typed as section)
+     *
+     * @var list<array{string, string, string|null}>
      */
-    public const MAPPINGS = [
-        // Direct / renamed top-level keys
-        ['paths', 'paths'],
-        ['exclude', 'excludes'],
-        ['format', 'format'],
-        ['rules', 'rules'],
-        ['disabledRules', 'disabled_rules'],
-        ['onlyRules', 'only_rules'],
-        ['excludePaths', 'exclude_paths'],
-        ['failOn', 'fail_on'],
+    public const array ENTRIES = [
+        // Top-level keys with explicit types
+        [self::PATHS, self::PATHS, self::LIST],
+        ['exclude', self::EXCLUDES, self::LIST],
+        [self::FORMAT, self::FORMAT, self::SCALAR],
+        [self::RULES, self::RULES, self::MIXED],
+        ['disabledRules', self::DISABLED_RULES, self::LIST],
+        ['onlyRules', self::ONLY_RULES, self::LIST],
+        ['excludePaths', self::EXCLUDE_PATHS, self::LIST],
+        ['failOn', self::FAIL_ON, self::SCALAR],
 
-        // Nested sections (dot = nesting)
-        ['cache.dir', 'cache.dir'],
-        ['cache.enabled', 'cache.enabled'],
-        ['namespace.strategy', 'namespace.strategy'],
-        ['namespace.composerJson', 'namespace.composer_json'],
-        ['aggregation.prefixes', 'aggregation.prefixes'],
-        ['aggregation.autoDepth', 'aggregation.auto_depth'],
-        ['parallel.workers', 'parallel.workers'],
-
-        // Coupling section
-        ['coupling.frameworkNamespaces|coupling.framework_namespaces', 'coupling.framework_namespaces'],
+        // Section sub-keys (root type derived as 'section')
+        ['cache.dir', self::CACHE_DIR, null],
+        ['cache.enabled', self::CACHE_ENABLED, null],
+        ['namespace.strategy', self::NAMESPACE_STRATEGY, null],
+        ['namespace.composerJson', self::NAMESPACE_COMPOSER_JSON, null],
+        ['aggregation.prefixes', self::AGGREGATION_PREFIXES, null],
+        ['aggregation.autoDepth', self::AGGREGATION_AUTO_DEPTH, null],
+        ['parallel.workers', self::PARALLEL_WORKERS, null],
+        ['coupling.frameworkNamespaces|coupling.framework_namespaces', self::COUPLING_FRAMEWORK_NAMESPACES, null],
 
         // Dual-naming (camelCase | snake_case)
-        ['computedMetrics|computed_metrics', 'computed_metrics'],
-        ['excludeHealth|exclude_health', 'exclude_health'],
-        ['includeGenerated|include_generated', 'include_generated'],
-        ['memoryLimit|memory_limit', 'memory_limit'],
+        ['computedMetrics|computed_metrics', self::COMPUTED_METRICS, self::MIXED],
+        ['excludeHealth|exclude_health', self::EXCLUDE_HEALTH, self::LIST],
+        ['includeGenerated|include_generated', self::INCLUDE_GENERATED, self::SCALAR],
+        ['memoryLimit|memory_limit', self::MEMORY_LIMIT, self::SCALAR],
     ];
 
     /**
      * Returns the set of allowed root-level keys (camelCase, post-normalization).
-     *
-     * Derived from MAPPINGS and ROOT_KEY_TYPES.
      *
      * @return list<string>
      */
@@ -107,7 +110,7 @@ final class ConfigSchema
     {
         $keys = [];
 
-        foreach (self::MAPPINGS as [$sourcePath]) {
+        foreach (self::ENTRIES as [$sourcePath]) {
             foreach (explode('|', $sourcePath) as $alt) {
                 $root = str_contains($alt, '.') ? explode('.', $alt, 2)[0] : $alt;
                 $keys[$root] = true;
@@ -118,38 +121,50 @@ final class ConfigSchema
     }
 
     /**
-     * Returns root keys that must be associative arrays (sections).
+     * Returns root keys that must be associative arrays.
+     *
+     * Includes both explicitly typed sections and roots derived from dotted sub-keys.
      *
      * @return list<string>
      */
     public static function sectionKeys(): array
     {
-        return self::keysByType('section');
+        $sections = [];
+
+        // Any entry with a dotted source path implies its root is a section
+        foreach (self::ENTRIES as [$sourcePath, , $type]) {
+            if ($type !== null) {
+                continue;
+            }
+
+            foreach (explode('|', $sourcePath) as $alt) {
+                if (str_contains($alt, '.')) {
+                    $sections[explode('.', $alt, 2)[0]] = true;
+                }
+            }
+        }
+
+        return array_keys($sections);
     }
 
     /**
-     * Returns root keys that must be sequential arrays (lists).
+     * Returns root keys that must be sequential arrays.
      *
      * @return list<string>
      */
     public static function listKeys(): array
     {
-        return self::keysByType('list');
-    }
+        $lists = [];
 
-    /**
-     * @return list<string>
-     */
-    private static function keysByType(string $type): array
-    {
-        $keys = [];
-
-        foreach (self::ROOT_KEY_TYPES as $key => $keyType) {
-            if ($keyType === $type) {
-                $keys[] = $key;
+        foreach (self::ENTRIES as [$sourcePath, , $type]) {
+            if ($type === self::LIST) {
+                foreach (explode('|', $sourcePath) as $alt) {
+                    $root = str_contains($alt, '.') ? explode('.', $alt, 2)[0] : $alt;
+                    $lists[$root] = true;
+                }
             }
         }
 
-        return $keys;
+        return array_keys($lists);
     }
 }

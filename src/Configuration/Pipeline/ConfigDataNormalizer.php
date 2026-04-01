@@ -12,7 +12,7 @@ use Qualimetrix\Configuration\ConfigSchema;
  * Shared by ConfigFileStage and PresetStage to convert nested YAML structures
  * into the flat key format expected by ConfigurationPipeline.
  *
- * Key mappings are defined in ConfigSchema::MAPPINGS (single source of truth).
+ * Key mappings are defined in ConfigSchema::ENTRIES (single source of truth).
  */
 final class ConfigDataNormalizer
 {
@@ -27,7 +27,7 @@ final class ConfigDataNormalizer
     {
         $result = [];
 
-        foreach (ConfigSchema::MAPPINGS as [$sourcePath, $resultKey]) {
+        foreach (ConfigSchema::ENTRIES as [$sourcePath, $resultKey]) {
             $value = self::resolve($data, $sourcePath);
 
             if ($value !== null) {
