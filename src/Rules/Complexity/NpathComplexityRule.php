@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Rules\Complexity;
 
+use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\HierarchicalRuleInterface;
@@ -165,17 +166,18 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
                 $displayValue = $npathValue >= self::MAX_DISPLAY ? '> 1M' : (string) $npathValue;
                 $categoryLabel = $this->getCategoryLabel($npathValue);
                 $threshold = $severity === Severity::Error ? $effectiveMethodOptions->error : $effectiveMethodOptions->warning;
+                $chain = $this->formatChain($metrics);
 
                 $violations[] = new Violation(
                     location: new Location($methodInfo->file, $methodInfo->line),
                     symbolPath: $methodInfo->symbolPath,
                     ruleName: $this->getName(),
                     violationCode: self::NAME . '.method',
-                    message: \sprintf('NPath complexity (execution paths) is %s (%s), exceeds threshold of %s. Reduce branching or extract methods', $displayValue, $categoryLabel, $threshold),
+                    message: \sprintf('NPath complexity (execution paths) is %s (%s), exceeds threshold of %s.%s Reduce branching or extract methods', $displayValue, $categoryLabel, $threshold, $chain !== '' ? " {$chain}." : ''),
                     severity: $severity,
                     metricValue: $npathValue,
                     level: RuleLevel::Method,
-                    recommendation: \sprintf('NPath complexity: %s (threshold: %s) — explosive number of execution paths', $displayValue, $threshold),
+                    recommendation: \sprintf('NPath complexity: %s (threshold: %s)%s — explosive number of execution paths', $displayValue, $threshold, $chain !== '' ? ". {$chain}" : ''),
                     threshold: (float) $threshold,
                 );
             }
@@ -229,5 +231,37 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
         }
 
         return $violations;
+    }
+
+    /**
+     * Formats a compact multiplicative chain of top NPath factors.
+     *
+     * Returns empty string if no factor data is available.
+     * Example: "Chain: ×6 if/else L25, ×4 match L31, ×3 switch L20"
+     */
+    private function formatChain(MetricBag $metrics): string
+    {
+        $entries = $metrics->entries('npath-complexity.factors');
+
+        if ($entries === []) {
+            return '';
+        }
+
+        // Sort by factor descending, take top 3
+        usort($entries, static fn(array $a, array $b): int => $b['factor'] <=> $a['factor']);
+        $top = \array_slice($entries, 0, 3);
+
+        $parts = [];
+
+        foreach ($top as $entry) {
+            $type = (string) $entry['type'];
+            $factor = (int) $entry['factor'];
+            $line = (int) $entry['line'];
+
+            $displayFactor = $factor >= self::MAX_DISPLAY ? '> 1M' : (string) $factor;
+            $parts[] = \sprintf('×%s %s L%d', $displayFactor, $type, $line);
+        }
+
+        return 'Chain: ' . implode(', ', $parts);
     }
 }

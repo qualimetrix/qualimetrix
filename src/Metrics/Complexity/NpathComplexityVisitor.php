@@ -65,6 +65,9 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
     /** @var array<string, int> Method/function FQN => NPath */
     private array $npath = [];
 
+    /** @var array<string, list<array{type: string, line: int, factor: int}>> FQN => multiplicative factors */
+    private array $factors = [];
+
     /** @var array<string, array{namespace: ?string, class: ?string, method: string, line: int}> FQN => method info */
     private array $methodInfos = [];
 
@@ -75,17 +78,22 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
     private ?string $currentClass = null;
     private int $closureCounter = 0;
 
+    /** @var ?string FQN of the method currently being calculated (for factor tracking) */
+    private ?string $calculatingFqn = null;
+
     /** @var int Depth of anonymous class nesting (methods inside anonymous classes are skipped) */
     private int $anonymousClassDepth = 0;
 
     public function reset(): void
     {
         $this->npath = [];
+        $this->factors = [];
         $this->methodInfos = [];
         $this->methodStack = [];
         $this->currentNamespace = null;
         $this->currentClass = null;
         $this->closureCounter = 0;
+        $this->calculatingFqn = null;
         $this->anonymousClassDepth = 0;
     }
 
@@ -95,6 +103,16 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
     public function getNpath(): array
     {
         return $this->npath;
+    }
+
+    /**
+     * Returns tracked multiplicative factors per method/function.
+     *
+     * @return array<string, list<array{type: string, line: int, factor: int}>>
+     */
+    public function getFactors(): array
+    {
+        return $this->factors;
     }
 
     /**
@@ -108,6 +126,14 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
 
         foreach ($this->methodInfos as $fqn => $info) {
             $metrics = (new MetricBag())->with('npath', $this->npath[$fqn] ?? 1);
+
+            foreach ($this->factors[$fqn] ?? [] as $factor) {
+                $metrics = $metrics->withEntry('npath-complexity.factors', [
+                    'type' => $factor['type'],
+                    'line' => $factor['line'],
+                    'factor' => $factor['factor'],
+                ]);
+            }
 
             $result[] = new MethodWithMetrics(
                 namespace: $info['namespace'],
@@ -146,7 +172,10 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
         if ($node instanceof ClassMethod) {
             if ($this->anonymousClassDepth === 0) {
                 $fqn = $this->buildMethodFqn($node->name->toString());
-                $npath = $this->calculateSequenceNpath($node->stmts ?? []);
+                $this->calculatingFqn = $fqn;
+                $this->factors[$fqn] = [];
+                $npath = $this->calculateSequenceNpath($node->stmts ?? [], trackFactors: true);
+                $this->calculatingFqn = null;
                 $this->startMethod($fqn, $node->name->toString(), $node->getStartLine(), $npath);
             }
 
@@ -156,7 +185,10 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
         // Start of a function
         if ($node instanceof Function_) {
             $fqn = $this->buildFunctionFqn($node->name->toString());
-            $npath = $this->calculateSequenceNpath($node->stmts ?? []);
+            $this->calculatingFqn = $fqn;
+            $this->factors[$fqn] = [];
+            $npath = $this->calculateSequenceNpath($node->stmts ?? [], trackFactors: true);
+            $this->calculatingFqn = null;
             $this->startMethod($fqn, $node->name->toString(), $node->getStartLine(), $npath);
 
             return null;
@@ -171,7 +203,10 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
             ++$this->closureCounter;
             $fqn = $this->buildClosureFqn();
             $closureName = '{closure#' . $this->closureCounter . '}';
-            $npath = $this->calculateSequenceNpath($node->stmts ?? []);
+            $this->calculatingFqn = $fqn;
+            $this->factors[$fqn] = [];
+            $npath = $this->calculateSequenceNpath($node->stmts ?? [], trackFactors: true);
+            $this->calculatingFqn = null;
             $this->startMethod($fqn, $closureName, $node->getStartLine(), $npath);
 
             return null;
@@ -186,6 +221,7 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
             ++$this->closureCounter;
             $fqn = $this->buildClosureFqn();
             $closureName = '{closure#' . $this->closureCounter . '}';
+            $this->factors[$fqn] = [];
             $npath = max(1, $this->calculateExprNpath($node->expr));
             $this->startMethod($fqn, $closureName, $node->getStartLine(), $npath);
 
@@ -261,7 +297,7 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
      *
      * @param array<Stmt> $stmts
      */
-    private function calculateSequenceNpath(array $stmts): int
+    private function calculateSequenceNpath(array $stmts, bool $trackFactors = false): int
     {
         if ($stmts === []) {
             return 1;
@@ -271,6 +307,15 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
 
         foreach ($stmts as $stmt) {
             $stmtNpath = $this->calculateStmtNpath($stmt);
+
+            if ($trackFactors && $stmtNpath > 1 && $this->calculatingFqn !== null) {
+                $this->factors[$this->calculatingFqn][] = [
+                    'type' => $this->getStmtTypeLabel($stmt),
+                    'line' => $stmt->getStartLine(),
+                    'factor' => min($stmtNpath, self::MAX_NPATH),
+                ];
+            }
+
             $npath = $this->safeMultiply($npath, $stmtNpath);
 
             if ($npath >= self::MAX_NPATH) {
@@ -456,6 +501,41 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
         }
 
         return max(1, $npath);
+    }
+
+    /**
+     * Returns a human-readable label for a statement type used in breakdown messages.
+     */
+    private function getStmtTypeLabel(Stmt $stmt): string
+    {
+        return match (true) {
+            $stmt instanceof If_ => $stmt->else !== null || $stmt->elseifs !== [] ? 'if/else' : 'if',
+            $stmt instanceof While_ => 'while',
+            $stmt instanceof For_ => 'for',
+            $stmt instanceof Foreach_ => 'foreach',
+            $stmt instanceof Do_ => 'do',
+            $stmt instanceof Switch_ => 'switch',
+            $stmt instanceof TryCatch => 'try/catch',
+            $stmt instanceof Stmt\Expression => $this->getExprTypeLabel($stmt->expr),
+            $stmt instanceof Stmt\Return_ => $stmt->expr !== null ? $this->getExprTypeLabel($stmt->expr) : 'return',
+            default => 'stmt',
+        };
+    }
+
+    /**
+     * Returns a human-readable label for an expression type.
+     */
+    private function getExprTypeLabel(Expr $expr): string
+    {
+        return match (true) {
+            $expr instanceof Ternary => 'ternary',
+            $expr instanceof BinaryOp\BooleanAnd, $expr instanceof BinaryOp\LogicalAnd => '&&/||',
+            $expr instanceof BinaryOp\BooleanOr, $expr instanceof BinaryOp\LogicalOr => '&&/||',
+            $expr instanceof BinaryOp\Coalesce => '??',
+            $expr instanceof Match_ => 'match',
+            $expr instanceof Expr\Assign, $expr instanceof Expr\AssignOp => $this->getExprTypeLabel($expr->expr),
+            default => 'expr',
+        };
     }
 
     private function safeMultiply(int $a, int $b): int

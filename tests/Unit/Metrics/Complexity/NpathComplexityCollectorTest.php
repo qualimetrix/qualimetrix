@@ -944,6 +944,97 @@ PHP;
         return $collector->collect($file, $ast ?? []);
     }
 
+    public function testFactorsTrackedForMultiplicativeStatements(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Test
+{
+    public function complex($a, $b): int
+    {
+        if ($a > 0) {       // NPath: 3 (if with else)
+            return 1;
+        } else {
+            $x = 2;
+        }
+
+        switch ($b) {       // NPath: 3 (3 cases)
+            case 1: return 10;
+            case 2: return 20;
+            default: return 30;
+        }
+    }
+}
+PHP;
+
+        $visitor = new NpathComplexityVisitor();
+        $parser = (new ParserFactory())->createForHostVersion();
+        $ast = $parser->parse($code) ?? [];
+
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $factors = $visitor->getFactors();
+        $fqn = 'App\Test::complex';
+
+        self::assertArrayHasKey($fqn, $factors);
+        self::assertCount(2, $factors[$fqn]);
+
+        // First factor: if/else
+        self::assertSame('if/else', $factors[$fqn][0]['type']);
+        self::assertGreaterThan(1, $factors[$fqn][0]['factor']);
+
+        // Second factor: switch
+        self::assertSame('switch', $factors[$fqn][1]['type']);
+        self::assertGreaterThan(1, $factors[$fqn][1]['factor']);
+
+        // All factors have line numbers
+        foreach ($factors[$fqn] as $factor) {
+            self::assertArrayHasKey('line', $factor);
+            self::assertGreaterThan(0, $factor['line']);
+        }
+    }
+
+    public function testFactorsPassedViaMethodsWithMetrics(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Test
+{
+    public function simple($a): int
+    {
+        if ($a) {           // NPath: 2 (if without else)
+            return 1;
+        }
+        return 0;
+    }
+}
+PHP;
+
+        $visitor = new NpathComplexityVisitor();
+        $parser = (new ParserFactory())->createForHostVersion();
+        $ast = $parser->parse($code) ?? [];
+
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $methods = $visitor->getMethodsWithMetrics();
+        self::assertCount(1, $methods);
+
+        $entries = $methods[0]->metrics->entries('npath-complexity.factors');
+        self::assertCount(1, $entries);
+        self::assertSame('if', $entries[0]['type']);
+        self::assertSame(2, $entries[0]['factor']);
+    }
+
     private function collectMetrics(string $code): \Qualimetrix\Core\Metric\MetricBag
     {
         $parser = (new ParserFactory())->createForHostVersion();
