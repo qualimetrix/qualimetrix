@@ -42,23 +42,20 @@ bin/qmx hook:install
 
 ## Configuration
 
-Create `qmx.yaml`:
+Create `qmx.yaml` ([full format](https://qualimetrix.github.io/qualimetrix/getting-started/configuration/)):
 
 ```yaml
 rules:
-  complexity:
-    warning_threshold: 10
-    error_threshold: 20
-
-  cognitive:
-    warning_threshold: 15
-    error_threshold: 30
+  complexity.cyclomatic:
+    method:
+      warning: 15
+      error: 25
 ```
 
 Or use CLI options:
 
 ```bash
-bin/qmx check src/ --cyclomatic-warning=10 --cyclomatic-error=20
+bin/qmx check src/ --cyclomatic-warning=15 --cyclomatic-error=25
 ```
 
 ## Git Integration
@@ -83,9 +80,9 @@ bin/qmx check src/ --baseline=baseline.json
 
 ## Documentation
 
-- [Quick Start](docs/QUICK_START.md)
+- [Quick Start](https://qualimetrix.github.io/qualimetrix/getting-started/quick-start/)
 - [Architecture](docs/ARCHITECTURE.md)
-- [GitHub Action](docs/GITHUB_ACTION.md)
+- [GitHub Action](https://qualimetrix.github.io/qualimetrix/ci-cd/github-actions/)
 - [Changelog](CHANGELOG.md)
 - [llms.txt](https://qualimetrix.github.io/qualimetrix/llms.txt) — concise reference for AI agents
 - [llms-full.txt](https://qualimetrix.github.io/qualimetrix/llms-full.txt) — complete documentation in a single file

@@ -30,16 +30,17 @@ Infrastructure -> Analysis -> Metrics/Rules/Reporting/Configuration -> Core
 
 **Rule:** dependencies flow DOWNWARD only. Violations are checked via `deptrac`.
 
-### 2. Four-Phase Pipeline
+### 2. Five-Phase Pipeline
 
 ```
-Collection (parallel) -> Aggregation -> RuleExecution -> Reporting
-     |                      |              |             |
-  MetricBag[]        AggregatedMetrics  Violation[]   Output
+Discovery -> Collection (parallel) -> Aggregation -> RuleExecution -> Reporting
+                |                        |              |               |
+             MetricBag[]          AggregatedMetrics  Violation[]      Output
 ```
 
 | Phase         | % of time | Parallel             |
 | ------------- | --------- | -------------------- |
+| Discovery     | <1%       | No                   |
 | Collection    | 85-95%    | Yes (amphp/parallel) |
 | Aggregation   | 2-5%      | No                   |
 | RuleExecution | 1-3%      | No                   |
@@ -86,6 +87,8 @@ Symfony DI with autoconfiguration — new components are registered automaticall
 | Stage     | implements `ConfigurationStageInterface` | `qmx.config_stage` |
 
 **No need** to modify `ContainerFactory` when adding new components.
+
+For full details (CompilerPasses, exclude patterns, autowiring constraints for rules), see [CLAUDE.md § Symfony DI](../CLAUDE.md#7-symfony-di-automatic-service-registration).
 
 ---
 
