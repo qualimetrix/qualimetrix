@@ -1389,4 +1389,96 @@ PHP;
         self::assertArrayHasKey('second', $complexities);
         self::assertSame(0, $complexities['second']);
     }
+
+    public function testIncrementsTrackingWithNestedStructures(): void
+    {
+        $code = <<<'PHP'
+<?php
+namespace App;
+
+class Service
+{
+    public function process($items, $flag) {
+        if ($flag) {               // +1 (if, nesting=0)
+            foreach ($items as $item) {  // +2 (foreach, nesting=1)
+                if ($item > 0) {         // +3 (if, nesting=2)
+                    return $item;
+                }
+            }
+        } else {                   // +1 (else)
+            return null;
+        }
+    }
+}
+PHP;
+
+        $visitor = new CognitiveComplexityVisitor();
+        $parser = (new ParserFactory())->createForHostVersion();
+        $ast = $parser->parse($code) ?? [];
+
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $increments = $visitor->getIncrements();
+        $fqn = 'App\Service::process';
+
+        self::assertArrayHasKey($fqn, $increments);
+        self::assertCount(4, $increments[$fqn]);
+
+        // Verify first increment (if at nesting=0 → +1)
+        self::assertSame('if', $increments[$fqn][0]['type']);
+        self::assertSame(1, $increments[$fqn][0]['points']);
+
+        // Verify second increment (foreach at nesting=1 → +2)
+        self::assertSame('foreach', $increments[$fqn][1]['type']);
+        self::assertSame(2, $increments[$fqn][1]['points']);
+
+        // Verify third increment (nested if at nesting=2 → +3)
+        self::assertSame('if', $increments[$fqn][2]['type']);
+        self::assertSame(3, $increments[$fqn][2]['points']);
+
+        // Verify fourth increment (else → +1)
+        self::assertSame('else', $increments[$fqn][3]['type']);
+        self::assertSame(1, $increments[$fqn][3]['points']);
+
+        // All increments have line numbers
+        foreach ($increments[$fqn] as $inc) {
+            self::assertArrayHasKey('line', $inc);
+            self::assertGreaterThan(0, $inc['line']);
+        }
+    }
+
+    public function testIncrementsPassedViaMethodsWithMetrics(): void
+    {
+        $code = <<<'PHP'
+<?php
+namespace App;
+
+class Service
+{
+    public function process($x) {
+        if ($x) {          // +1
+            return true;
+        }
+    }
+}
+PHP;
+
+        $visitor = new CognitiveComplexityVisitor();
+        $parser = (new ParserFactory())->createForHostVersion();
+        $ast = $parser->parse($code) ?? [];
+
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $methods = $visitor->getMethodsWithMetrics();
+        self::assertCount(1, $methods);
+
+        $entries = $methods[0]->metrics->entries('cognitive-complexity.increments');
+        self::assertCount(1, $entries);
+        self::assertSame('if', $entries[0]['type']);
+        self::assertSame(1, $entries[0]['points']);
+    }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Rules\Complexity;
 
+use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\HierarchicalRuleInterface;
@@ -144,17 +145,18 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
 
             if ($severity !== null) {
                 $threshold = $severity === Severity::Error ? $effectiveMethodOptions->error : $effectiveMethodOptions->warning;
+                $breakdown = $this->formatBreakdown($metrics);
 
                 $violations[] = new Violation(
                     location: new Location($methodInfo->file, $methodInfo->line),
                     symbolPath: $methodInfo->symbolPath,
                     ruleName: $this->getName(),
                     violationCode: self::NAME . '.method',
-                    message: \sprintf('Cognitive complexity is %d, exceeds threshold of %d. Reduce nesting and break into smaller methods', $cognitiveValue, $threshold),
+                    message: \sprintf('Cognitive complexity is %d, exceeds threshold of %d.%s Reduce nesting and break into smaller methods', $cognitiveValue, $threshold, $breakdown !== '' ? " {$breakdown}." : ''),
                     severity: $severity,
                     metricValue: $cognitiveValue,
                     level: RuleLevel::Method,
-                    recommendation: \sprintf('Cognitive complexity: %d (threshold: %d) — deeply nested, hard to follow', $cognitiveValue, $threshold),
+                    recommendation: \sprintf('Cognitive complexity: %d (threshold: %d)%s — deeply nested, hard to follow', $cognitiveValue, $threshold, $breakdown !== '' ? ". {$breakdown}" : ''),
                     threshold: $threshold,
                 );
             }
@@ -206,5 +208,54 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
         }
 
         return $violations;
+    }
+
+    /**
+     * Formats a compact breakdown of top complexity contributors.
+     *
+     * Returns empty string if no increment data is available.
+     * Example: "Top: nested if +5 L12, foreach +4 L15, &&/|| +1 L22"
+     */
+    private function formatBreakdown(MetricBag $metrics): string
+    {
+        $entries = $metrics->entries('cognitive-complexity.increments');
+
+        if ($entries === []) {
+            return '';
+        }
+
+        // Sort by points descending, take top 3
+        usort($entries, static fn(array $a, array $b): int => $b['points'] <=> $a['points']);
+        $top = \array_slice($entries, 0, 3);
+
+        $parts = [];
+
+        foreach ($top as $entry) {
+            $type = (string) $entry['type'];
+            $points = (int) $entry['points'];
+            $line = (int) $entry['line'];
+
+            $label = $this->formatIncrementLabel($type, $points);
+            $parts[] = \sprintf('%s +%d L%d', $label, $points, $line);
+        }
+
+        return 'Top: ' . implode(', ', $parts);
+    }
+
+    /**
+     * Returns a human-readable label for a complexity increment.
+     *
+     * Structures with nesting bonus (points > 1) get a "nested" prefix.
+     */
+    private function formatIncrementLabel(string $type, int $points): string
+    {
+        // These structure types receive nesting bonus (1 + nestingLevel)
+        $nestingTypes = ['if', 'for', 'foreach', 'while', 'do', 'catch', 'switch', 'match'];
+
+        if ($points > 1 && \in_array($type, $nestingTypes, true)) {
+            return 'nested ' . $type;
+        }
+
+        return $type;
     }
 }

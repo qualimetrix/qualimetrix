@@ -417,4 +417,83 @@ final class CognitiveComplexityRuleTest extends TestCase
         self::assertSame(15, $options->method->warning);
         self::assertSame(40, $options->method->error);
     }
+
+    public function testMethodViolationIncludesBreakdownWhenEntriesPresent(): void
+    {
+        $rule = new CognitiveComplexityRule(new CognitiveComplexityOptions());
+
+        $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
+        $methodInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+
+        $metricBag = (new MetricBag())
+            ->with('cognitive', 25)
+            ->withEntry('cognitive-complexity.increments', ['type' => 'if', 'line' => 12, 'points' => 5])
+            ->withEntry('cognitive-complexity.increments', ['type' => 'foreach', 'line' => 15, 'points' => 4])
+            ->withEntry('cognitive-complexity.increments', ['type' => '&&/||', 'line' => 22, 'points' => 1])
+            ->withEntry('cognitive-complexity.increments', ['type' => 'else', 'line' => 30, 'points' => 1]);
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturn([$methodInfo]);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyzeLevel(RuleLevel::Method, $context);
+
+        self::assertCount(1, $violations);
+        // Top 3 by points: if +5, foreach +4, &&/|| +1 (or else +1)
+        self::assertStringContainsString('Top: nested if +5 L12, nested foreach +4 L15,', $violations[0]->message);
+        // recommendation: "CC: 25 (threshold: 15). Top: ... — deeply nested"
+        self::assertNotNull($violations[0]->recommendation);
+        self::assertStringContainsString('. Top:', $violations[0]->recommendation);
+        self::assertStringContainsString('— deeply nested', $violations[0]->recommendation);
+    }
+
+    public function testBreakdownWithSingleIncrementAndClosureLabel(): void
+    {
+        $rule = new CognitiveComplexityRule(new CognitiveComplexityOptions());
+
+        $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
+        $methodInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+
+        $metricBag = (new MetricBag())
+            ->with('cognitive', 20)
+            ->withEntry('cognitive-complexity.increments', ['type' => 'closure', 'line' => 15, 'points' => 3]);
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturn([$methodInfo]);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyzeLevel(RuleLevel::Method, $context);
+
+        self::assertCount(1, $violations);
+        // Closure never gets "nested" prefix regardless of points
+        self::assertStringContainsString('Top: closure +3 L15.', $violations[0]->message); // trailing "." from message format, not from breakdown
+    }
+
+    public function testMethodViolationNoBreakdownWhenNoEntries(): void
+    {
+        $rule = new CognitiveComplexityRule(new CognitiveComplexityOptions());
+
+        $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
+        $methodInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+
+        $metricBag = (new MetricBag())->with('cognitive', 20);
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturn([$methodInfo]);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyzeLevel(RuleLevel::Method, $context);
+
+        self::assertCount(1, $violations);
+        self::assertStringNotContainsString('Top:', $violations[0]->message);
+    }
 }

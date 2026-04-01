@@ -676,4 +676,57 @@ final class NpathComplexityRuleTest extends TestCase
         self::assertSame(500, $options->maxWarning);
         self::assertSame(1000, $options->maxError);
     }
+
+    public function testMethodViolationIncludesChainWhenEntriesPresent(): void
+    {
+        $rule = new NpathComplexityRule(new NpathComplexityOptions());
+
+        $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
+        $methodInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+
+        $metricBag = (new MetricBag())
+            ->with('npath', 1296)
+            ->withEntry('npath-complexity.factors', ['type' => 'if/else', 'line' => 25, 'factor' => 6])
+            ->withEntry('npath-complexity.factors', ['type' => 'match', 'line' => 31, 'factor' => 4])
+            ->withEntry('npath-complexity.factors', ['type' => 'switch', 'line' => 20, 'factor' => 3]);
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturn([$methodInfo]);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyzeLevel(RuleLevel::Method, $context);
+
+        self::assertCount(1, $violations);
+        // Top 3 by factor: ×6 if/else, ×4 match, ×3 switch
+        self::assertStringContainsString('Chain: ×6 if/else L25, ×4 match L31, ×3 switch L20.', $violations[0]->message);
+        // recommendation: "NPath: 1296 (threshold: 200). Chain: ... — explosive"
+        self::assertNotNull($violations[0]->recommendation);
+        self::assertStringContainsString('. Chain:', $violations[0]->recommendation);
+        self::assertStringContainsString('— explosive', $violations[0]->recommendation);
+    }
+
+    public function testMethodViolationNoChainWhenNoEntries(): void
+    {
+        $rule = new NpathComplexityRule(new NpathComplexityOptions());
+
+        $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
+        $methodInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+
+        $metricBag = (new MetricBag())->with('npath', 1200);
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturn([$methodInfo]);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyzeLevel(RuleLevel::Method, $context);
+
+        self::assertCount(1, $violations);
+        self::assertStringNotContainsString('Chain:', $violations[0]->message);
+    }
 }

@@ -66,6 +66,9 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
     /** @var array<string, int> Method/function FQN => complexity */
     private array $complexities = [];
 
+    /** @var array<string, list<array{type: string, line: int, points: int}>> FQN => increments */
+    private array $increments = [];
+
     /** @var array<string, array{namespace: ?string, class: ?string, method: string, line: int}> FQN => method info */
     private array $methodInfos = [];
 
@@ -88,6 +91,7 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
     public function reset(): void
     {
         $this->complexities = [];
+        $this->increments = [];
         $this->methodInfos = [];
         $this->methodStack = [];
         $this->nestingLevel = 0;
@@ -107,6 +111,16 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
     }
 
     /**
+     * Returns tracked complexity increments per method/function.
+     *
+     * @return array<string, list<array{type: string, line: int, points: int}>>
+     */
+    public function getIncrements(): array
+    {
+        return $this->increments;
+    }
+
+    /**
      * Returns structured method metrics for each analyzed method.
      *
      * @return list<MethodWithMetrics>
@@ -117,6 +131,14 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
 
         foreach ($this->methodInfos as $fqn => $info) {
             $metrics = (new MetricBag())->with('cognitive', $this->complexities[$fqn] ?? 0);
+
+            foreach ($this->increments[$fqn] ?? [] as $increment) {
+                $metrics = $metrics->withEntry('cognitive-complexity.increments', [
+                    'type' => $increment['type'],
+                    'line' => $increment['line'],
+                    'points' => $increment['points'],
+                ]);
+            }
 
             $result[] = new MethodWithMetrics(
                 namespace: $info['namespace'],
@@ -181,8 +203,14 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
             // Add +1 structural increment to parent method (SonarSource spec B1: lambdas)
             if (!empty($this->methodStack)) {
                 $parentMethod = $this->methodStack[array_key_last($this->methodStack)];
+                $parentFqn = $parentMethod['fqn'];
                 $increment = 1 + $this->nestingLevel; // B1 + B3 nesting bonus
-                $this->complexities[$parentMethod['fqn']] = ($this->complexities[$parentMethod['fqn']] ?? 0) + $increment;
+                $this->complexities[$parentFqn] = ($this->complexities[$parentFqn] ?? 0) + $increment;
+                $this->increments[$parentFqn][] = [
+                    'type' => 'closure',
+                    'line' => $node->getStartLine(),
+                    'points' => $increment,
+                ];
             }
 
             ++$this->closureCounter;
@@ -284,6 +312,7 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
         ];
         // Initialize with base complexity of 0 (unlike CCN which starts at 1)
         $this->complexities[$fqn] = 0;
+        $this->increments[$fqn] = [];
         // Store method info for later retrieval
         $this->methodInfos[$fqn] = [
             'namespace' => $this->currentNamespace,
@@ -340,7 +369,13 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
 
         if ($increment > 0) {
             $currentMethod = $this->methodStack[array_key_last($this->methodStack)];
-            $this->complexities[$currentMethod['fqn']] += $increment;
+            $fqn = $currentMethod['fqn'];
+            $this->complexities[$fqn] += $increment;
+            $this->increments[$fqn][] = [
+                'type' => $this->getNodeTypeLabel($node),
+                'line' => $node->getStartLine(),
+                'points' => $increment,
+            ];
         }
     }
 
@@ -443,6 +478,33 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
 
         // No logical operator ancestor - this is the root of a new boolean expression
         return 1;
+    }
+
+    /**
+     * Returns a human-readable label for the node type used in breakdown messages.
+     */
+    private function getNodeTypeLabel(Node $node): string
+    {
+        return match (true) {
+            $node instanceof If_ => 'if',
+            $node instanceof ElseIf_ => 'elseif',
+            $node instanceof Else_ => 'else',
+            $node instanceof For_ => 'for',
+            $node instanceof Foreach_ => 'foreach',
+            $node instanceof While_ => 'while',
+            $node instanceof Do_ => 'do',
+            $node instanceof Catch_ => 'catch',
+            $node instanceof Switch_ => 'switch',
+            $node instanceof Match_ => 'match',
+            $node instanceof Ternary => 'ternary',
+            $node instanceof Coalesce => '??',
+            $node instanceof Goto_ => 'goto',
+            $node instanceof Break_ => 'break',
+            $node instanceof Continue_ => 'continue',
+            $this->isLogicalOperator($node) => '&&/||',
+            $node instanceof FuncCall, $node instanceof MethodCall, $node instanceof StaticCall => 'recursion',
+            default => 'other',
+        };
     }
 
     /**
