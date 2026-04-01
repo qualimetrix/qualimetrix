@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-04-01
+
+### Changed
+- Cognitive Complexity violations include breakdown of top contributors: `Top: nested if +5 L12, foreach +4 L15, &&/|| +1 L22`
+- NPath Complexity violations include multiplicative chain: `Chain: ×6 if/else L25, ×4 match L31, ×3 switch L20`
+
 ## [0.10.0] - 2026-03-29
 
 ### Breaking
@@ -200,7 +206,8 @@ Initial release.
 - Symfony DI with autowiring and autoconfiguration
 - GitHub Actions workflow
 
-[Unreleased]: https://github.com/qualimetrix/qualimetrix/compare/v0.10.0...HEAD
+[Unreleased]: https://github.com/qualimetrix/qualimetrix/compare/v0.11.0...HEAD
+[0.11.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.9.2...v0.10.0
 [0.9.2]: https://github.com/qualimetrix/qualimetrix/compare/v0.9.1...v0.9.2
 [0.9.1]: https://github.com/qualimetrix/qualimetrix/compare/v0.9.0...v0.9.1
