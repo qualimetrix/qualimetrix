@@ -8,6 +8,9 @@ cache:
 
 format: text  # text, json, checkstyle
 
+# PHP memory limit (default: php.ini value)
+# memory_limit: 512M  # e.g., 512M, 1G, -1 (unlimited)
+
 # Namespace detection
 namespace:
   strategy: chain  # psr4, tokenizer, chain

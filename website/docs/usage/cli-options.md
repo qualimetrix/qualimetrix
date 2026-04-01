@@ -375,6 +375,22 @@ bin/qmx check src/ --workers=4
 !!! tip
     Use `--workers=0` for debugging or when running in environments that do not support `ext-parallel`.
 
+### `--memory-limit`
+
+Set the PHP memory limit for analysis. By default, PHP's `memory_limit` from `php.ini` is used.
+
+```bash
+# Set memory limit to 1GB for large projects
+bin/qmx check src/ --memory-limit=1G
+
+# Unlimited memory
+bin/qmx check src/ --memory-limit=-1
+```
+
+Valid formats: `-1` (unlimited), or a positive integer with optional `K`/`M`/`G` suffix (e.g., `512M`, `2G`).
+
+Equivalent YAML: `memory_limit: 1G`
+
 ### `--log-file`
 
 Write a debug log to a file:

@@ -287,6 +287,9 @@ cache:
   enabled: true
   dir: .qmx-cache
 
+# PHP memory limit (default: php.ini value)
+memory_limit: 1G
+
 # Output format
 format: text
 
