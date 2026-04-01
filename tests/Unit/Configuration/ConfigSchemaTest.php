@@ -10,6 +10,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Configuration\ConfigSchema;
 use Qualimetrix\Configuration\Loader\YamlConfigLoader;
 use ReflectionClass;
+use ReflectionNamedType;
 
 #[CoversClass(ConfigSchema::class)]
 final class ConfigSchemaTest extends TestCase
@@ -180,6 +181,85 @@ final class ConfigSchemaTest extends TestCase
                 $resultKey,
                 $constantValues,
                 "Result key '{$resultKey}' has no matching constant in ConfigSchema",
+            );
+        }
+    }
+
+    /**
+     * Reverse of everyEntryHasMatchingConstant: every string constant
+     * must appear in ENTRIES (to have a YAML path) or be explicitly
+     * documented as internal-only.
+     */
+    #[Test]
+    public function everyConstantHasEntryOrIsInternal(): void
+    {
+        // Constants that are intentionally internal (no YAML path)
+        $internalConstants = [ConfigSchema::PROJECT_ROOT];
+
+        $reflection = new ReflectionClass(ConfigSchema::class);
+        $entryResultKeys = array_map(static fn(array $e): string => $e[1], ConfigSchema::ENTRIES);
+
+        foreach ($reflection->getReflectionConstants() as $rc) {
+            if (!$rc->isPublic() || !$rc->getType() instanceof ReflectionNamedType || $rc->getType()->getName() !== 'string') {
+                continue;
+            }
+
+            $value = $rc->getValue();
+
+            if (\in_array($value, $internalConstants, true)) {
+                continue;
+            }
+
+            self::assertContains(
+                $value,
+                $entryResultKeys,
+                \sprintf(
+                    "ConfigSchema::%s = '%s' has no ENTRIES row (YAML path unreachable). "
+                    . 'Add an entry to ENTRIES or list it in the $internalConstants allowlist.',
+                    $rc->getName(),
+                    $value,
+                ),
+            );
+        }
+    }
+
+    /**
+     * Verifies no key constant is defined in ConfigSchema but unused
+     * by any consumer. A dangling constant means the key is configurable
+     * in YAML but silently ignored at runtime.
+     */
+    #[Test]
+    public function noConstantIsDangling(): void
+    {
+        $consumerFiles = [
+            __DIR__ . '/../../../src/Configuration/AnalysisConfiguration.php',
+            __DIR__ . '/../../../src/Configuration/Pipeline/ConfigurationPipeline.php',
+            __DIR__ . '/../../../src/Configuration/Pipeline/ConfigurationMerger.php',
+            __DIR__ . '/../../../src/Configuration/Pipeline/Stage/DefaultsStage.php',
+            __DIR__ . '/../../../src/Configuration/Pipeline/Stage/CliStage.php',
+        ];
+
+        $allCode = '';
+        foreach ($consumerFiles as $file) {
+            $allCode .= file_get_contents($file);
+        }
+
+        $reflection = new ReflectionClass(ConfigSchema::class);
+
+        foreach ($reflection->getReflectionConstants() as $rc) {
+            if (!$rc->isPublic() || !$rc->getType() instanceof ReflectionNamedType || $rc->getType()->getName() !== 'string') {
+                continue;
+            }
+
+            $search = 'ConfigSchema::' . $rc->getName();
+            self::assertStringContainsString(
+                $search,
+                $allCode,
+                \sprintf(
+                    '%s is defined but not referenced in any consumer. '
+                    . 'Either wire it to a consumer or remove the constant.',
+                    $search,
+                ),
             );
         }
     }
