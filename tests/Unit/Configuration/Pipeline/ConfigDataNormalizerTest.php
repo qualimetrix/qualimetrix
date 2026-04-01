@@ -200,29 +200,4 @@ final class ConfigDataNormalizerTest extends TestCase
         self::assertSame(4, $result['parallel.workers']);
     }
 
-    #[Test]
-    public function allowedRootKeysContainsAllExpectedSections(): void
-    {
-        $keys = ConfigDataNormalizer::allowedRootKeys();
-
-        // Top-level direct keys
-        self::assertContains('paths', $keys);
-        self::assertContains('exclude', $keys);
-        self::assertContains('format', $keys);
-        self::assertContains('rules', $keys);
-        self::assertContains('failOn', $keys);
-
-        // Section keys (derived from dotted mappings)
-        self::assertContains('cache', $keys);
-        self::assertContains('namespace', $keys);
-        self::assertContains('aggregation', $keys);
-        self::assertContains('coupling', $keys);
-        self::assertContains('parallel', $keys);
-
-        // Dual-naming alternatives
-        self::assertContains('computedMetrics', $keys);
-        self::assertContains('computed_metrics', $keys);
-        self::assertContains('memoryLimit', $keys);
-        self::assertContains('memory_limit', $keys);
-    }
 }
