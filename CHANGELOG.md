@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.1] - 2026-04-01
+
+### Changed
+- `--memory-limit` option and `memory_limit` config key to control PHP memory limit (e.g., `--memory-limit=1G`)
+- Removed hidden 512M memory limit override — PHP's `memory_limit` from php.ini is now respected by default
+
 ## [0.11.0] - 2026-04-01
 
 ### Changed
@@ -206,7 +212,8 @@ Initial release.
 - Symfony DI with autowiring and autoconfiguration
 - GitHub Actions workflow
 
-[Unreleased]: https://github.com/qualimetrix/qualimetrix/compare/v0.11.0...HEAD
+[Unreleased]: https://github.com/qualimetrix/qualimetrix/compare/v0.11.1...HEAD
+[0.11.1]: https://github.com/qualimetrix/qualimetrix/compare/v0.11.0...v0.11.1
 [0.11.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.9.2...v0.10.0
 [0.9.2]: https://github.com/qualimetrix/qualimetrix/compare/v0.9.1...v0.9.2
