@@ -20,6 +20,9 @@ final class ConfigDataNormalizer
      * - 'section.key'   — nested key (dot = nesting level)
      * - 'keyA|keyB'     — alternative keys (first found wins)
      *
+     * This is the single source of truth for all valid config keys.
+     * YamlConfigLoader derives its allowed root keys from this list.
+     *
      * @var list<array{string, string}>
      */
     private const MAPPINGS = [
@@ -40,6 +43,7 @@ final class ConfigDataNormalizer
         ['namespace.composerJson', 'namespace.composer_json'],
         ['aggregation.prefixes', 'aggregation.prefixes'],
         ['aggregation.autoDepth', 'aggregation.auto_depth'],
+        ['parallel.workers', 'parallel.workers'],
 
         // Coupling section
         ['coupling.frameworkNamespaces|coupling.framework_namespaces', 'coupling.framework_namespaces'],
@@ -50,6 +54,29 @@ final class ConfigDataNormalizer
         ['includeGenerated|include_generated', 'include_generated'],
         ['memoryLimit|memory_limit', 'memory_limit'],
     ];
+
+    /**
+     * Returns the set of allowed root-level keys (camelCase, post-normalization).
+     *
+     * Derived from MAPPINGS — this is the single source of truth.
+     * Used by YamlConfigLoader for unknown key validation.
+     *
+     * @return list<string>
+     */
+    public static function allowedRootKeys(): array
+    {
+        $keys = [];
+
+        foreach (self::MAPPINGS as [$sourcePath]) {
+            foreach (explode('|', $sourcePath) as $alt) {
+                // Extract root segment: 'cache.dir' → 'cache', 'rules' → 'rules'
+                $root = str_contains($alt, '.') ? explode('.', $alt, 2)[0] : $alt;
+                $keys[$root] = true;
+            }
+        }
+
+        return array_keys($keys);
+    }
 
     /**
      * Normalizes nested YAML config data to flat dot-notation keys.

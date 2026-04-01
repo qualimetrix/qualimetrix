@@ -56,6 +56,10 @@ cache:
   enabled: true
   dir: .qmx-cache
 
+# Parallel processing
+# parallel:
+#   workers: 0           # 0 = auto-detect, 1 = sequential, N = N workers
+
 # Namespace detection strategy: psr4, tokenizer, chain (default: chain)
 # namespace:
 #   strategy: chain

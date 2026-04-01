@@ -5,43 +5,13 @@ declare(strict_types=1);
 namespace Qualimetrix\Configuration\Loader;
 
 use Qualimetrix\Configuration\Exception\ConfigLoadException;
+use Qualimetrix\Configuration\Pipeline\ConfigDataNormalizer;
 use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Yaml;
 
 final class YamlConfigLoader implements ConfigLoaderInterface
 {
     private const array SUPPORTED_EXTENSIONS = ['yaml', 'yml'];
-
-    /**
-     * Allowed root keys in configuration file.
-     * Supports both snake_case and camelCase variants.
-     */
-    private const array ALLOWED_ROOT_KEYS = [
-        'rules',
-        'cache',
-        'format',
-        'namespace',
-        'aggregation',
-        'disabledRules',
-        'disabled_rules',
-        'onlyRules',
-        'only_rules',
-        'paths',
-        'exclude',
-        'excludePaths',
-        'exclude_paths',
-        'failOn',
-        'fail_on',
-        'computedMetrics',
-        'computed_metrics',
-        'excludeHealth',
-        'exclude_health',
-        'includeGenerated',
-        'include_generated',
-        'memoryLimit',
-        'memory_limit',
-        'coupling',
-    ];
 
     public function load(string $path): array
     {
@@ -67,9 +37,13 @@ final class YamlConfigLoader implements ConfigLoaderInterface
             throw ConfigLoadException::invalidFormat($path, 'YAML');
         }
 
-        $this->validateStructure($content, $path);
+        $normalized = $this->normalizeKeys($content);
 
-        return $this->normalizeKeys($content);
+        // Validate after key normalization so we only need camelCase allowed keys
+        // (derived from ConfigDataNormalizer::MAPPINGS — single source of truth)
+        $this->validateStructure($normalized, $path);
+
+        return $normalized;
     }
 
     public function supports(string $path): bool
@@ -118,14 +92,20 @@ final class YamlConfigLoader implements ConfigLoaderInterface
     }
 
     /**
-     * Validates the structure of the configuration.
+     * Validates the structure of the normalized configuration.
      *
-     * @param array<string, mixed> $config
+     * Allowed root keys are derived from ConfigDataNormalizer::MAPPINGS
+     * (single source of truth) — no hardcoded list to maintain here.
+     *
+     * @param array<string, mixed> $config Post-normalization config (camelCase keys)
      */
     private function validateStructure(array $config, string $path): void
     {
-        // Check for unknown root keys
-        $unknownKeys = array_diff(array_keys($config), self::ALLOWED_ROOT_KEYS);
+        // Check for unknown root keys (derived from ConfigDataNormalizer)
+        $unknownKeys = array_diff(
+            array_keys($config),
+            ConfigDataNormalizer::allowedRootKeys(),
+        );
 
         if ($unknownKeys !== []) {
             throw ConfigLoadException::invalidStructure(
@@ -153,33 +133,18 @@ final class YamlConfigLoader implements ConfigLoaderInterface
             }
         }
 
-        // Validate 'cache' section structure
-        if (isset($config['cache']) && !\is_array($config['cache'])) {
-            throw ConfigLoadException::invalidStructure(
-                $path,
-                '"cache" must be an associative array',
-            );
-        }
-
-        // Validate 'namespace' section structure
-        if (isset($config['namespace']) && !\is_array($config['namespace'])) {
-            throw ConfigLoadException::invalidStructure(
-                $path,
-                '"namespace" must be an associative array',
-            );
-        }
-
-        // Validate 'aggregation' section structure
-        if (isset($config['aggregation']) && !\is_array($config['aggregation'])) {
-            throw ConfigLoadException::invalidStructure(
-                $path,
-                '"aggregation" must be an associative array',
-            );
+        // Validate section keys that must be associative arrays
+        foreach (['cache', 'namespace', 'aggregation', 'coupling', 'parallel'] as $section) {
+            if (isset($config[$section]) && !\is_array($config[$section])) {
+                throw ConfigLoadException::invalidStructure(
+                    $path,
+                    \sprintf('"%s" must be an associative array', $section),
+                );
+            }
         }
 
         // Validate list fields
-        $listFields = ['disabled_rules', 'disabledRules', 'only_rules', 'onlyRules', 'paths', 'exclude', 'exclude_paths', 'excludePaths'];
-        foreach ($listFields as $field) {
+        foreach (['disabledRules', 'onlyRules', 'paths', 'exclude', 'excludePaths'] as $field) {
             if (isset($config[$field]) && !\is_array($config[$field])) {
                 throw ConfigLoadException::invalidStructure(
                     $path,
