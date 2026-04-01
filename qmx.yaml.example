@@ -43,7 +43,7 @@
 
 # Output format: summary, text, json, checkstyle, sarif, gitlab, health, html
 # Docs: https://qualimetrix.github.io/qualimetrix/reference/output-formats/
-format: summary
+# format: summary              # default: summary
 
 # When to exit with non-zero code: "warning" or "error"
 # failOn: warning
@@ -51,19 +51,22 @@ format: summary
 # PHP memory limit (default: php.ini value)
 # memory_limit: 1G
 
-# Cache settings
-cache:
-  enabled: true
-  dir: .qmx-cache
+# Cache settings (both default to true/.qmx-cache)
+# cache:
+#   enabled: true
+#   dir: .qmx-cache
 
 # Parallel processing
 # parallel:
-#   workers: 0           # 0 = auto-detect, 1 = sequential, N = N workers
+#   workers: 0                 # 0 = auto-detect, 1 = sequential, N = N workers
 
 # Namespace detection strategy: psr4, tokenizer, chain (default: chain)
 # namespace:
 #   strategy: chain
 #   composer_json: composer.json
+
+# Include auto-generated files in analysis (default: false)
+# include_generated: true
 
 
 # -----------------------------------------------------------------------------
@@ -104,8 +107,14 @@ cache:
 #   https://qualimetrix.github.io/qualimetrix/reference/default-thresholds/
 # Available rules:
 #   https://qualimetrix.github.io/qualimetrix/reference/rules/
-
-rules:
+#
+# Every rule supports exclude_namespaces to suppress violations in specific
+# namespaces (prefix matching):
+#   coupling.cbo:
+#     exclude_namespaces:
+#       - App\Core\ValueObject
+#
+# rules:
 
   # — Complexity —
   # Docs: https://qualimetrix.github.io/qualimetrix/metrics/complexity/
@@ -113,42 +122,42 @@ rules:
   # Cyclomatic complexity (McCabe). Counts decision points in code.
   # complexity.cyclomatic:
   #   method:
-  #     warning: 10          # default: 10
-  #     error: 20            # default: 20
+  #     warning: 10              # default: 10
+  #     error: 20                # default: 20
   #   class:
-  #     max_warning: 30      # max CCN among class methods
+  #     max_warning: 30          # max CCN among class methods
   #     max_error: 50
 
   # Cognitive complexity. Measures how hard code is to understand.
   # complexity.cognitive:
   #   method:
-  #     warning: 15          # default: 15
-  #     error: 30            # default: 30
+  #     warning: 15              # default: 15
+  #     error: 30                # default: 30
 
   # NPATH complexity. Number of acyclic execution paths.
   # complexity.npath:
   #   method:
-  #     warning: 200         # default: 200
-  #     error: 1000          # default: 1000
+  #     warning: 200             # default: 200
+  #     error: 1000              # default: 1000
 
   # Weighted Methods per Class (sum of CCN for all methods).
   # complexity.wmc:
-  #   warning: 50            # default: 50
-  #   error: 80              # default: 80
+  #   warning: 50                # default: 50
+  #   error: 80                  # default: 80
 
   # — Size —
   # Docs: https://qualimetrix.github.io/qualimetrix/metrics/size/
 
   # size.method-count:
-  #   warning: 20            # methods per class, default: 20
+  #   warning: 20                # methods per class, default: 20
   #   error: 30
 
   # size.class-count:
-  #   warning: 15            # classes per namespace, default: 15
+  #   warning: 15                # classes per namespace, default: 15
   #   error: 25
 
   # size.property-count:
-  #   warning: 15            # default: 15
+  #   warning: 15                # default: 15
   #   error: 20
   #   exclude_readonly: true
   #   exclude_promoted_only: true
@@ -158,25 +167,25 @@ rules:
 
   # LCOM4 — Lack of Cohesion of Methods. Lower is better (1 = perfectly cohesive).
   # design.lcom:
-  #   warning: 3             # default: 3
+  #   warning: 3                 # default: 3
   #   error: 5
-  #   min_methods: 3         # skip classes with fewer methods
+  #   min_methods: 3             # skip classes with fewer methods
   #   exclude_readonly: true
 
   # DIT — Depth of Inheritance Tree.
   # design.inheritance:
-  #   warning: 4             # default: 4
+  #   warning: 4                 # default: 4
   #   error: 6
 
   # NOC — Number of Children (direct subclasses).
   # design.noc:
-  #   warning: 10            # default: 10
+  #   warning: 10                # default: 10
   #   error: 15
 
   # Type coverage — percentage of typed parameters, returns, properties.
   # Inverted: values BELOW the threshold trigger violations.
   # design.type-coverage:
-  #   param_warning: 80      # default: 80%
+  #   param_warning: 80          # default: 80%
   #   param_error: 50
   #   return_warning: 80
   #   return_error: 50
@@ -201,7 +210,7 @@ rules:
 
   # Maintainability Index. Inverted: values BELOW the threshold trigger violations.
   # maintainability.index:
-  #   warning: 40            # default: 40
+  #   warning: 40                # default: 40
   #   error: 20
   #   exclude_tests: true
   #   min_loc: 10
@@ -212,7 +221,7 @@ rules:
   # CBO — Coupling Between Objects.
   # coupling.cbo:
   #   class:
-  #     warning: 14          # default: 14
+  #     warning: 14              # default: 14
   #     error: 20
   #   namespace:
   #     warning: 14
@@ -221,7 +230,7 @@ rules:
   # Instability (Ce / (Ca + Ce)). Range 0.0–1.0.
   # coupling.instability:
   #   class:
-  #     max_warning: 0.8     # default: 0.8
+  #     max_warning: 0.8         # default: 0.8
   #     max_error: 0.95
   #   namespace:
   #     max_warning: 0.8
@@ -229,12 +238,12 @@ rules:
 
   # Distance from Main Sequence. Range 0.0–1.0.
   # coupling.distance:
-  #   max_distance_warning: 0.3   # default: 0.3
+  #   max_distance_warning: 0.3  # default: 0.3
   #   max_distance_error: 0.5
 
   # ClassRank (PageRank on dependency graph).
   # coupling.class-rank:
-  #   warning: 0.02          # default: 0.02
+  #   warning: 0.02              # default: 0.02
   #   error: 0.05
 
   # — Architecture —
@@ -242,19 +251,19 @@ rules:
   # Circular dependency detection (can be memory-intensive for large projects).
   # architecture.circular-dependency:
   #   enabled: true
-  #   max_cycle_size: 0      # 0 = report all sizes
+  #   max_cycle_size: 0          # 0 = report all sizes
 
   # — Code Smells —
   # Docs: https://qualimetrix.github.io/qualimetrix/rules/code-smells/
 
   # code-smell.long-parameter-list:
-  #   warning: 4             # default: 4
+  #   warning: 4                 # default: 4
   #   error: 6
-  #   vo-warning: 8          # for value object constructors
+  #   vo-warning: 8              # for value object constructors
   #   vo-error: 12
 
   # code-smell.constructor-overinjection:
-  #   warning: 8             # default: 8
+  #   warning: 8                 # default: 8
   #   error: 12
 
   # — Security —
@@ -264,7 +273,7 @@ rules:
   # — Duplication —
   # Code duplication detection (memory-intensive, skipped when disabled).
   # duplication.code-duplication:
-  #   warning: 5             # duplicate block count
+  #   warning: 5                 # duplicate block count
   #   error: 50
   #   min_lines: 5
   #   min_tokens: 70
@@ -276,12 +285,12 @@ rules:
 
 # Disable rules by name or group prefix.
 # disabled_rules:
-#   - code-smell                # disable all code-smell.* rules
+#   - code-smell                 # disable all code-smell.* rules
 #   - architecture.circular-dependency
 
 # Run only specific rules (prefix matching).
 # only_rules:
-#   - complexity               # only run complexity.* rules
+#   - complexity                 # only run complexity.* rules
 
 
 # -----------------------------------------------------------------------------
@@ -308,3 +317,7 @@ rules:
 #     warning: 30
 #     error: 60
 #     description: "Risk score combining complexity and cohesion"
+
+# Exclude specific health dimensions from the overall score.
+# exclude_health:
+#   - typing                     # e.g., exclude typing from overall health
