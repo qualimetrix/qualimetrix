@@ -342,8 +342,9 @@ final class HealthBarRendererTest extends TestCase
 
         $healthLine = $lines[0];
         // Extract the bar between [ and ]
-        preg_match('/\[([#.]+)]/', $healthLine, $matches);
-        self::assertNotEmpty($matches, 'Bar pattern not found');
+        if (preg_match('/\[([#.]+)]/', $healthLine, $matches) !== 1) {
+            self::fail('Bar pattern not found in: ' . $healthLine);
+        }
         $bar = $matches[1];
         self::assertSame(30, \strlen($bar));
         self::assertSame(15, substr_count($bar, '#'));
@@ -392,8 +393,9 @@ final class HealthBarRendererTest extends TestCase
 
         $healthLine = $lines[0];
         // Negative score: filled = max(0, min(30, round(-10/100*30))) = 0
-        preg_match('/\[([#.]+)]/', $healthLine, $matches);
-        self::assertNotEmpty($matches);
+        if (preg_match('/\[([#.]+)]/', $healthLine, $matches) !== 1) {
+            self::fail('Bar pattern not found in: ' . $healthLine);
+        }
         self::assertSame(0, substr_count($matches[1], '#'));
     }
 
