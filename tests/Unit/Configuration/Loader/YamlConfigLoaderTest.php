@@ -389,6 +389,36 @@ YAML);
         self::assertSame(['Symfony', 'Doctrine'], $config['coupling']['frameworkNamespaces']);
     }
 
+    public function testLoadProjectQmxYamlWithoutErrors(): void
+    {
+        $projectRoot = \dirname(__DIR__, 4);
+        $configPath = $projectRoot . '/qmx.yaml';
+
+        if (!file_exists($configPath)) {
+            self::markTestSkipped('No qmx.yaml in project root');
+        }
+
+        // Smoke test: the project's own config file must load without errors
+        $config = $this->loader->load($configPath);
+
+        self::assertNotEmpty($config, 'Project qmx.yaml should produce non-empty config');
+    }
+
+    public function testLoadProjectQmxYamlExampleWithoutErrors(): void
+    {
+        $projectRoot = \dirname(__DIR__, 4);
+        $examplePath = $projectRoot . '/qmx.yaml.example';
+
+        if (!file_exists($examplePath)) {
+            self::markTestSkipped('No qmx.yaml.example in project root');
+        }
+
+        // The example file is fully commented out — should parse as empty
+        $config = $this->loader->load($examplePath);
+
+        self::assertSame([], $config);
+    }
+
     public function testLoadPreservesMultipleRuleNamesWithMixedFormats(): void
     {
         $path = $this->tempDir . '/config.yaml';
