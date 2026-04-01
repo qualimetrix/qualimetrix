@@ -40,6 +40,7 @@ final class YamlConfigLoader implements ConfigLoaderInterface
         'include_generated',
         'memoryLimit',
         'memory_limit',
+        'coupling',
     ];
 
     public function load(string $path): array
