@@ -63,6 +63,7 @@ final class RuntimeConfigurator
         $this->frameworkNamespacesHolder->reset();
 
         $this->configureLogger($input, $output);
+        $this->configureMemoryLimit($resolved->analysis, $output);
         $this->configureProgressReporter($input, $output);
         $this->configureProfiler($input);
 
@@ -98,6 +99,28 @@ final class RuntimeConfigurator
         $definitions = $this->computedMetricsResolver->resolve($resolved->computedMetrics);
         $definitions = $this->healthFormulaExcluder->applyExcludeHealth($definitions, $resolved->analysis->excludeHealth);
         ComputedMetricDefinitionHolder::setDefinitions($definitions);
+    }
+
+    /**
+     * Applies PHP memory limit from configuration.
+     *
+     * The default (512M) is set in DefaultsStage and can be overridden
+     * via qmx.yaml or --memory-limit CLI option.
+     */
+    private function configureMemoryLimit(AnalysisConfiguration $config, OutputInterface $output): void
+    {
+        if ($config->memoryLimit === null) {
+            return;
+        }
+
+        $result = ini_set('memory_limit', $config->memoryLimit);
+
+        if ($result === false) {
+            $output->writeln(\sprintf(
+                '<comment>Warning: failed to set memory_limit to %s. ini_set() may be disabled.</comment>',
+                $config->memoryLimit,
+            ));
+        }
     }
 
     /**

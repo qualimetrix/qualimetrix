@@ -48,6 +48,7 @@ final class ConfigDataNormalizer
         ['computedMetrics|computed_metrics', 'computed_metrics'],
         ['excludeHealth|exclude_health', 'exclude_health'],
         ['includeGenerated|include_generated', 'include_generated'],
+        ['memoryLimit|memory_limit', 'memory_limit'],
     ];
 
     /**

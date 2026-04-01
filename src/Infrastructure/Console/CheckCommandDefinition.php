@@ -250,6 +250,12 @@ final class CheckCommandDefinition
                 null,
                 InputOption::VALUE_NONE,
                 'Disable progress bar',
+            )
+            ->addOption(
+                'memory-limit',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'PHP memory limit (e.g., 512M, 1G, -1 for unlimited)',
             );
     }
 

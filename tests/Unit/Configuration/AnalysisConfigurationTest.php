@@ -512,4 +512,107 @@ final class AnalysisConfigurationTest extends TestCase
 
         self::assertSame(['Symfony', 'Psr'], $merged->frameworkNamespaces);
     }
+
+    // --- memoryLimit tests ---
+
+    public function testDefaultMemoryLimitIsNull(): void
+    {
+        $config = new AnalysisConfiguration();
+
+        self::assertNull($config->memoryLimit);
+    }
+
+    public function testFromArrayParsesMemoryLimitString(): void
+    {
+        $config = AnalysisConfiguration::fromArray(['memory_limit' => '1G']);
+
+        self::assertSame('1G', $config->memoryLimit);
+    }
+
+    public function testFromArrayParsesMemoryLimitWithMegabytes(): void
+    {
+        $config = AnalysisConfiguration::fromArray(['memory_limit' => '512M']);
+
+        self::assertSame('512M', $config->memoryLimit);
+    }
+
+    public function testFromArrayParsesMemoryLimitUnlimited(): void
+    {
+        $config = AnalysisConfiguration::fromArray(['memory_limit' => '-1']);
+
+        self::assertSame('-1', $config->memoryLimit);
+    }
+
+    public function testFromArrayParsesMemoryLimitInteger(): void
+    {
+        // YAML without quotes: memory_limit: 134217728
+        $config = AnalysisConfiguration::fromArray(['memory_limit' => 134217728]);
+
+        self::assertSame('134217728', $config->memoryLimit);
+    }
+
+    public function testFromArrayParsesMemoryLimitLowercaseSuffix(): void
+    {
+        $config = AnalysisConfiguration::fromArray(['memory_limit' => '512m']);
+
+        self::assertSame('512m', $config->memoryLimit);
+    }
+
+    public function testFromArrayMemoryLimitNullByDefault(): void
+    {
+        $config = AnalysisConfiguration::fromArray([]);
+
+        self::assertNull($config->memoryLimit);
+    }
+
+    public function testFromArrayMemoryLimitInvalidStringThrowsException(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Invalid value "banana" for "memory_limit"');
+
+        AnalysisConfiguration::fromArray(['memory_limit' => 'banana']);
+    }
+
+    public function testFromArrayMemoryLimitInvalidNegativeThrowsException(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Invalid value "-2" for "memory_limit"');
+
+        AnalysisConfiguration::fromArray(['memory_limit' => '-2']);
+    }
+
+    public function testFromArrayMemoryLimitZeroThrowsException(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Invalid value "0" for "memory_limit"');
+
+        AnalysisConfiguration::fromArray(['memory_limit' => '0']);
+    }
+
+    public function testMergeMemoryLimitOverridesWhenPresent(): void
+    {
+        $base = new AnalysisConfiguration(memoryLimit: '512M');
+
+        $merged = $base->merge(['memory_limit' => '1G']);
+
+        self::assertSame('1G', $merged->memoryLimit);
+    }
+
+    public function testMergeMemoryLimitPreservesWhenNotInOverrides(): void
+    {
+        $base = new AnalysisConfiguration(memoryLimit: '1G');
+
+        $merged = $base->merge(['format' => 'json']);
+
+        self::assertSame('1G', $merged->memoryLimit);
+    }
+
+    public function testMergeMemoryLimitPreservesNullWhenNotInOverrides(): void
+    {
+        $base = new AnalysisConfiguration();
+
+        $merged = $base->merge(['format' => 'json']);
+
+        self::assertNull($merged->memoryLimit);
+    }
 }

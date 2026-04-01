@@ -38,6 +38,8 @@ final class YamlConfigLoader implements ConfigLoaderInterface
         'exclude_health',
         'includeGenerated',
         'include_generated',
+        'memoryLimit',
+        'memory_limit',
     ];
 
     public function load(string $path): array

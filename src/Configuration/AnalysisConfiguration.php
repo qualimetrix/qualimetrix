@@ -40,6 +40,7 @@ final readonly class AnalysisConfiguration
      * @param list<string> $excludeHealth Health dimensions to exclude from scoring (e.g., 'typing', 'complexity')
      * @param bool $includeGenerated Whether to include files marked with @generated annotation
      * @param list<string> $frameworkNamespaces Framework namespace prefixes for CBO_APP/CE_FRAMEWORK metrics
+     * @param string|null $memoryLimit PHP memory limit override (e.g., '512M', '1G', '-1' for unlimited)
      */
     public function __construct(
         public string $cacheDir = self::DEFAULT_CACHE_DIR,
@@ -58,6 +59,7 @@ final readonly class AnalysisConfiguration
         public array $excludeHealth = [],
         public bool $includeGenerated = false,
         public array $frameworkNamespaces = [],
+        public ?string $memoryLimit = null,
     ) {}
 
     /**
@@ -84,6 +86,7 @@ final readonly class AnalysisConfiguration
             excludeHealth: self::getStringList($config, 'exclude_health'),
             includeGenerated: self::getBool($config, 'include_generated', false),
             frameworkNamespaces: self::getStringList($config, 'coupling.framework_namespaces'),
+            memoryLimit: self::getMemoryLimit($config, 'memory_limit'),
         );
     }
 
@@ -119,6 +122,7 @@ final readonly class AnalysisConfiguration
             frameworkNamespaces: self::hasNestedValue($overrides, 'coupling.framework_namespaces')
                 ? self::getStringList($overrides, 'coupling.framework_namespaces')
                 : $this->frameworkNamespaces,
+            memoryLimit: self::getMemoryLimit($overrides, 'memory_limit') ?? $this->memoryLimit,
         );
     }
 
@@ -254,6 +258,43 @@ final readonly class AnalysisConfiguration
         }
 
         return array_values(array_filter($value, is_string(...)));
+    }
+
+    /**
+     * Extracts and validates a PHP memory limit value.
+     *
+     * Accepts: '-1' (unlimited), integer bytes, or string with K/M/G suffix.
+     * Integer values from YAML (e.g., `memory_limit: 512`) are treated as bytes.
+     *
+     * @param array<string, mixed> $config
+     */
+    private static function getMemoryLimit(array $config, string $path): ?string
+    {
+        $value = self::getNestedValue($config, $path);
+
+        if ($value === null) {
+            return null;
+        }
+
+        // Handle integer values from YAML (e.g., memory_limit: 512)
+        if (\is_int($value)) {
+            return (string) $value;
+        }
+
+        if (!\is_string($value)) {
+            return null;
+        }
+
+        // Validate format: -1, or digits optionally followed by K/M/G
+        if (!preg_match('/\A(?:-1|[1-9]\d*[KMGkmg]?)\z/', $value)) {
+            throw new InvalidArgumentException(\sprintf(
+                'Invalid value "%s" for "%s". Expected: -1 (unlimited), integer bytes, or integer with K/M/G suffix (e.g., 512M, 1G)',
+                $value,
+                $path,
+            ));
+        }
+
+        return $value;
     }
 
     /**

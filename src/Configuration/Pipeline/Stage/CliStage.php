@@ -59,6 +59,9 @@ final class CliStage implements ConfigurationStageInterface
             $values['parallel.workers'] = (int) $input->getOption('workers');
         }
 
+        // Memory limit
+        $this->setIfNotEmpty($values, 'memory_limit', $this->extractStringOption($input, 'memory-limit'));
+
         if ($values === []) {
             return null;
         }

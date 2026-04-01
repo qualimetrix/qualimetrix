@@ -172,4 +172,21 @@ final class ConfigDataNormalizerTest extends TestCase
 
         self::assertSame(['Symfony'], $result['coupling.framework_namespaces']);
     }
+
+    #[Test]
+    public function normalizesMemoryLimitFromCamelCase(): void
+    {
+        $result = ConfigDataNormalizer::normalize(['memoryLimit' => '1G']);
+
+        self::assertArrayNotHasKey('memoryLimit', $result);
+        self::assertSame('1G', $result['memory_limit']);
+    }
+
+    #[Test]
+    public function normalizesMemoryLimitFromSnakeCase(): void
+    {
+        $result = ConfigDataNormalizer::normalize(['memory_limit' => '512M']);
+
+        self::assertSame('512M', $result['memory_limit']);
+    }
 }
