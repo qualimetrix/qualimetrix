@@ -99,7 +99,7 @@ final class YamlConfigLoader implements ConfigLoaderInterface
 
             if (\is_array($value)) {
                 // When entering the 'rules' section, preserve rule name keys (next level)
-                $isRulesSection = !$preserveKeys && $stringKey === 'rules';
+                $isRulesSection = !$preserveKeys && $stringKey === ConfigSchema::RULES;
                 $result[$normalizedKey] = $this->normalizeKeys($value, $isRulesSection);
             } else {
                 $result[$normalizedKey] = $value;
@@ -155,15 +155,15 @@ final class YamlConfigLoader implements ConfigLoaderInterface
         }
 
         // Validate 'rules' section structure
-        if (isset($config['rules'])) {
-            if (!\is_array($config['rules'])) {
+        if (isset($config[ConfigSchema::RULES])) {
+            if (!\is_array($config[ConfigSchema::RULES])) {
                 throw ConfigLoadException::invalidStructure(
                     $path,
-                    \sprintf('"%s" must be an associative array', $this->originalKey('rules', $keyMap)),
+                    \sprintf('"%s" must be an associative array', $this->originalKey(ConfigSchema::RULES, $keyMap)),
                 );
             }
 
-            foreach ($config['rules'] as $ruleName => $ruleConfig) {
+            foreach ($config[ConfigSchema::RULES] as $ruleName => $ruleConfig) {
                 if (!\is_array($ruleConfig) && !\is_bool($ruleConfig) && $ruleConfig !== null) {
                     throw ConfigLoadException::invalidStructure(
                         $path,
