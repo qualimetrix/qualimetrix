@@ -220,6 +220,12 @@ Standard Symfony practices are used: **autowiring** and **autoconfiguration**.
 2. Implement `ConfigurationStageInterface`
 3. The class will be registered **automatically** and added to `ConfigurationPipeline`
 
+**Adding a new config option (YAML key):**
+1. Add a constant to `src/Configuration/ConfigSchema.php` (e.g., `public const MY_OPTION = 'my.option'`)
+2. Add an entry to `ConfigSchema::ENTRIES` (source path, result key, root type)
+3. Add handling in the appropriate consumer (`AnalysisConfiguration`, `DefaultsStage`, `CliStage`, etc.)
+4. All consumers must reference the constant, not a string literal
+
 **Adding a new rule:**
 1. Create a `*Rule.php` class in `src/Rules/{Category}/` (e.g., `src/Rules/Complexity/`)
 2. Implement `RuleInterface` (or extend `AbstractRule`)
