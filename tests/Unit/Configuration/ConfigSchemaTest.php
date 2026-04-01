@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Configuration\ConfigSchema;
+use ReflectionClass;
 
 #[CoversClass(ConfigSchema::class)]
 final class ConfigSchemaTest extends TestCase
@@ -24,7 +25,7 @@ final class ConfigSchemaTest extends TestCase
         self::assertContains('rules', $keys);
         self::assertContains('failOn', $keys);
 
-        // Section keys (derived from dotted mappings)
+        // Section keys (derived from dotted entries)
         self::assertContains('cache', $keys);
         self::assertContains('namespace', $keys);
         self::assertContains('aggregation', $keys);
@@ -39,7 +40,7 @@ final class ConfigSchemaTest extends TestCase
     }
 
     #[Test]
-    public function sectionKeysReturnsOnlySections(): void
+    public function sectionKeysIncludesDottedRoots(): void
     {
         $sections = ConfigSchema::sectionKeys();
 
@@ -74,21 +75,39 @@ final class ConfigSchemaTest extends TestCase
     }
 
     #[Test]
-    public function allRootKeyTypesAreCovered(): void
+    public function sectionAndListKeysDoNotOverlap(): void
     {
         $sections = ConfigSchema::sectionKeys();
         $lists = ConfigSchema::listKeys();
+
+        self::assertSame([], array_intersect($sections, $lists));
+    }
+
+    #[Test]
+    public function allTypedKeysAreInAllowedRootKeys(): void
+    {
         $allowed = ConfigSchema::allowedRootKeys();
 
-        // No section key should also be a list key
-        self::assertSame([], array_intersect($sections, $lists));
-
-        // All section and list keys must be in allowed root keys
-        foreach ($sections as $section) {
+        foreach (ConfigSchema::sectionKeys() as $section) {
             self::assertContains($section, $allowed, "Section key '{$section}' not in allowed root keys");
         }
-        foreach ($lists as $list) {
+        foreach (ConfigSchema::listKeys() as $list) {
             self::assertContains($list, $allowed, "List key '{$list}' not in allowed root keys");
+        }
+    }
+
+    #[Test]
+    public function everyEntryHasMatchingConstant(): void
+    {
+        $reflection = new ReflectionClass(ConfigSchema::class);
+        $constantValues = array_values($reflection->getConstants());
+
+        foreach (ConfigSchema::ENTRIES as [, $resultKey]) {
+            self::assertContains(
+                $resultKey,
+                $constantValues,
+                "Result key '{$resultKey}' has no matching constant in ConfigSchema",
+            );
         }
     }
 }
