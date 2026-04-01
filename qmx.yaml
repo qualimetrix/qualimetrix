@@ -6,32 +6,30 @@
 # Fail CI on errors only (warnings are informational)
 failOn: error
 
-# Coupling: Core contracts are used everywhere by design
+# Coupling: mark vendor dependencies as framework
 coupling:
   framework-namespaces:
     - Symfony
     - PhpParser
     - Psr
-    - Amphp
-
-# Exclude paths from violation reporting
-exclude_paths:
-  - src/Infrastructure/DependencyInjection/*
+    - Amp
 
 rules:
   # Core value objects (Severity, SymbolPath, SymbolType, Location, ClassInfo)
-  # are coupling magnets by design — relax class-level CBO
+  # are coupling magnets by design — every domain depends on them.
+  # Suppress CBO violations for Core namespaces rather than inflating thresholds globally.
   coupling.cbo:
-    class:
-      warning: 20
-      error: 40
+    exclude_namespaces:
+      - Qualimetrix\Core\Violation
+      - Qualimetrix\Core\Symbol
     namespace:
       warning: 16
       error: 25
 
   coupling.class-rank:
-    warning: 0.03
-    error: 0.06
+    exclude_namespaces:
+      - Qualimetrix\Core\Violation
+      - Qualimetrix\Core\Symbol
 
   coupling.distance:
     max_distance_warning: 0.4

@@ -37,11 +37,14 @@ final class YamlConfigLoader implements ConfigLoaderInterface
             throw ConfigLoadException::invalidFormat($path, 'YAML');
         }
 
+        // Build reverse map (normalizedKey → originalKey) for user-facing error messages
+        $keyMap = $this->buildRootKeyMap($content);
+
         $normalized = $this->normalizeKeys($content);
 
         // Validate after key normalization so we only need camelCase allowed keys
         // (derived from ConfigDataNormalizer::MAPPINGS — single source of truth)
-        $this->validateStructure($normalized, $path);
+        $this->validateStructure($normalized, $path, $keyMap);
 
         return $normalized;
     }
@@ -51,6 +54,27 @@ final class YamlConfigLoader implements ConfigLoaderInterface
         $extension = strtolower(pathinfo($path, \PATHINFO_EXTENSION));
 
         return \in_array($extension, self::SUPPORTED_EXTENSIONS, true);
+    }
+
+    /**
+     * Builds a map of normalizedKey → originalKey for root-level keys.
+     *
+     * Used to show the user's original key names in error messages,
+     * even though validation runs on normalized (camelCase) keys.
+     *
+     * @param array<string, mixed> $config Raw YAML config
+     *
+     * @return array<string, string> normalizedKey → originalKey
+     */
+    private function buildRootKeyMap(array $config): array
+    {
+        $map = [];
+
+        foreach (array_keys($config) as $originalKey) {
+            $map[$this->snakeToCamel((string) $originalKey)] = (string) $originalKey;
+        }
+
+        return $map;
     }
 
     /**
@@ -92,14 +116,25 @@ final class YamlConfigLoader implements ConfigLoaderInterface
     }
 
     /**
+     * Resolves the original key name from the reverse map.
+     *
+     * @param array<string, string> $keyMap normalizedKey → originalKey
+     */
+    private function originalKey(string $normalizedKey, array $keyMap): string
+    {
+        return $keyMap[$normalizedKey] ?? $normalizedKey;
+    }
+
+    /**
      * Validates the structure of the normalized configuration.
      *
      * Allowed root keys are derived from ConfigDataNormalizer::MAPPINGS
      * (single source of truth) — no hardcoded list to maintain here.
      *
      * @param array<string, mixed> $config Post-normalization config (camelCase keys)
+     * @param array<string, string> $keyMap normalizedKey → originalKey for error messages
      */
-    private function validateStructure(array $config, string $path): void
+    private function validateStructure(array $config, string $path, array $keyMap): void
     {
         // Check for unknown root keys (derived from ConfigDataNormalizer)
         $unknownKeys = array_diff(
@@ -108,9 +143,14 @@ final class YamlConfigLoader implements ConfigLoaderInterface
         );
 
         if ($unknownKeys !== []) {
+            $originalNames = array_map(
+                fn(string $key): string => $this->originalKey($key, $keyMap),
+                $unknownKeys,
+            );
+
             throw ConfigLoadException::invalidStructure(
                 $path,
-                \sprintf('Unknown configuration keys: %s', implode(', ', $unknownKeys)),
+                \sprintf('Unknown configuration keys: %s', implode(', ', $originalNames)),
             );
         }
 
@@ -119,7 +159,7 @@ final class YamlConfigLoader implements ConfigLoaderInterface
             if (!\is_array($config['rules'])) {
                 throw ConfigLoadException::invalidStructure(
                     $path,
-                    '"rules" must be an associative array',
+                    \sprintf('"%s" must be an associative array', $this->originalKey('rules', $keyMap)),
                 );
             }
 
@@ -138,7 +178,7 @@ final class YamlConfigLoader implements ConfigLoaderInterface
             if (isset($config[$section]) && !\is_array($config[$section])) {
                 throw ConfigLoadException::invalidStructure(
                     $path,
-                    \sprintf('"%s" must be an associative array', $section),
+                    \sprintf('"%s" must be an associative array', $this->originalKey($section, $keyMap)),
                 );
             }
         }
@@ -148,7 +188,7 @@ final class YamlConfigLoader implements ConfigLoaderInterface
             if (isset($config[$field]) && !\is_array($config[$field])) {
                 throw ConfigLoadException::invalidStructure(
                     $path,
-                    \sprintf('"%s" must be a list', $field),
+                    \sprintf('"%s" must be a list', $this->originalKey($field, $keyMap)),
                 );
             }
         }

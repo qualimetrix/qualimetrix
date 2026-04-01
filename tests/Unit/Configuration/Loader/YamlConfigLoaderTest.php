@@ -170,7 +170,8 @@ another_bad_key: true
 YAML);
 
         $this->expectException(ConfigLoadException::class);
-        $this->expectExceptionMessage('Unknown configuration keys');
+        // Error message should show original key names (snake_case), not camelCase
+        $this->expectExceptionMessage('unknown_key, another_bad_key');
 
         $this->loader->load($path);
     }
@@ -256,7 +257,7 @@ YAML);
         file_put_contents($path, 'disabled_rules: not_a_list');
 
         $this->expectException(ConfigLoadException::class);
-        $this->expectExceptionMessage('"disabledRules" must be a list');
+        $this->expectExceptionMessage('"disabled_rules" must be a list');
 
         $this->loader->load($path);
     }
@@ -302,7 +303,7 @@ YAML);
         file_put_contents($path, 'exclude_paths: not_a_list');
 
         $this->expectException(ConfigLoadException::class);
-        $this->expectExceptionMessage('"excludePaths" must be a list');
+        $this->expectExceptionMessage('"exclude_paths" must be a list');
 
         $this->loader->load($path);
     }
