@@ -197,6 +197,17 @@ exclude_health:
 
 Equivalent CLI: `--exclude-health=typing --exclude-health=maintainability`
 
+### Memory limit
+
+Set the PHP memory limit for analysis. By default, PHP's `memory_limit` from `php.ini` is used.
+
+```yaml
+memory_limit: 1G    # 1 gigabyte
+# memory_limit: -1  # Unlimited
+```
+
+Equivalent CLI: `--memory-limit=1G`
+
 ### Format
 
 Set the default output format:

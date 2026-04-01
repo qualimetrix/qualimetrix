@@ -192,6 +192,17 @@ exclude_health:
 
 Эквивалент в CLI: `--exclude-health=typing --exclude-health=maintainability`
 
+### Лимит памяти (memory_limit)
+
+Лимит памяти PHP для анализа. По умолчанию используется значение `memory_limit` из `php.ini`.
+
+```yaml
+memory_limit: 1G    # 1 гигабайт
+# memory_limit: -1  # Без ограничений
+```
+
+Эквивалент в CLI: `--memory-limit=1G`
+
 ### Формат вывода (format)
 
 Формат отчёта по умолчанию:
