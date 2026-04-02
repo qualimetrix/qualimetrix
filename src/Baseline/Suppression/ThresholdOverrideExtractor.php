@@ -146,7 +146,7 @@ final readonly class ThresholdOverrideExtractor
     }
 
     /**
-     * Parses the value portion of a @qmx-threshold annotation.
+     * Parses the value portion of a `@qmx-threshold` annotation.
      *
      * Returns [warning, error] or null if unparseable.
      *
