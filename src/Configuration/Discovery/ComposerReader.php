@@ -7,7 +7,7 @@ namespace Qualimetrix\Configuration\Discovery;
 final class ComposerReader
 {
     /**
-     * Extracts paths from autoload.psr-4 and autoload-dev.psr-4.
+     * Extracts paths from autoload.psr-4 and optionally autoload-dev.psr-4.
      *
      * Handles both single-path strings and multi-path arrays per PSR-4 spec:
      *   "App\\": "src/"
@@ -15,7 +15,7 @@ final class ComposerReader
      *
      * @return list<string> Paths relative to composer.json
      */
-    public function extractAutoloadPaths(string $composerJsonPath): array
+    public function extractAutoloadPaths(string $composerJsonPath, bool $includeDev = true): array
     {
         if (!file_exists($composerJsonPath)) {
             return [];
@@ -34,7 +34,10 @@ final class ComposerReader
         $paths = [];
 
         $this->collectPsr4Paths($data, 'autoload', $paths);
-        $this->collectPsr4Paths($data, 'autoload-dev', $paths);
+
+        if ($includeDev) {
+            $this->collectPsr4Paths($data, 'autoload-dev', $paths);
+        }
 
         return array_values(array_unique($paths));
     }

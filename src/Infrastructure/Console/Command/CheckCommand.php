@@ -16,6 +16,7 @@ use Qualimetrix\Infrastructure\Console\CheckCommandDefinition;
 use Qualimetrix\Infrastructure\Console\FilteredInputDefinition;
 use Qualimetrix\Infrastructure\Console\ResultPresenter;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
+use Qualimetrix\Infrastructure\Console\ScopeWarningChecker;
 use Qualimetrix\Infrastructure\Console\ViolationFilterOrchestrator;
 use Qualimetrix\Infrastructure\Git\GitScopeResolver;
 use Qualimetrix\Infrastructure\Rule\Exception\ConflictingCliAliasException;
@@ -177,6 +178,8 @@ final class CheckCommand extends Command
             return self::FAILURE;
         }
 
+        $this->warnAboutPartialScope($scopeResolution->paths, $input, $output);
+
         $result = $this->runAnalysis($scopeResolution->paths, $scopeResolution->fileDiscovery);
 
         if ($result->filesAnalyzed === 0 && $scopeResolution->analyzeScope === null) {
@@ -289,6 +292,27 @@ final class CheckCommand extends Command
             $output->writeln(
                 '<comment>Warning: both --disable-rule and --only-rule are active. This may result in no rules being enabled.</comment>',
             );
+        }
+    }
+
+    /**
+     * Warns when analyzed paths don't cover the full project scope.
+     *
+     * @param list<string> $paths
+     */
+    private function warnAboutPartialScope(array $paths, InputInterface $input, OutputInterface $output): void
+    {
+        // Only show for human-readable formats; structured formats would be corrupted
+        $format = $input->getOption('format');
+        $textFormats = [null, 'text', 'summary', 'health', 'metrics', 'github'];
+        if (!\in_array($format, $textFormats, true)) {
+            return;
+        }
+
+        $checker = new ScopeWarningChecker();
+        $warnings = $checker->check(getcwd() ?: '.', $paths);
+        foreach ($warnings as $warning) {
+            $output->writeln(\sprintf('<comment>Warning: %s</comment>', $warning));
         }
     }
 

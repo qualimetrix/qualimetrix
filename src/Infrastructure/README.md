@@ -114,6 +114,7 @@ Infrastructure/
     ├── ResultPresenter.php            # Output presentation
     ├── BaselinePresenter.php          # Baseline file generation presentation
     ├── ExitCodeResolver.php           # Determines CLI exit code from violations
+    ├── ScopeWarningChecker.php        # Warns when analysis paths don't cover all composer.json autoload entries
     ├── ProfilePresenter.php           # Handles profiling output: summary to stderr or export to file
     ├── FormatterContextFactory.php    # Creates FormatterContext from CLI input options
     ├── CheckCommandDefinition.php     # Command option definitions
