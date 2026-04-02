@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- LCOM4 rule: `exclude_methods` option to exclude specific methods from the cohesion graph (reduces false positives from interface-mandated methods like `getName`, `getDescription`)
+- Partial scope warning when analysis paths don't cover all composer.json autoload entries
 - `coupling.instability`: classes and namespaces with no dependents (Ca=0) are now skipped by default (configurable via `skip_leaf: false`)
 - `code-smell.boolean-argument`: parameters with common boolean prefixes (`is*`, `has*`, `can*`, `should*`, `will*`, `did*`, `was*`) are now allowed by default (configurable via `allowed_prefixes: []`)
 - `code-smell.error-suppression`: `allowed_functions` option to whitelist functions where `@` usage is acceptable (e.g., `fopen`, `unlink`)
