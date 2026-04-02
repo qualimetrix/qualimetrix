@@ -22,6 +22,7 @@ final readonly class ClassInstabilityOptions implements LevelOptionsInterface, T
         public bool $enabled = true,
         public float $maxWarning = 0.8,
         public float $maxError = 0.95,
+        public bool $skipLeaf = true,
     ) {}
 
     /**
@@ -40,6 +41,7 @@ final readonly class ClassInstabilityOptions implements LevelOptionsInterface, T
             enabled: (bool) ($config['enabled'] ?? true),
             maxWarning: (float) $thresholds['warning'],
             maxError: (float) $thresholds['error'],
+            skipLeaf: (bool) ($config['skip_leaf'] ?? $config['skipLeaf'] ?? true),
         );
     }
 
@@ -69,6 +71,7 @@ final readonly class ClassInstabilityOptions implements LevelOptionsInterface, T
             enabled: $this->enabled,
             maxWarning: $warning !== null ? (float) $warning : $this->maxWarning,
             maxError: $error !== null ? (float) $error : $this->maxError,
+            skipLeaf: $this->skipLeaf,
         );
     }
 }
