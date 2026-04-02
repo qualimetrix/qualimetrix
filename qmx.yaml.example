@@ -238,11 +238,11 @@
   #   class:
   #     max_warning: 0.8         # default: 0.8
   #     max_error: 0.95
-  #     skip_leaf: true          # skip Ca=0 classes (default: true)
+  #     min_afferent: 1          # skip classes with Ca < N (default: 1)
   #   namespace:
   #     max_warning: 0.8
   #     max_error: 0.95
-  #     skip_leaf: true          # skip Ca=0 namespaces (default: true)
+  #     min_afferent: 1          # skip namespaces with Ca < N (default: 1)
 
   # Distance from Main Sequence. Range 0.0–1.0.
   # coupling.distance:

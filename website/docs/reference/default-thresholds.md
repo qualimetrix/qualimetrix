@@ -70,7 +70,7 @@ Rules that check how tightly classes and namespaces are connected to each other.
 
 **CBO (Coupling Between Objects)** counts the number of other classes a class depends on. High coupling makes code harder to change.
 
-**Instability** is a ratio from 0 (fully stable) to 1 (fully unstable). A class that depends on many others but is not depended upon is unstable. By default, `skip_leaf: true` -- classes and namespaces with no dependents (Ca=0) are skipped since they have I=1.0 by definition.
+**Instability** is a ratio from 0 (fully stable) to 1 (fully unstable). A class that depends on many others but is not depended upon is unstable. By default, `min_afferent: 1` -- classes and namespaces with no dependents (Ca=0) are skipped since they have I=1.0 by definition. Set to `2` to also skip symbols with only one dependent.
 
 **Distance from the Main Sequence** measures how well a namespace balances abstractness and stability. A distance close to 0 is ideal.
 

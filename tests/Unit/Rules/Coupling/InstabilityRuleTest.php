@@ -202,14 +202,14 @@ final class InstabilityRuleTest extends TestCase
         self::assertSame(0.97, $violations[0]->metricValue);
     }
 
-    public function testAnalyzeLevelClassSkipsLeafClassWithZeroCa(): void
+    public function testAnalyzeLevelClassSkipsBelowMinAfferentDefault(): void
     {
         $rule = new InstabilityRule(new InstabilityOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'LeafService');
         $classInfo = new SymbolInfo($symbolPath, 'src/Service/LeafService.php', 10);
 
-        // Ca=0 means nobody depends on this class, so I=1.00 is expected
+        // Ca=0, below default minAfferent=1, should be skipped
         $metricBag = (new MetricBag())
             ->with('instability', 1.0)
             ->with('ca', 0)
@@ -227,18 +227,18 @@ final class InstabilityRuleTest extends TestCase
         self::assertCount(0, $violations);
     }
 
-    public function testAnalyzeLevelClassDoesNotSkipLeafWhenSkipLeafDisabled(): void
+    public function testAnalyzeLevelClassDoesNotSkipWhenMinAfferentIsZero(): void
     {
         $rule = new InstabilityRule(
             new InstabilityOptions(
-                class: new ClassInstabilityOptions(skipLeaf: false),
+                class: new ClassInstabilityOptions(minAfferent: 0),
             ),
         );
 
         $symbolPath = SymbolPath::forClass('App\Service', 'LeafService');
         $classInfo = new SymbolInfo($symbolPath, 'src/Service/LeafService.php', 10);
 
-        // Ca=0 means leaf class, but skipLeaf is false so it should NOT be skipped
+        // Ca=0, but minAfferent=0 means check all classes
         $metricBag = (new MetricBag())
             ->with('instability', 1.0)
             ->with('ca', 0)
@@ -255,6 +255,65 @@ final class InstabilityRuleTest extends TestCase
 
         self::assertCount(1, $violations);
         self::assertSame(Severity::Error, $violations[0]->severity);
+    }
+
+    public function testAnalyzeLevelClassSkipsCaOneWhenMinAfferentIsTwo(): void
+    {
+        $rule = new InstabilityRule(
+            new InstabilityOptions(
+                class: new ClassInstabilityOptions(minAfferent: 2),
+            ),
+        );
+
+        $symbolPath = SymbolPath::forClass('App\Service', 'NearLeafService');
+        $classInfo = new SymbolInfo($symbolPath, 'src/Service/NearLeafService.php', 10);
+
+        // Ca=1, below minAfferent=2, should be skipped
+        $metricBag = (new MetricBag())
+            ->with('instability', 0.92)
+            ->with('ca', 1)
+            ->with('ce', 11);
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturn([$classInfo]);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyzeLevel(RuleLevel::Class_, $context);
+
+        self::assertCount(0, $violations);
+    }
+
+    public function testAnalyzeLevelClassDoesNotSkipCaTwoWhenMinAfferentIsTwo(): void
+    {
+        $rule = new InstabilityRule(
+            new InstabilityOptions(
+                class: new ClassInstabilityOptions(minAfferent: 2),
+            ),
+        );
+
+        $symbolPath = SymbolPath::forClass('App\Service', 'CoreService');
+        $classInfo = new SymbolInfo($symbolPath, 'src/Service/CoreService.php', 10);
+
+        // Ca=2, meets minAfferent=2, should NOT be skipped
+        $metricBag = (new MetricBag())
+            ->with('instability', 0.85)
+            ->with('ca', 2)
+            ->with('ce', 12);
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturn([$classInfo]);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyzeLevel(RuleLevel::Class_, $context);
+
+        self::assertCount(1, $violations);
+        self::assertSame(Severity::Warning, $violations[0]->severity);
     }
 
     // Namespace-level tests
@@ -333,14 +392,14 @@ final class InstabilityRuleTest extends TestCase
         self::assertSame(0.98, $violations[0]->metricValue);
     }
 
-    public function testAnalyzeLevelNamespaceSkipsLeafByDefault(): void
+    public function testAnalyzeLevelNamespaceSkipsBelowMinAfferentDefault(): void
     {
         $rule = new InstabilityRule(new InstabilityOptions());
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
         $nsInfo = new SymbolInfo($symbolPath, 'src/Service', null);
 
-        // Ca=0 means leaf namespace, should be skipped by default
+        // Ca=0, below default minAfferent=1, should be skipped
         $metricBag = (new MetricBag())
             ->with('instability', 1.0)
             ->with('ca', 0)
@@ -359,18 +418,18 @@ final class InstabilityRuleTest extends TestCase
         self::assertCount(0, $violations);
     }
 
-    public function testAnalyzeLevelNamespaceDoesNotSkipLeafWhenSkipLeafDisabled(): void
+    public function testAnalyzeLevelNamespaceDoesNotSkipWhenMinAfferentIsZero(): void
     {
         $rule = new InstabilityRule(
             new InstabilityOptions(
-                namespace: new NamespaceInstabilityOptions(skipLeaf: false),
+                namespace: new NamespaceInstabilityOptions(minAfferent: 0),
             ),
         );
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
         $nsInfo = new SymbolInfo($symbolPath, 'src/Service', null);
 
-        // Ca=0 means leaf namespace, but skipLeaf is false
+        // Ca=0, but minAfferent=0 means check all namespaces
         $metricBag = (new MetricBag())
             ->with('instability', 1.0)
             ->with('ca', 0)
@@ -388,6 +447,36 @@ final class InstabilityRuleTest extends TestCase
 
         self::assertCount(1, $violations);
         self::assertSame(Severity::Error, $violations[0]->severity);
+    }
+
+    public function testAnalyzeLevelNamespaceSkipsCaOneWhenMinAfferentIsTwo(): void
+    {
+        $rule = new InstabilityRule(
+            new InstabilityOptions(
+                namespace: new NamespaceInstabilityOptions(minAfferent: 2),
+            ),
+        );
+
+        $symbolPath = SymbolPath::forNamespace('App\Service');
+        $nsInfo = new SymbolInfo($symbolPath, 'src/Service', null);
+
+        // Ca=1, below minAfferent=2, should be skipped
+        $metricBag = (new MetricBag())
+            ->with('instability', 0.92)
+            ->with('ca', 1)
+            ->with('ce', 11)
+            ->with('classCount.sum', 5);
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturn([$nsInfo]);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyzeLevel(RuleLevel::Namespace_, $context);
+
+        self::assertCount(0, $violations);
     }
 
     // Namespace minClassCount tests
@@ -662,55 +751,64 @@ final class InstabilityRuleTest extends TestCase
         yield 'above error threshold' => [1.0, 0.8, 0.95, Severity::Error];
     }
 
-    public function testClassOptionsSkipLeafFromArray(): void
+    public function testClassOptionsMinAfferentFromArray(): void
     {
         $options = ClassInstabilityOptions::fromArray([
-            'skip_leaf' => false,
+            'min_afferent' => 3,
         ]);
 
-        self::assertFalse($options->skipLeaf);
+        self::assertSame(3, $options->minAfferent);
     }
 
-    public function testClassOptionsSkipLeafDefaultTrue(): void
+    public function testClassOptionsMinAfferentFromArrayCamelCase(): void
+    {
+        $options = ClassInstabilityOptions::fromArray([
+            'minAfferent' => 5,
+        ]);
+
+        self::assertSame(5, $options->minAfferent);
+    }
+
+    public function testClassOptionsMinAfferentDefaultOne(): void
     {
         $options = ClassInstabilityOptions::fromArray([]);
 
-        self::assertTrue($options->skipLeaf);
+        self::assertSame(1, $options->minAfferent);
     }
 
-    public function testClassOptionsWithOverridePreservesSkipLeaf(): void
+    public function testClassOptionsWithOverridePreservesMinAfferent(): void
     {
-        $options = new ClassInstabilityOptions(skipLeaf: false);
+        $options = new ClassInstabilityOptions(minAfferent: 3);
         $overridden = $options->withOverride(0.9, null);
 
-        self::assertFalse($overridden->skipLeaf);
+        self::assertSame(3, $overridden->minAfferent);
         self::assertSame(0.9, $overridden->maxWarning);
     }
 
-    public function testNamespaceOptionsSkipLeafFromArray(): void
+    public function testNamespaceOptionsMinAfferentFromArray(): void
     {
         $options = NamespaceInstabilityOptions::fromArray([
-            'skip_leaf' => false,
+            'min_afferent' => 2,
         ]);
 
-        self::assertFalse($options->skipLeaf);
+        self::assertSame(2, $options->minAfferent);
     }
 
-    public function testNamespaceOptionsSkipLeafDefaultTrue(): void
+    public function testNamespaceOptionsMinAfferentDefaultOne(): void
     {
         $options = NamespaceInstabilityOptions::fromArray([
             'enabled' => true,
         ]);
 
-        self::assertTrue($options->skipLeaf);
+        self::assertSame(1, $options->minAfferent);
     }
 
-    public function testNamespaceOptionsWithOverridePreservesSkipLeaf(): void
+    public function testNamespaceOptionsWithOverridePreservesMinAfferent(): void
     {
-        $options = new NamespaceInstabilityOptions(skipLeaf: false);
+        $options = new NamespaceInstabilityOptions(minAfferent: 4);
         $overridden = $options->withOverride(0.9, null);
 
-        self::assertFalse($overridden->skipLeaf);
+        self::assertSame(4, $overridden->minAfferent);
         self::assertSame(0.9, $overridden->maxWarning);
         self::assertSame(3, $overridden->minClassCount);
     }

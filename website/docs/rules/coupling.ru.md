@@ -277,13 +277,13 @@ rules:
     class:
       max_warning: 0.9
       max_error: 1.0
-      skip_leaf: true    # по умолчанию: true
+      min_afferent: 1    # по умолчанию: 1
     namespace:
       min_class_count: 5
-      skip_leaf: true    # по умолчанию: true
+      min_afferent: 1    # по умолчанию: 1
 ```
 
-**`skip_leaf`** -- если `true` (по умолчанию), классы и пространства имён без зависимых (Ca = 0) пропускаются. Такие "листовые" символы имеют нестабильность I = 1.0 по определению (Ce / (0 + Ce) = 1.0), что не является проектным недостатком -- это просто означает, что от них пока ничего не зависит. Установите `false`, если хотите отмечать все сильно нестабильные символы, независимо от наличия зависимых.
+**`min_afferent`** -- минимальное афферентное сцепление (Ca), необходимое для проверки класса или пространства имён. По умолчанию: `1` (символы с Ca = 0 пропускаются). Установите `0`, чтобы проверять все символы, или `2`, чтобы также пропускать символы с единственным зависимым. Символы с малым числом зависимых имеют высокую нестабильность по определению, что архитектурно ожидаемо для конкретных классов-реализаций.
 
 Сокращённая запись с `threshold`:
 
@@ -297,9 +297,9 @@ rules:
 ```bash
 bin/qmx check src/ --rule-opt="coupling.instability:class.max_warning=0.9"
 bin/qmx check src/ --rule-opt="coupling.instability:class.max_error=1.0"
-bin/qmx check src/ --rule-opt="coupling.instability:class.skip_leaf=false"
+bin/qmx check src/ --rule-opt="coupling.instability:class.min_afferent=0"
 bin/qmx check src/ --rule-opt="coupling.instability:namespace.min_class_count=5"
-bin/qmx check src/ --rule-opt="coupling.instability:namespace.skip_leaf=false"
+bin/qmx check src/ --rule-opt="coupling.instability:namespace.min_afferent=2"
 ```
 
 ---

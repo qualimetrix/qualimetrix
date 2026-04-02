@@ -141,12 +141,12 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
                 continue;
             }
 
-            // Skip leaf classes with no afferent coupling (Ca=0) or no Ca metric.
-            // These classes have I=1.00 by definition, which is architecturally correct
-            // for concrete classes that nobody depends on.
+            // Skip classes with insufficient afferent coupling.
+            // Classes with very few dependents (low Ca) have high instability by definition,
+            // which is architecturally expected for concrete implementation classes.
             $caRaw = $metrics->get(MetricName::COUPLING_CA);
             $ca = $caRaw !== null ? (int) $caRaw : 0;
-            if ($ca === 0 && $classOptions->skipLeaf) {
+            if ($ca < $classOptions->minAfferent) {
                 continue;
             }
 
@@ -212,10 +212,10 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
                 continue;
             }
 
-            // Skip leaf namespaces with no afferent coupling (Ca=0).
-            // These namespaces have I=1.00 by definition, which is not a design flaw.
+            // Skip namespaces with insufficient afferent coupling.
+            // Namespaces with very few dependents have high instability by definition.
             $ca = (int) ($metrics->get(MetricName::COUPLING_CA) ?? 0);
-            if ($ca === 0 && $namespaceOptions->skipLeaf) {
+            if ($ca < $namespaceOptions->minAfferent) {
                 continue;
             }
 
