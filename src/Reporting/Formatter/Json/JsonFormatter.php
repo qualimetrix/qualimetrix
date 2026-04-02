@@ -24,7 +24,7 @@ use Qualimetrix\Reporting\Report;
 final class JsonFormatter implements FormatterInterface
 {
     private const PACKAGE = 'qmx';
-    private const DEFAULT_VIOLATION_LIMIT = 50;
+    private const ?int DEFAULT_VIOLATION_LIMIT = null;
     private const DEFAULT_TOP_OFFENDERS = 10;
 
     public function __construct(

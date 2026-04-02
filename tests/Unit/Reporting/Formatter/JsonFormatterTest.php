@@ -367,7 +367,7 @@ final class JsonFormatterTest extends TestCase
         self::assertEquals(['complexity' => 12.0, 'cohesion' => 8.0], $cls['healthScores']);
     }
 
-    public function testViolationsLimitedToTop50ByDefault(): void
+    public function testAllViolationsIncludedByDefault(): void
     {
         $builder = ReportBuilder::create()
             ->filesAnalyzed(1)
@@ -389,7 +389,7 @@ final class JsonFormatterTest extends TestCase
         $output = $this->formatter->format($report, new FormatterContext());
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
-        self::assertCount(50, $data['violations']);
+        self::assertCount(55, $data['violations']);
         // Summary shows total count
         self::assertSame(55, $data['summary']['violationCount']);
     }
@@ -920,8 +920,8 @@ final class JsonFormatterTest extends TestCase
         $output = $this->formatter->format($report, $context);
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
-        // Invalid value falls back to default (50)
-        self::assertCount(50, $data['violations']);
+        // Invalid value falls back to default (no limit)
+        self::assertCount(55, $data['violations']);
     }
 
     public function testWorstClassFileRelativized(): void
@@ -1178,9 +1178,9 @@ final class JsonFormatterTest extends TestCase
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertSame(55, $data['violationsMeta']['total']);
-        self::assertSame(50, $data['violationsMeta']['shown']);
-        self::assertSame(50, $data['violationsMeta']['limit']);
-        self::assertTrue($data['violationsMeta']['truncated']);
+        self::assertSame(55, $data['violationsMeta']['shown']);
+        self::assertNull($data['violationsMeta']['limit']);
+        self::assertFalse($data['violationsMeta']['truncated']);
     }
 
     public function testViolationsMetaShownEqualsTotal(): void
