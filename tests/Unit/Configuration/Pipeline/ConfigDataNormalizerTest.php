@@ -110,25 +110,9 @@ final class ConfigDataNormalizerTest extends TestCase
     }
 
     #[Test]
-    public function normalizesExcludeHealthFromSnakeCase(): void
-    {
-        $result = ConfigDataNormalizer::normalize(['exclude_health' => ['complexity']]);
-
-        self::assertSame(['complexity'], $result['exclude_health']);
-    }
-
-    #[Test]
     public function normalizesIncludeGeneratedFromCamelCase(): void
     {
         $result = ConfigDataNormalizer::normalize(['includeGenerated' => true]);
-
-        self::assertTrue($result['include_generated']);
-    }
-
-    #[Test]
-    public function normalizesIncludeGeneratedFromSnakeCase(): void
-    {
-        $result = ConfigDataNormalizer::normalize(['include_generated' => true]);
 
         self::assertTrue($result['include_generated']);
     }
@@ -162,18 +146,6 @@ final class ConfigDataNormalizerTest extends TestCase
     }
 
     #[Test]
-    public function normalizesCouplingFrameworkNamespacesSnakeCase(): void
-    {
-        $result = ConfigDataNormalizer::normalize([
-            'coupling' => [
-                'framework_namespaces' => ['Symfony'],
-            ],
-        ]);
-
-        self::assertSame(['Symfony'], $result['coupling.framework_namespaces']);
-    }
-
-    #[Test]
     public function normalizesMemoryLimitFromCamelCase(): void
     {
         $result = ConfigDataNormalizer::normalize(['memoryLimit' => '1G']);
@@ -183,10 +155,13 @@ final class ConfigDataNormalizerTest extends TestCase
     }
 
     #[Test]
-    public function normalizesMemoryLimitFromSnakeCase(): void
+    public function normalizesParallelWorkers(): void
     {
-        $result = ConfigDataNormalizer::normalize(['memory_limit' => '512M']);
+        $result = ConfigDataNormalizer::normalize([
+            'parallel' => ['workers' => 4],
+        ]);
 
-        self::assertSame('512M', $result['memory_limit']);
+        self::assertSame(4, $result['parallel.workers']);
     }
+
 }

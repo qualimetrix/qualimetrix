@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Configuration\Pipeline;
 
+use Qualimetrix\Configuration\ConfigSchema;
+
 /**
  * Centralizes configuration merge logic for layered configuration resolution.
  *
@@ -39,7 +41,12 @@ final class ConfigurationMerger
      *
      * @var list<string>
      */
-    public const array MERGEABLE_LIST_KEYS = ['disabled_rules', 'exclude_paths', 'excludes', 'exclude_health'];
+    public const array MERGEABLE_LIST_KEYS = [
+        ConfigSchema::DISABLED_RULES,
+        ConfigSchema::EXCLUDE_PATHS,
+        ConfigSchema::EXCLUDES,
+        ConfigSchema::EXCLUDE_HEALTH,
+    ];
 
     /**
      * Merges an overlay configuration layer into a base configuration.
@@ -58,7 +65,7 @@ final class ConfigurationMerger
                     continue;
                 }
 
-                if ($key === 'rules') {
+                if ($key === ConfigSchema::RULES) {
                     $base[$key] = self::deepMergeAssociative($base[$key], $value);
                     continue;
                 }

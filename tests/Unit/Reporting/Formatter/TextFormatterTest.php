@@ -230,9 +230,9 @@ final class TextFormatterTest extends TestCase
         $violationLine = $lines[0];
 
         // Parse using cut-like logic: file:line: severity[rule]: message (symbol)
-        preg_match('/^([^:]+):(\d+): (error|warning)\[([^\]]+)\]: (.+)$/', $violationLine, $matches);
-
-        self::assertCount(6, $matches);
+        if (preg_match('/^([^:]+):(\d+): (error|warning)\[([^\]]+)\]: (.+)$/', $violationLine, $matches) !== 1) {
+            self::fail('Violation line does not match expected format: ' . $violationLine);
+        }
         self::assertSame('src/Foo.php', $matches[1]);
         self::assertSame('10', $matches[2]);
         self::assertSame('error', $matches[3]);

@@ -1,0 +1,46 @@
+# Qualimetrix — project configuration (dogfooding)
+#
+# We analyze ourselves with our own tool. This config tunes thresholds
+# and excludes known architectural hotspots in Core.
+
+# Fail CI on errors only (warnings are informational)
+failOn: error
+
+# Coupling: mark vendor dependencies as framework
+coupling:
+  framework-namespaces:
+    - Symfony
+    - PhpParser
+    - Psr
+    - Amp
+
+rules:
+  # Core value objects (Severity, SymbolPath, SymbolType, Location, ClassInfo)
+  # are coupling magnets by design — every domain depends on them.
+  # Suppress CBO violations for Core namespaces rather than inflating thresholds globally.
+  coupling.cbo:
+    exclude_namespaces:
+      - Qualimetrix\Core\Violation
+      - Qualimetrix\Core\Symbol
+    namespace:
+      warning: 16
+      error: 25
+
+  coupling.class-rank:
+    exclude_namespaces:
+      - Qualimetrix\Core\Violation
+      - Qualimetrix\Core\Symbol
+
+  coupling.distance:
+    max_distance_warning: 0.4
+    max_distance_error: 0.6
+
+  coupling.instability:
+    namespace:
+      max_warning: 0.9
+      max_error: 1.0
+
+  # Maintainability: some metric collectors are inherently complex
+  maintainability.index:
+    warning: 35
+    error: 20

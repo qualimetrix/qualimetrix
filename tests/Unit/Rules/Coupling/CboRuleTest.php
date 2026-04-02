@@ -717,8 +717,9 @@ final class CboRuleTest extends TestCase
 
         // Count the number of class names listed after "Top dependencies: "
         self::assertStringContainsString('Top dependencies:', $recommendation);
-        preg_match('/Top dependencies: ([^.]+)\./', $recommendation, $matches);
-        self::assertNotEmpty($matches);
+        if (preg_match('/Top dependencies: ([^.]+)\./', $recommendation, $matches) !== 1) {
+            self::fail('Top dependencies pattern not found in: ' . $recommendation);
+        }
         $listedDeps = explode(', ', $matches[1]);
         self::assertCount(5, $listedDeps);
 
