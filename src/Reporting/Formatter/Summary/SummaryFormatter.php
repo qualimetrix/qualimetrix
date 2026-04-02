@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Formatter\Summary;
 
-use Qualimetrix\Reporting\Filter\ViolationFilter;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
 use Qualimetrix\Reporting\Formatter\Support\AnsiColor;
 use Qualimetrix\Reporting\Formatter\Support\DetailedViolationRenderer;
@@ -27,7 +26,6 @@ final class SummaryFormatter implements FormatterInterface
         private readonly HealthBarRenderer $healthBarRenderer,
         private readonly OffenderListRenderer $offenderListRenderer,
         private readonly TopIssuesRenderer $topIssuesRenderer,
-        private readonly ViolationFilter $violationFilter,
         private readonly ViolationSummaryRenderer $violationSummaryRenderer,
         private readonly HintRenderer $hintRenderer,
     ) {}
@@ -51,16 +49,16 @@ final class SummaryFormatter implements FormatterInterface
 
         // Append detailed violation list when --detail is used
         if ($context->isDetailEnabled() && !$report->isEmpty()) {
-            $filteredViolations = $this->violationFilter->filterViolations($report->violations, $context);
-            if ($filteredViolations !== []) {
+            $detailViolations = $report->violations;
+            if ($detailViolations !== []) {
                 $limit = $context->detailLimit;
-                $totalCount = \count($filteredViolations);
+                $totalCount = \count($detailViolations);
                 $showAll = $limit === null || $limit === 0 || $totalCount <= $limit;
-                $displayViolations = $showAll ? $filteredViolations : \array_slice($filteredViolations, 0, $limit);
+                $displayViolations = $showAll ? $detailViolations : \array_slice($detailViolations, 0, $limit);
 
                 $lines[] = '';
                 $lines[] = $color->bold('Violations');
-                $lines[] = $this->detailedRenderer->render($displayViolations, $context, $filteredViolations);
+                $lines[] = $this->detailedRenderer->render($displayViolations, $context, $detailViolations);
 
                 if (!$showAll) {
                     $remaining = $totalCount - $limit;

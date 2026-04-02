@@ -10,6 +10,7 @@ use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Configuration\Pipeline\ConfigurationPipeline;
 use Qualimetrix\Configuration\RuleOptionsFactory;
 use Qualimetrix\Configuration\RuleOptionsRegistry;
+use Qualimetrix\Infrastructure\Logging\LoggerHolder;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -47,10 +48,16 @@ final class ConfigurationConfigurator implements ContainerConfiguratorInterface
         $container->set(RuleOptionsRegistry::class, $registry);
 
         // RuleOptionsFactory - stateless factory that reads from the registry
+        // LoggerHolder is a synthetic service set by CoreServicesConfigurator (runs before this)
+        /** @var LoggerHolder $loggerHolder */
+        $loggerHolder = $container->get(LoggerHolder::class);
         $container->register(RuleOptionsFactory::class)
             ->setSynthetic(true)
             ->setPublic(true);
-        $container->set(RuleOptionsFactory::class, new RuleOptionsFactory($registry));
+        $container->set(RuleOptionsFactory::class, new RuleOptionsFactory(
+            $registry,
+            new \Qualimetrix\Infrastructure\Logging\DelegatingLogger($loggerHolder),
+        ));
 
         // ConfigurationHolder - mutable, configured at runtime with merged config
         $configProvider = new ConfigurationHolder();

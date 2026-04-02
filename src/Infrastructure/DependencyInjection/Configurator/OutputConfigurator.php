@@ -220,6 +220,9 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(ConfigurationProviderInterface::class),
             ]);
 
+        // ViolationFilter for --namespace/--class drill-down
+        $container->register(ViolationFilter::class);
+
         // ResultPresenter for formatting/output of analysis results
         $container->register(ResultPresenter::class)
             ->setArguments([
@@ -229,6 +232,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(SummaryEnricher::class),
                 new Reference(ProfilePresenter::class),
                 new Reference(ExitCodeResolver::class),
+                new Reference(ViolationFilter::class),
                 new Reference(FormatterContextFactory::class),
             ]);
 
