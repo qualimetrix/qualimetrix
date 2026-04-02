@@ -13,9 +13,9 @@ use Qualimetrix\Core\Violation\Violation;
  * Filters violations based on suppression tags in code.
  *
  * Suppressions can be applied at:
- * - File level (@qmx-ignore-file) — suppresses all matching violations in file
- * - Symbol level (@qmx-ignore <rule>) — suppresses matching violations within the symbol's line range
- * - Line level (@qmx-ignore-next-line <rule>) — suppresses matching violations on next line only
+ * - File level (`@qmx-ignore-file`) — suppresses all matching violations in file
+ * - Symbol level (`@qmx-ignore <rule>`) — suppresses matching violations within the symbol's line range
+ * - Line level (`@qmx-ignore-next-line <rule>`) — suppresses matching violations on next line only
  */
 final class SuppressionFilter implements ViolationFilterInterface
 {

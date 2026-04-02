@@ -23,7 +23,7 @@ final readonly class CollectionResult
      * @param int $filesSkipped Number of files skipped due to errors
      * @param array<string, list<Suppression>> $suppressions Per-file suppression tags (file => suppressions)
      * @param array<string, list<ThresholdOverride>> $thresholdOverrides Per-file threshold overrides (file => overrides)
-     * @param array<string, list<ThresholdDiagnostic>> $thresholdDiagnostics Per-file diagnostics for invalid @qmx-threshold annotations
+     * @param array<string, list<ThresholdDiagnostic>> $thresholdDiagnostics Per-file diagnostics for invalid `@qmx-threshold` annotations
      */
     public function __construct(
         public int $filesAnalyzed,

@@ -50,7 +50,7 @@ abstract class AbstractRule implements RuleInterface
     }
 
     /**
-     * Returns options with @qmx-threshold overrides applied for a specific symbol.
+     * Returns options with `@qmx-threshold` overrides applied for a specific symbol.
      *
      * Use this when the rule needs to read threshold fields from the options
      * (e.g., to build messages or determine which threshold was exceeded).
@@ -79,10 +79,10 @@ abstract class AbstractRule implements RuleInterface
     }
 
     /**
-     * Returns the effective severity for a metric value, applying @qmx-threshold overrides.
+     * Returns the effective severity for a metric value, applying `@qmx-threshold` overrides.
      *
      * Rules should call this instead of $options->getSeverity() directly to support
-     * per-symbol threshold overrides via @qmx-threshold annotations.
+     * per-symbol threshold overrides via `@qmx-threshold` annotations.
      *
      * @param RuleOptionsInterface|LevelOptionsInterface $options The options to use for severity check
      * @param string $file File path of the symbol

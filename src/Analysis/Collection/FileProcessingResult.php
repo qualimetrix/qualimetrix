@@ -29,7 +29,7 @@ final class FileProcessingResult
      * @param list<Dependency> $dependencies Dependencies collected from the file
      * @param list<Suppression> $suppressions Suppression tags extracted from the file
      * @param list<ThresholdOverride> $thresholdOverrides Threshold overrides extracted from the file
-     * @param list<ThresholdDiagnostic> $thresholdDiagnostics Diagnostics for invalid @qmx-threshold annotations
+     * @param list<ThresholdDiagnostic> $thresholdDiagnostics Diagnostics for invalid `@qmx-threshold` annotations
      */
     private function __construct(
         public readonly string $filePath,
@@ -54,7 +54,7 @@ final class FileProcessingResult
      * @param list<Dependency> $dependencies Dependencies collected from the file
      * @param list<Suppression> $suppressions Suppression tags extracted from the file
      * @param list<ThresholdOverride> $thresholdOverrides Threshold overrides extracted from the file
-     * @param list<ThresholdDiagnostic> $thresholdDiagnostics Diagnostics for invalid @qmx-threshold annotations
+     * @param list<ThresholdDiagnostic> $thresholdDiagnostics Diagnostics for invalid `@qmx-threshold` annotations
      */
     public static function success(
         string $filePath,

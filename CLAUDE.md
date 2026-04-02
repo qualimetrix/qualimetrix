@@ -259,6 +259,22 @@ Standard Symfony practices are used: **autowiring** and **autoconfiguration**.
 - `FormatterCompilerPass` -> `FormatterRegistry`
 - `ConfigurationStageCompilerPass` -> `ConfigurationPipeline`
 
+### 8. Escape `@qmx-*` Tags in Docblocks
+
+When referencing `@qmx-ignore` or `@qmx-threshold` in docblocks as documentation (format descriptions, examples), wrap them in backticks. The parser strips backtick-delimited regions before matching, so unescaped tags in docblocks are interpreted as real suppressions/overrides.
+
+```php
+// Wrong: will be parsed as a real suppression tag
+/**
+ * Use @qmx-ignore complexity to suppress this rule.
+ */
+
+// Correct: backtick-escaped, ignored by the parser
+/**
+ * Use `@qmx-ignore complexity` to suppress this rule.
+ */
+```
+
 ---
 
 ## Technology Stack

@@ -31,7 +31,7 @@ final readonly class ViolationFilterPipeline
     /**
      * Loads per-file suppression tags into the suppression filter.
      *
-     * Must be called before filter() for @qmx-ignore tags to take effect.
+     * Must be called before filter() for `@qmx-ignore` tags to take effect.
      *
      * @param array<string, list<Suppression>> $suppressions Per-file suppression tags
      */

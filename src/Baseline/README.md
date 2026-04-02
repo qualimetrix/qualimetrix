@@ -127,6 +127,25 @@ class ContainerFactory { ... }
 - `@qmx-threshold` on a **method** docblock: applies to that specific method only
 - Method-level override takes precedence over class-level (first match wins)
 
+## Escaping in Documentation
+
+When referencing `@qmx-ignore` or `@qmx-threshold` tags in docblocks as documentation
+(e.g., format descriptions, usage examples), wrap them in backticks to prevent the parser
+from interpreting them as real tags:
+
+```php
+/**
+ * Use `@qmx-ignore complexity` to suppress this rule.       // ← escaped, not parsed
+ * Use `@qmx-threshold complexity.cyclomatic 15` to override. // ← escaped, not parsed
+ *
+ * @qmx-ignore coupling Real suppression tag                   // ← real, will be parsed
+ */
+```
+
+The extractors strip backtick-delimited regions before pattern matching.
+An unpaired backtick is safe — without a closing pair, the regex does not match,
+and the tag is parsed normally.
+
 ## Related Documents
 
 - [src/Core/README.md](../Core/README.md) — contracts (`ViolationFilterInterface`)
