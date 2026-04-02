@@ -57,14 +57,14 @@ final class ParserConfigurator implements ContainerConfiguratorInterface
         $container->register(CachedFileParser::class)
             ->setArguments([
                 new Reference(PhpFileParser::class),
-                new Reference(CacheInterface::class),
+                new Reference(CacheFactory::class),
                 new Reference(CacheKeyGenerator::class),
             ]);
 
         $container->register(FileParserFactory::class)
             ->setArguments([
                 new Reference(PhpFileParser::class),
-                new Reference(CacheInterface::class),
+                new Reference(CacheFactory::class),
                 new Reference(CacheKeyGenerator::class),
                 new Reference(ConfigurationProviderInterface::class),
             ]);

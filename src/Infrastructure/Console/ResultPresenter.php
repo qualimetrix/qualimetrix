@@ -9,6 +9,7 @@ use Qualimetrix\Configuration\AnalysisConfiguration;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
 use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Reporting\Filter\ViolationFilter;
 use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
 use Qualimetrix\Reporting\Health\SummaryEnricher;
 use Qualimetrix\Reporting\ReportBuilder;
@@ -27,6 +28,7 @@ final class ResultPresenter
         private readonly SummaryEnricher $summaryEnricher,
         private readonly ProfilePresenter $profilePresenter,
         private readonly ExitCodeResolver $exitCodeResolver,
+        private readonly ViolationFilter $violationFilter = new ViolationFilter(),
         private readonly FormatterContextFactory $formatterContextFactory = new FormatterContextFactory(),
     ) {}
 
@@ -65,9 +67,12 @@ final class ResultPresenter
         $formatter = $this->formatterRegistry->get($format);
         $context = $this->formatterContextFactory->create($input, $output, $formatter, $scopedReporting, $scopeFilePaths);
 
+        // Apply --namespace/--class drill-down filter centrally (all formatters benefit)
+        $filteredViolations = $this->violationFilter->filterViolations($violations, $context);
+
         // Build and output report with filtered violations
         $report = ReportBuilder::create()
-            ->addViolations($violations)
+            ->addViolations($filteredViolations)
             ->filesAnalyzed($analysisResult->filesAnalyzed)
             ->filesSkipped($analysisResult->filesSkipped)
             ->duration($analysisResult->duration)

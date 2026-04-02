@@ -12,7 +12,7 @@ use Qualimetrix\Configuration\ConfigurationHolder;
 use Qualimetrix\Infrastructure\Ast\CachedFileParser;
 use Qualimetrix\Infrastructure\Ast\FileParserFactory;
 use Qualimetrix\Infrastructure\Ast\PhpFileParser;
-use Qualimetrix\Infrastructure\Cache\CacheInterface;
+use Qualimetrix\Infrastructure\Cache\CacheFactory;
 use Qualimetrix\Infrastructure\Cache\CacheKeyGenerator;
 
 #[CoversClass(FileParserFactory::class)]
@@ -31,7 +31,7 @@ final class FileParserFactoryTest extends TestCase
 
         $factory = new FileParserFactory(
             new PhpFileParser(),
-            $this->createStub(CacheInterface::class),
+            new CacheFactory($configProvider),
             new CacheKeyGenerator(),
             $configProvider,
         );
@@ -54,7 +54,7 @@ final class FileParserFactoryTest extends TestCase
 
         $factory = new FileParserFactory(
             new PhpFileParser(),
-            $this->createStub(CacheInterface::class),
+            new CacheFactory($configProvider),
             new CacheKeyGenerator(),
             $configProvider,
         );
