@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Configuration;
 
 use InvalidArgumentException;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use Qualimetrix\Core\Rule\RuleOptionsInterface;
 use ReflectionClass;
 use ReflectionNamedType;
@@ -23,6 +25,7 @@ final class RuleOptionsFactory
 {
     public function __construct(
         private readonly RuleOptionsRegistry $registry,
+        private readonly LoggerInterface $logger = new NullLogger(),
     ) {}
 
     /**
@@ -67,10 +70,13 @@ final class RuleOptionsFactory
         // 4b. Extract and store exclude_paths at framework level
         $this->extractExcludePaths($ruleName, $merged);
 
-        // 5. Validate numeric fields before instantiation
+        // 5. Warn about unknown option keys
+        $this->warnAboutUnknownKeys($merged, $defaults, $ruleName);
+
+        // 6. Validate numeric fields before instantiation
         $this->validateNumericFields($merged, $ruleName);
 
-        // 6. Create instance using fromArray
+        // 7. Create instance using fromArray
         return $optionsClass::fromArray($merged);
     }
 
@@ -262,6 +268,46 @@ final class RuleOptionsFactory
         }
 
         return $result;
+    }
+
+    /**
+     * Warns about unknown option keys in rule configuration.
+     *
+     * Compares merged config keys against known constructor parameters.
+     * Framework-level keys (excludeNamespaces, excludePaths) are excluded
+     * since they are extracted before fromArray().
+     *
+     * @param array<string, mixed> $merged
+     * @param array<string, mixed> $defaults
+     */
+    private function warnAboutUnknownKeys(array $merged, array $defaults, string $ruleName): void
+    {
+        // Framework-level keys that are valid but not in the options constructor
+        static $frameworkKeys = ['excludeNamespaces', 'exclude_namespaces', 'excludePaths', 'exclude_paths'];
+
+        // Build known keys in both snake_case and camelCase forms
+        $knownKeys = [...$frameworkKeys];
+        foreach (array_keys($defaults) as $key) {
+            $knownKeys[] = $key;
+            // Also accept camelCase version of snake_case keys
+            $camelKey = lcfirst(str_replace(['_', '-'], '', ucwords($key, '_-')));
+            if ($camelKey !== $key) {
+                $knownKeys[] = $camelKey;
+            }
+        }
+
+        foreach (array_keys($merged) as $key) {
+            if (\in_array($key, $knownKeys, true)) {
+                continue;
+            }
+
+            $this->logger->warning(\sprintf(
+                'Unknown option "%s" for rule "%s". Available options: %s',
+                $key,
+                $ruleName,
+                implode(', ', array_keys($defaults)),
+            ));
+        }
     }
 
     /**

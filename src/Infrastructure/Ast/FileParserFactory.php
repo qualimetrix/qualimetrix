@@ -6,17 +6,20 @@ namespace Qualimetrix\Infrastructure\Ast;
 
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Core\Ast\FileParserInterface;
-use Qualimetrix\Infrastructure\Cache\CacheInterface;
+use Qualimetrix\Infrastructure\Cache\CacheFactory;
 use Qualimetrix\Infrastructure\Cache\CacheKeyGenerator;
 
 /**
  * Factory for creating file parsers based on runtime configuration.
+ *
+ * Uses CacheFactory (not CacheInterface) to ensure cache directory
+ * reflects runtime configuration (e.g., --cache-dir CLI option).
  */
 final class FileParserFactory
 {
     public function __construct(
         private readonly PhpFileParser $parser,
-        private readonly CacheInterface $cache,
+        private readonly CacheFactory $cacheFactory,
         private readonly CacheKeyGenerator $keyGenerator,
         private readonly ConfigurationProviderInterface $configurationProvider,
     ) {}
@@ -31,7 +34,7 @@ final class FileParserFactory
         if ($config->cacheEnabled) {
             return new CachedFileParser(
                 $this->parser,
-                $this->cache,
+                $this->cacheFactory,
                 $this->keyGenerator,
             );
         }

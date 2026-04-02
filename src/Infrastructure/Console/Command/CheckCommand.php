@@ -163,7 +163,7 @@ final class CheckCommand extends Command
         $this->clearCacheIfRequested($input, $output);
 
         $this->validateWorkersOption($input);
-        $this->warnAboutUnknownRules($resolved, $output);
+        $this->warnAboutUnknownRules($resolved, $input, $output);
         $this->warnAboutConflictingRuleFilters($resolved, $output);
         $this->logConfigSources($resolved, $output);
 
@@ -332,36 +332,58 @@ final class CheckCommand extends Command
     }
 
     /**
-     * Warns about unknown rule names in --only-rule and --disable-rule.
+     * Warns about unknown rule names in --only-rule, --disable-rule, --rule-opt, and config rules.
      */
-    private function warnAboutUnknownRules(ResolvedConfiguration $resolved, OutputInterface $output): void
+    private function warnAboutUnknownRules(ResolvedConfiguration $resolved, InputInterface $input, OutputInterface $output): void
     {
         $knownNames = array_map(
             fn(string $class): string => $class::NAME,
             $this->ruleRegistry->getClasses(),
         );
 
+        // Extract rule names from --rule-opt=RULE:KEY=VALUE
+        $cliRuleNames = [];
+        /** @var list<string> $ruleOpts */
+        $ruleOpts = $input->getOption('rule-opt');
+        foreach ($ruleOpts as $opt) {
+            $colonPos = strpos($opt, ':');
+            if ($colonPos !== false) {
+                $cliRuleNames[] = substr($opt, 0, $colonPos);
+            }
+        }
+
         $checkNames = [
             ...$resolved->analysis->onlyRules,
             ...$resolved->analysis->disabledRules,
+            ...array_keys($resolved->ruleOptions),
+            ...$cliRuleNames,
         ];
 
         foreach ($checkNames as $name) {
-            $matched = false;
-            foreach ($knownNames as $known) {
-                // Support exact match, prefix match (e.g., "complexity" matches "complexity.cyclomatic"),
-                // and reverse prefix match (e.g., "complexity.cyclomatic.method" refines "complexity.cyclomatic")
-                if ($name === $known || str_starts_with($known, $name . '.') || str_starts_with($name, $known . '.')) {
-                    $matched = true;
-                    break;
-                }
+            if ($this->matchesKnownRule($name, $knownNames)) {
+                continue;
             }
-            if (!$matched) {
-                $output->writeln(\sprintf(
-                    '<comment>Warning: rule "%s" does not match any registered rule</comment>',
-                    $name,
-                ));
+
+            $output->writeln(\sprintf(
+                '<comment>Warning: rule "%s" does not match any registered rule</comment>',
+                $name,
+            ));
+        }
+    }
+
+    /**
+     * Checks if a rule name matches any known rule via exact, prefix, or reverse prefix match.
+     *
+     * @param list<string> $knownNames
+     */
+    private function matchesKnownRule(string $name, array $knownNames): bool
+    {
+        foreach ($knownNames as $known) {
+            if ($name === $known || str_starts_with($known, $name . '.') || str_starts_with($name, $known . '.')) {
+                return true;
             }
         }
+
+        return false;
     }
 }
