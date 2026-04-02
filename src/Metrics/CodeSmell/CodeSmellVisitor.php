@@ -120,7 +120,11 @@ final class CodeSmellVisitor extends NodeVisitorAbstract implements ResettableVi
         } elseif ($node instanceof FuncCall) {
             $this->checkDebugFunction($node);
         } elseif ($node instanceof ErrorSuppress) {
-            $this->addLocation('error_suppression', $node);
+            $funcName = null;
+            if ($node->expr instanceof FuncCall && $node->expr->name instanceof Name) {
+                $funcName = $node->expr->name->toLowerString();
+            }
+            $this->addLocation('error_suppression', $node, $funcName);
         } elseif ($node instanceof For_ || $node instanceof While_ || $node instanceof Do_) {
             $this->checkCountInLoop($node);
         } elseif ($node instanceof Variable) {

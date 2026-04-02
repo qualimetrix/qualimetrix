@@ -11,6 +11,9 @@ use Qualimetrix\Core\Violation\Severity;
  *
  * The @ operator hides errors which can make debugging difficult.
  * Handle errors explicitly instead.
+ *
+ * Supports `allowed_functions` option to whitelist specific functions
+ * where @ usage is acceptable (e.g., fopen, unlink).
  */
 final class ErrorSuppressionRule extends AbstractCodeSmellRule
 {
@@ -47,10 +50,38 @@ final class ErrorSuppressionRule extends AbstractCodeSmellRule
     }
 
     /**
-     * @return class-string<CodeSmellOptions>
+     * @param array<string, mixed> $entry
+     */
+    protected function shouldIncludeEntry(array $entry): bool
+    {
+        if (!$this->options instanceof ErrorSuppressionOptions) {
+            return true;
+        }
+
+        $funcName = $entry['extra'] ?? null;
+
+        return !\is_string($funcName) || !$this->options->isFunctionAllowed($funcName);
+    }
+
+    /**
+     * @param array<string, mixed> $entry
+     */
+    protected function buildMessage(array $entry): string
+    {
+        $funcName = $entry['extra'] ?? null;
+
+        if (\is_string($funcName) && $funcName !== '') {
+            return \sprintf('Error suppression (@) on %s() - handle errors explicitly', $funcName);
+        }
+
+        return $this->getMessageTemplate();
+    }
+
+    /**
+     * @return class-string<ErrorSuppressionOptions>
      */
     public static function getOptionsClass(): string
     {
-        return CodeSmellOptions::class;
+        return ErrorSuppressionOptions::class;
     }
 }
