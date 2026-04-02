@@ -83,7 +83,7 @@ final class ClassRankRule extends AbstractRule
 
             $rankValue = (float) $classRank;
 
-            // Apply @qmx-threshold overrides and re-scale
+            // Apply `@qmx-threshold` overrides and re-scale
             /** @var ClassRankOptions $effectiveOptions */
             $effectiveOptions = $this->getEffectiveOptions($context, $this->options, $classInfo->file, $classInfo->line ?? 1);
             $effectiveScaledWarning = $effectiveOptions->warning / $scaleFactor;

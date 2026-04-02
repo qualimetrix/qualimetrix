@@ -146,7 +146,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
         // Convert threshold annotation diagnostics to violations
         $diagnosticViolations = self::buildDiagnosticViolations($collectionResult->thresholdDiagnostics);
 
-        // Warn about @qmx-threshold annotations targeting rules that don't support overrides
+        // Warn about `@qmx-threshold` annotations targeting rules that don't support overrides
         $unsupportedViolations = $this->buildUnsupportedOverrideViolations(
             $collectionResult->thresholdOverrides,
         );

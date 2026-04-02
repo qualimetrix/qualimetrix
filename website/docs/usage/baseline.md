@@ -292,3 +292,18 @@ bin/qmx baseline:cleanup baseline.json
 git add baseline.json
 git commit -m "chore: clean up stale baseline entries"
 ```
+
+### 6. Escape tags in documentation
+
+When referencing `@qmx-ignore` or `@qmx-threshold` in docblocks as documentation (format descriptions, examples), wrap them in backticks to prevent the parser from treating them as real tags:
+
+```php
+/**
+ * Use `@qmx-ignore complexity` to suppress this rule.       // escaped — not parsed
+ * Use `@qmx-threshold complexity.cyclomatic 15` to override. // escaped — not parsed
+ *
+ * @qmx-ignore coupling Real suppression tag                   // real — will be parsed
+ */
+```
+
+An unpaired backtick is safe — without a closing pair, the tag is parsed normally.

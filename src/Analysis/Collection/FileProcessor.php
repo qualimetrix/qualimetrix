@@ -159,7 +159,7 @@ final class FileProcessor implements FileProcessorInterface
     /**
      * Extracts suppression tags from all relevant AST nodes.
      *
-     * Scans nodes that can have docblocks or regular comments containing @qmx-ignore:
+     * Scans nodes that can have docblocks or regular comments containing `@qmx-ignore`:
      * classes, methods, functions, properties, enum cases, constants, expressions,
      * and any statement preceded by a suppression comment.
      *
@@ -192,7 +192,7 @@ final class FileProcessor implements FileProcessorInterface
                 return true;
             }
 
-            // Any node with a regular comment containing @qmx-ignore
+            // Any node with a regular comment containing `@qmx-ignore`
             foreach ($node->getComments() as $comment) {
                 if (!$comment instanceof \PhpParser\Comment\Doc
                     && str_contains($comment->getText(), '@qmx-ignore')) {

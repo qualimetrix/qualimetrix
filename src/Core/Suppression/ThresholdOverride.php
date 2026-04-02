@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Qualimetrix\Core\Suppression;
 
 /**
- * Represents a @qmx-threshold annotation from a docblock.
+ * Represents a `@qmx-threshold` annotation from a docblock.
  *
  * Allows per-symbol threshold overrides for rules. Two syntaxes:
- * - Shorthand: @qmx-threshold complexity.cyclomatic 15 (sets both warning and error)
- * - Explicit: @qmx-threshold complexity.cyclomatic warning=15 error=25
- * - Partial: @qmx-threshold complexity.cyclomatic warning=15 (override warning only)
+ * - Shorthand: `@qmx-threshold complexity.cyclomatic 15` (sets both warning and error)
+ * - Explicit: `@qmx-threshold complexity.cyclomatic warning=15 error=25`
+ * - Partial: `@qmx-threshold complexity.cyclomatic warning=15` (override warning only)
  */
 final readonly class ThresholdOverride
 {

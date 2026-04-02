@@ -9,7 +9,7 @@ use Qualimetrix\Core\Rule\RuleMatcher;
 /**
  * Represents a suppression tag from docblock.
  *
- * Example: @qmx-ignore complexity Reason why it's ignored
+ * Example: `@qmx-ignore complexity Reason why it's ignored` it's ignored
  */
 final readonly class Suppression
 {

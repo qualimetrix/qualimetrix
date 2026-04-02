@@ -9,7 +9,7 @@ namespace Qualimetrix\Core\Rule;
  *
  * Options classes with warning/error thresholds implement this to support
  *
- * @qmx-threshold annotations. Options without thresholds (boolean rules like
+ * `@qmx-threshold` annotations. Options without thresholds (boolean rules like
  * code smells) do not need to implement this.
  */
 interface ThresholdAwareOptionsInterface

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Core\Suppression;
 
 /**
- * Represents a validation diagnostic for an invalid @qmx-threshold annotation.
+ * Represents a validation diagnostic for an invalid `@qmx-threshold` annotation.
  *
  * Produced by ThresholdOverrideExtractor when an annotation has:
  * - Invalid syntax (unparseable values)

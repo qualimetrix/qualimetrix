@@ -8,7 +8,7 @@ use Qualimetrix\Core\Suppression\ThresholdDiagnostic;
 use Qualimetrix\Core\Suppression\ThresholdOverride;
 
 /**
- * Result of extracting @qmx-threshold annotations from a single AST node.
+ * Result of extracting `@qmx-threshold` annotations from a single AST node.
  *
  * Contains both valid overrides and diagnostics for invalid annotations.
  */
