@@ -25,6 +25,7 @@ final class RuleOptionsRegistry
 
     public function __construct(
         private readonly RuleNamespaceExclusionProvider $exclusionProvider = new RuleNamespaceExclusionProvider(),
+        private readonly RulePathExclusionProvider $pathExclusionProvider = new RulePathExclusionProvider(),
     ) {}
 
     /**
@@ -101,10 +102,16 @@ final class RuleOptionsRegistry
         $this->configFileOptions = [];
         $this->cliOptions = [];
         $this->exclusionProvider->reset();
+        $this->pathExclusionProvider->reset();
     }
 
     public function getExclusionProvider(): RuleNamespaceExclusionProvider
     {
         return $this->exclusionProvider;
+    }
+
+    public function getPathExclusionProvider(): RulePathExclusionProvider
+    {
+        return $this->pathExclusionProvider;
     }
 }

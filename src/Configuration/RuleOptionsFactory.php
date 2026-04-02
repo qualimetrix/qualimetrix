@@ -64,6 +64,9 @@ final class RuleOptionsFactory
         // 4. Extract and store exclude_namespaces at framework level
         $this->extractExcludeNamespaces($ruleName, $merged);
 
+        // 4b. Extract and store exclude_paths at framework level
+        $this->extractExcludePaths($ruleName, $merged);
+
         // 5. Validate numeric fields before instantiation
         $this->validateNumericFields($merged, $ruleName);
 
@@ -95,6 +98,33 @@ final class RuleOptionsFactory
 
         if ($prefixes !== []) {
             $this->registry->getExclusionProvider()->setExclusions($ruleName, $prefixes);
+        }
+    }
+
+    /**
+     * Extracts exclude_paths from merged options and stores them in the provider.
+     *
+     * Supports both snake_case (from config file) and camelCase (from CLI).
+     * Removes the key from $merged so it doesn't leak into Options::fromArray().
+     *
+     * @param array<string, mixed> $merged
+     */
+    private function extractExcludePaths(string $ruleName, array &$merged): void
+    {
+        $raw = $merged['excludePaths'] ?? $merged['exclude_paths'] ?? null;
+
+        unset($merged['excludePaths'], $merged['exclude_paths']);
+
+        if (\is_string($raw)) {
+            $patterns = [$raw];
+        } elseif (\is_array($raw)) {
+            $patterns = array_values($raw);
+        } else {
+            return;
+        }
+
+        if ($patterns !== []) {
+            $this->registry->getPathExclusionProvider()->setExclusions($ruleName, $patterns);
         }
     }
 

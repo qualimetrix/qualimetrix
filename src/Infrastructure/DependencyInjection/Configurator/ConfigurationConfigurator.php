@@ -11,6 +11,7 @@ use Qualimetrix\Configuration\Pipeline\ConfigurationPipeline;
 use Qualimetrix\Configuration\RuleNamespaceExclusionProvider;
 use Qualimetrix\Configuration\RuleOptionsFactory;
 use Qualimetrix\Configuration\RuleOptionsRegistry;
+use Qualimetrix\Configuration\RulePathExclusionProvider;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -46,8 +47,15 @@ final class ConfigurationConfigurator implements ContainerConfiguratorInterface
             ->setPublic(true);
         $container->set(RuleNamespaceExclusionProvider::class, $exclusionProvider);
 
+        // RulePathExclusionProvider - shared between RuleOptionsRegistry and RuleExecutor
+        $pathExclusionProvider = new RulePathExclusionProvider();
+        $container->register(RulePathExclusionProvider::class)
+            ->setSynthetic(true)
+            ->setPublic(true);
+        $container->set(RulePathExclusionProvider::class, $pathExclusionProvider);
+
         // RuleOptionsRegistry - mutable storage, can be configured with CLI options at runtime
-        $registry = new RuleOptionsRegistry($exclusionProvider);
+        $registry = new RuleOptionsRegistry($exclusionProvider, $pathExclusionProvider);
         $container->register(RuleOptionsRegistry::class)
             ->setSynthetic(true)
             ->setPublic(true);
