@@ -9,13 +9,13 @@ use Qualimetrix\Core\Suppression\ThresholdDiagnostic;
 use Qualimetrix\Core\Suppression\ThresholdOverride;
 
 /**
- * Extracts @qmx-threshold annotations from docblock comments.
+ * Extracts `@qmx-threshold` annotations from docblock comments.
  *
  * Supported syntaxes:
- * - Shorthand: @qmx-threshold complexity.cyclomatic 15
- * - Explicit: @qmx-threshold complexity.cyclomatic warning=15 error=25
- * - Partial: @qmx-threshold complexity.cyclomatic warning=15
- * - Float: @qmx-threshold coupling.instability 0.8
+ * - Shorthand: `@qmx-threshold complexity.cyclomatic 15`
+ * - Explicit: `@qmx-threshold complexity.cyclomatic warning=15 error=25`
+ * - Partial: `@qmx-threshold complexity.cyclomatic warning=15`
+ * - Float: `@qmx-threshold coupling.instability 0.8`
  *
  * Invalid annotations produce diagnostics instead of being silently ignored:
  * - Unparseable value syntax
@@ -26,7 +26,7 @@ use Qualimetrix\Core\Suppression\ThresholdOverride;
 final readonly class ThresholdOverrideExtractor
 {
     /**
-     * Pattern matches: @qmx-threshold <rule-pattern> <rest-of-line>
+     * Pattern matches: `@qmx-threshold <rule-pattern> <rest-of-line>`
      * Capture group 1: rule pattern (alphanumeric, dots, asterisks, hyphens)
      * Capture group 2: threshold values (rest of line)
      */
@@ -54,7 +54,7 @@ final readonly class ThresholdOverrideExtractor
             return new ThresholdOverrideExtractionResult([], []);
         }
 
-        $text = $docComment->getText();
+        $text = self::stripBacktickRegions($docComment->getText());
         if (!str_contains($text, '@qmx-threshold')) {
             return new ThresholdOverrideExtractionResult([], []);
         }
@@ -205,6 +205,14 @@ final readonly class ThresholdOverrideExtractor
     private static function cleanTrailingDocblock(string $raw): string
     {
         return rtrim($raw, " \t*/");
+    }
+
+    /**
+     * Strips backtick-delimited regions from text to avoid matching documentation references.
+     */
+    private static function stripBacktickRegions(string $text): string
+    {
+        return preg_replace('/`[^`]*`/', '', $text) ?? $text;
     }
 
     /**

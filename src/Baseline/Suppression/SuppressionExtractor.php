@@ -14,14 +14,14 @@ use Qualimetrix\Core\Suppression\SuppressionType;
  *
  * Supported comment styles:
  *
- * - PHPDoc docblocks: /** @qmx-ignore ... * /
- * - Line comments: // @qmx-ignore ...
- * - Block comments: /* @qmx-ignore ... * /
+ * - PHPDoc docblocks: /** `@qmx-ignore ...` * /
+ * - Line comments: // `@qmx-ignore ...`
+ * - Block comments: /* `@qmx-ignore ...` * /
  *
  * Supported tags:
- * - @qmx-ignore <rule> [reason]
- * - @qmx-ignore-next-line <rule> [reason]
- * - @qmx-ignore-file [rule] [reason]
+ * - `@qmx-ignore <rule> [reason]`
+ * - `@qmx-ignore-next-line <rule> [reason]`
+ * - `@qmx-ignore-file [rule] [reason]`
  *
  * Note: inline same-line comments (e.g., `$x = foo(); // @qmx-ignore rule`) are not supported.
  * Only separate-line comments are recognized.
@@ -84,7 +84,7 @@ final readonly class SuppressionExtractor
         // Check docblock
         $docComment = $node->getDocComment();
         if ($docComment !== null) {
-            $text = $docComment->getText();
+            $text = self::stripBacktickRegions($docComment->getText());
             if (str_contains($text, '@qmx-ignore-file')) {
                 if (preg_match_all(self::PATTERN_FILE, $text, $matches, \PREG_SET_ORDER)) {
                     foreach ($matches as $match) {
@@ -106,7 +106,7 @@ final readonly class SuppressionExtractor
                 continue;
             }
 
-            $text = $comment->getText();
+            $text = self::stripBacktickRegions($comment->getText());
             if (!str_contains($text, '@qmx-ignore-file')) {
                 continue;
             }
@@ -134,6 +134,7 @@ final readonly class SuppressionExtractor
      */
     private function extractFromText(string $text, int $startLine, int $endLine, ?int $nodeEndLine): array
     {
+        $text = self::stripBacktickRegions($text);
         $suppressions = [];
 
         // Extract file-level suppressions
@@ -175,6 +176,17 @@ final readonly class SuppressionExtractor
         }
 
         return $suppressions;
+    }
+
+    /**
+     * Strips backtick-delimited regions from text to avoid matching documentation references.
+     *
+     * Docblocks that mention `@qmx-ignore` as examples (e.g., format descriptions)
+     * should not be interpreted as real suppression tags.
+     */
+    private static function stripBacktickRegions(string $text): string
+    {
+        return preg_replace('/`[^`]*`/', '', $text) ?? $text;
     }
 
     private static function extractReason(?string $raw): ?string

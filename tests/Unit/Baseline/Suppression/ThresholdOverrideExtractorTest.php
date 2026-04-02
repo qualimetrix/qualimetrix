@@ -513,6 +513,61 @@ final class ThresholdOverrideExtractorTest extends TestCase
         self::assertStringContainsString('coupling.cbo', $result->diagnostics[0]->message);
     }
 
+    public function testBacktickEscapedThresholdIsNotExtracted(): void
+    {
+        $node = $this->createClassNodeWithDoc(
+            <<<'DOC'
+            /**
+             * Use `@qmx-threshold complexity.cyclomatic 15` to override thresholds.
+             */
+            DOC,
+            10,
+            50,
+        );
+
+        $overrides = $this->extractor->extract($node);
+
+        self::assertEmpty($overrides);
+    }
+
+    public function testMixedRealAndBacktickEscapedThresholds(): void
+    {
+        $node = $this->createClassNodeWithDoc(
+            <<<'DOC'
+            /**
+             * @qmx-threshold complexity.cyclomatic 15
+             * See also `@qmx-threshold coupling.cbo 30` for coupling.
+             */
+            DOC,
+            10,
+            50,
+        );
+
+        $overrides = $this->extractor->extract($node);
+
+        self::assertCount(1, $overrides);
+        self::assertSame('complexity.cyclomatic', $overrides[0]->rulePattern);
+        self::assertSame(15, $overrides[0]->warning);
+    }
+
+    public function testBacktickEscapedThresholdProducesNoDiagnostics(): void
+    {
+        $node = $this->createClassNodeWithDoc(
+            <<<'DOC'
+            /**
+             * Example: `@qmx-threshold complexity.cyclomatic not-a-number`
+             */
+            DOC,
+            10,
+            50,
+        );
+
+        $result = $this->extractor->extractWithDiagnostics($node);
+
+        self::assertEmpty($result->overrides);
+        self::assertEmpty($result->diagnostics);
+    }
+
     private function createClassNodeWithDoc(string $docText, int $startLine, int $endLine): Class_
     {
         $docComment = new Doc($docText, $startLine, $startLine);

@@ -739,4 +739,146 @@ final class SuppressionExtractorTest extends TestCase
 
         self::assertEmpty($suppressions);
     }
+
+    public function testBacktickEscapedIgnoreIsNotExtracted(): void
+    {
+        $docComment = new Doc(
+            <<<'DOC'
+            /**
+             * Use `@qmx-ignore complexity` to suppress this rule.
+             */
+            DOC,
+            10,
+            12,
+        );
+
+        $node = new Class_('Foo');
+        $node->setDocComment($docComment);
+
+        $suppressions = $this->extractor->extract($node);
+
+        self::assertEmpty($suppressions);
+    }
+
+    public function testBacktickEscapedIgnoreFileIsNotExtracted(): void
+    {
+        $docComment = new Doc(
+            <<<'DOC'
+            /**
+             * Supported tags:
+             * - `@qmx-ignore-file [rule] [reason]`
+             */
+            DOC,
+            10,
+            13,
+        );
+
+        $node = new Class_('Foo');
+        $node->setDocComment($docComment);
+
+        $suppressions = $this->extractor->extract($node);
+
+        self::assertEmpty($suppressions);
+    }
+
+    public function testBacktickEscapedIgnoreFileNotExtractedAtFileLevel(): void
+    {
+        $docComment = new Doc(
+            <<<'DOC'
+            /**
+             * Use `@qmx-ignore-file` to suppress all rules in a file.
+             */
+            DOC,
+            1,
+            3,
+        );
+
+        $node = new Class_('Foo');
+        $node->setDocComment($docComment);
+
+        $suppressions = $this->extractor->extractFileLevelSuppressions($node);
+
+        self::assertEmpty($suppressions);
+    }
+
+    public function testBacktickEscapedNextLineIsNotExtracted(): void
+    {
+        $docComment = new Doc(
+            <<<'DOC'
+            /**
+             * Use `@qmx-ignore-next-line complexity` to suppress one line.
+             */
+            DOC,
+            10,
+            12,
+        );
+
+        $node = new Class_('Foo');
+        $node->setDocComment($docComment);
+
+        $suppressions = $this->extractor->extract($node);
+
+        self::assertEmpty($suppressions);
+    }
+
+    public function testMixedRealAndBacktickEscapedTags(): void
+    {
+        $docComment = new Doc(
+            <<<'DOC'
+            /**
+             * @qmx-ignore complexity Real suppression
+             * See also `@qmx-ignore coupling` for coupling rules.
+             */
+            DOC,
+            10,
+            13,
+        );
+
+        $node = new Class_('Foo', [], ['startLine' => 14, 'endLine' => 30]);
+        $node->setDocComment($docComment);
+
+        $suppressions = $this->extractor->extract($node);
+
+        self::assertCount(1, $suppressions);
+        self::assertSame('complexity', $suppressions[0]->rule);
+        self::assertSame('Real suppression', $suppressions[0]->reason);
+    }
+
+    public function testUnpairedBacktickDoesNotSuppressTag(): void
+    {
+        $docComment = new Doc(
+            <<<'DOC'
+            /**
+             * `unclosed backtick before
+             * @qmx-ignore complexity Intentional suppression
+             */
+            DOC,
+            10,
+            13,
+        );
+
+        $node = new Class_('Foo', [], ['startLine' => 14, 'endLine' => 30]);
+        $node->setDocComment($docComment);
+
+        $suppressions = $this->extractor->extract($node);
+
+        self::assertCount(1, $suppressions);
+        self::assertSame('complexity', $suppressions[0]->rule);
+    }
+
+    public function testBacktickEscapedIgnoreFileInRegularComment(): void
+    {
+        $comment = new Comment(
+            '// Use `@qmx-ignore-file` to suppress all rules',
+            startLine: 1,
+            endLine: 1,
+        );
+
+        $node = new Class_('Foo');
+        $node->setAttribute('comments', [$comment]);
+
+        $suppressions = $this->extractor->extractFileLevelSuppressions($node);
+
+        self::assertEmpty($suppressions);
+    }
 }
