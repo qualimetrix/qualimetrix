@@ -25,7 +25,6 @@ use Qualimetrix\Infrastructure\Logging\LoggerFactory;
 use Qualimetrix\Infrastructure\Logging\LoggerHolder;
 use Qualimetrix\Infrastructure\Profiler\Profiler;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
-use Qualimetrix\Rules\Structure\LcomOptions;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -224,12 +223,20 @@ final class RuntimeConfigurator
     private function configureCollectors(array $ruleOptions): void
     {
         $lcomConfig = $ruleOptions['design.lcom'] ?? [];
-        if ($lcomConfig !== []) {
-            $options = LcomOptions::fromArray($lcomConfig);
-            if ($options->excludeMethods !== null && $options->excludeMethods !== []) {
+        $excludeKey = $lcomConfig['exclude_methods'] ?? $lcomConfig['excludeMethods'] ?? null;
+
+        if ($excludeKey !== null) {
+            $excludeMethods = match (true) {
+                \is_string($excludeKey) && str_contains($excludeKey, ',') => array_map('trim', explode(',', $excludeKey)),
+                \is_string($excludeKey) => [$excludeKey],
+                \is_array($excludeKey) => array_values($excludeKey),
+                default => [],
+            };
+
+            if ($excludeMethods !== []) {
                 CollectorConfigHolder::set(
                     CollectorConfigHolder::LCOM_EXCLUDE_METHODS,
-                    $options->excludeMethods,
+                    $excludeMethods,
                 );
             }
         }

@@ -18,6 +18,7 @@ use Qualimetrix\Configuration\Pipeline\ResolvedConfiguration;
 use Qualimetrix\Configuration\RuleOptionsRegistry;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinitionHolder;
 use Qualimetrix\Core\Coupling\FrameworkNamespacesHolder;
+use Qualimetrix\Core\Metric\CollectorConfigHolder;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
 use Qualimetrix\Infrastructure\Cache\CacheFactory;
 use Qualimetrix\Infrastructure\Console\Progress\ProgressReporterHolder;
@@ -414,6 +415,97 @@ final class RuntimeConfiguratorTest extends TestCase
         foreach ($overall->formulas as $formula) {
             self::assertStringNotContainsString('health__typing', $formula);
         }
+    }
+
+    #[Test]
+    public function configureCollectorsSetsExcludeMethodsFromArray(): void
+    {
+        CollectorConfigHolder::reset();
+
+        $resolved = new ResolvedConfiguration(
+            paths: PathsConfiguration::defaults(),
+            analysis: new AnalysisConfiguration(),
+            ruleOptions: [
+                'design.lcom' => [
+                    'exclude_methods' => ['getName', 'getDescription'],
+                ],
+            ],
+        );
+
+        $this->configurator->configure($resolved, $this->createCliInput([]), $this->createOutput());
+
+        self::assertSame(
+            ['getName', 'getDescription'],
+            CollectorConfigHolder::get(CollectorConfigHolder::LCOM_EXCLUDE_METHODS),
+        );
+    }
+
+    #[Test]
+    public function configureCollectorsSetsExcludeMethodsFromCommaSeparatedString(): void
+    {
+        CollectorConfigHolder::reset();
+
+        $resolved = new ResolvedConfiguration(
+            paths: PathsConfiguration::defaults(),
+            analysis: new AnalysisConfiguration(),
+            ruleOptions: [
+                'design.lcom' => [
+                    'exclude_methods' => 'getName, getDescription',
+                ],
+            ],
+        );
+
+        $this->configurator->configure($resolved, $this->createCliInput([]), $this->createOutput());
+
+        self::assertSame(
+            ['getName', 'getDescription'],
+            CollectorConfigHolder::get(CollectorConfigHolder::LCOM_EXCLUDE_METHODS),
+        );
+    }
+
+    #[Test]
+    public function configureCollectorsSetsExcludeMethodsFromSingleString(): void
+    {
+        CollectorConfigHolder::reset();
+
+        $resolved = new ResolvedConfiguration(
+            paths: PathsConfiguration::defaults(),
+            analysis: new AnalysisConfiguration(),
+            ruleOptions: [
+                'design.lcom' => [
+                    'exclude_methods' => 'getName',
+                ],
+            ],
+        );
+
+        $this->configurator->configure($resolved, $this->createCliInput([]), $this->createOutput());
+
+        self::assertSame(
+            ['getName'],
+            CollectorConfigHolder::get(CollectorConfigHolder::LCOM_EXCLUDE_METHODS),
+        );
+    }
+
+    #[Test]
+    public function configureCollectorsSkipsWhenNoExcludeMethods(): void
+    {
+        CollectorConfigHolder::reset();
+
+        $resolved = new ResolvedConfiguration(
+            paths: PathsConfiguration::defaults(),
+            analysis: new AnalysisConfiguration(),
+            ruleOptions: [
+                'design.lcom' => [
+                    'warning' => 5,
+                ],
+            ],
+        );
+
+        $this->configurator->configure($resolved, $this->createCliInput([]), $this->createOutput());
+
+        self::assertNull(
+            CollectorConfigHolder::get(CollectorConfigHolder::LCOM_EXCLUDE_METHODS),
+        );
     }
 
     #[Test]
