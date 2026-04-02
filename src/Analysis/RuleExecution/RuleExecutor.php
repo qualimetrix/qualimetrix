@@ -6,6 +6,7 @@ namespace Qualimetrix\Analysis\RuleExecution;
 
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Configuration\RuleNamespaceExclusionProvider;
+use Qualimetrix\Configuration\RulePathExclusionProvider;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\RuleInterface;
@@ -30,6 +31,7 @@ final class RuleExecutor implements RuleExecutorInterface
         iterable $rules,
         private readonly ConfigurationProviderInterface $configurationProvider,
         private readonly RuleNamespaceExclusionProvider $exclusionProvider = new RuleNamespaceExclusionProvider(),
+        private readonly RulePathExclusionProvider $pathExclusionProvider = new RulePathExclusionProvider(),
     ) {
         $this->allRules = $rules instanceof Traversable
             ? iterator_to_array($rules, false)
@@ -55,6 +57,13 @@ final class RuleExecutor implements RuleExecutorInterface
                 fn(Violation $v) => $v->symbolPath->namespace === null
                     || $v->symbolPath->namespace === ''
                     || !$this->exclusionProvider->isExcluded($ruleName, $v->symbolPath->namespace),
+            );
+
+            // Filter violations from excluded paths (per-rule)
+            $ruleViolations = array_filter(
+                $ruleViolations,
+                fn(Violation $v) => $v->location->file === ''
+                    || !$this->pathExclusionProvider->isExcluded($ruleName, $v->location->file),
             );
 
             $violations = [...$violations, ...$ruleViolations];

@@ -27,6 +27,7 @@ use Qualimetrix\Analysis\RuleExecution\RuleExecutor;
 use Qualimetrix\Analysis\RuleExecution\RuleExecutorInterface;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Configuration\RuleNamespaceExclusionProvider;
+use Qualimetrix\Configuration\RulePathExclusionProvider;
 use Qualimetrix\Core\Ast\FileParserInterface;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Namespace_\ProjectNamespaceResolverInterface;
@@ -102,6 +103,7 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
                 '$rules' => [], // Will be set by RuleCompilerPass
                 '$configurationProvider' => new Reference(ConfigurationProviderInterface::class),
                 '$exclusionProvider' => new Reference(RuleNamespaceExclusionProvider::class),
+                '$pathExclusionProvider' => new Reference(RulePathExclusionProvider::class),
             ]);
         $container->setAlias(RuleExecutorInterface::class, RuleExecutor::class);
 
