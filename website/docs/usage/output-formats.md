@@ -108,7 +108,7 @@ src/Repository/OrderRepository.php:15: error[coupling.cbo.class]: CBO is 18, max
 
 ## json
 
-Machine-readable JSON output. Summary-oriented format with health scores, worst offenders, and a capped list of violations.
+Machine-readable JSON output. Summary-oriented format with health scores, worst offenders, and all violations.
 
 **When to use:** Custom scripts, dashboards, programmatic processing.
 
@@ -186,7 +186,7 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
     ],
     "violationsMeta": {
         "total": 3,
-        "limit": 50,
+        "limit": null,
         "truncated": false,
         "byRule": {
             "complexity.cyclomatic": 2,
@@ -217,12 +217,8 @@ When using `--group-by=class` or `--group-by=namespace`, violations are organize
 **Options:**
 
 ```bash
-# Control violation limit (default: 50)
-bin/qmx check src/ --format=json --format-opt=limit=100
-
-# Show all violations (no limit)
-bin/qmx check src/ --format=json --all
-# Or equivalently: --format-opt=violations=all
+# Limit violations in output (default: all)
+bin/qmx check src/ --format=json --format-opt=violations=50
 
 # Control number of worst offenders (default: 10)
 bin/qmx check src/ --format=json --format-opt=top=20

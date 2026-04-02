@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Unit\Baseline\Suppression;
 
+use PhpParser\Comment;
 use PhpParser\Comment\Doc;
 use PhpParser\Node\Stmt\Class_;
+use PhpParser\Node\Stmt\ClassMethod;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Baseline\Suppression\SuppressionExtractor;
@@ -524,5 +526,217 @@ final class SuppressionExtractorTest extends TestCase
         self::assertSame('size', $byType['file']->rule);
         self::assertSame('coupling', $byType['next-line']->rule);
         self::assertSame('complexity', $byType['symbol']->rule);
+    }
+
+    // ---- Regular comment support tests ----
+
+    public function testExtractsSuppressionFromLineComment(): void
+    {
+        $comment = new Comment(
+            '// @qmx-ignore complexity.cyclomatic',
+            startLine: 10,
+            endLine: 10,
+        );
+
+        $node = new ClassMethod('doSomething', [], ['startLine' => 11, 'endLine' => 20]);
+        $node->setAttribute('comments', [$comment]);
+
+        $suppressions = $this->extractor->extract($node);
+
+        self::assertCount(1, $suppressions);
+        self::assertSame('complexity.cyclomatic', $suppressions[0]->rule);
+        self::assertNull($suppressions[0]->reason);
+        self::assertSame(10, $suppressions[0]->line);
+        self::assertSame(SuppressionType::Symbol, $suppressions[0]->type);
+        self::assertSame(20, $suppressions[0]->endLine);
+    }
+
+    public function testExtractsSuppressionFromBlockComment(): void
+    {
+        $comment = new Comment(
+            '/* @qmx-ignore complexity.cyclomatic */',
+            startLine: 10,
+            endLine: 10,
+        );
+
+        $node = new ClassMethod('doSomething', [], ['startLine' => 11, 'endLine' => 20]);
+        $node->setAttribute('comments', [$comment]);
+
+        $suppressions = $this->extractor->extract($node);
+
+        self::assertCount(1, $suppressions);
+        self::assertSame('complexity.cyclomatic', $suppressions[0]->rule);
+        self::assertSame(SuppressionType::Symbol, $suppressions[0]->type);
+    }
+
+    public function testExtractsNextLineFromLineComment(): void
+    {
+        $comment = new Comment(
+            '// @qmx-ignore-next-line complexity.cyclomatic',
+            startLine: 15,
+            endLine: 15,
+        );
+
+        $node = new ClassMethod('doSomething', [], ['startLine' => 16, 'endLine' => 25]);
+        $node->setAttribute('comments', [$comment]);
+
+        $suppressions = $this->extractor->extract($node);
+
+        self::assertCount(1, $suppressions);
+        self::assertSame('complexity.cyclomatic', $suppressions[0]->rule);
+        self::assertSame(SuppressionType::NextLine, $suppressions[0]->type);
+        // Line should be endLine (15) so that filter targets line 16
+        self::assertSame(15, $suppressions[0]->line);
+    }
+
+    public function testExtractsFileLevelFromLineComment(): void
+    {
+        $comment = new Comment(
+            '// @qmx-ignore-file',
+            startLine: 3,
+            endLine: 3,
+        );
+
+        $node = new Class_('Foo');
+        $node->setAttribute('comments', [$comment]);
+
+        $suppressions = $this->extractor->extractFileLevelSuppressions($node);
+
+        self::assertCount(1, $suppressions);
+        self::assertSame('*', $suppressions[0]->rule);
+        self::assertSame(SuppressionType::File, $suppressions[0]->type);
+        self::assertSame(3, $suppressions[0]->line);
+    }
+
+    public function testLineCommentWithReason(): void
+    {
+        $comment = new Comment(
+            '// @qmx-ignore complexity.cyclomatic Legacy algorithm, too costly to refactor',
+            startLine: 10,
+            endLine: 10,
+        );
+
+        $node = new ClassMethod('doSomething', [], ['startLine' => 11, 'endLine' => 20]);
+        $node->setAttribute('comments', [$comment]);
+
+        $suppressions = $this->extractor->extract($node);
+
+        self::assertCount(1, $suppressions);
+        self::assertSame('complexity.cyclomatic', $suppressions[0]->rule);
+        self::assertSame('Legacy algorithm, too costly to refactor', $suppressions[0]->reason);
+    }
+
+    public function testDocCommentStillWorksAfterRefactor(): void
+    {
+        $docComment = new Doc(
+            '/** @qmx-ignore complexity */',
+            startLine: 10,
+            endLine: 10,
+        );
+
+        $node = new Class_('Foo', [], ['startLine' => 11, 'endLine' => 50]);
+        $node->setDocComment($docComment);
+
+        $suppressions = $this->extractor->extract($node);
+
+        self::assertCount(1, $suppressions);
+        self::assertSame('complexity', $suppressions[0]->rule);
+        self::assertSame(SuppressionType::Symbol, $suppressions[0]->type);
+        self::assertSame(50, $suppressions[0]->endLine);
+    }
+
+    public function testMixedDocblockAndLineComments(): void
+    {
+        $lineComment = new Comment(
+            '// @qmx-ignore coupling.cbo',
+            startLine: 9,
+            endLine: 9,
+        );
+
+        $docComment = new Doc(
+            '/** @qmx-ignore complexity */',
+            startLine: 10,
+            endLine: 10,
+        );
+
+        $node = new Class_('Foo', [], ['startLine' => 11, 'endLine' => 50]);
+        // Set both: regular comment + docblock
+        $node->setAttribute('comments', [$lineComment, $docComment]);
+
+        $suppressions = $this->extractor->extract($node);
+
+        self::assertCount(2, $suppressions);
+
+        $rules = array_map(static fn($s) => $s->rule, $suppressions);
+        sort($rules);
+
+        self::assertSame(['complexity', 'coupling.cbo'], $rules);
+    }
+
+    public function testReturnsEmptyWhenNoCommentsAndNoDocblock(): void
+    {
+        $node = new ClassMethod('doSomething');
+
+        $suppressions = $this->extractor->extract($node);
+
+        self::assertEmpty($suppressions);
+    }
+
+    public function testFileLevelFromBlockComment(): void
+    {
+        $comment = new Comment(
+            '/* @qmx-ignore-file complexity */',
+            startLine: 2,
+            endLine: 2,
+        );
+
+        $node = new Class_('Foo');
+        $node->setAttribute('comments', [$comment]);
+
+        $suppressions = $this->extractor->extractFileLevelSuppressions($node);
+
+        self::assertCount(1, $suppressions);
+        self::assertSame('complexity', $suppressions[0]->rule);
+        self::assertSame(SuppressionType::File, $suppressions[0]->type);
+    }
+
+    public function testNextLineFromMultiLineBlockComment(): void
+    {
+        $comment = new Comment(
+            <<<'COMMENT'
+            /*
+             * @qmx-ignore-next-line complexity.cyclomatic
+             */
+            COMMENT,
+            startLine: 10,
+            endLine: 12,
+        );
+
+        $node = new ClassMethod('doSomething', [], ['startLine' => 13, 'endLine' => 25]);
+        $node->setAttribute('comments', [$comment]);
+
+        $suppressions = $this->extractor->extract($node);
+
+        self::assertCount(1, $suppressions);
+        self::assertSame('complexity.cyclomatic', $suppressions[0]->rule);
+        self::assertSame(SuppressionType::NextLine, $suppressions[0]->type);
+        // Line should be endLine (12) so that filter targets line 13
+        self::assertSame(12, $suppressions[0]->line);
+    }
+
+    public function testLineCommentWithoutRuleProducesNoSuppression(): void
+    {
+        $comment = new Comment(
+            '// @qmx-ignore',
+            startLine: 10,
+            endLine: 10,
+        );
+
+        $node = new ClassMethod('doSomething', [], ['startLine' => 11, 'endLine' => 20]);
+        $node->setAttribute('comments', [$comment]);
+
+        $suppressions = $this->extractor->extract($node);
+
+        self::assertEmpty($suppressions);
     }
 }

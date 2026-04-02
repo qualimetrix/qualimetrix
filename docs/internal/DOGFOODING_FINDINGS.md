@@ -104,40 +104,34 @@ This means:
 
 ## Follow-up: Improvements to implement
 
-These are pre-existing issues surfaced during dogfooding. Not blockers, but worth addressing.
+These are pre-existing issues surfaced during dogfooding. All resolved.
 
-### F1. JSON format: configurable violation limit
+### F1. JSON format: configurable violation limit — **RESOLVED**
 
 **Related to:** Issue #2 above.
 
-Add `--format-opt=limit=N` (or `limit: N` in config) to control the number of violations
-in JSON output. Default 50 is fine for text, but CI integrations (SARIF, GitLab Code Quality)
-need the full list.
+**Resolution:** Changed `DEFAULT_VIOLATION_LIMIT` from 50 to `null` (unlimited).
+JSON now outputs all violations by default, consistent with SARIF/Checkstyle/GitLab formatters.
+`--format-opt=violations=N` still available to set a custom limit.
 
-**Scope:** `src/Reporting/Formatter/JsonFormatter.php` — the `MAX_VIOLATIONS` constant.
-
-### F2. `@qmx-ignore` in regular comments
+### F2. `@qmx-ignore` in regular comments — **RESOLVED**
 
 **Related to:** Issues #3 and #4 above.
 
-Currently `@qmx-ignore` only works in PHP docblocks (`/** ... */`). Regular comments
-(`// @qmx-ignore`, `/* @qmx-ignore */`) are ignored. This creates UX friction:
-- Can't suppress a specific line with `//`
-- Empty catch blocks with intentional comments still trigger violations
+**Resolution:** Extended `SuppressionExtractor` to scan `$node->getComments()` in addition
+to `$node->getDocComment()`. All three tag types (`@qmx-ignore`, `@qmx-ignore-next-line`,
+`@qmx-ignore-file`) now work in `//` and `/* */` comments. `FileProcessor` node filter
+extended to catch `@qmx-ignore` comments on any statement type (not just docblock-bearing nodes).
 
-**Scope:** `src/Baseline/Suppression/SuppressionExtractor.php` — needs to scan
-`$node->getComments()` in addition to `$node->getDocComment()`, or parse the token stream.
+**Limitation:** Inline same-line comments (`$x = foo(); // @qmx-ignore rule`) are not supported.
 
-### F3. Empty catch with intentional comments
+### F3. Empty catch with intentional comments — **RESOLVED via F2**
 
-**Related to:** Issue #3 above. Depends on F2.
+**Related to:** Issue #3 above.
 
-Once `@qmx-ignore` works in regular comments, users can write:
+**Resolution:** With F2 implemented, users can write:
 ```php
 } catch (CacheException) {
     // @qmx-ignore code-smell.empty-catch — best-effort caching
 }
 ```
-
-Alternatively, treat catch blocks with comments containing "intentional"/"ignore"/"expected"
-as non-empty (heuristic approach, independent of F2).

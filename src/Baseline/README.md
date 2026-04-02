@@ -62,17 +62,22 @@ Produces stable hashes based on:
 
 ### Supported Tags
 
-| Tag                     | Scope             | SuppressionType |
-| ----------------------- | ----------------- | --------------- |
-| `@qmx-ignore <rule>`    | Symbol (docblock) | Symbol          |
-| `@qmx-ignore-next-line` | Next line only    | NextLine        |
-| `@qmx-ignore-file`      | Entire file       | File            |
+| Tag                     | Scope                        | SuppressionType |
+| ----------------------- | ---------------------------- | --------------- |
+| `@qmx-ignore <rule>`    | Symbol (docblock or comment) | Symbol          |
+| `@qmx-ignore-next-line` | Next line only               | NextLine        |
+| `@qmx-ignore-file`      | Entire file                  | File            |
+
+All three tags work in PHPDoc docblocks (`/** */`), line comments (`//`), and block comments (`/* */`).
+
+> **Note:** Inline same-line comments (e.g., `$x = foo(); // @qmx-ignore rule`) are not supported.
+> Only comments on a separate line before the target are recognized.
 
 Rule names support prefix matching: `@qmx-ignore complexity` suppresses all `complexity.*` rules.
 
 ### How Suppression Is Wired
 
-1. **FileProcessor** (in `Analysis/Collection/`) uses `SuppressionExtractor` to extract suppression tags during AST traversal
+1. **FileProcessor** (in `Analysis/Collection/`) uses `SuppressionExtractor` to extract suppression tags from docblocks and regular comments during AST traversal
 2. Extracted suppressions are carried in `CollectionResult` alongside metrics
 3. During violation filtering, `ViolationFilterPipeline` (in `Infrastructure/Console/`) applies `SuppressionFilter` to remove suppressed violations
 

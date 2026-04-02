@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `code-smell.boolean-argument`: parameters with common boolean prefixes (`is*`, `has*`, `can*`, `should*`, `will*`, `did*`, `was*`) are now allowed by default (configurable via `allowed_prefixes: []`)
 - `code-smell.error-suppression`: `allowed_functions` option to whitelist functions where `@` usage is acceptable (e.g., `fopen`, `unlink`)
 - Per-rule `exclude_paths` option for targeted violation suppression by file path patterns
+- `@qmx-ignore` tags now work in regular comments (`//`, `/* */`), not just PHPDoc docblocks
+- JSON format (`--format=json`) now outputs all violations by default (was limited to 50); use `--format-opt=violations=50` to restore the old behavior
 
 ### Removed
 - `baseline.json` — replaced with proper `qmx.yaml` configuration using new features

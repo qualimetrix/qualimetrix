@@ -128,8 +128,8 @@ bin/qmx check src/ --format-opt=key=value
 
 | Option              | Default | Description                          |
 | ------------------- | ------- | ------------------------------------ |
-| `violations=N\|all` | 50      | Max violations in output (0=none)    |
-| `limit=N`           | 50      | Alias for `violations`               |
+| `violations=N\|all` | all     | Max violations in output (0=none)    |
+| `limit=N`           | all     | Alias for `violations`               |
 | `top=N`             | 10      | Number of worst offenders to include |
 
 ```bash
