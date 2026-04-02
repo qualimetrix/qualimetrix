@@ -1,0 +1,323 @@
+# =============================================================================
+# Qualimetrix — Example Configuration
+# =============================================================================
+#
+# Copy this file to qmx.yaml in your project root and customize as needed.
+# Qualimetrix auto-detects qmx.yaml (or qmx.yml) in the working directory.
+#
+# You can also specify a config file explicitly:
+#   vendor/bin/qmx check src/ --config=my-config.yaml
+#
+# Full documentation:
+#   https://qualimetrix.github.io/qualimetrix/getting-started/configuration/
+#
+# Configuration priority (highest wins):
+#   CLI options > config file > presets > composer.json auto-discovery > defaults
+#
+# All settings below are OPTIONAL. Qualimetrix works out of the box
+# with sensible defaults — only override what you need.
+# =============================================================================
+
+
+# -----------------------------------------------------------------------------
+# Paths & Exclusions
+# -----------------------------------------------------------------------------
+
+# Directories to analyze (default: auto-detected from composer.json PSR-4)
+# paths:
+#   - src/
+#   - lib/
+
+# Exclude paths from violation reporting (glob patterns, fnmatch syntax).
+# Files are still analyzed for metrics — only violations are suppressed.
+# Namespace-level violations are not affected.
+# exclude_paths:
+#   - src/Entity/*
+#   - src/DTO/*
+#   - src/Migrations/*
+
+
+# -----------------------------------------------------------------------------
+# General Settings
+# -----------------------------------------------------------------------------
+
+# Output format: summary, text, json, checkstyle, sarif, gitlab, health, html
+# Docs: https://qualimetrix.github.io/qualimetrix/reference/output-formats/
+# format: summary              # default: summary
+
+# When to exit with non-zero code: "warning" or "error"
+# failOn: warning
+
+# PHP memory limit (default: php.ini value)
+# memory_limit: 1G
+
+# Cache settings (both default to true/.qmx-cache)
+# cache:
+#   enabled: true
+#   dir: .qmx-cache
+
+# Parallel processing
+# parallel:
+#   workers: 0                 # 0 = auto-detect, 1 = sequential, N = N workers
+
+# Namespace detection strategy: psr4, tokenizer, chain (default: chain)
+# namespace:
+#   strategy: chain
+#   composer_json: composer.json
+
+# Include auto-generated files in analysis (default: false)
+# include_generated: true
+
+
+# -----------------------------------------------------------------------------
+# Coupling Settings
+# -----------------------------------------------------------------------------
+# Docs: https://qualimetrix.github.io/qualimetrix/metrics/coupling/
+
+# Framework namespace prefixes — dependencies on these are tracked separately
+# as CBO_FRAMEWORK (not counted toward CBO_APP). Boundary-aware: "Psr" matches
+# "Psr\Log" but NOT "PsrExtended\Custom".
+# coupling:
+#   framework-namespaces:
+#     - Symfony
+#     - Doctrine
+#     - Psr
+#     - Illuminate
+
+
+# -----------------------------------------------------------------------------
+# Aggregation
+# -----------------------------------------------------------------------------
+
+# Custom namespace prefixes for aggregation grouping
+# aggregation:
+#   prefixes:
+#     - App\Domain
+#     - App\Infrastructure
+#   auto_depth: 2
+
+
+# -----------------------------------------------------------------------------
+# Rules
+# -----------------------------------------------------------------------------
+# Rule names use "group.rule-name" format (kebab-case).
+# Only override thresholds you want to change — defaults apply for the rest.
+#
+# All default thresholds:
+#   https://qualimetrix.github.io/qualimetrix/reference/default-thresholds/
+# Available rules:
+#   https://qualimetrix.github.io/qualimetrix/reference/rules/
+#
+# Every rule supports exclude_namespaces to suppress violations in specific
+# namespaces (prefix matching):
+#   coupling.cbo:
+#     exclude_namespaces:
+#       - App\Core\ValueObject
+#
+# rules:
+
+  # — Complexity —
+  # Docs: https://qualimetrix.github.io/qualimetrix/metrics/complexity/
+
+  # Cyclomatic complexity (McCabe). Counts decision points in code.
+  # complexity.cyclomatic:
+  #   method:
+  #     warning: 10              # default: 10
+  #     error: 20                # default: 20
+  #   class:
+  #     max_warning: 30          # max CCN among class methods
+  #     max_error: 50
+
+  # Cognitive complexity. Measures how hard code is to understand.
+  # complexity.cognitive:
+  #   method:
+  #     warning: 15              # default: 15
+  #     error: 30                # default: 30
+
+  # NPATH complexity. Number of acyclic execution paths.
+  # complexity.npath:
+  #   method:
+  #     warning: 200             # default: 200
+  #     error: 1000              # default: 1000
+
+  # Weighted Methods per Class (sum of CCN for all methods).
+  # complexity.wmc:
+  #   warning: 50                # default: 50
+  #   error: 80                  # default: 80
+
+  # — Size —
+  # Docs: https://qualimetrix.github.io/qualimetrix/metrics/size/
+
+  # size.method-count:
+  #   warning: 20                # methods per class, default: 20
+  #   error: 30
+
+  # size.class-count:
+  #   warning: 15                # classes per namespace, default: 15
+  #   error: 25
+
+  # size.property-count:
+  #   warning: 15                # default: 15
+  #   error: 20
+  #   exclude_readonly: true
+  #   exclude_promoted_only: true
+
+  # — Design —
+  # Docs: https://qualimetrix.github.io/qualimetrix/metrics/design/
+
+  # LCOM4 — Lack of Cohesion of Methods. Lower is better (1 = perfectly cohesive).
+  # design.lcom:
+  #   warning: 3                 # default: 3
+  #   error: 5
+  #   min_methods: 3             # skip classes with fewer methods
+  #   exclude_readonly: true
+
+  # DIT — Depth of Inheritance Tree.
+  # design.inheritance:
+  #   warning: 4                 # default: 4
+  #   error: 6
+
+  # NOC — Number of Children (direct subclasses).
+  # design.noc:
+  #   warning: 10                # default: 10
+  #   error: 15
+
+  # Type coverage — percentage of typed parameters, returns, properties.
+  # Inverted: values BELOW the threshold trigger violations.
+  # design.type-coverage:
+  #   param_warning: 80          # default: 80%
+  #   param_error: 50
+  #   return_warning: 80
+  #   return_error: 50
+  #   property_warning: 80
+  #   property_error: 50
+
+  # God Class detection (Lanza & Marinescu heuristics).
+  # design.god-class:
+  #   wmc_threshold: 47
+  #   lcom_threshold: 3
+  #   tcc_threshold: 0.33
+  #   min_criteria: 3
+
+  # Data Class detection.
+  # design.data-class:
+  #   woc_threshold: 80
+  #   wmc_threshold: 10
+  #   exclude_readonly: true
+
+  # — Maintainability —
+  # Docs: https://qualimetrix.github.io/qualimetrix/metrics/maintainability/
+
+  # Maintainability Index. Inverted: values BELOW the threshold trigger violations.
+  # maintainability.index:
+  #   warning: 40                # default: 40
+  #   error: 20
+  #   exclude_tests: true
+  #   min_loc: 10
+
+  # — Coupling —
+  # Docs: https://qualimetrix.github.io/qualimetrix/metrics/coupling/
+
+  # CBO — Coupling Between Objects.
+  # coupling.cbo:
+  #   class:
+  #     warning: 14              # default: 14
+  #     error: 20
+  #   namespace:
+  #     warning: 14
+  #     error: 20
+
+  # Instability (Ce / (Ca + Ce)). Range 0.0–1.0.
+  # coupling.instability:
+  #   class:
+  #     max_warning: 0.8         # default: 0.8
+  #     max_error: 0.95
+  #   namespace:
+  #     max_warning: 0.8
+  #     max_error: 0.95
+
+  # Distance from Main Sequence. Range 0.0–1.0.
+  # coupling.distance:
+  #   max_distance_warning: 0.3  # default: 0.3
+  #   max_distance_error: 0.5
+
+  # ClassRank (PageRank on dependency graph).
+  # coupling.class-rank:
+  #   warning: 0.02              # default: 0.02
+  #   error: 0.05
+
+  # — Architecture —
+
+  # Circular dependency detection (can be memory-intensive for large projects).
+  # architecture.circular-dependency:
+  #   enabled: true
+  #   max_cycle_size: 0          # 0 = report all sizes
+
+  # — Code Smells —
+  # Docs: https://qualimetrix.github.io/qualimetrix/rules/code-smells/
+
+  # code-smell.long-parameter-list:
+  #   warning: 4                 # default: 4
+  #   error: 6
+  #   vo-warning: 8              # for value object constructors
+  #   vo-error: 12
+
+  # code-smell.constructor-overinjection:
+  #   warning: 8                 # default: 8
+  #   error: 12
+
+  # — Security —
+  # Docs: https://qualimetrix.github.io/qualimetrix/rules/security/
+  # All security rules are enabled by default with no thresholds.
+
+  # — Duplication —
+  # Code duplication detection (memory-intensive, skipped when disabled).
+  # duplication.code-duplication:
+  #   warning: 5                 # duplicate block count
+  #   error: 50
+  #   min_lines: 5
+  #   min_tokens: 70
+
+
+# -----------------------------------------------------------------------------
+# Rule Management
+# -----------------------------------------------------------------------------
+
+# Disable rules by name or group prefix.
+# disabled_rules:
+#   - code-smell                 # disable all code-smell.* rules
+#   - architecture.circular-dependency
+
+# Run only specific rules (prefix matching).
+# only_rules:
+#   - complexity                 # only run complexity.* rules
+
+
+# -----------------------------------------------------------------------------
+# Computed Metrics (Health Scores)
+# -----------------------------------------------------------------------------
+# Docs: https://qualimetrix.github.io/qualimetrix/metrics/health-scores/
+#
+# Override built-in health score thresholds or define custom computed metrics.
+
+# computed_metrics:
+#   # Override a health score threshold
+#   health.complexity:
+#     warning: 60
+#     error: 30
+#
+#   # Disable a health score
+#   health.typing:
+#     enabled: false
+#
+#   # Define a custom metric using Symfony Expression Language
+#   computed.risk_score:
+#     formula: "ccn__avg * (1 - (tcc__avg ?? 0))"
+#     levels: [namespace]
+#     warning: 30
+#     error: 60
+#     description: "Risk score combining complexity and cohesion"
+
+# Exclude specific health dimensions from the overall score.
+# exclude_health:
+#   - typing                     # e.g., exclude typing from overall health

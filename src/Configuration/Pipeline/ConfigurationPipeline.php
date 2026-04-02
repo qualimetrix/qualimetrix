@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Configuration\Pipeline;
 
 use Qualimetrix\Configuration\AnalysisConfiguration;
+use Qualimetrix\Configuration\ConfigSchema;
 use Qualimetrix\Configuration\PathsConfiguration;
 use Qualimetrix\Configuration\Pipeline\Stage\ConfigurationStageInterface;
 
@@ -70,12 +71,12 @@ final class ConfigurationPipeline implements ConfigurationPipelineInterface
     {
         return new ResolvedConfiguration(
             paths: new PathsConfiguration(
-                paths: $this->getListValue($merged, 'paths', ['.']),
-                excludes: $this->getListValue($merged, 'excludes', ['vendor', 'node_modules', '.git']),
+                paths: $this->getListValue($merged, ConfigSchema::PATHS, ['.']),
+                excludes: $this->getListValue($merged, ConfigSchema::EXCLUDES, ['vendor', 'node_modules', '.git']),
             ),
             analysis: AnalysisConfiguration::fromArray($merged),
-            ruleOptions: $this->getAssocArrayValue($merged, 'rules', []),
-            computedMetrics: $this->getAssocArrayValue($merged, 'computed_metrics', []),
+            ruleOptions: $this->getAssocArrayValue($merged, ConfigSchema::RULES, []),
+            computedMetrics: $this->getAssocArrayValue($merged, ConfigSchema::COMPUTED_METRICS, []),
             appliedSources: $appliedSources,
         );
     }

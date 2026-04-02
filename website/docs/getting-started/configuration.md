@@ -218,6 +218,72 @@ format: summary   # Default
 # format: html
 ```
 
+### Cache
+
+Control AST caching for faster repeated runs:
+
+```yaml
+cache:
+  enabled: true         # Default: true
+  dir: .qmx-cache       # Default: .qmx-cache
+```
+
+Equivalent CLI: `--no-cache` to disable, `--cache-dir=DIR` to change directory.
+
+### Parallel Processing
+
+Control the number of parallel workers for file analysis:
+
+```yaml
+parallel:
+  workers: 4     # Fixed number of workers
+  # workers: 0   # Disable parallelism (single-threaded)
+```
+
+By default, Qualimetrix auto-detects the optimal worker count based on CPU cores. Equivalent CLI: `--workers=4`
+
+!!! tip
+    Use `workers: 0` for debugging or when running in environments without `ext-parallel`.
+
+### Namespace Detection
+
+Control how Qualimetrix resolves namespace-to-directory mapping:
+
+```yaml
+namespace:
+  strategy: chain          # Default: chain (try psr4, then tokenizer)
+  # strategy: psr4         # PSR-4 only (requires composer.json)
+  # strategy: tokenizer    # Parse namespace from PHP tokens
+  composer_json: composer.json   # Path to composer.json for PSR-4 detection
+```
+
+### Coupling
+
+Configure framework namespace prefixes for the CBO (Coupling Between Objects) metric. Dependencies on framework namespaces are tracked separately as `cbo_app` and `ce_framework`:
+
+```yaml
+coupling:
+  framework-namespaces:
+    - Symfony
+    - Doctrine
+    - Psr
+    - Illuminate
+```
+
+When no `framework-namespaces` are configured, `cbo_app` equals `cbo` (no effect).
+
+### Aggregation
+
+Control how namespaces are grouped for aggregated metrics:
+
+```yaml
+aggregation:
+  prefixes:
+    - App\Domain
+    - App\Infrastructure
+  auto_depth: 2    # Auto-detect depth for namespace grouping
+```
+
 ---
 
 ## Presets
@@ -277,6 +343,18 @@ include_generated: false
 
 format: summary
 fail_on: error        # default — warnings shown but don't fail the build
+
+cache:
+  enabled: true
+  dir: .qmx-cache
+
+parallel:
+  workers: 4
+
+coupling:
+  framework-namespaces:
+    - Symfony
+    - Doctrine
 
 exclude_health:
   - typing

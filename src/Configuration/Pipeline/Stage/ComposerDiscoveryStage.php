@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Configuration\Pipeline\Stage;
 
+use Qualimetrix\Configuration\ConfigSchema;
 use Qualimetrix\Configuration\Discovery\ComposerReader;
 use Qualimetrix\Configuration\Pipeline\ConfigurationContext;
 use Qualimetrix\Configuration\Pipeline\ConfigurationLayer;
@@ -42,7 +43,7 @@ final class ComposerDiscoveryStage implements ConfigurationStageInterface
         }
 
         return new ConfigurationLayer('composer.json', [
-            'paths' => $paths,
+            ConfigSchema::PATHS => $paths,
         ]);
     }
 }

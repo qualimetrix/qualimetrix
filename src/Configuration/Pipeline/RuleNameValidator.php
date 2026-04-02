@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Configuration\Pipeline;
 
 use Psr\Log\LoggerInterface;
+use Qualimetrix\Configuration\ConfigSchema;
 use Qualimetrix\Configuration\KnownRuleNamesProviderInterface;
 
 /**
@@ -32,7 +33,7 @@ final class RuleNameValidator
         KnownRuleNamesProviderInterface $provider,
         LoggerInterface $logger,
     ): void {
-        $rulesSection = $data['rules'] ?? null;
+        $rulesSection = $data[ConfigSchema::RULES] ?? null;
         if (!\is_array($rulesSection) || $rulesSection === []) {
             return;
         }

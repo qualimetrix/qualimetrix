@@ -14,6 +14,7 @@ Configuration is responsible for managing analysis settings. It supports:
 
 ```
 Configuration/
+├── ConfigSchema.php               # Single source of truth: key constants, YAML mappings, type constraints
 ├── AnalysisConfiguration.php      # General analysis config
 ├── PathsConfiguration.php         # VO for paths and excludes
 ├── ConfigurationHolder.php        # Runtime configuration holder
@@ -32,7 +33,7 @@ Configuration/
 │   ├── ConfigurationPipeline.php           # Implementation
 │   ├── ConfigurationContext.php            # Context (input + workDir)
 │   ├── ConfigurationLayer.php              # Configuration layer
-│   ├── ConfigDataNormalizer.php            # YAML → dot-notation normalizer
+│   ├── ConfigDataNormalizer.php            # YAML → dot-notation normalizer (uses ConfigSchema::ENTRIES)
 │   ├── ConfigurationMerger.php            # Layered config merge logic
 │   ├── RuleNameValidator.php              # Unknown rule name warnings
 │   ├── ResolvedConfiguration.php           # Final configuration
@@ -55,11 +56,37 @@ Configuration/
 │
 ├── Loader/
 │   ├── ConfigLoaderInterface.php  # Loader contract
-│   └── YamlConfigLoader.php       # YAML loader
+│   └── YamlConfigLoader.php       # YAML loader (validates against ConfigSchema)
 │
 └── Exception/
     └── ConfigLoadException.php    # Loading exception
 ```
+
+---
+
+## ConfigSchema — Single Source of Truth
+
+`ConfigSchema` is the central registry for all configuration keys. It eliminates
+duplicated string literals and ensures consistency across the pipeline.
+
+**What it provides:**
+- **Key constants** (`ConfigSchema::CACHE_DIR`, `ConfigSchema::FORMAT`, etc.) — used by all consumers instead of string literals
+- **Unified ENTRIES** — maps YAML source paths to internal flat keys with root key type constraints
+- **Derived methods** — `allowedRootKeys()`, `sectionKeys()`, `listKeys()` for validation
+
+**Dependency graph** (all arrows point toward ConfigSchema):
+
+```
+YamlConfigLoader ──→ ConfigSchema ←── ConfigDataNormalizer
+DefaultsStage    ──→ ConfigSchema ←── ConfigurationMerger
+CliStage         ──→ ConfigSchema ←── ConfigurationPipeline
+                     ConfigSchema ←── AnalysisConfiguration
+```
+
+**Adding a new config option:**
+1. Add a constant to `ConfigSchema` (e.g., `public const MY_OPTION = 'my.option'`)
+2. Add an entry to `ConfigSchema::ENTRIES` (if YAML-configurable)
+3. Add handling in the appropriate consumer (`AnalysisConfiguration`, stage, etc.)
 
 ---
 

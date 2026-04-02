@@ -170,7 +170,8 @@ another_bad_key: true
 YAML);
 
         $this->expectException(ConfigLoadException::class);
-        $this->expectExceptionMessage('Unknown configuration keys');
+        // Error message should show original key names (snake_case), not camelCase
+        $this->expectExceptionMessage('unknown_key, another_bad_key');
 
         $this->loader->load($path);
     }
@@ -358,6 +359,64 @@ YAML);
         self::assertArrayHasKey('excludePaths', $config);
         self::assertSame(['size.method-count'], $config['disabledRules']);
         self::assertSame(['vendor'], $config['excludePaths']);
+    }
+
+    public function testLoadAcceptsParallelSection(): void
+    {
+        $path = $this->tempDir . '/config.yaml';
+        file_put_contents($path, <<<'YAML'
+parallel:
+  workers: 4
+YAML);
+
+        $config = $this->loader->load($path);
+
+        self::assertSame(4, $config['parallel']['workers']);
+    }
+
+    public function testLoadAcceptsCouplingSection(): void
+    {
+        $path = $this->tempDir . '/config.yaml';
+        file_put_contents($path, <<<'YAML'
+coupling:
+  framework_namespaces:
+    - Symfony
+    - Doctrine
+YAML);
+
+        $config = $this->loader->load($path);
+
+        self::assertSame(['Symfony', 'Doctrine'], $config['coupling']['frameworkNamespaces']);
+    }
+
+    public function testLoadProjectQmxYamlWithoutErrors(): void
+    {
+        $projectRoot = \dirname(__DIR__, 4);
+        $configPath = $projectRoot . '/qmx.yaml';
+
+        if (!file_exists($configPath)) {
+            self::markTestSkipped('No qmx.yaml in project root');
+        }
+
+        // Smoke test: the project's own config file must load without errors
+        $config = $this->loader->load($configPath);
+
+        self::assertNotEmpty($config, 'Project qmx.yaml should produce non-empty config');
+    }
+
+    public function testLoadProjectQmxYamlExampleWithoutErrors(): void
+    {
+        $projectRoot = \dirname(__DIR__, 4);
+        $examplePath = $projectRoot . '/qmx.yaml.example';
+
+        if (!file_exists($examplePath)) {
+            self::markTestSkipped('No qmx.yaml.example in project root');
+        }
+
+        // The example file is fully commented out — should parse as empty
+        $config = $this->loader->load($examplePath);
+
+        self::assertSame([], $config);
     }
 
     public function testLoadPreservesMultipleRuleNamesWithMixedFormats(): void

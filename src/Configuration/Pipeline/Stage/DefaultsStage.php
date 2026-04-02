@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Configuration\Pipeline\Stage;
 
+use Qualimetrix\Configuration\AnalysisConfiguration;
+use Qualimetrix\Configuration\ConfigSchema;
 use Qualimetrix\Configuration\Pipeline\ConfigurationContext;
 use Qualimetrix\Configuration\Pipeline\ConfigurationLayer;
 
@@ -29,13 +31,13 @@ final class DefaultsStage implements ConfigurationStageInterface
     public function apply(ConfigurationContext $context): ConfigurationLayer
     {
         return new ConfigurationLayer('defaults', [
-            'paths' => ['.'],
-            'excludes' => ['vendor', 'node_modules', '.git'],
-            'cache.dir' => '.qmx-cache',
-            'cache.enabled' => true,
-            'format' => 'summary',
-            'namespace.strategy' => 'chain',
-            'project_root' => $context->workingDirectory,
+            ConfigSchema::PATHS => ['.'],
+            ConfigSchema::EXCLUDES => ['vendor', 'node_modules', '.git'],
+            ConfigSchema::CACHE_DIR => AnalysisConfiguration::DEFAULT_CACHE_DIR,
+            ConfigSchema::CACHE_ENABLED => true,
+            ConfigSchema::FORMAT => AnalysisConfiguration::DEFAULT_FORMAT,
+            ConfigSchema::NAMESPACE_STRATEGY => AnalysisConfiguration::DEFAULT_NAMESPACE_STRATEGY,
+            ConfigSchema::PROJECT_ROOT => $context->workingDirectory,
         ]);
     }
 }

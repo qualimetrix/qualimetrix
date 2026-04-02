@@ -70,23 +70,23 @@ final readonly class AnalysisConfiguration
     public static function fromArray(array $config): self
     {
         return new self(
-            cacheDir: self::getString($config, 'cache.dir', self::DEFAULT_CACHE_DIR),
-            cacheEnabled: self::getBool($config, 'cache.enabled', true),
-            format: self::getString($config, 'format', self::DEFAULT_FORMAT),
-            namespaceStrategy: self::getString($config, 'namespace.strategy', self::DEFAULT_NAMESPACE_STRATEGY),
-            composerJsonPath: self::getStringOrNull($config, 'namespace.composer_json'),
-            aggregationPrefixes: self::getStringList($config, 'aggregation.prefixes'),
-            aggregationAutoDepth: self::getIntOrNull($config, 'aggregation.auto_depth'),
-            disabledRules: self::getStringList($config, 'disabled_rules'),
-            onlyRules: self::getStringList($config, 'only_rules'),
-            excludePaths: self::getStringList($config, 'exclude_paths'),
-            workers: self::getIntOrNull($config, 'parallel.workers'),
-            projectRoot: self::getString($config, 'project_root', '.'),
-            failOn: self::getFailOn($config, 'fail_on'),
-            excludeHealth: self::getStringList($config, 'exclude_health'),
-            includeGenerated: self::getBool($config, 'include_generated', false),
-            frameworkNamespaces: self::getStringList($config, 'coupling.framework_namespaces'),
-            memoryLimit: self::getMemoryLimit($config, 'memory_limit'),
+            cacheDir: self::getString($config, ConfigSchema::CACHE_DIR, self::DEFAULT_CACHE_DIR),
+            cacheEnabled: self::getBool($config, ConfigSchema::CACHE_ENABLED, true),
+            format: self::getString($config, ConfigSchema::FORMAT, self::DEFAULT_FORMAT),
+            namespaceStrategy: self::getString($config, ConfigSchema::NAMESPACE_STRATEGY, self::DEFAULT_NAMESPACE_STRATEGY),
+            composerJsonPath: self::getStringOrNull($config, ConfigSchema::NAMESPACE_COMPOSER_JSON),
+            aggregationPrefixes: self::getStringList($config, ConfigSchema::AGGREGATION_PREFIXES),
+            aggregationAutoDepth: self::getIntOrNull($config, ConfigSchema::AGGREGATION_AUTO_DEPTH),
+            disabledRules: self::getStringList($config, ConfigSchema::DISABLED_RULES),
+            onlyRules: self::getStringList($config, ConfigSchema::ONLY_RULES),
+            excludePaths: self::getStringList($config, ConfigSchema::EXCLUDE_PATHS),
+            workers: self::getIntOrNull($config, ConfigSchema::PARALLEL_WORKERS),
+            projectRoot: self::getString($config, ConfigSchema::PROJECT_ROOT, '.'),
+            failOn: self::getFailOn($config, ConfigSchema::FAIL_ON),
+            excludeHealth: self::getStringList($config, ConfigSchema::EXCLUDE_HEALTH),
+            includeGenerated: self::getBool($config, ConfigSchema::INCLUDE_GENERATED, false),
+            frameworkNamespaces: self::getStringList($config, ConfigSchema::COUPLING_FRAMEWORK_NAMESPACES),
+            memoryLimit: self::getMemoryLimit($config, ConfigSchema::MEMORY_LIMIT),
         );
     }
 
@@ -98,31 +98,31 @@ final readonly class AnalysisConfiguration
     public function merge(array $overrides): self
     {
         return new self(
-            cacheDir: self::getString($overrides, 'cache.dir', $this->cacheDir),
-            cacheEnabled: self::getBool($overrides, 'cache.enabled', $this->cacheEnabled),
-            format: self::getString($overrides, 'format', $this->format),
-            namespaceStrategy: self::getString($overrides, 'namespace.strategy', $this->namespaceStrategy),
-            composerJsonPath: self::getStringOrNull($overrides, 'namespace.composer_json') ?? $this->composerJsonPath,
-            aggregationPrefixes: self::hasNestedValue($overrides, 'aggregation.prefixes')
-                ? self::getStringList($overrides, 'aggregation.prefixes')
+            cacheDir: self::getString($overrides, ConfigSchema::CACHE_DIR, $this->cacheDir),
+            cacheEnabled: self::getBool($overrides, ConfigSchema::CACHE_ENABLED, $this->cacheEnabled),
+            format: self::getString($overrides, ConfigSchema::FORMAT, $this->format),
+            namespaceStrategy: self::getString($overrides, ConfigSchema::NAMESPACE_STRATEGY, $this->namespaceStrategy),
+            composerJsonPath: self::getStringOrNull($overrides, ConfigSchema::NAMESPACE_COMPOSER_JSON) ?? $this->composerJsonPath,
+            aggregationPrefixes: self::hasNestedValue($overrides, ConfigSchema::AGGREGATION_PREFIXES)
+                ? self::getStringList($overrides, ConfigSchema::AGGREGATION_PREFIXES)
                 : $this->aggregationPrefixes,
-            aggregationAutoDepth: self::getIntOrNull($overrides, 'aggregation.auto_depth') ?? $this->aggregationAutoDepth,
-            disabledRules: array_values(array_unique([...$this->disabledRules, ...self::getStringList($overrides, 'disabled_rules')])),
-            onlyRules: self::hasNestedValue($overrides, 'only_rules')
-                ? self::getStringList($overrides, 'only_rules')
+            aggregationAutoDepth: self::getIntOrNull($overrides, ConfigSchema::AGGREGATION_AUTO_DEPTH) ?? $this->aggregationAutoDepth,
+            disabledRules: array_values(array_unique([...$this->disabledRules, ...self::getStringList($overrides, ConfigSchema::DISABLED_RULES)])),
+            onlyRules: self::hasNestedValue($overrides, ConfigSchema::ONLY_RULES)
+                ? self::getStringList($overrides, ConfigSchema::ONLY_RULES)
                 : $this->onlyRules,
-            excludePaths: array_values(array_unique([...$this->excludePaths, ...self::getStringList($overrides, 'exclude_paths')])),
-            workers: self::getIntOrNull($overrides, 'parallel.workers') ?? $this->workers,
-            projectRoot: self::getString($overrides, 'project_root', $this->projectRoot),
-            failOn: self::getFailOn($overrides, 'fail_on') ?? $this->failOn,
-            excludeHealth: self::hasNestedValue($overrides, 'exclude_health')
-                ? self::getStringList($overrides, 'exclude_health')
+            excludePaths: array_values(array_unique([...$this->excludePaths, ...self::getStringList($overrides, ConfigSchema::EXCLUDE_PATHS)])),
+            workers: self::getIntOrNull($overrides, ConfigSchema::PARALLEL_WORKERS) ?? $this->workers,
+            projectRoot: self::getString($overrides, ConfigSchema::PROJECT_ROOT, $this->projectRoot),
+            failOn: self::getFailOn($overrides, ConfigSchema::FAIL_ON) ?? $this->failOn,
+            excludeHealth: self::hasNestedValue($overrides, ConfigSchema::EXCLUDE_HEALTH)
+                ? self::getStringList($overrides, ConfigSchema::EXCLUDE_HEALTH)
                 : $this->excludeHealth,
-            includeGenerated: self::getBool($overrides, 'include_generated', $this->includeGenerated),
-            frameworkNamespaces: self::hasNestedValue($overrides, 'coupling.framework_namespaces')
-                ? self::getStringList($overrides, 'coupling.framework_namespaces')
+            includeGenerated: self::getBool($overrides, ConfigSchema::INCLUDE_GENERATED, $this->includeGenerated),
+            frameworkNamespaces: self::hasNestedValue($overrides, ConfigSchema::COUPLING_FRAMEWORK_NAMESPACES)
+                ? self::getStringList($overrides, ConfigSchema::COUPLING_FRAMEWORK_NAMESPACES)
                 : $this->frameworkNamespaces,
-            memoryLimit: self::getMemoryLimit($overrides, 'memory_limit') ?? $this->memoryLimit,
+            memoryLimit: self::getMemoryLimit($overrides, ConfigSchema::MEMORY_LIMIT) ?? $this->memoryLimit,
         );
     }
 
