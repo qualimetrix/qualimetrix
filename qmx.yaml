@@ -52,9 +52,13 @@ rules:
       warning: 20
       error: 30
 
+  # Core contracts and value objects are coupling hubs by design.
   coupling.class-rank:
     exclude_namespaces:
-      - Qualimetrix\Core
+      - Qualimetrix\Core\Violation
+      - Qualimetrix\Core\Symbol
+      - Qualimetrix\Core\Metric
+      - Qualimetrix\Core\Rule
 
   # Distance: Core leaf namespaces are maximally concrete with few abstractions.
   # This is by design for value objects.
@@ -79,7 +83,7 @@ rules:
       - src/Metrics/*Visitor.php
       - src/Metrics/*Trait.php
       - src/Infrastructure/DependencyInjection/*
-      - src/Infrastructure/Console/Command/*
+      # Console commands/orchestrators (* matches across / with fnmatch, covers Command/ too)
       - src/Infrastructure/Console/*
       - src/Analysis/Pipeline/*
       - src/Baseline/*
@@ -143,10 +147,16 @@ rules:
 
   # --- Code Smells ---
 
-  # All boolean params in this project are well-named ($enabled, $inverted, $precise etc.).
-  # The rule catches meaningless `bool $flag` patterns — not applicable here.
+  # Boolean params in Options/config DTOs are by design. Keep the rule active
+  # to catch future poorly-named booleans, but exclude structural categories.
   code-smell.boolean-argument:
-    enabled: false
+    allowed_prefixes: [is, has, can, should, will, did, was]
+    exclude_paths:
+      - src/Rules/*Options.php
+      - src/Analysis/*Options.php
+      - src/Infrastructure/Console/*
+      - src/Reporting/*
+      - src/Core/*
 
   code-smell.error-suppression:
     allowed_functions:
