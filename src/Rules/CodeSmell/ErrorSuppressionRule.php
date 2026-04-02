@@ -54,13 +54,11 @@ final class ErrorSuppressionRule extends AbstractCodeSmellRule
      */
     protected function shouldIncludeEntry(array $entry): bool
     {
-        if (!$this->options instanceof ErrorSuppressionOptions) {
-            return true;
-        }
-
+        /** @var ErrorSuppressionOptions $options */
+        $options = $this->options;
         $funcName = $entry['extra'] ?? null;
 
-        return !\is_string($funcName) || !$this->options->isFunctionAllowed($funcName);
+        return !\is_string($funcName) || !$options->isFunctionAllowed($funcName);
     }
 
     /**

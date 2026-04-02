@@ -95,6 +95,19 @@ final class RuleOptionsRegistry
     }
 
     /**
+     * Resets all runtime state between analysis runs.
+     *
+     * Clears CLI options and exclusion providers while preserving config file options
+     * (which are re-set later via setConfigFileOptions()).
+     */
+    public function resetRuntimeState(): void
+    {
+        $this->cliOptions = [];
+        $this->exclusionProvider->reset();
+        $this->pathExclusionProvider->reset();
+    }
+
+    /**
      * Clears all options (useful for testing).
      */
     public function reset(): void

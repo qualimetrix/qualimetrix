@@ -8,10 +8,8 @@ use Qualimetrix\Configuration\AnalysisConfiguration;
 use Qualimetrix\Configuration\ConfigurationHolder;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Configuration\Pipeline\ConfigurationPipeline;
-use Qualimetrix\Configuration\RuleNamespaceExclusionProvider;
 use Qualimetrix\Configuration\RuleOptionsFactory;
 use Qualimetrix\Configuration\RuleOptionsRegistry;
-use Qualimetrix\Configuration\RulePathExclusionProvider;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -40,22 +38,9 @@ final class ConfigurationConfigurator implements ContainerConfiguratorInterface
      */
     private function registerConfigurationHolder(ContainerBuilder $container): void
     {
-        // RuleNamespaceExclusionProvider - shared between RuleOptionsRegistry and RuleExecutor
-        $exclusionProvider = new RuleNamespaceExclusionProvider();
-        $container->register(RuleNamespaceExclusionProvider::class)
-            ->setSynthetic(true)
-            ->setPublic(true);
-        $container->set(RuleNamespaceExclusionProvider::class, $exclusionProvider);
-
-        // RulePathExclusionProvider - shared between RuleOptionsRegistry and RuleExecutor
-        $pathExclusionProvider = new RulePathExclusionProvider();
-        $container->register(RulePathExclusionProvider::class)
-            ->setSynthetic(true)
-            ->setPublic(true);
-        $container->set(RulePathExclusionProvider::class, $pathExclusionProvider);
-
-        // RuleOptionsRegistry - mutable storage, can be configured with CLI options at runtime
-        $registry = new RuleOptionsRegistry($exclusionProvider, $pathExclusionProvider);
+        // RuleOptionsRegistry - mutable storage for rule options, exclusion providers, and CLI overrides.
+        // Exclusion providers are owned by the registry (no separate DI registration needed).
+        $registry = new RuleOptionsRegistry();
         $container->register(RuleOptionsRegistry::class)
             ->setSynthetic(true)
             ->setPublic(true);

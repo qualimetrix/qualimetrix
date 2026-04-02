@@ -31,7 +31,9 @@ final readonly class ErrorSuppressionOptions implements RuleOptionsInterface
         $raw = $config['allowedFunctions'] ?? $config['allowed_functions'] ?? [];
 
         $functions = [];
-        if (\is_array($raw)) {
+        if (\is_string($raw)) {
+            $functions = [strtolower($raw)];
+        } elseif (\is_array($raw)) {
             $functions = array_map('strtolower', array_values(array_filter($raw, 'is_string')));
         }
 

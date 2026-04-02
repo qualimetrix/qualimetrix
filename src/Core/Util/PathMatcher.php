@@ -8,7 +8,8 @@ namespace Qualimetrix\Core\Util;
  * Matches file paths against glob patterns.
  *
  * Used for exclude_paths feature to suppress violations by file path patterns.
- * Uses fnmatch() with FNM_NOESCAPE flag, so `*` matches across directory separators.
+ * Uses fnmatch() with FNM_NOESCAPE flag (disables backslash escaping).
+ * Without FNM_PATHNAME, `*` matches across directory separators by default.
  *
  * Examples:
  *   - `src/Entity/*` matches `src/Entity/User.php` and `src/Entity/Sub/Deep.php`

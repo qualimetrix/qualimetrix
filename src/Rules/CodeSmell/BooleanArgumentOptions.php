@@ -33,7 +33,9 @@ final readonly class BooleanArgumentOptions implements RuleOptionsInterface
         $raw = $config['allowedPrefixes'] ?? $config['allowed_prefixes'] ?? null;
 
         $prefixes = self::DEFAULT_PREFIXES;
-        if (\is_array($raw)) {
+        if (\is_string($raw)) {
+            $prefixes = [$raw];
+        } elseif (\is_array($raw)) {
             $prefixes = array_values(array_filter($raw, 'is_string'));
         }
 
