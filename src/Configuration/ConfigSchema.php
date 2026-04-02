@@ -49,6 +49,16 @@ final class ConfigSchema
     /** Internal key: set by DefaultsStage only, not YAML-configurable. */
     public const string PROJECT_ROOT = 'project_root';
 
+    /**
+     * Keys that are intentionally internal (no YAML path in ENTRIES).
+     *
+     * Used by tests to verify that every public constant either has an
+     * ENTRIES row or is explicitly listed here.
+     *
+     * @var list<string>
+     */
+    public const array INTERNAL_KEYS = [self::PROJECT_ROOT];
+
     // -------------------------------------------------------------------------
     // Root key types
     // -------------------------------------------------------------------------
@@ -60,10 +70,10 @@ final class ConfigSchema
     /**
      * Unified config entries: [sourcePath, resultKey, rootKeyType].
      *
-     * Source key path (camelCase, post-loader-normalization):
+     * Source key path (camelCase — YamlConfigLoader normalizes snake_case before
+     * ConfigDataNormalizer sees the data, so only camelCase paths are needed):
      * - 'key'           — top-level key
      * - 'section.key'   — nested key (dot = nesting level; root is auto-typed as section)
-     * - 'keyA|keyB'     — alternative keys (first found wins)
      *
      * Root key type:
      * - 'list'    — must be a sequential array (paths, disabled_rules, etc.)
@@ -92,13 +102,13 @@ final class ConfigSchema
         ['aggregation.prefixes', self::AGGREGATION_PREFIXES, null],
         ['aggregation.autoDepth', self::AGGREGATION_AUTO_DEPTH, null],
         ['parallel.workers', self::PARALLEL_WORKERS, null],
-        ['coupling.frameworkNamespaces|coupling.framework_namespaces', self::COUPLING_FRAMEWORK_NAMESPACES, null],
+        ['coupling.frameworkNamespaces', self::COUPLING_FRAMEWORK_NAMESPACES, null],
 
-        // Dual-naming (camelCase | snake_case)
-        ['computedMetrics|computed_metrics', self::COMPUTED_METRICS, self::MIXED],
-        ['excludeHealth|exclude_health', self::EXCLUDE_HEALTH, self::LIST],
-        ['includeGenerated|include_generated', self::INCLUDE_GENERATED, self::SCALAR],
-        ['memoryLimit|memory_limit', self::MEMORY_LIMIT, self::SCALAR],
+        // Top-level camelCase keys (loader normalizes snake_case before these are resolved)
+        ['computedMetrics', self::COMPUTED_METRICS, self::MIXED],
+        ['excludeHealth', self::EXCLUDE_HEALTH, self::LIST],
+        ['includeGenerated', self::INCLUDE_GENERATED, self::SCALAR],
+        ['memoryLimit', self::MEMORY_LIMIT, self::SCALAR],
     ];
 
     /**
@@ -111,10 +121,8 @@ final class ConfigSchema
         $keys = [];
 
         foreach (self::ENTRIES as [$sourcePath]) {
-            foreach (explode('|', $sourcePath) as $alt) {
-                $root = str_contains($alt, '.') ? explode('.', $alt, 2)[0] : $alt;
-                $keys[$root] = true;
-            }
+            $root = str_contains($sourcePath, '.') ? explode('.', $sourcePath, 2)[0] : $sourcePath;
+            $keys[$root] = true;
         }
 
         return array_keys($keys);
@@ -137,10 +145,8 @@ final class ConfigSchema
                 continue;
             }
 
-            foreach (explode('|', $sourcePath) as $alt) {
-                if (str_contains($alt, '.')) {
-                    $sections[explode('.', $alt, 2)[0]] = true;
-                }
+            if (str_contains($sourcePath, '.')) {
+                $sections[explode('.', $sourcePath, 2)[0]] = true;
             }
         }
 
@@ -158,10 +164,8 @@ final class ConfigSchema
 
         foreach (self::ENTRIES as [$sourcePath, , $type]) {
             if ($type === self::LIST) {
-                foreach (explode('|', $sourcePath) as $alt) {
-                    $root = str_contains($alt, '.') ? explode('.', $alt, 2)[0] : $alt;
-                    $lists[$root] = true;
-                }
+                $root = str_contains($sourcePath, '.') ? explode('.', $sourcePath, 2)[0] : $sourcePath;
+                $lists[$root] = true;
             }
         }
 

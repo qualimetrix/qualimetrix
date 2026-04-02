@@ -41,23 +41,12 @@ final class ConfigDataNormalizer
     /**
      * Resolves a value from the data array using a source path.
      *
+     * Source paths are camelCase (YamlConfigLoader normalizes before this runs).
+     *
      * @param array<string, mixed> $data
      */
     private static function resolve(array $data, string $sourcePath): mixed
     {
-        // Alternative keys: 'keyA|keyB'
-        if (str_contains($sourcePath, '|')) {
-            foreach (explode('|', $sourcePath) as $alt) {
-                $value = self::resolve($data, $alt);
-
-                if ($value !== null) {
-                    return $value;
-                }
-            }
-
-            return null;
-        }
-
         // Nested key: 'section.key'
         if (str_contains($sourcePath, '.')) {
             [$section, $key] = explode('.', $sourcePath, 2);

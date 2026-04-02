@@ -34,11 +34,11 @@ final class ConfigSchemaTest extends TestCase
         self::assertContains('coupling', $keys);
         self::assertContains('parallel', $keys);
 
-        // Dual-naming alternatives
+        // camelCase top-level keys (no snake_case — loader normalizes before validation)
         self::assertContains('computedMetrics', $keys);
-        self::assertContains('computed_metrics', $keys);
         self::assertContains('memoryLimit', $keys);
-        self::assertContains('memory_limit', $keys);
+        self::assertContains('excludeHealth', $keys);
+        self::assertContains('includeGenerated', $keys);
     }
 
     #[Test]
@@ -128,11 +128,8 @@ final class ConfigSchemaTest extends TestCase
     /**
      * Builds a YAML string that contains every root key from ConfigSchema::ENTRIES.
      *
-     * Uses dummy values appropriate for each key type:
-     * - sections get a sub-key with a dummy value
-     * - lists get a single-element array
-     * - scalars get a string
-     * - mixed (rules, computed_metrics) get an associative array
+     * Uses realistic sub-keys for sections (derived from dotted source paths)
+     * to verify that both root keys AND their actual sub-keys are accepted.
      */
     private function buildFullConfigYaml(): string
     {
@@ -140,13 +137,18 @@ final class ConfigSchemaTest extends TestCase
         $lists = array_flip(ConfigSchema::listKeys());
         $lines = [];
         $handledRoots = [];
+        $sectionSubKeys = [];
+
+        // Collect real sub-keys for sections from dotted source paths
+        foreach (ConfigSchema::ENTRIES as [$sourcePath]) {
+            if (str_contains($sourcePath, '.')) {
+                [$root, $subKey] = explode('.', $sourcePath, 2);
+                $sectionSubKeys[$root][] = $subKey;
+            }
+        }
 
         foreach (ConfigSchema::ENTRIES as [$sourcePath, , $type]) {
-            // Take only the first alternative for dual-naming entries
-            $source = explode('|', $sourcePath)[0];
-
-            // Get the root key
-            $root = str_contains($source, '.') ? explode('.', $source, 2)[0] : $source;
+            $root = str_contains($sourcePath, '.') ? explode('.', $sourcePath, 2)[0] : $sourcePath;
 
             if (isset($handledRoots[$root])) {
                 continue;
@@ -155,7 +157,10 @@ final class ConfigSchemaTest extends TestCase
 
             if (isset($sections[$root])) {
                 $lines[] = "{$root}:";
-                $lines[] = '  _dummy: true';
+                // Use real sub-keys from ENTRIES instead of dummy values
+                foreach ($sectionSubKeys[$root] ?? [] as $subKey) {
+                    $lines[] = "  {$subKey}: dummy";
+                }
             } elseif (isset($lists[$root])) {
                 $lines[] = "{$root}:";
                 $lines[] = '  - dummy';
@@ -193,8 +198,7 @@ final class ConfigSchemaTest extends TestCase
     #[Test]
     public function everyConstantHasEntryOrIsInternal(): void
     {
-        // Constants that are intentionally internal (no YAML path)
-        $internalConstants = [ConfigSchema::PROJECT_ROOT];
+        $internalConstants = ConfigSchema::INTERNAL_KEYS;
 
         $reflection = new ReflectionClass(ConfigSchema::class);
         $entryResultKeys = array_map(static fn(array $e): string => $e[1], ConfigSchema::ENTRIES);
@@ -227,17 +231,22 @@ final class ConfigSchemaTest extends TestCase
      * Verifies no key constant is defined in ConfigSchema but unused
      * by any consumer. A dangling constant means the key is configurable
      * in YAML but silently ignored at runtime.
+     *
+     * Consumer files are discovered dynamically to avoid hardcoded lists
+     * going stale when new consumers are added.
      */
     #[Test]
     public function noConstantIsDangling(): void
     {
-        $consumerFiles = [
-            __DIR__ . '/../../../src/Configuration/AnalysisConfiguration.php',
-            __DIR__ . '/../../../src/Configuration/Pipeline/ConfigurationPipeline.php',
-            __DIR__ . '/../../../src/Configuration/Pipeline/ConfigurationMerger.php',
-            __DIR__ . '/../../../src/Configuration/Pipeline/Stage/DefaultsStage.php',
-            __DIR__ . '/../../../src/Configuration/Pipeline/Stage/CliStage.php',
-        ];
+        $configDir = __DIR__ . '/../../../src/Configuration';
+        $consumerFiles = glob($configDir . '/{,*/,*/*/}*.php', \GLOB_BRACE) ?: [];
+        self::assertNotEmpty($consumerFiles, 'No PHP files found in src/Configuration/');
+
+        // Exclude ConfigSchema itself — we check consumers, not the definition
+        $consumerFiles = array_filter(
+            $consumerFiles,
+            static fn(string $f): bool => !str_ends_with($f, 'ConfigSchema.php'),
+        );
 
         $allCode = '';
         foreach ($consumerFiles as $file) {
