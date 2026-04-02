@@ -13,6 +13,9 @@
 # Fail CI on errors only (warnings are informational)
 failOn: error
 
+# Self-analysis with duplication detection needs more memory
+memory_limit: 1G
+
 # Coupling: mark vendor dependencies as framework
 coupling:
   framework-namespaces:

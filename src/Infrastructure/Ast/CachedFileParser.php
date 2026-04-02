@@ -14,9 +14,7 @@ use SplFileInfo;
 /**
  * Decorator that caches parsed AST to avoid re-parsing unchanged files.
  *
- * @qmx-ignore-file code-smell.empty-catch Cache write failures are intentionally ignored (best-effort caching)
- *
- * TODO: Remove @qmx-ignore-file after verifying exclude_paths works end-to-end (see DOGFOODING_FINDINGS.md #1)
+ * @qmx-ignore code-smell.empty-catch Cache write failures are intentionally ignored (best-effort caching)
  */
 final class CachedFileParser implements FileParserInterface
 {
