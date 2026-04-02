@@ -23,7 +23,7 @@ final readonly class NamespaceInstabilityOptions implements LevelOptionsInterfac
         public float $maxWarning = 0.8,
         public float $maxError = 0.95,
         public int $minClassCount = 3,
-        public bool $skipLeaf = true,
+        public int $minAfferent = 1,
     ) {}
 
     /**
@@ -42,7 +42,7 @@ final readonly class NamespaceInstabilityOptions implements LevelOptionsInterfac
             maxWarning: (float) $thresholds['warning'],
             maxError: (float) $thresholds['error'],
             minClassCount: (int) ($config['min_class_count'] ?? $config['minClassCount'] ?? 3),
-            skipLeaf: (bool) ($config['skip_leaf'] ?? $config['skipLeaf'] ?? true),
+            minAfferent: (int) ($config['min_afferent'] ?? $config['minAfferent'] ?? 1),
         );
     }
 
@@ -73,7 +73,7 @@ final readonly class NamespaceInstabilityOptions implements LevelOptionsInterfac
             maxWarning: $warning !== null ? (float) $warning : $this->maxWarning,
             maxError: $error !== null ? (float) $error : $this->maxError,
             minClassCount: $this->minClassCount,
-            skipLeaf: $this->skipLeaf,
+            minAfferent: $this->minAfferent,
         );
     }
 }

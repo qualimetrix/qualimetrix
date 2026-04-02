@@ -277,13 +277,13 @@ rules:
     class:
       max_warning: 0.9
       max_error: 1.0
-      skip_leaf: true    # default: true
+      min_afferent: 1    # default: 1
     namespace:
       min_class_count: 5
-      skip_leaf: true    # default: true
+      min_afferent: 1    # default: 1
 ```
 
-**`skip_leaf`** -- when `true` (default), classes and namespaces with no dependents (Ca = 0) are skipped. These "leaf" symbols have instability I = 1.0 by definition (Ce / (0 + Ce) = 1.0), which is not a design flaw -- it simply means nothing depends on them yet. Set to `false` if you want to flag all highly unstable symbols regardless.
+**`min_afferent`** -- minimum afferent coupling (Ca) required for a class or namespace to be checked. Default: `1` (symbols with Ca = 0 are skipped). Set to `0` to check all symbols, or to `2` to also skip symbols with only one dependent. Symbols with very few dependents have high instability by definition, which is architecturally expected for concrete implementation classes.
 
 For a simple pass/fail threshold:
 
@@ -297,9 +297,9 @@ rules:
 ```bash
 bin/qmx check src/ --rule-opt="coupling.instability:class.max_warning=0.9"
 bin/qmx check src/ --rule-opt="coupling.instability:class.max_error=1.0"
-bin/qmx check src/ --rule-opt="coupling.instability:class.skip_leaf=false"
+bin/qmx check src/ --rule-opt="coupling.instability:class.min_afferent=0"
 bin/qmx check src/ --rule-opt="coupling.instability:namespace.min_class_count=5"
-bin/qmx check src/ --rule-opt="coupling.instability:namespace.skip_leaf=false"
+bin/qmx check src/ --rule-opt="coupling.instability:namespace.min_afferent=2"
 ```
 
 ---
