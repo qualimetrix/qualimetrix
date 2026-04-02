@@ -56,9 +56,7 @@ final class RuntimeConfigurator
         OutputInterface $output,
     ): void {
         // Reset memoized state from previous run to prevent leaking
-        $this->ruleOptionsRegistry->resetCliOptions();
-        $this->ruleOptionsRegistry->getExclusionProvider()->reset();
-        $this->ruleOptionsRegistry->getPathExclusionProvider()->reset();
+        $this->ruleOptionsRegistry->resetRuntimeState();
         $this->cacheFactory->reset();
         ComputedMetricDefinitionHolder::reset();
         $this->frameworkNamespacesHolder->reset();

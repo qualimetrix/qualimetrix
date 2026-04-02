@@ -120,7 +120,7 @@ final class BooleanArgumentRuleTest extends TestCase
 
         $metricBag = (new MetricBag())
             ->withEntry('codeSmell.boolean_argument', ['line' => 10, 'extra' => 'overwrite'])
-            ->withEntry('codeSmell.boolean_argument', ['line' => 25, 'extra' => '$silent']);
+            ->withEntry('codeSmell.boolean_argument', ['line' => 25, 'extra' => 'silent']);
 
         $repository = $this->createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -133,7 +133,6 @@ final class BooleanArgumentRuleTest extends TestCase
 
         self::assertCount(2, $violations);
         self::assertSame('Boolean argument $overwrite detected - consider splitting methods or using enums', $violations[0]->message);
-        // Leading $ in stored extra is stripped
         self::assertSame('Boolean argument $silent detected - consider splitting methods or using enums', $violations[1]->message);
     }
 

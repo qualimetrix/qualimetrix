@@ -24,14 +24,22 @@ The violation on `src/Infrastructure/Ast/CachedFileParser.php` is still reported
 - `RulePathExclusionProvider::isExcluded()` returns true when called directly
 - `RuleOptionsRegistry` and container-level `RulePathExclusionProvider` share the same instance (confirmed via `spl_object_id`)
 
-**Hypothesis:** `RuleExecutor` is a private (non-public) service. During Symfony DI compilation, the container may inline the definition and instantiate a **new** `RulePathExclusionProvider()` from the constructor default instead of resolving the `Reference` to the synthetic service. The existing `RuleNamespaceExclusionProvider` works — the difference may be in how the synthetic service is resolved for inlined definitions.
+**Root cause (confirmed via triple review):** Both `RuleNamespaceExclusionProvider` and
+`RulePathExclusionProvider` were registered as separate synthetic services, then injected
+into `RuleExecutor` (a non-public service) via `new Reference(...)`. Synthetic services
+set via `$container->set()` on `ContainerBuilder` may be lost during compilation — the
+compiled container does not preserve these runtime-set instances for private service
+injection. `RuleNamespaceExclusionProvider` appeared to work because it was accessed
+through `RuleOptionsRegistry` (also synthetic) in the configuration pipeline path,
+not through `RuleExecutor`.
 
-**Investigation plan:**
-1. Make `RuleExecutor` public temporarily and verify the `pathExclusionProvider` instance via reflection
-2. Compare DI wiring of `RuleNamespaceExclusionProvider` vs `RulePathExclusionProvider` — are they resolved identically?
-3. Check if Symfony's compiler pass inlines the `RuleExecutor` arguments before synthetic services are set
+**Fix applied:** Removed separate synthetic registrations of both exclusion providers.
+`RuleExecutor` now receives providers through `RuleOptionsRegistry` (which already
+owns them). This reduced synthetic service count from 9 to 7 and eliminated the
+instance mismatch.
 
-**Workaround:** Use `@qmx-ignore-file` in class docblock instead of `exclude_paths` for code smell rules.
+**Lesson:** Avoid registering objects as separate synthetic services when they are
+already owned by another synthetic service. Prefer accessing them through the owner.
 
 ---
 
@@ -90,5 +98,46 @@ This means:
 ## Notes
 
 - Issues #2–#4 are pre-existing and were not introduced by the dogfooding changes.
-- Issue #1 was introduced by the F1 implementation (per-rule `exclude_paths`) and needs a fix.
-- The `exclude_paths` feature works correctly for non-code-smell rules (verified via unit tests and `RulePathExclusionProviderTest`). The bug is specific to the DI wiring path.
+- Issue #1 was introduced by the F1 implementation and has been fixed (see root cause above).
+
+---
+
+## Follow-up: Improvements to implement
+
+These are pre-existing issues surfaced during dogfooding. Not blockers, but worth addressing.
+
+### F1. JSON format: configurable violation limit
+
+**Related to:** Issue #2 above.
+
+Add `--format-opt=limit=N` (or `limit: N` in config) to control the number of violations
+in JSON output. Default 50 is fine for text, but CI integrations (SARIF, GitLab Code Quality)
+need the full list.
+
+**Scope:** `src/Reporting/Formatter/JsonFormatter.php` — the `MAX_VIOLATIONS` constant.
+
+### F2. `@qmx-ignore` in regular comments
+
+**Related to:** Issues #3 and #4 above.
+
+Currently `@qmx-ignore` only works in PHP docblocks (`/** ... */`). Regular comments
+(`// @qmx-ignore`, `/* @qmx-ignore */`) are ignored. This creates UX friction:
+- Can't suppress a specific line with `//`
+- Empty catch blocks with intentional comments still trigger violations
+
+**Scope:** `src/Baseline/Suppression/SuppressionExtractor.php` — needs to scan
+`$node->getComments()` in addition to `$node->getDocComment()`, or parse the token stream.
+
+### F3. Empty catch with intentional comments
+
+**Related to:** Issue #3 above. Depends on F2.
+
+Once `@qmx-ignore` works in regular comments, users can write:
+```php
+} catch (CacheException) {
+    // @qmx-ignore code-smell.empty-catch — best-effort caching
+}
+```
+
+Alternatively, treat catch blocks with comments containing "intentional"/"ignore"/"expected"
+as non-empty (heuristic approach, independent of F2).

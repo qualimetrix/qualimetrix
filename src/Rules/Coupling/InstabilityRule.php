@@ -22,8 +22,8 @@ use Qualimetrix\Rules\AbstractRule;
  * - 0: maximally stable (only incoming dependencies)
  * - 1: maximally unstable (only outgoing dependencies)
  *
- * Classes/namespaces with high instability are hard to maintain since changes
- * may break many dependents.
+ * Classes/namespaces with high instability are fragile — they depend on many
+ * other components, so changes in dependencies may break them.
  */
 final class InstabilityRule extends AbstractRule implements HierarchicalRuleInterface
 {

@@ -118,7 +118,7 @@ final class RuleOptionsFactory
         if (\is_string($raw)) {
             $patterns = [$raw];
         } elseif (\is_array($raw)) {
-            $patterns = array_values($raw);
+            $patterns = array_values(array_filter($raw, 'is_string'));
         } else {
             return;
         }

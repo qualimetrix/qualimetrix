@@ -10,6 +10,8 @@ use Qualimetrix\Analysis\RuleExecution\RuleExecutor;
 use Qualimetrix\Configuration\AnalysisConfiguration;
 use Qualimetrix\Configuration\ConfigurationHolder;
 use Qualimetrix\Configuration\RuleNamespaceExclusionProvider;
+use Qualimetrix\Configuration\RuleOptionsRegistry;
+use Qualimetrix\Configuration\RulePathExclusionProvider;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Rule\RuleInterface;
@@ -340,8 +342,9 @@ final class RuleExecutorTest extends TestCase
         $exclusionProvider = new RuleNamespaceExclusionProvider();
         $exclusionProvider->setExclusions('rule1', ['App\\Tests']);
 
+        $registry = new RuleOptionsRegistry(exclusionProvider: $exclusionProvider);
         $provider = $this->createConfiguredProvider();
-        $executor = new RuleExecutor([$rule], $provider, $exclusionProvider);
+        $executor = new RuleExecutor([$rule], $provider, $registry);
 
         $violations = $executor->execute($this->createMinimalContext());
 
@@ -357,8 +360,9 @@ final class RuleExecutorTest extends TestCase
         $exclusionProvider = new RuleNamespaceExclusionProvider();
         $exclusionProvider->setExclusions('rule1', ['App\\Tests']);
 
+        $registry = new RuleOptionsRegistry(exclusionProvider: $exclusionProvider);
         $provider = $this->createConfiguredProvider();
-        $executor = new RuleExecutor([$rule], $provider, $exclusionProvider);
+        $executor = new RuleExecutor([$rule], $provider, $registry);
 
         $violations = $executor->execute($this->createMinimalContext());
 
@@ -373,8 +377,9 @@ final class RuleExecutorTest extends TestCase
         $exclusionProvider = new RuleNamespaceExclusionProvider();
         $exclusionProvider->setExclusions('rule1', ['App\\Tests']);
 
+        $registry = new RuleOptionsRegistry(exclusionProvider: $exclusionProvider);
         $provider = $this->createConfiguredProvider();
-        $executor = new RuleExecutor([$rule], $provider, $exclusionProvider);
+        $executor = new RuleExecutor([$rule], $provider, $registry);
 
         $violations = $executor->execute($this->createMinimalContext());
 
@@ -392,8 +397,9 @@ final class RuleExecutorTest extends TestCase
         $exclusionProvider = new RuleNamespaceExclusionProvider();
         $exclusionProvider->setExclusions('rule1', ['App\\Tests']);
 
+        $registry = new RuleOptionsRegistry(exclusionProvider: $exclusionProvider);
         $provider = $this->createConfiguredProvider();
-        $executor = new RuleExecutor([$rule1, $rule2], $provider, $exclusionProvider);
+        $executor = new RuleExecutor([$rule1, $rule2], $provider, $registry);
 
         $violations = $executor->execute($this->createMinimalContext());
 
@@ -474,6 +480,83 @@ final class RuleExecutorTest extends TestCase
             ruleName: $ruleName,
             violationCode: $ruleName,
             message: "Violation from $ruleName in $namespace",
+            severity: Severity::Warning,
+        );
+    }
+
+    // --- Path exclusion tests ---
+
+    public function testExcludePathsFiltersViolations(): void
+    {
+        $excludedViolation = $this->createViolationWithFile('rule1', 'src/Generated/Model.php');
+        $includedViolation = $this->createViolationWithFile('rule1', 'src/Core/Service.php');
+
+        $rule = $this->createRule('rule1', [$excludedViolation, $includedViolation]);
+
+        $pathExclusionProvider = new RulePathExclusionProvider();
+        $pathExclusionProvider->setExclusions('rule1', ['src/Generated/*']);
+
+        $registry = new RuleOptionsRegistry(pathExclusionProvider: $pathExclusionProvider);
+        $provider = $this->createConfiguredProvider();
+        $executor = new RuleExecutor([$rule], $provider, $registry);
+
+        $violations = $executor->execute($this->createMinimalContext());
+
+        self::assertCount(1, $violations);
+        self::assertSame($includedViolation, $violations[0]);
+    }
+
+    public function testExcludePathsIsolatedPerRule(): void
+    {
+        $v1 = $this->createViolationWithFile('rule1', 'src/Generated/Model.php');
+        $v2 = $this->createViolationWithFile('rule2', 'src/Generated/Model.php');
+
+        $rule1 = $this->createRule('rule1', [$v1]);
+        $rule2 = $this->createRule('rule2', [$v2]);
+
+        $pathExclusionProvider = new RulePathExclusionProvider();
+        $pathExclusionProvider->setExclusions('rule1', ['src/Generated/*']);
+
+        $registry = new RuleOptionsRegistry(pathExclusionProvider: $pathExclusionProvider);
+        $provider = $this->createConfiguredProvider();
+        $executor = new RuleExecutor([$rule1, $rule2], $provider, $registry);
+
+        $violations = $executor->execute($this->createMinimalContext());
+
+        self::assertCount(1, $violations);
+        self::assertSame($v2, $violations[0]);
+    }
+
+    public function testExcludePathsWithEmptyFilePassesThrough(): void
+    {
+        $violation = $this->createViolationWithFile('rule1', '');
+
+        $rule = $this->createRule('rule1', [$violation]);
+
+        $pathExclusionProvider = new RulePathExclusionProvider();
+        $pathExclusionProvider->setExclusions('rule1', ['src/Generated/*']);
+
+        $registry = new RuleOptionsRegistry(pathExclusionProvider: $pathExclusionProvider);
+        $provider = $this->createConfiguredProvider();
+        $executor = new RuleExecutor([$rule], $provider, $registry);
+
+        $violations = $executor->execute($this->createMinimalContext());
+
+        self::assertCount(1, $violations);
+        self::assertSame($violation, $violations[0]);
+    }
+
+    private function createViolationWithFile(string $ruleName, string $file): Violation
+    {
+        return new Violation(
+            location: new Location(
+                file: $file,
+                line: 1,
+            ),
+            symbolPath: SymbolPath::forFile($file !== '' ? $file : '/unknown'),
+            ruleName: $ruleName,
+            violationCode: $ruleName,
+            message: "Violation from $ruleName in $file",
             severity: Severity::Warning,
         );
     }

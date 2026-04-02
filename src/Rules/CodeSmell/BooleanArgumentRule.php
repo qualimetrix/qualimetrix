@@ -58,13 +58,11 @@ final class BooleanArgumentRule extends AbstractCodeSmellRule
      */
     protected function shouldIncludeEntry(array $entry): bool
     {
-        if (!$this->options instanceof BooleanArgumentOptions) {
-            return true;
-        }
-
+        /** @var BooleanArgumentOptions $options */
+        $options = $this->options;
         $paramName = $entry['extra'] ?? null;
 
-        return !\is_string($paramName) || !$this->options->isAllowedPrefix($paramName);
+        return !\is_string($paramName) || !$options->isAllowedPrefix($paramName);
     }
 
     /**
