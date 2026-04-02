@@ -1,6 +1,6 @@
 # Qualimetrix Product Roadmap
 
-**Updated:** 2026-03-25
+**Updated:** 2026-04-02
 **Based on:** [Competitive analysis](COMPETITOR_COMPARISON.md), cross-ecosystem research (SonarQube, ESLint, Semgrep,
 NDepend, CodeScene, RuboCop, Ruff, ArchUnit), triple expert evaluation (Gemini + Codex, 2026-03-25)
 
@@ -34,76 +34,11 @@ What Qualimetrix should own:              What to leave to others:
 
 ## Priority Tiers
 
-Items ordered by combined usefulness × marketing impact × effort efficiency. Based on independent evaluations by Gemini
-and Codex with convergent conclusions on top priorities.
+Items ordered by combined usefulness × marketing impact × effort efficiency.
 
-### Tier 1 — Next Up (highest ROI, do first)
+### Tier 1 — Strategic (high value, higher effort)
 
-#### 1. Effort-Aware Prioritization
-
-- **Why it matters:** Qualimetrix already finds hundreds of violations on a large project. The #1 user question is "what should
-  I fix first?" Right now, violations are sorted by severity, but a warning in a utility class nobody imports is less
-  important than a warning in a class that 50 others depend on. This feature combines ClassRank (how central the class
-  is), severity, and remediation time into a single impact score — answering "where does my refactoring hour buy the
-  most quality?"
-- **What changes:** New "Top N highest-impact issues" section in summary/text/JSON reports. Violations ranked by
-  `impact = classRank × severity × debtMinutes`. Optionally: `--top=N` to control count
-- **All data already exists:** ClassRank, severity, remediation time — this is purely a reporting/sorting layer change
-- **Reference:** CodeScene hotspot analysis, SonarQube debt ratio
-- **Effort:** Low-Medium
-- **Value:** Very High — transforms Qualimetrix from "here are your problems" to "here's what to fix first"
-- **Marketing angle:** Killer feature for messaging. Great CLI screenshot material: "from 300 warnings to top 10
-  actions"
-
-#### 2. Analysis Presets
-
-- **Why it matters:** First-run experience is critical for adoption. Today a user runs `qmx check src/` and gets output
-  with default thresholds that may be too strict for a legacy project or too lax for a greenfield one. Presets let users
-  self-select their context in one flag, dramatically lowering the barrier to entry
-- **What changes:** Built-in named configurations: `--preset=strict` (greenfield, strict thresholds),
-  `--preset=legacy` (relaxed thresholds, focus on critical issues only), `--preset=ci` (fast mode, error-only,
-  machine-friendly output). Presets are syntactic sugar over existing config options — no new analysis logic needed
-- **Implementation:** Preset configs as bundled YAML files, resolved before user config merge. `PresetResolver` in
-  Configuration pipeline
-- **Reference:** ESLint configs (eslint:recommended), RuboCop profiles, Ruff preview mode
-- **Effort:** Low
-- **Value:** Very High — reduces onboarding friction from "read the docs" to "pick a preset"
-- **Marketing angle:** "Zero-config for your context: `--preset=legacy` for existing projects, `--preset=strict` for new
-  ones"
-
-#### 3. Martin Diagram (Instability/Abstractness Scatter)
-
-- **Why it matters:** This is Robert C. Martin's canonical architecture health visualization — a single scatter plot
-  that immediately shows which namespaces are in the "Zone of Pain" (concrete + stable = brittle, hard to change) and
-  which are in the "Zone of Uselessness" (abstract + unstable = dead abstractions). Architecture teams recognize this
-  diagram instantly; it's the standard way to communicate package health
-- **What changes:** New visualization in HTML report. X = Instability (0..1), Y = Abstractness (0..1). Diagonal = Main
-  Sequence. Dot size = LOC, color = distance from main sequence. Hover shows namespace name and metrics
-- **Data ready:** `instability`, `abstractness`, `distance` already collected at namespace level
-- **Reference:** Robert C. Martin "Clean Architecture", NDepend abstractness/instability graph
-- **Effort:** Low (simple D3 scatter, all data ready)
-- **Value:** High — best ROI visualization in the entire backlog. One glance shows at-risk modules
-- **Marketing angle:** Instant recognition for architecture-minded developers. Excellent conference/demo screenshot
-
-#### 4. Cognitive Complexity Breakdown
-
-- **Why it matters:** When Qualimetrix says "cognitive complexity is 47", the developer's next question is "where exactly?"
-  Currently they have to read the entire method and mentally compute contributions. A breakdown like "if+3 at line 12,
-  nested for+4 at line 15, recursive call+1 at line 22" makes the violation immediately actionable — the developer knows
-  exactly which constructs to extract or simplify. No PHP tool provides this level of detail
-- **What changes:** Violation message includes top N contributors to total cognitive complexity, with line numbers and
-  increment values. Requires refactoring `CognitiveComplexityVisitor` to track per-increment source (node type + line +
-  points)
-- **Reference:** SonarQube's inline annotation display
-- **Effort:** Medium
-- **Value:** Very High — unique in PHP ecosystem, dramatically improves actionability
-- **Marketing angle:** Strong differentiation. "Qualimetrix doesn't just measure complexity — it explains it"
-
----
-
-### Tier 2 — Strategic (high value, higher effort)
-
-#### 5. Architecture Rules (deptrac replacement)
+#### 1. Architecture Rules (deptrac replacement)
 
 - **Why it matters:** This is the single most important feature for the "replaces five tools" narrative. Deptrac is the
   only tool in the replacement set that Qualimetrix doesn't yet cover. With architecture rules, Qualimetrix owns the full stack:
@@ -130,7 +65,7 @@ and Codex with convergent conclusions on top priorities.
 - **Value:** Very High — completes the "one tool replaces five" promise
 - **Marketing angle:** Headline feature. "Drop deptrac from your CI — Qualimetrix does it natively, 40x faster"
 
-#### 6. Trend Analysis & Quality Gates
+#### 2. Trend Analysis & Quality Gates
 
 - **Why it matters:** This is SonarQube's killer feature — and no PHP CLI tool has it. Today Qualimetrix answers "how healthy
   is your code now?" but can't answer "is it getting better or worse?" Quality gates that fail CI when metrics regress
@@ -148,9 +83,9 @@ and Codex with convergent conclusions on top priorities.
 
 ---
 
-### Tier 3 — Depth & Breadth (valuable, can wait)
+### Tier 2 — Depth & Breadth (valuable, can wait)
 
-#### 7. Complexity Distribution (Box Plots)
+#### 3. Complexity Distribution (Box Plots)
 
 - **Why it matters:** Summary statistics (avg, p95) hide distribution shape. Two classes with avg CCN=10 look identical,
   but one might have 200 trivial methods + 3 monsters while the other is uniformly moderate. Box plots per
@@ -161,7 +96,7 @@ and Codex with convergent conclusions on top priorities.
 - **Value:** High for experienced teams, medium for general audience
 - **Marketing angle:** Visually impressive, appeals to data-oriented developers
 
-#### 8. Custom Rules API
+#### 4. Custom Rules API
 
 - **Why it matters:** Enterprise teams have domain-specific quality rules ("no direct DB queries outside Repository", "
   all DTOs must be readonly"). Without a plugin API, they either fork Qualimetrix or use a separate tool. A PHP plugin
@@ -178,7 +113,7 @@ and Codex with convergent conclusions on top priorities.
 - **Value:** High — critical for enterprise adoption, attracts community contributions
 - **Marketing angle:** "Platform maturity" signal. Less wow, more trust
 
-#### 9. Unused Variables Detection
+#### 5. Unused Variables Detection
 
 - **Why it matters:** Universally expected code quality check. Every linter in every language has it. Its absence is
   noticed. However, doing it well in PHP is hard due to `extract()`, variable variables (`$$x`), `compact()`, `list()`
@@ -194,7 +129,7 @@ and Codex with convergent conclusions on top priorities.
 - **Value:** High for adoption (expected feature), but overlap with PHPStan reduces unique value
 - **Marketing angle:** Checkbox feature — expected, not differentiating
 
-#### 10. Tech Debt Breakdown
+#### 6. Tech Debt Breakdown
 
 - **Why it matters:** Qualimetrix reports total tech debt as a single number ("4.2 hours"). But a tech lead planning a sprint
   needs to know: "2.5 hours is complexity, 1 hour is coupling, 0.7 hours is code smells". Category breakdown makes debt
@@ -209,9 +144,9 @@ and Codex with convergent conclusions on top priorities.
 
 ---
 
-### Tier 4 — Nice to Have (low priority or high risk)
+### Tier 3 — Nice to Have (low priority or high risk)
 
-#### 11. Feature Envy Detection
+#### 7. Feature Envy Detection
 
 - **Rule:** `code-smell.feature-envy`
 - **Logic:** Method uses more symbols from another class than from its own. Classic Fowler smell
@@ -222,7 +157,7 @@ and Codex with convergent conclusions on top priorities.
 - **Effort:** Medium-High (analysis + FP tuning)
 - **Value:** Medium — recognized smell, but risky in PHP
 
-#### 12. CRAP Index
+#### 8. CRAP Index
 
 - **Metric:** `crap` = CCN² × (1 − coverage)². Without coverage data: CRAP = CCN²
 - **Input:** Optional Clover XML coverage file (`--coverage=clover.xml`)
@@ -234,7 +169,7 @@ and Codex with convergent conclusions on top priorities.
 - **Effort:** Medium
 - **Value:** Low without coverage, Medium-High with coverage — conditional feature
 
-#### 13. Interactive Dependency Graph
+#### 9. Interactive Dependency Graph
 
 - **Visualization:** Force-directed graph (D3 force simulation). Nodes = classes/namespaces, edges = dependencies.
   Color = health, size = ClassRank
@@ -247,7 +182,7 @@ and Codex with convergent conclusions on top priorities.
 - **Value:** High for demos, Medium for daily use
 - **Marketing angle:** Best possible screenshot, but risk of overpromise
 
-#### 14. Health Radar Chart
+#### 10. Health Radar Chart
 
 - **Data:** 5 sub-health scores (complexity, cohesion, coupling, typing, maintainability)
 - **Visualization:** Spider/radar chart per class or namespace. Overlay two namespaces for comparison
@@ -256,7 +191,7 @@ and Codex with convergent conclusions on top priorities.
 - **Effort:** Low
 - **Value:** Low — visual garnish
 
-#### 15. Cyclomatic Density
+#### 11. Cyclomatic Density
 
 - **Metric:** `cyclomaticDensity` = CCN / LLOC
 - **Rule:** `complexity.cyclomatic-density`
@@ -267,7 +202,7 @@ and Codex with convergent conclusions on top priorities.
 - **Effort:** Low
 - **Value:** Low — better as internal signal than user-facing rule
 
-#### 16. Type Coverage Heatmap
+#### 12. Type Coverage Heatmap
 
 - **Data:** `typeCoverage.param`, `.return`, `.property` per class
 - **Visualization:** Heatmap grid. Rows = classes (grouped by namespace), columns = param/return/property. Color =
@@ -283,11 +218,10 @@ and Codex with convergent conclusions on top priorities.
 
 Items surfaced during expert evaluation that don't fit existing phases but deserve tracking:
 
-| Gap                       | Description                                                                                                                                                      | Potential Value | Notes                                                                                                                                                 |
-| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Diff-based regression** | "Did this PR make things worse?" without SQLite history — compare violations in changed files against baseline or previous commit                                | High            | Lighter alternative to full Trend Analysis (6). Partially covered by `--analyze=git:staged` + baseline, but lacks explicit "new violations only" mode |
-| **Baseline hygiene**      | Aging (when was violation baselined?), new vs existing debt visibility, suppression audit ("show me all baselined violations")                                   | Medium          | Makes baseline a living tool rather than a write-once-forget artifact                                                                                 |
-| **Explainability depth**  | Per-violation "what to do" recommendations beyond current `humanMessage` — e.g., "extract method X to reduce CCN", "introduce interface to break coupling cycle" | Medium          | Partially exists; evaluate coverage and quality of current recommendations before investing                                                           |
+| Gap                       | Description                                                                                                                                                      | Potential Value | Notes                                                                                                                                                                  |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Diff-based regression** | "Did this PR make things worse?" without SQLite history — compare violations in changed files against baseline or previous commit                                | High            | Lighter alternative to full Trend Analysis (2). Partially covered by `--analyze=git:staged` + `--report=git:main..HEAD`, but lacks explicit "new violations only" mode |
+| **Explainability depth**  | Per-violation "what to do" recommendations beyond current `humanMessage` — e.g., "extract method X to reduce CCN", "introduce interface to break coupling cycle" | Medium          | Partially exists; evaluate coverage and quality of current recommendations before investing                                                                            |
 
 ---
 
@@ -307,7 +241,9 @@ Items surfaced during expert evaluation that don't fit existing phases but deser
 ## Success Metrics
 
 After Tiers 1–2, Qualimetrix replaces: **phpmd + phpmetrics + phpcpd + deptrac** and offers capabilities no PHP tool has (
-effort-aware prioritization, cognitive complexity breakdown, architecture rules, quality gates).
+architecture rules, quality gates).
+
+**Already delivered:** Effort-aware prioritization, cognitive complexity breakdown, analysis presets, Martin diagram.
 
 **Target value proposition:** "One tool. 40x faster. Deeper metrics. Quality gates. Replaces five tools."
 
