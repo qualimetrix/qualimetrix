@@ -13,6 +13,9 @@ use Qualimetrix\Core\Violation\Severity;
  * and should be split into separate methods. They harm readability
  * since the caller must know what `true` or `false` means.
  *
+ * Supports `allowed_prefixes` option to whitelist self-documenting
+ * boolean parameters (e.g., $isActive, $hasPermission).
+ *
  * Bad:  function save(bool $overwrite) {}
  * Good: function save() {} and function saveOverwriting() {}
  */
@@ -51,6 +54,20 @@ final class BooleanArgumentRule extends AbstractCodeSmellRule
     }
 
     /**
+     * @param array<string, mixed> $entry
+     */
+    protected function shouldIncludeEntry(array $entry): bool
+    {
+        if (!$this->options instanceof BooleanArgumentOptions) {
+            return true;
+        }
+
+        $paramName = $entry['extra'] ?? null;
+
+        return !\is_string($paramName) || !$this->options->isAllowedPrefix($paramName);
+    }
+
+    /**
      * Includes the parameter name in the message when available.
      *
      * @param array<string, mixed> $entry
@@ -67,10 +84,10 @@ final class BooleanArgumentRule extends AbstractCodeSmellRule
     }
 
     /**
-     * @return class-string<CodeSmellOptions>
+     * @return class-string<BooleanArgumentOptions>
      */
     public static function getOptionsClass(): string
     {
-        return CodeSmellOptions::class;
+        return BooleanArgumentOptions::class;
     }
 }

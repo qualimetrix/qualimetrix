@@ -15,8 +15,8 @@ use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\Severity;
+use Qualimetrix\Rules\CodeSmell\BooleanArgumentOptions;
 use Qualimetrix\Rules\CodeSmell\BooleanArgumentRule;
-use Qualimetrix\Rules\CodeSmell\CodeSmellOptions;
 
 #[CoversClass(BooleanArgumentRule::class)]
 final class BooleanArgumentRuleTest extends TestCase
@@ -24,7 +24,7 @@ final class BooleanArgumentRuleTest extends TestCase
     #[Test]
     public function nameAndDescriptionAreCorrect(): void
     {
-        $rule = new BooleanArgumentRule(new CodeSmellOptions());
+        $rule = new BooleanArgumentRule(new BooleanArgumentOptions());
 
         self::assertSame('code-smell.boolean-argument', $rule->getName());
         self::assertSame('Detects boolean arguments in method/function signatures', $rule->getDescription());
@@ -34,7 +34,7 @@ final class BooleanArgumentRuleTest extends TestCase
     #[Test]
     public function requiresReturnsExpectedMetrics(): void
     {
-        $rule = new BooleanArgumentRule(new CodeSmellOptions());
+        $rule = new BooleanArgumentRule(new BooleanArgumentOptions());
 
         self::assertSame(['codeSmell.boolean_argument'], $rule->requires());
     }
@@ -42,13 +42,13 @@ final class BooleanArgumentRuleTest extends TestCase
     #[Test]
     public function optionsClassIsCorrect(): void
     {
-        self::assertSame(CodeSmellOptions::class, BooleanArgumentRule::getOptionsClass());
+        self::assertSame(BooleanArgumentOptions::class, BooleanArgumentRule::getOptionsClass());
     }
 
     #[Test]
     public function disabledRuleReturnsNoViolations(): void
     {
-        $rule = new BooleanArgumentRule(new CodeSmellOptions(enabled: false));
+        $rule = new BooleanArgumentRule(new BooleanArgumentOptions(enabled: false));
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
         $repository->expects(self::never())->method('all');
@@ -61,7 +61,7 @@ final class BooleanArgumentRuleTest extends TestCase
     #[Test]
     public function noSmellsProducesNoViolations(): void
     {
-        $rule = new BooleanArgumentRule(new CodeSmellOptions());
+        $rule = new BooleanArgumentRule(new BooleanArgumentOptions());
 
         $symbolPath = SymbolPath::forFile('src/Clean.php');
         $fileInfo = new SymbolInfo($symbolPath, 'src/Clean.php', null);
@@ -82,7 +82,7 @@ final class BooleanArgumentRuleTest extends TestCase
     #[Test]
     public function smellDetectedProducesViolation(): void
     {
-        $rule = new BooleanArgumentRule(new CodeSmellOptions());
+        $rule = new BooleanArgumentRule(new BooleanArgumentOptions());
 
         $symbolPath = SymbolPath::forFile('src/Smelly.php');
         $fileInfo = new SymbolInfo($symbolPath, 'src/Smelly.php', null);
@@ -113,7 +113,7 @@ final class BooleanArgumentRuleTest extends TestCase
     #[Test]
     public function smellWithParamNameIncludesItInMessage(): void
     {
-        $rule = new BooleanArgumentRule(new CodeSmellOptions());
+        $rule = new BooleanArgumentRule(new BooleanArgumentOptions());
 
         $symbolPath = SymbolPath::forFile('src/Smelly.php');
         $fileInfo = new SymbolInfo($symbolPath, 'src/Smelly.php', null);
@@ -140,7 +140,7 @@ final class BooleanArgumentRuleTest extends TestCase
     #[Test]
     public function smellWithoutParamNameFallsBackToGenericMessage(): void
     {
-        $rule = new BooleanArgumentRule(new CodeSmellOptions());
+        $rule = new BooleanArgumentRule(new BooleanArgumentOptions());
 
         $symbolPath = SymbolPath::forFile('src/Smelly.php');
         $fileInfo = new SymbolInfo($symbolPath, 'src/Smelly.php', null);
@@ -159,5 +159,80 @@ final class BooleanArgumentRuleTest extends TestCase
 
         self::assertCount(1, $violations);
         self::assertSame('Boolean argument detected - consider splitting methods or using enums', $violations[0]->message);
+    }
+
+    #[Test]
+    public function allowedPrefixesFilterEntries(): void
+    {
+        $rule = new BooleanArgumentRule(new BooleanArgumentOptions());
+
+        $symbolPath = SymbolPath::forFile('src/Service.php');
+        $fileInfo = new SymbolInfo($symbolPath, 'src/Service.php', null);
+
+        $metricBag = (new MetricBag())
+            ->withEntry('codeSmell.boolean_argument', ['line' => 10, 'extra' => 'isActive'])    // allowed
+            ->withEntry('codeSmell.boolean_argument', ['line' => 20, 'extra' => 'hasPermission']) // allowed
+            ->withEntry('codeSmell.boolean_argument', ['line' => 30, 'extra' => 'overwrite'])     // NOT allowed
+            ->withEntry('codeSmell.boolean_argument', ['line' => 40, 'extra' => 'island']);       // NOT allowed (no boundary)
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::File ? [$fileInfo] : []);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyze($context);
+
+        self::assertCount(2, $violations);
+        self::assertSame(30, $violations[0]->location->line);
+        self::assertSame(40, $violations[1]->location->line);
+    }
+
+    #[Test]
+    public function emptyPrefixListReportsAllEntries(): void
+    {
+        $rule = new BooleanArgumentRule(new BooleanArgumentOptions(allowedPrefixes: []));
+
+        $symbolPath = SymbolPath::forFile('src/Service.php');
+        $fileInfo = new SymbolInfo($symbolPath, 'src/Service.php', null);
+
+        $metricBag = (new MetricBag())
+            ->withEntry('codeSmell.boolean_argument', ['line' => 10, 'extra' => 'isActive'])
+            ->withEntry('codeSmell.boolean_argument', ['line' => 20, 'extra' => 'overwrite']);
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::File ? [$fileInfo] : []);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyze($context);
+
+        self::assertCount(2, $violations);
+    }
+
+    #[Test]
+    public function entryWithoutExtraIsAlwaysReported(): void
+    {
+        $rule = new BooleanArgumentRule(new BooleanArgumentOptions());
+
+        $symbolPath = SymbolPath::forFile('src/Service.php');
+        $fileInfo = new SymbolInfo($symbolPath, 'src/Service.php', null);
+
+        $metricBag = (new MetricBag())
+            ->withEntry('codeSmell.boolean_argument', ['line' => 10]); // no extra
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::File ? [$fileInfo] : []);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyze($context);
+
+        self::assertCount(1, $violations);
     }
 }
