@@ -227,6 +227,36 @@ final class InstabilityRuleTest extends TestCase
         self::assertCount(0, $violations);
     }
 
+    public function testAnalyzeLevelClassDoesNotSkipLeafWhenSkipLeafDisabled(): void
+    {
+        $rule = new InstabilityRule(
+            new InstabilityOptions(
+                class: new ClassInstabilityOptions(skipLeaf: false),
+            ),
+        );
+
+        $symbolPath = SymbolPath::forClass('App\Service', 'LeafService');
+        $classInfo = new SymbolInfo($symbolPath, 'src/Service/LeafService.php', 10);
+
+        // Ca=0 means leaf class, but skipLeaf is false so it should NOT be skipped
+        $metricBag = (new MetricBag())
+            ->with('instability', 1.0)
+            ->with('ca', 0)
+            ->with('ce', 5);
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturn([$classInfo]);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyzeLevel(RuleLevel::Class_, $context);
+
+        self::assertCount(1, $violations);
+        self::assertSame(Severity::Error, $violations[0]->severity);
+    }
+
     // Namespace-level tests
 
     public function testAnalyzeLevelNamespaceReturnsEmptyWhenDisabled(): void
@@ -301,6 +331,63 @@ final class InstabilityRuleTest extends TestCase
         self::assertCount(1, $violations);
         self::assertSame(Severity::Error, $violations[0]->severity);
         self::assertSame(0.98, $violations[0]->metricValue);
+    }
+
+    public function testAnalyzeLevelNamespaceSkipsLeafByDefault(): void
+    {
+        $rule = new InstabilityRule(new InstabilityOptions());
+
+        $symbolPath = SymbolPath::forNamespace('App\Service');
+        $nsInfo = new SymbolInfo($symbolPath, 'src/Service', null);
+
+        // Ca=0 means leaf namespace, should be skipped by default
+        $metricBag = (new MetricBag())
+            ->with('instability', 1.0)
+            ->with('ca', 0)
+            ->with('ce', 10)
+            ->with('classCount.sum', 5);
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturn([$nsInfo]);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyzeLevel(RuleLevel::Namespace_, $context);
+
+        self::assertCount(0, $violations);
+    }
+
+    public function testAnalyzeLevelNamespaceDoesNotSkipLeafWhenSkipLeafDisabled(): void
+    {
+        $rule = new InstabilityRule(
+            new InstabilityOptions(
+                namespace: new NamespaceInstabilityOptions(skipLeaf: false),
+            ),
+        );
+
+        $symbolPath = SymbolPath::forNamespace('App\Service');
+        $nsInfo = new SymbolInfo($symbolPath, 'src/Service', null);
+
+        // Ca=0 means leaf namespace, but skipLeaf is false
+        $metricBag = (new MetricBag())
+            ->with('instability', 1.0)
+            ->with('ca', 0)
+            ->with('ce', 10)
+            ->with('classCount.sum', 5);
+
+        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturn([$nsInfo]);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyzeLevel(RuleLevel::Namespace_, $context);
+
+        self::assertCount(1, $violations);
+        self::assertSame(Severity::Error, $violations[0]->severity);
     }
 
     // Namespace minClassCount tests
@@ -573,6 +660,59 @@ final class InstabilityRuleTest extends TestCase
         yield 'above warning, below error' => [0.9, 0.8, 0.95, Severity::Warning];
         yield 'at error threshold' => [0.95, 0.8, 0.95, Severity::Error];
         yield 'above error threshold' => [1.0, 0.8, 0.95, Severity::Error];
+    }
+
+    public function testClassOptionsSkipLeafFromArray(): void
+    {
+        $options = ClassInstabilityOptions::fromArray([
+            'skip_leaf' => false,
+        ]);
+
+        self::assertFalse($options->skipLeaf);
+    }
+
+    public function testClassOptionsSkipLeafDefaultTrue(): void
+    {
+        $options = ClassInstabilityOptions::fromArray([]);
+
+        self::assertTrue($options->skipLeaf);
+    }
+
+    public function testClassOptionsWithOverridePreservesSkipLeaf(): void
+    {
+        $options = new ClassInstabilityOptions(skipLeaf: false);
+        $overridden = $options->withOverride(0.9, null);
+
+        self::assertFalse($overridden->skipLeaf);
+        self::assertSame(0.9, $overridden->maxWarning);
+    }
+
+    public function testNamespaceOptionsSkipLeafFromArray(): void
+    {
+        $options = NamespaceInstabilityOptions::fromArray([
+            'skip_leaf' => false,
+        ]);
+
+        self::assertFalse($options->skipLeaf);
+    }
+
+    public function testNamespaceOptionsSkipLeafDefaultTrue(): void
+    {
+        $options = NamespaceInstabilityOptions::fromArray([
+            'enabled' => true,
+        ]);
+
+        self::assertTrue($options->skipLeaf);
+    }
+
+    public function testNamespaceOptionsWithOverridePreservesSkipLeaf(): void
+    {
+        $options = new NamespaceInstabilityOptions(skipLeaf: false);
+        $overridden = $options->withOverride(0.9, null);
+
+        self::assertFalse($overridden->skipLeaf);
+        self::assertSame(0.9, $overridden->maxWarning);
+        self::assertSame(3, $overridden->minClassCount);
     }
 
     public function testClassOptionsFromArrayWithCamelCase(): void

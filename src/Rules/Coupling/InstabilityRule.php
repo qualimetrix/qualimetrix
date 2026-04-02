@@ -146,7 +146,7 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
             // for concrete classes that nobody depends on.
             $caRaw = $metrics->get(MetricName::COUPLING_CA);
             $ca = $caRaw !== null ? (int) $caRaw : 0;
-            if ($ca === 0) {
+            if ($ca === 0 && $classOptions->skipLeaf) {
                 continue;
             }
 
@@ -212,6 +212,13 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
                 continue;
             }
 
+            // Skip leaf namespaces with no afferent coupling (Ca=0).
+            // These namespaces have I=1.00 by definition, which is not a design flaw.
+            $ca = (int) ($metrics->get(MetricName::COUPLING_CA) ?? 0);
+            if ($ca === 0 && $namespaceOptions->skipLeaf) {
+                continue;
+            }
+
             $instabilityValue = (float) $instability;
 
             /** @var NamespaceInstabilityOptions $effectiveNsOptions */
@@ -219,7 +226,6 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
             $severity = $effectiveNsOptions->getSeverity($instabilityValue);
 
             if ($severity !== null) {
-                $ca = (int) ($metrics->get(MetricName::COUPLING_CA) ?? 0);
                 $ce = (int) ($metrics->get(MetricName::COUPLING_CE) ?? 0);
 
                 $threshold = $severity === Severity::Error ? $effectiveNsOptions->maxError : $effectiveNsOptions->maxWarning;
