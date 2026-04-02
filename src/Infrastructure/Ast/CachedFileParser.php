@@ -13,6 +13,8 @@ use SplFileInfo;
 
 /**
  * Decorator that caches parsed AST to avoid re-parsing unchanged files.
+ *
+ * @qmx-ignore-file code-smell.empty-catch Cache write failures are intentionally ignored (best-effort caching)
  */
 final class CachedFileParser implements FileParserInterface
 {
@@ -44,11 +46,11 @@ final class CachedFileParser implements FileParserInterface
         // Parse and cache
         $ast = $this->inner->parse($file);
 
-        // Cache failure should not break parsing - caching is an optimization
+        // Cache failure should not break parsing - caching is best-effort
         try {
             $this->cache->set($key, $ast);
         } catch (CacheWriteException) {
-            // Silently ignore cache write failures
+            // Intentionally ignored: cache write failure is non-critical
         }
 
         return $ast;

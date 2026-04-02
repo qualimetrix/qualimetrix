@@ -108,11 +108,17 @@
 # Available rules:
 #   https://qualimetrix.github.io/qualimetrix/reference/rules/
 #
-# Every rule supports exclude_namespaces to suppress violations in specific
-# namespaces (prefix matching):
+# Every rule supports these universal options:
+#   exclude_namespaces — suppress violations in specific namespaces (prefix matching)
+#   exclude_paths — suppress violations in specific files (fnmatch glob patterns)
+#
+# Example:
 #   coupling.cbo:
 #     exclude_namespaces:
 #       - App\Core\ValueObject
+#     exclude_paths:
+#       - src/Metrics/*Visitor.php
+#       - src/Infrastructure/DependencyInjection/*
 #
 # rules:
 
@@ -232,9 +238,11 @@
   #   class:
   #     max_warning: 0.8         # default: 0.8
   #     max_error: 0.95
+  #     skip_leaf: true          # skip Ca=0 classes (default: true)
   #   namespace:
   #     max_warning: 0.8
   #     max_error: 0.95
+  #     skip_leaf: true          # skip Ca=0 namespaces (default: true)
 
   # Distance from Main Sequence. Range 0.0–1.0.
   # coupling.distance:
@@ -265,6 +273,23 @@
   # code-smell.constructor-overinjection:
   #   warning: 8                 # default: 8
   #   error: 12
+
+  # Boolean argument detection. Self-documenting prefixes are allowed by default.
+  # code-smell.boolean-argument:
+  #   allowed_prefixes:          # default: [is, has, can, should, will, did, was]
+  #     - is
+  #     - has
+  #     - can
+  #   # To flag ALL boolean params:
+  #   # allowed_prefixes: []
+
+  # Error suppression (@) detection. Whitelist I/O functions where @ is acceptable.
+  # code-smell.error-suppression:
+  #   allowed_functions:         # default: []
+  #     - fopen
+  #     - file_get_contents
+  #     - unlink
+  #     - mkdir
 
   # — Security —
   # Docs: https://qualimetrix.github.io/qualimetrix/rules/security/
