@@ -128,6 +128,7 @@ final class LcomRule extends AbstractRule
             'lcom-error' => 'error',
             'lcom-exclude-readonly' => 'excludeReadonly',
             'lcom-min-methods' => 'minMethods',
+            'lcom-exclude-methods' => 'excludeMethods',
         ];
     }
 }

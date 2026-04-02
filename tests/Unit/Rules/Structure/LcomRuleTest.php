@@ -287,7 +287,59 @@ final class LcomRuleTest extends TestCase
 
         self::assertArrayHasKey('lcom-warning', $aliases);
         self::assertArrayHasKey('lcom-error', $aliases);
+        self::assertArrayHasKey('lcom-exclude-methods', $aliases);
         self::assertSame('warning', $aliases['lcom-warning']);
         self::assertSame('error', $aliases['lcom-error']);
+        self::assertSame('excludeMethods', $aliases['lcom-exclude-methods']);
+    }
+
+    public function testFromArrayWithExcludeMethods(): void
+    {
+        $options = LcomOptions::fromArray([
+            'exclude_methods' => ['getName', 'getDescription'],
+        ]);
+
+        self::assertSame(['getName', 'getDescription'], $options->excludeMethods);
+    }
+
+    public function testFromArrayWithExcludeMethodsSnakeCase(): void
+    {
+        $options = LcomOptions::fromArray([
+            'excludeMethods' => ['getName', 'getDescription'],
+        ]);
+
+        self::assertSame(['getName', 'getDescription'], $options->excludeMethods);
+    }
+
+    public function testFromArrayWithExcludeMethodsString(): void
+    {
+        $options = LcomOptions::fromArray([
+            'exclude_methods' => 'getName',
+        ]);
+
+        self::assertSame(['getName'], $options->excludeMethods);
+    }
+
+    public function testFromArrayWithExcludeMethodsNull(): void
+    {
+        $options = LcomOptions::fromArray([
+            'warning' => 3,
+            'error' => 5,
+        ]);
+
+        self::assertNull($options->excludeMethods);
+    }
+
+    public function testWithOverridePreservesExcludeMethods(): void
+    {
+        $options = LcomOptions::fromArray([
+            'exclude_methods' => ['getName', 'getDescription'],
+        ]);
+
+        $overridden = $options->withOverride(warning: 4, error: 6);
+
+        self::assertSame(4, $overridden->warning);
+        self::assertSame(6, $overridden->error);
+        self::assertSame(['getName', 'getDescription'], $overridden->excludeMethods);
     }
 }

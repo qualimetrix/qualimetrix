@@ -501,6 +501,7 @@ Custom preset files use the same YAML format as `qmx.yaml`. Specify a file path
 | `--lcom-error=N`                        | design.lcom                          | error                 |
 | `--lcom-exclude-readonly=N`             | design.lcom                          | excludeReadonly       |
 | `--lcom-min-methods=N`                  | design.lcom                          | minMethods            |
+| `--lcom-exclude-methods=V`              | design.lcom                          | excludeMethods        |
 | `--noc-warning=N`                       | design.noc                           | warning               |
 | `--noc-error=N`                         | design.noc                           | error                 |
 | `--type-coverage-param-warning=N`       | design.type-coverage                 | param_warning         |

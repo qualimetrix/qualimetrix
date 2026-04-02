@@ -21,12 +21,16 @@ use Qualimetrix\Rules\Support\ThresholdParser;
  */
 final readonly class LcomOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface
 {
+    /**
+     * @param list<string>|null $excludeMethods Method names to exclude from LCOM graph (e.g., lifecycle hooks)
+     */
     public function __construct(
         public bool $enabled = true,
         public int $warning = 3,
         public int $error = 5,
         public bool $excludeReadonly = true,
         public int $minMethods = 3,
+        public ?array $excludeMethods = null,
     ) {}
 
     /**
@@ -40,12 +44,25 @@ final readonly class LcomOptions implements RuleOptionsInterface, ThresholdAware
 
         $thresholds = ThresholdParser::parse($config, 'warning', 'error', 3, 5);
 
+        $excludeMethods = null;
+        $excludeKey = $config['exclude_methods'] ?? $config['excludeMethods'] ?? null;
+
+        if (\is_string($excludeKey)) {
+            // Support comma-separated values from CLI (e.g., --rule-opt='design.lcom:exclude_methods=getName,getDescription')
+            $excludeMethods = str_contains($excludeKey, ',')
+                ? array_map('trim', explode(',', $excludeKey))
+                : [$excludeKey];
+        } elseif (\is_array($excludeKey)) {
+            $excludeMethods = array_values($excludeKey);
+        }
+
         return new self(
             enabled: (bool) ($config['enabled'] ?? true),
             warning: (int) $thresholds['warning'],
             error: (int) $thresholds['error'],
             excludeReadonly: (bool) ($config['exclude_readonly'] ?? $config['excludeReadonly'] ?? true),
             minMethods: (int) ($config['min_methods'] ?? $config['minMethods'] ?? 3),
+            excludeMethods: $excludeMethods,
         );
     }
 
@@ -80,6 +97,7 @@ final readonly class LcomOptions implements RuleOptionsInterface, ThresholdAware
             error: $error !== null ? (int) $error : $this->error,
             excludeReadonly: $this->excludeReadonly,
             minMethods: $this->minMethods,
+            excludeMethods: $this->excludeMethods,
         );
     }
 }

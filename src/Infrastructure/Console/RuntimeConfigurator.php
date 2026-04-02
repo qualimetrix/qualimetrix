@@ -15,6 +15,7 @@ use Qualimetrix\Configuration\RuleOptionsRegistry;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinitionHolder;
 use Qualimetrix\Core\Coupling\FrameworkNamespaces;
 use Qualimetrix\Core\Coupling\FrameworkNamespacesHolder;
+use Qualimetrix\Core\Metric\CollectorConfigHolder;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
 use Qualimetrix\Core\Progress\NullProgressReporter;
 use Qualimetrix\Infrastructure\Cache\CacheFactory;
@@ -24,6 +25,7 @@ use Qualimetrix\Infrastructure\Logging\LoggerFactory;
 use Qualimetrix\Infrastructure\Logging\LoggerHolder;
 use Qualimetrix\Infrastructure\Profiler\Profiler;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
+use Qualimetrix\Rules\Structure\LcomOptions;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -59,6 +61,7 @@ final class RuntimeConfigurator
         $this->ruleOptionsRegistry->resetRuntimeState();
         $this->cacheFactory->reset();
         ComputedMetricDefinitionHolder::reset();
+        CollectorConfigHolder::reset();
         $this->frameworkNamespacesHolder->reset();
 
         $this->configureLogger($input, $output);
@@ -86,6 +89,9 @@ final class RuntimeConfigurator
 
         // Configure runtime providers
         $this->configureRuntime($resolved->analysis, $ruleOptions);
+
+        // Extract collector-level config from rule options
+        $this->configureCollectors($ruleOptions);
 
         // Set framework namespaces for CBO_APP/CE_FRAMEWORK metrics
         if ($resolved->analysis->frameworkNamespaces !== []) {
@@ -205,6 +211,28 @@ final class RuntimeConfigurator
 
         // Enable profiler if --profile or --profile=file was provided
         $this->profilerHolder->set(new Profiler());
+    }
+
+    /**
+     * Extracts collector-level configuration from rule options.
+     *
+     * Some rule options affect metric calculation (not just thresholds),
+     * so they must reach collectors via CollectorConfigHolder.
+     *
+     * @param array<string, array<string, mixed>> $ruleOptions
+     */
+    private function configureCollectors(array $ruleOptions): void
+    {
+        $lcomConfig = $ruleOptions['design.lcom'] ?? [];
+        if ($lcomConfig !== []) {
+            $options = LcomOptions::fromArray($lcomConfig);
+            if ($options->excludeMethods !== null && $options->excludeMethods !== []) {
+                CollectorConfigHolder::set(
+                    CollectorConfigHolder::LCOM_EXCLUDE_METHODS,
+                    $options->excludeMethods,
+                );
+            }
+        }
     }
 
     /**

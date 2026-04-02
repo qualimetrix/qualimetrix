@@ -9,6 +9,7 @@ use Qualimetrix\Analysis\Collection\Dependency\DependencyVisitor;
 use Qualimetrix\Analysis\Collection\FileProcessor;
 use Qualimetrix\Analysis\Collection\FileProcessorInterface;
 use Qualimetrix\Analysis\Collection\Metric\CompositeCollector;
+use Qualimetrix\Core\Metric\CollectorConfigHolder;
 use Qualimetrix\Core\Metric\DerivedCollectorInterface;
 use Qualimetrix\Core\Metric\MetricCollectorInterface;
 use Qualimetrix\Core\Metric\ParallelSafeCollectorInterface;
@@ -55,23 +56,36 @@ final class WorkerBootstrap
      * @param list<class-string<MetricCollectorInterface>> $collectorClasses Collector class names from DI
      * @param list<class-string<DerivedCollectorInterface>> $derivedCollectorClasses Derived collector class names
      * @param string|null $cacheDir Cache directory (null to disable caching)
+     * @param array<string, mixed> $collectorConfig Collector-level configuration (e.g., LCOM exclude methods)
      */
     public static function getFileProcessor(
         string $projectRoot,
         array $collectorClasses,
         array $derivedCollectorClasses = [],
         ?string $cacheDir = null,
+        array $collectorConfig = [],
     ): FileProcessorInterface {
-        $newCacheKey = self::buildCacheKey($projectRoot, $collectorClasses, $derivedCollectorClasses, $cacheDir);
+        $newCacheKey = self::buildCacheKey($projectRoot, $collectorClasses, $derivedCollectorClasses, $cacheDir, $collectorConfig);
 
         // Return cached processor if configuration hasn't changed
         if (self::$processor !== null && self::$cacheKey === $newCacheKey) {
+            // Apply collector config (must be set on each call, not just on cache miss,
+            // because static state resets between worker process reuse scenarios)
+            foreach ($collectorConfig as $key => $value) {
+                CollectorConfigHolder::set($key, $value);
+            }
+
             return self::$processor;
         }
 
         // Create new processor
         self::$processor = self::createFileProcessor($projectRoot, $collectorClasses, $derivedCollectorClasses, $cacheDir);
         self::$cacheKey = $newCacheKey;
+
+        // Apply collector config
+        foreach ($collectorConfig as $key => $value) {
+            CollectorConfigHolder::set($key, $value);
+        }
 
         return self::$processor;
     }
@@ -90,17 +104,22 @@ final class WorkerBootstrap
      *
      * @param list<class-string<MetricCollectorInterface>> $collectorClasses
      * @param list<class-string<DerivedCollectorInterface>> $derivedCollectorClasses
+     * @param array<string, mixed> $collectorConfig
      */
     private static function buildCacheKey(
         string $projectRoot,
         array $collectorClasses,
         array $derivedCollectorClasses,
         ?string $cacheDir,
+        array $collectorConfig = [],
     ): string {
         // Include collector classes in cache key to detect changes
         $collectorsHash = md5(implode('|', $collectorClasses) . '||' . implode('|', $derivedCollectorClasses));
+        $sortedConfig = $collectorConfig;
+        ksort($sortedConfig);
+        $configHash = $sortedConfig !== [] ? md5(serialize($sortedConfig)) : '';
 
-        return $projectRoot . '|' . ($cacheDir ?? 'no-cache') . '|' . $collectorsHash;
+        return $projectRoot . '|' . ($cacheDir ?? 'no-cache') . '|' . $collectorsHash . '|' . $configHash;
     }
 
     /**

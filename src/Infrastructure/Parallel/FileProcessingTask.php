@@ -33,6 +33,7 @@ final class FileProcessingTask implements Task
      * @param list<class-string<MetricCollectorInterface>> $collectorClasses Collector class names
      * @param list<class-string<DerivedCollectorInterface>> $derivedCollectorClasses Derived collector class names
      * @param string|null $cacheDir Optional cache directory for AST caching
+     * @param array<string, mixed> $collectorConfig Collector-level configuration (e.g., LCOM exclude methods)
      */
     public function __construct(
         private readonly string $filePath,
@@ -40,6 +41,7 @@ final class FileProcessingTask implements Task
         private readonly array $collectorClasses,
         private readonly array $derivedCollectorClasses = [],
         private readonly ?string $cacheDir = null,
+        private readonly array $collectorConfig = [],
     ) {}
 
     /**
@@ -64,6 +66,7 @@ final class FileProcessingTask implements Task
             collectorClasses: $this->collectorClasses,
             derivedCollectorClasses: $this->derivedCollectorClasses,
             cacheDir: $this->cacheDir,
+            collectorConfig: $this->collectorConfig,
         );
 
         // Process the file

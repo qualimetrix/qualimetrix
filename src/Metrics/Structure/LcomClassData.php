@@ -156,12 +156,16 @@ final class LcomClassData
      *
      * @return int Number of connected components (1 = perfectly cohesive)
      */
-    public function calculateLcom(): int
+    /**
+     * @param list<string> $excludeMethods Method names to exclude from the LCOM graph
+     */
+    public function calculateLcom(array $excludeMethods = []): int
     {
-        // Exclude static methods from the graph
+        // Exclude static methods and explicitly excluded methods from the graph
+        $excludeSet = $excludeMethods !== [] ? array_flip($excludeMethods) : [];
         $methods = array_values(array_filter(
             $this->getMethods(),
-            fn(string $m): bool => !isset($this->staticMethods[$m]),
+            fn(string $m): bool => !isset($this->staticMethods[$m]) && !isset($excludeSet[$m]),
         ));
         $count = \count($methods);
 

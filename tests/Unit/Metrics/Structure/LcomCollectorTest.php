@@ -9,6 +9,7 @@ use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\AggregationStrategy;
+use Qualimetrix\Core\Metric\CollectorConfigHolder;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\SymbolLevel;
 use Qualimetrix\Metrics\Structure\LcomClassData;
@@ -1373,6 +1374,43 @@ PHP;
         // getName: returns constant => stateless
         // LCOM = 2
         self::assertSame(2, $metrics->get('lcom:App\WithMatch'));
+    }
+
+    public function testCollectorRespectsExcludeMethodsFromConfig(): void
+    {
+        CollectorConfigHolder::set(CollectorConfigHolder::LCOM_EXCLUDE_METHODS, ['getName']);
+
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Service
+{
+    private $data;
+
+    public function doWork(): void
+    {
+        $this->data = 1;
+    }
+
+    public function getName(): string
+    {
+        return 'service';
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // With getName excluded: only doWork remains => LCOM 1
+        // Without exclusion: doWork uses $data (1 component), getName is stateless (virtual node) => LCOM 2
+        self::assertSame(1, $metrics->get('lcom:App\Service'));
+    }
+
+    protected function tearDown(): void
+    {
+        CollectorConfigHolder::reset();
     }
 
     private function collectMetrics(string $code): MetricBag

@@ -64,6 +64,9 @@ final class AmphpParallelStrategy implements ExecutionStrategyInterface, Paralle
     /** @var list<class-string<DerivedCollectorInterface>> */
     private array $derivedCollectorClasses = [];
 
+    /** @var array<string, mixed> */
+    private array $collectorConfig = [];
+
     public function __construct(
         private readonly LoggerInterface $logger = new NullLogger(),
     ) {}
@@ -145,6 +148,16 @@ final class AmphpParallelStrategy implements ExecutionStrategyInterface, Paralle
     public function setDerivedCollectorClasses(array $classes): void
     {
         $this->derivedCollectorClasses = $classes;
+    }
+
+    /**
+     * Sets collector-level configuration to pass to worker processes.
+     *
+     * @param array<string, mixed> $config Key-value pairs (e.g., LCOM exclude methods)
+     */
+    public function setCollectorConfig(array $config): void
+    {
+        $this->collectorConfig = $config;
     }
 
     /**
@@ -319,6 +332,7 @@ final class AmphpParallelStrategy implements ExecutionStrategyInterface, Paralle
                 collectorClasses: $this->collectorClasses,
                 derivedCollectorClasses: $this->derivedCollectorClasses,
                 cacheDir: $this->cacheDir,
+                collectorConfig: $this->collectorConfig,
             );
             $executions[] = [
                 'file' => $file,

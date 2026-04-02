@@ -9,6 +9,7 @@ use Psr\Log\NullLogger;
 use Qualimetrix\Analysis\Collection\Strategy\ExecutionStrategyInterface;
 use Qualimetrix\Analysis\Collection\Strategy\StrategySelectorInterface;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
+use Qualimetrix\Core\Metric\CollectorConfigHolder;
 use Qualimetrix\Core\Metric\DerivedCollectorInterface;
 use Qualimetrix\Core\Metric\MetricCollectorInterface;
 
@@ -130,6 +131,9 @@ final class StrategySelector implements StrategySelectorInterface
         } else {
             $this->amphpStrategy->setCacheDir(null);
         }
+
+        // Pass collector config to worker processes
+        $this->amphpStrategy->setCollectorConfig(CollectorConfigHolder::all());
 
         $this->logger->info(
             'StrategySelector: using parallel strategy',

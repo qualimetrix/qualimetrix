@@ -253,6 +253,7 @@ LCOM4 = number of connected components in the method graph.
 **Filters (RFC-008):**
 - `excludeReadonly: true` — exclude readonly classes
 - `minMethods: 3` — minimum methods for checking
+- `exclude_methods: [getName, getDescription, ...]` — exclude specific methods from the LCOM4 graph (reduces false positives from interface-mandated methods)
 
 **CLI:** `--lcom-warning=3 --lcom-error=5 --lcom-exclude-readonly --lcom-min-methods=3`
 

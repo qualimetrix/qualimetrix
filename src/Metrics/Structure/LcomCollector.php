@@ -9,6 +9,7 @@ use PhpParser\Node;
 use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\ClassMetricsProviderInterface;
 use Qualimetrix\Core\Metric\ClassWithMetrics;
+use Qualimetrix\Core\Metric\CollectorConfigHolder;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricDefinition;
 use Qualimetrix\Core\Metric\MetricName;
@@ -104,7 +105,9 @@ final class LcomCollector extends AbstractCollector implements ClassMetricsProvi
      */
     private function adjustedLcom(LcomClassData $classData): int
     {
-        $lcom = $classData->calculateLcom();
+        /** @var list<string> $excludeMethods */
+        $excludeMethods = CollectorConfigHolder::get(CollectorConfigHolder::LCOM_EXCLUDE_METHODS, []);
+        $lcom = $classData->calculateLcom($excludeMethods);
 
         return ($lcom > 1 && $classData->hasOnlyTrivialMethods()) ? 1 : $lcom;
     }
