@@ -91,7 +91,17 @@ bin/qmx baseline:cleanup baseline.json
 
 ## Inline suppression with @qmx-ignore
 
-For cases where a violation is intentional and you do not want it in the baseline, you can suppress it directly in the code using docblock tags.
+For cases where a violation is intentional and you do not want it in the baseline, you can suppress it directly in the code using comments.
+
+Suppression tags work in all comment styles:
+
+- PHPDoc docblocks: `/** @qmx-ignore rule */`
+- Line comments: `// @qmx-ignore rule`
+- Block comments: `/* @qmx-ignore rule */`
+
+!!! note "Limitation"
+    Inline same-line comments are not supported: `$x = foo(); // @qmx-ignore rule` will **not** work.
+    Place the comment on a separate line before the target.
 
 ### Suppress a specific rule
 
@@ -147,7 +157,7 @@ class CliApplication
     {
         // process commands...
 
-        /** @qmx-ignore-next-line code-smell.exit CLI entry point */
+        // @qmx-ignore-next-line code-smell.exit CLI entry point
         exit(0);
     }
 }
@@ -155,14 +165,24 @@ class CliApplication
 
 This is useful for one-off suppressions where a docblock-level tag would be too broad.
 
+This also works for suppressing empty catch violations:
+
+```php
+try {
+    $cache->delete($key);
+} catch (CacheException) {
+    // @qmx-ignore code-smell.empty-catch Best-effort caching
+}
+```
+
 ### Suppression tag syntax
 
-| Tag                                     | Scope                               | Example                                                 |
-| --------------------------------------- | ----------------------------------- | ------------------------------------------------------- |
-| `@qmx-ignore <rule> [reason]`           | The symbol this docblock belongs to | `@qmx-ignore complexity.cyclomatic Legacy code`         |
-| `@qmx-ignore * [reason]`                | All rules for this symbol           | `@qmx-ignore * Generated code`                          |
-| `@qmx-ignore-next-line <rule> [reason]` | The next line only                  | `@qmx-ignore-next-line code-smell.exit CLI entry point` |
-| `@qmx-ignore-file`                      | Entire file                         | `@qmx-ignore-file`                                      |
+| Tag                                     | Scope                              | Example                                                 |
+| --------------------------------------- | ---------------------------------- | ------------------------------------------------------- |
+| `@qmx-ignore <rule> [reason]`           | The symbol this comment belongs to | `@qmx-ignore complexity.cyclomatic Legacy code`         |
+| `@qmx-ignore * [reason]`                | All rules for this symbol          | `@qmx-ignore * Generated code`                          |
+| `@qmx-ignore-next-line <rule> [reason]` | The next line only                 | `@qmx-ignore-next-line code-smell.exit CLI entry point` |
+| `@qmx-ignore-file`                      | Entire file                        | `@qmx-ignore-file`                                      |
 
 The rule name supports prefix matching: `@qmx-ignore complexity` suppresses all `complexity.*` rules.
 

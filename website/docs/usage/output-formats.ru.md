@@ -108,7 +108,7 @@ src/Repository/OrderRepository.php:15: error[coupling.cbo.class]: CBO is 18, max
 
 ## json
 
-Машиночитаемый JSON-вывод. Формат, ориентированный на сводную информацию: оценки здоровья, худшие нарушители и ограниченный список нарушений.
+Машиночитаемый JSON-вывод. Формат, ориентированный на сводную информацию: оценки здоровья, худшие нарушители и все нарушения.
 
 **Когда использовать:** Пользовательские скрипты, дашборды, программная обработка.
 
@@ -186,7 +186,7 @@ src/Repository/OrderRepository.php:15: error[coupling.cbo.class]: CBO is 18, max
     ],
     "violationsMeta": {
         "total": 3,
-        "limit": 50,
+        "limit": null,
         "truncated": false,
         "byRule": {
             "complexity.cyclomatic": 2,
@@ -217,12 +217,8 @@ src/Repository/OrderRepository.php:15: error[coupling.cbo.class]: CBO is 18, max
 **Опции:**
 
 ```bash
-# Управление лимитом нарушений (по умолчанию: 50)
-bin/qmx check src/ --format=json --format-opt=limit=100
-
-# Показать все нарушения (без лимита)
-bin/qmx check src/ --format=json --all
-# Или эквивалентно: --format-opt=violations=all
+# Ограничить количество нарушений в выводе (по умолчанию: все)
+bin/qmx check src/ --format=json --format-opt=violations=50
 
 # Управление количеством худших нарушителей (по умолчанию: 10)
 bin/qmx check src/ --format=json --format-opt=top=20

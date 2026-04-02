@@ -159,8 +159,9 @@ final class FileProcessor implements FileProcessorInterface
     /**
      * Extracts suppression tags from all relevant AST nodes.
      *
-     * Scans nodes that can have docblocks: classes, methods, functions, properties,
-     * enum cases, constants, and file-level comments on the first statement.
+     * Scans nodes that can have docblocks or regular comments containing @qmx-ignore:
+     * classes, methods, functions, properties, enum cases, constants, expressions,
+     * and any statement preceded by a suppression comment.
      *
      * @param array<Node> $ast Top-level AST statements
      *
@@ -177,17 +178,32 @@ final class FileProcessor implements FileProcessorInterface
             }
         }
 
-        // Find all nodes that can carry docblock suppressions
+        // Find all nodes that can carry suppression comments (docblocks or regular comments)
         $nodeFinder = new NodeFinder();
-        $nodesWithDocblocks = $nodeFinder->find($ast, static fn(Node $node): bool => $node instanceof Node\Stmt\ClassLike
+        $nodesWithSuppressions = $nodeFinder->find($ast, static function (Node $node): bool {
+            // Node types that can carry docblock suppressions
+            if ($node instanceof Node\Stmt\ClassLike
                 || $node instanceof Node\Stmt\ClassMethod
                 || $node instanceof Node\Stmt\Function_
                 || $node instanceof Node\Stmt\Property
                 || $node instanceof Node\Stmt\EnumCase
                 || $node instanceof Node\Stmt\ClassConst
-                || $node instanceof Node\Stmt\Expression);
+                || $node instanceof Node\Stmt\Expression) {
+                return true;
+            }
 
-        foreach ($nodesWithDocblocks as $node) {
+            // Any node with a regular comment containing @qmx-ignore
+            foreach ($node->getComments() as $comment) {
+                if (!$comment instanceof \PhpParser\Comment\Doc
+                    && str_contains($comment->getText(), '@qmx-ignore')) {
+                    return true;
+                }
+            }
+
+            return false;
+        });
+
+        foreach ($nodesWithSuppressions as $node) {
             foreach ($this->suppressionExtractor->extract($node) as $suppression) {
                 $suppressions[] = $suppression;
             }
