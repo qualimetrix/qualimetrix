@@ -123,9 +123,25 @@ rules:
   coupling.cbo:
     exclude_namespaces:
       - App\Tests
+    exclude_paths:
+      - src/Infrastructure/DependencyInjection/*
 ```
 
 Это полезно, когда определённые неймспейсы (например, тесты, сгенерированный код, legacy-модули) не должны вызывать нарушения для конкретного правила, но при этом всё равно анализируются для сбора метрик.
+
+**Исключение путей из правила:**
+
+Любое правило может исключить конкретные файлы по glob-паттернам (fnmatch). Нарушения из совпадающих файлов подавляются:
+
+```yaml
+rules:
+  coupling.cbo:
+    exclude_paths:
+      - src/Metrics/*Visitor.php
+      - src/Infrastructure/DependencyInjection/*
+```
+
+Работает совместно с `exclude_namespaces` -- оба фильтра применяются. В отличие от глобального `exclude_paths`, эта опция на уровне правила влияет только на конкретное правило, а не на все.
 
 **Переопределение порогов для символа через `@qmx-threshold`:**
 
@@ -362,6 +378,8 @@ rules:
   complexity.cyclomatic:
     exclude_namespaces:
       - App\Tests
+    exclude_paths:
+      - src/Generated/*.php
     method:
       warning: 15
       error: 25

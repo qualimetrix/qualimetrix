@@ -59,6 +59,21 @@ public function save(bool $sendNotification): void
     public function save(SaveMode $mode = SaveMode::Silent): void { /* ... */ }
     ```
 
+### Конфигурация
+
+```yaml
+# qmx.yaml
+rules:
+  code-smell.boolean-argument:
+    allowed_prefixes: [is, has, can, should, will, did, was]  # по умолчанию
+```
+
+Булевые параметры, имена которых начинаются с одного из этих префиксов, считаются самодокументируемыми и не помечаются. Например, `$isActive`, `$hasPermission` или `$is_active` (snake_case) будут пропущены с настройками по умолчанию. Установите `[]`, чтобы помечать все булевые параметры.
+
+```bash
+bin/qmx check src/ --rule-opt="code-smell.boolean-argument:allowed_prefixes=is,has,can"
+```
+
 ---
 
 <!-- llms:skip-end -->
@@ -248,9 +263,27 @@ $data = file_get_contents($path);
 $result = json_decode($input, flags: JSON_THROW_ON_ERROR);
 ```
 
----
-
 <!-- llms:skip-end -->
+
+### Конфигурация
+
+```yaml
+# qmx.yaml
+rules:
+  code-smell.error-suppression:
+    allowed_functions:  # по умолчанию: []
+      - fopen
+      - file_get_contents
+      - unlink
+```
+
+Функции, для которых подавление ошибок через `@` допустимо. Некоторые функции ввода-вывода возвращают `false` и генерируют предупреждение при ошибке -- использование `@` с ними является распространённой практикой, когда возвращаемое значение проверяется явно. По умолчанию список пуст.
+
+```bash
+bin/qmx check src/ --rule-opt="code-smell.error-suppression:allowed_functions=fopen,unlink"
+```
+
+---
 
 ## eval()
 
@@ -881,6 +914,7 @@ bin/qmx check src/ --rule-opt="code-smell.unreachable-code:error=1"
 rules:
   code-smell.boolean-argument:
     enabled: true
+    allowed_prefixes: [is, has, can, should, will, did, was]
   code-smell.debug-code:
     enabled: true
   code-smell.empty-catch:
@@ -900,6 +934,7 @@ rules:
     enabled: true
   code-smell.error-suppression:
     enabled: true
+    allowed_functions: []
   code-smell.long-parameter-list:
     warning: 4
     error: 6

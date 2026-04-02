@@ -70,7 +70,7 @@ Rules that check how tightly classes and namespaces are connected to each other.
 
 **CBO (Coupling Between Objects)** counts the number of other classes a class depends on. High coupling makes code harder to change.
 
-**Instability** is a ratio from 0 (fully stable) to 1 (fully unstable). A class that depends on many others but is not depended upon is unstable.
+**Instability** is a ratio from 0 (fully stable) to 1 (fully unstable). A class that depends on many others but is not depended upon is unstable. By default, `skip_leaf: true` -- classes and namespaces with no dependents (Ca=0) are skipped since they have I=1.0 by definition.
 
 **Distance from the Main Sequence** measures how well a namespace balances abstractness and stability. A distance close to 0 is ideal.
 
@@ -90,24 +90,24 @@ These rules are **inverted**: a violation is reported when the metric falls **be
 
 These rules detect specific patterns that are usually bad practice. Most do not have numeric thresholds -- they either find the pattern or they don't. Two rules (Long Parameter List and Unreachable Code) use numeric thresholds.
 
-| Rule                       | ID                                     | Warning                                            | Error             | Status  |
-| -------------------------- | -------------------------------------- | -------------------------------------------------- | ----------------- | ------- |
-| Constructor Over-injection | `code-smell.constructor-overinjection` | 8 params                                           | 12 params         | enabled |
-| Data Class                 | `design.data-class`                    | WOC ≥ 80%, WMC ≤ 10                                | —                 | enabled |
-| God Class                  | `design.god-class`                     | WMC ≥ 47, TCC < 0.33, LCOM ≥ 3, LOC ≥ 300 (3 of 4) | —                 | enabled |
-| Boolean Argument           | `code-smell.boolean-argument`          | —                                                  | —                 | enabled |
-| count() in Loop            | `code-smell.count-in-loop`             | —                                                  | —                 | enabled |
-| Debug Code                 | `code-smell.debug-code`                | —                                                  | always            | enabled |
-| Empty Catch                | `code-smell.empty-catch`               | —                                                  | always            | enabled |
-| Error Suppression          | `code-smell.error-suppression`         | always                                             | —                 | enabled |
-| eval()                     | `code-smell.eval`                      | —                                                  | always            | enabled |
-| exit()/die()               | `code-smell.exit`                      | always                                             | —                 | enabled |
-| goto                       | `code-smell.goto`                      | —                                                  | always            | enabled |
-| Superglobals               | `code-smell.superglobals`              | always                                             | —                 | enabled |
-| Long Parameter List        | `code-smell.long-parameter-list`       | 4 params (VO: 8)                                   | 6 params (VO: 12) | enabled |
-| Unreachable Code           | `code-smell.unreachable-code`          | 1                                                  | 2                 | enabled |
-| Unused Private             | `code-smell.unused-private`            | always                                             | —                 | enabled |
-| Identical Sub-expression   | `code-smell.identical-subexpression`   | always                                             | —                 | enabled |
+| Rule                       | ID                                     | Warning                                            | Error             | Status                                                           |
+| -------------------------- | -------------------------------------- | -------------------------------------------------- | ----------------- | ---------------------------------------------------------------- |
+| Constructor Over-injection | `code-smell.constructor-overinjection` | 8 params                                           | 12 params         | enabled                                                          |
+| Data Class                 | `design.data-class`                    | WOC ≥ 80%, WMC ≤ 10                                | —                 | enabled                                                          |
+| God Class                  | `design.god-class`                     | WMC ≥ 47, TCC < 0.33, LCOM ≥ 3, LOC ≥ 300 (3 of 4) | —                 | enabled                                                          |
+| Boolean Argument           | `code-smell.boolean-argument`          | —                                                  | —                 | enabled (allowed_prefixes: is, has, can, should, will, did, was) |
+| count() in Loop            | `code-smell.count-in-loop`             | —                                                  | —                 | enabled                                                          |
+| Debug Code                 | `code-smell.debug-code`                | —                                                  | always            | enabled                                                          |
+| Empty Catch                | `code-smell.empty-catch`               | —                                                  | always            | enabled                                                          |
+| Error Suppression          | `code-smell.error-suppression`         | always                                             | —                 | enabled (allowed_functions: [])                                  |
+| eval()                     | `code-smell.eval`                      | —                                                  | always            | enabled                                                          |
+| exit()/die()               | `code-smell.exit`                      | always                                             | —                 | enabled                                                          |
+| goto                       | `code-smell.goto`                      | —                                                  | always            | enabled                                                          |
+| Superglobals               | `code-smell.superglobals`              | always                                             | —                 | enabled                                                          |
+| Long Parameter List        | `code-smell.long-parameter-list`       | 4 params (VO: 8)                                   | 6 params (VO: 12) | enabled                                                          |
+| Unreachable Code           | `code-smell.unreachable-code`          | 1                                                  | 2                 | enabled                                                          |
+| Unused Private             | `code-smell.unused-private`            | always                                             | —                 | enabled                                                          |
+| Identical Sub-expression   | `code-smell.identical-subexpression`   | always                                             | —                 | enabled                                                          |
 
 ## Duplication Rules
 

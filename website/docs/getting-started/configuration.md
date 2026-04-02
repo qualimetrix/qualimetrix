@@ -129,9 +129,25 @@ rules:
   coupling.cbo:
     exclude_namespaces:
       - App\Tests
+    exclude_paths:
+      - src/Infrastructure/DependencyInjection/*
 ```
 
 This is useful when certain namespaces (e.g., tests, generated code, legacy modules) should not trigger violations for a specific rule, while still being analyzed for metrics.
+
+**Exclude paths from a rule:**
+
+Any rule can exclude specific file paths using glob patterns (fnmatch). Violations from matching files are suppressed:
+
+```yaml
+rules:
+  coupling.cbo:
+    exclude_paths:
+      - src/Metrics/*Visitor.php
+      - src/Infrastructure/DependencyInjection/*
+```
+
+This works alongside `exclude_namespaces` -- both filters are applied. Unlike the global `exclude_paths`, per-rule `exclude_paths` only affects the specific rule, not all rules.
 
 **Per-symbol threshold overrides with `@qmx-threshold`:**
 
@@ -367,6 +383,8 @@ rules:
   complexity.cyclomatic:
     exclude_namespaces:
       - App\Tests
+    exclude_paths:
+      - src/Generated/*.php
     method:
       warning: 15
       error: 25
