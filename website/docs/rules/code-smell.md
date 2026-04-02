@@ -59,6 +59,21 @@ public function save(bool $sendNotification): void
     public function save(SaveMode $mode = SaveMode::Silent): void { /* ... */ }
     ```
 
+### Configuration
+
+```yaml
+# qmx.yaml
+rules:
+  code-smell.boolean-argument:
+    allowed_prefixes: [is, has, can, should, will, did, was]  # defaults
+```
+
+Boolean parameters whose names start with one of these prefixes are considered self-documenting and are not flagged. For example, `$isActive`, `$hasPermission`, or `$is_active` (snake_case) would all be allowed with the default prefixes. Set to `[]` to flag all boolean parameters.
+
+```bash
+bin/qmx check src/ --rule-opt="code-smell.boolean-argument:allowed_prefixes=is,has,can"
+```
+
 ---
 
 <!-- llms:skip-end -->
@@ -248,9 +263,27 @@ $data = file_get_contents($path);
 $result = json_decode($input, flags: JSON_THROW_ON_ERROR);
 ```
 
----
-
 <!-- llms:skip-end -->
+
+### Configuration
+
+```yaml
+# qmx.yaml
+rules:
+  code-smell.error-suppression:
+    allowed_functions:  # default: []
+      - fopen
+      - file_get_contents
+      - unlink
+```
+
+Functions where `@` error suppression is acceptable. Some I/O functions return `false` and emit a warning on failure -- using `@` with them is a common practice when you check the return value explicitly. By default, no functions are allowed.
+
+```bash
+bin/qmx check src/ --rule-opt="code-smell.error-suppression:allowed_functions=fopen,unlink"
+```
+
+---
 
 ## eval()
 
@@ -880,6 +913,7 @@ All code smell rules share the same simple configuration -- just enable or disab
 rules:
   code-smell.boolean-argument:
     enabled: true
+    allowed_prefixes: [is, has, can, should, will, did, was]
   code-smell.debug-code:
     enabled: true
   code-smell.empty-catch:
@@ -899,6 +933,7 @@ rules:
     enabled: true
   code-smell.error-suppression:
     enabled: true
+    allowed_functions: []
   code-smell.long-parameter-list:
     warning: 4
     error: 6

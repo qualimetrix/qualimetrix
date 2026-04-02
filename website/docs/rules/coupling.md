@@ -277,9 +277,13 @@ rules:
     class:
       max_warning: 0.9
       max_error: 1.0
+      skip_leaf: true    # default: true
     namespace:
       min_class_count: 5
+      skip_leaf: true    # default: true
 ```
+
+**`skip_leaf`** -- when `true` (default), classes and namespaces with no dependents (Ca = 0) are skipped. These "leaf" symbols have instability I = 1.0 by definition (Ce / (0 + Ce) = 1.0), which is not a design flaw -- it simply means nothing depends on them yet. Set to `false` if you want to flag all highly unstable symbols regardless.
 
 For a simple pass/fail threshold:
 
@@ -293,7 +297,9 @@ rules:
 ```bash
 bin/qmx check src/ --rule-opt="coupling.instability:class.max_warning=0.9"
 bin/qmx check src/ --rule-opt="coupling.instability:class.max_error=1.0"
+bin/qmx check src/ --rule-opt="coupling.instability:class.skip_leaf=false"
 bin/qmx check src/ --rule-opt="coupling.instability:namespace.min_class_count=5"
+bin/qmx check src/ --rule-opt="coupling.instability:namespace.skip_leaf=false"
 ```
 
 ---
