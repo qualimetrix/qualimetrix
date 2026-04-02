@@ -363,6 +363,28 @@ Run `bin/qmx check src/` after modifying metric collection or aggregation logic 
 - **Complexity violations** (CCN > threshold): **Code quality signal** — normal for complex algorithms, investigate only if unexpected
 - **Health score regression** vs `composer benchmark:check`: May indicate **formula bug** if changes touched computed metrics
 
+### Dogfooding: Violation Management Strategy
+
+We analyze ourselves with `bin/qmx check src/` using `qmx.yaml` at the repository root. No baseline file — every exclusion is explicit and justified.
+
+**Decision framework** (in priority order):
+
+| Situation                                  | Action                                                |
+| ------------------------------------------ | ----------------------------------------------------- |
+| Real issue                                 | Fix the code                                          |
+| Structural (project nature)                | `exclude_paths` or `exclude_namespaces` in `qmx.yaml` |
+| Threshold mismatch                         | Tune threshold in `qmx.yaml`                          |
+| Legitimate exception for a specific symbol | `@qmx-threshold` on the class/method with reason      |
+| Genuinely inapplicable                     | `@qmx-ignore` with reason                             |
+| Generated or non-analyzable file           | `@qmx-ignore-file` with reason                        |
+
+**Key principles:**
+- All `@qmx-*` inline tags are available for use — pick the right one for the situation
+- Every inline tag must include a reason explaining **why** the exception is acceptable
+- Prefer `qmx.yaml` configuration over inline tags when the exclusion applies to a category (e.g., all visitors, all DI configurators)
+- Prefer `@qmx-threshold` over `@qmx-ignore` — keeping the rule active with adjusted limits is better than silencing it
+- Do not use a baseline file for dogfooding — we are not a legacy project
+
 ---
 
 ## Changelog
