@@ -23,16 +23,6 @@ final class HookInstallCommand extends Command
         parent::__construct();
     }
 
-    /**
-     * Marker comment to identify our hook.
-     *
-     * This constant is defined here for consistency with HookUninstallCommand
-     * and HookStatusCommand, which check for this marker in hook files.
-     *
-     * @phpstan-ignore classConstant.unused
-     */
-    private const HOOK_MARKER = 'Qualimetrix pre-commit hook';
-
     protected function configure(): void
     {
         $this->addOption(
