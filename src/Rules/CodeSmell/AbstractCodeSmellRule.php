@@ -66,6 +66,16 @@ abstract class AbstractCodeSmellRule extends AbstractRule
     }
 
     /**
+     * Override in subclasses to filter entries before violation creation.
+     *
+     * @param array<string, mixed> $entry
+     */
+    protected function shouldIncludeEntry(array $entry): bool
+    {
+        return true;
+    }
+
+    /**
      * @return list<string>
      */
     public function requires(): array
@@ -94,6 +104,10 @@ abstract class AbstractCodeSmellRule extends AbstractRule
             $entries = $metrics->entries("codeSmell.{$type}");
 
             foreach ($entries as $entry) {
+                if (!$this->shouldIncludeEntry($entry)) {
+                    continue;
+                }
+
                 $line = (int) $entry['line'];
 
                 $violations[] = new Violation(
