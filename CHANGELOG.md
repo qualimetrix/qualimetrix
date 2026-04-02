@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- `coupling.instability`: namespaces with no dependents (Ca=0) are now skipped by default (configurable via `skip_leaf: false`)
+- `code-smell.boolean-argument`: parameters with common boolean prefixes (`is*`, `has*`, `can*`, `should*`, `will*`, `did*`, `was*`) are now allowed by default (configurable via `allowed_prefixes: []`)
+- `code-smell.error-suppression`: `allowed_functions` option to whitelist functions where `@` usage is acceptable (e.g., `fopen`, `unlink`)
+- Per-rule `exclude_paths` option for targeted violation suppression by file path patterns
+- Removed `baseline.json` — replaced with proper `qmx.yaml` configuration using new features
+
 ## [0.11.2] - 2026-04-02
 
 ### Changed

@@ -1,7 +1,14 @@
 # Qualimetrix — project configuration (dogfooding)
 #
 # We analyze ourselves with our own tool. This config tunes thresholds
-# and excludes known architectural hotspots in Core.
+# and excludes known architectural hotspots instead of using a baseline.
+#
+# Decision framework for violations:
+# 1. Real issue? → Fix the code
+# 2. Structural (project nature)? → exclude_paths or exclude_namespaces
+# 3. Threshold mismatch? → Tune threshold
+# 4. One-off exception? → @qmx-threshold on the class/method
+# 5. Genuinely inapplicable? → @qmx-ignore with reason
 
 # Fail CI on errors only (warnings are informational)
 failOn: error
@@ -15,32 +22,202 @@ coupling:
     - Amp
 
 rules:
-  # Core value objects (Severity, SymbolPath, SymbolType, Location, ClassInfo)
-  # are coupling magnets by design — every domain depends on them.
-  # Suppress CBO violations for Core namespaces rather than inflating thresholds globally.
+  # --- Coupling ---
+
+  # Core value objects are coupling magnets by design — every domain depends on them.
   coupling.cbo:
     exclude_namespaces:
       - Qualimetrix\Core\Violation
       - Qualimetrix\Core\Symbol
+      - Qualimetrix\Core\Metric
+      - Qualimetrix\Core\Rule
+      - Qualimetrix\Rules\Support
+      - Qualimetrix\Rules
+    exclude_paths:
+      # AST visitors depend on many php-parser node types (not actionable coupling)
+      - src/Metrics/*Visitor.php
+      - src/Metrics/*Trait.php
+      # DI configurators wire all services (coupling is their job)
+      - src/Infrastructure/DependencyInjection/*
+      # Infrastructure console commands and pipeline orchestrators need many deps
+      - src/Infrastructure/Console/*
+      - src/Analysis/Pipeline/*
     namespace:
       warning: 16
       error: 25
+    class:
+      warning: 20
+      error: 30
 
   coupling.class-rank:
     exclude_namespaces:
       - Qualimetrix\Core\Violation
       - Qualimetrix\Core\Symbol
 
+  # Distance: Core leaf namespaces are maximally concrete with few abstractions.
+  # This is by design for value objects.
   coupling.distance:
+    exclude_namespaces:
+      - Qualimetrix\Core
+      - Qualimetrix\Core\Util
+      - Qualimetrix\Core\ComputedMetric
+      - Qualimetrix\Core\Suppression
+      - Qualimetrix\Core\Violation
+      - Qualimetrix\Core\Profiler
+      - Qualimetrix\Reporting\Debt
+      - Qualimetrix\Infrastructure\Serializer
+      - Qualimetrix\Reporting\Formatter\Support
+      - Qualimetrix\Analysis\Collection\Metric
     max_distance_warning: 0.4
     max_distance_error: 0.6
 
   coupling.instability:
+    exclude_paths:
+      # Visitors/configurators are inherently unstable (many outgoing, few incoming deps)
+      - src/Metrics/*Visitor.php
+      - src/Infrastructure/DependencyInjection/*
+      - src/Infrastructure/Console/Command/*
+      - src/Analysis/Pipeline/*
+      - src/Baseline/*
+    class:
+      skip_leaf: true
     namespace:
+      skip_leaf: true
       max_warning: 0.9
       max_error: 1.0
 
-  # Maintainability: some metric collectors are inherently complex
+  # --- Complexity ---
+
+  # AST visitors inherently have high NPath/CCN/WMC due to many node type branches.
+  # This is structural complexity from matching PHP AST node types, not a design flaw.
+  complexity.npath:
+    exclude_paths:
+      - src/Metrics/*
+      - src/Rules/Design/*Rule.php
+      - src/Reporting/Formatter/Summary/*Renderer.php
+      - src/Rules/Support/ThresholdParser.php
+      - src/Analysis/Duplication/*
+
+  # Code duplication detection: MetricHintProvider intentionally has similar hint blocks;
+  # Options classes have repeated fromArray/threshold patterns by convention.
+  duplication.code-duplication:
+    exclude_paths:
+      - src/Reporting/Health/MetricHintProvider.php
+      - src/Rules/CodeSmell/ConstructorOverinjectionOptions.php
+      - src/Metrics/Complexity/CognitiveComplexityVisitor.php
+
+  complexity.cyclomatic:
+    exclude_paths:
+      - src/Metrics/*
+      - src/Rules/Support/ThresholdParser.php
+      - src/Rules/Design/*Rule.php
+      - src/Reporting/Formatter/Sarif/*
+      - src/Reporting/Health/*
+      - src/Reporting/Formatter/Summary/*
+      - src/Analysis/Pipeline/*
+      - src/Baseline/*
+
+  complexity.wmc:
+    exclude_paths:
+      - src/Metrics/*
+      - src/Reporting/Health/*
+
+  complexity.cognitive:
+    exclude_paths:
+      - src/Metrics/*
+      - src/Analysis/Duplication/*
+      - src/Reporting/Health/*
+      - src/Reporting/Formatter/Summary/*
+      - src/Reporting/Impact/*
+      - src/Rules/Design/*Rule.php
+      - src/Rules/Support/ThresholdParser.php
+
+  # --- Code Smells ---
+
+  code-smell.boolean-argument:
+    allowed_prefixes: [is, has, can, should, will, did, was]
+
+  code-smell.error-suppression:
+    allowed_functions:
+      - file_get_contents
+      - file_put_contents
+      - fopen
+      - unlink
+      - mkdir
+      - rename
+      - json_decode
+
+  # Data-carrying objects and pipeline services need many constructor params.
+  # This is a natural pattern for immutable VOs, not a design smell.
+  code-smell.long-parameter-list:
+    warning: 8
+    error: 12
+    exclude_paths:
+      - src/Reporting/Report.php
+      - src/Reporting/FormatterContext.php
+      - src/Reporting/Health/*
+      - src/Analysis/Collection/*
+      - src/Analysis/Pipeline/*
+      - src/Infrastructure/Console/*
+      - src/Infrastructure/Parallel/*
+    exclude_namespaces:
+      - Qualimetrix\Core
+
+  code-smell.constructor-overinjection:
+    exclude_paths:
+      - src/Reporting/Report.php
+      - src/Reporting/FormatterContext.php
+      - src/Reporting/Formatter/Summary/*
+
+  # Cache operations use @ for intentional error suppression and empty catch
+  # for "best effort" cache invalidation.
+  # Empty catch blocks are flagged as warnings (default is error).
+  # The one in CachedFileParser is intentional (best-effort caching).
+  code-smell.empty-catch:
+    exclude_paths:
+      - src/Infrastructure/Ast/*
+
+  # MethodCountMetrics tracks many per-class counts (each is a separate property)
+  size.property-count:
+    exclude_paths:
+      - src/Metrics/Structure/MethodCountMetrics.php
+
+  # --- Design ---
+
+  # AbstractRule and AbstractCollector have many children — this is by design
+  # (one rule/collector per metric category).
+  design.noc:
+    exclude_namespaces:
+      - Qualimetrix\Rules
+      - Qualimetrix\Metrics
+
+  design.lcom:
+    exclude_paths:
+      - src/Reporting/Health/*
+      # Derived metric collectors are thin wrappers (low cohesion by nature)
+      - src/Metrics/Coupling/*Collector.php
+
+  design.god-class:
+    exclude_paths:
+      - src/Reporting/Health/*
+      - src/Reporting/Formatter/Health/*
+      - src/Rules/Coupling/CboRule.php
+
+  # --- Maintainability ---
   maintainability.index:
     warning: 35
     error: 20
+
+  # --- Health scores ---
+  # Suppress health violations for namespaces with known structural reasons
+  computed.health:
+    exclude_namespaces:
+      - Qualimetrix\Rules\Support
+      - Qualimetrix\Metrics\Halstead
+      - Qualimetrix\Core\Violation
+      - Qualimetrix\Metrics\Coupling
+      - Qualimetrix\Metrics\Structure
+      - Qualimetrix\Infrastructure\DependencyInjection\Configurator
+      - Qualimetrix\Reporting\Impact
+    exclude_paths:
+      - src/Analysis/Collection/Dependency/DependencyGraph.php

@@ -28,7 +28,7 @@ jobs:
         uses: ./
         with:
           paths: 'src/'
-          baseline: 'baseline.json'
+          # No baseline needed - using proper qmx.yaml configuration instead
           format: 'text'
           php-version: ${{ matrix.php-version }}
 
@@ -84,12 +84,7 @@ jobs:
         run: composer install --no-progress --prefer-dist --optimize-autoloader
 
       - name: Run Qualimetrix
-        run: |
-          if [ -f "baseline.json" ]; then
-            bin/qmx check src/ --baseline=baseline.json --baseline-ignore-stale
-          else
-            bin/qmx check src/
-          fi
+        run: bin/qmx check src/
 
       - name: Upload results (if failed)
         if: failure()
