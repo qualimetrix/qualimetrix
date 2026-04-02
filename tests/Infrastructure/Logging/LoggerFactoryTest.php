@@ -113,23 +113,22 @@ final class LoggerFactoryTest extends TestCase
         $this->assertStringContainsString('Warning message', $content);
     }
 
-    public function testFileLoggerAlwaysUsesDebugLevel(): void
+    public function testFileLoggerRespectsLogLevel(): void
     {
         $factory = new LoggerFactory();
         $output = new BufferedOutput(OutputInterface::VERBOSITY_NORMAL);
         $logFile = $this->tempDir . '/test.log';
 
-        // Console logger won't log at NORMAL verbosity, but file logger should log everything
+        // File logger should respect the configured log level
         $logger = $factory->create($output, $logFile, LogLevel::INFO);
 
         $logger->debug('Debug message');
         $logger->info('Info message');
 
-        // Both should be in file (file logger uses DEBUG level)
         $this->assertFileExists($logFile);
         $content = file_get_contents($logFile);
         $this->assertIsString($content);
-        $this->assertStringContainsString('Debug message', $content);
+        $this->assertStringNotContainsString('Debug message', $content);
         $this->assertStringContainsString('Info message', $content);
     }
 

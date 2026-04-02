@@ -49,7 +49,6 @@ final class SummaryFormatterTest extends TestCase
             new HealthBarRenderer(new HealthScoreResolver($namespaceDrillDown)),
             $offenderListRenderer,
             new TopIssuesRenderer(),
-            $violationFilter,
             new ViolationSummaryRenderer($violationFilter, $registry),
             new HintRenderer($offenderListRenderer),
         );
@@ -915,6 +914,8 @@ final class SummaryFormatterTest extends TestCase
 
     public function testDetailWithNamespaceFilterShowsScopedViolationsOnly(): void
     {
+        // Violations are pre-filtered by ResultPresenter before reaching the formatter.
+        // Only in-scope violations are included in the report.
         $report = $this->createReport(
             violations: [
                 new Violation(
@@ -924,14 +925,6 @@ final class SummaryFormatterTest extends TestCase
                     violationCode: 'test',
                     message: 'In scope',
                     severity: Severity::Error,
-                ),
-                new Violation(
-                    location: new Location('b.php', 1),
-                    symbolPath: SymbolPath::forClass('App\Other', 'Foo'),
-                    ruleName: 'test',
-                    violationCode: 'test',
-                    message: 'Out of scope',
-                    severity: Severity::Warning,
                 ),
             ],
             filesAnalyzed: 10,

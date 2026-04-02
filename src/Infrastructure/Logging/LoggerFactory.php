@@ -43,7 +43,7 @@ final class LoggerFactory
 
         // File logger
         if ($logFile !== null && $logFile !== '') {
-            $loggers[] = new FileLogger($logFile, LogLevel::DEBUG);
+            $loggers[] = new FileLogger($logFile, $level);
         }
 
         if ($loggers === []) {

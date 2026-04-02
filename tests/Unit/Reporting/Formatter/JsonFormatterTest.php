@@ -45,7 +45,6 @@ final class JsonFormatterTest extends TestCase
         $remediationTimeRegistry = new RemediationTimeRegistry();
         $this->formatter = new JsonFormatter(
             new DebtCalculator($remediationTimeRegistry),
-            $violationFilter,
             new JsonHealthSection(new HealthScoreResolver($namespaceDrillDown), $sanitizer),
             new JsonOffenderSection($namespaceDrillDown, $violationFilter, $sanitizer),
             new JsonViolationSection($remediationTimeRegistry, $sanitizer),
@@ -500,6 +499,8 @@ final class JsonFormatterTest extends TestCase
 
     public function testNamespaceFilter(): void
     {
+        // Violations are pre-filtered by ResultPresenter before reaching the formatter.
+        // Only in-scope violations are passed to the report builder.
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
                 location: new Location('src/Payment/Pay.php', 10),
@@ -516,14 +517,6 @@ final class JsonFormatterTest extends TestCase
                 violationCode: 'test',
                 message: 'In Payment Gateway',
                 severity: Severity::Warning,
-            ))
-            ->addViolation(new Violation(
-                location: new Location('src/User/User.php', 30),
-                symbolPath: SymbolPath::forClass('App\User', 'UserService'),
-                ruleName: 'test',
-                violationCode: 'test',
-                message: 'In User',
-                severity: Severity::Error,
             ))
             ->filesAnalyzed(3)
             ->filesSkipped(0)
@@ -551,15 +544,9 @@ final class JsonFormatterTest extends TestCase
 
     public function testNamespaceFilterBoundaryAware(): void
     {
+        // App\PaymentGateway is NOT in App\Payment scope — ResultPresenter
+        // would filter it out before reaching the formatter. Empty report.
         $report = ReportBuilder::create()
-            ->addViolation(new Violation(
-                location: new Location('src/PaymentGateway.php', 10),
-                symbolPath: SymbolPath::forClass('App\PaymentGateway', 'Foo'),
-                ruleName: 'test',
-                violationCode: 'test',
-                message: 'Not matched',
-                severity: Severity::Warning,
-            ))
             ->filesAnalyzed(1)
             ->filesSkipped(0)
             ->duration(0.1)
@@ -569,12 +556,12 @@ final class JsonFormatterTest extends TestCase
         $output = $this->formatter->format($report, $context);
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
-        // App\PaymentGateway should NOT match App\Payment
         self::assertSame([], $data['violations']);
     }
 
     public function testClassFilter(): void
     {
+        // Only the matching class violation is passed (pre-filtered by ResultPresenter)
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
                 location: new Location('src/Payment/Pay.php', 10),
@@ -582,14 +569,6 @@ final class JsonFormatterTest extends TestCase
                 ruleName: 'test',
                 violationCode: 'test',
                 message: 'In PayService',
-                severity: Severity::Error,
-            ))
-            ->addViolation(new Violation(
-                location: new Location('src/User/User.php', 30),
-                symbolPath: SymbolPath::forClass('App\User', 'UserService'),
-                ruleName: 'test',
-                violationCode: 'test',
-                message: 'In UserService',
                 severity: Severity::Error,
             ))
             ->filesAnalyzed(2)

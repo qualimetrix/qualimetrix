@@ -8,7 +8,6 @@ use Composer\InstalledVersions;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Reporting\Debt\DebtCalculator;
-use Qualimetrix\Reporting\Filter\ViolationFilter;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
 use Qualimetrix\Reporting\Formatter\Support\ViolationSorter;
 use Qualimetrix\Reporting\FormatterContext;
@@ -29,7 +28,6 @@ final class JsonFormatter implements FormatterInterface
 
     public function __construct(
         private readonly DebtCalculator $debtCalculator,
-        private readonly ViolationFilter $filter,
         private readonly JsonHealthSection $healthSection,
         private readonly JsonOffenderSection $offenderSection,
         private readonly JsonViolationSection $violationSection,
@@ -37,8 +35,7 @@ final class JsonFormatter implements FormatterInterface
 
     public function format(Report $report, FormatterContext $context): string
     {
-        $violations = $this->filter->filterViolations($report->violations, $context);
-        $filteredViolations = $this->violationSection->sort($violations);
+        $filteredViolations = $this->violationSection->sort($report->violations);
 
         $limit = $this->getViolationLimit($context);
         $outputViolations = $limit === null
