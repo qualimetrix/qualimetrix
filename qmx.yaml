@@ -83,9 +83,9 @@ rules:
       - src/Analysis/Pipeline/*
       - src/Baseline/*
     class:
-      skip_leaf: true
+      min_afferent: 2
     namespace:
-      skip_leaf: true
+      min_afferent: 2
       max_warning: 0.9
       max_error: 1.0
 
@@ -195,6 +195,7 @@ rules:
       - Qualimetrix\Metrics
 
   design.lcom:
+    warning: 4
     exclude_paths:
       - src/Reporting/Health/*
       # Derived metric collectors are thin wrappers (low cohesion by nature)
