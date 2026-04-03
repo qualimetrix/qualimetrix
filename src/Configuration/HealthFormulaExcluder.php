@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Configuration;
 
-use Psr\Log\LoggerInterface;
+use InvalidArgumentException;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinition;
 
 /**
@@ -13,10 +13,6 @@ use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinition;
  */
 final readonly class HealthFormulaExcluder
 {
-    public function __construct(
-        private LoggerInterface $logger,
-    ) {}
-
     /**
      * Filters out excluded health dimensions and rebuilds health.overall formula
      * with normalized weights when dimensions are excluded.
@@ -47,13 +43,19 @@ final readonly class HealthFormulaExcluder
             }
         }
 
+        $unknownDimensions = [];
         foreach ($excludedNames as $name) {
             if ($name !== 'health.overall' && !isset($knownDimensions[$name])) {
-                $this->logger->warning('Unknown health dimension in --exclude-health: {dimension}. Known dimensions: {known}', [
-                    'dimension' => $name,
-                    'known' => implode(', ', array_keys($knownDimensions)),
-                ]);
+                $unknownDimensions[] = $name;
             }
+        }
+
+        if ($unknownDimensions !== []) {
+            throw new InvalidArgumentException(\sprintf(
+                'Unknown health dimension(s) in --exclude-health: %s. Valid dimensions: %s',
+                implode(', ', $unknownDimensions),
+                implode(', ', array_keys($knownDimensions)),
+            ));
         }
 
         // Filter out excluded dimensions

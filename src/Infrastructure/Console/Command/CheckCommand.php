@@ -180,7 +180,11 @@ final class CheckCommand extends Command
         $result = $this->runAnalysis($scopeResolution->paths, $scopeResolution->fileDiscovery);
 
         if ($result->filesAnalyzed === 0) {
-            $output->writeln('<comment>No PHP files found in the given paths.</comment>');
+            if ($result->filesSkipped > 0) {
+                $output->writeln(\sprintf('<comment>All %d PHP file(s) were skipped due to parse errors.</comment>', $result->filesSkipped));
+            } else {
+                $output->writeln('<comment>No PHP files found in the given paths.</comment>');
+            }
 
             return self::SUCCESS;
         }

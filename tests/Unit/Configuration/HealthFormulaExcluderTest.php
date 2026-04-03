@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Unit\Configuration;
 
+use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
-use Psr\Log\LoggerInterface;
-use Psr\Log\NullLogger;
 use Qualimetrix\Configuration\HealthFormulaExcluder;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefaults;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinition;
@@ -20,7 +19,7 @@ final class HealthFormulaExcluderTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->excluder = new HealthFormulaExcluder(new NullLogger());
+        $this->excluder = new HealthFormulaExcluder();
     }
 
     public function testNoExclusionsReturnsSameDefinitions(): void
@@ -129,28 +128,20 @@ final class HealthFormulaExcluderTest extends TestCase
         self::assertSame([], $result);
     }
 
-    public function testUnknownDimensionLogsWarning(): void
+    public function testUnknownDimensionThrowsException(): void
     {
-        $logger = $this->createMock(LoggerInterface::class);
-        $logger->expects(self::once())
-            ->method('warning')
-            ->with(
-                self::stringContains('Unknown health dimension'),
-                self::callback(static fn(array $ctx): bool => $ctx['dimension'] === 'health.nonexistent'),
-            );
-
-        $excluder = new HealthFormulaExcluder($logger);
+        $excluder = new HealthFormulaExcluder();
         $definitions = array_values(ComputedMetricDefaults::getDefaults());
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessageMatches('/Unknown health dimension.*health\.nonexistent/');
 
         $excluder->applyExcludeHealth($definitions, ['nonexistent']);
     }
 
-    public function testExcludingOverallDimensionDoesNotWarn(): void
+    public function testExcludingOverallDimensionDoesNotThrow(): void
     {
-        $logger = $this->createMock(LoggerInterface::class);
-        $logger->expects(self::never())->method('warning');
-
-        $excluder = new HealthFormulaExcluder($logger);
+        $excluder = new HealthFormulaExcluder();
         $definitions = array_values(ComputedMetricDefaults::getDefaults());
 
         $result = $excluder->applyExcludeHealth($definitions, ['health.overall']);
