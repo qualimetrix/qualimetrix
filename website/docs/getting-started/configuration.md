@@ -60,6 +60,18 @@ exclude_paths:
   - src/DTO/*
 ```
 
+### Exclude Namespaces
+
+Suppress violations for classes in specific namespaces (prefix matching). Like `exclude_paths`, files are still analyzed and metrics are collected, but violations are not reported. This applies to all rules globally:
+
+```yaml
+exclude_namespaces:
+  - App\Tests
+  - App\Generated
+```
+
+This is useful when entire namespace subtrees should never produce violations. For per-rule exclusions, use `exclude_namespaces` inside a rule configuration instead (see below).
+
 ### Rules
 
 Control which rules are active and set custom thresholds.
@@ -354,6 +366,9 @@ exclude:
 exclude_paths:
   - src/Entity/*
   - src/DTO/*
+
+exclude_namespaces:
+  - App\Tests
 
 include_generated: false
 

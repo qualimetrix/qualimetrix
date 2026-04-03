@@ -133,8 +133,7 @@ final readonly class FormatterContext
         public GroupBy $groupBy = GroupBy::None,
         public array $options = [],        // from --format-opt key=value
         public string $basePath = '',      // for relativizing file paths
-        public bool $scopedReporting = false, // scoped reporting (e.g., --analyze=git:staged)
-        public ?array $scopeFilePaths = null, // relative paths in scope for filtering
+        public bool $scopedReporting = false, // scoped reporting (e.g., --report=git:staged)
         public ?string $namespace = null,  // --namespace filter (boundary-aware prefix)
         public ?string $class = null,      // --class filter (exact FQCN match)
     ) {}
@@ -600,7 +599,7 @@ Self-contained interactive HTML report with D3.js treemap visualization. All CSS
 - **Search** — find namespaces and classes by name
 - **URL hash navigation** — deep linking via `#ns:App/Payment`, `#cl:App/Service`
 - **Dark mode** — adapts to system preference
-- **Partial analysis warning** — banner when using `--analyze=git:staged`
+- **Partial analysis warning** — banner when using scoped reporting (e.g., `--report=git:staged`)
 
 ### Usage
 

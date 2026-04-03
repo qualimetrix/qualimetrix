@@ -16,8 +16,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Per-rule `exclude_paths` option for targeted violation suppression by file path patterns
 - `@qmx-ignore` tags now work in regular comments (`//`, `/* */`), not just PHPDoc docblocks
 - JSON format (`--format=json`) now outputs all violations by default (was limited to 50); use `--format-opt=violations=50` to restore the old behavior
+- Global `exclude_namespaces` config option for suppressing violations by namespace prefix (like `exclude_paths` but for namespaces)
+- Computed metric formulas referencing non-existent metrics now produce a clear error instead of silently failing
+- Warnings (partial scope, unknown rules, missing composer.json) now go to stderr to avoid corrupting machine-readable output
+- Exit codes: config/input errors now return exit code 3 (was 1, overlapping with "warnings found"). Scheme: 0=clean, 1=warnings, 2=errors, 3=config error
+
+### Fixed
+- `graph:export` command crash due to `-d` shortcut conflict with global `--working-dir`
 
 ### Removed
+- `--analyze` option — was misleading (analyzed all files regardless, only filtered violations like `--report`). Use `--report` instead
+- `analyze` command alias — use `check` instead
 - `baseline.json` — replaced with proper `qmx.yaml` configuration using new features
 
 ## [0.11.2] - 2026-04-02

@@ -17,8 +17,8 @@ Running a full analysis on a large codebase can take time. More importantly, a l
 The two most common scenarios:
 
 ```bash
-# Before committing: check staged files
-bin/qmx check src/ --analyze=git:staged
+# Before committing: install a pre-commit hook
+bin/qmx hook:install
 
 # Before merging: check what changed vs main
 bin/qmx check src/ --report=git:main..HEAD
@@ -26,25 +26,15 @@ bin/qmx check src/ --report=git:main..HEAD
 
 ---
 
-## Pre-commit workflow with --analyze=git:staged
+## Pre-commit workflow
 
-The `--analyze=git:staged` option limits analysis to files added to Git's staging area (`git add`):
-
-```bash
-bin/qmx check src/ --analyze=git:staged
-```
-
-Only PHP files that are currently staged for commit are analyzed. This is fast and gives you immediate feedback before committing.
-
-### Automatic pre-commit hook
-
-Instead of running `--analyze=git:staged` manually, install a Git hook:
+Install a Git hook to automatically check staged files before each commit:
 
 ```bash
 bin/qmx hook:install
 ```
 
-This creates a `.git/hooks/pre-commit` script that automatically runs Qualimetrix on staged files before each commit. If violations with severity `error` are found, the commit is blocked.
+This creates a `.git/hooks/pre-commit` script that automatically runs Qualimetrix on staged files before each commit. Only PHP files that are currently staged are analyzed, making it fast. If violations with severity `error` are found, the commit is blocked.
 
 Check the hook status:
 
@@ -89,53 +79,22 @@ bin/qmx check src/ --report=git:abc1234..HEAD
 
 ---
 
-## --analyze vs --report
+## How --report works
 
-Qualimetrix has two separate scoping mechanisms:
-
-| Option      | Controls   | What it does                                  |
-| ----------- | ---------- | --------------------------------------------- |
-| `--analyze` | **Input**  | Which files to parse and collect metrics from |
-| `--report`  | **Output** | Which violations to show in the report        |
-
-### --analyze
-
-Limits the set of files that Qualimetrix processes:
-
-```bash
-# Only parse and analyze staged files
-bin/qmx check src/ --analyze=git:staged
-```
-
-This is faster because fewer files are parsed, but namespace-level and coupling metrics may be incomplete since Qualimetrix does not see the full picture.
-
-### --report
-
-Analyzes all files but filters the report to show only violations from changed files:
+The `--report` option controls which violations are shown in the output. Qualimetrix still analyzes the full codebase (it needs complete metrics for namespace-level rules), but only reports violations from the changed files:
 
 ```bash
 # Analyze everything, report only changed files
 bin/qmx check src/ --report=git:main..HEAD
 ```
 
-This gives accurate metrics (the full codebase is analyzed) while only showing relevant violations.
+This gives accurate metrics while only showing relevant violations.
 
-### Combining both
-
-You can combine them for fine-grained control:
-
-```bash
-# Parse only changed files, report only changed files
-bin/qmx check src/ --analyze=git:main..HEAD --report=git:main..HEAD
-```
-
-### Which one to use?
-
-| Scenario                        | Recommendation                              |
-| ------------------------------- | ------------------------------------------- |
-| Pre-commit hook (speed matters) | `--analyze=git:staged` (uses `--analyze`)   |
-| PR review (accuracy matters)    | `--report=git:main`..HEAD (uses `--report`) |
-| CI pipeline with full analysis  | `--report=git:main..HEAD`                   |
+| Scenario                        | Recommendation            |
+| ------------------------------- | ------------------------- |
+| Pre-commit hook (speed matters) | `bin/qmx hook:install`    |
+| PR review (accuracy matters)    | `--report=git:main..HEAD` |
+| CI pipeline with full analysis  | `--report=git:main..HEAD` |
 
 ---
 
@@ -153,7 +112,7 @@ bin/qmx check src/ --report=git:main..HEAD --report-strict
 
 ## Scope syntax
 
-Both `--analyze` and `--report` accept scope expressions:
+The `--report` option accepts scope expressions:
 
 | Expression                 | Meaning                                      |
 | -------------------------- | -------------------------------------------- |
@@ -169,26 +128,13 @@ Both `--analyze` and `--report` accept scope expressions:
 ### Local development
 
 ```bash
-# 1. Make changes
-# 2. Stage them
-git add src/Service/UserService.php
-
-# 3. Check before committing
-bin/qmx check src/ --analyze=git:staged
-
-# 4. If clean, commit
-git commit -m "refactor: simplify UserService"
-```
-
-Or automate it with the hook:
-
-```bash
 # One-time setup
 bin/qmx hook:install
 
 # Now every commit is checked automatically
+git add src/Service/UserService.php
 git commit -m "refactor: simplify UserService"
-# Qualimetrix runs automatically, blocks commit if errors found
+# Qualimetrix runs automatically on staged files, blocks commit if errors found
 ```
 
 ### Pull request review

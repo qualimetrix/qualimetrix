@@ -158,6 +158,7 @@ Qualimetrix uses standard exit codes:
 | `0`       | No violations                  |
 | `1`       | Warnings found (but no errors) |
 | `2`       | Errors found                   |
+| `3`       | Configuration or input error   |
 
 Most CI systems treat a non-zero exit code as a failure. By default, Qualimetrix uses `--fail-on=error`, so warnings are shown but don't cause failure. To also fail on warnings:
 

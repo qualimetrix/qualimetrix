@@ -25,8 +25,8 @@ vendor/bin/qmx check src/
 # Use with git pre-commit hook
 vendor/bin/qmx hook:install
 
-# Analyze only staged files
-vendor/bin/qmx check src/ --analyze=git:staged
+# Report only violations from changed files
+vendor/bin/qmx check src/ --report=git:main..HEAD
 ```
 
 ## Available Metrics

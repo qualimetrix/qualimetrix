@@ -36,10 +36,10 @@ jobs:
 
 ## Outputs
 
-| Output       | Description                                     |
-| ------------ | ----------------------------------------------- |
-| `violations` | Number of violations found                      |
-| `exit-code`  | Exit code (0 = clean, 1 = warnings, 2 = errors) |
+| Output       | Description                                                       |
+| ------------ | ----------------------------------------------------------------- |
+| `violations` | Number of violations found                                        |
+| `exit-code`  | Exit code (0 = clean, 1 = warnings, 2 = errors, 3 = config error) |
 
 ## Examples
 

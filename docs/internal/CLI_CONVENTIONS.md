@@ -40,7 +40,7 @@ If it manages a tool subsystem or resource → namespaced.
 ### General rules
 
 1. **One name per option.** No shortcut aliases that duplicate another option's functionality.
-   Use `--analyze=git:staged` instead of providing a separate `--staged` shortcut.
+   Use `--report=git:staged` instead of providing a separate `--staged` shortcut.
 
 2. **Short flags (`-f`, `-w`, `-c`)** — only for the most frequently used options (≤ 6 total).
 
