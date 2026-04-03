@@ -72,6 +72,8 @@ exclude_namespaces:
 
 This is useful when entire namespace subtrees should never produce violations. For per-rule exclusions, use `exclude_namespaces` inside a rule configuration instead (see below).
 
+Also available as a CLI option: `--exclude-namespace` (merged with YAML config).
+
 ### Rules
 
 Control which rules are active and set custom thresholds.

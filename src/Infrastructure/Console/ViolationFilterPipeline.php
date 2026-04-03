@@ -123,7 +123,8 @@ final readonly class ViolationFilterPipeline
         // 4. Namespace exclusion filter
         $namespaceExclusionFiltered = 0;
         $configNamespaces = $this->configurationProvider->getConfiguration()->excludeNamespaces;
-        $namespaceMatcher = new NamespaceMatcher($configNamespaces);
+        $allNamespaces = array_values(array_unique([...$configNamespaces, ...$options->excludeNamespaces]));
+        $namespaceMatcher = new NamespaceMatcher($allNamespaces);
 
         if (!$namespaceMatcher->isEmpty()) {
             $beforeCount = \count($violations);
