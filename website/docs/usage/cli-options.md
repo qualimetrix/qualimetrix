@@ -64,6 +64,16 @@ Suppress violations for files matching a glob pattern. The files are still analy
 bin/qmx check src/ --exclude-path="src/Entity/*" --exclude-path="src/DTO/*"
 ```
 
+### `--exclude-namespace`
+
+Suppress violations for classes in namespaces matching a prefix or glob pattern. The classes are still analyzed (their metrics contribute to aggregated calculations), but violations are not reported. Can be repeated:
+
+```bash
+bin/qmx check src/ --exclude-namespace="App\Entity" --exclude-namespace="App\DTO\*"
+```
+
+Merged with `exclude_namespaces` from `qmx.yaml` — both sources are combined.
+
 ---
 
 ## Preset options

@@ -64,6 +64,16 @@ include_generated: true
 bin/qmx check src/ --exclude-path="src/Entity/*" --exclude-path="src/DTO/*"
 ```
 
+### `--exclude-namespace`
+
+Подавить нарушения для классов в пространствах имён, соответствующих префиксу или glob-паттерну. Классы по-прежнему анализируются (их метрики учитываются в агрегированных расчётах), но нарушения не выводятся. Можно указывать несколько раз:
+
+```bash
+bin/qmx check src/ --exclude-namespace="App\Entity" --exclude-namespace="App\DTO\*"
+```
+
+Объединяется с `exclude_namespaces` из `qmx.yaml` — оба источника суммируются.
+
 ---
 
 ## Опции пресетов

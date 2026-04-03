@@ -83,6 +83,13 @@ final class CheckCommandDefinition
                 [],
             )
             ->addOption(
+                'exclude-namespace',
+                null,
+                InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
+                'Suppress violations for classes in namespace matching prefix or glob pattern (can be repeated, e.g., App\Entity, App\*Repository)',
+                [],
+            )
+            ->addOption(
                 'include-generated',
                 null,
                 InputOption::VALUE_NONE,

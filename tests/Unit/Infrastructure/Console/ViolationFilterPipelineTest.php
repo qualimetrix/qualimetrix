@@ -68,6 +68,7 @@ final class ViolationFilterPipelineTest extends TestCase
             ignoreStaleBaseline: false,
             disableSuppression: true,
             excludePaths: [],
+            excludeNamespaces: [],
             gitScope: null,
         );
 
@@ -89,6 +90,7 @@ final class ViolationFilterPipelineTest extends TestCase
             ignoreStaleBaseline: false,
             disableSuppression: true,
             excludePaths: [],
+            excludeNamespaces: [],
             gitScope: null,
         );
 
@@ -110,6 +112,7 @@ final class ViolationFilterPipelineTest extends TestCase
             ignoreStaleBaseline: false,
             disableSuppression: true,
             excludePaths: [],
+            excludeNamespaces: [],
             gitScope: null,
         );
 
@@ -140,6 +143,7 @@ final class ViolationFilterPipelineTest extends TestCase
             ignoreStaleBaseline: false,
             disableSuppression: true,
             excludePaths: [],
+            excludeNamespaces: [],
             gitScope: null,
         );
 
@@ -172,6 +176,7 @@ final class ViolationFilterPipelineTest extends TestCase
             ignoreStaleBaseline: true,
             disableSuppression: true,
             excludePaths: [],
+            excludeNamespaces: [],
             gitScope: null,
         );
 
@@ -207,6 +212,7 @@ final class ViolationFilterPipelineTest extends TestCase
             ignoreStaleBaseline: false,
             disableSuppression: false,
             excludePaths: [],
+            excludeNamespaces: [],
             gitScope: null,
         );
 
@@ -239,6 +245,7 @@ final class ViolationFilterPipelineTest extends TestCase
             ignoreStaleBaseline: false,
             disableSuppression: true,
             excludePaths: [],
+            excludeNamespaces: [],
             gitScope: null,
         );
 
@@ -263,6 +270,7 @@ final class ViolationFilterPipelineTest extends TestCase
             ignoreStaleBaseline: false,
             disableSuppression: true,
             excludePaths: ['vendor'],
+            excludeNamespaces: [],
             gitScope: null,
         );
 
@@ -297,6 +305,7 @@ final class ViolationFilterPipelineTest extends TestCase
             ignoreStaleBaseline: false,
             disableSuppression: true,
             excludePaths: [],
+            excludeNamespaces: [],
             gitScope: null,
         );
 
@@ -331,6 +340,7 @@ final class ViolationFilterPipelineTest extends TestCase
             ignoreStaleBaseline: false,
             disableSuppression: true,
             excludePaths: ['vendor'],
+            excludeNamespaces: [],
             gitScope: null,
         );
 
@@ -353,6 +363,7 @@ final class ViolationFilterPipelineTest extends TestCase
             ignoreStaleBaseline: false,
             disableSuppression: true,
             excludePaths: [],
+            excludeNamespaces: [],
             gitScope: null,
         );
 
@@ -388,6 +399,7 @@ final class ViolationFilterPipelineTest extends TestCase
             ignoreStaleBaseline: false,
             disableSuppression: true,
             excludePaths: [],
+            excludeNamespaces: [],
             gitScope: null,
         );
 
@@ -422,6 +434,7 @@ final class ViolationFilterPipelineTest extends TestCase
             ignoreStaleBaseline: false,
             disableSuppression: true,
             excludePaths: [],
+            excludeNamespaces: [],
             gitScope: null,
         );
 
@@ -461,6 +474,7 @@ final class ViolationFilterPipelineTest extends TestCase
             ignoreStaleBaseline: false,
             disableSuppression: true,
             excludePaths: [],
+            excludeNamespaces: [],
             gitScope: null,
         );
 
@@ -468,6 +482,42 @@ final class ViolationFilterPipelineTest extends TestCase
 
         self::assertCount(1, $result->violations);
         self::assertSame(0, $result->namespaceExclusionFiltered);
+    }
+
+    #[Test]
+    public function cliExcludeNamespaceMergesWithConfig(): void
+    {
+        $v1 = $this->makeViolation('src/Service/UserService.php', 'App\\Service', 'UserService');
+        $v2 = $this->makeViolation('src/Generated/Proxy.php', 'App\\Generated', 'Proxy');
+        $v3 = $this->makeViolation('src/Entity/User.php', 'App\\Entity', 'User');
+
+        $config = new AnalysisConfiguration(
+            excludeNamespaces: ['App\\Generated'],
+        );
+        $configProvider = $this->createStub(ConfigurationProviderInterface::class);
+        $configProvider->method('getConfiguration')->willReturn($config);
+
+        $pipeline = new ViolationFilterPipeline(
+            new BaselineLoader(),
+            new ViolationHasher(),
+            new SuppressionFilter(),
+            $configProvider,
+        );
+
+        $options = new ViolationFilterOptions(
+            baselinePath: null,
+            ignoreStaleBaseline: false,
+            disableSuppression: true,
+            excludePaths: [],
+            excludeNamespaces: ['App\\Entity'],
+            gitScope: null,
+        );
+
+        $result = $pipeline->filter([$v1, $v2, $v3], $options);
+
+        self::assertCount(1, $result->violations);
+        self::assertSame('App\\Service', $result->violations[0]->symbolPath->namespace);
+        self::assertSame(2, $result->namespaceExclusionFiltered);
     }
 
     #[Test]
@@ -482,6 +532,7 @@ final class ViolationFilterPipelineTest extends TestCase
             ignoreStaleBaseline: false,
             disableSuppression: true,
             excludePaths: [],
+            excludeNamespaces: [],
             gitScope: null,
         );
 
@@ -505,6 +556,7 @@ final class ViolationFilterPipelineTest extends TestCase
             ignoreStaleBaseline: false,
             disableSuppression: true,
             excludePaths: [],
+            excludeNamespaces: [],
             gitScope: null,
         );
 

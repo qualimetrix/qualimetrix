@@ -40,6 +40,8 @@ final readonly class ViolationFilterOrchestrator
         $baselinePath = $input->getOption('baseline');
         /** @var list<string> $cliExcludePaths */
         $cliExcludePaths = $input->getOption('exclude-path');
+        /** @var list<string> $cliExcludeNamespaces */
+        $cliExcludeNamespaces = $input->getOption('exclude-namespace');
 
         $gitScope = null;
         if ($scopeResolution->gitClient !== null && $scopeResolution->reportScope !== null) {
@@ -55,6 +57,7 @@ final readonly class ViolationFilterOrchestrator
             ignoreStaleBaseline: (bool) $input->getOption('baseline-ignore-stale'),
             disableSuppression: (bool) $input->getOption('no-suppression'),
             excludePaths: $cliExcludePaths,
+            excludeNamespaces: $cliExcludeNamespaces,
             gitScope: $gitScope,
         );
 
