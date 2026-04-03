@@ -90,11 +90,6 @@ deptrac:
         - type: directory
           value: src/Infrastructure/Serializer/.*
 
-    - name: Infra.Storage
-      collectors:
-        - type: directory
-          value: src/Infrastructure/Storage/.*
-
     - name: Infra.Logging
       collectors:
         - type: directory
@@ -124,11 +119,6 @@ deptrac:
       collectors:
         - type: directory
           value: src/Infrastructure/Ast/.*
-
-    - name: Infra.Collector
-      collectors:
-        - type: directory
-          value: src/Infrastructure/Collector/.*
 
     - name: Infra.Parallel
       collectors:
@@ -204,8 +194,6 @@ deptrac:
     # Leaf modules
     Infra.Serializer:
       - Core
-    Infra.Storage:
-      - Core
     Infra.Logging:
       - Core
     Infra.Profiler:
@@ -227,10 +215,6 @@ deptrac:
       - Core
       - Configuration
       - Infra.Cache
-    Infra.Collector:
-      - Core
-      - Analysis.Collection
-      - Infra.Storage
     Infra.Parallel:
       - Core
       - Configuration
@@ -274,7 +258,6 @@ deptrac:
       - Analysis.Collection
       - Analysis.Pipeline
       - Infra.Serializer
-      - Infra.Storage
       - Infra.Logging
       - Infra.Profiler
       - Infra.Rule
@@ -282,7 +265,6 @@ deptrac:
       - Infra.Cache
       - Infra.Ast
       - Infra.Parallel
-      - Infra.Collector
       - Infra.Console
 
   formatters:
