@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Reporting\Formatter;
 
 use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Version;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Reporting\Debt\DebtCalculator;
@@ -150,8 +151,10 @@ final class TextFormatter implements FormatterInterface
 
     private function formatSummary(Report $report, AnsiColor $color): string
     {
+        $version = Version::get();
         $summary = \sprintf(
-            '%d error(s), %d warning(s) in %d file(s)',
+            'Qualimetrix %s: %d error(s), %d warning(s) in %d file(s)',
+            $version,
             $report->errorCount,
             $report->warningCount,
             $report->filesAnalyzed,

@@ -51,7 +51,9 @@ final class TextFormatterTest extends TestCase
 
         $output = $this->formatter->format($report, $this->plainContext);
 
-        self::assertSame("0 error(s), 0 warning(s) in 42 file(s)\nTechnical debt: 0min\n", $output);
+        self::assertStringContainsString('0 error(s), 0 warning(s) in 42 file(s)', $output);
+        self::assertStringContainsString('Qualimetrix ', $output);
+        self::assertStringContainsString("Technical debt: 0min\n", $output);
     }
 
     public function testFormatSingleViolation(): void
@@ -81,7 +83,7 @@ final class TextFormatterTest extends TestCase
             $lines[0],
         );
         self::assertSame('', $lines[1]);
-        self::assertSame('1 error(s), 0 warning(s) in 1 file(s)', $lines[2]);
+        self::assertStringContainsString('1 error(s), 0 warning(s) in 1 file(s)', $lines[2]);
         self::assertStringStartsWith('Technical debt:', $lines[3]);
         self::assertStringEndsWith("\n", $output);
     }
@@ -120,7 +122,7 @@ final class TextFormatterTest extends TestCase
         self::assertStringStartsWith('src/Service/UserService.php: error[cyclomatic-complexity]:', $lines[0]);
         self::assertStringStartsWith('src/Service/UserService.php: warning[cyclomatic-complexity]:', $lines[1]);
         self::assertSame('', $lines[2]);
-        self::assertSame('1 error(s), 1 warning(s) in 1 file(s)', $lines[3]);
+        self::assertStringContainsString('1 error(s), 1 warning(s) in 1 file(s)', $lines[3]);
         self::assertStringStartsWith('Technical debt:', $lines[4]);
         self::assertStringEndsWith("\n", $output);
     }
@@ -365,7 +367,8 @@ final class TextFormatterTest extends TestCase
         $output = $this->formatter->format($report, $colorContext);
 
         // Summary should be bold red when errors present
-        self::assertStringContainsString("\e[1;31m1 error(s)", $output);
+        self::assertStringContainsString("\e[1;31mQualimetrix ", $output);
+        self::assertStringContainsString('1 error(s)', $output);
     }
 
     public function testRelativizesAbsolutePathsWithBasePath(): void
@@ -404,7 +407,8 @@ final class TextFormatterTest extends TestCase
         $output = $this->formatter->format($report, $colorContext);
 
         // Summary should be bold green when no violations
-        self::assertStringContainsString("\e[1;32m0 error(s)", $output);
+        self::assertStringContainsString("\e[1;32mQualimetrix ", $output);
+        self::assertStringContainsString('0 error(s)', $output);
     }
 
     public function testDetailModeGroupsByFile(): void

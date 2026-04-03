@@ -9,6 +9,7 @@ use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinitionHolder;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Version;
 use Qualimetrix\Reporting\Debt\DebtCalculator;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\Report;
@@ -327,7 +328,7 @@ final class HtmlTreeBuilder
         return [
             'name' => $projectName ?? InstalledVersions::getRootPackage()['name'] ?? 'unknown',
             'generatedAt' => gmdate('c'),
-            'qmxVersion' => InstalledVersions::getRootPackage()['pretty_version'] ?? 'dev',
+            'qmxVersion' => Version::get(),
             'scopedReporting' => $scopedReporting,
         ];
     }

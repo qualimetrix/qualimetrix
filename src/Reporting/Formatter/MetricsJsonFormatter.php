@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Reporting\Formatter;
 
 use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Version;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Reporting\Report;
@@ -68,6 +69,7 @@ final class MetricsJsonFormatter implements FormatterInterface
 
         $data = [
             'version' => self::VERSION,
+            'toolVersion' => Version::get(),
             'package' => self::PACKAGE,
             'timestamp' => gmdate('c'),
             'symbols' => $symbols,

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Formatter\Summary;
 
+use Qualimetrix\Core\Version;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
 use Qualimetrix\Reporting\Formatter\Support\AnsiColor;
 use Qualimetrix\Reporting\Formatter\Support\DetailedViolationRenderer;
@@ -89,8 +90,10 @@ final class SummaryFormatter implements FormatterInterface
      */
     private function renderHeader(Report $report, FormatterContext $context, AnsiColor $color, array &$lines): void
     {
+        $version = Version::get();
         $header = \sprintf(
-            'Qualimetrix — %d file%s analyzed',
+            'Qualimetrix %s — %d file%s analyzed',
+            $version,
             $report->filesAnalyzed,
             $report->filesAnalyzed === 1 ? '' : 's',
         );

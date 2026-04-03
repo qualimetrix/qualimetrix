@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Formatter\Sarif;
 
+use Qualimetrix\Core\Version;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
@@ -19,7 +20,6 @@ use Qualimetrix\Reporting\Report;
  */
 final class SarifFormatter implements FormatterInterface
 {
-    private const VERSION = '0.1.0';
     private const SCHEMA = 'https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json';
     public function __construct(
         private readonly SarifRuleCollector $ruleCollector,
@@ -39,7 +39,7 @@ final class SarifFormatter implements FormatterInterface
             'tool' => [
                 'driver' => [
                     'name' => 'Qualimetrix',
-                    'version' => self::VERSION,
+                    'version' => Version::get(),
                     'informationUri' => SarifRuleCollector::INFORMATION_URI,
                     'rules' => $rules,
                 ],
