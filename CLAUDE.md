@@ -317,7 +317,7 @@ bin/qmx check src/ --preset=legacy           # Legacy: relaxed thresholds
 bin/qmx check src/ --preset=strict,ci        # Combine multiple presets
 
 # Git integration
-bin/qmx check src/ --analyze=git:staged
+bin/qmx check src/ --report=git:staged
 bin/qmx check src/ --report=git:main..HEAD
 
 # Baseline

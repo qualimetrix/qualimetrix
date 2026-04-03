@@ -25,8 +25,8 @@ vendor/bin/qmx check src/
 # Установка git pre-commit хука
 vendor/bin/qmx hook:install
 
-# Анализ только подготовленных файлов
-vendor/bin/qmx check src/ --analyze=git:staged
+# Вывод нарушений только из изменённых файлов
+vendor/bin/qmx check src/ --report=git:main..HEAD
 ```
 
 ## Доступные метрики

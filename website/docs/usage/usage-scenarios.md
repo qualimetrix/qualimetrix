@@ -72,7 +72,7 @@ bin/qmx hook:install
 **Tips:**
 
 - If a commit is blocked, you can fix the issues or skip the hook with `git commit --no-verify`
-- The hook uses `--analyze=git:staged` automatically
+- The hook automatically analyzes only staged files
 - The default `--fail-on=error` means warnings pass through; use `--fail-on=warning` for stricter enforcement
 
 !!! note

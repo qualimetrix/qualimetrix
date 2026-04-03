@@ -61,8 +61,8 @@ bin/qmx check src/ --cyclomatic-warning=15 --cyclomatic-error=25
 ## Git Integration
 
 ```bash
-# Analyze staged files only
-bin/qmx check src/ --analyze=git:staged
+# Show violations in staged files only
+bin/qmx check src/ --report=git:staged
 
 # Show violations in changed files
 bin/qmx check src/ --report=git:main..HEAD

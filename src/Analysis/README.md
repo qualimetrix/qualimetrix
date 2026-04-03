@@ -147,18 +147,17 @@ Building and returning `AnalysisResult`.
 
 ### Full Dependency Graph Principle
 
-File scope filtering (`--analyze=git:staged`) affects **reporting** (which violations to show), not **collection** (which metrics to compute). The dependency graph is always built from ALL project files, ensuring:
+The dependency graph is always built from ALL project files, ensuring:
 
 - Afferent couplings (Ca) are always visible (Instability = Ce / (Ca + Ce) is correct)
 - ClassRank (PageRank) reflects the complete project graph
 - Distance from Main Sequence is accurate
 - Health scores are computed from the full graph
 
-When `--analyze=git:staged` is used:
-1. `GitScopeResolver` returns `FinderFileDiscovery` (all files) + `scopeFilePaths` (changed files)
-2. `AnalysisPipeline` collects metrics from all files (cache amortizes the cost)
-3. `ViolationFilterPipeline` filters violations to scoped files
-4. Formatters show full health scores; worst offenders are from the complete graph
+When `--report=git:staged` is used:
+1. `AnalysisPipeline` collects metrics from all files (cache amortizes the cost)
+2. `ViolationFilterPipeline` filters violations to changed files
+3. Formatters show full health scores; worst offenders are from the complete graph
 
 ---
 

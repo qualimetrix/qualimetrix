@@ -63,6 +63,7 @@ Console/
 | 0    | No violations                    |
 | 1    | Warnings present (but no errors) |
 | 2    | Errors present                   |
+| 3    | Configuration or input error     |
 
 ### BaselineCleanupCommand
 
@@ -113,11 +114,10 @@ Export dependency graph in DOT or JSON format.
 
 ### Git Integration
 
-| Option            | Default | Description                                          |
-| ----------------- | ------- | ---------------------------------------------------- |
-| `--analyze`       | —       | File scope for analysis (git:staged, git:main..HEAD) |
-| `--report`        | —       | Violation scope for report                           |
-| `--report-strict` | false   | Show only violations in changed files                |
+| Option            | Default | Description                           |
+| ----------------- | ------- | ------------------------------------- |
+| `--report`        | —       | Violation scope for report            |
+| `--report-strict` | false   | Show only violations in changed files |
 
 ### Logging and Progress
 
@@ -189,9 +189,6 @@ bin/qmx check src/ --config=qmx.yaml
 bin/qmx check src/ --format=json
 bin/qmx check src/ --format=checkstyle
 
-# Pre-commit: staged files only
-bin/qmx check src/ --analyze=git:staged
-
 # PR review: full analysis, report only for changes
 bin/qmx check src/ --report=git:main..HEAD
 
@@ -215,7 +212,7 @@ bin/qmx hook:uninstall
 - `CheckCommand` works with all options
 - Exit codes are correct (0/1/2)
 - Progress bar works for large projects
-- Git integration via --analyze, --report options
+- Git integration via --report option
 - Baseline management via options
 - GraphExportCommand exports the graph
 - Hook commands manage pre-commit hook

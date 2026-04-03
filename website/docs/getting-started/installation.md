@@ -43,7 +43,7 @@ docker run --rm -v $(pwd):/app qmx check src/
 
 This mounts your current directory into the container and analyzes the `src/` folder.
 
-You can pass any CLI options after `analyze`:
+You can pass any CLI options after `check`:
 
 ```bash
 # JSON output

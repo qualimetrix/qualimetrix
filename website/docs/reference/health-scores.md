@@ -194,6 +194,9 @@ Common aggregation suffixes: `__avg`, `__min`, `__max`, `__sum`, `__p5`, `__p95`
 
 This is not an exhaustive list — any metric collected by Qualimetrix can be referenced in formulas. Use `bin/qmx check src/ --format=metrics-json` to see all available metrics for your project.
 
+!!! warning "Unknown metric references"
+    If a formula references a metric that does not exist (e.g., a typo like `ccn__abg` instead of `ccn__avg`), Qualimetrix will report a clear error instead of silently returning zero. Always use the `??` operator to provide a default for metrics that may legitimately be absent: `(ccn__avg ?? 0)`.
+
 ### Available Functions
 
 | Function                 | Description                                          |

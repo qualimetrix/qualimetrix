@@ -576,5 +576,9 @@ All formats use the same exit codes:
 | 0         | No violations                         |
 | 1         | At least one warning (but no errors)  |
 | 2         | At least one error-severity violation |
+| 3         | Configuration or input error          |
 
 By default (`--fail-on=error`), warnings no longer cause exit code 1 — only errors trigger a non-zero exit. Use `--fail-on=warning` for the stricter behavior where warnings also fail.
+
+!!! note
+    All diagnostic warnings (e.g., configuration notices, deprecation messages) are written to **stderr**, not stdout. This means you can safely pipe the analysis output to a file or another tool without interference: `bin/qmx check src/ --format=json > results.json`.

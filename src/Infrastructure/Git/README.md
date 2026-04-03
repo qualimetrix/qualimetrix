@@ -2,10 +2,7 @@
 
 ## Overview
 
-Git integration enables flexible control over analysis and reporting scope:
-
-1. **--analyze** — which files to analyze (parsing, metrics)
-2. **--report** — which violations to show in the report
+Git integration enables filtering violations to show only those related to changed files via the `--report` option.
 
 ## Components
 
@@ -56,34 +53,29 @@ Parses strings in format `git:staged`, `git:main..HEAD` into a `GitScope` object
 
 ## Use Cases
 
-| Scenario         | --analyze        | --report         | Aggregated |
-| ---------------- | ---------------- | ---------------- | ---------- |
-| Full analysis    | (entire project) | (entire project) | yes        |
-| Quick pre-commit | git:staged       | (implicit)       | no         |
-| PR review (fast) | git:main..HEAD   | (implicit)       | no         |
-| PR review (full) | (entire project) | git:main..HEAD   | yes        |
+| Scenario      | --report        | Description                                          |
+| ------------- | --------------- | ---------------------------------------------------- |
+| Full analysis | (not specified) | Analyze everything, show all violations              |
+| Pre-commit    | git:staged      | Full analysis, show violations in staged files only  |
+| PR review     | git:main..HEAD  | Full analysis, show violations in changed files only |
 
 ## CLI Options
 
-| Option              | Description                                         |
-| ------------------- | --------------------------------------------------- |
-| `--analyze=<scope>` | Which files to analyze (git:staged, git:main..HEAD) |
-| `--report=<scope>`  | Which violations to show in the report              |
-| `--report-strict`   | Show only violations exactly in changed files       |
+| Option             | Description                                   |
+| ------------------ | --------------------------------------------- |
+| `--report=<scope>` | Which violations to show in the report        |
+| `--report-strict`  | Show only violations exactly in changed files |
 
 ## Examples
 
 ```bash
-# Pre-commit: staged files only
-bin/qmx check src/ --analyze=git:staged
+# Pre-commit: show violations in staged files only
+bin/qmx check src/ --report=git:staged
 
-# PR review: full analysis, report only for changes
+# PR review: show violations in changed files only
 bin/qmx check src/ --report=git:main..HEAD
 
-# Quick PR: analyze only changed files
-bin/qmx check src/ --analyze=git:main..HEAD
-
-# Strict mode: only violations in changed files
+# Strict mode: only violations in changed files (exclude parent namespaces)
 bin/qmx check src/ --report=git:main..HEAD --report-strict
 
 # Combined with baseline
@@ -96,7 +88,7 @@ bin/qmx check src/ --report=git:main..HEAD --baseline=baseline.json
 #!/bin/bash
 # .git/hooks/pre-commit
 
-bin/qmx check --analyze=git:staged --format=text
+bin/qmx check --report=git:staged --format=text
 
 if [ $? -ne 0 ]; then
     echo "Qualimetrix found issues in staged files"
@@ -109,10 +101,8 @@ fi
 - `GitClient` with support for all scope formats (staged, HEAD, two-dot, three-dot)
 - `GitScopeParser` parses git:... syntax
 - `GitScopeFilter` filters violations by scope
-- CLI options `--analyze`, `--report` work
+- CLI option `--report` works
 - `--report-strict` disables parent namespaces
-- Validation: report scope is a subset of analyze scope
-- Warning about unavailable aggregated metrics during partial analyze
 - Pre-commit hook example works
 - Unit tests with real git repo
 - End-to-end integration test

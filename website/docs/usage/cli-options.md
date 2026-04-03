@@ -1,8 +1,8 @@
 # CLI Options
 
-Qualimetrix provides the `analyze` command for code analysis and several utility commands for baseline management, git hooks, and dependency graph visualization.
+Qualimetrix provides the `check` command for code analysis and several utility commands for baseline management, git hooks, and dependency graph visualization.
 
-## analyze command
+## check command
 
 ```bash
 bin/qmx check [options] [--] [<paths>...]
@@ -328,16 +328,7 @@ bin/qmx check src/ --no-suppression
 
 ## Git scope options
 
-Analyze or report only changed files. See [Git Integration](git-integration.md) for the full guide.
-
-### `--analyze`
-
-Control which files to analyze. Accepts a git scope expression:
-
-```bash
-bin/qmx check src/ --analyze=git:staged          # only staged files
-bin/qmx check src/ --analyze=git:main..HEAD       # only files changed since main
-```
+Report only violations from changed files. See [Git Integration](git-integration.md) for the full guide.
 
 ### `--report`
 
