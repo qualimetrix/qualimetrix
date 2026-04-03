@@ -32,11 +32,10 @@ final class GitScopeResolverTest extends TestCase
         );
 
         $definition = new InputDefinition([
-            new InputOption('analyze', null, InputOption::VALUE_REQUIRED),
             new InputOption('report', null, InputOption::VALUE_REQUIRED),
         ]);
 
-        $input = new ArrayInput(['--analyze' => 'git:staged'], $definition);
+        $input = new ArrayInput(['--report' => 'git:main..HEAD'], $definition);
 
         $resolver = new GitScopeResolver();
         $result = $resolver->resolve($input, $resolved);
@@ -58,7 +57,6 @@ final class GitScopeResolverTest extends TestCase
         );
 
         $definition = new InputDefinition([
-            new InputOption('analyze', null, InputOption::VALUE_REQUIRED),
             new InputOption('report', null, InputOption::VALUE_REQUIRED),
         ]);
 
@@ -82,11 +80,10 @@ final class GitScopeResolverTest extends TestCase
         );
 
         $definition = new InputDefinition([
-            new InputOption('analyze', null, InputOption::VALUE_REQUIRED),
             new InputOption('report', null, InputOption::VALUE_REQUIRED),
         ]);
 
-        $input = new ArrayInput(['--analyze' => 'git:staged'], $definition);
+        $input = new ArrayInput(['--report' => 'git:main..HEAD'], $definition);
 
         $resolver = new GitScopeResolver();
         $result = $resolver->resolve($input, $resolved);
@@ -96,10 +93,6 @@ final class GitScopeResolverTest extends TestCase
 
         $excludedDirsProperty = new ReflectionProperty($result->fileDiscovery, 'excludedDirs');
         self::assertSame(['vendor', 'tests'], $excludedDirsProperty->getValue($result->fileDiscovery));
-
-        // scopeFilePaths populated for analyze scope
-        self::assertNotNull($result->scopeFilePaths);
-        self::assertIsArray($result->scopeFilePaths);
     }
 
     #[Test]
@@ -112,7 +105,6 @@ final class GitScopeResolverTest extends TestCase
         );
 
         $definition = new InputDefinition([
-            new InputOption('analyze', null, InputOption::VALUE_REQUIRED),
             new InputOption('report', null, InputOption::VALUE_REQUIRED),
         ]);
 
@@ -122,7 +114,5 @@ final class GitScopeResolverTest extends TestCase
         $result = $resolver->resolve($input, $resolved);
 
         self::assertInstanceOf(FinderFileDiscovery::class, $result->fileDiscovery);
-        // No scope filter for full analysis
-        self::assertNull($result->scopeFilePaths);
     }
 }

@@ -24,15 +24,11 @@ final class FormatterContextFactory
         private readonly ConfigurationProviderInterface $configurationProvider,
     ) {}
 
-    /**
-     * @param list<string>|null $scopeFilePaths Relative paths in scope for scoped reporting
-     */
     public function create(
         InputInterface $input,
         OutputInterface $output,
         FormatterInterface $formatter,
         bool $scopedReporting = false,
-        ?array $scopeFilePaths = null,
     ): FormatterContext {
         // Resolve group-by: explicit CLI option or formatter default
         /** @var string|null $groupByValue */
@@ -105,7 +101,6 @@ final class FormatterContextFactory
             options: $options,
             basePath: $this->configurationProvider->getConfiguration()->projectRoot,
             scopedReporting: $scopedReporting,
-            scopeFilePaths: $scopeFilePaths,
             namespace: $namespaceFilter,
             class: $classFilter,
             terminalWidth: $terminalWidth,

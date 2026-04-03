@@ -42,7 +42,6 @@ final readonly class ViolationFilterOrchestrator
             $gitScope = new GitScopeFilterConfig(
                 gitClient: $scopeResolution->gitClient,
                 reportScope: $scopeResolution->reportScope,
-                analyzeScope: $scopeResolution->analyzeScope,
                 strictMode: (bool) $input->getOption('report-strict'),
             );
         }
@@ -53,7 +52,6 @@ final readonly class ViolationFilterOrchestrator
             disableSuppression: (bool) $input->getOption('no-suppression'),
             excludePaths: $cliExcludePaths,
             gitScope: $gitScope,
-            scopeFilePaths: $scopeResolution->scopeFilePaths,
         );
 
         $filterResult = $this->violationFilterPipeline->filter($result->violations, $options);
@@ -85,6 +83,13 @@ final readonly class ViolationFilterOrchestrator
             $output->writeln(\sprintf(
                 '<info>%d violation(s) suppressed by path exclusion patterns</info>',
                 $filterResult->pathExclusionFiltered,
+            ));
+        }
+
+        if ($filterResult->namespaceExclusionFiltered > 0 && $output->isVerbose()) {
+            $output->writeln(\sprintf(
+                '<info>%d violation(s) suppressed by namespace exclusion patterns</info>',
+                $filterResult->namespaceExclusionFiltered,
             ));
         }
 

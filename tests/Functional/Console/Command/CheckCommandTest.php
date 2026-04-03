@@ -146,8 +146,8 @@ class ComplexClass {
             '--no-progress' => true,
         ]);
 
-        // Assert failure with clear error message
-        $this->assertSame(1, $commandTester->getStatusCode());
+        // Assert config/input error (exit code 3)
+        $this->assertSame(3, $commandTester->getStatusCode());
         $output = $commandTester->getDisplay();
         $this->assertStringContainsString('does not exist', $output);
     }

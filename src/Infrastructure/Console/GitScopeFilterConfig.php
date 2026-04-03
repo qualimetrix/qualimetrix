@@ -15,7 +15,6 @@ final readonly class GitScopeFilterConfig
     public function __construct(
         public GitClient $gitClient,
         public ?GitScope $reportScope,
-        public ?GitScope $analyzeScope,
         public bool $strictMode,
     ) {}
 }

@@ -34,6 +34,7 @@ final readonly class AnalysisConfiguration
      * @param list<string> $disabledRules List of disabled rule names
      * @param list<string> $onlyRules List of rules to run (empty = all enabled)
      * @param list<string> $excludePaths Path patterns to suppress violations for
+     * @param list<string> $excludeNamespaces Namespace prefixes to suppress violations for
      * @param int|null $workers Number of parallel workers (null = auto-detect, 1 = sequential)
      * @param string $projectRoot Project root directory (for parallel workers)
      * @param Severity|false|null $failOn Minimum severity to trigger non-zero exit code (null = default/error, false = none/never fail)
@@ -53,6 +54,7 @@ final readonly class AnalysisConfiguration
         public array $disabledRules = [],
         public array $onlyRules = [],
         public array $excludePaths = [],
+        public array $excludeNamespaces = [],
         public ?int $workers = null,
         public string $projectRoot = '.',
         public Severity|false|null $failOn = null,
@@ -80,6 +82,7 @@ final readonly class AnalysisConfiguration
             disabledRules: self::getStringList($config, ConfigSchema::DISABLED_RULES),
             onlyRules: self::getStringList($config, ConfigSchema::ONLY_RULES),
             excludePaths: self::getStringList($config, ConfigSchema::EXCLUDE_PATHS),
+            excludeNamespaces: self::getStringList($config, ConfigSchema::EXCLUDE_NAMESPACES),
             workers: self::getIntOrNull($config, ConfigSchema::PARALLEL_WORKERS),
             projectRoot: self::getString($config, ConfigSchema::PROJECT_ROOT, '.'),
             failOn: self::getFailOn($config, ConfigSchema::FAIL_ON),
@@ -112,6 +115,7 @@ final readonly class AnalysisConfiguration
                 ? self::getStringList($overrides, ConfigSchema::ONLY_RULES)
                 : $this->onlyRules,
             excludePaths: array_values(array_unique([...$this->excludePaths, ...self::getStringList($overrides, ConfigSchema::EXCLUDE_PATHS)])),
+            excludeNamespaces: array_values(array_unique([...$this->excludeNamespaces, ...self::getStringList($overrides, ConfigSchema::EXCLUDE_NAMESPACES)])),
             workers: self::getIntOrNull($overrides, ConfigSchema::PARALLEL_WORKERS) ?? $this->workers,
             projectRoot: self::getString($overrides, ConfigSchema::PROJECT_ROOT, $this->projectRoot),
             failOn: self::getFailOn($overrides, ConfigSchema::FAIL_ON) ?? $this->failOn,

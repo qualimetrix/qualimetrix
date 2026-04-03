@@ -25,13 +25,13 @@ use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Throwable;
 
 #[AsCommand(
     name: 'check',
     description: 'Check PHP code for complexity and structural issues',
-    aliases: ['analyze'],
 )]
 final class CheckCommand extends Command
 {
@@ -91,10 +91,19 @@ final class CheckCommand extends Command
         return $this->filteredDefinition;
     }
 
+    /**
+     * Exit code for input/configuration errors (distinct from analysis results).
+     *
+     * Exit code semantics:
+     * - 0: clean (no violations at configured fail level)
+     * - 1: warnings found (with --fail-on=warning)
+     * - 2: errors found (violations at error severity)
+     * - 3: input/configuration error (bad paths, invalid config, etc.)
+     */
+    private const int EXIT_CONFIG_ERROR = 3;
+
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $this->showDeprecationWarningIfNeeded($input, $output);
-
         try {
             return $this->doExecute($input, $output);
         } catch (ConflictingCliAliasException $e) {
@@ -105,18 +114,18 @@ final class CheckCommand extends Command
                 $e->secondRule,
             ));
 
-            return self::FAILURE;
+            return self::EXIT_CONFIG_ERROR;
         } catch (ConfigLoadException $e) {
             $output->writeln(\sprintf(
                 '<error>Configuration error: %s</error>',
                 $e->getMessage(),
             ));
 
-            return self::FAILURE;
+            return self::EXIT_CONFIG_ERROR;
         } catch (InvalidArgumentException $e) {
             $output->writeln(\sprintf('<error>%s</error>', $e->getMessage()));
 
-            return self::FAILURE;
+            return self::EXIT_CONFIG_ERROR;
         } catch (Throwable $e) {
             $output->writeln(\sprintf(
                 '<error>Unexpected error: %s</error>',
@@ -130,20 +139,6 @@ final class CheckCommand extends Command
             }
 
             return self::FAILURE;
-        }
-    }
-
-    /**
-     * Shows a deprecation warning when the command is invoked via the 'analyze' alias.
-     */
-    private function showDeprecationWarningIfNeeded(InputInterface $input, OutputInterface $output): void
-    {
-        $firstArg = $input->getFirstArgument();
-        if ($firstArg === 'analyze') {
-            $output->writeln(
-                '<comment>[DEPRECATED] The \'analyze\' command is deprecated, use \'check\' instead.</comment>',
-            );
-            $output->writeln('');
         }
     }
 
@@ -175,16 +170,16 @@ final class CheckCommand extends Command
                 $output->writeln(\sprintf('<error>%s</error>', $error));
             }
 
-            return self::FAILURE;
+            return self::EXIT_CONFIG_ERROR;
         }
 
         $projectRoot = $resolved->analysis->projectRoot;
-        $this->warnIfComposerJsonMissing($projectRoot, $input, $output);
-        $this->warnAboutPartialScope($scopeResolution->paths, $projectRoot, $input, $output);
+        $this->warnIfComposerJsonMissing($projectRoot, $output);
+        $this->warnAboutPartialScope($scopeResolution->paths, $projectRoot, $output);
 
         $result = $this->runAnalysis($scopeResolution->paths, $scopeResolution->fileDiscovery);
 
-        if ($result->filesAnalyzed === 0 && $scopeResolution->analyzeScope === null) {
+        if ($result->filesAnalyzed === 0) {
             $output->writeln('<comment>No PHP files found in the given paths.</comment>');
 
             return self::SUCCESS;
@@ -195,7 +190,7 @@ final class CheckCommand extends Command
 
         $baselineGenerated = $this->baselinePresenter->generateBaselineIfRequested($result->violations, $input, $output);
 
-        $scopedReporting = $scopeResolution->analyzeScope !== null;
+        $scopedReporting = $scopeResolution->reportScope !== null;
         $exitCode = $this->resultPresenter->presentResults(
             $filteredViolations,
             $result,
@@ -203,7 +198,6 @@ final class CheckCommand extends Command
             $output,
             $baselineGenerated,
             $scopedReporting,
-            $scopeResolution->scopeFilePaths,
         );
 
         $this->resultPresenter->presentProfile($input, $output);
@@ -296,8 +290,9 @@ final class CheckCommand extends Command
     private function warnAboutConflictingRuleFilters(ResolvedConfiguration $resolved, OutputInterface $output): void
     {
         if ($resolved->analysis->disabledRules !== [] && $resolved->analysis->onlyRules !== []) {
-            $output->writeln(
-                '<comment>Warning: both --disable-rule and --only-rule are active. This may result in no rules being enabled.</comment>',
+            $this->writeWarning(
+                $output,
+                'Warning: both --disable-rule and --only-rule are active. This may result in no rules being enabled.',
             );
         }
     }
@@ -305,17 +300,13 @@ final class CheckCommand extends Command
     /**
      * Warns when composer.json is not found in project root.
      */
-    private function warnIfComposerJsonMissing(string $projectRoot, InputInterface $input, OutputInterface $output): void
+    private function warnIfComposerJsonMissing(string $projectRoot, OutputInterface $output): void
     {
-        if (!$this->isTextFormat($input)) {
-            return;
-        }
-
         if (!file_exists($projectRoot . '/composer.json')) {
-            $output->writeln(\sprintf(
-                '<comment>Warning: No composer.json found in %s. Namespace detection and coupling metrics may be inaccurate.</comment>',
-                $projectRoot,
-            ));
+            $this->writeWarning(
+                $output,
+                \sprintf('Warning: No composer.json found in %s. Namespace detection and coupling metrics may be inaccurate.', $projectRoot),
+            );
         }
     }
 
@@ -324,28 +315,23 @@ final class CheckCommand extends Command
      *
      * @param list<string> $paths
      */
-    private function warnAboutPartialScope(array $paths, string $projectRoot, InputInterface $input, OutputInterface $output): void
+    private function warnAboutPartialScope(array $paths, string $projectRoot, OutputInterface $output): void
     {
-        if (!$this->isTextFormat($input)) {
-            return;
-        }
-
         $checker = new ScopeWarningChecker();
         $warnings = $checker->check($projectRoot, $paths);
         foreach ($warnings as $warning) {
-            $output->writeln(\sprintf('<comment>Warning: %s</comment>', $warning));
+            $this->writeWarning($output, \sprintf('Warning: %s', $warning));
         }
     }
 
     /**
-     * Checks if the output format is text-based (safe for inline warnings).
+     * Writes a warning to stderr to avoid polluting structured output.
      */
-    private function isTextFormat(InputInterface $input): bool
+    private function writeWarning(OutputInterface $output, string $message): void
     {
-        $format = $input->getOption('format');
-        $textFormats = [null, 'text', 'summary', 'health', 'metrics', 'github'];
-
-        return \in_array($format, $textFormats, true);
+        if ($output instanceof ConsoleOutputInterface) {
+            $output->getErrorOutput()->writeln(\sprintf('<comment>%s</comment>', $message));
+        }
     }
 
     /**
@@ -396,10 +382,10 @@ final class CheckCommand extends Command
                 continue;
             }
 
-            $output->writeln(\sprintf(
-                '<comment>Warning: rule "%s" does not match any registered rule</comment>',
-                $name,
-            ));
+            $this->writeWarning(
+                $output,
+                \sprintf('Warning: rule "%s" does not match any registered rule', $name),
+            );
         }
     }
 

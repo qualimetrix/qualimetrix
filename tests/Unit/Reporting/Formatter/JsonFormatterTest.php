@@ -278,7 +278,7 @@ final class JsonFormatterTest extends TestCase
             ],
         );
 
-        $context = new FormatterContext(scopedReporting: true, scopeFilePaths: ['/src/Foo.php']);
+        $context = new FormatterContext(scopedReporting: true);
         $output = $this->formatter->format($report, $context);
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
@@ -949,7 +949,7 @@ final class JsonFormatterTest extends TestCase
             ],
         );
 
-        $context = new FormatterContext(scopedReporting: true, scopeFilePaths: ['/src/Foo.php']);
+        $context = new FormatterContext(scopedReporting: true);
         $output = $this->formatter->format($report, $context);
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 

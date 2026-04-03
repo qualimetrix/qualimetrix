@@ -362,7 +362,136 @@ final class ViolationFilterPipelineTest extends TestCase
         self::assertSame(0, $result->pathExclusionFiltered);
     }
 
-    // -- Git scope filter (step 4) --
+    // -- Namespace exclusion filter (step 4) --
+
+    #[Test]
+    public function excludeNamespacesFilterRemovesMatchingViolations(): void
+    {
+        $v1 = $this->makeViolation('src/Service/UserService.php', 'App\\Service', 'UserService');
+        $v2 = $this->makeViolation('src/Generated/Proxy.php', 'App\\Generated', 'Proxy');
+
+        $config = new AnalysisConfiguration(
+            excludeNamespaces: ['App\\Generated'],
+        );
+        $configProvider = $this->createStub(ConfigurationProviderInterface::class);
+        $configProvider->method('getConfiguration')->willReturn($config);
+
+        $pipeline = new ViolationFilterPipeline(
+            new BaselineLoader(),
+            new ViolationHasher(),
+            new SuppressionFilter(),
+            $configProvider,
+        );
+
+        $options = new ViolationFilterOptions(
+            baselinePath: null,
+            ignoreStaleBaseline: false,
+            disableSuppression: true,
+            excludePaths: [],
+            gitScope: null,
+        );
+
+        $result = $pipeline->filter([$v1, $v2], $options);
+
+        self::assertCount(1, $result->violations);
+        self::assertSame('App\\Service', $result->violations[0]->symbolPath->namespace);
+        self::assertSame(1, $result->namespaceExclusionFiltered);
+    }
+
+    #[Test]
+    public function excludeNamespacesMatchesChildNamespaces(): void
+    {
+        $v1 = $this->makeViolation('src/Service/UserService.php', 'App\\Service', 'UserService');
+        $v2 = $this->makeViolation('src/Generated/Sub/Proxy.php', 'App\\Generated\\Sub', 'Proxy');
+
+        $config = new AnalysisConfiguration(
+            excludeNamespaces: ['App\\Generated'],
+        );
+        $configProvider = $this->createStub(ConfigurationProviderInterface::class);
+        $configProvider->method('getConfiguration')->willReturn($config);
+
+        $pipeline = new ViolationFilterPipeline(
+            new BaselineLoader(),
+            new ViolationHasher(),
+            new SuppressionFilter(),
+            $configProvider,
+        );
+
+        $options = new ViolationFilterOptions(
+            baselinePath: null,
+            ignoreStaleBaseline: false,
+            disableSuppression: true,
+            excludePaths: [],
+            gitScope: null,
+        );
+
+        $result = $pipeline->filter([$v1, $v2], $options);
+
+        self::assertCount(1, $result->violations);
+        self::assertSame(1, $result->namespaceExclusionFiltered);
+    }
+
+    #[Test]
+    public function excludeNamespacesKeepsNullNamespace(): void
+    {
+        $vFile = new Violation(
+            location: new Location('src/helpers.php', 10),
+            symbolPath: SymbolPath::forFile('src/helpers.php'),
+            ruleName: 'complexity.cyclomatic',
+            violationCode: 'complexity.cyclomatic.method',
+            message: 'CCN too high',
+            severity: Severity::Error,
+        );
+
+        $config = new AnalysisConfiguration(
+            excludeNamespaces: ['App'],
+        );
+        $configProvider = $this->createStub(ConfigurationProviderInterface::class);
+        $configProvider->method('getConfiguration')->willReturn($config);
+
+        $pipeline = new ViolationFilterPipeline(
+            new BaselineLoader(),
+            new ViolationHasher(),
+            new SuppressionFilter(),
+            $configProvider,
+        );
+
+        $options = new ViolationFilterOptions(
+            baselinePath: null,
+            ignoreStaleBaseline: false,
+            disableSuppression: true,
+            excludePaths: [],
+            gitScope: null,
+        );
+
+        $result = $pipeline->filter([$vFile], $options);
+
+        self::assertCount(1, $result->violations);
+        self::assertSame(0, $result->namespaceExclusionFiltered);
+    }
+
+    #[Test]
+    public function noNamespaceExclusionWhenEmpty(): void
+    {
+        $violation = $this->makeViolation('src/Service/UserService.php');
+
+        $pipeline = $this->createPipeline();
+
+        $options = new ViolationFilterOptions(
+            baselinePath: null,
+            ignoreStaleBaseline: false,
+            disableSuppression: true,
+            excludePaths: [],
+            gitScope: null,
+        );
+
+        $result = $pipeline->filter([$violation], $options);
+
+        self::assertCount(1, $result->violations);
+        self::assertSame(0, $result->namespaceExclusionFiltered);
+    }
+
+    // -- Git scope filter (step 5) --
 
     #[Test]
     public function gitScopeFilterIsSkippedWhenNull(): void

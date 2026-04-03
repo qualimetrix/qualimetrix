@@ -16,14 +16,11 @@ final readonly class GitScopeResolution
 {
     /**
      * @param list<string> $paths
-     * @param list<string>|null $scopeFilePaths Relative paths of in-scope files for violation filtering (null = all files in scope)
      */
     public function __construct(
         public array $paths,
         public FileDiscoveryInterface $fileDiscovery,
         public ?GitClient $gitClient,
-        public ?GitScope $analyzeScope,
         public ?GitScope $reportScope,
-        public ?array $scopeFilePaths = null,
     ) {}
 }
