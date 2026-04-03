@@ -15,11 +15,18 @@ PSR-3 logger integration for debugging, monitoring, and logging parse errors.
 
 ## Components
 
+### LoggerHelperTrait
+
+Shared trait used by `ConsoleLogger` and `FileLogger` providing:
+- `interpolate()` — PSR-3 message placeholder interpolation (`{key}` → context value)
+- `meetsMinLevel()` — log level threshold filtering
+
 ### ConsoleLogger
 
 PSR-3 `LoggerInterface` implementation with output to Symfony Console Output.
 
 **Features:**
+- PSR-3 message interpolation (`{placeholder}` tokens replaced with context values)
 - Formatting with timestamp and level
 - Color output for different levels (error/warning/info)
 - Filtering by minimum level
@@ -28,7 +35,7 @@ PSR-3 `LoggerInterface` implementation with output to Symfony Console Output.
 **Output format:**
 ```
 [10:15:30] [INFO] Starting analysis
-[10:15:31] [WARNING] Failed to parse file {"file":"src/Legacy.php","error":"Syntax error"}
+[10:15:31] [WARNING] Failed to parse file src/Legacy.php {"file":"src/Legacy.php","error":"Syntax error"}
 [10:15:45] [INFO] Analysis complete {"violations":23}
 ```
 
@@ -37,6 +44,7 @@ PSR-3 `LoggerInterface` implementation with output to Symfony Console Output.
 PSR-3 `LoggerInterface` implementation with output to file in JSON Lines format.
 
 **Features:**
+- PSR-3 message interpolation (`{placeholder}` tokens replaced with context values)
 - Each entry is a separate JSON line
 - Automatic directory creation
 - Logging all levels (including DEBUG)
@@ -44,7 +52,7 @@ PSR-3 `LoggerInterface` implementation with output to file in JSON Lines format.
 **Output format:**
 ```json
 {"timestamp":"2025-12-07T10:15:30+00:00","level":"info","message":"Starting analysis","context":{"paths":["src/"]}}
-{"timestamp":"2025-12-07T10:15:30+00:00","level":"debug","message":"Parsing file","context":{"file":"src/Foo.php"}}
+{"timestamp":"2025-12-07T10:15:30+00:00","level":"debug","message":"Parsing file src/Foo.php","context":{"file":"src/Foo.php"}}
 ```
 
 ### LoggerFactory
