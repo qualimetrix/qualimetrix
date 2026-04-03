@@ -366,18 +366,9 @@ Dependency cycle value object.
 
 ### InMemoryMetricRepository
 
-Stores metrics in memory. For large projects (>100K LOC) `SqliteStorage` is recommended.
+Stores metrics in memory.
 
 **Key methods:**
 - `add(SymbolPath, MetricBag, file, line)` — add with automatic merge
 - `getNamespaces()` — list of namespaces
 - `forNamespace(string)` — symbols in namespace
-
-### SqliteStorage
-
-Alternative implementation for large projects — stores metrics in SQLite:
-- Minimal memory consumption
-- Persistence between runs
-- WAL mode, 64MB cache, memory-mapped I/O
-
-**StorageFactory** automatically selects implementation: SQLite for projects > 1000 files, InMemory by default.

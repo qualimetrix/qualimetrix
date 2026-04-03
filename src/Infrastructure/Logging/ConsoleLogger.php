@@ -61,7 +61,7 @@ final class ConsoleLogger extends AbstractLogger
      * Formats log message with timestamp, level, and context.
      *
      * Message placeholders are interpolated per PSR-3 spec.
-     * Remaining non-interpolated context is appended as JSON.
+     * Full context is appended as JSON for machine readability.
      *
      * @param array<string, mixed> $context
      */

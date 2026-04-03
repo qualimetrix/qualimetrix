@@ -47,8 +47,7 @@ final class PhpSerializer implements SerializerInterface
     {
         // Suppress warnings and use error handler to detect failures.
         // This serializer is used for AST cache (PhpParser nodes) and parallel worker data,
-        // so we must allow PhpParser classes. SqliteStorage handles its own metric
-        // deserialization with allowed_classes=false separately.
+        // so we must allow PhpParser classes.
         $result = @unserialize($data);
 
         // unserialize returns false on failure, but false is also a valid value

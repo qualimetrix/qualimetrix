@@ -105,12 +105,11 @@ Export dependency graph in DOT or JSON format.
 
 ### Caching
 
-| Option          | Default      | Description                       |
-| --------------- | ------------ | --------------------------------- |
-| `--no-cache`    | false        | Disable caching                   |
-| `--cache-dir`   | `.qmx-cache` | Cache directory                   |
-| `--clear-cache` | false        | Clear cache before analysis       |
-| `--storage`     | `auto`       | Storage type (auto/sqlite/memory) |
+| Option          | Default      | Description                 |
+| --------------- | ------------ | --------------------------- |
+| `--no-cache`    | false        | Disable caching             |
+| `--cache-dir`   | `.qmx-cache` | Cache directory             |
+| `--clear-cache` | false        | Clear cache before analysis |
 
 ### Git Integration
 
