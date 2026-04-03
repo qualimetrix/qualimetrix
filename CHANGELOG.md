@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- `--show-suppressed` now lists each suppressed violation with file, line, message, and rule name (was count-only)
+- `exclude_paths` and `exclude_namespaces` now support both prefix matching (`src/Entity`) and glob patterns (`src/Metrics/*Visitor.php`); simple directory/namespace names work without trailing `/*`
+- `--exclude-health` with invalid dimension name now produces an error instead of silently ignoring
+
+### Fixed
+- "No PHP files found" message shown when all files had parse errors — now shows "All N file(s) were skipped due to parse errors"
+
 ## [0.12.0] - 2026-04-03
 
 ### Changed
