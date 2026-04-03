@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-04-03
+
 ### Changed
 - `--show-suppressed` now lists each suppressed violation with file, line, message, and rule name (was count-only)
 - `exclude_paths` and `exclude_namespaces` now support both prefix matching (`src/Entity`) and glob patterns (`src/Metrics/*Visitor.php`); simple directory/namespace names work without trailing `/*`
@@ -263,6 +265,7 @@ Initial release.
 [0.8.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/qualimetrix/qualimetrix/compare/v0.7.0...v0.7.1
 [Unreleased]: https://github.com/qualimetrix/qualimetrix/compare/v0.12.0...HEAD
+[0.13.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.12.0...v0.13.0
 [0.12.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.11.2...v0.12.0
 [0.11.2]: https://github.com/qualimetrix/qualimetrix/compare/v0.11.1...v0.11.2
 [0.7.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.6.0...v0.7.0
