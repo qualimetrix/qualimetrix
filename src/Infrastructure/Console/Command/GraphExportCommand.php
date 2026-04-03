@@ -65,7 +65,7 @@ final class GraphExportCommand extends Command
             )
             ->addOption(
                 'direction',
-                'd',
+                null,
                 InputOption::VALUE_REQUIRED,
                 'Graph direction (LR, TB, RL, BT)',
                 'LR',
