@@ -80,8 +80,8 @@ final class YamlConfigLoader implements ConfigLoaderInterface
     /**
      * Recursively normalizes snake_case keys to camelCase.
      *
-     * Keys that are rule identifiers (contain `.`) are preserved as-is,
-     * because rule names use `group.rule-name` format and must not be normalized.
+     * Keys that are identifiers (rule names, computed metric names) are preserved as-is,
+     * because they use `group.name` format and must not be normalized.
      * Their nested option values are still normalized.
      *
      * @param array<string, mixed> $config
@@ -98,9 +98,10 @@ final class YamlConfigLoader implements ConfigLoaderInterface
             $normalizedKey = $preserveKeys ? $stringKey : $this->snakeToCamel($stringKey);
 
             if (\is_array($value)) {
-                // When entering the 'rules' section, preserve rule name keys (next level)
-                $isRulesSection = !$preserveKeys && $stringKey === ConfigSchema::RULES;
-                $result[$normalizedKey] = $this->normalizeKeys($value, $isRulesSection);
+                // Preserve identifier keys (rule names, metric names) — defined in ConfigSchema
+                $isIdentifierSection = !$preserveKeys
+                    && \in_array($normalizedKey, ConfigSchema::identifierKeySections(), true);
+                $result[$normalizedKey] = $this->normalizeKeys($value, $isIdentifierSection);
             } else {
                 $result[$normalizedKey] = $value;
             }
