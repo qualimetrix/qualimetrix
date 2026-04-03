@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
-use Composer\InstalledVersions;
 use InvalidArgumentException;
+use Qualimetrix\Core\Version;
 use Symfony\Component\Console\Application as BaseApplication;
 use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Input\InputInterface;
@@ -24,7 +24,7 @@ final class Application extends BaseApplication
 
     public function __construct()
     {
-        parent::__construct(self::NAME, InstalledVersions::getRootPackage()['pretty_version']);
+        parent::__construct(self::NAME, Version::get());
     }
 
     public function doRun(InputInterface $input, OutputInterface $output): int

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Formatter\Health;
 
+use Qualimetrix\Core\Version;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
 use Qualimetrix\Reporting\Formatter\Support\AnsiColor;
 use Qualimetrix\Reporting\FormatterContext;
@@ -84,8 +85,10 @@ final class HealthTextFormatter implements FormatterInterface
      */
     private function renderHeader(Report $report, FormatterContext $context, AnsiColor $color, array &$lines): void
     {
+        $version = Version::get();
         $header = \sprintf(
-            'Health Report — %d file%s analyzed',
+            'Health Report (Qualimetrix %s) — %d file%s analyzed',
+            $version,
             $report->filesAnalyzed,
             $report->filesAnalyzed === 1 ? '' : 's',
         );

@@ -65,7 +65,8 @@ final class SarifFormatterTest extends TestCase
         $run = $data['runs'][0];
         self::assertArrayHasKey('tool', $run);
         self::assertSame('Qualimetrix', $run['tool']['driver']['name']);
-        self::assertSame('0.1.0', $run['tool']['driver']['version']);
+        self::assertIsString($run['tool']['driver']['version']);
+        self::assertMatchesRegularExpression('/^(v?\d+\.\d+|dev-)/', $run['tool']['driver']['version']);
         self::assertSame('https://github.com/qualimetrix/qualimetrix', $run['tool']['driver']['informationUri']);
 
         // Empty report should have no rules and no results

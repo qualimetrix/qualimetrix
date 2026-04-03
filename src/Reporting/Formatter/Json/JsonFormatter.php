@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Formatter\Json;
 
-use Composer\InstalledVersions;
+use Qualimetrix\Core\Version;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Reporting\Debt\DebtCalculator;
@@ -49,7 +49,7 @@ final class JsonFormatter implements FormatterInterface
 
         $data = [
             'meta' => [
-                'version' => InstalledVersions::getRootPackage()['pretty_version'] ?? 'dev',
+                'version' => Version::get(),
                 'package' => self::PACKAGE,
                 'timestamp' => gmdate('c'),
             ],
