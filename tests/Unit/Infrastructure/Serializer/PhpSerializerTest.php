@@ -69,7 +69,6 @@ final class PhpSerializerTest extends TestCase
     public function itDeserializesObjects(): void
     {
         // PhpSerializer allows objects (needed for AST cache with PhpParser nodes).
-        // SqliteStorage handles metric deserialization with allowed_classes=false separately.
         $data = new stdClass();
         $data->name = 'test';
         $data->value = 42;
@@ -184,7 +183,6 @@ final class PhpSerializerTest extends TestCase
     public function itDeserializesObjectsFullyByDefault(): void
     {
         // PhpSerializer allows all classes (needed for AST cache).
-        // Security restriction (allowed_classes=false) is applied in SqliteStorage directly.
         $obj = new stdClass();
         $obj->name = 'test';
         $serialized = serialize($obj);
