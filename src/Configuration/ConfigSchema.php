@@ -156,6 +156,17 @@ final class ConfigSchema
     }
 
     /**
+     * Returns root keys whose child keys are identifiers (rule/metric names)
+     * that must not be normalized to camelCase.
+     *
+     * @return list<string>
+     */
+    public static function identifierKeySections(): array
+    {
+        return [self::RULES, 'computedMetrics'];
+    }
+
+    /**
      * Returns root keys that must be sequential arrays.
      *
      * @return list<string>

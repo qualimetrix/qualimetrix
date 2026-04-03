@@ -447,6 +447,30 @@ YAML);
         self::assertSame(15, $config['rules']['size.method-count']['warningThreshold']);
     }
 
+    public function testLoadPreservesComputedMetricNameKeys(): void
+    {
+        $path = $this->tempDir . '/config.yaml';
+        file_put_contents($path, <<<'YAML'
+computed_metrics:
+  computed.my_score:
+    formula: "loc * 2"
+    warning_threshold: 80
+  health.complexity:
+    error_threshold: 50
+YAML);
+
+        $config = $this->loader->load($path);
+
+        // Computed metric name keys are preserved exactly as written
+        self::assertArrayHasKey('computed.my_score', $config['computedMetrics']);
+        self::assertArrayHasKey('health.complexity', $config['computedMetrics']);
+
+        // Option keys within metrics are still normalized
+        self::assertSame('loc * 2', $config['computedMetrics']['computed.my_score']['formula']);
+        self::assertSame(80, $config['computedMetrics']['computed.my_score']['warningThreshold']);
+        self::assertSame(50, $config['computedMetrics']['health.complexity']['errorThreshold']);
+    }
+
     private function removeDirectory(string $dir): void
     {
         if (!is_dir($dir)) {
