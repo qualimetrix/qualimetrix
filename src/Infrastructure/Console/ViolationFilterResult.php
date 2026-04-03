@@ -14,6 +14,7 @@ final readonly class ViolationFilterResult
 {
     /**
      * @param list<Violation> $violations
+     * @param list<Violation> $suppressedViolations Violations removed by @qmx-ignore suppression
      * @param list<string> $staleBaselineKeys
      */
     public function __construct(
@@ -26,5 +27,6 @@ final readonly class ViolationFilterResult
         public ?BaselineFilter $baselineFilter = null,
         public array $staleBaselineKeys = [],
         public int $staleBaselineCount = 0,
+        public array $suppressedViolations = [],
     ) {}
 }

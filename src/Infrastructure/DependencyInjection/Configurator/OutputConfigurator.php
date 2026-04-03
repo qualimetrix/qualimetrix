@@ -179,10 +179,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
             ]);
 
         // HealthFormulaExcluder for exclude-health formula rebuilding
-        $container->register(HealthFormulaExcluder::class)
-            ->setArguments([
-                new Reference(DelegatingLogger::class),
-            ]);
+        $container->register(HealthFormulaExcluder::class);
 
         // ComputedMetricFormulaValidator (validates expression syntax, references, circular deps)
         $container->register(ComputedMetricFormulaValidator::class);

@@ -15,6 +15,10 @@ use Symfony\Component\Console\Output\OutputInterface;
  *
  * Combines ViolationFilterPipeline execution with CLI output for
  * stale baselines, resolved violations, suppression stats, and git scope notes.
+ *
+ * @qmx-threshold complexity.npath method.error=3000
+ * @qmx-threshold complexity.cyclomatic method.error=25
+ * Orchestrator method handles many filter stages with output — complexity is structural.
  */
 final readonly class ViolationFilterOrchestrator
 {
@@ -72,11 +76,30 @@ final readonly class ViolationFilterOrchestrator
             }
         }
 
-        if ($input->getOption('show-suppressed') && $filterResult->suppressionFiltered > 0) {
+        if ($input->getOption('show-suppressed') && $filterResult->suppressedViolations !== []) {
+            $output->writeln('');
             $output->writeln(\sprintf(
-                '<info>%d violations were suppressed by @qmx-ignore tags</info>',
-                $filterResult->suppressionFiltered,
+                '<info>%d violation(s) suppressed by @qmx-ignore tags:</info>',
+                \count($filterResult->suppressedViolations),
             ));
+
+            $byFile = [];
+            foreach ($filterResult->suppressedViolations as $v) {
+                $file = $v->location->file ?: '(no file)';
+                $byFile[$file][] = $v;
+            }
+
+            foreach ($byFile as $file => $violations) {
+                $output->writeln(\sprintf('  <comment>%s</comment>', $file));
+                foreach ($violations as $v) {
+                    $output->writeln(\sprintf(
+                        '    line %s — %s [%s]',
+                        $v->location->line ?? '?',
+                        $v->getDisplayMessage(),
+                        $v->ruleName,
+                    ));
+                }
+            }
         }
 
         if ($filterResult->pathExclusionFiltered > 0 && $output->isVerbose()) {
