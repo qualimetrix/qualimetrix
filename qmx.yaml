@@ -41,10 +41,10 @@ rules:
       - src/Metrics/*Visitor.php
       - src/Metrics/*Trait.php
       # DI configurators wire all services (coupling is their job)
-      - src/Infrastructure/DependencyInjection/*
+      - src/Infrastructure/DependencyInjection
       # Infrastructure console commands and pipeline orchestrators need many deps
-      - src/Infrastructure/Console/*
-      - src/Analysis/Pipeline/*
+      - src/Infrastructure/Console
+      - src/Analysis/Pipeline
     namespace:
       warning: 16
       error: 25
@@ -82,11 +82,11 @@ rules:
       # Visitors/configurators are inherently unstable (many outgoing, few incoming deps)
       - src/Metrics/*Visitor.php
       - src/Metrics/*Trait.php
-      - src/Infrastructure/DependencyInjection/*
-      # Console commands/orchestrators (* matches across / with fnmatch, covers Command/ too)
-      - src/Infrastructure/Console/*
-      - src/Analysis/Pipeline/*
-      - src/Baseline/*
+      - src/Infrastructure/DependencyInjection
+      # Console commands/orchestrators
+      - src/Infrastructure/Console
+      - src/Analysis/Pipeline
+      - src/Baseline
       # Abstract base classes aggregate deps from all subclasses — instability is structural
       - src/Metrics/AbstractCollector.php
       - src/Rules/AbstractRule.php
@@ -103,11 +103,11 @@ rules:
   # This is structural complexity from matching PHP AST node types, not a design flaw.
   complexity.npath:
     exclude_paths:
-      - src/Metrics/*
+      - src/Metrics
       - src/Rules/Design/*Rule.php
       - src/Reporting/Formatter/Summary/*Renderer.php
       - src/Rules/Support/ThresholdParser.php
-      - src/Analysis/Duplication/*
+      - src/Analysis/Duplication
 
   # Code duplication: Options classes share fromArray/threshold patterns by convention;
   # MetricHintProvider has intentionally similar hint blocks.
@@ -121,27 +121,27 @@ rules:
 
   complexity.cyclomatic:
     exclude_paths:
-      - src/Metrics/*
+      - src/Metrics
       - src/Rules/Support/ThresholdParser.php
       - src/Rules/Design/*Rule.php
-      - src/Reporting/Formatter/Sarif/*
-      - src/Reporting/Health/*
-      - src/Reporting/Formatter/Summary/*
-      - src/Analysis/Pipeline/*
-      - src/Baseline/*
+      - src/Reporting/Formatter/Sarif
+      - src/Reporting/Health
+      - src/Reporting/Formatter/Summary
+      - src/Analysis/Pipeline
+      - src/Baseline
 
   complexity.wmc:
     exclude_paths:
-      - src/Metrics/*
-      - src/Reporting/Health/*
+      - src/Metrics
+      - src/Reporting/Health
 
   complexity.cognitive:
     exclude_paths:
-      - src/Metrics/*
-      - src/Analysis/Duplication/*
-      - src/Reporting/Health/*
-      - src/Reporting/Formatter/Summary/*
-      - src/Reporting/Impact/*
+      - src/Metrics
+      - src/Analysis/Duplication
+      - src/Reporting/Health
+      - src/Reporting/Formatter/Summary
+      - src/Reporting/Impact
       - src/Rules/Design/*Rule.php
       - src/Rules/Support/ThresholdParser.php
 
@@ -154,9 +154,9 @@ rules:
     exclude_paths:
       - src/Rules/*Options.php
       - src/Analysis/*Options.php
-      - src/Infrastructure/Console/*
-      - src/Reporting/*
-      - src/Core/*
+      - src/Infrastructure/Console
+      - src/Reporting
+      - src/Core
 
   code-smell.error-suppression:
     allowed_functions:
@@ -183,11 +183,11 @@ rules:
     exclude_paths:
       - src/Reporting/Report.php
       - src/Reporting/FormatterContext.php
-      - src/Reporting/Health/*
-      - src/Analysis/Collection/*
-      - src/Analysis/Pipeline/*
-      - src/Infrastructure/Console/*
-      - src/Infrastructure/Parallel/*
+      - src/Reporting/Health
+      - src/Analysis/Collection
+      - src/Analysis/Pipeline
+      - src/Infrastructure/Console
+      - src/Infrastructure/Parallel
     exclude_namespaces:
       - Qualimetrix\Core
 
@@ -195,7 +195,7 @@ rules:
     exclude_paths:
       - src/Reporting/Report.php
       - src/Reporting/FormatterContext.php
-      - src/Reporting/Formatter/Summary/*
+      - src/Reporting/Formatter/Summary
 
   # Cache operations use @ for intentional error suppression and empty catch
   # for "best effort" cache invalidation.
@@ -203,7 +203,7 @@ rules:
   # The one in CachedFileParser is intentional (best-effort caching).
   code-smell.empty-catch:
     exclude_paths:
-      - src/Infrastructure/Ast/*
+      - src/Infrastructure/Ast
 
   # MethodCountMetrics tracks many per-class counts (each is a separate property)
   size.property-count:
@@ -222,14 +222,14 @@ rules:
   design.lcom:
     warning: 5
     exclude_paths:
-      - src/Reporting/Health/*
+      - src/Reporting/Health
       # Derived metric collectors are thin wrappers (low cohesion by nature)
       - src/Metrics/Coupling/*Collector.php
 
   design.god-class:
     exclude_paths:
-      - src/Reporting/Health/*
-      - src/Reporting/Formatter/Health/*
+      - src/Reporting/Health
+      - src/Reporting/Formatter/Health
       - src/Rules/Coupling/CboRule.php
 
   # --- Maintainability ---

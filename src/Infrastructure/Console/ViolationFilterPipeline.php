@@ -10,6 +10,7 @@ use Qualimetrix\Baseline\Suppression\SuppressionFilter;
 use Qualimetrix\Baseline\ViolationHasher;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Core\Suppression\Suppression;
+use Qualimetrix\Core\Util\NamespaceMatcher;
 use Qualimetrix\Core\Util\PathMatcher;
 use Qualimetrix\Core\Violation\Filter\PathExclusionFilter;
 use Qualimetrix\Core\Violation\Violation;
@@ -17,7 +18,10 @@ use Qualimetrix\Infrastructure\Git\GitScopeFilter;
 
 /**
  * Pipeline that applies all violation filters in order:
- * baseline -> suppression -> path exclusion -> git scope.
+ * baseline -> suppression -> path exclusion -> namespace exclusion -> git scope.
+ *
+ * @qmx-threshold complexity.cognitive method.error=35
+ * Multi-stage filter pipeline — cognitive complexity is structural.
  */
 final readonly class ViolationFilterPipeline
 {
@@ -86,14 +90,17 @@ final readonly class ViolationFilterPipeline
         }
 
         // 2. Suppression filter
-        $suppressionFiltered = 0;
+        $suppressedViolations = [];
         if (!$options->disableSuppression) {
-            $beforeCount = \count($violations);
-            $violations = array_values(array_filter(
-                $violations,
-                fn(Violation $v) => $this->suppressionFilter->shouldInclude($v),
-            ));
-            $suppressionFiltered = $beforeCount - \count($violations);
+            $included = [];
+            foreach ($violations as $v) {
+                if ($this->suppressionFilter->shouldInclude($v)) {
+                    $included[] = $v;
+                } else {
+                    $suppressedViolations[] = $v;
+                }
+            }
+            $violations = $included;
         }
 
         // 3. Path exclusion filter
@@ -116,25 +123,13 @@ final readonly class ViolationFilterPipeline
         // 4. Namespace exclusion filter
         $namespaceExclusionFiltered = 0;
         $configNamespaces = $this->configurationProvider->getConfiguration()->excludeNamespaces;
+        $namespaceMatcher = new NamespaceMatcher($configNamespaces);
 
-        if ($configNamespaces !== []) {
+        if (!$namespaceMatcher->isEmpty()) {
             $beforeCount = \count($violations);
             $violations = array_values(array_filter(
                 $violations,
-                static function (Violation $v) use ($configNamespaces): bool {
-                    $ns = $v->symbolPath->namespace;
-                    if ($ns === null || $ns === '') {
-                        return true;
-                    }
-                    foreach ($configNamespaces as $prefix) {
-                        $prefix = rtrim($prefix, '\\');
-                        if ($ns === $prefix || str_starts_with($ns, $prefix . '\\')) {
-                            return false;
-                        }
-                    }
-
-                    return true;
-                },
+                static fn(Violation $v): bool => !$namespaceMatcher->matches($v->symbolPath->namespace ?? ''),
             ));
             $namespaceExclusionFiltered = $beforeCount - \count($violations);
         }
@@ -159,13 +154,14 @@ final readonly class ViolationFilterPipeline
         return new ViolationFilterResult(
             violations: $violations,
             baselineFiltered: $baselineFiltered,
-            suppressionFiltered: $suppressionFiltered,
+            suppressionFiltered: \count($suppressedViolations),
             pathExclusionFiltered: $pathExclusionFiltered,
             namespaceExclusionFiltered: $namespaceExclusionFiltered,
             gitScopeFiltered: $gitScopeFiltered,
             baselineFilter: $baselineFilter,
             staleBaselineKeys: $staleKeys,
             staleBaselineCount: $staleCount,
+            suppressedViolations: $suppressedViolations,
         );
     }
 }

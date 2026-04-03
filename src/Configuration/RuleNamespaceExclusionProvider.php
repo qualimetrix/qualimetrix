@@ -4,31 +4,37 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Configuration;
 
+use Qualimetrix\Core\Util\NamespaceMatcher;
+
 /**
- * Stores per-rule namespace exclusions and provides prefix-based matching.
+ * Stores per-rule namespace exclusions and provides namespace matching.
  *
  * Extracted from config during RuleOptionsFactory::create() and consumed
  * by RuleExecutor to filter violations at framework level.
  */
 final class RuleNamespaceExclusionProvider
 {
-    /** @var array<string, list<string>> rule name => list of namespace prefixes */
+    /** @var array<string, NamespaceMatcher> */
+    private array $matchers = [];
+
+    /** @var array<string, list<string>> raw patterns for getExclusions() */
     private array $exclusions = [];
 
     /**
-     * @param list<string> $prefixes
+     * @param list<string> $patterns Namespace patterns (prefixes or globs)
      */
-    public function setExclusions(string $ruleName, array $prefixes): void
+    public function setExclusions(string $ruleName, array $patterns): void
     {
-        if ($prefixes === []) {
+        if ($patterns === []) {
             return;
         }
 
-        $this->exclusions[$ruleName] = $prefixes;
+        $this->exclusions[$ruleName] = $patterns;
+        $this->matchers[$ruleName] = new NamespaceMatcher($patterns);
     }
 
     /**
-     * Returns the exclusion prefixes for a given rule.
+     * Returns the exclusion patterns for a given rule.
      *
      * @return list<string>
      */
@@ -39,23 +45,16 @@ final class RuleNamespaceExclusionProvider
 
     public function isExcluded(string $ruleName, string $namespace): bool
     {
-        if (!isset($this->exclusions[$ruleName])) {
+        if (!isset($this->matchers[$ruleName])) {
             return false;
         }
 
-        foreach ($this->exclusions[$ruleName] as $prefix) {
-            $prefix = rtrim($prefix, '\\');
-
-            if ($namespace === $prefix || str_starts_with($namespace, $prefix . '\\')) {
-                return true;
-            }
-        }
-
-        return false;
+        return $this->matchers[$ruleName]->matches($namespace);
     }
 
     public function reset(): void
     {
+        $this->matchers = [];
         $this->exclusions = [];
     }
 }

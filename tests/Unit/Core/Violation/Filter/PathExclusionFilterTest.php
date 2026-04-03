@@ -18,25 +18,25 @@ final class PathExclusionFilterTest extends TestCase
 {
     public function testFiltersSuppressedPath(): void
     {
-        $filter = new PathExclusionFilter(new PathMatcher(['src/Entity/*']));
+        $filter = new PathExclusionFilter(new PathMatcher(['src/Entity']));
 
         $violation = $this->createViolation('src/Entity/User.php');
 
-        self::assertFalse($filter->shouldInclude($violation), 'Violation matching exclusion pattern should be suppressed');
+        self::assertFalse($filter->shouldInclude($violation), 'Violation matching exclusion prefix should be suppressed');
     }
 
     public function testPassesNonMatchingPath(): void
     {
-        $filter = new PathExclusionFilter(new PathMatcher(['src/Entity/*']));
+        $filter = new PathExclusionFilter(new PathMatcher(['src/Entity']));
 
         $violation = $this->createViolation('src/Service/UserService.php');
 
-        self::assertTrue($filter->shouldInclude($violation), 'Violation not matching exclusion pattern should pass through');
+        self::assertTrue($filter->shouldInclude($violation), 'Violation not matching exclusion prefix should pass through');
     }
 
     public function testPassesEmptyFilePath(): void
     {
-        $filter = new PathExclusionFilter(new PathMatcher(['*']));
+        $filter = new PathExclusionFilter(new PathMatcher(['src']));
 
         $violation = new Violation(
             location: new Location(''),
@@ -50,7 +50,16 @@ final class PathExclusionFilterTest extends TestCase
         self::assertTrue($filter->shouldInclude($violation), 'Violation with empty file path should never be filtered');
     }
 
-    public function testPassesWhenNoPatterns(): void
+    public function testFiltersGlobPattern(): void
+    {
+        $filter = new PathExclusionFilter(new PathMatcher(['src/Metrics/*Visitor.php']));
+
+        $violation = $this->createViolation('src/Metrics/CboVisitor.php');
+
+        self::assertFalse($filter->shouldInclude($violation), 'Violation matching glob pattern should be suppressed');
+    }
+
+    public function testPassesWhenNoPrefixes(): void
     {
         $filter = new PathExclusionFilter(new PathMatcher([]));
 

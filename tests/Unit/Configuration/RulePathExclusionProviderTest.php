@@ -18,34 +18,43 @@ final class RulePathExclusionProviderTest extends TestCase
         self::assertFalse($provider->isExcluded('coupling.cbo', 'src/Service/UserService.php'));
     }
 
-    public function testIsExcludedMatchesGlobPattern(): void
+    public function testIsExcludedMatchesPathPrefix(): void
     {
         $provider = new RulePathExclusionProvider();
-        $provider->setExclusions('coupling.cbo', ['src/Metrics/*Visitor.php']);
+        $provider->setExclusions('coupling.cbo', ['src/Metrics']);
 
         self::assertTrue($provider->isExcluded('coupling.cbo', 'src/Metrics/CodeSmellVisitor.php'));
         self::assertFalse($provider->isExcluded('coupling.cbo', 'src/Rules/SomeRule.php'));
     }
 
-    public function testIsExcludedMatchesWildcardDirectory(): void
+    public function testIsExcludedMatchesDirectoryPrefix(): void
     {
         $provider = new RulePathExclusionProvider();
-        $provider->setExclusions('coupling.cbo', ['src/Infrastructure/DependencyInjection/*']);
+        $provider->setExclusions('coupling.cbo', ['src/Infrastructure/DependencyInjection']);
 
         self::assertTrue($provider->isExcluded('coupling.cbo', 'src/Infrastructure/DependencyInjection/ContainerFactory.php'));
         self::assertFalse($provider->isExcluded('coupling.cbo', 'src/Infrastructure/Console/Command.php'));
     }
 
+    public function testIsExcludedDoesNotMatchPartialPrefix(): void
+    {
+        $provider = new RulePathExclusionProvider();
+        $provider->setExclusions('coupling.cbo', ['src/Entity']);
+
+        self::assertTrue($provider->isExcluded('coupling.cbo', 'src/Entity/User.php'));
+        self::assertFalse($provider->isExcluded('coupling.cbo', 'src/EntityManager/Foo.php'));
+    }
+
     public function testIsExcludedIsolatedPerRule(): void
     {
         $provider = new RulePathExclusionProvider();
-        $provider->setExclusions('coupling.cbo', ['src/Metrics/*']);
+        $provider->setExclusions('coupling.cbo', ['src/Metrics']);
 
         self::assertTrue($provider->isExcluded('coupling.cbo', 'src/Metrics/SomeFile.php'));
         self::assertFalse($provider->isExcluded('complexity.cyclomatic', 'src/Metrics/SomeFile.php'));
     }
 
-    public function testSetExclusionsIgnoresEmptyPatterns(): void
+    public function testSetExclusionsIgnoresEmptyPrefixes(): void
     {
         $provider = new RulePathExclusionProvider();
         $provider->setExclusions('coupling.cbo', []);
@@ -56,7 +65,7 @@ final class RulePathExclusionProviderTest extends TestCase
     public function testIsExcludedReturnsFalseForEmptyFilePath(): void
     {
         $provider = new RulePathExclusionProvider();
-        $provider->setExclusions('coupling.cbo', ['src/*']);
+        $provider->setExclusions('coupling.cbo', ['src']);
 
         self::assertFalse($provider->isExcluded('coupling.cbo', ''));
     }
@@ -64,7 +73,7 @@ final class RulePathExclusionProviderTest extends TestCase
     public function testResetClearsAllExclusions(): void
     {
         $provider = new RulePathExclusionProvider();
-        $provider->setExclusions('coupling.cbo', ['src/*']);
+        $provider->setExclusions('coupling.cbo', ['src']);
 
         self::assertTrue($provider->isExcluded('coupling.cbo', 'src/File.php'));
 
@@ -73,13 +82,21 @@ final class RulePathExclusionProviderTest extends TestCase
         self::assertFalse($provider->isExcluded('coupling.cbo', 'src/File.php'));
     }
 
-    public function testStringValueCoercedToArray(): void
+    public function testIsExcludedMatchesGlobPattern(): void
     {
-        // This tests the RuleOptionsFactory behavior indirectly,
-        // but we verify PathMatcher works with a single pattern
         $provider = new RulePathExclusionProvider();
-        $provider->setExclusions('coupling.cbo', ['src/Entity/*.php']);
+        $provider->setExclusions('coupling.cbo', ['src/Metrics/*Visitor.php']);
+
+        self::assertTrue($provider->isExcluded('coupling.cbo', 'src/Metrics/CboVisitor.php'));
+        self::assertFalse($provider->isExcluded('coupling.cbo', 'src/Metrics/CboCollector.php'));
+    }
+
+    public function testSinglePrefixMatchesExactFile(): void
+    {
+        $provider = new RulePathExclusionProvider();
+        $provider->setExclusions('coupling.cbo', ['src/Entity/User.php']);
 
         self::assertTrue($provider->isExcluded('coupling.cbo', 'src/Entity/User.php'));
+        self::assertFalse($provider->isExcluded('coupling.cbo', 'src/Entity/Order.php'));
     }
 }

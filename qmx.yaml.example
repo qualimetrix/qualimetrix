@@ -28,13 +28,14 @@
 #   - src/
 #   - lib/
 
-# Exclude paths from violation reporting (glob patterns, fnmatch syntax).
+# Exclude paths from violation reporting.
+# Patterns without glob characters (*, ?, [) use prefix matching.
+# Patterns with glob characters use fnmatch().
 # Files are still analyzed for metrics — only violations are suppressed.
-# Namespace-level violations are not affected.
 # exclude_paths:
-#   - src/Entity/*
-#   - src/DTO/*
-#   - src/Migrations/*
+#   - src/Entity              # prefix: matches all files under src/Entity/
+#   - src/DTO                 # prefix: matches all files under src/DTO/
+#   - src/Metrics/*Visitor.php # glob: matches visitor files only
 
 
 # -----------------------------------------------------------------------------
@@ -109,16 +110,16 @@
 #   https://qualimetrix.github.io/qualimetrix/reference/rules/
 #
 # Every rule supports these universal options:
-#   exclude_namespaces — suppress violations in specific namespaces (prefix matching)
-#   exclude_paths — suppress violations in specific files (fnmatch glob patterns)
+#   exclude_namespaces — suppress violations in specific namespaces (prefix or glob matching)
+#   exclude_paths — suppress violations in specific files (prefix or glob matching)
 #
 # Example:
 #   coupling.cbo:
 #     exclude_namespaces:
 #       - App\Core\ValueObject
 #     exclude_paths:
-#       - src/Metrics/*Visitor.php
-#       - src/Infrastructure/DependencyInjection/*
+#       - src/Metrics
+#       - src/Infrastructure/DependencyInjection
 #
 # rules:
 

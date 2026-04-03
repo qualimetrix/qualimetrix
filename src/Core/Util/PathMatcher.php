@@ -5,16 +5,22 @@ declare(strict_types=1);
 namespace Qualimetrix\Core\Util;
 
 /**
- * Matches file paths against glob patterns.
+ * Matches file paths against path patterns.
  *
- * Used for exclude_paths feature to suppress violations by file path patterns.
- * Uses fnmatch() with FNM_NOESCAPE flag (disables backslash escaping).
- * Without FNM_PATHNAME, `*` matches across directory separators by default.
+ * Supports two matching modes, selected automatically per pattern:
+ * - **Prefix mode** (no glob characters): the pattern is treated as a path prefix
+ *   with `/` boundary awareness. `src/Entity` matches `src/Entity` itself and
+ *   any path under it (`src/Entity/User.php`, `src/Entity/Sub/Deep.php`),
+ *   but NOT `src/EntityManager/Foo.php`.
+ * - **Glob mode** (contains `*`, `?`, or `[`): the pattern is matched using
+ *   `fnmatch()` with `FNM_NOESCAPE`. Without `FNM_PATHNAME`, `*` matches
+ *   across directory separators.
  *
  * Examples:
- *   - `src/Entity/*` matches `src/Entity/User.php` and `src/Entity/Sub/Deep.php`
- *   - `*.php` matches any PHP file at any depth
- *   - `src/DTO/UserDTO.php` matches exact path
+ *   - `src/Entity` matches `src/Entity`, `src/Entity/User.php`, `src/Entity/Sub/Deep.php`
+ *   - `src/Entity` does NOT match `src/EntityManager/Foo.php`
+ *   - `src/Metrics/*Visitor.php` matches `src/Metrics/CboVisitor.php`
+ *   - `src/Rules/**\/*Options.php` matches `src/Rules/Complexity/CcnOptions.php`
  */
 final readonly class PathMatcher
 {
@@ -24,7 +30,7 @@ final readonly class PathMatcher
     private array $normalizedPatterns;
 
     /**
-     * @param list<string> $patterns Glob patterns to match against
+     * @param list<string> $patterns Path patterns or prefixes to match against
      */
     public function __construct(array $patterns)
     {
@@ -46,8 +52,18 @@ final readonly class PathMatcher
         $normalizedPath = rtrim($filePath, '/');
 
         foreach ($this->normalizedPatterns as $pattern) {
-            if (fnmatch($pattern, $normalizedPath, \FNM_NOESCAPE)) {
-                return true;
+            if ($pattern === '') {
+                continue;
+            }
+
+            if ($this->isGlobPattern($pattern)) {
+                if (fnmatch($pattern, $normalizedPath, \FNM_NOESCAPE)) {
+                    return true;
+                }
+            } else {
+                if ($normalizedPath === $pattern || str_starts_with($normalizedPath, $pattern . '/')) {
+                    return true;
+                }
             }
         }
 
@@ -60,5 +76,13 @@ final readonly class PathMatcher
     public function isEmpty(): bool
     {
         return $this->normalizedPatterns === [];
+    }
+
+    /**
+     * Returns true if the pattern contains glob characters (*, ?, [).
+     */
+    private function isGlobPattern(string $pattern): bool
+    {
+        return str_contains($pattern, '*') || str_contains($pattern, '?') || str_contains($pattern, '[');
     }
 }

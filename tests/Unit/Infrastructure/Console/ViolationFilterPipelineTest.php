@@ -262,7 +262,7 @@ final class ViolationFilterPipelineTest extends TestCase
             baselinePath: null,
             ignoreStaleBaseline: false,
             disableSuppression: true,
-            excludePaths: ['vendor/*'],
+            excludePaths: ['vendor'],
             gitScope: null,
         );
 
@@ -280,7 +280,7 @@ final class ViolationFilterPipelineTest extends TestCase
         $v2 = $this->makeViolation('generated/Proxy.php');
 
         $config = new AnalysisConfiguration(
-            excludePaths: ['generated/*'],
+            excludePaths: ['generated'],
         );
         $configProvider = $this->createStub(ConfigurationProviderInterface::class);
         $configProvider->method('getConfiguration')->willReturn($config);
@@ -314,7 +314,7 @@ final class ViolationFilterPipelineTest extends TestCase
         $v3 = $this->makeViolation('vendor/library/SomeClass.php');
 
         $config = new AnalysisConfiguration(
-            excludePaths: ['generated/*'],
+            excludePaths: ['generated'],
         );
         $configProvider = $this->createStub(ConfigurationProviderInterface::class);
         $configProvider->method('getConfiguration')->willReturn($config);
@@ -330,7 +330,7 @@ final class ViolationFilterPipelineTest extends TestCase
             baselinePath: null,
             ignoreStaleBaseline: false,
             disableSuppression: true,
-            excludePaths: ['vendor/*'],
+            excludePaths: ['vendor'],
             gitScope: null,
         );
 

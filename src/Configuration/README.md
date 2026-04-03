@@ -263,13 +263,14 @@ Consumed by `RuleExecutor` to filter violations at framework level.
 ### qmx.yaml
 
 ```yaml
-# Exclude paths from violations (glob patterns, fnmatch syntax)
+# Exclude paths from violations (prefix or glob matching)
+# Patterns without glob characters (*, ?, [) use prefix matching.
+# Patterns with glob characters use fnmatch().
 # Note: files are still analyzed and metrics are collected,
 # but violations for matching files are suppressed.
-# Namespace-level/aggregated violations are not affected (they have no specific file).
 exclude_paths:
-  - src/Entity/*
-  - src/DTO/*
+  - src/Entity              # prefix: matches all files under src/Entity/
+  - src/Metrics/*Visitor.php # glob: matches visitor files only
 
 # Rule settings
 rules:
@@ -542,10 +543,10 @@ Examples:
 | ------------------------ | ---------------------------------------------------------------- |
 | `--disable-rule=RULE`    | Disable a rule or category                                       |
 | `--only-rule=RULE`       | Run only the specified rule or category                          |
-| `--exclude-path=PATTERN` | Suppress violations for files matching glob pattern (repeatable) |
+| `--exclude-path=PATTERN` | Suppress violations for files matching path prefix or glob (repeatable) |
 | `--config=PATH`          | Path to config file                                              |
 
-**`--exclude-path`** uses `fnmatch()` glob syntax (e.g., `src/Entity/*`, `*/DTO/*`).
+**`--exclude-path`** supports both prefix matching (e.g., `src/Entity`) and glob patterns (e.g., `src/Metrics/*Visitor.php`).
 CLI patterns are **merged** with `exclude_paths` from the config file, not overridden.
 Note: excluded files are still analyzed and their metrics are collected — only violations are suppressed.
 Namespace-level and aggregated violations are not affected, as they have no specific file path.
