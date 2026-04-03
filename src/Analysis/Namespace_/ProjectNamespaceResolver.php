@@ -4,15 +4,16 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Namespace_;
 
-use InvalidArgumentException;
 use Qualimetrix\Core\Namespace_\ProjectNamespaceResolverInterface;
-use RuntimeException;
 
 /**
  * Resolves project namespaces from composer.json autoload configuration.
  *
  * Determines which namespaces belong to the project (not external dependencies)
  * by reading autoload.psr-4 and autoload-dev.psr-4 sections.
+ *
+ * When composer.json is missing or has no PSR-4 configuration, all namespaces
+ * are treated as project namespaces (empty prefix list = match everything).
  */
 final class ProjectNamespaceResolver implements ProjectNamespaceResolverInterface
 {
@@ -22,7 +23,7 @@ final class ProjectNamespaceResolver implements ProjectNamespaceResolverInterfac
     private readonly array $projectPrefixes;
 
     /**
-     * @param string|null $composerJsonPath Path to composer.json (null = auto-detect)
+     * @param string|null $composerJsonPath Absolute path to composer.json (null = project root / composer.json)
      * @param list<string>|null $overridePrefixes Override detected prefixes
      */
     public function __construct(
@@ -34,7 +35,7 @@ final class ProjectNamespaceResolver implements ProjectNamespaceResolverInterfac
             return;
         }
 
-        $path = $composerJsonPath ?? $this->findComposerJson();
+        $path = $composerJsonPath ?? getcwd() . '/composer.json';
         $this->projectPrefixes = $this->extractPrefixesFromComposer($path);
     }
 
@@ -51,6 +52,11 @@ final class ProjectNamespaceResolver implements ProjectNamespaceResolverInterfac
 
         // Empty namespace is considered project namespace (global scope)
         if ($namespace === '') {
+            return true;
+        }
+
+        // No prefixes detected — treat all namespaces as project (graceful degradation)
+        if ($this->projectPrefixes === []) {
             return true;
         }
 
@@ -77,61 +83,26 @@ final class ProjectNamespaceResolver implements ProjectNamespaceResolverInterfac
     }
 
     /**
-     * Find composer.json in current directory or parent directories.
-     *
-     * @throws RuntimeException If composer.json not found
-     */
-    private function findComposerJson(): string
-    {
-        $dir = getcwd();
-        if ($dir === false) {
-            throw new RuntimeException('Cannot determine current working directory');
-        }
-
-        $maxDepth = 10; // Prevent infinite loop
-        $depth = 0;
-
-        while ($depth < $maxDepth) {
-            $composerPath = $dir . '/composer.json';
-            if (file_exists($composerPath)) {
-                return $composerPath;
-            }
-
-            $parentDir = \dirname($dir);
-            if ($parentDir === $dir) {
-                // Reached filesystem root
-                break;
-            }
-
-            $dir = $parentDir;
-            $depth++;
-        }
-
-        throw new RuntimeException('composer.json not found in current or parent directories');
-    }
-
-    /**
      * Extract namespace prefixes from composer.json.
      *
-     * @throws InvalidArgumentException If composer.json is invalid
-     * @throws RuntimeException If composer.json cannot be read
+     * Returns empty list if composer.json is missing, unreadable, or has no PSR-4 config.
      *
      * @return list<string> Normalized and sorted prefixes
      */
     private function extractPrefixesFromComposer(string $path): array
     {
         if (!file_exists($path)) {
-            throw new InvalidArgumentException("composer.json not found at: {$path}");
+            return [];
         }
 
         $content = file_get_contents($path);
         if ($content === false) {
-            throw new RuntimeException("Failed to read composer.json at: {$path}");
+            return [];
         }
 
         $data = json_decode($content, true);
         if (!\is_array($data)) {
-            throw new InvalidArgumentException("Invalid JSON in composer.json at: {$path}");
+            return [];
         }
 
         $prefixes = [];
@@ -144,10 +115,6 @@ final class ProjectNamespaceResolver implements ProjectNamespaceResolverInterfac
         // Extract from autoload-dev.psr-4
         if (isset($data['autoload-dev']['psr-4']) && \is_array($data['autoload-dev']['psr-4'])) {
             $prefixes = array_merge($prefixes, array_keys($data['autoload-dev']['psr-4']));
-        }
-
-        if ($prefixes === []) {
-            throw new InvalidArgumentException("No PSR-4 autoload configuration found in: {$path}");
         }
 
         return $this->normalizeAndSort($prefixes);

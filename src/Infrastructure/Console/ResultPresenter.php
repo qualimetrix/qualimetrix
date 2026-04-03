@@ -28,8 +28,8 @@ final class ResultPresenter
         private readonly SummaryEnricher $summaryEnricher,
         private readonly ProfilePresenter $profilePresenter,
         private readonly ExitCodeResolver $exitCodeResolver,
-        private readonly ViolationFilter $violationFilter = new ViolationFilter(),
-        private readonly FormatterContextFactory $formatterContextFactory = new FormatterContextFactory(),
+        private readonly ViolationFilter $violationFilter,
+        private readonly FormatterContextFactory $formatterContextFactory,
     ) {}
 
     /**

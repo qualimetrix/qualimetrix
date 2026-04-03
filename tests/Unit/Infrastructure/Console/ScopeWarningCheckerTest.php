@@ -28,12 +28,12 @@ final class ScopeWarningCheckerTest extends TestCase
     }
 
     #[Test]
-    public function testNoComposerJsonReturnsWarning(): void
+    public function testNoComposerJsonReturnsNoWarnings(): void
     {
+        // Missing composer.json is reported by CheckCommand, not ScopeWarningChecker
         $warnings = $this->checker->check($this->tempDir, ['src']);
 
-        self::assertCount(1, $warnings);
-        self::assertStringContainsString('No composer.json found', $warnings[0]);
+        self::assertSame([], $warnings);
     }
 
     #[Test]
