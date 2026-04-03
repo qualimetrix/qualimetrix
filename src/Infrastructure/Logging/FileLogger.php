@@ -17,6 +17,8 @@ use Stringable;
  */
 final class FileLogger extends AbstractLogger
 {
+    use LoggerHelperTrait;
+
     /** @var resource|null */
     private $handle = null;
 
@@ -52,7 +54,7 @@ final class FileLogger extends AbstractLogger
      */
     public function log($level, string|Stringable $message, array $context = []): void
     {
-        if (!$this->shouldLog($level)) {
+        if (!$this->meetsMinLevel($level, $this->minLevel)) {
             return;
         }
 
@@ -63,30 +65,11 @@ final class FileLogger extends AbstractLogger
         $line = json_encode([
             'timestamp' => date('c'),
             'level' => $level,
-            'message' => (string) $message,
+            'message' => $this->interpolate((string) $message, $context),
             'context' => $context,
         ], \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE) . "\n";
 
         fwrite($this->handle, $line);
-    }
-
-    /**
-     * Determines if a log message should be written based on configured minimum level.
-     */
-    private function shouldLog(string $level): bool
-    {
-        $levels = [
-            LogLevel::DEBUG => 0,
-            LogLevel::INFO => 1,
-            LogLevel::NOTICE => 2,
-            LogLevel::WARNING => 3,
-            LogLevel::ERROR => 4,
-            LogLevel::CRITICAL => 5,
-            LogLevel::ALERT => 6,
-            LogLevel::EMERGENCY => 7,
-        ];
-
-        return ($levels[$level] ?? 0) >= ($levels[$this->minLevel] ?? 0);
     }
 
     /**

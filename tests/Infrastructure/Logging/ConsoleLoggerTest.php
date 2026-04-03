@@ -46,8 +46,22 @@ final class ConsoleLoggerTest extends TestCase
 
         $content = $output->fetch();
         $this->assertStringContainsString('Processing', $content);
+        // Context is still appended as JSON
         $this->assertStringContainsString('"file":"test.php"', $content);
         $this->assertStringContainsString('"count":42', $content);
+    }
+
+    public function testInterpolatesPlaceholders(): void
+    {
+        $output = new BufferedOutput(OutputInterface::VERBOSITY_VERBOSE);
+        $logger = new ConsoleLogger($output);
+
+        $logger->info('Processing {file} ({count} lines)', ['file' => 'test.php', 'count' => 42]);
+
+        $content = $output->fetch();
+        $this->assertStringContainsString('Processing test.php (42 lines)', $content);
+        $this->assertStringNotContainsString('{file}', $content);
+        $this->assertStringNotContainsString('{count}', $content);
     }
 
     public function testDifferentLogLevels(): void
