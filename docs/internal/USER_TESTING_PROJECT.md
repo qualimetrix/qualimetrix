@@ -71,12 +71,12 @@ All bugs fixed in commit `85e4612`.
 | 1   | Parse error files show "No PHP files found"                      | UX   | **Fixed** |
 | 2   | `--preset=strict --preset=legacy` silently drops first           | UX   | Not reproducible |
 | 3   | `--show-suppressed` shows only count, not which violations       | UX   | **Fixed** |
-| 4   | `@qmx-ignore complexity` doesn't suppress `health.complexity`    | UX   | Open     |
+| 4   | `@qmx-ignore complexity` doesn't suppress `health.complexity`    | UX   | Won't Fix |
 | 5   | `exclude_paths` requires glob syntax, not directory paths        | UX   | **Fixed** |
 | 6   | Invalid `--exclude-health` value silently ignored                | UX   | **Fixed** |
 | 7   | `--format=metrics` name suggests human-readable but outputs JSON | UX   | Open     |
-| 8   | Metric name normalization (`my_ratio` → `myRatio`) undocumented  | UX   | Open     |
-| 9   | No `--exclude-namespace` CLI option (only YAML)                  | UX   | Open     |
+| 8   | Metric name normalization (`my_ratio` → `myRatio`) undocumented  | Bug  | **Fixed** |
+| 9   | No `--exclude-namespace` CLI option (only YAML)                  | UX   | **Fixed** |
 
 ---
 
