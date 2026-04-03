@@ -30,28 +30,6 @@ final class MetricBag
     }
 
     /**
-     * Restores MetricBag from storage format (includes both metrics and structured data).
-     *
-     * @param array<string, mixed> $data
-     */
-    public static function fromStorageArray(array $data): self
-    {
-        $result = new self();
-
-        if (isset($data['__entries']) && \is_array($data['__entries'])) {
-            /** @var array<string, list<array<string, scalar>>> $entries */
-            $entries = $data['__entries'];
-            $result->data = DataBag::fromArray($entries);
-            unset($data['__entries']);
-        }
-
-        /** @var array<string, int|float> $data */
-        $result->metrics = $data;
-
-        return $result;
-    }
-
-    /**
      * Returns a new MetricBag with the given metric set.
      */
     public function with(string $name, int|float $value): self
@@ -114,23 +92,6 @@ final class MetricBag
     public function all(): array
     {
         return $this->metrics;
-    }
-
-    /**
-     * Returns storage-friendly array including both metrics and structured data.
-     * Uses '__entries' as a reserved key for DataBag data — metric names must not use this key.
-     *
-     * @return array<string, mixed>
-     */
-    public function toStorageArray(): array
-    {
-        $result = $this->metrics;
-
-        if (!$this->data->isEmpty()) {
-            $result['__entries'] = $this->data->all();
-        }
-
-        return $result;
     }
 
     /**

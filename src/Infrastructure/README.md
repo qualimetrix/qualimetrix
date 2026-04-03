@@ -7,7 +7,6 @@ Infrastructure contains external adapters and entry points:
 - **DependencyInjection**: Unified Symfony DI container with lazy services
 - **Ast**: PHP parser implementation with factory
 - **Cache**: AST caching ([details](Cache/README.md))
-- **Storage**: SQLite metric storage for large projects ([details](Storage/README.md))
 - **Git**: Git integration for analyzing staged/changed files ([details](Git/README.md))
 - **Logging**: PSR-3 logging ([details](Logging/README.md))
 - **Parallel**: Parallel processing strategies
@@ -18,8 +17,8 @@ Infrastructure contains external adapters and entry points:
 
 Infrastructure sub-packages follow internal deptrac rules to prevent circular dependencies:
 
-- **Leaf** (no Infrastructure siblings): Serializer, Storage, Logging, Profiler, Rule, Git
-- **Mid** (depends on specific siblings): Cache -> Serializer, Ast -> Cache, Collector -> Storage, Parallel -> Ast + Cache + Serializer
+- **Leaf** (no Infrastructure siblings): Serializer, Logging, Profiler, Rule, Git
+- **Mid** (depends on specific siblings): Cache -> Serializer, Ast -> Cache, Parallel -> Ast + Cache + Serializer
 - **Hub** (wide dependencies): Console -> Git, Rule, Cache, Logging, Profiler; DI -> all
 
 ## Structure
@@ -36,15 +35,6 @@ Infrastructure/
 │   ├── CacheFactory.php
 │   ├── CacheKeyGenerator.php
 │   └── CacheWriteException.php      # Cache write failure exception
-├── Storage/                          # -> See Storage/README.md
-│   ├── StorageInterface.php
-│   ├── SqliteStorage.php
-│   ├── InMemoryStorage.php
-│   ├── StorageFactory.php
-│   ├── ChangeDetector.php
-│   └── FileRecord.php
-├── Collector/
-│   └── CachedCollector.php          # Decorator with metric caching
 ├── Git/                              # -> See Git/README.md
 │   ├── GitClient.php
 │   ├── GitScopeParser.php
@@ -57,6 +47,7 @@ Infrastructure/
 ├── Logging/                          # -> See Logging/README.md
 │   ├── LoggerFactory.php
 │   ├── LoggerHolder.php
+│   ├── LoggerHelperTrait.php        # Shared PSR-3 interpolation and level filtering
 │   ├── DelegatingLogger.php
 │   ├── ConsoleLogger.php
 │   └── FileLogger.php
@@ -270,7 +261,7 @@ Factory with runtime configuration awareness.
 **Algorithm:**
 1. Finding autoloader
 2. Creating unified DI container via `ContainerFactory::create()`
-3. Getting `CheckCommand` from container (all dependencies injected)
+3. Registering commands via `ContainerCommandLoader` (lazy — commands are only instantiated when executed)
 4. Running Application
 
 **Runtime configuration:**
@@ -283,7 +274,6 @@ Factory with runtime configuration awareness.
 ## Detailed Documentation
 
 - [Cache/README.md](Cache/README.md) — AST Caching
-- [Storage/README.md](Storage/README.md) — SQLite Metric Storage
 - [Git/README.md](Git/README.md) — Git Integration
 - [Logging/README.md](Logging/README.md) — PSR-3 Logging
 - [Console/README.md](Console/README.md) — CLI Commands and Options

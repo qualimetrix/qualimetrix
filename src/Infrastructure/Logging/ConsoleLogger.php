@@ -21,6 +21,8 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 final class ConsoleLogger extends AbstractLogger
 {
+    use LoggerHelperTrait;
+
     /**
      * @param OutputInterface $output Console output interface
      * @param string $minLevel Minimum log level to output (default: INFO)
@@ -37,7 +39,7 @@ final class ConsoleLogger extends AbstractLogger
      */
     public function log($level, string|Stringable $message, array $context = []): void
     {
-        if (!$this->shouldLog($level)) {
+        if (!$this->meetsMinLevel($level, $this->minLevel)) {
             return;
         }
 
@@ -58,6 +60,9 @@ final class ConsoleLogger extends AbstractLogger
     /**
      * Formats log message with timestamp, level, and context.
      *
+     * Message placeholders are interpolated per PSR-3 spec.
+     * Full context is appended as JSON for machine readability.
+     *
      * @param array<string, mixed> $context
      */
     private function format(string $level, string $message, array $context): string
@@ -65,30 +70,13 @@ final class ConsoleLogger extends AbstractLogger
         $timestamp = date('H:i:s');
         $levelUpper = strtoupper($level);
 
+        $message = $this->interpolate($message, $context);
+
         $contextStr = '';
         if ($context !== []) {
             $contextStr = ' ' . json_encode($context, \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE);
         }
 
         return "[{$timestamp}] [{$levelUpper}] {$message}{$contextStr}";
-    }
-
-    /**
-     * Determines if a log message should be output based on configured minimum level.
-     */
-    private function shouldLog(string $level): bool
-    {
-        $levels = [
-            LogLevel::DEBUG => 0,
-            LogLevel::INFO => 1,
-            LogLevel::NOTICE => 2,
-            LogLevel::WARNING => 3,
-            LogLevel::ERROR => 4,
-            LogLevel::CRITICAL => 5,
-            LogLevel::ALERT => 6,
-            LogLevel::EMERGENCY => 7,
-        ];
-
-        return ($levels[$level] ?? 0) >= ($levels[$this->minLevel] ?? 0);
     }
 }

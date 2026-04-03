@@ -6,14 +6,15 @@ declare(strict_types=1);
 namespace Qualimetrix;
 
 use Qualimetrix\Infrastructure\Console\Application;
-use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand;
+use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\Console\Command\GraphExportCommand;
 use Qualimetrix\Infrastructure\Console\Command\HookInstallCommand;
 use Qualimetrix\Infrastructure\Console\Command\HookStatusCommand;
 use Qualimetrix\Infrastructure\Console\Command\HookUninstallCommand;
 use Qualimetrix\Infrastructure\Console\Command\RulesCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Symfony\Component\Console\CommandLoader\ContainerCommandLoader;
 
 // Find autoloader
 $autoloadPaths = [
@@ -41,33 +42,19 @@ if (!$autoloaderFound) {
 $containerFactory = new ContainerFactory();
 $container = $containerFactory->create();
 
-// Get commands from container (all dependencies injected)
-/** @var CheckCommand $analyzeCommand */
-$analyzeCommand = $container->get(CheckCommand::class);
-/** @var BaselineCleanupCommand $baselineCleanupCommand */
-$baselineCleanupCommand = $container->get(BaselineCleanupCommand::class);
-/** @var GraphExportCommand $graphExportCommand */
-$graphExportCommand = $container->get(GraphExportCommand::class);
-/** @var HookInstallCommand $hookInstallCommand */
-$hookInstallCommand = $container->get(HookInstallCommand::class);
-/** @var HookUninstallCommand $hookUninstallCommand */
-$hookUninstallCommand = $container->get(HookUninstallCommand::class);
-/** @var HookStatusCommand $hookStatusCommand */
-$hookStatusCommand = $container->get(HookStatusCommand::class);
-/** @var RulesCommand $rulesCommand */
-$rulesCommand = $container->get(RulesCommand::class);
-
-// Create and run application
+// Create application with lazy command loading.
+// Commands are only instantiated when actually executed, avoiding eager
+// resolution of the entire dependency tree for lightweight operations
+// like --help or hook:status.
 $application = new Application();
-$application->addCommands([
-    $analyzeCommand,
-    $baselineCleanupCommand,
-    $graphExportCommand,
-    $hookInstallCommand,
-    $hookUninstallCommand,
-    $hookStatusCommand,
-    $rulesCommand,
-]);
-// No default command - show help/list when run without arguments
+$application->setCommandLoader(new ContainerCommandLoader($container, [
+    'check' => CheckCommand::class,
+    'baseline:cleanup' => BaselineCleanupCommand::class,
+    'graph:export' => GraphExportCommand::class,
+    'hook:install' => HookInstallCommand::class,
+    'hook:uninstall' => HookUninstallCommand::class,
+    'hook:status' => HookStatusCommand::class,
+    'rules' => RulesCommand::class,
+]));
 
 exit($application->run());

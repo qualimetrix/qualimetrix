@@ -89,6 +89,24 @@ final class FileLoggerTest extends TestCase
         $this->assertArrayHasKey('timestamp', $data);
     }
 
+    public function testInterpolatesPlaceholders(): void
+    {
+        $path = $this->tempDir . '/test.log';
+        $logger = new FileLogger($path);
+
+        $logger->info('Processing {file}', ['file' => 'test.php', 'extra' => 'data']);
+
+        $content = file_get_contents($path);
+        $this->assertIsString($content);
+
+        $data = json_decode(trim($content), true);
+        $this->assertIsArray($data);
+        // Message should have placeholders interpolated
+        $this->assertSame('Processing test.php', $data['message']);
+        // Full context preserved in structured data
+        $this->assertSame(['file' => 'test.php', 'extra' => 'data'], $data['context']);
+    }
+
     public function testRespectsMinLevel(): void
     {
         $path = $this->tempDir . '/test.log';
