@@ -659,12 +659,22 @@ An immutable set of unique strings with O(1) lookups. Implements `Countable` and
 
 ### PathMatcher
 
-Matches file paths against glob patterns using `fnmatch()`. Used for `exclude_paths` configuration.
+Matches file paths against patterns. Supports two modes per pattern: prefix matching (no glob characters — `src/Entity` matches all files under it) and glob matching (with `*`, `?`, `[` — `src/Metrics/*Visitor.php`). Used for `exclude_paths` configuration.
 
 **Constructor:** `__construct(list<string> $patterns)`
 
 **Methods:**
 - `matches(string $filePath): bool` — whether path matches any pattern
+- `isEmpty(): bool` — whether no patterns are configured
+
+### NamespaceMatcher
+
+Matches namespaces against patterns. Same dual-mode logic as `PathMatcher` but uses `\` as boundary separator. Used for `exclude_namespaces` configuration.
+
+**Constructor:** `__construct(list<string> $patterns)`
+
+**Methods:**
+- `matches(string $namespace): bool` — whether namespace matches any pattern
 - `isEmpty(): bool` — whether no patterns are configured
 
 ---

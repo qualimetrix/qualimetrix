@@ -52,12 +52,12 @@ include_generated: true
 
 ### Исключение путей из отчёта (exclude_paths)
 
-Glob-паттерны для подавления нарушений. В отличие от `exclude`, эти файлы **всё равно анализируются** (их метрики собираются), но нарушения не выводятся в отчёт. Это полезно для сгенерированного кода, простых классов данных или файлов сущностей, где правила сложности не имеют смысла:
+Паттерны путей для подавления нарушений. В отличие от `exclude`, эти файлы **всё равно анализируются** (их метрики собираются), но нарушения не выводятся в отчёт. Поддерживаются префиксы директорий и glob-паттерны:
 
 ```yaml
 exclude_paths:
-  - src/Entity/*
-  - src/DTO/*
+  - src/Entity                # префикс: все файлы в src/Entity/
+  - src/Metrics/*Visitor.php  # glob: только файлы визиторов
 ```
 
 ### Исключение неймспейсов (exclude_namespaces)
@@ -136,21 +136,21 @@ rules:
     exclude_namespaces:
       - App\Tests
     exclude_paths:
-      - src/Infrastructure/DependencyInjection/*
+      - src/Infrastructure/DependencyInjection
 ```
 
 Это полезно, когда определённые неймспейсы (например, тесты, сгенерированный код, legacy-модули) не должны вызывать нарушения для конкретного правила, но при этом всё равно анализируются для сбора метрик.
 
 **Исключение путей из правила:**
 
-Любое правило может исключить конкретные файлы по glob-паттернам (fnmatch). Нарушения из совпадающих файлов подавляются:
+Любое правило может исключить конкретные файлы по префиксу пути или glob-паттерну. Нарушения из совпадающих файлов подавляются:
 
 ```yaml
 rules:
   coupling.cbo:
     exclude_paths:
-      - src/Metrics/*Visitor.php
-      - src/Infrastructure/DependencyInjection/*
+      - src/Metrics                # префикс: все файлы в src/Metrics/
+      - src/Metrics/*Visitor.php   # glob: только файлы визиторов
 ```
 
 Работает совместно с `exclude_namespaces` -- оба фильтра применяются. В отличие от глобального `exclude_paths`, эта опция на уровне правила влияет только на конкретное правило, а не на все.
@@ -359,8 +359,8 @@ exclude:
   - tests/Fixtures/
 
 exclude_paths:
-  - src/Entity/*
-  - src/DTO/*
+  - src/Entity
+  - src/DTO
 
 exclude_namespaces:
   - App\Tests
@@ -394,7 +394,7 @@ rules:
     exclude_namespaces:
       - App\Tests
     exclude_paths:
-      - src/Generated/*.php
+      - src/Generated
     method:
       warning: 15
       error: 25

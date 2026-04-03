@@ -79,7 +79,7 @@ final class CheckCommandDefinition
                 'exclude-path',
                 null,
                 InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
-                'Suppress violations for files matching pattern (can be repeated, e.g., src/Entity/*)',
+                'Suppress violations for files matching path prefix or glob pattern (can be repeated, e.g., src/Entity, src/Metrics/*Visitor.php)',
                 [],
             )
             ->addOption(

@@ -494,7 +494,7 @@ final class RuleExecutorTest extends TestCase
         $rule = $this->createRule('rule1', [$excludedViolation, $includedViolation]);
 
         $pathExclusionProvider = new RulePathExclusionProvider();
-        $pathExclusionProvider->setExclusions('rule1', ['src/Generated/*']);
+        $pathExclusionProvider->setExclusions('rule1', ['src/Generated']);
 
         $registry = new RuleOptionsRegistry(pathExclusionProvider: $pathExclusionProvider);
         $provider = $this->createConfiguredProvider();
@@ -515,7 +515,7 @@ final class RuleExecutorTest extends TestCase
         $rule2 = $this->createRule('rule2', [$v2]);
 
         $pathExclusionProvider = new RulePathExclusionProvider();
-        $pathExclusionProvider->setExclusions('rule1', ['src/Generated/*']);
+        $pathExclusionProvider->setExclusions('rule1', ['src/Generated']);
 
         $registry = new RuleOptionsRegistry(pathExclusionProvider: $pathExclusionProvider);
         $provider = $this->createConfiguredProvider();
@@ -534,7 +534,7 @@ final class RuleExecutorTest extends TestCase
         $rule = $this->createRule('rule1', [$violation]);
 
         $pathExclusionProvider = new RulePathExclusionProvider();
-        $pathExclusionProvider->setExclusions('rule1', ['src/Generated/*']);
+        $pathExclusionProvider->setExclusions('rule1', ['src/Generated']);
 
         $registry = new RuleOptionsRegistry(pathExclusionProvider: $pathExclusionProvider);
         $provider = $this->createConfiguredProvider();

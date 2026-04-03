@@ -7,7 +7,7 @@ namespace Qualimetrix\Configuration;
 use Qualimetrix\Core\Util\PathMatcher;
 
 /**
- * Stores per-rule path exclusions and provides glob-based matching.
+ * Stores per-rule path exclusions and provides path matching.
  *
  * Extracted from config during RuleOptionsFactory::create() and consumed
  * by RuleExecutor to filter violations at framework level.
@@ -18,7 +18,7 @@ final class RulePathExclusionProvider
     private array $matchers = [];
 
     /**
-     * @param list<string> $patterns Glob patterns (fnmatch)
+     * @param list<string> $patterns Path patterns (prefixes or globs)
      */
     public function setExclusions(string $ruleName, array $patterns): void
     {

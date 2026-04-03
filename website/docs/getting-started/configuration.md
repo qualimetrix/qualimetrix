@@ -52,12 +52,12 @@ Equivalent CLI: `--include-generated`
 
 ### Exclude Paths
 
-Glob patterns for suppressing violations. Unlike `exclude`, these files **are still analyzed** (their metrics are collected), but violations are not reported. This is useful for generated code, simple data classes, or entity files where complexity rules don't make sense:
+Path patterns for suppressing violations. Unlike `exclude`, these files **are still analyzed** (their metrics are collected), but violations are not reported. Supports both directory prefixes and glob patterns:
 
 ```yaml
 exclude_paths:
-  - src/Entity/*
-  - src/DTO/*
+  - src/Entity                # prefix: matches all files under src/Entity/
+  - src/Metrics/*Visitor.php  # glob: matches visitor files only
 ```
 
 ### Exclude Namespaces
@@ -142,21 +142,21 @@ rules:
     exclude_namespaces:
       - App\Tests
     exclude_paths:
-      - src/Infrastructure/DependencyInjection/*
+      - src/Infrastructure/DependencyInjection
 ```
 
 This is useful when certain namespaces (e.g., tests, generated code, legacy modules) should not trigger violations for a specific rule, while still being analyzed for metrics.
 
 **Exclude paths from a rule:**
 
-Any rule can exclude specific file paths using glob patterns (fnmatch). Violations from matching files are suppressed:
+Any rule can exclude specific file paths using prefix or glob matching. Violations from matching files are suppressed:
 
 ```yaml
 rules:
   coupling.cbo:
     exclude_paths:
-      - src/Metrics/*Visitor.php
-      - src/Infrastructure/DependencyInjection/*
+      - src/Metrics                # prefix: all files in src/Metrics/
+      - src/Metrics/*Visitor.php   # glob: only visitor files
 ```
 
 This works alongside `exclude_namespaces` -- both filters are applied. Unlike the global `exclude_paths`, per-rule `exclude_paths` only affects the specific rule, not all rules.
@@ -364,8 +364,8 @@ exclude:
   - tests/Fixtures/
 
 exclude_paths:
-  - src/Entity/*
-  - src/DTO/*
+  - src/Entity
+  - src/DTO
 
 exclude_namespaces:
   - App\Tests
@@ -399,7 +399,7 @@ rules:
     exclude_namespaces:
       - App\Tests
     exclude_paths:
-      - src/Generated/*.php
+      - src/Generated
     method:
       warning: 15
       error: 25
