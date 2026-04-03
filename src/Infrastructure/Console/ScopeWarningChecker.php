@@ -27,7 +27,8 @@ final class ScopeWarningChecker
         $composerJsonPath = $workingDirectory . '/composer.json';
 
         if (!file_exists($composerJsonPath)) {
-            return ['No composer.json found. Coupling metrics require running from the project root.'];
+            // Missing composer.json is already reported by CheckCommand::warnIfComposerJsonMissing()
+            return [];
         }
 
         $reader = new ComposerReader();

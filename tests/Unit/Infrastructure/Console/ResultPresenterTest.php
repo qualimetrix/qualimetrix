@@ -20,10 +20,12 @@ use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Infrastructure\Console\ExitCodeResolver;
+use Qualimetrix\Infrastructure\Console\FormatterContextFactory;
 use Qualimetrix\Infrastructure\Console\ProfilePresenter;
 use Qualimetrix\Infrastructure\Console\ResultPresenter;
 use Qualimetrix\Reporting\Debt\DebtCalculator;
 use Qualimetrix\Reporting\Debt\RemediationTimeRegistry;
+use Qualimetrix\Reporting\Filter\ViolationFilter;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
 use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
 use Qualimetrix\Reporting\GroupBy;
@@ -42,6 +44,8 @@ final class ResultPresenterTest extends TestCase
     protected function setUp(): void
     {
         $configProvider = $this->createStub(ConfigurationProviderInterface::class);
+        $configProvider->method('getConfiguration')->willReturn(new AnalysisConfiguration());
+
         $this->presenter = new ResultPresenter(
             formatterRegistry: $this->createStub(FormatterRegistryInterface::class),
             profilerHolder: new ProfilerHolder(),
@@ -53,6 +57,8 @@ final class ResultPresenterTest extends TestCase
             ),
             profilePresenter: new ProfilePresenter(new ProfilerHolder()),
             exitCodeResolver: new ExitCodeResolver($configProvider),
+            violationFilter: new ViolationFilter(),
+            formatterContextFactory: new FormatterContextFactory($configProvider),
         );
     }
 
@@ -91,6 +97,8 @@ final class ResultPresenterTest extends TestCase
             ),
             profilePresenter: new ProfilePresenter(new ProfilerHolder()),
             exitCodeResolver: new ExitCodeResolver($configHolder),
+            violationFilter: new ViolationFilter(),
+            formatterContextFactory: new FormatterContextFactory($configHolder),
         );
 
         $input = $this->createStub(InputInterface::class);
@@ -313,6 +321,8 @@ final class ResultPresenterTest extends TestCase
             ),
             profilePresenter: new ProfilePresenter(new ProfilerHolder()),
             exitCodeResolver: new ExitCodeResolver($configHolder),
+            violationFilter: new ViolationFilter(),
+            formatterContextFactory: new FormatterContextFactory($configHolder),
         );
 
         $input = $this->createStub(InputInterface::class);
@@ -364,6 +374,8 @@ final class ResultPresenterTest extends TestCase
             ),
             profilePresenter: new ProfilePresenter(new ProfilerHolder()),
             exitCodeResolver: new ExitCodeResolver($configHolder),
+            violationFilter: new ViolationFilter(),
+            formatterContextFactory: new FormatterContextFactory($configHolder),
         );
 
         $input = $this->createStub(InputInterface::class);

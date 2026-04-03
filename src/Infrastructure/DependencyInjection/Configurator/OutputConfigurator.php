@@ -203,8 +203,11 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(ProfileSummaryRenderer::class),
             ]);
 
-        // FormatterContextFactory (pure logic, no dependencies)
-        $container->register(FormatterContextFactory::class);
+        // FormatterContextFactory (uses projectRoot for basePath)
+        $container->register(FormatterContextFactory::class)
+            ->setArguments([
+                new Reference(ConfigurationProviderInterface::class),
+            ]);
 
         // ExitCodeResolver for determining process exit code from violations
         $container->register(ExitCodeResolver::class)

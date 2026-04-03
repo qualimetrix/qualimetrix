@@ -178,7 +178,9 @@ final class CheckCommand extends Command
             return self::FAILURE;
         }
 
-        $this->warnAboutPartialScope($scopeResolution->paths, $input, $output);
+        $projectRoot = $resolved->analysis->projectRoot;
+        $this->warnIfComposerJsonMissing($projectRoot, $input, $output);
+        $this->warnAboutPartialScope($scopeResolution->paths, $projectRoot, $input, $output);
 
         $result = $this->runAnalysis($scopeResolution->paths, $scopeResolution->fileDiscovery);
 
@@ -211,13 +213,18 @@ final class CheckCommand extends Command
 
     /**
      * Resolves configuration using the pipeline.
+     *
+     * Working directory is captured from getcwd() which is the project root
+     * (already changed by Application::doRun() if --working-dir was passed).
      */
     private function resolveConfiguration(InputInterface $input): ResolvedConfiguration
     {
         $configPath = $input->getOption('config');
+        $workingDirectory = getcwd() ?: '.';
+
         $context = new ConfigurationContext(
             $input,
-            getcwd() ?: '.',
+            $workingDirectory,
             \is_string($configPath) && $configPath !== '' ? $configPath : null,
         );
 
@@ -296,24 +303,49 @@ final class CheckCommand extends Command
     }
 
     /**
+     * Warns when composer.json is not found in project root.
+     */
+    private function warnIfComposerJsonMissing(string $projectRoot, InputInterface $input, OutputInterface $output): void
+    {
+        if (!$this->isTextFormat($input)) {
+            return;
+        }
+
+        if (!file_exists($projectRoot . '/composer.json')) {
+            $output->writeln(\sprintf(
+                '<comment>Warning: No composer.json found in %s. Namespace detection and coupling metrics may be inaccurate.</comment>',
+                $projectRoot,
+            ));
+        }
+    }
+
+    /**
      * Warns when analyzed paths don't cover the full project scope.
      *
      * @param list<string> $paths
      */
-    private function warnAboutPartialScope(array $paths, InputInterface $input, OutputInterface $output): void
+    private function warnAboutPartialScope(array $paths, string $projectRoot, InputInterface $input, OutputInterface $output): void
     {
-        // Only show for human-readable formats; structured formats would be corrupted
-        $format = $input->getOption('format');
-        $textFormats = [null, 'text', 'summary', 'health', 'metrics', 'github'];
-        if (!\in_array($format, $textFormats, true)) {
+        if (!$this->isTextFormat($input)) {
             return;
         }
 
         $checker = new ScopeWarningChecker();
-        $warnings = $checker->check(getcwd() ?: '.', $paths);
+        $warnings = $checker->check($projectRoot, $paths);
         foreach ($warnings as $warning) {
             $output->writeln(\sprintf('<comment>Warning: %s</comment>', $warning));
         }
+    }
+
+    /**
+     * Checks if the output format is text-based (safe for inline warnings).
+     */
+    private function isTextFormat(InputInterface $input): bool
+    {
+        $format = $input->getOption('format');
+        $textFormats = [null, 'text', 'summary', 'health', 'metrics', 'github'];
+
+        return \in_array($format, $textFormats, true);
     }
 
     /**

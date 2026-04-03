@@ -4,12 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Unit\Analysis\Namespace_;
 
-use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Namespace_\ProjectNamespaceResolver;
-use RuntimeException;
 
 #[CoversClass(ProjectNamespaceResolver::class)]
 final class ProjectNamespaceResolverTest extends TestCase
@@ -150,26 +148,27 @@ JSON;
         yield 'with trailing backslash' => ['App\\', 'App\\Service', true];
     }
 
-    public function testThrowsExceptionIfComposerJsonNotFound(): void
+    public function testGracefullyDegradeIfComposerJsonNotFound(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('composer.json not found at:');
+        $resolver = new ProjectNamespaceResolver(composerJsonPath: $this->tempDir . '/nonexistent.json');
 
-        new ProjectNamespaceResolver(composerJsonPath: $this->tempDir . '/nonexistent.json');
+        // All namespaces treated as project when composer.json is missing
+        self::assertTrue($resolver->isProjectNamespace('Any\\Namespace'));
+        self::assertSame([], $resolver->getProjectPrefixes());
     }
 
-    public function testThrowsExceptionIfComposerJsonIsInvalid(): void
+    public function testGracefullyDegradeIfComposerJsonIsInvalid(): void
     {
         $path = $this->tempDir . '/composer.json';
         file_put_contents($path, 'invalid json');
 
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Invalid JSON in composer.json');
+        $resolver = new ProjectNamespaceResolver(composerJsonPath: $path);
 
-        new ProjectNamespaceResolver(composerJsonPath: $path);
+        self::assertTrue($resolver->isProjectNamespace('Any\\Namespace'));
+        self::assertSame([], $resolver->getProjectPrefixes());
     }
 
-    public function testThrowsExceptionIfNoPsr4ConfigFound(): void
+    public function testGracefullyDegradeIfNoPsr4ConfigFound(): void
     {
         $composerJson = <<<JSON
 {
@@ -180,13 +179,13 @@ JSON;
         $path = $this->tempDir . '/composer.json';
         file_put_contents($path, $composerJson);
 
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('No PSR-4 autoload configuration found');
+        $resolver = new ProjectNamespaceResolver(composerJsonPath: $path);
 
-        new ProjectNamespaceResolver(composerJsonPath: $path);
+        self::assertTrue($resolver->isProjectNamespace('Any\\Namespace'));
+        self::assertSame([], $resolver->getProjectPrefixes());
     }
 
-    public function testAutoDetectsComposerJsonInCurrentDirectory(): void
+    public function testUsesComposerJsonFromCwdWhenNoPathGiven(): void
     {
         $composerJson = <<<JSON
 {
@@ -201,7 +200,6 @@ JSON;
         $path = $this->tempDir . '/composer.json';
         file_put_contents($path, $composerJson);
 
-        // Change to temp directory
         $originalCwd = getcwd();
         if ($originalCwd === false) {
             self::fail('Cannot get current directory');
@@ -217,26 +215,12 @@ JSON;
         }
     }
 
-    public function testAutoDetectsComposerJsonInParentDirectory(): void
+    public function testGracefullyDegradeIfComposerJsonNotInCwd(): void
     {
-        $composerJson = <<<JSON
-{
-    "autoload": {
-        "psr-4": {
-            "ParentApp\\\\": "src/"
-        }
-    }
-}
-JSON;
-
-        $path = $this->tempDir . '/composer.json';
-        file_put_contents($path, $composerJson);
-
-        // Create subdirectory
+        // Subdirectory without composer.json — no longer searches parent dirs
         $subDir = $this->tempDir . '/subdir';
         mkdir($subDir);
 
-        // Change to subdirectory
         $originalCwd = getcwd();
         if ($originalCwd === false) {
             self::fail('Cannot get current directory');
@@ -246,27 +230,9 @@ JSON;
 
         try {
             $resolver = new ProjectNamespaceResolver();
-            self::assertTrue($resolver->isProjectNamespace('ParentApp\\Service'));
-        } finally {
-            chdir($originalCwd);
-        }
-    }
-
-    public function testThrowsExceptionIfComposerJsonNotFoundInParentDirectories(): void
-    {
-        // Use system temp directory which likely doesn't have composer.json
-        $originalCwd = getcwd();
-        if ($originalCwd === false) {
-            self::fail('Cannot get current directory');
-        }
-
-        chdir('/tmp');
-
-        try {
-            $this->expectException(RuntimeException::class);
-            $this->expectExceptionMessage('composer.json not found in current or parent directories');
-
-            new ProjectNamespaceResolver();
+            // All namespaces treated as project when composer.json is missing
+            self::assertTrue($resolver->isProjectNamespace('Any\\Namespace'));
+            self::assertSame([], $resolver->getProjectPrefixes());
         } finally {
             chdir($originalCwd);
         }

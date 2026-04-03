@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console;
 
 use InvalidArgumentException;
+use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
@@ -18,6 +19,10 @@ use ValueError;
 final class FormatterContextFactory
 {
     private const int DEFAULT_DETAIL_LIMIT = 200;
+
+    public function __construct(
+        private readonly ConfigurationProviderInterface $configurationProvider,
+    ) {}
 
     /**
      * @param list<string>|null $scopeFilePaths Relative paths in scope for scoped reporting
@@ -98,7 +103,7 @@ final class FormatterContextFactory
             useColor: $output->isDecorated(),
             groupBy: $groupBy,
             options: $options,
-            basePath: getcwd() ?: '.',
+            basePath: $this->configurationProvider->getConfiguration()->projectRoot,
             scopedReporting: $scopedReporting,
             scopeFilePaths: $scopeFilePaths,
             namespace: $namespaceFilter,
