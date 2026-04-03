@@ -94,7 +94,6 @@ final class FormatterContextTest extends TestCase
             groupBy: \Qualimetrix\Reporting\GroupBy::File,
             basePath: '/project',
             scopedReporting: true,
-            scopeFilePaths: ['/project/src/Foo.php'],
             namespace: 'App\\Service',
             class: 'App\\Service\\UserService',
             terminalWidth: 120,
@@ -109,7 +108,6 @@ final class FormatterContextTest extends TestCase
         self::assertSame(\Qualimetrix\Reporting\GroupBy::File, $result->groupBy);
         self::assertSame('/project', $result->basePath);
         self::assertTrue($result->scopedReporting);
-        self::assertSame(['/project/src/Foo.php'], $result->scopeFilePaths);
         self::assertSame('App\\Service', $result->namespace);
         self::assertSame('App\\Service\\UserService', $result->class);
         self::assertSame(120, $result->terminalWidth);

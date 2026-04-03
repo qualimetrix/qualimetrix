@@ -36,7 +36,6 @@ final class ResultPresenter
      * Outputs formatted results and returns exit code.
      *
      * @param list<Violation> $violations
-     * @param list<string>|null $scopeFilePaths Relative paths in scope for scoped reporting
      */
     public function presentResults(
         array $violations,
@@ -45,7 +44,6 @@ final class ResultPresenter
         OutputInterface $output,
         bool $baselineGenerated = false,
         bool $scopedReporting = false,
-        ?array $scopeFilePaths = null,
     ): int {
         $profiler = $this->profilerHolder->get();
         $profiler->start('reporting', 'pipeline');
@@ -65,7 +63,7 @@ final class ResultPresenter
         }
 
         $formatter = $this->formatterRegistry->get($format);
-        $context = $this->formatterContextFactory->create($input, $output, $formatter, $scopedReporting, $scopeFilePaths);
+        $context = $this->formatterContextFactory->create($input, $output, $formatter, $scopedReporting);
 
         // Apply --namespace/--class drill-down filter centrally (all formatters benefit)
         $filteredViolations = $this->violationFilter->filterViolations($violations, $context);
@@ -79,7 +77,7 @@ final class ResultPresenter
             ->metrics($analysisResult->metrics)
             ->namespaceTree($analysisResult->namespaceTree)
             ->build();
-        $report = $this->summaryEnricher->enrich($report, $scopeFilePaths);
+        $report = $this->summaryEnricher->enrich($report);
         $formattedOutput = $formatter->format($report, $context);
 
         $this->writeOutput($formattedOutput, $format, $input, $output);

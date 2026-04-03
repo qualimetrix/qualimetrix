@@ -113,7 +113,33 @@ final readonly class ViolationFilterPipeline
             $pathExclusionFiltered = $beforeCount - \count($violations);
         }
 
-        // 4. Git scope filter
+        // 4. Namespace exclusion filter
+        $namespaceExclusionFiltered = 0;
+        $configNamespaces = $this->configurationProvider->getConfiguration()->excludeNamespaces;
+
+        if ($configNamespaces !== []) {
+            $beforeCount = \count($violations);
+            $violations = array_values(array_filter(
+                $violations,
+                static function (Violation $v) use ($configNamespaces): bool {
+                    $ns = $v->symbolPath->namespace;
+                    if ($ns === null || $ns === '') {
+                        return true;
+                    }
+                    foreach ($configNamespaces as $prefix) {
+                        $prefix = rtrim($prefix, '\\');
+                        if ($ns === $prefix || str_starts_with($ns, $prefix . '\\')) {
+                            return false;
+                        }
+                    }
+
+                    return true;
+                },
+            ));
+            $namespaceExclusionFiltered = $beforeCount - \count($violations);
+        }
+
+        // 5. Git scope filter
         $gitScopeFiltered = 0;
         if ($options->gitScope !== null && $options->gitScope->reportScope !== null) {
             $gitFilter = new GitScopeFilter(
@@ -130,25 +156,13 @@ final readonly class ViolationFilterPipeline
             $gitScopeFiltered = $beforeCount - \count($violations);
         }
 
-        // 5. Analyze scope filter — keep only violations for files in scope
-        $analyzeScopeFiltered = 0;
-        if ($options->scopeFilePaths !== null) {
-            $scopeSet = array_flip($options->scopeFilePaths);
-            $beforeCount = \count($violations);
-            $violations = array_values(array_filter(
-                $violations,
-                static fn(Violation $v) => !$v->location->isNone() && isset($scopeSet[$v->location->file]),
-            ));
-            $analyzeScopeFiltered = $beforeCount - \count($violations);
-        }
-
         return new ViolationFilterResult(
             violations: $violations,
             baselineFiltered: $baselineFiltered,
             suppressionFiltered: $suppressionFiltered,
             pathExclusionFiltered: $pathExclusionFiltered,
+            namespaceExclusionFiltered: $namespaceExclusionFiltered,
             gitScopeFiltered: $gitScopeFiltered,
-            analyzeScopeFiltered: $analyzeScopeFiltered,
             baselineFilter: $baselineFilter,
             staleBaselineKeys: $staleKeys,
             staleBaselineCount: $staleCount,

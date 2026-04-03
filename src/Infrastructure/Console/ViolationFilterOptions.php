@@ -11,7 +11,6 @@ final readonly class ViolationFilterOptions
 {
     /**
      * @param list<string> $excludePaths
-     * @param list<string>|null $scopeFilePaths Relative file paths for analyze scope filtering (null = no scope filter)
      */
     public function __construct(
         public ?string $baselinePath,
@@ -19,6 +18,5 @@ final readonly class ViolationFilterOptions
         public bool $disableSuppression,
         public array $excludePaths,
         public ?GitScopeFilterConfig $gitScope,
-        public ?array $scopeFilePaths = null,
     ) {}
 }

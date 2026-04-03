@@ -14,6 +14,7 @@ use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Metrics\ComputedMetric\ComputedMetricEvaluator;
+use RuntimeException;
 
 #[CoversClass(ComputedMetricEvaluator::class)]
 final class ComputedMetricEvaluatorTest extends TestCase
@@ -88,11 +89,11 @@ final class ComputedMetricEvaluatorTest extends TestCase
     }
 
     #[Test]
-    public function missingVariableWithoutFallbackDoesNotCrash(): void
+    public function missingVariableWithoutFallbackThrowsException(): void
     {
         $repo = new InMemoryMetricRepository();
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
-        $repo->add($classPath, MetricBag::fromArray([]), 'src/UserService.php', 10);
+        $repo->add($classPath, MetricBag::fromArray(['known' => 1.0]), 'src/UserService.php', 10);
 
         $definition = new ComputedMetricDefinition(
             name: 'health.test',
@@ -101,10 +102,54 @@ final class ComputedMetricEvaluatorTest extends TestCase
             levels: [SymbolType::Class_],
         );
 
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('references unknown metrics: missing_var');
+
+        $this->evaluator->compute($repo, [$definition]);
+    }
+
+    #[Test]
+    public function missingVariableReportsMultipleUnknownMetrics(): void
+    {
+        $repo = new InMemoryMetricRepository();
+        $classPath = SymbolPath::forClass('App\\Service', 'UserService');
+        $repo->add($classPath, MetricBag::fromArray(['known' => 1.0]), 'src/UserService.php', 10);
+
+        $definition = new ComputedMetricDefinition(
+            name: 'health.test',
+            formulas: ['class' => 'known + foo + bar'],
+            description: 'Test metric',
+            levels: [SymbolType::Class_],
+        );
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('references unknown metrics: foo, bar');
+
+        $this->evaluator->compute($repo, [$definition]);
+    }
+
+    #[Test]
+    public function variableExistingInSomeSymbolsPassesValidation(): void
+    {
+        $repo = new InMemoryMetricRepository();
+
+        // Class A has 'ccn', class B does not — but union includes 'ccn', so formula is valid
+        $classA = SymbolPath::forClass('App', 'ClassA');
+        $classB = SymbolPath::forClass('App', 'ClassB');
+        $repo->add($classA, MetricBag::fromArray(['ccn' => 5.0]), 'src/ClassA.php', 1);
+        $repo->add($classB, MetricBag::fromArray([]), 'src/ClassB.php', 1);
+
+        $definition = new ComputedMetricDefinition(
+            name: 'health.test',
+            formulas: ['class' => '(ccn ?? 0) * 10'],
+            description: 'Test with partial data',
+            levels: [SymbolType::Class_],
+        );
+
         $this->evaluator->compute($repo, [$definition]);
 
-        // Metric should not be computed
-        self::assertNull($repo->get($classPath)->get('health.test'));
+        self::assertSame(50.0, $repo->get($classA)->get('health.test'));
+        self::assertSame(0.0, $repo->get($classB)->get('health.test'));
     }
 
     #[Test]

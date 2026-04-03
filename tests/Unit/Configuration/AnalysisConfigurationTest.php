@@ -27,6 +27,7 @@ final class AnalysisConfigurationTest extends TestCase
         self::assertSame([], $config->disabledRules);
         self::assertSame([], $config->onlyRules);
         self::assertSame([], $config->excludePaths);
+        self::assertSame([], $config->excludeNamespaces);
         self::assertNull($config->failOn);
     }
 
@@ -136,6 +137,41 @@ final class AnalysisConfigurationTest extends TestCase
         ]);
 
         self::assertSame(['src/Generated/*', 'src/Legacy/*'], $merged->excludePaths);
+    }
+
+    public function testFromArrayParsesExcludeNamespaces(): void
+    {
+        $config = AnalysisConfiguration::fromArray([
+            'exclude_namespaces' => ['App\\Generated', 'App\\Legacy'],
+        ]);
+
+        self::assertSame(['App\\Generated', 'App\\Legacy'], $config->excludeNamespaces);
+    }
+
+    public function testMergeAccumulatesExcludeNamespaces(): void
+    {
+        $base = new AnalysisConfiguration(
+            excludeNamespaces: ['App\\Generated'],
+        );
+
+        $merged = $base->merge([
+            'exclude_namespaces' => ['App\\Legacy', 'App\\Vendor'],
+        ]);
+
+        self::assertSame(['App\\Generated', 'App\\Legacy', 'App\\Vendor'], $merged->excludeNamespaces);
+    }
+
+    public function testMergeExcludeNamespacesDeduplicates(): void
+    {
+        $base = new AnalysisConfiguration(
+            excludeNamespaces: ['App\\Generated'],
+        );
+
+        $merged = $base->merge([
+            'exclude_namespaces' => ['App\\Generated', 'App\\Legacy'],
+        ]);
+
+        self::assertSame(['App\\Generated', 'App\\Legacy'], $merged->excludeNamespaces);
     }
 
     public function testMergeEmptyOnlyRulesResetsToEmpty(): void

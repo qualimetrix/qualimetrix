@@ -12,6 +12,7 @@ use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
+use RuntimeException;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 use Throwable;
 
@@ -67,6 +68,8 @@ final class ComputedMetricEvaluator
     ): void {
         $symbols = $this->getSymbolsForLevel($repo, $level);
 
+        $this->validateFormulaVariables($repo, $definition, $level, $formula, $symbols);
+
         foreach ($symbols as [$symbolPath, $file, $line]) {
             $metricBag = $repo->get($symbolPath);
             $variables = $this->buildVariableMap($metricBag);
@@ -107,6 +110,151 @@ final class ComputedMetricEvaluator
             $repo->addScalar($symbolPath, $definition->name, $result);
         }
     }
+
+    /**
+     * Validates that all required formula variables exist in the metric repository.
+     *
+     * Variables protected by null-coalescing (`??`) are intentionally optional and skipped.
+     * References to other computed metrics (`health__*`, `computed__*`) are validated
+     * separately by `ComputedMetricFormulaValidator` and also skipped here.
+     *
+     * @param list<array{SymbolPath, string, ?int}> $symbols
+     *
+     * @throws RuntimeException If the formula references metrics that do not exist at this level
+     */
+    private function validateFormulaVariables(
+        MetricRepositoryInterface $repo,
+        ComputedMetricDefinition $definition,
+        SymbolType $level,
+        string $formula,
+        array $symbols,
+    ): void {
+        // Collect union of all known metric keys across all symbols at this level
+        $allKnownKeys = [];
+        foreach ($symbols as [$symbolPath]) {
+            foreach ($repo->get($symbolPath)->all() as $key => $value) {
+                $allKnownKeys[str_replace('.', '__', $key)] = true;
+            }
+        }
+
+        // Skip validation when no metrics exist at this level — there is no data to validate against.
+        // In production, aggregation populates metrics before evaluation; in unit tests, data may be sparse.
+        if ($allKnownKeys === []) {
+            return;
+        }
+
+        // Extract required variables (excluding null-coalescing-protected ones)
+        $requiredVars = $this->extractRequiredFormulaVariables($formula);
+
+        $unknownVars = [];
+        foreach ($requiredVars as $var) {
+            // Skip computed metric references — validated by ComputedMetricFormulaValidator
+            if (str_starts_with($var, 'health__') || str_starts_with($var, 'computed__')) {
+                continue;
+            }
+
+            if (!isset($allKnownKeys[$var])) {
+                $unknownVars[] = str_replace('__', '.', $var);
+            }
+        }
+
+        if ($unknownVars !== []) {
+            $levelKey = match ($level) {
+                SymbolType::Class_ => 'class',
+                SymbolType::Namespace_ => 'namespace',
+                SymbolType::Project => 'project',
+                default => $level->value,
+            };
+
+            throw new RuntimeException(\sprintf(
+                'Computed metric "%s" at level "%s" references unknown metrics: %s. Check the formula: %s',
+                $definition->name,
+                $levelKey,
+                implode(', ', $unknownVars),
+                $formula,
+            ));
+        }
+    }
+
+    /**
+     * Extracts formula variables that are NOT protected by null-coalescing (`??`).
+     *
+     * Variables appearing only in `(var ?? fallback)` patterns are intentionally optional
+     * and should not trigger validation errors.
+     *
+     * @return list<string>
+     */
+    private function extractRequiredFormulaVariables(string $formula): array
+    {
+        $allVars = $this->extractFormulaVariables($formula);
+        $optionalVars = $this->extractNullCoalescingVariables($formula);
+
+        $required = [];
+        foreach ($allVars as $var) {
+            if (!isset($optionalVars[$var])) {
+                $required[] = $var;
+            }
+        }
+
+        return $required;
+    }
+
+    /**
+     * Extracts all variable-like tokens from a formula, excluding known functions and EL keywords.
+     *
+     * @return list<string>
+     */
+    private function extractFormulaVariables(string $formula): array
+    {
+        if (preg_match_all('/\b([a-zA-Z_][a-zA-Z0-9_]*)\b/', $formula, $matches) === false) {
+            return [];
+        }
+
+        $excluded = array_flip([...self::KNOWN_FUNCTIONS, ...self::EL_KEYWORDS]);
+
+        $variables = [];
+        $seen = [];
+        foreach ($matches[1] as $token) {
+            if (isset($excluded[$token]) || isset($seen[$token])) {
+                continue;
+            }
+            $variables[] = $token;
+            $seen[$token] = true;
+        }
+
+        return $variables;
+    }
+
+    /**
+     * Extracts variables that appear on the left side of `??` (null-coalescing).
+     *
+     * Matches patterns like `(var ?? fallback)` and `var ?? fallback`.
+     *
+     * @return array<string, true>
+     */
+    private function extractNullCoalescingVariables(string $formula): array
+    {
+        $optional = [];
+
+        // Match: identifier followed by optional whitespace and ??
+        if (preg_match_all('/\b([a-zA-Z_][a-zA-Z0-9_]*)\s*\?\?/', $formula, $matches)) {
+            foreach ($matches[1] as $var) {
+                $optional[$var] = true;
+            }
+        }
+
+        return $optional;
+    }
+
+    /** @var list<string> */
+    private const array KNOWN_FUNCTIONS = [
+        'min', 'max', 'abs', 'sqrt', 'log', 'log10', 'clamp',
+    ];
+
+    /** @var list<string> */
+    private const array EL_KEYWORDS = [
+        'true', 'false', 'null', 'not', 'and', 'or', 'in', 'matches',
+    ];
 
     /**
      * @return list<array{SymbolPath, string, ?int}>

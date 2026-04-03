@@ -18,8 +18,7 @@ final readonly class FormatterContext
      * @param GroupBy $groupBy How to group violations in output
      * @param array<string, string> $options Formatter-specific options from --format-opt
      * @param string $basePath Base directory for relativizing file paths in output (e.g., CWD)
-     * @param bool $scopedReporting Whether reporting is scoped (e.g., --analyze=git:staged). Metrics and health are always complete; only violations/worst offenders are filtered to scope.
-     * @param list<string>|null $scopeFilePaths Relative file paths in scope (for filtering worst offenders). null = all files.
+     * @param bool $scopedReporting Whether reporting is scoped (e.g., --report=git:main..HEAD). Metrics and health are always complete; only violations are filtered to scope.
      * @param string|null $namespace Namespace filter for drill-down (boundary-aware prefix match)
      * @param string|null $class Class filter for drill-down (exact FQCN match)
      * @param int $terminalWidth Terminal width for adaptive rendering (0 = use default 80)
@@ -33,7 +32,6 @@ final readonly class FormatterContext
         public array $options = [],
         public string $basePath = '',
         public bool $scopedReporting = false,
-        public ?array $scopeFilePaths = null,
         public ?string $namespace = null,
         public ?string $class = null,
         public int $terminalWidth = 0,
@@ -78,7 +76,6 @@ final readonly class FormatterContext
             options: $this->options,
             basePath: $this->basePath,
             scopedReporting: $this->scopedReporting,
-            scopeFilePaths: $this->scopeFilePaths,
             namespace: $this->namespace,
             class: $this->class,
             terminalWidth: $this->terminalWidth,

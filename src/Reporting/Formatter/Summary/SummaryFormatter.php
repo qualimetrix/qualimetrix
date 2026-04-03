@@ -96,10 +96,7 @@ final class SummaryFormatter implements FormatterInterface
         );
 
         if ($context->scopedReporting) {
-            $scopeCount = $context->scopeFilePaths !== null ? \count($context->scopeFilePaths) : null;
-            $header .= $scopeCount !== null
-                ? \sprintf(' (%d in scope)', $scopeCount)
-                : ' (scoped)';
+            $header .= ' (scoped)';
         }
 
         if ($context->namespace !== null) {

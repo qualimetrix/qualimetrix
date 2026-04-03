@@ -32,6 +32,7 @@ final class ConfigSchema
     public const string DISABLED_RULES = 'disabled_rules';
     public const string ONLY_RULES = 'only_rules';
     public const string EXCLUDE_PATHS = 'exclude_paths';
+    public const string EXCLUDE_NAMESPACES = 'exclude_namespaces';
     public const string FAIL_ON = 'fail_on';
     public const string CACHE_DIR = 'cache.dir';
     public const string CACHE_ENABLED = 'cache.enabled';
@@ -92,6 +93,7 @@ final class ConfigSchema
         ['disabledRules', self::DISABLED_RULES, self::LIST],
         ['onlyRules', self::ONLY_RULES, self::LIST],
         ['excludePaths', self::EXCLUDE_PATHS, self::LIST],
+        ['excludeNamespaces', self::EXCLUDE_NAMESPACES, self::LIST],
         ['failOn', self::FAIL_ON, self::SCALAR],
 
         // Section sub-keys (root type derived as 'section')

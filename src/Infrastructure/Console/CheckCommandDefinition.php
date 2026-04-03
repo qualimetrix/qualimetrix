@@ -115,7 +115,7 @@ final class CheckCommandDefinition
                 'fail-on',
                 null,
                 InputOption::VALUE_REQUIRED,
-                'Minimum severity to trigger non-zero exit code (none, warning, error). Default: error. Exit codes: 0 = clean or warnings-only, 1 = warnings (requires --fail-on=warning), 2 = errors',
+                'Minimum severity to trigger non-zero exit code (none, warning, error). Default: error. Exit codes: 0 = clean, 1 = warnings, 2 = errors, 3 = config/input error',
             )
             ->addOption(
                 'namespace',
@@ -203,12 +203,6 @@ final class CheckCommandDefinition
     private static function addGitScopeOptions(Command $command): void
     {
         $command
-            ->addOption(
-                'analyze',
-                null,
-                InputOption::VALUE_REQUIRED,
-                'Scope of files to analyze (e.g., git:staged, git:main..HEAD)',
-            )
             ->addOption(
                 'report',
                 null,
