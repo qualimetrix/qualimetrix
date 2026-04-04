@@ -176,6 +176,24 @@ final class ConfigSchemaTest extends TestCase
     }
 
     #[Test]
+    public function allowedSectionSubKeysReturnsCorrectKeysPerSection(): void
+    {
+        $subKeys = ConfigSchema::allowedSectionSubKeys();
+
+        self::assertSame(['dir', 'enabled'], $subKeys['cache']);
+        self::assertSame(['strategy', 'composerJson'], $subKeys['namespace']);
+        self::assertSame(['prefixes', 'autoDepth'], $subKeys['aggregation']);
+        self::assertSame(['workers'], $subKeys['parallel']);
+        self::assertSame(['frameworkNamespaces'], $subKeys['coupling']);
+
+        // All section roots should match sectionKeys()
+        self::assertEqualsCanonicalizing(
+            ConfigSchema::sectionKeys(),
+            array_keys($subKeys),
+        );
+    }
+
+    #[Test]
     public function everyEntryHasMatchingConstant(): void
     {
         $reflection = new ReflectionClass(ConfigSchema::class);
