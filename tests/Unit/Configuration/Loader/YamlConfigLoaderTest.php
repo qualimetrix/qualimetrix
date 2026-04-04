@@ -171,7 +171,7 @@ YAML);
 
         $this->expectException(ConfigLoadException::class);
         // Error message should show original key names (snake_case), not camelCase
-        $this->expectExceptionMessage('unknown_key, another_bad_key');
+        $this->expectExceptionMessage('"unknown_key", "another_bad_key"');
 
         $this->loader->load($path);
     }
@@ -469,6 +469,110 @@ YAML);
         self::assertSame('loc * 2', $config['computedMetrics']['computed.my_score']['formula']);
         self::assertSame(80, $config['computedMetrics']['computed.my_score']['warningThreshold']);
         self::assertSame(50, $config['computedMetrics']['health.complexity']['errorThreshold']);
+    }
+
+    public function testLoadRejectsUnknownCacheSubKey(): void
+    {
+        $path = $this->tempDir . '/config.yaml';
+        file_put_contents($path, <<<'YAML'
+cache:
+  enabled: true
+  typo_key: something
+YAML);
+
+        $this->expectException(ConfigLoadException::class);
+        $this->expectExceptionMessage('Unknown key in "cache" section: "typo_key"');
+
+        $this->loader->load($path);
+    }
+
+    public function testLoadRejectsUnknownNamespaceSubKeyWithSuggestion(): void
+    {
+        $path = $this->tempDir . '/config.yaml';
+        file_put_contents($path, <<<'YAML'
+namespace:
+  straetgy: psr4
+YAML);
+
+        $this->expectException(ConfigLoadException::class);
+        $this->expectExceptionMessage('did you mean "strategy"?');
+
+        $this->loader->load($path);
+    }
+
+    public function testLoadRejectsUnknownParallelSubKeyWithSuggestion(): void
+    {
+        $path = $this->tempDir . '/config.yaml';
+        file_put_contents($path, <<<'YAML'
+parallel:
+  worker: 4
+YAML);
+
+        $this->expectException(ConfigLoadException::class);
+        $this->expectExceptionMessage('did you mean "workers"?');
+
+        $this->loader->load($path);
+    }
+
+    public function testLoadSuggestsCorrectRootKeyForTypo(): void
+    {
+        $path = $this->tempDir . '/config.yaml';
+        file_put_contents($path, <<<'YAML'
+cahce:
+  enabled: true
+YAML);
+
+        $this->expectException(ConfigLoadException::class);
+        $this->expectExceptionMessage('did you mean "cache"?');
+
+        $this->loader->load($path);
+    }
+
+    public function testLoadNoSuggestionForDistantKey(): void
+    {
+        $path = $this->tempDir . '/config.yaml';
+        file_put_contents($path, <<<'YAML'
+zzzzzzz: true
+YAML);
+
+        try {
+            $this->loader->load($path);
+            self::fail('Expected ConfigLoadException');
+        } catch (ConfigLoadException $e) {
+            self::assertStringContainsString('"zzzzzzz"', $e->getMessage());
+            self::assertStringNotContainsString('did you mean', $e->getMessage());
+        }
+    }
+
+    public function testLoadRejectsMultipleUnknownSubKeys(): void
+    {
+        $path = $this->tempDir . '/config.yaml';
+        file_put_contents($path, <<<'YAML'
+cache:
+  foo: bar
+  baz: qux
+YAML);
+
+        $this->expectException(ConfigLoadException::class);
+        $this->expectExceptionMessage('Unknown keys in "cache" section');
+
+        $this->loader->load($path);
+    }
+
+    public function testLoadShowsAllowedKeysInSubKeyError(): void
+    {
+        $path = $this->tempDir . '/config.yaml';
+        file_put_contents($path, <<<'YAML'
+cache:
+  foo: bar
+YAML);
+
+        try {
+            $this->loader->load($path);
+            self::fail('Expected ConfigLoadException');
+        } catch (ConfigLoadException $e) {
+            self::assertStringContainsString('Allowed keys: dir, enabled', $e->getMessage());
+        }
     }
 
     private function removeDirectory(string $dir): void
