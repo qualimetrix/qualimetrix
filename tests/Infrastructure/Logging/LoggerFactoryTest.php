@@ -39,10 +39,28 @@ final class LoggerFactoryTest extends TestCase
         }
     }
 
-    public function testCreatesNullLoggerByDefault(): void
+    public function testCreatesConsoleLoggerAtDefaultVerbosity(): void
     {
         $factory = new LoggerFactory();
         $output = new BufferedOutput(OutputInterface::VERBOSITY_NORMAL);
+
+        $logger = $factory->create($output);
+
+        // At default verbosity, warnings should be visible
+        $logger->warning('Test warning');
+        $content = $output->fetch();
+        $this->assertStringContainsString('Test warning', $content);
+
+        // But info should NOT be visible
+        $logger->info('Test info');
+        $content = $output->fetch();
+        $this->assertStringNotContainsString('Test info', $content);
+    }
+
+    public function testCreatesNullLoggerWhenQuiet(): void
+    {
+        $factory = new LoggerFactory();
+        $output = new BufferedOutput(OutputInterface::VERBOSITY_QUIET);
 
         $logger = $factory->create($output);
 

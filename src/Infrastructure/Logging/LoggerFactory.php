@@ -9,6 +9,7 @@ use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
 use Psr\Log\NullLogger;
 use Stringable;
+use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -37,8 +38,18 @@ final class LoggerFactory
         $loggers = [];
 
         // Console logger (respects verbosity)
-        if ($output->getVerbosity() >= OutputInterface::VERBOSITY_VERBOSE) {
-            $loggers[] = new ConsoleLogger($output, $level);
+        // Use stderr to avoid polluting structured output (JSON, SARIF, etc.)
+        if (!$output->isQuiet()) {
+            $logOutput = $output instanceof ConsoleOutputInterface
+                ? $output->getErrorOutput()
+                : $output;
+            $consoleLevel = match (true) {
+                $output->isDebug() => LogLevel::DEBUG,
+                $output->isVeryVerbose() => LogLevel::DEBUG,
+                $output->isVerbose() => $level,
+                default => LogLevel::WARNING,
+            };
+            $loggers[] = new ConsoleLogger($logOutput, $consoleLevel);
         }
 
         // File logger
