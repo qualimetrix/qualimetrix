@@ -8,6 +8,7 @@ use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Configuration\AnalysisConfiguration;
+use Qualimetrix\Configuration\ConfigSchema;
 use Qualimetrix\Core\Violation\Severity;
 
 #[CoversClass(AnalysisConfiguration::class)]
@@ -266,22 +267,131 @@ final class AnalysisConfigurationTest extends TestCase
         self::assertFalse($config->isRuleEnabled('my-rule'));
     }
 
-    public function testFromArrayIgnoresInvalidTypes(): void
+    public function testFromArrayRejectsInvalidCacheDir(): void
     {
-        $config = AnalysisConfiguration::fromArray([
-            'cache' => [
-                'dir' => 123, // Invalid: should be string
-                'enabled' => 'yes', // Invalid: should be bool
-            ],
-            'aggregation' => [
-                'prefixes' => 'not-an-array', // Invalid: should be array
-            ],
-        ]);
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('cache.dir');
 
-        // Falls back to defaults
+        AnalysisConfiguration::fromArray([
+            'cache' => ['dir' => 123],
+        ]);
+    }
+
+    public function testFromArrayRejectsNonBoolCacheEnabled(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('expected boolean');
+
+        AnalysisConfiguration::fromArray([
+            'cache' => ['enabled' => 'yes'],
+        ]);
+    }
+
+    public function testFromArrayRejectsNonStringFormat(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('format');
+
+        AnalysisConfiguration::fromArray([
+            'format' => 123,
+        ]);
+    }
+
+    public function testFromArrayRejectsInvalidNamespaceStrategy(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Allowed values: chain, psr4, tokenizer');
+
+        AnalysisConfiguration::fromArray([
+            'namespace' => ['strategy' => 'invalid'],
+        ]);
+    }
+
+    public function testFromArrayRejectsNegativeWorkers(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('must be non-negative');
+
+        AnalysisConfiguration::fromArray([
+            'parallel' => ['workers' => -5],
+        ]);
+    }
+
+    public function testFromArrayRejectsZeroAutoDepth(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('must be positive');
+
+        AnalysisConfiguration::fromArray([
+            'aggregation' => ['auto_depth' => 0],
+        ]);
+    }
+
+    public function testFromArrayRejectsNonArrayPrefixes(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('expected array');
+
+        AnalysisConfiguration::fromArray([
+            'aggregation' => ['prefixes' => 'string'],
+        ]);
+    }
+
+    public function testFromArrayAcceptsAbsentKeysWithDefaults(): void
+    {
+        $config = AnalysisConfiguration::fromArray([]);
+
         self::assertSame('.qmx-cache', $config->cacheDir);
         self::assertTrue($config->cacheEnabled);
+        self::assertSame('summary', $config->format);
+        self::assertSame('chain', $config->namespaceStrategy);
+        self::assertNull($config->composerJsonPath);
         self::assertSame([], $config->aggregationPrefixes);
+        self::assertNull($config->aggregationAutoDepth);
+        self::assertSame([], $config->disabledRules);
+        self::assertSame([], $config->onlyRules);
+        self::assertSame([], $config->excludePaths);
+        self::assertSame([], $config->excludeNamespaces);
+        self::assertNull($config->workers);
+        self::assertNull($config->failOn);
+        self::assertSame([], $config->excludeHealth);
+        self::assertFalse($config->includeGenerated);
+        self::assertSame([], $config->frameworkNamespaces);
+        self::assertNull($config->memoryLimit);
+    }
+
+    public function testFromArrayAcceptsNullWorkers(): void
+    {
+        $config = AnalysisConfiguration::fromArray([
+            'parallel' => ['workers' => null],
+        ]);
+
+        self::assertNull($config->workers);
+    }
+
+    public function testFromArrayTreatsExplicitNullAsDefault(): void
+    {
+        // YAML `format: ~` or `format:` (no value) parses as null
+        $config = AnalysisConfiguration::fromArray([
+            'format' => null,
+            'cache' => ['enabled' => null, 'dir' => null],
+            ConfigSchema::DISABLED_RULES => null,
+        ]);
+
+        self::assertSame('summary', $config->format);
+        self::assertTrue($config->cacheEnabled);
+        self::assertSame('.qmx-cache', $config->cacheDir);
+        self::assertSame([], $config->disabledRules);
+    }
+
+    public function testFromArrayRejectsNonStringListElements(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('expected string, got int');
+
+        AnalysisConfiguration::fromArray([
+            ConfigSchema::EXCLUDE_PATHS => ['src/*', 123],
+        ]);
     }
 
     // --- Prefix matching tests ---
