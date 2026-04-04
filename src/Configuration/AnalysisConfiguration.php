@@ -10,6 +10,12 @@ use Qualimetrix\Core\Violation\Severity;
 
 /**
  * Value object containing general analysis configuration (not rule-specific).
+ *
+ * @qmx-threshold code-smell.constructor-overinjection error=20
+ * @qmx-threshold code-smell.long-parameter-list error=20
+ * Flat readonly VO with named arguments — not a service with too many
+ * dependencies. Splitting into sub-objects would add indirection without
+ * improving cohesion. Threshold raised to accommodate config growth.
  */
 final readonly class AnalysisConfiguration
 {
