@@ -17,6 +17,9 @@ final readonly class AnalysisConfiguration
     public const string DEFAULT_FORMAT = 'summary';
     public const string DEFAULT_NAMESPACE_STRATEGY = 'chain';
 
+    /** @var list<string> */
+    private const array ALLOWED_NAMESPACE_STRATEGIES = ['chain', 'psr4', 'tokenizer'];
+
     /**
      * Special value for workers: sequential processing (no parallelism).
      * Auto-detect CPU cores is represented by null.
@@ -71,19 +74,47 @@ final readonly class AnalysisConfiguration
      */
     public static function fromArray(array $config): self
     {
+        $namespaceStrategy = self::getString($config, ConfigSchema::NAMESPACE_STRATEGY, self::DEFAULT_NAMESPACE_STRATEGY);
+        if (!\in_array($namespaceStrategy, self::ALLOWED_NAMESPACE_STRATEGIES, true)) {
+            throw new InvalidArgumentException(\sprintf(
+                'Invalid value "%s" for "%s". Allowed values: %s',
+                $namespaceStrategy,
+                ConfigSchema::NAMESPACE_STRATEGY,
+                implode(', ', self::ALLOWED_NAMESPACE_STRATEGIES),
+            ));
+        }
+
+        $workers = self::getIntOrNull($config, ConfigSchema::PARALLEL_WORKERS);
+        if ($workers !== null && $workers < 0) {
+            throw new InvalidArgumentException(\sprintf(
+                'Invalid value "%d" for "%s": must be non-negative',
+                $workers,
+                ConfigSchema::PARALLEL_WORKERS,
+            ));
+        }
+
+        $aggregationAutoDepth = self::getIntOrNull($config, ConfigSchema::AGGREGATION_AUTO_DEPTH);
+        if ($aggregationAutoDepth !== null && $aggregationAutoDepth <= 0) {
+            throw new InvalidArgumentException(\sprintf(
+                'Invalid value "%d" for "%s": must be positive',
+                $aggregationAutoDepth,
+                ConfigSchema::AGGREGATION_AUTO_DEPTH,
+            ));
+        }
+
         return new self(
             cacheDir: self::getString($config, ConfigSchema::CACHE_DIR, self::DEFAULT_CACHE_DIR),
             cacheEnabled: self::getBool($config, ConfigSchema::CACHE_ENABLED, true),
             format: self::getString($config, ConfigSchema::FORMAT, self::DEFAULT_FORMAT),
-            namespaceStrategy: self::getString($config, ConfigSchema::NAMESPACE_STRATEGY, self::DEFAULT_NAMESPACE_STRATEGY),
+            namespaceStrategy: $namespaceStrategy,
             composerJsonPath: self::getStringOrNull($config, ConfigSchema::NAMESPACE_COMPOSER_JSON),
             aggregationPrefixes: self::getStringList($config, ConfigSchema::AGGREGATION_PREFIXES),
-            aggregationAutoDepth: self::getIntOrNull($config, ConfigSchema::AGGREGATION_AUTO_DEPTH),
+            aggregationAutoDepth: $aggregationAutoDepth,
             disabledRules: self::getStringList($config, ConfigSchema::DISABLED_RULES),
             onlyRules: self::getStringList($config, ConfigSchema::ONLY_RULES),
             excludePaths: self::getStringList($config, ConfigSchema::EXCLUDE_PATHS),
             excludeNamespaces: self::getStringList($config, ConfigSchema::EXCLUDE_NAMESPACES),
-            workers: self::getIntOrNull($config, ConfigSchema::PARALLEL_WORKERS),
+            workers: $workers,
             projectRoot: self::getString($config, ConfigSchema::PROJECT_ROOT, '.'),
             failOn: self::getFailOn($config, ConfigSchema::FAIL_ON),
             excludeHealth: self::getStringList($config, ConfigSchema::EXCLUDE_HEALTH),
@@ -178,7 +209,20 @@ final readonly class AnalysisConfiguration
     {
         $value = self::getNestedValue($config, $path);
 
-        return \is_string($value) ? $value : $default;
+        // Absent key or explicit null (YAML `~`) — use default
+        if ($value === null) {
+            return $default;
+        }
+
+        if (!\is_string($value)) {
+            throw new InvalidArgumentException(\sprintf(
+                'Invalid value for "%s": expected string, got %s',
+                $path,
+                get_debug_type($value),
+            ));
+        }
+
+        return $value;
     }
 
     /**
@@ -188,7 +232,19 @@ final readonly class AnalysisConfiguration
     {
         $value = self::getNestedValue($config, $path);
 
-        return \is_string($value) ? $value : null;
+        if ($value === null) {
+            return null;
+        }
+
+        if (!\is_string($value)) {
+            throw new InvalidArgumentException(\sprintf(
+                'Invalid value for "%s": expected string, got %s',
+                $path,
+                get_debug_type($value),
+            ));
+        }
+
+        return $value;
     }
 
     /**
@@ -198,7 +254,20 @@ final readonly class AnalysisConfiguration
     {
         $value = self::getNestedValue($config, $path);
 
-        return \is_bool($value) ? $value : $default;
+        // Absent key or explicit null (YAML `~`) — use default
+        if ($value === null) {
+            return $default;
+        }
+
+        if (!\is_bool($value)) {
+            throw new InvalidArgumentException(\sprintf(
+                'Invalid value for "%s": expected boolean, got %s',
+                $path,
+                get_debug_type($value),
+            ));
+        }
+
+        return $value;
     }
 
     /**
@@ -208,7 +277,19 @@ final readonly class AnalysisConfiguration
     {
         $value = self::getNestedValue($config, $path);
 
-        return \is_int($value) ? $value : null;
+        if ($value === null) {
+            return null;
+        }
+
+        if (!\is_int($value)) {
+            throw new InvalidArgumentException(\sprintf(
+                'Invalid value for "%s": expected integer or null, got %s',
+                $path,
+                get_debug_type($value),
+            ));
+        }
+
+        return $value;
     }
 
     /**
@@ -257,11 +338,31 @@ final readonly class AnalysisConfiguration
     {
         $value = self::getNestedValue($config, $path);
 
-        if (!\is_array($value)) {
+        // Absent key or explicit null (YAML `~`) — use default
+        if ($value === null) {
             return [];
         }
 
-        return array_values(array_filter($value, is_string(...)));
+        if (!\is_array($value)) {
+            throw new InvalidArgumentException(\sprintf(
+                'Invalid value for "%s": expected array, got %s',
+                $path,
+                get_debug_type($value),
+            ));
+        }
+
+        foreach ($value as $i => $item) {
+            if (!\is_string($item)) {
+                throw new InvalidArgumentException(\sprintf(
+                    'Invalid element at index %d in "%s": expected string, got %s',
+                    $i,
+                    $path,
+                    get_debug_type($item),
+                ));
+            }
+        }
+
+        return array_values($value);
     }
 
     /**
@@ -286,7 +387,11 @@ final readonly class AnalysisConfiguration
         }
 
         if (!\is_string($value)) {
-            return null;
+            throw new InvalidArgumentException(\sprintf(
+                'Invalid value for "%s": expected string, integer or null, got %s',
+                $path,
+                get_debug_type($value),
+            ));
         }
 
         // Validate format: -1, or digits optionally followed by K/M/G
