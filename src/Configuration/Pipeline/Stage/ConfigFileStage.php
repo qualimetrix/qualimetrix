@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Configuration\Pipeline\Stage;
 
-use Psr\Log\LoggerInterface;
-use Psr\Log\NullLogger;
 use Qualimetrix\Configuration\Exception\ConfigLoadException;
 use Qualimetrix\Configuration\KnownRuleNamesProviderInterface;
 use Qualimetrix\Configuration\Loader\ConfigLoaderInterface;
@@ -29,7 +27,6 @@ final class ConfigFileStage implements ConfigurationStageInterface
     public function __construct(
         private readonly ConfigLoaderInterface $loader,
         private readonly ?KnownRuleNamesProviderInterface $knownRuleNamesProvider = null,
-        private readonly LoggerInterface $logger = new NullLogger(),
     ) {}
 
     public function priority(): int
@@ -52,7 +49,7 @@ final class ConfigFileStage implements ConfigurationStageInterface
 
         $data = $this->loader->load($configPath);
 
-        $this->warnAboutUnknownRuleNames($data, basename($configPath));
+        $this->validateRuleNames($data, $configPath);
 
         return new ConfigurationLayer(
             basename($configPath),
@@ -106,12 +103,12 @@ final class ConfigFileStage implements ConfigurationStageInterface
     /**
      * @param array<string, mixed> $data
      */
-    private function warnAboutUnknownRuleNames(array $data, string $configSource): void
+    private function validateRuleNames(array $data, string $configPath): void
     {
         if ($this->knownRuleNamesProvider === null) {
             return;
         }
 
-        RuleNameValidator::warnAboutUnknownRuleNames($data, $configSource, $this->knownRuleNamesProvider, $this->logger);
+        RuleNameValidator::validateRuleNames($data, basename($configPath), $this->knownRuleNamesProvider, $configPath);
     }
 }

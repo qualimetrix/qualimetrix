@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Configuration\Pipeline\Stage;
 
-use Psr\Log\LoggerInterface;
-use Psr\Log\NullLogger;
 use Qualimetrix\Configuration\KnownRuleNamesProviderInterface;
 use Qualimetrix\Configuration\Loader\ConfigLoaderInterface;
 use Qualimetrix\Configuration\Pipeline\ConfigDataNormalizer;
@@ -31,7 +29,6 @@ final class PresetStage implements ConfigurationStageInterface
         private readonly ConfigLoaderInterface $loader,
         private readonly PresetResolver $resolver,
         private readonly ?KnownRuleNamesProviderInterface $knownRuleNamesProvider = null,
-        private readonly LoggerInterface $logger = new NullLogger(),
     ) {}
 
     public function priority(): int
@@ -120,7 +117,7 @@ final class PresetStage implements ConfigurationStageInterface
             $data = $this->loader->load($path);
 
             if ($this->knownRuleNamesProvider !== null) {
-                RuleNameValidator::warnAboutUnknownRuleNames($data, "preset:{$name}", $this->knownRuleNamesProvider, $this->logger);
+                RuleNameValidator::validateRuleNames($data, "preset:{$name}", $this->knownRuleNamesProvider, $path);
             }
 
             $normalized = ConfigDataNormalizer::normalize($data);
