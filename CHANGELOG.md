@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-04-04
+
 ### Changed
 - Strict configuration validation: unknown section sub-keys (`cache.typo`), invalid value types (`cache.enabled: "yes"`), and unknown rule names (`rules.complexty`) now produce clear errors with "Did you mean?" suggestions
 - Warnings (e.g., unknown rule option keys) are now visible at default verbosity via stderr, without requiring `-v`
@@ -279,7 +281,8 @@ Initial release.
 [0.9.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/qualimetrix/qualimetrix/compare/v0.7.0...v0.7.1
-[Unreleased]: https://github.com/qualimetrix/qualimetrix/compare/v0.14.0...HEAD
+[Unreleased]: https://github.com/qualimetrix/qualimetrix/compare/v0.15.0...HEAD
+[0.15.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.14.0...v0.15.0
 [0.14.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.12.0...v0.13.0
 [0.12.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.11.2...v0.12.0
