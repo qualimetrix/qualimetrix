@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Strict configuration validation: unknown section sub-keys (`cache.typo`), invalid value types (`cache.enabled: "yes"`), and unknown rule names (`rules.complexty`) now produce clear errors with "Did you mean?" suggestions
+- Warnings (e.g., unknown rule option keys) are now visible at default verbosity via stderr, without requiring `-v`
+
+### Fixed
+- Configuration warnings were invisible without `-v` flag due to `NullLogger` at default verbosity
+
 ## [0.14.0] - 2026-04-03
 
 ### Changed
