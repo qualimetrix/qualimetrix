@@ -156,6 +156,29 @@ final class ConfigSchema
     }
 
     /**
+     * Returns allowed sub-keys for each section (camelCase, post-normalization).
+     *
+     * Derived from ENTRIES: entries with null type and dotted sourcePath are section sub-keys.
+     *
+     * @return array<string, list<string>> section => [subKey, ...]
+     */
+    public static function allowedSectionSubKeys(): array
+    {
+        $result = [];
+
+        foreach (self::ENTRIES as [$sourcePath, , $type]) {
+            if ($type !== null || !str_contains($sourcePath, '.')) {
+                continue;
+            }
+
+            [$section, $subKey] = explode('.', $sourcePath, 2);
+            $result[$section][] = $subKey;
+        }
+
+        return $result;
+    }
+
+    /**
      * Returns root keys whose child keys are identifiers (rule/metric names)
      * that must not be normalized to camelCase.
      *
