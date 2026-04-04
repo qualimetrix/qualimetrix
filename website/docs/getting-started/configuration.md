@@ -429,6 +429,40 @@ This makes it easy to experiment without editing the config file.
 
 ---
 
+## Configuration Validation
+
+Qualimetrix validates your configuration file and reports clear errors for common mistakes.
+
+### Unknown keys
+
+Any unrecognized key — at the root level or inside a section — produces an error with a suggestion:
+
+```
+Invalid configuration in qmx.yaml:
+  Unknown key "workes" in "parallel" section. Did you mean "workers"?
+```
+
+### Type errors
+
+If a value has the wrong type, you'll get a clear message instead of silent fallback to defaults:
+
+```
+Invalid value for "cache.enabled": expected boolean, got string
+```
+
+### Unknown rule names
+
+Misspelled rule names in the `rules:` section are rejected:
+
+```
+Unknown rule "complexty.cyclomatic" in qmx.yaml. Did you mean "complexity.cyclomatic"?
+```
+
+!!! tip
+    Set a value to `~` (YAML null) or leave it empty to explicitly use the default — this is always valid.
+
+---
+
 ## What's Next?
 
 See the [CLI Options](../usage/cli-options.md) reference for the complete list of command-line options.
