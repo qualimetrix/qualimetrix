@@ -6,6 +6,7 @@ namespace Qualimetrix\Rules\ComputedMetric;
 
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinition;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinitionHolder;
+use Qualimetrix\Core\Rule\RuleOptionKey;
 use Qualimetrix\Core\Rule\RuleOptionsInterface;
 use Qualimetrix\Core\Violation\Severity;
 
@@ -29,7 +30,7 @@ final readonly class ComputedMetricRuleOptions implements RuleOptionsInterface
         $definitions = ComputedMetricDefinitionHolder::getDefinitions();
 
         return new self(
-            enabled: (bool) ($config['enabled'] ?? true),
+            enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
             definitions: $definitions,
         );
     }

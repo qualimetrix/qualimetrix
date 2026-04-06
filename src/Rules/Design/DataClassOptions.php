@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Rules\Design;
 
+use Qualimetrix\Core\Rule\RuleOptionKey;
 use Qualimetrix\Core\Rule\RuleOptionsInterface;
 use Qualimetrix\Core\Violation\Severity;
 
@@ -35,7 +36,7 @@ final readonly class DataClassOptions implements RuleOptionsInterface
         }
 
         return new self(
-            enabled: (bool) ($config['enabled'] ?? true),
+            enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
             wocThreshold: (int) ($config['woc_threshold'] ?? $config['wocThreshold'] ?? 80),
             wmcThreshold: (int) ($config['wmc_threshold'] ?? $config['wmcThreshold'] ?? 10),
             minMethods: (int) ($config['min_methods'] ?? $config['minMethods'] ?? 3),

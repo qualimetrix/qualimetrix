@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Rules\Coupling;
 
+use Qualimetrix\Core\Rule\RuleOptionKey;
 use Qualimetrix\Core\Rule\RuleOptionsInterface;
 use Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Core\Violation\Severity;
@@ -36,10 +37,10 @@ final readonly class ClassRankOptions implements RuleOptionsInterface, Threshold
             return new self(enabled: false);
         }
 
-        $thresholds = ThresholdParser::parse($config, 'warning', 'error', 0.02, 0.05);
+        $thresholds = ThresholdParser::parse($config, RuleOptionKey::WARNING, RuleOptionKey::ERROR, 0.02, 0.05);
 
         return new self(
-            enabled: (bool) ($config['enabled'] ?? true),
+            enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
             warning: (float) $thresholds['warning'],
             error: (float) $thresholds['error'],
         );

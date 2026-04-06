@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Rules\CodeSmell;
 
+use Qualimetrix\Core\Rule\RuleOptionKey;
 use Qualimetrix\Core\Rule\RuleOptionsInterface;
 use Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Core\Violation\Severity;
@@ -41,11 +42,11 @@ final readonly class LongParameterListOptions implements RuleOptionsInterface, T
             return new self(enabled: false);
         }
 
-        $thresholds = ThresholdParser::parse($config, 'warning', 'error', 4, 6);
+        $thresholds = ThresholdParser::parse($config, RuleOptionKey::WARNING, RuleOptionKey::ERROR, 4, 6);
         $voThresholds = ThresholdParser::parse($config, 'vo-warning', 'vo-error', 8, 12, 'vo-threshold');
 
         return new self(
-            enabled: (bool) ($config['enabled'] ?? true),
+            enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
             warning: (int) $thresholds['warning'],
             error: (int) $thresholds['error'],
             voWarning: (int) $voThresholds['warning'],

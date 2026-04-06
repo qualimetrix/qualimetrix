@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Rules\Design;
 
+use Qualimetrix\Core\Rule\RuleOptionKey;
 use Qualimetrix\Core\Rule\RuleOptionsInterface;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Rules\Support\ThresholdParser;
@@ -44,7 +45,7 @@ final readonly class TypeCoverageOptions implements RuleOptionsInterface
         $propertyThresholds = ThresholdParser::parse($config, 'property_warning', 'property_error', 80.0, 50.0, thresholdKey: 'property_threshold', legacyWarningKeys: ['propertyWarning'], legacyErrorKeys: ['propertyError']);
 
         return new self(
-            enabled: (bool) ($config['enabled'] ?? true),
+            enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
             paramWarning: (float) $paramThresholds['warning'],
             paramError: (float) $paramThresholds['error'],
             returnWarning: (float) $returnThresholds['warning'],

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Rules\Coupling;
 
+use Qualimetrix\Core\Rule\RuleOptionKey;
 use Qualimetrix\Core\Rule\RuleOptionsInterface;
 use Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Core\Violation\Severity;
@@ -62,7 +63,7 @@ final readonly class DistanceOptions implements RuleOptionsInterface, ThresholdA
         $thresholds = ThresholdParser::parse($config, 'max_distance_warning', 'max_distance_error', 0.3, 0.5, legacyWarningKeys: ['maxDistanceWarning'], legacyErrorKeys: ['maxDistanceError']);
 
         return new self(
-            enabled: (bool) ($config['enabled'] ?? true),
+            enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
             maxDistanceWarning: (float) $thresholds['warning'],
             maxDistanceError: (float) $thresholds['error'],
             includeNamespaces: $includeNamespaces,

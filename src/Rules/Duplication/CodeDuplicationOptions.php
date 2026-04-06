@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Rules\Duplication;
 
+use Qualimetrix\Core\Rule\RuleOptionKey;
 use Qualimetrix\Core\Rule\RuleOptionsInterface;
 use Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Core\Violation\Severity;
@@ -24,10 +25,10 @@ final readonly class CodeDuplicationOptions implements RuleOptionsInterface, Thr
 
     public static function fromArray(array $config): self
     {
-        $thresholds = ThresholdParser::parse($config, 'warning', 'error', 5, 50);
+        $thresholds = ThresholdParser::parse($config, RuleOptionKey::WARNING, RuleOptionKey::ERROR, 5, 50);
 
         return new self(
-            enabled: (bool) ($config['enabled'] ?? true),
+            enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
             min_lines: (int) ($config['min_lines'] ?? $config['minLines'] ?? 5),
             min_tokens: (int) ($config['min_tokens'] ?? $config['minTokens'] ?? 70),
             warning: (int) $thresholds['warning'],

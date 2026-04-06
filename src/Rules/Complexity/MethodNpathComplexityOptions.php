@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Rules\Complexity;
 
 use Qualimetrix\Core\Rule\LevelOptionsInterface;
+use Qualimetrix\Core\Rule\RuleOptionKey;
 use Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Rules\Support\ThresholdParser;
@@ -25,10 +26,10 @@ final readonly class MethodNpathComplexityOptions implements LevelOptionsInterfa
      */
     public static function fromArray(array $config): self
     {
-        $thresholds = ThresholdParser::parse($config, 'warning', 'error', 200, 1000);
+        $thresholds = ThresholdParser::parse($config, RuleOptionKey::WARNING, RuleOptionKey::ERROR, 200, 1000);
 
         return new self(
-            enabled: (bool) ($config['enabled'] ?? true),
+            enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
             warning: (int) $thresholds['warning'],
             error: (int) $thresholds['error'],
         );
