@@ -14,8 +14,8 @@ final class ComputedMetricDefaults
     public static function getDefaults(): array
     {
         return [
-            'health.complexity' => new ComputedMetricDefinition(
-                name: 'health.complexity',
+            HealthDimension::Complexity->value => new ComputedMetricDefinition(
+                name: HealthDimension::Complexity->value,
                 formulas: [
                     // Class: avg + max-method penalties. avg detects uniformly complex classes,
                     // sqrt(max) penalizes single monster methods that hide behind a low average.
@@ -33,8 +33,8 @@ final class ComputedMetricDefaults
                 warningThreshold: 50.0,
                 errorThreshold: 25.0,
             ),
-            'health.cohesion' => new ComputedMetricDefinition(
-                name: 'health.cohesion',
+            HealthDimension::Cohesion->value => new ComputedMetricDefinition(
+                name: HealthDimension::Cohesion->value,
                 formulas: [
                     // Pure methods (no property access, e.g. interface contract getters) inflate
                     // TCC denominator and LCOM. Adjust both: boost TCC proportionally, reduce LCOM.
@@ -48,8 +48,8 @@ final class ComputedMetricDefaults
                 warningThreshold: 50.0,
                 errorThreshold: 25.0,
             ),
-            'health.coupling' => new ComputedMetricDefinition(
-                name: 'health.coupling',
+            HealthDimension::Coupling->value => new ComputedMetricDefinition(
+                name: HealthDimension::Coupling->value,
                 formulas: [
                     // Blend ce_packages (dependency breadth) with dampened ce (volume).
                     // K=15, W_pkg=3.0, W_raw=0.5, threshold=5.
@@ -66,8 +66,8 @@ final class ComputedMetricDefaults
                 warningThreshold: 50.0,
                 errorThreshold: 25.0,
             ),
-            'health.typing' => new ComputedMetricDefinition(
-                name: 'health.typing',
+            HealthDimension::Typing->value => new ComputedMetricDefinition(
+                name: HealthDimension::Typing->value,
                 formulas: [
                     'class' => 'clamp(typeCoverage__pct ?? 0, 0, 100)',
                     'namespace' => 'clamp(((typeCoverage__paramTyped__sum ?? 0) + (typeCoverage__returnTyped__sum ?? 0) + (typeCoverage__propertyTyped__sum ?? 0)) / max((typeCoverage__paramTotal__sum ?? 0) + (typeCoverage__returnTotal__sum ?? 0) + (typeCoverage__propertyTotal__sum ?? 0), 1) * 100, 0, 100)',
@@ -78,8 +78,8 @@ final class ComputedMetricDefaults
                 warningThreshold: 80.0,
                 errorThreshold: 50.0,
             ),
-            'health.maintainability' => new ComputedMetricDefinition(
-                name: 'health.maintainability',
+            HealthDimension::Maintainability->value => new ComputedMetricDefinition(
+                name: HealthDimension::Maintainability->value,
                 formulas: [
                     // Penalty-based: avg detects uniformly poor MI, sqrt(min) penalizes worst methods.
                     // MI=85→100, MI=75/min=50→85, MI=65/min=30→57.
@@ -96,8 +96,8 @@ final class ComputedMetricDefaults
                 warningThreshold: 50.0,
                 errorThreshold: 25.0,
             ),
-            'health.overall' => new ComputedMetricDefinition(
-                name: 'health.overall',
+            HealthDimension::Overall->value => new ComputedMetricDefinition(
+                name: HealthDimension::Overall->value,
                 formulas: [
                     // Maintainability excluded at class level: MI is method-level,
                     // and its signal is already captured by complexity and cohesion sub-scores.

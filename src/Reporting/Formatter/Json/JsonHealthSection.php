@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Formatter\Json;
 
+use Qualimetrix\Core\ComputedMetric\HealthDimension;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\Health\DecompositionItem;
@@ -35,7 +36,7 @@ final class JsonHealthSection
 
         if ($context->namespace !== null && $report->metrics !== null) {
             $nsPath = SymbolPath::forNamespace($context->namespace);
-            $flatOverall = $report->metrics->get($nsPath)->get('health.overall');
+            $flatOverall = $report->metrics->get($nsPath)->get(HealthDimension::Overall->value);
             $result = $this->formatHealthScores($healthScores, $context);
             if ($result !== null && $flatOverall !== null) {
                 $recursiveScore = $result['overall']['score'] ?? null;

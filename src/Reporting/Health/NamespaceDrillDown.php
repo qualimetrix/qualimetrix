@@ -6,6 +6,9 @@ namespace Qualimetrix\Reporting\Health;
 
 use Generator;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefaults;
+use Qualimetrix\Core\ComputedMetric\HealthDimension;
+use Qualimetrix\Core\Metric\AggregationStrategy;
+use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -38,7 +41,7 @@ final readonly class NamespaceDrillDown
     public function buildSubtreeHealthScores(MetricRepositoryInterface $metrics, string $namespace): array
     {
         $defaults = ComputedMetricDefaults::getDefaults();
-        $dimensions = ['health.complexity', 'health.cohesion', 'health.coupling', 'health.typing', 'health.maintainability', 'health.overall'];
+        $allDimensions = HealthDimension::all();
 
         // Collect health scores from all matching namespaces, weighted by class count
         $weightedSums = [];
@@ -52,19 +55,20 @@ final readonly class NamespaceDrillDown
             }
 
             $nsMetrics = $metrics->get($nsInfo->symbolPath);
-            $classCount = (int) ($nsMetrics->get('classCount.sum') ?? 1);
+            $classCount = (int) ($nsMetrics->get(MetricName::agg(MetricName::SIZE_CLASS_COUNT, AggregationStrategy::Sum)) ?? 1);
             if ($classCount < 1) {
                 $classCount = 1;
             }
 
-            foreach ($dimensions as $dim) {
-                $value = $nsMetrics->get($dim);
+            foreach ($allDimensions as $dim) {
+                $value = $nsMetrics->get($dim->value);
                 if ($value === null) {
                     continue;
                 }
 
-                $weightedSums[$dim] = ($weightedSums[$dim] ?? 0.0) + (float) $value * $classCount;
-                $dimensionWeights[$dim] = ($dimensionWeights[$dim] ?? 0) + $classCount;
+                $key = $dim->value;
+                $weightedSums[$key] = ($weightedSums[$key] ?? 0.0) + (float) $value * $classCount;
+                $dimensionWeights[$key] = ($dimensionWeights[$key] ?? 0) + $classCount;
             }
         }
 
@@ -75,7 +79,8 @@ final readonly class NamespaceDrillDown
         // Build HealthScore objects from weighted averages
         $healthScores = [];
 
-        foreach ($dimensions as $dimension) {
+        foreach ($allDimensions as $dim) {
+            $dimension = $dim->value;
             if (!isset($weightedSums[$dimension])) {
                 continue;
             }
@@ -88,7 +93,7 @@ final readonly class NamespaceDrillDown
 
             $warnThreshold = $definition->warningThreshold ?? 50.0;
             $errThreshold = $definition->errorThreshold ?? 25.0;
-            $dimensionName = str_replace('health.', '', $dimension);
+            $dimensionName = $dim->shortName();
 
             $contributors = $this->contributorRanker->rank(
                 $dimension,
@@ -123,7 +128,7 @@ final readonly class NamespaceDrillDown
         bool $includeNotableMetrics = false,
     ): array {
         $defaults = ComputedMetricDefaults::getDefaults();
-        $overallDef = $defaults['health.overall'];
+        $overallDef = $defaults[HealthDimension::Overall->value];
         $warnThreshold = $overallDef->warningThreshold ?? 50.0;
         $errThreshold = $overallDef->errorThreshold ?? 30.0;
 
@@ -152,7 +157,7 @@ final readonly class NamespaceDrillDown
             }
 
             $classMetrics = $metrics->get($symbolInfo->symbolPath);
-            $healthOverall = $classMetrics->get('health.overall');
+            $healthOverall = $classMetrics->get(HealthDimension::Overall->value);
 
             if ($healthOverall === null) {
                 continue;
@@ -162,10 +167,10 @@ final readonly class NamespaceDrillDown
             $label = $this->hintProvider->getScoreLabel($scoreValue, $warnThreshold, $errThreshold);
 
             $dimensionScores = [];
-            foreach (['complexity', 'cohesion', 'coupling', 'typing', 'maintainability'] as $dim) {
-                $value = $classMetrics->get('health.' . $dim);
+            foreach (HealthDimension::subDimensions() as $dim) {
+                $value = $classMetrics->get($dim->value);
                 if ($value !== null) {
-                    $dimensionScores[$dim] = (float) $value;
+                    $dimensionScores[$dim->shortName()] = (float) $value;
                 }
             }
 
@@ -173,7 +178,7 @@ final readonly class NamespaceDrillDown
 
             $notableMetrics = [];
             if ($includeNotableMetrics) {
-                foreach (['methodCount', 'propertyCount', 'cbo', 'ccn.avg', 'tcc', 'wmc', 'mi.avg', 'loc'] as $key) {
+                foreach ([MetricName::STRUCTURE_METHOD_COUNT, MetricName::STRUCTURE_PROPERTY_COUNT, MetricName::COUPLING_CBO, MetricName::agg(MetricName::COMPLEXITY_CCN, AggregationStrategy::Average), MetricName::COHESION_TCC, MetricName::STRUCTURE_WMC, MetricName::agg(MetricName::MAINTAINABILITY_MI, AggregationStrategy::Average), MetricName::SIZE_LOC] as $key) {
                     $value = $classMetrics->get($key);
                     if ($value !== null) {
                         $notableMetrics[$key] = $value;
@@ -218,8 +223,6 @@ final readonly class NamespaceDrillDown
     public function buildClassHealthScores(MetricRepositoryInterface $metrics, string $classFqn): array
     {
         $defaults = ComputedMetricDefaults::getDefaults();
-        $dimensions = ['health.complexity', 'health.cohesion', 'health.coupling', 'health.typing', 'health.maintainability', 'health.overall'];
-
         // Find the class in the metrics repository
         $classPath = null;
         foreach ($metrics->all(SymbolType::Class_) as $symbolInfo) {
@@ -240,18 +243,18 @@ final readonly class NamespaceDrillDown
         $classMetrics = $metrics->get($classPath);
         $healthScores = [];
 
-        foreach ($dimensions as $dimension) {
-            $score = $classMetrics->get($dimension);
+        foreach (HealthDimension::all() as $dim) {
+            $score = $classMetrics->get($dim->value);
 
             if ($score === null) {
                 continue;
             }
 
             $scoreValue = (float) $score;
-            $definition = $defaults[$dimension];
+            $definition = $defaults[$dim->value];
             $warnThreshold = $definition->warningThreshold ?? 50.0;
             $errThreshold = $definition->errorThreshold ?? 25.0;
-            $dimensionName = str_replace('health.', '', $dimension);
+            $dimensionName = $dim->shortName();
 
             $healthScores[$dimensionName] = new HealthScore(
                 name: $dimensionName,

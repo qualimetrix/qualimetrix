@@ -6,6 +6,7 @@ namespace Qualimetrix\Configuration;
 
 use InvalidArgumentException;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinition;
+use Qualimetrix\Core\ComputedMetric\HealthDimension;
 
 /**
  * Filters out excluded health dimensions and rebuilds the health.overall
@@ -38,14 +39,14 @@ final readonly class HealthFormulaExcluder
         // Validate dimension names -- warn on unknown
         $knownDimensions = [];
         foreach ($definitions as $definition) {
-            if (str_starts_with($definition->name, 'health.') && $definition->name !== 'health.overall') {
+            if (str_starts_with($definition->name, 'health.') && $definition->name !== HealthDimension::Overall->value) {
                 $knownDimensions[$definition->name] = true;
             }
         }
 
         $unknownDimensions = [];
         foreach ($excludedNames as $name) {
-            if ($name !== 'health.overall' && !isset($knownDimensions[$name])) {
+            if ($name !== HealthDimension::Overall->value && !isset($knownDimensions[$name])) {
                 $unknownDimensions[] = $name;
             }
         }
@@ -67,7 +68,7 @@ final readonly class HealthFormulaExcluder
                 continue;
             }
 
-            if ($definition->name === 'health.overall') {
+            if ($definition->name === HealthDimension::Overall->value) {
                 $overallIndex = \count($filtered);
             }
 
