@@ -117,6 +117,16 @@ final class MetricName
     public const string CODE_SMELL_UNREACHABLE_CODE = 'unreachableCode';
     public const string CODE_SMELL_UNREACHABLE_CODE_FIRST_LINE = 'unreachableCode.firstLine';
 
+    /**
+     * Returns the aggregated metric name for a base metric and strategy.
+     *
+     * Example: agg(COMPLEXITY_CCN, AggregationStrategy::Sum) → 'ccn.sum'
+     */
+    public static function agg(string $metric, AggregationStrategy $strategy): string
+    {
+        return $metric . '.' . $strategy->value;
+    }
+
     private function __construct()
     {
         // Static-only class

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Core\Metric;
 
+use RuntimeException;
+
 final class MetricBag
 {
     /** @var array<string, int|float> */
@@ -59,6 +61,24 @@ final class MetricBag
     public function get(string $name): int|float|null
     {
         return $this->metrics[$name] ?? null;
+    }
+
+    /**
+     * Returns a metric value, throwing if the key does not exist.
+     *
+     * Use this instead of get() when the metric is expected to always be present
+     * (e.g., after aggregation). A missing key indicates a pipeline bug, not an
+     * optional metric.
+     *
+     * @throws RuntimeException if the metric key is not found
+     */
+    public function require(string $name): int|float
+    {
+        return $this->metrics[$name] ?? throw new RuntimeException(\sprintf(
+            'Required metric "%s" not found in MetricBag. Available keys: %s',
+            $name,
+            implode(', ', array_keys($this->metrics)) ?: '(empty)',
+        ));
     }
 
     public function has(string $name): bool
