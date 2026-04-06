@@ -6,6 +6,8 @@ namespace Qualimetrix\Reporting\Health;
 
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefaults;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinitionHolder;
+use Qualimetrix\Core\ComputedMetric\HealthDimension;
+use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Namespace_\NamespaceTree;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -50,7 +52,7 @@ final readonly class SummaryEnricher
 
         // Compute debt density (minutes per 1K LOC)
         $projectMetrics = $report->metrics->get(SymbolPath::forProject());
-        $totalLoc = $projectMetrics->get(MetricName::SIZE_LOC . '.sum');
+        $totalLoc = $projectMetrics->get(MetricName::agg(MetricName::SIZE_LOC, AggregationStrategy::Sum));
         $debtPer1kLoc = ($totalLoc !== null && $totalLoc > 0)
             ? round($debtSummary->totalMinutes / ((float) $totalLoc / 1000), 1)
             : null;
@@ -86,28 +88,26 @@ final readonly class SummaryEnricher
         $defaults = ComputedMetricDefaults::getDefaults();
         $healthScores = [];
 
-        $dimensions = ['health.complexity', 'health.cohesion', 'health.coupling', 'health.typing', 'health.maintainability', 'health.overall'];
-
-        foreach ($dimensions as $dimension) {
-            $score = $projectMetrics->get($dimension);
+        foreach (HealthDimension::all() as $dim) {
+            $score = $projectMetrics->get($dim->value);
 
             if ($score === null) {
                 continue;
             }
 
             $scoreValue = (float) $score;
-            $definition = $defaults[$dimension];
+            $definition = $defaults[$dim->value];
             $warnThreshold = $definition->warningThreshold ?? 50.0;
             $errThreshold = $definition->errorThreshold ?? 25.0;
 
-            $decomposition = $this->buildDecomposition($dimension, $projectMetrics);
+            $decomposition = $this->buildDecomposition($dim->value, $projectMetrics);
             $contributors = $this->contributorRanker->rank(
-                $dimension,
+                $dim->value,
                 $report->metrics,
                 $report->metrics->all(SymbolType::Class_),
             );
 
-            $dimensionName = str_replace('health.', '', $dimension);
+            $dimensionName = $dim->shortName();
             $healthScores[$dimensionName] = new HealthScore(
                 name: $dimensionName,
                 score: $scoreValue,
@@ -121,8 +121,8 @@ final readonly class SummaryEnricher
 
         // Show typing dimension with "0 classes analyzed" when other dimensions exist but typing doesn't,
         // unless typing was explicitly excluded via --exclude-health
-        if ($healthScores !== [] && !isset($healthScores['typing']) && !$this->isDefinitionExcluded('health.typing')) {
-            $typingDef = $defaults['health.typing'];
+        if ($healthScores !== [] && !isset($healthScores['typing']) && !$this->isDefinitionExcluded(HealthDimension::Typing->value)) {
+            $typingDef = $defaults[HealthDimension::Typing->value];
             $healthScores['typing'] = new HealthScore(
                 name: 'typing',
                 score: null,
@@ -148,7 +148,7 @@ final readonly class SummaryEnricher
         \Qualimetrix\Core\Metric\MetricBag $projectMetrics,
     ): array {
         // Typing dimension needs special handling: compute percentages from raw sums
-        if ($dimension === 'health.typing') {
+        if ($dimension === HealthDimension::Typing->value) {
             return $this->buildTypingDecomposition($projectMetrics);
         }
 
@@ -187,9 +187,9 @@ final readonly class SummaryEnricher
     private function buildTypingDecomposition(\Qualimetrix\Core\Metric\MetricBag $metrics): array
     {
         $components = [
-            ['label' => 'Parameter types', 'typed' => 'typeCoverage.paramTyped.sum', 'total' => 'typeCoverage.paramTotal.sum'],
-            ['label' => 'Return types', 'typed' => 'typeCoverage.returnTyped.sum', 'total' => 'typeCoverage.returnTotal.sum'],
-            ['label' => 'Property types', 'typed' => 'typeCoverage.propertyTyped.sum', 'total' => 'typeCoverage.propertyTotal.sum'],
+            ['label' => 'Parameter types', 'typed' => MetricName::agg(MetricName::TYPE_COVERAGE_PARAM_TYPED, AggregationStrategy::Sum), 'total' => MetricName::agg(MetricName::TYPE_COVERAGE_PARAM_TOTAL, AggregationStrategy::Sum)],
+            ['label' => 'Return types', 'typed' => MetricName::agg(MetricName::TYPE_COVERAGE_RETURN_TYPED, AggregationStrategy::Sum), 'total' => MetricName::agg(MetricName::TYPE_COVERAGE_RETURN_TOTAL, AggregationStrategy::Sum)],
+            ['label' => 'Property types', 'typed' => MetricName::agg(MetricName::TYPE_COVERAGE_PROPERTY_TYPED, AggregationStrategy::Sum), 'total' => MetricName::agg(MetricName::TYPE_COVERAGE_PROPERTY_TOTAL, AggregationStrategy::Sum)],
         ];
 
         $items = [];
@@ -225,7 +225,7 @@ final readonly class SummaryEnricher
         \assert($report->metrics !== null);
 
         $defaults = ComputedMetricDefaults::getDefaults();
-        $overallDef = $defaults['health.overall'];
+        $overallDef = $defaults[HealthDimension::Overall->value];
         $warnThreshold = $overallDef->warningThreshold ?? 50.0;
 
         /** @var list<array{score: float, info: \Qualimetrix\Core\Symbol\SymbolInfo}> $candidates */
@@ -233,7 +233,7 @@ final readonly class SummaryEnricher
 
         foreach ($report->metrics->all($symbolType) as $symbolInfo) {
             $metrics = $report->metrics->get($symbolInfo->symbolPath);
-            $healthOverall = $metrics->get('health.overall');
+            $healthOverall = $metrics->get(HealthDimension::Overall->value);
 
             if ($healthOverall === null) {
                 continue;
@@ -243,7 +243,7 @@ final readonly class SummaryEnricher
 
             // Skip namespaces with no direct classes (e.g., root namespace containers like "PHPUnit")
             if ($symbolType === SymbolType::Namespace_) {
-                $classCountInNs = (int) ($metrics->get('classCount.sum') ?? 0);
+                $classCountInNs = (int) ($metrics->get(MetricName::agg(MetricName::SIZE_CLASS_COUNT, AggregationStrategy::Sum)) ?? 0);
 
                 if ($classCountInNs === 0) {
                     continue;
@@ -278,7 +278,7 @@ final readonly class SummaryEnricher
             $symbolCanonical = $symbolInfo->symbolPath->toCanonical();
             $violationCount = $violationCounts[$symbolCanonical] ?? 0;
             $classCount = $symbolType === SymbolType::Namespace_
-                ? (int) ($metrics->get('classCount.sum') ?? 0)
+                ? (int) ($metrics->get(MetricName::agg(MetricName::SIZE_CLASS_COUNT, AggregationStrategy::Sum)) ?? 0)
                 : 0;
 
             $file = $symbolType === SymbolType::Class_ ? $symbolInfo->file : null;
@@ -288,7 +288,7 @@ final readonly class SummaryEnricher
             $density = WorstOffender::computeViolationDensity(
                 $violationCount,
                 $metrics,
-                $symbolType === SymbolType::Namespace_ ? 'loc.sum' : MetricName::SIZE_CLASS_LOC,
+                $symbolType === SymbolType::Namespace_ ? MetricName::agg(MetricName::SIZE_LOC, AggregationStrategy::Sum) : MetricName::SIZE_CLASS_LOC,
             );
 
             $offenders[] = new WorstOffender(
@@ -313,14 +313,13 @@ final readonly class SummaryEnricher
      */
     private function getPerDimensionScores(\Qualimetrix\Core\Metric\MetricBag $metrics): array
     {
-        $dimensions = ['complexity', 'cohesion', 'coupling', 'typing', 'maintainability', 'overall'];
         $scores = [];
 
-        foreach ($dimensions as $dim) {
-            $value = $metrics->get('health.' . $dim);
+        foreach (HealthDimension::all() as $dim) {
+            $value = $metrics->get($dim->value);
 
             if ($value !== null) {
-                $scores[$dim] = (float) $value;
+                $scores[$dim->shortName()] = (float) $value;
             }
         }
 
@@ -376,8 +375,23 @@ final readonly class SummaryEnricher
     {
         $notable = [];
         $keys = $symbolType === SymbolType::Class_
-            ? ['methodCount', 'propertyCount', 'cbo', 'ccn.avg', 'tcc', 'wmc', 'mi.avg', 'loc']
-            : ['classCount.sum', 'cbo.avg', 'ccn.avg', 'distance', 'mi.avg'];
+            ? [
+                MetricName::STRUCTURE_METHOD_COUNT,
+                MetricName::STRUCTURE_PROPERTY_COUNT,
+                MetricName::COUPLING_CBO,
+                MetricName::agg(MetricName::COMPLEXITY_CCN, AggregationStrategy::Average),
+                MetricName::COHESION_TCC,
+                MetricName::STRUCTURE_WMC,
+                MetricName::agg(MetricName::MAINTAINABILITY_MI, AggregationStrategy::Average),
+                MetricName::SIZE_LOC,
+            ]
+            : [
+                MetricName::agg(MetricName::SIZE_CLASS_COUNT, AggregationStrategy::Sum),
+                MetricName::agg(MetricName::COUPLING_CBO, AggregationStrategy::Average),
+                MetricName::agg(MetricName::COMPLEXITY_CCN, AggregationStrategy::Average),
+                MetricName::COUPLING_DISTANCE,
+                MetricName::agg(MetricName::MAINTAINABILITY_MI, AggregationStrategy::Average),
+            ];
 
         foreach ($keys as $key) {
             $value = $metrics->get($key);

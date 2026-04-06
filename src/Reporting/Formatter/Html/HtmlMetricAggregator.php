@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Formatter\Html;
 
+use Qualimetrix\Core\ComputedMetric\HealthDimension;
+use Qualimetrix\Core\Metric\AggregationStrategy;
+use Qualimetrix\Core\Metric\MetricName;
+
 /**
  * Aggregates metrics bottom-up through the HTML tree hierarchy.
  *
@@ -14,16 +18,6 @@ namespace Qualimetrix\Reporting\Formatter\Html;
  */
 final readonly class HtmlMetricAggregator
 {
-    /** @var list<string> */
-    private const array HEALTH_KEYS = [
-        'health.overall',
-        'health.complexity',
-        'health.cohesion',
-        'health.coupling',
-        'health.typing',
-        'health.maintainability',
-    ];
-
     /**
      * Aggregates metrics bottom-up for intermediate namespace nodes (post-order traversal).
      */
@@ -44,7 +38,7 @@ final readonly class HtmlMetricAggregator
 
     private function aggregateLocSum(HtmlTreeNode $node): void
     {
-        if (isset($node->metrics['loc.sum'])) {
+        if (isset($node->metrics[MetricName::agg(MetricName::SIZE_LOC, AggregationStrategy::Sum)])) {
             return;
         }
 
@@ -52,7 +46,7 @@ final readonly class HtmlMetricAggregator
         $hasValue = false;
 
         foreach ($node->children as $child) {
-            $childLoc = $child->metrics['loc.sum'] ?? null;
+            $childLoc = $child->metrics[MetricName::agg(MetricName::SIZE_LOC, AggregationStrategy::Sum)] ?? null;
             if ($childLoc !== null) {
                 $sum += $childLoc;
                 $hasValue = true;
@@ -60,13 +54,14 @@ final readonly class HtmlMetricAggregator
         }
 
         if ($hasValue) {
-            $node->metrics['loc.sum'] = $sum;
+            $node->metrics[MetricName::agg(MetricName::SIZE_LOC, AggregationStrategy::Sum)] = $sum;
         }
     }
 
     private function aggregateHealthScores(HtmlTreeNode $node): void
     {
-        foreach (self::HEALTH_KEYS as $key) {
+        foreach (HealthDimension::all() as $dim) {
+            $key = $dim->value;
             if (isset($node->metrics[$key])) {
                 continue; // Already has this metric from the repository
             }
@@ -80,7 +75,7 @@ final readonly class HtmlMetricAggregator
                     continue;
                 }
 
-                $weight = (float) ($child->metrics['loc.sum'] ?? 1);
+                $weight = (float) ($child->metrics[MetricName::agg(MetricName::SIZE_LOC, AggregationStrategy::Sum)] ?? 1);
                 $weightedSum += $score * $weight;
                 $totalWeight += $weight;
             }

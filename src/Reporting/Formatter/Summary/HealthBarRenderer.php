@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Formatter\Summary;
 
+use Qualimetrix\Core\ComputedMetric\HealthDimension;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Reporting\Formatter\Support\AnsiColor;
 use Qualimetrix\Reporting\FormatterContext;
@@ -69,7 +70,7 @@ final class HealthBarRenderer
             // C2: Show flat (direct) score when namespace drill-down uses recursive aggregation
             if ($context->namespace !== null && $report->metrics !== null) {
                 $nsPath = SymbolPath::forNamespace($context->namespace);
-                $flatOverall = $report->metrics->get($nsPath)->get('health.overall');
+                $flatOverall = $report->metrics->get($nsPath)->get(HealthDimension::Overall->value);
                 if ($flatOverall !== null) {
                     $flatScore = (float) $flatOverall;
                     $delta = abs($overall->score - $flatScore);
