@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Aggregator\ClassToNamespaceAggregator;
 use Qualimetrix\Analysis\Aggregator\MethodToClassAggregator;
 use Qualimetrix\Analysis\Aggregator\NamespaceToProjectAggregator;
 use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
+use Qualimetrix\Core\Metric\AggregationMeta;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Namespace_\NamespaceTree;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -101,7 +102,7 @@ final class GlobalFunctionAggregationTest extends TestCase
         // Class aggregation should only include the method, not the function
         $classMetrics = $repository->get(SymbolPath::forClass('App\\Service', 'UserService'));
         self::assertSame(3, (int) $classMetrics->get('ccn.sum'));
-        self::assertSame(1, $classMetrics->get('symbolMethodCount'));
+        self::assertSame(1, $classMetrics->get(AggregationMeta::SYMBOL_METHOD_COUNT));
 
         // Function CCN (10) should NOT be mixed into the class
     }
@@ -150,7 +151,7 @@ final class GlobalFunctionAggregationTest extends TestCase
 
         $namespaceBag = $repository->get(SymbolPath::forNamespace('App\\Utils'));
         self::assertSame(5, $namespaceBag->get('ccn.sum'));
-        self::assertSame(1, $namespaceBag->get('symbolMethodCount'));
+        self::assertSame(1, $namespaceBag->get(AggregationMeta::SYMBOL_METHOD_COUNT));
     }
 
     #[Test]
@@ -175,7 +176,7 @@ final class GlobalFunctionAggregationTest extends TestCase
 
         $projectBag = $repository->get(SymbolPath::forProject());
         self::assertSame(8, $projectBag->get('ccn.sum'));
-        self::assertSame(1, $projectBag->get('symbolMethodCount'));
+        self::assertSame(1, $projectBag->get(AggregationMeta::SYMBOL_METHOD_COUNT));
     }
 
     #[Test]
@@ -197,8 +198,8 @@ final class GlobalFunctionAggregationTest extends TestCase
         $bag = AggregationHelper::addSymbolCounts(new MetricBag(), $symbolInfos);
 
         // Both the method AND the function should be counted
-        self::assertSame(2, $bag->get('symbolMethodCount'));
-        self::assertSame(1, $bag->get('symbolClassCount'));
+        self::assertSame(2, $bag->get(AggregationMeta::SYMBOL_METHOD_COUNT));
+        self::assertSame(1, $bag->get(AggregationMeta::SYMBOL_CLASS_COUNT));
     }
 
     #[Test]
@@ -228,6 +229,6 @@ final class GlobalFunctionAggregationTest extends TestCase
         // class sum (3) + function (10) = 13
         self::assertSame(13, $namespaceBag->get('ccn.sum'));
         // 1 method + 1 function = 2 callables
-        self::assertSame(2, $namespaceBag->get('symbolMethodCount'));
+        self::assertSame(2, $namespaceBag->get(AggregationMeta::SYMBOL_METHOD_COUNT));
     }
 }

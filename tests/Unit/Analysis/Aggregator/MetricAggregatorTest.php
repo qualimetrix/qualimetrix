@@ -10,6 +10,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Aggregator\AggregationHelper;
 use Qualimetrix\Analysis\Aggregator\MetricAggregator;
 use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
+use Qualimetrix\Core\Metric\AggregationMeta;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricCollectorInterface;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -50,12 +51,12 @@ final class MetricAggregatorTest extends TestCase
         self::assertSame(8, (int) $classMetrics->get('ccn.sum')); // 5 + 3
         self::assertEquals(4.0, $classMetrics->get('ccn.avg')); // (5 + 3) / 2 - use assertEquals for int/float comparison
         self::assertSame(5, (int) $classMetrics->get('ccn.max'));
-        self::assertSame(2, $classMetrics->get('symbolMethodCount')); // 2 methods in class
+        self::assertSame(2, $classMetrics->get(AggregationMeta::SYMBOL_METHOD_COUNT)); // 2 methods in class
 
         // Check namespace-level aggregation
         $nsMetrics = $repository->get(SymbolPath::forNamespace('App\\Service'));
         self::assertInstanceOf(MetricBag::class, $nsMetrics);
-        self::assertSame(2, $nsMetrics->get('symbolMethodCount'));
+        self::assertSame(2, $nsMetrics->get(AggregationMeta::SYMBOL_METHOD_COUNT));
         self::assertSame(8, (int) $nsMetrics->get('ccn.sum')); // Sum of method values: 5 + 3
         self::assertEquals(4.0, $nsMetrics->get('ccn.avg')); // Avg of method values: (5 + 3) / 2
         self::assertSame(5, (int) $nsMetrics->get('ccn.max')); // Max of method values: max(5, 3)
@@ -98,7 +99,7 @@ final class MetricAggregatorTest extends TestCase
         $classMetrics = $repository->get(SymbolPath::forClass('App\\Service', 'OrderService'));
 
         // Method count
-        self::assertSame(3, $classMetrics->get('symbolMethodCount'));
+        self::assertSame(3, $classMetrics->get(AggregationMeta::SYMBOL_METHOD_COUNT));
 
         // CCN aggregations
         self::assertSame(15, (int) $classMetrics->get('ccn.sum')); // 2 + 5 + 8
@@ -136,7 +137,7 @@ final class MetricAggregatorTest extends TestCase
         $projectMetrics = $repository->get(SymbolPath::forProject());
 
         self::assertInstanceOf(MetricBag::class, $projectMetrics);
-        self::assertSame(2, $projectMetrics->get('symbolMethodCount'));
+        self::assertSame(2, $projectMetrics->get(AggregationMeta::SYMBOL_METHOD_COUNT));
         self::assertSame(10, (int) $projectMetrics->get('ccn.sum')); // 4 + 6
         self::assertSame(6, (int) $projectMetrics->get('ccn.max'));
     }
@@ -188,7 +189,7 @@ final class MetricAggregatorTest extends TestCase
         $nsMetrics = $repository->get(SymbolPath::forNamespace('App\\Entity'));
 
         self::assertInstanceOf(MetricBag::class, $nsMetrics);
-        self::assertSame(0, $nsMetrics->get('symbolMethodCount'));
+        self::assertSame(0, $nsMetrics->get(AggregationMeta::SYMBOL_METHOD_COUNT));
         // CCN aggregation won't have values since there are no methods
         self::assertNull($nsMetrics->get('ccn.sum'));
     }
@@ -400,17 +401,17 @@ final class MetricAggregatorTest extends TestCase
 
         // Check namespace 1
         $ns1Metrics = $repository->get(SymbolPath::forNamespace('App\\Service'));
-        self::assertSame(2, $ns1Metrics->get('symbolClassCount'));
+        self::assertSame(2, $ns1Metrics->get(AggregationMeta::SYMBOL_CLASS_COUNT));
         self::assertSame(8, (int) $ns1Metrics->get('ccn.sum')); // 5 + 3
 
         // Check namespace 2
         $ns2Metrics = $repository->get(SymbolPath::forNamespace('App\\Repository'));
-        self::assertSame(1, $ns2Metrics->get('symbolClassCount'));
+        self::assertSame(1, $ns2Metrics->get(AggregationMeta::SYMBOL_CLASS_COUNT));
         self::assertSame(8, (int) $ns2Metrics->get('ccn.sum'));
 
         // Check project level
         $projectMetrics = $repository->get(SymbolPath::forProject());
-        self::assertSame(3, $projectMetrics->get('symbolClassCount'));
+        self::assertSame(3, $projectMetrics->get(AggregationMeta::SYMBOL_CLASS_COUNT));
         self::assertSame(16, (int) $projectMetrics->get('ccn.sum')); // 8 + 8
     }
 

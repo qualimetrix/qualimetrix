@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Aggregator;
 
+use Qualimetrix\Core\Metric\AggregationMeta;
+use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\MetricDefinition;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
@@ -52,13 +54,13 @@ final class MethodToClassAggregator implements AggregationPhaseInterface
             $classBag = AggregationHelper::applyAggregations($metricValues, $methodDefinitions, SymbolLevel::Class_);
 
             // Add WMC alias (WMC = ccn.sum)
-            $ccnSum = $classBag->get(MetricName::COMPLEXITY_CCN . '.sum');
+            $ccnSum = $classBag->get(MetricName::agg(MetricName::COMPLEXITY_CCN, AggregationStrategy::Sum));
             if ($ccnSum !== null) {
                 $classBag = $classBag->with(MetricName::STRUCTURE_WMC, $ccnSum);
             }
 
             // Add method symbol count for class-level rules (distinct from methodCount quality metric)
-            $classBag = $classBag->with('symbolMethodCount', \count($methodInfos));
+            $classBag = $classBag->with(AggregationMeta::SYMBOL_METHOD_COUNT, \count($methodInfos));
 
             $repository->add($classPath, $classBag, $firstInfo->file, 0);
         }

@@ -10,6 +10,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefaults;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinitionHolder;
+use Qualimetrix\Core\Metric\AggregationMeta;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
@@ -319,8 +320,8 @@ final class GoldenFileAggregationTest extends TestCase
         $m = self::$repository->get(SymbolPath::forNamespace('GoldenMetrics\App\Repository'));
         self::assertSame(15, $m->get('ccn.sum'), 'Repository ccn.sum');
         self::assertSame(4, $m->get('ccn.max'), 'Repository ccn.max');
-        self::assertSame(8, $m->get('symbolMethodCount'), 'Repository symbolMethodCount');
-        self::assertSame(2, $m->get('symbolClassCount'), 'Repository symbolClassCount');
+        self::assertSame(8, $m->get(AggregationMeta::SYMBOL_METHOD_COUNT), 'Repository symbolMethodCount');
+        self::assertSame(2, $m->get(AggregationMeta::SYMBOL_CLASS_COUNT), 'Repository symbolClassCount');
         self::assertEqualsWithDelta(0.5, $m->get('abstractness'), 0.01, 'Repository abstractness');
         self::assertSame(129, $m->get('loc.sum'), 'Repository loc.sum');
 
@@ -328,8 +329,8 @@ final class GoldenFileAggregationTest extends TestCase
         $m = self::$repository->get(SymbolPath::forNamespace('GoldenMetrics\App\Service\Auth'));
         self::assertSame(11, $m->get('ccn.sum'), 'Auth ccn.sum');
         self::assertSame(3, $m->get('ccn.max'), 'Auth ccn.max');
-        self::assertSame(5, $m->get('symbolMethodCount'), 'Auth symbolMethodCount');
-        self::assertSame(2, $m->get('symbolClassCount'), 'Auth symbolClassCount');
+        self::assertSame(5, $m->get(AggregationMeta::SYMBOL_METHOD_COUNT), 'Auth symbolMethodCount');
+        self::assertSame(2, $m->get(AggregationMeta::SYMBOL_CLASS_COUNT), 'Auth symbolClassCount');
         self::assertSame(133, $m->get('loc.sum'), 'Auth loc.sum');
     }
 
@@ -345,8 +346,8 @@ final class GoldenFileAggregationTest extends TestCase
         self::assertSame(29, $m->get('ccn.sum'), 'Service ccn.sum');
         self::assertSame(5, $m->get('ccn.max'), 'Service ccn.max');
         self::assertEqualsWithDelta(2.4167, $m->get('ccn.avg'), 0.01, 'Service ccn.avg');
-        self::assertSame(12, $m->get('symbolMethodCount'), 'Service symbolMethodCount');
-        self::assertSame(4, $m->get('symbolClassCount'), 'Service symbolClassCount');
+        self::assertSame(12, $m->get(AggregationMeta::SYMBOL_METHOD_COUNT), 'Service symbolMethodCount');
+        self::assertSame(4, $m->get(AggregationMeta::SYMBOL_CLASS_COUNT), 'Service symbolClassCount');
         self::assertSame(301, $m->get('loc.sum'), 'Service loc.sum');
     }
 
@@ -362,8 +363,8 @@ final class GoldenFileAggregationTest extends TestCase
         self::assertSame(44, $m->get('ccn.sum'), 'App ccn.sum');
         self::assertSame(5, $m->get('ccn.max'), 'App ccn.max');
         self::assertEqualsWithDelta(2.2, $m->get('ccn.avg'), 0.01, 'App ccn.avg');
-        self::assertSame(20, $m->get('symbolMethodCount'), 'App symbolMethodCount');
-        self::assertSame(7, $m->get('symbolClassCount'), 'App symbolClassCount');
+        self::assertSame(20, $m->get(AggregationMeta::SYMBOL_METHOD_COUNT), 'App symbolMethodCount');
+        self::assertSame(7, $m->get(AggregationMeta::SYMBOL_CLASS_COUNT), 'App symbolClassCount');
         self::assertSame(453, $m->get('loc.sum'), 'App loc.sum');
     }
 
@@ -383,8 +384,8 @@ final class GoldenFileAggregationTest extends TestCase
             0.01,
             'GoldenMetrics ccn.avg = App ccn.avg',
         );
-        self::assertSame($app->get('symbolMethodCount'), $m->get('symbolMethodCount'), 'GoldenMetrics symbolMethodCount');
-        self::assertSame($app->get('symbolClassCount'), $m->get('symbolClassCount'), 'GoldenMetrics symbolClassCount');
+        self::assertSame($app->get(AggregationMeta::SYMBOL_METHOD_COUNT), $m->get(AggregationMeta::SYMBOL_METHOD_COUNT), 'GoldenMetrics symbolMethodCount');
+        self::assertSame($app->get(AggregationMeta::SYMBOL_CLASS_COUNT), $m->get(AggregationMeta::SYMBOL_CLASS_COUNT), 'GoldenMetrics symbolClassCount');
     }
 
     // ──────────────────────────────────────────────────────────────────
@@ -401,9 +402,9 @@ final class GoldenFileAggregationTest extends TestCase
         self::assertSame(482, $m->get('loc.sum'), 'project loc.sum');
         self::assertSame(7, $m->get('classCount.sum'), 'project classCount.sum (excludes interfaces)');
         self::assertSame(1, $m->get('interfaceCount.sum'), 'project interfaceCount.sum');
-        self::assertSame(21, $m->get('symbolMethodCount'), 'project symbolMethodCount');
+        self::assertSame(21, $m->get(AggregationMeta::SYMBOL_METHOD_COUNT), 'project symbolMethodCount');
         // symbolClassCount includes interfaces (7 classes + 1 interface = 8)
-        self::assertSame(8, $m->get('symbolClassCount'), 'project symbolClassCount');
+        self::assertSame(8, $m->get(AggregationMeta::SYMBOL_CLASS_COUNT), 'project symbolClassCount');
     }
 
     // ──────────────────────────────────────────────────────────────────
@@ -447,8 +448,8 @@ final class GoldenFileAggregationTest extends TestCase
         // Global namespace aggregation
         $nsMetrics = self::$repository->get(SymbolPath::forNamespace(''));
         self::assertSame(2, $nsMetrics->get('ccn.sum'), 'global ns ccn.sum');
-        self::assertSame(1, $nsMetrics->get('symbolMethodCount'), 'global ns symbolMethodCount');
-        self::assertSame(1, $nsMetrics->get('symbolClassCount'), 'global ns symbolClassCount');
+        self::assertSame(1, $nsMetrics->get(AggregationMeta::SYMBOL_METHOD_COUNT), 'global ns symbolMethodCount');
+        self::assertSame(1, $nsMetrics->get(AggregationMeta::SYMBOL_CLASS_COUNT), 'global ns symbolClassCount');
         self::assertSame(29, $nsMetrics->get('loc.sum'), 'global ns loc.sum');
     }
 }
