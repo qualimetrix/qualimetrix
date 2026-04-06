@@ -22,6 +22,7 @@ Core/
 │   ├── ClassWithMetrics.php               # VO for class with metrics
 │   ├── DerivedCollectorInterface.php      # Derived (composite) collectors
 │   ├── GlobalContextCollectorInterface.php # Cross-file collectors
+│   ├── AggregationMeta.php                # Constants for aggregation-injected counters
 │   ├── AggregationStrategy.php            # Strategy enum
 │   ├── SymbolLevel.php                    # Hierarchy level enum
 │   └── ParallelSafeCollectorInterface.php # Marker for parallel-safe collectors
@@ -35,6 +36,7 @@ Core/
 │   ├── LevelOptionsInterface.php          # Level-specific options
 │   ├── ThresholdAwareOptionsInterface.php # Options that support @qmx-threshold overrides
 │   ├── RuleLevel.php                      # Rule level enum
+│   ├── RuleOptionKey.php                  # Common option key constants (enabled, warning, error, threshold)
 │   └── RuleMatcher.php                    # Prefix matching utility
 ├── Symbol/
 │   ├── SymbolType.php
@@ -76,7 +78,8 @@ Core/
 ├── ComputedMetric/
 │   ├── ComputedMetricDefinition.php       # VO: computed metric definition (name, formulas, levels, thresholds)
 │   ├── ComputedMetricDefaults.php         # Default health.* definitions (6 built-in scores)
-│   └── ComputedMetricDefinitionHolder.php # Static runtime holder for resolved definitions
+│   ├── ComputedMetricDefinitionHolder.php # Static runtime holder for resolved definitions
+│   └── HealthDimension.php               # Enum: health dimension identifiers (complexity, cohesion, etc.)
 ├── Suppression/
 │   ├── Suppression.php                    # VO: suppression tag from docblock (@qmx-ignore)
 │   ├── SuppressionType.php                # Enum: suppression scope (symbol/next-line/file)
