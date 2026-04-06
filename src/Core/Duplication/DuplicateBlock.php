@@ -37,7 +37,7 @@ final readonly class DuplicateBlock
 
         // Sort locations deterministically so primaryLocation() is stable
         // regardless of file discovery order
-        usort($locations, static fn(DuplicateLocation $a, DuplicateLocation $b) => $a->file <=> $b->file ?: $a->startLine <=> $b->startLine);
+        usort($locations, static fn(DuplicateLocation $a, DuplicateLocation $b) => ($a->file <=> $b->file) !== 0 ? ($a->file <=> $b->file) : ($a->startLine <=> $b->startLine));
         $this->locations = $locations;
     }
 

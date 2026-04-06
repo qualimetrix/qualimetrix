@@ -237,7 +237,7 @@ final class ComputedMetricEvaluator
         $optional = [];
 
         // Match: identifier followed by optional whitespace and ??
-        if (preg_match_all('/\b([a-zA-Z_][a-zA-Z0-9_]*)\s*\?\?/', $formula, $matches)) {
+        if (preg_match_all('/\b([a-zA-Z_][a-zA-Z0-9_]*)\s*\?\?/', $formula, $matches) !== 0) {
             foreach ($matches[1] as $var) {
                 $optional[$var] = true;
             }
@@ -369,7 +369,7 @@ final class ComputedMetricEvaluator
     private function extractComputedMetricDeps(string $formula): array
     {
         $deps = [];
-        if (preg_match_all('/\b(health__[a-zA-Z0-9_]+|computed__[a-zA-Z0-9_]+)\b/', $formula, $matches)) {
+        if (preg_match_all('/\b(health__[a-zA-Z0-9_]+|computed__[a-zA-Z0-9_]+)\b/', $formula, $matches) !== 0) {
             foreach ($matches[1] as $var) {
                 // Convert back: health__complexity → health.complexity
                 $name = str_replace('__', '.', $var);

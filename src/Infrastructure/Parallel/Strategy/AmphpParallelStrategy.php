@@ -177,7 +177,7 @@ final class AmphpParallelStrategy implements ExecutionStrategyInterface, Paralle
      *
      * @return list<mixed>
      */
-    public function execute(array $files, callable $processor, bool $canParallelize = true): array
+    public function execute(array $files, callable $processor, bool $canParallelize = true): array // @phpstan-ignore method.childReturnType
     {
         // Fallback to sequential if parallelization is not possible
         if (!$canParallelize || $files === []) {

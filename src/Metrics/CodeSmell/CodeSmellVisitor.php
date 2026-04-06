@@ -344,7 +344,7 @@ final class CodeSmellVisitor extends NodeVisitorAbstract implements ResettableVi
 
         // Check nested expressions
         foreach ($node->getSubNodeNames() as $name) {
-            $subNode = $node->{$name};
+            $subNode = $node->{$name}; // @phpstan-ignore property.dynamicName
 
             // Skip closures and arrow functions — count() inside them is not in the loop condition
             if ($subNode instanceof Closure || $subNode instanceof ArrowFunction) {

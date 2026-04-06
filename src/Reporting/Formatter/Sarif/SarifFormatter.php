@@ -180,7 +180,7 @@ final class SarifFormatter implements FormatterInterface
         $encoded = implode('/', array_map('rawurlencode', $segments));
 
         // Restore Windows drive letter colon (e.g., don't encode C:)
-        if (preg_match('/^([A-Za-z])%3A/', $encoded, $m)) {
+        if (preg_match('/^([A-Za-z])%3A/', $encoded, $m) === 1) {
             $encoded = $m[1] . ':' . substr($encoded, \strlen($m[0]));
         }
 

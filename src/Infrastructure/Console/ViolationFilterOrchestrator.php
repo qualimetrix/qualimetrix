@@ -67,7 +67,7 @@ final readonly class ViolationFilterOrchestrator
             $this->handleStaleBaselineOutput($filterResult, $options, $output);
         }
 
-        if ($input->getOption('show-resolved') && $filterResult->baselineFilter !== null) {
+        if ($input->getOption('show-resolved') === true && $filterResult->baselineFilter !== null) {
             $resolved = $filterResult->baselineFilter->getResolvedFromBaseline($result->violations);
             $resolvedCount = array_sum(array_map(count(...), $resolved));
 
@@ -79,7 +79,7 @@ final readonly class ViolationFilterOrchestrator
             }
         }
 
-        if ($input->getOption('show-suppressed') && $filterResult->suppressedViolations !== []) {
+        if ($input->getOption('show-suppressed') === true && $filterResult->suppressedViolations !== []) {
             $output->writeln('');
             $output->writeln(\sprintf(
                 '<info>%d violation(s) suppressed by @qmx-ignore tags:</info>',
@@ -88,7 +88,7 @@ final readonly class ViolationFilterOrchestrator
 
             $byFile = [];
             foreach ($filterResult->suppressedViolations as $v) {
-                $file = $v->location->file ?: '(no file)';
+                $file = ($v->location->file !== '' ? $v->location->file : '(no file)');
                 $byFile[$file][] = $v;
             }
 

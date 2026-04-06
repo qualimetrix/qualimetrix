@@ -162,7 +162,7 @@ final class GraphExportCommand extends Command
 
         $options = new DotExporterOptions(
             direction: (string) $input->getOption('direction'),
-            groupByNamespace: !$input->getOption('no-clusters'),
+            groupByNamespace: $input->getOption('no-clusters') !== true,
             includeNamespaces: $includeNamespaces !== [] ? $includeNamespaces : null,
             excludeNamespaces: $excludeNamespaces,
         );

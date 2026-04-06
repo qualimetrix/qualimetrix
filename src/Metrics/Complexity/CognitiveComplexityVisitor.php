@@ -201,7 +201,7 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
             }
 
             // Add +1 structural increment to parent method (SonarSource spec B1: lambdas)
-            if (!empty($this->methodStack)) {
+            if ($this->methodStack !== []) {
                 $parentMethod = $this->methodStack[array_key_last($this->methodStack)];
                 $parentFqn = $parentMethod['fqn'];
                 $increment = 1 + $this->nestingLevel; // B1 + B3 nesting bonus

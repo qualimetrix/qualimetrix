@@ -26,7 +26,7 @@ final class GitScopeParser
      */
     public function parse(string $scope): ?GitScope
     {
-        if (!preg_match(self::PATTERN, $scope, $matches)) {
+        if (preg_match(self::PATTERN, $scope, $matches) !== 1) {
             return null;
         }
 

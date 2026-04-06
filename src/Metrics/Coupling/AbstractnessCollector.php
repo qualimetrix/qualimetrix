@@ -73,8 +73,8 @@ final class AbstractnessCollector implements GlobalContextCollectorInterface
             $abstractCount = (int) $metrics->require(MetricName::agg(MetricName::SIZE_ABSTRACT_CLASS_COUNT, AggregationStrategy::Sum));
             $interfaceCount = (int) $metrics->require(MetricName::agg(MetricName::SIZE_INTERFACE_COUNT, AggregationStrategy::Sum));
 
-            $totalTypes = (int) $classCount + (int) $enumCount + (int) $traitCount + (int) $interfaceCount;
-            $totalAbstractions = (int) $abstractCount + (int) $interfaceCount;
+            $totalTypes = $classCount + $enumCount + $traitCount + $interfaceCount;
+            $totalAbstractions = $abstractCount + $interfaceCount;
 
             $abstractness = $this->computeAbstractness($totalTypes, $totalAbstractions);
 

@@ -110,8 +110,8 @@ final class HalsteadCollector extends AbstractCollector implements MethodMetrics
         \assert($this->visitor instanceof HalsteadVisitor);
 
         foreach ($this->visitor->getMethodsWithMetrics() as $method) {
-            $fqn = ($method->namespace ? $method->namespace . '\\' : '')
-                . ($method->class ? $method->class . '::' : '')
+            $fqn = ($method->namespace !== null ? $method->namespace . '\\' : '')
+                . ($method->class !== null ? $method->class . '::' : '')
                 . $method->method;
             $metrics = $method->metrics;
 

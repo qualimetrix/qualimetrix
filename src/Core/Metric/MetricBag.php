@@ -77,7 +77,7 @@ final class MetricBag
         return $this->metrics[$name] ?? throw new RuntimeException(\sprintf(
             'Required metric "%s" not found in MetricBag. Available keys: %s',
             $name,
-            implode(', ', array_keys($this->metrics)) ?: '(empty)',
+            (array_keys($this->metrics) !== [] ? implode(', ', array_keys($this->metrics)) : '(empty)'),
         ));
     }
 

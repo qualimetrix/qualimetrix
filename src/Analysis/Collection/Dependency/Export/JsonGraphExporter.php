@@ -88,7 +88,7 @@ final class JsonGraphExporter implements GraphExporterInterface
             ];
         }
 
-        usort($edges, static fn(array $a, array $b): int => ($a['from'] <=> $b['from']) ?: ($a['to'] <=> $b['to']));
+        usort($edges, static fn(array $a, array $b): int => ($a['from'] <=> $b['from']) !== 0 ? ($a['from'] <=> $b['from']) : ($a['to'] <=> $b['to']));
 
         $result = [
             'meta' => [

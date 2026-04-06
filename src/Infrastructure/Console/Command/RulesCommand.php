@@ -60,7 +60,7 @@ final class RulesCommand extends Command
             ];
         }
 
-        usort($rules, static fn(array $a, array $b): int => $a['group'] <=> $b['group'] ?: $a['name'] <=> $b['name']);
+        usort($rules, static fn(array $a, array $b): int => ($a['group'] <=> $b['group']) !== 0 ? ($a['group'] <=> $b['group']) : ($a['name'] <=> $b['name']));
 
         if ($rules === []) {
             $output->writeln($groupFilter !== null

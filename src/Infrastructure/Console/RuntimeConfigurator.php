@@ -179,7 +179,7 @@ final class RuntimeConfigurator
         }
 
         // Explicit disable
-        if ($input->getOption('no-progress')) {
+        if ($input->getOption('no-progress') === true) {
             $this->progressReporterHolder->setReporter(new NullProgressReporter());
 
             return;
@@ -209,7 +209,7 @@ final class RuntimeConfigurator
         }
 
         // Enable profiler if --profile or --profile=file was provided
-        $this->profilerHolder->set(new Profiler());
+        $this->profilerHolder->set(new Profiler()); // @phpstan-ignore staticMethod.dynamicCall
     }
 
     /**

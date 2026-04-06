@@ -52,6 +52,7 @@ final class FileLogger extends AbstractLogger
      * @param string|Stringable $message Log message
      * @param array<string, mixed> $context Additional context
      */
+    // @phpstan-ignore-next-line method.childParameterType
     public function log($level, string|Stringable $message, array $context = []): void
     {
         if (!$this->meetsMinLevel($level, $this->minLevel)) {

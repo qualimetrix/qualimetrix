@@ -34,7 +34,7 @@ final class SequentialStrategy implements ExecutionStrategyInterface
      *
      * @return list<mixed>
      */
-    public function execute(array $files, callable $processor, bool $canParallelize = true): array
+    public function execute(array $files, callable $processor, bool $canParallelize = true): array // @phpstan-ignore method.childReturnType
     {
         $results = [];
         $profiler = ProfilerHolder::get();

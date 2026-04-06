@@ -86,7 +86,7 @@ final readonly class SuppressionExtractor
         if ($docComment !== null) {
             $text = self::stripBacktickRegions($docComment->getText());
             if (str_contains($text, '@qmx-ignore-file')) {
-                if (preg_match_all(self::PATTERN_FILE, $text, $matches, \PREG_SET_ORDER)) {
+                if (preg_match_all(self::PATTERN_FILE, $text, $matches, \PREG_SET_ORDER) !== 0) {
                     foreach ($matches as $match) {
                         $rule = ($match[1] ?? '') !== '' ? $match[1] : '*';
                         $suppressions[] = new Suppression(
@@ -111,7 +111,7 @@ final readonly class SuppressionExtractor
                 continue;
             }
 
-            if (preg_match_all(self::PATTERN_FILE, $text, $matches, \PREG_SET_ORDER)) {
+            if (preg_match_all(self::PATTERN_FILE, $text, $matches, \PREG_SET_ORDER) !== 0) {
                 foreach ($matches as $match) {
                     $rule = ($match[1] ?? '') !== '' ? $match[1] : '*';
                     $suppressions[] = new Suppression(
@@ -138,7 +138,7 @@ final readonly class SuppressionExtractor
         $suppressions = [];
 
         // Extract file-level suppressions
-        if (preg_match_all(self::PATTERN_FILE, $text, $matches, \PREG_SET_ORDER)) {
+        if (preg_match_all(self::PATTERN_FILE, $text, $matches, \PREG_SET_ORDER) !== 0) {
             foreach ($matches as $match) {
                 $rule = ($match[1] ?? '') !== '' ? $match[1] : '*';
                 $suppressions[] = new Suppression(
@@ -151,7 +151,7 @@ final readonly class SuppressionExtractor
         }
 
         // Extract next-line suppressions (use endLine so filter targets endLine+1)
-        if (preg_match_all(self::PATTERN_NEXT_LINE, $text, $matches, \PREG_SET_ORDER)) {
+        if (preg_match_all(self::PATTERN_NEXT_LINE, $text, $matches, \PREG_SET_ORDER) !== 0) {
             foreach ($matches as $match) {
                 $suppressions[] = new Suppression(
                     rule: $match[1],
@@ -163,7 +163,7 @@ final readonly class SuppressionExtractor
         }
 
         // Extract symbol-level suppressions (plain @qmx-ignore, not -next-line or -file)
-        if (preg_match_all(self::PATTERN_SYMBOL, $text, $matches, \PREG_SET_ORDER)) {
+        if (preg_match_all(self::PATTERN_SYMBOL, $text, $matches, \PREG_SET_ORDER) !== 0) {
             foreach ($matches as $match) {
                 $suppressions[] = new Suppression(
                     rule: $match[1],

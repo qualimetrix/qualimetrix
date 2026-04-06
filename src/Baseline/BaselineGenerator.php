@@ -46,7 +46,7 @@ final readonly class BaselineGenerator
         // Sort keys and entries for deterministic output
         ksort($entries);
         foreach ($entries as $key => $keyEntries) {
-            usort($entries[$key], fn(BaselineEntry $a, BaselineEntry $b) => $a->rule <=> $b->rule ?: $a->hash <=> $b->hash);
+            usort($entries[$key], fn(BaselineEntry $a, BaselineEntry $b) => ($a->rule <=> $b->rule) !== 0 ? ($a->rule <=> $b->rule) : ($a->hash <=> $b->hash));
         }
 
         return new Baseline(

@@ -47,8 +47,8 @@ final readonly class WorstOffender
         }
 
         $sorted = $offenders;
-        usort($sorted, static fn(self $a, self $b): int => ($b->violationDensity ?? -1.0) <=> ($a->violationDensity ?? -1.0)
-                ?: $a->symbolPath->toCanonical() <=> $b->symbolPath->toCanonical());
+        usort($sorted, static fn(self $a, self $b): int => (($b->violationDensity ?? -1.0) <=> ($a->violationDensity ?? -1.0)) !== 0 ? (($b->violationDensity ?? -1.0) <=> ($a->violationDensity ?? -1.0))
+                : ($a->symbolPath->toCanonical() <=> $b->symbolPath->toCanonical()));
 
         return $sorted;
     }

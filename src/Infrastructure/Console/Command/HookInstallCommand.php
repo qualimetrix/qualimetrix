@@ -62,7 +62,7 @@ final class HookInstallCommand extends Command
 
         // Check if hook already exists
         if (file_exists($hookPath)) {
-            if (!$input->getOption('force')) {
+            if ($input->getOption('force') !== true) {
                 $output->writeln('<comment>Pre-commit hook already exists.</comment>');
                 $output->writeln('Use --force to overwrite.');
 

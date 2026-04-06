@@ -264,6 +264,7 @@ final class IdenticalSubExpressionVisitor extends NodeVisitorAbstract implements
             }
 
             foreach ($a->getSubNodeNames() as $name) {
+                // @phpstan-ignore-next-line property.dynamicName
                 if (!$this->nodesEqual($a->{$name}, $b->{$name})) {
                     return false;
                 }
@@ -307,7 +308,7 @@ final class IdenticalSubExpressionVisitor extends NodeVisitorAbstract implements
         }
 
         foreach ($node->getSubNodeNames() as $name) {
-            $sub = $node->{$name};
+            $sub = $node->{$name}; // @phpstan-ignore property.dynamicName
 
             if ($sub instanceof Node && $this->hasSideEffects($sub)) {
                 return true;
