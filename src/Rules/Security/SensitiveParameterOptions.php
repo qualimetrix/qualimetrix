@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Rules\Security;
 
+use Qualimetrix\Core\Rule\RuleOptionKey;
 use Qualimetrix\Core\Rule\RuleOptionsInterface;
 use Qualimetrix\Core\Violation\Severity;
 
@@ -22,7 +23,7 @@ final readonly class SensitiveParameterOptions implements RuleOptionsInterface
     public static function fromArray(array $config): self
     {
         return new self(
-            enabled: (bool) ($config['enabled'] ?? true),
+            enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
         );
     }
 

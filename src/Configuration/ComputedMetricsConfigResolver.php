@@ -7,6 +7,7 @@ namespace Qualimetrix\Configuration;
 use InvalidArgumentException;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefaults;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinition;
+use Qualimetrix\Core\Rule\RuleOptionKey;
 use Qualimetrix\Core\Symbol\SymbolType;
 use RuntimeException;
 
@@ -37,7 +38,7 @@ final class ComputedMetricsConfigResolver
             }
 
             // Handle enabled: false
-            if (isset($overrides['enabled']) && $overrides['enabled'] === false) {
+            if (isset($overrides[RuleOptionKey::ENABLED]) && $overrides[RuleOptionKey::ENABLED] === false) {
                 unset($definitions[$name]);
 
                 continue;
@@ -192,7 +193,7 @@ final class ComputedMetricsConfigResolver
         }
 
         if ($hasThreshold) {
-            $value = $this->resolveThreshold($config['threshold']);
+            $value = $this->resolveThreshold($config[RuleOptionKey::THRESHOLD]);
 
             // threshold: null means "not set" — fall back to defaults (consistent with ThresholdParser)
             if ($value === null) {
@@ -203,8 +204,8 @@ final class ComputedMetricsConfigResolver
         }
 
         return [
-            'warningThreshold' => $hasWarning ? $this->resolveThreshold($config['warning']) : $defaultWarning,
-            'errorThreshold' => $hasError ? $this->resolveThreshold($config['error']) : $defaultError,
+            'warningThreshold' => $hasWarning ? $this->resolveThreshold($config[RuleOptionKey::WARNING]) : $defaultWarning,
+            'errorThreshold' => $hasError ? $this->resolveThreshold($config[RuleOptionKey::ERROR]) : $defaultError,
         ];
     }
 

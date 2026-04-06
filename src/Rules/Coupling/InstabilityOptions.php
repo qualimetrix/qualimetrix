@@ -8,6 +8,7 @@ use InvalidArgumentException;
 use Qualimetrix\Core\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Core\Rule\LevelOptionsInterface;
 use Qualimetrix\Core\Rule\RuleLevel;
+use Qualimetrix\Core\Rule\RuleOptionKey;
 use Qualimetrix\Core\Violation\Severity;
 
 /**
@@ -28,7 +29,7 @@ final readonly class InstabilityOptions implements HierarchicalRuleOptionsInterf
     public static function fromArray(array $config): self
     {
         // Explicit top-level enabled: false disables all levels
-        if (\array_key_exists('enabled', $config) && $config['enabled'] === false) {
+        if (\array_key_exists(RuleOptionKey::ENABLED, $config) && $config[RuleOptionKey::ENABLED] === false) {
             return new self(
                 class: new ClassInstabilityOptions(enabled: false),
                 namespace: new NamespaceInstabilityOptions(enabled: false),

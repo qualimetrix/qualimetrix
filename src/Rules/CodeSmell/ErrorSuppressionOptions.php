@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Rules\CodeSmell;
 
+use Qualimetrix\Core\Rule\RuleOptionKey;
 use Qualimetrix\Core\Rule\RuleOptionsInterface;
 use Qualimetrix\Core\Violation\Severity;
 
@@ -38,7 +39,7 @@ final readonly class ErrorSuppressionOptions implements RuleOptionsInterface
         }
 
         return new self(
-            enabled: (bool) ($config['enabled'] ?? true),
+            enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
             allowedFunctions: $functions,
         );
     }

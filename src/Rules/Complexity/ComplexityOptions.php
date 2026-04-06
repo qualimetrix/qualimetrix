@@ -8,6 +8,7 @@ use InvalidArgumentException;
 use Qualimetrix\Core\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Core\Rule\LevelOptionsInterface;
 use Qualimetrix\Core\Rule\RuleLevel;
+use Qualimetrix\Core\Rule\RuleOptionKey;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Rules\Support\ThresholdParser;
 
@@ -29,7 +30,7 @@ final readonly class ComplexityOptions implements HierarchicalRuleOptionsInterfa
     public static function fromArray(array $config): self
     {
         // Explicit top-level enabled: false disables all levels
-        if (\array_key_exists('enabled', $config) && $config['enabled'] === false) {
+        if (\array_key_exists(RuleOptionKey::ENABLED, $config) && $config[RuleOptionKey::ENABLED] === false) {
             return new self(
                 method: new MethodComplexityOptions(enabled: false),
                 class: new ClassComplexityOptions(enabled: false),
@@ -39,11 +40,11 @@ final readonly class ComplexityOptions implements HierarchicalRuleOptionsInterfa
         // Handle legacy flat format: {enabled, warningThreshold, errorThreshold}
         // Also supports threshold shorthand at top level
         if (\array_key_exists('warningThreshold', $config) || \array_key_exists('errorThreshold', $config) || \array_key_exists('threshold', $config)) {
-            $thresholds = ThresholdParser::parse($config, 'warning', 'error', 10, 20, legacyWarningKeys: ['warningThreshold'], legacyErrorKeys: ['errorThreshold']);
+            $thresholds = ThresholdParser::parse($config, RuleOptionKey::WARNING, RuleOptionKey::ERROR, 10, 20, legacyWarningKeys: ['warningThreshold'], legacyErrorKeys: ['errorThreshold']);
 
             return new self(
                 method: new MethodComplexityOptions(
-                    enabled: (bool) ($config['enabled'] ?? true),
+                    enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
                     warning: (int) $thresholds['warning'],
                     error: (int) $thresholds['error'],
                 ),

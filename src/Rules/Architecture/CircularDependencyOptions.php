@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Rules\Architecture;
 
+use Qualimetrix\Core\Rule\RuleOptionKey;
 use Qualimetrix\Core\Rule\RuleOptionsInterface;
 use Qualimetrix\Core\Violation\Severity;
 
@@ -29,7 +30,7 @@ final readonly class CircularDependencyOptions implements RuleOptionsInterface
     public static function fromArray(array $config): self
     {
         return new self(
-            enabled: (bool) ($config['enabled'] ?? true),
+            enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
             maxCycleSize: (int) ($config['max_cycle_size'] ?? $config['maxCycleSize'] ?? 0),
             directAsError: (bool) ($config['direct_as_error'] ?? $config['directAsError'] ?? true),
         );

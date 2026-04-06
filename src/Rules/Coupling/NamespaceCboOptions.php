@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Rules\Coupling;
 
 use Qualimetrix\Core\Rule\LevelOptionsInterface;
+use Qualimetrix\Core\Rule\RuleOptionKey;
 use Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Rules\Support\ThresholdParser;
@@ -35,10 +36,10 @@ final readonly class NamespaceCboOptions implements LevelOptionsInterface, Thres
             return new self();
         }
 
-        $thresholds = ThresholdParser::parse($config, 'warning', 'error', 14, 20);
+        $thresholds = ThresholdParser::parse($config, RuleOptionKey::WARNING, RuleOptionKey::ERROR, 14, 20);
 
         return new self(
-            enabled: (bool) ($config['enabled'] ?? true),
+            enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
             warning: (int) $thresholds['warning'],
             error: (int) $thresholds['error'],
             minClassCount: (int) ($config['min_class_count'] ?? $config['minClassCount'] ?? 3),

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Rules\Support;
 
 use InvalidArgumentException;
+use Qualimetrix\Core\Rule\RuleOptionKey;
 
 /**
  * Parses threshold configuration for rules with dual warning/error thresholds.
@@ -39,7 +40,7 @@ final class ThresholdParser
         string $errorKey,
         int|float $defaultWarning,
         int|float $defaultError,
-        string $thresholdKey = 'threshold',
+        string $thresholdKey = RuleOptionKey::THRESHOLD,
         array $legacyWarningKeys = [],
         array $legacyErrorKeys = [],
     ): array {

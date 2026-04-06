@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Rules\Maintainability;
 
+use Qualimetrix\Core\Rule\RuleOptionKey;
 use Qualimetrix\Core\Rule\RuleOptionsInterface;
 use Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Core\Violation\Severity;
@@ -38,10 +39,10 @@ final readonly class MaintainabilityOptions implements RuleOptionsInterface, Thr
             return new self(enabled: false);
         }
 
-        $thresholds = ThresholdParser::parse($config, 'warning', 'error', 40.0, 20.0);
+        $thresholds = ThresholdParser::parse($config, RuleOptionKey::WARNING, RuleOptionKey::ERROR, 40.0, 20.0);
 
         return new self(
-            enabled: (bool) ($config['enabled'] ?? true),
+            enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
             warning: (float) $thresholds['warning'],
             error: (float) $thresholds['error'],
             excludeTests: (bool) ($config['exclude_tests'] ?? $config['excludeTests'] ?? true),

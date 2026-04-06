@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Rules\Design;
 
+use Qualimetrix\Core\Rule\RuleOptionKey;
 use Qualimetrix\Core\Rule\RuleOptionsInterface;
 use Qualimetrix\Core\Violation\Severity;
 
@@ -41,7 +42,7 @@ final readonly class GodClassOptions implements RuleOptionsInterface
         }
 
         return new self(
-            enabled: (bool) ($config['enabled'] ?? true),
+            enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
             wmcThreshold: (int) ($config['wmc_threshold'] ?? $config['wmcThreshold'] ?? 47),
             lcomThreshold: (int) ($config['lcom_threshold'] ?? $config['lcomThreshold'] ?? 3),
             tccThreshold: (float) ($config['tcc_threshold'] ?? $config['tccThreshold'] ?? 0.33),

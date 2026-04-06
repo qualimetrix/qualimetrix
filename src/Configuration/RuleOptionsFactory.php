@@ -7,6 +7,7 @@ namespace Qualimetrix\Configuration;
 use InvalidArgumentException;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use Qualimetrix\Core\Rule\RuleOptionKey;
 use Qualimetrix\Core\Rule\RuleOptionsInterface;
 use ReflectionClass;
 use ReflectionNamedType;
@@ -201,11 +202,11 @@ final class RuleOptionsFactory
         }
 
         if ($config === false) {
-            return ['enabled' => false];
+            return [RuleOptionKey::ENABLED => false];
         }
 
         if ($config === true) {
-            return ['enabled' => true];
+            return [RuleOptionKey::ENABLED => true];
         }
 
         // null or any other scalar — treat as empty config (use defaults)
