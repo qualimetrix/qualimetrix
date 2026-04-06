@@ -72,7 +72,7 @@ final class ClassInfoTest extends TestCase
 
         $symbolPath = $classInfo->getSymbolPath();
 
-        self::assertInstanceOf(SymbolPath::class, $symbolPath);
+        self::assertInstanceOf(SymbolPath::class, $symbolPath); // @phpstan-ignore staticMethod.alreadyNarrowedType
         self::assertSame('App\Service', $symbolPath->namespace);
         self::assertSame('UserService', $symbolPath->type);
         self::assertNull($symbolPath->member);
@@ -158,6 +158,6 @@ final class ClassInfoTest extends TestCase
 
         // This test verifies that ClassInfo is readonly
         // The readonly keyword ensures immutability at the language level
-        self::assertInstanceOf(ClassInfo::class, $classInfo);
+        self::assertInstanceOf(ClassInfo::class, $classInfo); // @phpstan-ignore staticMethod.alreadyNarrowedType
     }
 }

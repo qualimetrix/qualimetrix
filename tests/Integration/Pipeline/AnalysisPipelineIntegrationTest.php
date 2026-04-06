@@ -84,7 +84,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
 
         // Spy rule that captures the context
         $capturedContext = null;
-        $spyRule = $this->createStub(RuleInterface::class);
+        $spyRule = self::createStub(RuleInterface::class);
         $spyRule->method('getName')->willReturn('test.spy');
         $spyRule->method('analyze')->willReturnCallback(
             function (AnalysisContext $context) use (&$capturedContext): array {
@@ -111,7 +111,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
             'AnalysisContext should contain the dependency graph built from collected dependencies. '
             . 'Currently AnalysisPipeline creates AnalysisContext without $dependencyGraph parameter.',
         );
-        self::assertInstanceOf(DependencyGraphInterface::class, $capturedContext->dependencyGraph);
+        self::assertInstanceOf(DependencyGraphInterface::class, $capturedContext->dependencyGraph); // @phpstan-ignore staticMethod.alreadyNarrowedType
     }
 
     /**
@@ -249,7 +249,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         // CompositeCollector has no per-file collectors for this test
         $compositeCollector = new CompositeCollector([]);
 
-        $ruleExecutor = $this->createStub(\Qualimetrix\Analysis\RuleExecution\RuleExecutorInterface::class);
+        $ruleExecutor = self::createStub(\Qualimetrix\Analysis\RuleExecution\RuleExecutorInterface::class);
         $ruleExecutor->method('execute')->willReturn([]);
 
         $pipeline = $this->createPipelineWithGlobalCollectors(
@@ -302,12 +302,12 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         \Qualimetrix\Analysis\RuleExecution\RuleExecutorInterface $ruleExecutor,
         ?InMemoryMetricRepository $existingRepository = null,
     ): AnalysisPipeline {
-        $discovery = $this->createStub(FileDiscoveryInterface::class);
+        $discovery = self::createStub(FileDiscoveryInterface::class);
         $discovery->method('discover')->willReturn(new ArrayIterator([
             new SplFileInfo('/tmp/dummy.php'),
         ]));
 
-        $orchestrator = $this->createStub(CollectionOrchestratorInterface::class);
+        $orchestrator = self::createStub(CollectionOrchestratorInterface::class);
         $orchestrator->method('collect')->willReturnCallback(
             function (array $files, $repository) use ($dependencies, $existingRepository): CollectionPhaseOutput {
                 // If we have a pre-populated repository, copy its data
@@ -351,12 +351,12 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         CompositeCollector $compositeCollector,
         InMemoryMetricRepository $existingRepository,
     ): AnalysisPipeline {
-        $discovery = $this->createStub(FileDiscoveryInterface::class);
+        $discovery = self::createStub(FileDiscoveryInterface::class);
         $discovery->method('discover')->willReturn(new ArrayIterator([
             new SplFileInfo('/tmp/dummy.php'),
         ]));
 
-        $orchestrator = $this->createStub(CollectionOrchestratorInterface::class);
+        $orchestrator = self::createStub(CollectionOrchestratorInterface::class);
         $orchestrator->method('collect')->willReturnCallback(
             function (array $files, $repository) use ($dependencies, $existingRepository): CollectionPhaseOutput {
                 // Copy pre-populated symbols into the pipeline's repository
@@ -394,7 +394,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
     {
         $config = new AnalysisConfiguration();
 
-        $provider = $this->createStub(ConfigurationProviderInterface::class);
+        $provider = self::createStub(ConfigurationProviderInterface::class);
         $provider->method('getRuleOptions')->willReturn([]);
         $provider->method('getConfiguration')->willReturn($config);
         $provider->method('hasConfiguration')->willReturn(true);

@@ -188,7 +188,7 @@ final class DerivedCollectorSortTest extends TestCase
 
         $requiresCallCount = 0;
 
-        $derived = $this->createStub(DerivedCollectorInterface::class);
+        $derived = self::createStub(DerivedCollectorInterface::class);
         $derived->method('getName')->willReturn('test-derived');
         $derived->method('provides')->willReturn(['derived_value']);
         $derived->method('getMetricDefinitions')->willReturn([]);
@@ -225,7 +225,7 @@ final class DerivedCollectorSortTest extends TestCase
         array $provides,
         callable $calculate,
     ): DerivedCollectorInterface {
-        $mock = $this->createStub(DerivedCollectorInterface::class);
+        $mock = self::createStub(DerivedCollectorInterface::class);
         $mock->method('getName')->willReturn($name);
         $mock->method('requires')->willReturn($requires);
         $mock->method('provides')->willReturn($provides);
@@ -237,7 +237,7 @@ final class DerivedCollectorSortTest extends TestCase
 
     private function createBaseCollector(MetricBag $metrics): MetricCollectorInterface
     {
-        $collector = $this->createStub(MetricCollectorInterface::class);
+        $collector = self::createStub(MetricCollectorInterface::class);
         $collector->method('getName')->willReturn('base');
         $collector->method('getVisitor')->willReturn(new class extends NodeVisitorAbstract {});
         $collector->method('collect')->willReturn($metrics);

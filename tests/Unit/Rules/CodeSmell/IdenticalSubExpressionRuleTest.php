@@ -197,7 +197,7 @@ final class IdenticalSubExpressionRuleTest extends TestCase
         $symbolPath = SymbolPath::forFile('src/file.php');
         $fileInfo = new SymbolInfo($symbolPath, 'src/file.php', 1);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::File ? [$fileInfo] : []);
         $repository->method('get')

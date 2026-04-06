@@ -71,7 +71,7 @@ final class LongParameterListRuleTest extends TestCase
 
     public function testConstructorRejectsWrongOptionsType(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        self::expectException(InvalidArgumentException::class);
 
         new LongParameterListRule(new class implements \Qualimetrix\Core\Rule\RuleOptionsInterface {
             public static function fromArray(array $config): static
@@ -112,7 +112,7 @@ final class LongParameterListRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('parameterCount', 3);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Method ? [$methodInfo] : []);
         $repository->method('get')
@@ -132,7 +132,7 @@ final class LongParameterListRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('parameterCount', 4);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Method ? [$methodInfo] : []);
         $repository->method('get')
@@ -158,7 +158,7 @@ final class LongParameterListRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('parameterCount', 6);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Method ? [$methodInfo] : []);
         $repository->method('get')
@@ -181,7 +181,7 @@ final class LongParameterListRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('parameterCount', 8);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Method ? [$methodInfo] : []);
         $repository->method('get')
@@ -222,7 +222,7 @@ final class LongParameterListRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('parameterCount', $parameterCount);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Method ? [$methodInfo] : []);
         $repository->method('get')
@@ -359,7 +359,7 @@ final class LongParameterListRuleTest extends TestCase
             ->with('parameterCount', 7)
             ->with('isVoConstructor', 1);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Method ? [$methodInfo] : []);
         $repository->method('get')
@@ -386,7 +386,7 @@ final class LongParameterListRuleTest extends TestCase
             ->with('parameterCount', 8)
             ->with('isVoConstructor', 1);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Method ? [$methodInfo] : []);
         $repository->method('get')
@@ -419,7 +419,7 @@ final class LongParameterListRuleTest extends TestCase
             ->with('parameterCount', 13)
             ->with('isVoConstructor', 1);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Method ? [$methodInfo] : []);
         $repository->method('get')
@@ -451,7 +451,7 @@ final class LongParameterListRuleTest extends TestCase
         $metricBag = (new MetricBag())
             ->with('parameterCount', 5);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Method ? [$methodInfo] : []);
         $repository->method('get')
@@ -504,7 +504,7 @@ final class LongParameterListRuleTest extends TestCase
             ->with('parameterCount', $parameterCount)
             ->with('isVoConstructor', 1);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Method ? [$methodInfo] : []);
         $repository->method('get')
@@ -577,7 +577,7 @@ final class LongParameterListRuleTest extends TestCase
 
     public function testThresholdShorthandCannotMixWithVoWarningAndVoThreshold(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        self::expectException(InvalidArgumentException::class);
 
         LongParameterListOptions::fromArray([
             'vo-threshold' => 10,

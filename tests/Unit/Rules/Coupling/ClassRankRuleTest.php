@@ -64,10 +64,10 @@ final class ClassRankRuleTest extends TestCase
     #[Test]
     public function throwsExceptionForWrongOptionsType(): void
     {
-        $wrongOptions = $this->createStub(\Qualimetrix\Core\Rule\RuleOptionsInterface::class);
+        $wrongOptions = self::createStub(\Qualimetrix\Core\Rule\RuleOptionsInterface::class);
 
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Expected');
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('Expected');
 
         new ClassRankRule($wrongOptions);
     }
@@ -90,7 +90,7 @@ final class ClassRankRuleTest extends TestCase
     {
         $rule = new ClassRankRule(new ClassRankOptions());
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([]);
 
@@ -106,7 +106,7 @@ final class ClassRankRuleTest extends TestCase
 
         $classes = $this->createDummyClasses(100, 'src/SomeClass.php', 10);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn($classes);
         $repository->method('get')
@@ -127,7 +127,7 @@ final class ClassRankRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('classRank', 0.01);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn($classes);
         $repository->method('get')
@@ -156,7 +156,7 @@ final class ClassRankRuleTest extends TestCase
         $classes = $this->createDummyClasses(99);
         $classes[] = $targetInfo;
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn($classes);
         $repository->method('get')
@@ -191,7 +191,7 @@ final class ClassRankRuleTest extends TestCase
         $classes = $this->createDummyClasses(99);
         $classes[] = $targetInfo;
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn($classes);
         $repository->method('get')
@@ -227,7 +227,7 @@ final class ClassRankRuleTest extends TestCase
         $classes = $this->createDummyClasses(99);
         $classes[] = $targetInfo;
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn($classes);
         $repository->method('get')
@@ -307,7 +307,7 @@ final class ClassRankRuleTest extends TestCase
         $classes = $this->createDummyClasses(399);
         $classes[] = $targetInfo;
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn($classes);
         $repository->method('get')
@@ -343,7 +343,7 @@ final class ClassRankRuleTest extends TestCase
         $classes = $this->createDummyClasses(24);
         $classes[] = $targetInfo;
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn($classes);
         $repository->method('get')
@@ -377,7 +377,7 @@ final class ClassRankRuleTest extends TestCase
         $classes = $this->createDummyClasses(1599);
         $classes[] = $targetInfo;
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn($classes);
         $repository->method('get')
@@ -409,7 +409,7 @@ final class ClassRankRuleTest extends TestCase
         $classes = $this->createDummyClasses(99);
         $classes[] = $targetInfo;
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn($classes);
         $repository->method('get')

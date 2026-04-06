@@ -133,8 +133,8 @@ final class HealthFormulaExcluderTest extends TestCase
         $excluder = new HealthFormulaExcluder();
         $definitions = array_values(ComputedMetricDefaults::getDefaults());
 
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessageMatches('/Unknown health dimension.*health\.nonexistent/');
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessageMatches('/Unknown health dimension.*health\.nonexistent/');
 
         $excluder->applyExcludeHealth($definitions, ['nonexistent']);
     }

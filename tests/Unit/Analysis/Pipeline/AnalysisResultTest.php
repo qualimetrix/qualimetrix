@@ -245,7 +245,7 @@ final class AnalysisResultTest extends TestCase
             filesAnalyzed: 1,
             filesSkipped: 0,
             duration: 0.1,
-            metrics: $this->createStub(MetricRepositoryInterface::class),
+            metrics: self::createStub(MetricRepositoryInterface::class),
             suppressions: ['shared.php' => [$suppression1], 'only1.php' => [$suppression2]],
         );
 
@@ -254,7 +254,7 @@ final class AnalysisResultTest extends TestCase
             filesAnalyzed: 1,
             filesSkipped: 0,
             duration: 0.1,
-            metrics: $this->createStub(MetricRepositoryInterface::class),
+            metrics: self::createStub(MetricRepositoryInterface::class),
             suppressions: ['shared.php' => [$suppression3], 'only2.php' => [$suppression2]],
         );
 
@@ -295,7 +295,7 @@ final class AnalysisResultTest extends TestCase
             filesAnalyzed: $filesAnalyzed,
             filesSkipped: $filesSkipped,
             duration: $duration,
-            metrics: $this->createStub(MetricRepositoryInterface::class),
+            metrics: self::createStub(MetricRepositoryInterface::class),
         );
     }
 

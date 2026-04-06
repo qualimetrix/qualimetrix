@@ -68,7 +68,7 @@ final class ExitRuleTest extends TestCase
 
         $metricBag = new MetricBag();
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::File ? [$fileInfo] : []);
         $repository->method('get')
@@ -91,7 +91,7 @@ final class ExitRuleTest extends TestCase
             ->withEntry('codeSmell.exit', ['line' => 10])
             ->withEntry('codeSmell.exit', ['line' => 35]);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::File ? [$fileInfo] : []);
         $repository->method('get')

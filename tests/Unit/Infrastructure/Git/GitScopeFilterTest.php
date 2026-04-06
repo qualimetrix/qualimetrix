@@ -61,7 +61,7 @@ final class GitScopeFilterTest extends TestCase
             severity: Severity::Warning,
         );
 
-        $this->assertTrue($filter->shouldInclude($violation));
+        self::assertTrue($filter->shouldInclude($violation));
     }
 
     #[Test]
@@ -84,7 +84,7 @@ final class GitScopeFilterTest extends TestCase
             severity: Severity::Warning,
         );
 
-        $this->assertFalse($filter->shouldInclude($violation));
+        self::assertFalse($filter->shouldInclude($violation));
     }
 
     #[Test]
@@ -108,7 +108,7 @@ final class GitScopeFilterTest extends TestCase
             severity: Severity::Warning,
         );
 
-        $this->assertTrue($filter->shouldInclude($violation));
+        self::assertTrue($filter->shouldInclude($violation));
     }
 
     #[Test]
@@ -136,7 +136,7 @@ final class GitScopeFilterTest extends TestCase
             severity: Severity::Warning,
         );
 
-        $this->assertFalse($filter->shouldInclude($violation));
+        self::assertFalse($filter->shouldInclude($violation));
     }
 
     #[Test]
@@ -165,7 +165,7 @@ final class GitScopeFilterTest extends TestCase
             severity: Severity::Warning,
         );
 
-        $this->assertFalse($filter->shouldInclude($violation));
+        self::assertFalse($filter->shouldInclude($violation));
     }
 
     #[Test]
@@ -188,7 +188,7 @@ final class GitScopeFilterTest extends TestCase
             severity: Severity::Warning,
         );
 
-        $this->assertFalse($filter->shouldInclude($violation));
+        self::assertFalse($filter->shouldInclude($violation));
     }
 
     #[Test]
@@ -223,7 +223,7 @@ final class GitScopeFilterTest extends TestCase
                 severity: Severity::Warning,
             );
 
-            $this->assertTrue(
+            self::assertTrue(
                 $filter->shouldInclude($violation),
                 "Expected namespace '$namespace' to be included",
             );
@@ -253,7 +253,7 @@ final class GitScopeFilterTest extends TestCase
         );
 
         // File path match should work even without namespace
-        $this->assertTrue($filter->shouldInclude($violation));
+        self::assertTrue($filter->shouldInclude($violation));
     }
 
     #[Test]
@@ -305,7 +305,7 @@ final class GitScopeFilterTest extends TestCase
         ];
 
         foreach ($violations as $violation) {
-            $this->assertTrue($filter->shouldInclude($violation));
+            self::assertTrue($filter->shouldInclude($violation));
         }
     }
 
@@ -340,7 +340,7 @@ final class GitScopeFilterTest extends TestCase
             severity: Severity::Warning,
         );
 
-        $this->assertTrue($filter->shouldInclude($violation));
+        self::assertTrue($filter->shouldInclude($violation));
 
         // Base.php was NOT changed in main..HEAD (it's in both), should not be included
         // However, it shares namespace 'App' with Service.php which is in 'App\Service'
@@ -358,7 +358,7 @@ final class GitScopeFilterTest extends TestCase
         // and namespace 'App' is a parent of 'App\Service' so it would be included
         // Let's use strict mode to test this properly
         $strictFilter = new GitScopeFilter($gitClient, new GitScope('main..HEAD'), includeParentNamespaces: false);
-        $this->assertFalse($strictFilter->shouldInclude($baseViolation));
+        self::assertFalse($strictFilter->shouldInclude($baseViolation));
     }
 
     #[Test]
@@ -386,7 +386,7 @@ final class GitScopeFilterTest extends TestCase
 
         // File is still in Git's staged changes, so violations should be included
         // even though the file doesn't exist locally
-        $this->assertTrue($filter->shouldInclude($violation));
+        self::assertTrue($filter->shouldInclude($violation));
     }
 
     #[Test]
@@ -411,7 +411,7 @@ final class GitScopeFilterTest extends TestCase
         );
 
         // Should be included because file path matches
-        $this->assertTrue($filter->shouldInclude($violation));
+        self::assertTrue($filter->shouldInclude($violation));
     }
 
     #[Test]
@@ -446,7 +446,7 @@ PHP;
             severity: Severity::Warning,
         );
 
-        $this->assertTrue($filter->shouldInclude($violation));
+        self::assertTrue($filter->shouldInclude($violation));
     }
 
     #[Test]
@@ -483,7 +483,7 @@ PHP;
             severity: Severity::Warning,
         );
 
-        $this->assertTrue($filter->shouldInclude($violation));
+        self::assertTrue($filter->shouldInclude($violation));
     }
 
     private function initGitRepo(): void

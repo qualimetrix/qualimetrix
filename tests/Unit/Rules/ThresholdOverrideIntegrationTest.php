@@ -104,7 +104,7 @@ final class ThresholdOverrideIntegrationTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\\Service', 'BigService');
         $symbolInfo = new SymbolInfo($symbolPath, 'src/Service/BigService.php', 10);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')->willReturn([$symbolInfo]);
         $repository->method('get')->willReturn(
             MetricBag::fromArray([MetricName::STRUCTURE_METHOD_COUNT => 25]),
@@ -140,7 +140,7 @@ final class ThresholdOverrideIntegrationTest extends TestCase
         $methodPath = SymbolPath::forMethod('App\\Service', 'BigService', 'doStuff');
         $methodInfo = new SymbolInfo($methodPath, 'src/Service/BigService.php', 20);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')->willReturnCallback(function (SymbolType $type) use ($methodInfo) {
             return match ($type) {
                 SymbolType::Method => [$methodInfo],
@@ -183,7 +183,7 @@ final class ThresholdOverrideIntegrationTest extends TestCase
         $method2Path = SymbolPath::forMethod('App\\Service', 'Service', 'otherMethod');
         $method2Info = new SymbolInfo($method2Path, 'src/Service/Service.php', 60);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')->willReturnCallback(function (SymbolType $type) use ($method1Info, $method2Info) {
             return match ($type) {
                 SymbolType::Method => [$method1Info, $method2Info],
@@ -375,8 +375,8 @@ final class ThresholdOverrideIntegrationTest extends TestCase
             $content = file_get_contents($file->getPathname());
             \assert($content !== false);
 
-            if (preg_match('/^namespace\s+([\w\\\\]+);/m', $content, $nsMatch)
-                && preg_match('/^final\s+readonly\s+class\s+(\w+)/m', $content, $classMatch)) {
+            if (preg_match('/^namespace\s+([\w\\\\]+);/m', $content, $nsMatch) === 1
+                && preg_match('/^final\s+readonly\s+class\s+(\w+)/m', $content, $classMatch) === 1) {
                 $fqcn = $nsMatch[1] . '\\' . $classMatch[1];
 
                 if (!class_exists($fqcn)) {
@@ -472,7 +472,7 @@ final class ThresholdOverrideIntegrationTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\\Service', 'BigService');
         $symbolInfo = new SymbolInfo($symbolPath, 'src/Service/BigService.php', 10);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')->willReturn([$symbolInfo]);
         $repository->method('get')->willReturn(
             MetricBag::fromArray([MetricName::STRUCTURE_METHOD_COUNT => 35]),
@@ -518,7 +518,7 @@ final class ThresholdOverrideIntegrationTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\\Service', 'BigService');
         $symbolInfo = new SymbolInfo($symbolPath, 'src/Service/BigService.php', 20);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')->willReturn([$symbolInfo]);
         $repository->method('get')->willReturn(
             MetricBag::fromArray([MetricName::STRUCTURE_METHOD_COUNT => 25]),
@@ -549,7 +549,7 @@ final class ThresholdOverrideIntegrationTest extends TestCase
     {
         $options = new MethodComplexityOptions(warning: 10, error: 20);
 
-        self::assertInstanceOf(ThresholdAwareOptionsInterface::class, $options);
+        self::assertInstanceOf(ThresholdAwareOptionsInterface::class, $options); // @phpstan-ignore staticMethod.alreadyNarrowedType
 
         // A 'complexity' prefix override should match 'complexity.cyclomatic'
         $override = new ThresholdOverride('complexity', 20, 30, 1, null);

@@ -24,8 +24,8 @@ final class ConfigurationHolderTest extends TestCase
     {
         $provider = new ConfigurationHolder();
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Configuration not set');
+        self::expectException(RuntimeException::class);
+        self::expectExceptionMessage('Configuration not set');
 
         $provider->getConfiguration();
     }

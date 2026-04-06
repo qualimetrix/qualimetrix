@@ -43,11 +43,11 @@ final class ResultPresenterTest extends TestCase
 
     protected function setUp(): void
     {
-        $configProvider = $this->createStub(ConfigurationProviderInterface::class);
+        $configProvider = self::createStub(ConfigurationProviderInterface::class);
         $configProvider->method('getConfiguration')->willReturn(new AnalysisConfiguration());
 
         $this->presenter = new ResultPresenter(
-            formatterRegistry: $this->createStub(FormatterRegistryInterface::class),
+            formatterRegistry: self::createStub(FormatterRegistryInterface::class),
             profilerHolder: new ProfilerHolder(),
             configurationProvider: $configProvider,
             summaryEnricher: new SummaryEnricher(
@@ -75,7 +75,7 @@ final class ResultPresenterTest extends TestCase
         $configHolder->setConfiguration(new AnalysisConfiguration(format: 'json'));
 
         // Create a mock formatter that records it was called
-        $mockFormatter = $this->createStub(FormatterInterface::class);
+        $mockFormatter = self::createStub(FormatterInterface::class);
         $mockFormatter->method('format')->willReturn('[]');
         $mockFormatter->method('getDefaultGroupBy')->willReturn(GroupBy::None);
 
@@ -101,7 +101,7 @@ final class ResultPresenterTest extends TestCase
             formatterContextFactory: new FormatterContextFactory($configHolder),
         );
 
-        $input = $this->createStub(InputInterface::class);
+        $input = self::createStub(InputInterface::class);
         $input->method('getOption')->willReturnCallback(
             static fn(string $name): mixed => match ($name) {
                 'format' => null, // CLI did not specify format
@@ -111,7 +111,7 @@ final class ResultPresenterTest extends TestCase
             },
         );
 
-        $output = $this->createStub(OutputInterface::class);
+        $output = self::createStub(OutputInterface::class);
         $output->method('isDecorated')->willReturn(false);
 
         $analysisResult = new AnalysisResult(
@@ -130,7 +130,7 @@ final class ResultPresenterTest extends TestCase
     public function presentProfileShowsErrorWhenTmpFileWriteFails(): void
     {
         // Enable profiler
-        $profiler = $this->createStub(ProfilerInterface::class);
+        $profiler = self::createStub(ProfilerInterface::class);
         $profiler->method('isEnabled')->willReturn(true);
         $profiler->method('export')->willReturn('{"test":"data"}');
         ProfilerHolder::set($profiler);
@@ -138,7 +138,7 @@ final class ResultPresenterTest extends TestCase
         // Use a non-existent directory to trigger write failure
         $invalidPath = '/non/existent/dir/profile.json';
 
-        $input = $this->createStub(InputInterface::class);
+        $input = self::createStub(InputInterface::class);
         $input->method('getOption')->willReturnCallback(
             static fn(string $name): mixed => match ($name) {
                 'profile' => $invalidPath,
@@ -164,7 +164,7 @@ final class ResultPresenterTest extends TestCase
     public function presentProfileShowsSuccessOnValidWrite(): void
     {
         // Enable profiler
-        $profiler = $this->createStub(ProfilerInterface::class);
+        $profiler = self::createStub(ProfilerInterface::class);
         $profiler->method('isEnabled')->willReturn(true);
         $profiler->method('export')->willReturn('{"test":"data"}');
         ProfilerHolder::set($profiler);
@@ -172,7 +172,7 @@ final class ResultPresenterTest extends TestCase
         $tmpDir = sys_get_temp_dir();
         $profilePath = $tmpDir . '/test_profile_' . getmypid() . '.json';
 
-        $input = $this->createStub(InputInterface::class);
+        $input = self::createStub(InputInterface::class);
         $input->method('getOption')->willReturnCallback(
             static fn(string $name): mixed => match ($name) {
                 'profile' => $profilePath,
@@ -277,7 +277,7 @@ final class ResultPresenterTest extends TestCase
     public function presentResultsReturnsExitCode0ForWarningsWhenFailOnNone(): void
     {
         $exitCode = $this->presentWithViolationsAndFailOn(
-            [$this->createViolation(Severity::Warning)],
+            [self::createViolation(Severity::Warning)],
             false,
         );
 
@@ -288,7 +288,7 @@ final class ResultPresenterTest extends TestCase
     public function presentResultsReturnsExitCode0ForErrorsWhenFailOnNone(): void
     {
         $exitCode = $this->presentWithViolationsAndFailOn(
-            [$this->createViolation(Severity::Error)],
+            [self::createViolation(Severity::Error)],
             false,
         );
 
@@ -303,11 +303,11 @@ final class ResultPresenterTest extends TestCase
         $configHolder = new ConfigurationHolder();
         $configHolder->setConfiguration(new AnalysisConfiguration(failOn: $failOn));
 
-        $mockFormatter = $this->createStub(FormatterInterface::class);
+        $mockFormatter = self::createStub(FormatterInterface::class);
         $mockFormatter->method('format')->willReturn('');
         $mockFormatter->method('getDefaultGroupBy')->willReturn(GroupBy::None);
 
-        $registry = $this->createStub(FormatterRegistryInterface::class);
+        $registry = self::createStub(FormatterRegistryInterface::class);
         $registry->method('get')->willReturn($mockFormatter);
 
         $presenter = new ResultPresenter(
@@ -325,7 +325,7 @@ final class ResultPresenterTest extends TestCase
             formatterContextFactory: new FormatterContextFactory($configHolder),
         );
 
-        $input = $this->createStub(InputInterface::class);
+        $input = self::createStub(InputInterface::class);
         $input->method('getOption')->willReturnCallback(
             static fn(string $name): mixed => match ($name) {
                 'format' => null,
@@ -335,7 +335,7 @@ final class ResultPresenterTest extends TestCase
             },
         );
 
-        $output = $this->createStub(OutputInterface::class);
+        $output = self::createStub(OutputInterface::class);
         $output->method('isDecorated')->willReturn(false);
 
         $analysisResult = new AnalysisResult(
@@ -356,11 +356,11 @@ final class ResultPresenterTest extends TestCase
         $configHolder = new ConfigurationHolder();
         $configHolder->setConfiguration(new AnalysisConfiguration());
 
-        $mockFormatter = $this->createStub(FormatterInterface::class);
+        $mockFormatter = self::createStub(FormatterInterface::class);
         $mockFormatter->method('format')->willReturn('');
         $mockFormatter->method('getDefaultGroupBy')->willReturn(GroupBy::None);
 
-        $registry = $this->createStub(FormatterRegistryInterface::class);
+        $registry = self::createStub(FormatterRegistryInterface::class);
         $registry->method('get')->willReturn($mockFormatter);
 
         $presenter = new ResultPresenter(
@@ -378,7 +378,7 @@ final class ResultPresenterTest extends TestCase
             formatterContextFactory: new FormatterContextFactory($configHolder),
         );
 
-        $input = $this->createStub(InputInterface::class);
+        $input = self::createStub(InputInterface::class);
         $input->method('getOption')->willReturnCallback(
             static fn(string $name): mixed => match ($name) {
                 'format' => null,
@@ -390,7 +390,7 @@ final class ResultPresenterTest extends TestCase
             },
         );
 
-        $output = $this->createStub(OutputInterface::class);
+        $output = self::createStub(OutputInterface::class);
         $output->method('isDecorated')->willReturn(false);
 
         $analysisResult = new AnalysisResult(
@@ -402,8 +402,8 @@ final class ResultPresenterTest extends TestCase
             suppressions: [],
         );
 
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('mutually exclusive');
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('mutually exclusive');
 
         $presenter->presentResults([], $analysisResult, $input, $output);
     }

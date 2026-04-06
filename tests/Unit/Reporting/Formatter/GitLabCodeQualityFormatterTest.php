@@ -309,8 +309,12 @@ final class GitLabCodeQualityFormatterTest extends TestCase
         self::assertArrayHasKey('begin', $issue['location']['lines']);
 
         // Verify no extra fields in location (GitLab spec only requires path and lines.begin)
-        self::assertCount(2, $issue['location']);
-        self::assertCount(1, $issue['location']['lines']);
+        $location = $issue['location'];
+        \assert(\is_array($location));
+        self::assertCount(2, $location);
+        $lines = $location['lines'];
+        \assert(\is_array($lines));
+        self::assertCount(1, $lines);
     }
 
     public function testCheckNameUsesViolationCode(): void

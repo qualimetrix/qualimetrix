@@ -53,7 +53,7 @@ final class PhpFileParserTest extends TestCase
 
         // Namespace should contain the class
         $namespaceNode = $ast[1];
-        self::assertInstanceOf(Namespace_::class, $namespaceNode);
+        self::assertInstanceOf(Namespace_::class, $namespaceNode); // @phpstan-ignore staticMethod.alreadyNarrowedType
         self::assertNotEmpty($namespaceNode->stmts);
 
         $classNode = $namespaceNode->stmts[0];
@@ -78,8 +78,8 @@ final class PhpFileParserTest extends TestCase
     {
         $file = new SplFileInfo($this->fixturesPath . '/invalid_syntax.php');
 
-        $this->expectException(ParseException::class);
-        $this->expectExceptionMessageMatches('/Failed to parse.*invalid_syntax\.php/');
+        self::expectException(ParseException::class);
+        self::expectExceptionMessageMatches('/Failed to parse.*invalid_syntax\.php/');
 
         $this->parser->parse($file);
     }
@@ -88,8 +88,8 @@ final class PhpFileParserTest extends TestCase
     {
         $file = new SplFileInfo($this->fixturesPath . '/nonexistent.php');
 
-        $this->expectException(ParseException::class);
-        $this->expectExceptionMessage('File does not exist or is not a regular file');
+        self::expectException(ParseException::class);
+        self::expectExceptionMessage('File does not exist or is not a regular file');
 
         $this->parser->parse($file);
     }
@@ -127,15 +127,15 @@ final class PhpFileParserTest extends TestCase
 
     public function testParserThrowsExceptionWhenParserReturnsNull(): void
     {
-        $mockParser = $this->createStub(\PhpParser\Parser::class);
+        $mockParser = self::createStub(\PhpParser\Parser::class);
         $mockParser->method('parse')
             ->willReturn(null);
 
         $fileParser = new PhpFileParser($mockParser);
         $file = new SplFileInfo($this->fixturesPath . '/ValidClass.php');
 
-        $this->expectException(ParseException::class);
-        $this->expectExceptionMessage('Parser returned null');
+        self::expectException(ParseException::class);
+        self::expectExceptionMessage('Parser returned null');
 
         $fileParser->parse($file);
     }
@@ -144,7 +144,7 @@ final class PhpFileParserTest extends TestCase
     {
         $originalException = new RuntimeException('Original error');
 
-        $mockParser = $this->createStub(\PhpParser\Parser::class);
+        $mockParser = self::createStub(\PhpParser\Parser::class);
         $mockParser->method('parse')
             ->willThrowException($originalException);
 

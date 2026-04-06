@@ -32,7 +32,7 @@ final class ConfigFileStageTest extends TestCase
     #[Test]
     public function hasPriorityTwenty(): void
     {
-        $stage = new ConfigFileStage($this->createStub(ConfigLoaderInterface::class));
+        $stage = new ConfigFileStage(self::createStub(ConfigLoaderInterface::class));
 
         self::assertSame(20, $stage->priority());
     }
@@ -40,7 +40,7 @@ final class ConfigFileStageTest extends TestCase
     #[Test]
     public function hasNameConfigFile(): void
     {
-        $stage = new ConfigFileStage($this->createStub(ConfigLoaderInterface::class));
+        $stage = new ConfigFileStage(self::createStub(ConfigLoaderInterface::class));
 
         self::assertSame('config_file', $stage->name());
     }
@@ -85,7 +85,7 @@ final class ConfigFileStageTest extends TestCase
     {
         touch($this->tempDir . '/qmx.yaml');
 
-        $loader = $this->createStub(ConfigLoaderInterface::class);
+        $loader = self::createStub(ConfigLoaderInterface::class);
         $loader->method('load')->willReturn([
             'cache' => [
                 'dir' => '/custom/cache',
@@ -112,7 +112,7 @@ final class ConfigFileStageTest extends TestCase
     {
         touch($this->tempDir . '/qmx.yaml');
 
-        $loader = $this->createStub(ConfigLoaderInterface::class);
+        $loader = self::createStub(ConfigLoaderInterface::class);
         $loader->method('load')->willReturn([
             'paths' => ['src', 'lib'],
             'exclude' => ['vendor', 'tests'],
@@ -163,7 +163,7 @@ final class ConfigFileStageTest extends TestCase
     {
         touch($this->tempDir . '/qmx.yaml');
 
-        $loader = $this->createStub(ConfigLoaderInterface::class);
+        $loader = self::createStub(ConfigLoaderInterface::class);
         $loader->method('load')->willReturn([
             'excludePaths' => ['vendor/', 'tests/'],
         ]);
@@ -276,8 +276,8 @@ final class ConfigFileStageTest extends TestCase
         $stage = new ConfigFileStage($loader);
         $context = new ConfigurationContext(new ArrayInput([]), $this->tempDir, $missingPath);
 
-        $this->expectException(ConfigLoadException::class);
-        $this->expectExceptionMessage('Configuration file not found');
+        self::expectException(ConfigLoadException::class);
+        self::expectExceptionMessage('Configuration file not found');
 
         $stage->apply($context);
     }
@@ -302,7 +302,7 @@ final class ConfigFileStageTest extends TestCase
         if (!is_dir($dir)) {
             return;
         }
-        $files = array_diff(scandir($dir) ?: [], ['.', '..']);
+        $files = array_diff((scandir($dir) !== false ? scandir($dir) : []), ['.', '..']);
         foreach ($files as $file) {
             $path = $dir . '/' . $file;
             is_dir($path) ? $this->removeDir($path) : unlink($path);

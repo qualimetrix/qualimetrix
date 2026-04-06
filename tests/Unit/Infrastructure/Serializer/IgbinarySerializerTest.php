@@ -111,8 +111,8 @@ final class IgbinarySerializerTest extends TestCase
     #[Test]
     public function itThrowsOnInvalidData(): void
     {
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Igbinary unserialization failed');
+        self::expectException(RuntimeException::class);
+        self::expectExceptionMessage('Igbinary unserialization failed');
 
         $this->serializer->unserialize('invalid igbinary data');
     }

@@ -48,7 +48,7 @@ final class PresetStageTest extends TestCase
     public function hasPriorityFifteen(): void
     {
         $stage = new PresetStage(
-            $this->createStub(ConfigLoaderInterface::class),
+            self::createStub(ConfigLoaderInterface::class),
             $this->resolver,
         );
 
@@ -59,7 +59,7 @@ final class PresetStageTest extends TestCase
     public function hasNamePreset(): void
     {
         $stage = new PresetStage(
-            $this->createStub(ConfigLoaderInterface::class),
+            self::createStub(ConfigLoaderInterface::class),
             $this->resolver,
         );
 
@@ -125,7 +125,7 @@ final class PresetStageTest extends TestCase
     #[Test]
     public function loadsMultiplePresetsViaRepeatedOption(): void
     {
-        $loader = $this->createStub(ConfigLoaderInterface::class);
+        $loader = self::createStub(ConfigLoaderInterface::class);
         $callCount = 0;
         $loader->method('load')
             ->willReturnCallback(function () use (&$callCount): array {
@@ -155,7 +155,7 @@ final class PresetStageTest extends TestCase
     public function splitsCommaSeparatedValues(): void
     {
         $resolvedPaths = [];
-        $loader = $this->createStub(ConfigLoaderInterface::class);
+        $loader = self::createStub(ConfigLoaderInterface::class);
         $loader->method('load')
             ->willReturnCallback(function (string $path) use (&$resolvedPaths): array {
                 $resolvedPaths[] = $path;
@@ -212,7 +212,7 @@ final class PresetStageTest extends TestCase
         $presetA = $this->createTempPresetFile('a.yaml');
         $presetB = $this->createTempPresetFile('b.yaml');
 
-        $loader = $this->createStub(ConfigLoaderInterface::class);
+        $loader = self::createStub(ConfigLoaderInterface::class);
         $loader->method('load')
             ->willReturnCallback(function (string $path) use ($presetA, $presetB): array {
                 return match ($path) {
@@ -240,7 +240,7 @@ final class PresetStageTest extends TestCase
         $presetA = $this->createTempPresetFile('a.yaml');
         $presetB = $this->createTempPresetFile('b.yaml');
 
-        $loader = $this->createStub(ConfigLoaderInterface::class);
+        $loader = self::createStub(ConfigLoaderInterface::class);
         $loader->method('load')
             ->willReturnCallback(function (string $path) use ($presetA, $presetB): array {
                 return match ($path) {
@@ -268,7 +268,7 @@ final class PresetStageTest extends TestCase
         $presetA = $this->createTempPresetFile('a.yaml');
         $presetB = $this->createTempPresetFile('b.yaml');
 
-        $loader = $this->createStub(ConfigLoaderInterface::class);
+        $loader = self::createStub(ConfigLoaderInterface::class);
         $loader->method('load')
             ->willReturnCallback(function (string $path) use ($presetA, $presetB): array {
                 return match ($path) {
@@ -310,7 +310,7 @@ final class PresetStageTest extends TestCase
     #[Test]
     public function layerSourceContainsAllPresetNames(): void
     {
-        $loader = $this->createStub(ConfigLoaderInterface::class);
+        $loader = self::createStub(ConfigLoaderInterface::class);
         $loader->method('load')->willReturn(['failOn' => 'warning']);
 
         $stage = new PresetStage($loader, $this->resolver);
@@ -357,12 +357,12 @@ final class PresetStageTest extends TestCase
     #[Test]
     public function presetWithUnknownRuleName_throwsError(): void
     {
-        $loader = $this->createStub(ConfigLoaderInterface::class);
+        $loader = self::createStub(ConfigLoaderInterface::class);
         $loader->method('load')->willReturn([
             'rules' => ['nonexistent.rule' => ['warning' => 10]],
         ]);
 
-        $provider = $this->createStub(KnownRuleNamesProviderInterface::class);
+        $provider = self::createStub(KnownRuleNamesProviderInterface::class);
         $provider->method('getKnownRuleNames')->willReturn(['complexity.cyclomatic']);
 
         $stage = new PresetStage($loader, $this->resolver, $provider);
@@ -371,8 +371,8 @@ final class PresetStageTest extends TestCase
             $this->tempDir,
         );
 
-        $this->expectException(\Qualimetrix\Configuration\Exception\ConfigLoadException::class);
-        $this->expectExceptionMessage('nonexistent.rule');
+        self::expectException(\Qualimetrix\Configuration\Exception\ConfigLoadException::class);
+        self::expectExceptionMessage('nonexistent.rule');
 
         $stage->apply($context);
     }
@@ -380,7 +380,7 @@ final class PresetStageTest extends TestCase
     #[Test]
     public function presetWithoutKnownRuleNamesProvider_noWarning(): void
     {
-        $loader = $this->createStub(ConfigLoaderInterface::class);
+        $loader = self::createStub(ConfigLoaderInterface::class);
         $loader->method('load')->willReturn([
             'rules' => ['nonexistent.rule' => ['warning' => 10]],
         ]);
@@ -426,7 +426,7 @@ final class PresetStageTest extends TestCase
         if (!is_dir($dir)) {
             return;
         }
-        $files = array_diff(scandir($dir) ?: [], ['.', '..']);
+        $files = array_diff((scandir($dir) !== false ? scandir($dir) : []), ['.', '..']);
         foreach ($files as $file) {
             $path = $dir . '/' . $file;
             is_dir($path) ? $this->removeDir($path) : unlink($path);

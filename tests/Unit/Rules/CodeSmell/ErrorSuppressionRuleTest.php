@@ -68,7 +68,7 @@ final class ErrorSuppressionRuleTest extends TestCase
 
         $metricBag = new MetricBag();
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::File ? [$fileInfo] : []);
         $repository->method('get')
@@ -91,7 +91,7 @@ final class ErrorSuppressionRuleTest extends TestCase
             ->withEntry('codeSmell.error_suppression', ['line' => 8])
             ->withEntry('codeSmell.error_suppression', ['line' => 22]);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::File ? [$fileInfo] : []);
         $repository->method('get')
@@ -119,7 +119,7 @@ final class ErrorSuppressionRuleTest extends TestCase
         $metricBag = (new MetricBag())
             ->withEntry('codeSmell.error_suppression', ['line' => 10, 'extra' => 'fopen']);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::File ? [$fileInfo] : []);
         $repository->method('get')
@@ -147,7 +147,7 @@ final class ErrorSuppressionRuleTest extends TestCase
             ->withEntry('codeSmell.error_suppression', ['line' => 20, 'extra' => 'exec'])
             ->withEntry('codeSmell.error_suppression', ['line' => 30]); // no function name
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::File ? [$fileInfo] : []);
         $repository->method('get')
@@ -176,7 +176,7 @@ final class ErrorSuppressionRuleTest extends TestCase
         $metricBag = (new MetricBag())
             ->withEntry('codeSmell.error_suppression', ['line' => 5]); // no extra = method call or other
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::File ? [$fileInfo] : []);
         $repository->method('get')

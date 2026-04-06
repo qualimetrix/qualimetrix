@@ -39,7 +39,7 @@ trait MetricRepositoryTestHelper
         array $classMetrics = [],
     ): MetricRepositoryInterface {
         /** @var MetricRepositoryInterface&Stub $mock */
-        $mock = $this->createStub(MetricRepositoryInterface::class);
+        $mock = self::createStub(MetricRepositoryInterface::class);
 
         $mock->method('get')
             ->willReturnCallback(function (SymbolPath $symbol) use ($projectMetrics, $namespaceMetrics, $classMetrics): MetricBag {

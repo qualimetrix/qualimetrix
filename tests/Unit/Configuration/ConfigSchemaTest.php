@@ -257,7 +257,7 @@ final class ConfigSchemaTest extends TestCase
     public function noConstantIsDangling(): void
     {
         $configDir = __DIR__ . '/../../../src/Configuration';
-        $consumerFiles = glob($configDir . '/{,*/,*/*/}*.php', \GLOB_BRACE) ?: [];
+        $consumerFiles = (glob($configDir . '/{,*/,*/*/}*.php', \GLOB_BRACE) !== false ? glob($configDir . '/{,*/,*/*/}*.php', \GLOB_BRACE) : []);
         self::assertNotEmpty($consumerFiles, 'No PHP files found in src/Configuration/');
 
         // Exclude ConfigSchema itself — we check consumers, not the definition

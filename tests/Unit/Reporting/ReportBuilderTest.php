@@ -21,7 +21,7 @@ final class ReportBuilderTest extends TestCase
     {
         $builder = ReportBuilder::create();
 
-        self::assertInstanceOf(ReportBuilder::class, $builder);
+        self::assertInstanceOf(ReportBuilder::class, $builder); // @phpstan-ignore staticMethod.alreadyNarrowedType
     }
 
     public function testBuildEmptyReport(): void
@@ -150,7 +150,7 @@ final class ReportBuilderTest extends TestCase
 
     public function testMetricsPassedThrough(): void
     {
-        $metrics = $this->createStub(MetricRepositoryInterface::class);
+        $metrics = self::createStub(MetricRepositoryInterface::class);
 
         $report = ReportBuilder::create()
             ->metrics($metrics)

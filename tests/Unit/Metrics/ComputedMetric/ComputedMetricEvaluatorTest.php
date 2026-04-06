@@ -103,8 +103,8 @@ final class ComputedMetricEvaluatorTest extends TestCase
             levels: [SymbolType::Class_],
         );
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('references unknown metrics: missing_var');
+        self::expectException(RuntimeException::class);
+        self::expectExceptionMessage('references unknown metrics: missing_var');
 
         $this->evaluator->compute($repo, [$definition]);
     }
@@ -123,8 +123,8 @@ final class ComputedMetricEvaluatorTest extends TestCase
             levels: [SymbolType::Class_],
         );
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('references unknown metrics: foo, bar');
+        self::expectException(RuntimeException::class);
+        self::expectExceptionMessage('references unknown metrics: foo, bar');
 
         $this->evaluator->compute($repo, [$definition]);
     }

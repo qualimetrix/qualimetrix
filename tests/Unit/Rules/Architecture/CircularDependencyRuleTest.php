@@ -22,21 +22,21 @@ final class CircularDependencyRuleTest extends TestCase
     {
         $rule = new CircularDependencyRule(new CircularDependencyOptions());
 
-        $this->assertSame('architecture.circular-dependency', $rule->getName());
+        self::assertSame('architecture.circular-dependency', $rule->getName());
     }
 
     public function testGetDescription(): void
     {
         $rule = new CircularDependencyRule(new CircularDependencyOptions());
 
-        $this->assertStringContainsString('circular', strtolower($rule->getDescription()));
+        self::assertStringContainsString('circular', strtolower($rule->getDescription()));
     }
 
     public function testGetCategory(): void
     {
         $rule = new CircularDependencyRule(new CircularDependencyOptions());
 
-        $this->assertSame(RuleCategory::Architecture, $rule->getCategory());
+        self::assertSame(RuleCategory::Architecture, $rule->getCategory());
     }
 
     public function testGeneratesViolationForCycle(): void
@@ -56,9 +56,9 @@ final class CircularDependencyRuleTest extends TestCase
 
         $violations = $rule->analyze($context);
 
-        $this->assertCount(1, $violations);
-        $this->assertSame('architecture.circular-dependency', $violations[0]->ruleName);
-        $this->assertStringContainsString('Circular dependency (2 classes)', $violations[0]->message);
+        self::assertCount(1, $violations);
+        self::assertSame('architecture.circular-dependency', $violations[0]->ruleName);
+        self::assertStringContainsString('Circular dependency (2 classes)', $violations[0]->message);
     }
 
     public function testErrorSeverityForDirectCycle(): void
@@ -78,8 +78,8 @@ final class CircularDependencyRuleTest extends TestCase
 
         $violations = $rule->analyze($context);
 
-        $this->assertCount(1, $violations);
-        $this->assertSame(Severity::Error, $violations[0]->severity);
+        self::assertCount(1, $violations);
+        self::assertSame(Severity::Error, $violations[0]->severity);
     }
 
     public function testWarningSeverityForTransitiveCycle(): void
@@ -99,8 +99,8 @@ final class CircularDependencyRuleTest extends TestCase
 
         $violations = $rule->analyze($context);
 
-        $this->assertCount(1, $violations);
-        $this->assertSame(Severity::Warning, $violations[0]->severity);
+        self::assertCount(1, $violations);
+        self::assertSame(Severity::Warning, $violations[0]->severity);
     }
 
     public function testRespectsMaxCycleSize(): void
@@ -122,7 +122,7 @@ final class CircularDependencyRuleTest extends TestCase
         $violations = $rule->analyze($context);
 
         // Only the cycle with size 2 should be reported (size 5 exceeds max)
-        $this->assertCount(1, $violations);
+        self::assertCount(1, $violations);
     }
 
     public function testDisabledReturnsEmpty(): void
@@ -142,7 +142,7 @@ final class CircularDependencyRuleTest extends TestCase
 
         $violations = $rule->analyze($context);
 
-        $this->assertEmpty($violations);
+        self::assertEmpty($violations);
     }
 
     public function testReturnsEmptyWhenNoCycles(): void
@@ -156,7 +156,7 @@ final class CircularDependencyRuleTest extends TestCase
 
         $violations = $rule->analyze($context);
 
-        $this->assertEmpty($violations);
+        self::assertEmpty($violations);
     }
 
     public function testMetricValueIsCycleSize(): void
@@ -176,8 +176,8 @@ final class CircularDependencyRuleTest extends TestCase
 
         $violations = $rule->analyze($context);
 
-        $this->assertCount(1, $violations);
-        $this->assertSame(3, $violations[0]->metricValue);
+        self::assertCount(1, $violations);
+        self::assertSame(3, $violations[0]->metricValue);
     }
 
     public function testOptionsFromArrayWithSnakeCase(): void

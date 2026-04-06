@@ -39,8 +39,8 @@ final class GlobalCollectorRunnerTest extends TestCase
         // Pass collectors in reverse order to verify sorting works
         $runner = new GlobalCollectorRunner([$collector2, $collector1]);
 
-        $graph = $this->createStub(DependencyGraphInterface::class);
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $graph = self::createStub(DependencyGraphInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
 
         $runner->run($graph, $repository);
 
@@ -56,8 +56,8 @@ final class GlobalCollectorRunnerTest extends TestCase
         self::assertSame(0, $runner->count());
         self::assertFalse($runner->hasCollectors());
 
-        $graph = $this->createStub(DependencyGraphInterface::class);
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $graph = self::createStub(DependencyGraphInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
 
         // Should not throw
         $runner->run($graph, $repository);
@@ -96,8 +96,8 @@ final class GlobalCollectorRunnerTest extends TestCase
 
         $runner = new GlobalCollectorRunner([$collector1, $collector2]);
 
-        $graph = $this->createStub(DependencyGraphInterface::class);
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $graph = self::createStub(DependencyGraphInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
 
         $runner->run($graph, $repository);
 
@@ -131,7 +131,7 @@ final class GlobalCollectorRunnerTest extends TestCase
         array $requires,
         array $provides,
     ): GlobalContextCollectorInterface&Stub {
-        $collector = $this->createStub(GlobalContextCollectorInterface::class);
+        $collector = self::createStub(GlobalContextCollectorInterface::class);
         $collector->method('getName')->willReturn($name);
         $collector->method('requires')->willReturn($requires);
         $collector->method('provides')->willReturn($provides);

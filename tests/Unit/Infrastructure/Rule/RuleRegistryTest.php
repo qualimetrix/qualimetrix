@@ -73,8 +73,8 @@ final class RuleRegistryTest extends TestCase
             ComplexityRule::class,
         ]);
 
-        $this->expectException(ConflictingCliAliasException::class);
-        $this->expectExceptionMessage('CLI alias "cyclomatic-warning" is defined by both "complexity.cyclomatic" and "complexity.cyclomatic" rules');
+        self::expectException(ConflictingCliAliasException::class);
+        self::expectExceptionMessage('CLI alias "cyclomatic-warning" is defined by both "complexity.cyclomatic" and "complexity.cyclomatic" rules');
 
         $registry->getAllCliAliases();
     }

@@ -17,43 +17,43 @@ final class LoggerHolderTest extends TestCase
 
         $logger = $holder->getLogger();
 
-        $this->assertInstanceOf(NullLogger::class, $logger);
+        self::assertInstanceOf(NullLogger::class, $logger);
     }
 
     public function testCanSetCustomLogger(): void
     {
         $holder = new LoggerHolder();
-        $customLogger = $this->createStub(LoggerInterface::class);
+        $customLogger = self::createStub(LoggerInterface::class);
 
         $holder->setLogger($customLogger);
 
-        $this->assertSame($customLogger, $holder->getLogger());
+        self::assertSame($customLogger, $holder->getLogger());
     }
 
     public function testCanReplaceLogger(): void
     {
         $holder = new LoggerHolder();
 
-        $firstLogger = $this->createStub(LoggerInterface::class);
+        $firstLogger = self::createStub(LoggerInterface::class);
         $holder->setLogger($firstLogger);
-        $this->assertSame($firstLogger, $holder->getLogger());
+        self::assertSame($firstLogger, $holder->getLogger());
 
-        $secondLogger = $this->createStub(LoggerInterface::class);
+        $secondLogger = self::createStub(LoggerInterface::class);
         $holder->setLogger($secondLogger);
-        $this->assertSame($secondLogger, $holder->getLogger());
+        self::assertSame($secondLogger, $holder->getLogger());
     }
 
     public function testMultipleGettersReturnSameInstance(): void
     {
         $holder = new LoggerHolder();
-        $logger = $this->createStub(LoggerInterface::class);
+        $logger = self::createStub(LoggerInterface::class);
 
         $holder->setLogger($logger);
 
         $retrieved1 = $holder->getLogger();
         $retrieved2 = $holder->getLogger();
 
-        $this->assertSame($retrieved1, $retrieved2);
-        $this->assertSame($logger, $retrieved1);
+        self::assertSame($retrieved1, $retrieved2);
+        self::assertSame($logger, $retrieved1);
     }
 }

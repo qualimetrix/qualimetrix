@@ -27,7 +27,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
 
         $retrieved = $repository->get($symbol);
 
-        self::assertInstanceOf(MetricBag::class, $retrieved);
+        self::assertInstanceOf(MetricBag::class, $retrieved); // @phpstan-ignore staticMethod.alreadyNarrowedType
         self::assertSame(5, $retrieved->get('ccn'));
     }
 
@@ -38,7 +38,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
 
         $retrieved = $repository->get(SymbolPath::forClass('Unknown', 'Class'));
 
-        self::assertInstanceOf(MetricBag::class, $retrieved);
+        self::assertInstanceOf(MetricBag::class, $retrieved); // @phpstan-ignore staticMethod.alreadyNarrowedType
         self::assertSame([], $retrieved->all());
     }
 
@@ -63,7 +63,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
 
         $retrieved = $repository->get($symbol);
 
-        self::assertInstanceOf(MetricBag::class, $retrieved);
+        self::assertInstanceOf(MetricBag::class, $retrieved); // @phpstan-ignore staticMethod.alreadyNarrowedType
         self::assertSame(10, $retrieved->get('classCount.sum'));
         self::assertSame(50, $retrieved->get('methodCount'));
         self::assertSame(100, $retrieved->get('ccn.sum'));

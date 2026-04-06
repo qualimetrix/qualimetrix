@@ -28,11 +28,11 @@ final class FormatterContextFactoryTest extends TestCase
     protected function setUp(): void
     {
         $config = new AnalysisConfiguration();
-        $configProvider = $this->createStub(ConfigurationProviderInterface::class);
+        $configProvider = self::createStub(ConfigurationProviderInterface::class);
         $configProvider->method('getConfiguration')->willReturn($config);
 
         $this->factory = new FormatterContextFactory($configProvider);
-        $this->formatter = $this->createStub(FormatterInterface::class);
+        $this->formatter = self::createStub(FormatterInterface::class);
         $this->formatter->method('getDefaultGroupBy')->willReturn(GroupBy::None);
         $this->output = new NullOutput();
     }
@@ -79,8 +79,8 @@ final class FormatterContextFactoryTest extends TestCase
             '--format-opt' => ['violations=10'],
         ]);
 
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Conflicting options: --all cannot be combined with --format-opt=violations=N');
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('Conflicting options: --all cannot be combined with --format-opt=violations=N');
 
         $this->factory->create($input, $this->output, $this->formatter);
     }

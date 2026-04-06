@@ -21,7 +21,7 @@ final class RulesCommandTest extends TestCase
     #[Test]
     public function configuresSetsNameAndDescription(): void
     {
-        $registry = $this->createStub(RuleRegistryInterface::class);
+        $registry = self::createStub(RuleRegistryInterface::class);
         $registry->method('getAll')->willReturn([]);
 
         $command = new RulesCommand($registry);
@@ -33,7 +33,7 @@ final class RulesCommandTest extends TestCase
     #[Test]
     public function configuresGroupOption(): void
     {
-        $registry = $this->createStub(RuleRegistryInterface::class);
+        $registry = self::createStub(RuleRegistryInterface::class);
         $registry->method('getAll')->willReturn([]);
 
         $command = new RulesCommand($registry);
@@ -49,7 +49,7 @@ final class RulesCommandTest extends TestCase
     #[Test]
     public function displaysNoRulesMessageWhenRegistryEmpty(): void
     {
-        $registry = $this->createStub(RuleRegistryInterface::class);
+        $registry = self::createStub(RuleRegistryInterface::class);
         $registry->method('getAll')->willReturn([]);
 
         $tester = new CommandTester(new RulesCommand($registry));
@@ -64,7 +64,7 @@ final class RulesCommandTest extends TestCase
     {
         $rule = $this->createRuleMock('complexity.cyclomatic', RuleCategory::Complexity, 'Cyclomatic complexity');
 
-        $registry = $this->createStub(RuleRegistryInterface::class);
+        $registry = self::createStub(RuleRegistryInterface::class);
         $registry->method('getAll')->willReturn([$rule]);
 
         $tester = new CommandTester(new RulesCommand($registry));
@@ -80,7 +80,7 @@ final class RulesCommandTest extends TestCase
         $ruleA = $this->createRuleMock('complexity.cyclomatic', RuleCategory::Complexity, 'Cyclomatic complexity');
         $ruleB = $this->createRuleMock('size.class-count', RuleCategory::Size, 'Class count');
 
-        $registry = $this->createStub(RuleRegistryInterface::class);
+        $registry = self::createStub(RuleRegistryInterface::class);
         $registry->method('getAll')->willReturn([$ruleA, $ruleB]);
 
         $tester = new CommandTester(new RulesCommand($registry));
@@ -103,7 +103,7 @@ final class RulesCommandTest extends TestCase
         $ruleA = $this->createRuleMock('complexity.cyclomatic', RuleCategory::Complexity, 'Cyclomatic complexity');
         $ruleB = $this->createRuleMock('size.class-count', RuleCategory::Size, 'Class count');
 
-        $registry = $this->createStub(RuleRegistryInterface::class);
+        $registry = self::createStub(RuleRegistryInterface::class);
         $registry->method('getAll')->willReturn([$ruleA, $ruleB]);
 
         $tester = new CommandTester(new RulesCommand($registry));
@@ -127,7 +127,7 @@ final class RulesCommandTest extends TestCase
             ['cyclomatic-warning' => 'warning_threshold'],
         );
 
-        $registry = $this->createStub(RuleRegistryInterface::class);
+        $registry = self::createStub(RuleRegistryInterface::class);
         $registry->method('getAll')->willReturn([$rule]);
 
         $tester = new CommandTester(new RulesCommand($registry));
@@ -144,7 +144,7 @@ final class RulesCommandTest extends TestCase
     {
         $rule = $this->createRuleMock('complexity.cyclomatic', RuleCategory::Complexity, 'Cyclomatic complexity');
 
-        $registry = $this->createStub(RuleRegistryInterface::class);
+        $registry = self::createStub(RuleRegistryInterface::class);
         $registry->method('getAll')->willReturn([$rule]);
 
         $tester = new CommandTester(new RulesCommand($registry));

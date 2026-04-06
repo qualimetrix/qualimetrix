@@ -63,10 +63,10 @@ final class InheritanceRuleTest extends TestCase
 
     public function testThrowsExceptionForWrongOptionsType(): void
     {
-        $wrongOptions = $this->createStub(\Qualimetrix\Core\Rule\RuleOptionsInterface::class);
+        $wrongOptions = self::createStub(\Qualimetrix\Core\Rule\RuleOptionsInterface::class);
 
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Expected');
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('Expected');
 
         new InheritanceRule($wrongOptions);
     }
@@ -87,7 +87,7 @@ final class InheritanceRuleTest extends TestCase
     {
         $rule = new InheritanceRule(new InheritanceOptions());
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([]);
 
@@ -106,7 +106,7 @@ final class InheritanceRuleTest extends TestCase
         // DIT of 5 is at warning threshold (5) but below error (7)
         $metricBag = (new MetricBag())->with('dit', 5);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -134,7 +134,7 @@ final class InheritanceRuleTest extends TestCase
         // DIT of 8 is above error threshold (7)
         $metricBag = (new MetricBag())->with('dit', 8);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -158,7 +158,7 @@ final class InheritanceRuleTest extends TestCase
         // DIT of 2 is normal (below warning threshold 5)
         $metricBag = (new MetricBag())->with('dit', 2);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -180,7 +180,7 @@ final class InheritanceRuleTest extends TestCase
         // No 'dit' metric
         $metricBag = new MetricBag();
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -242,7 +242,7 @@ final class InheritanceRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('dit', $dit);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')

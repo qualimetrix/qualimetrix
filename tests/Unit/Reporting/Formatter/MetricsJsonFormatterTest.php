@@ -68,7 +68,7 @@ final class MetricsJsonFormatterTest extends TestCase
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
         $methodPath = SymbolPath::forMethod('App\\Service', 'UserService', 'calculate');
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(static function (SymbolType $type) use ($classPath, $methodPath): array {
                 if ($type === SymbolType::Class_) {
@@ -128,7 +128,7 @@ final class MetricsJsonFormatterTest extends TestCase
     {
         $classPath = SymbolPath::forClass('App', 'Empty');
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(static function (SymbolType $type) use ($classPath): array {
                 if ($type === SymbolType::Class_) {
@@ -161,7 +161,7 @@ final class MetricsJsonFormatterTest extends TestCase
     {
         $classPath = SymbolPath::forClass('App', 'Test');
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(static function (SymbolType $type) use ($classPath): array {
                 if ($type === SymbolType::Class_) {
@@ -210,7 +210,7 @@ final class MetricsJsonFormatterTest extends TestCase
     {
         $filePath = SymbolPath::forFile('src/Service/UserService.php');
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(static function (SymbolType $type) use ($filePath): array {
                 if ($type === SymbolType::File) {
@@ -249,6 +249,7 @@ final class MetricsJsonFormatterTest extends TestCase
         self::assertArrayHasKey('ccn', $metrics);
 
         // Internal derived-metric keys containing ':' should be filtered out
+        \assert(\is_array($metrics));
         foreach (array_keys($metrics) as $key) {
             self::assertStringNotContainsString(':', (string) $key, "Internal key '{$key}' should not appear in output");
         }

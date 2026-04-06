@@ -13,9 +13,9 @@ final class ConsoleProgressBarTest extends TestCase
 {
     public function testSkipsProgressBarForFewFiles(): void
     {
-        $this->expectNotToPerformAssertions();
+        self::expectNotToPerformAssertions();
 
-        $output = $this->createStub(OutputInterface::class);
+        $output = self::createStub(OutputInterface::class);
         $reporter = new ConsoleProgressBar($output, minFilesForProgress: 10);
 
         // Should not create progress bar for 5 files
@@ -38,14 +38,14 @@ final class ConsoleProgressBarTest extends TestCase
         $reporter->finish();
 
         // Output should be empty (no progress bar)
-        $this->assertSame('', $output->fetch());
+        self::assertSame('', $output->fetch());
     }
 
     public function testHandlesAdvanceBeforeStart(): void
     {
-        $this->expectNotToPerformAssertions();
+        self::expectNotToPerformAssertions();
 
-        $output = $this->createStub(OutputInterface::class);
+        $output = self::createStub(OutputInterface::class);
         $reporter = new ConsoleProgressBar($output);
 
         // Should not throw when advancing before start
@@ -56,9 +56,9 @@ final class ConsoleProgressBarTest extends TestCase
 
     public function testCanBeFinishedMultipleTimes(): void
     {
-        $this->expectNotToPerformAssertions();
+        self::expectNotToPerformAssertions();
 
-        $output = $this->createStub(OutputInterface::class);
+        $output = self::createStub(OutputInterface::class);
         $reporter = new ConsoleProgressBar($output);
 
         $reporter->start(5); // Too few files, progress bar not created

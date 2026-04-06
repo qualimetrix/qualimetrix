@@ -33,11 +33,11 @@ final class CircularDependencyDetectorTest extends TestCase
 
         $cycles = $this->detector->detect($graph);
 
-        $this->assertCount(1, $cycles);
-        $this->assertSame(2, $cycles[0]->getSize());
+        self::assertCount(1, $cycles);
+        self::assertSame(2, $cycles[0]->getSize());
         $classStrings = array_map(fn(SymbolPath $p) => $p->toString(), $cycles[0]->getClasses());
-        $this->assertContains('A', $classStrings);
-        $this->assertContains('B', $classStrings);
+        self::assertContains('A', $classStrings);
+        self::assertContains('B', $classStrings);
     }
 
     public function testDetectsTransitiveCycle(): void
@@ -51,12 +51,12 @@ final class CircularDependencyDetectorTest extends TestCase
 
         $cycles = $this->detector->detect($graph);
 
-        $this->assertCount(1, $cycles);
-        $this->assertSame(3, $cycles[0]->getSize());
+        self::assertCount(1, $cycles);
+        self::assertSame(3, $cycles[0]->getSize());
         $classStrings = array_map(fn(SymbolPath $p) => $p->toString(), $cycles[0]->getClasses());
-        $this->assertContains('A', $classStrings);
-        $this->assertContains('B', $classStrings);
-        $this->assertContains('C', $classStrings);
+        self::assertContains('A', $classStrings);
+        self::assertContains('B', $classStrings);
+        self::assertContains('C', $classStrings);
     }
 
     public function testDetectsMultipleCycles(): void
@@ -71,7 +71,7 @@ final class CircularDependencyDetectorTest extends TestCase
 
         $cycles = $this->detector->detect($graph);
 
-        $this->assertCount(2, $cycles);
+        self::assertCount(2, $cycles);
     }
 
     public function testNoCyclesInDAG(): void
@@ -85,7 +85,7 @@ final class CircularDependencyDetectorTest extends TestCase
 
         $cycles = $this->detector->detect($graph);
 
-        $this->assertEmpty($cycles);
+        self::assertEmpty($cycles);
     }
 
     public function testHandlesComplexGraph(): void
@@ -100,8 +100,8 @@ final class CircularDependencyDetectorTest extends TestCase
 
         $cycles = $this->detector->detect($graph);
 
-        $this->assertCount(1, $cycles);
-        $this->assertSame(2, $cycles[0]->getSize());
+        self::assertCount(1, $cycles);
+        self::assertSame(2, $cycles[0]->getSize());
     }
 
     public function testFindsPathInCycle(): void
@@ -115,13 +115,13 @@ final class CircularDependencyDetectorTest extends TestCase
 
         $cycles = $this->detector->detect($graph);
 
-        $this->assertCount(1, $cycles);
+        self::assertCount(1, $cycles);
         $path = $cycles[0]->getPath();
 
         // Path should start and end with the same class
-        $this->assertSame($path[0]->toCanonical(), $path[\count($path) - 1]->toCanonical());
+        self::assertSame($path[0]->toCanonical(), $path[\count($path) - 1]->toCanonical());
         // Path should be at least 4 elements (A -> B -> C -> A)
-        $this->assertGreaterThanOrEqual(4, \count($path));
+        self::assertGreaterThanOrEqual(4, \count($path));
     }
 
     public function testEmptyGraph(): void
@@ -130,7 +130,7 @@ final class CircularDependencyDetectorTest extends TestCase
 
         $cycles = $this->detector->detect($graph);
 
-        $this->assertEmpty($cycles);
+        self::assertEmpty($cycles);
     }
 
     public function testSingleNodeNoCycle(): void
@@ -142,7 +142,7 @@ final class CircularDependencyDetectorTest extends TestCase
 
         $cycles = $this->detector->detect($graph);
 
-        $this->assertEmpty($cycles);
+        self::assertEmpty($cycles);
     }
 
     public function testDisconnectedComponents(): void
@@ -157,7 +157,7 @@ final class CircularDependencyDetectorTest extends TestCase
 
         $cycles = $this->detector->detect($graph);
 
-        $this->assertEmpty($cycles);
+        self::assertEmpty($cycles);
     }
 
     /**

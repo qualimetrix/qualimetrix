@@ -100,11 +100,11 @@ final class CompositeCollectorTest extends TestCase
         $visitor1 = new TrackingVisitor($callTracker, 'visitor1Called');
         $visitor2 = new TrackingVisitor($callTracker, 'visitor2Called');
 
-        $collector1 = $this->createStub(MetricCollectorInterface::class);
+        $collector1 = self::createStub(MetricCollectorInterface::class);
         $collector1->method('getVisitor')->willReturn($visitor1);
         $collector1->method('collect')->willReturn(new MetricBag());
 
-        $collector2 = $this->createStub(MetricCollectorInterface::class);
+        $collector2 = self::createStub(MetricCollectorInterface::class);
         $collector2->method('getVisitor')->willReturn($visitor2);
         $collector2->method('collect')->willReturn(new MetricBag());
 
@@ -138,7 +138,7 @@ final class CompositeCollectorTest extends TestCase
         $baseCollector = $this->createCollector('base', $baseMetrics);
 
         // Derived collector that doubles the ccn value
-        $derivedCollector = $this->createStub(DerivedCollectorInterface::class);
+        $derivedCollector = self::createStub(DerivedCollectorInterface::class);
         $derivedCollector->method('getName')->willReturn('derived');
         $derivedCollector->method('requires')->willReturn(['base']);
         $derivedCollector->method('provides')->willReturn(['derived_ccn']);
@@ -173,7 +173,7 @@ final class CompositeCollectorTest extends TestCase
         $baseCollector = $this->createCollector('base', $baseMetrics);
 
         // First derived collector
-        $derived1 = $this->createStub(DerivedCollectorInterface::class);
+        $derived1 = self::createStub(DerivedCollectorInterface::class);
         $derived1->method('getName')->willReturn('derived1');
         $derived1->method('requires')->willReturn(['base']);
         $derived1->method('provides')->willReturn(['doubled']);
@@ -183,7 +183,7 @@ final class CompositeCollectorTest extends TestCase
                 (new MetricBag())->with('doubled', ($bag->get('value') ?? 0) * 2));
 
         // Second derived collector
-        $derived2 = $this->createStub(DerivedCollectorInterface::class);
+        $derived2 = self::createStub(DerivedCollectorInterface::class);
         $derived2->method('getName')->willReturn('derived2');
         $derived2->method('requires')->willReturn(['base']);
         $derived2->method('provides')->willReturn(['tripled']);
@@ -222,7 +222,7 @@ final class CompositeCollectorTest extends TestCase
         $baseCollector = $this->createCollector('base', $baseMetrics);
 
         // Derived collector that returns empty bag
-        $derivedCollector = $this->createStub(DerivedCollectorInterface::class);
+        $derivedCollector = self::createStub(DerivedCollectorInterface::class);
         $derivedCollector->method('getName')->willReturn('empty_derived');
         $derivedCollector->method('requires')->willReturn(['base']);
         $derivedCollector->method('provides')->willReturn([]);
@@ -246,7 +246,7 @@ final class CompositeCollectorTest extends TestCase
 
         $baseCollector = $this->createCollector('base', $baseMetrics);
 
-        $derivedCollector = $this->createStub(DerivedCollectorInterface::class);
+        $derivedCollector = self::createStub(DerivedCollectorInterface::class);
         $derivedCollector->method('getName')->willReturn('derived');
         $derivedCollector->method('requires')->willReturn(['base']);
         $derivedCollector->method('provides')->willReturn(['calculated']);
@@ -274,7 +274,7 @@ final class CompositeCollectorTest extends TestCase
     {
         $collector = $this->createCollector('base', new MetricBag());
 
-        $derivedCollector = $this->createStub(DerivedCollectorInterface::class);
+        $derivedCollector = self::createStub(DerivedCollectorInterface::class);
         $derivedCollector->method('getName')->willReturn('derived');
 
         $composite = new CompositeCollector([$collector], [$derivedCollector]);
@@ -290,7 +290,7 @@ final class CompositeCollectorTest extends TestCase
     {
         $collector = $this->createCollector('base', new MetricBag());
 
-        $derivedCollector = $this->createStub(DerivedCollectorInterface::class);
+        $derivedCollector = self::createStub(DerivedCollectorInterface::class);
         $derivedCollector->method('getName')->willReturn('derived');
         $derivedCollector->method('requires')->willReturn([]);
         $derivedCollector->method('provides')->willReturn([]);
@@ -318,7 +318,7 @@ final class CompositeCollectorTest extends TestCase
 
         $baseCollector = $this->createCollector('base', $baseMetrics);
 
-        $derivedCollector = $this->createStub(DerivedCollectorInterface::class);
+        $derivedCollector = self::createStub(DerivedCollectorInterface::class);
         $derivedCollector->method('getName')->willReturn('derived');
         $derivedCollector->method('requires')->willReturn(['base']);
         $derivedCollector->method('provides')->willReturn(['ratio']);
@@ -389,14 +389,14 @@ final class CompositeCollectorTest extends TestCase
         $baseCollector = $this->createCollector('base', $baseMetrics);
 
         // Collector A requires B, Collector B requires A => cycle
-        $derivedA = $this->createStub(DerivedCollectorInterface::class);
+        $derivedA = self::createStub(DerivedCollectorInterface::class);
         $derivedA->method('getName')->willReturn('derivedA');
         $derivedA->method('requires')->willReturn(['derivedB']);
         $derivedA->method('provides')->willReturn(['metricA']);
         $derivedA->method('getMetricDefinitions')->willReturn([]);
         $derivedA->method('calculate')->willReturn(new MetricBag());
 
-        $derivedB = $this->createStub(DerivedCollectorInterface::class);
+        $derivedB = self::createStub(DerivedCollectorInterface::class);
         $derivedB->method('getName')->willReturn('derivedB');
         $derivedB->method('requires')->willReturn(['derivedA']);
         $derivedB->method('provides')->willReturn(['metricB']);
@@ -405,15 +405,15 @@ final class CompositeCollectorTest extends TestCase
 
         $composite = new CompositeCollector([$baseCollector], [$derivedA, $derivedB]);
 
-        $this->expectException(LogicException::class);
-        $this->expectExceptionMessageMatches('/Cyclic dependency.*derivedA.*derivedB|Cyclic dependency.*derivedB.*derivedA/');
+        self::expectException(LogicException::class);
+        self::expectExceptionMessageMatches('/Cyclic dependency.*derivedA.*derivedB|Cyclic dependency.*derivedB.*derivedA/');
 
         $composite->collect(new SplFileInfo(__FILE__), []);
     }
 
     private function createCollector(string $name, MetricBag $metrics): MetricCollectorInterface
     {
-        $collector = $this->createStub(MetricCollectorInterface::class);
+        $collector = self::createStub(MetricCollectorInterface::class);
         $collector->method('getName')->willReturn($name);
         $collector->method('getVisitor')->willReturn(new class extends NodeVisitorAbstract {});
         $collector->method('collect')->willReturn($metrics);

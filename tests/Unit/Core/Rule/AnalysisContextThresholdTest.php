@@ -16,7 +16,7 @@ final class AnalysisContextThresholdTest extends TestCase
     public function testGetThresholdOverrideReturnsNullWhenNoOverrides(): void
     {
         $context = new AnalysisContext(
-            metrics: $this->createStub(MetricRepositoryInterface::class),
+            metrics: self::createStub(MetricRepositoryInterface::class),
         );
 
         self::assertNull($context->getThresholdOverride('complexity.cyclomatic', 'src/Foo.php', 10));
@@ -25,7 +25,7 @@ final class AnalysisContextThresholdTest extends TestCase
     public function testGetThresholdOverrideReturnsNullForUnknownFile(): void
     {
         $context = new AnalysisContext(
-            metrics: $this->createStub(MetricRepositoryInterface::class),
+            metrics: self::createStub(MetricRepositoryInterface::class),
             thresholdOverrides: [
                 'src/Bar.php' => [
                     new ThresholdOverride('complexity.cyclomatic', 15, 25, 10, 50),
@@ -40,7 +40,7 @@ final class AnalysisContextThresholdTest extends TestCase
     {
         $override = new ThresholdOverride('complexity.cyclomatic', 15, 25, 10, 50);
         $context = new AnalysisContext(
-            metrics: $this->createStub(MetricRepositoryInterface::class),
+            metrics: self::createStub(MetricRepositoryInterface::class),
             thresholdOverrides: [
                 'src/Foo.php' => [$override],
             ],
@@ -55,7 +55,7 @@ final class AnalysisContextThresholdTest extends TestCase
     {
         $override = new ThresholdOverride('complexity', 15, 25, 10, 50);
         $context = new AnalysisContext(
-            metrics: $this->createStub(MetricRepositoryInterface::class),
+            metrics: self::createStub(MetricRepositoryInterface::class),
             thresholdOverrides: [
                 'src/Foo.php' => [$override],
             ],
@@ -70,7 +70,7 @@ final class AnalysisContextThresholdTest extends TestCase
     {
         $override = new ThresholdOverride('complexity.cyclomatic', 15, 25, 10, 50);
         $context = new AnalysisContext(
-            metrics: $this->createStub(MetricRepositoryInterface::class),
+            metrics: self::createStub(MetricRepositoryInterface::class),
             thresholdOverrides: [
                 'src/Foo.php' => [$override],
             ],
@@ -90,7 +90,7 @@ final class AnalysisContextThresholdTest extends TestCase
     {
         $override = new ThresholdOverride('complexity.cyclomatic', 15, 25, 10, 50);
         $context = new AnalysisContext(
-            metrics: $this->createStub(MetricRepositoryInterface::class),
+            metrics: self::createStub(MetricRepositoryInterface::class),
             thresholdOverrides: [
                 'src/Foo.php' => [$override],
             ],
@@ -103,7 +103,7 @@ final class AnalysisContextThresholdTest extends TestCase
     {
         $override = new ThresholdOverride('complexity.cyclomatic', 15, 25, 10, null);
         $context = new AnalysisContext(
-            metrics: $this->createStub(MetricRepositoryInterface::class),
+            metrics: self::createStub(MetricRepositoryInterface::class),
             thresholdOverrides: [
                 'src/Foo.php' => [$override],
             ],
@@ -120,7 +120,7 @@ final class AnalysisContextThresholdTest extends TestCase
         $override1 = new ThresholdOverride('complexity', 15, 25, 10, 50);
         $override2 = new ThresholdOverride('complexity.cyclomatic', 20, 30, 10, 50);
         $context = new AnalysisContext(
-            metrics: $this->createStub(MetricRepositoryInterface::class),
+            metrics: self::createStub(MetricRepositoryInterface::class),
             thresholdOverrides: [
                 'src/Foo.php' => [$override1, $override2],
             ],
@@ -139,7 +139,7 @@ final class AnalysisContextThresholdTest extends TestCase
         $methodOverride = new ThresholdOverride('complexity.cyclomatic', 30, 50, 20, 40);
 
         $context = new AnalysisContext(
-            metrics: $this->createStub(MetricRepositoryInterface::class),
+            metrics: self::createStub(MetricRepositoryInterface::class),
             thresholdOverrides: [
                 'src/Foo.php' => [$classOverride, $methodOverride],
             ],
@@ -162,7 +162,7 @@ final class AnalysisContextThresholdTest extends TestCase
         $bounded = new ThresholdOverride('complexity.cyclomatic', 30, 50, 10, 50);
 
         $context = new AnalysisContext(
-            metrics: $this->createStub(MetricRepositoryInterface::class),
+            metrics: self::createStub(MetricRepositoryInterface::class),
             thresholdOverrides: [
                 'src/Foo.php' => [$unbounded, $bounded],
             ],
@@ -181,7 +181,7 @@ final class AnalysisContextThresholdTest extends TestCase
     {
         $override = new ThresholdOverride('*', 30, 50, 10, 100);
         $context = new AnalysisContext(
-            metrics: $this->createStub(MetricRepositoryInterface::class),
+            metrics: self::createStub(MetricRepositoryInterface::class),
             thresholdOverrides: [
                 'src/Foo.php' => [$override],
             ],

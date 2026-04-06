@@ -34,7 +34,7 @@ final class FileProcessorTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->parser = $this->createStub(FileParserInterface::class);
+        $this->parser = self::createStub(FileParserInterface::class);
     }
 
     #[Test]

@@ -110,9 +110,9 @@ final class CommandInjectionRuleTest extends TestCase
 
     public function testConstructorRejectsWrongOptionsType(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        self::expectException(InvalidArgumentException::class);
 
-        $options = $this->createStub(\Qualimetrix\Core\Rule\RuleOptionsInterface::class);
+        $options = self::createStub(\Qualimetrix\Core\Rule\RuleOptionsInterface::class);
         new CommandInjectionRule($options);
     }
 
@@ -125,7 +125,7 @@ final class CommandInjectionRuleTest extends TestCase
             line: null,
         );
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$fileInfo]);
         $repository->method('get')

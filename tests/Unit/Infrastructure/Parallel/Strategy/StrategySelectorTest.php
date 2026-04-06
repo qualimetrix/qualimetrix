@@ -30,7 +30,7 @@ final class StrategySelectorTest extends TestCase
     {
         $this->amphpStrategy = new AmphpParallelStrategy(new NullLogger());
         $this->sequentialStrategy = new SequentialStrategy();
-        $this->configProvider = $this->createStub(ConfigurationProviderInterface::class);
+        $this->configProvider = self::createStub(ConfigurationProviderInterface::class);
     }
 
 

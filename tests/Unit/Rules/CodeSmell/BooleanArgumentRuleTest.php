@@ -68,7 +68,7 @@ final class BooleanArgumentRuleTest extends TestCase
 
         $metricBag = new MetricBag();
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::File ? [$fileInfo] : []);
         $repository->method('get')
@@ -91,7 +91,7 @@ final class BooleanArgumentRuleTest extends TestCase
             ->withEntry('codeSmell.boolean_argument', ['line' => 10])
             ->withEntry('codeSmell.boolean_argument', ['line' => 25]);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::File ? [$fileInfo] : []);
         $repository->method('get')
@@ -122,7 +122,7 @@ final class BooleanArgumentRuleTest extends TestCase
             ->withEntry('codeSmell.boolean_argument', ['line' => 10, 'extra' => 'overwrite'])
             ->withEntry('codeSmell.boolean_argument', ['line' => 25, 'extra' => 'silent']);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::File ? [$fileInfo] : []);
         $repository->method('get')
@@ -147,7 +147,7 @@ final class BooleanArgumentRuleTest extends TestCase
         $metricBag = (new MetricBag())
             ->withEntry('codeSmell.boolean_argument', ['line' => 10]);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::File ? [$fileInfo] : []);
         $repository->method('get')
@@ -174,7 +174,7 @@ final class BooleanArgumentRuleTest extends TestCase
             ->withEntry('codeSmell.boolean_argument', ['line' => 30, 'extra' => 'overwrite'])     // NOT allowed
             ->withEntry('codeSmell.boolean_argument', ['line' => 40, 'extra' => 'island']);       // NOT allowed (no boundary)
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::File ? [$fileInfo] : []);
         $repository->method('get')
@@ -200,7 +200,7 @@ final class BooleanArgumentRuleTest extends TestCase
             ->withEntry('codeSmell.boolean_argument', ['line' => 10, 'extra' => 'isActive'])
             ->withEntry('codeSmell.boolean_argument', ['line' => 20, 'extra' => 'overwrite']);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::File ? [$fileInfo] : []);
         $repository->method('get')
@@ -223,7 +223,7 @@ final class BooleanArgumentRuleTest extends TestCase
         $metricBag = (new MetricBag())
             ->withEntry('codeSmell.boolean_argument', ['line' => 10]); // no extra
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::File ? [$fileInfo] : []);
         $repository->method('get')

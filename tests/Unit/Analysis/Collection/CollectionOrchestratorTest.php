@@ -38,12 +38,12 @@ final class CollectionOrchestratorTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->fileProcessor = $this->createStub(FileProcessorInterface::class);
-        $this->strategy = $this->createStub(ExecutionStrategyInterface::class);
-        $this->strategySelector = $this->createStub(StrategySelectorInterface::class);
+        $this->fileProcessor = self::createStub(FileProcessorInterface::class);
+        $this->strategy = self::createStub(ExecutionStrategyInterface::class);
+        $this->strategySelector = self::createStub(StrategySelectorInterface::class);
         $this->strategySelector->method('select')->willReturn($this->strategy);
-        $this->progress = $this->createStub(ProgressReporter::class);
-        $this->logger = $this->createStub(LoggerInterface::class);
+        $this->progress = self::createStub(ProgressReporter::class);
+        $this->logger = self::createStub(LoggerInterface::class);
         $this->derivedMetricExtractor = new DerivedMetricExtractor(new CompositeCollector([]));
     }
 
@@ -380,7 +380,7 @@ final class CollectionOrchestratorTest extends TestCase
         $files = [new SplFileInfo('/tmp/test.php')];
 
         $strategy = $this->createMock(ExecutionStrategyInterface::class);
-        $strategySelector = $this->createStub(StrategySelectorInterface::class);
+        $strategySelector = self::createStub(StrategySelectorInterface::class);
         $strategySelector->method('select')->willReturn($strategy);
 
         // Verify that strategy receives a callable
@@ -408,7 +408,7 @@ final class CollectionOrchestratorTest extends TestCase
     public function itRegistersDerivedMetricsForMethods(): void
     {
         // Create mock derived collector
-        $derivedCollector = $this->createStub(DerivedCollectorInterface::class);
+        $derivedCollector = self::createStub(DerivedCollectorInterface::class);
         $derivedCollector->method('provides')->willReturn(['mi']);
 
         $compositeCollector = new CompositeCollector([], [$derivedCollector]);
@@ -461,7 +461,7 @@ final class CollectionOrchestratorTest extends TestCase
     public function itIgnoresDerivedMetricsForNonExistentMethods(): void
     {
         // Create mock derived collector
-        $derivedCollector = $this->createStub(DerivedCollectorInterface::class);
+        $derivedCollector = self::createStub(DerivedCollectorInterface::class);
         $derivedCollector->method('provides')->willReturn(['mi']);
 
         $compositeCollector = new CompositeCollector([], [$derivedCollector]);
@@ -504,7 +504,7 @@ final class CollectionOrchestratorTest extends TestCase
     public function itIgnoresInvalidMethodFqnsInDerivedMetrics(): void
     {
         // Create mock derived collector
-        $derivedCollector = $this->createStub(DerivedCollectorInterface::class);
+        $derivedCollector = self::createStub(DerivedCollectorInterface::class);
         $derivedCollector->method('provides')->willReturn(['mi']);
 
         $compositeCollector = new CompositeCollector([], [$derivedCollector]);
@@ -548,7 +548,7 @@ final class CollectionOrchestratorTest extends TestCase
     public function itHandlesDerivedMetricsWithoutNamespace(): void
     {
         // Create mock derived collector
-        $derivedCollector = $this->createStub(DerivedCollectorInterface::class);
+        $derivedCollector = self::createStub(DerivedCollectorInterface::class);
         $derivedCollector->method('provides')->willReturn(['mi']);
 
         $compositeCollector = new CompositeCollector([], [$derivedCollector]);
@@ -599,7 +599,7 @@ final class CollectionOrchestratorTest extends TestCase
     public function itIgnoresNonDerivedMetricsWithColonFormat(): void
     {
         // Create mock derived collector that provides 'mi'
-        $derivedCollector = $this->createStub(DerivedCollectorInterface::class);
+        $derivedCollector = self::createStub(DerivedCollectorInterface::class);
         $derivedCollector->method('provides')->willReturn(['mi']);
 
         $compositeCollector = new CompositeCollector([], [$derivedCollector]);
@@ -654,7 +654,7 @@ final class CollectionOrchestratorTest extends TestCase
     public function itHandlesMetricsWithoutColonSeparator(): void
     {
         // Create mock derived collector
-        $derivedCollector = $this->createStub(DerivedCollectorInterface::class);
+        $derivedCollector = self::createStub(DerivedCollectorInterface::class);
         $derivedCollector->method('provides')->willReturn(['mi']);
 
         $compositeCollector = new CompositeCollector([], [$derivedCollector]);
@@ -748,7 +748,7 @@ final class CollectionOrchestratorTest extends TestCase
     public function itHandlesUnicodeInMethodFqn(): void
     {
         // Create mock derived collector
-        $derivedCollector = $this->createStub(DerivedCollectorInterface::class);
+        $derivedCollector = self::createStub(DerivedCollectorInterface::class);
         $derivedCollector->method('provides')->willReturn(['mi']);
 
         $compositeCollector = new CompositeCollector([], [$derivedCollector]);

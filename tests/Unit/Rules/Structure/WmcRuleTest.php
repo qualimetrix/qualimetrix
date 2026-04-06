@@ -64,10 +64,10 @@ final class WmcRuleTest extends TestCase
 
     public function testThrowsExceptionForWrongOptionsType(): void
     {
-        $wrongOptions = $this->createStub(\Qualimetrix\Core\Rule\RuleOptionsInterface::class);
+        $wrongOptions = self::createStub(\Qualimetrix\Core\Rule\RuleOptionsInterface::class);
 
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Expected');
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('Expected');
 
         new WmcRule($wrongOptions);
     }
@@ -88,7 +88,7 @@ final class WmcRuleTest extends TestCase
     {
         $rule = new WmcRule(new WmcOptions());
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([]);
 
@@ -107,7 +107,7 @@ final class WmcRuleTest extends TestCase
         // WMC of 20 is below warning threshold (50)
         $metricBag = (new MetricBag())->with('wmc', 20);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -129,7 +129,7 @@ final class WmcRuleTest extends TestCase
         // WMC of 60 is above warning threshold (50) but below error (80)
         $metricBag = (new MetricBag())->with('wmc', 60)->with('methodCount', 15);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -161,7 +161,7 @@ final class WmcRuleTest extends TestCase
         // WMC of 85 is above error threshold (80)
         $metricBag = (new MetricBag())->with('wmc', 85)->with('methodCount', 10);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -192,7 +192,7 @@ final class WmcRuleTest extends TestCase
         // WMC of 93, 31 methods -> avg 3.0 -> "many methods, consider splitting"
         $metricBag = (new MetricBag())->with('wmc', 93)->with('methodCount', 31);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -218,7 +218,7 @@ final class WmcRuleTest extends TestCase
         // WMC of 60, 30 methods -> avg 2.0 -> "many methods, consider splitting"
         $metricBag = (new MetricBag())->with('wmc', 60)->with('methodCount', 30);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -244,7 +244,7 @@ final class WmcRuleTest extends TestCase
         // WMC without methodCount metric
         $metricBag = (new MetricBag())->with('wmc', 60);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -271,7 +271,7 @@ final class WmcRuleTest extends TestCase
         // WMC of 25 is above custom warning threshold (20) but below custom error (40)
         $metricBag = (new MetricBag())->with('wmc', 25);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -294,7 +294,7 @@ final class WmcRuleTest extends TestCase
         // WMC of 0 for class without methods
         $metricBag = (new MetricBag())->with('wmc', 0);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -319,7 +319,7 @@ final class WmcRuleTest extends TestCase
         $metricBag1 = (new MetricBag())->with('wmc', 20); // No violation
         $metricBag2 = (new MetricBag())->with('wmc', 90); // Error
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo1, $classInfo2]);
         $repository->method('get')
@@ -351,7 +351,7 @@ final class WmcRuleTest extends TestCase
         // No 'wmc' metric
         $metricBag = new MetricBag();
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -413,7 +413,7 @@ final class WmcRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('wmc', $wmc);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -494,7 +494,7 @@ final class WmcRuleTest extends TestCase
             ->with('wmc', 60)
             ->with('isDataClass', 1);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -519,7 +519,7 @@ final class WmcRuleTest extends TestCase
             ->with('wmc', 90)
             ->with('isDataClass', 1);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')

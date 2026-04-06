@@ -135,9 +135,9 @@ final class HardcodedCredentialsRuleTest extends TestCase
 
     public function testConstructorRejectsWrongOptionsType(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        self::expectException(InvalidArgumentException::class);
 
-        $options = $this->createStub(\Qualimetrix\Core\Rule\RuleOptionsInterface::class);
+        $options = self::createStub(\Qualimetrix\Core\Rule\RuleOptionsInterface::class);
         new HardcodedCredentialsRule($options);
     }
 
@@ -150,7 +150,7 @@ final class HardcodedCredentialsRuleTest extends TestCase
             line: null,
         );
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$fileInfo]);
         $repository->method('get')

@@ -51,8 +51,8 @@ final class ComputedMetricDefinitionTest extends TestCase
 
     public function testInvalidNameNoPrefix(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('must start with "health." or "computed."');
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('must start with "health." or "computed."');
 
         new ComputedMetricDefinition(
             name: 'custom.metric',
@@ -64,8 +64,8 @@ final class ComputedMetricDefinitionTest extends TestCase
 
     public function testInvalidNameContainsDoubleUnderscore(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('must not contain "__"');
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('must not contain "__"');
 
         new ComputedMetricDefinition(
             name: 'health.my__metric',
@@ -77,8 +77,8 @@ final class ComputedMetricDefinitionTest extends TestCase
 
     public function testInvalidNameSegmentStartsWithDigit(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('must match [a-zA-Z][a-zA-Z0-9_]*');
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('must match [a-zA-Z][a-zA-Z0-9_]*');
 
         new ComputedMetricDefinition(
             name: 'health.1invalid',
@@ -90,8 +90,8 @@ final class ComputedMetricDefinitionTest extends TestCase
 
     public function testInvalidNameSegmentWithSpecialChars(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('must match [a-zA-Z][a-zA-Z0-9_]*');
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('must match [a-zA-Z][a-zA-Z0-9_]*');
 
         new ComputedMetricDefinition(
             name: 'health.inv-alid',

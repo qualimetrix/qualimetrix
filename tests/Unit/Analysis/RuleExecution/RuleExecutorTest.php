@@ -420,7 +420,7 @@ final class RuleExecutorTest extends TestCase
      */
     private function createRule(string $name, array $violations, RuleCategory $category = RuleCategory::Complexity): RuleInterface
     {
-        $rule = $this->createStub(RuleInterface::class);
+        $rule = self::createStub(RuleInterface::class);
         $rule->method('getName')->willReturn($name);
         $rule->method('analyze')->willReturn($violations);
         $rule->method('getCategory')->willReturn($category);
@@ -430,7 +430,7 @@ final class RuleExecutorTest extends TestCase
 
     private function createMinimalContext(): AnalysisContext
     {
-        $repository = $this->createStub(\Qualimetrix\Core\Metric\MetricRepositoryInterface::class);
+        $repository = self::createStub(\Qualimetrix\Core\Metric\MetricRepositoryInterface::class);
         $repository->method('all')->willReturn([]);
 
         return new AnalysisContext($repository, []);

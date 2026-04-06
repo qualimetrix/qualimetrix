@@ -36,9 +36,9 @@ final class DotExporterTest extends TestCase
         $exporter = new DotExporter();
         $dot = $exporter->export($graph);
 
-        $this->assertStringContainsString('digraph Dependencies', $dot);
-        $this->assertStringContainsString('"App\\\\ServiceA" -> "App\\\\ServiceB"', $dot);
-        $this->assertStringContainsString('"App\\\\ServiceB" -> "App\\\\ServiceC"', $dot);
+        self::assertStringContainsString('digraph Dependencies', $dot);
+        self::assertStringContainsString('"App\\\\ServiceA" -> "App\\\\ServiceB"', $dot);
+        self::assertStringContainsString('"App\\\\ServiceB" -> "App\\\\ServiceC"', $dot);
     }
 
     public function testGroupsByNamespace(): void
@@ -56,9 +56,9 @@ final class DotExporterTest extends TestCase
         $exporter = new DotExporter(new DotExporterOptions(groupByNamespace: true));
         $dot = $exporter->export($graph);
 
-        $this->assertStringContainsString('subgraph cluster_', $dot);
-        $this->assertStringContainsString('label="App\\\\Service"', $dot);
-        $this->assertStringContainsString('label="App\\\\Repository"', $dot);
+        self::assertStringContainsString('subgraph cluster_', $dot);
+        self::assertStringContainsString('label="App\\\\Service"', $dot);
+        self::assertStringContainsString('label="App\\\\Repository"', $dot);
     }
 
     public function testUsesShortLabels(): void
@@ -76,8 +76,8 @@ final class DotExporterTest extends TestCase
         $exporter = new DotExporter(new DotExporterOptions(shortLabels: true));
         $dot = $exporter->export($graph);
 
-        $this->assertStringContainsString('label="UserService"', $dot);
-        $this->assertStringContainsString('label="UserRepository"', $dot);
+        self::assertStringContainsString('label="UserService"', $dot);
+        self::assertStringContainsString('label="UserRepository"', $dot);
     }
 
     public function testUsesFullLabelsWhenDisabled(): void
@@ -98,8 +98,8 @@ final class DotExporterTest extends TestCase
         ));
         $dot = $exporter->export($graph);
 
-        $this->assertStringContainsString('label="App\\\\UserService"', $dot);
-        $this->assertStringContainsString('label="App\\\\UserRepository"', $dot);
+        self::assertStringContainsString('label="App\\\\UserService"', $dot);
+        self::assertStringContainsString('label="App\\\\UserRepository"', $dot);
     }
 
     public function testUsesFullLabelsInClusterModeWhenShortLabelsDisabled(): void
@@ -121,8 +121,8 @@ final class DotExporterTest extends TestCase
         $dot = $exporter->export($graph);
 
         // With shortLabels=false and groupByNamespace=true, labels should be full FQN
-        $this->assertStringContainsString('label="App\\\\Service\\\\UserService"', $dot);
-        $this->assertStringContainsString('label="App\\\\Repository\\\\UserRepository"', $dot);
+        self::assertStringContainsString('label="App\\\\Service\\\\UserService"', $dot);
+        self::assertStringContainsString('label="App\\\\Repository\\\\UserRepository"', $dot);
     }
 
     public function testUsesShortLabelsInClusterMode(): void
@@ -144,8 +144,8 @@ final class DotExporterTest extends TestCase
         $dot = $exporter->export($graph);
 
         // With shortLabels=true (default) in cluster mode, labels should be class name only
-        $this->assertStringContainsString('label="UserService"', $dot);
-        $this->assertStringContainsString('label="UserRepository"', $dot);
+        self::assertStringContainsString('label="UserService"', $dot);
+        self::assertStringContainsString('label="UserRepository"', $dot);
     }
 
     public function testEscapesSpecialCharacters(): void
@@ -165,8 +165,8 @@ final class DotExporterTest extends TestCase
 
         // Backslashes should be escaped as \\
         // Quotes should be escaped as \"
-        $this->assertStringContainsString('\\"', $dot);
-        $this->assertStringContainsString('\\\\', $dot);
+        self::assertStringContainsString('\\"', $dot);
+        self::assertStringContainsString('\\\\', $dot);
     }
 
     public function testFiltersIncludeNamespaces(): void
@@ -192,9 +192,9 @@ final class DotExporterTest extends TestCase
         ));
         $dot = $exporter->export($graph);
 
-        $this->assertStringContainsString('Foo', $dot);
-        $this->assertStringContainsString('Bar', $dot);
-        $this->assertStringNotContainsString('FooTest', $dot);
+        self::assertStringContainsString('Foo', $dot);
+        self::assertStringContainsString('Bar', $dot);
+        self::assertStringNotContainsString('FooTest', $dot);
     }
 
     public function testFiltersExcludeNamespaces(): void
@@ -220,9 +220,9 @@ final class DotExporterTest extends TestCase
         ));
         $dot = $exporter->export($graph);
 
-        $this->assertStringContainsString('Foo', $dot);
-        $this->assertStringContainsString('Bar', $dot);
-        $this->assertStringNotContainsString('FooTest', $dot);
+        self::assertStringContainsString('Foo', $dot);
+        self::assertStringContainsString('Bar', $dot);
+        self::assertStringNotContainsString('FooTest', $dot);
     }
 
     public function testColorsByInstability(): void
@@ -241,7 +241,7 @@ final class DotExporterTest extends TestCase
         $dot = $exporter->export($graph);
 
         // Should contain color information
-        $this->assertStringContainsString('fillcolor=', $dot);
+        self::assertStringContainsString('fillcolor=', $dot);
     }
 
     public function testDisablesColorByInstability(): void
@@ -259,7 +259,7 @@ final class DotExporterTest extends TestCase
         $exporter = new DotExporter(new DotExporterOptions(colorByInstability: false));
         $dot = $exporter->export($graph);
 
-        $this->assertStringContainsString('fillcolor="lightblue"', $dot);
+        self::assertStringContainsString('fillcolor="lightblue"', $dot);
     }
 
     public function testChangesDirection(): void
@@ -277,7 +277,7 @@ final class DotExporterTest extends TestCase
         $exporter = new DotExporter(new DotExporterOptions(direction: 'TB'));
         $dot = $exporter->export($graph);
 
-        $this->assertStringContainsString('rankdir=TB', $dot);
+        self::assertStringContainsString('rankdir=TB', $dot);
     }
 
     public function testExportsEmptyGraph(): void
@@ -286,20 +286,20 @@ final class DotExporterTest extends TestCase
         $exporter = new DotExporter();
         $dot = $exporter->export($graph);
 
-        $this->assertStringContainsString('digraph Dependencies', $dot);
-        $this->assertStringContainsString('No classes to display', $dot);
+        self::assertStringContainsString('digraph Dependencies', $dot);
+        self::assertStringContainsString('No classes to display', $dot);
     }
 
     public function testGetFormat(): void
     {
         $exporter = new DotExporter();
-        $this->assertSame('dot', $exporter->getFormat());
+        self::assertSame('dot', $exporter->getFormat());
     }
 
     public function testGetFileExtension(): void
     {
         $exporter = new DotExporter();
-        $this->assertSame('dot', $exporter->getFileExtension());
+        self::assertSame('dot', $exporter->getFileExtension());
     }
 
     public function testFiltersEdgesWhenNodesAreFiltered(): void
@@ -320,7 +320,7 @@ final class DotExporterTest extends TestCase
         $dot = $exporter->export($graph);
 
         // Edge should not appear because one node is filtered out
-        $this->assertStringNotContainsString('Foo" -> "', $dot);
+        self::assertStringNotContainsString('Foo" -> "', $dot);
     }
 
     /**

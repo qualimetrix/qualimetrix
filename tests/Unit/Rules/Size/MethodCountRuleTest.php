@@ -65,7 +65,7 @@ final class MethodCountRuleTest extends TestCase
 
     public function testConstructorRejectsWrongOptionsType(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        self::expectException(InvalidArgumentException::class);
 
         new MethodCountRule(new class implements \Qualimetrix\Core\Rule\RuleOptionsInterface {
             public static function fromArray(array $config): static
@@ -106,7 +106,7 @@ final class MethodCountRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('methodCount', 5);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -126,7 +126,7 @@ final class MethodCountRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('methodCount', 15);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -152,7 +152,7 @@ final class MethodCountRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('methodCount', 25);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -180,7 +180,7 @@ final class MethodCountRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('methodCount', $methodCount);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')

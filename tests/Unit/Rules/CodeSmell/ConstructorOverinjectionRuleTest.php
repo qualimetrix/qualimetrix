@@ -66,7 +66,7 @@ final class ConstructorOverinjectionRuleTest extends TestCase
 
     public function testConstructorRejectsWrongOptionsType(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        self::expectException(InvalidArgumentException::class);
 
         new ConstructorOverinjectionRule(new class implements \Qualimetrix\Core\Rule\RuleOptionsInterface {
             public static function fromArray(array $config): static
@@ -107,7 +107,7 @@ final class ConstructorOverinjectionRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('parameterCount', 10);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Method ? [$methodInfo] : []);
         $repository->method('get')
@@ -127,7 +127,7 @@ final class ConstructorOverinjectionRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('parameterCount', 10);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Method ? [$methodInfo] : []);
         $repository->method('get')
@@ -147,7 +147,7 @@ final class ConstructorOverinjectionRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('parameterCount', 7);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Method ? [$methodInfo] : []);
         $repository->method('get')
@@ -167,7 +167,7 @@ final class ConstructorOverinjectionRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('parameterCount', 8);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Method ? [$methodInfo] : []);
         $repository->method('get')
@@ -193,7 +193,7 @@ final class ConstructorOverinjectionRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('parameterCount', 12);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Method ? [$methodInfo] : []);
         $repository->method('get')
@@ -216,7 +216,7 @@ final class ConstructorOverinjectionRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('parameterCount', 15);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Method ? [$methodInfo] : []);
         $repository->method('get')
@@ -244,7 +244,7 @@ final class ConstructorOverinjectionRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('parameterCount', $parameterCount);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Method ? [$methodInfo] : []);
         $repository->method('get')
@@ -282,7 +282,7 @@ final class ConstructorOverinjectionRuleTest extends TestCase
 
         $metricBag = new MetricBag();
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Method ? [$methodInfo] : []);
         $repository->method('get')

@@ -55,7 +55,7 @@ final class MetricAggregatorTest extends TestCase
 
         // Check namespace-level aggregation
         $nsMetrics = $repository->get(SymbolPath::forNamespace('App\\Service'));
-        self::assertInstanceOf(MetricBag::class, $nsMetrics);
+        self::assertInstanceOf(MetricBag::class, $nsMetrics); // @phpstan-ignore staticMethod.alreadyNarrowedType
         self::assertSame(2, $nsMetrics->get(AggregationMeta::SYMBOL_METHOD_COUNT));
         self::assertSame(8, (int) $nsMetrics->get('ccn.sum')); // Sum of method values: 5 + 3
         self::assertEquals(4.0, $nsMetrics->get('ccn.avg')); // Avg of method values: (5 + 3) / 2
@@ -136,7 +136,7 @@ final class MetricAggregatorTest extends TestCase
         // Project level (empty namespace)
         $projectMetrics = $repository->get(SymbolPath::forProject());
 
-        self::assertInstanceOf(MetricBag::class, $projectMetrics);
+        self::assertInstanceOf(MetricBag::class, $projectMetrics); // @phpstan-ignore staticMethod.alreadyNarrowedType
         self::assertSame(2, $projectMetrics->get(AggregationMeta::SYMBOL_METHOD_COUNT));
         self::assertSame(10, (int) $projectMetrics->get('ccn.sum')); // 4 + 6
         self::assertSame(6, (int) $projectMetrics->get('ccn.max'));
@@ -154,7 +154,7 @@ final class MetricAggregatorTest extends TestCase
         $projectMetrics = $repository->get(SymbolPath::forProject());
 
         // Empty MetricBag is returned for non-existent symbols
-        self::assertInstanceOf(MetricBag::class, $projectMetrics);
+        self::assertInstanceOf(MetricBag::class, $projectMetrics); // @phpstan-ignore staticMethod.alreadyNarrowedType
         self::assertSame([], $projectMetrics->all());
     }
 
@@ -188,7 +188,7 @@ final class MetricAggregatorTest extends TestCase
 
         $nsMetrics = $repository->get(SymbolPath::forNamespace('App\\Entity'));
 
-        self::assertInstanceOf(MetricBag::class, $nsMetrics);
+        self::assertInstanceOf(MetricBag::class, $nsMetrics); // @phpstan-ignore staticMethod.alreadyNarrowedType
         self::assertSame(0, $nsMetrics->get(AggregationMeta::SYMBOL_METHOD_COUNT));
         // CCN aggregation won't have values since there are no methods
         self::assertNull($nsMetrics->get('ccn.sum'));
@@ -269,7 +269,7 @@ final class MetricAggregatorTest extends TestCase
     public function itHandlesCollectorsWithNoDefinitions(): void
     {
         // Create a collector that returns no metric definitions
-        $collectorWithoutDefinitions = $this->createStub(MetricCollectorInterface::class);
+        $collectorWithoutDefinitions = self::createStub(MetricCollectorInterface::class);
         $collectorWithoutDefinitions->method('getMetricDefinitions')->willReturn([]);
         $collectorWithoutDefinitions->method('getName')->willReturn('empty');
 

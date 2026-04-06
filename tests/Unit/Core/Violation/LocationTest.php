@@ -77,20 +77,20 @@ final class LocationTest extends TestCase
 
         // This test verifies that Location is readonly by attempting to create a new instance
         // The readonly keyword ensures immutability at the language level
-        self::assertInstanceOf(Location::class, $location);
+        self::assertInstanceOf(Location::class, $location); // @phpstan-ignore staticMethod.alreadyNarrowedType
     }
 
     public function testLocationWithLineZeroThrowsException(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Line number must be >= 1 or null, got 0');
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('Line number must be >= 1 or null, got 0');
 
         new Location('src/test.php', 0);
     }
 
     public function testLocationWithNegativeLineThrowsException(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        self::expectException(InvalidArgumentException::class);
 
         new Location('src/test.php', -1);
     }

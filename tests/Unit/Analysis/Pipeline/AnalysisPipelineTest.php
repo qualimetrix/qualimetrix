@@ -46,12 +46,12 @@ final class AnalysisPipelineTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->defaultDiscovery = $this->createStub(FileDiscoveryInterface::class);
-        $this->collectionOrchestrator = $this->createStub(CollectionOrchestratorInterface::class);
-        $this->ruleExecutor = $this->createStub(RuleExecutorInterface::class);
-        $this->configurationProvider = $this->createStub(ConfigurationProviderInterface::class);
+        $this->defaultDiscovery = self::createStub(FileDiscoveryInterface::class);
+        $this->collectionOrchestrator = self::createStub(CollectionOrchestratorInterface::class);
+        $this->ruleExecutor = self::createStub(RuleExecutorInterface::class);
+        $this->configurationProvider = self::createStub(ConfigurationProviderInterface::class);
         $this->globalCollectorRunner = new GlobalCollectorRunner([]);
-        $this->logger = $this->createStub(LoggerInterface::class);
+        $this->logger = self::createStub(LoggerInterface::class);
         $this->compositeCollector = new CompositeCollector([]);
 
         $this->configurationProvider->method('getConfiguration')->willReturn(new AnalysisConfiguration());
@@ -104,7 +104,7 @@ final class AnalysisPipelineTest extends TestCase
     #[Test]
     public function itUsesCustomFileDiscovery(): void
     {
-        $customDiscovery = $this->createStub(FileDiscoveryInterface::class);
+        $customDiscovery = self::createStub(FileDiscoveryInterface::class);
         $customDiscovery->method('discover')->willReturn(new ArrayIterator([]));
 
         $defaultDiscovery = $this->createMock(FileDiscoveryInterface::class);
@@ -155,7 +155,7 @@ final class AnalysisPipelineTest extends TestCase
         self::assertSame(5, $result->filesAnalyzed);
         self::assertSame(2, $result->filesSkipped);
         self::assertGreaterThan(0, $result->duration);
-        self::assertInstanceOf(MetricRepositoryInterface::class, $result->metrics);
+        self::assertInstanceOf(MetricRepositoryInterface::class, $result->metrics); // @phpstan-ignore staticMethod.alreadyNarrowedType
     }
 
     #[Test]
@@ -241,7 +241,7 @@ final class AnalysisPipelineTest extends TestCase
         $this->defaultDiscovery->method('discover')->willReturn(new ArrayIterator([]));
         $this->collectionOrchestrator->method('collect')->willReturn(new CollectionPhaseOutput(new CollectionResult(0, 0), []));
 
-        $configProvider = $this->createStub(ConfigurationProviderInterface::class);
+        $configProvider = self::createStub(ConfigurationProviderInterface::class);
         $configProvider->method('getConfiguration')->willReturn(
             new AnalysisConfiguration(disabledRules: ['duplication.code-duplication']),
         );
@@ -262,7 +262,7 @@ final class AnalysisPipelineTest extends TestCase
         $this->defaultDiscovery->method('discover')->willReturn(new ArrayIterator([]));
         $this->collectionOrchestrator->method('collect')->willReturn(new CollectionPhaseOutput(new CollectionResult(0, 0), []));
 
-        $configProvider = $this->createStub(ConfigurationProviderInterface::class);
+        $configProvider = self::createStub(ConfigurationProviderInterface::class);
         $configProvider->method('getConfiguration')->willReturn(
             new AnalysisConfiguration(disabledRules: ['architecture.circular-dependency']),
         );
@@ -298,7 +298,7 @@ final class AnalysisPipelineTest extends TestCase
         // ComplexityRule supports it
         $complexityRule = new ComplexityRule(ComplexityRule::getOptionsClass()::fromArray([]));
 
-        $ruleExecutor = $this->createStub(RuleExecutorInterface::class);
+        $ruleExecutor = self::createStub(RuleExecutorInterface::class);
         $ruleExecutor->method('execute')->willReturn([]);
         $ruleExecutor->method('getAllRules')->willReturn([$godClassRule, $complexityRule]);
 
@@ -333,7 +333,7 @@ final class AnalysisPipelineTest extends TestCase
 
         $complexityRule = new ComplexityRule(ComplexityRule::getOptionsClass()::fromArray([]));
 
-        $ruleExecutor = $this->createStub(RuleExecutorInterface::class);
+        $ruleExecutor = self::createStub(RuleExecutorInterface::class);
         $ruleExecutor->method('execute')->willReturn([]);
         $ruleExecutor->method('getAllRules')->willReturn([$complexityRule]);
 
@@ -361,7 +361,7 @@ final class AnalysisPipelineTest extends TestCase
             ),
         );
 
-        $ruleExecutor = $this->createStub(RuleExecutorInterface::class);
+        $ruleExecutor = self::createStub(RuleExecutorInterface::class);
         $ruleExecutor->method('execute')->willReturn([]);
         $ruleExecutor->method('getAllRules')->willReturn([]);
 

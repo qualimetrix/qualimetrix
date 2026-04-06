@@ -52,10 +52,10 @@ final class HookStatusCommandTest extends TestCase
         $commandTester->execute([]);
 
         // Assert success (status always succeeds)
-        $this->assertSame(0, $commandTester->getStatusCode());
+        self::assertSame(0, $commandTester->getStatusCode());
         $output = $commandTester->getDisplay();
-        $this->assertStringContainsString('NOT INSTALLED', $output);
-        $this->assertStringContainsString('To install the hook', $output);
+        self::assertStringContainsString('NOT INSTALLED', $output);
+        self::assertStringContainsString('To install the hook', $output);
     }
 
     #[Test]
@@ -82,11 +82,11 @@ final class HookStatusCommandTest extends TestCase
         $commandTester->execute([]);
 
         // Assert success
-        $this->assertSame(0, $commandTester->getStatusCode());
+        self::assertSame(0, $commandTester->getStatusCode());
         $output = $commandTester->getDisplay();
-        $this->assertStringContainsString('INSTALLED', $output);
-        $this->assertStringContainsString('Symlink', $output);
-        $this->assertStringContainsString('Qualimetrix', $output);
+        self::assertStringContainsString('INSTALLED', $output);
+        self::assertStringContainsString('Symlink', $output);
+        self::assertStringContainsString('Qualimetrix', $output);
     }
 
     #[Test]
@@ -106,11 +106,11 @@ final class HookStatusCommandTest extends TestCase
         $commandTester->execute([]);
 
         // Assert success
-        $this->assertSame(0, $commandTester->getStatusCode());
+        self::assertSame(0, $commandTester->getStatusCode());
         $output = $commandTester->getDisplay();
-        $this->assertStringContainsString('INSTALLED', $output);
-        $this->assertStringContainsString('Copy', $output);
-        $this->assertStringContainsString('Qualimetrix', $output);
+        self::assertStringContainsString('INSTALLED', $output);
+        self::assertStringContainsString('Copy', $output);
+        self::assertStringContainsString('Qualimetrix', $output);
     }
 
     #[Test]
@@ -130,11 +130,11 @@ final class HookStatusCommandTest extends TestCase
         $commandTester->execute([]);
 
         // Assert success
-        $this->assertSame(0, $commandTester->getStatusCode());
+        self::assertSame(0, $commandTester->getStatusCode());
         $output = $commandTester->getDisplay();
-        $this->assertStringContainsString('INSTALLED', $output);
-        $this->assertStringContainsString('Third-party hook', $output);
-        $this->assertStringContainsString('Warning', $output);
+        self::assertStringContainsString('INSTALLED', $output);
+        self::assertStringContainsString('Third-party hook', $output);
+        self::assertStringContainsString('Warning', $output);
     }
 
     #[Test]
@@ -154,11 +154,11 @@ final class HookStatusCommandTest extends TestCase
         $commandTester->execute([]);
 
         // Assert success
-        $this->assertSame(0, $commandTester->getStatusCode());
+        self::assertSame(0, $commandTester->getStatusCode());
         $output = $commandTester->getDisplay();
-        $this->assertStringContainsString('INSTALLED', $output);
-        $this->assertStringContainsString('Executable: No', $output);
-        $this->assertStringContainsString('Warning: Hook is not executable', $output);
+        self::assertStringContainsString('INSTALLED', $output);
+        self::assertStringContainsString('Executable: No', $output);
+        self::assertStringContainsString('Warning: Hook is not executable', $output);
     }
 
     #[Test]
@@ -182,10 +182,10 @@ final class HookStatusCommandTest extends TestCase
         $commandTester->execute([]);
 
         // Assert success
-        $this->assertSame(0, $commandTester->getStatusCode());
+        self::assertSame(0, $commandTester->getStatusCode());
         $output = $commandTester->getDisplay();
-        $this->assertStringContainsString('Backup: Yes', $output);
-        $this->assertStringContainsString('Backup path:', $output);
+        self::assertStringContainsString('Backup: Yes', $output);
+        self::assertStringContainsString('Backup path:', $output);
     }
 
     #[Test]
@@ -203,9 +203,9 @@ final class HookStatusCommandTest extends TestCase
         $commandTester->execute([]);
 
         // Assert failure
-        $this->assertSame(1, $commandTester->getStatusCode());
+        self::assertSame(1, $commandTester->getStatusCode());
         $output = $commandTester->getDisplay();
-        $this->assertStringContainsString('Not a git repository', $output);
+        self::assertStringContainsString('Not a git repository', $output);
     }
 
     /**
@@ -217,7 +217,7 @@ final class HookStatusCommandTest extends TestCase
             return;
         }
 
-        $files = array_diff(scandir($dir) ?: [], ['.', '..']);
+        $files = array_diff((scandir($dir) !== false ? scandir($dir) : []), ['.', '..']);
         foreach ($files as $file) {
             $path = $dir . '/' . $file;
             is_dir($path) ? $this->removeDirectory($path) : unlink($path);

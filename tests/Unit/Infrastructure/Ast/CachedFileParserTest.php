@@ -50,7 +50,7 @@ final class CachedFileParserTest extends TestCase
         $inner = $this->createMock(FileParserInterface::class);
         $inner->expects(self::never())->method('parse');
 
-        $cache = $this->createStub(CacheInterface::class);
+        $cache = self::createStub(CacheInterface::class);
         $cache->method('get')->willReturn($cachedAst);
 
         $parser = new CachedFileParser($inner, $cache, $keyGenerator);

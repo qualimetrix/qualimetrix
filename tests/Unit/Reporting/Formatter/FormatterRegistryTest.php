@@ -57,8 +57,8 @@ final class FormatterRegistryTest extends TestCase
     {
         $registry = new FormatterRegistry();
 
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Formatter "unknown" not found. Available formatters: none');
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('Formatter "unknown" not found. Available formatters: none');
 
         $registry->get('unknown');
     }
@@ -69,8 +69,8 @@ final class FormatterRegistryTest extends TestCase
         $json = $this->createMockFormatter('json');
         $registry = new FormatterRegistry([$text, $json]);
 
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Formatter "xml" not found. Available formatters: text, json');
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('Formatter "xml" not found. Available formatters: text, json');
 
         $registry->get('xml');
     }

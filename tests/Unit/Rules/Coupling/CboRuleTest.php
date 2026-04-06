@@ -90,10 +90,10 @@ final class CboRuleTest extends TestCase
 
     public function testConstructorThrowsForInvalidOptions(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Expected');
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('Expected');
 
-        $invalidOptions = $this->createStub(\Qualimetrix\Core\Rule\RuleOptionsInterface::class);
+        $invalidOptions = self::createStub(\Qualimetrix\Core\Rule\RuleOptionsInterface::class);
         new CboRule($invalidOptions);
     }
 
@@ -119,7 +119,7 @@ final class CboRuleTest extends TestCase
     {
         $rule = new CboRule(new CboOptions());
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([]);
 
@@ -137,7 +137,7 @@ final class CboRuleTest extends TestCase
 
         $metricBag = new MetricBag();
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -161,7 +161,7 @@ final class CboRuleTest extends TestCase
             ->with('ca', 5)
             ->with('ce', 5);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -186,7 +186,7 @@ final class CboRuleTest extends TestCase
             ->with('ca', 8)
             ->with('ce', 10);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -217,7 +217,7 @@ final class CboRuleTest extends TestCase
             ->with('ca', 10)
             ->with('ce', 15);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -252,7 +252,7 @@ final class CboRuleTest extends TestCase
             ->with('ca', 6)
             ->with('ce', 6);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -281,7 +281,7 @@ final class CboRuleTest extends TestCase
             ->with('ca', 44)
             ->with('ce', 1);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -309,7 +309,7 @@ final class CboRuleTest extends TestCase
             ->with('ca', 3)
             ->with('ce', 22);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -337,7 +337,7 @@ final class CboRuleTest extends TestCase
             ->with('ca', 10)
             ->with('ce', 10);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -384,7 +384,7 @@ final class CboRuleTest extends TestCase
             ->with('ce', 10)
             ->with('classCount.sum', 5);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$nsInfo]);
         $repository->method('get')
@@ -414,7 +414,7 @@ final class CboRuleTest extends TestCase
             ->with('ce', 15)
             ->with('classCount.sum', 5);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$nsInfo]);
         $repository->method('get')
@@ -444,7 +444,7 @@ final class CboRuleTest extends TestCase
             ->with('ce', 30)
             ->with('classCount.sum', 1);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$nsInfo]);
         $repository->method('get')
@@ -478,7 +478,7 @@ final class CboRuleTest extends TestCase
             ->with('ce', 10)
             ->with('classCount.sum', 5);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => match ($type) {
                 SymbolType::Class_ => [$classInfo],
@@ -569,8 +569,8 @@ final class CboRuleTest extends TestCase
     {
         $options = new CboOptions();
 
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Level method is not supported by CboRule');
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('Level method is not supported by CboRule');
 
         $options->forLevel(RuleLevel::Method);
     }
@@ -635,7 +635,7 @@ final class CboRuleTest extends TestCase
             ->with('ca', 3)
             ->with('ce', 22);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -657,7 +657,7 @@ final class CboRuleTest extends TestCase
             new Dependency($symbolPath, SymbolPath::forClass('App\Cache', 'CacheManager'), DependencyType::TypeHint, $location),
         ];
 
-        $graph = $this->createStub(DependencyGraphInterface::class);
+        $graph = self::createStub(DependencyGraphInterface::class);
         $graph->method('getClassDependencies')
             ->willReturn($deps);
 
@@ -684,7 +684,7 @@ final class CboRuleTest extends TestCase
             ->with('ca', 3)
             ->with('ce', 22);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -704,7 +704,7 @@ final class CboRuleTest extends TestCase
             );
         }
 
-        $graph = $this->createStub(DependencyGraphInterface::class);
+        $graph = self::createStub(DependencyGraphInterface::class);
         $graph->method('getClassDependencies')
             ->willReturn($deps);
 
@@ -740,7 +740,7 @@ final class CboRuleTest extends TestCase
             ->with('ca', 10)
             ->with('ce', 15);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -768,13 +768,13 @@ final class CboRuleTest extends TestCase
             ->with('ca', 25)
             ->with('ce', 0);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
 
-        $graph = $this->createStub(DependencyGraphInterface::class);
+        $graph = self::createStub(DependencyGraphInterface::class);
         $graph->method('getClassDependencies')
             ->willReturn([]);
 
@@ -800,13 +800,13 @@ final class CboRuleTest extends TestCase
             ->with('ce', 15)
             ->with('classCount.sum', 5);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$nsInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
 
-        $graph = $this->createStub(DependencyGraphInterface::class);
+        $graph = self::createStub(DependencyGraphInterface::class);
 
         $context = new AnalysisContext($repository, dependencyGraph: $graph);
         $violations = $rule->analyzeLevel(RuleLevel::Namespace_, $context);
@@ -828,7 +828,7 @@ final class CboRuleTest extends TestCase
             ->with('ca', 3)
             ->with('ce', 17);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -841,7 +841,7 @@ final class CboRuleTest extends TestCase
             new Dependency($symbolPath, SymbolPath::forClass('', 'stdClass'), DependencyType::New_, $location),
         ];
 
-        $graph = $this->createStub(DependencyGraphInterface::class);
+        $graph = self::createStub(DependencyGraphInterface::class);
         $graph->method('getClassDependencies')
             ->willReturn($deps);
 
@@ -877,7 +877,7 @@ final class CboRuleTest extends TestCase
             ->with('ca', 5)
             ->with('ce', $cbo - 5);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -931,7 +931,7 @@ final class CboRuleTest extends TestCase
             ->with('ca', 5)
             ->with('ce', 10);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -966,7 +966,7 @@ final class CboRuleTest extends TestCase
             ->with('ce', 25)
             ->with('ce_framework', 23);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -1008,7 +1008,7 @@ final class CboRuleTest extends TestCase
             ->with('ca', 5)
             ->with('ce', 10);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')

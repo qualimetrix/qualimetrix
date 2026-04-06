@@ -149,8 +149,8 @@ final class RuleOptionsFactoryTest extends TestCase
 
     public function testCreateThrowsForNonExistentClass(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('does not exist');
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('does not exist');
 
         /** @phpstan-ignore argument.type */
         $this->factory->create('test-rule', 'NonExistent\\Class');
@@ -158,8 +158,8 @@ final class RuleOptionsFactoryTest extends TestCase
 
     public function testCreateThrowsForNonRuleOptionsClass(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('must implement');
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('must implement');
 
         /** @phpstan-ignore argument.type */
         $this->factory->create('test-rule', stdClass::class);
@@ -882,8 +882,8 @@ final class RuleOptionsFactoryTest extends TestCase
             ],
         ]);
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('option "warningThreshold" must be numeric');
+        self::expectException(RuntimeException::class);
+        self::expectExceptionMessage('option "warningThreshold" must be numeric');
 
         $this->factory->create('test-rule', TestRuleOptions::class);
     }
@@ -897,8 +897,8 @@ final class RuleOptionsFactoryTest extends TestCase
             ],
         ]);
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('option "errorThreshold" must be numeric');
+        self::expectException(RuntimeException::class);
+        self::expectExceptionMessage('option "errorThreshold" must be numeric');
 
         $this->factory->create('test-rule', TestRuleOptions::class);
     }
@@ -946,8 +946,8 @@ final class RuleOptionsFactoryTest extends TestCase
             ],
         ]);
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('rule "complexity.cyclomatic"');
+        self::expectException(RuntimeException::class);
+        self::expectExceptionMessage('rule "complexity.cyclomatic"');
 
         $this->factory->create('complexity.cyclomatic', TestRuleOptions::class);
     }

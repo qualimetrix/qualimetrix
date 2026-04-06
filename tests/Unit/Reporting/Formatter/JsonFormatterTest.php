@@ -1005,7 +1005,7 @@ final class JsonFormatterTest extends TestCase
             'classCount' => 5,
         ]);
 
-        $metrics = $this->createStub(\Qualimetrix\Core\Metric\MetricRepositoryInterface::class);
+        $metrics = self::createStub(\Qualimetrix\Core\Metric\MetricRepositoryInterface::class);
         $metrics->method('has')->willReturnCallback(
             static fn(SymbolPath $sp): bool => $sp->toCanonical() === $nsPath->toCanonical(),
         );
@@ -1063,7 +1063,7 @@ final class JsonFormatterTest extends TestCase
             'health.overall' => 40.0,
         ]);
 
-        $metrics = $this->createStub(\Qualimetrix\Core\Metric\MetricRepositoryInterface::class);
+        $metrics = self::createStub(\Qualimetrix\Core\Metric\MetricRepositoryInterface::class);
         $metrics->method('has')->willReturnCallback(
             static fn(SymbolPath $sp): bool => $sp->toCanonical() === $nsPath->toCanonical(),
         );
@@ -1108,7 +1108,7 @@ final class JsonFormatterTest extends TestCase
 
     public function testNamespaceFilterFallsBackToProjectWhenNoNsMetrics(): void
     {
-        $metrics = $this->createStub(\Qualimetrix\Core\Metric\MetricRepositoryInterface::class);
+        $metrics = self::createStub(\Qualimetrix\Core\Metric\MetricRepositoryInterface::class);
         $metrics->method('has')->willReturn(false);
         $metrics->method('get')->willReturn(new \Qualimetrix\Core\Metric\MetricBag());
         $metrics->method('all')->willReturn([]);
@@ -1404,7 +1404,9 @@ final class JsonFormatterTest extends TestCase
         self::assertArrayHasKey('App\Model', $data['violationGroups']);
 
         // App\Model has 2 violations — sorted first (worst first)
-        $keys = array_keys($data['violationGroups']);
+        $violationGroups = $data['violationGroups'];
+        \assert(\is_array($violationGroups));
+        $keys = array_keys($violationGroups);
         self::assertSame('App\Model', $keys[0]);
         self::assertSame('App\Service', $keys[1]);
 

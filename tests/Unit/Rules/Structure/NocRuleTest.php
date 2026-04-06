@@ -63,10 +63,10 @@ final class NocRuleTest extends TestCase
 
     public function testThrowsExceptionForWrongOptionsType(): void
     {
-        $wrongOptions = $this->createStub(\Qualimetrix\Core\Rule\RuleOptionsInterface::class);
+        $wrongOptions = self::createStub(\Qualimetrix\Core\Rule\RuleOptionsInterface::class);
 
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Expected');
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('Expected');
 
         new NocRule($wrongOptions);
     }
@@ -87,7 +87,7 @@ final class NocRuleTest extends TestCase
     {
         $rule = new NocRule(new NocOptions());
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([]);
 
@@ -106,7 +106,7 @@ final class NocRuleTest extends TestCase
         // NOC of 0 means no children (should be skipped)
         $metricBag = (new MetricBag())->with('noc', 0);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -128,7 +128,7 @@ final class NocRuleTest extends TestCase
         // NOC of 12 is above warning threshold (10) but below error (15)
         $metricBag = (new MetricBag())->with('noc', 12);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -156,7 +156,7 @@ final class NocRuleTest extends TestCase
         // NOC of 20 is above error threshold (15)
         $metricBag = (new MetricBag())->with('noc', 20);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -180,7 +180,7 @@ final class NocRuleTest extends TestCase
         // NOC of 3 is normal (below warning threshold 7)
         $metricBag = (new MetricBag())->with('noc', 3);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -202,7 +202,7 @@ final class NocRuleTest extends TestCase
         // No 'noc' metric
         $metricBag = new MetricBag();
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -264,7 +264,7 @@ final class NocRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('noc', $noc);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')

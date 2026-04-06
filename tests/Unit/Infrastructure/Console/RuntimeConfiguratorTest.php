@@ -44,7 +44,7 @@ final class RuntimeConfiguratorTest extends TestCase
         $this->ruleOptionsRegistry = new RuleOptionsRegistry();
         $this->frameworkNamespacesHolder = new FrameworkNamespacesHolder();
 
-        $this->configProvider = $this->createStub(ConfigurationProviderInterface::class);
+        $this->configProvider = self::createStub(ConfigurationProviderInterface::class);
         $this->configurator = $this->buildConfigurator($this->configProvider);
     }
 
@@ -67,7 +67,7 @@ final class RuntimeConfiguratorTest extends TestCase
         $loggerFactory = new LoggerFactory();
         $loggerHolder = new LoggerHolder();
 
-        $ruleRegistry = $this->createStub(RuleRegistryInterface::class);
+        $ruleRegistry = self::createStub(RuleRegistryInterface::class);
         $ruleRegistry->method('getClasses')->willReturn([]);
 
         return new RuntimeConfigurator(
@@ -125,7 +125,7 @@ final class RuntimeConfiguratorTest extends TestCase
         $this->configurator->configure($resolved2, $input2, $this->createOutput());
 
         // CLI options from first run should not persist
-        self::assertEmpty(
+        self::assertEmpty( // @phpstan-ignore staticMethod.impossibleType
             $this->ruleOptionsRegistry->getCliOptions(),
             'CLI options from first configure() call should not leak into second call',
         );
@@ -209,7 +209,7 @@ final class RuntimeConfiguratorTest extends TestCase
         $configProvider
             ->expects($this->once())
             ->method('setRuleOptions')
-            ->with($this->callback(function (array $options): bool {
+            ->with(self::callback(function (array $options): bool {
                 // CLI overrides warningThreshold
                 self::assertSame(15, $options['complexity.cyclomatic']['warningThreshold']);
                 // YAML values preserved
@@ -244,7 +244,7 @@ final class RuntimeConfiguratorTest extends TestCase
         $configProvider
             ->expects($this->once())
             ->method('setRuleOptions')
-            ->with($this->callback(function (array $options): bool {
+            ->with(self::callback(function (array $options): bool {
                 // Original key preserved
                 self::assertSame(10, $options['complexity.cyclomatic']['warningThreshold']);
                 // New key added from CLI (parser converts 'false' to boolean)
@@ -280,7 +280,7 @@ final class RuntimeConfiguratorTest extends TestCase
         $configProvider
             ->expects($this->once())
             ->method('setRuleOptions')
-            ->with($this->callback(function (array $options): bool {
+            ->with(self::callback(function (array $options): bool {
                 self::assertSame(15, $options['complexity.cyclomatic']['warningThreshold']);
                 self::assertSame(30, $options['complexity.cyclomatic']['errorThreshold']);
 
@@ -312,7 +312,7 @@ final class RuntimeConfiguratorTest extends TestCase
         $configProvider
             ->expects($this->once())
             ->method('setRuleOptions')
-            ->with($this->callback(function (array $options): bool {
+            ->with(self::callback(function (array $options): bool {
                 // YAML rule preserved
                 self::assertSame(10, $options['complexity.cyclomatic']['warningThreshold']);
                 // New rule from CLI added
@@ -331,7 +331,7 @@ final class RuntimeConfiguratorTest extends TestCase
      */
     private function createCliInput(array $ruleOpts): InputInterface
     {
-        $input = $this->createStub(InputInterface::class);
+        $input = self::createStub(InputInterface::class);
         $input->method('getOption')->willReturnCallback(
             static function (string $name) use ($ruleOpts): mixed {
                 return match ($name) {
@@ -566,7 +566,7 @@ final class RuntimeConfiguratorTest extends TestCase
 
     private function createOutput(): OutputInterface
     {
-        $output = $this->createStub(OutputInterface::class);
+        $output = self::createStub(OutputInterface::class);
         $output->method('isDecorated')->willReturn(false);
         $output->method('getVerbosity')->willReturn(OutputInterface::VERBOSITY_NORMAL);
 

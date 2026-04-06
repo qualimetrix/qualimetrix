@@ -74,30 +74,30 @@ final class BaselineWorkflowTest extends TestCase
         $generator = new BaselineGenerator($hasher);
         $baseline = $generator->generate($violations);
 
-        $this->assertSame(2, $baseline->count());
+        self::assertSame(2, $baseline->count());
         // Check that entries exist for both canonical paths
-        $this->assertArrayHasKey('method:App\Service\UserService::calculateDiscount', $baseline->entries);
-        $this->assertArrayHasKey('class:App\Service\UserService', $baseline->entries);
+        self::assertArrayHasKey('method:App\Service\UserService::calculateDiscount', $baseline->entries);
+        self::assertArrayHasKey('class:App\Service\UserService', $baseline->entries);
 
         // Step 2: Write baseline to file
         $writer = new BaselineWriter();
         $writer->write($baseline, $this->baselinePath);
 
-        $this->assertFileExists($this->baselinePath);
+        self::assertFileExists($this->baselinePath);
 
         // Step 3: Load baseline from file
         $loader = new BaselineLoader();
         $loadedBaseline = $loader->load($this->baselinePath);
 
-        $this->assertSame($baseline->count(), $loadedBaseline->count());
-        $this->assertSame($baseline->version, $loadedBaseline->version);
+        self::assertSame($baseline->count(), $loadedBaseline->count());
+        self::assertSame($baseline->version, $loadedBaseline->version);
 
         // Step 4: Filter violations using baseline
         $filter = new BaselineFilter($loadedBaseline, $hasher);
 
         // Both violations should be filtered out (in baseline)
-        $this->assertFalse($filter->shouldInclude($violations[0]));
-        $this->assertFalse($filter->shouldInclude($violations[1]));
+        self::assertFalse($filter->shouldInclude($violations[0]));
+        self::assertFalse($filter->shouldInclude($violations[1]));
 
         // Step 5: Test new violation (not in baseline)
         $newViolation = new Violation(
@@ -110,7 +110,7 @@ final class BaselineWorkflowTest extends TestCase
         );
 
         // New violation should NOT be filtered
-        $this->assertTrue($filter->shouldInclude($newViolation));
+        self::assertTrue($filter->shouldInclude($newViolation));
     }
 
     public function testResolvedViolationsDetection(): void
@@ -164,8 +164,8 @@ final class BaselineWorkflowTest extends TestCase
 
         // Should detect that method2 was resolved
         $methodKey = 'method:App\Service\UserService::method2';
-        $this->assertArrayHasKey($methodKey, $resolved);
-        $this->assertCount(1, $resolved[$methodKey]);
+        self::assertArrayHasKey($methodKey, $resolved);
+        self::assertCount(1, $resolved[$methodKey]);
     }
 
     public function testFilePathPortabilityRoundtrip(): void
@@ -239,7 +239,7 @@ final class BaselineWorkflowTest extends TestCase
         );
 
         // Hashes should be identical (line drift stability)
-        $this->assertSame($hasher->hash($violation1), $hasher->hash($violation2));
+        self::assertSame($hasher->hash($violation1), $hasher->hash($violation2));
     }
 
     public function testStableHashAcrossValueChanges(): void
@@ -266,7 +266,7 @@ final class BaselineWorkflowTest extends TestCase
         );
 
         // Hashes should be identical (value normalization)
-        $this->assertSame($hasher->hash($violation1), $hasher->hash($violation2));
+        self::assertSame($hasher->hash($violation1), $hasher->hash($violation2));
     }
 
     public function testHashChangesOnMethodRename(): void
@@ -292,6 +292,6 @@ final class BaselineWorkflowTest extends TestCase
         );
 
         // Hashes should be different (method name changed)
-        $this->assertNotSame($hasher->hash($violation1), $hasher->hash($violation2));
+        self::assertNotSame($hasher->hash($violation1), $hasher->hash($violation2));
     }
 }
