@@ -42,9 +42,7 @@ final class TypeCoverageVisitor extends NodeVisitorAbstract implements Resettabl
     private array $classInfos = [];
 
     private ?string $currentNamespace = null;
-    /** @phpstan-ignore property.onlyWritten, property.unusedType (required by VisitorMethodTrackingTrait) */
-    private ?string $currentClass = null;
-    /** @phpstan-ignore property.onlyWritten (required by VisitorMethodTrackingTrait) */
+    private ?string $currentClass = null; // @phpstan-ignore property.unusedType (assigned via VisitorMethodTrackingTrait)
     private int $closureCounter = 0;
 
     /**

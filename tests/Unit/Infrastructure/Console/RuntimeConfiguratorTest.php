@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Infrastructure\Console;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Configuration\AnalysisConfiguration;
 use Qualimetrix\Configuration\ComputedMetricFormulaValidator;
@@ -33,32 +34,51 @@ use Symfony\Component\Console\Output\OutputInterface;
 #[CoversClass(HealthFormulaExcluder::class)]
 final class RuntimeConfiguratorTest extends TestCase
 {
-    private ConfigurationProviderInterface&MockObject $configProvider;
+    private ConfigurationProviderInterface&Stub $configProvider;
     private RuleOptionsRegistry $ruleOptionsRegistry;
     private FrameworkNamespacesHolder $frameworkNamespacesHolder;
     private RuntimeConfigurator $configurator;
 
     protected function setUp(): void
     {
-        $loggerFactory = new LoggerFactory();
-        $loggerHolder = new LoggerHolder();
-
-        $this->configProvider = $this->createMock(ConfigurationProviderInterface::class);
         $this->ruleOptionsRegistry = new RuleOptionsRegistry();
         $this->frameworkNamespacesHolder = new FrameworkNamespacesHolder();
+
+        $this->configProvider = $this->createStub(ConfigurationProviderInterface::class);
+        $this->configurator = $this->buildConfigurator($this->configProvider);
+    }
+
+    /**
+     * Replaces the default stub with a mock and rebuilds the configurator.
+     *
+     * Call this in tests that need `expects()` on the config provider.
+     */
+    private function useConfigProviderMock(): ConfigurationProviderInterface&MockObject
+    {
+        $mock = $this->createMock(ConfigurationProviderInterface::class);
+        $this->configProvider = $mock;
+        $this->configurator = $this->buildConfigurator($mock);
+
+        return $mock;
+    }
+
+    private function buildConfigurator(ConfigurationProviderInterface $configProvider): RuntimeConfigurator
+    {
+        $loggerFactory = new LoggerFactory();
+        $loggerHolder = new LoggerHolder();
 
         $ruleRegistry = $this->createStub(RuleRegistryInterface::class);
         $ruleRegistry->method('getClasses')->willReturn([]);
 
-        $this->configurator = new RuntimeConfigurator(
+        return new RuntimeConfigurator(
             $loggerFactory,
             $loggerHolder,
             new ProgressReporterHolder(),
             new ProfilerHolder(),
-            $this->configProvider,
+            $configProvider,
             $this->ruleOptionsRegistry,
             $ruleRegistry,
-            new CacheFactory($this->configProvider),
+            new CacheFactory($configProvider),
             new ComputedMetricsConfigResolver(new ComputedMetricFormulaValidator()),
             new HealthFormulaExcluder(),
             $this->frameworkNamespacesHolder,
@@ -68,6 +88,8 @@ final class RuntimeConfiguratorTest extends TestCase
     #[Test]
     public function itResetsCliOptionsBetweenConfigureCalls(): void
     {
+        $configProvider = $this->useConfigProviderMock();
+
         // First configure call: set CLI options
         $resolved1 = new ResolvedConfiguration(
             paths: PathsConfiguration::defaults(),
@@ -79,10 +101,10 @@ final class RuntimeConfiguratorTest extends TestCase
             'complexity.cyclomatic:warningThreshold=50',
         ]);
 
-        $this->configProvider
+        $configProvider
             ->expects($this->exactly(2))
             ->method('setConfiguration');
-        $this->configProvider
+        $configProvider
             ->expects($this->exactly(2))
             ->method('setRuleOptions');
 
@@ -112,6 +134,8 @@ final class RuntimeConfiguratorTest extends TestCase
     #[Test]
     public function itResetsNamespaceExclusionsBetweenConfigureCalls(): void
     {
+        $configProvider = $this->useConfigProviderMock();
+
         // First configure call: set exclude_namespaces via config
         $resolved1 = new ResolvedConfiguration(
             paths: PathsConfiguration::defaults(),
@@ -125,10 +149,10 @@ final class RuntimeConfiguratorTest extends TestCase
 
         $input1 = $this->createCliInput([]);
 
-        $this->configProvider
+        $configProvider
             ->expects($this->exactly(2))
             ->method('setConfiguration');
-        $this->configProvider
+        $configProvider
             ->expects($this->exactly(2))
             ->method('setRuleOptions');
 
@@ -164,6 +188,8 @@ final class RuntimeConfiguratorTest extends TestCase
     #[Test]
     public function cliOptionOverridesOnlySpecificKeysPreservingYamlOptions(): void
     {
+        $configProvider = $this->useConfigProviderMock();
+
         $resolved = new ResolvedConfiguration(
             paths: PathsConfiguration::defaults(),
             analysis: new AnalysisConfiguration(),
@@ -180,7 +206,7 @@ final class RuntimeConfiguratorTest extends TestCase
             'complexity.cyclomatic:warningThreshold=15',
         ]);
 
-        $this->configProvider
+        $configProvider
             ->expects($this->once())
             ->method('setRuleOptions')
             ->with($this->callback(function (array $options): bool {
@@ -199,6 +225,8 @@ final class RuntimeConfiguratorTest extends TestCase
     #[Test]
     public function cliOptionCanAddNewKeysNotInYaml(): void
     {
+        $configProvider = $this->useConfigProviderMock();
+
         $resolved = new ResolvedConfiguration(
             paths: PathsConfiguration::defaults(),
             analysis: new AnalysisConfiguration(),
@@ -213,7 +241,7 @@ final class RuntimeConfiguratorTest extends TestCase
             'complexity.cyclomatic:countNullsafe=false',
         ]);
 
-        $this->configProvider
+        $configProvider
             ->expects($this->once())
             ->method('setRuleOptions')
             ->with($this->callback(function (array $options): bool {
@@ -231,6 +259,8 @@ final class RuntimeConfiguratorTest extends TestCase
     #[Test]
     public function cliCanReplaceAllKeysWhenProvidingCompleteOptions(): void
     {
+        $configProvider = $this->useConfigProviderMock();
+
         $resolved = new ResolvedConfiguration(
             paths: PathsConfiguration::defaults(),
             analysis: new AnalysisConfiguration(),
@@ -247,7 +277,7 @@ final class RuntimeConfiguratorTest extends TestCase
             'complexity.cyclomatic:errorThreshold=30',
         ]);
 
-        $this->configProvider
+        $configProvider
             ->expects($this->once())
             ->method('setRuleOptions')
             ->with($this->callback(function (array $options): bool {
@@ -263,6 +293,8 @@ final class RuntimeConfiguratorTest extends TestCase
     #[Test]
     public function cliOptionsForNewRuleAreAddedAlongsideYamlRules(): void
     {
+        $configProvider = $this->useConfigProviderMock();
+
         $resolved = new ResolvedConfiguration(
             paths: PathsConfiguration::defaults(),
             analysis: new AnalysisConfiguration(),
@@ -277,7 +309,7 @@ final class RuntimeConfiguratorTest extends TestCase
             'size.class-count:warningThreshold=50',
         ]);
 
-        $this->configProvider
+        $configProvider
             ->expects($this->once())
             ->method('setRuleOptions')
             ->with($this->callback(function (array $options): bool {
@@ -341,6 +373,8 @@ final class RuntimeConfiguratorTest extends TestCase
     #[Test]
     public function resetClearsFrameworkNamespacesBetweenConfigureCalls(): void
     {
+        $configProvider = $this->useConfigProviderMock();
+
         // First configure: set framework namespaces
         $resolved1 = new ResolvedConfiguration(
             paths: PathsConfiguration::defaults(),
@@ -348,10 +382,10 @@ final class RuntimeConfiguratorTest extends TestCase
             ruleOptions: [],
         );
 
-        $this->configProvider
+        $configProvider
             ->expects($this->exactly(2))
             ->method('setConfiguration');
-        $this->configProvider
+        $configProvider
             ->expects($this->exactly(2))
             ->method('setRuleOptions');
 

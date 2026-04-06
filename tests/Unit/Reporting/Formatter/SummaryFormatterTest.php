@@ -975,7 +975,7 @@ final class SummaryFormatterTest extends TestCase
             'classCount' => 5,
         ]);
 
-        $metrics = $this->createMock(\Qualimetrix\Core\Metric\MetricRepositoryInterface::class);
+        $metrics = $this->createStub(\Qualimetrix\Core\Metric\MetricRepositoryInterface::class);
         $metrics->method('has')->willReturnCallback(
             static fn(SymbolPath $sp): bool => $sp->toCanonical() === $nsPath->toCanonical(),
         );
@@ -1030,7 +1030,7 @@ final class SummaryFormatterTest extends TestCase
             'health.complexity' => 50.0,
         ]);
 
-        $metrics = $this->createMock(\Qualimetrix\Core\Metric\MetricRepositoryInterface::class);
+        $metrics = $this->createStub(\Qualimetrix\Core\Metric\MetricRepositoryInterface::class);
         $metrics->method('has')->willReturnCallback(
             static fn(SymbolPath $sp): bool => $sp->toCanonical() === $nsPath->toCanonical(),
         );
@@ -1071,7 +1071,7 @@ final class SummaryFormatterTest extends TestCase
 
     public function testNamespaceFilterFallsBackToProjectWhenNoNsMetrics(): void
     {
-        $metrics = $this->createMock(\Qualimetrix\Core\Metric\MetricRepositoryInterface::class);
+        $metrics = $this->createStub(\Qualimetrix\Core\Metric\MetricRepositoryInterface::class);
         $metrics->method('has')->willReturn(false);
         $metrics->method('get')->willReturn(new \Qualimetrix\Core\Metric\MetricBag());
         $metrics->method('all')->willReturn([]);

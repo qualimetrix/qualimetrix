@@ -21,7 +21,7 @@ final class RulesCommandTest extends TestCase
     #[Test]
     public function configuresSetsNameAndDescription(): void
     {
-        $registry = $this->createMock(RuleRegistryInterface::class);
+        $registry = $this->createStub(RuleRegistryInterface::class);
         $registry->method('getAll')->willReturn([]);
 
         $command = new RulesCommand($registry);
@@ -33,7 +33,7 @@ final class RulesCommandTest extends TestCase
     #[Test]
     public function configuresGroupOption(): void
     {
-        $registry = $this->createMock(RuleRegistryInterface::class);
+        $registry = $this->createStub(RuleRegistryInterface::class);
         $registry->method('getAll')->willReturn([]);
 
         $command = new RulesCommand($registry);
@@ -49,7 +49,7 @@ final class RulesCommandTest extends TestCase
     #[Test]
     public function displaysNoRulesMessageWhenRegistryEmpty(): void
     {
-        $registry = $this->createMock(RuleRegistryInterface::class);
+        $registry = $this->createStub(RuleRegistryInterface::class);
         $registry->method('getAll')->willReturn([]);
 
         $tester = new CommandTester(new RulesCommand($registry));
@@ -64,7 +64,7 @@ final class RulesCommandTest extends TestCase
     {
         $rule = $this->createRuleMock('complexity.cyclomatic', RuleCategory::Complexity, 'Cyclomatic complexity');
 
-        $registry = $this->createMock(RuleRegistryInterface::class);
+        $registry = $this->createStub(RuleRegistryInterface::class);
         $registry->method('getAll')->willReturn([$rule]);
 
         $tester = new CommandTester(new RulesCommand($registry));
@@ -80,7 +80,7 @@ final class RulesCommandTest extends TestCase
         $ruleA = $this->createRuleMock('complexity.cyclomatic', RuleCategory::Complexity, 'Cyclomatic complexity');
         $ruleB = $this->createRuleMock('size.class-count', RuleCategory::Size, 'Class count');
 
-        $registry = $this->createMock(RuleRegistryInterface::class);
+        $registry = $this->createStub(RuleRegistryInterface::class);
         $registry->method('getAll')->willReturn([$ruleA, $ruleB]);
 
         $tester = new CommandTester(new RulesCommand($registry));
@@ -103,7 +103,7 @@ final class RulesCommandTest extends TestCase
         $ruleA = $this->createRuleMock('complexity.cyclomatic', RuleCategory::Complexity, 'Cyclomatic complexity');
         $ruleB = $this->createRuleMock('size.class-count', RuleCategory::Size, 'Class count');
 
-        $registry = $this->createMock(RuleRegistryInterface::class);
+        $registry = $this->createStub(RuleRegistryInterface::class);
         $registry->method('getAll')->willReturn([$ruleA, $ruleB]);
 
         $tester = new CommandTester(new RulesCommand($registry));
@@ -127,7 +127,7 @@ final class RulesCommandTest extends TestCase
             ['cyclomatic-warning' => 'warning_threshold'],
         );
 
-        $registry = $this->createMock(RuleRegistryInterface::class);
+        $registry = $this->createStub(RuleRegistryInterface::class);
         $registry->method('getAll')->willReturn([$rule]);
 
         $tester = new CommandTester(new RulesCommand($registry));
@@ -144,7 +144,7 @@ final class RulesCommandTest extends TestCase
     {
         $rule = $this->createRuleMock('complexity.cyclomatic', RuleCategory::Complexity, 'Cyclomatic complexity');
 
-        $registry = $this->createMock(RuleRegistryInterface::class);
+        $registry = $this->createStub(RuleRegistryInterface::class);
         $registry->method('getAll')->willReturn([$rule]);
 
         $tester = new CommandTester(new RulesCommand($registry));
@@ -165,11 +165,6 @@ final class RulesCommandTest extends TestCase
         string $description,
         array $cliAliases = [],
     ): RuleInterface {
-        $rule = $this->createMock(RuleInterface::class);
-        $rule->method('getName')->willReturn($name);
-        $rule->method('getCategory')->willReturn($category);
-        $rule->method('getDescription')->willReturn($description);
-
         // getCliAliases() is static — mocks can't handle it, so we use an anonymous class.
         // Caveat: $staticAliases is shared across all instances of this anonymous class.
         // This is safe as long as getCliAliases() is read before creating the next instance.

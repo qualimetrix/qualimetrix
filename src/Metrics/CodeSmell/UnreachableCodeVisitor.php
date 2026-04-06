@@ -40,7 +40,6 @@ final class UnreachableCodeVisitor extends NodeVisitorAbstract implements Resett
 
     private ?string $currentNamespace = null;
     private ?string $currentClass = null;
-    /** @phpstan-ignore property.onlyWritten (required by VisitorMethodTrackingTrait) */
     private int $closureCounter = 0;
 
     /** @var list<string|null> Stack of class names for nested class-like scopes */

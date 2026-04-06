@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Unit\Reporting\Health;
 
-use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\MockObject\Stub;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Symbol\SymbolInfo;
@@ -38,8 +38,8 @@ trait MetricRepositoryTestHelper
         array $classes = [],
         array $classMetrics = [],
     ): MetricRepositoryInterface {
-        /** @var MetricRepositoryInterface&MockObject $mock */
-        $mock = $this->createMock(MetricRepositoryInterface::class);
+        /** @var MetricRepositoryInterface&Stub $mock */
+        $mock = $this->createStub(MetricRepositoryInterface::class);
 
         $mock->method('get')
             ->willReturnCallback(function (SymbolPath $symbol) use ($projectMetrics, $namespaceMetrics, $classMetrics): MetricBag {

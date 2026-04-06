@@ -389,7 +389,7 @@ PHP;
     {
         // Trait_ with null name should be skipped
         $traitNode = new Trait_('TemporaryTrait');
-        $traitNode->name = null; // @phpstan-ignore assign.propertyType
+        $traitNode->name = null;
         $definitions = TraitUsageResolver::collectTraitDefinitions([$traitNode]);
 
         self::assertSame([], $definitions);
