@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Rules\Complexity;
 
+use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Rule\AnalysisContext;
@@ -198,7 +199,7 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
 
         foreach ($context->metrics->all(SymbolType::Class_) as $classInfo) {
             $metrics = $context->metrics->get($classInfo->symbolPath);
-            $maxNpath = $metrics->get(MetricName::COMPLEXITY_NPATH . '.max');
+            $maxNpath = $metrics->get(MetricName::agg(MetricName::COMPLEXITY_NPATH, AggregationStrategy::Max));
 
             if ($maxNpath === null) {
                 continue;

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Rules\Coupling;
 
 use Psr\Log\LoggerInterface;
+use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Namespace_\ProjectNamespaceResolverInterface;
 use Qualimetrix\Core\Rule\AnalysisContext;
@@ -103,7 +104,7 @@ final class DistanceRule extends AbstractRule
             $metrics = $context->metrics->get($nsInfo->symbolPath);
 
             // Skip namespaces with too few classes for meaningful analysis
-            $classCount = (int) ($metrics->get(MetricName::SIZE_CLASS_COUNT . '.sum') ?? 0);
+            $classCount = (int) ($metrics->get(MetricName::agg(MetricName::SIZE_CLASS_COUNT, AggregationStrategy::Sum)) ?? 0);
             if ($classCount < $this->options->minClassCount) {
                 continue;
             }

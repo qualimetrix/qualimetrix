@@ -6,6 +6,8 @@ namespace Qualimetrix\Reporting\Formatter\Html;
 
 use Composer\InstalledVersions;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinitionHolder;
+use Qualimetrix\Core\Metric\AggregationStrategy;
+use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
@@ -138,10 +140,10 @@ final class HtmlTreeBuilder
             $classNode->metrics = $this->filterMetrics($classBag->all());
 
             // Class-level MetricBag doesn't have LOC — get it from the file
-            if (!isset($classNode->metrics['loc.sum']) && $symbolInfo->file !== '') {
+            if (!isset($classNode->metrics[MetricName::agg(MetricName::SIZE_LOC, AggregationStrategy::Sum)]) && $symbolInfo->file !== '') {
                 $loc = $fileLoc[$symbolInfo->file] ?? null;
                 if ($loc !== null) {
-                    $classNode->metrics['loc.sum'] = $loc;
+                    $classNode->metrics[MetricName::agg(MetricName::SIZE_LOC, AggregationStrategy::Sum)] = $loc;
                 }
             }
 
@@ -225,7 +227,7 @@ final class HtmlTreeBuilder
 
         foreach ($metrics->all(SymbolType::File) as $symbolInfo) {
             $bag = $metrics->get($symbolInfo->symbolPath);
-            $loc = $bag->get('loc');
+            $loc = $bag->get(MetricName::SIZE_LOC);
             if ($loc !== null) {
                 $index[$symbolInfo->file] = $loc;
             }

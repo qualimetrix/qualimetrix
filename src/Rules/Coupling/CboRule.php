@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Rules\Coupling;
 
 use Qualimetrix\Core\Dependency\DependencyGraphInterface;
+use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Rule\AnalysisContext;
@@ -175,7 +176,7 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
             $metrics = $context->metrics->get($nsInfo->symbolPath);
 
             // Skip namespaces with too few classes
-            $classCount = (int) ($metrics->get(MetricName::SIZE_CLASS_COUNT . '.sum') ?? 0);
+            $classCount = (int) ($metrics->get(MetricName::agg(MetricName::SIZE_CLASS_COUNT, AggregationStrategy::Sum)) ?? 0);
             if ($classCount < $namespaceOptions->minClassCount) {
                 continue;
             }
@@ -211,8 +212,8 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
     ): ?Violation {
         /** @var ClassCboOptions|NamespaceCboOptions $options */
         $options = $this->getEffectiveOptions($context, $options, $symbolInfo->file, $symbolInfo->line ?? 1);
-        $ca = (int) ($metrics->get(MetricName::COUPLING_CA) ?? 0);
-        $ce = (int) ($metrics->get(MetricName::COUPLING_CE) ?? 0);
+        $ca = (int) $metrics->require(MetricName::COUPLING_CA);
+        $ce = (int) $metrics->require(MetricName::COUPLING_CE);
 
         $violationCode = self::NAME . ($level === RuleLevel::Namespace_ ? '.namespace' : '.class');
 
