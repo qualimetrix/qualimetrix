@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\DataBag;
 use Qualimetrix\Core\Metric\MetricBag;
+use RuntimeException;
 
 #[CoversClass(MetricBag::class)]
 final class MetricBagTest extends TestCase
@@ -37,6 +38,33 @@ final class MetricBagTest extends TestCase
         $bag = new MetricBag();
 
         self::assertNull($bag->get('nonexistent'));
+    }
+
+    public function testRequireReturnsExistingMetric(): void
+    {
+        $bag = (new MetricBag())->with('ccn', 7);
+
+        self::assertSame(7, $bag->require('ccn'));
+    }
+
+    public function testRequireThrowsForMissingMetric(): void
+    {
+        $bag = (new MetricBag())->with('loc', 100);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Required metric "ccn" not found');
+
+        $bag->require('ccn');
+    }
+
+    public function testRequireThrowsOnEmptyBag(): void
+    {
+        $bag = new MetricBag();
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('(empty)');
+
+        $bag->require('anything');
     }
 
     public function testHas(): void
