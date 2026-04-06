@@ -10,6 +10,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefaults;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinition;
+use Qualimetrix\Core\Metric\AggregationMeta;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
@@ -307,7 +308,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
             'ccn.sum' => 30.0,
             'cognitive.avg' => 4.0,
             'cognitive.sum' => 40.0,
-            'symbolMethodCount' => 10,
+            AggregationMeta::SYMBOL_METHOD_COUNT => 10,
             'npath.avg' => 5.0,
             'tcc.avg' => 0.5,
             'lcom.avg' => 3.0,
@@ -499,7 +500,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
             'ccn.avg' => 20.0,          // average WMC (per-class) - NOT per-method
             'cognitive.sum' => 30.0,
             'cognitive.avg' => 15.0,    // average per-class cognitive sum
-            'symbolMethodCount' => 6,    // total method count
+            AggregationMeta::SYMBOL_METHOD_COUNT => 6,    // total method count
             'npath.avg' => 10.0,
         ]), '', null);
 

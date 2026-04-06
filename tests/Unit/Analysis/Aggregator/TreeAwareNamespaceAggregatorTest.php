@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Aggregator\TreeAwareNamespaceAggregator;
 use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
+use Qualimetrix\Core\Metric\AggregationMeta;
 use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricDefinition;
@@ -179,7 +180,7 @@ final class TreeAwareNamespaceAggregatorTest extends TestCase
         // CCN sum: 3 + 7 + 5 = 15
         self::assertEquals(15, $appMetrics->get('ccn.sum'));
         // Symbol counts: 3 classes total (Bootstrap, Kernel, UserService)
-        self::assertSame(3, $appMetrics->get('symbolClassCount'));
+        self::assertSame(3, $appMetrics->get(AggregationMeta::SYMBOL_CLASS_COUNT));
     }
 
     #[Test]
@@ -294,9 +295,9 @@ final class TreeAwareNamespaceAggregatorTest extends TestCase
         $appMetrics = $repository->get(SymbolPath::forNamespace('App'));
 
         // 2 classes
-        self::assertSame(2, $appMetrics->get('symbolClassCount'));
+        self::assertSame(2, $appMetrics->get(AggregationMeta::SYMBOL_CLASS_COUNT));
         // 1 method
-        self::assertSame(1, $appMetrics->get('symbolMethodCount'));
+        self::assertSame(1, $appMetrics->get(AggregationMeta::SYMBOL_METHOD_COUNT));
     }
 
     /**

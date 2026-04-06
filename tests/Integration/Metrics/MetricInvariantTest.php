@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Pipeline\AnalysisPipelineInterface;
+use Qualimetrix\Core\Metric\AggregationMeta;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Namespace_\NamespaceTree;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -289,7 +290,7 @@ final class MetricInvariantTest extends TestCase
             }
 
             $nsBag = self::$repository->get(SymbolPath::forNamespace($ns));
-            $symbolMethodCount = $nsBag->get('symbolMethodCount');
+            $symbolMethodCount = $nsBag->get(AggregationMeta::SYMBOL_METHOD_COUNT);
 
             if ($symbolMethodCount === null) {
                 continue;
@@ -353,7 +354,7 @@ final class MetricInvariantTest extends TestCase
             }
 
             $nsBag = self::$repository->get(SymbolPath::forNamespace($ns));
-            $symbolClassCount = $nsBag->get('symbolClassCount');
+            $symbolClassCount = $nsBag->get(AggregationMeta::SYMBOL_CLASS_COUNT);
 
             if ($symbolClassCount === null) {
                 continue;
@@ -406,7 +407,7 @@ final class MetricInvariantTest extends TestCase
     public function testProjectSymbolCountEqualsLeafNsTotal(): void
     {
         $projectBag = self::$repository->get(SymbolPath::forProject());
-        $projectSymbolClassCount = $projectBag->get('symbolClassCount');
+        $projectSymbolClassCount = $projectBag->get(AggregationMeta::SYMBOL_CLASS_COUNT);
         self::assertNotNull($projectSymbolClassCount, 'Project symbolClassCount must exist');
 
         // Count actual Class_ symbols in the repository
@@ -426,7 +427,7 @@ final class MetricInvariantTest extends TestCase
         // Each leaf namespace's symbolClassCount should equal its direct Class_ symbols only.
         foreach (self::$namespaceTree->getLeaves() as $leafNs) {
             $leafBag = self::$repository->get(SymbolPath::forNamespace($leafNs));
-            $leafClassCount = $leafBag->get('symbolClassCount');
+            $leafClassCount = $leafBag->get(AggregationMeta::SYMBOL_CLASS_COUNT);
 
             if ($leafClassCount === null) {
                 continue;

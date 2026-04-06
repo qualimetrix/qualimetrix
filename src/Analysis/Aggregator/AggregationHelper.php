@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Aggregator;
 
+use Qualimetrix\Core\Metric\AggregationMeta;
 use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricCollectorInterface;
@@ -150,8 +151,8 @@ final class AggregationHelper
         }
 
         return $bag
-            ->with('symbolMethodCount', $methodCount)
-            ->with('symbolClassCount', $classCount);
+            ->with(AggregationMeta::SYMBOL_METHOD_COUNT, $methodCount)
+            ->with(AggregationMeta::SYMBOL_CLASS_COUNT, $classCount);
     }
 
     /**
