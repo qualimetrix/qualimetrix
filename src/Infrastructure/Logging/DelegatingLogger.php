@@ -27,6 +27,7 @@ final class DelegatingLogger extends AbstractLogger
      * @param string|Stringable $message Log message
      * @param array<string, mixed> $context Additional context
      */
+    // @phpstan-ignore-next-line method.childParameterType
     public function log($level, string|Stringable $message, array $context = []): void
     {
         $this->loggerHolder->getLogger()->log($level, $message, $context);

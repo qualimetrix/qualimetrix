@@ -71,7 +71,7 @@ final class TypeDependencyHelper
                 $context->addDependency(
                     $context->getResolver()->resolve($attr->name),
                     DependencyType::Attribute,
-                    $attr->getStartLine() ?: $fallbackLine,
+                    $attr->getStartLine() !== 0 ? $attr->getStartLine() : $fallbackLine,
                 );
             }
         }

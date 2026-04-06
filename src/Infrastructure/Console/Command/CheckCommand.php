@@ -218,7 +218,8 @@ final class CheckCommand extends Command
     private function resolveConfiguration(InputInterface $input): ResolvedConfiguration
     {
         $configPath = $input->getOption('config');
-        $workingDirectory = getcwd() ?: '.';
+        $cwd = getcwd();
+        $workingDirectory = $cwd !== false ? $cwd : '.';
 
         $context = new ConfigurationContext(
             $input,
@@ -234,7 +235,7 @@ final class CheckCommand extends Command
      */
     private function clearCacheIfRequested(InputInterface $input, OutputInterface $output): void
     {
-        if ($input->getOption('clear-cache')) {
+        if ($input->getOption('clear-cache') === true) {
             $cache = $this->cacheFactory->create();
             $cache->clear();
             $output->writeln('<info>Cache cleared.</info>');

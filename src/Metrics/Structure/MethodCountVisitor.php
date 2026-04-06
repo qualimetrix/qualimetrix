@@ -466,8 +466,9 @@ final class MethodCountVisitor extends NodeVisitorAbstract implements Resettable
         // Check the short name (last segment) against known exception base classes.
         // This catches both direct extends (\Exception) and project-specific exceptions
         // that extend framework exceptions (e.g., App\Exception\BaseException extends \RuntimeException).
-        $shortName = str_contains($parentFqn, '\\')
-            ? substr($parentFqn, strrpos($parentFqn, '\\') + 1)
+        $lastBackslash = strrpos($parentFqn, '\\');
+        $shortName = $lastBackslash !== false
+            ? substr($parentFqn, $lastBackslash + 1)
             : $parentFqn;
 
         return \in_array($shortName, self::EXCEPTION_BASE_CLASSES, true);

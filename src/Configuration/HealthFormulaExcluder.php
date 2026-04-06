@@ -139,7 +139,7 @@ final readonly class HealthFormulaExcluder
         $weights = [];
 
         // Match patterns like: (health__complexity ?? 75) * 0.30
-        if (preg_match_all('/\((\w+)\s*\?\?\s*\d+\)\s*\*\s*([\d.]+)/', $formula, $matches, \PREG_SET_ORDER)) {
+        if (preg_match_all('/\((\w+)\s*\?\?\s*\d+\)\s*\*\s*([\d.]+)/', $formula, $matches, \PREG_SET_ORDER) !== 0) {
             foreach ($matches as $match) {
                 $varName = str_replace('__', '.', $match[1]);
                 $weights[$varName] = (float) $match[2];

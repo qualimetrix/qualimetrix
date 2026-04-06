@@ -27,7 +27,7 @@ final class DotExporter implements GraphExporterInterface
     {
         $classes = $this->filterClasses($graph->getAllClasses());
 
-        if (empty($classes)) {
+        if ($classes === []) {
             return $this->exportEmpty();
         }
 
@@ -115,7 +115,7 @@ final class DotExporter implements GraphExporterInterface
         $clusterIndex = 0;
         foreach ($byNamespace as $namespace => $namespaceClasses) {
             $lines[] = \sprintf('    subgraph cluster_%d {', $clusterIndex++);
-            $lines[] = \sprintf('        label="%s";', $this->escape($namespace ?: 'Global'));
+            $lines[] = \sprintf('        label="%s";', $this->escape($namespace !== '' ? $namespace : 'Global'));
             $lines[] = '        style=filled;';
             $lines[] = '        fillcolor=lightyellow;';
             $lines[] = '';

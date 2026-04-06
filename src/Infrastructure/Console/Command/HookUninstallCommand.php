@@ -61,7 +61,7 @@ final class HookUninstallCommand extends Command
             return $removeResult;
         }
 
-        if ($input->getOption('restore-backup')) {
+        if ($input->getOption('restore-backup') === true) {
             return $this->restoreBackup($hookPath, $output);
         }
 

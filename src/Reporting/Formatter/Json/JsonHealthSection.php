@@ -39,9 +39,9 @@ final class JsonHealthSection
             $flatOverall = $report->metrics->get($nsPath)->get(HealthDimension::Overall->value);
             $result = $this->formatHealthScores($healthScores, $context);
             if ($result !== null && $flatOverall !== null) {
-                $recursiveScore = $result['overall']['score'] ?? null;
+                $recursiveScore = isset($result['overall']['score']) ? (float) $result['overall']['score'] : null;
                 $flatScore = $this->sanitizer->sanitizeFloat((float) $flatOverall);
-                if ($recursiveScore !== null && abs($recursiveScore - $flatScore) > 5.0) {
+                if ($recursiveScore !== null && $flatScore !== null && abs($recursiveScore - $flatScore) > 5.0) {
                     $result['overall']['scope'] = 'recursive';
                     $result['overall']['directScore'] = $flatScore;
                 }

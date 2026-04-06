@@ -86,7 +86,8 @@ final class FormatterContextFactory
             throw new InvalidArgumentException('Options --namespace and --class are mutually exclusive');
         }
 
-        $terminalWidth = (new \Symfony\Component\Console\Terminal())->getWidth() ?: 80;
+        $detectedWidth = (new \Symfony\Component\Console\Terminal())->getWidth();
+        $terminalWidth = $detectedWidth !== 0 ? $detectedWidth : 80;
         $detailLimit = $this->parseDetailOption($input, $namespaceFilter, $classFilter);
         $topIssuesLimit = $this->parseTopOption($input);
 

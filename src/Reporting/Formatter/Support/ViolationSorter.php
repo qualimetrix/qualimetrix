@@ -64,40 +64,40 @@ final class ViolationSorter
 
     private static function bySeverityFileLine(Violation $a, Violation $b): int
     {
-        return self::severityOrder($a->severity) <=> self::severityOrder($b->severity)
-            ?: $a->location->file <=> $b->location->file
-            ?: ($a->location->line ?? 0) <=> ($b->location->line ?? 0);
+        return ($cmp1 = self::severityOrder($a->severity) <=> self::severityOrder($b->severity)) !== 0 ? $cmp1
+            : (($cmp2 = $a->location->file <=> $b->location->file) !== 0 ? $cmp2
+            : (($a->location->line ?? 0) <=> ($b->location->line ?? 0)));
     }
 
     private static function byFileSeverityLine(Violation $a, Violation $b): int
     {
-        return $a->location->file <=> $b->location->file
-            ?: self::severityOrder($a->severity) <=> self::severityOrder($b->severity)
-            ?: ($a->location->line ?? 0) <=> ($b->location->line ?? 0);
+        return ($cmp1 = $a->location->file <=> $b->location->file) !== 0 ? $cmp1
+            : (($cmp2 = self::severityOrder($a->severity) <=> self::severityOrder($b->severity)) !== 0 ? $cmp2
+            : (($a->location->line ?? 0) <=> ($b->location->line ?? 0)));
     }
 
     private static function byRuleSeverityFileLine(Violation $a, Violation $b): int
     {
-        return $a->ruleName <=> $b->ruleName
-            ?: self::severityOrder($a->severity) <=> self::severityOrder($b->severity)
-            ?: $a->location->file <=> $b->location->file
-            ?: ($a->location->line ?? 0) <=> ($b->location->line ?? 0);
+        return ($cmp1 = $a->ruleName <=> $b->ruleName) !== 0 ? $cmp1
+            : (($cmp2 = self::severityOrder($a->severity) <=> self::severityOrder($b->severity)) !== 0 ? $cmp2
+            : (($cmp3 = $a->location->file <=> $b->location->file) !== 0 ? $cmp3
+            : (($a->location->line ?? 0) <=> ($b->location->line ?? 0))));
     }
 
     private static function byClassSeverityLine(Violation $a, Violation $b): int
     {
-        return self::extractClassName($a) <=> self::extractClassName($b)
-            ?: self::severityOrder($a->severity) <=> self::severityOrder($b->severity)
-            ?: $a->location->file <=> $b->location->file
-            ?: ($a->location->line ?? 0) <=> ($b->location->line ?? 0);
+        return ($cmp1 = self::extractClassName($a) <=> self::extractClassName($b)) !== 0 ? $cmp1
+            : (($cmp2 = self::severityOrder($a->severity) <=> self::severityOrder($b->severity)) !== 0 ? $cmp2
+            : (($cmp3 = $a->location->file <=> $b->location->file) !== 0 ? $cmp3
+            : (($a->location->line ?? 0) <=> ($b->location->line ?? 0))));
     }
 
     private static function byNamespaceSeverityLine(Violation $a, Violation $b): int
     {
-        return self::extractNamespaceName($a) <=> self::extractNamespaceName($b)
-            ?: self::severityOrder($a->severity) <=> self::severityOrder($b->severity)
-            ?: $a->location->file <=> $b->location->file
-            ?: ($a->location->line ?? 0) <=> ($b->location->line ?? 0);
+        return ($cmp1 = self::extractNamespaceName($a) <=> self::extractNamespaceName($b)) !== 0 ? $cmp1
+            : (($cmp2 = self::severityOrder($a->severity) <=> self::severityOrder($b->severity)) !== 0 ? $cmp2
+            : (($cmp3 = $a->location->file <=> $b->location->file) !== 0 ? $cmp3
+            : (($a->location->line ?? 0) <=> ($b->location->line ?? 0))));
     }
 
     /**

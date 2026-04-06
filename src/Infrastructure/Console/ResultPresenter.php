@@ -45,7 +45,7 @@ final class ResultPresenter
         bool $baselineGenerated = false,
         bool $scopedReporting = false,
     ): int {
-        $profiler = $this->profilerHolder->get();
+        $profiler = $this->profilerHolder->get(); // @phpstan-ignore staticMethod.dynamicCall
         $profiler->start('reporting', 'pipeline');
 
         // Use resolved config format (already merged: defaults -> config file -> CLI)

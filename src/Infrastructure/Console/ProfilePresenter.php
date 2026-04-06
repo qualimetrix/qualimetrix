@@ -24,7 +24,7 @@ final class ProfilePresenter
      */
     public function present(InputInterface $input, OutputInterface $output): void
     {
-        $profiler = $this->profilerHolder->get();
+        $profiler = $this->profilerHolder->get(); // @phpstan-ignore staticMethod.dynamicCall
 
         if (!$profiler->isEnabled()) {
             return;

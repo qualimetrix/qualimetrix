@@ -128,11 +128,11 @@ final class GitClient
     private function parseNameStatus(string $output): array
     {
         $files = [];
-        $lines = array_filter(explode("\n", trim($output)));
+        $lines = array_filter(explode("\n", trim($output)), static fn(string $line): bool => $line !== '');
 
         foreach ($lines as $line) {
             // Standard: single-letter status\tpath (A/M/D/C and others like T/U/X)
-            if (preg_match('/^([A-Z])\t(.+)$/', $line, $matches)) {
+            if (preg_match('/^([A-Z])\t(.+)$/', $line, $matches) === 1) {
                 $status = ChangeStatus::tryFrom($matches[1]);
                 // Skip unknown statuses (T=type change, U=unmerged, X=unknown, etc.)
                 if ($status === null) {
@@ -148,7 +148,7 @@ final class GitClient
             }
 
             // Rename: R<similarity>\told\tnew
-            if (preg_match('/^R\d*\t(.+)\t(.+)$/', $line, $matches)) {
+            if (preg_match('/^R\d*\t(.+)\t(.+)$/', $line, $matches) === 1) {
                 $files[] = new ChangedFile(
                     path: $matches[2],
                     status: ChangeStatus::Renamed,
@@ -159,7 +159,7 @@ final class GitClient
             }
 
             // Copy: C<similarity>\told\tnew
-            if (preg_match('/^C\d*\t(.+)\t(.+)$/', $line, $matches)) {
+            if (preg_match('/^C\d*\t(.+)\t(.+)$/', $line, $matches) === 1) {
                 $files[] = new ChangedFile(
                     path: $matches[2],
                     status: ChangeStatus::Copied,

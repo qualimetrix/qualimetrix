@@ -74,12 +74,12 @@ final class ComposerReader
     private function normalizePaths(string|array $pathOrPaths): array
     {
         if (\is_string($pathOrPaths)) {
-            return [rtrim($pathOrPaths, '/') ?: '.'];
+            return [(rtrim($pathOrPaths, '/') !== '' ? rtrim($pathOrPaths, '/') : '.')];
         }
 
         $result = [];
         foreach ($pathOrPaths as $path) {
-            $result[] = rtrim($path, '/') ?: '.';
+            $result[] = (rtrim($path, '/') !== '' ? rtrim($path, '/') : '.');
         }
 
         return $result;

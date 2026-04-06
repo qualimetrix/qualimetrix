@@ -57,7 +57,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
     public function analyze(string|array $paths, ?FileDiscoveryInterface $discovery = null): AnalysisResult
     {
         $startTime = microtime(true);
-        $profiler = $this->profilerHolder?->get();
+        $profiler = $this->profilerHolder?->get(); // @phpstan-ignore staticMethod.dynamicCall
 
         $profiler?->start('analysis', 'pipeline');
 

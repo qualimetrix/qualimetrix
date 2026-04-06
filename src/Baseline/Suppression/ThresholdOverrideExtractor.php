@@ -64,7 +64,7 @@ final readonly class ThresholdOverrideExtractor
         /** @var array<string, true> $seenRules track rule patterns to detect duplicates */
         $seenRules = [];
 
-        if (preg_match_all(self::PATTERN, $text, $matches, \PREG_SET_ORDER)) {
+        if (preg_match_all(self::PATTERN, $text, $matches, \PREG_SET_ORDER) !== 0) {
             foreach ($matches as $match) {
                 $rulePattern = $match[1];
                 $valueString = self::cleanTrailingDocblock($match[2]);
@@ -161,7 +161,7 @@ final readonly class ThresholdOverrideExtractor
         }
 
         // Try shorthand: just a number (sets both warning and error)
-        if (preg_match('/^(\d+(?:\.\d+)?)$/', $valueString, $match)) {
+        if (preg_match('/^(\d+(?:\.\d+)?)$/', $valueString, $match) === 1) {
             $value = self::parseNumber($match[1]);
 
             return [$value, $value];
@@ -171,11 +171,11 @@ final readonly class ThresholdOverrideExtractor
         $warning = null;
         $error = null;
 
-        if (preg_match('/warning=(\d+(?:\.\d+)?)/', $valueString, $match)) {
+        if (preg_match('/warning=(\d+(?:\.\d+)?)/', $valueString, $match) === 1) {
             $warning = self::parseNumber($match[1]);
         }
 
-        if (preg_match('/error=(\d+(?:\.\d+)?)/', $valueString, $match)) {
+        if (preg_match('/error=(\d+(?:\.\d+)?)/', $valueString, $match) === 1) {
             $error = self::parseNumber($match[1]);
         }
 

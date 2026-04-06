@@ -254,8 +254,8 @@ final readonly class SummaryEnricher
         }
 
         // Sort by score ascending (worst first), with stable secondary sort by canonical path
-        usort($candidates, static fn(array $a, array $b): int => $a['score'] <=> $b['score']
-                ?: $a['info']->symbolPath->toCanonical() <=> $b['info']->symbolPath->toCanonical());
+        usort($candidates, static fn(array $a, array $b): int => ($a['score'] <=> $b['score']) !== 0 ? ($a['score'] <=> $b['score'])
+                : ($a['info']->symbolPath->toCanonical() <=> $b['info']->symbolPath->toCanonical()));
 
         $violationCounts = $this->countViolationsPerSymbol($report->violations, $symbolType, $tree);
 

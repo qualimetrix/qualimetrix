@@ -54,9 +54,9 @@ final class JsonViolationSection
                 return $exceedOrder;
             }
 
-            return ($a->location->file <=> $b->location->file)
-                ?: ($a->location->line <=> $b->location->line)
-                ?: ($a->violationCode <=> $b->violationCode);
+            return (($cmp1 = $a->location->file <=> $b->location->file) !== 0 ? $cmp1
+                : (($cmp2 = $a->location->line <=> $b->location->line) !== 0 ? $cmp2
+                : ($a->violationCode <=> $b->violationCode)));
         });
 
         return $violations;

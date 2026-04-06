@@ -72,7 +72,7 @@ final readonly class ContributorRanker
                 $value = $classMetrics->get($input['classKey']);
 
                 if ($value !== null) {
-                    $metricValues[$input['classKey']] = \is_float($value) ? $value : (int) $value;
+                    $metricValues[$input['classKey']] = $value;
                 }
             }
 

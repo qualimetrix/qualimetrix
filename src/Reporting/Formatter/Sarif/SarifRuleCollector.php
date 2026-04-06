@@ -87,7 +87,7 @@ final class SarifRuleCollector
     public function formatRuleName(string $ruleName): string
     {
         // Convert kebab-case and dot-separated names to words
-        $words = preg_split('/[-.]/', $ruleName) ?: [$ruleName];
+        $words = (preg_split('/[-.]/', $ruleName) !== false ? preg_split('/[-.]/', $ruleName) : [$ruleName]);
         $words = array_map('ucfirst', $words);
 
         return implode(' ', $words);

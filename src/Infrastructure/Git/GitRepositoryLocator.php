@@ -24,9 +24,12 @@ final class GitRepositoryLocator
      */
     public function findGitDir(?string $workingDir = null): ?string
     {
-        $workingDir ??= getcwd() ?: null;
         if ($workingDir === null) {
-            return null;
+            $cwd = getcwd();
+            if ($cwd === false) {
+                return null;
+            }
+            $workingDir = $cwd;
         }
 
         return $this->findViaGitCommand($workingDir)

@@ -401,7 +401,7 @@ final readonly class AnalysisConfiguration
         }
 
         // Validate format: -1, or digits optionally followed by K/M/G
-        if (!preg_match('/\A(?:-1|[1-9]\d*[KMGkmg]?)\z/', $value)) {
+        if (preg_match('/\A(?:-1|[1-9]\d*[KMGkmg]?)\z/', $value) !== 1) {
             throw new InvalidArgumentException(\sprintf(
                 'Invalid value "%s" for "%s". Expected: -1 (unlimited), integer bytes, or integer with K/M/G suffix (e.g., 512M, 1G)',
                 $value,

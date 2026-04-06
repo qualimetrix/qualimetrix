@@ -80,7 +80,8 @@ final class Psr4NamespaceDetector implements NamespaceDetectorInterface
             return;
         }
 
-        $this->baseDir = \dirname(realpath($composerJsonPath) ?: $composerJsonPath);
+        $resolved = realpath($composerJsonPath);
+        $this->baseDir = \dirname($resolved !== false ? $resolved : $composerJsonPath);
 
         $psr4 = [];
 

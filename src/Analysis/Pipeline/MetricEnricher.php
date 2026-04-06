@@ -81,7 +81,7 @@ final class MetricEnricher
         array $files,
         int $filesAnalyzed,
     ): EnrichmentResult {
-        $profiler = $this->profilerHolder?->get();
+        $profiler = $this->profilerHolder?->get(); // @phpstan-ignore staticMethod.dynamicCall
         $config = $this->configurationProvider->getConfiguration();
 
         // Phase 3: Aggregation (regular + derived collector definitions)

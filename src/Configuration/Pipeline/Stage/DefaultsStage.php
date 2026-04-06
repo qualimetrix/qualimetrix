@@ -37,7 +37,7 @@ final class DefaultsStage implements ConfigurationStageInterface
             ConfigSchema::CACHE_ENABLED => true,
             ConfigSchema::FORMAT => AnalysisConfiguration::DEFAULT_FORMAT,
             ConfigSchema::NAMESPACE_STRATEGY => AnalysisConfiguration::DEFAULT_NAMESPACE_STRATEGY,
-            ConfigSchema::PROJECT_ROOT => realpath($context->workingDirectory) ?: $context->workingDirectory,
+            ConfigSchema::PROJECT_ROOT => (realpath($context->workingDirectory) !== false ? realpath($context->workingDirectory) : $context->workingDirectory),
         ]);
     }
 }

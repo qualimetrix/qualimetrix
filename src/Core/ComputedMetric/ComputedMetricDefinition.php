@@ -85,7 +85,7 @@ final readonly class ComputedMetricDefinition
                 // First segment is prefix -- already validated above
                 continue;
             }
-            if (!preg_match('/^[a-zA-Z][a-zA-Z0-9_]*$/', $segment)) {
+            if (preg_match('/^[a-zA-Z][a-zA-Z0-9_]*$/', $segment) !== 1) {
                 throw new InvalidArgumentException(
                     \sprintf(
                         'Computed metric name segment "%s" in "%s" must match [a-zA-Z][a-zA-Z0-9_]*',

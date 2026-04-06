@@ -209,8 +209,8 @@ final readonly class NamespaceDrillDown
             );
         }
 
-        usort($offenders, static fn(WorstOffender $a, WorstOffender $b): int => $a->healthOverall <=> $b->healthOverall
-                ?: $a->symbolPath->toCanonical() <=> $b->symbolPath->toCanonical());
+        usort($offenders, static fn(WorstOffender $a, WorstOffender $b): int => ($a->healthOverall <=> $b->healthOverall) !== 0 ? ($a->healthOverall <=> $b->healthOverall)
+                : ($a->symbolPath->toCanonical() <=> $b->symbolPath->toCanonical()));
 
         return $offenders;
     }
