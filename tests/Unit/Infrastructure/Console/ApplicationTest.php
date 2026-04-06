@@ -61,8 +61,8 @@ final class ApplicationTest extends TestCase
         $app = new Application();
         $app->setAutoExit(false);
 
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Invalid working directory');
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('Invalid working directory');
 
         $app->doRun(
             new ArrayInput(['--working-dir' => '/nonexistent/path/xyz']),

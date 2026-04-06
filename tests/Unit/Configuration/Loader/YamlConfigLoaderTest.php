@@ -109,8 +109,8 @@ YAML);
     {
         $path = $this->tempDir . '/nonexistent.yaml';
 
-        $this->expectException(ConfigLoadException::class);
-        $this->expectExceptionMessage('Configuration file not found');
+        self::expectException(ConfigLoadException::class);
+        self::expectExceptionMessage('Configuration file not found');
 
         $this->loader->load($path);
     }
@@ -125,8 +125,8 @@ rules:
       syntax: [
 YAML);
 
-        $this->expectException(ConfigLoadException::class);
-        $this->expectExceptionMessage('Failed to parse configuration file');
+        self::expectException(ConfigLoadException::class);
+        self::expectExceptionMessage('Failed to parse configuration file');
 
         $this->loader->load($path);
     }
@@ -136,8 +136,8 @@ YAML);
         $path = $this->tempDir . '/scalar.yaml';
         file_put_contents($path, 'just a string');
 
-        $this->expectException(ConfigLoadException::class);
-        $this->expectExceptionMessage('is not valid YAML format');
+        self::expectException(ConfigLoadException::class);
+        self::expectExceptionMessage('is not valid YAML format');
 
         $this->loader->load($path);
     }
@@ -169,9 +169,9 @@ unknown_key: some_value
 another_bad_key: true
 YAML);
 
-        $this->expectException(ConfigLoadException::class);
+        self::expectException(ConfigLoadException::class);
         // Error message should show original key names (snake_case), not camelCase
-        $this->expectExceptionMessage('"unknown_key", "another_bad_key"');
+        self::expectExceptionMessage('"unknown_key", "another_bad_key"');
 
         $this->loader->load($path);
     }
@@ -181,8 +181,8 @@ YAML);
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, 'rules: not_an_array');
 
-        $this->expectException(ConfigLoadException::class);
-        $this->expectExceptionMessage('"rules" must be an associative array');
+        self::expectException(ConfigLoadException::class);
+        self::expectExceptionMessage('"rules" must be an associative array');
 
         $this->loader->load($path);
     }
@@ -195,8 +195,8 @@ rules:
   complexity: "invalid string value"
 YAML);
 
-        $this->expectException(ConfigLoadException::class);
-        $this->expectExceptionMessage('Rule "complexity" configuration must be an array, boolean, or null');
+        self::expectException(ConfigLoadException::class);
+        self::expectExceptionMessage('Rule "complexity" configuration must be an array, boolean, or null');
 
         $this->loader->load($path);
     }
@@ -234,8 +234,8 @@ YAML);
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, 'cache: not_an_array');
 
-        $this->expectException(ConfigLoadException::class);
-        $this->expectExceptionMessage('"cache" must be an associative array');
+        self::expectException(ConfigLoadException::class);
+        self::expectExceptionMessage('"cache" must be an associative array');
 
         $this->loader->load($path);
     }
@@ -245,8 +245,8 @@ YAML);
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, 'namespace: not_an_array');
 
-        $this->expectException(ConfigLoadException::class);
-        $this->expectExceptionMessage('"namespace" must be an associative array');
+        self::expectException(ConfigLoadException::class);
+        self::expectExceptionMessage('"namespace" must be an associative array');
 
         $this->loader->load($path);
     }
@@ -256,8 +256,8 @@ YAML);
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, 'disabled_rules: not_a_list');
 
-        $this->expectException(ConfigLoadException::class);
-        $this->expectExceptionMessage('"disabled_rules" must be a list');
+        self::expectException(ConfigLoadException::class);
+        self::expectExceptionMessage('"disabled_rules" must be a list');
 
         $this->loader->load($path);
     }
@@ -302,8 +302,8 @@ YAML);
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, 'exclude_paths: not_a_list');
 
-        $this->expectException(ConfigLoadException::class);
-        $this->expectExceptionMessage('"exclude_paths" must be a list');
+        self::expectException(ConfigLoadException::class);
+        self::expectExceptionMessage('"exclude_paths" must be a list');
 
         $this->loader->load($path);
     }
@@ -480,8 +480,8 @@ cache:
   typo_key: something
 YAML);
 
-        $this->expectException(ConfigLoadException::class);
-        $this->expectExceptionMessage('Unknown key in "cache" section: "typo_key"');
+        self::expectException(ConfigLoadException::class);
+        self::expectExceptionMessage('Unknown key in "cache" section: "typo_key"');
 
         $this->loader->load($path);
     }
@@ -494,8 +494,8 @@ namespace:
   straetgy: psr4
 YAML);
 
-        $this->expectException(ConfigLoadException::class);
-        $this->expectExceptionMessage('did you mean "strategy"?');
+        self::expectException(ConfigLoadException::class);
+        self::expectExceptionMessage('did you mean "strategy"?');
 
         $this->loader->load($path);
     }
@@ -508,8 +508,8 @@ parallel:
   worker: 4
 YAML);
 
-        $this->expectException(ConfigLoadException::class);
-        $this->expectExceptionMessage('did you mean "workers"?');
+        self::expectException(ConfigLoadException::class);
+        self::expectExceptionMessage('did you mean "workers"?');
 
         $this->loader->load($path);
     }
@@ -522,8 +522,8 @@ cahce:
   enabled: true
 YAML);
 
-        $this->expectException(ConfigLoadException::class);
-        $this->expectExceptionMessage('did you mean "cache"?');
+        self::expectException(ConfigLoadException::class);
+        self::expectExceptionMessage('did you mean "cache"?');
 
         $this->loader->load($path);
     }
@@ -553,8 +553,8 @@ cache:
   baz: qux
 YAML);
 
-        $this->expectException(ConfigLoadException::class);
-        $this->expectExceptionMessage('Unknown keys in "cache" section');
+        self::expectException(ConfigLoadException::class);
+        self::expectExceptionMessage('Unknown keys in "cache" section');
 
         $this->loader->load($path);
     }

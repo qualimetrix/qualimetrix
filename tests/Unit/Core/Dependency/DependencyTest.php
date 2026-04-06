@@ -185,6 +185,6 @@ final class DependencyTest extends TestCase
 
         // This test verifies that Dependency is readonly
         // The readonly keyword ensures immutability at the language level
-        self::assertInstanceOf(Dependency::class, $dependency);
+        self::assertInstanceOf(Dependency::class, $dependency); // @phpstan-ignore staticMethod.alreadyNarrowedType
     }
 }

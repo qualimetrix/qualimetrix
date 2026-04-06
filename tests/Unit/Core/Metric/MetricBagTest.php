@@ -51,8 +51,8 @@ final class MetricBagTest extends TestCase
     {
         $bag = (new MetricBag())->with('loc', 100);
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Required metric "ccn" not found');
+        self::expectException(RuntimeException::class);
+        self::expectExceptionMessage('Required metric "ccn" not found');
 
         $bag->require('ccn');
     }
@@ -61,8 +61,8 @@ final class MetricBagTest extends TestCase
     {
         $bag = new MetricBag();
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('(empty)');
+        self::expectException(RuntimeException::class);
+        self::expectExceptionMessage('(empty)');
 
         $bag->require('anything');
     }
@@ -215,7 +215,7 @@ final class MetricBagTest extends TestCase
 
         $dataBag = $bag->dataBag();
 
-        self::assertInstanceOf(DataBag::class, $dataBag);
+        self::assertInstanceOf(DataBag::class, $dataBag); // @phpstan-ignore staticMethod.alreadyNarrowedType
         self::assertSame(1, $dataBag->count('key'));
     }
 

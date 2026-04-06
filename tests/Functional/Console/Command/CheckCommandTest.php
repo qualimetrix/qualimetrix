@@ -49,10 +49,10 @@ final class CheckCommandTest extends TestCase
         ]);
 
         // Assert success (exit code 0 - no violations)
-        $this->assertSame(0, $commandTester->getStatusCode());
+        self::assertSame(0, $commandTester->getStatusCode());
         $output = $commandTester->getDisplay();
         // Text format shows "0 error(s), 0 warning(s) in X file(s)"
-        $this->assertStringContainsString('0 error(s), 0 warning(s)', $output);
+        self::assertStringContainsString('0 error(s), 0 warning(s)', $output);
     }
 
     #[Test]
@@ -96,11 +96,11 @@ class ComplexClass {
         ]);
 
         // Assert warnings (exit code 1 or 2 - has warnings or errors)
-        $this->assertContains($commandTester->getStatusCode(), [1, 2]);
+        self::assertContains($commandTester->getStatusCode(), [1, 2]);
         $output = $commandTester->getDisplay();
         // Output format: "X error(s), Y warning(s) in Z file(s)"
-        $this->assertMatchesRegularExpression('/\d+ (error|warning)\(s\)/', $output);
-        $this->assertStringContainsString('ComplexClass', $output);
+        self::assertMatchesRegularExpression('/\d+ (error|warning)\(s\)/', $output);
+        self::assertStringContainsString('ComplexClass', $output);
     }
 
     #[Test]
@@ -120,16 +120,16 @@ class ComplexClass {
         ]);
 
         // Assert success
-        $this->assertSame(0, $commandTester->getStatusCode());
+        self::assertSame(0, $commandTester->getStatusCode());
         $output = $commandTester->getDisplay();
 
         // Verify JSON output
         $json = json_decode($output, true);
-        $this->assertIsArray($json);
+        self::assertIsArray($json);
         // JSON format uses summary structure with meta, health, worst offenders, and violations
-        $this->assertArrayHasKey('meta', $json);
-        $this->assertArrayHasKey('summary', $json);
-        $this->assertArrayHasKey('violations', $json);
+        self::assertArrayHasKey('meta', $json);
+        self::assertArrayHasKey('summary', $json);
+        self::assertArrayHasKey('violations', $json);
     }
 
     #[Test]
@@ -147,9 +147,9 @@ class ComplexClass {
         ]);
 
         // Assert config/input error (exit code 3)
-        $this->assertSame(3, $commandTester->getStatusCode());
+        self::assertSame(3, $commandTester->getStatusCode());
         $output = $commandTester->getDisplay();
-        $this->assertStringContainsString('does not exist', $output);
+        self::assertStringContainsString('does not exist', $output);
     }
 
     #[Test]
@@ -176,12 +176,12 @@ class ComplexClass {
         ]);
 
         // Assert success
-        $this->assertSame(0, $commandTester->getStatusCode());
+        self::assertSame(0, $commandTester->getStatusCode());
         $output = $commandTester->getDisplay();
         // Output shows "0 error(s), 0 warning(s) in 1 file(s)"
-        $this->assertStringContainsString('0 error(s), 0 warning(s)', $output);
+        self::assertStringContainsString('0 error(s), 0 warning(s)', $output);
         // Files analyzed should only be from src/
-        $this->assertStringContainsString('1 file', $output);
+        self::assertStringContainsString('1 file', $output);
     }
 
     #[Test]
@@ -219,10 +219,10 @@ class ComplexClass {
         ]);
 
         // Assert baseline was generated
-        $this->assertFileExists($baselinePath);
+        self::assertFileExists($baselinePath);
         $output = $commandTester->getDisplay();
-        $this->assertStringContainsString('Baseline', $output);
-        $this->assertStringContainsString('written to', $output);
+        self::assertStringContainsString('Baseline', $output);
+        self::assertStringContainsString('written to', $output);
     }
 
     #[Test]
@@ -269,7 +269,7 @@ class ComplexClass {
 
         // Assert no violations (all in baseline)
         $output = $commandTester2->getDisplay();
-        $this->assertSame(0, $commandTester2->getStatusCode(), "Baseline should suppress all violations. Output:\n" . $output);
+        self::assertSame(0, $commandTester2->getStatusCode(), "Baseline should suppress all violations. Output:\n" . $output);
     }
 
     #[Test]
@@ -286,10 +286,10 @@ class ComplexClass {
             '--disable-rule' => ['computed.health'],
         ]);
 
-        $this->assertSame(0, $commandTester->getStatusCode());
+        self::assertSame(0, $commandTester->getStatusCode());
         $output = $commandTester->getDisplay();
-        $this->assertStringContainsString('<?xml', $output);
-        $this->assertStringContainsString('<checkstyle', $output);
+        self::assertStringContainsString('<?xml', $output);
+        self::assertStringContainsString('<checkstyle', $output);
     }
 
     #[Test]
@@ -306,13 +306,13 @@ class ComplexClass {
             '--disable-rule' => ['computed.health'],
         ]);
 
-        $this->assertSame(0, $commandTester->getStatusCode());
+        self::assertSame(0, $commandTester->getStatusCode());
         $output = $commandTester->getDisplay();
         $json = json_decode($output, true);
-        $this->assertIsArray($json);
-        $this->assertArrayHasKey('$schema', $json);
-        $this->assertSame('2.1.0', $json['version']);
-        $this->assertArrayHasKey('runs', $json);
+        self::assertIsArray($json);
+        self::assertArrayHasKey('$schema', $json);
+        self::assertSame('2.1.0', $json['version']);
+        self::assertArrayHasKey('runs', $json);
     }
 
     #[Test]
@@ -329,11 +329,11 @@ class ComplexClass {
             '--disable-rule' => ['computed.health'],
         ]);
 
-        $this->assertSame(0, $commandTester->getStatusCode());
+        self::assertSame(0, $commandTester->getStatusCode());
         $output = $commandTester->getDisplay();
         // GitLab format outputs a JSON array (empty when no violations)
         $json = json_decode($output, true);
-        $this->assertIsArray($json);
+        self::assertIsArray($json);
     }
 
     #[Test]
@@ -350,9 +350,9 @@ class ComplexClass {
             '--disable-rule' => ['computed.health'],
         ]);
 
-        $this->assertSame(0, $commandTester->getStatusCode());
+        self::assertSame(0, $commandTester->getStatusCode());
         $output = $commandTester->getDisplay();
-        $this->assertStringContainsString('Health Report', $output);
+        self::assertStringContainsString('Health Report', $output);
     }
 
     #[Test]
@@ -369,10 +369,10 @@ class ComplexClass {
             '--disable-rule' => ['computed.health'],
         ]);
 
-        $this->assertSame(0, $commandTester->getStatusCode());
+        self::assertSame(0, $commandTester->getStatusCode());
         $output = $commandTester->getDisplay();
         // Summary format shows file count and violation summary
-        $this->assertStringContainsString('1 file', $output);
+        self::assertStringContainsString('1 file', $output);
     }
 
     #[Test]
@@ -391,7 +391,7 @@ class ComplexClass {
         ]);
 
         // No violations -> empty output, exit code 0
-        $this->assertSame(0, $commandTester->getStatusCode());
+        self::assertSame(0, $commandTester->getStatusCode());
     }
 
     #[Test]
@@ -426,10 +426,10 @@ class ComplexClass {
             '--no-progress' => true,
         ]);
 
-        $this->assertContains($commandTester->getStatusCode(), [1, 2]);
+        self::assertContains($commandTester->getStatusCode(), [1, 2]);
         $output = $commandTester->getDisplay();
         // GitHub Actions format uses ::warning or ::error prefix
-        $this->assertMatchesRegularExpression('/::(warning|error)\s/', $output);
+        self::assertMatchesRegularExpression('/::(warning|error)\s/', $output);
     }
 
     #[Test]
@@ -456,9 +456,9 @@ class SimpleClass {
         ]);
 
         $output = $commandTester->getDisplay();
-        $this->assertStringContainsString('Health Report', $output);
+        self::assertStringContainsString('Health Report', $output);
         // Health dimensions should be present
-        $this->assertMatchesRegularExpression('/Complexity|Cohesion|Coupling|Maintainability|Overall/i', $output);
+        self::assertMatchesRegularExpression('/Complexity|Cohesion|Coupling|Maintainability|Overall/i', $output);
     }
 
     /**
@@ -487,7 +487,7 @@ class SimpleClass {
             return;
         }
 
-        $files = array_diff(scandir($dir) ?: [], ['.', '..']);
+        $files = array_diff((scandir($dir) !== false ? scandir($dir) : []), ['.', '..']);
         foreach ($files as $file) {
             $path = $dir . '/' . $file;
             is_dir($path) ? $this->removeDirectory($path) : unlink($path);

@@ -95,7 +95,7 @@ final class NpathComplexityRuleTest extends TestCase
     {
         $rule = new NpathComplexityRule(new NpathComplexityOptions());
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([]);
 
@@ -113,7 +113,7 @@ final class NpathComplexityRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('npath', 250); // Above warning (200), below error (1000)
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$methodInfo]);
         $repository->method('get')
@@ -139,7 +139,7 @@ final class NpathComplexityRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('npath', 1200); // Above error (1000)
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$methodInfo]);
         $repository->method('get')
@@ -184,7 +184,7 @@ final class NpathComplexityRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('npath.max', 600); // Above warning (500), below error (1000)
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -213,7 +213,7 @@ final class NpathComplexityRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('npath.max', 1200); // Above error (1000)
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -247,7 +247,7 @@ final class NpathComplexityRuleTest extends TestCase
         $methodBag = (new MetricBag())->with('npath', 250); // Warning
         $classBag = (new MetricBag())->with('npath.max', 600); // Warning
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => match ($type) {
                 SymbolType::Method => [$methodInfo],
@@ -280,7 +280,7 @@ final class NpathComplexityRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('npath', 2_500_000); // > 1M
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$methodInfo]);
         $repository->method('get')
@@ -417,7 +417,7 @@ final class NpathComplexityRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('npath', $npath);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$methodInfo]);
         $repository->method('get')
@@ -498,7 +498,7 @@ final class NpathComplexityRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('npath', $npath);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$methodInfo]);
         $repository->method('get')
@@ -529,7 +529,7 @@ final class NpathComplexityRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('npath.max', $npath);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -587,7 +587,7 @@ final class NpathComplexityRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('npath.max', 2_500_000); // > 1M
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -620,7 +620,7 @@ final class NpathComplexityRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('npath', 1_500_000);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$methodInfo]);
         $repository->method('get')
@@ -653,7 +653,7 @@ final class NpathComplexityRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('npath.max', 1_500_000);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -690,7 +690,7 @@ final class NpathComplexityRuleTest extends TestCase
             ->withEntry('npath-complexity.factors', ['type' => 'match', 'line' => 31, 'factor' => 4])
             ->withEntry('npath-complexity.factors', ['type' => 'switch', 'line' => 20, 'factor' => 3]);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$methodInfo]);
         $repository->method('get')
@@ -717,7 +717,7 @@ final class NpathComplexityRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('npath', 1200);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$methodInfo]);
         $repository->method('get')

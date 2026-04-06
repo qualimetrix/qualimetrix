@@ -135,7 +135,7 @@ final class DataClassRuleTest extends TestCase
 
         $metricBag = $this->makeMetricBag(['methodCount' => 2]);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')->willReturn([$classInfo]);
         $repository->method('get')->willReturn($metricBag);
 
@@ -153,7 +153,7 @@ final class DataClassRuleTest extends TestCase
 
         $metricBag = $this->makeMetricBag(['isReadonly' => 1]);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')->willReturn([$classInfo]);
         $repository->method('get')->willReturn($metricBag);
 
@@ -171,7 +171,7 @@ final class DataClassRuleTest extends TestCase
 
         $metricBag = $this->makeMetricBag(['isReadonly' => 1]);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')->willReturn([$classInfo]);
         $repository->method('get')->willReturn($metricBag);
 
@@ -191,7 +191,7 @@ final class DataClassRuleTest extends TestCase
 
         $metricBag = $this->makeMetricBag(['isPromotedPropertiesOnly' => 1]);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')->willReturn([$classInfo]);
         $repository->method('get')->willReturn($metricBag);
 
@@ -209,7 +209,7 @@ final class DataClassRuleTest extends TestCase
 
         $metricBag = $this->makeMetricBag(['isPromotedPropertiesOnly' => 1]);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')->willReturn([$classInfo]);
         $repository->method('get')->willReturn($metricBag);
 
@@ -229,7 +229,7 @@ final class DataClassRuleTest extends TestCase
 
         $metricBag = $this->makeMetricBag(['isDataClass' => 1]);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')->willReturn([$classInfo]);
         $repository->method('get')->willReturn($metricBag);
 
@@ -247,7 +247,7 @@ final class DataClassRuleTest extends TestCase
 
         $metricBag = $this->makeMetricBag();
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')->willReturn([$classInfo]);
         $repository->method('get')->willReturn($metricBag);
 
@@ -274,7 +274,7 @@ final class DataClassRuleTest extends TestCase
 
         $metricBag = $this->makeMetricBag(['woc' => 50]);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')->willReturn([$classInfo]);
         $repository->method('get')->willReturn($metricBag);
 
@@ -292,7 +292,7 @@ final class DataClassRuleTest extends TestCase
 
         $metricBag = $this->makeMetricBag(['wmc' => 15]);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')->willReturn([$classInfo]);
         $repository->method('get')->willReturn($metricBag);
 
@@ -320,7 +320,7 @@ final class DataClassRuleTest extends TestCase
             ->with('isInterface', 0)
             ->with('isException', 0);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')->willReturn([$classInfo]);
         $repository->method('get')->willReturn($metricBag);
 
@@ -340,7 +340,7 @@ final class DataClassRuleTest extends TestCase
 
         $metricBag = $this->makeMetricBag(['isInterface' => 1]);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')->willReturn([$classInfo]);
         $repository->method('get')->willReturn($metricBag);
 
@@ -358,7 +358,7 @@ final class DataClassRuleTest extends TestCase
 
         $metricBag = $this->makeMetricBag(['isAbstract' => 1]);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')->willReturn([$classInfo]);
         $repository->method('get')->willReturn($metricBag);
 
@@ -376,7 +376,7 @@ final class DataClassRuleTest extends TestCase
 
         $metricBag = $this->makeMetricBag(['propertyCount' => 0]);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')->willReturn([$classInfo]);
         $repository->method('get')->willReturn($metricBag);
 
@@ -394,7 +394,7 @@ final class DataClassRuleTest extends TestCase
 
         $metricBag = $this->makeMetricBag(['isException' => 1]);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')->willReturn([$classInfo]);
         $repository->method('get')->willReturn($metricBag);
 
@@ -412,7 +412,7 @@ final class DataClassRuleTest extends TestCase
 
         $metricBag = $this->makeMetricBag(['isException' => 1]);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')->willReturn([$classInfo]);
         $repository->method('get')->willReturn($metricBag);
 

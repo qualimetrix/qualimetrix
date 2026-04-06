@@ -68,8 +68,8 @@ final class ThresholdParserTest extends TestCase
     #[Test]
     public function thresholdWithWarningThrowsException(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Cannot mix "threshold" with "warning"/"error"');
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('Cannot mix "threshold" with "warning"/"error"');
 
         ThresholdParser::parse(['threshold' => 15, 'warning' => 10], 'warning', 'error', 10, 20);
     }
@@ -77,7 +77,7 @@ final class ThresholdParserTest extends TestCase
     #[Test]
     public function thresholdWithErrorThrowsException(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        self::expectException(InvalidArgumentException::class);
 
         ThresholdParser::parse(['threshold' => 15, 'error' => 20], 'warning', 'error', 10, 20);
     }
@@ -85,7 +85,7 @@ final class ThresholdParserTest extends TestCase
     #[Test]
     public function thresholdWithLegacyWarningKeyThrowsException(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        self::expectException(InvalidArgumentException::class);
 
         ThresholdParser::parse(
             ['threshold' => 15, 'warningThreshold' => 10],
@@ -100,7 +100,7 @@ final class ThresholdParserTest extends TestCase
     #[Test]
     public function thresholdWithLegacyErrorKeyThrowsException(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        self::expectException(InvalidArgumentException::class);
 
         ThresholdParser::parse(
             ['threshold' => 15, 'errorThreshold' => 20],

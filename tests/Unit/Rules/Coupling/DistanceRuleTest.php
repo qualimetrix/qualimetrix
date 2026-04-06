@@ -89,7 +89,7 @@ final class DistanceRuleTest extends TestCase
     {
         $rule = new DistanceRule(new DistanceOptions(includeNamespaces: ['App'], minClassCount: 0));
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([]);
 
@@ -107,7 +107,7 @@ final class DistanceRuleTest extends TestCase
 
         $metricBag = new MetricBag();
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$nsInfo]);
         $repository->method('get')
@@ -131,7 +131,7 @@ final class DistanceRuleTest extends TestCase
             ->with('abstractness', 0.2)
             ->with('instability', 0.45);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$nsInfo]);
         $repository->method('get')
@@ -163,7 +163,7 @@ final class DistanceRuleTest extends TestCase
             ->with('abstractness', 0.1)
             ->with('instability', 0.3);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$nsInfo]);
         $repository->method('get')
@@ -190,7 +190,7 @@ final class DistanceRuleTest extends TestCase
             ->with('abstractness', 0.5)
             ->with('instability', 0.5);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$nsInfo]);
         $repository->method('get')
@@ -221,7 +221,7 @@ final class DistanceRuleTest extends TestCase
             ->with('abstractness', 0.0)
             ->with('instability', 0.45);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$nsInfo1, $nsInfo2]);
         $repository->method('get')
@@ -305,7 +305,7 @@ final class DistanceRuleTest extends TestCase
             ->with('abstractness', 0.0)
             ->with('instability', 0.0);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$nsInfo]);
         $repository->method('get')
@@ -351,7 +351,7 @@ final class DistanceRuleTest extends TestCase
             ->with('instability', 0.3)
             ->with('classCount.sum', 2);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$nsInfo]);
         $repository->method('get')
@@ -379,7 +379,7 @@ final class DistanceRuleTest extends TestCase
             ->with('instability', 0.3)
             ->with('classCount.sum', 3);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$nsInfo]);
         $repository->method('get')
@@ -407,7 +407,7 @@ final class DistanceRuleTest extends TestCase
             ->with('abstractness', 0.1)
             ->with('instability', 0.3);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$nsInfo]);
         $repository->method('get')
@@ -447,16 +447,16 @@ final class DistanceRuleTest extends TestCase
 
     public function testConstructorThrowsForInvalidOptions(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Expected');
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('Expected');
 
-        $invalidOptions = $this->createStub(\Qualimetrix\Core\Rule\RuleOptionsInterface::class);
+        $invalidOptions = self::createStub(\Qualimetrix\Core\Rule\RuleOptionsInterface::class);
         new DistanceRule($invalidOptions);
     }
 
     public function testAnalyzeLogsWarningWhenNoProjectNamespacesDetected(): void
     {
-        $resolver = $this->createStub(ProjectNamespaceResolverInterface::class);
+        $resolver = self::createStub(ProjectNamespaceResolverInterface::class);
         $resolver->method('isProjectNamespace')
             ->willReturn(false);
 
@@ -477,7 +477,7 @@ final class DistanceRuleTest extends TestCase
         $symbolPath = SymbolPath::forNamespace('Vendor\Package');
         $nsInfo = new SymbolInfo($symbolPath, 'vendor/package/src', null);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$nsInfo]);
 
@@ -507,7 +507,7 @@ final class DistanceRuleTest extends TestCase
             ->with('abstractness', 0.5)
             ->with('instability', 0.5);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$nsInfo]);
         $repository->method('get')
@@ -529,7 +529,7 @@ final class DistanceRuleTest extends TestCase
             $logger,
         );
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([]);
 
@@ -539,7 +539,7 @@ final class DistanceRuleTest extends TestCase
 
     public function testAnalyzeWarningIncludesRuleOptHint(): void
     {
-        $resolver = $this->createStub(ProjectNamespaceResolverInterface::class);
+        $resolver = self::createStub(ProjectNamespaceResolverInterface::class);
         $resolver->method('isProjectNamespace')
             ->willReturn(false);
 
@@ -563,7 +563,7 @@ final class DistanceRuleTest extends TestCase
         $nsPath2 = SymbolPath::forNamespace('Vendor\PackageB');
         $nsInfo2 = new SymbolInfo($nsPath2, 'vendor/b/src', null);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$nsInfo1, $nsInfo2]);
 

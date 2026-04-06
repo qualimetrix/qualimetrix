@@ -22,9 +22,9 @@ final class DelegatingLoggerTest extends TestCase
 
         $delegating->info('Test message');
 
-        $this->assertCount(1, $testLogger->records);
-        $this->assertSame('info', $testLogger->records[0]['level']);
-        $this->assertSame('Test message', $testLogger->records[0]['message']);
+        self::assertCount(1, $testLogger->records);
+        self::assertSame('info', $testLogger->records[0]['level']);
+        self::assertSame('Test message', $testLogger->records[0]['message']);
     }
 
     public function testDelegatesToMultipleLogLevels(): void
@@ -40,11 +40,11 @@ final class DelegatingLoggerTest extends TestCase
         $delegating->warning('Warning message');
         $delegating->error('Error message');
 
-        $this->assertCount(4, $testLogger->records);
-        $this->assertSame('debug', $testLogger->records[0]['level']);
-        $this->assertSame('info', $testLogger->records[1]['level']);
-        $this->assertSame('warning', $testLogger->records[2]['level']);
-        $this->assertSame('error', $testLogger->records[3]['level']);
+        self::assertCount(4, $testLogger->records);
+        self::assertSame('debug', $testLogger->records[0]['level']);
+        self::assertSame('info', $testLogger->records[1]['level']);
+        self::assertSame('warning', $testLogger->records[2]['level']);
+        self::assertSame('error', $testLogger->records[3]['level']);
     }
 
     public function testDelegatesToContextData(): void
@@ -57,8 +57,8 @@ final class DelegatingLoggerTest extends TestCase
 
         $delegating->info('Message with context', ['key' => 'value', 'count' => 42]);
 
-        $this->assertCount(1, $testLogger->records);
-        $this->assertSame(['key' => 'value', 'count' => 42], $testLogger->records[0]['context']);
+        self::assertCount(1, $testLogger->records);
+        self::assertSame(['key' => 'value', 'count' => 42], $testLogger->records[0]['context']);
     }
 
     public function testReactsToDynamicLoggerChange(): void
@@ -71,7 +71,7 @@ final class DelegatingLoggerTest extends TestCase
 
         // First message goes to first logger
         $delegating->info('First message');
-        $this->assertCount(1, $firstLogger->records);
+        self::assertCount(1, $firstLogger->records);
 
         // Change logger
         $secondLogger = new InMemoryLogger();
@@ -79,9 +79,9 @@ final class DelegatingLoggerTest extends TestCase
 
         // Second message goes to second logger
         $delegating->info('Second message');
-        $this->assertCount(1, $firstLogger->records);
-        $this->assertCount(1, $secondLogger->records);
-        $this->assertSame('Second message', $secondLogger->records[0]['message']);
+        self::assertCount(1, $firstLogger->records);
+        self::assertCount(1, $secondLogger->records);
+        self::assertSame('Second message', $secondLogger->records[0]['message']);
     }
 
     public function testDelegatesToNullLoggerInitially(): void
@@ -94,7 +94,7 @@ final class DelegatingLoggerTest extends TestCase
         $delegating->error('Error message');
 
         // No exception thrown = test passes
-        $this->expectNotToPerformAssertions();
+        self::expectNotToPerformAssertions();
     }
 
     public function testSupportsStringableMessages(): void
@@ -114,8 +114,8 @@ final class DelegatingLoggerTest extends TestCase
 
         $delegating->info($stringable);
 
-        $this->assertCount(1, $testLogger->records);
-        $this->assertSame('Stringable message', $testLogger->records[0]['message']);
+        self::assertCount(1, $testLogger->records);
+        self::assertSame('Stringable message', $testLogger->records[0]['message']);
     }
 
     public function testSupportsAllPsrLogLevels(): void
@@ -135,15 +135,15 @@ final class DelegatingLoggerTest extends TestCase
         $delegating->info('Info');
         $delegating->debug('Debug');
 
-        $this->assertCount(8, $testLogger->records);
-        $this->assertSame('emergency', $testLogger->records[0]['level']);
-        $this->assertSame('alert', $testLogger->records[1]['level']);
-        $this->assertSame('critical', $testLogger->records[2]['level']);
-        $this->assertSame('error', $testLogger->records[3]['level']);
-        $this->assertSame('warning', $testLogger->records[4]['level']);
-        $this->assertSame('notice', $testLogger->records[5]['level']);
-        $this->assertSame('info', $testLogger->records[6]['level']);
-        $this->assertSame('debug', $testLogger->records[7]['level']);
+        self::assertCount(8, $testLogger->records);
+        self::assertSame('emergency', $testLogger->records[0]['level']);
+        self::assertSame('alert', $testLogger->records[1]['level']);
+        self::assertSame('critical', $testLogger->records[2]['level']);
+        self::assertSame('error', $testLogger->records[3]['level']);
+        self::assertSame('warning', $testLogger->records[4]['level']);
+        self::assertSame('notice', $testLogger->records[5]['level']);
+        self::assertSame('info', $testLogger->records[6]['level']);
+        self::assertSame('debug', $testLogger->records[7]['level']);
     }
 }
 

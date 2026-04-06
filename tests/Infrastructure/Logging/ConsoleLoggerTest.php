@@ -20,8 +20,8 @@ final class ConsoleLoggerTest extends TestCase
         $logger->info('Test message');
 
         $content = $output->fetch();
-        $this->assertStringContainsString('Test message', $content);
-        $this->assertStringContainsString('[INFO]', $content);
+        self::assertStringContainsString('Test message', $content);
+        self::assertStringContainsString('[INFO]', $content);
     }
 
     public function testRespectsMinLevel(): void
@@ -33,8 +33,8 @@ final class ConsoleLoggerTest extends TestCase
         $logger->warning('Should appear');
 
         $content = $output->fetch();
-        $this->assertStringNotContainsString('Should not appear', $content);
-        $this->assertStringContainsString('Should appear', $content);
+        self::assertStringNotContainsString('Should not appear', $content);
+        self::assertStringContainsString('Should appear', $content);
     }
 
     public function testFormatsContext(): void
@@ -45,10 +45,10 @@ final class ConsoleLoggerTest extends TestCase
         $logger->info('Processing', ['file' => 'test.php', 'count' => 42]);
 
         $content = $output->fetch();
-        $this->assertStringContainsString('Processing', $content);
+        self::assertStringContainsString('Processing', $content);
         // Context is still appended as JSON
-        $this->assertStringContainsString('"file":"test.php"', $content);
-        $this->assertStringContainsString('"count":42', $content);
+        self::assertStringContainsString('"file":"test.php"', $content);
+        self::assertStringContainsString('"count":42', $content);
     }
 
     public function testInterpolatesPlaceholders(): void
@@ -59,9 +59,9 @@ final class ConsoleLoggerTest extends TestCase
         $logger->info('Processing {file} ({count} lines)', ['file' => 'test.php', 'count' => 42]);
 
         $content = $output->fetch();
-        $this->assertStringContainsString('Processing test.php (42 lines)', $content);
-        $this->assertStringNotContainsString('{file}', $content);
-        $this->assertStringNotContainsString('{count}', $content);
+        self::assertStringContainsString('Processing test.php (42 lines)', $content);
+        self::assertStringNotContainsString('{file}', $content);
+        self::assertStringNotContainsString('{count}', $content);
     }
 
     public function testDifferentLogLevels(): void
@@ -75,10 +75,10 @@ final class ConsoleLoggerTest extends TestCase
         $logger->error('Error message');
 
         $content = $output->fetch();
-        $this->assertStringContainsString('[DEBUG]', $content);
-        $this->assertStringContainsString('[INFO]', $content);
-        $this->assertStringContainsString('[WARNING]', $content);
-        $this->assertStringContainsString('[ERROR]', $content);
+        self::assertStringContainsString('[DEBUG]', $content);
+        self::assertStringContainsString('[INFO]', $content);
+        self::assertStringContainsString('[WARNING]', $content);
+        self::assertStringContainsString('[ERROR]', $content);
     }
 
     public function testRespectsVerbosityLevels(): void
@@ -92,7 +92,7 @@ final class ConsoleLoggerTest extends TestCase
         $logger->warning('Warning message');
 
         $content = $output->fetch();
-        $this->assertStringContainsString('[WARNING]', $content);
+        self::assertStringContainsString('[WARNING]', $content);
         // DEBUG and INFO should not appear at NORMAL verbosity
     }
 
@@ -104,10 +104,10 @@ final class ConsoleLoggerTest extends TestCase
         $logger->info('Message without context');
 
         $content = $output->fetch();
-        $this->assertStringContainsString('Message without context', $content);
+        self::assertStringContainsString('Message without context', $content);
         // Should not contain "[]" or "{}"
-        $this->assertStringNotContainsString('[]', $content);
-        $this->assertStringNotContainsString('{}', $content);
+        self::assertStringNotContainsString('[]', $content);
+        self::assertStringNotContainsString('{}', $content);
     }
 
     public function testTimestampIncluded(): void
@@ -119,6 +119,6 @@ final class ConsoleLoggerTest extends TestCase
 
         $content = $output->fetch();
         // Should contain timestamp pattern like [HH:MM:SS]
-        $this->assertMatchesRegularExpression('/\[\d{2}:\d{2}:\d{2}\]/', $content);
+        self::assertMatchesRegularExpression('/\[\d{2}:\d{2}:\d{2}\]/', $content);
     }
 }

@@ -137,7 +137,7 @@ final class PropertyCountRuleTest extends TestCase
             line: 1,
         );
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$symbolInfo]);
         $repository->method('get')
@@ -281,7 +281,7 @@ final class PropertyCountRuleTest extends TestCase
             line: 1,
         );
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$symbolInfo]);
         $repository->method('get')

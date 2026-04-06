@@ -57,12 +57,12 @@ final class HookUninstallCommandTest extends TestCase
         $commandTester->execute([]);
 
         // Assert success
-        $this->assertSame(0, $commandTester->getStatusCode());
+        self::assertSame(0, $commandTester->getStatusCode());
         $output = $commandTester->getDisplay();
-        $this->assertStringContainsString('Pre-commit hook removed', $output);
+        self::assertStringContainsString('Pre-commit hook removed', $output);
 
         // Verify hook was removed
-        $this->assertFileDoesNotExist($hookPath);
+        self::assertFileDoesNotExist($hookPath);
     }
 
     #[Test]
@@ -77,10 +77,10 @@ final class HookUninstallCommandTest extends TestCase
         $commandTester->execute([]);
 
         // Assert success
-        $this->assertSame(0, $commandTester->getStatusCode());
+        self::assertSame(0, $commandTester->getStatusCode());
         $output = $commandTester->getDisplay();
-        $this->assertStringContainsString('Pre-commit hook not found', $output);
-        $this->assertStringContainsString('Nothing to uninstall', $output);
+        self::assertStringContainsString('Pre-commit hook not found', $output);
+        self::assertStringContainsString('Nothing to uninstall', $output);
     }
 
     #[Test]
@@ -100,13 +100,13 @@ final class HookUninstallCommandTest extends TestCase
         $commandTester->execute([]);
 
         // Assert failure
-        $this->assertSame(1, $commandTester->getStatusCode());
+        self::assertSame(1, $commandTester->getStatusCode());
         $output = $commandTester->getDisplay();
-        $this->assertStringContainsString('not an Qualimetrix hook', $output);
-        $this->assertStringContainsString('Will not remove third-party hook', $output);
+        self::assertStringContainsString('not an Qualimetrix hook', $output);
+        self::assertStringContainsString('Will not remove third-party hook', $output);
 
         // Verify hook still exists
-        $this->assertFileExists($hookPath);
+        self::assertFileExists($hookPath);
     }
 
     #[Test]
@@ -130,19 +130,19 @@ final class HookUninstallCommandTest extends TestCase
         $commandTester->execute(['--restore-backup' => true]);
 
         // Assert success
-        $this->assertSame(0, $commandTester->getStatusCode());
+        self::assertSame(0, $commandTester->getStatusCode());
         $output = $commandTester->getDisplay();
-        $this->assertStringContainsString('Pre-commit hook removed', $output);
-        $this->assertStringContainsString('Backup restored', $output);
+        self::assertStringContainsString('Pre-commit hook removed', $output);
+        self::assertStringContainsString('Backup restored', $output);
 
         // Verify hook was restored from backup
-        $this->assertFileExists($hookPath);
+        self::assertFileExists($hookPath);
         $content = file_get_contents($hookPath);
-        $this->assertIsString($content);
-        $this->assertStringContainsString('Backup hook', $content);
+        self::assertIsString($content);
+        self::assertStringContainsString('Backup hook', $content);
 
         // Verify restored hook is executable
-        $this->assertTrue(is_executable($hookPath));
+        self::assertTrue(is_executable($hookPath));
     }
 
     #[Test]
@@ -162,10 +162,10 @@ final class HookUninstallCommandTest extends TestCase
         $commandTester->execute(['--restore-backup' => true]);
 
         // Assert success (hook removed successfully)
-        $this->assertSame(0, $commandTester->getStatusCode());
+        self::assertSame(0, $commandTester->getStatusCode());
         $output = $commandTester->getDisplay();
-        $this->assertStringContainsString('Pre-commit hook removed', $output);
-        $this->assertStringContainsString('No backup found to restore', $output);
+        self::assertStringContainsString('Pre-commit hook removed', $output);
+        self::assertStringContainsString('No backup found to restore', $output);
     }
 
     #[Test]
@@ -189,15 +189,15 @@ final class HookUninstallCommandTest extends TestCase
         $commandTester->execute([]); // Without --restore-backup flag
 
         // Assert success
-        $this->assertSame(0, $commandTester->getStatusCode());
+        self::assertSame(0, $commandTester->getStatusCode());
         $output = $commandTester->getDisplay();
-        $this->assertStringContainsString('Pre-commit hook removed', $output);
-        $this->assertStringContainsString('Backup file exists', $output);
-        $this->assertStringContainsString('Use --restore-backup to restore it', $output);
+        self::assertStringContainsString('Pre-commit hook removed', $output);
+        self::assertStringContainsString('Backup file exists', $output);
+        self::assertStringContainsString('Use --restore-backup to restore it', $output);
 
         // Verify hook was removed but backup still exists
-        $this->assertFileDoesNotExist($hookPath);
-        $this->assertFileExists($backupPath);
+        self::assertFileDoesNotExist($hookPath);
+        self::assertFileExists($backupPath);
     }
 
     #[Test]
@@ -215,9 +215,9 @@ final class HookUninstallCommandTest extends TestCase
         $commandTester->execute([]);
 
         // Assert failure
-        $this->assertSame(1, $commandTester->getStatusCode());
+        self::assertSame(1, $commandTester->getStatusCode());
         $output = $commandTester->getDisplay();
-        $this->assertStringContainsString('Not a git repository', $output);
+        self::assertStringContainsString('Not a git repository', $output);
     }
 
     /**
@@ -229,7 +229,7 @@ final class HookUninstallCommandTest extends TestCase
             return;
         }
 
-        $files = array_diff(scandir($dir) ?: [], ['.', '..']);
+        $files = array_diff((scandir($dir) !== false ? scandir($dir) : []), ['.', '..']);
         foreach ($files as $file) {
             $path = $dir . '/' . $file;
             is_dir($path) ? $this->removeDirectory($path) : unlink($path);

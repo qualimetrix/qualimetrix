@@ -162,8 +162,8 @@ final class ProfilerTest extends TestCase
 
     public function testExportThrowsExceptionForUnsupportedFormat(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Unsupported export format: invalid');
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('Unsupported export format: invalid');
 
         // @phpstan-ignore-next-line Testing invalid format
         $this->profiler->export('invalid');

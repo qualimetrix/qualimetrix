@@ -14,7 +14,7 @@ final class ProgressReporterHolderTest extends TestCase
     {
         $holder = new ProgressReporterHolder();
 
-        $this->assertInstanceOf(NullProgressReporter::class, $holder->getReporter());
+        self::assertInstanceOf(NullProgressReporter::class, $holder->getReporter());
     }
 
     public function testCanSetAndGetReporter(): void
@@ -24,7 +24,7 @@ final class ProgressReporterHolderTest extends TestCase
 
         $holder->setReporter($reporter);
 
-        $this->assertSame($reporter, $holder->getReporter());
+        self::assertSame($reporter, $holder->getReporter());
     }
 
     public function testCanReplaceReporter(): void
@@ -34,9 +34,9 @@ final class ProgressReporterHolderTest extends TestCase
         $reporter2 = new NullProgressReporter();
 
         $holder->setReporter($reporter1);
-        $this->assertSame($reporter1, $holder->getReporter());
+        self::assertSame($reporter1, $holder->getReporter());
 
         $holder->setReporter($reporter2);
-        $this->assertSame($reporter2, $holder->getReporter());
+        self::assertSame($reporter2, $holder->getReporter());
     }
 }

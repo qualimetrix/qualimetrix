@@ -70,8 +70,8 @@ final class RuleRegistryCompilerPassTest extends TestCase
 
         $pass = new RuleRegistryCompilerPass();
 
-        $this->expectException(LogicException::class);
-        $this->expectExceptionMessage('Duplicate rule NAME "complexity.cyclomatic"');
+        self::expectException(LogicException::class);
+        self::expectExceptionMessage('Duplicate rule NAME "complexity.cyclomatic"');
 
         $pass->process($container);
     }

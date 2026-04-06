@@ -65,7 +65,7 @@ final class UnreachableCodeRuleTest extends TestCase
 
     public function testConstructorRejectsWrongOptionsType(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        self::expectException(InvalidArgumentException::class);
 
         new UnreachableCodeRule(new class implements \Qualimetrix\Core\Rule\RuleOptionsInterface {
             public static function fromArray(array $config): static
@@ -106,7 +106,7 @@ final class UnreachableCodeRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('unreachableCode', 0);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Method ? [$methodInfo] : []);
         $repository->method('get')
@@ -128,7 +128,7 @@ final class UnreachableCodeRuleTest extends TestCase
             ->with('unreachableCode', 2)
             ->with('unreachableCode.firstLine', 15);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Method ? [$methodInfo] : []);
         $repository->method('get')
@@ -155,7 +155,7 @@ final class UnreachableCodeRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('unreachableCode', 1);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Method ? [$methodInfo] : []);
         $repository->method('get')

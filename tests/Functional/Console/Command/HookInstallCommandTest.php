@@ -60,16 +60,16 @@ final class HookInstallCommandTest extends TestCase
         $commandTester->execute([]);
 
         // Assert success
-        $this->assertSame(0, $commandTester->getStatusCode());
+        self::assertSame(0, $commandTester->getStatusCode());
         $output = $commandTester->getDisplay();
-        $this->assertStringContainsString('Pre-commit hook installed', $output);
+        self::assertStringContainsString('Pre-commit hook installed', $output);
 
         // Verify hook was created
         $hookPath = $this->gitDir . '/hooks/pre-commit';
-        $this->assertFileExists($hookPath);
+        self::assertFileExists($hookPath);
 
         // Verify it's a symlink
-        $this->assertTrue(is_link($hookPath));
+        self::assertTrue(is_link($hookPath));
     }
 
     #[Test]
@@ -88,10 +88,10 @@ final class HookInstallCommandTest extends TestCase
         $commandTester->execute([]);
 
         // Assert failure
-        $this->assertSame(1, $commandTester->getStatusCode());
+        self::assertSame(1, $commandTester->getStatusCode());
         $output = $commandTester->getDisplay();
-        $this->assertStringContainsString('Pre-commit hook already exists', $output);
-        $this->assertStringContainsString('Use --force to overwrite', $output);
+        self::assertStringContainsString('Pre-commit hook already exists', $output);
+        self::assertStringContainsString('Use --force to overwrite', $output);
     }
 
     #[Test]
@@ -110,19 +110,19 @@ final class HookInstallCommandTest extends TestCase
         $commandTester->execute(['--force' => true]);
 
         // Assert success
-        $this->assertSame(0, $commandTester->getStatusCode());
+        self::assertSame(0, $commandTester->getStatusCode());
         $output = $commandTester->getDisplay();
-        $this->assertStringContainsString('Pre-commit hook installed', $output);
-        $this->assertStringContainsString('backed up', $output);
+        self::assertStringContainsString('Pre-commit hook installed', $output);
+        self::assertStringContainsString('backed up', $output);
 
         // Verify backup was created
         $backupPath = $hookPath . '.backup';
-        $this->assertFileExists($backupPath);
+        self::assertFileExists($backupPath);
 
         // Verify old hook content in backup
         $backupContent = file_get_contents($backupPath);
-        $this->assertIsString($backupContent);
-        $this->assertStringContainsString('Old hook', $backupContent);
+        self::assertIsString($backupContent);
+        self::assertStringContainsString('Old hook', $backupContent);
     }
 
     #[Test]
@@ -140,9 +140,9 @@ final class HookInstallCommandTest extends TestCase
         $commandTester->execute([]);
 
         // Assert failure
-        $this->assertSame(1, $commandTester->getStatusCode());
+        self::assertSame(1, $commandTester->getStatusCode());
         $output = $commandTester->getDisplay();
-        $this->assertStringContainsString('Not a git repository', $output);
+        self::assertStringContainsString('Not a git repository', $output);
     }
 
     #[Test]
@@ -157,12 +157,12 @@ final class HookInstallCommandTest extends TestCase
         $commandTester->execute([]);
 
         // Assert success
-        $this->assertSame(0, $commandTester->getStatusCode());
+        self::assertSame(0, $commandTester->getStatusCode());
 
         // Verify hook is executable
         $hookPath = $this->gitDir . '/hooks/pre-commit';
-        $this->assertFileExists($hookPath);
-        $this->assertTrue(is_executable($hookPath));
+        self::assertFileExists($hookPath);
+        self::assertTrue(is_executable($hookPath));
     }
 
     /**
@@ -174,7 +174,7 @@ final class HookInstallCommandTest extends TestCase
             return;
         }
 
-        $files = array_diff(scandir($dir) ?: [], ['.', '..']);
+        $files = array_diff((scandir($dir) !== false ? scandir($dir) : []), ['.', '..']);
         foreach ($files as $file) {
             $path = $dir . '/' . $file;
             is_dir($path) ? $this->removeDirectory($path) : unlink($path);

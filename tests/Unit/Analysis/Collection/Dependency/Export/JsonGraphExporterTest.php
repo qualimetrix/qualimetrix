@@ -31,11 +31,11 @@ final class JsonGraphExporterTest extends TestCase
 
         $data = json_decode($json, true, 512, \JSON_THROW_ON_ERROR);
 
-        $this->assertIsArray($data);
-        $this->assertArrayHasKey('meta', $data);
-        $this->assertArrayHasKey('statistics', $data);
-        $this->assertArrayHasKey('nodes', $data);
-        $this->assertArrayHasKey('edges', $data);
+        self::assertIsArray($data);
+        self::assertArrayHasKey('meta', $data);
+        self::assertArrayHasKey('statistics', $data);
+        self::assertArrayHasKey('nodes', $data);
+        self::assertArrayHasKey('edges', $data);
     }
 
     public function testMetaSection(): void
@@ -44,9 +44,9 @@ final class JsonGraphExporterTest extends TestCase
         $exporter = new JsonGraphExporter();
         $data = $this->decode($exporter->export($graph));
 
-        $this->assertSame('1.0.0', $data['meta']['version']);
-        $this->assertSame('qmx', $data['meta']['package']);
-        $this->assertArrayHasKey('timestamp', $data['meta']);
+        self::assertSame('1.0.0', $data['meta']['version']);
+        self::assertSame('qmx', $data['meta']['package']);
+        self::assertArrayHasKey('timestamp', $data['meta']);
     }
 
     public function testStatisticsSection(): void
@@ -70,8 +70,8 @@ final class JsonGraphExporterTest extends TestCase
         $exporter = new JsonGraphExporter();
         $data = $this->decode($exporter->export($graph));
 
-        $this->assertSame(3, $data['statistics']['nodeCount']);
-        $this->assertSame(2, $data['statistics']['edgeCount']);
+        self::assertSame(3, $data['statistics']['nodeCount']);
+        self::assertSame(2, $data['statistics']['edgeCount']);
     }
 
     public function testNodesContainFqnAndNamespace(): void
@@ -89,13 +89,13 @@ final class JsonGraphExporterTest extends TestCase
         $exporter = new JsonGraphExporter();
         $data = $this->decode($exporter->export($graph));
 
-        $this->assertCount(2, $data['nodes']);
+        self::assertCount(2, $data['nodes']);
 
         // Nodes are sorted by FQN
-        $this->assertSame('App\\Repository\\UserRepository', $data['nodes'][0]['fqn']);
-        $this->assertSame('App\\Repository', $data['nodes'][0]['namespace']);
-        $this->assertSame('App\\Service\\UserService', $data['nodes'][1]['fqn']);
-        $this->assertSame('App\\Service', $data['nodes'][1]['namespace']);
+        self::assertSame('App\\Repository\\UserRepository', $data['nodes'][0]['fqn']);
+        self::assertSame('App\\Repository', $data['nodes'][0]['namespace']);
+        self::assertSame('App\\Service\\UserService', $data['nodes'][1]['fqn']);
+        self::assertSame('App\\Service', $data['nodes'][1]['namespace']);
     }
 
     public function testEdgesAreAggregated(): void
@@ -126,14 +126,14 @@ final class JsonGraphExporterTest extends TestCase
         $data = $this->decode($exporter->export($graph));
 
         // Should be aggregated into one edge
-        $this->assertSame(1, $data['statistics']['edgeCount']);
-        $this->assertCount(1, $data['edges']);
+        self::assertSame(1, $data['statistics']['edgeCount']);
+        self::assertCount(1, $data['edges']);
 
         $edge = $data['edges'][0];
-        $this->assertSame('App\\ServiceA', $edge['from']);
-        $this->assertSame('App\\ServiceB', $edge['to']);
-        $this->assertSame(['new', 'type_hint'], $edge['types']); // sorted alphabetically
-        $this->assertSame(3, $edge['count']);
+        self::assertSame('App\\ServiceA', $edge['from']);
+        self::assertSame('App\\ServiceB', $edge['to']);
+        self::assertSame(['new', 'type_hint'], $edge['types']); // sorted alphabetically
+        self::assertSame(3, $edge['count']);
     }
 
     public function testEdgesSortedByFromThenTo(): void
@@ -163,12 +163,12 @@ final class JsonGraphExporterTest extends TestCase
         $exporter = new JsonGraphExporter();
         $data = $this->decode($exporter->export($graph));
 
-        $this->assertSame('App\\A', $data['edges'][0]['from']);
-        $this->assertSame('App\\B', $data['edges'][0]['to']);
-        $this->assertSame('App\\A', $data['edges'][1]['from']);
-        $this->assertSame('App\\Z', $data['edges'][1]['to']);
-        $this->assertSame('App\\Z', $data['edges'][2]['from']);
-        $this->assertSame('App\\A', $data['edges'][2]['to']);
+        self::assertSame('App\\A', $data['edges'][0]['from']);
+        self::assertSame('App\\B', $data['edges'][0]['to']);
+        self::assertSame('App\\A', $data['edges'][1]['from']);
+        self::assertSame('App\\Z', $data['edges'][1]['to']);
+        self::assertSame('App\\Z', $data['edges'][2]['from']);
+        self::assertSame('App\\A', $data['edges'][2]['to']);
     }
 
     public function testEmptyGraph(): void
@@ -177,10 +177,10 @@ final class JsonGraphExporterTest extends TestCase
         $exporter = new JsonGraphExporter();
         $data = $this->decode($exporter->export($graph));
 
-        $this->assertSame(0, $data['statistics']['nodeCount']);
-        $this->assertSame(0, $data['statistics']['edgeCount']);
-        $this->assertSame([], $data['nodes']);
-        $this->assertSame([], $data['edges']);
+        self::assertSame(0, $data['statistics']['nodeCount']);
+        self::assertSame(0, $data['statistics']['edgeCount']);
+        self::assertSame([], $data['nodes']);
+        self::assertSame([], $data['edges']);
     }
 
     public function testFiltersIncludeNamespaces(): void
@@ -204,14 +204,14 @@ final class JsonGraphExporterTest extends TestCase
         $exporter = new JsonGraphExporter(includeNamespaces: ['App\\Service']);
         $data = $this->decode($exporter->export($graph));
 
-        $this->assertSame(2, $data['statistics']['nodeCount']);
+        self::assertSame(2, $data['statistics']['nodeCount']);
         $fqns = array_column($data['nodes'], 'fqn');
-        $this->assertContains('App\\Service\\Foo', $fqns);
-        $this->assertContains('App\\Service\\Bar', $fqns);
-        $this->assertNotContains('App\\Tests\\FooTest', $fqns);
+        self::assertContains('App\\Service\\Foo', $fqns);
+        self::assertContains('App\\Service\\Bar', $fqns);
+        self::assertNotContains('App\\Tests\\FooTest', $fqns);
 
         // Only edge within included namespace should be present
-        $this->assertSame(1, $data['statistics']['edgeCount']);
+        self::assertSame(1, $data['statistics']['edgeCount']);
     }
 
     public function testFiltersExcludeNamespaces(): void
@@ -236,8 +236,8 @@ final class JsonGraphExporterTest extends TestCase
         $data = $this->decode($exporter->export($graph));
 
         $fqns = array_column($data['nodes'], 'fqn');
-        $this->assertNotContains('App\\Tests\\FooTest', $fqns);
-        $this->assertSame(1, $data['statistics']['edgeCount']);
+        self::assertNotContains('App\\Tests\\FooTest', $fqns);
+        self::assertSame(1, $data['statistics']['edgeCount']);
     }
 
     public function testFiltersEdgesWhenNodesAreFiltered(): void
@@ -256,20 +256,20 @@ final class JsonGraphExporterTest extends TestCase
         $data = $this->decode($exporter->export($graph));
 
         // Edge should not appear because target node is filtered out
-        $this->assertSame(0, $data['statistics']['edgeCount']);
-        $this->assertSame([], $data['edges']);
+        self::assertSame(0, $data['statistics']['edgeCount']);
+        self::assertSame([], $data['edges']);
     }
 
     public function testGetFormat(): void
     {
         $exporter = new JsonGraphExporter();
-        $this->assertSame('json', $exporter->getFormat());
+        self::assertSame('json', $exporter->getFormat());
     }
 
     public function testGetFileExtension(): void
     {
         $exporter = new JsonGraphExporter();
-        $this->assertSame('json', $exporter->getFileExtension());
+        self::assertSame('json', $exporter->getFileExtension());
     }
 
     public function testAllDependencyTypesPreserved(): void
@@ -300,8 +300,8 @@ final class JsonGraphExporterTest extends TestCase
         $data = $this->decode($exporter->export($graph));
 
         $edge = $data['edges'][0];
-        $this->assertSame(['extends', 'implements', 'static_call'], $edge['types']);
-        $this->assertSame(3, $edge['count']);
+        self::assertSame(['extends', 'implements', 'static_call'], $edge['types']);
+        self::assertSame(3, $edge['count']);
     }
 
     public function testOutputIsPrettyPrintedJson(): void
@@ -311,10 +311,10 @@ final class JsonGraphExporterTest extends TestCase
         $json = $exporter->export($graph);
 
         // Pretty-printed JSON contains newlines and indentation
-        $this->assertStringContainsString("\n", $json);
-        $this->assertStringContainsString('    ', $json);
+        self::assertStringContainsString("\n", $json);
+        self::assertStringContainsString('    ', $json);
         // Ends with newline
-        $this->assertStringEndsWith("\n", $json);
+        self::assertStringEndsWith("\n", $json);
     }
 
     /**

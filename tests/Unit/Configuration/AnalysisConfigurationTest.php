@@ -269,8 +269,8 @@ final class AnalysisConfigurationTest extends TestCase
 
     public function testFromArrayRejectsInvalidCacheDir(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('cache.dir');
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('cache.dir');
 
         AnalysisConfiguration::fromArray([
             'cache' => ['dir' => 123],
@@ -279,8 +279,8 @@ final class AnalysisConfigurationTest extends TestCase
 
     public function testFromArrayRejectsNonBoolCacheEnabled(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('expected boolean');
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('expected boolean');
 
         AnalysisConfiguration::fromArray([
             'cache' => ['enabled' => 'yes'],
@@ -289,8 +289,8 @@ final class AnalysisConfigurationTest extends TestCase
 
     public function testFromArrayRejectsNonStringFormat(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('format');
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('format');
 
         AnalysisConfiguration::fromArray([
             'format' => 123,
@@ -299,8 +299,8 @@ final class AnalysisConfigurationTest extends TestCase
 
     public function testFromArrayRejectsInvalidNamespaceStrategy(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Allowed values: chain, psr4, tokenizer');
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('Allowed values: chain, psr4, tokenizer');
 
         AnalysisConfiguration::fromArray([
             'namespace' => ['strategy' => 'invalid'],
@@ -309,8 +309,8 @@ final class AnalysisConfigurationTest extends TestCase
 
     public function testFromArrayRejectsNegativeWorkers(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('must be non-negative');
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('must be non-negative');
 
         AnalysisConfiguration::fromArray([
             'parallel' => ['workers' => -5],
@@ -319,8 +319,8 @@ final class AnalysisConfigurationTest extends TestCase
 
     public function testFromArrayRejectsZeroAutoDepth(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('must be positive');
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('must be positive');
 
         AnalysisConfiguration::fromArray([
             'aggregation' => ['auto_depth' => 0],
@@ -329,8 +329,8 @@ final class AnalysisConfigurationTest extends TestCase
 
     public function testFromArrayRejectsNonArrayPrefixes(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('expected array');
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('expected array');
 
         AnalysisConfiguration::fromArray([
             'aggregation' => ['prefixes' => 'string'],
@@ -386,8 +386,8 @@ final class AnalysisConfigurationTest extends TestCase
 
     public function testFromArrayRejectsNonStringListElements(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('expected string, got int');
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('expected string, got int');
 
         AnalysisConfiguration::fromArray([
             ConfigSchema::EXCLUDE_PATHS => ['src/*', 123],
@@ -541,8 +541,8 @@ final class AnalysisConfigurationTest extends TestCase
 
     public function testFromArrayFailOnInvalidStringThrowsException(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Invalid value "invalid" for "fail_on"');
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('Invalid value "invalid" for "fail_on"');
 
         AnalysisConfiguration::fromArray(['fail_on' => 'invalid']);
     }
@@ -713,24 +713,24 @@ final class AnalysisConfigurationTest extends TestCase
 
     public function testFromArrayMemoryLimitInvalidStringThrowsException(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Invalid value "banana" for "memory_limit"');
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('Invalid value "banana" for "memory_limit"');
 
         AnalysisConfiguration::fromArray(['memory_limit' => 'banana']);
     }
 
     public function testFromArrayMemoryLimitInvalidNegativeThrowsException(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Invalid value "-2" for "memory_limit"');
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('Invalid value "-2" for "memory_limit"');
 
         AnalysisConfiguration::fromArray(['memory_limit' => '-2']);
     }
 
     public function testFromArrayMemoryLimitZeroThrowsException(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Invalid value "0" for "memory_limit"');
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('Invalid value "0" for "memory_limit"');
 
         AnalysisConfiguration::fromArray(['memory_limit' => '0']);
     }

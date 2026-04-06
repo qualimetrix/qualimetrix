@@ -79,7 +79,7 @@ final class SymbolInfoTest extends TestCase
 
         // This test verifies that SymbolInfo is readonly
         // The readonly keyword ensures immutability at the language level
-        self::assertInstanceOf(SymbolInfo::class, $symbolInfo);
+        self::assertInstanceOf(SymbolInfo::class, $symbolInfo); // @phpstan-ignore staticMethod.alreadyNarrowedType
     }
 
     public function testConstructorWithLineOne(): void

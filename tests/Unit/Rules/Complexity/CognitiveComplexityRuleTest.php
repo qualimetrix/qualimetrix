@@ -95,7 +95,7 @@ final class CognitiveComplexityRuleTest extends TestCase
     {
         $rule = new CognitiveComplexityRule(new CognitiveComplexityOptions());
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([]);
 
@@ -113,7 +113,7 @@ final class CognitiveComplexityRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('cognitive', 20);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$methodInfo]);
         $repository->method('get')
@@ -139,7 +139,7 @@ final class CognitiveComplexityRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('cognitive', 35);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$methodInfo]);
         $repository->method('get')
@@ -180,7 +180,7 @@ final class CognitiveComplexityRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('cognitive.max', 35); // Above warning (30), below error (50)
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -205,7 +205,7 @@ final class CognitiveComplexityRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('cognitive.max', 55); // Above error (50)
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -234,7 +234,7 @@ final class CognitiveComplexityRuleTest extends TestCase
         $methodBag = (new MetricBag())->with('cognitive', 20); // Warning
         $classBag = (new MetricBag())->with('cognitive.max', 35); // Warning
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => match ($type) {
                 SymbolType::Method => [$methodInfo],
@@ -369,7 +369,7 @@ final class CognitiveComplexityRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('cognitive', $cognitive);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$methodInfo]);
         $repository->method('get')
@@ -432,7 +432,7 @@ final class CognitiveComplexityRuleTest extends TestCase
             ->withEntry('cognitive-complexity.increments', ['type' => '&&/||', 'line' => 22, 'points' => 1])
             ->withEntry('cognitive-complexity.increments', ['type' => 'else', 'line' => 30, 'points' => 1]);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$methodInfo]);
         $repository->method('get')
@@ -461,7 +461,7 @@ final class CognitiveComplexityRuleTest extends TestCase
             ->with('cognitive', 20)
             ->withEntry('cognitive-complexity.increments', ['type' => 'closure', 'line' => 15, 'points' => 3]);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$methodInfo]);
         $repository->method('get')
@@ -484,7 +484,7 @@ final class CognitiveComplexityRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('cognitive', 20);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$methodInfo]);
         $repository->method('get')

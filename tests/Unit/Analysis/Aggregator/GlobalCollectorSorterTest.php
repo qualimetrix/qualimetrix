@@ -152,8 +152,8 @@ final class GlobalCollectorSorterTest extends TestCase
         $a = $this->createCollector('a', ['metricB'], ['metricA']);
         $b = $this->createCollector('b', ['metricA'], ['metricB']);
 
-        $this->expectException(CyclicDependencyException::class);
-        $this->expectExceptionMessage('Cyclic dependency detected');
+        self::expectException(CyclicDependencyException::class);
+        self::expectExceptionMessage('Cyclic dependency detected');
 
         $this->sorter->sort([$a, $b]);
     }
@@ -166,7 +166,7 @@ final class GlobalCollectorSorterTest extends TestCase
         $b = $this->createCollector('b', ['metricA'], ['metricB']);
         $c = $this->createCollector('c', ['metricB'], ['metricC']);
 
-        $this->expectException(CyclicDependencyException::class);
+        self::expectException(CyclicDependencyException::class);
 
         $this->sorter->sort([$a, $b, $c]);
     }
@@ -224,7 +224,7 @@ final class GlobalCollectorSorterTest extends TestCase
      */
     private function createCollector(string $name, array $requires, array $provides): GlobalContextCollectorInterface
     {
-        $collector = $this->createStub(GlobalContextCollectorInterface::class);
+        $collector = self::createStub(GlobalContextCollectorInterface::class);
         $collector->method('getName')->willReturn($name);
         $collector->method('requires')->willReturn($requires);
         $collector->method('provides')->willReturn($provides);

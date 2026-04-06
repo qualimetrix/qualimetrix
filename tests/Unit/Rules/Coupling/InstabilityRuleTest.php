@@ -86,10 +86,10 @@ final class InstabilityRuleTest extends TestCase
 
     public function testConstructorThrowsForInvalidOptions(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Expected');
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('Expected');
 
-        $invalidOptions = $this->createStub(\Qualimetrix\Core\Rule\RuleOptionsInterface::class);
+        $invalidOptions = self::createStub(\Qualimetrix\Core\Rule\RuleOptionsInterface::class);
         new InstabilityRule($invalidOptions);
     }
 
@@ -115,7 +115,7 @@ final class InstabilityRuleTest extends TestCase
     {
         $rule = new InstabilityRule(new InstabilityOptions());
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([]);
 
@@ -133,7 +133,7 @@ final class InstabilityRuleTest extends TestCase
 
         $metricBag = new MetricBag();
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -157,7 +157,7 @@ final class InstabilityRuleTest extends TestCase
             ->with('ca', 2)
             ->with('ce', 12);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -188,7 +188,7 @@ final class InstabilityRuleTest extends TestCase
             ->with('ca', 1)
             ->with('ce', 32);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -215,7 +215,7 @@ final class InstabilityRuleTest extends TestCase
             ->with('ca', 0)
             ->with('ce', 5);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -244,7 +244,7 @@ final class InstabilityRuleTest extends TestCase
             ->with('ca', 0)
             ->with('ce', 5);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -274,7 +274,7 @@ final class InstabilityRuleTest extends TestCase
             ->with('ca', 1)
             ->with('ce', 11);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -303,7 +303,7 @@ final class InstabilityRuleTest extends TestCase
             ->with('ca', 2)
             ->with('ce', 12);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -348,7 +348,7 @@ final class InstabilityRuleTest extends TestCase
             ->with('ce', 22)
             ->with('classCount.sum', 5);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$nsInfo]);
         $repository->method('get')
@@ -378,7 +378,7 @@ final class InstabilityRuleTest extends TestCase
             ->with('ce', 49)
             ->with('classCount.sum', 5);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$nsInfo]);
         $repository->method('get')
@@ -406,7 +406,7 @@ final class InstabilityRuleTest extends TestCase
             ->with('ce', 10)
             ->with('classCount.sum', 5);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$nsInfo]);
         $repository->method('get')
@@ -436,7 +436,7 @@ final class InstabilityRuleTest extends TestCase
             ->with('ce', 10)
             ->with('classCount.sum', 5);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$nsInfo]);
         $repository->method('get')
@@ -467,7 +467,7 @@ final class InstabilityRuleTest extends TestCase
             ->with('ce', 11)
             ->with('classCount.sum', 5);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$nsInfo]);
         $repository->method('get')
@@ -495,7 +495,7 @@ final class InstabilityRuleTest extends TestCase
             ->with('ce', 49)
             ->with('classCount.sum', 1);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$nsInfo]);
         $repository->method('get')
@@ -521,7 +521,7 @@ final class InstabilityRuleTest extends TestCase
             ->with('ce', 49)
             ->with('classCount.sum', 5);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$nsInfo]);
         $repository->method('get')
@@ -556,7 +556,7 @@ final class InstabilityRuleTest extends TestCase
             ->with('ce', 22)
             ->with('classCount.sum', 5);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => match ($type) {
                 SymbolType::Class_ => [$classInfo],
@@ -647,8 +647,8 @@ final class InstabilityRuleTest extends TestCase
     {
         $options = new InstabilityOptions();
 
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Level method is not supported by InstabilityRule');
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('Level method is not supported by InstabilityRule');
 
         $options->forLevel(RuleLevel::Method);
     }
@@ -722,7 +722,7 @@ final class InstabilityRuleTest extends TestCase
             ->with('ca', 5)
             ->with('ce', 10);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')

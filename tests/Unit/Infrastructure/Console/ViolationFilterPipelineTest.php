@@ -290,7 +290,7 @@ final class ViolationFilterPipelineTest extends TestCase
         $config = new AnalysisConfiguration(
             excludePaths: ['generated'],
         );
-        $configProvider = $this->createStub(ConfigurationProviderInterface::class);
+        $configProvider = self::createStub(ConfigurationProviderInterface::class);
         $configProvider->method('getConfiguration')->willReturn($config);
 
         $pipeline = new ViolationFilterPipeline(
@@ -325,7 +325,7 @@ final class ViolationFilterPipelineTest extends TestCase
         $config = new AnalysisConfiguration(
             excludePaths: ['generated'],
         );
-        $configProvider = $this->createStub(ConfigurationProviderInterface::class);
+        $configProvider = self::createStub(ConfigurationProviderInterface::class);
         $configProvider->method('getConfiguration')->willReturn($config);
 
         $pipeline = new ViolationFilterPipeline(
@@ -384,7 +384,7 @@ final class ViolationFilterPipelineTest extends TestCase
         $config = new AnalysisConfiguration(
             excludeNamespaces: ['App\\Generated'],
         );
-        $configProvider = $this->createStub(ConfigurationProviderInterface::class);
+        $configProvider = self::createStub(ConfigurationProviderInterface::class);
         $configProvider->method('getConfiguration')->willReturn($config);
 
         $pipeline = new ViolationFilterPipeline(
@@ -419,7 +419,7 @@ final class ViolationFilterPipelineTest extends TestCase
         $config = new AnalysisConfiguration(
             excludeNamespaces: ['App\\Generated'],
         );
-        $configProvider = $this->createStub(ConfigurationProviderInterface::class);
+        $configProvider = self::createStub(ConfigurationProviderInterface::class);
         $configProvider->method('getConfiguration')->willReturn($config);
 
         $pipeline = new ViolationFilterPipeline(
@@ -459,7 +459,7 @@ final class ViolationFilterPipelineTest extends TestCase
         $config = new AnalysisConfiguration(
             excludeNamespaces: ['App'],
         );
-        $configProvider = $this->createStub(ConfigurationProviderInterface::class);
+        $configProvider = self::createStub(ConfigurationProviderInterface::class);
         $configProvider->method('getConfiguration')->willReturn($config);
 
         $pipeline = new ViolationFilterPipeline(
@@ -494,7 +494,7 @@ final class ViolationFilterPipelineTest extends TestCase
         $config = new AnalysisConfiguration(
             excludeNamespaces: ['App\\Generated'],
         );
-        $configProvider = $this->createStub(ConfigurationProviderInterface::class);
+        $configProvider = self::createStub(ConfigurationProviderInterface::class);
         $configProvider->method('getConfiguration')->willReturn($config);
 
         $pipeline = new ViolationFilterPipeline(
@@ -582,7 +582,7 @@ final class ViolationFilterPipelineTest extends TestCase
 
     private function createPipeline(): ViolationFilterPipeline
     {
-        $configProvider = $this->createStub(ConfigurationProviderInterface::class);
+        $configProvider = self::createStub(ConfigurationProviderInterface::class);
         $configProvider->method('getConfiguration')
             ->willReturn(new AnalysisConfiguration());
 

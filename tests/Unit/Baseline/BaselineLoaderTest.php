@@ -85,8 +85,8 @@ final class BaselineLoaderTest extends TestCase
         $path = $this->tempDir . '/baseline.json';
         file_put_contents($path, $json);
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('canonical key format changed');
+        self::expectException(RuntimeException::class);
+        self::expectExceptionMessage('canonical key format changed');
         $this->loader->load($path);
     }
 
@@ -111,16 +111,16 @@ final class BaselineLoaderTest extends TestCase
         $path = $this->tempDir . '/baseline.json';
         file_put_contents($path, $json);
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Unsupported baseline version: 2');
+        self::expectException(RuntimeException::class);
+        self::expectExceptionMessage('Unsupported baseline version: 2');
 
         $this->loader->load($path);
     }
 
     public function testThrowsWhenFileNotFound(): void
     {
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Baseline file not found');
+        self::expectException(RuntimeException::class);
+        self::expectExceptionMessage('Baseline file not found');
 
         $this->loader->load($this->tempDir . '/nonexistent.json');
     }
@@ -130,8 +130,8 @@ final class BaselineLoaderTest extends TestCase
         $path = $this->tempDir . '/invalid.json';
         file_put_contents($path, '{invalid json}');
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Invalid JSON in baseline file');
+        self::expectException(RuntimeException::class);
+        self::expectExceptionMessage('Invalid JSON in baseline file');
 
         $this->loader->load($path);
     }
@@ -148,8 +148,8 @@ final class BaselineLoaderTest extends TestCase
         $path = $this->tempDir . '/baseline.json';
         file_put_contents($path, $json);
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Baseline file must contain "version" field');
+        self::expectException(RuntimeException::class);
+        self::expectExceptionMessage('Baseline file must contain "version" field');
 
         $this->loader->load($path);
     }
@@ -167,8 +167,8 @@ final class BaselineLoaderTest extends TestCase
         $path = $this->tempDir . '/baseline.json';
         file_put_contents($path, $json);
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Unsupported baseline version: 99');
+        self::expectException(RuntimeException::class);
+        self::expectExceptionMessage('Unsupported baseline version: 99');
 
         $this->loader->load($path);
     }
@@ -185,8 +185,8 @@ final class BaselineLoaderTest extends TestCase
         $path = $this->tempDir . '/baseline.json';
         file_put_contents($path, $json);
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Baseline file must contain "generated" field');
+        self::expectException(RuntimeException::class);
+        self::expectExceptionMessage('Baseline file must contain "generated" field');
 
         $this->loader->load($path);
     }
@@ -203,8 +203,8 @@ final class BaselineLoaderTest extends TestCase
         $path = $this->tempDir . '/baseline.json';
         file_put_contents($path, $json);
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Baseline file must contain "violations" field');
+        self::expectException(RuntimeException::class);
+        self::expectExceptionMessage('Baseline file must contain "violations" field');
 
         $this->loader->load($path);
     }
@@ -223,8 +223,8 @@ final class BaselineLoaderTest extends TestCase
         $path = $this->tempDir . '/baseline.json';
         file_put_contents($path, $json);
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Invalid date in baseline "generated" field');
+        self::expectException(RuntimeException::class);
+        self::expectExceptionMessage('Invalid date in baseline "generated" field');
 
         $this->loader->load($path);
     }

@@ -43,7 +43,7 @@ final class CodeDuplicationRuleTest extends TestCase
     {
         $rule = new CodeDuplicationRule(new CodeDuplicationOptions(enabled: false));
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $context = new AnalysisContext(
             $repository,
             duplicateBlocks: [
@@ -63,7 +63,7 @@ final class CodeDuplicationRuleTest extends TestCase
     {
         $rule = new CodeDuplicationRule(new CodeDuplicationOptions());
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $context = new AnalysisContext($repository);
 
         self::assertSame([], $rule->analyze($context));
@@ -74,7 +74,7 @@ final class CodeDuplicationRuleTest extends TestCase
     {
         $rule = new CodeDuplicationRule(new CodeDuplicationOptions());
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $context = new AnalysisContext(
             $repository,
             duplicateBlocks: [
@@ -109,7 +109,7 @@ final class CodeDuplicationRuleTest extends TestCase
     {
         $rule = new CodeDuplicationRule(new CodeDuplicationOptions());
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $context = new AnalysisContext(
             $repository,
             duplicateBlocks: [
@@ -140,7 +140,7 @@ final class CodeDuplicationRuleTest extends TestCase
     {
         $rule = new CodeDuplicationRule(new CodeDuplicationOptions());
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $context = new AnalysisContext(
             $repository,
             duplicateBlocks: [
@@ -169,7 +169,7 @@ final class CodeDuplicationRuleTest extends TestCase
     {
         $rule = new CodeDuplicationRule(new CodeDuplicationOptions());
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $context = new AnalysisContext(
             $repository,
             duplicateBlocks: [
@@ -195,7 +195,7 @@ final class CodeDuplicationRuleTest extends TestCase
     {
         $rule = new CodeDuplicationRule(new CodeDuplicationOptions());
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $context = new AnalysisContext(
             $repository,
             duplicateBlocks: [
@@ -222,7 +222,7 @@ final class CodeDuplicationRuleTest extends TestCase
     {
         $rule = new CodeDuplicationRule(new CodeDuplicationOptions());
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $context = new AnalysisContext(
             $repository,
             duplicateBlocks: [

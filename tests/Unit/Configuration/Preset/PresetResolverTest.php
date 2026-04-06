@@ -67,9 +67,9 @@ final class PresetResolverTest extends TestCase
     #[Test]
     public function throwsOnUnknownBuiltInName(): void
     {
-        $this->expectException(ConfigLoadException::class);
-        $this->expectExceptionMessageMatches('/Unknown preset.*foo/');
-        $this->expectExceptionMessageMatches('/Available presets/');
+        self::expectException(ConfigLoadException::class);
+        self::expectExceptionMessageMatches('/Unknown preset.*foo/');
+        self::expectExceptionMessageMatches('/Available presets/');
 
         $this->resolver->resolve('foo', '/tmp');
     }
@@ -117,7 +117,7 @@ final class PresetResolverTest extends TestCase
     #[Test]
     public function throwsOnNonExistentFilePath(): void
     {
-        $this->expectException(ConfigLoadException::class);
+        self::expectException(ConfigLoadException::class);
 
         $this->resolver->resolve('./missing.yaml', '/tmp');
     }

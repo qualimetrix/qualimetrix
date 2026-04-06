@@ -68,7 +68,7 @@ final class GotoRuleTest extends TestCase
 
         $metricBag = new MetricBag();
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::File ? [$fileInfo] : []);
         $repository->method('get')
@@ -90,7 +90,7 @@ final class GotoRuleTest extends TestCase
         $metricBag = (new MetricBag())
             ->withEntry('codeSmell.goto', ['line' => 50]);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::File ? [$fileInfo] : []);
         $repository->method('get')

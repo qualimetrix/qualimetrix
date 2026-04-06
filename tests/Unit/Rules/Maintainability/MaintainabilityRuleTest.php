@@ -63,10 +63,10 @@ final class MaintainabilityRuleTest extends TestCase
 
     public function testThrowsExceptionForWrongOptionsType(): void
     {
-        $wrongOptions = $this->createStub(\Qualimetrix\Core\Rule\RuleOptionsInterface::class);
+        $wrongOptions = self::createStub(\Qualimetrix\Core\Rule\RuleOptionsInterface::class);
 
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Expected');
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('Expected');
 
         new MaintainabilityRule($wrongOptions);
     }
@@ -87,7 +87,7 @@ final class MaintainabilityRuleTest extends TestCase
     {
         $rule = new MaintainabilityRule(new MaintainabilityOptions());
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([]);
 
@@ -108,7 +108,7 @@ final class MaintainabilityRuleTest extends TestCase
             ->with('mi', 30.0)
             ->with('methodLoc', 15);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$methodInfo]);
         $repository->method('get')
@@ -136,7 +136,7 @@ final class MaintainabilityRuleTest extends TestCase
             ->with('mi', 15.0)
             ->with('methodLoc', 20);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$methodInfo]);
         $repository->method('get')
@@ -162,7 +162,7 @@ final class MaintainabilityRuleTest extends TestCase
             ->with('mi', 90.0)
             ->with('methodLoc', 12);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$methodInfo]);
         $repository->method('get')
@@ -185,7 +185,7 @@ final class MaintainabilityRuleTest extends TestCase
             ->with('mi', 25.67)
             ->with('methodLoc', 15);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$methodInfo]);
         $repository->method('get')
@@ -209,7 +209,7 @@ final class MaintainabilityRuleTest extends TestCase
         // No 'mi' metric
         $metricBag = new MetricBag();
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$methodInfo]);
         $repository->method('get')
@@ -273,7 +273,7 @@ final class MaintainabilityRuleTest extends TestCase
             ->with('mi', $mi)
             ->with('methodLoc', 15);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$methodInfo]);
         $repository->method('get')
@@ -351,7 +351,7 @@ final class MaintainabilityRuleTest extends TestCase
             ->with('mi', 15.0)
             ->with('methodLoc', 20);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$methodInfo]);
         $repository->method('get')
@@ -376,7 +376,7 @@ final class MaintainabilityRuleTest extends TestCase
             ->with('mi', 15.0)
             ->with('methodLoc', 20);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$methodInfo]);
         $repository->method('get')
@@ -402,7 +402,7 @@ final class MaintainabilityRuleTest extends TestCase
             ->with('mi', 15.0)
             ->with('methodLoc', 10);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$methodInfo]);
         $repository->method('get')
@@ -427,7 +427,7 @@ final class MaintainabilityRuleTest extends TestCase
             ->with('mi', 15.0)
             ->with('methodLoc', 20);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$methodInfo]);
         $repository->method('get')

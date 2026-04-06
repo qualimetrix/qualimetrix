@@ -136,7 +136,7 @@ final class TypeCoverageOptionsTest extends TestCase
     #[Test]
     public function fromArray_thresholdMixedWithWarningThrows(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        self::expectException(InvalidArgumentException::class);
 
         TypeCoverageOptions::fromArray([
             'param_threshold' => 90.0,

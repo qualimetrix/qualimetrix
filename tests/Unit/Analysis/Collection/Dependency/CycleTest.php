@@ -19,9 +19,9 @@ final class CycleTest extends TestCase
             path: $this->paths(['App\\A', 'App\\B', 'App\\C', 'App\\A']),
         );
 
-        $this->assertSame(3, $cycle->getSize());
-        $this->assertCount(3, $cycle->getClasses());
-        $this->assertCount(4, $cycle->getPath());
+        self::assertSame(3, $cycle->getSize());
+        self::assertCount(3, $cycle->getClasses());
+        self::assertCount(4, $cycle->getPath());
     }
 
     public function testToString(): void
@@ -31,7 +31,7 @@ final class CycleTest extends TestCase
             path: $this->paths(['App\\A', 'App\\B', 'App\\C', 'App\\A']),
         );
 
-        $this->assertSame(
+        self::assertSame(
             'App\\A → App\\B → App\\C → App\\A',
             $cycle->toString(),
         );
@@ -44,7 +44,7 @@ final class CycleTest extends TestCase
             path: $this->paths(['App\\Service\\UserService', 'App\\Service\\OrderService', 'App\\Service\\UserService']),
         );
 
-        $this->assertSame(
+        self::assertSame(
             'UserService → OrderService → UserService',
             $cycle->toShortString(),
         );
@@ -57,7 +57,7 @@ final class CycleTest extends TestCase
             path: $this->paths(['A', 'B', 'A']),
         );
 
-        $this->assertSame(
+        self::assertSame(
             'A → B → A',
             $cycle->toShortString(),
         );
@@ -70,9 +70,9 @@ final class CycleTest extends TestCase
             path: $this->paths(['App\\A', 'App\\B', 'App\\A']),
         );
 
-        $this->assertSame(2, $cycle->getSize());
-        $this->assertSame('App\\A → App\\B → App\\A', $cycle->toString());
-        $this->assertSame('A → B → A', $cycle->toShortString());
+        self::assertSame(2, $cycle->getSize());
+        self::assertSame('App\\A → App\\B → App\\A', $cycle->toString());
+        self::assertSame('A → B → A', $cycle->toShortString());
     }
 
     public function testToTruncatedShortStringSmallCycle(): void
@@ -83,7 +83,7 @@ final class CycleTest extends TestCase
         );
 
         // Small cycles should not be truncated
-        $this->assertSame('A → B → C → A', $cycle->toTruncatedShortString(5));
+        self::assertSame('A → B → C → A', $cycle->toTruncatedShortString(5));
     }
 
     public function testToTruncatedShortStringLargeCycle(): void
@@ -102,7 +102,7 @@ final class CycleTest extends TestCase
         );
 
         $truncated = $cycle->toTruncatedShortString(5);
-        $this->assertSame('C0 → C1 → C2 → C3 → C4 → ... (5 more)', $truncated);
+        self::assertSame('C0 → C1 → C2 → C3 → C4 → ... (5 more)', $truncated);
     }
 
     public function testToTruncatedShortStringExactlyAtLimit(): void
@@ -121,7 +121,7 @@ final class CycleTest extends TestCase
         );
 
         // Path has 6 entries, maxEntries=5 → 5+1=6 → fits, no truncation
-        $this->assertSame('C0 → C1 → C2 → C3 → C4 → C0', $cycle->toTruncatedShortString(5));
+        self::assertSame('C0 → C1 → C2 → C3 → C4 → C0', $cycle->toTruncatedShortString(5));
     }
 
     public function testGetSizeCategorySmall(): void
@@ -130,7 +130,7 @@ final class CycleTest extends TestCase
             classes: $this->paths(['A', 'B', 'C']),
             path: $this->paths(['A', 'B', 'C', 'A']),
         );
-        $this->assertSame('small', $cycle->getSizeCategory());
+        self::assertSame('small', $cycle->getSizeCategory());
     }
 
     public function testGetSizeCategorySmallBoundary(): void
@@ -147,7 +147,7 @@ final class CycleTest extends TestCase
             classes: $this->paths($classes),
             path: $this->paths($path),
         );
-        $this->assertSame('small', $cycle->getSizeCategory());
+        self::assertSame('small', $cycle->getSizeCategory());
     }
 
     public function testGetSizeCategoryMedium(): void
@@ -164,7 +164,7 @@ final class CycleTest extends TestCase
             classes: $this->paths($classes),
             path: $this->paths($path),
         );
-        $this->assertSame('medium', $cycle->getSizeCategory());
+        self::assertSame('medium', $cycle->getSizeCategory());
     }
 
     public function testGetSizeCategoryMediumBoundary(): void
@@ -181,7 +181,7 @@ final class CycleTest extends TestCase
             classes: $this->paths($classes),
             path: $this->paths($path),
         );
-        $this->assertSame('medium', $cycle->getSizeCategory());
+        self::assertSame('medium', $cycle->getSizeCategory());
     }
 
     public function testGetSizeCategoryLarge(): void
@@ -198,7 +198,7 @@ final class CycleTest extends TestCase
             classes: $this->paths($classes),
             path: $this->paths($path),
         );
-        $this->assertSame('large', $cycle->getSizeCategory());
+        self::assertSame('large', $cycle->getSizeCategory());
     }
 
     public function testToStructuredData(): void
@@ -210,9 +210,9 @@ final class CycleTest extends TestCase
 
         $data = $cycle->toStructuredData();
 
-        $this->assertSame(['A', 'B', 'C', 'A'], $data['cycle']);
-        $this->assertSame(3, $data['length']);
-        $this->assertSame('small', $data['category']);
+        self::assertSame(['A', 'B', 'C', 'A'], $data['cycle']);
+        self::assertSame(3, $data['length']);
+        self::assertSame('small', $data['category']);
     }
 
     public function testToStructuredDataLargeCycleContainsFullPath(): void
@@ -232,12 +232,12 @@ final class CycleTest extends TestCase
 
         $data = $cycle->toStructuredData();
 
-        $this->assertSame(25, $data['length']);
-        $this->assertSame('large', $data['category']);
+        self::assertSame(25, $data['length']);
+        self::assertSame('large', $data['category']);
         // Full path is preserved in structured data
-        $this->assertCount(26, $data['cycle']);
-        $this->assertSame('C0', $data['cycle'][0]);
-        $this->assertSame('C0', $data['cycle'][25]);
+        self::assertCount(26, $data['cycle']);
+        self::assertSame('C0', $data['cycle'][0]);
+        self::assertSame('C0', $data['cycle'][25]);
     }
 
     /**

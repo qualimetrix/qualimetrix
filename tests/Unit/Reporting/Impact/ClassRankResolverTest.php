@@ -33,7 +33,7 @@ final class ClassRankResolverTest extends TestCase
     {
         $classMetrics = (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.05);
 
-        $metrics = $this->createStub(MetricRepositoryInterface::class);
+        $metrics = self::createStub(MetricRepositoryInterface::class);
         $metrics->method('get')->willReturnCallback(
             static function (SymbolPath $sp) use ($classMetrics): MetricBag {
                 if ($sp->toCanonical() === 'class:App\Service\UserService') {
@@ -57,7 +57,7 @@ final class ClassRankResolverTest extends TestCase
     {
         $classMetrics = (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.12);
 
-        $metrics = $this->createStub(MetricRepositoryInterface::class);
+        $metrics = self::createStub(MetricRepositoryInterface::class);
         $metrics->method('get')->willReturnCallback(
             static function (SymbolPath $sp) use ($classMetrics): MetricBag {
                 if ($sp->toCanonical() === 'class:App\Service\UserService') {
@@ -79,7 +79,7 @@ final class ClassRankResolverTest extends TestCase
     #[Test]
     public function resolveForNamespaceViolationReturnsMaxClassRank(): void
     {
-        $metrics = $this->createStub(MetricRepositoryInterface::class);
+        $metrics = self::createStub(MetricRepositoryInterface::class);
 
         $metrics->method('getNamespaces')->willReturn(['App\Service']);
 
@@ -109,7 +109,7 @@ final class ClassRankResolverTest extends TestCase
     #[Test]
     public function resolveForNamespaceIncludesSubNamespaces(): void
     {
-        $metrics = $this->createStub(MetricRepositoryInterface::class);
+        $metrics = self::createStub(MetricRepositoryInterface::class);
 
         $metrics->method('getNamespaces')->willReturn(['App\Service', 'App\Service\Sub']);
 
@@ -137,7 +137,7 @@ final class ClassRankResolverTest extends TestCase
     #[Test]
     public function resolveForFileViolationReturnsMaxClassRankInFile(): void
     {
-        $metrics = $this->createStub(MetricRepositoryInterface::class);
+        $metrics = self::createStub(MetricRepositoryInterface::class);
 
         $metrics->method('getNamespaces')->willReturn(['App']);
 
@@ -167,7 +167,7 @@ final class ClassRankResolverTest extends TestCase
     #[Test]
     public function resolveReturnsNullWhenNoClassRankMetric(): void
     {
-        $metrics = $this->createStub(MetricRepositoryInterface::class);
+        $metrics = self::createStub(MetricRepositoryInterface::class);
         $metrics->method('get')->willReturn(new MetricBag());
 
         $violation = $this->createViolation(
@@ -181,7 +181,7 @@ final class ClassRankResolverTest extends TestCase
     #[Test]
     public function resolveReturnsNullForProjectViolation(): void
     {
-        $metrics = $this->createStub(MetricRepositoryInterface::class);
+        $metrics = self::createStub(MetricRepositoryInterface::class);
 
         $violation = $this->createViolation(SymbolPath::forProject());
 
@@ -192,7 +192,7 @@ final class ClassRankResolverTest extends TestCase
     #[Test]
     public function resolveReturnsNullForFunctionViolation(): void
     {
-        $metrics = $this->createStub(MetricRepositoryInterface::class);
+        $metrics = self::createStub(MetricRepositoryInterface::class);
 
         $violation = $this->createViolation(
             SymbolPath::forGlobalFunction('App\Utils', 'helper'),
@@ -208,7 +208,7 @@ final class ClassRankResolverTest extends TestCase
         $nanMetrics = (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, \NAN);
         $infMetrics = (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, \INF);
 
-        $metrics = $this->createStub(MetricRepositoryInterface::class);
+        $metrics = self::createStub(MetricRepositoryInterface::class);
 
         // Test NAN
         $metrics->method('get')->willReturn($nanMetrics);
@@ -221,7 +221,7 @@ final class ClassRankResolverTest extends TestCase
         self::assertNull($this->resolver->resolve($violation, $metrics, $index));
 
         // Test INF with a fresh mock
-        $metricsInf = $this->createStub(MetricRepositoryInterface::class);
+        $metricsInf = self::createStub(MetricRepositoryInterface::class);
         $metricsInf->method('get')->willReturn($infMetrics);
 
         $violationInf = $this->createViolation(

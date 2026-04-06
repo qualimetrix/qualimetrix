@@ -52,7 +52,7 @@ final class ImpactCalculatorTest extends TestCase
             'code-smell.debug-code',
         );
 
-        $metrics = $this->createStub(MetricRepositoryInterface::class);
+        $metrics = self::createStub(MetricRepositoryInterface::class);
         $metrics->method('get')->willReturnCallback(
             static function (SymbolPath $sp): MetricBag {
                 return match ($sp->toCanonical()) {
@@ -85,7 +85,7 @@ final class ImpactCalculatorTest extends TestCase
         $v2 = $this->createViolation('src/b.php', 1, Severity::Warning, SymbolPath::forClass('App', 'High'), 'code-smell.debug-code');
         $v3 = $this->createViolation('src/c.php', 1, Severity::Warning, SymbolPath::forClass('App', 'Mid'), 'code-smell.debug-code');
 
-        $metrics = $this->createStub(MetricRepositoryInterface::class);
+        $metrics = self::createStub(MetricRepositoryInterface::class);
         $metrics->method('get')->willReturnCallback(
             static function (SymbolPath $sp): MetricBag {
                 return match ($sp->toCanonical()) {
@@ -112,7 +112,7 @@ final class ImpactCalculatorTest extends TestCase
         $v1 = $this->createViolation('src/b.php', 10, Severity::Warning, SymbolPath::forClass('App', 'Same'), 'code-smell.debug-code');
         $v2 = $this->createViolation('src/a.php', 5, Severity::Warning, SymbolPath::forClass('App', 'Same'), 'code-smell.debug-code');
 
-        $metrics = $this->createStub(MetricRepositoryInterface::class);
+        $metrics = self::createStub(MetricRepositoryInterface::class);
         $metrics->method('get')->willReturn(
             (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.05),
         );
@@ -128,7 +128,7 @@ final class ImpactCalculatorTest extends TestCase
     #[Test]
     public function emptyViolationsReturnsEmpty(): void
     {
-        $metrics = $this->createStub(MetricRepositoryInterface::class);
+        $metrics = self::createStub(MetricRepositoryInterface::class);
         $calculator = new ImpactCalculator($this->resolver, $this->registry);
 
         $issues = $calculator->computeTopIssues([], $metrics);
@@ -149,7 +149,7 @@ final class ImpactCalculatorTest extends TestCase
             'code-smell.debug-code',
         );
 
-        $metrics = $this->createStub(MetricRepositoryInterface::class);
+        $metrics = self::createStub(MetricRepositoryInterface::class);
         $metrics->method('all')->willReturn([]);
         $metrics->method('get')->willReturn(new MetricBag());
 
@@ -188,7 +188,7 @@ final class ImpactCalculatorTest extends TestCase
             'code-smell.debug-code',
         );
 
-        $metrics = $this->createStub(MetricRepositoryInterface::class);
+        $metrics = self::createStub(MetricRepositoryInterface::class);
         $metrics->method('all')->willReturn([
             new SymbolInfo(SymbolPath::forClass('App', 'ClassA'), 'src/a.php', 1),
             new SymbolInfo(SymbolPath::forClass('App', 'ClassB'), 'src/b.php', 1),
@@ -242,7 +242,7 @@ final class ImpactCalculatorTest extends TestCase
             'code-smell.debug-code',
         );
 
-        $metrics = $this->createStub(MetricRepositoryInterface::class);
+        $metrics = self::createStub(MetricRepositoryInterface::class);
         $metrics->method('get')->willReturn(
             (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.1),
         );
@@ -273,7 +273,7 @@ final class ImpactCalculatorTest extends TestCase
             'code-smell.debug-code',
         );
 
-        $metrics = $this->createStub(MetricRepositoryInterface::class);
+        $metrics = self::createStub(MetricRepositoryInterface::class);
         $metrics->method('get')->willReturn(
             (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.0),
         );

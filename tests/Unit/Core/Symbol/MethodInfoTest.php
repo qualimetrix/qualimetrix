@@ -44,7 +44,7 @@ final class MethodInfoTest extends TestCase
 
         $symbolPath = $methodInfo->getSymbolPath();
 
-        self::assertInstanceOf(SymbolPath::class, $symbolPath);
+        self::assertInstanceOf(SymbolPath::class, $symbolPath); // @phpstan-ignore staticMethod.alreadyNarrowedType
         self::assertSame('App\Service', $symbolPath->namespace);
         self::assertSame('UserService', $symbolPath->type);
         self::assertSame('calculate', $symbolPath->member);
@@ -133,7 +133,7 @@ final class MethodInfoTest extends TestCase
 
         // This test verifies that MethodInfo is readonly
         // The readonly keyword ensures immutability at the language level
-        self::assertInstanceOf(MethodInfo::class, $methodInfo);
+        self::assertInstanceOf(MethodInfo::class, $methodInfo); // @phpstan-ignore staticMethod.alreadyNarrowedType
     }
 
     public function testConstructorWithDeepNestedNamespace(): void

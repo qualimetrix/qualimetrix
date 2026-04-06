@@ -11,7 +11,7 @@ final class NullProgressReporterTest extends TestCase
 {
     public function testDoesNothing(): void
     {
-        $this->expectNotToPerformAssertions();
+        self::expectNotToPerformAssertions();
 
         $reporter = new NullProgressReporter();
 
@@ -25,7 +25,7 @@ final class NullProgressReporterTest extends TestCase
 
     public function testCanBeCalledMultipleTimes(): void
     {
-        $this->expectNotToPerformAssertions();
+        self::expectNotToPerformAssertions();
 
         $reporter = new NullProgressReporter();
 

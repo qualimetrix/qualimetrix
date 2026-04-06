@@ -65,7 +65,7 @@ final class ClassCountRuleTest extends TestCase
 
     public function testConstructorRejectsWrongOptionsType(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        self::expectException(InvalidArgumentException::class);
 
         new ClassCountRule(new class implements \Qualimetrix\Core\Rule\RuleOptionsInterface {
             public static function fromArray(array $config): static
@@ -106,7 +106,7 @@ final class ClassCountRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('classCount.sum', 5);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$namespaceInfo]);
         $repository->method('get')
@@ -127,7 +127,7 @@ final class ClassCountRuleTest extends TestCase
         // 18 classes is above warning (15) but below error (25)
         $metricBag = (new MetricBag())->with('classCount.sum', 18);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$namespaceInfo]);
         $repository->method('get')
@@ -154,7 +154,7 @@ final class ClassCountRuleTest extends TestCase
         // 30 classes is above error threshold (25)
         $metricBag = (new MetricBag())->with('classCount.sum', 30);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$namespaceInfo]);
         $repository->method('get')
@@ -182,7 +182,7 @@ final class ClassCountRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('classCount.sum', $classCount);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$nsInfo]);
         $repository->method('get')

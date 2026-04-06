@@ -24,7 +24,7 @@ final class RuleNameValidatorTest extends TestCase
             '/path/to/test.yaml',
         );
 
-        $this->expectNotToPerformAssertions();
+        self::expectNotToPerformAssertions();
     }
 
     #[Test]
@@ -37,7 +37,7 @@ final class RuleNameValidatorTest extends TestCase
             '/path/to/test.yaml',
         );
 
-        $this->expectNotToPerformAssertions();
+        self::expectNotToPerformAssertions();
     }
 
     #[Test]
@@ -50,14 +50,14 @@ final class RuleNameValidatorTest extends TestCase
             '/path/to/test.yaml',
         );
 
-        $this->expectNotToPerformAssertions();
+        self::expectNotToPerformAssertions();
     }
 
     #[Test]
     public function unknownRuleName_throwsException(): void
     {
-        $this->expectException(ConfigLoadException::class);
-        $this->expectExceptionMessageMatches('/Unknown rule "nonexistent\.rule"/');
+        self::expectException(ConfigLoadException::class);
+        self::expectExceptionMessageMatches('/Unknown rule "nonexistent\.rule"/');
 
         RuleNameValidator::validateRuleNames(
             ['rules' => ['nonexistent.rule' => ['warning' => 10]]],
@@ -77,7 +77,7 @@ final class RuleNameValidatorTest extends TestCase
             '/path/to/test.yaml',
         );
 
-        $this->expectNotToPerformAssertions();
+        self::expectNotToPerformAssertions();
     }
 
     #[Test]
@@ -90,15 +90,15 @@ final class RuleNameValidatorTest extends TestCase
             '/path/to/test.yaml',
         );
 
-        $this->expectNotToPerformAssertions();
+        self::expectNotToPerformAssertions();
     }
 
     #[Test]
     public function multipleUnknownNames_allListedInException(): void
     {
-        $this->expectException(ConfigLoadException::class);
-        $this->expectExceptionMessageMatches('/nonexistent\.one/');
-        $this->expectExceptionMessageMatches('/nonexistent\.two/');
+        self::expectException(ConfigLoadException::class);
+        self::expectExceptionMessageMatches('/nonexistent\.one/');
+        self::expectExceptionMessageMatches('/nonexistent\.two/');
 
         RuleNameValidator::validateRuleNames(
             ['rules' => [
@@ -114,8 +114,8 @@ final class RuleNameValidatorTest extends TestCase
     #[Test]
     public function validateRuleNamesThrowsForUnknownRule(): void
     {
-        $this->expectException(ConfigLoadException::class);
-        $this->expectExceptionMessageMatches('/Unknown rule "bogus\.rule" in qmx\.yaml/');
+        self::expectException(ConfigLoadException::class);
+        self::expectExceptionMessageMatches('/Unknown rule "bogus\.rule" in qmx\.yaml/');
 
         RuleNameValidator::validateRuleNames(
             ['rules' => ['bogus.rule' => ['warning' => 5]]],
@@ -128,8 +128,8 @@ final class RuleNameValidatorTest extends TestCase
     #[Test]
     public function validateRuleNamesSuggestsCloseMatch(): void
     {
-        $this->expectException(ConfigLoadException::class);
-        $this->expectExceptionMessageMatches('/Unknown rule "complexty".*Did you mean "complexity"\?/');
+        self::expectException(ConfigLoadException::class);
+        self::expectExceptionMessageMatches('/Unknown rule "complexty".*Did you mean "complexity"\?/');
 
         RuleNameValidator::validateRuleNames(
             ['rules' => ['complexty' => ['cyclomatic' => ['warning' => 10]]]],
@@ -181,7 +181,7 @@ final class RuleNameValidatorTest extends TestCase
      */
     private function createProvider(array $names): KnownRuleNamesProviderInterface
     {
-        $provider = $this->createStub(KnownRuleNamesProviderInterface::class);
+        $provider = self::createStub(KnownRuleNamesProviderInterface::class);
         $provider->method('getKnownRuleNames')->willReturn($names);
 
         return $provider;

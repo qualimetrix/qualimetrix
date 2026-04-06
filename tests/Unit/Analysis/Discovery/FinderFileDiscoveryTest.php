@@ -38,7 +38,7 @@ final class FinderFileDiscoveryTest extends TestCase
         $files = iterator_to_array($discovery->discover($file), false);
 
         self::assertCount(1, $files);
-        self::assertInstanceOf(SplFileInfo::class, $files[0]);
+        self::assertInstanceOf(SplFileInfo::class, $files[0]); // @phpstan-ignore staticMethod.alreadyNarrowedType
         self::assertSame('Test.php', $files[0]->getFilename());
     }
 

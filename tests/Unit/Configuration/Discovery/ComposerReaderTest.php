@@ -228,7 +228,7 @@ final class ComposerReaderTest extends TestCase
             return;
         }
 
-        $files = array_diff(scandir($dir) ?: [], ['.', '..']);
+        $files = array_diff((scandir($dir) !== false ? scandir($dir) : []), ['.', '..']);
         foreach ($files as $file) {
             $path = $dir . '/' . $file;
             is_dir($path) ? $this->removeDir($path) : unlink($path);

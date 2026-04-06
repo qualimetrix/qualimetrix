@@ -89,7 +89,7 @@ final class ComputedMetricRuleTest extends TestCase
         $rule = $this->createRuleWithDefinitions([$definition]);
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([new SymbolInfo($classPath, 'src/UserService.php', 10)]);
         $repository->method('get')
@@ -115,7 +115,7 @@ final class ComputedMetricRuleTest extends TestCase
         $rule = $this->createRuleWithDefinitions([$definition]);
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([new SymbolInfo($classPath, 'src/UserService.php', 10)]);
         $repository->method('get')
@@ -145,7 +145,7 @@ final class ComputedMetricRuleTest extends TestCase
         $rule = $this->createRuleWithDefinitions([$definition]);
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([new SymbolInfo($classPath, 'src/UserService.php', 10)]);
         $repository->method('get')
@@ -172,7 +172,7 @@ final class ComputedMetricRuleTest extends TestCase
         $rule = $this->createRuleWithDefinitions([$definition]);
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([new SymbolInfo($classPath, 'src/UserService.php', 10)]);
         $repository->method('get')
@@ -199,7 +199,7 @@ final class ComputedMetricRuleTest extends TestCase
         $rule = $this->createRuleWithDefinitions([$definition]);
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([new SymbolInfo($classPath, 'src/UserService.php', 10)]);
         $repository->method('get')
@@ -226,7 +226,7 @@ final class ComputedMetricRuleTest extends TestCase
         $rule = $this->createRuleWithDefinitions([$definition]);
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([new SymbolInfo($classPath, 'src/UserService.php', 10)]);
         $repository->method('get')
@@ -271,7 +271,7 @@ final class ComputedMetricRuleTest extends TestCase
         $rule = $this->createRuleWithDefinitions([$definition]);
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([new SymbolInfo($classPath, 'src/UserService.php', 10)]);
         $repository->method('get')
@@ -303,7 +303,7 @@ final class ComputedMetricRuleTest extends TestCase
         $rule = $this->createRuleWithDefinitions([$definition]);
         $classPath = SymbolPath::forClass('App', 'Test');
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([new SymbolInfo($classPath, 'test.php', 1)]);
         $repository->method('get')
@@ -338,7 +338,7 @@ final class ComputedMetricRuleTest extends TestCase
         $rule = $this->createRuleWithDefinitions([$def1, $def2]);
         $classPath = SymbolPath::forClass('App', 'Test');
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([new SymbolInfo($classPath, 'test.php', 1)]);
         $repository->method('get')
@@ -372,7 +372,7 @@ final class ComputedMetricRuleTest extends TestCase
         $classPath = SymbolPath::forClass('App', 'Test');
         $nsPath = SymbolPath::forNamespace('App');
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([new SymbolInfo($classPath, 'test.php', 1)]);
         $repository->method('getNamespaces')
@@ -408,7 +408,7 @@ final class ComputedMetricRuleTest extends TestCase
         $rule = $this->createRuleWithDefinitions([$definition]);
         $projectPath = SymbolPath::forProject();
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('get')
             ->willReturn((new MetricBag())->with('health.project', 8.0));
 
@@ -432,7 +432,7 @@ final class ComputedMetricRuleTest extends TestCase
 
         $rule = $this->createRuleWithDefinitions([$definition]);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('getNamespaces')
             ->willReturn(['App\\Service']);
         $repository->method('get')
@@ -458,7 +458,7 @@ final class ComputedMetricRuleTest extends TestCase
         $rule = $this->createRuleWithDefinitions([$definition]);
         $classPath = SymbolPath::forClass('App', 'Foo');
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([new SymbolInfo($classPath, 'src/Foo.php', 42)]);
         $repository->method('get')
@@ -485,7 +485,7 @@ final class ComputedMetricRuleTest extends TestCase
         $rule = $this->createRuleWithDefinitions([$definition]);
         $classPath = SymbolPath::forClass('App', 'Test');
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([new SymbolInfo($classPath, 'test.php', 1)]);
         $repository->method('get')
@@ -511,7 +511,7 @@ final class ComputedMetricRuleTest extends TestCase
         $rule = $this->createRuleWithDefinitions([$definition]);
         $classPath = SymbolPath::forClass('App', 'Test');
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([new SymbolInfo($classPath, 'test.php', 1)]);
         $repository->method('get')
@@ -538,7 +538,7 @@ final class ComputedMetricRuleTest extends TestCase
         $rule = $this->createRuleWithDefinitions([$definition]);
         $classPath = SymbolPath::forClass('App', 'Test');
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([new SymbolInfo($classPath, 'test.php', 1)]);
         $repository->method('get')
@@ -566,7 +566,7 @@ final class ComputedMetricRuleTest extends TestCase
         $rule = $this->createRuleWithDefinitions([$definition]);
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([new SymbolInfo($classPath, 'src/UserService.php', 10)]);
         $repository->method('get')
@@ -597,7 +597,7 @@ final class ComputedMetricRuleTest extends TestCase
         $rule = $this->createRuleWithDefinitions([$definition]);
         $classPath = SymbolPath::forClass('App', 'Test');
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([new SymbolInfo($classPath, 'test.php', 1)]);
         $repository->method('get')
@@ -626,7 +626,7 @@ final class ComputedMetricRuleTest extends TestCase
         $rule = $this->createRuleWithDefinitions([$definition]);
         $classPath = SymbolPath::forClass('App', 'Test');
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([new SymbolInfo($classPath, 'test.php', 1)]);
         $repository->method('get')
@@ -669,7 +669,7 @@ final class ComputedMetricRuleTest extends TestCase
         $rule = $this->createRuleWithDefinitions([$definition]);
         $classPath = SymbolPath::forClass('App', 'Test');
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([new SymbolInfo($classPath, 'test.php', 1)]);
         $repository->method('get')

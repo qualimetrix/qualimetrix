@@ -30,8 +30,8 @@ final class GitScopeParserTest extends TestCase
     {
         $scope = $this->parser->parse($input);
 
-        $this->assertNotNull($scope);
-        $this->assertSame($expectedRef, $scope->ref);
+        self::assertNotNull($scope);
+        self::assertSame($expectedRef, $scope->ref);
     }
 
     /**
@@ -57,7 +57,7 @@ final class GitScopeParserTest extends TestCase
     {
         $scope = $this->parser->parse($input);
 
-        $this->assertNull($scope);
+        self::assertNull($scope);
     }
 
     /**
@@ -77,7 +77,7 @@ final class GitScopeParserTest extends TestCase
     #[DataProvider('validGitScopesProvider')]
     public function testIsValidReturnsTrueForValidScopes(string $input, string $_expectedRef): void
     {
-        $this->assertTrue($this->parser->isValid($input));
+        self::assertTrue($this->parser->isValid($input));
     }
 
     /**
@@ -86,6 +86,6 @@ final class GitScopeParserTest extends TestCase
     #[DataProvider('invalidGitScopesProvider')]
     public function testIsValidReturnsFalseForInvalidScopes(string $input): void
     {
-        $this->assertFalse($this->parser->isValid($input));
+        self::assertFalse($this->parser->isValid($input));
     }
 }

@@ -97,7 +97,7 @@ final class GodClassRuleTest extends TestCase
             ->with('methodCount', 10)
             ->with('isReadonly', 1);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Class_ ? [$classInfo] : []);
         $repository->method('get')
@@ -123,7 +123,7 @@ final class GodClassRuleTest extends TestCase
             ->with('methodCount', 2)
             ->with('isReadonly', 0);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Class_ ? [$classInfo] : []);
         $repository->method('get')
@@ -149,7 +149,7 @@ final class GodClassRuleTest extends TestCase
             ->with('methodCount', 10)
             ->with('isReadonly', 0);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Class_ ? [$classInfo] : []);
         $repository->method('get')
@@ -182,7 +182,7 @@ final class GodClassRuleTest extends TestCase
             ->with('methodCount', 10)
             ->with('isReadonly', 0);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Class_ ? [$classInfo] : []);
         $repository->method('get')
@@ -212,7 +212,7 @@ final class GodClassRuleTest extends TestCase
             ->with('methodCount', 10)
             ->with('isReadonly', 0);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Class_ ? [$classInfo] : []);
         $repository->method('get')
@@ -240,7 +240,7 @@ final class GodClassRuleTest extends TestCase
             ->with('methodCount', 50)
             ->with('isReadonly', 0);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Class_ ? [$classInfo] : []);
         $repository->method('get')
@@ -268,7 +268,7 @@ final class GodClassRuleTest extends TestCase
             ->with('methodCount', 10)
             ->with('isReadonly', 0);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Class_ ? [$classInfo] : []);
         $repository->method('get')
@@ -296,7 +296,7 @@ final class GodClassRuleTest extends TestCase
             ->with('methodCount', 10)
             ->with('isReadonly', 0);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Class_ ? [$classInfo] : []);
         $repository->method('get')
@@ -325,7 +325,7 @@ final class GodClassRuleTest extends TestCase
             ->with('methodCount', 10)
             ->with('isReadonly', 0);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Class_ ? [$classInfo] : []);
         $repository->method('get')
@@ -353,7 +353,7 @@ final class GodClassRuleTest extends TestCase
             ->with('methodCount', 10)
             ->with('isReadonly', 0);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Class_ ? [$classInfo] : []);
         $repository->method('get')
@@ -384,7 +384,7 @@ final class GodClassRuleTest extends TestCase
             ->with('methodCount', 5)
             ->with('isReadonly', 0);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Class_ ? [$classInfo] : []);
         $repository->method('get')
@@ -412,7 +412,7 @@ final class GodClassRuleTest extends TestCase
             ->with('methodCount', 10)
             ->with('isReadonly', 0);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Class_ ? [$classInfo] : []);
         $repository->method('get')

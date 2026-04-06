@@ -19,15 +19,15 @@ final class SerializerSelectorTest extends TestCase
     #[Test]
     public function itSelectsHighestPriorityAvailable(): void
     {
-        $lowPriority = $this->createStub(SerializerInterface::class);
+        $lowPriority = self::createStub(SerializerInterface::class);
         $lowPriority->method('isAvailable')->willReturn(true);
         $lowPriority->method('getPriority')->willReturn(10);
 
-        $highPriority = $this->createStub(SerializerInterface::class);
+        $highPriority = self::createStub(SerializerInterface::class);
         $highPriority->method('isAvailable')->willReturn(true);
         $highPriority->method('getPriority')->willReturn(100);
 
-        $mediumPriority = $this->createStub(SerializerInterface::class);
+        $mediumPriority = self::createStub(SerializerInterface::class);
         $mediumPriority->method('isAvailable')->willReturn(true);
         $mediumPriority->method('getPriority')->willReturn(50);
 
@@ -45,11 +45,11 @@ final class SerializerSelectorTest extends TestCase
     #[Test]
     public function itSkipsUnavailableSerializers(): void
     {
-        $unavailable = $this->createStub(SerializerInterface::class);
+        $unavailable = self::createStub(SerializerInterface::class);
         $unavailable->method('isAvailable')->willReturn(false);
         $unavailable->method('getPriority')->willReturn(100);
 
-        $available = $this->createStub(SerializerInterface::class);
+        $available = self::createStub(SerializerInterface::class);
         $available->method('isAvailable')->willReturn(true);
         $available->method('getPriority')->willReturn(50);
 
@@ -66,10 +66,10 @@ final class SerializerSelectorTest extends TestCase
     #[Test]
     public function itThrowsExceptionWhenNoSerializersAvailable(): void
     {
-        $unavailable1 = $this->createStub(SerializerInterface::class);
+        $unavailable1 = self::createStub(SerializerInterface::class);
         $unavailable1->method('isAvailable')->willReturn(false);
 
-        $unavailable2 = $this->createStub(SerializerInterface::class);
+        $unavailable2 = self::createStub(SerializerInterface::class);
         $unavailable2->method('isAvailable')->willReturn(false);
 
         $selector = new SerializerSelector([
@@ -77,8 +77,8 @@ final class SerializerSelectorTest extends TestCase
             $unavailable2,
         ]);
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('No serializer available');
+        self::expectException(RuntimeException::class);
+        self::expectExceptionMessage('No serializer available');
 
         $selector->select();
     }
@@ -88,8 +88,8 @@ final class SerializerSelectorTest extends TestCase
     {
         $selector = new SerializerSelector([]);
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('No serializer available');
+        self::expectException(RuntimeException::class);
+        self::expectExceptionMessage('No serializer available');
 
         $selector->select();
     }
@@ -100,7 +100,7 @@ final class SerializerSelectorTest extends TestCase
         $selector = SerializerSelector::createDefault();
         $selected = $selector->select();
 
-        self::assertInstanceOf(SerializerInterface::class, $selected);
+        self::assertInstanceOf(SerializerInterface::class, $selected); // @phpstan-ignore staticMethod.alreadyNarrowedType
 
         // If igbinary is available - it will be selected (priority 100)
         // Otherwise PhpSerializer will be selected (priority 0)
@@ -125,11 +125,11 @@ final class SerializerSelectorTest extends TestCase
     #[Test]
     public function itHandlesEqualPriorities(): void
     {
-        $serializer1 = $this->createStub(SerializerInterface::class);
+        $serializer1 = self::createStub(SerializerInterface::class);
         $serializer1->method('isAvailable')->willReturn(true);
         $serializer1->method('getPriority')->willReturn(50);
 
-        $serializer2 = $this->createStub(SerializerInterface::class);
+        $serializer2 = self::createStub(SerializerInterface::class);
         $serializer2->method('isAvailable')->willReturn(true);
         $serializer2->method('getPriority')->willReturn(50);
 

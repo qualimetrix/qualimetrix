@@ -39,15 +39,15 @@ final class MetricEnricherTest extends TestCase
         $this->globalCollectorRunner = new GlobalCollectorRunner([]);
 
         $config = new AnalysisConfiguration();
-        $this->configProvider = $this->createStub(ConfigurationProviderInterface::class);
+        $this->configProvider = self::createStub(ConfigurationProviderInterface::class);
         $this->configProvider->method('getConfiguration')->willReturn($config);
 
-        $this->graph = $this->createStub(DependencyGraphInterface::class);
+        $this->graph = self::createStub(DependencyGraphInterface::class);
         $this->graph->method('getAllClasses')->willReturn([]);
         $this->graph->method('getAllNamespaces')->willReturn([]);
         $this->graph->method('getAllDependencies')->willReturn([]);
 
-        $this->repository = $this->createStub(MetricRepositoryInterface::class);
+        $this->repository = self::createStub(MetricRepositoryInterface::class);
         $this->repository->method('all')->willReturn([]);
 
         // Reset static state
@@ -70,7 +70,7 @@ final class MetricEnricherTest extends TestCase
 
         $result = $enricher->enrich($this->repository, $this->graph, [], 10);
 
-        self::assertInstanceOf(EnrichmentResult::class, $result);
+        self::assertInstanceOf(EnrichmentResult::class, $result); // @phpstan-ignore staticMethod.alreadyNarrowedType
         self::assertSame([], $result->cycles);
         self::assertSame([], $result->duplicateBlocks);
     }
@@ -99,7 +99,7 @@ final class MetricEnricherTest extends TestCase
         $config = new AnalysisConfiguration(
             disabledRules: [CircularDependencyRule::NAME],
         );
-        $configProvider = $this->createStub(ConfigurationProviderInterface::class);
+        $configProvider = self::createStub(ConfigurationProviderInterface::class);
         $configProvider->method('getConfiguration')->willReturn($config);
 
         $enricher = new MetricEnricher(
@@ -120,7 +120,7 @@ final class MetricEnricherTest extends TestCase
         $config = new AnalysisConfiguration(
             disabledRules: [CodeDuplicationRule::NAME],
         );
-        $configProvider = $this->createStub(ConfigurationProviderInterface::class);
+        $configProvider = self::createStub(ConfigurationProviderInterface::class);
         $configProvider->method('getConfiguration')->willReturn($config);
 
         $enricher = new MetricEnricher(
@@ -164,7 +164,7 @@ final class MetricEnricherTest extends TestCase
         // Should not throw when evaluator is null, even with files analyzed
         $result = $enricher->enrich($this->repository, $this->graph, [], 10);
 
-        self::assertInstanceOf(EnrichmentResult::class, $result);
+        self::assertInstanceOf(EnrichmentResult::class, $result); // @phpstan-ignore staticMethod.alreadyNarrowedType
     }
 
     #[Test]
@@ -179,7 +179,7 @@ final class MetricEnricherTest extends TestCase
         $result = $enricher->enrich($this->repository, $this->graph, [], 5);
 
         // NamespaceTree should always be present (aggregation always runs)
-        self::assertInstanceOf(EnrichmentResult::class, $result);
+        self::assertInstanceOf(EnrichmentResult::class, $result); // @phpstan-ignore staticMethod.alreadyNarrowedType
     }
 
     #[Test]
@@ -195,7 +195,7 @@ final class MetricEnricherTest extends TestCase
 
         $result = $enricher->enrich($this->repository, $this->graph, [], 0);
 
-        self::assertInstanceOf(EnrichmentResult::class, $result);
+        self::assertInstanceOf(EnrichmentResult::class, $result); // @phpstan-ignore staticMethod.alreadyNarrowedType
         self::assertSame([], $result->cycles);
         self::assertSame([], $result->duplicateBlocks);
     }
@@ -212,7 +212,7 @@ final class MetricEnricherTest extends TestCase
         $depAtoB = new Dependency($classA, $classB, DependencyType::TypeHint, $location);
         $depBtoA = new Dependency($classB, $classA, DependencyType::TypeHint, $location);
 
-        $graph = $this->createStub(DependencyGraphInterface::class);
+        $graph = self::createStub(DependencyGraphInterface::class);
         $graph->method('getAllClasses')->willReturn([$classA, $classB]);
         $graph->method('getAllNamespaces')->willReturn([]);
         $graph->method('getAllDependencies')->willReturn([$depAtoB, $depBtoA]);

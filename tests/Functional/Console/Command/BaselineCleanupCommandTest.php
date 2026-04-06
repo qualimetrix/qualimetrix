@@ -93,16 +93,16 @@ final class BaselineCleanupCommandTest extends TestCase
         ]);
 
         // Assert success
-        $this->assertSame(0, $commandTester->getStatusCode());
+        self::assertSame(0, $commandTester->getStatusCode());
         $output = $commandTester->getDisplay();
-        $this->assertStringContainsString('Removed 1 stale entries from 1 symbols', $output);
+        self::assertStringContainsString('Removed 1 stale entries from 1 symbols', $output);
 
         // Verify baseline was cleaned
         $loader = new BaselineLoader();
         $cleanedBaseline = $loader->load($baselinePath);
-        $this->assertSame(1, $cleanedBaseline->count());
-        $this->assertArrayHasKey('file:' . $testFile, $cleanedBaseline->entries);
-        $this->assertArrayNotHasKey('file:' . $nonExistingFile, $cleanedBaseline->entries);
+        self::assertSame(1, $cleanedBaseline->count());
+        self::assertArrayHasKey('file:' . $testFile, $cleanedBaseline->entries);
+        self::assertArrayNotHasKey('file:' . $nonExistingFile, $cleanedBaseline->entries);
     }
 
     #[Test]
@@ -147,9 +147,9 @@ final class BaselineCleanupCommandTest extends TestCase
         ]);
 
         // Assert success
-        $this->assertSame(0, $commandTester->getStatusCode());
+        self::assertSame(0, $commandTester->getStatusCode());
         $output = $commandTester->getDisplay();
-        $this->assertStringContainsString('No stale entries found', $output);
+        self::assertStringContainsString('No stale entries found', $output);
     }
 
     #[Test]
@@ -171,9 +171,9 @@ final class BaselineCleanupCommandTest extends TestCase
         ]);
 
         // Assert failure
-        $this->assertSame(1, $commandTester->getStatusCode());
+        self::assertSame(1, $commandTester->getStatusCode());
         $output = $commandTester->getDisplay();
-        $this->assertStringContainsString('Baseline file not found', $output);
+        self::assertStringContainsString('Baseline file not found', $output);
     }
 
     #[Test]
@@ -217,10 +217,10 @@ final class BaselineCleanupCommandTest extends TestCase
         );
 
         // Assert success and verbose output
-        $this->assertSame(0, $commandTester->getStatusCode());
+        self::assertSame(0, $commandTester->getStatusCode());
         $output = $commandTester->getDisplay();
-        $this->assertStringContainsString('Removed symbols:', $output);
-        $this->assertStringContainsString('NonExisting.php', $output);
+        self::assertStringContainsString('Removed symbols:', $output);
+        self::assertStringContainsString('NonExisting.php', $output);
     }
 
     #[Test]
@@ -288,7 +288,7 @@ final class BaselineCleanupCommandTest extends TestCase
             return;
         }
 
-        $files = array_diff(scandir($dir) ?: [], ['.', '..']);
+        $files = array_diff((scandir($dir) !== false ? scandir($dir) : []), ['.', '..']);
         foreach ($files as $file) {
             $path = $dir . '/' . $file;
             is_dir($path) ? $this->removeDirectory($path) : unlink($path);

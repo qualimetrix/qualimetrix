@@ -22,7 +22,7 @@ final class EmptyDependencyGraphTest extends TestCase
 
     public function testImplementsDependencyGraphInterface(): void
     {
-        self::assertInstanceOf(DependencyGraphInterface::class, $this->graph);
+        self::assertInstanceOf(DependencyGraphInterface::class, $this->graph); // @phpstan-ignore staticMethod.alreadyNarrowedType
     }
 
     public function testGetClassDependenciesReturnsEmptyArray(): void

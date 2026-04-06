@@ -50,7 +50,7 @@ final class WorkerBootstrapTest extends TestCase
             cacheDir: null,
         );
 
-        self::assertInstanceOf(FileProcessorInterface::class, $processor);
+        self::assertInstanceOf(FileProcessorInterface::class, $processor); // @phpstan-ignore staticMethod.alreadyNarrowedType
     }
 
     #[Test]
@@ -238,7 +238,7 @@ final class WorkerBootstrapTest extends TestCase
             cacheDir: null,
         );
 
-        self::assertInstanceOf(FileProcessorInterface::class, $processor);
+        self::assertInstanceOf(FileProcessorInterface::class, $processor); // @phpstan-ignore staticMethod.alreadyNarrowedType
     }
 
     #[Test]
@@ -256,7 +256,7 @@ final class WorkerBootstrapTest extends TestCase
             cacheDir: null,
         );
 
-        self::assertInstanceOf(FileProcessorInterface::class, $processor);
+        self::assertInstanceOf(FileProcessorInterface::class, $processor); // @phpstan-ignore staticMethod.alreadyNarrowedType
     }
 
     #[Test]
@@ -363,7 +363,7 @@ final class WorkerBootstrapTest extends TestCase
             return;
         }
 
-        $files = array_diff(scandir($dir) ?: [], ['.', '..']);
+        $files = array_diff((scandir($dir) !== false ? scandir($dir) : []), ['.', '..']);
 
         foreach ($files as $file) {
             $path = $dir . '/' . $file;

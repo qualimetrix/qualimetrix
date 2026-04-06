@@ -68,7 +68,7 @@ final class SuperglobalsRuleTest extends TestCase
 
         $metricBag = new MetricBag();
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::File ? [$fileInfo] : []);
         $repository->method('get')
@@ -92,7 +92,7 @@ final class SuperglobalsRuleTest extends TestCase
             ->withEntry('codeSmell.superglobals', ['line' => 18])
             ->withEntry('codeSmell.superglobals', ['line' => 33]);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::File ? [$fileInfo] : []);
         $repository->method('get')

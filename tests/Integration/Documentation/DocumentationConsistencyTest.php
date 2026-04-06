@@ -194,8 +194,8 @@ final class DocumentationConsistencyTest extends TestCase
             $content = file_get_contents($file->getPathname());
             \assert($content !== false);
 
-            if (preg_match('/^namespace\s+([\w\\\\]+);/m', $content, $nsMatch)
-                && preg_match('/^(?:final\s+)?class\s+(\w+)/m', $content, $classMatch)) {
+            if (preg_match('/^namespace\s+([\w\\\\]+);/m', $content, $nsMatch) === 1
+                && preg_match('/^(?:final\s+)?class\s+(\w+)/m', $content, $classMatch) === 1) {
                 $fqcn = $nsMatch[1] . '\\' . $classMatch[1];
 
                 if (!class_exists($fqcn)) {

@@ -74,7 +74,7 @@ final class TypeCoverageRuleTest extends TestCase
 
     public function testConstructorRejectsWrongOptionsType(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        self::expectException(InvalidArgumentException::class);
 
         new TypeCoverageRule(new class implements \Qualimetrix\Core\Rule\RuleOptionsInterface {
             public static function fromArray(array $config): static
@@ -124,7 +124,7 @@ final class TypeCoverageRuleTest extends TestCase
             ->with('typeCoverage.propertyTyped', 2)
             ->with('typeCoverage.property', 100.0);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -152,7 +152,7 @@ final class TypeCoverageRuleTest extends TestCase
             ->with('typeCoverage.returnTotal', 0)
             ->with('typeCoverage.propertyTotal', 0);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -185,7 +185,7 @@ final class TypeCoverageRuleTest extends TestCase
             ->with('typeCoverage.returnTotal', 0)
             ->with('typeCoverage.propertyTotal', 0);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -216,7 +216,7 @@ final class TypeCoverageRuleTest extends TestCase
             ->with('typeCoverage.return', 25.0)
             ->with('typeCoverage.propertyTotal', 0);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -247,7 +247,7 @@ final class TypeCoverageRuleTest extends TestCase
             ->with('typeCoverage.propertyTyped', 3)
             ->with('typeCoverage.property', 60.0);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -286,7 +286,7 @@ final class TypeCoverageRuleTest extends TestCase
             ->with('typeCoverage.propertyTyped', 0)
             ->with('typeCoverage.property', 0.0);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -313,7 +313,7 @@ final class TypeCoverageRuleTest extends TestCase
             ->with('typeCoverage.returnTotal', 0)
             ->with('typeCoverage.propertyTotal', 0);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')

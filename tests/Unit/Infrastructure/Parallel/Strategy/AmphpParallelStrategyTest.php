@@ -105,7 +105,7 @@ final class AmphpParallelStrategyTest extends TestCase
 
         // Should be clamped to 1 - verify by using 1 file which should now pass threshold
         // (though other conditions like projectRoot will cause fallback)
-        $this->expectNotToPerformAssertions();
+        self::expectNotToPerformAssertions();
     }
 
     #[Test]
@@ -114,7 +114,7 @@ final class AmphpParallelStrategyTest extends TestCase
         $this->strategy->setProjectRoot('/path/to/project');
 
         // We can't directly verify the private property, but method should not throw
-        $this->expectNotToPerformAssertions();
+        self::expectNotToPerformAssertions();
     }
 
     #[Test]
@@ -123,7 +123,7 @@ final class AmphpParallelStrategyTest extends TestCase
         $this->strategy->setCacheDir('/path/to/cache');
 
         // We can't directly verify the private property, but method should not throw
-        $this->expectNotToPerformAssertions();
+        self::expectNotToPerformAssertions();
     }
 
     #[Test]
@@ -132,7 +132,7 @@ final class AmphpParallelStrategyTest extends TestCase
         $this->strategy->setCacheDir(null);
 
         // Should accept null to disable caching
-        $this->expectNotToPerformAssertions();
+        self::expectNotToPerformAssertions();
     }
 
     #[Test]
@@ -144,7 +144,7 @@ final class AmphpParallelStrategyTest extends TestCase
         ]);
 
         // We can't directly verify the private property, but method should not throw
-        $this->expectNotToPerformAssertions();
+        self::expectNotToPerformAssertions();
     }
 
     #[Test]
@@ -153,7 +153,7 @@ final class AmphpParallelStrategyTest extends TestCase
         $this->strategy->setCollectorClasses([]);
 
         // Should accept empty array
-        $this->expectNotToPerformAssertions();
+        self::expectNotToPerformAssertions();
     }
 
     #[Test]
@@ -164,7 +164,7 @@ final class AmphpParallelStrategyTest extends TestCase
         ]);
 
         // We can't directly verify the private property, but method should not throw
-        $this->expectNotToPerformAssertions();
+        self::expectNotToPerformAssertions();
     }
 
     #[Test]
@@ -301,7 +301,7 @@ final class AmphpParallelStrategyTest extends TestCase
             ->method('debug')
             ->with(
                 'AmphpParallelStrategy: file count below threshold, using sequential',
-                $this->callback(fn(array $context): bool => isset($context['files_count'], $context['threshold'])),
+                self::callback(fn(array $context): bool => isset($context['files_count'], $context['threshold'])),
             );
 
         $strategy = new AmphpParallelStrategy($logger);
@@ -361,7 +361,7 @@ final class AmphpParallelStrategyTest extends TestCase
 
         // Verify that single file can theoretically pass threshold
         // (though other conditions will cause fallback in practice)
-        $this->expectNotToPerformAssertions();
+        self::expectNotToPerformAssertions();
     }
 
     #[Test]
@@ -438,7 +438,7 @@ final class AmphpParallelStrategyTest extends TestCase
     {
         // Only run this test if parallel is actually unavailable
         if ($this->strategy->isAvailable()) {
-            $this->markTestSkipped('Parallel is available, cannot test unavailable case');
+            self::markTestSkipped('Parallel is available, cannot test unavailable case');
         }
 
         $logger = $this->createMock(LoggerInterface::class);

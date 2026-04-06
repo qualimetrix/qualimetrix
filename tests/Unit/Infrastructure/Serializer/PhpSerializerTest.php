@@ -138,8 +138,8 @@ final class PhpSerializerTest extends TestCase
     #[Test]
     public function itThrowsOnInvalidSerializedData(): void
     {
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Failed to unserialize data');
+        self::expectException(RuntimeException::class);
+        self::expectExceptionMessage('Failed to unserialize data');
 
         $this->serializer->unserialize('invalid serialized data');
     }

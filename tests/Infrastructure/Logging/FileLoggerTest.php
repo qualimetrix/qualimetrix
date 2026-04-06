@@ -34,7 +34,7 @@ final class FileLoggerTest extends TestCase
             return;
         }
 
-        $files = array_diff(scandir($dir) ?: [], ['.', '..']);
+        $files = array_diff((scandir($dir) !== false ? scandir($dir) : []), ['.', '..']);
         foreach ($files as $file) {
             $path = $dir . '/' . $file;
             if (is_dir($path)) {
@@ -53,10 +53,10 @@ final class FileLoggerTest extends TestCase
 
         $logger->info('Test message');
 
-        $this->assertFileExists($path);
+        self::assertFileExists($path);
         $content = file_get_contents($path);
-        $this->assertIsString($content);
-        $this->assertStringContainsString('Test message', $content);
+        self::assertIsString($content);
+        self::assertStringContainsString('Test message', $content);
     }
 
     public function testCreatesDirectory(): void
@@ -66,7 +66,7 @@ final class FileLoggerTest extends TestCase
 
         $logger->info('Test');
 
-        $this->assertFileExists($path);
+        self::assertFileExists($path);
     }
 
     public function testWritesJsonLines(): void
@@ -77,16 +77,16 @@ final class FileLoggerTest extends TestCase
         $logger->info('Test message', ['key' => 'value']);
 
         $content = file_get_contents($path);
-        $this->assertIsString($content);
+        self::assertIsString($content);
 
         $line = trim($content);
         $data = json_decode($line, true);
 
-        $this->assertIsArray($data);
-        $this->assertSame('info', $data['level']);
-        $this->assertSame('Test message', $data['message']);
-        $this->assertSame(['key' => 'value'], $data['context']);
-        $this->assertArrayHasKey('timestamp', $data);
+        self::assertIsArray($data);
+        self::assertSame('info', $data['level']);
+        self::assertSame('Test message', $data['message']);
+        self::assertSame(['key' => 'value'], $data['context']);
+        self::assertArrayHasKey('timestamp', $data);
     }
 
     public function testInterpolatesPlaceholders(): void
@@ -97,14 +97,14 @@ final class FileLoggerTest extends TestCase
         $logger->info('Processing {file}', ['file' => 'test.php', 'extra' => 'data']);
 
         $content = file_get_contents($path);
-        $this->assertIsString($content);
+        self::assertIsString($content);
 
         $data = json_decode(trim($content), true);
-        $this->assertIsArray($data);
+        self::assertIsArray($data);
         // Message should have placeholders interpolated
-        $this->assertSame('Processing test.php', $data['message']);
+        self::assertSame('Processing test.php', $data['message']);
         // Full context preserved in structured data
-        $this->assertSame(['file' => 'test.php', 'extra' => 'data'], $data['context']);
+        self::assertSame(['file' => 'test.php', 'extra' => 'data'], $data['context']);
     }
 
     public function testRespectsMinLevel(): void
@@ -118,12 +118,12 @@ final class FileLoggerTest extends TestCase
         $logger->error('Error message');
 
         $content = file_get_contents($path);
-        $this->assertIsString($content);
+        self::assertIsString($content);
 
-        $this->assertStringNotContainsString('Debug message', $content);
-        $this->assertStringNotContainsString('Info message', $content);
-        $this->assertStringContainsString('Warning message', $content);
-        $this->assertStringContainsString('Error message', $content);
+        self::assertStringNotContainsString('Debug message', $content);
+        self::assertStringNotContainsString('Info message', $content);
+        self::assertStringContainsString('Warning message', $content);
+        self::assertStringContainsString('Error message', $content);
     }
 
     public function testMultipleLogEntries(): void
@@ -136,17 +136,17 @@ final class FileLoggerTest extends TestCase
         $logger->info('Third');
 
         $content = file_get_contents($path);
-        $this->assertIsString($content);
+        self::assertIsString($content);
 
         $lines = explode("\n", trim($content));
-        $this->assertCount(3, $lines);
+        self::assertCount(3, $lines);
 
         foreach ($lines as $line) {
             $data = json_decode($line, true);
-            $this->assertIsArray($data);
-            $this->assertArrayHasKey('level', $data);
-            $this->assertArrayHasKey('message', $data);
-            $this->assertArrayHasKey('timestamp', $data);
+            self::assertIsArray($data);
+            self::assertArrayHasKey('level', $data);
+            self::assertArrayHasKey('message', $data);
+            self::assertArrayHasKey('timestamp', $data);
         }
     }
 
@@ -165,13 +165,13 @@ final class FileLoggerTest extends TestCase
         unset($logger2);
 
         $content = file_get_contents($path);
-        $this->assertIsString($content);
+        self::assertIsString($content);
 
         $lines = explode("\n", trim($content));
-        $this->assertCount(2, $lines);
+        self::assertCount(2, $lines);
 
-        $this->assertStringContainsString('First', $lines[0]);
-        $this->assertStringContainsString('Second', $lines[1]);
+        self::assertStringContainsString('First', $lines[0]);
+        self::assertStringContainsString('Second', $lines[1]);
     }
 
     public function testHandlesEmptyContext(): void
@@ -182,11 +182,11 @@ final class FileLoggerTest extends TestCase
         $logger->info('No context');
 
         $content = file_get_contents($path);
-        $this->assertIsString($content);
+        self::assertIsString($content);
 
         $data = json_decode(trim($content), true);
-        $this->assertIsArray($data);
-        $this->assertSame([], $data['context']);
+        self::assertIsArray($data);
+        self::assertSame([], $data['context']);
     }
 
     public function testTimestampFormat(): void
@@ -197,13 +197,13 @@ final class FileLoggerTest extends TestCase
         $logger->info('Test');
 
         $content = file_get_contents($path);
-        $this->assertIsString($content);
+        self::assertIsString($content);
 
         $data = json_decode(trim($content), true);
-        $this->assertIsArray($data);
+        self::assertIsArray($data);
 
         // Timestamp should be in ISO 8601 format (date('c'))
-        $this->assertMatchesRegularExpression(
+        self::assertMatchesRegularExpression(
             '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$/',
             $data['timestamp'],
         );

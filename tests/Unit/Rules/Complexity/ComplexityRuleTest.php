@@ -95,7 +95,7 @@ final class ComplexityRuleTest extends TestCase
     {
         $rule = new ComplexityRule(new ComplexityOptions());
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([]);
 
@@ -113,7 +113,7 @@ final class ComplexityRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('ccn', 15)->with('cognitive', 20);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$methodInfo]);
         $repository->method('get')
@@ -142,7 +142,7 @@ final class ComplexityRuleTest extends TestCase
         // High CCN but low cognitive — typical switch/match pattern
         $metricBag = (new MetricBag())->with('ccn', 15)->with('cognitive', 5);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$methodInfo]);
         $repository->method('get')
@@ -169,7 +169,7 @@ final class ComplexityRuleTest extends TestCase
         // No cognitive metric available
         $metricBag = (new MetricBag())->with('ccn', 15);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$methodInfo]);
         $repository->method('get')
@@ -192,7 +192,7 @@ final class ComplexityRuleTest extends TestCase
         // Cognitive exactly at threshold (15) — no divergence
         $metricBag = (new MetricBag())->with('ccn', 15)->with('cognitive', 15);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$methodInfo]);
         $repository->method('get')
@@ -214,7 +214,7 @@ final class ComplexityRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('ccn', 25)->with('cognitive', 30);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$methodInfo]);
         $repository->method('get')
@@ -255,7 +255,7 @@ final class ComplexityRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('ccn.max', 35); // Above warning (30), below error (50)
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -280,7 +280,7 @@ final class ComplexityRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('ccn.max', 55); // Above error (50)
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -309,7 +309,7 @@ final class ComplexityRuleTest extends TestCase
         $methodBag = (new MetricBag())->with('ccn', 15)->with('cognitive', 20); // Warning
         $classBag = (new MetricBag())->with('ccn.max', 35); // Warning
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => match ($type) {
                 SymbolType::Method => [$methodInfo],
@@ -444,7 +444,7 @@ final class ComplexityRuleTest extends TestCase
 
         $metricBag = (new MetricBag())->with('ccn', $ccn);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$methodInfo]);
         $repository->method('get')

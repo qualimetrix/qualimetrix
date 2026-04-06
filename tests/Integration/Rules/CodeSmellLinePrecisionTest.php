@@ -151,7 +151,7 @@ PHP;
             ->withEntry('codeSmell.eval', ['line' => 5])
             ->withEntry('codeSmell.eval', ['line' => 16]);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::File ? [$fileInfo] : []);
         $repository->method('get')
@@ -177,7 +177,7 @@ PHP;
         $metricBag = (new MetricBag())
             ->withEntry('codeSmell.eval', ['line' => 42]);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::File ? [$fileInfo] : []);
         $repository->method('get')

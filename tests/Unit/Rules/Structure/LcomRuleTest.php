@@ -63,10 +63,10 @@ final class LcomRuleTest extends TestCase
 
     public function testThrowsExceptionForWrongOptionsType(): void
     {
-        $wrongOptions = $this->createStub(\Qualimetrix\Core\Rule\RuleOptionsInterface::class);
+        $wrongOptions = self::createStub(\Qualimetrix\Core\Rule\RuleOptionsInterface::class);
 
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Expected');
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('Expected');
 
         new LcomRule($wrongOptions);
     }
@@ -87,7 +87,7 @@ final class LcomRuleTest extends TestCase
     {
         $rule = new LcomRule(new LcomOptions());
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([]);
 
@@ -109,7 +109,7 @@ final class LcomRuleTest extends TestCase
             ->with('methodCount', 5)
             ->with('isReadonly', 0);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -140,7 +140,7 @@ final class LcomRuleTest extends TestCase
             ->with('methodCount', 10)
             ->with('isReadonly', 0);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -164,7 +164,7 @@ final class LcomRuleTest extends TestCase
         // LCOM of 1 means perfectly cohesive (below warning threshold 2)
         $metricBag = (new MetricBag())->with('lcom', 1);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -186,7 +186,7 @@ final class LcomRuleTest extends TestCase
         // No 'lcom' metric
         $metricBag = new MetricBag();
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')
@@ -251,7 +251,7 @@ final class LcomRuleTest extends TestCase
             ->with('methodCount', 5)
             ->with('isReadonly', 0);
 
-        $repository = $this->createStub(MetricRepositoryInterface::class);
+        $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturn([$classInfo]);
         $repository->method('get')

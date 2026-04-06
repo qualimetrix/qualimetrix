@@ -139,8 +139,8 @@ final class ComputedMetricsConfigResolverTest extends TestCase
 
     public function testInvalidPrefixThrows(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('must start with "health." or "computed."');
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('must start with "health." or "computed."');
 
         $this->resolver->resolve([
             'custom.my_score' => [
@@ -151,8 +151,8 @@ final class ComputedMetricsConfigResolverTest extends TestCase
 
     public function testFormulaSyntaxErrorThrows(): void
     {
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Invalid formula syntax');
+        self::expectException(RuntimeException::class);
+        self::expectExceptionMessage('Invalid formula syntax');
 
         $this->resolver->resolve([
             'computed.bad' => [
@@ -164,8 +164,8 @@ final class ComputedMetricsConfigResolverTest extends TestCase
 
     public function testCircularDependencyThrows(): void
     {
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Circular dependency');
+        self::expectException(RuntimeException::class);
+        self::expectExceptionMessage('Circular dependency');
 
         $this->resolver->resolve([
             'computed.a' => [
@@ -181,8 +181,8 @@ final class ComputedMetricsConfigResolverTest extends TestCase
 
     public function testReferenceToNonExistentComputedMetricThrows(): void
     {
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('references unknown metric "computed.nonexistent"');
+        self::expectException(RuntimeException::class);
+        self::expectExceptionMessage('references unknown metric "computed.nonexistent"');
 
         $this->resolver->resolve([
             'computed.ref' => [
@@ -194,8 +194,8 @@ final class ComputedMetricsConfigResolverTest extends TestCase
 
     public function testMissingFormulaForLevelThrows(): void
     {
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('has no formula for level');
+        self::expectException(RuntimeException::class);
+        self::expectExceptionMessage('has no formula for level');
 
         $this->resolver->resolve([
             'computed.partial' => [
@@ -209,8 +209,8 @@ final class ComputedMetricsConfigResolverTest extends TestCase
 
     public function testReservedHealthPrefixForNewMetricThrows(): void
     {
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('reserved "health.*" prefix');
+        self::expectException(RuntimeException::class);
+        self::expectExceptionMessage('reserved "health.*" prefix');
 
         $this->resolver->resolve([
             'health.custom' => [
@@ -298,8 +298,8 @@ final class ComputedMetricsConfigResolverTest extends TestCase
 
     public function testThresholdMixedWithWarningThrows(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Cannot mix "threshold"');
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('Cannot mix "threshold"');
 
         $this->resolver->resolve([
             'health.complexity' => [
@@ -311,7 +311,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
 
     public function testThresholdMixedWithErrorThrows(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        self::expectException(InvalidArgumentException::class);
 
         $this->resolver->resolve([
             'health.complexity' => [

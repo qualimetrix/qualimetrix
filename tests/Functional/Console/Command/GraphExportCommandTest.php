@@ -65,13 +65,13 @@ final class GraphExportCommandTest extends TestCase
         ]);
 
         // Assert success
-        $this->assertSame(0, $commandTester->getStatusCode());
+        self::assertSame(0, $commandTester->getStatusCode());
         $output = $commandTester->getDisplay();
 
         // Verify DOT format output
-        $this->assertStringContainsString('digraph', $output);
-        $this->assertStringContainsString('ClassA', $output);
-        $this->assertStringContainsString('ClassB', $output);
+        self::assertStringContainsString('digraph', $output);
+        self::assertStringContainsString('ClassA', $output);
+        self::assertStringContainsString('ClassB', $output);
     }
 
     #[Test]
@@ -106,13 +106,13 @@ final class GraphExportCommandTest extends TestCase
         ]);
 
         // Assert success
-        $this->assertSame(0, $commandTester->getStatusCode());
-        $this->assertFileExists($outputFile);
+        self::assertSame(0, $commandTester->getStatusCode());
+        self::assertFileExists($outputFile);
 
         $content = file_get_contents($outputFile);
-        $this->assertIsString($content);
-        $this->assertStringContainsString('digraph', $content);
-        $this->assertStringContainsString('ClassA', $content);
+        self::assertIsString($content);
+        self::assertStringContainsString('digraph', $content);
+        self::assertStringContainsString('ClassA', $content);
     }
 
     #[Test]
@@ -140,9 +140,9 @@ final class GraphExportCommandTest extends TestCase
         ]);
 
         // Assert failure
-        $this->assertSame(1, $commandTester->getStatusCode());
+        self::assertSame(1, $commandTester->getStatusCode());
         $output = $commandTester->getDisplay();
-        $this->assertStringContainsString('No files found', $output);
+        self::assertStringContainsString('No files found', $output);
     }
 
     #[Test]
@@ -175,12 +175,12 @@ final class GraphExportCommandTest extends TestCase
         ]);
 
         // Assert success
-        $this->assertSame(0, $commandTester->getStatusCode());
+        self::assertSame(0, $commandTester->getStatusCode());
         $output = $commandTester->getDisplay();
 
         // Verify only Service namespace is included
-        $this->assertStringContainsString('ClassA', $output);
-        $this->assertStringNotContainsString('ClassB', $output);
+        self::assertStringContainsString('ClassA', $output);
+        self::assertStringNotContainsString('ClassB', $output);
     }
 
     #[Test]
@@ -213,9 +213,9 @@ final class GraphExportCommandTest extends TestCase
         ]);
 
         // Assert success
-        $this->assertSame(0, $commandTester->getStatusCode());
+        self::assertSame(0, $commandTester->getStatusCode());
         $output = $commandTester->getDisplay();
-        $this->assertStringContainsString('rankdir=TB', $output);
+        self::assertStringContainsString('rankdir=TB', $output);
     }
 
     #[Test]
@@ -248,11 +248,11 @@ final class GraphExportCommandTest extends TestCase
         ]);
 
         // Assert success
-        $this->assertSame(0, $commandTester->getStatusCode());
+        self::assertSame(0, $commandTester->getStatusCode());
         $output = $commandTester->getDisplay();
 
         // When no clusters, there should be no "subgraph cluster_" in output
-        $this->assertStringNotContainsString('subgraph cluster_', $output);
+        self::assertStringNotContainsString('subgraph cluster_', $output);
     }
 
     /**
@@ -264,7 +264,7 @@ final class GraphExportCommandTest extends TestCase
             return;
         }
 
-        $files = array_diff(scandir($dir) ?: [], ['.', '..']);
+        $files = array_diff((scandir($dir) !== false ? scandir($dir) : []), ['.', '..']);
         foreach ($files as $file) {
             $path = $dir . '/' . $file;
             is_dir($path) ? $this->removeDirectory($path) : unlink($path);
