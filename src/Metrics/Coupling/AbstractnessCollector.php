@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Metrics\Coupling;
 
 use Qualimetrix\Core\Dependency\DependencyGraphInterface;
+use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\GlobalContextCollectorInterface;
 use Qualimetrix\Core\Metric\MetricDefinition;
 use Qualimetrix\Core\Metric\MetricName;
@@ -33,11 +34,11 @@ final class AbstractnessCollector implements GlobalContextCollectorInterface
     public function requires(): array
     {
         return [
-            MetricName::SIZE_CLASS_COUNT . '.sum',
-            MetricName::SIZE_ENUM_COUNT . '.sum',
-            MetricName::SIZE_TRAIT_COUNT . '.sum',
-            MetricName::SIZE_ABSTRACT_CLASS_COUNT . '.sum',
-            MetricName::SIZE_INTERFACE_COUNT . '.sum',
+            MetricName::agg(MetricName::SIZE_CLASS_COUNT, AggregationStrategy::Sum),
+            MetricName::agg(MetricName::SIZE_ENUM_COUNT, AggregationStrategy::Sum),
+            MetricName::agg(MetricName::SIZE_TRAIT_COUNT, AggregationStrategy::Sum),
+            MetricName::agg(MetricName::SIZE_ABSTRACT_CLASS_COUNT, AggregationStrategy::Sum),
+            MetricName::agg(MetricName::SIZE_INTERFACE_COUNT, AggregationStrategy::Sum),
         ];
     }
 
@@ -66,11 +67,11 @@ final class AbstractnessCollector implements GlobalContextCollectorInterface
             $nsPath = $symbolInfo->symbolPath;
             $metrics = $repository->get($nsPath);
 
-            $classCount = $metrics->get(MetricName::SIZE_CLASS_COUNT . '.sum') ?? 0;
-            $enumCount = $metrics->get(MetricName::SIZE_ENUM_COUNT . '.sum') ?? 0;
-            $traitCount = $metrics->get(MetricName::SIZE_TRAIT_COUNT . '.sum') ?? 0;
-            $abstractCount = $metrics->get(MetricName::SIZE_ABSTRACT_CLASS_COUNT . '.sum') ?? 0;
-            $interfaceCount = $metrics->get(MetricName::SIZE_INTERFACE_COUNT . '.sum') ?? 0;
+            $classCount = (int) $metrics->require(MetricName::agg(MetricName::SIZE_CLASS_COUNT, AggregationStrategy::Sum));
+            $enumCount = (int) $metrics->require(MetricName::agg(MetricName::SIZE_ENUM_COUNT, AggregationStrategy::Sum));
+            $traitCount = (int) $metrics->require(MetricName::agg(MetricName::SIZE_TRAIT_COUNT, AggregationStrategy::Sum));
+            $abstractCount = (int) $metrics->require(MetricName::agg(MetricName::SIZE_ABSTRACT_CLASS_COUNT, AggregationStrategy::Sum));
+            $interfaceCount = (int) $metrics->require(MetricName::agg(MetricName::SIZE_INTERFACE_COUNT, AggregationStrategy::Sum));
 
             $totalTypes = (int) $classCount + (int) $enumCount + (int) $traitCount + (int) $interfaceCount;
             $totalAbstractions = (int) $abstractCount + (int) $interfaceCount;

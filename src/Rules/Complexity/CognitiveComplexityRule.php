@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Rules\Complexity;
 
+use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Rule\AnalysisContext;
@@ -177,7 +178,7 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
 
         foreach ($context->metrics->all(SymbolType::Class_) as $classInfo) {
             $metrics = $context->metrics->get($classInfo->symbolPath);
-            $maxCognitive = $metrics->get(MetricName::COMPLEXITY_COGNITIVE . '.max');
+            $maxCognitive = $metrics->get(MetricName::agg(MetricName::COMPLEXITY_COGNITIVE, AggregationStrategy::Max));
 
             if ($maxCognitive === null) {
                 continue;

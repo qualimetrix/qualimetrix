@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Rules\Coupling;
 
+use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\HierarchicalRuleInterface;
@@ -201,7 +202,7 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
             $metrics = $context->metrics->get($nsInfo->symbolPath);
 
             // Skip namespaces with too few classes
-            $classCount = (int) ($metrics->get(MetricName::SIZE_CLASS_COUNT . '.sum') ?? 0);
+            $classCount = (int) ($metrics->get(MetricName::agg(MetricName::SIZE_CLASS_COUNT, AggregationStrategy::Sum)) ?? 0);
             if ($classCount < $namespaceOptions->minClassCount) {
                 continue;
             }

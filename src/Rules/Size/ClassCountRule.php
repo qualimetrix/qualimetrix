@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Rules\Size;
 
+use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\RuleCategory;
@@ -86,7 +87,7 @@ final class ClassCountRule extends AbstractRule
             $metrics = $context->metrics->get($namespaceInfo->symbolPath);
 
             // Get aggregated classCount (sum from all files in namespace)
-            $classCount = (int) ($metrics->get(MetricName::SIZE_CLASS_COUNT . '.sum') ?? 0);
+            $classCount = (int) ($metrics->get(MetricName::agg(MetricName::SIZE_CLASS_COUNT, AggregationStrategy::Sum)) ?? 0);
 
             if ($classCount === 0) {
                 continue;
