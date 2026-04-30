@@ -78,18 +78,27 @@ def on_post_build(config: dict[str, Any], **kwargs: Any) -> None:
 
 
 def _collect_pages(nav: list[Any]) -> list[str]:
-    """Recursively extract page paths from the nav structure."""
+    """Recursively extract page paths from the nav structure.
+
+    External URLs (http://, https://) are skipped — they are not local pages.
+    """
     pages: list[str] = []
     for item in nav:
         if isinstance(item, str):
-            pages.append(item)
+            if not _is_external_url(item):
+                pages.append(item)
         elif isinstance(item, dict):
             for value in item.values():
                 if isinstance(value, str):
-                    pages.append(value)
+                    if not _is_external_url(value):
+                        pages.append(value)
                 elif isinstance(value, list):
                     pages.extend(_collect_pages(value))
     return pages
+
+
+def _is_external_url(value: str) -> bool:
+    return value.startswith(("http://", "https://"))
 
 
 def _build_toc(nav: list[Any], depth: int = 0) -> str:
@@ -104,7 +113,7 @@ def _build_toc(nav: list[Any], depth: int = 0) -> str:
         elif isinstance(item, dict):
             for title, value in item.items():
                 if isinstance(value, str):
-                    if value not in SKIP_PAGES:
+                    if value not in SKIP_PAGES and not _is_external_url(value):
                         lines.append(f"{indent}- {title}")
                 elif isinstance(value, list):
                     lines.append(f"{indent}- {title}")

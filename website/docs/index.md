@@ -2,6 +2,9 @@
 
 **Fast PHP static analysis tool** focused on code quality metrics, complexity analysis, and architectural insights.
 
+!!! warning "Beta software"
+    Qualimetrix is a young project (currently in the `0.x` series). Expect rough edges, occasional bugs, and **breaking changes between minor versions** until `1.0`. Pin an exact version in your `composer.json` and review the [changelog](changelog.md) before upgrading.
+
 ---
 
 ## Why Qualimetrix?
