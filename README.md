@@ -2,7 +2,7 @@
 
 Static analysis tool for PHP code quality metrics.
 
-**[Documentation](https://qualimetrix.github.io/qualimetrix/)** | [Quick Start](https://qualimetrix.github.io/qualimetrix/getting-started/quick-start/) | [llms.txt](https://qualimetrix.github.io/qualimetrix/llms.txt)
+**[Documentation](https://qualimetrix.dev/)** | [Quick Start](https://qualimetrix.dev/getting-started/quick-start/) | [llms.txt](https://qualimetrix.dev/llms.txt)
 
 ## Features
 
@@ -42,7 +42,7 @@ bin/qmx hook:install
 
 ## Configuration
 
-Create `qmx.yaml` ([full format](https://qualimetrix.github.io/qualimetrix/getting-started/configuration/)):
+Create `qmx.yaml` ([full format](https://qualimetrix.dev/getting-started/configuration/)):
 
 ```yaml
 rules:
@@ -80,12 +80,12 @@ bin/qmx check src/ --baseline=baseline.json
 
 ## Documentation
 
-- [Quick Start](https://qualimetrix.github.io/qualimetrix/getting-started/quick-start/)
+- [Quick Start](https://qualimetrix.dev/getting-started/quick-start/)
 - [Architecture](docs/ARCHITECTURE.md)
-- [GitHub Action](https://qualimetrix.github.io/qualimetrix/ci-cd/github-actions/)
+- [GitHub Action](https://qualimetrix.dev/ci-cd/github-actions/)
 - [Changelog](CHANGELOG.md)
-- [llms.txt](https://qualimetrix.github.io/qualimetrix/llms.txt) — concise reference for AI agents
-- [llms-full.txt](https://qualimetrix.github.io/qualimetrix/llms-full.txt) — complete documentation in a single file
+- [llms.txt](https://qualimetrix.dev/llms.txt) — concise reference for AI agents
+- [llms-full.txt](https://qualimetrix.dev/llms-full.txt) — complete documentation in a single file
 
 ## Requirements
 

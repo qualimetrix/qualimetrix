@@ -1,6 +1,6 @@
 site_name: Qualimetrix
 site_description: Fast PHP static analysis tool for code quality metrics
-site_url: https://qualimetrix.github.io/qualimetrix/
+site_url: https://qualimetrix.dev/
 repo_url: https://github.com/qualimetrix/qualimetrix
 repo_name: qualimetrix/qualimetrix
 edit_uri: edit/main/website/docs/

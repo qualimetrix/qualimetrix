@@ -51,4 +51,4 @@ Head to the [Quick Start](getting-started/quick-start.md) guide to integrate Qua
 
 ## For AI Agents
 
-If you are an AI coding agent, see [llms.txt](llms.txt) for a concise machine-readable overview, or [llms-full.txt](https://qualimetrix.github.io/qualimetrix/llms-full.txt) for the complete reference in a single file.
+If you are an AI coding agent, see [llms.txt](llms.txt) for a concise machine-readable overview, or [llms-full.txt](https://qualimetrix.dev/llms-full.txt) for the complete reference in a single file.

@@ -30,11 +30,11 @@ HEADER = """\
 > optimized for consumption by LLMs and AI coding agents.
 >
 > For a concise overview, see llms.txt instead.
-> For human-readable documentation, visit https://qualimetrix.github.io/qualimetrix/
+> For human-readable documentation, visit https://qualimetrix.dev/
 
 """
 
-SITE_URL = "https://qualimetrix.github.io/qualimetrix/"
+SITE_URL = "https://qualimetrix.dev/"
 
 
 def on_post_build(config: dict[str, Any], **kwargs: Any) -> None:

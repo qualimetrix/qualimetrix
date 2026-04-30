@@ -16,7 +16,7 @@ use Qualimetrix\Core\Violation\Violation;
 final class SarifRuleCollector
 {
     public const INFORMATION_URI = 'https://github.com/qualimetrix/qualimetrix';
-    private const DOCS_BASE_URI = 'https://qualimetrix.github.io/qualimetrix/rules/';
+    private const DOCS_BASE_URI = 'https://qualimetrix.dev/rules/';
 
     /** @var array<string, string> Maps rule category prefix to its docs page path segment */
     private const CATEGORY_DOCS_MAP = [
