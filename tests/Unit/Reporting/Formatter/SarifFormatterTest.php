@@ -565,8 +565,8 @@ final class SarifFormatterTest extends TestCase
         }
 
         // Known categories map to their docs page
-        self::assertSame('https://qualimetrix.github.io/qualimetrix/rules/complexity/', $rulesByCode['complexity.cyclomatic']['helpUri']);
-        self::assertSame('https://qualimetrix.github.io/qualimetrix/rules/code-smell/', $rulesByCode['code-smell.boolean-argument']['helpUri']);
+        self::assertSame('https://qualimetrix.dev/rules/complexity/', $rulesByCode['complexity.cyclomatic']['helpUri']);
+        self::assertSame('https://qualimetrix.dev/rules/code-smell/', $rulesByCode['code-smell.boolean-argument']['helpUri']);
 
         // Unknown category falls back to repository URL
         self::assertSame('https://github.com/qualimetrix/qualimetrix', $rulesByCode['unknown-rule']['helpUri']);

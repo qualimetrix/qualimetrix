@@ -51,4 +51,4 @@ vendor/bin/qmx check src/ --report=git:main..HEAD
 
 ## Для AI-агентов
 
-Если вы AI-агент, используйте [llms.txt](llms.txt) для краткого обзора или [llms-full.txt](https://qualimetrix.github.io/qualimetrix/llms-full.txt) для полной документации в одном файле.
+Если вы AI-агент, используйте [llms.txt](llms.txt) для краткого обзора или [llms-full.txt](https://qualimetrix.dev/llms-full.txt) для полной документации в одном файле.
