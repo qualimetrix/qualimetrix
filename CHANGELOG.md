@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- `health.coupling` namespace formula rewritten to use efferent-only signals (`ce.avg`, `ce_packages.avg`, `ce.max`, `ce`, distance). Stable contracts namespaces (high incoming, low outgoing dependencies) are no longer unfairly penalized by bidirectional CBO. Class- and project-level formulas are unchanged.
+- New aggregations for the `ce` metric at namespace and project levels: `ce.avg`, `ce.max`, `ce.p95`.
+
 ## [0.15.0] - 2026-04-04
 
 ### Changed

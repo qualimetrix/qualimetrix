@@ -6,14 +6,14 @@ Qualimetrix вычисляет 6 оценок здоровья для каждо
 
 ## Измерения
 
-| Измерение                | Что измеряет                                     | Ключевые метрики                                    | Пороги (warning / error) |
-| ------------------------ | ------------------------------------------------ | --------------------------------------------------- | ------------------------ |
-| `health.complexity`      | Сложность методов и классов                      | CCN (avg, max, p95), Cognitive Complexity           | 50 / 25                  |
-| `health.cohesion`        | Связность методов внутри класса                  | TCC, LCOM4, количество методов                      | 50 / 25                  |
-| `health.coupling`        | Зависимости между классами и пространствами имён | CBO, Distance from Main Sequence, efferent coupling | 50 / 25                  |
-| `health.typing`          | Покрытие типами                                  | Типы параметров, возвращаемых значений, свойств     | 80 / 50                  |
-| `health.maintainability` | Лёгкость безопасной модификации                  | Maintainability Index (avg, p5, min)                | 50 / 25                  |
-| `health.overall`         | Взвешенное среднее всех измерений                | Все вышеперечисленные                               | 50 / 30                  |
+| Измерение                | Что измеряет                                     | Ключевые метрики                                                                          | Пороги (warning / error) |
+| ------------------------ | ------------------------------------------------ | ----------------------------------------------------------------------------------------- | ------------------------ |
+| `health.complexity`      | Сложность методов и классов                      | CCN (avg, max, p95), Cognitive Complexity                                                 | 50 / 25                  |
+| `health.cohesion`        | Связность методов внутри класса                  | TCC, LCOM4, количество методов                                                            | 50 / 25                  |
+| `health.coupling`        | Зависимости между классами и пространствами имён | Efferent coupling (Ce, Ce packages), Distance from Main Sequence, CBO (на уровне проекта) | 50 / 25                  |
+| `health.typing`          | Покрытие типами                                  | Типы параметров, возвращаемых значений, свойств                                           | 80 / 50                  |
+| `health.maintainability` | Лёгкость безопасной модификации                  | Maintainability Index (avg, p5, min)                                                      | 50 / 25                  |
+| `health.overall`         | Взвешенное среднее всех измерений                | Все вышеперечисленные                                                                     | 50 / 30                  |
 
 ---
 
@@ -61,7 +61,11 @@ Qualimetrix вычисляет 6 оценок здоровья для каждо
 
 ### health.coupling
 
-Измеряет зависимости на уровне класса и пространства имён. На уровне класса используется гиперболическое затухание: зависимости за пределами порога снижают оценку, но каждая следующая зависимость влияет слабее предыдущей. На уровне пространства имён дополнительно учитываются Distance from Main Sequence, средний и экстремальный CBO.
+Измеряет зависимости на уровне класса, пространства имён и проекта. Везде применяется гиперболическое затухание: зависимости за пределами порога снижают оценку, но каждая следующая зависимость влияет слабее предыдущей.
+
+- **На уровне класса** смешиваются `ce_packages` (количество внешних пакетов) и сглаженный raw `ce` (efferent coupling).
+- **На уровне пространства имён** используются **только efferent-сигналы**: средняя `ce.avg` и `ce_packages.avg` по классам, выброс отдельного класса (`ce.max`), а также общая исходящая ширина пространства имён (`ce`), плюс Distance from Main Sequence. Двунаправленный CBO здесь намеренно не используется — он смешивает Ca с Ce и несправедливо штрафует «контрактные» пространства имён со стабильно высоким Ca и низким Ce.
+- **На уровне проекта** оставлены агрегаты двунаправленного CBO (`cbo.avg`, `cbo.p95`, `cbo.max`): на уровне проекта Σ Ca = Σ Ce, потому что каждое внутреннее ребро вносит вклад в обе стороны, поэтому CBO симметричен и пропорционален Ce.
 
 ### health.typing
 
@@ -192,24 +196,27 @@ computed_metrics:
 
 В формулах доступны все метрики символа. Точки в именах метрик заменяются на `__`:
 
-| Переменная                                    | Описание                                            | Доступна на уровне         |
-| --------------------------------------------- | --------------------------------------------------- | -------------------------- |
-| `ccn__avg`, `ccn__max`                        | Средняя и максимальная цикломатическая сложность    | class, namespace, project  |
-| `ccn__sum`, `ccn__p95`                        | Сумма и 95-й перцентиль CCN                         | namespace, project         |
-| `cognitive__avg`, `cognitive__max`            | Средняя и максимальная когнитивная сложность        | class, namespace, project  |
-| `cognitive__sum`, `cognitive__p95`            | Сумма и 95-й перцентиль Cognitive                   | namespace, project         |
-| `tcc` / `tcc__avg`                            | Tight Class Cohesion (0–1)                          | class / namespace, project |
-| `lcom` / `lcom__avg`                          | LCOM4                                               | class / namespace, project |
-| `cbo__avg`, `cbo__max`, `cbo__p95`            | Агрегаты Coupling Between Objects                   | namespace, project         |
-| `ce`, `ce_packages`                           | Efferent coupling (зависимости, количество пакетов) | class                      |
-| `distance` / `distance__avg`                  | Distance from Main Sequence                         | namespace / project        |
-| `mi__avg`, `mi__min`                          | Средний и минимальный Maintainability Index         | class, namespace, project  |
-| `mi__p5`                                      | 5-й перцентиль MI                                   | namespace, project         |
-| `typeCoverage__pct`                           | Процент покрытия типами                             | class                      |
-| `methodCount`                                 | Количество методов в классе                         | class                      |
-| `symbolMethodCount`                           | Количество методов в области видимости символа      | namespace, project         |
-| `pureMethodCount_cohesion`                    | «Чистые» методы (без обращения к свойствам)         | class                      |
-| `health__complexity`, `health__cohesion`, ... | Значения других оценок здоровья                     | class, namespace, project  |
+| Переменная                                    | Описание                                         | Доступна на уровне         |
+| --------------------------------------------- | ------------------------------------------------ | -------------------------- |
+| `ccn__avg`, `ccn__max`                        | Средняя и максимальная цикломатическая сложность | class, namespace, project  |
+| `ccn__sum`, `ccn__p95`                        | Сумма и 95-й перцентиль CCN                      | namespace, project         |
+| `cognitive__avg`, `cognitive__max`            | Средняя и максимальная когнитивная сложность     | class, namespace, project  |
+| `cognitive__sum`, `cognitive__p95`            | Сумма и 95-й перцентиль Cognitive                | namespace, project         |
+| `tcc` / `tcc__avg`                            | Tight Class Cohesion (0–1)                       | class / namespace, project |
+| `lcom` / `lcom__avg`                          | LCOM4                                            | class / namespace, project |
+| `cbo__avg`, `cbo__max`, `cbo__p95`            | Агрегаты Coupling Between Objects                | namespace, project         |
+| `ce`                                          | Efferent coupling (исходящие классы)             | class, namespace           |
+| `ce__avg`, `ce__max`, `ce__p95`               | Агрегаты per-class Ce                            | namespace, project         |
+| `ce_packages`                                 | Количество внешних пакетов                       | class                      |
+| `ce_packages__avg`, `ce_packages__max`        | Агрегаты per-class ce_packages                   | namespace, project         |
+| `distance` / `distance__avg`                  | Distance from Main Sequence                      | namespace / project        |
+| `mi__avg`, `mi__min`                          | Средний и минимальный Maintainability Index      | class, namespace, project  |
+| `mi__p5`                                      | 5-й перцентиль MI                                | namespace, project         |
+| `typeCoverage__pct`                           | Процент покрытия типами                          | class                      |
+| `methodCount`                                 | Количество методов в классе                      | class                      |
+| `symbolMethodCount`                           | Количество методов в области видимости символа   | namespace, project         |
+| `pureMethodCount_cohesion`                    | «Чистые» методы (без обращения к свойствам)      | class                      |
+| `health__complexity`, `health__cohesion`, ... | Значения других оценок здоровья                  | class, namespace, project  |
 
 Это не исчерпывающий список — в формулах можно использовать любую метрику, собираемую Qualimetrix. Команда `bin/qmx check src/ --format=metrics-json` покажет все доступные метрики для вашего проекта.
 
