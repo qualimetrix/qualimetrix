@@ -15,64 +15,43 @@ use Qualimetrix\Rules\AbstractRule;
 /**
  * Base class for code smell rules.
  *
- * Provides common functionality for analyzing code smell metrics
- * from CodeSmellCollector.
+ * Concrete rules are expected to define the metadata via typed class
+ * constants (NAME, DESCRIPTION, SMELL_TYPE, SEVERITY, MESSAGE_TEMPLATE,
+ * MESSAGE_TEMPLATE_WITH_EXTRA, RECOMMENDATION). The base class reads them
+ * via late static binding so subclasses stay free of boilerplate methods.
+ *
+ * For rules that whitelist individual occurrences (e.g. allowed boolean
+ * prefixes, allowed @-suppressed functions) the options class must
+ * implement {@see EntryFilteringOptionsInterface}.
  */
 abstract class AbstractCodeSmellRule extends AbstractRule
 {
+    public const string NAME = '';
+    protected const string DESCRIPTION = '';
+    protected const string SMELL_TYPE = '';
+    protected const Severity SEVERITY = Severity::Warning;
+    protected const string MESSAGE_TEMPLATE = '';
+    protected const ?string MESSAGE_TEMPLATE_WITH_EXTRA = null;
+    protected const ?string RECOMMENDATION = null;
+
+    public function getName(): string
+    {
+        return static::NAME;
+    }
+
+    public function getDescription(): string
+    {
+        return static::DESCRIPTION;
+    }
+
     public function getCategory(): RuleCategory
     {
         return RuleCategory::CodeSmell;
     }
 
-    /**
-     * Returns the code smell type this rule checks.
-     */
-    abstract protected function getSmellType(): string;
-
-    /**
-     * Returns severity for this smell.
-     */
-    abstract protected function getSeverity(): Severity;
-
-    /**
-     * Returns the violation message describing a single occurrence.
-     *
-     * Subclasses may override {@see buildMessage()} instead to access the entry's extra data.
-     */
-    abstract protected function getMessageTemplate(): string;
-
-    /**
-     * Returns the actionable recommendation for this smell.
-     *
-     * While message describes what is wrong, recommendation tells the user what to do.
-     * Subclasses should override to provide a specific recommendation.
-     */
-    protected function getRecommendation(): ?string
+    public static function getOptionsClass(): string
     {
-        return null;
-    }
-
-    /**
-     * Builds the violation message for a single entry.
-     *
-     * Subclasses may override this to incorporate extra data (e.g. parameter name) from the entry.
-     *
-     * @param array<string, mixed> $entry
-     */
-    protected function buildMessage(array $entry): string
-    {
-        return $this->getMessageTemplate();
-    }
-
-    /**
-     * Override in subclasses to filter entries before violation creation.
-     *
-     * @param array<string, mixed> $entry
-     */
-    protected function shouldIncludeEntry(array $entry): bool
-    {
-        return true;
+        return CodeSmellOptions::class;
     }
 
     /**
@@ -80,10 +59,8 @@ abstract class AbstractCodeSmellRule extends AbstractRule
      */
     public function requires(): array
     {
-        $type = $this->getSmellType();
-
         return [
-            "codeSmell.{$type}",
+            'codeSmell.' . static::SMELL_TYPE,
         ];
     }
 
@@ -97,7 +74,7 @@ abstract class AbstractCodeSmellRule extends AbstractRule
         }
 
         $violations = [];
-        $type = $this->getSmellType();
+        $type = static::SMELL_TYPE;
 
         foreach ($context->metrics->all(SymbolType::File) as $fileInfo) {
             $metrics = $context->metrics->get($fileInfo->symbolPath);
@@ -113,16 +90,63 @@ abstract class AbstractCodeSmellRule extends AbstractRule
                 $violations[] = new Violation(
                     location: new Location($fileInfo->file, $line, precise: true),
                     symbolPath: $fileInfo->symbolPath,
-                    ruleName: $this->getName(),
-                    violationCode: $this->getName(),
+                    ruleName: static::NAME,
+                    violationCode: static::NAME,
                     message: $this->buildMessage($entry),
-                    severity: $this->getSeverity(),
+                    severity: static::SEVERITY,
                     metricValue: 1.0,
-                    recommendation: $this->getRecommendation(),
+                    recommendation: static::RECOMMENDATION,
                 );
             }
         }
 
         return $violations;
+    }
+
+    /**
+     * Filters entries before violation creation.
+     *
+     * Default behaviour: when the options class implements
+     * {@see EntryFilteringOptionsInterface}, the entry's `extra` value is
+     * routed through it. Otherwise every entry is kept.
+     *
+     * @param array<string, mixed> $entry
+     */
+    protected function shouldIncludeEntry(array $entry): bool
+    {
+        $options = $this->options;
+
+        if (!$options instanceof EntryFilteringOptionsInterface) {
+            return true;
+        }
+
+        $extra = $entry['extra'] ?? null;
+
+        return !\is_string($extra) || !$options->isExtraAllowed($extra);
+    }
+
+    /**
+     * Builds the violation message for a single entry.
+     *
+     * Default behaviour: when MESSAGE_TEMPLATE_WITH_EXTRA is set and the
+     * entry carries a non-empty `extra` value, sprintf-format it (with a
+     * leading `$` stripped if present, so $-prefixed param names render
+     * cleanly). Otherwise return the plain MESSAGE_TEMPLATE.
+     *
+     * @param array<string, mixed> $entry
+     */
+    protected function buildMessage(array $entry): string
+    {
+        $template = static::MESSAGE_TEMPLATE_WITH_EXTRA;
+        if ($template === null) {
+            return static::MESSAGE_TEMPLATE;
+        }
+
+        $extra = $entry['extra'] ?? null;
+        if (!\is_string($extra) || $extra === '') {
+            return static::MESSAGE_TEMPLATE;
+        }
+
+        return \sprintf($template, ltrim($extra, '$'));
     }
 }

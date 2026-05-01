@@ -14,7 +14,7 @@ use Qualimetrix\Core\Violation\Severity;
  * Allows whitelisting boolean parameters with self-documenting prefixes
  * (e.g., $isActive, $hasPermission, $canEdit).
  */
-final readonly class BooleanArgumentOptions implements RuleOptionsInterface
+final readonly class BooleanArgumentOptions implements RuleOptionsInterface, EntryFilteringOptionsInterface
 {
     private const array DEFAULT_PREFIXES = ['is', 'has', 'can', 'should', 'will', 'did', 'was'];
 
@@ -96,5 +96,10 @@ final readonly class BooleanArgumentOptions implements RuleOptionsInterface
         }
 
         return false;
+    }
+
+    public function isExtraAllowed(string $extra): bool
+    {
+        return $this->isAllowedPrefix($extra);
     }
 }

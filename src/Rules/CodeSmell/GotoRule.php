@@ -15,42 +15,9 @@ use Qualimetrix\Core\Violation\Severity;
 final class GotoRule extends AbstractCodeSmellRule
 {
     public const string NAME = 'code-smell.goto';
-
-    public function getName(): string
-    {
-        return self::NAME;
-    }
-
-    public function getDescription(): string
-    {
-        return 'Detects usage of goto statement';
-    }
-
-    protected function getSmellType(): string
-    {
-        return 'goto';
-    }
-
-    protected function getSeverity(): Severity
-    {
-        return Severity::Error;
-    }
-
-    protected function getMessageTemplate(): string
-    {
-        return 'goto statement detected - avoid using goto';
-    }
-
-    protected function getRecommendation(): string
-    {
-        return 'Replace goto with structured control flow (loops, early returns).';
-    }
-
-    /**
-     * @return class-string<CodeSmellOptions>
-     */
-    public static function getOptionsClass(): string
-    {
-        return CodeSmellOptions::class;
-    }
+    protected const string DESCRIPTION = 'Detects usage of goto statement';
+    protected const string SMELL_TYPE = 'goto';
+    protected const Severity SEVERITY = Severity::Error;
+    protected const string MESSAGE_TEMPLATE = 'goto statement detected - avoid using goto';
+    protected const ?string RECOMMENDATION = 'Replace goto with structured control flow (loops, early returns).';
 }

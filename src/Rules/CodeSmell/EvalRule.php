@@ -15,42 +15,9 @@ use Qualimetrix\Core\Violation\Severity;
 final class EvalRule extends AbstractCodeSmellRule
 {
     public const string NAME = 'code-smell.eval';
-
-    public function getName(): string
-    {
-        return self::NAME;
-    }
-
-    public function getDescription(): string
-    {
-        return 'Detects usage of eval() function';
-    }
-
-    protected function getSmellType(): string
-    {
-        return 'eval';
-    }
-
-    protected function getSeverity(): Severity
-    {
-        return Severity::Error;
-    }
-
-    protected function getMessageTemplate(): string
-    {
-        return 'eval() usage detected - security risk';
-    }
-
-    protected function getRecommendation(): string
-    {
-        return 'Replace eval() with a safer alternative (closures, reflection, or template engine).';
-    }
-
-    /**
-     * @return class-string<CodeSmellOptions>
-     */
-    public static function getOptionsClass(): string
-    {
-        return CodeSmellOptions::class;
-    }
+    protected const string DESCRIPTION = 'Detects usage of eval() function';
+    protected const string SMELL_TYPE = 'eval';
+    protected const Severity SEVERITY = Severity::Error;
+    protected const string MESSAGE_TEMPLATE = 'eval() usage detected - security risk';
+    protected const ?string RECOMMENDATION = 'Replace eval() with a safer alternative (closures, reflection, or template engine).';
 }
