@@ -92,11 +92,11 @@ final class HealthContributorTest extends TestCase
         self::assertSame('WellCohesive', $contributors[2]->className);
     }
 
-    public function testCouplingContributorsRankedByHighestCbo(): void
+    public function testCouplingContributorsRankedByHighestCe(): void
     {
         $report = $this->buildReportWithClasses([
-            ['ns' => 'App', 'name' => 'Isolated', 'cbo' => 2, 'distance' => 0.1],
-            ['ns' => 'App', 'name' => 'HighlyCoupled', 'cbo' => 20, 'distance' => 0.8],
+            ['ns' => 'App', 'name' => 'Isolated', 'ce' => 2, 'distance' => 0.1],
+            ['ns' => 'App', 'name' => 'HighlyCoupled', 'ce' => 20, 'distance' => 0.8],
         ]);
 
         $result = $this->enricher->enrich($report);
@@ -106,7 +106,7 @@ final class HealthContributorTest extends TestCase
 
         self::assertCount(2, $contributors);
         self::assertSame('HighlyCoupled', $contributors[0]->className);
-        self::assertSame(20, $contributors[0]->metricValues['cbo']);
+        self::assertSame(20, $contributors[0]->metricValues['ce']);
     }
 
     public function testMaintainabilityContributorsRankedByLowestMi(): void
@@ -226,7 +226,7 @@ final class HealthContributorTest extends TestCase
     }
 
     /**
-     * @param list<array{ns: string, name: string, ccn?: int, cognitive?: int, tcc?: float, lcom?: int, cbo?: int, distance?: float, mi?: float}> $classSpecs
+     * @param list<array{ns: string, name: string, ccn?: int, cognitive?: int, tcc?: float, lcom?: int, ce?: int, distance?: float, mi?: float}> $classSpecs
      */
     private function buildReportWithClasses(array $classSpecs): Report
     {
@@ -262,10 +262,10 @@ final class HealthContributorTest extends TestCase
                 $bag['lcom'] = $spec['lcom'];
             }
 
-            if (isset($spec['cbo'])) {
-                $bag['cbo'] = $spec['cbo'];
+            if (isset($spec['ce'])) {
+                $bag['ce'] = $spec['ce'];
                 $dimensionMetrics['health.coupling'] ??= 50.0;
-                $dimensionMetrics['cbo.avg'] ??= 5.0;
+                $dimensionMetrics['ce.avg'] ??= 3.0;
             }
 
             if (isset($spec['distance'])) {

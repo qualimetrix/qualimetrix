@@ -55,9 +55,20 @@ final class ComputedMetricDefaults
                     // K=15, W_pkg=3.0, W_raw=0.5, threshold=5.
                     // HalsteadVisitor (ce=127, pkg≈1): ~80. ShowCommand (ce=43, pkg≈15): ~26.
                     'class' => 'clamp(100 * 15 / (15 + max((ce_packages ?? 0) * 3.0 + (ce ?? 0) ** 0.5 * 0.5 - 5, 0)), 0, 100)',
-                    // K=18, cbo_avg threshold=8, cbo_p95 threshold=15, sqrt-scaled max penalty.
-                    // Calibrated against 11 benchmark projects (Guzzle→92, Sf Console→64, Qualimetrix→53, Laravel→53, Composer→32).
-                    'namespace' => 'clamp(100 * 18 / (18 + (distance ?? 0) * 6 + max((cbo__avg ?? 0) - 8, 0) * 3 + max((cbo__p95 ?? 0) - 15, 0) * 0.4 + max((cbo__max ?? 0) - 30, 0) ** 0.5 * 0.8), 0, 100)',
+                    // Efferent-only formula mirroring class-level. Bidirectional CBO at namespace
+                    // level conflates Ca with Ce, which unfairly penalizes stable-contracts namespaces
+                    // (high incoming, low outgoing). We rely on per-class Ce aggregates plus the
+                    // namespace's own Ce (count of distinct external classes the namespace as a
+                    // whole depends on). Distance from main sequence stays as a structural penalty.
+                    // Terms: distance (Martin), per-class breadth (ce_packages.avg + sqrt(ce.avg))
+                    // with -4 threshold (more lenient than class-level -5 since avg dilutes),
+                    // worst-case class outlier (ce.max), and namespace-level breadth (ce) with a
+                    // high threshold (50) so umbrella namespaces aren't disproportionately penalized.
+                    'namespace' => 'clamp(100 * 18 / (18 + (distance ?? 0) * 6 + max((ce_packages__avg ?? 0) * 3.0 + (ce__avg ?? 0) ** 0.5 * 0.5 - 4, 0) * 4 + max((ce__max ?? 0) - 30, 0) ** 0.5 * 0.8 + max((ce ?? 0) - 50, 0) ** 0.5 * 0.6), 0, 100)',
+                    // Project formula keeps bidirectional CBO aggregates: at project level Σ Ca = Σ Ce
+                    // (every internal edge contributes to both), so cbo.avg is symmetric and
+                    // proportional to ce.avg. Calibrated against 11 benchmark projects
+                    // (Guzzle→92, Sf Console→64, Qualimetrix→53, Laravel→53, Composer→32).
                     'project' => 'clamp(100 * 18 / (18 + (distance__avg ?? 0) * 6 + max((cbo__avg ?? 0) - 8, 0) * 3 + max((cbo__p95 ?? 0) - 15, 0) * 0.4 + max((cbo__max ?? 0) - 30, 0) ** 0.5 * 0.8), 0, 100)',
                 ],
                 description: 'Coupling health score (0-100, higher is better)',

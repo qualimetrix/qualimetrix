@@ -71,7 +71,18 @@ final class CouplingCollector implements GlobalContextCollectorInterface
                 name: MetricName::COUPLING_CE,
                 collectedAt: SymbolLevel::Class_,
                 aggregations: [
-                    SymbolLevel::Namespace_->value => [AggregationStrategy::Sum],
+                    SymbolLevel::Namespace_->value => [
+                        AggregationStrategy::Sum,
+                        AggregationStrategy::Average,
+                        AggregationStrategy::Max,
+                        AggregationStrategy::Percentile95,
+                    ],
+                    SymbolLevel::Project->value => [
+                        AggregationStrategy::Sum,
+                        AggregationStrategy::Average,
+                        AggregationStrategy::Max,
+                        AggregationStrategy::Percentile95,
+                    ],
                 ],
             ),
             new MetricDefinition(

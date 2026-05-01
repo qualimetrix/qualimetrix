@@ -72,10 +72,23 @@ final class CouplingCollectorTest extends TestCase
         self::assertSame('ce', $ce->name);
         self::assertSame(SymbolLevel::Class_, $ce->collectedAt);
         self::assertSame(
-            [AggregationStrategy::Sum],
+            [
+                AggregationStrategy::Sum,
+                AggregationStrategy::Average,
+                AggregationStrategy::Max,
+                AggregationStrategy::Percentile95,
+            ],
             $ce->getStrategiesForLevel(SymbolLevel::Namespace_),
         );
-        self::assertSame([], $ce->getStrategiesForLevel(SymbolLevel::Project));
+        self::assertSame(
+            [
+                AggregationStrategy::Sum,
+                AggregationStrategy::Average,
+                AggregationStrategy::Max,
+                AggregationStrategy::Percentile95,
+            ],
+            $ce->getStrategiesForLevel(SymbolLevel::Project),
+        );
 
         // cbo metric
         $cbo = $definitions[2];
