@@ -163,6 +163,33 @@ final class ErrorSuppressionRuleTest extends TestCase
     }
 
     #[Test]
+    public function emptyExtraFallsBackToBaseTemplate(): void
+    {
+        $rule = new ErrorSuppressionRule(new ErrorSuppressionOptions());
+
+        $symbolPath = SymbolPath::forFile('src/File.php');
+        $fileInfo = new SymbolInfo($symbolPath, 'src/File.php', null);
+
+        $metricBag = (new MetricBag())
+            ->withEntry('codeSmell.error_suppression', ['line' => 10, 'extra' => '']);
+
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::File ? [$fileInfo] : []);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyze($context);
+
+        self::assertCount(1, $violations);
+        self::assertSame(
+            'Error suppression operator (@) detected - handle errors explicitly',
+            $violations[0]->message,
+        );
+    }
+
+    #[Test]
     public function methodCallNotFilteredByAllowedFunctions(): void
     {
         // @$obj->method() has no function name (extra is null) — always reported

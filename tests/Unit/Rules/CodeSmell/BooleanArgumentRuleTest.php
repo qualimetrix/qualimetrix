@@ -213,6 +213,33 @@ final class BooleanArgumentRuleTest extends TestCase
     }
 
     #[Test]
+    public function emptyExtraFallsBackToBaseTemplate(): void
+    {
+        $rule = new BooleanArgumentRule(new BooleanArgumentOptions());
+
+        $symbolPath = SymbolPath::forFile('src/Service.php');
+        $fileInfo = new SymbolInfo($symbolPath, 'src/Service.php', null);
+
+        $metricBag = (new MetricBag())
+            ->withEntry('codeSmell.boolean_argument', ['line' => 10, 'extra' => '']);
+
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::File ? [$fileInfo] : []);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyze($context);
+
+        self::assertCount(1, $violations);
+        self::assertSame(
+            'Boolean argument detected - consider splitting methods or using enums',
+            $violations[0]->message,
+        );
+    }
+
+    #[Test]
     public function entryWithoutExtraIsAlwaysReported(): void
     {
         $rule = new BooleanArgumentRule(new BooleanArgumentOptions());
