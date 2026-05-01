@@ -312,7 +312,10 @@ final class ComputedMetricEvaluatorTest extends TestCase
             'npath.avg' => 5.0,
             'tcc.avg' => 0.5,
             'lcom.avg' => 3.0,
-            'cbo.avg' => 6.0,
+            'ce' => 6,
+            'ce.avg' => 4.0,
+            'ce.max' => 8.0,
+            'ce_packages.avg' => 0.2,
             'distance' => 0.3,
             'typeCoverage.paramTyped.sum' => 40.0,
             'typeCoverage.returnTyped.sum' => 35.0,
@@ -340,7 +343,11 @@ final class ComputedMetricEvaluatorTest extends TestCase
         //                 = 0.7071*50 + 0.6*50 = 35.36 + 30 = 65.36
         self::assertEqualsWithDelta(65.36, $bag->get('health.cohesion'), 0.01);
 
-        // health.coupling = 100 * 18 / (18 + 0.3*6 + max(6-8,0)*3 + 0 + 0)
+        // health.coupling = 100 * 18 / (18 + dist*6
+        //                              + max(ce_packages_avg*3 + sqrt(ce_avg)*0.5 - 4, 0)*4
+        //                              + max(ce_max - 30, 0)^0.5 * 0.8
+        //                              + max(ce - 50, 0)^0.5 * 0.6)
+        //                 = 1800 / (18 + 1.8 + max(0.2*3 + 2*0.5 - 4, 0)*4 + 0 + 0)
         //                 = 1800 / 19.8 ≈ 90.91
         self::assertEqualsWithDelta(90.91, $bag->get('health.coupling'), 0.01);
 
@@ -354,6 +361,69 @@ final class ComputedMetricEvaluatorTest extends TestCase
         // health.overall = clamp(100*0.30 + 65.36*0.20 + 90.91*0.20 + 76*0.10 + 65.94*0.20, 0, 100)
         //                = 30.0 + 13.072 + 18.182 + 7.6 + 13.188 = 82.04
         self::assertEqualsWithDelta(82.04, $bag->get('health.overall'), 0.5);
+    }
+
+    #[Test]
+    public function namespaceCouplingPenalizesEfferentBreadth(): void
+    {
+        $repo = new InMemoryMetricRepository();
+
+        // Register a class so the namespace appears in the repository.
+        $repo->add(SymbolPath::forClass('App\\Big', 'X'), MetricBag::fromArray([]), 'src/X.php', 1);
+
+        // Namespace with high efferent coupling: ce.avg=10 (per-class), ce.max=60 (outlier),
+        // ce_packages.avg=2 (touches 2 vendor packages on avg per class), ns-level ce=80.
+        $nsPath = SymbolPath::forNamespace('App\\Big');
+        $repo->add($nsPath, MetricBag::fromArray([
+            'ce' => 80,
+            'ce.avg' => 10.0,
+            'ce.max' => 60,
+            'ce_packages.avg' => 2.0,
+            'distance' => 0.2,
+            AggregationMeta::SYMBOL_METHOD_COUNT => 1,
+        ]), '', null);
+
+        $defaults = array_values(ComputedMetricDefaults::getDefaults());
+        $this->evaluator->compute($repo, $defaults);
+
+        // distance*6              = 0.2 * 6                              = 1.2
+        // per-class breadth term  = max(2*3 + sqrt(10)*0.5 - 4, 0)*4
+        //                         = max(6 + 1.5811 - 4, 0)*4 = 3.5811*4  = 14.3246
+        // ce.max outlier          = max(60-30, 0)^0.5 * 0.8 = sqrt(30)*0.8 = 4.3818
+        // ns breadth              = max(80-50, 0)^0.5 * 0.6 = sqrt(30)*0.6 = 3.2863
+        // denom                   = 18 + 1.2 + 14.3246 + 4.3818 + 3.2863 = 41.1927
+        // score                   = 100 * 18 / 41.1927                    ≈ 43.70
+        self::assertEqualsWithDelta(43.70, $repo->get($nsPath)->get('health.coupling'), 0.1);
+    }
+
+    #[Test]
+    public function namespaceCouplingRewardsStableContractsNamespace(): void
+    {
+        $repo = new InMemoryMetricRepository();
+
+        // Register a class so the namespace appears in the repository.
+        $repo->add(SymbolPath::forClass('App\\Contracts', 'I'), MetricBag::fromArray([]), 'src/I.php', 1);
+
+        // Stable-contracts namespace: low outgoing coupling (ce=5, ce.avg=1.3, ce.max=4),
+        // moderate distance from main sequence. Bidirectional CBO would be high here
+        // because of high afferent (every consumer depends on these contracts), but the
+        // formula uses efferent metrics only.
+        $nsPath = SymbolPath::forNamespace('App\\Contracts');
+        $repo->add($nsPath, MetricBag::fromArray([
+            'ce' => 5,
+            'ce.avg' => 1.3,
+            'ce.max' => 4,
+            'ce_packages.avg' => 0.0,
+            'distance' => 0.4,
+            AggregationMeta::SYMBOL_METHOD_COUNT => 1,
+        ]), '', null);
+
+        $defaults = array_values(ComputedMetricDefaults::getDefaults());
+        $this->evaluator->compute($repo, $defaults);
+
+        // distance*6 = 2.4; all other terms clamp to 0.
+        // denom = 18 + 2.4 = 20.4 -> 100*18/20.4 ≈ 88.24
+        self::assertEqualsWithDelta(88.24, $repo->get($nsPath)->get('health.coupling'), 0.1);
     }
 
     #[Test]

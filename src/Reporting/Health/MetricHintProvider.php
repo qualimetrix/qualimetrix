@@ -93,6 +93,34 @@ final class MetricHintProvider
             'badExplanation' => 'classes depend on too many others',
             'goodExplanation' => 'reasonable coupling',
         ],
+        'ce' => [
+            'label' => 'Ce',
+            'direction' => 'lower_is_better',
+            'goodValue' => 'below 3',
+            'badExplanation' => 'depends on too many external classes',
+            'goodExplanation' => 'limited outgoing dependencies',
+        ],
+        'ce.avg' => [
+            'label' => 'Ce (avg)',
+            'direction' => 'lower_is_better',
+            'goodValue' => 'below 3',
+            'badExplanation' => 'classes depend on too many others outgoing',
+            'goodExplanation' => 'low outgoing coupling',
+        ],
+        'ce_packages' => [
+            'label' => 'Ce packages',
+            'direction' => 'lower_is_better',
+            'goodValue' => 'below 2',
+            'badExplanation' => 'spread across too many external packages',
+            'goodExplanation' => 'narrow package dependencies',
+        ],
+        'ce_packages.avg' => [
+            'label' => 'Ce pkg (avg)',
+            'direction' => 'lower_is_better',
+            'goodValue' => 'below 1',
+            'badExplanation' => 'classes touch many external packages',
+            'goodExplanation' => 'narrow package dependencies',
+        ],
         'instability' => [
             'label' => 'Instability',
             'direction' => 'range',
@@ -406,7 +434,8 @@ final class MetricHintProvider
             ['key' => 'lcom.avg', 'altKey' => 'lcom', 'label' => 'LCOM', 'ideal' => '1', 'direction' => 'lower'],
         ],
         'health.coupling' => [
-            ['key' => 'cbo.avg', 'altKey' => 'cbo', 'label' => 'CBO', 'ideal' => '0-7', 'direction' => 'lower'],
+            ['key' => 'ce.avg', 'altKey' => 'ce', 'label' => 'Ce (avg)', 'ideal' => '0-3', 'direction' => 'lower'],
+            ['key' => 'ce_packages.avg', 'altKey' => 'ce_packages', 'label' => 'Ce packages', 'ideal' => '0-1', 'direction' => 'lower'],
             ['key' => 'distance.avg', 'altKey' => 'distance', 'label' => 'Distance', 'ideal' => '0.0', 'direction' => 'lower'],
         ],
         'health.typing' => [
@@ -448,6 +477,8 @@ final class MetricHintProvider
         'lcc' => 'Loose Class Cohesion',
         'wmc' => 'Weighted Methods per Class',
         'cbo' => 'Coupling Between Objects',
+        'ce' => 'Efferent Coupling',
+        'ce_packages' => 'Efferent Packages',
         'dit' => 'Depth of Inheritance Tree',
         'noc' => 'Number of Children',
         'rfc' => 'Response for a Class',
