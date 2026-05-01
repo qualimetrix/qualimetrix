@@ -6,14 +6,14 @@ Qualimetrix computes **six health scores** for every class, namespace, and proje
 
 ## Dimensions
 
-| Dimension                | What it measures                            | Key input metrics                                         | Default thresholds (warning / error) |
-| ------------------------ | ------------------------------------------- | --------------------------------------------------------- | ------------------------------------ |
-| `health.complexity`      | Method and class complexity                 | CCN (avg, max, p95), Cognitive Complexity (avg, max, p95) | 50 / 25                              |
-| `health.cohesion`        | How well class methods relate to each other | TCC, LCOM4, method count                                  | 50 / 25                              |
-| `health.coupling`        | Dependencies between classes and namespaces | CBO, Distance from Main Sequence, efferent coupling       | 50 / 25                              |
-| `health.typing`          | Type declaration coverage                   | Parameter, return, and property type coverage             | 80 / 50                              |
-| `health.maintainability` | Ease of safe modification                   | Maintainability Index (avg, p5, min)                      | 50 / 25                              |
-| `health.overall`         | Weighted average of all dimensions          | All of the above                                          | 50 / 30                              |
+| Dimension                | What it measures                            | Key input metrics                                                                     | Default thresholds (warning / error) |
+| ------------------------ | ------------------------------------------- | ------------------------------------------------------------------------------------- | ------------------------------------ |
+| `health.complexity`      | Method and class complexity                 | CCN (avg, max, p95), Cognitive Complexity (avg, max, p95)                             | 50 / 25                              |
+| `health.cohesion`        | How well class methods relate to each other | TCC, LCOM4, method count                                                              | 50 / 25                              |
+| `health.coupling`        | Dependencies between classes and namespaces | Efferent coupling (Ce, Ce packages), Distance from Main Sequence, CBO (project level) | 50 / 25                              |
+| `health.typing`          | Type declaration coverage                   | Parameter, return, and property type coverage                                         | 80 / 50                              |
+| `health.maintainability` | Ease of safe modification                   | Maintainability Index (avg, p5, min)                                                  | 50 / 25                              |
+| `health.overall`         | Weighted average of all dimensions          | All of the above                                                                      | 50 / 30                              |
 
 ---
 
@@ -62,7 +62,11 @@ Blends TCC (Tight Class Cohesion) and LCOM4. TCC is square-root-scaled to reward
 
 ### Coupling
 
-Uses hyperbolic decay (`K / (K + penalty)`) for smooth scoring. At class level, blends package-level and raw efferent coupling. At namespace level, combines Distance from Main Sequence, average CBO, and outlier CBO (p95, max).
+Uses hyperbolic decay (`K / (K + penalty)`) for smooth scoring.
+
+- **Class level** blends package-level (`ce_packages`) and dampened raw efferent coupling (`ce`).
+- **Namespace level** also relies on **efferent-only** signals: per-class average outgoing coupling (`ce.avg`, `ce_packages.avg`), worst-case class outlier (`ce.max`), and namespace-level outgoing breadth (`ce`), plus Distance from Main Sequence. Bidirectional CBO is intentionally avoided here because it conflates afferent (Ca) with efferent (Ce) and would unfairly penalize stable contracts namespaces (high Ca, low Ce by design).
+- **Project level** keeps bidirectional CBO aggregates (`cbo.avg`, `cbo.p95`, `cbo.max`): at project level Σ Ca = Σ Ce because every internal edge contributes to both sides, so CBO is symmetric and proportional to Ce.
 
 ### Typing
 
@@ -177,8 +181,13 @@ Metric names use double underscores in formulas (dots are not allowed in Express
 | `cbo.avg`                  | `cbo__avg`                 | namespace, project        |
 | `cbo.max`                  | `cbo__max`                 | namespace, project        |
 | `cbo.p95`                  | `cbo__p95`                 | namespace, project        |
-| `ce`                       | `ce`                       | class                     |
+| `ce`                       | `ce`                       | class, namespace          |
+| `ce.avg`                   | `ce__avg`                  | namespace, project        |
+| `ce.max`                   | `ce__max`                  | namespace, project        |
+| `ce.p95`                   | `ce__p95`                  | namespace, project        |
 | `ce_packages`              | `ce_packages`              | class                     |
+| `ce_packages.avg`          | `ce_packages__avg`         | namespace, project        |
+| `ce_packages.max`          | `ce_packages__max`         | namespace, project        |
 | `mi.avg`                   | `mi__avg`                  | class, namespace, project |
 | `mi.min`                   | `mi__min`                  | class, namespace, project |
 | `mi.p5`                    | `mi__p5`                   | namespace, project        |
