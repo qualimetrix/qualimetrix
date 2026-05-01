@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-05-01
+
 ### Changed
 - `health.coupling` namespace formula rewritten to use efferent-only signals (`ce.avg`, `ce_packages.avg`, `ce.max`, `ce`, distance). Stable contracts namespaces (high incoming, low outgoing dependencies) are no longer unfairly penalized by bidirectional CBO. Class- and project-level formulas are unchanged.
 - New aggregations for the `ce` metric at namespace and project levels: `ce.avg`, `ce.max`, `ce.p95`.
@@ -285,7 +287,8 @@ Initial release.
 [0.9.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/qualimetrix/qualimetrix/compare/v0.7.0...v0.7.1
-[Unreleased]: https://github.com/qualimetrix/qualimetrix/compare/v0.15.0...HEAD
+[Unreleased]: https://github.com/qualimetrix/qualimetrix/compare/v0.16.0...HEAD
+[0.16.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.15.0...v0.16.0
 [0.15.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.14.0...v0.15.0
 [0.14.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.12.0...v0.13.0
