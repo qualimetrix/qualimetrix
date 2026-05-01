@@ -22,64 +22,12 @@ use Qualimetrix\Core\Violation\Severity;
 final class BooleanArgumentRule extends AbstractCodeSmellRule
 {
     public const string NAME = 'code-smell.boolean-argument';
-
-    public function getName(): string
-    {
-        return self::NAME;
-    }
-
-    public function getDescription(): string
-    {
-        return 'Detects boolean arguments in method/function signatures';
-    }
-
-    protected function getSmellType(): string
-    {
-        return 'boolean_argument';
-    }
-
-    protected function getSeverity(): Severity
-    {
-        return Severity::Warning;
-    }
-
-    protected function getMessageTemplate(): string
-    {
-        return 'Boolean argument detected - consider splitting methods or using enums';
-    }
-
-    protected function getRecommendation(): string
-    {
-        return 'Replace boolean parameter with two explicit methods or use an enum.';
-    }
-
-    /**
-     * @param array<string, mixed> $entry
-     */
-    protected function shouldIncludeEntry(array $entry): bool
-    {
-        /** @var BooleanArgumentOptions $options */
-        $options = $this->options;
-        $paramName = $entry['extra'] ?? null;
-
-        return !\is_string($paramName) || !$options->isAllowedPrefix($paramName);
-    }
-
-    /**
-     * Includes the parameter name in the message when available.
-     *
-     * @param array<string, mixed> $entry
-     */
-    protected function buildMessage(array $entry): string
-    {
-        $paramName = isset($entry['extra']) && \is_string($entry['extra']) ? $entry['extra'] : null;
-
-        if ($paramName !== null) {
-            return \sprintf('Boolean argument $%s detected - consider splitting methods or using enums', ltrim($paramName, '$'));
-        }
-
-        return $this->getMessageTemplate();
-    }
+    protected const string DESCRIPTION = 'Detects boolean arguments in method/function signatures';
+    protected const string SMELL_TYPE = 'boolean_argument';
+    protected const Severity SEVERITY = Severity::Warning;
+    protected const string MESSAGE_TEMPLATE = 'Boolean argument detected - consider splitting methods or using enums';
+    protected const ?string MESSAGE_TEMPLATE_WITH_EXTRA = 'Boolean argument $%s detected - consider splitting methods or using enums';
+    protected const ?string RECOMMENDATION = 'Replace boolean parameter with two explicit methods or use an enum.';
 
     /**
      * @return class-string<BooleanArgumentOptions>

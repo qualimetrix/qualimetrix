@@ -18,62 +18,12 @@ use Qualimetrix\Core\Violation\Severity;
 final class ErrorSuppressionRule extends AbstractCodeSmellRule
 {
     public const string NAME = 'code-smell.error-suppression';
-
-    public function getName(): string
-    {
-        return self::NAME;
-    }
-
-    public function getDescription(): string
-    {
-        return 'Detects usage of error suppression operator (@)';
-    }
-
-    protected function getSmellType(): string
-    {
-        return 'error_suppression';
-    }
-
-    protected function getSeverity(): Severity
-    {
-        return Severity::Warning;
-    }
-
-    protected function getMessageTemplate(): string
-    {
-        return 'Error suppression operator (@) detected - handle errors explicitly';
-    }
-
-    protected function getRecommendation(): string
-    {
-        return 'Handle the error explicitly with try/catch or conditional checks.';
-    }
-
-    /**
-     * @param array<string, mixed> $entry
-     */
-    protected function shouldIncludeEntry(array $entry): bool
-    {
-        /** @var ErrorSuppressionOptions $options */
-        $options = $this->options;
-        $funcName = $entry['extra'] ?? null;
-
-        return !\is_string($funcName) || !$options->isFunctionAllowed($funcName);
-    }
-
-    /**
-     * @param array<string, mixed> $entry
-     */
-    protected function buildMessage(array $entry): string
-    {
-        $funcName = $entry['extra'] ?? null;
-
-        if (\is_string($funcName) && $funcName !== '') {
-            return \sprintf('Error suppression (@) on %s() - handle errors explicitly', $funcName);
-        }
-
-        return $this->getMessageTemplate();
-    }
+    protected const string DESCRIPTION = 'Detects usage of error suppression operator (@)';
+    protected const string SMELL_TYPE = 'error_suppression';
+    protected const Severity SEVERITY = Severity::Warning;
+    protected const string MESSAGE_TEMPLATE = 'Error suppression operator (@) detected - handle errors explicitly';
+    protected const ?string MESSAGE_TEMPLATE_WITH_EXTRA = 'Error suppression (@) on %s() - handle errors explicitly';
+    protected const ?string RECOMMENDATION = 'Handle the error explicitly with try/catch or conditional checks.';
 
     /**
      * @return class-string<ErrorSuppressionOptions>

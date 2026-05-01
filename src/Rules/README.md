@@ -836,13 +836,17 @@ final class ExampleRule extends AbstractRule {
 ### Code Smell Rule
 
 1. Create a `{Name}Rule extends AbstractCodeSmellRule` class
-2. Implement `getName(): string` — return the NAME constant
-3. Implement `getDescription(): string` — short description
-4. Implement `getSmellType(): string` — metric key from `CodeSmellCollector`
-5. Implement `getSeverity(): Severity` — typically `Severity::Warning`
-6. Implement `getMessageTemplate(): string` — use `{count}` placeholder
-7. Use `CodeSmellOptions` as the options class
-8. Write unit tests
+2. Declare the metadata via typed class constants on the rule:
+   - `public const string NAME` — full rule slug (`code-smell.{slug}`)
+   - `protected const string DESCRIPTION` — short description
+   - `protected const string SMELL_TYPE` — metric key from `CodeSmellCollector`
+   - `protected const Severity SEVERITY` — defaults to `Severity::Warning`; override for `Error`
+   - `protected const string MESSAGE_TEMPLATE` — generic violation message
+   - `protected const ?string MESSAGE_TEMPLATE_WITH_EXTRA` — sprintf template used when the entry has an `extra` value (optional)
+   - `protected const ?string RECOMMENDATION` — actionable hint shown to users (optional)
+3. Use `CodeSmellOptions` as the options class (default). Override `getOptionsClass()` only when a rule needs a richer options class
+4. For per-occurrence whitelisting, make the options class implement `EntryFilteringOptionsInterface::isExtraAllowed()` — `AbstractCodeSmellRule::shouldIncludeEntry()` will route through it automatically
+5. Write unit tests
 
 **Automatic registration:**
 - Rules are registered automatically via Symfony DI (autoconfiguration)

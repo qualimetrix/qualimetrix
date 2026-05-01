@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Rules\CodeSmell;
 
-use Qualimetrix\Core\Violation\Severity;
-
 /**
  * Detects debug code (var_dump, print_r, dd, etc).
  *
@@ -14,42 +12,8 @@ use Qualimetrix\Core\Violation\Severity;
 final class DebugCodeRule extends AbstractCodeSmellRule
 {
     public const string NAME = 'code-smell.debug-code';
-
-    public function getName(): string
-    {
-        return self::NAME;
-    }
-
-    public function getDescription(): string
-    {
-        return 'Detects debug code (var_dump, print_r, dd, etc)';
-    }
-
-    protected function getSmellType(): string
-    {
-        return 'debug_code';
-    }
-
-    protected function getSeverity(): Severity
-    {
-        return Severity::Warning;
-    }
-
-    protected function getMessageTemplate(): string
-    {
-        return 'Debug function call detected - remove before production';
-    }
-
-    protected function getRecommendation(): string
-    {
-        return 'Remove debug statements before merging to production.';
-    }
-
-    /**
-     * @return class-string<CodeSmellOptions>
-     */
-    public static function getOptionsClass(): string
-    {
-        return CodeSmellOptions::class;
-    }
+    protected const string DESCRIPTION = 'Detects debug code (var_dump, print_r, dd, etc)';
+    protected const string SMELL_TYPE = 'debug_code';
+    protected const string MESSAGE_TEMPLATE = 'Debug function call detected - remove before production';
+    protected const ?string RECOMMENDATION = 'Remove debug statements before merging to production.';
 }

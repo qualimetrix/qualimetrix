@@ -14,7 +14,7 @@ use Qualimetrix\Core\Violation\Severity;
  * Allows whitelisting specific functions where @ usage is acceptable
  * (e.g., I/O functions that return false + emit a warning).
  */
-final readonly class ErrorSuppressionOptions implements RuleOptionsInterface
+final readonly class ErrorSuppressionOptions implements RuleOptionsInterface, EntryFilteringOptionsInterface
 {
     /**
      * @param list<string> $allowedFunctions Lowercase function names where @ is allowed
@@ -58,5 +58,10 @@ final readonly class ErrorSuppressionOptions implements RuleOptionsInterface
     {
         return $this->allowedFunctions !== []
             && \in_array(strtolower($funcName), $this->allowedFunctions, true);
+    }
+
+    public function isExtraAllowed(string $extra): bool
+    {
+        return $this->isFunctionAllowed($extra);
     }
 }
