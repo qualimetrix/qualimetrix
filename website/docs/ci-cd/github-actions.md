@@ -43,6 +43,7 @@ jobs:
 
 ## Examples
 
+<!-- llms:skip-begin -->
 ### With Baseline
 
 ```yaml
@@ -62,6 +63,7 @@ jobs:
     paths: 'src/ lib/ app/'
     config: 'qmx.yaml'
 ```
+<!-- llms:skip-end -->
 
 ### SARIF Output for GitHub Security Tab
 
@@ -188,6 +190,7 @@ jobs:
 
 ## Complete Workflow Example
 
+<!-- llms:skip-begin -->
 ```yaml
 name: Code Quality
 
@@ -240,9 +243,11 @@ jobs:
         if: steps.qmx.outputs.exit-code != '0'
         run: exit ${{ steps.qmx.outputs.exit-code }}
 ```
+<!-- llms:skip-end -->
 
 ## Integration with Other Tools
 
+<!-- llms:skip-begin -->
 ### With PHPStan
 
 ```yaml
@@ -268,9 +273,11 @@ jobs:
         with:
           paths: 'src/'
 ```
+<!-- llms:skip-end -->
 
 ## Troubleshooting
 
+<!-- llms:skip-begin -->
 ### Action fails with "Qualimetrix binary not found"
 
 The action looks for Qualimetrix in this order:
@@ -308,9 +315,11 @@ with:
   working-directory: './backend'
   paths: 'src/'
 ```
+<!-- llms:skip-end -->
 
 ## Performance Tips
 
+<!-- llms:skip-begin -->
 1. **Use caching** for composer dependencies:
 
     ```yaml
@@ -323,3 +332,4 @@ with:
 
 2. **Use baseline** to focus on new issues only
 3. **Limit paths** to relevant source directories
+<!-- llms:skip-end -->

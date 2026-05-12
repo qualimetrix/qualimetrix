@@ -20,8 +20,9 @@ code_quality:
       codequality: gl-code-quality-report.json
 ```
 
-Флаг `--format=gitlab` генерирует вывод в формате GitLab Code Quality. После настройки вы увидите результаты анализа прямо в диффах merge request-ов.
+Флаг `--format=gitlab` генерирует вывод в формате GitLab Code Quality. После настройки вы увидите результаты анализа прямо в диффах merge request-ов. Чтобы игнорировать существующие нарушения, добавьте `--baseline=baseline.json` к команде `qmx check`.
 
+<!-- llms:skip-begin -->
 ### Использование Baseline
 
 Чтобы игнорировать известные проблемы в legacy-проекте:
@@ -38,6 +39,7 @@ code_quality:
     reports:
       codequality: gl-code-quality-report.json
 ```
+<!-- llms:skip-end -->
 
 ## Jenkins
 
@@ -75,6 +77,7 @@ jobs:
       - run: vendor/bin/qmx check src/
 ```
 
+<!-- llms:skip-begin -->
 ### Сохранение результатов как артефактов
 
 ```yaml
@@ -90,6 +93,7 @@ jobs:
           path: qmx-results.json
           destination: code-quality
 ```
+<!-- llms:skip-end -->
 
 ## Bitbucket Pipelines
 
@@ -105,6 +109,7 @@ pipelines:
           - vendor/bin/qmx check src/
 ```
 
+<!-- llms:skip-begin -->
 ### С кэшированием
 
 ```yaml
@@ -119,8 +124,11 @@ pipelines:
           - composer install --no-dev
           - vendor/bin/qmx check src/
 ```
+<!-- llms:skip-end -->
 
 ## Универсальная настройка (любая CI-система)
+
+<!-- llms:skip-begin -->
 
 Независимо от используемой CI-системы, настройка следует одним и тем же шагам:
 
@@ -193,10 +201,13 @@ vendor/bin/qmx check src/ --baseline=baseline.json
 ```bash
 vendor/bin/qmx check src/ --config=qmx.yaml
 ```
+<!-- llms:skip-end -->
 
 ## Советы
 
+<!-- llms:skip-begin -->
 - **Кэшируйте зависимости composer** в вашей CI-системе для ускорения сборок.
 - **Используйте `--no-dev`** при установке пакетов composer в CI -- Qualimetrix не нуждается в dev-зависимостях для работы.
 - **Запускайте Qualimetrix параллельно с другими проверками** (PHPStan, PHP-CS-Fixer) для экономии времени.
 - **Используйте baseline** при внедрении Qualimetrix в существующий проект, чтобы CI не падал из-за уже существующих проблем.
+<!-- llms:skip-end -->
