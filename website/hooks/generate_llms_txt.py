@@ -19,8 +19,20 @@ log = logging.getLogger("mkdocs.hooks.generate_llms_txt")
 
 _generated = False
 
-# Pages to skip (by source path relative to docs_dir)
-SKIP_PAGES = {"changelog.md"}
+# Pages to skip (by source path relative to docs_dir).
+#
+# Two reasons a page lives here:
+#
+# 1. Pure tutorial / onboarding content with no reference value for an agent
+#    (installation, quick-start, usage-scenarios) — the agent already knows the
+#    information from llms.txt and reference pages, the narrative is for humans.
+# 2. The page is auto-mirrored from another source (changelog).
+SKIP_PAGES = {
+    "changelog.md",
+    "getting-started/installation.md",
+    "getting-started/quick-start.md",
+    "usage/usage-scenarios.md",
+}
 
 HEADER = """\
 # Qualimetrix — Full Documentation
@@ -121,8 +133,46 @@ def _build_toc(nav: list[Any], depth: int = 0) -> str:
     return "\n".join(lines)
 
 
+_SKIP_BEGIN_RE = re.compile(r"<!--\s*llms:skip-begin\s*-->")
+_SKIP_END_RE = re.compile(r"<!--\s*llms:skip-end\s*-->")
+_ONLY_OPEN_RE = re.compile(r"<!--\s*llms-only\s*\n")
+_ONLY_BLOCK_RE = re.compile(
+    r"<!--\s*llms-only\s*\n(.*?)\s*-->", flags=re.DOTALL
+)
+
+
+def _validate_markers(content: str, page_path: str) -> None:
+    """Warn about unbalanced or malformed llms markers.
+
+    A typo (e.g. forgetting `skip-end`) otherwise fails silently — the
+    non-greedy regex below just won't match and the marker plus body leak
+    into llms-full.txt. We surface these so they show up during
+    `mkdocs build` instead of hiding until someone reads the output.
+    """
+    begins = len(_SKIP_BEGIN_RE.findall(content))
+    ends = len(_SKIP_END_RE.findall(content))
+    if begins != ends:
+        log.warning(
+            "%s: unbalanced llms:skip markers (%d begin, %d end)",
+            page_path, begins, ends,
+        )
+
+    only_opens = len(_ONLY_OPEN_RE.findall(content))
+    only_matched = len(_ONLY_BLOCK_RE.findall(content))
+    if only_opens != only_matched:
+        log.warning(
+            "%s: unbalanced llms-only blocks (%d opened, %d closed)",
+            page_path, only_opens, only_matched,
+        )
+
+
 def _strip_llms_skip_blocks(content: str) -> str:
-    """Remove content between <!-- llms:skip-begin --> and <!-- llms:skip-end --> markers."""
+    """Remove content between <!-- llms:skip-begin --> and <!-- llms:skip-end --> markers.
+
+    Limitations:
+    - Nested skip blocks are not supported: a stray inner `skip-end` will
+      terminate the outer block early.
+    """
     return re.sub(
         r"<!--\s*llms:skip-begin\s*-->.*?<!--\s*llms:skip-end\s*-->",
         "",
@@ -131,9 +181,35 @@ def _strip_llms_skip_blocks(content: str) -> str:
     )
 
 
+def _unwrap_llms_only_blocks(content: str) -> str:
+    """Unwrap `<!-- llms-only ... -->` blocks.
+
+    Content placed inside a single multi-line HTML comment with the
+    `llms-only` opener (everything until the next `-->`) is hidden from the
+    rendered website (the whole comment is a single HTML comment block,
+    so MkDocs renders nothing) but materializes in llms-full.txt.
+
+    Use it to emit a compact, agent-friendly version of a section while
+    the verbose human-facing version stays on the rendered page.
+
+    Note: do not use the two-marker form `<!-- llms:only-begin --> ...
+    <!-- llms:only-end -->` — MkDocs treats those as two separate comments
+    and the markdown between them renders on the website.
+
+    Limitations:
+    - The body must not contain `-->`: it would terminate the HTML comment
+      early in browsers and also stop the non-greedy regex here. If you
+      need to reference the closing comment sequence, encode it (e.g.
+      `--&gt;` or wrap with backticks).
+    """
+    return _ONLY_BLOCK_RE.sub(lambda match: match.group(1), content)
+
+
 def _transform(content: str, page_path: str) -> str:
     """Transform MkDocs-flavored markdown into plain markdown."""
+    _validate_markers(content, page_path)
     content = _strip_llms_skip_blocks(content)
+    content = _unwrap_llms_only_blocks(content)
     lines = content.split("\n")
     result: list[str] = []
     i = 0

@@ -102,11 +102,39 @@ Shared configuration section goes at the bottom of the page.
 The site publishes machine-readable documentation for AI coding agents:
 
 - **`llms.txt`** — hand-written index with links to pages (static file in `docs/`)
-- **`llms-full.txt`** — auto-generated from all English pages via `hooks/generate_llms_txt.py` during `mkdocs build`
+- **`llms-full.txt`** — auto-generated from English pages via `hooks/generate_llms_txt.py` during `mkdocs build`
 
-### Excluding content from `llms-full.txt`
+### Single-source-of-truth principle
 
-Wrap human-oriented sections (explanations, examples, refactoring advice) with skip markers:
+For LLM consumption, every fact should live in **one canonical place**. Other pages reference rather than duplicate:
+
+| Topic                                                | Canonical page                     |
+| ---------------------------------------------------- | ---------------------------------- |
+| Rule warning/error threshold values                  | `reference/default-thresholds.md`  |
+| YAML configuration schema (all keys, types, effects) | `getting-started/configuration.md` |
+| CLI flag reference                                   | `usage/cli-options.md`             |
+| `@qmx-ignore` / `@qmx-threshold` suppression syntax  | `usage/baseline.md`                |
+| GitHub Actions reference                             | `ci-cd/github-actions.md`          |
+| Health score formulas and variables                  | `reference/health-scores.md`       |
+
+When a fact appears in a non-canonical location (e.g., a threshold value inside a rule page), wrap it with skip markers so it only renders on the website and is stripped from `llms-full.txt`.
+
+### Pages excluded from `llms-full.txt`
+
+The generator skips entire pages whose content is purely onboarding/tutorial (handled by `SKIP_PAGES` in `hooks/generate_llms_txt.py`):
+
+- `getting-started/installation.md`
+- `getting-started/quick-start.md`
+- `usage/usage-scenarios.md`
+- `changelog.md`
+
+When adding a new page, decide its audience: if it's pure tutorial, add to `SKIP_PAGES`; if it carries reference value, leave it included and use skip markers for human-only sections.
+
+### Skip markers
+
+Two markers control per-section visibility in `llms-full.txt`. Both are HTML comments — invisible on the rendered website.
+
+**`<!-- llms:skip-begin --> ... <!-- llms:skip-end -->`** — content rendered on the website but stripped from `llms-full.txt`. Use for: tutorial prose, refactoring advice, code examples, duplicate threshold tables, large JSON example blobs, CI-yaml variations, "Read more →" cross-links.
 
 ```markdown
 <!-- llms:skip-begin -->
@@ -126,13 +154,43 @@ Cyclomatic Complexity counts the number of decision points...
 <!-- llms:skip-end -->
 ```
 
-The markers are standard HTML comments — invisible on the website, stripped by the generator.
+**`<!-- llms-only ... -->`** — single multi-line HTML comment whose body is hidden from the rendered website (MkDocs renders nothing for an HTML comment) but extracted into `llms-full.txt`. Use when you need a compact, agent-friendly version of a section that the human page renders verbosely.
 
-**What to skip:** `What it measures`, `Example`, `How to fix`, `Implementation notes`, tutorials, troubleshooting sections — anything an AI agent already knows or doesn't need for tool integration.
+```markdown
+<!-- llms:skip-begin -->
+[Verbose table for humans, 30 lines]
+<!-- llms:skip-end -->
 
-**What to keep:** Rule IDs, thresholds, configuration (YAML/CLI), command syntax — the actionable reference.
+<!-- llms-only
+Compact list for agents. See [Default Thresholds](../reference/default-thresholds.md) for values.
+- `complexity.cyclomatic`, `complexity.cognitive`, ...
+-->
+```
 
-When adding a new rule page, add skip markers around the same sections as existing pages. Both EN and RU versions must have identical markers.
+> **Important — single comment:** the opener `<!-- llms-only` and the closer `-->` must enclose the body inside a **single** HTML comment. Do **not** split it into two markers (`<!-- llms:only-begin --> ... <!-- llms:only-end -->`) — MkDocs treats those as two separate comments and the markdown between them renders on the website.
+
+> **Important — no `-->` inside the body:** the body must not contain `-->`. Browsers and the hook regex both terminate the comment at the first `-->`. If you need to mention the closing sequence, escape it (e.g. `--&gt;`) or wrap it in backticks. The build hook validates marker balance and prints a warning to the build log when something looks off.
+
+> **Important — no nesting:** skip and only blocks cannot be nested. A stray inner end marker terminates the outer block early. Place them sequentially instead.
+
+### What to skip in rule pages
+
+Per the single-source-of-truth principle:
+
+- `### What it measures` — pedagogical, agent already knows
+- `### Example` — illustration for humans
+- `### How to fix` — refactoring advice
+- `### Implementation notes` — algorithm nuances (skip unless the page is the canonical home for the nuance)
+- `### Thresholds` (default value tables) — duplicates `reference/default-thresholds.md`
+- Educational page intros and analogies ("Think of complexity like…")
+- "Read more →" cross-links
+
+### What to keep in rule pages
+
+- Rule ID (e.g., `**Rule ID:** complexity.cyclomatic`)
+- `### Configuration` — YAML/CLI option syntax and non-default options (`exclude_data_classes`, `min_afferent`, `max_warning`, `threshold` shorthand, etc.) — these are canonical here, not in `default-thresholds.md`
+
+When adding a new rule page, mirror the skip-marker placement from existing pages. Both EN and RU versions must have identical markers.
 
 ---
 
