@@ -364,6 +364,82 @@ final class ComputedMetricEvaluatorTest extends TestCase
     }
 
     #[Test]
+    public function typingHealthIsVacuousTruthForNamespaceWithNoTypeableDeclarations(): void
+    {
+        // A namespace containing only marker interfaces (no methods, no properties)
+        // has zero typeable positions. The metric must return 100 (vacuous truth)
+        // rather than 0 — there is literally nothing untyped.
+        $repo = new InMemoryMetricRepository();
+
+        // Register an empty interface-like class so the namespace appears.
+        $classPath = SymbolPath::forClass('App\\Shared\\Messaging', 'AsyncMessageInterface');
+        $repo->add($classPath, MetricBag::fromArray([]), 'src/AsyncMessageInterface.php', 1);
+
+        $nsPath = SymbolPath::forNamespace('App\\Shared\\Messaging');
+        $repo->add($nsPath, MetricBag::fromArray([
+            // All typeCoverage sums explicitly zero (denotes 0 typeable positions).
+            'typeCoverage.paramTyped.sum' => 0.0,
+            'typeCoverage.returnTyped.sum' => 0.0,
+            'typeCoverage.propertyTyped.sum' => 0.0,
+            'typeCoverage.paramTotal.sum' => 0.0,
+            'typeCoverage.returnTotal.sum' => 0.0,
+            'typeCoverage.propertyTotal.sum' => 0.0,
+        ]), '', null);
+
+        // Evaluate the typing definition in isolation — sibling formulas would require
+        // additional metrics (symbolMethodCount, mi.*, etc.) we do not stub out here.
+        $typing = ComputedMetricDefaults::getDefaults()['health.typing'];
+        $this->evaluator->compute($repo, [$typing]);
+
+        self::assertSame(100.0, $repo->get($nsPath)->get('health.typing'));
+    }
+
+    #[Test]
+    public function typingHealthIsVacuousTruthForNamespaceWithoutAnyTypeCoverageMetrics(): void
+    {
+        // Edge case: namespace bag has NO typeCoverage.* keys at all (rather than explicit 0s).
+        // The `?? 0` fallbacks must still resolve the ternary condition to true → 100.
+        $repo = new InMemoryMetricRepository();
+
+        $classPath = SymbolPath::forClass('App\\Empty', 'Marker');
+        $repo->add($classPath, MetricBag::fromArray([]), 'src/Marker.php', 1);
+
+        $nsPath = SymbolPath::forNamespace('App\\Empty');
+        $repo->add($nsPath, MetricBag::fromArray([]), '', null);
+
+        $typing = ComputedMetricDefaults::getDefaults()['health.typing'];
+        $this->evaluator->compute($repo, [$typing]);
+
+        self::assertSame(100.0, $repo->get($nsPath)->get('health.typing'));
+    }
+
+    #[Test]
+    public function typingHealthIsVacuousTruthAtProjectLevelWhenNoTypeSurface(): void
+    {
+        // The project-level formula inherits from namespace via getFormulaForLevel,
+        // so an entirely type-surface-free project should also yield 100.
+        $repo = new InMemoryMetricRepository();
+
+        $classPath = SymbolPath::forClass('App\\Shared\\Messaging', 'AsyncMessageInterface');
+        $repo->add($classPath, MetricBag::fromArray([]), 'src/AsyncMessageInterface.php', 1);
+
+        $projectPath = SymbolPath::forProject();
+        $repo->add($projectPath, MetricBag::fromArray([
+            'typeCoverage.paramTyped.sum' => 0.0,
+            'typeCoverage.returnTyped.sum' => 0.0,
+            'typeCoverage.propertyTyped.sum' => 0.0,
+            'typeCoverage.paramTotal.sum' => 0.0,
+            'typeCoverage.returnTotal.sum' => 0.0,
+            'typeCoverage.propertyTotal.sum' => 0.0,
+        ]), '', null);
+
+        $typing = ComputedMetricDefaults::getDefaults()['health.typing'];
+        $this->evaluator->compute($repo, [$typing]);
+
+        self::assertSame(100.0, $repo->get($projectPath)->get('health.typing'));
+    }
+
+    #[Test]
     public function namespaceCouplingPenalizesEfferentBreadth(): void
     {
         $repo = new InMemoryMetricRepository();

@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- `health.typing` no longer reports 0% for namespaces with no typeable declarations (e.g. marker interfaces used for Symfony Messenger routing). Empty type surface now yields 100% (vacuous truth) at namespace and project levels, matching the existing class-level semantic.
+
 ## [0.16.0] - 2026-05-01
 
 ### Changed

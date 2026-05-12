@@ -81,7 +81,12 @@ final class ComputedMetricDefaults
                 name: HealthDimension::Typing->value,
                 formulas: [
                     'class' => 'clamp(typeCoverage__pct ?? 0, 0, 100)',
-                    'namespace' => 'clamp(((typeCoverage__paramTyped__sum ?? 0) + (typeCoverage__returnTyped__sum ?? 0) + (typeCoverage__propertyTyped__sum ?? 0)) / max((typeCoverage__paramTotal__sum ?? 0) + (typeCoverage__returnTotal__sum ?? 0) + (typeCoverage__propertyTotal__sum ?? 0), 1) * 100, 0, 100)',
+                    // Vacuous truth: a namespace with no typeable declarations (e.g. marker
+                    // interfaces) is fully typed by definition. Mirrors class-level behavior
+                    // where TypeCoveragePercentCollector returns 100 when totalAll == 0,
+                    // and aligns with the convention in sibling formulas where an empty
+                    // namespace yields a high (no-problem) score.
+                    'namespace' => '(((typeCoverage__paramTotal__sum ?? 0) + (typeCoverage__returnTotal__sum ?? 0) + (typeCoverage__propertyTotal__sum ?? 0)) == 0) ? 100 : clamp(((typeCoverage__paramTyped__sum ?? 0) + (typeCoverage__returnTyped__sum ?? 0) + (typeCoverage__propertyTyped__sum ?? 0)) / ((typeCoverage__paramTotal__sum ?? 0) + (typeCoverage__returnTotal__sum ?? 0) + (typeCoverage__propertyTotal__sum ?? 0)) * 100, 0, 100)',
                 ],
                 description: 'Type coverage health score (0-100, higher is better)',
                 levels: [SymbolType::Class_, SymbolType::Namespace_, SymbolType::Project],
