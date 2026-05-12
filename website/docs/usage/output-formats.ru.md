@@ -96,6 +96,7 @@ src/Repository/OrderRepository.php:15: error[coupling.cbo.class]: CBO is 18, max
 
 ## text-verbose
 
+<!-- llms:skip-begin -->
 !!! warning "Устарело"
     `text-verbose` устарел. Используйте вместо него `--format=text --detail`, который обеспечивает аналогичный группированный многострочный вывод нарушений.
 
@@ -103,6 +104,10 @@ src/Repository/OrderRepository.php:15: error[coupling.cbo.class]: CBO is 18, max
     # Замена: bin/qmx check src/ --format=text-verbose
     bin/qmx check src/ --format=text --detail
     ```
+<!-- llms:skip-end -->
+<!-- llms-only
+Устарел. Используйте `--format=text --detail`.
+-->
 
 ---
 
@@ -112,6 +117,9 @@ src/Repository/OrderRepository.php:15: error[coupling.cbo.class]: CBO is 18, max
 
 **Когда использовать:** Пользовательские скрипты, дашборды, программная обработка.
 
+**Ключи верхнего уровня:** `meta`, `summary`, `health`, `worstNamespaces`, `worstClasses`, `violations`, `violationsMeta`, `violationGroups`.
+
+<!-- llms:skip-begin -->
 **Пример вывода:**
 
 ```json
@@ -196,11 +204,13 @@ src/Repository/OrderRepository.php:15: error[coupling.cbo.class]: CBO is 18, max
     "violationGroups": {}
 }
 ```
+<!-- llms:skip-end -->
 
 Записи `worstNamespaces` и `worstClasses` включают поле `violationDensity` -- количество нарушений на 100 строк кода -- для нормализованной по размеру оценки качества кода.
 
-При использовании `--group-by=class` или `--group-by=namespace` нарушения организуются в объект `violationGroups`, где ключами являются FQCN класса или пространство имён. Каждая группа содержит массив нарушений и сводные счётчики:
+При использовании `--group-by=class` или `--group-by=namespace` нарушения организуются в объект `violationGroups`, где ключами являются FQCN класса или пространство имён. Каждая группа содержит массив нарушений и сводные счётчики (`errorCount`, `warningCount`, `violationDensity`).
 
+<!-- llms:skip-begin -->
 ```json
 {
     "violationGroups": {
@@ -213,6 +223,7 @@ src/Repository/OrderRepository.php:15: error[coupling.cbo.class]: CBO is 18, max
     }
 }
 ```
+<!-- llms:skip-end -->
 
 **Опции:**
 
@@ -242,6 +253,9 @@ bin/qmx check src/ --format=json --no-progress > report.json
 
 **Когда использовать:** Пользовательские дашборды, анализ трендов, пайплайны data science или создание собственных критериев качества на основе сырых метрик.
 
+**Ключи верхнего уровня:** `version`, `package`, `timestamp`, `symbols[]` (каждый с `type`: file/class/method/namespace, `name`, `file`, `line`, `metrics: {...}`), `summary`.
+
+<!-- llms:skip-begin -->
 **Пример вывода (сокращённо):**
 
 ```json
@@ -297,6 +311,7 @@ bin/qmx check src/ --format=json --no-progress > report.json
     }
 }
 ```
+<!-- llms:skip-end -->
 
 **Использование:**
 
@@ -315,6 +330,9 @@ bin/qmx check src/ --format=metrics --no-progress > metrics.json
 
 **Когда использовать:** Jenkins, SonarQube или любой инструмент, принимающий Checkstyle XML.
 
+Checkstyle 3.0 XML: `<file name="...">` с вложенными `<error line="" severity="error|warning" message="" source="qmx.<rule>"/>`.
+
+<!-- llms:skip-begin -->
 **Пример вывода:**
 
 ```xml
@@ -338,6 +356,7 @@ bin/qmx check src/ --format=metrics --no-progress > metrics.json
 ```bash
 bin/qmx check src/ --format=checkstyle --no-progress > checkstyle.xml
 ```
+<!-- llms:skip-end -->
 
 ---
 
@@ -347,6 +366,9 @@ SARIF (Static Analysis Results Interchange Format) 2.1.0. Стандартный
 
 **Когда использовать:** Вкладка Security на GitHub, VS Code (с расширением SARIF Viewer), JetBrains IDE, Azure DevOps.
 
+SARIF 2.1.0: `runs[].results[]` с `ruleId`, `level` (error/warning), `message.text`, `locations[].physicalLocation.{artifactLocation.uri,region.startLine}`.
+
+<!-- llms:skip-begin -->
 **Пример вывода (сокращённо):**
 
 ```json
@@ -401,6 +423,7 @@ SARIF (Static Analysis Results Interchange Format) 2.1.0. Стандартный
 ```
 
 Результаты появятся во вкладке **Security** вашего репозитория и как инлайн-аннотации в пулл-реквестах.
+<!-- llms:skip-end -->
 
 ---
 
@@ -410,6 +433,9 @@ SARIF (Static Analysis Results Interchange Format) 2.1.0. Стандартный
 
 **Когда использовать:** GitLab CI/CD с отчётами Code Quality.
 
+Массив объектов с `description`, `check_name`, `fingerprint`, `severity` (critical/major), `location.{path,lines.begin}`. Маппинг: error → critical, warning → major.
+
+<!-- llms:skip-begin -->
 **Пример вывода (сокращённо):**
 
 ```json
@@ -429,13 +455,6 @@ SARIF (Static Analysis Results Interchange Format) 2.1.0. Стандартный
 ]
 ```
 
-**Маппинг уровней:**
-
-| Уровень Qualimetrix | Уровень GitLab |
-| ------------------- | -------------- |
-| error               | critical       |
-| warning             | major          |
-
 **Использование в CI (GitLab CI):**
 
 ```yaml
@@ -449,6 +468,7 @@ code_quality:
 ```
 
 Нарушения появятся инлайн во вкладке **Changes** вашего Merge Request.
+<!-- llms:skip-end -->
 
 ---
 
@@ -458,19 +478,15 @@ code_quality:
 
 **Когда использовать:** GitHub Actions CI. Проще в настройке, чем SARIF — не нужен шаг загрузки.
 
+Формат workflow-команд: `::<level> file=<path>,line=<n>,title=<rule>::<message>` (по строке на нарушение). Маппинг: warning → `::warning`, error → `::error`.
+
+<!-- llms:skip-begin -->
 **Пример вывода:**
 
 ```
 ::warning file=src/Service/UserService.php,line=87,title=size.method-count.class::Class has 22 methods, max recommended is 20
 ::error file=src/Service/UserService.php,line=42,title=complexity.cyclomatic.method::Cyclomatic complexity is 15, max allowed is 10
 ```
-
-**Маппинг уровней:**
-
-| Уровень Qualimetrix | Команда GitHub |
-| ------------------- | -------------- |
-| warning             | `::warning`    |
-| error               | `::error`      |
 
 **Использование в CI (GitHub Actions):**
 
@@ -480,6 +496,7 @@ code_quality:
 ```
 
 Аннотации появляются прямо на изменённых строках вашего пулл-реквеста — загрузка SARIF не требуется. По умолчанию `--fail-on=error` — предупреждения не блокируют сборку.
+<!-- llms:skip-end -->
 
 !!! tip "Совет"
     Используйте `--format=github` для быстрых инлайн-аннотаций. Используйте `--format=sarif`, если также хотите видеть результаты во вкладке Security на GitHub.
