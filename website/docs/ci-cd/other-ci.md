@@ -20,8 +20,9 @@ code_quality:
       codequality: gl-code-quality-report.json
 ```
 
-The `--format=gitlab` flag produces output in GitLab Code Quality format. Once configured, you will see code quality findings directly in your merge request diffs.
+The `--format=gitlab` flag produces output in GitLab Code Quality format. Once configured, you will see code quality findings directly in your merge request diffs. To ignore pre-existing violations, add `--baseline=baseline.json` to the `qmx check` command.
 
+<!-- llms:skip-begin -->
 ### Using a Baseline
 
 To ignore known issues in a legacy project:
@@ -38,6 +39,7 @@ code_quality:
     reports:
       codequality: gl-code-quality-report.json
 ```
+<!-- llms:skip-end -->
 
 ## Jenkins
 
@@ -75,6 +77,7 @@ jobs:
       - run: vendor/bin/qmx check src/
 ```
 
+<!-- llms:skip-begin -->
 ### Storing Results as Artifacts
 
 ```yaml
@@ -90,6 +93,7 @@ jobs:
           path: qmx-results.json
           destination: code-quality
 ```
+<!-- llms:skip-end -->
 
 ## Bitbucket Pipelines
 
@@ -105,6 +109,7 @@ pipelines:
           - vendor/bin/qmx check src/
 ```
 
+<!-- llms:skip-begin -->
 ### With Caching
 
 ```yaml
@@ -119,9 +124,11 @@ pipelines:
           - composer install --no-dev
           - vendor/bin/qmx check src/
 ```
+<!-- llms:skip-end -->
 
 ## Generic CI (Any System)
 
+<!-- llms:skip-begin -->
 No matter what CI system you use, the setup follows the same steps:
 
 ### 1. Install Dependencies
@@ -193,10 +200,13 @@ For consistent settings across local and CI environments, use a YAML config file
 ```bash
 vendor/bin/qmx check src/ --config=qmx.yaml
 ```
+<!-- llms:skip-end -->
 
 ## Tips
 
+<!-- llms:skip-begin -->
 - **Cache composer dependencies** in your CI system to speed up builds.
 - **Use `--no-dev`** when installing composer packages in CI -- Qualimetrix does not need dev dependencies to run.
 - **Run Qualimetrix in parallel with other checks** (PHPStan, PHP-CS-Fixer) to save time.
 - **Use a baseline** when introducing Qualimetrix into an existing project so CI does not fail on pre-existing issues.
+<!-- llms:skip-end -->

@@ -43,6 +43,7 @@ jobs:
 
 ## Примеры
 
+<!-- llms:skip-begin -->
 ### С Baseline
 
 ```yaml
@@ -62,6 +63,7 @@ jobs:
     paths: 'src/ lib/ app/'
     config: 'qmx.yaml'
 ```
+<!-- llms:skip-end -->
 
 ### SARIF-вывод для вкладки Security в GitHub
 
@@ -188,6 +190,7 @@ jobs:
 
 ## Полный пример workflow
 
+<!-- llms:skip-begin -->
 ```yaml
 name: Code Quality
 
@@ -240,9 +243,11 @@ jobs:
         if: steps.qmx.outputs.exit-code != '0'
         run: exit ${{ steps.qmx.outputs.exit-code }}
 ```
+<!-- llms:skip-end -->
 
 ## Интеграция с другими инструментами
 
+<!-- llms:skip-begin -->
 ### С PHPStan
 
 ```yaml
@@ -268,9 +273,11 @@ jobs:
         with:
           paths: 'src/'
 ```
+<!-- llms:skip-end -->
 
 ## Решение проблем
 
+<!-- llms:skip-begin -->
 ### Action падает с ошибкой "Qualimetrix binary not found"
 
 Action ищет Qualimetrix в следующем порядке:
@@ -308,9 +315,11 @@ with:
   working-directory: './backend'
   paths: 'src/'
 ```
+<!-- llms:skip-end -->
 
 ## Советы по производительности
 
+<!-- llms:skip-begin -->
 1. **Используйте кэширование** зависимостей composer:
 
     ```yaml
@@ -323,3 +332,4 @@ with:
 
 2. **Используйте baseline**, чтобы проверять только новые проблемы
 3. **Ограничивайте пути** только нужными директориями с исходным кодом
+<!-- llms:skip-end -->
