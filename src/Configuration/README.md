@@ -380,7 +380,7 @@ Order: base < local < ci (alphabetical or explicit priority).
 Merges default computed metric definitions with user overrides from the `computed_metrics` YAML section. Validates the result: formula syntax (via ExpressionLanguage), formula coverage (each level has a formula), circular dependencies between computed metrics, and inter-metric references.
 
 **Methods:**
-- `resolve(array $rawConfig): list<ComputedMetricDefinition>` — merges defaults with user config, validates, returns resolved definitions
+- `resolve(array $rawConfig, array $excludeHealth = []): list<ComputedMetricDefinition>` — merges defaults with user config, applies `exclude_health` (with weight renormalization of `health.overall`), validates, returns resolved definitions. The `$excludeHealth` arg accepts both bare (`'typing'`) and fully-qualified (`'health.typing'`) names.
 
 **User config options per metric:**
 - `formula: string` — shorthand formula applied to all levels
@@ -390,8 +390,10 @@ Merges default computed metric definitions with user overrides from the `compute
 - `warning: float|null` — warning threshold (graduated mode)
 - `error: float|null` — error threshold (graduated mode)
 - `inverted: bool` — whether higher values are better (default: false for new metrics)
-- `enabled: false` — removes the metric entirely
+- `enabled: false` — disables the metric. For `health.*` dimensions (except `health.overall` itself), this routes through the same `exclude_health` pipeline: the metric is removed AND `health.overall`'s weights are renormalized across remaining dimensions. For custom `computed.*` metrics and `health.overall`, it just removes the definition.
 - `description: string` — human-readable description
+
+**Note on disabling health dimensions:** Two paths produce the same effect — `computed_metrics.health.X.enabled: false` in YAML and `exclude_health: [X]` (or CLI `--exclude-health=X`). Both remove the dimension and renormalize `health.overall` weights. The renormalization requires `health.overall` to use the canonical weighted-sum shape `(health__dim ?? fallback) * weight`; if you override `health.overall` with a non-canonical formula (e.g. `min(...)`, a conditional), excluding dimensions will throw an explicit error — handle missing dimensions via `??` fallbacks in your custom formula instead.
 
 **Formula variable mapping:** Metric names use `__` as separator in formulas because ExpressionLanguage does not support `.` in identifiers. For example, `ccn.avg` becomes `ccn__avg`, `health.complexity` becomes `health__complexity`.
 
@@ -539,12 +541,12 @@ Examples:
 
 ### Rule Management
 
-| Option                   | Description                                                      |
-| ------------------------ | ---------------------------------------------------------------- |
-| `--disable-rule=RULE`    | Disable a rule or category                                       |
-| `--only-rule=RULE`       | Run only the specified rule or category                          |
+| Option                   | Description                                                             |
+| ------------------------ | ----------------------------------------------------------------------- |
+| `--disable-rule=RULE`    | Disable a rule or category                                              |
+| `--only-rule=RULE`       | Run only the specified rule or category                                 |
 | `--exclude-path=PATTERN` | Suppress violations for files matching path prefix or glob (repeatable) |
-| `--config=PATH`          | Path to config file                                              |
+| `--config=PATH`          | Path to config file                                                     |
 
 **`--exclude-path`** supports both prefix matching (e.g., `src/Entity`) and glob patterns (e.g., `src/Metrics/*Visitor.php`).
 CLI patterns are **merged** with `exclude_paths` from the config file, not overridden.
