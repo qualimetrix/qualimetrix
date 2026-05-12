@@ -120,6 +120,52 @@ final class DocumentationConsistencyTest extends TestCase
     }
 
     /**
+     * The compact rule catalog inside the llms-only block of rules/index.md
+     * must list every actual rule NAME. Drift here makes llms-full.txt lie to
+     * agents about which rules exist.
+     */
+    public function testLlmsOnlyRuleCatalogListsAllRules(): void
+    {
+        $index = $this->readFile('website/docs/rules/index.md');
+
+        $blockMatched = preg_match(
+            '/<!--\s*llms-only\s*\n(.*?)-->/s',
+            $index,
+            $matches,
+        );
+        self::assertSame(
+            1,
+            $blockMatched,
+            'website/docs/rules/index.md is missing the <!-- llms-only ... --> compact rule catalog.',
+        );
+
+        $body = $matches[1];
+
+        // Slugs appear inside inline-code spans, e.g. `complexity.cyclomatic`.
+        preg_match_all('/`([a-z][a-z-]*\.[a-z][a-z-]+)`/', $body, $slugMatches);
+        $declared = array_values(array_unique($slugMatches[1]));
+        sort($declared);
+
+        $actual = $this->collectAllRuleNames();
+        // Catalog entries that are not real RuleInterface implementations
+        // (tcc/lcc are inputs to other rules; computed.health is synthetic).
+        $catalogOnly = ['tcc', 'lcc'];
+        $sourceOnly = ['computed.health'];
+
+        $expected = array_values(array_diff($actual, $sourceOnly));
+        $declaredWithoutCatalogOnly = array_values(array_diff($declared, $catalogOnly));
+        sort($expected);
+        sort($declaredWithoutCatalogOnly);
+
+        self::assertSame(
+            $expected,
+            $declaredWithoutCatalogOnly,
+            'Compact rule catalog in website/docs/rules/index.md drifted from src/Rules/. '
+            . 'Update the <!-- llms-only ... --> block to match.',
+        );
+    }
+
+    /**
      * Collects all rule NAME constants by scanning src/Rules/ directory.
      *
      * @return list<string>
