@@ -34,6 +34,7 @@ These three factors are combined into a single number. The original formula prod
 
 <!-- llms:skip-end -->
 
+<!-- llms:skip-begin -->
 ### Thresholds
 
 | Score    | Severity | Meaning                          |
@@ -41,6 +42,7 @@ These three factors are combined into a single number. The original formula prod
 | 40+      | OK       | Maintainable code                |
 | 20--39   | Warning  | Maintainability is deteriorating |
 | Below 20 | Error    | Code is very hard to maintain    |
+<!-- llms:skip-end -->
 
 <!-- llms:skip-begin -->
 ### Example

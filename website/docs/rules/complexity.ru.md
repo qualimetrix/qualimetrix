@@ -29,6 +29,7 @@
 
 <!-- llms:skip-end -->
 
+<!-- llms:skip-begin -->
 ### Пороговые значения
 
 **Уровень метода** (включён по умолчанию):
@@ -44,6 +45,7 @@
 | ------- | ----- | ----------- |
 | Warning | >= 30 | Warning     |
 | Error   | >= 50 | Error       |
+<!-- llms:skip-end -->
 
 <!-- llms:skip-begin -->
 ### Пример
@@ -158,6 +160,7 @@ bin/qmx check src/ --rule-opt="complexity.cyclomatic:class.enabled=false"
 
 <!-- llms:skip-end -->
 
+<!-- llms:skip-begin -->
 ### Пороговые значения
 
 **Уровень метода** (включён по умолчанию):
@@ -173,6 +176,7 @@ bin/qmx check src/ --rule-opt="complexity.cyclomatic:class.enabled=false"
 | ------- | ----- | ----------- |
 | Warning | >= 30 | Warning     |
 | Error   | >= 50 | Error       |
+<!-- llms:skip-end -->
 
 <!-- llms:skip-begin -->
 ### Пример
@@ -263,6 +267,7 @@ NPath-сложность считает общее количество **уни
 
 <!-- llms:skip-end -->
 
+<!-- llms:skip-begin -->
 ### Пороговые значения
 
 **Уровень метода** (включён по умолчанию):
@@ -273,6 +278,7 @@ NPath-сложность считает общее количество **уни
 | Error   | >= 1000 | Error       |
 
 **Уровень класса** (отключён по умолчанию) -- проверяет максимальный NPath среди методов.
+<!-- llms:skip-end -->
 
 <!-- llms:skip-begin -->
 ### Пример
@@ -376,12 +382,14 @@ WMC (Weighted Methods per Class) -- это **сумма цикломатичес
 
 <!-- llms:skip-end -->
 
+<!-- llms:skip-begin -->
 ### Пороговые значения
 
 | Уровень | Порог | Серьёзность |
 | ------- | ----- | ----------- |
 | Warning | > 50  | Warning     |
 | Error   | > 80  | Error       |
+<!-- llms:skip-end -->
 
 <!-- llms:skip-begin -->
 ### Пример

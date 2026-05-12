@@ -33,6 +33,7 @@ For example, if `UserService` uses `UserRepository`, `Logger`, `Validator`, and 
 
 <!-- llms:skip-end -->
 
+<!-- llms:skip-begin -->
 ### Thresholds
 
 **Class level** (enabled by default):
@@ -48,6 +49,7 @@ For example, if `UserService` uses `UserRepository`, `Logger`, `Validator`, and 
 | ------- | --------- | -------- |
 | Warning | > 14      | Warning  |
 | Error   | > 20      | Error    |
+<!-- llms:skip-end -->
 
 <!-- llms:skip-begin -->
 ### Example
@@ -216,6 +218,7 @@ The result is a number between 0.0 and 1.0:
 
 <!-- llms:skip-end -->
 
+<!-- llms:skip-begin -->
 ### Thresholds
 
 **Class level** (enabled by default):
@@ -231,6 +234,7 @@ The result is a number between 0.0 and 1.0:
 | ------- | --------- | -------- |
 | Warning | >= 0.8    | Warning  |
 | Error   | >= 0.95   | Error    |
+<!-- llms:skip-end -->
 
 <!-- llms:skip-begin -->
 ### Example
@@ -347,6 +351,7 @@ There are two bad zones:
 
 <!-- llms:skip-end -->
 
+<!-- llms:skip-begin -->
 ### Thresholds
 
 | Level   | Threshold | Severity |
@@ -355,6 +360,7 @@ There are two bad zones:
 | Error   | >= 0.5    | Error    |
 
 Only namespaces with at least 3 classes are analyzed (configurable via `minClassCount`).
+<!-- llms:skip-end -->
 
 <!-- llms:skip-begin -->
 ### Example
@@ -436,12 +442,14 @@ The result is a value between 0.0 and 1.0, where all class ranks in the project 
 
 <!-- llms:skip-end -->
 
+<!-- llms:skip-begin -->
 ### Thresholds
 
 | Level   | Threshold | Severity |
 | ------- | --------- | -------- |
 | Warning | >= 0.02   | Warning  |
 | Error   | >= 0.05   | Error    |
+<!-- llms:skip-end -->
 
 <!-- llms:skip-begin -->
 ### Example

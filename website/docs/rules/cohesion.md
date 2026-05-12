@@ -41,6 +41,7 @@ Think of it like a dinner party: if every guest knows every other guest, the gro
 
 <!-- llms:skip-end -->
 
+<!-- llms:skip-begin -->
 ### Thresholds
 
 TCC and LCC are currently reported as **metrics only** (visible in `--format=metrics` output). They do not produce violations on their own. Use them alongside [LCOM](design.md#lcom----lack-of-cohesion-of-methods) for a fuller picture of class cohesion.
@@ -53,6 +54,7 @@ Recommended interpretation:
 | >= 0.5    | Good cohesion                                              |
 | 0.3--0.5  | Moderate -- review whether the class has too many concerns |
 | < 0.3     | Low cohesion -- the class likely needs to be split         |
+<!-- llms:skip-end -->
 
 <!-- llms:skip-begin -->
 ### Example

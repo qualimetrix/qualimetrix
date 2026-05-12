@@ -32,6 +32,7 @@ Think of it like a team: if all team members work on the same project, the team 
 
 <!-- llms:skip-end -->
 
+<!-- llms:skip-begin -->
 ### Thresholds
 
 | Value | Severity | Meaning                                      |
@@ -39,6 +40,7 @@ Think of it like a team: if all team members work on the same project, the team 
 | 1--2  | OK       | Cohesive class, all methods work together    |
 | 3--4  | Warning  | Class may have multiple responsibilities     |
 | 5+    | Error    | Class clearly does too much, should be split |
+<!-- llms:skip-end -->
 
 <!-- llms:skip-begin -->
 ### Example
@@ -165,6 +167,7 @@ High NOC can also indicate:
 - Potential violation of the Liskov Substitution Principle -- do all children truly behave like the parent?
 - Difficulty refactoring -- changing the base class requires updating all subclasses
 
+<!-- llms:skip-begin -->
 ### Thresholds
 
 | Value  | Severity | Meaning                                              |
@@ -172,6 +175,7 @@ High NOC can also indicate:
 | 0--9   | OK       | Manageable number of subclasses                      |
 | 10--14 | Warning  | Many children, changes will have wide impact         |
 | 15+    | Error    | Too many children, consider using interfaces instead |
+<!-- llms:skip-end -->
 
 <!-- llms:skip-begin -->
 ### Example
@@ -252,6 +256,7 @@ When you read a class deep in an inheritance tree, you need to understand **all 
 
 A class with DIT = 6 means you potentially need to read 7 classes to understand its full behavior. This is hard, error-prone, and makes the code resistant to change.
 
+<!-- llms:skip-begin -->
 ### Thresholds
 
 | DIT  | Severity | Meaning                                            |
@@ -259,6 +264,7 @@ A class with DIT = 6 means you potentially need to read 7 classes to understand 
 | 0--3 | OK       | Reasonable inheritance depth                       |
 | 4--5 | Warning  | Getting deep, review whether inheritance is needed |
 | 6+   | Error    | Too deep, likely a design problem                  |
+<!-- llms:skip-end -->
 
 <!-- llms:skip-begin -->
 ### Example
@@ -352,6 +358,7 @@ Unlike most rules, this one uses **inverted thresholds**: lower values are worse
 
 <!-- llms:skip-end -->
 
+<!-- llms:skip-begin -->
 ### Thresholds
 
 | Aspect    | Warning (below) | Error (below) |
@@ -359,6 +366,7 @@ Unlike most rules, this one uses **inverted thresholds**: lower values are worse
 | Parameter | 80%             | 50%           |
 | Return    | 80%             | 50%           |
 | Property  | 80%             | 50%           |
+<!-- llms:skip-end -->
 
 <!-- llms:skip-begin -->
 ### Example
@@ -448,6 +456,7 @@ Intentional DTOs are excluded: readonly classes, promoted-properties-only classe
 
 <!-- llms:skip-end -->
 
+<!-- llms:skip-begin -->
 ### Thresholds
 
 | Metric          | Condition   | Default |
@@ -455,6 +464,7 @@ Intentional DTOs are excluded: readonly classes, promoted-properties-only classe
 | WOC             | ≥ threshold | 80%     |
 | WMC             | ≤ threshold | 10      |
 | Minimum methods | ≥           | 3       |
+<!-- llms:skip-end -->
 
 <!-- llms:skip-begin -->
 ### Example

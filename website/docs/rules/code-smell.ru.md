@@ -507,12 +507,14 @@ class UserController
 
 <!-- llms:skip-end -->
 
+<!-- llms:skip-begin -->
 ### Пороговые значения
 
 | Значение | Серьёзность | Что означает                                       |
 | -------- | ----------- | -------------------------------------------------- |
 | 8        | Warning     | Слишком много зависимостей, рассмотрите разделение |
 | 12+      | Error       | Класс явно нарушает SRP                            |
+<!-- llms:skip-end -->
 
 <!-- llms:skip-begin -->
 ### Пример
@@ -573,6 +575,7 @@ bin/qmx check src/ --rule-opt="code-smell.constructor-overinjection:warning=6"
 
 <!-- llms:skip-end -->
 
+<!-- llms:skip-begin -->
 ### Пороговые значения
 
 **Стандартные пороги** (методы и функции):
@@ -588,6 +591,7 @@ bin/qmx check src/ --rule-opt="code-smell.constructor-overinjection:warning=6"
 | -------- | ----------- | ------------------------------------------- |
 | 8        | Warning     | Стоит разделить value object                |
 | 12+      | Error       | Слишком много полей, разделите value object |
+<!-- llms:skip-end -->
 
 <!-- llms:skip-begin -->
 

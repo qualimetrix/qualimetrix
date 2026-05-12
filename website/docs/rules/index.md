@@ -13,6 +13,7 @@ You can customize all thresholds via configuration file or command-line options.
 
 ## Rules Summary
 
+<!-- llms:skip-begin -->
 ### Complexity Rules
 
 These rules measure how tangled and branching your code is. Complex code is harder to understand, test, and change safely.
@@ -194,3 +195,21 @@ rules:
     warning: 25
     error: 40
 ```
+<!-- llms:skip-end -->
+
+<!-- llms-only
+Compact rule catalog. For warning/error thresholds, see [Default Thresholds Reference](../reference/default-thresholds.md). For configuration syntax, see [Configuration](../getting-started/configuration.md).
+
+- **Complexity:** `complexity.cyclomatic`, `complexity.cognitive`, `complexity.npath`, `complexity.wmc`
+- **Size:** `size.method-count`, `size.class-count`, `size.property-count`
+- **Design:** `design.lcom`, `design.inheritance`, `design.noc`, `design.type-coverage`, `design.data-class`, `design.god-class`
+- **Cohesion (metrics only, no rule):** `tcc`, `lcc` — used as inputs by `design.god-class`
+- **Coupling:** `coupling.cbo`, `coupling.instability`, `coupling.distance`, `coupling.class-rank`
+- **Maintainability:** `maintainability.index`
+- **Architecture:** `architecture.circular-dependency`
+- **Duplication:** `duplication.code-duplication`
+- **Code Smell:** `code-smell.boolean-argument`, `code-smell.count-in-loop`, `code-smell.debug-code`, `code-smell.empty-catch`, `code-smell.error-suppression`, `code-smell.eval`, `code-smell.exit`, `code-smell.goto`, `code-smell.superglobals`, `code-smell.long-parameter-list`, `code-smell.unreachable-code`, `code-smell.identical-subexpression`, `code-smell.constructor-overinjection`, `code-smell.unused-private`
+- **Security:** `security.hardcoded-credentials`, `security.sql-injection`, `security.xss`, `security.command-injection`, `security.sensitive-parameter`
+
+Disable a single rule: `--disable-rule=complexity.npath`. Disable a whole group: `--disable-rule=code-smell` (prefix match).
+-->
