@@ -163,6 +163,7 @@ rules:
 
 This works alongside `exclude_namespaces` -- both filters are applied. Unlike the global `exclude_paths`, per-rule `exclude_paths` only affects the specific rule, not all rules.
 
+<!-- llms:skip-begin -->
 **Per-symbol threshold overrides with `@qmx-threshold`:**
 
 In addition to project-wide thresholds in YAML, you can override thresholds for individual classes or methods using `@qmx-threshold` annotations directly in source code:
@@ -178,6 +179,7 @@ class ComplexStateMachine
 ```
 
 See [Baseline > @qmx-threshold](../usage/baseline.md#per-symbol-threshold-overrides-with-qmx-threshold) for full syntax and examples.
+<!-- llms:skip-end -->
 
 ### Disabled Rules
 
@@ -352,6 +354,7 @@ vendor/bin/qmx check src/ --preset=./my-preset.yaml
 
 ---
 
+<!-- llms:skip-begin -->
 ## Full Example
 
 ```yaml
@@ -428,6 +431,7 @@ vendor/bin/qmx check src/ --exclude-path='src/Generated/*'
 This makes it easy to experiment without editing the config file.
 
 ---
+<!-- llms:skip-end -->
 
 ## Configuration Validation
 
