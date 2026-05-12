@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Configuration\ComputedMetricFormulaValidator;
 use Qualimetrix\Configuration\ComputedMetricsConfigResolver;
+use Qualimetrix\Configuration\HealthFormulaExcluder;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinition;
 use Qualimetrix\Core\Symbol\SymbolType;
 use RuntimeException;
@@ -21,7 +22,10 @@ final class ComputedMetricsConfigResolverTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->resolver = new ComputedMetricsConfigResolver(new ComputedMetricFormulaValidator());
+        $this->resolver = new ComputedMetricsConfigResolver(
+            new ComputedMetricFormulaValidator(),
+            new HealthFormulaExcluder(),
+        );
     }
 
     public function testResolveWithEmptyConfigReturns6Defaults(): void
@@ -91,24 +95,126 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         self::assertStringContainsString('ccn__sum', (string) $complexity->getFormulaForLevel(SymbolType::Namespace_));
     }
 
-    public function testDisableHealthMetric(): void
+    public function testDisableHealthMetricRebuildsOverall(): void
     {
-        // Disable health.maintainability (not referenced by health.overall at class level,
-        // but referenced at namespace level). Also disable health.overall to avoid
-        // reference validation errors.
+        // Disabling a single health.* dimension via `enabled: false` must NOT break
+        // health.overall — instead, weights are renormalized exactly like exclude_health.
         $result = $this->resolver->resolve([
-            'health.maintainability' => [
+            'health.typing' => [
                 'enabled' => false,
             ],
+        ]);
+
+        // 6 defaults - 1 disabled = 5 (health.overall stays)
+        self::assertCount(5, $result);
+        $names = array_map(static fn(ComputedMetricDefinition $d): string => $d->name, $result);
+        self::assertNotContains('health.typing', $names);
+        self::assertContains('health.overall', $names);
+
+        // health.overall formula must no longer reference health__typing,
+        // and remaining weights must sum to ~1.0
+        $overall = $this->findByName($result, 'health.overall');
+        self::assertNotNull($overall);
+
+        $classFormula = $overall->formulas['class'] ?? '';
+        self::assertStringNotContainsString('health__typing', $classFormula);
+        preg_match_all('/\*\s*([\d.]+)/', $classFormula, $matches);
+        $weights = array_map('floatval', $matches[1]);
+        self::assertEqualsWithDelta(1.0, array_sum($weights), 0.001);
+    }
+
+    public function testDisableOverallDimensionDirectly(): void
+    {
+        // Disabling health.overall directly is also supported — it has no dependents,
+        // so sub-dimensions are untouched.
+        $result = $this->resolver->resolve([
             'health.overall' => [
                 'enabled' => false,
             ],
         ]);
 
-        self::assertCount(4, $result);
+        self::assertCount(5, $result);
         $names = array_map(static fn(ComputedMetricDefinition $d): string => $d->name, $result);
-        self::assertNotContains('health.maintainability', $names);
         self::assertNotContains('health.overall', $names);
+        self::assertContains('health.typing', $names);
+    }
+
+    public function testEnabledFalseAndExcludeHealthCombine(): void
+    {
+        // Combining `enabled: false` on one dimension with `exclude_health` on another
+        // removes both; health.overall is rebuilt with the remaining weights.
+        $result = $this->resolver->resolve(
+            [
+                'health.typing' => ['enabled' => false],
+            ],
+            ['maintainability'],
+        );
+
+        self::assertCount(4, $result); // typing + maintainability gone; overall stays
+        $names = array_map(static fn(ComputedMetricDefinition $d): string => $d->name, $result);
+        self::assertNotContains('health.typing', $names);
+        self::assertNotContains('health.maintainability', $names);
+        self::assertContains('health.overall', $names);
+
+        $overall = $this->findByName($result, 'health.overall');
+        self::assertNotNull($overall);
+        self::assertStringNotContainsString('health__typing', $overall->formulas['namespace'] ?? '');
+        self::assertStringNotContainsString('health__maintainability', $overall->formulas['namespace'] ?? '');
+    }
+
+    public function testDisableUserComputedMetric(): void
+    {
+        // Custom `computed.*` metrics disabled via `enabled: false` are simply removed —
+        // no formula renormalization applies (no health.overall reference path).
+        $result = $this->resolver->resolve([
+            'computed.foo' => [
+                'formula' => 'loc__avg * 2',
+                'levels' => ['namespace'],
+                'enabled' => false,
+            ],
+        ]);
+
+        self::assertCount(6, $result); // defaults untouched, custom rejected
+        $names = array_map(static fn(ComputedMetricDefinition $d): string => $d->name, $result);
+        self::assertNotContains('computed.foo', $names);
+    }
+
+    public function testDisableUnknownHealthDimensionThrowsTailoredError(): void
+    {
+        // Typo in the YAML key for `enabled: false` on a health metric must produce an
+        // error that points at the actual source (`computed_metrics.health.X.enabled`),
+        // not at `--exclude-health` / `exclude_health`.
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('Unknown health dimension "health.typying"');
+        self::expectExceptionMessage('computed_metrics.health.typying.enabled: false');
+
+        $this->resolver->resolve([
+            'health.typying' => [
+                'enabled' => false,
+            ],
+        ]);
+    }
+
+    public function testExcludeHealthAcceptsBothNameForms(): void
+    {
+        // Both bare ('typing') and fully-qualified ('health.typing') forms must be accepted
+        // in the excludeHealth arg, and dedupe across them.
+        $result = $this->resolver->resolve([], ['typing', 'health.typing']);
+
+        // 6 defaults - 1 excluded = 5
+        self::assertCount(5, $result);
+        $names = array_map(static fn(ComputedMetricDefinition $d): string => $d->name, $result);
+        self::assertNotContains('health.typing', $names);
+    }
+
+    public function testUnknownExcludeHealthArgThrows(): void
+    {
+        // Unknown name in the excludeHealth arg must surface as an error from
+        // HealthFormulaExcluder (different source than enabled:false, different message).
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessageMatches('/Unknown health dimension.*nonexistent/');
+
+        $this->resolver->resolve([], ['nonexistent']);
     }
 
     public function testCreateNewComputedMetric(): void
