@@ -119,11 +119,13 @@ computed_metrics:
     enabled: false
 ```
 
-Or exclude from display only (scores still computed):
+Or via CLI:
 
 ```bash
 bin/qmx check src/ --exclude-health=typing
 ```
+
+Both paths produce the same result: the dimension is removed from the pipeline AND `health.overall` weights are renormalized across the remaining dimensions (the disabled dimension is not silently treated as a neutral 75-point contribution). If you override `health.overall` with a non-canonical formula (e.g. `min(...)` or a conditional), excluding dimensions will throw an explicit error — handle the disabled dimension via `??` fallbacks in your custom formula instead.
 
 ### Overriding Formulas
 
