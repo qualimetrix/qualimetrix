@@ -24,6 +24,7 @@ Counts the number of methods in a class. A class with too many methods is likely
 
 <!-- llms:skip-end -->
 
+<!-- llms:skip-begin -->
 ### Thresholds
 
 | Value  | Severity | Meaning                                    |
@@ -31,6 +32,7 @@ Counts the number of methods in a class. A class with too many methods is likely
 | 1--19  | OK       | Reasonable class size                      |
 | 20--29 | Warning  | Class is getting large, consider splitting |
 | 30+    | Error    | Class is too large, should be refactored   |
+<!-- llms:skip-end -->
 
 ### Configuration
 
@@ -134,6 +136,7 @@ Counts the number of classes in a namespace (package). This is measured at the n
 
 <!-- llms:skip-end -->
 
+<!-- llms:skip-begin -->
 ### Thresholds
 
 | Value  | Severity | Meaning                                       |
@@ -141,6 +144,7 @@ Counts the number of classes in a namespace (package). This is measured at the n
 | 1--14  | OK       | Focused namespace                             |
 | 15--24 | Warning  | Namespace is getting crowded                  |
 | 25+    | Error    | Namespace should be split into sub-namespaces |
+<!-- llms:skip-end -->
 
 ### Configuration
 
@@ -227,6 +231,7 @@ Counts the number of properties (fields) in a class. A class with many propertie
 
 <!-- llms:skip-end -->
 
+<!-- llms:skip-begin -->
 ### Thresholds
 
 | Value  | Severity | Meaning                                          |
@@ -234,6 +239,7 @@ Counts the number of properties (fields) in a class. A class with many propertie
 | 1--15  | OK       | Reasonable number of properties                  |
 | 16--20 | Warning  | Too many properties, consider extracting objects |
 | 21+    | Error    | Far too many properties, refactor needed         |
+<!-- llms:skip-end -->
 
 ### Configuration
 

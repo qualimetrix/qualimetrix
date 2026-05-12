@@ -21,6 +21,7 @@ Think of it like comparing recipes: if two recipes have the exact same steps in 
 
 <!-- llms:skip-end -->
 
+<!-- llms:skip-begin -->
 ### Thresholds
 
 | Value                  | Severity | Meaning                                                    |
@@ -34,6 +35,7 @@ Minimum block size (configurable):
 | ------------ | ------- | -------------------------------------------------- |
 | `min_lines`  | 5       | Minimum number of lines for a block to be checked  |
 | `min_tokens` | 70      | Minimum number of tokens for a block to be flagged |
+<!-- llms:skip-end -->
 
 <!-- llms:skip-begin -->
 ### Example

@@ -29,6 +29,7 @@ The number roughly tells you the minimum number of test cases you need to fully 
 
 <!-- llms:skip-end -->
 
+<!-- llms:skip-begin -->
 ### Thresholds
 
 **Method level** (enabled by default):
@@ -44,6 +45,7 @@ The number roughly tells you the minimum number of test cases you need to fully 
 | ------- | --------- | -------- |
 | Warning | >= 30     | Warning  |
 | Error   | >= 50     | Error    |
+<!-- llms:skip-end -->
 
 <!-- llms:skip-begin -->
 ### Example
@@ -158,6 +160,7 @@ Key differences from cyclomatic complexity:
 
 <!-- llms:skip-end -->
 
+<!-- llms:skip-begin -->
 ### Thresholds
 
 **Method level** (enabled by default):
@@ -173,6 +176,7 @@ Key differences from cyclomatic complexity:
 | ------- | --------- | -------- |
 | Warning | >= 30     | Warning  |
 | Error   | >= 50     | Error    |
+<!-- llms:skip-end -->
 
 <!-- llms:skip-begin -->
 ### Example
@@ -263,6 +267,7 @@ The category label is included in violation messages (e.g., "NPath complexity is
 
 <!-- llms:skip-end -->
 
+<!-- llms:skip-begin -->
 ### Thresholds
 
 **Method level** (enabled by default):
@@ -273,6 +278,7 @@ The category label is included in violation messages (e.g., "NPath complexity is
 | Error   | >= 1000   | Error    |
 
 **Class level** (disabled by default) -- checks the maximum NPath among methods.
+<!-- llms:skip-end -->
 
 <!-- llms:skip-begin -->
 ### Example
@@ -376,12 +382,14 @@ A class with 20 simple getter/setter methods (each with complexity 1) has WMC = 
 
 <!-- llms:skip-end -->
 
+<!-- llms:skip-begin -->
 ### Thresholds
 
 | Level   | Threshold | Severity |
 | ------- | --------- | -------- |
 | Warning | > 50      | Warning  |
 | Error   | > 80      | Error    |
+<!-- llms:skip-end -->
 
 <!-- llms:skip-begin -->
 ### Example

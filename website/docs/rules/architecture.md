@@ -40,6 +40,7 @@ Circular dependencies cause real problems:
 - **Tight coupling.** Changes to any class in the cycle can break all other classes in the cycle.
 - **Harder to understand.** There is no clear "top" or "bottom" -- you cannot read the code in a linear order.
 
+<!-- llms:skip-begin -->
 ### Thresholds
 
 | Cycle type           | Severity | Meaning                                   |
@@ -49,6 +50,7 @@ Circular dependencies cause real problems:
 
 !!! note
     Direct cycles (A depends on B, B depends on A) are reported as **Error** by default because they represent the tightest coupling. Transitive cycles are reported as **Warning** because they are often easier to break.
+<!-- llms:skip-end -->
 
 ### Options
 

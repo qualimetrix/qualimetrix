@@ -507,12 +507,14 @@ Detects constructors with too many dependencies injected. A long constructor par
 
 <!-- llms:skip-end -->
 
+<!-- llms:skip-begin -->
 ### Thresholds
 
 | Value | Severity | Meaning                                   |
 | ----- | -------- | ----------------------------------------- |
 | 8     | Warning  | Too many dependencies, consider splitting |
 | 12+   | Error    | Class clearly violates SRP                |
+<!-- llms:skip-end -->
 
 <!-- llms:skip-begin -->
 ### Example
@@ -573,6 +575,7 @@ Detects methods and functions with too many parameters. A long parameter list ma
 
 <!-- llms:skip-end -->
 
+<!-- llms:skip-begin -->
 ### Thresholds
 
 **Standard thresholds** (methods and functions):
@@ -588,6 +591,7 @@ Detects methods and functions with too many parameters. A long parameter list ma
 | ----- | -------- | --------------------------------------- |
 | 8     | Warning  | Consider splitting the value object     |
 | 12+   | Error    | Too many fields, split the value object |
+<!-- llms:skip-end -->
 
 <!-- llms:skip-begin -->
 
