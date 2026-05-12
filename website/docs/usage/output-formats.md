@@ -96,6 +96,7 @@ src/Repository/OrderRepository.php:15: error[coupling.cbo.class]: CBO is 18, max
 
 ## text-verbose
 
+<!-- llms:skip-begin -->
 !!! warning "Deprecated"
     `text-verbose` is deprecated. Use `--format=text --detail` instead, which provides the same grouped, multi-line violation output alongside the compact one-line format.
 
@@ -103,6 +104,10 @@ src/Repository/OrderRepository.php:15: error[coupling.cbo.class]: CBO is 18, max
     # Replaces: bin/qmx check src/ --format=text-verbose
     bin/qmx check src/ --format=text --detail
     ```
+<!-- llms:skip-end -->
+<!-- llms-only
+Deprecated. Use `--format=text --detail` instead.
+-->
 
 ---
 
@@ -112,6 +117,9 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
 
 **When to use:** Custom scripts, dashboards, programmatic processing.
 
+**Top-level keys:** `meta`, `summary`, `health`, `worstNamespaces`, `worstClasses`, `violations`, `violationsMeta`, `violationGroups`.
+
+<!-- llms:skip-begin -->
 **Example output:**
 
 ```json
@@ -196,11 +204,13 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
     "violationGroups": {}
 }
 ```
+<!-- llms:skip-end -->
 
 The `worstNamespaces` and `worstClasses` entries include a `violationDensity` field -- violations per 100 lines of code -- providing a size-normalized view of code quality.
 
-When using `--group-by=class` or `--group-by=namespace`, violations are organized into a `violationGroups` object keyed by class FQCN or namespace. Each group contains its violations array and summary counts:
+When using `--group-by=class` or `--group-by=namespace`, violations are organized into a `violationGroups` object keyed by class FQCN or namespace. Each group contains its violations array and summary counts (`errorCount`, `warningCount`, `violationDensity`).
 
+<!-- llms:skip-begin -->
 ```json
 {
     "violationGroups": {
@@ -213,6 +223,7 @@ When using `--group-by=class` or `--group-by=namespace`, violations are organize
     }
 }
 ```
+<!-- llms:skip-end -->
 
 **Options:**
 
@@ -242,6 +253,9 @@ Raw metric values for every symbol (file, class, method, namespace). Unlike `jso
 
 **When to use:** Custom dashboards, trend analysis, data science pipelines, or building your own quality gates on raw metrics.
 
+**Top-level keys:** `version`, `package`, `timestamp`, `symbols[]` (each with `type`: file/class/method/namespace, `name`, `file`, `line`, `metrics: {...}`), `summary`.
+
+<!-- llms:skip-begin -->
 **Example output (abbreviated):**
 
 ```json
@@ -297,6 +311,7 @@ Raw metric values for every symbol (file, class, method, namespace). Unlike `jso
     }
 }
 ```
+<!-- llms:skip-end -->
 
 **Usage:**
 
@@ -315,6 +330,9 @@ Checkstyle XML format. Widely supported by CI tools.
 
 **When to use:** Jenkins, SonarQube, or any tool that accepts Checkstyle XML.
 
+Checkstyle 3.0 XML: `<file name="...">` with nested `<error line="" severity="error|warning" message="" source="qmx.<rule>"/>`.
+
+<!-- llms:skip-begin -->
 **Example output:**
 
 ```xml
@@ -338,6 +356,7 @@ Checkstyle XML format. Widely supported by CI tools.
 ```bash
 bin/qmx check src/ --format=checkstyle --no-progress > checkstyle.xml
 ```
+<!-- llms:skip-end -->
 
 ---
 
@@ -347,6 +366,9 @@ SARIF (Static Analysis Results Interchange Format) 2.1.0. A standard for static 
 
 **When to use:** GitHub Security tab, VS Code (with SARIF Viewer extension), JetBrains IDEs, Azure DevOps.
 
+SARIF 2.1.0 spec — `runs[].results[]` entries with `ruleId`, `level` (error/warning), `message.text`, `locations[].physicalLocation.{artifactLocation.uri,region.startLine}`.
+
+<!-- llms:skip-begin -->
 **Example output (abbreviated):**
 
 ```json
@@ -401,6 +423,7 @@ SARIF (Static Analysis Results Interchange Format) 2.1.0. A standard for static 
 ```
 
 Results appear in the **Security** tab of your repository and as inline annotations on pull requests.
+<!-- llms:skip-end -->
 
 ---
 
@@ -410,6 +433,9 @@ GitLab Code Quality JSON format. Shows violations directly in Merge Request diff
 
 **When to use:** GitLab CI/CD with Code Quality reports.
 
+Array of objects with `description`, `check_name`, `fingerprint`, `severity` (critical/major), `location.{path,lines.begin}`. Severity mapping: error → critical, warning → major.
+
+<!-- llms:skip-begin -->
 **Example output (abbreviated):**
 
 ```json
@@ -429,13 +455,6 @@ GitLab Code Quality JSON format. Shows violations directly in Merge Request diff
 ]
 ```
 
-**Severity mapping:**
-
-| Qualimetrix Severity | GitLab Severity |
-| -------------------- | --------------- |
-| error                | critical        |
-| warning              | major           |
-
 **CI usage (GitLab CI):**
 
 ```yaml
@@ -449,6 +468,7 @@ code_quality:
 ```
 
 Violations appear inline in the **Changes** tab of your Merge Request.
+<!-- llms:skip-end -->
 
 ---
 
@@ -458,19 +478,15 @@ GitHub Actions workflow command format. Produces inline annotations that appear 
 
 **When to use:** GitHub Actions CI. Simpler setup than SARIF — no upload step needed.
 
+Workflow command format: `::<level> file=<path>,line=<n>,title=<rule>::<message>` (one line per violation). Mapping: warning → `::warning`, error → `::error`.
+
+<!-- llms:skip-begin -->
 **Example output:**
 
 ```
 ::warning file=src/Service/UserService.php,line=87,title=size.method-count.class::Class has 22 methods, max recommended is 20
 ::error file=src/Service/UserService.php,line=42,title=complexity.cyclomatic.method::Cyclomatic complexity is 15, max allowed is 10
 ```
-
-**Severity mapping:**
-
-| Qualimetrix Severity | GitHub Command |
-| -------------------- | -------------- |
-| warning              | `::warning`    |
-| error                | `::error`      |
 
 **CI usage (GitHub Actions):**
 
@@ -480,6 +496,7 @@ GitHub Actions workflow command format. Produces inline annotations that appear 
 ```
 
 Annotations appear directly on the changed lines in your pull request — no SARIF upload needed. Only errors cause a non-zero exit code by default.
+<!-- llms:skip-end -->
 
 !!! tip
     Use `--format=github` for quick inline annotations. Use `--format=sarif` if you also want results in the GitHub Security tab.
