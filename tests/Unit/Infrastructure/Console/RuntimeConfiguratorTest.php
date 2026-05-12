@@ -79,8 +79,10 @@ final class RuntimeConfiguratorTest extends TestCase
             $this->ruleOptionsRegistry,
             $ruleRegistry,
             new CacheFactory($configProvider),
-            new ComputedMetricsConfigResolver(new ComputedMetricFormulaValidator()),
-            new HealthFormulaExcluder(),
+            new ComputedMetricsConfigResolver(
+                new ComputedMetricFormulaValidator(),
+                new HealthFormulaExcluder(),
+            ),
             $this->frameworkNamespacesHolder,
         );
     }

@@ -188,6 +188,35 @@ final class HealthFormulaExcluderTest extends TestCase
         self::assertStringEndsWith(', 0, 100)', $formula);
     }
 
+    public function testCustomNonWeightedOverallFormulaThrowsExplicitly(): void
+    {
+        // A user-defined `health.overall` formula that does not follow the canonical
+        // `(health__dim ?? 75) * weight` shape cannot be auto-renormalized. Refuse
+        // explicitly instead of silently dropping the formula.
+        $definitions = [
+            new ComputedMetricDefinition(
+                name: 'health.a',
+                formulas: ['class' => 'clamp(100, 0, 100)'],
+                description: 'a',
+                levels: [SymbolType::Class_],
+            ),
+            new ComputedMetricDefinition(
+                name: 'health.overall',
+                formulas: ['class' => 'min(health__a, 50)'], // non-canonical
+                description: 'overall',
+                levels: [SymbolType::Class_],
+                inverted: true,
+                warningThreshold: 50.0,
+                errorThreshold: 30.0,
+            ),
+        ];
+
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('Cannot auto-renormalize "health.overall"');
+
+        $this->excluder->applyExcludeHealth($definitions, ['a']);
+    }
+
     public function testRebuiltDefinitionPreservesOtherFields(): void
     {
         $definitions = array_values(ComputedMetricDefaults::getDefaults());

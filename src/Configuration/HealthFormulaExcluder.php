@@ -102,6 +102,26 @@ final readonly class HealthFormulaExcluder
 
         foreach ($formulas as $level => $formula) {
             $weights = $this->parseWeightsFromFormula($formula);
+
+            // Auto-renormalization works only on the canonical weighted-sum shape
+            // `(health__dim ?? 75) * 0.NN + ...`. If a user has overridden
+            // `health.overall` with a non-canonical formula (e.g. `min(...)`,
+            // a conditional, a custom aggregator), parsing yields no weights and
+            // silently dropping the level would lose the user's intent. Refuse
+            // explicitly so the user can either drop the exclusion or rewrite
+            // their custom formula to handle the missing dimension via `??`.
+            if ($weights === []) {
+                throw new InvalidArgumentException(\sprintf(
+                    'Cannot auto-renormalize "health.overall" at level "%s" after excluding '
+                    . 'health dimensions: the custom formula does not match the canonical '
+                    . 'weighted-sum shape `(health__dimension ?? fallback) * weight`. '
+                    . 'Either rewrite the custom formula to reference disabled dimensions '
+                    . 'via `??` fallbacks, or remove the exclusion. Formula: %s',
+                    $level,
+                    $formula,
+                ));
+            }
+
             $rebuilt = $this->buildWeightedFormula($weights, $excludedSet);
 
             if ($rebuilt !== null) {

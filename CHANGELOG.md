@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - `health.typing` no longer reports 0% for namespaces with no typeable declarations (e.g. marker interfaces used for Symfony Messenger routing). Empty type surface now yields 100% (vacuous truth) at namespace and project levels, matching the existing class-level semantic.
+- Disabling a health dimension via `computed_metrics.health.X.enabled: false` no longer breaks `health.overall`. Both `enabled: false` and `exclude_health: [X]` now follow the same pipeline — the dimension is removed and `health.overall` weights are renormalized across the remaining dimensions.
+
+### Changed
+- Excluding a health dimension when `health.overall` has been overridden with a non-canonical formula (one that does not match `(health__dim ?? fallback) * weight`) now throws an explicit error instead of silently dropping the formula. Custom formulas should handle disabled dimensions via `??` fallbacks.
 
 ## [0.16.0] - 2026-05-01
 

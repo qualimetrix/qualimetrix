@@ -174,11 +174,11 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(RuleRegistryInterface::class),
                 new Reference(CacheFactory::class),
                 new Reference(ComputedMetricsConfigResolver::class),
-                new Reference(HealthFormulaExcluder::class),
                 new Reference(FrameworkNamespacesHolder::class),
             ]);
 
         // HealthFormulaExcluder for exclude-health formula rebuilding
+        // (used internally by ComputedMetricsConfigResolver)
         $container->register(HealthFormulaExcluder::class);
 
         // ComputedMetricFormulaValidator (validates expression syntax, references, circular deps)
@@ -188,6 +188,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         $container->register(ComputedMetricsConfigResolver::class)
             ->setArguments([
                 new Reference(ComputedMetricFormulaValidator::class),
+                new Reference(HealthFormulaExcluder::class),
             ]);
 
         // ProfileSummaryRenderer (stateless, no dependencies)

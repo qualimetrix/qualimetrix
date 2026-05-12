@@ -8,7 +8,6 @@ use Psr\Log\LogLevel;
 use Qualimetrix\Configuration\AnalysisConfiguration;
 use Qualimetrix\Configuration\ComputedMetricsConfigResolver;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
-use Qualimetrix\Configuration\HealthFormulaExcluder;
 use Qualimetrix\Configuration\Pipeline\ResolvedConfiguration;
 use Qualimetrix\Configuration\RuleOptionsParserFactory;
 use Qualimetrix\Configuration\RuleOptionsRegistry;
@@ -44,7 +43,6 @@ final class RuntimeConfigurator
         private readonly RuleRegistryInterface $ruleRegistry,
         private readonly CacheFactory $cacheFactory,
         private readonly ComputedMetricsConfigResolver $computedMetricsResolver,
-        private readonly HealthFormulaExcluder $healthFormulaExcluder,
         private readonly FrameworkNamespacesHolder $frameworkNamespacesHolder,
     ) {}
 
@@ -99,9 +97,14 @@ final class RuntimeConfigurator
             );
         }
 
-        // Resolve computed metrics definitions, apply exclude-health, and store in holder
-        $definitions = $this->computedMetricsResolver->resolve($resolved->computedMetrics);
-        $definitions = $this->healthFormulaExcluder->applyExcludeHealth($definitions, $resolved->analysis->excludeHealth);
+        // Resolve computed metrics definitions and store in holder. The resolver internally
+        // applies exclude-health rewriting (merging in `health.*` metrics disabled via
+        // `enabled: false`) before validation, so both disable paths share the same
+        // semantics: removal + weight renormalization in `health.overall`.
+        $definitions = $this->computedMetricsResolver->resolve(
+            $resolved->computedMetrics,
+            $resolved->analysis->excludeHealth,
+        );
         ComputedMetricDefinitionHolder::setDefinitions($definitions);
     }
 
