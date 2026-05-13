@@ -170,6 +170,40 @@ final class LayerDefinitionTest extends TestCase
         self::assertSame('App\\Service\\', $definition->firstMatchingPattern('App\\Service\\Foo'));
     }
 
+    /**
+     * Pins delegation to {@see \Qualimetrix\Core\Util\NamespaceMatcher::matchesSingle()}:
+     * if the underlying primitive's semantics ever drift from what
+     * {@see LayerDefinition} expects, this test surfaces the mismatch.
+     */
+    #[Test]
+    public function matches_agreesWithNamespaceMatcherForGlobAndPrefixCases(): void
+    {
+        $cases = [
+            // [patterns, fqn, expected]
+            [['App\\Service'], 'App\\Service', true],
+            [['App\\Service'], 'App\\Service\\Foo', true],
+            [['App\\Service'], 'App\\ServiceManager', false],
+            [['App\\Service'], 'App\\Other', false],
+            [['App\\**\\Repository'], 'App\\Domain\\Repository', true],
+            [['App\\**\\Repository'], 'App\\Domain\\Service', false],
+            [['App\\?oo'], 'App\\Foo', true],
+            [['App\\?oo'], 'App\\Bar', false],
+            [['App\\[ABC]oo'], 'App\\Aoo', true],
+            [['App\\[ABC]oo'], 'App\\Doo', false],
+            [['App\\Service\\'], 'App\\Service\\Foo', true],
+            [['App\\Service\\'], 'App\\Service', true],
+        ];
+
+        foreach ($cases as [$patterns, $fqn, $expected]) {
+            $definition = new LayerDefinition('layer', $patterns);
+            self::assertSame(
+                $expected,
+                $definition->matches($fqn),
+                \sprintf('matches([%s], %s) expected %s', implode(',', $patterns), $fqn, $expected ? 'true' : 'false'),
+            );
+        }
+    }
+
     #[Test]
     public function construct_throwsOnEmptyName(): void
     {
