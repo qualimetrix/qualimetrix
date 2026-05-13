@@ -416,10 +416,13 @@ the `enabled` flag and a single `severity` selector — there are no numeric thr
 **Configuration:**
 ```yaml
 architecture:
-  layers:
-    controller: 'App\Controller\**'
-    service:    'App\Service\**'
-    repository: 'App\Repository\**'
+  layers:                                  # ordered list — first match wins
+    - name: controller
+      patterns: ['App\Controller\**']
+    - name: service
+      patterns: ['App\Service\**']
+    - name: repository
+      patterns: ['App\Repository\**']
   allow:
     controller: [service]
     service:    [repository]
@@ -435,8 +438,7 @@ rules:
 
 **Membership semantics:**
 - Namespace-based only (no class-name suffix, no interface, no attribute)
-- Single layer per class; longest-prefix specificity wins
-- Equal-specificity tie → configuration error at config-load time
+- Single layer per class; **declaration-order matching, first match wins** (see [ADR 0006](../../docs/adr/0006-architecture-rules-declaration-order.md))
 - Same-layer dependencies always allowed (MVP)
 
 **Reporting:**
@@ -446,10 +448,14 @@ rules:
 
 **Coverage diagnostic:** When `architecture.coverage` is `warn` or `error`, the rule emits **one** additional violation under `ruleName: architecture.coverage` summarising unmatched edges and listing up to 10 example unclassified classes. Severity is `Warning` for `warn`, `Error` for `error`.
 
+**Misorder safety nets (info severity):**
+- `architecture.unreachable-layer` — one info violation per declared layer that matched zero classes during the run (catches a broader layer earlier in the order silently swallowing everything).
+- `architecture.potential-shadow` — one info violation per (assigned, shadowed) layer pair observed in practice. Evidence-based: walks every class, records all matching layers, groups by (first-match, later-match). Catches prefix overlap, suffix-theft, and arbitrary intersection without re-introducing specificity scoring.
+
 **Files:**
 - `src/Rules/Architecture/LayerViolationRule.php` — rule implementation
 - `src/Rules/Architecture/LayerViolationOptions.php` — rule options
-- `src/Core/Architecture/Layer/` — reusable layer primitives (`LayerDefinition`, `LayerRegistry`, `LayerPolicy`)
+- `src/Core/Architecture/Layer/` — reusable layer primitives (`LayerDefinition`, `LayerRegistry`, `LayerPolicy`, `LayerMatch`)
 - `src/Configuration/Architecture/ArchitectureConfigurationFactory.php` — YAML → typed config
 
 ---
