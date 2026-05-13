@@ -8,15 +8,17 @@ use Qualimetrix\Configuration\Pipeline\DeferredWarning;
 use Qualimetrix\Core\Architecture\ArchitectureConfiguration;
 
 /**
- * Result of {@see ArchitectureConfigurationFactory::fromArray()}: the
- * resolved {@see ArchitectureConfiguration} plus any non-fatal warnings
- * that should be surfaced to the user once the runtime logger is wired
- * (see {@see DeferredWarning}).
+ * Result of {@see ArchitectureConfigurationFactory::fromArray()}.
  *
- * Step 0 of the architecture-rules follow-up plan introduces the type
- * and an empty `warnings` slot. Step 1 populates it with mutual-allow
- * detection and similar diagnostics, and drains the queue through the
- * configuration pipeline to the user-configured logger.
+ * Bundles the typed {@see ArchitectureConfiguration} produced from the raw YAML
+ * map with the list of {@see DeferredWarning}s the factory emitted while
+ * processing it. The pipeline collects these warnings into
+ * {@see \Qualimetrix\Configuration\Pipeline\ResolvedConfiguration::$deferredWarnings}
+ * so that {@see \Qualimetrix\Infrastructure\Console\RuntimeConfigurator} can
+ * replay them once the user-configured logger has been wired up — at the time
+ * {@see ArchitectureConfigurationFactory::fromArray()} runs, the logger holder
+ * still carries a {@see \Psr\Log\NullLogger}, and any messages logged directly
+ * would be dropped.
  */
 final readonly class ArchitectureFactoryResult
 {

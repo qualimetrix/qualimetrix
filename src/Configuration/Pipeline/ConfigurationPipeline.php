@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Configuration\Pipeline;
 
-use Psr\Log\LoggerInterface;
-use Psr\Log\NullLogger;
 use Qualimetrix\Configuration\AnalysisConfiguration;
 use Qualimetrix\Configuration\Architecture\ArchitectureConfigurationFactory;
 use Qualimetrix\Configuration\ConfigSchema;
@@ -18,26 +16,19 @@ use Qualimetrix\Configuration\Pipeline\Stage\ConfigurationStageInterface;
  * Collects configuration from multiple stages (defaults, composer, config file, cli)
  * and merges them according to priority order.
  *
- * Optional logger is forwarded to {@see ArchitectureConfigurationFactory} so that
- * mutual-allow warnings and pattern-collision warnings surface to the user. In
- * production this is a {@see \Qualimetrix\Infrastructure\Logging\DelegatingLogger}
- * pointing at {@see \Qualimetrix\Infrastructure\Logging\LoggerHolder}; warnings
- * emitted during {@see resolve()} are forwarded to whichever logger the holder
- * carries at log time (NullLogger before CLI configuration, console/file logger
- * afterwards). The factory itself accepts an optional logger and falls back to
- * NullLogger if none is supplied.
+ * The architecture configuration factory may emit warnings during resolution
+ * (e.g. mutual-allow detection). Because {@see resolve()} runs before
+ * {@see \Qualimetrix\Infrastructure\Console\RuntimeConfigurator::configureLogger()}
+ * has wired up the user-facing logger, those warnings are captured in
+ * {@see ResolvedConfiguration::$deferredWarnings} via
+ * {@see \Qualimetrix\Configuration\Architecture\ArchitectureFactoryResult}.
+ * {@see \Qualimetrix\Infrastructure\Console\RuntimeConfigurator} drains them
+ * to the configured logger once the holder is populated.
  */
 final class ConfigurationPipeline implements ConfigurationPipelineInterface
 {
     /** @var list<ConfigurationStageInterface> */
     private array $stages = [];
-
-    private LoggerInterface $logger;
-
-    public function __construct(?LoggerInterface $logger = null)
-    {
-        $this->logger = $logger ?? new NullLogger();
-    }
 
     public function resolve(ConfigurationContext $context): ResolvedConfiguration
     {
@@ -88,13 +79,12 @@ final class ConfigurationPipeline implements ConfigurationPipelineInterface
      */
     private function buildResolved(array $merged, array $appliedSources): ResolvedConfiguration
     {
-        // The architecture factory emits warnings for mutual-allow pairs and
-        // (until Step 1 lands) also forwards them to the pipeline logger so the
-        // existing surface keeps working. Step 1 will wire the result's
-        // warning list through ResolvedConfiguration into RuntimeConfigurator.
-        $architectureResult = (new ArchitectureConfigurationFactory())->fromArray(
+        // The architecture factory emits PSR-3-shaped records (e.g. mutual-allow
+        // detection) for downstream replay. They are collected into
+        // ResolvedConfiguration::$deferredWarnings and drained by
+        // RuntimeConfigurator after the user logger is wired up.
+        $factoryResult = (new ArchitectureConfigurationFactory())->fromArray(
             $this->getAssocArrayValue($merged, ConfigSchema::ARCHITECTURE, []),
-            $this->logger,
         );
 
         return new ResolvedConfiguration(
@@ -106,7 +96,8 @@ final class ConfigurationPipeline implements ConfigurationPipelineInterface
             ruleOptions: $this->getAssocArrayValue($merged, ConfigSchema::RULES, []),
             computedMetrics: $this->getAssocArrayValue($merged, ConfigSchema::COMPUTED_METRICS, []),
             appliedSources: $appliedSources,
-            architecture: $architectureResult->configuration,
+            architecture: $factoryResult->configuration,
+            deferredWarnings: $factoryResult->warnings,
         );
     }
 
