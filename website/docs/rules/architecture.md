@@ -314,7 +314,7 @@ To suppress the diagnostic for a known set of unclassified classes, declare a ca
 2. **Pattern matches no class in the analysed codebase.** The layer is declared for a namespace that doesn't exist yet — or the namespace was renamed.
 3. **DTO-only layer with no outgoing dependencies that happens not to have any classes registered yet.** Hit counting is over all analysed classes (not the dependency graph), so layers with classes but no outgoing dependencies still register hits — this case only arises when the layer truly contains no classes.
 
-Because it is `Info` severity, the diagnostic does not fail the run by default. Set `fail_on: info` to opt into stricter CI behaviour. Run `qmx debug:layer-assignment <class>` (Step 6 of the architecture-rules follow-up) to inspect specific classes when triaging.
+Because it is `Info` severity, the diagnostic does not fail the run by default. Set `fail_on: info` to opt into stricter CI behaviour. Run [`qmx debug:layer-assignment <class>`](#debug-layer-assignment) to inspect specific classes when triaging.
 
 ### Potential-shadow diagnostic
 
@@ -328,7 +328,48 @@ The fix is either to:
 - Re-order the layers so the more-specific one is declared first (often what the user meant), or
 - Tighten the broader pattern so the layers no longer overlap.
 
-Use `qmx debug:layer-assignment <class>` to verify the fix per specific class.
+Use [`qmx debug:layer-assignment <class>`](#debug-layer-assignment) to verify the fix per specific class.
+
+### Inspecting layer assignment for a single class { #debug-layer-assignment }
+
+When a class ends up in an unexpected layer — or you want to verify a fix for an `architecture.unreachable-layer` or `architecture.potential-shadow` diagnostic — use the `debug:layer-assignment` command for per-class introspection:
+
+```bash
+bin/qmx debug:layer-assignment 'App\Service\Foo'
+bin/qmx debug:layer-assignment 'App\Service\Foo' --config qmx.yaml
+```
+
+The command delegates to the same `LayerRegistry::resolveAll()` API the runtime rule uses, so the assignment it reports is exactly what `architecture.layer-violation` will observe at analysis time — there is no parallel matching path that could drift from runtime semantics. It walks the configured layers in declaration order, reports the layer the class is assigned to, and lists every other layer whose patterns would also have matched (a potential shadow source if it had been declared earlier).
+
+Example output for a uniquely-assigned class:
+
+```
+Class: App\Service\UserService
+
+  Assigned to: service
+    Matching pattern: App\Service\**
+
+  Would also match (in declaration order):
+    (none — the assignment is unique)
+```
+
+Example output for a shadowed class:
+
+```
+Class: App\Service\Foo
+
+  Assigned to: any-foo
+    Matching pattern: App\**\Foo
+
+  Would also match (in declaration order):
+    - service (pattern: 'App\Service\**')
+
+  Diagnostic hint:
+    Class is shadowed: would have matched 'service' if 'any-foo' was declared later.
+    See architecture.potential-shadow diagnostic for the broader picture.
+```
+
+Exit codes follow the standard convention: `0` for any informational result (including "class matches no declared layer"), `2` for invalid input (empty or malformed FQN), `1` for configuration-load errors.
 
 ### Options
 

@@ -314,7 +314,7 @@ Examples of unclassified classes: App\Legacy\Foo, App\Legacy\Bar, App\Legacy\Baz
 2. **Паттерн не совпадает ни с одним классом в анализируемой кодовой базе.** Слой объявлен для неймспейса, которого ещё нет — или неймспейс был переименован.
 3. **DTO-слой без исходящих зависимостей, в котором пока нет классов.** Подсчёт попаданий идёт по всем проанализированным классам (не по графу зависимостей), поэтому слои с классами, но без исходящих зависимостей, всё равно набирают попадания — этот случай возникает только когда слой реально не содержит ни одного класса.
 
-Поскольку severity `Info`, диагностика не валит прогон по умолчанию. Установите `fail_on: info`, чтобы получить строгое поведение в CI. Используйте `qmx debug:layer-assignment <class>` (Step 6 follow-up плана), чтобы инспектировать конкретные классы при разборе.
+Поскольку severity `Info`, диагностика не валит прогон по умолчанию. Установите `fail_on: info`, чтобы получить строгое поведение в CI. Используйте [`qmx debug:layer-assignment <class>`](#debug-layer-assignment), чтобы инспектировать конкретные классы при разборе.
 
 ### Диагностика потенциального затенения
 
@@ -328,7 +328,48 @@ Examples of unclassified classes: App\Legacy\Foo, App\Legacy\Bar, App\Legacy\Baz
 - Переставить слои так, чтобы более специфичный был объявлен раньше (часто именно это и имелось в виду), или
 - Сузить более широкий паттерн так, чтобы слои больше не пересекались.
 
-Используйте `qmx debug:layer-assignment <class>` для проверки исправления по конкретному классу.
+Используйте [`qmx debug:layer-assignment <class>`](#debug-layer-assignment) для проверки исправления по конкретному классу.
+
+### Инспекция назначения слоя для одного класса { #debug-layer-assignment }
+
+Когда класс попадает в неожиданный слой — или когда нужно проверить исправление диагностики `architecture.unreachable-layer` или `architecture.potential-shadow` — используйте команду `debug:layer-assignment` для покласовой инспекции:
+
+```bash
+bin/qmx debug:layer-assignment 'App\Service\Foo'
+bin/qmx debug:layer-assignment 'App\Service\Foo' --config qmx.yaml
+```
+
+Команда делегирует тот же `LayerRegistry::resolveAll()`, который использует runtime-правило, — поэтому назначение, которое она показывает, в точности совпадает с тем, что `architecture.layer-violation` увидит во время анализа: параллельной реализации сопоставления, которая могла бы разойтись с runtime, не существует. Команда обходит сконфигурированные слои в declaration order, показывает слой, к которому класс отнесён, и перечисляет все остальные слои, чьи паттерны тоже совпали бы (потенциальный источник затенения, если бы они были объявлены раньше).
+
+Пример вывода для однозначно отнесённого класса:
+
+```
+Class: App\Service\UserService
+
+  Assigned to: service
+    Matching pattern: App\Service\**
+
+  Would also match (in declaration order):
+    (none — the assignment is unique)
+```
+
+Пример вывода для затенённого класса:
+
+```
+Class: App\Service\Foo
+
+  Assigned to: any-foo
+    Matching pattern: App\**\Foo
+
+  Would also match (in declaration order):
+    - service (pattern: 'App\Service\**')
+
+  Diagnostic hint:
+    Class is shadowed: would have matched 'service' if 'any-foo' was declared later.
+    See architecture.potential-shadow diagnostic for the broader picture.
+```
+
+Коды выхода соответствуют стандартному соглашению: `0` для любого информационного результата (включая "класс не соответствует ни одному объявленному слою"), `2` для некорректного ввода (пустой или некорректный FQN), `1` для ошибок загрузки конфигурации.
 
 ### Настройки
 
