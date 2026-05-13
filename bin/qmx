@@ -8,6 +8,7 @@ namespace Qualimetrix;
 use Qualimetrix\Infrastructure\Console\Application;
 use Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
+use Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentCommand;
 use Qualimetrix\Infrastructure\Console\Command\GraphExportCommand;
 use Qualimetrix\Infrastructure\Console\Command\HookInstallCommand;
 use Qualimetrix\Infrastructure\Console\Command\HookStatusCommand;
@@ -50,6 +51,7 @@ $application = new Application();
 $application->setCommandLoader(new ContainerCommandLoader($container, [
     'check' => CheckCommand::class,
     'baseline:cleanup' => BaselineCleanupCommand::class,
+    'debug:layer-assignment' => LayerAssignmentCommand::class,
     'graph:export' => GraphExportCommand::class,
     'hook:install' => HookInstallCommand::class,
     'hook:uninstall' => HookUninstallCommand::class,
