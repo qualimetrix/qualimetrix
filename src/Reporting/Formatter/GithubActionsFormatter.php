@@ -74,6 +74,9 @@ final class GithubActionsFormatter implements FormatterInterface
         return match ($severity) {
             Severity::Error => 'error',
             Severity::Warning => 'warning',
+            // GitHub Actions has no "info" annotation level; "notice" is the
+            // closest standard equivalent and renders as a neutral info badge.
+            Severity::Info => 'notice',
         };
     }
 

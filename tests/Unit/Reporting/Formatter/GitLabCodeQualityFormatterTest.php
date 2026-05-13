@@ -142,6 +142,28 @@ final class GitLabCodeQualityFormatterTest extends TestCase
         self::assertSame('major', $data[1]['severity']);
     }
 
+    public function testMapsInfoSeverityToInfo(): void
+    {
+        $report = ReportBuilder::create()
+            ->addViolation(new Violation(
+                location: new Location('src/A.php', 10),
+                symbolPath: SymbolPath::forClass('App', 'A'),
+                ruleName: 'architecture.coverage',
+                violationCode: 'architecture.coverage',
+                message: 'Class is not assigned to a layer',
+                severity: Severity::Info,
+            ))
+            ->filesAnalyzed(1)
+            ->filesSkipped(0)
+            ->duration(0.1)
+            ->build();
+
+        $output = $this->formatter->format($report, new FormatterContext());
+        $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
+
+        self::assertSame('info', $data[0]['severity']);
+    }
+
     public function testGeneratesStableFingerprint(): void
     {
         $violation = new Violation(

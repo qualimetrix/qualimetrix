@@ -46,6 +46,7 @@ final class ConfigSchema
     public const string EXCLUDE_HEALTH = 'exclude_health';
     public const string INCLUDE_GENERATED = 'include_generated';
     public const string MEMORY_LIMIT = 'memory_limit';
+    public const string ARCHITECTURE = 'architecture';
 
     /** Internal key: set by DefaultsStage only, not YAML-configurable. */
     public const string PROJECT_ROOT = 'project_root';
@@ -111,6 +112,10 @@ final class ConfigSchema
         ['excludeHealth', self::EXCLUDE_HEALTH, self::LIST],
         ['includeGenerated', self::INCLUDE_GENERATED, self::SCALAR],
         ['memoryLimit', self::MEMORY_LIMIT, self::SCALAR],
+
+        // Architecture: free-form map with layers/allow/coverage sub-structure.
+        // Treated as MIXED because sub-keys are user-defined layer names, not a fixed schema.
+        [self::ARCHITECTURE, self::ARCHITECTURE, self::MIXED],
     ];
 
     /**
@@ -187,6 +192,64 @@ final class ConfigSchema
     public static function identifierKeySections(): array
     {
         return [self::RULES, 'computedMetrics'];
+    }
+
+    /**
+     * Returns dot-separated paths whose immediate children are user-defined
+     * identifiers and must NOT be normalized to camelCase.
+     *
+     * Unlike {@see identifierKeySections()}, these are nested below the root:
+     * the path {@code architecture.layers} means the keys under
+     * {@code architecture.layers.*} (layer names) are preserved verbatim.
+     *
+     * Preserving layer names ensures that error messages and downstream
+     * consumers see the names exactly as the user typed them — without this,
+     * a configuration line like {@code app_core: 'App\\Core'} would be
+     * silently turned into {@code appCore} during key normalization.
+     *
+     * @return list<string>
+     */
+    public static function nestedIdentifierKeyPaths(): array
+    {
+        return [
+            self::ARCHITECTURE . '.layers',
+            self::ARCHITECTURE . '.allow',
+        ];
+    }
+
+    /**
+     * Returns root keys that must be associative maps (not scalars, not lists).
+     *
+     * Includes:
+     * - Section keys (cache, namespace, aggregation, parallel, coupling) — sub-keys
+     *   are a fixed schema validated by {@see allowedSectionSubKeys()}.
+     * - MIXED roots whose sub-keys are user-defined identifiers (rules,
+     *   computed_metrics, architecture).
+     *
+     * The YAML loader uses this list to reject scalars and sequential lists for
+     * these keys at load time, so downstream consumers always see well-typed input.
+     *
+     * @return list<string>
+     */
+    public static function associativeRootKeys(): array
+    {
+        $keys = [];
+
+        foreach (self::sectionKeys() as $section) {
+            $keys[$section] = true;
+        }
+
+        // MIXED roots are associative maps (sub-keys are user-defined identifiers).
+        foreach (self::ENTRIES as [$sourcePath, , $type]) {
+            if ($type !== self::MIXED) {
+                continue;
+            }
+
+            $root = str_contains($sourcePath, '.') ? explode('.', $sourcePath, 2)[0] : $sourcePath;
+            $keys[$root] = true;
+        }
+
+        return array_keys($keys);
     }
 
     /**

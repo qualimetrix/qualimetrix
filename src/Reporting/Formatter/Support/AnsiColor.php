@@ -60,6 +60,11 @@ final readonly class AnsiColor
         return $this->wrap($text, '1;32');
     }
 
+    public function boldCyan(string $text): string
+    {
+        return $this->wrap($text, '1;36');
+    }
+
     private function wrap(string $text, string $code): string
     {
         if (!$this->enabled) {

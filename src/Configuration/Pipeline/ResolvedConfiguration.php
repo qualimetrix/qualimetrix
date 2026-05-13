@@ -6,9 +6,18 @@ namespace Qualimetrix\Configuration\Pipeline;
 
 use Qualimetrix\Configuration\AnalysisConfiguration;
 use Qualimetrix\Configuration\PathsConfiguration;
+use Qualimetrix\Core\Architecture\ArchitectureConfiguration;
 
 /**
  * Fully resolved configuration after pipeline processing.
+ *
+ * The `$architecture` field is nullable so that existing test fixtures and
+ * non-architecture-aware call sites can construct a ResolvedConfiguration
+ * without depending on the architecture domain. Production code in
+ * {@see ConfigurationPipeline::resolve()} always populates this field with
+ * a (possibly empty) {@see ArchitectureConfiguration}; consumers that want
+ * a guaranteed non-null value can fall back to an empty configuration when
+ * they encounter null.
  */
 final readonly class ResolvedConfiguration
 {
@@ -23,5 +32,6 @@ final readonly class ResolvedConfiguration
         public array $ruleOptions,
         public array $computedMetrics = [],
         public array $appliedSources = [],
+        public ?ArchitectureConfiguration $architecture = null,
     ) {}
 }

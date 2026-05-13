@@ -23,8 +23,9 @@ final class SeverityTest extends TestCase
      */
     public static function exitCodeDataProvider(): iterable
     {
-        yield 'warning exit code' => [Severity::Warning, 1];
-        yield 'error exit code' => [Severity::Error, 2];
+        yield 'info exit code is 0' => [Severity::Info, 0];
+        yield 'warning exit code is 1' => [Severity::Warning, 1];
+        yield 'error exit code is 2' => [Severity::Error, 2];
     }
 
     #[DataProvider('displayNameDataProvider')]
@@ -38,22 +39,21 @@ final class SeverityTest extends TestCase
      */
     public static function displayNameDataProvider(): iterable
     {
+        yield 'info display name' => [Severity::Info, 'Info'];
         yield 'warning display name' => [Severity::Warning, 'Warning'];
         yield 'error display name' => [Severity::Error, 'Error'];
     }
 
     public function testSeverityValues(): void
     {
+        self::assertSame('info', Severity::Info->value);
         self::assertSame('warning', Severity::Warning->value);
         self::assertSame('error', Severity::Error->value);
     }
 
-    public function testAllCasesHaveExitCode(): void
+    public function testInfoFromStringValue(): void
     {
-        foreach (Severity::cases() as $severity) {
-            $exitCode = $severity->getExitCode();
-            self::assertGreaterThan(0, $exitCode);
-        }
+        self::assertSame(Severity::Info, Severity::from('info'));
     }
 
     public function testAllCasesHaveDisplayName(): void
@@ -64,13 +64,30 @@ final class SeverityTest extends TestCase
         }
     }
 
-    public function testExitCodesAreUnique(): void
+    public function testInfoIsExitCodeZeroAllOthersNonZero(): void
+    {
+        self::assertSame(0, Severity::Info->getExitCode());
+
+        foreach (Severity::cases() as $severity) {
+            if ($severity === Severity::Info) {
+                continue;
+            }
+
+            self::assertGreaterThan(0, $severity->getExitCode(), \sprintf(
+                '%s severity should have non-zero exit code',
+                $severity->displayName(),
+            ));
+        }
+    }
+
+    public function testExitCodesAreUniqueAcrossNonInfoSeverities(): void
     {
         $exitCodes = array_map(
             static fn(Severity $severity) => $severity->getExitCode(),
             Severity::cases(),
         );
 
+        // All exit codes must be unique (Info=0 is also unique since others are >0)
         self::assertSame(
             \count($exitCodes),
             \count(array_unique($exitCodes)),
@@ -78,12 +95,10 @@ final class SeverityTest extends TestCase
         );
     }
 
-    public function testErrorHasHigherExitCodeThanWarning(): void
+    public function testSeverityOrderingByExitCode(): void
     {
-        self::assertGreaterThan(
-            Severity::Warning->getExitCode(),
-            Severity::Error->getExitCode(),
-            'Error severity should have higher exit code than Warning',
-        );
+        // Priority order: Info (0) < Warning (1) < Error (2)
+        self::assertLessThan(Severity::Warning->getExitCode(), Severity::Info->getExitCode());
+        self::assertLessThan(Severity::Error->getExitCode(), Severity::Warning->getExitCode());
     }
 }

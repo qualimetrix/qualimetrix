@@ -7,10 +7,13 @@ namespace Qualimetrix\Tests\Unit\Configuration\Pipeline;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\AbstractLogger;
 use Qualimetrix\Configuration\Pipeline\ConfigurationContext;
 use Qualimetrix\Configuration\Pipeline\ConfigurationLayer;
 use Qualimetrix\Configuration\Pipeline\ConfigurationPipeline;
 use Qualimetrix\Configuration\Pipeline\Stage\ConfigurationStageInterface;
+use Qualimetrix\Core\Architecture\CoverageMode;
+use Stringable;
 use Symfony\Component\Console\Input\ArrayInput;
 
 #[CoversClass(ConfigurationPipeline::class)]
@@ -221,6 +224,119 @@ final class ConfigurationPipelineTest extends TestCase
         self::assertCount(4, $excludes);
     }
 
+    #[Test]
+    public function architectureIsEmptyWhenNoStageContributesIt(): void
+    {
+        $pipeline = new ConfigurationPipeline();
+        $context = new ConfigurationContext(new ArrayInput([]), '/tmp');
+
+        $resolved = $pipeline->resolve($context);
+
+        self::assertNotNull($resolved->architecture);
+        self::assertTrue($resolved->architecture->isEmpty());
+        self::assertSame(CoverageMode::Ignore, $resolved->architecture->coverage());
+    }
+
+    #[Test]
+    public function architectureIsPopulatedFromMergedConfig(): void
+    {
+        $pipeline = new ConfigurationPipeline();
+
+        $configStage = $this->createStage(20, 'config', new ConfigurationLayer('qmx.yaml', [
+            'architecture' => [
+                'layers' => [
+                    'controller' => 'App\\Controller',
+                    'service' => 'App\\Service',
+                ],
+                'allow' => [
+                    'controller' => ['service'],
+                ],
+                'coverage' => 'warn',
+            ],
+        ]));
+
+        $pipeline->addStage($configStage);
+
+        $context = new ConfigurationContext(new ArrayInput([]), '/tmp');
+        $resolved = $pipeline->resolve($context);
+
+        self::assertNotNull($resolved->architecture);
+        self::assertFalse($resolved->architecture->isEmpty());
+        self::assertSame(['controller', 'service'], $resolved->architecture->registry()->layerNames());
+        self::assertTrue($resolved->architecture->policy()->isAllowed('controller', 'service'));
+        self::assertSame(CoverageMode::Warn, $resolved->architecture->coverage());
+    }
+
+    #[Test]
+    public function mutualAllowWarningSurfacesViaInjectedLogger(): void
+    {
+        $logger = new RecordingLogger();
+        $pipeline = new ConfigurationPipeline($logger);
+
+        $configStage = $this->createStage(20, 'config', new ConfigurationLayer('qmx.yaml', [
+            'architecture' => [
+                'layers' => [
+                    'a' => 'App\\A',
+                    'b' => 'App\\B',
+                ],
+                'allow' => [
+                    'a' => ['b'],
+                    'b' => ['a'],
+                ],
+            ],
+        ]));
+
+        $pipeline->addStage($configStage);
+
+        $context = new ConfigurationContext(new ArrayInput([]), '/tmp');
+        $pipeline->resolve($context);
+
+        $mutualWarnings = array_values(array_filter(
+            $logger->records,
+            static fn(array $record): bool => $record['level'] === 'warning'
+                && str_contains($record['message'], 'mutual-allow'),
+        ));
+
+        self::assertCount(1, $mutualWarnings);
+        self::assertStringContainsString('a', $mutualWarnings[0]['message']);
+        self::assertStringContainsString('b', $mutualWarnings[0]['message']);
+    }
+
+    #[Test]
+    public function architectureLayersAccumulateAcrossStages(): void
+    {
+        // End-to-end test for the merger fix: a preset-style stage declares
+        // architecture.layers, a project-style stage declares
+        // architecture.coverage, and the resolved configuration must contain
+        // both — the preset layers must not be wiped out by the project layer.
+        $pipeline = new ConfigurationPipeline();
+
+        $presetStage = $this->createStage(15, 'preset', new ConfigurationLayer('preset', [
+            'architecture' => [
+                'layers' => [
+                    'controller' => 'App\\Controller',
+                    'service' => 'App\\Service',
+                ],
+            ],
+        ]));
+
+        $projectStage = $this->createStage(20, 'project', new ConfigurationLayer('qmx.yaml', [
+            'architecture' => [
+                'coverage' => 'error',
+            ],
+        ]));
+
+        $pipeline->addStage($presetStage);
+        $pipeline->addStage($projectStage);
+
+        $context = new ConfigurationContext(new ArrayInput([]), '/tmp');
+        $resolved = $pipeline->resolve($context);
+
+        self::assertNotNull($resolved->architecture);
+        self::assertSame(['controller', 'service'], $resolved->architecture->registry()->layerNames());
+        self::assertSame(CoverageMode::Error, $resolved->architecture->coverage());
+    }
+
     private function createStage(int $priority, string $name, ?ConfigurationLayer $layer): ConfigurationStageInterface
     {
         return new class ($priority, $name, $layer) implements ConfigurationStageInterface {
@@ -245,5 +361,25 @@ final class ConfigurationPipelineTest extends TestCase
                 return $this->layer;
             }
         };
+    }
+}
+
+/**
+ * Minimal in-memory PSR-3 logger for verifying warning emission.
+ */
+final class RecordingLogger extends AbstractLogger
+{
+    /**
+     * @var list<array{level: string, message: string, context: array<string, mixed>}>
+     */
+    public array $records = [];
+
+    public function log($level, string|Stringable $message, array $context = []): void
+    {
+        $this->records[] = [
+            'level' => (string) $level,
+            'message' => (string) $message,
+            'context' => $context,
+        ];
     }
 }

@@ -50,7 +50,13 @@ final readonly class ImpactCalculator
         foreach ($violations as $violation) {
             $classRank = $this->classRankResolver->resolve($violation, $metrics, $index);
             $debtMinutes = $this->remediationTimeRegistry->getMinutesForViolation($violation);
-            $severityWeight = $violation->severity === Severity::Error ? 3 : 1;
+            $severityWeight = match ($violation->severity) {
+                Severity::Error => 3,
+                Severity::Warning => 1,
+                // Info is purely advisory — keep impact contribution minimal so
+                // it never crowds out real Warning/Error issues in top-N lists.
+                Severity::Info => 0,
+            };
 
             // Use median classRank as fallback, or 0 if no classes have classRank at all
             $effectiveRank = $classRank ?? $medianFallback ?? 0.0;

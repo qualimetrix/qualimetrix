@@ -91,9 +91,10 @@ Qualimetrix содержит набор встроенных правил для
 
 ### Правила архитектуры
 
-| Правило                                       | ID                                 | Что проверяет                                  | Warning | Error |
-| --------------------------------------------- | ---------------------------------- | ---------------------------------------------- | ------- | ----- |
-| [Циклические зависимости](architecture.ru.md) | `architecture.circular-dependency` | Классы, которые зависят друг от друга по кругу | --      | Error |
+| Правило                                       | ID                                 | Что проверяет                                                    | Warning | Error   |
+| --------------------------------------------- | ---------------------------------- | ---------------------------------------------------------------- | ------- | ------- |
+| [Циклические зависимости](architecture.ru.md) | `architecture.circular-dependency` | Классы, которые зависят друг от друга по кругу                   | --      | Error   |
+| [Нарушения слоёв](architecture.ru.md)         | `architecture.layer-violation`     | Зависимости между слоями, не разрешённые архитектурной политикой | --      | Warning |
 
 [Подробнее о правилах архитектуры --&gt;](architecture.ru.md)
 
@@ -206,7 +207,7 @@ rules:
 - **Cohesion (метрики, не правила):** `tcc`, `lcc` — используются как входы `design.god-class`
 - **Coupling:** `coupling.cbo`, `coupling.instability`, `coupling.distance`, `coupling.class-rank`
 - **Maintainability:** `maintainability.index`
-- **Architecture:** `architecture.circular-dependency`
+- **Architecture:** `architecture.circular-dependency`, `architecture.layer-violation`
 - **Duplication:** `duplication.code-duplication`
 - **Code Smell:** `code-smell.boolean-argument`, `code-smell.count-in-loop`, `code-smell.debug-code`, `code-smell.empty-catch`, `code-smell.error-suppression`, `code-smell.eval`, `code-smell.exit`, `code-smell.goto`, `code-smell.superglobals`, `code-smell.long-parameter-list`, `code-smell.unreachable-code`, `code-smell.identical-subexpression`, `code-smell.constructor-overinjection`, `code-smell.unused-private`
 - **Security:** `security.hardcoded-credentials`, `security.sql-injection`, `security.xss`, `security.command-injection`, `security.sensitive-parameter`

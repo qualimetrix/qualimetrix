@@ -91,9 +91,10 @@ These rules measure how tightly your classes depend on each other. Tightly coupl
 
 ### Architecture Rules
 
-| Rule                                     | ID                                 | What it checks                              | Default Warning | Default Error |
-| ---------------------------------------- | ---------------------------------- | ------------------------------------------- | --------------- | ------------- |
-| [Circular Dependencies](architecture.md) | `architecture.circular-dependency` | Classes that depend on each other in a loop | --              | Error         |
+| Rule                                     | ID                                 | What it checks                                            | Default Warning | Default Error |
+| ---------------------------------------- | ---------------------------------- | --------------------------------------------------------- | --------------- | ------------- |
+| [Circular Dependencies](architecture.md) | `architecture.circular-dependency` | Classes that depend on each other in a loop               | --              | Error         |
+| [Layer Violations](architecture.md)      | `architecture.layer-violation`     | Inter-layer dependencies that violate the declared policy | --              | Warning       |
 
 [Read more about Architecture rules --&gt;](architecture.md)
 
@@ -206,7 +207,7 @@ Compact rule catalog. For warning/error thresholds, see [Default Thresholds Refe
 - **Cohesion (metrics only, no rule):** `tcc`, `lcc` — used as inputs by `design.god-class`
 - **Coupling:** `coupling.cbo`, `coupling.instability`, `coupling.distance`, `coupling.class-rank`
 - **Maintainability:** `maintainability.index`
-- **Architecture:** `architecture.circular-dependency`
+- **Architecture:** `architecture.circular-dependency`, `architecture.layer-violation`
 - **Duplication:** `duplication.code-duplication`
 - **Code Smell:** `code-smell.boolean-argument`, `code-smell.count-in-loop`, `code-smell.debug-code`, `code-smell.empty-catch`, `code-smell.error-suppression`, `code-smell.eval`, `code-smell.exit`, `code-smell.goto`, `code-smell.superglobals`, `code-smell.long-parameter-list`, `code-smell.unreachable-code`, `code-smell.identical-subexpression`, `code-smell.constructor-overinjection`, `code-smell.unused-private`
 - **Security:** `security.hardcoded-credentials`, `security.sql-injection`, `security.xss`, `security.command-injection`, `security.sensitive-parameter`

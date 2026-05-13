@@ -249,6 +249,32 @@ final class SarifFormatterTest extends TestCase
         self::assertSame('warning', $results[1]['level']);
     }
 
+    public function testMapsInfoSeverityToNote(): void
+    {
+        $report = ReportBuilder::create()
+            ->addViolation(new Violation(
+                location: new Location('src/A.php', 10),
+                symbolPath: SymbolPath::forClass('App', 'A'),
+                ruleName: 'architecture.coverage',
+                violationCode: 'architecture.coverage',
+                message: 'Class is not assigned to a layer',
+                severity: Severity::Info,
+            ))
+            ->filesAnalyzed(1)
+            ->filesSkipped(0)
+            ->duration(0.1)
+            ->build();
+
+        $output = $this->formatter->format($report, new FormatterContext());
+        $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
+
+        $result = $data['runs'][0]['results'][0];
+
+        // SARIF level "note" is the spec-compliant mapping for informational diagnostics.
+        self::assertSame('note', $result['level']);
+        self::assertSame('note', $data['runs'][0]['tool']['driver']['rules'][0]['defaultConfiguration']['level']);
+    }
+
     public function testRuleDescriptions(): void
     {
         $report = ReportBuilder::create()

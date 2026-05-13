@@ -129,6 +129,7 @@ final class TextFormatter implements FormatterInterface
         return match ($severity) {
             Severity::Error => $color->red('error'),
             Severity::Warning => $color->yellow('warning'),
+            Severity::Info => $color->cyan('info'),
         };
     }
 
@@ -152,11 +153,17 @@ final class TextFormatter implements FormatterInterface
     private function formatSummary(Report $report, AnsiColor $color): string
     {
         $version = Version::get();
+        $parts = [
+            \sprintf('%d error(s)', $report->errorCount),
+            \sprintf('%d warning(s)', $report->warningCount),
+        ];
+        if ($report->infoCount > 0) {
+            $parts[] = \sprintf('%d info', $report->infoCount);
+        }
         $summary = \sprintf(
-            'Qualimetrix %s: %d error(s), %d warning(s) in %d file(s)',
+            'Qualimetrix %s: %s in %d file(s)',
             $version,
-            $report->errorCount,
-            $report->warningCount,
+            implode(', ', $parts),
             $report->filesAnalyzed,
         );
 
@@ -166,6 +173,10 @@ final class TextFormatter implements FormatterInterface
 
         if ($report->warningCount > 0) {
             return $color->boldYellow($summary);
+        }
+
+        if ($report->infoCount > 0) {
+            return $color->boldCyan($summary);
         }
 
         return $color->boldGreen($summary);

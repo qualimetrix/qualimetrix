@@ -54,6 +54,9 @@ Configuration/
 ├── Discovery/
 │   └── ComposerReader.php         # PSR-4 path extraction
 │
+├── Architecture/                  # Architecture rules config (RFC: architecture rules)
+│   └── ArchitectureConfigurationFactory.php  # YAML map under `architecture:` → typed Core\Architecture\ArchitectureConfiguration
+│
 ├── Loader/
 │   ├── ConfigLoaderInterface.php  # Loader contract
 │   └── YamlConfigLoader.php       # YAML loader (validates against ConfigSchema)
@@ -301,6 +304,17 @@ rules:
     warning: 2
     error: 3
 
+# Architecture layer policy (consumed by architecture.layer-violation)
+architecture:
+  layers:
+    controller: 'App\Controller\**'
+    service:    'App\Service\**'
+    repository: 'App\Repository\**'
+  allow:
+    controller: [service]
+    service:    [repository]
+  coverage: ignore   # ignore | warn | error
+
 # Coupling settings
 coupling:
   # Framework namespace prefixes for CBO_APP/CE_FRAMEWORK metrics
@@ -450,6 +464,7 @@ Custom preset files use the same YAML format as `qmx.yaml`. Specify a file path
 | --------------------------------------- | ------------------------------------ | --------------------- |
 | `--circular-deps`                       | architecture.circular-dependency     | enabled               |
 | `--max-cycle-size=N`                    | architecture.circular-dependency     | maxCycleSize          |
+| `--layer-violation`                     | architecture.layer-violation         | enabled               |
 | `--constructor-overinjection-warning=N` | code-smell.constructor-overinjection | warning               |
 | `--constructor-overinjection-error=N`   | code-smell.constructor-overinjection | error                 |
 | `--long-parameter-list-warning=N`       | code-smell.long-parameter-list       | warning               |

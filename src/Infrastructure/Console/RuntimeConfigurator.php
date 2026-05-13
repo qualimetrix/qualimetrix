@@ -11,6 +11,7 @@ use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Configuration\Pipeline\ResolvedConfiguration;
 use Qualimetrix\Configuration\RuleOptionsParserFactory;
 use Qualimetrix\Configuration\RuleOptionsRegistry;
+use Qualimetrix\Core\Architecture\ArchitectureConfigurationHolder;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinitionHolder;
 use Qualimetrix\Core\Coupling\FrameworkNamespaces;
 use Qualimetrix\Core\Coupling\FrameworkNamespacesHolder;
@@ -44,6 +45,7 @@ final class RuntimeConfigurator
         private readonly CacheFactory $cacheFactory,
         private readonly ComputedMetricsConfigResolver $computedMetricsResolver,
         private readonly FrameworkNamespacesHolder $frameworkNamespacesHolder,
+        private readonly ArchitectureConfigurationHolder $architectureHolder,
     ) {}
 
     /**
@@ -60,6 +62,7 @@ final class RuntimeConfigurator
         ComputedMetricDefinitionHolder::reset();
         CollectorConfigHolder::reset();
         $this->frameworkNamespacesHolder->reset();
+        $this->architectureHolder->reset();
 
         $this->configureLogger($input, $output);
         $this->configureMemoryLimit($resolved->analysis, $output);
@@ -95,6 +98,14 @@ final class RuntimeConfigurator
             $this->frameworkNamespacesHolder->set(
                 new FrameworkNamespaces($resolved->analysis->frameworkNamespaces),
             );
+        }
+
+        // Publish the resolved architecture configuration to the holder so that
+        // architecture-aware rules see the user's layer policy. When no
+        // `architecture:` YAML key was supplied, `$resolved->architecture` is
+        // null and the reset above already left the holder in its empty state.
+        if ($resolved->architecture !== null) {
+            $this->architectureHolder->set($resolved->architecture);
         }
 
         // Resolve computed metrics definitions and store in holder. The resolver internally

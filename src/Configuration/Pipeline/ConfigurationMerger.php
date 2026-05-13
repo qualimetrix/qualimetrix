@@ -20,6 +20,14 @@ use Qualimetrix\Configuration\ConfigSchema;
  *   while list-valued options (e.g., exclude_namespaces) are replaced entirely.
  *   This allows a later layer to override individual rule options without losing
  *   unrelated rule configurations from earlier layers.
+ * - `architecture`: deep associative merge with the same list-replacement semantics
+ *   as rules. Layer maps (`architecture.layers`) and allow maps (`architecture.allow`)
+ *   from preset and project config accumulate so that presets can ship a base
+ *   topology and projects can extend it without re-declaring every layer. The
+ *   scalar `architecture.coverage` is replaced by the overlay. Lists inside
+ *   `architecture.allow.<source>` are replaced wholesale, matching `rules`
+ *   behavior — overriding the allowed targets of a single source layer should
+ *   not silently accumulate stale targets from earlier layers.
  * - Everything else: simple override — the overlay value replaces the base value.
  *
  * **Why `only_rules` is NOT in MERGEABLE_LIST_KEYS:**
@@ -65,7 +73,7 @@ final class ConfigurationMerger
                     continue;
                 }
 
-                if ($key === ConfigSchema::RULES) {
+                if ($key === ConfigSchema::RULES || $key === ConfigSchema::ARCHITECTURE) {
                     $base[$key] = self::deepMergeAssociative($base[$key], $value);
                     continue;
                 }

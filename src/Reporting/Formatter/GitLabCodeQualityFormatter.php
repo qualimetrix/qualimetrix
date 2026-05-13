@@ -78,6 +78,7 @@ final class GitLabCodeQualityFormatter implements FormatterInterface
         return match ($severity) {
             Severity::Error => 'critical',
             Severity::Warning => 'major',
+            Severity::Info => 'info',
         };
     }
 }

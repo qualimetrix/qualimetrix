@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Baseline;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Baseline\ViolationHasher;
+use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
@@ -294,6 +295,177 @@ final class ViolationHasherTest extends TestCase
         self::assertSame(16, \strlen($hash));
     }
 
+    /**
+     * Regression pin (CCN-style, method-level violation).
+     *
+     * Pins the legacy hash format for a method-level violation with no dependency
+     * payload. Any change to the payload composition or hashing path for non-dep
+     * violations MUST break this test — it guards backward-compatible baselines.
+     *
+     * Payload: 'complexity.cyclomatic|App\Service|UserService|calculate|complexity.cyclomatic'
+     *   xxh3   (first 16 chars): 5c20ffa65ac250af
+     *   sha256 (first 16 chars): 2db0f10a4622890d
+     */
+    public function testRegressionPinForMethodLevelViolation(): void
+    {
+        $violation = new Violation(
+            location: new Location('src/Service/UserService.php', 42),
+            symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
+            ruleName: 'complexity.cyclomatic',
+            violationCode: 'complexity.cyclomatic',
+            message: 'Cyclomatic complexity 15 exceeds threshold 10',
+            severity: Severity::Warning,
+            metricValue: 15,
+        );
+
+        $expected = \in_array('xxh3', hash_algos(), true)
+            ? '5c20ffa65ac250af'
+            : '2db0f10a4622890d';
+
+        self::assertSame($expected, $this->hasher->hash($violation));
+    }
+
+    /**
+     * Regression pin (LCOM-style, class-level violation).
+     *
+     * Pins the legacy hash format for a class-level violation (member is null,
+     * stored as empty string in the payload).
+     *
+     * Payload: 'cohesion.lcom4|App\Service|OrderProcessor||cohesion.lcom4'
+     *   xxh3   (first 16 chars): 3cfded211c0e63b3
+     *   sha256 (first 16 chars): fc6229c5c897635b
+     */
+    public function testRegressionPinForClassLevelViolation(): void
+    {
+        $violation = new Violation(
+            location: new Location('src/Service/OrderProcessor.php', 10),
+            symbolPath: SymbolPath::forClass('App\Service', 'OrderProcessor'),
+            ruleName: 'cohesion.lcom4',
+            violationCode: 'cohesion.lcom4',
+            message: 'LCOM4 = 4 exceeds threshold 2',
+            severity: Severity::Warning,
+            metricValue: 4,
+        );
+
+        $expected = \in_array('xxh3', hash_algos(), true)
+            ? '3cfded211c0e63b3'
+            : 'fc6229c5c897635b';
+
+        self::assertSame($expected, $this->hasher->hash($violation));
+    }
+
+    public function testNullDependencyTargetMatchesRegressionPin(): void
+    {
+        // Same shape as the CCN regression pin but explicit null dependency fields.
+        // Asserts that explicitly passing null dependencyTarget/dependencyType is
+        // byte-for-byte equivalent to not passing them at all.
+        $violation = new Violation(
+            location: new Location('src/Service/UserService.php', 42),
+            symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
+            ruleName: 'complexity.cyclomatic',
+            violationCode: 'complexity.cyclomatic',
+            message: 'Cyclomatic complexity 15 exceeds threshold 10',
+            severity: Severity::Warning,
+            metricValue: 15,
+            dependencyTarget: null,
+            dependencyType: null,
+        );
+
+        $expected = \in_array('xxh3', hash_algos(), true)
+            ? '5c20ffa65ac250af'
+            : '2db0f10a4622890d';
+
+        self::assertSame($expected, $this->hasher->hash($violation));
+    }
+
+    public function testDependencyHashStableAcrossLineChanges(): void
+    {
+        $violation1 = $this->createDependencyViolation(
+            line: 12,
+            target: SymbolPath::forClass('App\Repository', 'UserRepository'),
+            type: DependencyType::TypeHint,
+        );
+        $violation2 = $this->createDependencyViolation(
+            line: 87,
+            target: SymbolPath::forClass('App\Repository', 'UserRepository'),
+            type: DependencyType::TypeHint,
+        );
+
+        self::assertSame(
+            $this->hasher->hash($violation1),
+            $this->hasher->hash($violation2),
+            'Dependency hash must be stable across line drift',
+        );
+    }
+
+    public function testDependencyHashChangesWhenTargetChanges(): void
+    {
+        $violation1 = $this->createDependencyViolation(
+            line: 12,
+            target: SymbolPath::forClass('App\Repository', 'UserRepository'),
+            type: DependencyType::TypeHint,
+        );
+        $violation2 = $this->createDependencyViolation(
+            line: 12,
+            target: SymbolPath::forClass('App\Repository', 'OrderRepository'),
+            type: DependencyType::TypeHint,
+        );
+
+        self::assertNotSame(
+            $this->hasher->hash($violation1),
+            $this->hasher->hash($violation2),
+            'Dependency hash must change when target symbol changes',
+        );
+    }
+
+    public function testDependencyHashChangesWhenDependencyTypeChanges(): void
+    {
+        $target = SymbolPath::forClass('App\Repository', 'UserRepository');
+
+        $violation1 = $this->createDependencyViolation(
+            line: 12,
+            target: $target,
+            type: DependencyType::TypeHint,
+        );
+        $violation2 = $this->createDependencyViolation(
+            line: 12,
+            target: $target,
+            type: DependencyType::New_,
+        );
+
+        self::assertNotSame(
+            $this->hasher->hash($violation1),
+            $this->hasher->hash($violation2),
+            'Dependency hash must change when dependency type changes',
+        );
+    }
+
+    public function testDependencyHashDiffersFromNonDependencyHashForSameSource(): void
+    {
+        $nonDep = new Violation(
+            location: new Location('src/Controller/UserController.php', 12),
+            symbolPath: SymbolPath::forClass('App\Controller', 'UserController'),
+            ruleName: 'architecture.layer-violation',
+            violationCode: 'architecture.layer-violation',
+            message: 'Layer violation',
+            severity: Severity::Warning,
+        );
+
+        $dep = $this->createDependencyViolation(
+            line: 12,
+            target: SymbolPath::forClass('App\Repository', 'UserRepository'),
+            type: DependencyType::TypeHint,
+        );
+
+        self::assertNotSame(
+            $this->hasher->hash($nonDep),
+            $this->hasher->hash($dep),
+            'A dependency-aware violation must hash differently than a non-dep violation '
+                . 'with the same source identity, otherwise per-use-site dedup would collide '
+                . 'with legacy entries.',
+        );
+    }
+
     private function createViolation(int $line, string $message): Violation
     {
         return new Violation(
@@ -304,6 +476,23 @@ final class ViolationHasherTest extends TestCase
             message: $message,
             severity: Severity::Warning,
             metricValue: 15,
+        );
+    }
+
+    private function createDependencyViolation(
+        int $line,
+        SymbolPath $target,
+        DependencyType $type,
+    ): Violation {
+        return new Violation(
+            location: new Location('src/Controller/UserController.php', $line),
+            symbolPath: SymbolPath::forClass('App\Controller', 'UserController'),
+            ruleName: 'architecture.layer-violation',
+            violationCode: 'architecture.layer-violation',
+            message: 'Layer "controller" must not depend on layer "repository"',
+            severity: Severity::Warning,
+            dependencyTarget: $target,
+            dependencyType: $type,
         );
     }
 }

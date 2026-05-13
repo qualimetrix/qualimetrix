@@ -182,12 +182,13 @@ final class JsonFormatter implements FormatterInterface
         if ($isDrillDown) {
             $errorCount = 0;
             $warningCount = 0;
+            $infoCount = 0;
             foreach ($filteredViolations as $v) {
-                if ($v->severity === Severity::Error) {
-                    $errorCount++;
-                } else {
-                    $warningCount++;
-                }
+                match ($v->severity) {
+                    Severity::Error => $errorCount++,
+                    Severity::Warning => $warningCount++,
+                    Severity::Info => $infoCount++,
+                };
             }
 
             $debtSummary = $this->debtCalculator->calculate($filteredViolations);
@@ -199,6 +200,7 @@ final class JsonFormatter implements FormatterInterface
                 'violationCount' => \count($filteredViolations),
                 'errorCount' => $errorCount,
                 'warningCount' => $warningCount,
+                'infoCount' => $infoCount,
                 'techDebtMinutes' => $debtSummary->totalMinutes,
             ];
         }
@@ -210,6 +212,7 @@ final class JsonFormatter implements FormatterInterface
             'violationCount' => $report->getTotalViolations(),
             'errorCount' => $report->errorCount,
             'warningCount' => $report->warningCount,
+            'infoCount' => $report->infoCount,
             'techDebtMinutes' => $report->techDebtMinutes,
             'debtPer1kLoc' => $report->debtPer1kLoc,
         ];

@@ -532,6 +532,13 @@ final class AnalysisConfigurationTest extends TestCase
         self::assertSame(Severity::Error, $config->failOn);
     }
 
+    public function testFromArrayParsesFailOnInfo(): void
+    {
+        $config = AnalysisConfiguration::fromArray(['fail_on' => 'info']);
+
+        self::assertSame(Severity::Info, $config->failOn);
+    }
+
     public function testFromArrayFailOnNullByDefault(): void
     {
         $config = AnalysisConfiguration::fromArray([]);

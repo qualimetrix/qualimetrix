@@ -49,6 +49,17 @@ final readonly class AnalysisResult
         return false;
     }
 
+    public function hasInfo(): bool
+    {
+        foreach ($this->violations as $violation) {
+            if ($violation->severity === Severity::Info) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /**
      * Returns exit code based on violations.
      * 0 - no violations
@@ -120,24 +131,26 @@ final readonly class AnalysisResult
     }
 
     /**
-     * @return array{errors: int, warnings: int}
+     * @return array{errors: int, warnings: int, info: int}
      */
     public function getViolationCountBySeverity(): array
     {
         $errors = 0;
         $warnings = 0;
+        $info = 0;
 
         foreach ($this->violations as $violation) {
-            if ($violation->severity === Severity::Error) {
-                $errors++;
-            } else {
-                $warnings++;
-            }
+            match ($violation->severity) {
+                Severity::Error => $errors++,
+                Severity::Warning => $warnings++,
+                Severity::Info => $info++,
+            };
         }
 
         return [
             'errors' => $errors,
             'warnings' => $warnings,
+            'info' => $info,
         ];
     }
 }

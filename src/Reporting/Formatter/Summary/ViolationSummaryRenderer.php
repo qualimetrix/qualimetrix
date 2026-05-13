@@ -44,12 +44,13 @@ final class ViolationSummaryRenderer
         $total = \count($violations);
         $errors = 0;
         $warnings = 0;
+        $info = 0;
         foreach ($violations as $v) {
-            if ($v->severity === Severity::Error) {
-                $errors++;
-            } else {
-                $warnings++;
-            }
+            match ($v->severity) {
+                Severity::Error => $errors++,
+                Severity::Warning => $warnings++,
+                Severity::Info => $info++,
+            };
         }
 
         $parts = [];
@@ -61,6 +62,9 @@ final class ViolationSummaryRenderer
         }
         if ($warnings > 0) {
             $details[] = \sprintf('%d warning%s', $warnings, $warnings === 1 ? '' : 's');
+        }
+        if ($info > 0) {
+            $details[] = \sprintf('%d info', $info);
         }
         if ($details !== []) {
             $parts[0] .= ' (' . implode(', ', $details) . ')';
@@ -87,6 +91,8 @@ final class ViolationSummaryRenderer
             $lines[] = $color->boldRed($summary);
         } elseif ($warnings > 0) {
             $lines[] = $color->boldYellow($summary);
+        } elseif ($info > 0) {
+            $lines[] = $color->boldCyan($summary);
         } else {
             $lines[] = $color->boldGreen($summary);
         }

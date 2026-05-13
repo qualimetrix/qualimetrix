@@ -39,9 +39,11 @@ final class DocumentationConsistencyTest extends TestCase
 
         // computed.health is a synthetic rule — not listed in default-thresholds.md
         // architecture.circular-dependency has no numeric thresholds — documented separately
+        // architecture.layer-violation has no numeric thresholds either — documented separately
         $exemptions = [
             'computed.health',
             'architecture.circular-dependency',
+            'architecture.layer-violation',
         ];
 
         $missing = [];
