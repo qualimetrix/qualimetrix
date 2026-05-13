@@ -491,6 +491,71 @@ final class LayerViolationRuleTest extends TestCase
     }
 
     #[Test]
+    public function potentialShadow_truncatesSampleListAtFiveAndAppendsRemainderHint(): void
+    {
+        // Eight classes match both layers. The diagnostic shows the
+        // alphabetically first five FQNs followed by "...and 3 more".
+        $rule = new LayerViolationRule(new LayerViolationOptions());
+
+        $arch = $this->buildArchitecture(
+            layers: [
+                'any' => ['App\\**'],
+                'service' => ['App\\Service\\**'],
+            ],
+            allow: [],
+        );
+
+        $repo = new InMemoryMetricRepository();
+        $names = ['Alpha', 'Bravo', 'Charlie', 'Delta', 'Echo', 'Foxtrot', 'Golf', 'Hotel'];
+        foreach ($names as $name) {
+            $this->registerClass($repo, 'App\\Service', $name);
+        }
+
+        $violations = $rule->analyze($this->buildContext(null, $arch, $repo));
+
+        $shadow = $this->filterByRule($violations, LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME);
+        self::assertCount(1, $shadow);
+
+        $message = $shadow[0]->message;
+        self::assertStringContainsString('for 8 class(es)', $message);
+        // Alphabetically first five present.
+        foreach (['Alpha', 'Bravo', 'Charlie', 'Delta', 'Echo'] as $sampled) {
+            self::assertStringContainsString('App\\Service\\' . $sampled, $message);
+        }
+        // Last three suppressed from the sample.
+        foreach (['Foxtrot', 'Golf', 'Hotel'] as $omitted) {
+            self::assertStringNotContainsString('App\\Service\\' . $omitted, $message);
+        }
+        self::assertStringContainsString('...and 3 more', $message);
+    }
+
+    #[Test]
+    public function potentialShadow_omitsRemainderHintWhenSampleFitsEntirely(): void
+    {
+        $rule = new LayerViolationRule(new LayerViolationOptions());
+
+        $arch = $this->buildArchitecture(
+            layers: [
+                'any' => ['App\\**'],
+                'service' => ['App\\Service\\**'],
+            ],
+            allow: [],
+        );
+
+        $repo = new InMemoryMetricRepository();
+        // Three classes — well below the sample limit of five.
+        foreach (['Alpha', 'Bravo', 'Charlie'] as $name) {
+            $this->registerClass($repo, 'App\\Service', $name);
+        }
+
+        $violations = $rule->analyze($this->buildContext(null, $arch, $repo));
+
+        $shadow = $this->filterByRule($violations, LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME);
+        self::assertCount(1, $shadow);
+        self::assertStringNotContainsString('...and', $shadow[0]->message);
+    }
+
+    #[Test]
     public function potentialShadow_deterministicOutputAcrossTwoRuns(): void
     {
         // Two runs against the same fixture must emit diagnostics in identical

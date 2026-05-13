@@ -148,7 +148,7 @@ final class CoverageDiagnosticsTest extends TestCase
             coverage: CoverageMode::Warn,
         );
 
-        // 12 distinct unmatched target classes — diagnostic must show 10 + "+2 more"
+        // 12 distinct unmatched target classes — diagnostic must show 10 + "...and 2 more"
         $dependencies = [];
         for ($i = 1; $i <= 12; $i++) {
             $dependencies[] = $this->buildDependency(
@@ -174,7 +174,7 @@ final class CoverageDiagnosticsTest extends TestCase
         self::assertStringContainsString('Class10', $recommendation);
         self::assertStringNotContainsString('Class11', $recommendation);
         self::assertStringNotContainsString('Class12', $recommendation);
-        self::assertStringContainsString('(+2 more)', $recommendation);
+        self::assertStringContainsString('...and 2 more', $recommendation);
     }
 
     #[Test]

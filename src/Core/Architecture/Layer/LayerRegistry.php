@@ -20,10 +20,12 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  *   layers that would have matched if they were declared earlier. Used by
  *   evidence-based shadow detection and the debug command.
  *
- * Both lookups are cached by {@see SymbolPath::toCanonical()} so a class
- * queried by both methods does not re-walk the pattern list. The cache
- * is the only mutable state on the registry (which is therefore final
- * but not readonly).
+ * Both lookups share a single cache keyed by {@see SymbolPath::toCanonical()}:
+ * the full {@see LayerMatch} list is computed once and stored, and
+ * {@see resolveLayer()} reads the first entry off that list. A class queried
+ * by both methods therefore walks the patterns at most once. The cache is the
+ * only mutable state on the registry (which is therefore final but not
+ * readonly).
  *
  * There is intentionally no specificity scoring, no collision detection,
  * and no exception class for ambiguity — declaration order is the user's
@@ -40,24 +42,16 @@ final class LayerRegistry
     private array $layers;
 
     /**
-     * First-match cache. Keyed by {@see SymbolPath::toCanonical()}.
-     *
-     * - string: name of the first matching layer
-     * - false: explicitly resolved to "no layer" (negative hit)
-     *
-     * @var array<string, string|false>
-     */
-    private array $resolveCache = [];
-
-    /**
-     * Full-match cache. Keyed by {@see SymbolPath::toCanonical()}.
+     * Shared cache for {@see resolveLayer()} and {@see resolveAll()}. Keyed by
+     * {@see SymbolPath::toCanonical()}.
      *
      * Each value is the complete list of {@see LayerMatch} entries in
      * declaration order. Empty list means the class matches no layer.
+     * {@see resolveLayer()} reads the first entry off this list.
      *
      * @var array<string, list<LayerMatch>>
      */
-    private array $resolveAllCache = [];
+    private array $matchCache = [];
 
     /**
      * @param list<LayerDefinition> $layers Layer definitions in declaration order;
@@ -91,29 +85,9 @@ final class LayerRegistry
      */
     public function resolveLayer(SymbolPath $class): ?string
     {
-        $fqn = $this->buildFqn($class);
-        if ($fqn === null) {
-            return null;
-        }
+        $matches = $this->resolveAll($class);
 
-        $cacheKey = $class->toCanonical();
-        if (\array_key_exists($cacheKey, $this->resolveCache)) {
-            $cached = $this->resolveCache[$cacheKey];
-
-            return $cached === false ? null : $cached;
-        }
-
-        foreach ($this->layers as $layer) {
-            if ($layer->matches($fqn)) {
-                $this->resolveCache[$cacheKey] = $layer->name();
-
-                return $layer->name();
-            }
-        }
-
-        $this->resolveCache[$cacheKey] = false;
-
-        return null;
+        return $matches === [] ? null : $matches[0]->layerName;
     }
 
     /**
@@ -129,14 +103,14 @@ final class LayerRegistry
      */
     public function resolveAll(SymbolPath $class): array
     {
-        $fqn = $this->buildFqn($class);
-        if ($fqn === null) {
-            return [];
+        $cacheKey = $class->toCanonical();
+        if (\array_key_exists($cacheKey, $this->matchCache)) {
+            return $this->matchCache[$cacheKey];
         }
 
-        $cacheKey = $class->toCanonical();
-        if (\array_key_exists($cacheKey, $this->resolveAllCache)) {
-            return $this->resolveAllCache[$cacheKey];
+        $fqn = $this->buildFqn($class);
+        if ($fqn === null) {
+            return $this->matchCache[$cacheKey] = [];
         }
 
         $matches = [];
@@ -148,9 +122,7 @@ final class LayerRegistry
             $matches[] = new LayerMatch($layer->name(), $pattern);
         }
 
-        $this->resolveAllCache[$cacheKey] = $matches;
-
-        return $matches;
+        return $this->matchCache[$cacheKey] = $matches;
     }
 
     /**

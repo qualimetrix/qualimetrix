@@ -117,13 +117,13 @@ final class LayerRegistryTest extends TestCase
     }
 
     #[Test]
-    public function resolveLayer_populatesInternalCache(): void
+    public function resolveLayer_populatesSharedMatchCache(): void
     {
         $registry = new LayerRegistry([
             new LayerDefinition('service', ['App\\Service']),
         ]);
 
-        $reflection = new ReflectionProperty(LayerRegistry::class, 'resolveCache');
+        $reflection = new ReflectionProperty(LayerRegistry::class, 'matchCache');
         self::assertSame([], $reflection->getValue($registry), 'Cache starts empty.');
 
         $symbol = SymbolPath::forClass('App\\Service', 'UserService');
@@ -132,11 +132,14 @@ final class LayerRegistryTest extends TestCase
         $cache = $reflection->getValue($registry);
         self::assertIsArray($cache);
         self::assertArrayHasKey($symbol->toCanonical(), $cache);
-        self::assertSame('service', $cache[$symbol->toCanonical()]);
+
+        $matches = $cache[$symbol->toCanonical()];
+        self::assertCount(1, $matches);
+        self::assertSame('service', $matches[0]->layerName);
 
         $registry->resolveLayer(SymbolPath::forClass('Other\\Place', 'Foo'));
         $cache = $reflection->getValue($registry);
-        self::assertCount(2, $cache, 'Negative result is cached separately.');
+        self::assertCount(2, $cache, 'Negative result (empty match list) is cached separately.');
     }
 
     #[Test]
@@ -238,21 +241,40 @@ final class LayerRegistryTest extends TestCase
     }
 
     #[Test]
-    public function resolveAll_populatesInternalCache(): void
+    public function resolveAll_andResolveLayer_shareTheSameCache(): void
     {
         $registry = new LayerRegistry([
-            new LayerDefinition('service', ['App\\Service']),
+            new LayerDefinition('any', ['App\\**']),
+            new LayerDefinition('service', ['App\\Service\\**']),
         ]);
 
-        $reflection = new ReflectionProperty(LayerRegistry::class, 'resolveAllCache');
+        $reflection = new ReflectionProperty(LayerRegistry::class, 'matchCache');
         self::assertSame([], $reflection->getValue($registry));
 
         $symbol = SymbolPath::forClass('App\\Service', 'Foo');
+
+        // Populate the cache via resolveAll, then verify resolveLayer is satisfied
+        // from the same cache without re-walking the pattern list.
         $registry->resolveAll($symbol);
 
         $cache = $reflection->getValue($registry);
         self::assertIsArray($cache);
+        self::assertCount(1, $cache, 'resolveAll populates a single cache entry.');
         self::assertArrayHasKey($symbol->toCanonical(), $cache);
+
+        $assigned = $registry->resolveLayer($symbol);
+        self::assertSame('any', $assigned, 'resolveLayer reads the first entry off the shared cache.');
+
+        $cache = $reflection->getValue($registry);
+        self::assertCount(1, $cache, 'resolveLayer must not populate a separate cache entry — both methods share one cache.');
+
+        // The reverse direction also shares the cache.
+        $other = SymbolPath::forClass('App\\Other', 'Bar');
+        $registry->resolveLayer($other);
+        self::assertCount(2, $reflection->getValue($registry));
+
+        $registry->resolveAll($other);
+        self::assertCount(2, $reflection->getValue($registry), 'resolveAll after resolveLayer must hit the existing cache entry.');
     }
 
     #[Test]
