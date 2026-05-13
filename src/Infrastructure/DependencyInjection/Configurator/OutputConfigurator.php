@@ -29,6 +29,7 @@ use Qualimetrix\Infrastructure\Cache\CacheFactory;
 use Qualimetrix\Infrastructure\Console\BaselinePresenter;
 use Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
+use Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentCommand;
 use Qualimetrix\Infrastructure\Console\Command\GraphExportCommand;
 use Qualimetrix\Infrastructure\Console\Command\HookInstallCommand;
 use Qualimetrix\Infrastructure\Console\Command\HookStatusCommand;
@@ -307,6 +308,13 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(DependencyVisitor::class),
                 new Reference(DependencyGraphBuilder::class),
                 new Reference(DelegatingLogger::class),
+            ])
+            ->setPublic(true);
+
+        // LayerAssignmentCommand (debug:layer-assignment)
+        $container->register(LayerAssignmentCommand::class)
+            ->setArguments([
+                new Reference(ConfigurationPipeline::class),
             ])
             ->setPublic(true);
     }
