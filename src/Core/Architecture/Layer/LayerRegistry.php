@@ -8,22 +8,29 @@ use InvalidArgumentException;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**
- * Owns the full set of {@see LayerDefinition} instances declared by configuration
- * and resolves classes to their owning layer.
+ * Owns the full ordered set of {@see LayerDefinition} instances declared by
+ * configuration and resolves classes to their owning layer.
  *
- * Resolution semantics:
- * - For each layer, ask {@see LayerDefinition::match()} for a specificity score.
- * - The layer with the highest specificity wins.
- * - If two or more layers tie on the highest specificity, throw
- *   {@see LayerCollisionException} — the configuration is ambiguous.
- * - If no layer matches, return null. The caller decides what to do with
- *   out-of-layer classes (coverage diagnostics, silent skip, etc.).
+ * Resolution semantics — **declaration order, first match wins**:
+ * - {@see resolveLayer()} iterates definitions in declared order and returns
+ *   the name of the first layer whose patterns match (or null if no layer
+ *   matches). This is the hot path used during dependency-edge analysis.
+ * - {@see resolveAll()} returns every layer whose patterns match, in
+ *   declaration order. The first entry is the assignment; the rest are
+ *   layers that would have matched if they were declared earlier. Used by
+ *   evidence-based shadow detection and the debug command.
  *
- * Resolution results are cached per {@see SymbolPath::toCanonical()} key so that
- * repeated lookups for the same class skip the per-pattern scan. This is the
- * hot path during rule analysis on large projects.
+ * Both lookups are cached by {@see SymbolPath::toCanonical()} so a class
+ * queried by both methods does not re-walk the pattern list. The cache
+ * is the only mutable state on the registry (which is therefore final
+ * but not readonly).
  *
- * The registry is final but not readonly: the cache is mutable internal state.
+ * There is intentionally no specificity scoring, no collision detection,
+ * and no exception class for ambiguity — declaration order is the user's
+ * tool to express intent, and the engine does not second-guess it. The
+ * {@see \Qualimetrix\Rules\Architecture\LayerViolationRule} emits
+ * `architecture.unreachable-layer` and `architecture.potential-shadow`
+ * info-level diagnostics to surface misordered or overlapping declarations.
  */
 final class LayerRegistry
 {
@@ -33,19 +40,28 @@ final class LayerRegistry
     private array $layers;
 
     /**
-     * Resolved layer per canonical symbol path.
-     * - string: layer name
-     * - false: explicitly resolved to "no layer" (cache miss vs. negative hit)
-     * - LayerCollisionException: cached ambiguous resolution; re-thrown on each
-     *   subsequent lookup of the same canonical key so repeated probes for the
-     *   same FQN do not repeat the full O(L*P) scan or rebuild the diagnostic.
+     * First-match cache. Keyed by {@see SymbolPath::toCanonical()}.
      *
-     * @var array<string, string|false|LayerCollisionException>
+     * - string: name of the first matching layer
+     * - false: explicitly resolved to "no layer" (negative hit)
+     *
+     * @var array<string, string|false>
      */
-    private array $resolutionCache = [];
+    private array $resolveCache = [];
 
     /**
-     * @param list<LayerDefinition> $layers Layer definitions; layer names must be unique.
+     * Full-match cache. Keyed by {@see SymbolPath::toCanonical()}.
+     *
+     * Each value is the complete list of {@see LayerMatch} entries in
+     * declaration order. Empty list means the class matches no layer.
+     *
+     * @var array<string, list<LayerMatch>>
+     */
+    private array $resolveAllCache = [];
+
+    /**
+     * @param list<LayerDefinition> $layers Layer definitions in declaration order;
+     *                                      layer names must be unique.
      *
      * @throws InvalidArgumentException If two layers share the same name.
      */
@@ -67,11 +83,11 @@ final class LayerRegistry
     }
 
     /**
-     * Resolves the layer that owns the class identified by `$class`.
+     * Returns the name of the first layer (in declaration order) whose
+     * patterns match the class FQN, or null if no layer matches.
      *
-     * Returns null when no layer matches. Throws on equal-specificity collisions.
-     *
-     * @throws LayerCollisionException If two or more layers tie on the highest specificity.
+     * This is the hot path for {@see \Qualimetrix\Rules\Architecture\LayerViolationRule}
+     * — called once per dependency-edge endpoint.
      */
     public function resolveLayer(SymbolPath $class): ?string
     {
@@ -81,51 +97,72 @@ final class LayerRegistry
         }
 
         $cacheKey = $class->toCanonical();
-        if (\array_key_exists($cacheKey, $this->resolutionCache)) {
-            $cached = $this->resolutionCache[$cacheKey];
-
-            if ($cached instanceof LayerCollisionException) {
-                throw $cached;
-            }
+        if (\array_key_exists($cacheKey, $this->resolveCache)) {
+            $cached = $this->resolveCache[$cacheKey];
 
             return $cached === false ? null : $cached;
         }
 
-        $bestMatches = $this->findBestMatches($fqn);
+        foreach ($this->layers as $layer) {
+            if ($layer->matches($fqn)) {
+                $this->resolveCache[$cacheKey] = $layer->name();
 
-        if ($bestMatches === []) {
-            $this->resolutionCache[$cacheKey] = false;
-
-            return null;
+                return $layer->name();
+            }
         }
 
-        if (\count($bestMatches) > 1) {
-            // Cache the collision so repeated probes of the same ambiguous FQN
-            // skip the full O(L*P) scan and avoid rebuilding the diagnostic.
-            $exception = new LayerCollisionException($fqn, $bestMatches);
-            $this->resolutionCache[$cacheKey] = $exception;
+        $this->resolveCache[$cacheKey] = false;
 
-            throw $exception;
-        }
-
-        $resolved = $bestMatches[0][0];
-        $this->resolutionCache[$cacheKey] = $resolved;
-
-        return $resolved;
+        return null;
     }
 
     /**
-     * Returns the sorted, deduplicated list of layer names.
+     * Returns every layer whose patterns match the class FQN, in declaration
+     * order.
+     *
+     * Returns an empty list when no layer matches. The first entry is the
+     * actual assignment; subsequent entries are layers that would have matched
+     * had they been declared earlier (used by `architecture.potential-shadow`
+     * and the debug command).
+     *
+     * @return list<LayerMatch>
+     */
+    public function resolveAll(SymbolPath $class): array
+    {
+        $fqn = $this->buildFqn($class);
+        if ($fqn === null) {
+            return [];
+        }
+
+        $cacheKey = $class->toCanonical();
+        if (\array_key_exists($cacheKey, $this->resolveAllCache)) {
+            return $this->resolveAllCache[$cacheKey];
+        }
+
+        $matches = [];
+        foreach ($this->layers as $layer) {
+            $pattern = $layer->firstMatchingPattern($fqn);
+            if ($pattern === null) {
+                continue;
+            }
+            $matches[] = new LayerMatch($layer->name(), $pattern);
+        }
+
+        $this->resolveAllCache[$cacheKey] = $matches;
+
+        return $matches;
+    }
+
+    /**
+     * Returns layer names in **declaration order** (NOT alphabetically
+     * sorted). The order is meaningful — it is the user's disambiguation
+     * tool and the factory's cross-validation reference.
      *
      * @return list<string>
      */
     public function layerNames(): array
     {
-        $names = array_map(static fn(LayerDefinition $layer): string => $layer->name(), $this->layers);
-        $names = array_values(array_unique($names));
-        sort($names);
-
-        return $names;
+        return array_map(static fn(LayerDefinition $layer): string => $layer->name(), $this->layers);
     }
 
     public function isEmpty(): bool
@@ -170,62 +207,5 @@ final class LayerRegistry
         }
 
         return $namespace . '\\' . $type;
-    }
-
-    /**
-     * Scans every layer and returns the set of `[layerName, pattern]` candidates
-     * that tie on the highest specificity.
-     *
-     * @return list<array{0: string, 1: string}> Empty when no layer matches.
-     */
-    private function findBestMatches(string $fqn): array
-    {
-        $bestSpecificity = -1;
-        /** @var list<array{0: string, 1: string}> $bestMatches */
-        $bestMatches = [];
-
-        foreach ($this->layers as $layer) {
-            $specificity = $layer->match($fqn);
-            if ($specificity === null) {
-                continue;
-            }
-
-            if ($specificity > $bestSpecificity) {
-                $bestSpecificity = $specificity;
-                $bestMatches = [[$layer->name(), $this->bestMatchingPattern($layer, $fqn)]];
-
-                continue;
-            }
-
-            if ($specificity === $bestSpecificity) {
-                $bestMatches[] = [$layer->name(), $this->bestMatchingPattern($layer, $fqn)];
-            }
-        }
-
-        return $bestMatches;
-    }
-
-    /**
-     * Returns the highest-specificity pattern of `$layer` that matches `$fqn`,
-     * used purely for diagnostics inside {@see LayerCollisionException}.
-     */
-    private function bestMatchingPattern(LayerDefinition $layer, string $fqn): string
-    {
-        $bestPattern = '';
-        $bestSpecificity = -1;
-
-        foreach ($layer->patterns() as $pattern) {
-            $candidate = new LayerDefinition($layer->name(), [$pattern]);
-            $specificity = $candidate->match($fqn);
-            if ($specificity === null) {
-                continue;
-            }
-            if ($specificity > $bestSpecificity) {
-                $bestSpecificity = $specificity;
-                $bestPattern = $pattern;
-            }
-        }
-
-        return $bestPattern;
     }
 }
