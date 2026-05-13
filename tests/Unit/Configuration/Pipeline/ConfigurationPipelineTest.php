@@ -7,16 +7,16 @@ namespace Qualimetrix\Tests\Unit\Configuration\Pipeline;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Psr\Log\AbstractLogger;
 use Qualimetrix\Configuration\Pipeline\ConfigurationContext;
 use Qualimetrix\Configuration\Pipeline\ConfigurationLayer;
 use Qualimetrix\Configuration\Pipeline\ConfigurationPipeline;
+use Qualimetrix\Configuration\Pipeline\DeferredWarning;
 use Qualimetrix\Configuration\Pipeline\Stage\ConfigurationStageInterface;
 use Qualimetrix\Core\Architecture\CoverageMode;
-use Stringable;
 use Symfony\Component\Console\Input\ArrayInput;
 
 #[CoversClass(ConfigurationPipeline::class)]
+#[CoversClass(DeferredWarning::class)]
 final class ConfigurationPipelineTest extends TestCase
 {
     #[Test]
@@ -269,10 +269,9 @@ final class ConfigurationPipelineTest extends TestCase
     }
 
     #[Test]
-    public function mutualAllowWarningSurfacesViaInjectedLogger(): void
+    public function mutualAllowWarningSurfacesAsDeferredWarning(): void
     {
-        $logger = new RecordingLogger();
-        $pipeline = new ConfigurationPipeline($logger);
+        $pipeline = new ConfigurationPipeline();
 
         $configStage = $this->createStage(20, 'config', new ConfigurationLayer('qmx.yaml', [
             'architecture' => [
@@ -290,17 +289,42 @@ final class ConfigurationPipelineTest extends TestCase
         $pipeline->addStage($configStage);
 
         $context = new ConfigurationContext(new ArrayInput([]), '/tmp');
-        $pipeline->resolve($context);
+        $resolved = $pipeline->resolve($context);
 
         $mutualWarnings = array_values(array_filter(
-            $logger->records,
-            static fn(array $record): bool => $record['level'] === 'warning'
-                && str_contains($record['message'], 'mutual-allow'),
+            $resolved->deferredWarnings,
+            static fn(DeferredWarning $w): bool => $w->level === 'warning'
+                && str_contains($w->message, 'mutual-allow'),
         ));
 
         self::assertCount(1, $mutualWarnings);
-        self::assertStringContainsString('a', $mutualWarnings[0]['message']);
-        self::assertStringContainsString('b', $mutualWarnings[0]['message']);
+        self::assertStringContainsString('a', $mutualWarnings[0]->message);
+        self::assertStringContainsString('b', $mutualWarnings[0]->message);
+    }
+
+    #[Test]
+    public function configurationWithoutFactoryWarningsHasEmptyDeferredWarnings(): void
+    {
+        $pipeline = new ConfigurationPipeline();
+
+        $configStage = $this->createStage(20, 'config', new ConfigurationLayer('qmx.yaml', [
+            'architecture' => [
+                'layers' => [
+                    ['name' => 'controller', 'patterns' => ['App\\Controller']],
+                    ['name' => 'service', 'patterns' => ['App\\Service']],
+                ],
+                'allow' => [
+                    'controller' => ['service'],
+                ],
+            ],
+        ]));
+
+        $pipeline->addStage($configStage);
+
+        $context = new ConfigurationContext(new ArrayInput([]), '/tmp');
+        $resolved = $pipeline->resolve($context);
+
+        self::assertSame([], $resolved->deferredWarnings);
     }
 
     #[Test]
@@ -399,25 +423,5 @@ final class ConfigurationPipelineTest extends TestCase
                 return $this->layer;
             }
         };
-    }
-}
-
-/**
- * Minimal in-memory PSR-3 logger for verifying warning emission.
- */
-final class RecordingLogger extends AbstractLogger
-{
-    /**
-     * @var list<array{level: string, message: string, context: array<string, mixed>}>
-     */
-    public array $records = [];
-
-    public function log($level, string|Stringable $message, array $context = []): void
-    {
-        $this->records[] = [
-            'level' => (string) $level,
-            'message' => (string) $message,
-            'context' => $context,
-        ];
     }
 }

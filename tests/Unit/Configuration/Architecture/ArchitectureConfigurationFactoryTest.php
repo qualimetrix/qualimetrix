@@ -7,7 +7,6 @@ namespace Qualimetrix\Tests\Unit\Configuration\Architecture;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Psr\Log\AbstractLogger;
 use Qualimetrix\Configuration\Architecture\ArchitectureConfigurationFactory;
 use Qualimetrix\Configuration\Architecture\ArchitectureFactoryResult;
 use Qualimetrix\Configuration\Exception\ConfigLoadException;
@@ -15,7 +14,6 @@ use Qualimetrix\Configuration\Pipeline\DeferredWarning;
 use Qualimetrix\Core\Architecture\ArchitectureConfiguration;
 use Qualimetrix\Core\Architecture\CoverageMode;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Stringable;
 
 #[CoversClass(ArchitectureConfigurationFactory::class)]
 #[CoversClass(ArchitectureConfiguration::class)]
@@ -151,7 +149,6 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     #[Test]
     public function selfReferenceInAllowIsSilentlyDeduplicated(): void
     {
-        $logger = new InMemoryLogger();
         $result = $this->factory->fromArray([
             'layers' => [
                 ['name' => 'controller', 'patterns' => ['App\\Controller']],
@@ -160,7 +157,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
             'allow' => [
                 'controller' => ['controller', 'service'],
             ],
-        ], $logger);
+        ]);
 
         $policy = $result->configuration->policy();
         // Same-layer is always allowed regardless of presence in the map.
@@ -169,7 +166,6 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
         self::assertSame(['service'], $policy->allowedTargets('controller'));
 
         // No warnings emitted for self-reference.
-        self::assertSame([], $logger->records);
         self::assertSame([], $result->warnings);
     }
 
@@ -196,7 +192,6 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     #[Test]
     public function longFormAllowEntryWithoutTypesIsAcceptedSilently(): void
     {
-        $logger = new InMemoryLogger();
         $result = $this->factory->fromArray([
             'layers' => [
                 ['name' => 'controller', 'patterns' => ['App\\Controller']],
@@ -207,16 +202,15 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
                     ['target' => 'service'],
                 ],
             ],
-        ], $logger);
+        ]);
 
         self::assertSame(['service'], $result->configuration->policy()->allowedTargets('controller'));
-        self::assertSame([], $logger->records);
+        self::assertSame([], $result->warnings);
     }
 
     #[Test]
     public function longFormAllowEntryWithTypesEmitsDeprecationWarning(): void
     {
-        $logger = new InMemoryLogger();
         $result = $this->factory->fromArray([
             'layers' => [
                 ['name' => 'controller', 'patterns' => ['App\\Controller']],
@@ -227,13 +221,13 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
                     ['target' => 'service', 'types' => ['method_call']],
                 ],
             ],
-        ], $logger);
+        ]);
 
         self::assertSame(['service'], $result->configuration->policy()->allowedTargets('controller'));
-        self::assertCount(1, $logger->records);
-        self::assertSame('warning', $logger->records[0]['level']);
-        self::assertStringContainsString("'types' filter declared but not yet enforced", $logger->records[0]['message']);
-        self::assertStringContainsString('architecture.allow.controller', $logger->records[0]['message']);
+        self::assertCount(1, $result->warnings);
+        self::assertSame('warning', $result->warnings[0]->level);
+        self::assertStringContainsString("'types' filter declared but not yet enforced", $result->warnings[0]->message);
+        self::assertStringContainsString('architecture.allow.controller', $result->warnings[0]->message);
     }
 
     // -------------------------------------------------------------------------
@@ -243,7 +237,6 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     #[Test]
     public function mutualAllowEmitsSingleWarningWithBothLayers(): void
     {
-        $logger = new InMemoryLogger();
         $result = $this->factory->fromArray([
             'layers' => [
                 ['name' => 'a', 'patterns' => ['App\\A']],
@@ -253,25 +246,18 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
                 'a' => ['b'],
                 'b' => ['a'],
             ],
-        ], $logger);
+        ]);
 
-        // Logger path (Step 0 keeps existing surface).
-        self::assertCount(1, $logger->records);
-        self::assertSame('warning', $logger->records[0]['level']);
-        self::assertStringContainsString('mutual-allow', $logger->records[0]['message']);
-        self::assertStringContainsString('a', $logger->records[0]['message']);
-        self::assertStringContainsString('b', $logger->records[0]['message']);
-
-        // Deferred-warning path (Step 1 will drain to RuntimeConfigurator).
         self::assertCount(1, $result->warnings);
         self::assertSame('warning', $result->warnings[0]->level);
         self::assertStringContainsString('mutual-allow', $result->warnings[0]->message);
+        self::assertStringContainsString('a', $result->warnings[0]->message);
+        self::assertStringContainsString('b', $result->warnings[0]->message);
     }
 
     #[Test]
     public function noMutualAllowProducesNoWarning(): void
     {
-        $logger = new InMemoryLogger();
         $result = $this->factory->fromArray([
             'layers' => [
                 ['name' => 'a', 'patterns' => ['App\\A']],
@@ -280,9 +266,8 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
             'allow' => [
                 'a' => ['b'],
             ],
-        ], $logger);
+        ]);
 
-        self::assertSame([], $logger->records);
         self::assertSame([], $result->warnings);
     }
 
@@ -713,25 +698,5 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
             self::assertStringContainsString('bar', $e->getMessage());
             self::assertStringContainsString('unknown keys', $e->getMessage());
         }
-    }
-}
-
-/**
- * Minimal in-memory PSR-3 logger for verifying warning emission.
- */
-final class InMemoryLogger extends AbstractLogger
-{
-    /**
-     * @var list<array{level: string, message: string, context: array<string, mixed>}>
-     */
-    public array $records = [];
-
-    public function log($level, string|Stringable $message, array $context = []): void
-    {
-        $this->records[] = [
-            'level' => (string) $level,
-            'message' => (string) $message,
-            'context' => $context,
-        ];
     }
 }
