@@ -17,10 +17,12 @@ use Qualimetrix\Configuration\Pipeline\Stage\CliStage;
 use Qualimetrix\Configuration\Pipeline\Stage\ComposerDiscoveryStage;
 use Qualimetrix\Configuration\Pipeline\Stage\ConfigFileStage;
 use Qualimetrix\Configuration\Pipeline\Stage\DefaultsStage;
+use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Logging\LoggerHolder;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use ReflectionMethod;
 use Stringable;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputArgument;
@@ -40,6 +42,7 @@ use Symfony\Component\Console\Input\InputOption;
 #[CoversClass(ConfigurationPipeline::class)]
 #[CoversClass(ArchitectureConfigurationFactory::class)]
 #[CoversClass(DeferredWarning::class)]
+#[CoversClass(RuntimeConfigurator::class)]
 final class DeferredWarningIntegrationTest extends TestCase
 {
     private string $tempDir;
@@ -135,6 +138,62 @@ YAML;
         $resolved = $pipeline->resolve($context);
 
         self::assertSame([], $resolved->deferredWarnings);
+    }
+
+    #[Test]
+    public function runtimeConfiguratorDrainsCapturedWarningsThroughTheConfiguredLogger(): void
+    {
+        // End-to-end test of the full production drain path:
+        //   ArchitectureConfigurationFactory → ConfigurationPipeline →
+        //   ResolvedConfiguration.deferredWarnings → RuntimeConfigurator
+        //   .drainDeferredWarnings() → LoggerHolder → user logger.
+        //
+        // Wires the real services from the DI container, swaps the LoggerHolder's
+        // logger for a RecordingLogger (the same swap RuntimeConfigurator::
+        // configureLogger() performs at runtime), then invokes the private drain
+        // method via reflection. The other two tests cover the factory→pipeline
+        // and the synthetic-warning→drain halves separately; this test pins the
+        // join.
+        $configYaml = <<<'YAML'
+architecture:
+  layers:
+    - name: a
+      patterns: ['App\A']
+    - name: b
+      patterns: ['App\B']
+  allow:
+    a: ['b']
+    b: ['a']
+YAML;
+        file_put_contents($this->tempDir . '/qmx.yaml', $configYaml);
+
+        $container = (new ContainerFactory())->create();
+
+        $pipeline = $container->get(ConfigurationPipeline::class);
+        self::assertInstanceOf(ConfigurationPipeline::class, $pipeline);
+
+        $input = $this->createInputWithDefinition([]);
+        $context = new ConfigurationContext($input, $this->tempDir);
+        $resolved = $pipeline->resolve($context);
+
+        $recording = new RecordingLogger();
+        $loggerHolder = $container->get(LoggerHolder::class);
+        self::assertInstanceOf(LoggerHolder::class, $loggerHolder);
+        $loggerHolder->setLogger($recording);
+
+        $runtimeConfigurator = $container->get(RuntimeConfigurator::class);
+        self::assertInstanceOf(RuntimeConfigurator::class, $runtimeConfigurator);
+
+        $drain = new ReflectionMethod(RuntimeConfigurator::class, 'drainDeferredWarnings');
+        $drain->invoke($runtimeConfigurator, $resolved);
+
+        $mutual = array_values(array_filter(
+            $recording->records,
+            static fn(array $record): bool => $record['level'] === 'warning'
+                && str_contains($record['message'], 'mutual-allow'),
+        ));
+        self::assertCount(1, $mutual, 'Mutual-allow warning must reach the configured logger via the production drain path.');
+        self::assertStringContainsString('a ↔ b', $mutual[0]['message']);
     }
 
     #[Test]

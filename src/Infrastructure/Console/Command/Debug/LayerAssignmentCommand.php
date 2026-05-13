@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Command\Debug;
 
+use Exception;
 use Qualimetrix\Configuration\Exception\ConfigLoadException;
 use Qualimetrix\Configuration\Pipeline\ConfigurationContext;
 use Qualimetrix\Configuration\Pipeline\ConfigurationPipeline;
 use Qualimetrix\Core\Architecture\ArchitectureConfiguration;
-use Qualimetrix\Core\Architecture\CoverageMode;
 use Qualimetrix\Core\Architecture\Layer\LayerMatch;
-use Qualimetrix\Core\Architecture\Layer\LayerPolicy;
 use Qualimetrix\Core\Architecture\Layer\LayerRegistry;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -19,7 +18,6 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Throwable;
 
 /**
  * Per-class introspection of layer assignment.
@@ -103,7 +101,10 @@ final class LayerAssignmentCommand extends Command
             $output->writeln(\sprintf('<error>Configuration error: %s</error>', $e->getMessage()));
 
             return self::FAILURE;
-        } catch (Throwable $e) {
+        } catch (Exception $e) {
+            // Catches recoverable failures while bubbling up Errors (TypeError, etc.)
+            // so genuine programming bugs in the pipeline surface in CI rather than
+            // being silently reported as exit code 1.
             $output->writeln(\sprintf('<error>Failed to load configuration: %s</error>', $e->getMessage()));
 
             return self::FAILURE;
@@ -189,15 +190,13 @@ final class LayerAssignmentCommand extends Command
 
         $resolved = $this->configurationPipeline->resolve($context);
 
-        return $resolved->architecture ?? new ArchitectureConfiguration(
-            new LayerRegistry([]),
-            // Empty policy & coverage are never inspected by this command, but
-            // we must satisfy the ArchitectureConfiguration constructor for the
-            // null-fallback path. In practice ResolvedConfiguration::$architecture
-            // is always populated by ConfigurationPipeline::resolve().
-            new LayerPolicy([]),
-            CoverageMode::Ignore,
-        );
+        // ConfigurationPipeline::resolve() always populates $architecture (the
+        // factory returns an empty ArchitectureConfiguration when the YAML
+        // section is missing). The assertion documents this invariant for
+        // readers and PHPStan.
+        \assert($resolved->architecture !== null);
+
+        return $resolved->architecture;
     }
 
     /**
