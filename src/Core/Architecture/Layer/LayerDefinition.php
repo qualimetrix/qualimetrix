@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Core\Architecture\Layer;
 
+use Qualimetrix\Core\Util\NamespaceMatcher;
+
 /**
  * Immutable Value Object describing a single architectural layer: a
  * human-readable name plus the list of namespace patterns whose classes
@@ -19,18 +21,13 @@ namespace Qualimetrix\Core\Architecture\Layer;
  * decides the class's layer. There is no specificity scoring — the user's
  * declaration order is the disambiguation rule.
  *
- * Note: {@see patternMatches()} intentionally duplicates the matching logic
- * from {@see \Qualimetrix\Core\Util\NamespaceMatcher} to avoid coupling
- * Core to that widely-used utility's API for a single-pattern, per-call
- * need. The two implementations must be kept behaviourally consistent.
- * Consolidation is tracked as a follow-up (see Step 2 of the architecture
- * rules follow-up plan).
+ * Per-pattern matching is delegated to {@see NamespaceMatcher::matchesSingle()}
+ * so this class shares a single source of truth with the wider namespace
+ * matching utility — no local copy of the glob-vs-prefix decision logic.
  */
 final readonly class LayerDefinition
 {
     private const string NAME_REGEX = '/^[a-z][a-z0-9_-]*$/';
-
-    private const array WILDCARD_CHARS = ['*', '?', '['];
 
     /**
      * Patterns with trailing backslashes stripped, used for matching.
@@ -90,11 +87,7 @@ final readonly class LayerDefinition
         }
 
         foreach ($this->normalizedPatterns as $pattern) {
-            if ($pattern === '') {
-                continue;
-            }
-
-            if ($this->patternMatches($pattern, $fqn)) {
+            if (NamespaceMatcher::matchesSingle($pattern, $fqn)) {
                 return true;
             }
         }
@@ -117,41 +110,12 @@ final readonly class LayerDefinition
         }
 
         foreach ($this->normalizedPatterns as $index => $pattern) {
-            if ($pattern === '') {
-                continue;
-            }
-
-            if ($this->patternMatches($pattern, $fqn)) {
+            if (NamespaceMatcher::matchesSingle($pattern, $fqn)) {
                 return $this->patterns[$index];
             }
         }
 
         return null;
-    }
-
-    private function patternMatches(string $pattern, string $fqn): bool
-    {
-        if (self::firstWildcardPosition($pattern) !== null) {
-            return fnmatch($pattern, $fqn, \FNM_NOESCAPE);
-        }
-
-        return $fqn === $pattern || str_starts_with($fqn, $pattern . '\\');
-    }
-
-    private static function firstWildcardPosition(string $pattern): ?int
-    {
-        $minPosition = null;
-        foreach (self::WILDCARD_CHARS as $wildcard) {
-            $position = strpos($pattern, $wildcard);
-            if ($position === false) {
-                continue;
-            }
-            if ($minPosition === null || $position < $minPosition) {
-                $minPosition = $position;
-            }
-        }
-
-        return $minPosition;
     }
 
     private function validateName(string $name): void
