@@ -18,6 +18,10 @@ namespace Qualimetrix\Core\Util;
  *   - `App\Entity` matches `App\Entity`, `App\Entity\User`, `App\Entity\Sub\Deep`
  *   - `App\Entity` does NOT match `App\EntityManager\Foo`
  *   - `App\*Repository` matches `App\UserRepository`
+ *
+ * The static helpers {@see matchesSingle()} and {@see isGlob()} expose the
+ * per-pattern primitives so other Core utilities (e.g. {@see \Qualimetrix\Core\Architecture\Layer\LayerDefinition})
+ * can reuse a single source of truth without rebuilding the instance pattern set.
  */
 final readonly class NamespaceMatcher
 {
@@ -51,14 +55,8 @@ final readonly class NamespaceMatcher
                 continue;
             }
 
-            if ($this->isGlobPattern($pattern)) {
-                if (fnmatch($pattern, $namespace, \FNM_NOESCAPE)) {
-                    return true;
-                }
-            } else {
-                if ($namespace === $pattern || str_starts_with($namespace, $pattern . '\\')) {
-                    return true;
-                }
+            if (self::matchesSingle($pattern, $namespace)) {
+                return true;
             }
         }
 
@@ -74,13 +72,35 @@ final readonly class NamespaceMatcher
     }
 
     /**
-     * Returns true if the pattern contains glob characters (*, ?, [).
+     * Tests a single pattern against a namespace.
+     *
+     * The caller is responsible for any normalization (e.g. trailing-backslash
+     * stripping). Empty `$pattern` and empty `$namespace` always return false.
+     *
+     * - **Glob mode** (pattern contains `*`, `?`, or `[`): uses `fnmatch()` with
+     *   `FNM_NOESCAPE` (backslashes are literals, not escape characters).
+     * - **Prefix mode** (no glob characters): exact match or namespace-boundary
+     *   prefix match (`App\Entity` matches `App\Entity\User` but not `App\EntityManager`).
      */
+    public static function matchesSingle(string $pattern, string $namespace): bool
+    {
+        if ($pattern === '' || $namespace === '') {
+            return false;
+        }
+
+        if (self::isGlob($pattern)) {
+            return fnmatch($pattern, $namespace, \FNM_NOESCAPE);
+        }
+
+        return $namespace === $pattern || str_starts_with($namespace, $pattern . '\\');
+    }
+
     /**
-     * Note: fnmatch with FNM_NOESCAPE handles backslashes as literals, not escape chars.
-     * Glob matching for namespaces relies on this flag being set.
+     * Returns true if the pattern contains glob characters (`*`, `?`, `[`).
+     *
+     * Used to decide between glob (`fnmatch`) and prefix matching modes.
      */
-    private function isGlobPattern(string $pattern): bool
+    public static function isGlob(string $pattern): bool
     {
         return str_contains($pattern, '*') || str_contains($pattern, '?') || str_contains($pattern, '[');
     }
