@@ -10,7 +10,6 @@ use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Configuration\Pipeline\ConfigurationPipeline;
 use Qualimetrix\Configuration\RuleOptionsFactory;
 use Qualimetrix\Configuration\RuleOptionsRegistry;
-use Qualimetrix\Infrastructure\Logging\DelegatingLogger;
 use Qualimetrix\Infrastructure\Logging\LoggerHolder;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -101,14 +100,13 @@ final class ConfigurationConfigurator implements ContainerConfiguratorInterface
         );
 
         // ConfigurationPipeline will be populated by ConfigurationStageCompilerPass.
-        // A DelegatingLogger is injected so that diagnostics from the pipeline
-        // (mutual-allow warnings, pattern-collision warnings from the architecture
-        // factory) reach whichever logger LoggerHolder carries at log time.
-        // LoggerHolder is a synthetic service set by CoreServicesConfigurator.
-        /** @var LoggerHolder $loggerHolder */
-        $loggerHolder = $container->get(LoggerHolder::class);
+        // The pipeline runs before RuntimeConfigurator::configureLogger() and
+        // therefore does NOT receive a logger: any warnings produced during
+        // resolution (mutual-allow, pattern-collision heuristics from the
+        // architecture factory) are captured as DeferredWarnings inside the
+        // ResolvedConfiguration and replayed once the user-facing logger is
+        // ready. See RuntimeConfigurator::drainDeferredWarnings().
         $container->register(ConfigurationPipeline::class)
-            ->setPublic(true)
-            ->setArguments([new DelegatingLogger($loggerHolder)]);
+            ->setPublic(true);
     }
 }
