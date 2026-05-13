@@ -1,7 +1,7 @@
 # 0005. Architecture Layer Rules
 
 **Date:** 2026-05-12
-**Status:** Accepted
+**Status:** Superseded by [ADR 0006](0006-architecture-rules-declaration-order.md) on Decision 3 (matching algorithm). Other decisions remain in force.
 
 ## Context
 
