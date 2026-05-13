@@ -45,4 +45,6 @@ What follows from this decision — trade-offs, constraints, future implications
 - [0002 — Interactive HTML Report](0002-html-report.md) — D3 treemap, self-contained HTML, JS build pipeline, hint embedding
 - [0003 — Reporting UX Redesign](0003-reporting-ux-redesign.md) — summary-first CLI, progressive disclosure, MetricHintProvider
 - [0004 — Architecture Findings (April 2026)](0004-architecture-findings-april-2026.md) — lazy command loading, PSR-3 interpolation, dead code removal
-- [0005 — Architecture Layer Rules](0005-architecture-rules.md) — `architecture.layer-violation`, namespace-based membership, allow-list semantics, per-use-site reporting, Phase 2 deferrals
+- [0005 — Architecture Layer Rules](0005-architecture-rules.md) — `architecture.layer-violation`, namespace-based membership, allow-list semantics, per-use-site reporting, Phase 2 deferrals (Decision 3 superseded by 0006)
+- [0006 — Architecture Rules: Declaration-Order Matching](0006-architecture-rules-declaration-order.md) — supersedes 0005 Decision 3; first-match-wins, ordered YAML list, evidence-based `architecture.potential-shadow`, `unreachable-layer`, debug CLI
+- [0007 — Architecture Rules Phase 2: Flexibility & Expressiveness](0007-architecture-rules-phase-2-design.md) — locked design for class-membership beyond namespace, template layers with capture binding, `exclude:`, `relations:` whitelist with hybrid alias API
