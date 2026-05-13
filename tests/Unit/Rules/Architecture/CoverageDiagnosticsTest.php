@@ -49,7 +49,11 @@ final class CoverageDiagnosticsTest extends TestCase
 
         $violations = $rule->analyze($this->buildContext($graph, $arch));
 
-        self::assertSame([], $violations);
+        // Scope: this test is about coverage-mode behaviour. Filter to just
+        // coverage diagnostics (the unreachable-layer diagnostic may also fire
+        // because we register no classes, but that is exercised in the
+        // LayerViolationRule test suite).
+        self::assertSame([], $this->filterCoverageDiagnostics($violations));
     }
 
     #[Test]

@@ -104,49 +104,6 @@ final class LayerPolicyTest extends TestCase
     }
 
     #[Test]
-    public function knownLayers_returnsSortedUnionOfKeysAndTargets(): void
-    {
-        $policy = new LayerPolicy([
-            'controller' => ['service'],
-            'service' => ['repository'],
-            'analysis' => ['service', 'reporting'],
-        ]);
-
-        self::assertSame(
-            ['analysis', 'controller', 'reporting', 'repository', 'service'],
-            $policy->knownLayers(),
-        );
-    }
-
-    #[Test]
-    public function knownLayers_deduplicatesAcrossKeysAndValues(): void
-    {
-        $policy = new LayerPolicy([
-            'a' => ['b', 'c'],
-            'b' => ['a', 'c'],
-        ]);
-
-        self::assertSame(['a', 'b', 'c'], $policy->knownLayers());
-    }
-
-    #[Test]
-    public function knownLayers_emptyPolicyReturnsEmpty(): void
-    {
-        self::assertSame([], (new LayerPolicy([]))->knownLayers());
-    }
-
-    #[Test]
-    public function knownLayers_keysOnlyWithEmptyAllowLists(): void
-    {
-        $policy = new LayerPolicy([
-            'core' => [],
-            'service' => [],
-        ]);
-
-        self::assertSame(['core', 'service'], $policy->knownLayers());
-    }
-
-    #[Test]
     public function isAllowed_unknownSourceLayerReturnsFalseRegardlessOfTarget(): void
     {
         // Documented contract: callers MUST pre-resolve $from via LayerRegistry.

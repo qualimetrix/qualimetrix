@@ -9,7 +9,9 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
 use Qualimetrix\Configuration\Architecture\ArchitectureConfigurationFactory;
+use Qualimetrix\Configuration\Architecture\ArchitectureFactoryResult;
 use Qualimetrix\Configuration\Exception\ConfigLoadException;
+use Qualimetrix\Configuration\Pipeline\DeferredWarning;
 use Qualimetrix\Core\Architecture\ArchitectureConfiguration;
 use Qualimetrix\Core\Architecture\CoverageMode;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -17,6 +19,8 @@ use Stringable;
 
 #[CoversClass(ArchitectureConfigurationFactory::class)]
 #[CoversClass(ArchitectureConfiguration::class)]
+#[CoversClass(ArchitectureFactoryResult::class)]
+#[CoversClass(DeferredWarning::class)]
 final class ArchitectureConfigurationFactoryTest extends TestCase
 {
     private ArchitectureConfigurationFactory $factory;
@@ -33,68 +37,81 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     #[Test]
     public function emptyInputProducesEmptyConfiguration(): void
     {
-        $config = $this->factory->fromArray([]);
+        $result = $this->factory->fromArray([]);
 
-        self::assertTrue($config->isEmpty());
-        self::assertSame(CoverageMode::Ignore, $config->coverage());
-        self::assertSame([], $config->registry()->layerNames());
-        self::assertSame([], $config->policy()->knownLayers());
+        self::assertTrue($result->configuration->isEmpty());
+        self::assertSame(CoverageMode::Ignore, $result->configuration->coverage());
+        self::assertSame([], $result->configuration->registry()->layerNames());
+        self::assertSame([], $result->warnings);
     }
 
     #[Test]
-    public function singleLayerWithStringPatternRegistersOnePattern(): void
+    public function fromArrayReturnsArchitectureFactoryResultWithConfigurationAndEmptyWarnings(): void
     {
-        $config = $this->factory->fromArray([
+        $result = $this->factory->fromArray([
             'layers' => [
-                'controller' => 'App\\Controller',
+                ['name' => 'controller', 'patterns' => ['App\\Controller']],
             ],
         ]);
 
-        self::assertFalse($config->isEmpty());
-        self::assertSame(['controller'], $config->registry()->layerNames());
-
-        $definitions = $config->registry()->definitions();
-        self::assertCount(1, $definitions);
-        self::assertSame('controller', $definitions[0]->name());
-        self::assertSame(['App\\Controller'], $definitions[0]->patterns());
+        // Type assertions are implicit from the return type and field types;
+        // verify the carried state instead.
+        self::assertFalse($result->configuration->isEmpty());
+        self::assertSame(['controller'], $result->configuration->registry()->layerNames());
+        self::assertSame([], $result->warnings);
     }
 
     #[Test]
     public function singleLayerWithListPatternRegistersAllPatterns(): void
     {
-        $config = $this->factory->fromArray([
+        $result = $this->factory->fromArray([
             'layers' => [
-                'service' => ['App\\Service', 'App\\Domain\\Service'],
+                ['name' => 'service', 'patterns' => ['App\\Service', 'App\\Domain\\Service']],
             ],
         ]);
 
-        $definitions = $config->registry()->definitions();
+        $definitions = $result->configuration->registry()->definitions();
         self::assertCount(1, $definitions);
+        self::assertSame('service', $definitions[0]->name());
         self::assertSame(['App\\Service', 'App\\Domain\\Service'], $definitions[0]->patterns());
+    }
+
+    #[Test]
+    public function layersListPreservesDeclarationOrder(): void
+    {
+        $result = $this->factory->fromArray([
+            'layers' => [
+                ['name' => 'zebra', 'patterns' => ['App\\Zebra']],
+                ['name' => 'alpha', 'patterns' => ['App\\Alpha']],
+                ['name' => 'beta', 'patterns' => ['App\\Beta']],
+            ],
+        ]);
+
+        // NOT sorted — declaration order is preserved through the registry.
+        self::assertSame(['zebra', 'alpha', 'beta'], $result->configuration->registry()->layerNames());
     }
 
     #[Test]
     public function twoLayersAndAllowProducePolicy(): void
     {
-        $config = $this->factory->fromArray([
+        $result = $this->factory->fromArray([
             'layers' => [
-                'controller' => 'App\\Controller',
-                'service' => 'App\\Service',
+                ['name' => 'controller', 'patterns' => ['App\\Controller']],
+                ['name' => 'service', 'patterns' => ['App\\Service']],
             ],
             'allow' => [
                 'controller' => ['service'],
             ],
         ]);
 
-        $policy = $config->policy();
+        $policy = $result->configuration->policy();
         self::assertTrue($policy->isAllowed('controller', 'service'));
         self::assertFalse($policy->isAllowed('service', 'controller'));
         // Same-layer dependencies always allowed.
         self::assertTrue($policy->isAllowed('controller', 'controller'));
-        self::assertSame(['controller', 'service'], $policy->knownLayers());
 
         // Registry resolves classes correctly.
-        $registry = $config->registry();
+        $registry = $result->configuration->registry();
         self::assertSame('controller', $registry->resolveLayer(SymbolPath::forClass('App\\Controller', 'UserController')));
         self::assertSame('service', $registry->resolveLayer(SymbolPath::forClass('App\\Service', 'UserService')));
     }
@@ -102,50 +119,50 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     #[Test]
     public function coverageDefaultsToIgnore(): void
     {
-        $config = $this->factory->fromArray([
-            'layers' => ['core' => 'App\\Core'],
+        $result = $this->factory->fromArray([
+            'layers' => [['name' => 'core', 'patterns' => ['App\\Core']]],
         ]);
 
-        self::assertSame(CoverageMode::Ignore, $config->coverage());
+        self::assertSame(CoverageMode::Ignore, $result->configuration->coverage());
     }
 
     #[Test]
     public function coverageWarnIsParsed(): void
     {
-        $config = $this->factory->fromArray([
-            'layers' => ['core' => 'App\\Core'],
+        $result = $this->factory->fromArray([
+            'layers' => [['name' => 'core', 'patterns' => ['App\\Core']]],
             'coverage' => 'warn',
         ]);
 
-        self::assertSame(CoverageMode::Warn, $config->coverage());
+        self::assertSame(CoverageMode::Warn, $result->configuration->coverage());
     }
 
     #[Test]
     public function coverageIsCaseInsensitive(): void
     {
-        $config = $this->factory->fromArray([
-            'layers' => ['core' => 'App\\Core'],
+        $result = $this->factory->fromArray([
+            'layers' => [['name' => 'core', 'patterns' => ['App\\Core']]],
             'coverage' => 'ERROR',
         ]);
 
-        self::assertSame(CoverageMode::Error, $config->coverage());
+        self::assertSame(CoverageMode::Error, $result->configuration->coverage());
     }
 
     #[Test]
     public function selfReferenceInAllowIsSilentlyDeduplicated(): void
     {
         $logger = new InMemoryLogger();
-        $config = $this->factory->fromArray([
+        $result = $this->factory->fromArray([
             'layers' => [
-                'controller' => 'App\\Controller',
-                'service' => 'App\\Service',
+                ['name' => 'controller', 'patterns' => ['App\\Controller']],
+                ['name' => 'service', 'patterns' => ['App\\Service']],
             ],
             'allow' => [
                 'controller' => ['controller', 'service'],
             ],
         ], $logger);
 
-        $policy = $config->policy();
+        $policy = $result->configuration->policy();
         // Same-layer is always allowed regardless of presence in the map.
         self::assertTrue($policy->isAllowed('controller', 'controller'));
         // 'controller' should not appear in the explicit target list.
@@ -153,22 +170,23 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
 
         // No warnings emitted for self-reference.
         self::assertSame([], $logger->records);
+        self::assertSame([], $result->warnings);
     }
 
     #[Test]
     public function duplicateAllowTargetsAreDeduplicated(): void
     {
-        $config = $this->factory->fromArray([
+        $result = $this->factory->fromArray([
             'layers' => [
-                'a' => 'App\\A',
-                'b' => 'App\\B',
+                ['name' => 'a', 'patterns' => ['App\\A']],
+                ['name' => 'b', 'patterns' => ['App\\B']],
             ],
             'allow' => [
                 'a' => ['b', 'b'],
             ],
         ]);
 
-        self::assertSame(['b'], $config->policy()->allowedTargets('a'));
+        self::assertSame(['b'], $result->configuration->policy()->allowedTargets('a'));
     }
 
     // -------------------------------------------------------------------------
@@ -179,10 +197,10 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     public function longFormAllowEntryWithoutTypesIsAcceptedSilently(): void
     {
         $logger = new InMemoryLogger();
-        $config = $this->factory->fromArray([
+        $result = $this->factory->fromArray([
             'layers' => [
-                'controller' => 'App\\Controller',
-                'service' => 'App\\Service',
+                ['name' => 'controller', 'patterns' => ['App\\Controller']],
+                ['name' => 'service', 'patterns' => ['App\\Service']],
             ],
             'allow' => [
                 'controller' => [
@@ -191,7 +209,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
             ],
         ], $logger);
 
-        self::assertSame(['service'], $config->policy()->allowedTargets('controller'));
+        self::assertSame(['service'], $result->configuration->policy()->allowedTargets('controller'));
         self::assertSame([], $logger->records);
     }
 
@@ -199,10 +217,10 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     public function longFormAllowEntryWithTypesEmitsDeprecationWarning(): void
     {
         $logger = new InMemoryLogger();
-        $config = $this->factory->fromArray([
+        $result = $this->factory->fromArray([
             'layers' => [
-                'controller' => 'App\\Controller',
-                'service' => 'App\\Service',
+                ['name' => 'controller', 'patterns' => ['App\\Controller']],
+                ['name' => 'service', 'patterns' => ['App\\Service']],
             ],
             'allow' => [
                 'controller' => [
@@ -211,7 +229,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
             ],
         ], $logger);
 
-        self::assertSame(['service'], $config->policy()->allowedTargets('controller'));
+        self::assertSame(['service'], $result->configuration->policy()->allowedTargets('controller'));
         self::assertCount(1, $logger->records);
         self::assertSame('warning', $logger->records[0]['level']);
         self::assertStringContainsString("'types' filter declared but not yet enforced", $logger->records[0]['message']);
@@ -226,10 +244,10 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     public function mutualAllowEmitsSingleWarningWithBothLayers(): void
     {
         $logger = new InMemoryLogger();
-        $this->factory->fromArray([
+        $result = $this->factory->fromArray([
             'layers' => [
-                'a' => 'App\\A',
-                'b' => 'App\\B',
+                ['name' => 'a', 'patterns' => ['App\\A']],
+                ['name' => 'b', 'patterns' => ['App\\B']],
             ],
             'allow' => [
                 'a' => ['b'],
@@ -237,21 +255,27 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
             ],
         ], $logger);
 
+        // Logger path (Step 0 keeps existing surface).
         self::assertCount(1, $logger->records);
         self::assertSame('warning', $logger->records[0]['level']);
         self::assertStringContainsString('mutual-allow', $logger->records[0]['message']);
         self::assertStringContainsString('a', $logger->records[0]['message']);
         self::assertStringContainsString('b', $logger->records[0]['message']);
+
+        // Deferred-warning path (Step 1 will drain to RuntimeConfigurator).
+        self::assertCount(1, $result->warnings);
+        self::assertSame('warning', $result->warnings[0]->level);
+        self::assertStringContainsString('mutual-allow', $result->warnings[0]->message);
     }
 
     #[Test]
     public function noMutualAllowProducesNoWarning(): void
     {
         $logger = new InMemoryLogger();
-        $this->factory->fromArray([
+        $result = $this->factory->fromArray([
             'layers' => [
-                'a' => 'App\\A',
-                'b' => 'App\\B',
+                ['name' => 'a', 'patterns' => ['App\\A']],
+                ['name' => 'b', 'patterns' => ['App\\B']],
             ],
             'allow' => [
                 'a' => ['b'],
@@ -259,20 +283,24 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
         ], $logger);
 
         self::assertSame([], $logger->records);
+        self::assertSame([], $result->warnings);
     }
 
     // -------------------------------------------------------------------------
-    // Layer validation
+    // Layer-list validation (ordered list, long form only)
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function layersAsSequentialListIsRejected(): void
+    public function legacyMapShapeForLayersIsRejected(): void
     {
         $this->expectException(ConfigLoadException::class);
-        $this->expectExceptionMessage('architecture.layers');
+        $this->expectExceptionMessageMatches('/ordered list of layer entries/');
 
+        // Legacy map shape ('layer-name' => pattern) is no longer accepted.
         $this->factory->fromArray([
-            'layers' => ['App\\Controller', 'App\\Service'],
+            'layers' => [
+                'controller' => 'App\\Controller',
+            ],
         ]);
     }
 
@@ -288,40 +316,79 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     }
 
     #[Test]
-    public function emptyLayerPatternStringIsRejected(): void
+    public function layerEntryWithoutNameIsRejected(): void
     {
         $this->expectException(ConfigLoadException::class);
-        $this->expectExceptionMessage('architecture.layers.controller');
+        $this->expectExceptionMessageMatches('/missing or empty "name"/');
 
         $this->factory->fromArray([
             'layers' => [
-                'controller' => '',
+                ['patterns' => ['App\\Controller']],
             ],
         ]);
     }
 
     #[Test]
-    public function layerPatternOfWrongTypeIsRejected(): void
+    public function layerEntryWithEmptyNameIsRejected(): void
     {
         $this->expectException(ConfigLoadException::class);
-        $this->expectExceptionMessage('architecture.layers.controller');
+        $this->expectExceptionMessageMatches('/missing or empty "name"/');
 
         $this->factory->fromArray([
             'layers' => [
-                'controller' => 42,
+                ['name' => '', 'patterns' => ['App\\Controller']],
             ],
         ]);
     }
 
     #[Test]
-    public function emptyPatternInsideListIsRejected(): void
+    public function layerEntryWithoutPatternsIsRejected(): void
     {
         $this->expectException(ConfigLoadException::class);
-        $this->expectExceptionMessage('architecture.layers.controller');
+        $this->expectExceptionMessageMatches('/missing "patterns"/');
 
         $this->factory->fromArray([
             'layers' => [
-                'controller' => ['App\\Controller', ''],
+                ['name' => 'controller'],
+            ],
+        ]);
+    }
+
+    #[Test]
+    public function layerEntryWithEmptyPatternsListIsRejected(): void
+    {
+        $this->expectException(ConfigLoadException::class);
+        $this->expectExceptionMessageMatches('/"patterns" must contain at least one entry/');
+
+        $this->factory->fromArray([
+            'layers' => [
+                ['name' => 'controller', 'patterns' => []],
+            ],
+        ]);
+    }
+
+    #[Test]
+    public function layerEntryWithPatternsAsScalarIsRejected(): void
+    {
+        $this->expectException(ConfigLoadException::class);
+        $this->expectExceptionMessageMatches('/"patterns" must be a non-empty list of strings/');
+
+        $this->factory->fromArray([
+            'layers' => [
+                ['name' => 'controller', 'patterns' => 'App\\Controller'],
+            ],
+        ]);
+    }
+
+    #[Test]
+    public function emptyPatternStringInsideListIsRejected(): void
+    {
+        $this->expectException(ConfigLoadException::class);
+        $this->expectExceptionMessageMatches('/non-empty string/');
+
+        $this->factory->fromArray([
+            'layers' => [
+                ['name' => 'controller', 'patterns' => ['App\\Controller', '']],
             ],
         ]);
     }
@@ -330,24 +397,11 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     public function nonStringPatternInsideListIsRejected(): void
     {
         $this->expectException(ConfigLoadException::class);
-        $this->expectExceptionMessage('architecture.layers.controller');
+        $this->expectExceptionMessageMatches('/non-empty string/');
 
         $this->factory->fromArray([
             'layers' => [
-                'controller' => ['App\\Controller', 42],
-            ],
-        ]);
-    }
-
-    #[Test]
-    public function emptyPatternListIsRejected(): void
-    {
-        $this->expectException(ConfigLoadException::class);
-        $this->expectExceptionMessage('architecture.layers.controller');
-
-        $this->factory->fromArray([
-            'layers' => [
-                'controller' => [],
+                ['name' => 'controller', 'patterns' => ['App\\Controller', 42]],
             ],
         ]);
     }
@@ -356,11 +410,72 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     public function invalidLayerNameIsRejected(): void
     {
         $this->expectException(ConfigLoadException::class);
-        $this->expectExceptionMessage('architecture.layers.UpperCaseName');
+        $this->expectExceptionMessageMatches('/UpperCaseName/');
 
         $this->factory->fromArray([
             'layers' => [
-                'UpperCaseName' => 'App\\Foo',
+                ['name' => 'UpperCaseName', 'patterns' => ['App\\Foo']],
+            ],
+        ]);
+    }
+
+    #[Test]
+    public function duplicateLayerNameAcrossListEntriesIsRejected(): void
+    {
+        $this->expectException(ConfigLoadException::class);
+        $this->expectExceptionMessageMatches('/duplicate layer name "service"/');
+
+        $this->factory->fromArray([
+            'layers' => [
+                ['name' => 'service', 'patterns' => ['App\\Service']],
+                ['name' => 'service', 'patterns' => ['App\\OtherService']],
+            ],
+        ]);
+    }
+
+    #[Test]
+    public function unknownKeyOnLayerEntryIsRejected(): void
+    {
+        $this->expectException(ConfigLoadException::class);
+        $this->expectExceptionMessageMatches('/unknown key/');
+
+        $this->factory->fromArray([
+            'layers' => [
+                ['name' => 'controller', 'patterns' => ['App\\Controller'], 'unexpected' => 'foo'],
+            ],
+        ]);
+    }
+
+    #[Test]
+    public function duplicatePatternAcrossLayersIsRejected(): void
+    {
+        try {
+            $this->factory->fromArray([
+                'layers' => [
+                    ['name' => 'a', 'patterns' => ['App\\Shared']],
+                    ['name' => 'b', 'patterns' => ['App\\Shared']],
+                ],
+            ]);
+            self::fail('Expected ConfigLoadException');
+        } catch (ConfigLoadException $e) {
+            self::assertSame('architecture', $e->configPath);
+            self::assertStringContainsString('App\\Shared', $e->getMessage());
+            self::assertStringContainsString('"a"', $e->getMessage());
+            self::assertStringContainsString('"b"', $e->getMessage());
+            self::assertStringContainsString('unreachable', $e->getMessage());
+        }
+    }
+
+    #[Test]
+    public function duplicateWildcardPatternAcrossLayersIsRejected(): void
+    {
+        $this->expectException(ConfigLoadException::class);
+        $this->expectExceptionMessageMatches('/App\\\\\\*\\*/');
+
+        $this->factory->fromArray([
+            'layers' => [
+                ['name' => 'a', 'patterns' => ['App\\**']],
+                ['name' => 'b', 'patterns' => ['App\\**']],
             ],
         ]);
     }
@@ -376,7 +491,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
         $this->expectExceptionMessage('architecture.allow');
 
         $this->factory->fromArray([
-            'layers' => ['a' => 'App\\A'],
+            'layers' => [['name' => 'a', 'patterns' => ['App\\A']]],
             'allow' => ['a', 'b'],
         ]);
     }
@@ -388,7 +503,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
         $this->expectExceptionMessage('architecture.allow');
 
         $this->factory->fromArray([
-            'layers' => ['a' => 'App\\A'],
+            'layers' => [['name' => 'a', 'patterns' => ['App\\A']]],
             'allow' => 'wrong',
         ]);
     }
@@ -400,7 +515,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
         $this->expectExceptionMessage('architecture.allow.controller: unknown layer');
 
         $this->factory->fromArray([
-            'layers' => ['service' => 'App\\Service'],
+            'layers' => [['name' => 'service', 'patterns' => ['App\\Service']]],
             'allow' => [
                 'controller' => ['service'],
             ],
@@ -415,8 +530,8 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
 
         $this->factory->fromArray([
             'layers' => [
-                'controller' => 'App\\Controller',
-                'service' => 'App\\Service',
+                ['name' => 'controller', 'patterns' => ['App\\Controller']],
+                ['name' => 'service', 'patterns' => ['App\\Service']],
             ],
             'allow' => [
                 'controller' => ['servise'],
@@ -432,8 +547,8 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
 
         $this->factory->fromArray([
             'layers' => [
-                'controller' => 'App\\Controller',
-                'service' => 'App\\Service',
+                ['name' => 'controller', 'patterns' => ['App\\Controller']],
+                ['name' => 'service', 'patterns' => ['App\\Service']],
             ],
             'allow' => [
                 'controller' => 'service',
@@ -448,9 +563,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
         $this->expectExceptionMessage('architecture.allow.controller[0]');
 
         $this->factory->fromArray([
-            'layers' => [
-                'controller' => 'App\\Controller',
-            ],
+            'layers' => [['name' => 'controller', 'patterns' => ['App\\Controller']]],
             'allow' => [
                 'controller' => [''],
             ],
@@ -465,8 +578,8 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
 
         $this->factory->fromArray([
             'layers' => [
-                'controller' => 'App\\Controller',
-                'service' => 'App\\Service',
+                ['name' => 'controller', 'patterns' => ['App\\Controller']],
+                ['name' => 'service', 'patterns' => ['App\\Service']],
             ],
             'allow' => [
                 'controller' => [
@@ -487,7 +600,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
         $this->expectExceptionMessage('architecture.coverage');
 
         $this->factory->fromArray([
-            'layers' => ['core' => 'App\\Core'],
+            'layers' => [['name' => 'core', 'patterns' => ['App\\Core']]],
             'coverage' => 'verbose',
         ]);
     }
@@ -499,7 +612,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
         $this->expectExceptionMessage('architecture.coverage');
 
         $this->factory->fromArray([
-            'layers' => ['core' => 'App\\Core'],
+            'layers' => [['name' => 'core', 'patterns' => ['App\\Core']]],
             'coverage' => 42,
         ]);
     }
@@ -513,7 +626,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     {
         try {
             $this->factory->fromArray([
-                'layers' => 'not-a-map',
+                'layers' => 'not-a-list',
             ]);
             self::fail('Expected ConfigLoadException');
         } catch (ConfigLoadException $e) {
@@ -522,7 +635,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     }
 
     // -------------------------------------------------------------------------
-    // Top-level structure validation (Issue 1)
+    // Top-level structure validation
     // -------------------------------------------------------------------------
 
     #[Test]
@@ -542,7 +655,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     {
         try {
             $this->factory->fromArray([
-                'layres' => ['controller' => 'App\\Controller'],
+                'layres' => [],
             ]);
             self::fail('Expected ConfigLoadException');
         } catch (ConfigLoadException $e) {
@@ -558,7 +671,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     {
         try {
             $this->factory->fromArray([
-                'layers' => ['a' => 'App\\A'],
+                'layers' => [['name' => 'a', 'patterns' => ['App\\A']]],
                 'imports' => ['some.yaml'],
             ]);
             self::fail('Expected ConfigLoadException');
@@ -573,7 +686,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     {
         try {
             $this->factory->fromArray([
-                'layers' => ['a' => 'App\\A'],
+                'layers' => [['name' => 'a', 'patterns' => ['App\\A']]],
                 'foo' => 1,
                 'bar' => 2,
             ]);
@@ -581,108 +694,8 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
         } catch (ConfigLoadException $e) {
             self::assertStringContainsString('foo', $e->getMessage());
             self::assertStringContainsString('bar', $e->getMessage());
-            // Plural form used when more than one unknown key
             self::assertStringContainsString('unknown keys', $e->getMessage());
         }
-    }
-
-    // -------------------------------------------------------------------------
-    // Pre-validation of pattern collisions (Issue 5)
-    // -------------------------------------------------------------------------
-
-    #[Test]
-    public function duplicateLiteralPatternAcrossLayersIsRejected(): void
-    {
-        try {
-            $this->factory->fromArray([
-                'layers' => [
-                    'a' => 'App\\Shared',
-                    'b' => 'App\\Shared',
-                ],
-            ]);
-            self::fail('Expected ConfigLoadException');
-        } catch (ConfigLoadException $e) {
-            self::assertSame('architecture', $e->configPath);
-            self::assertStringContainsString('duplicate pattern', $e->getMessage());
-            self::assertStringContainsString('App\\Shared', $e->getMessage());
-            self::assertStringContainsString('"a"', $e->getMessage());
-            self::assertStringContainsString('"b"', $e->getMessage());
-        }
-    }
-
-    #[Test]
-    public function duplicateWildcardPatternAcrossLayersIsRejected(): void
-    {
-        try {
-            $this->factory->fromArray([
-                'layers' => [
-                    'a' => 'App\\**',
-                    'b' => 'App\\**',
-                ],
-            ]);
-            self::fail('Expected ConfigLoadException');
-        } catch (ConfigLoadException $e) {
-            self::assertStringContainsString('duplicate pattern', $e->getMessage());
-            self::assertStringContainsString('App\\**', $e->getMessage());
-        }
-    }
-
-    #[Test]
-    public function samePrefixAndSpecificityProducesWarning(): void
-    {
-        $logger = new InMemoryLogger();
-        $this->factory->fromArray([
-            'layers' => [
-                'a' => 'App\\**\\Foo',
-                'b' => 'App\\**\\Bar',
-            ],
-        ], $logger);
-
-        $warnings = array_values(array_filter(
-            $logger->records,
-            static fn(array $record): bool => $record['level'] === 'warning'
-                && str_contains($record['message'], 'pattern collision'),
-        ));
-
-        self::assertCount(1, $warnings);
-        self::assertStringContainsString('App\\**\\Foo', $warnings[0]['message']);
-        self::assertStringContainsString('App\\**\\Bar', $warnings[0]['message']);
-    }
-
-    #[Test]
-    public function disjointPrefixesProduceNoCollisionWarning(): void
-    {
-        $logger = new InMemoryLogger();
-        $this->factory->fromArray([
-            'layers' => [
-                'controller' => 'App\\Controller\\**',
-                'service' => 'App\\Service\\**',
-            ],
-        ], $logger);
-
-        $collisionWarnings = array_filter(
-            $logger->records,
-            static fn(array $record): bool => str_contains($record['message'], 'pattern collision'),
-        );
-        self::assertSame([], array_values($collisionWarnings));
-    }
-
-    #[Test]
-    public function purePrefixPatternsThatAreNotEqualProduceNoCollisionWarning(): void
-    {
-        $logger = new InMemoryLogger();
-        $this->factory->fromArray([
-            'layers' => [
-                'a' => 'App\\Controller',
-                'b' => 'App\\Service',
-            ],
-        ], $logger);
-
-        $collisionWarnings = array_filter(
-            $logger->records,
-            static fn(array $record): bool => str_contains($record['message'], 'pattern collision'),
-        );
-        self::assertSame([], array_values($collisionWarnings));
     }
 }
 

@@ -180,28 +180,58 @@ final class ConfigurationMergerTest extends TestCase
     }
 
     #[Test]
-    public function architectureLayersAreDeepMerged(): void
+    public function architectureLayersListIsReplacedWholesaleByOverlay(): void
     {
+        // ADR 0006: `architecture.layers` is an ordered list under
+        // declaration-order matching. Order is meaningful and must not be
+        // silently reshuffled by deep-merge — when overlay defines `layers`,
+        // it replaces the base list entirely.
         $base = [
             'architecture' => [
                 'layers' => [
-                    'a' => 'App\\A',
+                    ['name' => 'a', 'patterns' => ['App\\A']],
+                    ['name' => 'b', 'patterns' => ['App\\B']],
                 ],
             ],
         ];
         $overlay = [
             'architecture' => [
                 'layers' => [
-                    'b' => 'App\\B',
+                    ['name' => 'c', 'patterns' => ['App\\C']],
                 ],
             ],
         ];
 
         $result = ConfigurationMerger::merge($base, $overlay);
 
-        // Both layer maps merge — preset 'a' is preserved, overlay 'b' added.
-        self::assertSame('App\\A', $result['architecture']['layers']['a']);
-        self::assertSame('App\\B', $result['architecture']['layers']['b']);
+        // Overlay's layers list wins outright; base's a/b are NOT carried over.
+        self::assertCount(1, $result['architecture']['layers']);
+        self::assertSame('c', $result['architecture']['layers'][0]['name']);
+    }
+
+    #[Test]
+    public function architectureLayersListIsPreservedWhenOverlayDoesNotDefineIt(): void
+    {
+        // Regression: an overlay that only touches `coverage` or `allow` must
+        // not clobber the base `layers` list.
+        $base = [
+            'architecture' => [
+                'layers' => [
+                    ['name' => 'controller', 'patterns' => ['App\\Controller']],
+                ],
+            ],
+        ];
+        $overlay = [
+            'architecture' => [
+                'coverage' => 'error',
+            ],
+        ];
+
+        $result = ConfigurationMerger::merge($base, $overlay);
+
+        self::assertCount(1, $result['architecture']['layers']);
+        self::assertSame('controller', $result['architecture']['layers'][0]['name']);
+        self::assertSame('error', $result['architecture']['coverage']);
     }
 
     #[Test]
@@ -275,12 +305,12 @@ final class ConfigurationMergerTest extends TestCase
     #[Test]
     public function architectureKeepsPresetLayersWhenProjectAddsCoverage(): void
     {
-        // Regression: previously the project config's architecture block replaced
-        // the preset's wholesale, wiping out shared layer definitions.
+        // Regression: project config that only adds `coverage` must not clobber
+        // the preset's layers list.
         $preset = [
             'architecture' => [
                 'layers' => [
-                    'controller' => 'App\\Controller',
+                    ['name' => 'controller', 'patterns' => ['App\\Controller']],
                 ],
             ],
         ];
@@ -292,7 +322,8 @@ final class ConfigurationMergerTest extends TestCase
 
         $result = ConfigurationMerger::merge($preset, $project);
 
-        self::assertSame('App\\Controller', $result['architecture']['layers']['controller']);
+        self::assertCount(1, $result['architecture']['layers']);
+        self::assertSame('controller', $result['architecture']['layers'][0]['name']);
         self::assertSame('error', $result['architecture']['coverage']);
     }
 

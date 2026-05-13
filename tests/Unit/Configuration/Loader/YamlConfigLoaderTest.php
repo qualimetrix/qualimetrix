@@ -600,24 +600,31 @@ YAML);
 
     public function testLoadPreservesArchitectureLayerNamesVerbatim(): void
     {
+        // Under ADR 0006 `architecture.layers` is an ordered list; layer names
+        // live in the `name` field of each entry, not as map keys. The values
+        // of `name` are scalars and never touched by the loader's key
+        // normalization, so the new shape preserves snake_case/kebab-case
+        // names by construction. This test pins that behaviour.
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, <<<'YAML'
 architecture:
   layers:
-    app_core: 'App\Core'
-    app-core-services: 'App\CoreServices'
-    appCore: 'App\AppCore'
+    - name: app_core
+      patterns: ['App\Core']
+    - name: app-core-services
+      patterns: ['App\CoreServices']
+    - name: appCore
+      patterns: ['App\AppCore']
 YAML);
 
         $config = $this->loader->load($path);
 
-        // All three layer names must be preserved as written; without preservation
-        // the loader would camelCase app_core → appCore and silently lose them.
-        self::assertArrayHasKey('app_core', $config['architecture']['layers']);
-        self::assertArrayHasKey('app-core-services', $config['architecture']['layers']);
-        self::assertArrayHasKey('appCore', $config['architecture']['layers']);
-        self::assertSame('App\\Core', $config['architecture']['layers']['app_core']);
-        self::assertSame('App\\CoreServices', $config['architecture']['layers']['app-core-services']);
+        // Layer list preserved as a sequential list.
+        self::assertIsArray($config['architecture']['layers']);
+        self::assertCount(3, $config['architecture']['layers']);
+        self::assertSame('app_core', $config['architecture']['layers'][0]['name']);
+        self::assertSame('app-core-services', $config['architecture']['layers'][1]['name']);
+        self::assertSame('appCore', $config['architecture']['layers'][2]['name']);
     }
 
     public function testLoadPreservesArchitectureAllowSourceLayerNames(): void
@@ -626,8 +633,10 @@ YAML);
         file_put_contents($path, <<<'YAML'
 architecture:
   layers:
-    app_core: 'App\Core'
-    app_service: 'App\Service'
+    - name: app_core
+      patterns: ['App\Core']
+    - name: app_service
+      patterns: ['App\Service']
   allow:
     app_core:
       - app_service
@@ -635,7 +644,8 @@ YAML);
 
         $config = $this->loader->load($path);
 
-        // Source layer name preserved
+        // Source layer name in `allow` is still a map key — preserved verbatim
+        // via ConfigSchema::nestedIdentifierKeyPaths().
         self::assertArrayHasKey('app_core', $config['architecture']['allow']);
         // Target list values are scalars — unaffected by key normalization
         self::assertSame(['app_service'], $config['architecture']['allow']['app_core']);
@@ -647,7 +657,8 @@ YAML);
         file_put_contents($path, <<<'YAML'
 architecture:
   layers:
-    app_core: 'App\Core'
+    - name: app_core
+      patterns: ['App\Core']
 disabled_rules:
   - architecture.layer-violation
 exclude_paths:
@@ -659,8 +670,8 @@ YAML);
         // CLI-style top-level snake_case keys are normalized to camelCase as before
         self::assertArrayHasKey('disabledRules', $config);
         self::assertArrayHasKey('excludePaths', $config);
-        // Architecture layer name preserved
-        self::assertArrayHasKey('app_core', $config['architecture']['layers']);
+        // Architecture layer name preserved (as the value of `name`).
+        self::assertSame('app_core', $config['architecture']['layers'][0]['name']);
     }
 
     public function testLoadAcceptsKebabCaseLayerNamesMatchingLayerDefinitionRegex(): void
@@ -671,14 +682,16 @@ YAML);
         file_put_contents($path, <<<'YAML'
 architecture:
   layers:
-    'app-core': 'App\Core'
-    'app_core_v2': 'App\CoreV2'
+    - name: 'app-core'
+      patterns: ['App\Core']
+    - name: 'app_core_v2'
+      patterns: ['App\CoreV2']
 YAML);
 
         $config = $this->loader->load($path);
 
-        self::assertArrayHasKey('app-core', $config['architecture']['layers']);
-        self::assertArrayHasKey('app_core_v2', $config['architecture']['layers']);
+        self::assertSame('app-core', $config['architecture']['layers'][0]['name']);
+        self::assertSame('app_core_v2', $config['architecture']['layers'][1]['name']);
     }
 
     private function removeDirectory(string $dir): void

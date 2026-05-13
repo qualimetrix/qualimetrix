@@ -33,118 +33,141 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
-    public function match_returnsNullForEmptyFqn(): void
+    public function matches_returnsFalseForEmptyFqn(): void
     {
         $definition = new LayerDefinition('any', ['App\\Foo']);
 
-        self::assertNull($definition->match(''));
+        self::assertFalse($definition->matches(''));
     }
 
     #[Test]
-    public function match_pureLiteralMatchesExactNamespace(): void
+    public function matches_pureLiteralMatchesExactNamespace(): void
     {
         $definition = new LayerDefinition('service', ['App\\Service']);
 
-        self::assertSame(11, $definition->match('App\\Service'));
+        self::assertTrue($definition->matches('App\\Service'));
     }
 
     #[Test]
-    public function match_pureLiteralMatchesChildNamespace(): void
+    public function matches_pureLiteralMatchesChildNamespace(): void
     {
         $definition = new LayerDefinition('service', ['App\\Service']);
 
-        self::assertSame(11, $definition->match('App\\Service\\Foo'));
+        self::assertTrue($definition->matches('App\\Service\\Foo'));
     }
 
     #[Test]
-    public function match_pureLiteralMatchesDeeplyNestedNamespace(): void
+    public function matches_pureLiteralMatchesDeeplyNestedNamespace(): void
     {
         $definition = new LayerDefinition('service', ['App\\Service']);
 
-        self::assertSame(11, $definition->match('App\\Service\\Deep\\Sub'));
+        self::assertTrue($definition->matches('App\\Service\\Deep\\Sub'));
     }
 
     #[Test]
-    public function match_pureLiteralRespectsBoundary(): void
+    public function matches_pureLiteralRespectsBoundary(): void
     {
         $definition = new LayerDefinition('service', ['App\\Service']);
 
-        self::assertNull(
-            $definition->match('App\\ServiceManager\\Foo'),
+        self::assertFalse(
+            $definition->matches('App\\ServiceManager\\Foo'),
             'App\\Service must not match App\\ServiceManager — namespace boundaries are respected.',
         );
     }
 
     #[Test]
-    public function match_globWithDoubleStarReturnsPrefixSpecificity(): void
+    public function matches_globWithDoubleStar(): void
     {
         $definition = new LayerDefinition('repository', ['App\\**\\Repository']);
 
-        // Literal prefix before first '*' is "App\\" → length 4.
-        self::assertSame(4, $definition->match('App\\X\\Repository'));
+        self::assertTrue($definition->matches('App\\X\\Repository'));
     }
 
     #[Test]
-    public function match_globWithTrailingDoubleStarReturnsPrefixSpecificity(): void
+    public function matches_globWithTrailingDoubleStar(): void
     {
         $definition = new LayerDefinition('service', ['App\\Service\\**']);
 
-        // Literal prefix "App\\Service\\" → length 12.
-        self::assertSame(12, $definition->match('App\\Service\\Foo'));
+        self::assertTrue($definition->matches('App\\Service\\Foo'));
     }
 
     #[Test]
-    public function match_pureLiteralAppFooSpecificity(): void
-    {
-        $definition = new LayerDefinition('foo', ['App\\Foo']);
-
-        self::assertSame(7, $definition->match('App\\Foo'));
-        self::assertSame(7, $definition->match('App\\Foo\\Bar'));
-    }
-
-    #[Test]
-    public function match_returnsMaximumSpecificityAcrossPatterns(): void
+    public function matches_anyOfMultiplePatternsSatisfies(): void
     {
         $definition = new LayerDefinition('mixed', ['App\\**', 'App\\Service\\Special']);
 
-        // For App\Service\Special\Foo, the literal prefix "App\\" (specificity 4)
-        // and the literal "App\Service\Special" (specificity 19) both match. Max wins.
-        self::assertSame(19, $definition->match('App\\Service\\Special\\Foo'));
+        self::assertTrue($definition->matches('App\\Service\\Special\\Foo'));
+        self::assertTrue($definition->matches('App\\Other'));
     }
 
     #[Test]
-    public function match_returnsNullWhenNoPatternMatches(): void
+    public function matches_returnsFalseWhenNoPatternMatches(): void
     {
         $definition = new LayerDefinition('controller', ['App\\Controller', 'App\\Http\\**']);
 
-        self::assertNull($definition->match('App\\Service\\Foo'));
+        self::assertFalse($definition->matches('App\\Service\\Foo'));
     }
 
     #[Test]
-    public function match_questionMarkWildcardComputesSpecificityFromQuestionMark(): void
+    public function matches_questionMarkWildcard(): void
     {
         $definition = new LayerDefinition('q', ['App\\?oo']);
 
-        // First wildcard at position 4 → specificity 4.
-        self::assertSame(4, $definition->match('App\\Foo'));
+        self::assertTrue($definition->matches('App\\Foo'));
     }
 
     #[Test]
-    public function match_charClassWildcardComputesSpecificityFromBracket(): void
+    public function matches_charClassWildcard(): void
     {
         $definition = new LayerDefinition('c', ['App\\[ABC]oo']);
 
-        // First wildcard `[` at position 4 → specificity 4.
-        self::assertSame(4, $definition->match('App\\Aoo'));
+        self::assertTrue($definition->matches('App\\Aoo'));
     }
 
     #[Test]
-    public function match_normalizesTrailingBackslashInPattern(): void
+    public function matches_normalizesTrailingBackslashInPattern(): void
     {
         $definition = new LayerDefinition('svc', ['App\\Service\\']);
 
-        // Trailing backslash stripped: pattern length 11.
-        self::assertSame(11, $definition->match('App\\Service\\Foo'));
+        // Trailing backslash stripped before matching.
+        self::assertTrue($definition->matches('App\\Service\\Foo'));
+        self::assertTrue($definition->matches('App\\Service'));
+    }
+
+    #[Test]
+    public function firstMatchingPattern_returnsTheFirstMatch(): void
+    {
+        $definition = new LayerDefinition('mixed', ['App\\Other', 'App\\**', 'App\\Service\\Special']);
+
+        // App\Service\Special\Foo is matched by patterns at index 1 and 2 —
+        // the first in declaration order wins.
+        self::assertSame('App\\**', $definition->firstMatchingPattern('App\\Service\\Special\\Foo'));
+    }
+
+    #[Test]
+    public function firstMatchingPattern_returnsNullForNoMatch(): void
+    {
+        $definition = new LayerDefinition('svc', ['App\\Service']);
+
+        self::assertNull($definition->firstMatchingPattern('Other\\Foo'));
+    }
+
+    #[Test]
+    public function firstMatchingPattern_returnsNullForEmptyFqn(): void
+    {
+        $definition = new LayerDefinition('svc', ['App\\Service']);
+
+        self::assertNull($definition->firstMatchingPattern(''));
+    }
+
+    #[Test]
+    public function firstMatchingPattern_returnsOriginalPatternStringEvenWithTrailingBackslash(): void
+    {
+        $definition = new LayerDefinition('svc', ['App\\Service\\']);
+
+        // The factory preserves the trailing backslash in the original list
+        // for diagnostics. Returned string matches the source verbatim.
+        self::assertSame('App\\Service\\', $definition->firstMatchingPattern('App\\Service\\Foo'));
     }
 
     #[Test]
