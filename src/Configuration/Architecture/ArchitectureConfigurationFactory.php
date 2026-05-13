@@ -5,9 +5,6 @@ declare(strict_types=1);
 namespace Qualimetrix\Configuration\Architecture;
 
 use InvalidArgumentException;
-use Psr\Log\LoggerInterface;
-use Psr\Log\LogLevel;
-use Psr\Log\NullLogger;
 use Qualimetrix\Configuration\Exception\ConfigLoadException;
 use Qualimetrix\Configuration\Pipeline\DeferredWarning;
 use Qualimetrix\Core\Architecture\ArchitectureConfiguration;
@@ -46,8 +43,8 @@ use Qualimetrix\Core\Architecture\Layer\LayerRegistry;
  * - Cross-validation between `layers` and `allow` (every reference in `allow`
  *   must name a declared layer).
  * - Long-form allow-entry normalization (`{target, types}` → bare string;
- *   `types` is reserved for a future filter and triggers a deprecation warning).
- * - Mutual-allow detection (`A → B` AND `B → A`) — surfaced as a warning.
+ *   `types` is reserved for a future filter and triggers a deferred deprecation warning).
+ * - Mutual-allow detection (`A → B` AND `B → A`) — surfaced as a deferred warning.
  * - Duplicate-pattern detection across layers (under declaration-order
  *   semantics any class matching the duplicate would always go to the earlier
  *   layer — the second layer is unreachable; reject at load with a clear error).
@@ -55,12 +52,17 @@ use Qualimetrix\Core\Architecture\Layer\LayerRegistry;
  * All structural errors surface as {@see ConfigLoadException} with the
  * logical path {@code 'architecture'}.
  *
- * The optional `LoggerInterface` argument is retained for backward
- * compatibility with the configuration pipeline; Step 1 of the follow-up
- * plan removes it in favour of draining
- * {@see ArchitectureFactoryResult::$warnings} via the runtime configurator.
- * For now, when a logger is provided, warnings are also emitted through it
- * (matching the pre-pivot behaviour).
+ * **Warning delivery.** The factory does NOT depend on a PSR-3 logger. Warnings
+ * are appended to a local list and returned inside
+ * {@see ArchitectureFactoryResult::$warnings}. The factory runs during
+ * configuration resolution, which happens before the user-facing logger is
+ * configured by
+ * {@see \Qualimetrix\Infrastructure\Console\RuntimeConfigurator::configureLogger()};
+ * deferring the warnings ensures they survive until the logger is ready.
+ * {@see \Qualimetrix\Configuration\Pipeline\ConfigurationPipeline} collects the
+ * list into {@see \Qualimetrix\Configuration\Pipeline\ResolvedConfiguration::$deferredWarnings},
+ * and {@see \Qualimetrix\Infrastructure\Console\RuntimeConfigurator} drains it
+ * to the configured logger after the holder is populated.
  *
  * @qmx-threshold complexity.wmc warning=85 error=100
  *                Comprehensive structural validation of a free-form YAML map
@@ -78,7 +80,8 @@ final class ArchitectureConfigurationFactory
     private const array ALLOWED_TOP_LEVEL_KEYS = ['layers', 'allow', 'coverage'];
 
     /**
-     * Converts the merged YAML map under {@code architecture:} to a typed result.
+     * Converts the merged YAML map under {@code architecture:} to a typed VO
+     * paired with a list of deferred warnings.
      *
      * Callers can pass {@code $merged['architecture'] ?? []} directly; both
      * associative and (degenerate) sequential arrays are accepted at the type
@@ -90,10 +93,8 @@ final class ArchitectureConfigurationFactory
      *
      * @param array<string, mixed>|array<int, mixed> $raw
      */
-    public function fromArray(array $raw, ?LoggerInterface $logger = null): ArchitectureFactoryResult
+    public function fromArray(array $raw): ArchitectureFactoryResult
     {
-        $logger ??= new NullLogger();
-
         if ($raw === []) {
             return new ArchitectureFactoryResult(
                 new ArchitectureConfiguration(
@@ -114,13 +115,14 @@ final class ArchitectureConfigurationFactory
         $this->rejectDuplicatePatterns($definitions);
         $registry = $this->buildRegistry($definitions);
 
+        $warnings = [];
         $layerNames = $registry->layerNames();
-        $allowedTargets = $this->buildAllowedTargets($allowRaw, $layerNames, $logger);
+        $allowedTargets = $this->buildAllowedTargets($allowRaw, $layerNames, $warnings);
 
         $policy = new LayerPolicy($allowedTargets);
         $coverage = $this->resolveCoverage($coverageRaw);
 
-        $warnings = $this->reportMutualAllow($allowedTargets, $logger);
+        $this->collectMutualAllowWarning($allowedTargets, $warnings);
 
         return new ArchitectureFactoryResult(
             new ArchitectureConfiguration($registry, $policy, $coverage),
@@ -374,10 +376,11 @@ final class ArchitectureConfigurationFactory
 
     /**
      * @param list<string> $layerNames Names from the registry; used for cross-validation.
+     * @param list<DeferredWarning> $warnings Accumulator, mutated by reference for warning collection.
      *
      * @return array<string, list<string>> Map source → list of allowed targets, deduplicated and self-references stripped.
      */
-    private function buildAllowedTargets(mixed $allowRaw, array $layerNames, LoggerInterface $logger): array
+    private function buildAllowedTargets(mixed $allowRaw, array $layerNames, array &$warnings): array
     {
         if ($allowRaw === [] || $allowRaw === null) {
             return [];
@@ -408,7 +411,7 @@ final class ArchitectureConfigurationFactory
                 );
             }
 
-            $allowed[$source] = $this->normalizeAllowTargets($source, $targets, $layerSet, $logger);
+            $allowed[$source] = $this->normalizeAllowTargets($source, $targets, $layerSet, $warnings);
         }
 
         return $allowed;
@@ -416,10 +419,11 @@ final class ArchitectureConfigurationFactory
 
     /**
      * @param array<string, int> $layerSet
+     * @param list<DeferredWarning> $warnings Accumulator, mutated by reference for warning collection.
      *
      * @return list<string>
      */
-    private function normalizeAllowTargets(string $source, mixed $targets, array $layerSet, LoggerInterface $logger): array
+    private function normalizeAllowTargets(string $source, mixed $targets, array $layerSet, array &$warnings): array
     {
         if ($targets === null) {
             return [];
@@ -435,7 +439,7 @@ final class ArchitectureConfigurationFactory
         $result = [];
         $seen = [];
         foreach ($targets as $index => $entry) {
-            $target = $this->normalizeAllowEntry($source, $index, $entry, $logger);
+            $target = $this->normalizeAllowEntry($source, $index, $entry, $warnings);
 
             // Self-reference: silently dedup (same-layer is always allowed by LayerPolicy).
             if ($target === $source) {
@@ -467,9 +471,11 @@ final class ArchitectureConfigurationFactory
      * - Long:  associative array {@code [target: 'service', types: ['method_call']]}.
      *
      * The long form's {@code types} key is accepted for forward compatibility but
-     * not yet enforced; if present, emit a PSR-3 warning.
+     * not yet enforced; if present, append a deferred deprecation-style warning.
+     *
+     * @param list<DeferredWarning> $warnings Accumulator, mutated by reference for warning collection.
      */
-    private function normalizeAllowEntry(string $source, int $index, mixed $entry, LoggerInterface $logger): string
+    private function normalizeAllowEntry(string $source, int $index, mixed $entry, array &$warnings): string
     {
         if (\is_string($entry)) {
             if ($entry === '') {
@@ -484,7 +490,7 @@ final class ArchitectureConfigurationFactory
 
         if (\is_array($entry) && !array_is_list($entry) && isset($entry['target']) && \is_string($entry['target']) && $entry['target'] !== '') {
             if (\array_key_exists('types', $entry)) {
-                $logger->warning(\sprintf(
+                $warnings[] = DeferredWarning::warning(\sprintf(
                     "architecture.allow.%s: 'types' filter declared but not yet enforced (Phase 2).",
                     $source,
                 ));
@@ -534,19 +540,14 @@ final class ArchitectureConfigurationFactory
     }
 
     /**
-     * Scans for symmetric {@code A → B} / {@code B → A} pairs.
-     *
-     * Mutual allow is legal but usually indicates that the two layers should
-     * be merged. The warning is returned as a {@see DeferredWarning} for
-     * downstream draining (see Step 1 of the follow-up plan) AND emitted via
-     * the optional PSR-3 logger so existing callers (the configuration
-     * pipeline) keep functioning during the transition.
+     * Scans for symmetric {@code A → B} / {@code B → A} pairs and appends one
+     * deferred warning listing every such pair. Mutual allow is legal but
+     * usually indicates that the two layers should be merged.
      *
      * @param array<string, list<string>> $allowedTargets
-     *
-     * @return list<DeferredWarning>
+     * @param list<DeferredWarning> $warnings Accumulator, mutated by reference for warning collection.
      */
-    private function reportMutualAllow(array $allowedTargets, LoggerInterface $logger): array
+    private function collectMutualAllowWarning(array $allowedTargets, array &$warnings): void
     {
         $pairs = [];
         $seen = [];
@@ -576,7 +577,7 @@ final class ArchitectureConfigurationFactory
         }
 
         if ($pairs === []) {
-            return [];
+            return;
         }
 
         $rendered = implode(', ', array_map(
@@ -584,13 +585,9 @@ final class ArchitectureConfigurationFactory
             $pairs,
         ));
 
-        $message = \sprintf(
+        $warnings[] = DeferredWarning::warning(\sprintf(
             'architecture.allow: mutual-allow detected between layer pair(s): %s. Consider merging the layers if this is unintentional.',
             $rendered,
-        );
-
-        $logger->warning($message);
-
-        return [new DeferredWarning(LogLevel::WARNING, $message)];
+        ));
     }
 }

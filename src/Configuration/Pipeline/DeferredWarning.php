@@ -4,36 +4,53 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Configuration\Pipeline;
 
+use Psr\Log\LoggerInterface;
+use Psr\Log\LogLevel;
+
 /**
- * Immutable VO carrying a warning emitted during configuration resolution
- * that must be deferred until the user-configured logger is wired up.
+ * Captured PSR-3 log record produced during configuration resolution.
+ *
+ * Configuration resolution runs before the user-facing logger is configured
+ * (see {@see \Qualimetrix\Infrastructure\Console\RuntimeConfigurator::configureLogger()}),
+ * so any warnings emitted at that stage must be deferred and replayed once the
+ * logger is ready. Each warning carries a PSR-3 level, message, and optional
+ * context, which {@see \Qualimetrix\Infrastructure\Console\RuntimeConfigurator}
+ * forwards verbatim to the configured logger via {@see LoggerInterface::log()}.
  *
  * Configuration sources (e.g.,
  * {@see \Qualimetrix\Configuration\Architecture\ArchitectureConfigurationFactory})
- * resolve before {@see \Qualimetrix\Infrastructure\Console\RuntimeConfigurator}
- * swaps the holder's `NullLogger` for the real one. Logging a warning at
- * resolution time would therefore drop it on the floor. Instead, factories
- * emit `DeferredWarning`s; `RuntimeConfigurator::configure()` drains the
- * queue to the configured logger after `configureLogger()` runs.
+ * append `DeferredWarning`s into
+ * {@see \Qualimetrix\Configuration\Architecture\ArchitectureFactoryResult::$warnings};
+ * the pipeline forwards them through
+ * {@see ResolvedConfiguration::$deferredWarnings} into the runtime configurator.
  *
- * Step 1 of the architecture-rules follow-up plan wires this VO through
- * `ResolvedConfiguration` and the runtime configurator. Step 0 introduces
- * the type and an empty-list slot on
- * {@see \Qualimetrix\Configuration\Architecture\ArchitectureFactoryResult}
- * so the seam is in place.
+ * Use {@see self::warning()} for the common case (level = {@see LogLevel::WARNING}).
+ * For other severities pass {@see LogLevel} constants directly to the constructor.
  *
- * @see ArchitectureFactoryResult
+ * @see \Qualimetrix\Configuration\Architecture\ArchitectureFactoryResult
+ *
+ * @phpstan-type LogLevelString 'emergency'|'alert'|'critical'|'error'|'warning'|'notice'|'info'|'debug'
  */
 final readonly class DeferredWarning
 {
     /**
-     * @param string $level PSR-3 log level (e.g. `warning`, `info`).
-     * @param string $message Human-readable warning text.
-     * @param array<string, mixed> $context Optional structured context for the logger.
+     * @param LogLevelString $level A PSR-3 {@see LogLevel} constant value
+     * @param string $message Pre-rendered message ready to be passed to {@see LoggerInterface::log()}
+     * @param array<string, mixed> $context Optional PSR-3 context (forwarded verbatim)
      */
     public function __construct(
         public string $level,
         public string $message,
         public array $context = [],
     ) {}
+
+    /**
+     * Convenience factory for the common {@see LogLevel::WARNING} case.
+     *
+     * @param array<string, mixed> $context
+     */
+    public static function warning(string $message, array $context = []): self
+    {
+        return new self(LogLevel::WARNING, $message, $context);
+    }
 }
