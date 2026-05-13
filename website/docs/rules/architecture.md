@@ -205,15 +205,22 @@ Declaring layers as YAML and enforcing them in CI turns the architecture diagram
 <!-- llms:skip-begin -->
 ### Configuration
 
+`architecture.layers` is an **ordered list** of layer entries. Each entry has a `name` and a `patterns` list. When a class FQN matches the patterns of multiple layers, the **first match in declaration order wins** — the same mechanism used by deptrac, ArchUnit, `.gitignore`, and Apache config blocks.
+
 ```yaml
 # qmx.yaml
 architecture:
   layers:
-    controller: 'App\Controller\**'
-    service:    'App\Service\**'
-    repository: 'App\Repository\**'
-    domain:     'App\Domain\**'
-    doctrine:   'Doctrine\**'        # vendor as a first-class layer
+    - name: controller
+      patterns: ['App\Controller\**']
+    - name: service
+      patterns: ['App\Service\**']
+    - name: repository
+      patterns: ['App\Repository\**']
+    - name: domain
+      patterns: ['App\Domain\**']
+    - name: doctrine
+      patterns: ['Doctrine\**']        # vendor as a first-class layer
 
   allow:
     controller: [service]                 # controllers may only call services
@@ -228,20 +235,43 @@ architecture:
 
 Patterns support both prefix matching (no wildcards, e.g. `App\Controller`) and glob matching (`*`, `**`, `?`, `[…]`). Same-layer dependencies are always allowed (sub-module isolation is intentionally out of scope for the MVP).
 
-If a class matches patterns from two layers, the layer with the **longer literal prefix** wins — `App\Service\Internal\**` is preferred over `App\Service\**`. Ties on specificity are a configuration error and are reported at config-load time.
+**Ordering and the catch-all idiom.** Declaration order is meaningful. Put **narrow** layers first and **broad** layers after — `App\Service\Internal\**` before `App\Service\**`. To capture everything left, declare a final layer with the pattern `**`:
+
+```yaml
+architecture:
+  layers:
+    - name: service
+      patterns: ['App\Service\**']
+    - name: catchall
+      patterns: ['**']                # captures every remaining class
+  allow:
+    service:  [catchall]
+    catchall: []
+```
+
+The catch-all replaces the older `coverage: warn` recipe for "show me everything I haven't classified yet". The `architecture.coverage` mechanism still works (see "Coverage modes" below), but with a catch-all layer it is usually unnecessary.
+
+**YAML merge semantics.** When a preset and a project config both define `architecture.layers`, the **later source replaces the entire list** — order is the user's disambiguation tool, and merging two ordered lists would silently destroy intent. The `architecture.allow` map continues to merge by source layer, and the scalar `architecture.coverage` is overridden by the later source.
 
 #### Configuration example with vendor and shared layers
 
 ```yaml
 architecture:
   layers:
-    domain:    'App\Domain\**'
-    app:       'App\Application\**'
-    infra:     'App\Infrastructure\**'
-    web:       'App\UserInterface\Web\**'
-    cli:       'App\UserInterface\Cli\**'
-    symfony:   'Symfony\**'
-    doctrine:  'Doctrine\**'
+    - name: domain
+      patterns: ['App\Domain\**']
+    - name: app
+      patterns: ['App\Application\**']
+    - name: infra
+      patterns: ['App\Infrastructure\**']
+    - name: web
+      patterns: ['App\UserInterface\Web\**']
+    - name: cli
+      patterns: ['App\UserInterface\Cli\**']
+    - name: symfony
+      patterns: ['Symfony\**']
+    - name: doctrine
+      patterns: ['Doctrine\**']
 
   allow:
     domain:   []
@@ -276,11 +306,29 @@ Examples of unclassified classes: App\Legacy\Foo, App\Legacy\Bar, App\Legacy\Baz
 To suppress the diagnostic for a known set of unclassified classes, declare a catch-all layer covering them (or accept the gap by leaving `coverage: ignore`).
 <!-- llms:skip-end -->
 
-### Layer collision diagnostics
+### Unreachable-layer diagnostic
 
-`architecture.layer-collision` is emitted whenever a class FQN matches two or more layer definitions with **equal specificity** — the configuration is ambiguous and the rule cannot decide which layer owns the class. One `Error`-severity violation per ambiguous class is reported under this dedicated rule name. The configuration validator catches many such cases at load time (identical patterns, equal-prefix patterns with matching specificity), but corner cases involving glob patterns are caught here, at analysis time.
+`architecture.unreachable-layer` (severity `Info`) fires once per declared layer whose patterns matched zero classes during analysis. Three possible causes:
 
-The fix is always to tighten one of the colliding patterns so its literal prefix is more specific, or to move the class out of the overlap. The diagnostic message lists every colliding layer name and the pattern that matched.
+1. **Shadowed by a broader layer earlier in the order.** A pattern like `'**'` or `'App\**'` declared before a narrower one captures every class first.
+2. **Pattern matches no class in the analysed codebase.** The layer is declared for a namespace that doesn't exist yet — or the namespace was renamed.
+3. **DTO-only layer with no outgoing dependencies that happens not to have any classes registered yet.** Hit counting is over all analysed classes (not the dependency graph), so layers with classes but no outgoing dependencies still register hits — this case only arises when the layer truly contains no classes.
+
+Because it is `Info` severity, the diagnostic does not fail the run by default. Set `fail_on: info` to opt into stricter CI behaviour. Run `qmx debug:layer-assignment <class>` (Step 6 of the architecture-rules follow-up) to inspect specific classes when triaging.
+
+### Potential-shadow diagnostic
+
+`architecture.potential-shadow` (severity `Info`) detects the quiet failure mode of declaration-order matching: when a class matches multiple layers, only the first wins, and earlier layers can silently steal classes that a user expected a later, narrower layer to own.
+
+Detection is **evidence-based**. The rule walks every analysed class, collects all layers whose patterns match, and records `(assigned, shadowed)` pairs that actually occur in the codebase. This catches every real shadow regardless of pattern shape — prefix overlap (`App\**\Foo` shadowing `App\Service\**`), suffix theft (`**\*Service` shadowing `App\Domain\**`), or any other intersection.
+
+One diagnostic is emitted per `(assigned, shadowed)` pair, with a sample of up to 5 example class FQNs (sorted lexicographically). Output is **deterministic across runs** — the pair list is sorted before emission so CI diffs are stable.
+
+The fix is either to:
+- Re-order the layers so the more-specific one is declared first (often what the user meant), or
+- Tighten the broader pattern so the layers no longer overlap.
+
+Use `qmx debug:layer-assignment <class>` to verify the fix per specific class.
 
 ### Options
 
@@ -388,13 +436,13 @@ The baseline file stores layer violations by source layer, target layer, depende
 ### Implementation notes
 
 - **Namespace-based membership only.** Layer membership is decided purely by matching the class FQN against namespace patterns. Class-name suffixes, marker interfaces, and PHP attributes are intentionally not supported — keeping the model namespace-only avoids drift between layer rules and your project's naming conventions, and matches the way most teams already organise their code.
-- **Single layer per class.** Every class belongs to at most one layer. When two patterns match the same class, the layer with the **longer literal prefix** wins (specificity = length of the substring before the first wildcard character). Equal-specificity ties are a configuration error and surface at config-load time, not analysis time.
-- **Vendor namespaces are first-class layers.** Declare `doctrine: 'Doctrine\**'` or `symfony: 'Symfony\**'` to write policy against vendor edges (e.g., "only repositories may use Doctrine"). Vendor layers behave identically to project layers.
+- **Single layer per class, declaration-order matching.** Every class belongs to at most one layer. When patterns from two layers match the same class, the **layer declared first** in `architecture.layers` wins (the same mechanism used by deptrac, ArchUnit, `.gitignore`, and Apache config). There is no specificity scoring — order is the user's tool to express intent, and the engine does not second-guess it. See [ADR 0006](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0006-architecture-rules-declaration-order.md) for the rationale.
+- **Vendor namespaces are first-class layers.** Declare a `doctrine` or `symfony` layer with `Doctrine\**` / `Symfony\**` patterns to write policy against vendor edges (e.g., "only repositories may use Doctrine"). Vendor layers behave identically to project layers.
 - **Same-layer dependencies are always allowed** in the MVP. Sub-module isolation within a single layer is deferred to Phase 2.
 - **Reporting granularity is per use-site.** Each forbidden dependency edge in `Qualimetrix\Analysis\Collection\Dependency\DependencyGraph` produces one violation. If a class violates the policy through five different method calls, you get five violations. Baseline identity collapses them to a single entry (see Suppression above).
 - **Out-of-layer ends are silently ignored** for layer-violation purposes. Their count is reported separately via the `coverage` mode.
-- **Layer collisions during resolution are skipped silently per-edge.** The configuration validator is responsible for rejecting ambiguous configurations up front; the runtime defence is a guard against edge cases that slip through.
 - **Default-enabled, but inert without layers.** The rule reports `enabled: true` by default and short-circuits when `architecture.layers` is empty, so projects without architecture configuration see zero overhead.
+- **Safety nets, not ambiguity errors.** The previous specificity-based algorithm rejected ambiguous configurations at load time. Under declaration-order matching, ambiguity does not exist — the order disambiguates — but the user can still **misorder** layers. Two info-severity diagnostics catch this: `architecture.unreachable-layer` (a layer that captured nothing) and `architecture.potential-shadow` (an earlier layer that silently stole classes from a later one). See the dedicated sections above.
 
 <!-- llms:skip-end -->
 
