@@ -245,8 +245,8 @@ final class ConfigurationPipelineTest extends TestCase
         $configStage = $this->createStage(20, 'config', new ConfigurationLayer('qmx.yaml', [
             'architecture' => [
                 'layers' => [
-                    'controller' => 'App\\Controller',
-                    'service' => 'App\\Service',
+                    ['name' => 'controller', 'patterns' => ['App\\Controller']],
+                    ['name' => 'service', 'patterns' => ['App\\Service']],
                 ],
                 'allow' => [
                     'controller' => ['service'],
@@ -262,6 +262,7 @@ final class ConfigurationPipelineTest extends TestCase
 
         self::assertNotNull($resolved->architecture);
         self::assertFalse($resolved->architecture->isEmpty());
+        // Declaration order is preserved (not alphabetically sorted).
         self::assertSame(['controller', 'service'], $resolved->architecture->registry()->layerNames());
         self::assertTrue($resolved->architecture->policy()->isAllowed('controller', 'service'));
         self::assertSame(CoverageMode::Warn, $resolved->architecture->coverage());
@@ -276,8 +277,8 @@ final class ConfigurationPipelineTest extends TestCase
         $configStage = $this->createStage(20, 'config', new ConfigurationLayer('qmx.yaml', [
             'architecture' => [
                 'layers' => [
-                    'a' => 'App\\A',
-                    'b' => 'App\\B',
+                    ['name' => 'a', 'patterns' => ['App\\A']],
+                    ['name' => 'b', 'patterns' => ['App\\B']],
                 ],
                 'allow' => [
                     'a' => ['b'],
@@ -303,19 +304,56 @@ final class ConfigurationPipelineTest extends TestCase
     }
 
     #[Test]
-    public function architectureLayersAccumulateAcrossStages(): void
+    public function architecturePresetLayersAreReplacedByProjectLayers(): void
     {
-        // End-to-end test for the merger fix: a preset-style stage declares
-        // architecture.layers, a project-style stage declares
-        // architecture.coverage, and the resolved configuration must contain
-        // both — the preset layers must not be wiped out by the project layer.
+        // ADR 0006: when a later config source defines `architecture.layers`,
+        // it REPLACES the base list entirely. Order is meaningful and
+        // mixing-and-matching across sources is unsafe.
         $pipeline = new ConfigurationPipeline();
 
         $presetStage = $this->createStage(15, 'preset', new ConfigurationLayer('preset', [
             'architecture' => [
                 'layers' => [
-                    'controller' => 'App\\Controller',
-                    'service' => 'App\\Service',
+                    ['name' => 'controller', 'patterns' => ['App\\Controller']],
+                    ['name' => 'service', 'patterns' => ['App\\Service']],
+                ],
+            ],
+        ]));
+
+        $projectStage = $this->createStage(20, 'project', new ConfigurationLayer('qmx.yaml', [
+            'architecture' => [
+                'layers' => [
+                    ['name' => 'domain', 'patterns' => ['App\\Domain']],
+                ],
+                'coverage' => 'error',
+            ],
+        ]));
+
+        $pipeline->addStage($presetStage);
+        $pipeline->addStage($projectStage);
+
+        $context = new ConfigurationContext(new ArrayInput([]), '/tmp');
+        $resolved = $pipeline->resolve($context);
+
+        self::assertNotNull($resolved->architecture);
+        // Project's single 'domain' layer replaced the preset's two.
+        self::assertSame(['domain'], $resolved->architecture->registry()->layerNames());
+        self::assertSame(CoverageMode::Error, $resolved->architecture->coverage());
+    }
+
+    #[Test]
+    public function architecturePresetLayersAreKeptWhenProjectDoesNotDefineLayers(): void
+    {
+        // The replace-whole-list rule only kicks in when the overlay DEFINES
+        // `layers`. If it only touches `coverage` or `allow`, the base list
+        // is preserved.
+        $pipeline = new ConfigurationPipeline();
+
+        $presetStage = $this->createStage(15, 'preset', new ConfigurationLayer('preset', [
+            'architecture' => [
+                'layers' => [
+                    ['name' => 'controller', 'patterns' => ['App\\Controller']],
+                    ['name' => 'service', 'patterns' => ['App\\Service']],
                 ],
             ],
         ]));

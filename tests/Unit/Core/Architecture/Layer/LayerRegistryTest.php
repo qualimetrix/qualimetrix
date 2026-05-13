@@ -8,14 +8,14 @@ use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Core\Architecture\Layer\LayerCollisionException;
 use Qualimetrix\Core\Architecture\Layer\LayerDefinition;
+use Qualimetrix\Core\Architecture\Layer\LayerMatch;
 use Qualimetrix\Core\Architecture\Layer\LayerRegistry;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use ReflectionProperty;
 
 #[CoversClass(LayerRegistry::class)]
-#[CoversClass(LayerCollisionException::class)]
+#[CoversClass(LayerMatch::class)]
 final class LayerRegistryTest extends TestCase
 {
     #[Test]
@@ -54,14 +54,14 @@ final class LayerRegistryTest extends TestCase
     }
 
     #[Test]
-    public function resolveLayer_longestSpecificityWins(): void
+    public function resolveLayer_declarationOrderFirstMatchWins_narrowBeforeBroad(): void
     {
+        // The narrower layer is declared first → it wins for classes inside its scope.
         $registry = new LayerRegistry([
+            new LayerDefinition('service', ['App\\Service\\**']),
             new LayerDefinition('any', ['App\\**']),
-            new LayerDefinition('service', ['App\\Service']),
         ]);
 
-        // `App\Service` (specificity 11) beats `App\**` (specificity 4).
         self::assertSame(
             'service',
             $registry->resolveLayer(SymbolPath::forClass('App\\Service', 'UserService')),
@@ -69,79 +69,32 @@ final class LayerRegistryTest extends TestCase
     }
 
     #[Test]
-    public function resolveLayer_longestSpecificityWinsAcrossPatterns(): void
+    public function resolveLayer_declarationOrderFirstMatchWins_broadBeforeNarrow(): void
     {
+        // Reversed order: the broad layer wins, shadowing the narrower one.
         $registry = new LayerRegistry([
-            new LayerDefinition('catchall', ['App\\**']),
-            new LayerDefinition('special', ['App\\Service\\Special\\**']),
+            new LayerDefinition('any', ['App\\**']),
+            new LayerDefinition('service', ['App\\Service\\**']),
         ]);
 
         self::assertSame(
-            'special',
-            $registry->resolveLayer(SymbolPath::forClass('App\\Service\\Special\\Module', 'Thing')),
+            'any',
+            $registry->resolveLayer(SymbolPath::forClass('App\\Service', 'UserService')),
         );
     }
 
     #[Test]
-    public function resolveLayer_equalSpecificityCollision_throws(): void
+    public function resolveLayer_catchAllAsFinalLayerCapturesResidual(): void
     {
         $registry = new LayerRegistry([
-            new LayerDefinition('alpha', ['App\\Shared']),
-            new LayerDefinition('beta', ['App\\Shared']),
+            new LayerDefinition('service', ['App\\Service\\**']),
+            new LayerDefinition('catchall', ['**']),
         ]);
 
-        try {
-            $registry->resolveLayer(SymbolPath::forClass('App\\Shared', 'Foo'));
-            self::fail('Expected LayerCollisionException to be thrown.');
-        } catch (LayerCollisionException $exception) {
-            self::assertSame('App\\Shared\\Foo', $exception->getFqn());
-
-            $matches = $exception->getMatches();
-            self::assertCount(2, $matches);
-
-            $layerNames = array_map(static fn(array $match): string => $match[0], $matches);
-            $patterns = array_map(static fn(array $match): string => $match[1], $matches);
-
-            self::assertContains('alpha', $layerNames);
-            self::assertContains('beta', $layerNames);
-            self::assertContains('App\\Shared', $patterns);
-
-            // Both candidates surface in the message.
-            self::assertStringContainsString('alpha', $exception->getMessage());
-            self::assertStringContainsString('beta', $exception->getMessage());
-        }
-    }
-
-    #[Test]
-    public function resolveLayer_collisionAcrossMultiPatternLayers_reportsBestPatternPerLayer(): void
-    {
-        // Each layer has two patterns; only the more-specific patterns tie at specificity 11.
-        $registry = new LayerRegistry([
-            new LayerDefinition('alpha', ['App\\**', 'App\\Shared']),
-            new LayerDefinition('beta', ['Other\\**', 'App\\Shared']),
-        ]);
-
-        try {
-            $registry->resolveLayer(SymbolPath::forClass('App\\Shared', 'Foo'));
-            self::fail('Expected LayerCollisionException.');
-        } catch (LayerCollisionException $exception) {
-            $patterns = array_map(static fn(array $match): string => $match[1], $exception->getMatches());
-
-            // Both layers should report `App\Shared` as the colliding pattern.
-            self::assertSame(['App\\Shared', 'App\\Shared'], $patterns);
-        }
-    }
-
-    #[Test]
-    public function construct_throwsOnDuplicateLayerNames(): void
-    {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessageMatches('/Duplicate layer name "service"/');
-
-        new LayerRegistry([
-            new LayerDefinition('service', ['App\\Service']),
-            new LayerDefinition('service', ['App\\OtherService']),
-        ]);
+        // App\Service goes to service.
+        self::assertSame('service', $registry->resolveLayer(SymbolPath::forClass('App\\Service', 'Foo')));
+        // Everything else goes to catchall.
+        self::assertSame('catchall', $registry->resolveLayer(SymbolPath::forClass('Other\\Bar', 'Baz')));
     }
 
     #[Test]
@@ -170,7 +123,7 @@ final class LayerRegistryTest extends TestCase
             new LayerDefinition('service', ['App\\Service']),
         ]);
 
-        $reflection = new ReflectionProperty(LayerRegistry::class, 'resolutionCache');
+        $reflection = new ReflectionProperty(LayerRegistry::class, 'resolveCache');
         self::assertSame([], $reflection->getValue($registry), 'Cache starts empty.');
 
         $symbol = SymbolPath::forClass('App\\Service', 'UserService');
@@ -239,6 +192,82 @@ final class LayerRegistryTest extends TestCase
     }
 
     #[Test]
+    public function resolveAll_returnsEveryMatchingLayerInDeclarationOrder(): void
+    {
+        $registry = new LayerRegistry([
+            new LayerDefinition('any', ['App\\**']),
+            new LayerDefinition('service', ['App\\Service\\**']),
+            new LayerDefinition('special', ['App\\Service\\Special\\**']),
+        ]);
+
+        $matches = $registry->resolveAll(SymbolPath::forClass('App\\Service\\Special', 'Foo'));
+
+        self::assertCount(3, $matches);
+        self::assertSame('any', $matches[0]->layerName);
+        self::assertSame('App\\**', $matches[0]->matchingPattern);
+        self::assertSame('service', $matches[1]->layerName);
+        self::assertSame('App\\Service\\**', $matches[1]->matchingPattern);
+        self::assertSame('special', $matches[2]->layerName);
+        self::assertSame('App\\Service\\Special\\**', $matches[2]->matchingPattern);
+    }
+
+    #[Test]
+    public function resolveAll_returnsEmptyListWhenNoLayerMatches(): void
+    {
+        $registry = new LayerRegistry([
+            new LayerDefinition('service', ['App\\Service']),
+        ]);
+
+        self::assertSame([], $registry->resolveAll(SymbolPath::forClass('Other\\Place', 'Foo')));
+    }
+
+    #[Test]
+    public function resolveAll_isCached(): void
+    {
+        $registry = new LayerRegistry([
+            new LayerDefinition('any', ['App\\**']),
+            new LayerDefinition('service', ['App\\Service\\**']),
+        ]);
+
+        $symbol = SymbolPath::forClass('App\\Service', 'Foo');
+
+        $first = $registry->resolveAll($symbol);
+        $second = $registry->resolveAll($symbol);
+
+        self::assertSame($first, $second, 'resolveAll() result must be cached and returned identically on repeat lookups.');
+    }
+
+    #[Test]
+    public function resolveAll_populatesInternalCache(): void
+    {
+        $registry = new LayerRegistry([
+            new LayerDefinition('service', ['App\\Service']),
+        ]);
+
+        $reflection = new ReflectionProperty(LayerRegistry::class, 'resolveAllCache');
+        self::assertSame([], $reflection->getValue($registry));
+
+        $symbol = SymbolPath::forClass('App\\Service', 'Foo');
+        $registry->resolveAll($symbol);
+
+        $cache = $reflection->getValue($registry);
+        self::assertIsArray($cache);
+        self::assertArrayHasKey($symbol->toCanonical(), $cache);
+    }
+
+    #[Test]
+    public function construct_throwsOnDuplicateLayerNames(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessageMatches('/Duplicate layer name "service"/');
+
+        new LayerRegistry([
+            new LayerDefinition('service', ['App\\Service']),
+            new LayerDefinition('service', ['App\\OtherService']),
+        ]);
+    }
+
+    #[Test]
     public function isEmpty_trueForEmptyList(): void
     {
         self::assertTrue((new LayerRegistry([]))->isEmpty());
@@ -255,7 +284,7 @@ final class LayerRegistryTest extends TestCase
     }
 
     #[Test]
-    public function layerNames_returnsSortedNames(): void
+    public function layerNames_preservesDeclarationOrder(): void
     {
         $registry = new LayerRegistry([
             new LayerDefinition('zebra', ['App\\Zebra']),
@@ -263,7 +292,8 @@ final class LayerRegistryTest extends TestCase
             new LayerDefinition('beta', ['App\\Beta']),
         ]);
 
-        self::assertSame(['alpha', 'beta', 'zebra'], $registry->layerNames());
+        // NOT alphabetically sorted — declaration order is preserved.
+        self::assertSame(['zebra', 'alpha', 'beta'], $registry->layerNames());
     }
 
     #[Test]
@@ -273,7 +303,7 @@ final class LayerRegistryTest extends TestCase
     }
 
     #[Test]
-    public function definitions_returnsConfiguredList(): void
+    public function definitions_returnsConfiguredListInOrder(): void
     {
         $definitions = [
             new LayerDefinition('service', ['App\\Service']),
@@ -283,105 +313,5 @@ final class LayerRegistryTest extends TestCase
         $registry = new LayerRegistry($definitions);
 
         self::assertSame($definitions, $registry->definitions());
-    }
-
-    #[Test]
-    public function resolveLayer_collisionIsCachedAndRethrown(): void
-    {
-        $registry = new LayerRegistry([
-            new LayerDefinition('alpha', ['App\\Shared']),
-            new LayerDefinition('beta', ['App\\Shared']),
-        ]);
-
-        $symbol = SymbolPath::forClass('App\\Shared', 'Foo');
-
-        $firstException = null;
-        try {
-            $registry->resolveLayer($symbol);
-            self::fail('Expected LayerCollisionException on first call.');
-        } catch (LayerCollisionException $exception) {
-            $firstException = $exception;
-        }
-
-        $secondException = null;
-        try {
-            $registry->resolveLayer($symbol);
-            self::fail('Expected LayerCollisionException on second call.');
-        } catch (LayerCollisionException $exception) {
-            $secondException = $exception;
-        }
-
-        // Same exception instance is rethrown from the cache — proves the
-        // findBestMatches scan was not repeated.
-        self::assertSame(
-            $firstException,
-            $secondException,
-            'Collision must be cached and the same exception instance re-thrown on repeat lookups.',
-        );
-    }
-
-    #[Test]
-    public function resolveLayer_collisionPopulatesCacheWithException(): void
-    {
-        $registry = new LayerRegistry([
-            new LayerDefinition('alpha', ['App\\Shared']),
-            new LayerDefinition('beta', ['App\\Shared']),
-        ]);
-
-        $reflection = new ReflectionProperty(LayerRegistry::class, 'resolutionCache');
-        self::assertSame([], $reflection->getValue($registry), 'Cache starts empty.');
-
-        $symbol = SymbolPath::forClass('App\\Shared', 'Foo');
-
-        try {
-            $registry->resolveLayer($symbol);
-            self::fail('Expected LayerCollisionException.');
-        } catch (LayerCollisionException) {
-            // expected
-        }
-
-        $cache = $reflection->getValue($registry);
-        self::assertIsArray($cache);
-        self::assertArrayHasKey($symbol->toCanonical(), $cache);
-        self::assertInstanceOf(
-            LayerCollisionException::class,
-            $cache[$symbol->toCanonical()],
-            'Collision result must be cached as the exception instance itself.',
-        );
-    }
-
-    #[Test]
-    public function resolveLayer_collisionCacheIsKeyedByCanonicalSymbol(): void
-    {
-        $registry = new LayerRegistry([
-            new LayerDefinition('alpha', ['App\\Shared']),
-            new LayerDefinition('beta', ['App\\Shared']),
-        ]);
-
-        $symbolA = SymbolPath::forClass('App\\Shared', 'Foo');
-        $symbolB = SymbolPath::forClass('App\\Shared', 'Bar');
-
-        $exceptionA = null;
-        try {
-            $registry->resolveLayer($symbolA);
-        } catch (LayerCollisionException $exception) {
-            $exceptionA = $exception;
-        }
-
-        $exceptionB = null;
-        try {
-            $registry->resolveLayer($symbolB);
-        } catch (LayerCollisionException $exception) {
-            $exceptionB = $exception;
-        }
-
-        self::assertNotNull($exceptionA);
-        self::assertNotNull($exceptionB);
-
-        // Different canonical paths → different fresh exception instances
-        // (each must report its own FQN).
-        self::assertNotSame($exceptionA, $exceptionB);
-        self::assertSame('App\\Shared\\Foo', $exceptionA->getFqn());
-        self::assertSame('App\\Shared\\Bar', $exceptionB->getFqn());
     }
 }
