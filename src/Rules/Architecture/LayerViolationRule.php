@@ -6,6 +6,7 @@ namespace Qualimetrix\Rules\Architecture;
 
 use Qualimetrix\Core\Architecture\ArchitectureConfiguration;
 use Qualimetrix\Core\Architecture\CoverageMode;
+use Qualimetrix\Core\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Core\Architecture\Layer\LayerRegistry;
 use Qualimetrix\Core\Dependency\Dependency;
 use Qualimetrix\Core\Rule\AnalysisContext;
@@ -147,11 +148,17 @@ final class LayerViolationRule extends AbstractRule
         // Per-edge violations + coverage state (also local).
         [$edgeViolations, $coverageState] = $this->collectEdgeViolations($architecture, $context);
 
+        // O(1) name → definition lookup for diagnostic builders that need pattern lists.
+        $definitionsByName = [];
+        foreach ($registry->definitions() as $definition) {
+            $definitionsByName[$definition->name()] = $definition;
+        }
+
         return [
             ...$edgeViolations,
             ...$this->buildCoverageDiagnosticAsList($architecture->coverage(), $coverageState),
-            ...$this->buildUnreachableLayerDiagnostics($registry, $layerHits),
-            ...$this->buildPotentialShadowDiagnostics($shadowEvidence, $registry),
+            ...$this->buildUnreachableLayerDiagnostics($registry, $layerHits, $definitionsByName),
+            ...$this->buildPotentialShadowDiagnostics($shadowEvidence),
         ];
     }
 
@@ -161,15 +168,17 @@ final class LayerViolationRule extends AbstractRule
      *
      * 1. `layerHits` — per-layer count of classes that ended up in that layer
      *    (feeds `architecture.unreachable-layer`).
-     * 2. `shadowEvidence` — per (assigned, shadowed) pair, list of class FQNs
-     *    that matched both layers (feeds `architecture.potential-shadow`).
+     * 2. `shadowEvidence` — per (assigned, shadowed) pair, list of evidence
+     *    entries carrying the class FQN plus the specific patterns that
+     *    matched on each side (feeds `architecture.potential-shadow` without
+     *    re-walking the layer list at emission time).
      *
      * Both are LOCAL variables here. Per CLAUDE.md "stateless rules", the rule
      * instance is reused across `analyze()` invocations — any field-based
      * accumulator would leak counts. The dedicated statelessness regression
      * test pins this contract.
      *
-     * @return array{0: array<string, int>, 1: array<string, array<string, list<string>>>}
+     * @return array{0: array<string, int>, 1: array<string, array<string, list<array{fqn: string, assignedPattern: string, shadowedPattern: string}>>>}
      */
     private function collectClassEvidence(LayerRegistry $registry, AnalysisContext $context): array
     {
@@ -178,7 +187,7 @@ final class LayerViolationRule extends AbstractRule
             $layerHits[$layerName] = 0;
         }
 
-        /** @var array<string, array<string, list<string>>> $shadowEvidence */
+        /** @var array<string, array<string, list<array{fqn: string, assignedPattern: string, shadowedPattern: string}>>> $shadowEvidence */
         $shadowEvidence = [];
 
         foreach ($context->metrics->all(SymbolType::Class_) as $classSymbol) {
@@ -197,7 +206,11 @@ final class LayerViolationRule extends AbstractRule
 
             $classFqn = $classSymbol->symbolPath->toString();
             for ($i = 1; $i < $matchCount; $i++) {
-                $shadowEvidence[$assigned->layerName][$matches[$i]->layerName][] = $classFqn;
+                $shadowEvidence[$assigned->layerName][$matches[$i]->layerName][] = [
+                    'fqn' => $classFqn,
+                    'assignedPattern' => $assigned->matchingPattern,
+                    'shadowedPattern' => $matches[$i]->matchingPattern,
+                ];
             }
         }
 
@@ -368,7 +381,7 @@ final class LayerViolationRule extends AbstractRule
 
         $sampleList = implode(', ', $sample);
         if ($remaining > 0) {
-            $sampleList .= \sprintf(' (+%d more)', $remaining);
+            $sampleList .= \sprintf(' ...and %d more', $remaining);
         }
 
         $message = \sprintf(
@@ -399,10 +412,12 @@ final class LayerViolationRule extends AbstractRule
      *
      * @param array<string, int> $layerHits Local map (NOT a field) of
      *                                      layerName → number of classes assigned.
+     * @param array<string, LayerDefinition> $definitionsByName Precomputed name → definition lookup
+     *                                                          for O(1) pattern access.
      *
      * @return list<Violation>
      */
-    private function buildUnreachableLayerDiagnostics(LayerRegistry $registry, array $layerHits): array
+    private function buildUnreachableLayerDiagnostics(LayerRegistry $registry, array $layerHits, array $definitionsByName): array
     {
         $violations = [];
 
@@ -411,13 +426,7 @@ final class LayerViolationRule extends AbstractRule
                 continue;
             }
 
-            $patterns = [];
-            foreach ($registry->definitions() as $definition) {
-                if ($definition->name() === $layerName) {
-                    $patterns = $definition->patterns();
-                    break;
-                }
-            }
+            $patterns = $definitionsByName[$layerName]->patterns();
 
             $message = \sprintf(
                 'Layer "%s" was never matched during analysis. Possible causes: (1) it is shadowed by a broader layer earlier in the declaration order, (2) the pattern(s) [%s] match no class in the analysed codebase. Run "qmx debug:layer-assignment <class>" to inspect specific classes.',
@@ -444,26 +453,28 @@ final class LayerViolationRule extends AbstractRule
      * during the class iteration.
      *
      * Determinism: `metrics->all()` iteration order is not stable under
-     * parallel collection. Both the per-pair sample (5 example FQNs) and the
-     * pair list are sorted lexicographically before emission so CI diffs are
-     * stable across runs.
+     * parallel collection. The per-pair sample is sorted lexicographically by
+     * FQN and the pair list is sorted by (assigned, shadowed) before emission
+     * so CI diffs are stable across runs.
      *
-     * @param array<string, array<string, list<string>>> $shadowEvidence
+     * Each evidence entry already carries the patterns that matched on each
+     * side (recorded during `collectClassEvidence()`), so no second walk over
+     * the layer list is necessary at emission time.
+     *
+     * @param array<string, array<string, list<array{fqn: string, assignedPattern: string, shadowedPattern: string}>>> $shadowEvidence
      *
      * @return list<Violation>
      */
-    private function buildPotentialShadowDiagnostics(array $shadowEvidence, LayerRegistry $registry): array
+    private function buildPotentialShadowDiagnostics(array $shadowEvidence): array
     {
-        // Flatten (assigned, shadowed, fqnList) and sort for determinism.
         $pairs = [];
         foreach ($shadowEvidence as $assigned => $shadowedMap) {
-            foreach ($shadowedMap as $shadowed => $fqns) {
-                $sortedFqns = $fqns;
-                sort($sortedFqns);
+            foreach ($shadowedMap as $shadowed => $entries) {
+                usort($entries, static fn(array $a, array $b): int => strcmp($a['fqn'], $b['fqn']));
                 $pairs[] = [
                     'assigned' => $assigned,
                     'shadowed' => $shadowed,
-                    'fqns' => $sortedFqns,
+                    'entries' => $entries,
                 ];
             }
         }
@@ -480,29 +491,31 @@ final class LayerViolationRule extends AbstractRule
         foreach ($pairs as $pair) {
             $assignedLayer = $pair['assigned'];
             $shadowedLayer = $pair['shadowed'];
-            $fqns = $pair['fqns'];
-            $total = \count($fqns);
+            $entries = $pair['entries'];
+            $total = \count($entries);
 
-            $sample = \array_slice($fqns, 0, self::SHADOW_SAMPLE_LIMIT);
+            // Evidence is only recorded when matchCount > 1, so the entry list
+            // for any emitted pair is non-empty by construction.
+            \assert($entries !== []);
+
+            $sample = \array_slice($entries, 0, self::SHADOW_SAMPLE_LIMIT);
             $remaining = $total - \count($sample);
 
-            // Identify the patterns involved (best-effort — use the first
-            // sample class to find which pattern matched on each side).
-            $sampleFqn = $sample[0] ?? '';
-            $assignedPattern = $this->findMatchingPattern($registry, $assignedLayer, $sampleFqn);
-            $shadowedPattern = $this->findMatchingPattern($registry, $shadowedLayer, $sampleFqn);
+            $assignedPattern = $sample[0]['assignedPattern'];
+            $shadowedPattern = $sample[0]['shadowedPattern'];
 
-            $sampleList = implode(', ', $sample);
+            $sampleFqns = array_map(static fn(array $entry): string => $entry['fqn'], $sample);
+            $sampleList = implode(', ', $sampleFqns);
             if ($remaining > 0) {
                 $sampleList .= \sprintf(' ...and %d more', $remaining);
             }
 
             $message = \sprintf(
-                'Layer "%s" (pattern: %s) shadows layer "%s" (pattern: %s) for %d class(es) including %s. Run "qmx debug:layer-assignment <class>" to inspect specific cases.',
+                'Layer "%s" (pattern: "%s") shadows layer "%s" (pattern: "%s") for %d class(es) including %s. Run "qmx debug:layer-assignment <class>" to inspect specific cases.',
                 $assignedLayer,
-                $assignedPattern !== null ? '"' . $assignedPattern . '"' : '(unknown)',
+                $assignedPattern,
                 $shadowedLayer,
-                $shadowedPattern !== null ? '"' . $shadowedPattern . '"' : '(unknown)',
+                $shadowedPattern,
                 $total,
                 $sampleList,
             );
@@ -523,25 +536,5 @@ final class LayerViolationRule extends AbstractRule
         }
 
         return $violations;
-    }
-
-    /**
-     * Helper for the shadow diagnostic: ask the named layer which of its
-     * patterns matched the given FQN.
-     */
-    private function findMatchingPattern(LayerRegistry $registry, string $layerName, string $fqn): ?string
-    {
-        if ($fqn === '') {
-            return null;
-        }
-
-        foreach ($registry->definitions() as $definition) {
-            if ($definition->name() !== $layerName) {
-                continue;
-            }
-            return $definition->firstMatchingPattern($fqn);
-        }
-
-        return null;
     }
 }

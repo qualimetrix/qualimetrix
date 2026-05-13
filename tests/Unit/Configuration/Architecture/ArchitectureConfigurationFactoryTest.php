@@ -305,6 +305,23 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     }
 
     #[Test]
+    public function singleKeyMapShorthandForLayerEntryIsRejected(): void
+    {
+        // ADR 0006 explicitly rejects the `- controller: 'App\Controller\**'`
+        // shorthand because single-key-map list entries confuse YAML parsers and
+        // IDE schema validators. Only the long form (`- name: ... patterns: [...]`)
+        // is accepted.
+        $this->expectException(ConfigLoadException::class);
+        $this->expectExceptionMessageMatches('/unknown key\(s\) "controller"/');
+
+        $this->factory->fromArray([
+            'layers' => [
+                ['controller' => 'App\\Controller\\**'],
+            ],
+        ]);
+    }
+
+    #[Test]
     public function layersAsScalarIsRejected(): void
     {
         $this->expectException(ConfigLoadException::class);
