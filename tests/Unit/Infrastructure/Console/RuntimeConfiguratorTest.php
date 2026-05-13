@@ -9,12 +9,14 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LogLevel;
 use Qualimetrix\Configuration\AnalysisConfiguration;
 use Qualimetrix\Configuration\ComputedMetricFormulaValidator;
 use Qualimetrix\Configuration\ComputedMetricsConfigResolver;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Configuration\HealthFormulaExcluder;
 use Qualimetrix\Configuration\PathsConfiguration;
+use Qualimetrix\Configuration\Pipeline\DeferredWarning;
 use Qualimetrix\Configuration\Pipeline\ResolvedConfiguration;
 use Qualimetrix\Configuration\RuleOptionsRegistry;
 use Qualimetrix\Core\Architecture\ArchitectureConfigurationHolder;
@@ -29,10 +31,12 @@ use Qualimetrix\Infrastructure\Logging\LoggerFactory;
 use Qualimetrix\Infrastructure\Logging\LoggerHolder;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\Console\Output\OutputInterface;
 
 #[CoversClass(RuntimeConfigurator::class)]
 #[CoversClass(HealthFormulaExcluder::class)]
+#[CoversClass(DeferredWarning::class)]
 final class RuntimeConfiguratorTest extends TestCase
 {
     private ConfigurationProviderInterface&Stub $configProvider;
@@ -568,6 +572,127 @@ final class RuntimeConfiguratorTest extends TestCase
         self::assertNotContains('health.cohesion', $names);
         self::assertContains('health.coupling', $names);
         self::assertContains('health.typing', $names);
+    }
+
+    // -------------------------------------------------------------------------
+    // Deferred-warning drain
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function deferredWarningsAreReplayedThroughConfiguredLogger(): void
+    {
+        // The architecture factory captures mutual-allow / pattern-collision
+        // warnings as DeferredWarnings during pipeline resolution. They must
+        // reach whichever logger LoggerHolder ends up carrying after
+        // configureLogger() has run — NOT the NullLogger placeholder that was
+        // in the holder during pipeline resolution.
+
+        $output = new BufferedOutput(OutputInterface::VERBOSITY_NORMAL, true);
+        $loggerHolder = $this->buildConfiguratorWithBufferedOutput($output);
+
+        $resolved = new ResolvedConfiguration(
+            paths: PathsConfiguration::defaults(),
+            analysis: new AnalysisConfiguration(),
+            ruleOptions: [],
+            deferredWarnings: [
+                new DeferredWarning(LogLevel::WARNING, 'architecture.allow: mutual-allow detected between layer pair(s): a ↔ b.'),
+            ],
+        );
+
+        $this->configurator->configure($resolved, $this->createCliInput([]), $output);
+
+        // The buffered ConsoleLogger emits warnings at VERBOSITY_NORMAL with a
+        // <comment> tag, so plain text should be visible regardless of decoration.
+        $rendered = $output->fetch();
+        self::assertStringContainsString('mutual-allow detected', $rendered);
+        self::assertStringContainsString('a ↔ b', $rendered);
+
+        // Sanity: the logger that received the warning is the one in the holder
+        // (proving the drain happens AFTER configureLogger swapped it in).
+        self::assertNotInstanceOf(\Psr\Log\NullLogger::class, $loggerHolder->getLogger());
+    }
+
+    #[Test]
+    public function emptyDeferredWarningsListProducesNoLogOutput(): void
+    {
+        $output = new BufferedOutput(OutputInterface::VERBOSITY_NORMAL, true);
+        $this->buildConfiguratorWithBufferedOutput($output);
+
+        $resolved = new ResolvedConfiguration(
+            paths: PathsConfiguration::defaults(),
+            analysis: new AnalysisConfiguration(),
+            ruleOptions: [],
+        );
+
+        $this->configurator->configure($resolved, $this->createCliInput([]), $output);
+
+        $rendered = $output->fetch();
+        self::assertSame('', $rendered, 'No warnings should be logged when deferredWarnings is empty');
+    }
+
+    #[Test]
+    public function deferredWarningLevelIsRoutedToTheLoggerVerbatim(): void
+    {
+        // Multiple deferred warnings at different levels must each travel through
+        // log($level, ...) on the configured logger. The ConsoleLogger renders
+        // warnings inside <comment> tags and errors inside <error> tags; the
+        // distinct prefixes prove the level was preserved when drained.
+
+        $output = new BufferedOutput(OutputInterface::VERBOSITY_NORMAL, true);
+        $this->buildConfiguratorWithBufferedOutput($output);
+
+        $resolved = new ResolvedConfiguration(
+            paths: PathsConfiguration::defaults(),
+            analysis: new AnalysisConfiguration(),
+            ruleOptions: [],
+            deferredWarnings: [
+                new DeferredWarning(LogLevel::WARNING, 'first warning'),
+                new DeferredWarning(LogLevel::ERROR, 'second error'),
+            ],
+        );
+
+        $this->configurator->configure($resolved, $this->createCliInput([]), $output);
+
+        $rendered = $output->fetch();
+        self::assertStringContainsString('[WARNING]', $rendered);
+        self::assertStringContainsString('first warning', $rendered);
+        self::assertStringContainsString('[ERROR]', $rendered);
+        self::assertStringContainsString('second error', $rendered);
+    }
+
+    /**
+     * Wires the test configurator with a BufferedOutput-friendly LoggerFactory
+     * and returns the LoggerHolder so the test can inspect it after configure().
+     */
+    private function buildConfiguratorWithBufferedOutput(BufferedOutput $output): LoggerHolder
+    {
+        // The real LoggerFactory honors verbosity, so a VERBOSITY_NORMAL
+        // BufferedOutput will produce a ConsoleLogger that writes warnings to
+        // the buffer (default level == WARNING).
+        $loggerFactory = new LoggerFactory();
+        $loggerHolder = new LoggerHolder();
+
+        $ruleRegistry = self::createStub(RuleRegistryInterface::class);
+        $ruleRegistry->method('getClasses')->willReturn([]);
+
+        $this->configurator = new RuntimeConfigurator(
+            $loggerFactory,
+            $loggerHolder,
+            new ProgressReporterHolder(),
+            new ProfilerHolder(),
+            $this->configProvider,
+            $this->ruleOptionsRegistry,
+            $ruleRegistry,
+            new CacheFactory($this->configProvider),
+            new ComputedMetricsConfigResolver(
+                new ComputedMetricFormulaValidator(),
+                new HealthFormulaExcluder(),
+            ),
+            $this->frameworkNamespacesHolder,
+            $this->architectureHolder,
+        );
+
+        return $loggerHolder;
     }
 
     private function createOutput(): OutputInterface
