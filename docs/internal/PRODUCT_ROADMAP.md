@@ -74,46 +74,51 @@ Items ordered by combined usefulness × marketing impact × effort efficiency.
 #### 3. Architecture Rules — Phase 2 (Flexibility & Expressiveness)
 
 - **Why it matters:** Phase 1 covers the textbook DDD/Clean Architecture case where every class lives in a namespace
-  matching its architectural role. Real codebases routinely deviate: hybrid horizontal/vertical layouts, legacy enclaves,
-  classes identified by suffix or marker interface rather than namespace, intra-layer module isolation. Without these
-  extensions, teams either contort their YAML or fall back to deptrac for the long-tail cases — undermining the
-  "one tool replaces five" promise for non-textbook projects
+  matching its architectural role. Real codebases routinely deviate: hybrid horizontal/vertical layouts, legacy
+  enclaves, classes identified by suffix or marker interface rather than namespace, intra-layer module isolation.
+  Without these extensions, teams either contort their YAML or fall back to deptrac for the long-tail cases —
+  undermining the "one tool replaces five" promise for non-textbook projects
 - **Origin:** Triage discussion 2026-05-13, after reviewing real-world flexibility friction on top of v0.17.0
+- **Design status:** Conceptual plan (Stage 1) with locked design decisions to be captured in ADR 0007 lives at
+  [plans/architecture-rules-phase2.md](plans/architecture-rules-phase2.md). The detailed implementation plan
+  (Stage 2) is appended to that document after Stage 1 triple review settles, and gets its own review pass before
+  code begins
 - **Five directions, ordered by priority:**
 
   1. **Class-membership beyond namespace** — declare layers by class-name suffix (`*Repository`, `*Controller`),
      interface implementation (`implements DoctrineRepositoryInterface`), or PHP attribute (`#[ORM\Entity]`).
-     Solves the case where a project's directory structure does not align with its architectural role
-     (e.g. `App\Service\UserRepository` is semantically a repository despite the namespace).
-     Implementation: extend `LayerDefinition` from `list<string> $patterns` to a VO with multiple membership sources;
-     compute specificity as a tuple `(membershipKind, prefixLen)` so attribute/interface signals outrank namespace globs.
-     Note: pivot in `plans/architecture-rules-followup.md` removes specificity; this work needs to define ordering
-     semantics consistent with declaration-order matching
-  2. **Submodule partitioning** — auto-split one layer into sub-buckets by wildcard capture group, forbid cross-bucket
-     edges. Compact syntax for DDD bounded-context isolation without listing N modules by hand:
-     ```yaml
-     domain:
-       patterns: 'App\Module\*\Domain\**'
-       partition_by: 1         # wildcard #1 → sub-bucket
-       cross_partition: forbid
-     ```
-     Replaces the deferred `allow_same_layer: false` design with something that scales without exploding the YAML
-  3. **Negative patterns (exclude within a layer)** — exclude a subtree from a layer match:
-     `App\Service\**` minus `App\Service\Legacy\**`. Coarse-grained structural complement to per-class `@qmx-ignore`
-     and fingerprint-based baseline; each mechanism owns a different niche (structural / point / migration snapshot)
-  4. **Dependency type filter (symmetric whitelist + blacklist)** — `types: [implements]` (whitelist) and
-     `forbid_types: [extends]` (blacklist) on long-form allow entries. Use cases: "domain may implement contracts but
-     not method-call them", "may extend Symfony bundles but not call vendor APIs". Two explicit keys read better than
-     one with an inversion flag. Phase-2 hook is already reserved in the long-form YAML parser
-  5. **Explicit default layer** — `'*': legacy` as a catch-all layer in `layers:`, participating in policy normally
-     (specificity 0 falls out of existing resolution logic). Distinct from `coverage:` modes — coverage is a
-     diagnostic for incremental adoption; a default layer lets policy actively govern unclassified classes
-     ("legacy must not depend on domain")
+     Multiple membership sources within one layer combined via an explicit `match: any | all` flag (default `any`
+     for migration ergonomics; `all` for strict-convention enforcement). Solves the case where directory structure
+     does not align with architectural role. Ordering between layers is governed by declaration-order (per
+     followup-plan pivot), not by membership-kind specificity
+  2. **Template layers (submodule partitioning)** — declare a layer with a capture-variable name like
+     `'domain-{module}'` that expands to one concrete layer instance per **observed binding tuple** in the discovered
+     class set (NOT cartesian product). Cross-module edges become natural violations under existing allow-list
+     semantics — no separate `cross_partition` flag. Allow-list entries can reference template instances via glob
+     (`'domain-*': [shared-kernel]`) AND via capture-variable binding (`'app-{m}': ['domain-{m}']`) for
+     same-instance-only constraints. Capture-binding is **mandatory** in MVP — without it, the DDD bounded-context
+     promise leaks
+  3. **Negative patterns within a layer** — `exclude:` clause on a layer entry (with its own `match: any | all`) to
+     remove a subtree from the match. Substantially redundant under declaration-order matching for namespace-only
+     cases, but useful in combination with `suffix`/`attributes`/`implements` from direction 1
+  4. **Dependency type filter** — whitelist `relations:` on long-form allow entries restricting which edge kinds are
+     permitted. Hybrid API: direct `DependencyType` enum values (extends, implements, trait_use, new, static_call, …)
+     plus three curated aliases (`inheritance`, `static_access`, `type_reference`) for common groupings. Symmetric
+     blacklist (`forbid_relations`) deferred until a real use case surfaces — whitelist alone already implicitly
+     forbids everything else
+  5. **Catch-all layer as recipe** — declaring a final layer with pattern `**` captures unclassified classes.
+     Subsumed by declaration-order matching from `architecture-rules-followup.md`; remains a documentation recipe
+     rather than a separate feature
 - **Explicitly dropped:**
   - Per-edge severity — no precedent in deptrac/ArchUnit/NDepend; can be emulated by splitting into two rules with
     different severity if the use case ever surfaces
-  - Wildcard source/target in allow-list (e.g. `'*': [utils]`) — marginal; deferred until a real signal appears
-- **Effort:** Medium per direction; (1) and (2) are the heaviest because they change membership semantics
+  - Wildcard source/target in allow-list shorthand (e.g. `'*': [utils]`) — marginal; deferred until a real signal
+    appears
+  - Pure positional partitioning (`partition_by: 1`) — rejected during design in favour of symbolic capture
+    variables (see direction 2). Positional addressing is fragile under YAML edits — adding a wildcard silently
+    shifts indices
+- **Effort:** Medium per direction; (1) and (2) are the heaviest because they change membership semantics. Detailed
+  estimates land in the Stage 2 implementation plan
 - **Value:** High for adoption in projects that don't fit the textbook layout; closes the long tail of "I'd use this
   but my project is X"
 - **Marketing angle:** "Architecture rules that fit your project, not the other way around"
