@@ -189,9 +189,9 @@ final class RuntimeConfigurator
      *
      * Configuration resolution happens before {@see self::configureLogger()},
      * so the {@see LoggerHolder} still carries a NullLogger when the
-     * architecture factory runs. To prevent its warnings (mutual-allow
-     * detection, pattern-collision heuristics) from being dropped, the factory
-     * buffers them in
+     * architecture factory runs. To prevent its warnings (currently:
+     * `mutual-allow` detection in the allow-list) from being dropped, the
+     * factory buffers them in
      * {@see \Qualimetrix\Configuration\Pipeline\ResolvedConfiguration::$deferredWarnings};
      * this method drains the buffer through the now-configured logger.
      */
