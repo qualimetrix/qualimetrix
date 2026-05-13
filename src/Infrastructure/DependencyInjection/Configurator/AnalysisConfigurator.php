@@ -27,6 +27,7 @@ use Qualimetrix\Analysis\RuleExecution\RuleExecutor;
 use Qualimetrix\Analysis\RuleExecution\RuleExecutorInterface;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Configuration\RuleOptionsRegistry;
+use Qualimetrix\Core\Architecture\ArchitectureConfigurationHolder;
 use Qualimetrix\Core\Ast\FileParserInterface;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Namespace_\ProjectNamespaceResolverInterface;
@@ -126,6 +127,11 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
                 new Reference(ComputedMetricEvaluator::class),
             ]);
 
+        // ArchitectureConfigurationHolder — shared between RuntimeConfigurator and AnalysisPipeline
+        // so that architecture-aware rules see the resolved layer policy in AnalysisContext.
+        $container->register(ArchitectureConfigurationHolder::class)
+            ->setPublic(true);
+
         // AnalysisPipeline - main orchestrator
         $container->register(AnalysisPipeline::class)
             ->setArguments([
@@ -138,6 +144,7 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
                 new Reference(DependencyGraphBuilder::class),
                 new Reference(DelegatingLogger::class),
                 new Reference(ProfilerHolder::class),
+                new Reference(ArchitectureConfigurationHolder::class),
             ])
             ->setPublic(true);
         $container->setAlias(AnalysisPipelineInterface::class, AnalysisPipeline::class)

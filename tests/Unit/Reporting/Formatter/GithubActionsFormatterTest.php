@@ -98,6 +98,27 @@ final class GithubActionsFormatterTest extends TestCase
         );
     }
 
+    public function testFormatInfoViolationUsesNoticeCommand(): void
+    {
+        $report = ReportBuilder::create()
+            ->addViolation(new Violation(
+                location: new Location('src/Service/UserService.php', 7),
+                symbolPath: SymbolPath::forClass('App\Service', 'UserService'),
+                ruleName: 'architecture.coverage',
+                violationCode: 'architecture.coverage',
+                message: 'Class not assigned to a layer',
+                severity: Severity::Info,
+            ))
+            ->filesAnalyzed(1)
+            ->filesSkipped(0)
+            ->duration(0.1)
+            ->build();
+
+        $output = $this->formatter->format($report, new FormatterContext());
+
+        self::assertStringStartsWith('::notice ', $output);
+    }
+
     public function testFormatMultipleViolations(): void
     {
         $report = ReportBuilder::create()

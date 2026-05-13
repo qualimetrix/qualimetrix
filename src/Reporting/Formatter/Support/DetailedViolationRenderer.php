@@ -168,6 +168,7 @@ final class DetailedViolationRenderer
         return match ($severity) {
             Severity::Error => $color->boldRed('ERROR'),
             Severity::Warning => $color->boldYellow('WARN'),
+            Severity::Info => $color->boldCyan('INFO'),
         };
     }
 
@@ -176,6 +177,7 @@ final class DetailedViolationRenderer
         return match ($key) {
             'error' => $color->boldRed('Errors'),
             'warning' => $color->boldYellow('Warnings'),
+            'info' => $color->boldCyan('Info'),
             default => $key,
         };
     }

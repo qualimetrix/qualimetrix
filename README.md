@@ -12,7 +12,7 @@ Static analysis tool for PHP code quality metrics.
 - **Cohesion**: TCC/LCC, LCOM4, WMC
 - **Size**: LOC, Class/Method/Property Count
 - **Structure**: DIT, NOC
-- **Architecture**: Circular Dependency Detection
+- **Architecture**: Circular Dependency Detection, Layer Policy Enforcement
 
 ## Quick Start
 

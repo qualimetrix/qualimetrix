@@ -39,6 +39,7 @@ final readonly class Report
         public ?float $debtPer1kLoc = null,
         public array $topIssues = [],
         public ?NamespaceTree $namespaceTree = null,
+        public int $infoCount = 0,
     ) {}
 
     /**

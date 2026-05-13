@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Reporting\Formatter\Summary;
 
 use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Reporting\Debt\DebtSummary;
 use Qualimetrix\Reporting\Formatter\Support\AnsiColor;
@@ -55,10 +56,16 @@ final class TopIssuesRenderer
     private function renderIssue(int $rank, RankedIssue $issue, FormatterContext $context, AnsiColor $color, array &$lines): void
     {
         $violation = $issue->violation;
-        $severity = $violation->severity->value === 'error' ? 'ERR' : 'WRN';
-        $severityFormatted = $violation->severity->value === 'error'
-            ? $color->red($severity)
-            : $color->yellow($severity);
+        $severity = match ($violation->severity) {
+            Severity::Error => 'ERR',
+            Severity::Warning => 'WRN',
+            Severity::Info => 'INF',
+        };
+        $severityFormatted = match ($violation->severity) {
+            Severity::Error => $color->red($severity),
+            Severity::Warning => $color->yellow($severity),
+            Severity::Info => $color->cyan($severity),
+        };
 
         $score = $this->formatScore($issue->impactScore);
         $debt = DebtSummary::formatMinutes($issue->debtMinutes);

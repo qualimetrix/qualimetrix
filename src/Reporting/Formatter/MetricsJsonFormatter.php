@@ -80,6 +80,7 @@ final class MetricsJsonFormatter implements FormatterInterface
                 'violations' => $report->getTotalViolations(),
                 'errors' => $report->errorCount,
                 'warnings' => $report->warningCount,
+                'info' => $report->infoCount,
             ],
         ];
 

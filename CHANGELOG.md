@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Architecture layer rules: declare layers in YAML and enforce allowed inter-layer dependencies via `architecture.layer-violation`. Supports vendor namespaces as first-class layers, namespace-based membership with longest-specificity tie-breaking, per-use-site reporting, and incremental adoption via the `architecture.coverage` diagnostic.
+
 ## [0.17.0] - 2026-05-12
 
 ### Fixed

@@ -361,6 +361,7 @@ final class ContainerFactoryTest extends TestCase
             CboRule::class,
             DistanceRule::class,
             CircularDependencyRule::class,
+            \Qualimetrix\Rules\Architecture\LayerViolationRule::class,
             LongParameterListRule::class,
             BooleanArgumentRule::class,
             CountInLoopRule::class,

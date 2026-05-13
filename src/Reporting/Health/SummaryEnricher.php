@@ -74,6 +74,7 @@ final readonly class SummaryEnricher
             debtPer1kLoc: $debtPer1kLoc,
             topIssues: $topIssues,
             namespaceTree: $tree,
+            infoCount: $report->infoCount,
         );
     }
 

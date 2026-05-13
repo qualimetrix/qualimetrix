@@ -295,6 +295,95 @@ final class ResultPresenterTest extends TestCase
         self::assertSame(0, $exitCode);
     }
 
+    #[Test]
+    public function presentResultsReturnsExitCode0ForInfoOnlyWithDefaultFailOn(): void
+    {
+        // Default fail-on is error, so Info alone must not fail the run.
+        $exitCode = $this->presentWithViolationsAndFailOn(
+            [self::createViolation(Severity::Info)],
+            null,
+        );
+
+        self::assertSame(0, $exitCode);
+    }
+
+    #[Test]
+    public function presentResultsReturnsExitCode0ForInfoOnlyWithFailOnWarning(): void
+    {
+        // fail_on: warning still does not fail on Info-only runs.
+        $exitCode = $this->presentWithViolationsAndFailOn(
+            [self::createViolation(Severity::Info)],
+            Severity::Warning,
+        );
+
+        self::assertSame(0, $exitCode);
+    }
+
+    #[Test]
+    public function presentResultsReturnsExitCode0ForInfoOnlyWithFailOnError(): void
+    {
+        $exitCode = $this->presentWithViolationsAndFailOn(
+            [self::createViolation(Severity::Info)],
+            Severity::Error,
+        );
+
+        self::assertSame(0, $exitCode);
+    }
+
+    #[Test]
+    public function presentResultsReturnsNonZeroExitCodeForInfoOnlyWithFailOnInfo(): void
+    {
+        // fail_on: info treats Info as a failing threshold.
+        $exitCode = $this->presentWithViolationsAndFailOn(
+            [self::createViolation(Severity::Info)],
+            Severity::Info,
+        );
+
+        self::assertGreaterThan(0, $exitCode);
+    }
+
+    #[Test]
+    public function presentResultsReturnsExitCode0ForInfoOnlyWithFailOnNone(): void
+    {
+        $exitCode = $this->presentWithViolationsAndFailOn(
+            [self::createViolation(Severity::Info)],
+            false,
+        );
+
+        self::assertSame(0, $exitCode);
+    }
+
+    #[Test]
+    public function presentResultsReturnsErrorExitCodeForMixedSeveritiesWithFailOnInfo(): void
+    {
+        // When Info, Warning, and Error are all present and fail_on is info,
+        // the highest exit code (Error = 2) must be reported.
+        $exitCode = $this->presentWithViolationsAndFailOn(
+            [
+                self::createViolation(Severity::Info),
+                self::createViolation(Severity::Warning),
+                self::createViolation(Severity::Error),
+            ],
+            Severity::Info,
+        );
+
+        self::assertSame(Severity::Error->getExitCode(), $exitCode);
+    }
+
+    #[Test]
+    public function presentResultsReturnsWarningExitCodeForInfoAndWarningWithFailOnInfo(): void
+    {
+        $exitCode = $this->presentWithViolationsAndFailOn(
+            [
+                self::createViolation(Severity::Info),
+                self::createViolation(Severity::Warning),
+            ],
+            Severity::Info,
+        );
+
+        self::assertSame(Severity::Warning->getExitCode(), $exitCode);
+    }
+
     /**
      * @param list<Violation> $violations
      */

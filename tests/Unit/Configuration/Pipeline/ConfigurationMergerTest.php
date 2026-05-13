@@ -180,6 +180,123 @@ final class ConfigurationMergerTest extends TestCase
     }
 
     #[Test]
+    public function architectureLayersAreDeepMerged(): void
+    {
+        $base = [
+            'architecture' => [
+                'layers' => [
+                    'a' => 'App\\A',
+                ],
+            ],
+        ];
+        $overlay = [
+            'architecture' => [
+                'layers' => [
+                    'b' => 'App\\B',
+                ],
+            ],
+        ];
+
+        $result = ConfigurationMerger::merge($base, $overlay);
+
+        // Both layer maps merge — preset 'a' is preserved, overlay 'b' added.
+        self::assertSame('App\\A', $result['architecture']['layers']['a']);
+        self::assertSame('App\\B', $result['architecture']['layers']['b']);
+    }
+
+    #[Test]
+    public function architectureAllowMapsAreDeepMerged(): void
+    {
+        $base = [
+            'architecture' => [
+                'allow' => [
+                    'controller' => ['service'],
+                ],
+            ],
+        ];
+        $overlay = [
+            'architecture' => [
+                'allow' => [
+                    'service' => ['repository'],
+                ],
+            ],
+        ];
+
+        $result = ConfigurationMerger::merge($base, $overlay);
+
+        self::assertSame(['service'], $result['architecture']['allow']['controller']);
+        self::assertSame(['repository'], $result['architecture']['allow']['service']);
+    }
+
+    #[Test]
+    public function architectureCoverageScalarIsOverridden(): void
+    {
+        $base = [
+            'architecture' => [
+                'coverage' => 'warn',
+            ],
+        ];
+        $overlay = [
+            'architecture' => [
+                'coverage' => 'error',
+            ],
+        ];
+
+        $result = ConfigurationMerger::merge($base, $overlay);
+
+        self::assertSame('error', $result['architecture']['coverage']);
+    }
+
+    #[Test]
+    public function architectureAllowListEntriesAreReplacedNotMerged(): void
+    {
+        // Within architecture.allow.<source>, the target list is replaced (matching
+        // the rules deep-merge contract for list-valued options).
+        $base = [
+            'architecture' => [
+                'allow' => [
+                    'controller' => ['service', 'shared'],
+                ],
+            ],
+        ];
+        $overlay = [
+            'architecture' => [
+                'allow' => [
+                    'controller' => ['repository'],
+                ],
+            ],
+        ];
+
+        $result = ConfigurationMerger::merge($base, $overlay);
+
+        self::assertSame(['repository'], $result['architecture']['allow']['controller']);
+    }
+
+    #[Test]
+    public function architectureKeepsPresetLayersWhenProjectAddsCoverage(): void
+    {
+        // Regression: previously the project config's architecture block replaced
+        // the preset's wholesale, wiping out shared layer definitions.
+        $preset = [
+            'architecture' => [
+                'layers' => [
+                    'controller' => 'App\\Controller',
+                ],
+            ],
+        ];
+        $project = [
+            'architecture' => [
+                'coverage' => 'error',
+            ],
+        ];
+
+        $result = ConfigurationMerger::merge($preset, $project);
+
+        self::assertSame('App\\Controller', $result['architecture']['layers']['controller']);
+        self::assertSame('error', $result['architecture']['coverage']);
+    }
+
+    #[Test]
     public function rulesDeepMergeHandlesNestedAssociativeArrays(): void
     {
         $base = [

@@ -14,6 +14,7 @@ use Qualimetrix\Analysis\Repository\DefaultMetricRepositoryFactory;
 use Qualimetrix\Analysis\Repository\MetricRepositoryFactoryInterface;
 use Qualimetrix\Analysis\RuleExecution\RuleExecutorInterface;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
+use Qualimetrix\Core\Architecture\ArchitectureConfigurationHolder;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\HierarchicalRuleOptionsInterface;
@@ -50,6 +51,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
         ?DependencyGraphBuilder $graphBuilder = null,
         private readonly LoggerInterface $logger = new NullLogger(),
         private readonly ?ProfilerHolder $profilerHolder = null,
+        private readonly ArchitectureConfigurationHolder $architectureHolder = new ArchitectureConfigurationHolder(),
     ) {
         $this->graphBuilder = $graphBuilder ?? new DependencyGraphBuilder();
     }
@@ -140,6 +142,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
             $enrichmentResult->duplicateBlocks,
             $enrichmentResult->namespaceTree,
             $collectionResult->thresholdOverrides,
+            $this->architectureHolder->get(),
         );
         $violations = $this->ruleExecutor->execute($context);
 

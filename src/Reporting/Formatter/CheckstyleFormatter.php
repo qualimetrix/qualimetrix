@@ -99,6 +99,7 @@ final class CheckstyleFormatter implements FormatterInterface
         return match ($severity) {
             Severity::Error => 'error',
             Severity::Warning => 'warning',
+            Severity::Info => 'info',
         };
     }
 }

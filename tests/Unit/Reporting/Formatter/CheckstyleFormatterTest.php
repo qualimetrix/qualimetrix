@@ -278,6 +278,30 @@ final class CheckstyleFormatterTest extends TestCase
         self::assertSame(GroupBy::None, $this->formatter->getDefaultGroupBy());
     }
 
+    public function testFormatRendersInfoSeverityAsLowercaseInfo(): void
+    {
+        $report = ReportBuilder::create()
+            ->addViolation(new Violation(
+                location: new Location('src/Service/UserService.php', 7),
+                symbolPath: SymbolPath::forClass('App\Service', 'UserService'),
+                ruleName: 'architecture.coverage',
+                violationCode: 'architecture.coverage',
+                message: 'Class is not assigned to any architectural layer',
+                severity: Severity::Info,
+            ))
+            ->filesAnalyzed(1)
+            ->filesSkipped(0)
+            ->duration(0.1)
+            ->build();
+
+        $output = $this->formatter->format($report, new FormatterContext());
+        $xml = $this->parseXml($output);
+
+        $error = $xml->getElementsByTagName('error')->item(0);
+        self::assertNotNull($error);
+        self::assertSame('info', $error->getAttribute('severity'));
+    }
+
     public function testRelativizesPathsWithBasePath(): void
     {
         $report = ReportBuilder::create()

@@ -17,6 +17,7 @@ use Qualimetrix\Configuration\HealthFormulaExcluder;
 use Qualimetrix\Configuration\PathsConfiguration;
 use Qualimetrix\Configuration\Pipeline\ResolvedConfiguration;
 use Qualimetrix\Configuration\RuleOptionsRegistry;
+use Qualimetrix\Core\Architecture\ArchitectureConfigurationHolder;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinitionHolder;
 use Qualimetrix\Core\Coupling\FrameworkNamespacesHolder;
 use Qualimetrix\Core\Metric\CollectorConfigHolder;
@@ -37,12 +38,14 @@ final class RuntimeConfiguratorTest extends TestCase
     private ConfigurationProviderInterface&Stub $configProvider;
     private RuleOptionsRegistry $ruleOptionsRegistry;
     private FrameworkNamespacesHolder $frameworkNamespacesHolder;
+    private ArchitectureConfigurationHolder $architectureHolder;
     private RuntimeConfigurator $configurator;
 
     protected function setUp(): void
     {
         $this->ruleOptionsRegistry = new RuleOptionsRegistry();
         $this->frameworkNamespacesHolder = new FrameworkNamespacesHolder();
+        $this->architectureHolder = new ArchitectureConfigurationHolder();
 
         $this->configProvider = self::createStub(ConfigurationProviderInterface::class);
         $this->configurator = $this->buildConfigurator($this->configProvider);
@@ -84,6 +87,7 @@ final class RuntimeConfiguratorTest extends TestCase
                 new HealthFormulaExcluder(),
             ),
             $this->frameworkNamespacesHolder,
+            $this->architectureHolder,
         );
     }
 

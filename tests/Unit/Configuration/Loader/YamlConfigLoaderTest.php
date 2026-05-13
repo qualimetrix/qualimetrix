@@ -575,6 +575,112 @@ YAML);
         }
     }
 
+    public function testLoadRejectsScalarArchitecture(): void
+    {
+        $path = $this->tempDir . '/config.yaml';
+        file_put_contents($path, 'architecture: false');
+
+        self::expectException(ConfigLoadException::class);
+        self::expectExceptionMessage('"architecture" must be an associative array');
+
+        $this->loader->load($path);
+    }
+
+    public function testLoadRejectsScalarComputedMetrics(): void
+    {
+        $path = $this->tempDir . '/config.yaml';
+        file_put_contents($path, 'computed_metrics: not_a_map');
+
+        // Belongs to the same associativeRootKeys() family — verify symmetry with rules
+        self::expectException(ConfigLoadException::class);
+        self::expectExceptionMessage('"computed_metrics" must be an associative array');
+
+        $this->loader->load($path);
+    }
+
+    public function testLoadPreservesArchitectureLayerNamesVerbatim(): void
+    {
+        $path = $this->tempDir . '/config.yaml';
+        file_put_contents($path, <<<'YAML'
+architecture:
+  layers:
+    app_core: 'App\Core'
+    app-core-services: 'App\CoreServices'
+    appCore: 'App\AppCore'
+YAML);
+
+        $config = $this->loader->load($path);
+
+        // All three layer names must be preserved as written; without preservation
+        // the loader would camelCase app_core → appCore and silently lose them.
+        self::assertArrayHasKey('app_core', $config['architecture']['layers']);
+        self::assertArrayHasKey('app-core-services', $config['architecture']['layers']);
+        self::assertArrayHasKey('appCore', $config['architecture']['layers']);
+        self::assertSame('App\\Core', $config['architecture']['layers']['app_core']);
+        self::assertSame('App\\CoreServices', $config['architecture']['layers']['app-core-services']);
+    }
+
+    public function testLoadPreservesArchitectureAllowSourceLayerNames(): void
+    {
+        $path = $this->tempDir . '/config.yaml';
+        file_put_contents($path, <<<'YAML'
+architecture:
+  layers:
+    app_core: 'App\Core'
+    app_service: 'App\Service'
+  allow:
+    app_core:
+      - app_service
+YAML);
+
+        $config = $this->loader->load($path);
+
+        // Source layer name preserved
+        self::assertArrayHasKey('app_core', $config['architecture']['allow']);
+        // Target list values are scalars — unaffected by key normalization
+        self::assertSame(['app_service'], $config['architecture']['allow']['app_core']);
+    }
+
+    public function testLoadStillNormalizesCliKeysOutsideArchitecture(): void
+    {
+        $path = $this->tempDir . '/config.yaml';
+        file_put_contents($path, <<<'YAML'
+architecture:
+  layers:
+    app_core: 'App\Core'
+disabled_rules:
+  - architecture.layer-violation
+exclude_paths:
+  - tests/
+YAML);
+
+        $config = $this->loader->load($path);
+
+        // CLI-style top-level snake_case keys are normalized to camelCase as before
+        self::assertArrayHasKey('disabledRules', $config);
+        self::assertArrayHasKey('excludePaths', $config);
+        // Architecture layer name preserved
+        self::assertArrayHasKey('app_core', $config['architecture']['layers']);
+    }
+
+    public function testLoadAcceptsKebabCaseLayerNamesMatchingLayerDefinitionRegex(): void
+    {
+        // LayerDefinition::NAME_REGEX accepts [a-z][a-z0-9_-]*; confirm the loader
+        // preserves names that fit the regex without mutating them.
+        $path = $this->tempDir . '/config.yaml';
+        file_put_contents($path, <<<'YAML'
+architecture:
+  layers:
+    'app-core': 'App\Core'
+    'app_core_v2': 'App\CoreV2'
+YAML);
+
+        $config = $this->loader->load($path);
+
+        self::assertArrayHasKey('app-core', $config['architecture']['layers']);
+        self::assertArrayHasKey('app_core_v2', $config['architecture']['layers']);
+    }
+
     private function removeDirectory(string $dir): void
     {
         if (!is_dir($dir)) {

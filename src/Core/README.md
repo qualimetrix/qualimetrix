@@ -57,6 +57,11 @@ Core/
 │   ├── CycleInterface.php
 │   ├── DependencyType.php                 # Dependency type enum
 │   └── EmptyDependencyGraph.php           # No-op graph implementation
+├── Architecture/                          # Layer primitives + typed architecture configuration (see README in subdir)
+│   ├── ArchitectureConfiguration.php      # VO: registry + policy + coverage mode
+│   ├── ArchitectureConfigurationHolder.php # Static runtime holder for resolved config
+│   ├── CoverageMode.php                   # Enum: Ignore | Warn | Error
+│   └── Layer/                             # LayerDefinition, LayerRegistry, LayerPolicy, exceptions
 ├── Duplication/
 │   ├── DuplicateBlock.php                 # VO: a group of duplicate code locations
 │   └── DuplicateLocation.php              # VO: a single location within a duplicate block
@@ -510,6 +515,8 @@ A rule violation.
 - `relatedLocations: list<Location>` — additional locations related to this violation (e.g., other occurrences of duplicated code)
 - `recommendation: ?string` — human-readable message for summary/detail formatters (e.g., "Cyclomatic complexity: 15 (threshold: 10) — too many code paths")
 - `threshold: int|float|null` — threshold that was exceeded (for programmatic comparison)
+- `dependencyTarget: ?SymbolPath` — target symbol of the offending dependency edge (for dependency-based rules such as `architecture.layer-violation`); null for non-dependency rules
+- `dependencyType: ?DependencyType` — type of the offending dependency edge; null for non-dependency rules. Both fields are included in the baseline hash when non-null, enabling per-edge baseline identity that survives line drift
 
 **Methods:**
 - `getFingerprint(): string` — unique identifier for baseline (`ruleName:symbolPath`)

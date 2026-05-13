@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Core\Rule;
 
+use Qualimetrix\Core\Architecture\ArchitectureConfiguration;
 use Qualimetrix\Core\Dependency\CycleInterface;
 use Qualimetrix\Core\Dependency\DependencyGraphInterface;
 use Qualimetrix\Core\Duplication\DuplicateBlock;
@@ -11,6 +12,9 @@ use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Namespace_\NamespaceTree;
 use Qualimetrix\Core\Suppression\ThresholdOverride;
 
+/**
+ * @qmx-threshold code-smell.constructor-overinjection warning=10 — AnalysisContext is an immutable bag of independent analysis artefacts (metrics, graph, cycles, duplicates, namespace tree, suppressions, architecture); bundling them would couple unrelated phases and obscure their optional nature.
+ */
 final readonly class AnalysisContext
 {
     /**
@@ -18,6 +22,7 @@ final readonly class AnalysisContext
      * @param list<CycleInterface> $cycles Detected circular dependency cycles
      * @param list<DuplicateBlock> $duplicateBlocks Detected code duplication blocks
      * @param array<string, list<ThresholdOverride>> $thresholdOverrides Per-file threshold overrides
+     * @param ?ArchitectureConfiguration $architecture Resolved architecture configuration (null when no `architecture:` YAML section was supplied)
      */
     public function __construct(
         public MetricRepositoryInterface $metrics,
@@ -27,6 +32,7 @@ final readonly class AnalysisContext
         public array $duplicateBlocks = [],
         public ?NamespaceTree $namespaceTree = null,
         public array $thresholdOverrides = [],
+        public ?ArchitectureConfiguration $architecture = null,
     ) {}
 
     /**

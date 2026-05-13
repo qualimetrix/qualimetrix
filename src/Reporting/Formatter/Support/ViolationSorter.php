@@ -132,6 +132,7 @@ final class ViolationSorter
         return match ($severity) {
             Severity::Error => 0,
             Severity::Warning => 1,
+            Severity::Info => 2,
         };
     }
 }

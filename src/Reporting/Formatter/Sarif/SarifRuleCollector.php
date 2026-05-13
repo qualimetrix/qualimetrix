@@ -54,8 +54,8 @@ final class SarifRuleCollector
                     'ruleName' => $violation->ruleName,
                     'maxSeverity' => $violation->severity,
                 ];
-            } elseif ($violation->severity === Severity::Error) {
-                $violationCodes[$code]['maxSeverity'] = Severity::Error;
+            } elseif (self::severityRank($violation->severity) > self::severityRank($violationCodes[$code]['maxSeverity'])) {
+                $violationCodes[$code]['maxSeverity'] = $violation->severity;
             }
         }
 
@@ -148,6 +148,19 @@ final class SarifRuleCollector
         return match ($severity) {
             Severity::Error => 'error',
             Severity::Warning => 'warning',
+            Severity::Info => 'note',
+        };
+    }
+
+    /**
+     * Numeric rank for ordering: Info < Warning < Error.
+     */
+    private static function severityRank(Severity $severity): int
+    {
+        return match ($severity) {
+            Severity::Info => 0,
+            Severity::Warning => 1,
+            Severity::Error => 2,
         };
     }
 }

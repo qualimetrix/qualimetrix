@@ -86,6 +86,15 @@ These rules are **inverted**: a violation is reported when the metric falls **be
 
 **Maintainability Index** combines complexity, lines of code, and Halstead metrics into a single score from 0 to 100. Higher is better. A score below 20 means the code is very hard to maintain.
 
+## Architecture Rules
+
+Rules that detect structural problems in the dependency graph. These rules do not use numeric thresholds — they either find a structural violation or they don't.
+
+| Rule                  | ID                                 | Severity                              | Default                                       | Notes                                                                                                                                                                                                     |
+| --------------------- | ---------------------------------- | ------------------------------------- | --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Circular Dependencies | `architecture.circular-dependency` | Error (direct) / Warning (transitive) | enabled                                       | Direct cycles (size 2) reported as Error; longer cycles as Warning. See [Architecture rules](../rules/architecture.md).                                                                                   |
+| Layer Violations      | `architecture.layer-violation`     | Warning (configurable)                | enabled (no-op without `architecture.layers`) | No numeric thresholds; only an `enabled` flag and a `severity` selector. Active only when the top-level `architecture:` YAML section declares layers. See [Architecture rules](../rules/architecture.md). |
+
 ## Code Smell Rules
 
 These rules detect specific patterns that are usually bad practice. Most do not have numeric thresholds -- they either find the pattern or they don't. Two rules (Long Parameter List and Unreachable Code) use numeric thresholds.

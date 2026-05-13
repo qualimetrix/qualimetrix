@@ -4,13 +4,19 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Core\Violation;
 
+use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Core\Rule\RuleLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
+/**
+ * @qmx-threshold code-smell.constructor-overinjection error=16 — Violation is a flat domain VO; its constructor parameters mirror its public surface and bundling would obscure their independence
+ */
 final readonly class Violation
 {
     /**
      * @param list<Location> $relatedLocations Additional locations (e.g., other copies of duplicated code)
+     * @param ?SymbolPath $dependencyTarget Target symbol of the offending dependency edge (for dependency-based rules)
+     * @param ?DependencyType $dependencyType Type of the offending dependency edge (for dependency-based rules)
      */
     public function __construct(
         public Location $location,
@@ -24,6 +30,8 @@ final readonly class Violation
         public array $relatedLocations = [],
         public ?string $recommendation = null,
         public int|float|null $threshold = null,
+        public ?SymbolPath $dependencyTarget = null,
+        public ?DependencyType $dependencyType = null,
     ) {}
 
     /**

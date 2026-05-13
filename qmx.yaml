@@ -24,6 +24,37 @@ coupling:
     - Psr
     - Amp
 
+# Architecture: enforce the layered design documented in CLAUDE.md.
+# Dependency direction: Infrastructure -> Analysis -> Metrics/Rules/Reporting/Configuration -> Core
+# Baseline and Configuration are siblings consumed by higher layers. The Analysis sub-tree forms the
+# pipeline glue and may pull from every domain layer.
+architecture:
+  layers:
+    core:           'Qualimetrix\Core\**'
+    configuration:  'Qualimetrix\Configuration\**'
+    metrics:        'Qualimetrix\Metrics\**'
+    rules:          'Qualimetrix\Rules\**'
+    reporting:      'Qualimetrix\Reporting\**'
+    baseline:       'Qualimetrix\Baseline\**'
+    analysis:       'Qualimetrix\Analysis\**'
+    infrastructure: 'Qualimetrix\Infrastructure\**'
+  allow:
+    # Core sits at the bottom — no upward deps.
+    core:           []
+    # Domain layers depend on Core only.
+    configuration:  [core]
+    metrics:        [core]
+    rules:          [core, configuration]
+    reporting:      [core, configuration]
+    baseline:       [core]
+    # Analysis orchestrates the rest of the pipeline.
+    analysis:       [core, configuration, metrics, rules, reporting, baseline]
+    # Infrastructure is the outermost glue.
+    infrastructure: [core, configuration, analysis, reporting, baseline, metrics, rules]
+  # Warn about edges touching classes outside our own namespaces (vendor, etc.).
+  # The default ignore mode is fine for vendor noise; we keep this opt-in.
+  coverage: ignore
+
 rules:
   # --- Coupling ---
 

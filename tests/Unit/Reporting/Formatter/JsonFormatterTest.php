@@ -680,6 +680,61 @@ final class JsonFormatterTest extends TestCase
         self::assertSame('test.a', $data['violations'][3]['code']); // warning, exceedance=1
     }
 
+    public function testInfoViolationRendersInfoSeverityAndSortsAfterWarning(): void
+    {
+        $report = ReportBuilder::create()
+            ->addViolation(new Violation(
+                location: new Location('src/A.php', 1),
+                symbolPath: SymbolPath::forClass('App', 'A'),
+                ruleName: 'architecture.coverage',
+                violationCode: 'architecture.coverage',
+                message: 'Class not assigned to a layer',
+                severity: Severity::Info,
+            ))
+            ->addViolation(new Violation(
+                location: new Location('src/B.php', 1),
+                symbolPath: SymbolPath::forClass('App', 'B'),
+                ruleName: 'complexity.cyclomatic',
+                violationCode: 'complexity.cyclomatic',
+                message: 'Complexity 12',
+                severity: Severity::Warning,
+                metricValue: 12,
+                threshold: 10,
+            ))
+            ->addViolation(new Violation(
+                location: new Location('src/C.php', 1),
+                symbolPath: SymbolPath::forClass('App', 'C'),
+                ruleName: 'complexity.cyclomatic',
+                violationCode: 'complexity.cyclomatic',
+                message: 'Complexity 25',
+                severity: Severity::Error,
+                metricValue: 25,
+                threshold: 20,
+            ))
+            ->filesAnalyzed(3)
+            ->filesSkipped(0)
+            ->duration(0.1)
+            ->build();
+
+        $output = $this->formatter->format($report, new FormatterContext());
+        $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
+
+        // JSON severity uses the enum value ('info', 'warning', 'error')
+        $severities = array_map(static fn(array $v): string => $v['severity'], $data['violations']);
+        self::assertSame(['error', 'warning', 'info'], $severities);
+
+        // Find the info violation and verify its rendered string
+        $infoViolation = null;
+        foreach ($data['violations'] as $violation) {
+            if ($violation['severity'] === 'info') {
+                $infoViolation = $violation;
+                break;
+            }
+        }
+        self::assertNotNull($infoViolation);
+        self::assertSame('info', $infoViolation['severity']);
+    }
+
     public function testNullThresholdViolationsStillSorted(): void
     {
         $report = ReportBuilder::create()

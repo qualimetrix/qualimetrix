@@ -80,17 +80,33 @@ final class YamlConfigLoader implements ConfigLoaderInterface
     /**
      * Recursively normalizes snake_case keys to camelCase.
      *
-     * Keys that are identifiers (rule names, computed metric names) are preserved as-is,
-     * because they use `group.name` format and must not be normalized.
-     * Their nested option values are still normalized.
+     * Keys that are identifiers are preserved as-is. Two preservation modes:
+     *
+     * 1. Direct identifier sections (e.g. {@code rules}, {@code computedMetrics}):
+     *    children are identifiers (`group.rule-name` form) and must not be normalized.
+     *    Their nested option values ARE normalized again.
+     *
+     * 2. Nested identifier paths (e.g. {@code architecture.layers},
+     *    {@code architecture.allow}): the immediate children of these grandparents
+     *    are user-defined identifiers (layer names) and must be preserved verbatim
+     *    so that error messages and downstream consumers see the names the user
+     *    wrote. Grand-grandchildren (allow-target lists) are scalars/lists and
+     *    require no key normalization either way.
+     *
+     * The current path is tracked as a dot-separated string built from already
+     * normalized keys, so look-ups against {@see ConfigSchema::nestedIdentifierKeyPaths()}
+     * use the canonical (camelCase) representation regardless of how the user
+     * spelled the parents.
      *
      * @param array<string, mixed> $config
-     * @param bool $preserveKeys When true, keys at this level are preserved (used for rule name keys)
+     * @param bool $preserveKeys When true, keys at this level are preserved (identifier section).
+     * @param string $currentPath Dot-separated normalized path leading to {@code $config}.
      *
      * @return array<string, mixed>
      */
-    private function normalizeKeys(array $config, bool $preserveKeys = false): array
+    private function normalizeKeys(array $config, bool $preserveKeys = false, string $currentPath = ''): array
     {
+        $nestedPaths = ConfigSchema::nestedIdentifierKeyPaths();
         $result = [];
 
         foreach ($config as $key => $value) {
@@ -98,10 +114,22 @@ final class YamlConfigLoader implements ConfigLoaderInterface
             $normalizedKey = $preserveKeys ? $stringKey : $this->snakeToCamel($stringKey);
 
             if (\is_array($value)) {
-                // Preserve identifier keys (rule names, metric names) — defined in ConfigSchema
+                $childPath = $currentPath === '' ? $normalizedKey : $currentPath . '.' . $normalizedKey;
+
                 $isIdentifierSection = !$preserveKeys
+                    && $currentPath === ''
                     && \in_array($normalizedKey, ConfigSchema::identifierKeySections(), true);
-                $result[$normalizedKey] = $this->normalizeKeys($value, $isIdentifierSection);
+
+                // Nested identifier paths preserve the grandchildren keys, e.g.
+                // architecture.layers.<userLayerName> stays as the user wrote it.
+                $isNestedIdentifierParent = !$preserveKeys
+                    && \in_array($childPath, $nestedPaths, true);
+
+                $result[$normalizedKey] = $this->normalizeKeys(
+                    $value,
+                    $isIdentifierSection || $isNestedIdentifierParent,
+                    $childPath,
+                );
             } else {
                 $result[$normalizedKey] = $value;
             }
@@ -213,8 +241,12 @@ final class YamlConfigLoader implements ConfigLoaderInterface
      */
     private function validateTypeConstraints(array $config, string $path, array $keyMap): void
     {
-        foreach (ConfigSchema::sectionKeys() as $section) {
-            if (isset($config[$section]) && !\is_array($config[$section])) {
+        foreach (ConfigSchema::associativeRootKeys() as $section) {
+            if (!isset($config[$section])) {
+                continue;
+            }
+
+            if (!\is_array($config[$section])) {
                 throw ConfigLoadException::invalidStructure(
                     $path,
                     \sprintf('"%s" must be an associative array', $this->originalKey($section, $keyMap)),

@@ -133,11 +133,13 @@ final class ReportBuilder
     {
         $errorCount = 0;
         $warningCount = 0;
+        $infoCount = 0;
 
         foreach ($this->violations as $violation) {
             match ($violation->severity) {
                 Severity::Error => $errorCount++,
                 Severity::Warning => $warningCount++,
+                Severity::Info => $infoCount++,
             };
         }
 
@@ -150,6 +152,7 @@ final class ReportBuilder
             warningCount: $warningCount,
             metrics: $this->metrics,
             namespaceTree: $this->namespaceTree,
+            infoCount: $infoCount,
         );
     }
 }

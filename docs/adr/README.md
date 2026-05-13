@@ -45,3 +45,4 @@ What follows from this decision — trade-offs, constraints, future implications
 - [0002 — Interactive HTML Report](0002-html-report.md) — D3 treemap, self-contained HTML, JS build pipeline, hint embedding
 - [0003 — Reporting UX Redesign](0003-reporting-ux-redesign.md) — summary-first CLI, progressive disclosure, MetricHintProvider
 - [0004 — Architecture Findings (April 2026)](0004-architecture-findings-april-2026.md) — lazy command loading, PSR-3 interpolation, dead code removal
+- [0005 — Architecture Layer Rules](0005-architecture-rules.md) — `architecture.layer-violation`, namespace-based membership, allow-list semantics, per-use-site reporting, Phase 2 deferrals

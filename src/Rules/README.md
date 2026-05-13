@@ -18,48 +18,49 @@ Rules are analysis rule implementations for static analysis. Rules are **complet
 
 ## Implemented Rules
 
-| Rule                                     | Category        | Type                            | Description                     | Default Thresholds                                |
-| ---------------------------------------- | --------------- | ------------------------------- | ------------------------------- | ------------------------------------------------- |
-| **complexity.cyclomatic**                | Complexity      | Hierarchical (Method, Class)    | Cyclomatic Complexity (CCN)     | method: 10/20, class.max: 30/50                   |
-| **complexity.cognitive**                 | Complexity      | Hierarchical (Method, Class)    | Cognitive Complexity            | method: 15/30, class.max: 30/50                   |
-| **complexity.npath**                     | Complexity      | Hierarchical (Method, Class)    | NPATH Complexity                | method: 200/1000, class (disabled)                |
-| **complexity.wmc**                       | Complexity      | Simple                          | Weighted Methods per Class      | warning: 50, error: 80                            |
-| **size.method-count**                    | Size            | Simple                          | Method count per class          | warning: 20, error: 30                            |
-| **size.class-count**                     | Size            | Simple                          | Class count per namespace       | warning: 15, error: 25                            |
-| **size.property-count**                  | Size            | Simple                          | Class property count            | warning: 15, error: 20                            |
-| **maintainability.index**                | Maintainability | Simple                          | Maintainability Index           | warning: 40, error: 20                            |
-| **design.lcom**                          | Design          | Simple                          | Lack of Cohesion (LCOM4)        | warning: 3, error: 5                              |
-| **design.noc**                           | Design          | Simple                          | Number of Children              | warning: 10, error: 15                            |
-| **design.inheritance**                   | Design          | Simple                          | Depth of Inheritance Tree (DIT) | warning: 4, error: 6                              |
-| **design.type-coverage**                 | Design          | Simple                          | Type declaration coverage       | param/return/property: 80%/50%                    |
-| **design.data-class**                    | Design          | Simple                          | Data Class detection            | wocThreshold: 80, wmcThreshold: 10                |
-| **design.god-class**                     | Design          | Simple                          | God Class detection (L&M)       | wmc: 47, lcom: 3, tcc: 0.33, loc: 300             |
-| **coupling.instability**                 | Coupling        | Hierarchical (Class, Namespace) | Instability (Ca/Ce)             | warning: 0.8, error: 0.95                         |
-| **coupling.cbo**                         | Coupling        | Hierarchical (Class, Namespace) | Coupling Between Objects        | warning: ..., error: ...                          |
-| **coupling.distance**                    | Coupling        | Simple                          | Distance from Main Sequence     | warning: 0.3, error: 0.5                          |
-| **coupling.class-rank**                  | Coupling        | Simple                          | ClassRank (PageRank on deps)    | warning: 0.02, error: 0.05 (scaled)               |
-| **architecture.circular-dependency**     | Architecture    | Simple                          | Circular dependencies           | enabled: true                                     |
-| **code-smell.boolean-argument**          | CodeSmell       | Simple                          | Boolean arguments in signatures | enabled: true                                     |
-| **code-smell.count-in-loop**             | CodeSmell       | Simple                          | count() calls in loops          | enabled: true                                     |
-| **code-smell.debug-code**                | CodeSmell       | Simple                          | Debug code (var_dump, etc.)     | enabled: true                                     |
-| **code-smell.empty-catch**               | CodeSmell       | Simple                          | Empty catch blocks              | enabled: true                                     |
-| **code-smell.error-suppression**         | CodeSmell       | Simple                          | Error suppression operator (@)  | enabled: true                                     |
-| **code-smell.eval**                      | CodeSmell       | Simple                          | eval() usage                    | enabled: true                                     |
-| **code-smell.exit**                      | CodeSmell       | Simple                          | exit/die usage                  | enabled: true                                     |
-| **code-smell.goto**                      | CodeSmell       | Simple                          | goto statements                 | enabled: true                                     |
-| **code-smell.constructor-overinjection** | CodeSmell       | Simple                          | Constructor over-injection      | warning: 8, error: 12                             |
-| **code-smell.long-parameter-list**       | CodeSmell       | Simple                          | Long parameter lists            | warning: 4, error: 6, vo-warning: 8, vo-error: 12 |
-| **code-smell.superglobals**              | CodeSmell       | Simple                          | Direct superglobal access       | enabled: true                                     |
-| **code-smell.unreachable-code**          | CodeSmell       | Simple                          | Unreachable code detection      | warning: 1, error: 2                              |
-| **security.hardcoded-credentials**       | Security        | Simple                          | Hardcoded credentials           | enabled: true                                     |
-| **security.sql-injection**               | Security        | Simple                          | SQL injection patterns          | enabled: true                                     |
-| **security.xss**                         | Security        | Simple                          | XSS patterns                    | enabled: true                                     |
-| **security.command-injection**           | Security        | Simple                          | Command injection patterns      | enabled: true                                     |
-| **security.sensitive-parameter**         | Security        | Simple                          | Missing #[\SensitiveParameter]  | enabled: true                                     |
-| **code-smell.unused-private**            | CodeSmell       | Simple                          | Unused private methods/props    | enabled: true                                     |
-| **code-smell.identical-subexpression**   | CodeSmell       | Simple                          | Identical sub-expressions       | enabled: true                                     |
-| **duplication.code-duplication**         | Duplication     | Simple                          | Duplicate code blocks           | min_lines: 5, min_tokens: 70, W/E                 |
-| **computed.health**                      | Maintainability | Simple                          | Computed health metric checks   | per-definition thresholds                         |
+| Rule                                     | Category        | Type                            | Description                     | Default Thresholds                                                     |
+| ---------------------------------------- | --------------- | ------------------------------- | ------------------------------- | ---------------------------------------------------------------------- |
+| **complexity.cyclomatic**                | Complexity      | Hierarchical (Method, Class)    | Cyclomatic Complexity (CCN)     | method: 10/20, class.max: 30/50                                        |
+| **complexity.cognitive**                 | Complexity      | Hierarchical (Method, Class)    | Cognitive Complexity            | method: 15/30, class.max: 30/50                                        |
+| **complexity.npath**                     | Complexity      | Hierarchical (Method, Class)    | NPATH Complexity                | method: 200/1000, class (disabled)                                     |
+| **complexity.wmc**                       | Complexity      | Simple                          | Weighted Methods per Class      | warning: 50, error: 80                                                 |
+| **size.method-count**                    | Size            | Simple                          | Method count per class          | warning: 20, error: 30                                                 |
+| **size.class-count**                     | Size            | Simple                          | Class count per namespace       | warning: 15, error: 25                                                 |
+| **size.property-count**                  | Size            | Simple                          | Class property count            | warning: 15, error: 20                                                 |
+| **maintainability.index**                | Maintainability | Simple                          | Maintainability Index           | warning: 40, error: 20                                                 |
+| **design.lcom**                          | Design          | Simple                          | Lack of Cohesion (LCOM4)        | warning: 3, error: 5                                                   |
+| **design.noc**                           | Design          | Simple                          | Number of Children              | warning: 10, error: 15                                                 |
+| **design.inheritance**                   | Design          | Simple                          | Depth of Inheritance Tree (DIT) | warning: 4, error: 6                                                   |
+| **design.type-coverage**                 | Design          | Simple                          | Type declaration coverage       | param/return/property: 80%/50%                                         |
+| **design.data-class**                    | Design          | Simple                          | Data Class detection            | wocThreshold: 80, wmcThreshold: 10                                     |
+| **design.god-class**                     | Design          | Simple                          | God Class detection (L&M)       | wmc: 47, lcom: 3, tcc: 0.33, loc: 300                                  |
+| **coupling.instability**                 | Coupling        | Hierarchical (Class, Namespace) | Instability (Ca/Ce)             | warning: 0.8, error: 0.95                                              |
+| **coupling.cbo**                         | Coupling        | Hierarchical (Class, Namespace) | Coupling Between Objects        | warning: ..., error: ...                                               |
+| **coupling.distance**                    | Coupling        | Simple                          | Distance from Main Sequence     | warning: 0.3, error: 0.5                                               |
+| **coupling.class-rank**                  | Coupling        | Simple                          | ClassRank (PageRank on deps)    | warning: 0.02, error: 0.05 (scaled)                                    |
+| **architecture.circular-dependency**     | Architecture    | Simple                          | Circular dependencies           | enabled: true                                                          |
+| **architecture.layer-violation**         | Architecture    | Simple                          | Layer policy violations         | enabled: true, severity: warning (no-op without `architecture.layers`) |
+| **code-smell.boolean-argument**          | CodeSmell       | Simple                          | Boolean arguments in signatures | enabled: true                                                          |
+| **code-smell.count-in-loop**             | CodeSmell       | Simple                          | count() calls in loops          | enabled: true                                                          |
+| **code-smell.debug-code**                | CodeSmell       | Simple                          | Debug code (var_dump, etc.)     | enabled: true                                                          |
+| **code-smell.empty-catch**               | CodeSmell       | Simple                          | Empty catch blocks              | enabled: true                                                          |
+| **code-smell.error-suppression**         | CodeSmell       | Simple                          | Error suppression operator (@)  | enabled: true                                                          |
+| **code-smell.eval**                      | CodeSmell       | Simple                          | eval() usage                    | enabled: true                                                          |
+| **code-smell.exit**                      | CodeSmell       | Simple                          | exit/die usage                  | enabled: true                                                          |
+| **code-smell.goto**                      | CodeSmell       | Simple                          | goto statements                 | enabled: true                                                          |
+| **code-smell.constructor-overinjection** | CodeSmell       | Simple                          | Constructor over-injection      | warning: 8, error: 12                                                  |
+| **code-smell.long-parameter-list**       | CodeSmell       | Simple                          | Long parameter lists            | warning: 4, error: 6, vo-warning: 8, vo-error: 12                      |
+| **code-smell.superglobals**              | CodeSmell       | Simple                          | Direct superglobal access       | enabled: true                                                          |
+| **code-smell.unreachable-code**          | CodeSmell       | Simple                          | Unreachable code detection      | warning: 1, error: 2                                                   |
+| **security.hardcoded-credentials**       | Security        | Simple                          | Hardcoded credentials           | enabled: true                                                          |
+| **security.sql-injection**               | Security        | Simple                          | SQL injection patterns          | enabled: true                                                          |
+| **security.xss**                         | Security        | Simple                          | XSS patterns                    | enabled: true                                                          |
+| **security.command-injection**           | Security        | Simple                          | Command injection patterns      | enabled: true                                                          |
+| **security.sensitive-parameter**         | Security        | Simple                          | Missing #[\SensitiveParameter]  | enabled: true                                                          |
+| **code-smell.unused-private**            | CodeSmell       | Simple                          | Unused private methods/props    | enabled: true                                                          |
+| **code-smell.identical-subexpression**   | CodeSmell       | Simple                          | Identical sub-expressions       | enabled: true                                                          |
+| **duplication.code-duplication**         | Duplication     | Simple                          | Duplicate code blocks           | min_lines: 5, min_tokens: 70, W/E                                      |
+| **computed.health**                      | Maintainability | Simple                          | Computed health metric checks   | per-definition thresholds                                              |
 
 ---
 
@@ -396,6 +397,60 @@ rules:
 1. Introduce Interface — depend on an interface
 2. Extract Service — extract a shared dependency
 3. Event-driven — use events instead of direct dependencies
+
+---
+
+## Layer Violation Rule
+
+**Name:** `architecture.layer-violation` | **Category:** Architecture | **Type:** Simple
+
+Reports dependency edges that cross declared architecture layers and are not in the policy allow-list.
+
+Layer definitions, allow-list, and `coverage` mode live in the top-level `architecture:` YAML section
+(see [`src/Configuration/Architecture/ArchitectureConfigurationFactory.php`](../Configuration/Architecture/ArchitectureConfigurationFactory.php))
+and reach the rule through `AnalysisContext::$architecture`. The Options class itself carries only
+the `enabled` flag and a single `severity` selector — there are no numeric thresholds.
+
+**Default:** `enabled: true`, `severity: warning`. The rule short-circuits immediately when `architecture.layers` is empty, so projects without architecture configuration pay zero cost.
+
+**Configuration:**
+```yaml
+architecture:
+  layers:
+    controller: 'App\Controller\**'
+    service:    'App\Service\**'
+    repository: 'App\Repository\**'
+  allow:
+    controller: [service]
+    service:    [repository]
+  coverage: ignore   # ignore | warn | error
+
+rules:
+  architecture.layer-violation:
+    enabled: true
+    severity: error
+```
+
+**CLI:** `--layer-violation` (toggles `enabled`).
+
+**Membership semantics:**
+- Namespace-based only (no class-name suffix, no interface, no attribute)
+- Single layer per class; longest-prefix specificity wins
+- Equal-specificity tie → configuration error at config-load time
+- Same-layer dependencies always allowed (MVP)
+
+**Reporting:**
+- One violation per offending dependency edge (use-site granularity)
+- Baseline identity = (source layer, target layer, target class, dependency type) — collapses multiple use-sites of the same forbidden edge into a single baseline entry
+- Out-of-layer ends (either source or target unmatched) silently skipped at violation level; counted toward the `architecture.coverage` diagnostic when `coverage != ignore`
+
+**Coverage diagnostic:** When `architecture.coverage` is `warn` or `error`, the rule emits **one** additional violation under `ruleName: architecture.coverage` summarising unmatched edges and listing up to 10 example unclassified classes. Severity is `Warning` for `warn`, `Error` for `error`.
+
+**Files:**
+- `src/Rules/Architecture/LayerViolationRule.php` — rule implementation
+- `src/Rules/Architecture/LayerViolationOptions.php` — rule options
+- `src/Core/Architecture/Layer/` — reusable layer primitives (`LayerDefinition`, `LayerRegistry`, `LayerPolicy`)
+- `src/Configuration/Architecture/ArchitectureConfigurationFactory.php` — YAML → typed config
 
 ---
 

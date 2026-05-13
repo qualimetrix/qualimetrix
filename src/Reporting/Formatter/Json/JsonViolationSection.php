@@ -42,7 +42,7 @@ final class JsonViolationSection
     public function sort(array $violations): array
     {
         usort($violations, static function (Violation $a, Violation $b): int {
-            $severityOrder = ($a->severity === Severity::Error ? 0 : 1) <=> ($b->severity === Severity::Error ? 0 : 1);
+            $severityOrder = self::severityRank($a->severity) <=> self::severityRank($b->severity);
             if ($severityOrder !== 0) {
                 return $severityOrder;
             }
@@ -107,6 +107,18 @@ final class JsonViolationSection
             'threshold' => $this->sanitizer->sanitizeNumeric($violation->threshold),
             'techDebtMinutes' => $this->remediationTimeRegistry->getMinutesForViolation($violation),
         ];
+    }
+
+    /**
+     * Sort rank for severities: Error first (0), then Warning (1), then Info (2).
+     */
+    private static function severityRank(Severity $severity): int
+    {
+        return match ($severity) {
+            Severity::Error => 0,
+            Severity::Warning => 1,
+            Severity::Info => 2,
+        };
     }
 
     private static function getExceedance(Violation $v): float
