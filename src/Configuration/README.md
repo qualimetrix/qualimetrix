@@ -37,6 +37,7 @@ Configuration/
 │   ├── ConfigurationMerger.php            # Layered config merge logic
 │   ├── RuleNameValidator.php              # Unknown rule name warnings
 │   ├── ResolvedConfiguration.php           # Final configuration
+│   ├── DeferredWarning.php                 # PSR-3-shaped record buffered during resolve(), replayed after logger is configured
 │   └── Stage/
 │       ├── ConfigurationStageInterface.php # Stage contract
 │       ├── DefaultsStage.php               # Priority 0: defaults
@@ -55,7 +56,8 @@ Configuration/
 │   └── ComposerReader.php         # PSR-4 path extraction
 │
 ├── Architecture/                  # Architecture rules config (RFC: architecture rules)
-│   └── ArchitectureConfigurationFactory.php  # YAML map under `architecture:` → typed Core\Architecture\ArchitectureConfiguration
+│   ├── ArchitectureConfigurationFactory.php  # YAML map under `architecture:` → typed Core\Architecture\ArchitectureConfiguration + DeferredWarnings
+│   └── ArchitectureFactoryResult.php         # Result VO: configuration + list of deferred warnings
 │
 ├── Loader/
 │   ├── ConfigLoaderInterface.php  # Loader contract
@@ -146,6 +148,35 @@ $resolved = $this->pipeline->resolve($context);
 $resolved->paths;       // PathsConfiguration
 $resolved->analysis;    // AnalysisConfiguration
 $resolved->ruleOptions; // array<string, mixed>
+```
+
+### Deferred warnings
+
+Some stages (notably `ArchitectureConfigurationFactory` reached from
+`buildResolved()`) need to surface PSR-3-shaped warnings to the user — for
+example, `mutual-allow` detection or pattern-collision heuristics. The pipeline
+runs *before* `RuntimeConfigurator::configureLogger()` wires the user-facing
+logger into `LoggerHolder`, so direct logging at that point would be routed to
+the placeholder `NullLogger` and silently dropped.
+
+To avoid that, the factory returns its warnings inside
+`ArchitectureFactoryResult`, the pipeline aggregates them into
+`ResolvedConfiguration::$deferredWarnings`, and
+`RuntimeConfigurator::drainDeferredWarnings()` replays each record through the
+now-configured logger via `LoggerInterface::log($level, $message, $context)`.
+The `DeferredWarning` VO carries a PSR-3 level constant, message, and optional
+context — drained verbatim with no transformation.
+
+```text
+Pipeline.resolve()
+   └─ ArchitectureConfigurationFactory.fromArray()
+         └─ DeferredWarning[]  (mutual-allow, pattern-collision, future cases)
+              │
+              ▼ ResolvedConfiguration.deferredWarnings
+              │
+RuntimeConfigurator.configure()
+   ├─ configureLogger()           # LoggerHolder gets the real logger
+   └─ drainDeferredWarnings()     # replays warnings into that logger
 ```
 
 ### Extending the Pipeline

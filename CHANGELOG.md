@@ -19,6 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 - `architecture.layer-collision` diagnostic and the underlying `LayerCollisionException` machinery. Declaration-order matching eliminates the ambiguity case; the two new info-severity diagnostics replace its safety net.
 
+### Fixed
+- Architecture configuration warnings (`mutual-allow`, pattern-collision heuristics) now actually reach the user logger. Previously they were emitted to a placeholder `NullLogger` because configuration resolution ran before the user logger was wired up; the warnings are now buffered as `DeferredWarning`s and replayed once the logger is configured.
+
 ## [0.17.0] - 2026-05-12
 
 ### Fixed
