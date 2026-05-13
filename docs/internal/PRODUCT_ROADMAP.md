@@ -38,13 +38,15 @@ Items ordered by combined usefulness × marketing impact × effort efficiency.
 
 ### Tier 1 — Strategic (high value, higher effort)
 
-#### 1. Architecture Rules (deptrac replacement) — Phase 1 ✅ Delivered v0.17.0
+#### 1. Architecture Rules (deptrac replacement) — Phase 1 ✅ Implemented (pending release tag)
 
-- **Status:** Shipped as MVP. Namespace-pattern layer membership, allow-list policy, coverage modes (`ignore`/`warn`/`error`),
-  vendor as first-class layers, baseline-friendly edge identity, `@qmx-ignore architecture.layer-violation` suppression.
-  Pivot from specificity-based to declaration-order matching is tracked in
-  [docs/internal/plans/architecture-rules-followup.md](plans/architecture-rules-followup.md)
-- **Marketing claim live:** "Drop deptrac from your CI — Qualimetrix does it natively, 40x faster"
+- **Status:** Implementation merged on `main` as MVP; not yet tagged in a release (v0.17.0 predates the merge).
+  Namespace-pattern layer membership, allow-list policy, coverage modes (`ignore`/`warn`/`error`), vendor as first-class
+  layers, baseline-friendly edge identity, `@qmx-ignore architecture.layer-violation` suppression. Pivot from
+  specificity-based to declaration-order matching is tracked in
+  [docs/internal/plans/architecture-rules-followup.md](plans/architecture-rules-followup.md) and should land before
+  the release that ships this feature
+- **Marketing claim (post-release):** "Drop deptrac from your CI — Qualimetrix does it natively, 40x faster"
 - **What's deferred to Phase 2** (see Tier 2): membership beyond namespace, submodule isolation, negative patterns,
   dependency type filter, explicit default layer
 - **Reference:** deptrac (PHP), ArchUnit (Java), NetArchTest (.NET), Dependency Cruiser (JS)
