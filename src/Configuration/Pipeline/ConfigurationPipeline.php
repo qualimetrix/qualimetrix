@@ -88,10 +88,11 @@ final class ConfigurationPipeline implements ConfigurationPipelineInterface
      */
     private function buildResolved(array $merged, array $appliedSources): ResolvedConfiguration
     {
-        // The architecture factory emits PSR-3 warnings for mutual-allow pairs
-        // and potential pattern collisions. The logger is forwarded from the
-        // pipeline so the warnings surface through the user-configured channel.
-        $architecture = (new ArchitectureConfigurationFactory())->fromArray(
+        // The architecture factory emits warnings for mutual-allow pairs and
+        // (until Step 1 lands) also forwards them to the pipeline logger so the
+        // existing surface keeps working. Step 1 will wire the result's
+        // warning list through ResolvedConfiguration into RuntimeConfigurator.
+        $architectureResult = (new ArchitectureConfigurationFactory())->fromArray(
             $this->getAssocArrayValue($merged, ConfigSchema::ARCHITECTURE, []),
             $this->logger,
         );
@@ -105,7 +106,7 @@ final class ConfigurationPipeline implements ConfigurationPipelineInterface
             ruleOptions: $this->getAssocArrayValue($merged, ConfigSchema::RULES, []),
             computedMetrics: $this->getAssocArrayValue($merged, ConfigSchema::COMPUTED_METRICS, []),
             appliedSources: $appliedSources,
-            architecture: $architecture,
+            architecture: $architectureResult->configuration,
         );
     }
 

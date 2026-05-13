@@ -5,35 +5,26 @@ declare(strict_types=1);
 namespace Qualimetrix\Core\Architecture\Layer;
 
 /**
- * Immutable Value Object describing a single architectural layer: a human-readable
- * name plus the list of namespace patterns whose classes belong to that layer.
+ * Immutable Value Object describing a single architectural layer: a
+ * human-readable name plus the list of namespace patterns whose classes
+ * belong to that layer.
  *
- * Two responsibilities:
- * 1. Boolean membership check via {@see match()}.
- * 2. Specificity computation: how "tight" the matching pattern is. Specificity is
- *    used by {@see LayerRegistry} to disambiguate between overlapping layers
- *    (e.g. `App\**` vs `App\Service\**` — the latter is more specific).
+ * Boolean membership check is provided via {@see matches()}. Diagnostics
+ * that need to report which specific pattern matched a class (the debug
+ * command, the `architecture.potential-shadow` diagnostic) call
+ * {@see firstMatchingPattern()}.
  *
- * Specificity semantics:
- * - A pattern's specificity is the length (in characters) of its literal prefix
- *   before the first wildcard character (`*`, `?`, `[`).
- * - For a pattern with no wildcards (pure prefix mode), specificity equals the
- *   pattern's full length after trailing-backslash normalization.
- * - If the layer holds several patterns and more than one matches, the highest
- *   specificity wins. The maximum value is returned.
+ * Under declaration-order matching ({@see LayerRegistry}), the layer's
+ * patterns are scanned in declaration order; the first matching pattern
+ * decides the class's layer. There is no specificity scoring — the user's
+ * declaration order is the disambiguation rule.
  *
- * Specificity limitation:
- * - Specificity is computed as the length of the literal prefix before the first
- *   wildcard character (`*`, `?`, `[`). This means `App\**\Foo` and `App\**\Bar`
- *   have the same specificity (4). When two layers have patterns with identical
- *   prefix-specificity that overlap, a {@see LayerCollisionException} is thrown
- *   at resolution time. Users should design patterns with unique literal prefixes
- *   (e.g., `App\Service\**\Repository` vs `App\Repository\**`).
- *
- * Note: {@see patternMatches()} intentionally duplicates the matching logic from
- * {@see \Qualimetrix\Core\Util\NamespaceMatcher} to avoid coupling Core to that
- * widely-used utility's API for a single-pattern, per-call need. The two
- * implementations must be kept behaviourally consistent.
+ * Note: {@see patternMatches()} intentionally duplicates the matching logic
+ * from {@see \Qualimetrix\Core\Util\NamespaceMatcher} to avoid coupling
+ * Core to that widely-used utility's API for a single-pattern, per-call
+ * need. The two implementations must be kept behaviourally consistent.
+ * Consolidation is tracked as a follow-up (see Step 2 of the architecture
+ * rules follow-up plan).
  */
 final readonly class LayerDefinition
 {
@@ -42,14 +33,7 @@ final readonly class LayerDefinition
     private const array WILDCARD_CHARS = ['*', '?', '['];
 
     /**
-     * Per-pattern specificity, indexed parallel to {@see $normalizedPatterns}.
-     *
-     * @var list<int>
-     */
-    private array $specificities;
-
-    /**
-     * Patterns with trailing backslashes stripped, used for matching/specificity.
+     * Patterns with trailing backslashes stripped, used for matching.
      *
      * @var list<string>
      */
@@ -69,15 +53,11 @@ final readonly class LayerDefinition
         $this->validatePatterns($patterns);
 
         $normalized = [];
-        $specificities = [];
         foreach ($patterns as $pattern) {
-            $normalizedPattern = rtrim($pattern, '\\');
-            $normalized[] = $normalizedPattern;
-            $specificities[] = self::specificityOf($normalizedPattern);
+            $normalized[] = rtrim($pattern, '\\');
         }
 
         $this->normalizedPatterns = $normalized;
-        $this->specificities = $specificities;
     }
 
     /**
@@ -99,45 +79,63 @@ final readonly class LayerDefinition
     }
 
     /**
-     * Returns the specificity of the most specific pattern that matches `$fqn`,
+     * Returns true when at least one of this layer's patterns matches `$fqn`.
+     *
+     * Empty `$fqn` is never a match.
+     */
+    public function matches(string $fqn): bool
+    {
+        if ($fqn === '') {
+            return false;
+        }
+
+        foreach ($this->normalizedPatterns as $pattern) {
+            if ($pattern === '') {
+                continue;
+            }
+
+            if ($this->patternMatches($pattern, $fqn)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Returns the FIRST pattern (in declaration order) that matches `$fqn`,
      * or null if no pattern matches.
      *
-     * Specificity is always a positive integer when a match exists — patterns
-     * are required to be non-empty by the constructor.
+     * The returned string is the user-supplied original pattern (with any
+     * trailing backslash preserved), so diagnostics quote the exact text
+     * the user wrote in YAML.
      */
-    public function match(string $fqn): ?int
+    public function firstMatchingPattern(string $fqn): ?string
     {
         if ($fqn === '') {
             return null;
         }
 
-        $best = null;
         foreach ($this->normalizedPatterns as $index => $pattern) {
-            if ($pattern === '' || !$this->patternMatches($pattern, $fqn)) {
+            if ($pattern === '') {
                 continue;
             }
 
-            $specificity = $this->specificities[$index];
-            if ($best === null || $specificity > $best) {
-                $best = $specificity;
+            if ($this->patternMatches($pattern, $fqn)) {
+                return $this->patterns[$index];
             }
         }
 
-        return $best;
+        return null;
     }
 
-    /**
-     * Computes specificity for a single normalized pattern.
-     */
-    private static function specificityOf(string $pattern): int
+    private function patternMatches(string $pattern, string $fqn): bool
     {
-        $firstWildcard = self::firstWildcardPosition($pattern);
-
-        if ($firstWildcard === null) {
-            return \strlen($pattern);
+        if (self::firstWildcardPosition($pattern) !== null) {
+            return fnmatch($pattern, $fqn, \FNM_NOESCAPE);
         }
 
-        return $firstWildcard;
+        return $fqn === $pattern || str_starts_with($fqn, $pattern . '\\');
     }
 
     private static function firstWildcardPosition(string $pattern): ?int
@@ -154,15 +152,6 @@ final readonly class LayerDefinition
         }
 
         return $minPosition;
-    }
-
-    private function patternMatches(string $pattern, string $fqn): bool
-    {
-        if (self::firstWildcardPosition($pattern) !== null) {
-            return fnmatch($pattern, $fqn, \FNM_NOESCAPE);
-        }
-
-        return $fqn === $pattern || str_starts_with($fqn, $pattern . '\\');
     }
 
     private function validateName(string $name): void

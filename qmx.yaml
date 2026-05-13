@@ -28,16 +28,28 @@ coupling:
 # Dependency direction: Infrastructure -> Analysis -> Metrics/Rules/Reporting/Configuration -> Core
 # Baseline and Configuration are siblings consumed by higher layers. The Analysis sub-tree forms the
 # pipeline glue and may pull from every domain layer.
+#
+# Declaration order matters (ADR 0006: first match wins). Since each layer's
+# pattern is a disjoint namespace under Qualimetrix\*, order within the list
+# only affects diagnostics (architecture.potential-shadow / architecture.unreachable-layer).
 architecture:
   layers:
-    core:           'Qualimetrix\Core\**'
-    configuration:  'Qualimetrix\Configuration\**'
-    metrics:        'Qualimetrix\Metrics\**'
-    rules:          'Qualimetrix\Rules\**'
-    reporting:      'Qualimetrix\Reporting\**'
-    baseline:       'Qualimetrix\Baseline\**'
-    analysis:       'Qualimetrix\Analysis\**'
-    infrastructure: 'Qualimetrix\Infrastructure\**'
+    - name: core
+      patterns: ['Qualimetrix\Core\**']
+    - name: configuration
+      patterns: ['Qualimetrix\Configuration\**']
+    - name: metrics
+      patterns: ['Qualimetrix\Metrics\**']
+    - name: rules
+      patterns: ['Qualimetrix\Rules\**']
+    - name: reporting
+      patterns: ['Qualimetrix\Reporting\**']
+    - name: baseline
+      patterns: ['Qualimetrix\Baseline\**']
+    - name: analysis
+      patterns: ['Qualimetrix\Analysis\**']
+    - name: infrastructure
+      patterns: ['Qualimetrix\Infrastructure\**']
   allow:
     # Core sits at the bottom — no upward deps.
     core:           []

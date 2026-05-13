@@ -199,20 +199,24 @@ final class ConfigSchema
      * identifiers and must NOT be normalized to camelCase.
      *
      * Unlike {@see identifierKeySections()}, these are nested below the root:
-     * the path {@code architecture.layers} means the keys under
-     * {@code architecture.layers.*} (layer names) are preserved verbatim.
+     * the path {@code architecture.allow} means the keys under
+     * {@code architecture.allow.*} (source layer names) are preserved verbatim.
      *
      * Preserving layer names ensures that error messages and downstream
      * consumers see the names exactly as the user typed them — without this,
-     * a configuration line like {@code app_core: 'App\\Core'} would be
-     * silently turned into {@code appCore} during key normalization.
+     * a configuration line like {@code app_core: [domain]} would be silently
+     * turned into {@code appCore} during key normalization.
+     *
+     * Note: under ADR 0006 (declaration-order matching) `architecture.layers`
+     * is an ordered list of entries (each with a `name` field), not a map.
+     * List items have no user-defined keys, so the path no longer needs
+     * preservation.
      *
      * @return list<string>
      */
     public static function nestedIdentifierKeyPaths(): array
     {
         return [
-            self::ARCHITECTURE . '.layers',
             self::ARCHITECTURE . '.allow',
         ];
     }

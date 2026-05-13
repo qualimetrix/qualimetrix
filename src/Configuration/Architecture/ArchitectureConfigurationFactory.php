@@ -6,8 +6,10 @@ namespace Qualimetrix\Configuration\Architecture;
 
 use InvalidArgumentException;
 use Psr\Log\LoggerInterface;
+use Psr\Log\LogLevel;
 use Psr\Log\NullLogger;
 use Qualimetrix\Configuration\Exception\ConfigLoadException;
+use Qualimetrix\Configuration\Pipeline\DeferredWarning;
 use Qualimetrix\Core\Architecture\ArchitectureConfiguration;
 use Qualimetrix\Core\Architecture\CoverageMode;
 use Qualimetrix\Core\Architecture\Layer\InvalidLayerDefinitionException;
@@ -17,36 +19,57 @@ use Qualimetrix\Core\Architecture\Layer\LayerRegistry;
 
 /**
  * Converts the raw YAML map under the {@code architecture:} key into a typed
- * {@see ArchitectureConfiguration} value object.
+ * {@see ArchitectureFactoryResult} carrying the resolved
+ * {@see ArchitectureConfiguration} and any deferred warnings.
+ *
+ * Schema (declaration-order matching, first match wins):
+ *
+ * ```yaml
+ * architecture:
+ *   layers:
+ *     - name: controller
+ *       patterns: ['App\Controller\**']
+ *     - name: repository
+ *       patterns: ['App\Repository\**']
+ *   allow:
+ *     controller: [repository]
+ *   coverage: ignore
+ * ```
+ *
+ * `layers` is an **ordered list**; the first layer whose patterns match a class
+ * FQN owns that class. There is no specificity scoring and no collision
+ * detection — order is the user's tool to express intent. See
+ * {@see \Qualimetrix\Core\Architecture\Layer\LayerRegistry} and ADR 0006.
  *
  * Responsibilities:
- * - Structural validation (top-level keys, maps vs. lists, key types, allowed values).
- * - Cross-validation between {@code layers} and {@code allow} (every reference
- *   in {@code allow} must name an existing layer).
- * - Long-form allow-entry normalization (`{target, types}` short-form → bare
- *   string; `types` is reserved for a future filter and currently triggers a
- *   deprecation-style warning).
- * - Mutual-allow detection (`A → B` AND `B → A`) — logged as a PSR-3 warning.
- * - Best-effort pattern-collision pre-validation: duplicate literal patterns
- *   across layers are rejected outright; same-prefix/same-specificity patterns
- *   trigger a logger warning.
+ * - Structural validation (top-level keys, layer list shape, allow shape, coverage value).
+ * - Cross-validation between `layers` and `allow` (every reference in `allow`
+ *   must name a declared layer).
+ * - Long-form allow-entry normalization (`{target, types}` → bare string;
+ *   `types` is reserved for a future filter and triggers a deprecation warning).
+ * - Mutual-allow detection (`A → B` AND `B → A`) — surfaced as a warning.
+ * - Duplicate-pattern detection across layers (under declaration-order
+ *   semantics any class matching the duplicate would always go to the earlier
+ *   layer — the second layer is unreachable; reject at load with a clear error).
  *
- * All structural errors surface as {@see ConfigLoadException} with the logical
- * path {@code 'architecture'} so that callers can route them through the same
- * channel as other configuration errors.
+ * All structural errors surface as {@see ConfigLoadException} with the
+ * logical path {@code 'architecture'}.
  *
- * The logger is optional. The factory falls back to a {@see NullLogger} when no
- * logger is provided. In production the
- * {@see \Qualimetrix\Configuration\Pipeline\ConfigurationPipeline} wires a
- * {@see \Qualimetrix\Infrastructure\Logging\DelegatingLogger} pointing at the
- * runtime {@see \Qualimetrix\Infrastructure\Logging\LoggerHolder}, so warnings
- * emitted here are forwarded to whichever logger the holder carries at log time.
+ * The optional `LoggerInterface` argument is retained for backward
+ * compatibility with the configuration pipeline; Step 1 of the follow-up
+ * plan removes it in favour of draining
+ * {@see ArchitectureFactoryResult::$warnings} via the runtime configurator.
+ * For now, when a logger is provided, warnings are also emitted through it
+ * (matching the pre-pivot behaviour).
  *
- * @qmx-threshold complexity.wmc error=100
+ * @qmx-threshold complexity.wmc warning=85 error=100
  *                Comprehensive structural validation of a free-form YAML map
- *                produces many short, focused methods. WMC stays high because
- *                each validation step is its own method (preferable to one big
- *                validator). All methods are individually simple.
+ *                produces many short, focused validation methods (top-level
+ *                shape, layer entries, allow entries, coverage, duplicate
+ *                patterns, mutual-allow). WMC stays high because each step is
+ *                its own method (preferable to one big validator). All methods
+ *                are individually simple; Step 3 of the follow-up plan
+ *                decomposes the class into per-concern validators.
  */
 final class ArchitectureConfigurationFactory
 {
@@ -55,7 +78,7 @@ final class ArchitectureConfigurationFactory
     private const array ALLOWED_TOP_LEVEL_KEYS = ['layers', 'allow', 'coverage'];
 
     /**
-     * Converts the merged YAML map under {@code architecture:} to a typed VO.
+     * Converts the merged YAML map under {@code architecture:} to a typed result.
      *
      * Callers can pass {@code $merged['architecture'] ?? []} directly; both
      * associative and (degenerate) sequential arrays are accepted at the type
@@ -65,23 +88,19 @@ final class ArchitectureConfigurationFactory
      * like {@code imports:}) trigger a {@see ConfigLoadException} so that user
      * mistakes never silently disable architecture rules.
      *
-     * Pre-validation of layer pattern collisions is best-effort and limited to
-     * a heuristic check that detects exact-duplicate patterns and same-prefix
-     * patterns across layers. Equal-specificity ambiguities that depend on
-     * actual class FQNs are still surfaced at analyze-time by
-     * {@see \Qualimetrix\Core\Architecture\Layer\LayerCollisionException}.
-     *
      * @param array<string, mixed>|array<int, mixed> $raw
      */
-    public function fromArray(array $raw, ?LoggerInterface $logger = null): ArchitectureConfiguration
+    public function fromArray(array $raw, ?LoggerInterface $logger = null): ArchitectureFactoryResult
     {
         $logger ??= new NullLogger();
 
         if ($raw === []) {
-            return new ArchitectureConfiguration(
-                new LayerRegistry([]),
-                new LayerPolicy([]),
-                CoverageMode::Ignore,
+            return new ArchitectureFactoryResult(
+                new ArchitectureConfiguration(
+                    new LayerRegistry([]),
+                    new LayerPolicy([]),
+                    CoverageMode::Ignore,
+                ),
             );
         }
 
@@ -92,6 +111,7 @@ final class ArchitectureConfigurationFactory
         $coverageRaw = $raw['coverage'] ?? null;
 
         $definitions = $this->buildLayerDefinitions($layersRaw);
+        $this->rejectDuplicatePatterns($definitions);
         $registry = $this->buildRegistry($definitions);
 
         $layerNames = $registry->layerNames();
@@ -100,20 +120,17 @@ final class ArchitectureConfigurationFactory
         $policy = new LayerPolicy($allowedTargets);
         $coverage = $this->resolveCoverage($coverageRaw);
 
-        $this->reportMutualAllow($allowedTargets, $logger);
-        $this->reportPatternCollisions($definitions, $logger);
+        $warnings = $this->reportMutualAllow($allowedTargets, $logger);
 
-        return new ArchitectureConfiguration($registry, $policy, $coverage);
+        return new ArchitectureFactoryResult(
+            new ArchitectureConfiguration($registry, $policy, $coverage),
+            $warnings,
+        );
     }
 
     /**
      * Validates that {@code $raw} is an associative map whose keys are exactly
      * the well-known top-level architecture keys (`layers`, `allow`, `coverage`).
-     *
-     * Sequential arrays and scalars are rejected outright. Unknown keys produce
-     * a single exception listing all of them — typos like {@code layres:} would
-     * otherwise be silently dropped, leaving the user with an apparently empty
-     * architecture configuration.
      *
      * @param array<string, mixed>|array<int, mixed> $raw
      */
@@ -149,6 +166,9 @@ final class ArchitectureConfigurationFactory
     }
 
     /**
+     * Parses the ordered `architecture.layers` list into {@see LayerDefinition}
+     * instances, preserving declaration order.
+     *
      * @return list<LayerDefinition>
      */
     private function buildLayerDefinitions(mixed $layersRaw): array
@@ -160,63 +180,110 @@ final class ArchitectureConfigurationFactory
         if (!\is_array($layersRaw)) {
             throw new ConfigLoadException(
                 self::CONFIG_PATH,
-                'architecture.layers: must be a map of layer-name → pattern(s), got ' . get_debug_type($layersRaw) . '.',
+                'architecture.layers: must be an ordered list of layer entries, got ' . get_debug_type($layersRaw) . '.',
             );
         }
 
-        if (array_is_list($layersRaw)) {
+        if (!array_is_list($layersRaw)) {
             throw new ConfigLoadException(
                 self::CONFIG_PATH,
-                'architecture.layers: must be a map of layer-name → pattern(s); a sequential list is not allowed.',
+                'architecture.layers: must be an ordered list of layer entries (each entry an object with "name" and "patterns" keys), not a map. '
+                . 'See ADR 0006 for the schema change rationale.',
             );
         }
 
         $definitions = [];
-        foreach ($layersRaw as $name => $value) {
-            if (\is_int($name)) {
-                throw new ConfigLoadException(
-                    self::CONFIG_PATH,
-                    \sprintf('architecture.layers: numeric keys are not allowed (got %d).', $name),
-                );
-            }
-
-            $patterns = $this->normalizeLayerPatterns($name, $value);
-
-            try {
-                $definitions[] = new LayerDefinition($name, $patterns);
-            } catch (InvalidLayerDefinitionException $e) {
-                throw new ConfigLoadException(
-                    self::CONFIG_PATH,
-                    \sprintf('architecture.layers.%s: %s', $name, $e->getMessage()),
-                    $e,
-                );
-            }
+        $seenNames = [];
+        foreach ($layersRaw as $index => $entry) {
+            $definitions[] = $this->buildSingleLayerDefinition($index, $entry, $seenNames);
         }
 
         return $definitions;
     }
 
     /**
+     * @param array<string, true> $seenNames
+     *
+     * @param-out array<string, true> $seenNames
+     */
+    private function buildSingleLayerDefinition(int $index, mixed $entry, array &$seenNames): LayerDefinition
+    {
+        if (!\is_array($entry) || array_is_list($entry)) {
+            throw new ConfigLoadException(
+                self::CONFIG_PATH,
+                \sprintf(
+                    'architecture.layers[%d]: each entry must be a map with "name" and "patterns" keys, got %s.',
+                    $index,
+                    get_debug_type($entry),
+                ),
+            );
+        }
+
+        $allowedEntryKeys = ['name', 'patterns'];
+        $unknown = array_diff(array_keys($entry), $allowedEntryKeys);
+        if ($unknown !== []) {
+            throw new ConfigLoadException(
+                self::CONFIG_PATH,
+                \sprintf(
+                    'architecture.layers[%d]: unknown key(s) %s. Allowed keys: %s.',
+                    $index,
+                    implode(', ', array_map(static fn($k): string => '"' . (string) $k . '"', $unknown)),
+                    implode(', ', array_map(static fn(string $k): string => '"' . $k . '"', $allowedEntryKeys)),
+                ),
+            );
+        }
+
+        if (!\array_key_exists('name', $entry) || !\is_string($entry['name']) || $entry['name'] === '') {
+            throw new ConfigLoadException(
+                self::CONFIG_PATH,
+                \sprintf('architecture.layers[%d]: missing or empty "name" (must be a non-empty string).', $index),
+            );
+        }
+        $name = $entry['name'];
+
+        if (isset($seenNames[$name])) {
+            throw new ConfigLoadException(
+                self::CONFIG_PATH,
+                \sprintf(
+                    'architecture.layers[%d]: duplicate layer name "%s" — each layer must have a unique identifier.',
+                    $index,
+                    $name,
+                ),
+            );
+        }
+        $seenNames[$name] = true;
+
+        $patterns = $this->normalizeLayerPatterns($index, $name, $entry['patterns'] ?? null);
+
+        try {
+            return new LayerDefinition($name, $patterns);
+        } catch (InvalidLayerDefinitionException $e) {
+            throw new ConfigLoadException(
+                self::CONFIG_PATH,
+                \sprintf('architecture.layers[%d] ("%s"): %s', $index, $name, $e->getMessage()),
+                $e,
+            );
+        }
+    }
+
+    /**
      * @return list<string>
      */
-    private function normalizeLayerPatterns(string $layerName, mixed $value): array
+    private function normalizeLayerPatterns(int $index, string $layerName, mixed $value): array
     {
-        if (\is_string($value)) {
-            if ($value === '') {
-                throw new ConfigLoadException(
-                    self::CONFIG_PATH,
-                    \sprintf('architecture.layers.%s: pattern must be a non-empty string.', $layerName),
-                );
-            }
-
-            return [$value];
+        if ($value === null) {
+            throw new ConfigLoadException(
+                self::CONFIG_PATH,
+                \sprintf('architecture.layers[%d] ("%s"): missing "patterns" key (must be a non-empty list of strings).', $index, $layerName),
+            );
         }
 
         if (!\is_array($value) || !array_is_list($value)) {
             throw new ConfigLoadException(
                 self::CONFIG_PATH,
                 \sprintf(
-                    'architecture.layers.%s: pattern must be a non-empty string or a list of strings, got %s.',
+                    'architecture.layers[%d] ("%s"): "patterns" must be a non-empty list of strings, got %s.',
+                    $index,
                     $layerName,
                     get_debug_type($value),
                 ),
@@ -226,19 +293,20 @@ final class ArchitectureConfigurationFactory
         if ($value === []) {
             throw new ConfigLoadException(
                 self::CONFIG_PATH,
-                \sprintf('architecture.layers.%s: pattern list must contain at least one pattern.', $layerName),
+                \sprintf('architecture.layers[%d] ("%s"): "patterns" must contain at least one entry.', $index, $layerName),
             );
         }
 
         $patterns = [];
-        foreach ($value as $index => $pattern) {
+        foreach ($value as $patternIndex => $pattern) {
             if (!\is_string($pattern) || $pattern === '') {
                 throw new ConfigLoadException(
                     self::CONFIG_PATH,
                     \sprintf(
-                        'architecture.layers.%s: pattern must be a non-empty string at index %d (got %s).',
-                        $layerName,
+                        'architecture.layers[%d] ("%s"): "patterns" entry at index %d must be a non-empty string (got %s).',
                         $index,
+                        $layerName,
+                        $patternIndex,
                         \is_string($pattern) ? "''" : get_debug_type($pattern),
                     ),
                 );
@@ -247,6 +315,45 @@ final class ArchitectureConfigurationFactory
         }
 
         return $patterns;
+    }
+
+    /**
+     * Rejects duplicate patterns across different layers. Under declaration-
+     * order semantics any class matching the duplicate would always belong to
+     * the earlier layer — the second occurrence is unreachable and is always
+     * a configuration mistake.
+     *
+     * Same-pattern entries within ONE layer are not duplicates (the layer
+     * itself can list whatever it wants), so the check is cross-layer only.
+     *
+     * @param list<LayerDefinition> $definitions
+     */
+    private function rejectDuplicatePatterns(array $definitions): void
+    {
+        $owners = [];
+        foreach ($definitions as $definition) {
+            $seenInThisLayer = [];
+            foreach ($definition->patterns() as $pattern) {
+                $normalized = rtrim($pattern, '\\');
+                if (isset($seenInThisLayer[$normalized])) {
+                    continue;
+                }
+                $seenInThisLayer[$normalized] = true;
+
+                if (isset($owners[$normalized]) && $owners[$normalized] !== $definition->name()) {
+                    throw new ConfigLoadException(
+                        self::CONFIG_PATH,
+                        \sprintf(
+                            'architecture.layers: pattern "%s" declared in both "%s" and "%s". Under declaration-order matching the second occurrence is unreachable; remove or refine one of them.',
+                            $normalized,
+                            $owners[$normalized],
+                            $definition->name(),
+                        ),
+                    );
+                }
+                $owners[$normalized] = $definition->name();
+            }
+        }
     }
 
     /**
@@ -427,13 +534,19 @@ final class ArchitectureConfigurationFactory
     }
 
     /**
-     * Scans for symmetric {@code A → B} / {@code B → A} pairs and logs one warning
-     * listing every such pair. Mutual allow is legal but usually indicates that
-     * the two layers should be merged.
+     * Scans for symmetric {@code A → B} / {@code B → A} pairs.
+     *
+     * Mutual allow is legal but usually indicates that the two layers should
+     * be merged. The warning is returned as a {@see DeferredWarning} for
+     * downstream draining (see Step 1 of the follow-up plan) AND emitted via
+     * the optional PSR-3 logger so existing callers (the configuration
+     * pipeline) keep functioning during the transition.
      *
      * @param array<string, list<string>> $allowedTargets
+     *
+     * @return list<DeferredWarning>
      */
-    private function reportMutualAllow(array $allowedTargets, LoggerInterface $logger): void
+    private function reportMutualAllow(array $allowedTargets, LoggerInterface $logger): array
     {
         $pairs = [];
         $seen = [];
@@ -463,7 +576,7 @@ final class ArchitectureConfigurationFactory
         }
 
         if ($pairs === []) {
-            return;
+            return [];
         }
 
         $rendered = implode(', ', array_map(
@@ -471,145 +584,13 @@ final class ArchitectureConfigurationFactory
             $pairs,
         ));
 
-        $logger->warning(\sprintf(
+        $message = \sprintf(
             'architecture.allow: mutual-allow detected between layer pair(s): %s. Consider merging the layers if this is unintentional.',
             $rendered,
-        ));
-    }
+        );
 
-    /**
-     * Best-effort pre-validation of pattern collisions between layers.
-     *
-     * Full collision detection across arbitrary patterns is intractable in
-     * general (it depends on the universe of class FQNs that will actually
-     * be analyzed), so this method applies cheap O(L²·P²) heuristics that
-     * catch the practically important cases at config-load time:
-     *
-     * - **Exact-duplicate pattern**: the same literal pattern (after trailing
-     *   `\` normalization) appears in two different layers. This is always a
-     *   bug — any class matching that pattern will trigger a
-     *   {@see \Qualimetrix\Core\Architecture\Layer\LayerCollisionException} at
-     *   analyze time. Reported as a {@see ConfigLoadException}.
-     *
-     * - **Same prefix + same specificity**: two patterns in different layers
-     *   share the literal prefix before their first wildcard and have equal
-     *   specificity. They MAY collide on real class FQNs (e.g. {@code App\**\Foo}
-     *   and {@code App\**\Bar} only collide if both wildcard segments land on
-     *   the same class). Reported as a logger warning, not a hard error —
-     *   false positives are acceptable.
-     *
-     * Equal-specificity ambiguities that only manifest at runtime against
-     * specific class FQNs are still surfaced by {@see LayerRegistry} when
-     * the rule runs.
-     *
-     * @param list<LayerDefinition> $definitions
-     */
-    private function reportPatternCollisions(array $definitions, LoggerInterface $logger): void
-    {
-        $count = \count($definitions);
-        if ($count < 2) {
-            return;
-        }
+        $logger->warning($message);
 
-        $warnings = [];
-        $seenWarningKeys = [];
-
-        for ($i = 0; $i < $count; $i++) {
-            for ($j = $i + 1; $j < $count; $j++) {
-                $a = $definitions[$i];
-                $b = $definitions[$j];
-
-                foreach ($a->patterns() as $patternA) {
-                    $normalizedA = rtrim($patternA, '\\');
-                    foreach ($b->patterns() as $patternB) {
-                        $normalizedB = rtrim($patternB, '\\');
-
-                        if ($normalizedA === $normalizedB) {
-                            throw new ConfigLoadException(
-                                self::CONFIG_PATH,
-                                \sprintf(
-                                    'architecture.layers: duplicate pattern "%s" declared in layers "%s" and "%s" — every class matching this pattern would collide between the two layers.',
-                                    $normalizedA,
-                                    $a->name(),
-                                    $b->name(),
-                                ),
-                            );
-                        }
-
-                        if (!self::sharesPrefixAndSpecificity($normalizedA, $normalizedB)) {
-                            continue;
-                        }
-
-                        $pairKey = $a->name() < $b->name()
-                            ? $a->name() . '|' . $b->name() . '|' . $normalizedA . '|' . $normalizedB
-                            : $b->name() . '|' . $a->name() . '|' . $normalizedB . '|' . $normalizedA;
-                        if (isset($seenWarningKeys[$pairKey])) {
-                            continue;
-                        }
-                        $seenWarningKeys[$pairKey] = true;
-
-                        $warnings[] = \sprintf(
-                            '"%s" (layer "%s") and "%s" (layer "%s")',
-                            $normalizedA,
-                            $a->name(),
-                            $normalizedB,
-                            $b->name(),
-                        );
-                    }
-                }
-            }
-        }
-
-        if ($warnings === []) {
-            return;
-        }
-
-        $logger->warning(\sprintf(
-            'architecture.layers: potential pattern collision detected — these patterns share the same literal prefix and specificity, so they may match the same class FQN: %s. Tighten the patterns to make layer assignment unambiguous.',
-            implode('; ', $warnings),
-        ));
-    }
-
-    /**
-     * Returns true when two normalized patterns share the literal prefix before
-     * their first wildcard character (`*`, `?`, `[`) AND have the same
-     * specificity score (length of that literal prefix).
-     *
-     * A pattern with no wildcards has specificity equal to its full length, so
-     * two prefix-mode patterns can only "share specificity" when they are
-     * equal — that case is the exact-duplicate path handled by the caller.
-     */
-    private static function sharesPrefixAndSpecificity(string $a, string $b): bool
-    {
-        $wildcardA = self::firstWildcardPosition($a);
-        $wildcardB = self::firstWildcardPosition($b);
-
-        // Both pure-prefix patterns are only a collision when they're equal,
-        // which the caller already covered via the duplicate-pattern check.
-        if ($wildcardA === null || $wildcardB === null) {
-            return false;
-        }
-
-        if ($wildcardA !== $wildcardB) {
-            return false;
-        }
-
-        return substr($a, 0, $wildcardA) === substr($b, 0, $wildcardB);
-    }
-
-    private static function firstWildcardPosition(string $pattern): ?int
-    {
-        $best = null;
-        foreach (['*', '?', '['] as $wildcard) {
-            $position = strpos($pattern, $wildcard);
-            if ($position === false) {
-                continue;
-            }
-            if ($best === null || $position < $best) {
-                $best = $position;
-            }
-        }
-
-        return $best;
+        return [new DeferredWarning(LogLevel::WARNING, $message)];
     }
 }

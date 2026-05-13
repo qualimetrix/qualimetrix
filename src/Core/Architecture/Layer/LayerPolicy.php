@@ -13,8 +13,9 @@ namespace Qualimetrix\Core\Architecture\Layer;
  *   must appear in `$allowedTargets[$from]`.
  * - An unknown source layer (no entry at all) means "no targets allowed".
  *
- * Cross-validation against {@see LayerRegistry::layerNames()} is the factory's
- * responsibility — this class trusts the input.
+ * Cross-validation against {@see LayerRegistry::layerNames()} (which preserves
+ * declaration order) is the factory's responsibility — this class trusts the
+ * input.
  */
 final readonly class LayerPolicy
 {
@@ -68,30 +69,5 @@ final readonly class LayerPolicy
     public function allowedTargets(string $from): array
     {
         return $this->allowedTargets[$from] ?? [];
-    }
-
-    /**
-     * Returns the sorted, deduplicated union of every layer name referenced
-     * by this policy — both as keys (sources) and within values (targets).
-     *
-     * Used by the configuration factory to verify that every name in the policy
-     * also exists in the layer registry.
-     *
-     * @return list<string>
-     */
-    public function knownLayers(): array
-    {
-        $names = array_keys($this->allowedTargets);
-
-        foreach ($this->allowedTargets as $targets) {
-            foreach ($targets as $target) {
-                $names[] = $target;
-            }
-        }
-
-        $unique = array_values(array_unique($names));
-        sort($unique);
-
-        return $unique;
     }
 }

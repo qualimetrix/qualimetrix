@@ -20,14 +20,17 @@ use Qualimetrix\Configuration\ConfigSchema;
  *   while list-valued options (e.g., exclude_namespaces) are replaced entirely.
  *   This allows a later layer to override individual rule options without losing
  *   unrelated rule configurations from earlier layers.
- * - `architecture`: deep associative merge with the same list-replacement semantics
- *   as rules. Layer maps (`architecture.layers`) and allow maps (`architecture.allow`)
- *   from preset and project config accumulate so that presets can ship a base
- *   topology and projects can extend it without re-declaring every layer. The
- *   scalar `architecture.coverage` is replaced by the overlay. Lists inside
- *   `architecture.allow.<source>` are replaced wholesale, matching `rules`
- *   behavior — overriding the allowed targets of a single source layer should
- *   not silently accumulate stale targets from earlier layers.
+ * - `architecture`: deep associative merge with one special case. The
+ *   `architecture.layers` field is an **ordered list** (declaration-order
+ *   matching, ADR 0006) and is **replaced wholesale** when a later configuration
+ *   source defines it — never appended or merged. Naive deep-merge would
+ *   silently destroy ordering, and ordering is the user's disambiguation tool.
+ *   Presets that ship a base layer topology can therefore be wholly overridden
+ *   by a project config that re-declares `layers`. The `architecture.allow` map
+ *   continues to deep-merge by source layer (a later source can override one
+ *   source's targets without re-declaring every layer's allowed targets); the
+ *   list inside each `architecture.allow.<source>` entry is replaced. The
+ *   scalar `architecture.coverage` is replaced by the overlay.
  * - Everything else: simple override — the overlay value replaces the base value.
  *
  * **Why `only_rules` is NOT in MERGEABLE_LIST_KEYS:**
@@ -73,8 +76,13 @@ final class ConfigurationMerger
                     continue;
                 }
 
-                if ($key === ConfigSchema::RULES || $key === ConfigSchema::ARCHITECTURE) {
+                if ($key === ConfigSchema::RULES) {
                     $base[$key] = self::deepMergeAssociative($base[$key], $value);
+                    continue;
+                }
+
+                if ($key === ConfigSchema::ARCHITECTURE) {
+                    $base[$key] = self::mergeArchitecture($base[$key], $value);
                     continue;
                 }
             }
@@ -106,6 +114,45 @@ final class ConfigurationMerger
             } else {
                 $base[$key] = $value;
             }
+        }
+
+        return $base;
+    }
+
+    /**
+     * Merges the {@code architecture:} section with special handling for the
+     * ordered `layers` list.
+     *
+     * - `layers` (list): when the overlay defines it, it REPLACES the base list
+     *   entirely. Declaration order is meaningful and must not be silently
+     *   reshuffled by deep-merge. See ADR 0006.
+     * - `allow` (map of source → list of targets): deep-merged by source. Each
+     *   source's allowed-target list is replaced wholesale (matching `rules`
+     *   list-replacement behaviour).
+     * - `coverage` (scalar): replaced by overlay.
+     *
+     * @param array<string, mixed> $base
+     * @param array<string, mixed> $overlay
+     *
+     * @return array<string, mixed>
+     */
+    private static function mergeArchitecture(array $base, array $overlay): array
+    {
+        foreach ($overlay as $key => $value) {
+            if ($key === 'layers') {
+                // ORDERED-LIST REPLACEMENT: the overlay's layers list wins outright.
+                // Deep-merge would destroy declaration order which is meaningful
+                // under first-match-wins semantics (ADR 0006).
+                $base[$key] = $value;
+                continue;
+            }
+
+            if (\is_array($value) && isset($base[$key]) && \is_array($base[$key]) && !array_is_list($value)) {
+                $base[$key] = self::deepMergeAssociative($base[$key], $value);
+                continue;
+            }
+
+            $base[$key] = $value;
         }
 
         return $base;
