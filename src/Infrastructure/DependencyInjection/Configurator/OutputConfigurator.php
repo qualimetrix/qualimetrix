@@ -164,8 +164,11 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(ConfigurationProviderInterface::class),
             ]);
 
-        // RuntimeConfigurator for runtime service configuration
+        // RuntimeConfigurator for runtime service configuration. Public so the
+        // deferred-warning integration test can retrieve it from the compiled
+        // container and exercise the production drain path end-to-end.
         $container->register(RuntimeConfigurator::class)
+            ->setPublic(true)
             ->setArguments([
                 new Reference(LoggerFactory::class),
                 new Reference(LoggerHolder::class),
