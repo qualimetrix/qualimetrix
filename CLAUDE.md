@@ -379,6 +379,7 @@ We analyze ourselves with `bin/qmx check src/` using `qmx.yaml` at the repositor
 | Generated or non-analyzable file           | `@qmx-ignore-file` with reason                        |
 
 **Key principles:**
+- **Refactoring is the default response, not threshold tweaking.** When a check signal flags real architectural debt (high WMC, low cohesion, complexity, coupling), prefer extracting a class, splitting responsibilities, or otherwise improving the architecture — that's why we measure. Refactoring cost is low for an AI agent; the metric is the signal. Threshold tweaking is reserved for cases where the metric mis-models the design (e.g., stateless utility classes have low cohesion *by construction*, not as a defect).
 - All `@qmx-*` inline tags are available for use — pick the right one for the situation
 - Every inline tag must include a reason explaining **why** the exception is acceptable
 - Prefer `qmx.yaml` configuration over inline tags when the exclusion applies to a category (e.g., all visitors, all DI configurators)
