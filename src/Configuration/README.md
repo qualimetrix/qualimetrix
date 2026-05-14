@@ -57,7 +57,13 @@ Configuration/
 │
 ├── Architecture/                  # Architecture rules config (RFC: architecture rules)
 │   ├── ArchitectureConfigurationFactory.php  # YAML map under `architecture:` → typed Core\Architecture\ArchitectureConfiguration + DeferredWarnings
-│   └── ArchitectureFactoryResult.php         # Result VO: configuration + list of deferred warnings
+│   ├── ArchitectureFactoryResult.php         # Result VO: configuration + list of deferred warnings
+│   └── Validation/                # Per-concern validators (composed by the factory)
+│       ├── LayersValidator.php                # Parses `layers:` block; rejects unknown keys; emits LayerDefinition / TemplateLayerDefinition
+│       ├── AllowValidator.php                 # Parses `allow:` block; selector grammar + capture-variable cross-validation + allow_cross_instance long-form key
+│       ├── CoverageValidator.php              # Parses `coverage:` mode
+│       ├── MutualAllowDetector.php            # Deferred warning for A↔B exact-allow pairs (suggest layer merge)
+│       └── WildcardSelfAllowDetector.php      # Deferred warning for `'foo-*' → 'foo-*'` self-glob entries (silence with allow_cross_instance: true)
 │
 ├── Loader/
 │   ├── ConfigLoaderInterface.php  # Loader contract
@@ -170,7 +176,7 @@ context — drained verbatim with no transformation.
 ```text
 Pipeline.resolve()
    └─ ArchitectureConfigurationFactory.fromArray()
-         └─ DeferredWarning[]  (mutual-allow detection; future warning sources)
+         └─ DeferredWarning[]  (mutual-allow detection, wildcard-self-allow detection, allow-list `types:` deprecation hint)
               │
               ▼ ResolvedConfiguration.deferredWarnings
               │
