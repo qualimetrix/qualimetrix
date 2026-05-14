@@ -4,39 +4,67 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Core\Architecture\Layer;
 
+use InvalidArgumentException;
+
 /**
  * Outcome of {@see LayerDefinition::matches()}.
  *
- * Step A carries only the matched pattern string on the Match variant —
- * just enough for {@see LayerRegistry::resolveAll()} to feed
- * {@see LayerMatch} and the {@code architecture.potential-shadow}
- * diagnostic. Step B will extend the Match variant with a list of matched
- * criterion descriptors so the violation message can report WHICH criterion
- * caught the class under {@code match: any} semantics (Direction 1).
+ * The Match variant carries a list of {@see MatchedCriterion} descriptors in
+ * **declaration order** — the criterion kinds are scanned
+ * {@see MatchedCriterionKind::Pattern}, then {@see MatchedCriterionKind::Suffix},
+ * {@see MatchedCriterionKind::Attribute}, {@see MatchedCriterionKind::Implements},
+ * {@see MatchedCriterionKind::Extends}. Within a kind, list entries are scanned
+ * in declared order and the first matching entry is recorded.
  *
- * Modelled as a single value object with two static factories rather than a
- * sealed hierarchy: the field count is small and the additional indirection
- * adds no clarity. The {@see matched} flag is the discriminant; the
- * {@see matchedPattern} field is {@code null} on the NoMatch variant.
+ * Under {@see MatchMode::Any} the descriptor list contains every criterion that
+ * fired (one per kind). Under {@see MatchMode::All} the list contains the
+ * matched entry for every NON-EMPTY criterion (empty criteria are trivially
+ * satisfied and not recorded).
+ *
+ * {@see LayerRegistry::resolveAll()} forwards the list into {@see LayerMatch}
+ * so the {@code architecture.layer-violation} and
+ * {@code architecture.potential-shadow} messages can report WHICH criterion
+ * caught the class — the diagnostic specificity edge case from Phase 2
+ * direction 1.
+ *
+ * Modelled as a single VO with two static factories rather than a sealed
+ * hierarchy: the field count is small and the additional indirection adds no
+ * clarity. The {@see matched} flag is the discriminant; the
+ * {@see matchedCriteria} list is empty on the NoMatch variant.
  */
 final readonly class MembershipResult
 {
+    /**
+     * @param list<MatchedCriterion> $matchedCriteria
+     */
     private function __construct(
         public bool $matched,
-        public ?string $matchedPattern,
+        public array $matchedCriteria,
     ) {}
 
     /**
-     * Returns a Match result carrying the FIRST pattern (in declaration order)
-     * that satisfied the layer's membership criteria.
+     * Builds a Match result carrying the descriptors of every criterion that
+     * fired, in declaration order.
+     *
+     * @param list<MatchedCriterion> $criteria Non-empty list of matched
+     *                                         criterion descriptors.
+     *
+     * @throws InvalidArgumentException If {@code $criteria} is empty.
      */
-    public static function match(string $pattern): self
+    public static function match(array $criteria): self
     {
-        return new self(true, $pattern);
+        if ($criteria === []) {
+            throw new InvalidArgumentException(
+                'MembershipResult::match() requires at least one matched criterion. '
+                . 'Use MembershipResult::noMatch() for the non-matching variant.',
+            );
+        }
+
+        return new self(true, $criteria);
     }
 
     public static function noMatch(): self
     {
-        return new self(false, null);
+        return new self(false, []);
     }
 }

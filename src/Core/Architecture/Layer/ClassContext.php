@@ -5,20 +5,29 @@ declare(strict_types=1);
 namespace Qualimetrix\Core\Architecture\Layer;
 
 /**
- * Minimal read-only view of a class needed by
- * {@see LayerDefinition::matches()} to evaluate the layer's membership
- * criteria.
+ * Read-only view of a class consumed by {@see LayerDefinition::matches()} to
+ * evaluate the layer's membership criteria.
  *
- * Step A populates only the FQN and the short name (the data
- * {@see LayerRegistry} already had via {@see \Qualimetrix\Core\Symbol\SymbolPath}).
- * Step B will extend the VO with resolved attribute FQNs, the interface
- * chain and the parent-class chain so the `attributes`, `implements` and
- * `extends` membership criteria can be evaluated without exposing AST nodes
- * to the rule layer.
+ * The five fields back the five criterion kinds documented on
+ * {@see MembershipSpec}:
  *
- * The VO is constructed outside the worker boundary (in the main process)
- * from already-merged collection output, so it does not need to be
- * serializable for {@code amphp/parallel}.
+ * - {@see fqn} → matched against {@code patterns}.
+ * - {@see shortName} → matched against {@code suffix}.
+ * - {@see attributeFqns} → matched against {@code attributes}.
+ * - {@see interfaces} → matched against {@code implements} (already includes
+ *   the transitive closure: direct implements + interfaces inherited from
+ *   parent classes + interfaces extending other interfaces).
+ * - {@see parentClasses} → matched against {@code extends} (already includes
+ *   the transitive parent-class chain).
+ *
+ * Built by {@see ClassContextFactory} from the analysis-run dependency graph.
+ * Construction happens in the main process (outside {@code amphp/parallel}
+ * workers) from already-merged collection output, so the VO does not need to
+ * be serializable for worker transport.
+ *
+ * For non-class symbols (pure-namespace {@see \Qualimetrix\Core\Symbol\SymbolPath}
+ * or an empty FQN) the factory returns a minimal context with empty lists; only
+ * the {@code patterns} criterion can match in that case.
  */
 final readonly class ClassContext
 {
@@ -30,9 +39,20 @@ final readonly class ClassContext
      * @param string $shortName Class name without the namespace prefix
      *                          (e.g. {@code UserService}). Empty when the
      *                          FQN itself is empty.
+     * @param list<string> $attributeFqns Attribute class FQNs applied to this
+     *                                    class via {@code #[Attr]}.
+     * @param list<string> $interfaces Interface FQNs the class implements
+     *                                 transitively (direct + via parent +
+     *                                 via interface-extends-interface).
+     * @param list<string> $parentClasses Parent-class FQNs in the transitive
+     *                                    extends chain (immediate parent
+     *                                    first, then grandparent, etc.).
      */
     public function __construct(
         public string $fqn,
         public string $shortName,
+        public array $attributeFqns = [],
+        public array $interfaces = [],
+        public array $parentClasses = [],
     ) {}
 }

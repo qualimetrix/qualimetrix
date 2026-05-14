@@ -8,11 +8,16 @@ use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Architecture\Layer\ClassContextFactory;
 use Qualimetrix\Core\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Core\Architecture\Layer\LayerMatch;
 use Qualimetrix\Core\Architecture\Layer\LayerRegistry;
 use Qualimetrix\Core\Architecture\Layer\MembershipSpec;
+use Qualimetrix\Core\Dependency\Dependency;
+use Qualimetrix\Core\Dependency\DependencyGraphInterface;
+use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Violation\Location;
 use ReflectionProperty;
 
 #[CoversClass(LayerRegistry::class)]
@@ -231,11 +236,11 @@ final class LayerRegistryTest extends TestCase
 
         self::assertCount(3, $matches);
         self::assertSame('any', $matches[0]->layerName);
-        self::assertSame('App\\**', $matches[0]->matchingPattern);
+        self::assertSame('App\\**', $matches[0]->matchedCriteria[0]->value);
         self::assertSame('service', $matches[1]->layerName);
-        self::assertSame('App\\Service\\**', $matches[1]->matchingPattern);
+        self::assertSame('App\\Service\\**', $matches[1]->matchedCriteria[0]->value);
         self::assertSame('special', $matches[2]->layerName);
-        self::assertSame('App\\Service\\Special\\**', $matches[2]->matchingPattern);
+        self::assertSame('App\\Service\\Special\\**', $matches[2]->matchedCriteria[0]->value);
     }
 
     #[Test]
@@ -302,6 +307,88 @@ final class LayerRegistryTest extends TestCase
     }
 
     #[Test]
+    public function bindGraph_dropsCacheSoStaleAssignmentsCannotLeakBetweenRuns(): void
+    {
+        // Layer matches by `extends: App\Domain\Base`. Class is in App\Domain.
+        $registry = new LayerRegistry([
+            new LayerDefinition(
+                'aggregates',
+                new MembershipSpec(extends: ['App\\Domain\\Base']),
+            ),
+        ]);
+
+        $klass = SymbolPath::forClass('App\\Domain', 'User');
+        $base = SymbolPath::forClass('App\\Domain', 'Base');
+        $other = SymbolPath::forClass('App\\Domain', 'Other');
+
+        // Run 1: User extends Base → layer = aggregates.
+        $registry->bindGraph(self::graphWith([[$klass, $base, DependencyType::Extends]]));
+        self::assertSame('aggregates', $registry->resolveLayer($klass));
+
+        // Run 2: User now extends Other (no longer Base). The class must NOT
+        // be classified as aggregates — bindGraph must have dropped the cache.
+        $registry->bindGraph(self::graphWith([[$klass, $other, DependencyType::Extends]]));
+        self::assertNull(
+            $registry->resolveLayer($klass),
+            'bindGraph() must drop the matchCache so the next resolve sees the new graph.',
+        );
+    }
+
+    #[Test]
+    public function bindGraph_null_returnsRegistryToNoGraphMode(): void
+    {
+        $registry = new LayerRegistry([
+            new LayerDefinition(
+                'aggregates',
+                new MembershipSpec(extends: ['App\\Domain\\Base']),
+            ),
+        ]);
+
+        $klass = SymbolPath::forClass('App\\Domain', 'User');
+        $base = SymbolPath::forClass('App\\Domain', 'Base');
+
+        $registry->bindGraph(self::graphWith([[$klass, $base, DependencyType::Extends]]));
+        self::assertSame('aggregates', $registry->resolveLayer($klass));
+
+        // Unbind the graph; the extends criterion can no longer fire.
+        $registry->bindGraph(null);
+        self::assertNull($registry->resolveLayer($klass));
+    }
+
+    #[Test]
+    public function clearCache_dropsCachedMatchesWithoutTouchingTheFactoryBinding(): void
+    {
+        $registry = new LayerRegistry([
+            new LayerDefinition(
+                'svc',
+                new MembershipSpec(patterns: ['App\\Service\\**']),
+            ),
+        ]);
+
+        $symbol = SymbolPath::forClass('App\\Service', 'Foo');
+
+        $reflection = new ReflectionProperty(LayerRegistry::class, 'matchCache');
+        self::assertSame([], $reflection->getValue($registry));
+
+        $registry->resolveLayer($symbol);
+        self::assertCount(1, $reflection->getValue($registry), 'resolveLayer populates the cache.');
+
+        $registry->clearCache();
+        self::assertSame([], $reflection->getValue($registry), 'clearCache must drop every cache entry.');
+    }
+
+    #[Test]
+    public function contextFactory_returnsTheInjectedInstance(): void
+    {
+        $factory = new ClassContextFactory();
+        $registry = new LayerRegistry([
+            new LayerDefinition('svc', new MembershipSpec(patterns: ['App\\Service'])),
+        ], $factory);
+
+        self::assertSame($factory, $registry->contextFactory());
+    }
+
+    #[Test]
     public function construct_throwsOnDuplicateLayerNames(): void
     {
         $this->expectException(InvalidArgumentException::class);
@@ -359,5 +446,68 @@ final class LayerRegistryTest extends TestCase
         $registry = new LayerRegistry($definitions);
 
         self::assertSame($definitions, $registry->definitions());
+    }
+
+    /**
+     * @param list<array{0: SymbolPath, 1: SymbolPath, 2: DependencyType}> $edges
+     */
+    private static function graphWith(array $edges): DependencyGraphInterface
+    {
+        $deps = [];
+        foreach ($edges as [$source, $target, $type]) {
+            $deps[] = new Dependency($source, $target, $type, Location::none());
+        }
+
+        return new readonly class ($deps) implements DependencyGraphInterface {
+            /**
+             * @param list<Dependency> $deps
+             */
+            public function __construct(private array $deps) {}
+
+            public function getClassDependencies(SymbolPath $class): array
+            {
+                return [];
+            }
+
+            public function getClassDependents(SymbolPath $class): array
+            {
+                return [];
+            }
+
+            public function getClassCe(SymbolPath $class): int
+            {
+                return 0;
+            }
+
+            public function getClassCa(SymbolPath $class): int
+            {
+                return 0;
+            }
+
+            public function getNamespaceCe(SymbolPath $namespace): int
+            {
+                return 0;
+            }
+
+            public function getNamespaceCa(SymbolPath $namespace): int
+            {
+                return 0;
+            }
+
+            public function getAllClasses(): array
+            {
+                return [];
+            }
+
+            public function getAllNamespaces(): array
+            {
+                return [];
+            }
+
+            public function getAllDependencies(): array
+            {
+                return $this->deps;
+            }
+        };
     }
 }

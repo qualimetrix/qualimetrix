@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Core\Architecture\Layer;
 
 use InvalidArgumentException;
+use Qualimetrix\Core\Dependency\DependencyGraphInterface;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**
@@ -13,9 +14,10 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  *
  * Resolution semantics — **declaration order, first match wins**:
  * - {@see resolveLayer()} iterates definitions in declared order and returns
- *   the name of the first layer whose patterns match (or null if no layer
- *   matches). This is the hot path used during dependency-edge analysis.
- * - {@see resolveAll()} returns every layer whose patterns match, in
+ *   the name of the first layer whose membership criteria match (or null if
+ *   no layer matches). This is the hot path used during dependency-edge
+ *   analysis.
+ * - {@see resolveAll()} returns every layer whose criteria match, in
  *   declaration order. The first entry is the assignment; the rest are
  *   layers that would have matched if they were declared earlier. Used by
  *   evidence-based shadow detection and the debug command.
@@ -23,9 +25,19 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * Both lookups share a single cache keyed by {@see SymbolPath::toCanonical()}:
  * the full {@see LayerMatch} list is computed once and stored, and
  * {@see resolveLayer()} reads the first entry off that list. A class queried
- * by both methods therefore walks the patterns at most once. The cache is the
+ * by both methods therefore walks the criteria at most once. The cache is the
  * only mutable state on the registry (which is therefore final but not
  * readonly).
+ *
+ * The registry holds a {@see ClassContextFactory} that produces the
+ * {@see ClassContext} consumed by {@see LayerDefinition::matches()}. The
+ * factory is per-analysis-run state: the rule binds the dependency graph at
+ * the start of every {@see \Qualimetrix\Rules\Architecture\LayerViolationRule::analyze()}
+ * call via {@see bindGraph()} and clears the registry's match cache via
+ * {@see clearCache()} so the new graph's data is picked up. Before
+ * {@see bindGraph()} is called the factory operates in no-graph mode (e.g.
+ * during config load or in the {@code debug:layer-assignment} command) and
+ * only the {@code patterns} and {@code suffix} criteria can fire.
  *
  * There is intentionally no specificity scoring, no collision detection,
  * and no exception class for ambiguity — declaration order is the user's
@@ -41,13 +53,14 @@ final class LayerRegistry
      */
     private array $layers;
 
+    private ClassContextFactory $contextFactory;
+
     /**
      * Shared cache for {@see resolveLayer()} and {@see resolveAll()}. Keyed by
      * {@see SymbolPath::toCanonical()}.
      *
      * Each value is the complete list of {@see LayerMatch} entries in
      * declaration order. Empty list means the class matches no layer.
-     * {@see resolveLayer()} reads the first entry off this list.
      *
      * @var array<string, list<LayerMatch>>
      */
@@ -56,10 +69,13 @@ final class LayerRegistry
     /**
      * @param list<LayerDefinition> $layers Layer definitions in declaration order;
      *                                      layer names must be unique.
+     * @param ClassContextFactory|null $contextFactory Optional factory injection
+     *                                                 for tests / DI; defaults
+     *                                                 to a fresh no-graph instance.
      *
      * @throws InvalidArgumentException If two layers share the same name.
      */
-    public function __construct(array $layers)
+    public function __construct(array $layers, ?ClassContextFactory $contextFactory = null)
     {
         $seenNames = [];
         foreach ($layers as $layer) {
@@ -74,11 +90,43 @@ final class LayerRegistry
         }
 
         $this->layers = $layers;
+        $this->contextFactory = $contextFactory ?? new ClassContextFactory();
+    }
+
+    /**
+     * Returns the underlying {@see ClassContextFactory} so callers (chiefly
+     * {@see \Qualimetrix\Rules\Architecture\LayerViolationRule}) can bind it
+     * to the analysis-run dependency graph.
+     */
+    public function contextFactory(): ClassContextFactory
+    {
+        return $this->contextFactory;
+    }
+
+    /**
+     * Convenience: forwards to {@see ClassContextFactory::bindGraph()} and
+     * invalidates the match cache so subsequent lookups pick up the new
+     * graph's data.
+     */
+    public function bindGraph(?DependencyGraphInterface $graph): void
+    {
+        $this->contextFactory->bindGraph($graph);
+        $this->matchCache = [];
+    }
+
+    /**
+     * Drops cached layer matches. Useful when the registry instance is reused
+     * across analysis runs (e.g. test fixtures sharing a configuration object)
+     * and the underlying graph data may have changed.
+     */
+    public function clearCache(): void
+    {
+        $this->matchCache = [];
     }
 
     /**
      * Returns the name of the first layer (in declaration order) whose
-     * patterns match the class FQN, or null if no layer matches.
+     * membership criteria match the class, or null if no layer matches.
      *
      * This is the hot path for {@see \Qualimetrix\Rules\Architecture\LayerViolationRule}
      * — called once per dependency-edge endpoint.
@@ -91,8 +139,8 @@ final class LayerRegistry
     }
 
     /**
-     * Returns every layer whose patterns match the class FQN, in declaration
-     * order.
+     * Returns every layer whose membership criteria match the class, in
+     * declaration order.
      *
      * Returns an empty list when no layer matches. The first entry is the
      * actual assignment; subsequent entries are layers that would have matched
@@ -108,12 +156,10 @@ final class LayerRegistry
             return $this->matchCache[$cacheKey];
         }
 
-        $fqn = $this->buildFqn($class);
-        if ($fqn === null) {
+        $context = $this->contextFactory->build($class);
+        if ($context->fqn === '') {
             return $this->matchCache[$cacheKey] = [];
         }
-
-        $context = new ClassContext($fqn, self::deriveShortName($fqn));
 
         $matches = [];
         foreach ($this->layers as $layer) {
@@ -121,8 +167,7 @@ final class LayerRegistry
             if (!$result->matched) {
                 continue;
             }
-            \assert($result->matchedPattern !== null);
-            $matches[] = new LayerMatch($layer->name(), $result->matchedPattern);
+            $matches[] = new LayerMatch($layer->name(), $result->matchedCriteria);
         }
 
         return $this->matchCache[$cacheKey] = $matches;
@@ -151,57 +196,5 @@ final class LayerRegistry
     public function definitions(): array
     {
         return $this->layers;
-    }
-
-    /**
-     * Builds the FQN string from a SymbolPath.
-     *
-     * Rules:
-     * - Both `$namespace` and `$type` empty/null → null (no FQN, never a layer match).
-     * - Namespace empty/null → bare type name.
-     * - Both present → `namespace\\type`.
-     * - Pure-namespace SymbolPath (type null) → returns the namespace string by design,
-     *   so prefix-mode patterns like `App\Service` match both `App\Service\Foo` and the
-     *   `App\Service` namespace itself. This is intentional: a layer's patterns describe
-     *   "things in this namespace", which includes the namespace node as well as its
-     *   classes. Today only class-level lookups reach this method (the rule iterates
-     *   `metrics->all(SymbolType::Class_)`), but the behavior is pinned by
-     *   `LayerRegistryTest::resolveLayer_namespaceOnlyPath_isResolvable` so future
-     *   consumers (e.g. a layer-aware metric over namespace symbols) get a stable
-     *   contract.
-     */
-    private function buildFqn(SymbolPath $class): ?string
-    {
-        $namespace = $class->namespace;
-        $type = $class->type;
-
-        $hasNamespace = $namespace !== null && $namespace !== '';
-        $hasType = $type !== null && $type !== '';
-
-        if (!$hasNamespace && !$hasType) {
-            return null;
-        }
-
-        if (!$hasNamespace) {
-            return $type;
-        }
-
-        if (!$hasType) {
-            return $namespace;
-        }
-
-        return $namespace . '\\' . $type;
-    }
-
-    /**
-     * Extracts the short name (the segment after the last backslash) from a
-     * fully-qualified name. Returns the input unchanged when it has no
-     * namespace separator — covers bare type names and pure-namespace FQNs.
-     */
-    private static function deriveShortName(string $fqn): string
-    {
-        $position = strrpos($fqn, '\\');
-
-        return $position === false ? $fqn : substr($fqn, $position + 1);
     }
 }

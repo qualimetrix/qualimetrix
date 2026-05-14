@@ -11,6 +11,7 @@ use Qualimetrix\Configuration\Pipeline\ConfigurationPipeline;
 use Qualimetrix\Core\Architecture\ArchitectureConfiguration;
 use Qualimetrix\Core\Architecture\Layer\LayerMatch;
 use Qualimetrix\Core\Architecture\Layer\LayerRegistry;
+use Qualimetrix\Core\Architecture\Layer\MatchedCriterion;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -68,12 +69,17 @@ final class LayerAssignmentCommand extends Command
             )
             ->setHelp(
                 'Reports the layer the given class is assigned to under the project'
-                . "\n" . 'architecture configuration, plus every other layer whose patterns'
+                . "\n" . 'architecture configuration, plus every other layer whose criteria'
                 . "\n" . 'would have matched the class (would have been the assignment if'
                 . "\n" . 'declared earlier).' . "\n\n"
                 . 'Layer evaluation follows declaration order: the first layer whose'
-                . "\n" . 'pattern matches wins. Reorder layers in qmx.yaml or tighten broad'
+                . "\n" . 'criteria match wins. Reorder layers in qmx.yaml or tighten broad'
                 . "\n" . 'patterns to resolve unwanted shadowing.' . "\n\n"
+                . 'NOTE: this command does not run analysis, so the "attributes",'
+                . "\n" . '"implements" and "extends" criteria — which rely on the per-run'
+                . "\n" . 'dependency graph — are SILENTLY SKIPPED. Only "patterns" and'
+                . "\n" . '"suffix" criteria fire here. Use a full `qmx check` run if you'
+                . "\n" . 'need to inspect graph-dependent assignments.' . "\n\n"
                 . 'Examples:' . "\n"
                 . '  <info>bin/qmx debug:layer-assignment \'App\\Service\\Foo\'</info>' . "\n"
                 . '  <info>bin/qmx debug:layer-assignment \'App\\Service\\Foo\' --config qmx.yaml</info>',
@@ -228,7 +234,7 @@ final class LayerAssignmentCommand extends Command
 
         $assigned = $matches[0];
         $output->writeln(\sprintf('  Assigned to: <info>%s</info>', $assigned->layerName));
-        $output->writeln(\sprintf('    Matching pattern: <comment>%s</comment>', $assigned->matchingPattern));
+        $output->writeln(\sprintf('    Matched by: <comment>%s</comment>', self::describeCriteria($assigned)));
         $output->writeln('');
 
         $shadowed = \array_slice($matches, 1);
@@ -247,9 +253,9 @@ final class LayerAssignmentCommand extends Command
 
         foreach ($shadowed as $entry) {
             $output->writeln(\sprintf(
-                "    - %-{$maxLayerNameWidth}s (pattern: '<comment>%s</comment>')",
+                "    - %-{$maxLayerNameWidth}s (matched by: '<comment>%s</comment>')",
                 $entry->layerName,
-                $entry->matchingPattern,
+                self::describeCriteria($entry),
             ));
         }
 
@@ -262,5 +268,18 @@ final class LayerAssignmentCommand extends Command
             $assigned->layerName,
         ));
         $output->writeln('    See <comment>architecture.potential-shadow</comment> diagnostic for the broader picture.');
+    }
+
+    /**
+     * Joins every matched criterion descriptor with a comma so the command
+     * line surface mirrors the order that {@see LayerDefinition::matches()}
+     * scans (pattern → suffix → attribute → implements → extends).
+     */
+    private static function describeCriteria(LayerMatch $entry): string
+    {
+        return implode(', ', array_map(
+            static fn(MatchedCriterion $criterion): string => $criterion->describe(),
+            $entry->matchedCriteria,
+        ));
     }
 }
