@@ -11,6 +11,16 @@ Architecture/
 ├── ArchitectureConfiguration.php           # Typed holder: registry + policy + coverage
 ├── ArchitectureConfigurationHolder.php     # Mutable runtime holder (DI-injected)
 ├── CoverageMode.php                        # ignore / warn / error enum
+├── Allow/
+│   ├── LayerSelector.php                   # Sealed VO: exact / glob / captured selector (D4 grammar)
+│   ├── LayerSelectorParser.php             # Static parser: raw string → LayerSelector
+│   ├── ParseCapturedState.php              # Transient parser scratch state
+│   ├── SelectorKind.php                    # enum: exact | glob | captured
+│   ├── SelectorSegment.php                 # VO: one parsed segment of a captured selector
+│   ├── CaptureBinding.php                  # Immutable map: capture variable → bound value
+│   ├── AllowTarget.php                     # VO: target selector + relations + cross-instance flag
+│   ├── AllowListEntry.php                  # VO: source selector + list<AllowTarget>
+│   └── InvalidSelectorException.php        # Thrown by LayerSelectorParser::parse() on grammar errors
 └── Layer/
     ├── LayerDefinition.php                 # VO: layer name + MembershipSpec
     ├── MembershipSpec.php                  # VO: criteria a class must match to join a layer
@@ -22,7 +32,7 @@ Architecture/
     ├── MembershipResult.php                # VO: Match (carrying matched criteria) | NoMatch
     ├── LayerMatch.php                      # VO: layer name + list of matched criteria
     ├── LayerRegistry.php                   # Ordered layers + class → layer resolution (cached)
-    ├── LayerPolicy.php                     # Allow-list of inter-layer dependencies
+    ├── LayerPolicy.php                     # Traversal-based allow-list of inter-layer dependencies
     └── InvalidLayerDefinitionException.php # Thrown on construction-time validation failures
 ```
 
@@ -59,7 +69,10 @@ Immutable specification of the criteria a class must satisfy to belong to a
 layer. The shape evolves with Phase 2:
 
 - Step A: `patterns: list<string>` + `MatchMode $mode`.
-- Step B (current): adds `suffix`, `attributes`, `implements`, `extends`.
+- Step B: adds `suffix`, `attributes`, `implements`, `extends`.
+- Step C (current): introduces the `Allow/` sub-package (`LayerSelector` and
+  the parser) and migrates `LayerPolicy` to entry-list traversal; the
+  `MembershipSpec` shape itself is unchanged from Step B.
 - Step F (planned): adds optional `ExcludeSpec $exclude`.
 
 Construction-time invariant: at least one of the five criterion lists must be
@@ -190,16 +203,69 @@ FQN construction from `SymbolPath` happens inside the factory: `namespace +
 
 ### LayerPolicy
 
-Immutable allow-list.
+Immutable allow-list. Phase 2 Step C migrated the internal representation
+from `array<string, list<string>>` to `list<AllowListEntry>`; each entry
+carries a source `LayerSelector` plus a list of `AllowTarget`s. The selector
+abstraction lets glob / captured allow entries flow end-to-end (see the
+`Allow/` subdirectory below).
 
-- `__construct(array<string, list<string>> $allowedTargets)`.
+- `__construct(list<AllowListEntry> $entries)`.
 - `isAllowed(string $from, string $to): bool` — `$from === $to` always allowed;
-  otherwise checks `$to ∈ $allowedTargets[$from]`. Unknown `$from` → false.
-- `allowedTargets(string $from): list<string>` — empty list if `$from` is unknown.
+  otherwise traverses entries, runs `source->matchSource($from)` for each, and
+  on a hit checks each `AllowTarget` via `target->matchesTarget($to, $binding)`.
+  Returns `true` on the first match. The Phase-1-shape (exact-only) allow-list
+  preserves byte-for-byte truth values vs the pre-Step-C map lookup.
+- `allowedTargets(string $from): list<string>` — used by the rule's
+  human-readable recommendation. Only entries whose target is an **exact**
+  selector contribute; glob / captured targets are advisory-only and excluded
+  until Step E refines the recommendation surface.
+- `entries(): list<AllowListEntry>` — raw entry list, for detectors like
+  `MutualAllowDetector` and downstream rule helpers.
 
-Cross-validation against `LayerRegistry::layerNames()` (which preserves
-declaration order) is the factory's responsibility — this class trusts the
-input.
+Cross-validation against `LayerRegistry::layerNames()` is the factory's
+responsibility (and is intentionally limited to `exact` selectors so glob /
+captured forms don't get rejected before Step D's template-layer expansion
+runs); this class trusts the input.
+
+### Allow/ — LayerSelector and friends
+
+Phase 2 Step C introduces a small VO package under `Allow/` for parsing and
+matching `architecture.allow` selectors per the D4 grammar (ADR 0007):
+
+- **`LayerSelector`** — sealed VO with private constructor + `exact()` /
+  `glob()` / `captured()` factories. Two match methods:
+  `matchSource(string $name): ?CaptureBinding` (source side; produces a
+  binding on success) and `matchesTarget(string $name, CaptureBinding $binding): bool`
+  (target side; substitutes bound values once Step E lights up the flow).
+- **`LayerSelectorParser`** — static, stateless parser. The single entry point
+  for raw-string input: `LayerSelectorParser::parse('domain-*')` detects the
+  kind from content (captured > glob > exact) and returns the appropriate
+  `LayerSelector`. The parser lives in its own class so `LayerSelector` stays
+  a small VO; the grammar machinery (escape handling, brace matching,
+  quantifier validation) is kept together where it can be understood as one
+  piece.
+- **`SelectorKind`** / **`SelectorSegment`** / **`ParseCapturedState`** —
+  enum, VO, and transient parsing record used by the parser.
+- **`CaptureBinding`** — immutable `array<string, string>` carrying captured
+  variable → value pairs. In Step C the source-side binding is always built;
+  the target-side match deliberately ignores it (Step E enables binding
+  identity enforcement).
+- **`AllowTarget`** — VO bundling a target `LayerSelector` with two
+  forward-looking optional fields: `?list<DependencyType> $relations` (Step G)
+  and `bool $allowCrossInstance` (Step E). Both default to "off" in Step C so
+  Phase-1 BC is preserved.
+- **`AllowListEntry`** — VO pairing a source `LayerSelector` with a
+  `list<AllowTarget>`. The unit `LayerPolicy` traverses linearly.
+- **`InvalidSelectorException`** — thrown by `LayerSelectorParser::parse()`
+  on grammar errors (empty input, unbalanced braces, unknown quantifier,
+  invalid variable name, captures without any unescaped `{`). The
+  Configuration validator catches and rewraps it as `ConfigLoadException`
+  with a user-facing config-path context (e.g. `architecture.allow.controller[0]`).
+
+Grammar reminder (D4): `{var}` → captured (variable name matches
+`[A-Za-z_][A-Za-z0-9_]*`); contains `*`, `?`, or `[` → glob; else exact. Layer
+**names** reject `* ? [ { }` at `LayersValidator` time — those characters are
+selector metacharacters.
 
 ### Exceptions
 
@@ -221,4 +287,7 @@ input.
 - The Phase 2 design (multi-criterion membership, template layers, exclude
   block, relation filters) is locked in
   [ADR 0007](../../../docs/adr/0007-architecture-rules-flexibility.md).
-  Step B (current) implements direction 1 (class-membership beyond namespace).
+  Step C (current) lands the D4 selector grammar — glob and captured
+  allow-list selectors with `LayerPolicy` migrated to entry-list traversal.
+  Steps D (template expansion), E (capture-binding identity), F
+  (`exclude:` block), and G (`relations:` filter) follow.
