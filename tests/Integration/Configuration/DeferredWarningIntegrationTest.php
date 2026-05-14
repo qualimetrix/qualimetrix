@@ -20,10 +20,10 @@ use Qualimetrix\Configuration\Pipeline\Stage\DefaultsStage;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Logging\LoggerHolder;
+use Qualimetrix\Tests\Support\Logger\RecordingLogger;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use ReflectionMethod;
-use Stringable;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputDefinition;
@@ -258,23 +258,5 @@ YAML;
         }
 
         rmdir($this->tempDir);
-    }
-}
-
-/**
- * Captures PSR-3 log records for assertions in deferred-warning replay tests.
- */
-final class RecordingLogger extends \Psr\Log\AbstractLogger
-{
-    /** @var list<array{level: string, message: string, context: array<string, mixed>}> */
-    public array $records = [];
-
-    public function log($level, string|Stringable $message, array $context = []): void
-    {
-        $this->records[] = [
-            'level' => (string) $level,
-            'message' => (string) $message,
-            'context' => $context,
-        ];
     }
 }
