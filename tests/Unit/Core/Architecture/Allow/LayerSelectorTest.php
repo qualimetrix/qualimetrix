@@ -174,22 +174,79 @@ final class LayerSelectorTest extends TestCase
     }
 
     #[Test]
-    public function capturedTargetCurrentlyIgnoresSourceBindingInStepC(): void
+    public function capturedTargetSubstitutesSourceBinding(): void
     {
-        // Pins Step C's deliberately loose target match: a captured target
-        // selector matches any value of the right shape, regardless of what
-        // the source side bound. Step E switches to {@code buildRegex($binding)}
-        // and tightens this to require substitution match.
+        // Step E binding-aware semantics: a captured target selector
+        // substitutes the bound variable values from the source side before
+        // matching. {@code 'domain-{m}'} with binding {@code m → Order} matches
+        // only {@code 'domain-Order'} literally — sibling instances of the
+        // same shape are rejected.
         $target = LayerSelectorParser::parse('domain-{m}');
 
         $sourceBinding = new CaptureBinding(['m' => 'Order']);
 
-        // Same value as source: matches.
         self::assertTrue($target->matchesTarget('domain-Order', $sourceBinding));
-        // Different value: also matches in Step C (Step E will reject).
-        self::assertTrue($target->matchesTarget('domain-Inventory', $sourceBinding));
-        // Wrong shape: doesn't match.
+        self::assertFalse($target->matchesTarget('domain-Inventory', $sourceBinding));
         self::assertFalse($target->matchesTarget('controller', $sourceBinding));
+    }
+
+    #[Test]
+    public function capturedTargetWithEmptyBindingDegradesToShapeMatch(): void
+    {
+        // When the source binding is empty (exact/glob source kinds, or the
+        // policy's cross-instance escape hatch), the captured target falls
+        // back to per-segment default patterns: it matches any same-shape
+        // name. This is the runtime path activated by
+        // {@code allow_cross_instance: true} on the allow entry.
+        $target = LayerSelectorParser::parse('domain-{m}');
+
+        $empty = CaptureBinding::empty();
+
+        self::assertTrue($target->matchesTarget('domain-Order', $empty));
+        self::assertTrue($target->matchesTarget('domain-Inventory', $empty));
+        self::assertFalse($target->matchesTarget('controller', $empty));
+    }
+
+    #[Test]
+    public function capturedTargetWithMultipleBindingsSubstitutesEach(): void
+    {
+        $target = LayerSelectorParser::parse('{a}-{b}');
+
+        $binding = new CaptureBinding(['a' => 'app', 'b' => 'Order']);
+
+        self::assertTrue($target->matchesTarget('app-Order', $binding));
+        self::assertFalse($target->matchesTarget('app-Inventory', $binding));
+        self::assertFalse($target->matchesTarget('domain-Order', $binding));
+    }
+
+    #[Test]
+    public function capturedTargetWithMultiSegmentBindingSubstitutesAcrossSeparators(): void
+    {
+        $target = LayerSelectorParser::parse('app-{path:**}');
+
+        $binding = new CaptureBinding(['path' => 'Order\\Sub\\Leaf']);
+
+        self::assertTrue($target->matchesTarget('app-Order\\Sub\\Leaf', $binding));
+        self::assertFalse($target->matchesTarget('app-Order\\Sub', $binding));
+    }
+
+    #[Test]
+    public function captureVariablesListsDeclaredNames(): void
+    {
+        $exact = LayerSelector::exact('controller');
+        self::assertSame([], $exact->captureVariables());
+
+        $glob = LayerSelector::glob('domain-*');
+        self::assertSame([], $glob->captureVariables());
+
+        $singleCapture = LayerSelectorParser::parse('app-{m}');
+        self::assertSame(['m'], $singleCapture->captureVariables());
+
+        $multiCapture = LayerSelectorParser::parse('{a}-{b}');
+        self::assertSame(['a', 'b'], $multiCapture->captureVariables());
+
+        $multiSegmentCapture = LayerSelectorParser::parse('app-{path:**}');
+        self::assertSame(['path'], $multiSegmentCapture->captureVariables());
     }
 
     // -------------------------------------------------------------------------

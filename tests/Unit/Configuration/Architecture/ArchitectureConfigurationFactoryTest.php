@@ -100,6 +100,24 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     }
 
     #[Test]
+    public function wildcardSelfAllowWarningSurfacedByFactory(): void
+    {
+        // End-to-end check that WildcardSelfAllowDetector is wired into the
+        // factory pipeline after AllowValidator and before result assembly.
+        $result = $this->factory->fromArray([
+            'layers' => [
+                ['name' => 'domain-orders', 'patterns' => ['App\\Domain\\Orders\\**']],
+            ],
+            'allow' => [
+                'domain-*' => ['domain-*'],
+            ],
+        ]);
+
+        self::assertCount(1, $result->warnings);
+        self::assertStringContainsString('wildcard-self-allow', $result->warnings[0]->message);
+    }
+
+    #[Test]
     public function allowIsCrossValidatedAgainstLayerNamesProducedByLayersValidator(): void
     {
         // Demonstrates the orchestration handoff: the registry's layerNames()
@@ -319,9 +337,9 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     #[Test]
     public function capturedSelectorWithSubstitutionParsesEndToEnd(): void
     {
-        // Step C scope: captured selectors parse and the policy traversal sees
-        // their match-target loose semantics (any-segment shape match,
-        // bindings ignored on the target side until Step E).
+        // Step E binding-aware semantics: captured source binding flows into
+        // captured target before matching, so same-{m} edges pass and
+        // cross-instance edges are rejected.
         $result = $this->factory->fromArray([
             'layers' => [
                 ['name' => 'app-orders', 'patterns' => ['App\\Orders\\App']],
@@ -337,7 +355,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
 
         // Same-{m} → allowed.
         self::assertTrue($policy->isAllowed('app-orders', 'domain-orders'));
-        // Cross-instance — Step C currently allows (Step E tightens).
-        self::assertTrue($policy->isAllowed('app-orders', 'domain-inventory'));
+        // Cross-instance → rejected (binding mismatch).
+        self::assertFalse($policy->isAllowed('app-orders', 'domain-inventory'));
     }
 }

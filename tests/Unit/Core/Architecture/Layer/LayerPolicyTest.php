@@ -147,12 +147,13 @@ final class LayerPolicyTest extends TestCase
     }
 
     #[Test]
-    public function isAllowed_capturedSelectorParsesButProducesNoBindingInStepC(): void
+    public function isAllowed_capturedSelectorEnforcesSameBindingIdentity(): void
     {
-        // Step C: captured source matches via the regex (so `app-Order` is
-        // accepted), but the binding is currently produced and discarded;
-        // captured targets fall through to literal compare. This pins the
-        // current scope so Step E's enhancement is observable.
+        // Step E binding-aware semantics: 'app-{m}' → 'domain-{m}' allows
+        // app-Order to depend on domain-Order (same binding) but not on
+        // domain-Inventory (binding mismatch). The captured target's
+        // {@code {m}} segment is substituted with the source-side binding
+        // value before matching.
         $policy = new LayerPolicy([
             new AllowListEntry(
                 LayerSelectorParser::parse('app-{m}'),
@@ -160,15 +161,51 @@ final class LayerPolicyTest extends TestCase
             ),
         ]);
 
-        // Source captured selector matches.
         self::assertFalse($policy->isAllowed('app-Order', 'unrelated'));
-        // Target captured selector at Step C scope produces a regex that
-        // matches the same "any-segment" shape; it does NOT yet substitute the
-        // bound `m`. So `app-Order` → `domain-Order` is allowed (target regex
-        // matches), `app-Order` → `domain-Inventory` is ALSO allowed (Step E
-        // tightens this).
+        self::assertTrue($policy->isAllowed('app-Order', 'domain-Order'));
+        self::assertFalse($policy->isAllowed('app-Order', 'domain-Inventory'));
+    }
+
+    #[Test]
+    public function isAllowed_allowCrossInstanceSwapsSourceBindingForEmptyBinding(): void
+    {
+        // With allow_cross_instance: true, the policy passes an empty binding
+        // into the captured target's matchesTarget call. The captured target
+        // degrades to per-segment default patterns and accepts any same-shape
+        // name, including cross-instance edges.
+        $policy = new LayerPolicy([
+            new AllowListEntry(
+                LayerSelectorParser::parse('app-{m}'),
+                [
+                    new AllowTarget(
+                        LayerSelectorParser::parse('domain-{m}'),
+                        allowCrossInstance: true,
+                    ),
+                ],
+            ),
+        ]);
+
         self::assertTrue($policy->isAllowed('app-Order', 'domain-Order'));
         self::assertTrue($policy->isAllowed('app-Order', 'domain-Inventory'));
+        self::assertFalse($policy->isAllowed('app-Order', 'controller'));
+    }
+
+    #[Test]
+    public function isAllowed_capturedSourceWithExactTargetIgnoresBinding(): void
+    {
+        // Captured source binding flows through but the exact target's
+        // matchesTarget ignores binding entirely — every instance of the
+        // captured source layer can reach the same exact target layer.
+        $policy = new LayerPolicy([
+            new AllowListEntry(
+                LayerSelectorParser::parse('domain-{m}'),
+                [new AllowTarget(LayerSelector::exact('vendor'))],
+            ),
+        ]);
+
+        self::assertTrue($policy->isAllowed('domain-Order', 'vendor'));
+        self::assertTrue($policy->isAllowed('domain-Inventory', 'vendor'));
+        self::assertFalse($policy->isAllowed('domain-Order', 'other'));
     }
 
     #[Test]
