@@ -48,6 +48,14 @@ final class ConfigSchema
     public const string MEMORY_LIMIT = 'memory_limit';
     public const string ARCHITECTURE = 'architecture';
 
+    // Note: `architecture.max_expanded_layers` (Phase 2 direction 2) is a
+    // sub-key under the MIXED `architecture` root and lives in its sibling
+    // {@see \Qualimetrix\Configuration\Architecture\ArchitectureConfigurationFactory}
+    // alongside `layers`, `allow`, and `coverage`. The default value is
+    // {@see \Qualimetrix\Core\Architecture\ArchitectureConfiguration::DEFAULT_MAX_EXPANDED_LAYERS}.
+    // It does not appear in ENTRIES because sub-keys of a MIXED root are
+    // validated by the dedicated factory, not by the generic schema.
+
     /** Internal key: set by DefaultsStage only, not YAML-configurable. */
     public const string PROJECT_ROOT = 'project_root';
 

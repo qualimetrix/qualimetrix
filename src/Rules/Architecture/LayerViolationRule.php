@@ -82,6 +82,8 @@ final class LayerViolationRule extends AbstractRule
 
     public const string POTENTIAL_SHADOW_DIAGNOSTIC_NAME = 'architecture.potential-shadow';
 
+    public const string EMPTY_TEMPLATE_DIAGNOSTIC_NAME = 'architecture.empty-template';
+
     private const int COVERAGE_SAMPLE_LIMIT = 10;
 
     private const int SHADOW_SAMPLE_LIMIT = 5;
@@ -167,7 +169,59 @@ final class LayerViolationRule extends AbstractRule
             ...$this->buildCoverageDiagnosticAsList($architecture->coverage(), $coverageState),
             ...$this->buildUnreachableLayerDiagnostics($registry, $layerHits, $definitionsByName),
             ...$this->buildPotentialShadowDiagnostics($shadowEvidence),
+            ...self::buildEmptyTemplateDiagnostics($architecture->emptyTemplateNames()),
         ];
+    }
+
+    /**
+     * Emits one warning diagnostic per template name that produced zero
+     * concrete layers during expansion (Phase 2 direction 2).
+     *
+     * The list is populated by
+     * {@see \Qualimetrix\Analysis\Architecture\LayerExpansionStage} and
+     * threaded through
+     * {@see \Qualimetrix\Core\Architecture\ArchitectureConfigurationHolder}
+     * to the architecture configuration consumed here via
+     * {@see \Qualimetrix\Core\Rule\AnalysisContext}.
+     *
+     * Severity is {@see Severity::Warning} rather than {@see Severity::Info}
+     * because an empty template is usually a typo, missing dependency in the
+     * scanned paths, or recent refactor that removed the matching classes —
+     * all conditions a user wants to be loud.
+     *
+     * @param list<string> $emptyTemplateNames
+     *
+     * @return list<Violation>
+     */
+    private static function buildEmptyTemplateDiagnostics(array $emptyTemplateNames): array
+    {
+        if ($emptyTemplateNames === []) {
+            return [];
+        }
+
+        $diagnostics = [];
+        foreach ($emptyTemplateNames as $template) {
+            $diagnostics[] = new Violation(
+                location: Location::none(),
+                symbolPath: SymbolPath::forProject(),
+                ruleName: self::EMPTY_TEMPLATE_DIAGNOSTIC_NAME,
+                violationCode: self::EMPTY_TEMPLATE_DIAGNOSTIC_NAME,
+                message: \sprintf(
+                    'Template layer "%s" expanded to zero concrete layers — no class in the analysed codebase '
+                    . 'matched the template\'s criteria. Common causes: (1) a typo in the template name or '
+                    . 'pattern, (2) matching classes were filtered out by file discovery (`exclude_paths` / '
+                    . '`exclude_namespaces` at top level or in rule options), (3) the module disappeared in a '
+                    . 'recent refactor, or (4) a single-segment capture `{var}` is used where the binding spans '
+                    . 'multiple namespace segments — try `{var:**}` for cross-segment captures.',
+                    $template,
+                ),
+                severity: Severity::Warning,
+                recommendation: 'Verify the template patterns against the project structure, or remove the '
+                    . 'template if no longer relevant.',
+            );
+        }
+
+        return $diagnostics;
     }
 
     /**

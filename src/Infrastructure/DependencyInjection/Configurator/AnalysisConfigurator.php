@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
 use Qualimetrix\Analysis\Aggregator\GlobalCollectorRunner;
+use Qualimetrix\Analysis\Architecture\LayerExpansionStage;
 use Qualimetrix\Analysis\Collection\CollectionOrchestrator;
 use Qualimetrix\Analysis\Collection\CollectionOrchestratorInterface;
 use Qualimetrix\Analysis\Collection\Dependency\DependencyGraphBuilder;
@@ -132,6 +133,10 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
         $container->register(ArchitectureConfigurationHolder::class)
             ->setPublic(true);
 
+        // LayerExpansionStage — runs template-layer expansion between collection and enrichment.
+        // No DI dependencies of its own; registered for clarity and to allow future overrides.
+        $container->register(LayerExpansionStage::class);
+
         // AnalysisPipeline - main orchestrator
         $container->register(AnalysisPipeline::class)
             ->setArguments([
@@ -145,6 +150,7 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
                 new Reference(DelegatingLogger::class),
                 new Reference(ProfilerHolder::class),
                 new Reference(ArchitectureConfigurationHolder::class),
+                new Reference(LayerExpansionStage::class),
             ])
             ->setPublic(true);
         $container->setAlias(AnalysisPipelineInterface::class, AnalysisPipeline::class)

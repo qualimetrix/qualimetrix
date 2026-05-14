@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console\Command;
 
 use InvalidArgumentException;
+use Qualimetrix\Analysis\Architecture\LayerExpansionException;
 use Qualimetrix\Analysis\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Configuration\Exception\ConfigLoadException;
 use Qualimetrix\Configuration\Pipeline\ConfigurationContext;
@@ -118,6 +119,17 @@ final class CheckCommand extends Command
         } catch (ConfigLoadException $e) {
             $output->writeln(\sprintf(
                 '<error>Configuration error: %s</error>',
+                $e->getMessage(),
+            ));
+
+            return self::EXIT_CONFIG_ERROR;
+        } catch (LayerExpansionException $e) {
+            // Template-layer expansion failures are user-fixable misconfiguration
+            // (typo'd templates, ceiling exceeded, name collisions). Surface them
+            // with the same framing and exit code as ConfigLoadException so the
+            // user sees them as configuration errors, not internal crashes.
+            $output->writeln(\sprintf(
+                '<error>Architecture configuration error: %s</error>',
                 $e->getMessage(),
             ));
 

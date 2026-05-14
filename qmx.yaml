@@ -38,8 +38,14 @@ architecture:
       patterns: ['Qualimetrix\Core\**']
     - name: configuration
       patterns: ['Qualimetrix\Configuration\**']
-    - name: metrics
-      patterns: ['Qualimetrix\Metrics\**']
+    # Template layer (Phase 2 direction 2). Expands to one concrete layer
+    # per observed metric category under src/Metrics/. The metric collector
+    # subtree is naturally module-like — each category (Complexity, Coupling,
+    # CodeSmell, ...) is independent — so per-category layer visibility helps
+    # catch cross-category coupling that the single flat `metrics` layer used
+    # to mask.
+    - name: 'metrics-{Category}'
+      patterns: ['Qualimetrix\Metrics\{Category}\**']
     - name: rules
       patterns: ['Qualimetrix\Rules\**']
     - name: reporting
@@ -55,14 +61,16 @@ architecture:
     core:           []
     # Domain layers depend on Core only.
     configuration:  [core]
-    metrics:        [core]
+    # Every metric category depends on Core; the wildcard selector matches
+    # all `metrics-*` concrete layers produced by template expansion.
+    'metrics-*':    [core]
     rules:          [core, configuration]
     reporting:      [core, configuration]
     baseline:       [core]
     # Analysis orchestrates the rest of the pipeline.
-    analysis:       [core, configuration, metrics, rules, reporting, baseline]
+    analysis:       [core, configuration, 'metrics-*', rules, reporting, baseline]
     # Infrastructure is the outermost glue.
-    infrastructure: [core, configuration, analysis, reporting, baseline, metrics, rules]
+    infrastructure: [core, configuration, analysis, reporting, baseline, 'metrics-*', rules]
   # Warn about edges touching classes outside our own namespaces (vendor, etc.).
   # The default ignore mode is fine for vendor noise; we keep this opt-in.
   coverage: ignore
