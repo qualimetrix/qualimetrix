@@ -6,6 +6,7 @@ namespace Qualimetrix\Analysis\Pipeline;
 
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use Qualimetrix\Analysis\Architecture\LayerExpansionStage;
 use Qualimetrix\Analysis\Collection\CollectionOrchestratorInterface;
 use Qualimetrix\Analysis\Collection\Dependency\DependencyGraphBuilder;
 use Qualimetrix\Analysis\Discovery\FileDiscoveryInterface;
@@ -15,6 +16,10 @@ use Qualimetrix\Analysis\Repository\MetricRepositoryFactoryInterface;
 use Qualimetrix\Analysis\RuleExecution\RuleExecutorInterface;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Core\Architecture\ArchitectureConfigurationHolder;
+use Qualimetrix\Core\Architecture\Layer\ClassContextFactory;
+use Qualimetrix\Core\Architecture\Layer\ClassSet;
+use Qualimetrix\Core\Dependency\DependencyGraphInterface;
+use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\HierarchicalRuleOptionsInterface;
@@ -23,6 +28,7 @@ use Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Core\Suppression\ThresholdDiagnostic;
 use Qualimetrix\Core\Suppression\ThresholdOverride;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
@@ -52,6 +58,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
         private readonly LoggerInterface $logger = new NullLogger(),
         private readonly ?ProfilerHolder $profilerHolder = null,
         private readonly ArchitectureConfigurationHolder $architectureHolder = new ArchitectureConfigurationHolder(),
+        private readonly LayerExpansionStage $layerExpansionStage = new LayerExpansionStage(),
     ) {
         $this->graphBuilder = $graphBuilder ?? new DependencyGraphBuilder();
     }
@@ -119,6 +126,14 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
         $graph = $this->graphBuilder->build($collectionOutput->dependencies);
         unset($collectionOutput); // Free raw dependencies — no longer needed
         $profiler?->stop('dependency');
+
+        // Phase 2.6: Architecture layer template expansion (Phase 2 direction 2).
+        // Runs only when the user config carries at least one TemplateLayerDefinition.
+        // Updates ArchitectureConfigurationHolder so the rule sees the post-expansion
+        // registry and empty-template diagnostic list via AnalysisContext.
+        $profiler?->start('architecture-expansion', 'pipeline');
+        $this->expandArchitectureTemplatesIfNeeded($repository, $graph);
+        $profiler?->stop('architecture-expansion');
 
         // Phases 3-3.8: Enrichment (aggregation, global collectors, computed metrics,
         // circular dependency detection, duplication detection)
@@ -292,6 +307,68 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
         }
 
         return false;
+    }
+
+    /**
+     * Runs the {@see LayerExpansionStage} when the active architecture
+     * configuration carries at least one {@see \Qualimetrix\Core\Architecture\Layer\TemplateLayerDefinition},
+     * and writes the post-expansion configuration back into the
+     * {@see ArchitectureConfigurationHolder}.
+     *
+     * No-op for Phase-1-shape configurations (no templates) — the pipeline
+     * runs unchanged and the holder keeps its original
+     * {@see ArchitectureConfiguration}.
+     */
+    private function expandArchitectureTemplatesIfNeeded(
+        MetricRepositoryInterface $repository,
+        DependencyGraphInterface $graph,
+    ): void {
+        $architecture = $this->architectureHolder->get();
+        if (!$architecture->hasTemplates()) {
+            return;
+        }
+
+        $contextFactory = new ClassContextFactory();
+        $contextFactory->bindGraph($graph);
+
+        $classSet = new ClassSet(
+            self::collectClassPaths($repository),
+            $contextFactory,
+        );
+
+        $expansion = $this->layerExpansionStage->expand(
+            $architecture->entries(),
+            $classSet,
+            $architecture->maxExpandedLayers(),
+        );
+
+        $this->architectureHolder->set(
+            $architecture->withExpansion(
+                $expansion->expandedLayers,
+                $expansion->emptyTemplateNames,
+            ),
+        );
+
+        $this->logger->debug('Architecture template expansion completed', [
+            'expanded_layers' => \count($expansion->expandedLayers),
+            'empty_templates' => \count($expansion->emptyTemplateNames),
+        ]);
+    }
+
+    /**
+     * Collects the {@see SymbolPath} for every class symbol recorded in the
+     * metric repository — the input set for template expansion.
+     *
+     * @return list<SymbolPath>
+     */
+    private static function collectClassPaths(MetricRepositoryInterface $repository): array
+    {
+        $paths = [];
+        foreach ($repository->all(SymbolType::Class_) as $classSymbol) {
+            $paths[] = $classSymbol->symbolPath;
+        }
+
+        return $paths;
     }
 
     /**

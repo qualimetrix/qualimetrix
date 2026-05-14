@@ -30,7 +30,22 @@ use Qualimetrix\Core\Util\NamespaceMatcher;
  */
 final readonly class LayerDefinition
 {
+    /**
+     * Strict regex applied to names declared directly in YAML (Phase-1
+     * shape: lowercase, hyphens, underscores, digits). Keeps user-written
+     * layer names predictable and grep-friendly.
+     */
     private const string NAME_REGEX = '/^[a-z][a-z0-9_-]*$/';
+
+    /**
+     * Relaxed regex applied to names produced by template expansion (Phase 2
+     * direction 2). Binding values are typically PascalCase namespace
+     * segments ({@code Order}, {@code Audit}); requiring authors to
+     * lowercase them in YAML would defeat the ergonomic point of templates.
+     * Expansion-produced names still must start with a letter and contain
+     * only letters, digits, hyphens, and underscores.
+     */
+    private const string EXPANDED_NAME_REGEX = '/^[A-Za-z][A-Za-z0-9_-]*$/';
 
     /**
      * Patterns with trailing backslashes stripped, used for matching.
@@ -40,17 +55,28 @@ final readonly class LayerDefinition
     private array $normalizedPatterns;
 
     /**
-     * @param string $name Layer identifier — must match `[a-z][a-z0-9_-]*`.
+     * @param string $name Layer identifier — must match `[a-z][a-z0-9_-]*`
+     *                     for user-declared layers, or
+     *                     `[A-Za-z][A-Za-z0-9_-]*` for layers produced by
+     *                     template expansion ({@see expanded()}).
      * @param MembershipSpec $membership Criteria carrying at least one
      *                                   non-empty list.
+     * @param bool $expanded When true, the relaxed
+     *                       {@see EXPANDED_NAME_REGEX} is applied; flag is
+     *                       carried as a field because {@see LayerRegistry}
+     *                       and the rule layer may want to surface it in
+     *                       diagnostics (e.g. "{layer name} comes from
+     *                       template expansion"). Phase D itself never
+     *                       reads it.
      *
      * @throws InvalidLayerDefinitionException If the name is invalid.
      */
     public function __construct(
         public string $name,
         public MembershipSpec $membership,
+        public bool $expanded = false,
     ) {
-        $this->validateName($name);
+        $this->validateName($name, $expanded);
 
         $normalized = [];
         foreach ($membership->patterns as $pattern) {
@@ -58,6 +84,23 @@ final readonly class LayerDefinition
         }
 
         $this->normalizedPatterns = $normalized;
+    }
+
+    /**
+     * Static factory used by {@see \Qualimetrix\Analysis\Architecture\LayerExpansionStage}
+     * when instantiating layers produced by template expansion. Applies the
+     * relaxed {@see EXPANDED_NAME_REGEX} so PascalCase binding values do not
+     * have to be lowercased.
+     *
+     * @throws InvalidLayerDefinitionException If the produced name still
+     *                                         violates the relaxed regex
+     *                                         (e.g. binding contains a
+     *                                         backslash, dot, or starts
+     *                                         with a digit).
+     */
+    public static function expanded(string $name, MembershipSpec $membership): self
+    {
+        return new self($name, $membership, true);
     }
 
     /**
@@ -242,18 +285,26 @@ final readonly class LayerDefinition
         return $count;
     }
 
-    private function validateName(string $name): void
+    private function validateName(string $name, bool $expanded): void
     {
         if ($name === '') {
             throw new InvalidLayerDefinitionException('Layer name must not be empty.');
         }
 
-        if (preg_match(self::NAME_REGEX, $name) !== 1) {
-            throw new InvalidLayerDefinitionException(\sprintf(
-                'Layer name "%s" must match pattern %s (lowercase letter followed by lowercase letters, digits, underscores, or hyphens).',
-                $name,
-                self::NAME_REGEX,
-            ));
+        $regex = $expanded ? self::EXPANDED_NAME_REGEX : self::NAME_REGEX;
+        if (preg_match($regex, $name) === 1) {
+            return;
         }
+
+        $description = $expanded
+            ? 'letter followed by letters, digits, underscores, or hyphens'
+            : 'lowercase letter followed by lowercase letters, digits, underscores, or hyphens';
+
+        throw new InvalidLayerDefinitionException(\sprintf(
+            'Layer name "%s" must match pattern %s (%s).',
+            $name,
+            $regex,
+            $description,
+        ));
     }
 }

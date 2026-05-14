@@ -8,9 +8,9 @@ use InvalidArgumentException;
 use Qualimetrix\Configuration\Exception\ConfigLoadException;
 use Qualimetrix\Core\Architecture\Layer\InvalidLayerDefinitionException;
 use Qualimetrix\Core\Architecture\Layer\LayerDefinition;
-use Qualimetrix\Core\Architecture\Layer\LayerRegistry;
 use Qualimetrix\Core\Architecture\Layer\MatchMode;
 use Qualimetrix\Core\Architecture\Layer\MembershipSpec;
+use Qualimetrix\Core\Architecture\Layer\TemplateLayerDefinition;
 
 /**
  * Parses and validates the {@code architecture.layers} sub-tree.
@@ -57,20 +57,30 @@ final class LayersValidator
     ];
 
     /**
-     * Parses the raw `layers` value into a {@see LayerRegistry}.
+     * Parses the raw {@code layers} value into the declaration-order list of
+     * static {@see LayerDefinition}s and parameterised
+     * {@see TemplateLayerDefinition}s.
+     *
+     * Templates are recognised by the presence of capture variables in the
+     * {@code name:} field per the {@see TemplateLayerDefinition} grammar.
+     * Cross-template duplicate detection (e.g. two templates expanding to the
+     * same instance name) happens at expansion time in
+     * {@see \Qualimetrix\Analysis\Architecture\LayerExpansionStage}, not here.
+     *
+     * @return list<LayerDefinition|TemplateLayerDefinition>
      */
-    public function validate(mixed $layersRaw): LayerRegistry
+    public function validate(mixed $layersRaw): array
     {
-        $definitions = $this->buildLayerDefinitions($layersRaw);
-        self::rejectDuplicatePatterns($definitions);
+        $entries = $this->buildLayerEntries($layersRaw);
+        self::rejectDuplicatePatterns($entries);
 
-        return $this->buildRegistry($definitions);
+        return $entries;
     }
 
     /**
-     * @return list<LayerDefinition>
+     * @return list<LayerDefinition|TemplateLayerDefinition>
      */
-    private function buildLayerDefinitions(mixed $layersRaw): array
+    private function buildLayerEntries(mixed $layersRaw): array
     {
         if ($layersRaw === [] || $layersRaw === null) {
             return [];
@@ -91,13 +101,13 @@ final class LayersValidator
             );
         }
 
-        $definitions = [];
+        $entries = [];
         $seenNames = [];
         foreach ($layersRaw as $index => $entry) {
-            $definitions[] = self::buildSingleLayerDefinition($index, $entry, $seenNames);
+            $entries[] = self::buildSingleLayerEntry($index, $entry, $seenNames);
         }
 
-        return $definitions;
+        return $entries;
     }
 
     /**
@@ -105,7 +115,7 @@ final class LayersValidator
      *
      * @param-out array<string, true> $seenNames
      */
-    private static function buildSingleLayerDefinition(int $index, mixed $entry, array &$seenNames): LayerDefinition
+    private static function buildSingleLayerEntry(int $index, mixed $entry, array &$seenNames): LayerDefinition|TemplateLayerDefinition
     {
         $entry = self::ensureEntryIsAssociativeArray($index, $entry);
         self::rejectUnknownKeys($index, $entry);
@@ -117,7 +127,54 @@ final class LayersValidator
         $criteria = self::normalizeCriteria($index, $name, $entry);
         $mode = self::normalizeMatchMode($index, $name, $entry['match'] ?? null);
 
+        if (TemplateLayerDefinition::containsCaptureVariable($name)) {
+            return self::buildTemplateDefinition($index, $name, $criteria, $mode);
+        }
+
         return self::buildMembershipDefinition($index, $name, $criteria, $mode);
+    }
+
+    /**
+     * Constructs a {@see TemplateLayerDefinition} from a parsed entry whose
+     * name contains capture variables. Catches the construction-time
+     * invariant violations (empty name, variable in name not bound by any
+     * capture-producing pattern, invalid capture grammar) and rewraps them
+     * as {@see ConfigLoadException} so the user sees a config-layer error.
+     *
+     * @param array{patterns: list<string>, suffix: list<string>, attributes: list<string>, implements: list<string>, extends: list<string>} $criteria
+     */
+    private static function buildTemplateDefinition(int $index, string $nameTemplate, array $criteria, MatchMode $mode): TemplateLayerDefinition
+    {
+        if (array_filter($criteria) === []) {
+            throw new ConfigLoadException(
+                self::CONFIG_PATH,
+                \sprintf(
+                    'architecture.layers[%d] ("%s"): must declare at least one of "patterns", "suffix", "attributes", "implements" or "extends".',
+                    $index,
+                    $nameTemplate,
+                ),
+            );
+        }
+
+        try {
+            return new TemplateLayerDefinition(
+                $nameTemplate,
+                new MembershipSpec(
+                    patterns: $criteria['patterns'],
+                    suffix: $criteria['suffix'],
+                    attributes: $criteria['attributes'],
+                    implements: $criteria['implements'],
+                    extends: $criteria['extends'],
+                    mode: $mode,
+                ),
+            );
+        } catch (InvalidArgumentException $e) {
+            throw new ConfigLoadException(
+                self::CONFIG_PATH,
+                \sprintf('architecture.layers[%d] ("%s"): %s', $index, $nameTemplate, $e->getMessage()),
+                $e,
+            );
+        }
     }
 
     /**
@@ -478,63 +535,55 @@ final class LayersValidator
     }
 
     /**
-     * Rejects duplicate patterns across different layers. Under declaration-
-     * order semantics any class matching the duplicate would always belong to
-     * the earlier layer — the second occurrence is unreachable and is always
-     * a configuration mistake.
+     * Rejects duplicate patterns across different entries. Under
+     * declaration-order semantics any class matching the duplicate would
+     * always belong to the earlier entry — the second occurrence is
+     * unreachable and is always a configuration mistake.
      *
-     * Same-pattern entries within ONE layer are not duplicates (the layer
-     * itself can list whatever it wants), so the check is cross-layer only.
+     * Same-pattern entries within ONE entry are not duplicates (the entry
+     * itself can list whatever it wants), so the check is cross-entry only.
      *
      * Only the {@code patterns} criterion is duplicate-checked: suffix /
      * attributes / implements / extends entries can legitimately overlap
-     * across layers because their match semantics are richer than a literal
-     * FQN prefix (a suffix-only class might match multiple suffix layers; the
+     * across entries because their match semantics are richer than a literal
+     * FQN prefix (a suffix-only class might match multiple suffix entries; the
      * declaration-order rule already chooses the assignment unambiguously).
      *
-     * @param list<LayerDefinition> $definitions
+     * Both {@see LayerDefinition} and {@see TemplateLayerDefinition} are
+     * walked uniformly — a static entry's pattern colliding with a template's
+     * raw pattern would also be unreachable under declaration order.
+     *
+     * @param list<LayerDefinition|TemplateLayerDefinition> $entries
      */
-    private static function rejectDuplicatePatterns(array $definitions): void
+    private static function rejectDuplicatePatterns(array $entries): void
     {
         $owners = [];
-        foreach ($definitions as $definition) {
-            $seenInThisLayer = [];
-            foreach ($definition->patterns() as $pattern) {
+        foreach ($entries as $entry) {
+            $entryName = $entry instanceof TemplateLayerDefinition ? $entry->nameTemplate() : $entry->name();
+            $patterns = $entry instanceof TemplateLayerDefinition
+                ? $entry->membership()->patterns
+                : $entry->patterns();
+            $seenInThisEntry = [];
+            foreach ($patterns as $pattern) {
                 $normalized = rtrim($pattern, '\\');
-                if (isset($seenInThisLayer[$normalized])) {
+                if (isset($seenInThisEntry[$normalized])) {
                     continue;
                 }
-                $seenInThisLayer[$normalized] = true;
+                $seenInThisEntry[$normalized] = true;
 
-                if (isset($owners[$normalized]) && $owners[$normalized] !== $definition->name()) {
+                if (isset($owners[$normalized]) && $owners[$normalized] !== $entryName) {
                     throw new ConfigLoadException(
                         self::CONFIG_PATH,
                         \sprintf(
                             'architecture.layers: pattern "%s" declared in both "%s" and "%s". Under declaration-order matching the second occurrence is unreachable; remove or refine one of them.',
                             $normalized,
                             $owners[$normalized],
-                            $definition->name(),
+                            $entryName,
                         ),
                     );
                 }
-                $owners[$normalized] = $definition->name();
+                $owners[$normalized] = $entryName;
             }
-        }
-    }
-
-    /**
-     * @param list<LayerDefinition> $definitions
-     */
-    private function buildRegistry(array $definitions): LayerRegistry
-    {
-        try {
-            return new LayerRegistry($definitions);
-        } catch (InvalidArgumentException $e) {
-            throw new ConfigLoadException(
-                self::CONFIG_PATH,
-                \sprintf('architecture.layers: %s', $e->getMessage()),
-                $e,
-            );
         }
     }
 }
