@@ -11,6 +11,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Core\Architecture\Layer\LayerMatch;
 use Qualimetrix\Core\Architecture\Layer\LayerRegistry;
+use Qualimetrix\Core\Architecture\Layer\MembershipSpec;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use ReflectionProperty;
 
@@ -22,7 +23,7 @@ final class LayerRegistryTest extends TestCase
     public function resolveLayer_singleLayerSingleMatch_returnsName(): void
     {
         $registry = new LayerRegistry([
-            new LayerDefinition('controller', ['App\\Controller']),
+            new LayerDefinition('controller', new MembershipSpec(['App\\Controller'])),
         ]);
 
         self::assertSame(
@@ -35,7 +36,7 @@ final class LayerRegistryTest extends TestCase
     public function resolveLayer_singleLayerNoMatch_returnsNull(): void
     {
         $registry = new LayerRegistry([
-            new LayerDefinition('controller', ['App\\Controller']),
+            new LayerDefinition('controller', new MembershipSpec(['App\\Controller'])),
         ]);
 
         self::assertNull(
@@ -58,8 +59,8 @@ final class LayerRegistryTest extends TestCase
     {
         // The narrower layer is declared first → it wins for classes inside its scope.
         $registry = new LayerRegistry([
-            new LayerDefinition('service', ['App\\Service\\**']),
-            new LayerDefinition('any', ['App\\**']),
+            new LayerDefinition('service', new MembershipSpec(['App\\Service\\**'])),
+            new LayerDefinition('any', new MembershipSpec(['App\\**'])),
         ]);
 
         self::assertSame(
@@ -73,8 +74,8 @@ final class LayerRegistryTest extends TestCase
     {
         // Reversed order: the broad layer wins, shadowing the narrower one.
         $registry = new LayerRegistry([
-            new LayerDefinition('any', ['App\\**']),
-            new LayerDefinition('service', ['App\\Service\\**']),
+            new LayerDefinition('any', new MembershipSpec(['App\\**'])),
+            new LayerDefinition('service', new MembershipSpec(['App\\Service\\**'])),
         ]);
 
         self::assertSame(
@@ -87,8 +88,8 @@ final class LayerRegistryTest extends TestCase
     public function resolveLayer_catchAllAsFinalLayerCapturesResidual(): void
     {
         $registry = new LayerRegistry([
-            new LayerDefinition('service', ['App\\Service\\**']),
-            new LayerDefinition('catchall', ['**']),
+            new LayerDefinition('service', new MembershipSpec(['App\\Service\\**'])),
+            new LayerDefinition('catchall', new MembershipSpec(['**'])),
         ]);
 
         // App\Service goes to service.
@@ -101,8 +102,8 @@ final class LayerRegistryTest extends TestCase
     public function resolveLayer_isCachedAcrossInvocations(): void
     {
         $registry = new LayerRegistry([
-            new LayerDefinition('service', ['App\\Service']),
-            new LayerDefinition('controller', ['App\\Controller']),
+            new LayerDefinition('service', new MembershipSpec(['App\\Service'])),
+            new LayerDefinition('controller', new MembershipSpec(['App\\Controller'])),
         ]);
 
         $symbol = SymbolPath::forClass('App\\Service', 'UserService');
@@ -120,7 +121,7 @@ final class LayerRegistryTest extends TestCase
     public function resolveLayer_populatesSharedMatchCache(): void
     {
         $registry = new LayerRegistry([
-            new LayerDefinition('service', ['App\\Service']),
+            new LayerDefinition('service', new MembershipSpec(['App\\Service'])),
         ]);
 
         $reflection = new ReflectionProperty(LayerRegistry::class, 'matchCache');
@@ -146,7 +147,7 @@ final class LayerRegistryTest extends TestCase
     public function resolveLayer_cacheReturnsSameNegativeResult(): void
     {
         $registry = new LayerRegistry([
-            new LayerDefinition('service', ['App\\Service']),
+            new LayerDefinition('service', new MembershipSpec(['App\\Service'])),
         ]);
 
         $symbol = SymbolPath::forClass('Other\\Place', 'Foo');
@@ -160,7 +161,7 @@ final class LayerRegistryTest extends TestCase
     public function resolveLayer_emptyNamespaceAndEmptyTypeReturnsNull(): void
     {
         $registry = new LayerRegistry([
-            new LayerDefinition('global', ['Foo']),
+            new LayerDefinition('global', new MembershipSpec(['Foo'])),
         ]);
 
         // A SymbolPath with both namespace and type empty (a namespace-only path with empty namespace).
@@ -173,7 +174,7 @@ final class LayerRegistryTest extends TestCase
     public function resolveLayer_emptyNamespaceWithType_matchesByBareType(): void
     {
         $registry = new LayerRegistry([
-            new LayerDefinition('global', ['GlobalClass']),
+            new LayerDefinition('global', new MembershipSpec(['GlobalClass'])),
         ]);
 
         $symbol = SymbolPath::forClass('', 'GlobalClass');
@@ -185,7 +186,7 @@ final class LayerRegistryTest extends TestCase
     public function resolveLayer_namespaceOnlyPath_isResolvable(): void
     {
         $registry = new LayerRegistry([
-            new LayerDefinition('service', ['App\\Service']),
+            new LayerDefinition('service', new MembershipSpec(['App\\Service'])),
         ]);
 
         // Namespace-level SymbolPath (no type). FQN = the namespace itself.
@@ -202,7 +203,7 @@ final class LayerRegistryTest extends TestCase
         // reach the registry, but future layer-aware metrics over namespace
         // symbols inherit this consistent behavior.
         $registry = new LayerRegistry([
-            new LayerDefinition('service', ['App\\Service']),
+            new LayerDefinition('service', new MembershipSpec(['App\\Service'])),
         ]);
 
         self::assertSame(
@@ -221,9 +222,9 @@ final class LayerRegistryTest extends TestCase
     public function resolveAll_returnsEveryMatchingLayerInDeclarationOrder(): void
     {
         $registry = new LayerRegistry([
-            new LayerDefinition('any', ['App\\**']),
-            new LayerDefinition('service', ['App\\Service\\**']),
-            new LayerDefinition('special', ['App\\Service\\Special\\**']),
+            new LayerDefinition('any', new MembershipSpec(['App\\**'])),
+            new LayerDefinition('service', new MembershipSpec(['App\\Service\\**'])),
+            new LayerDefinition('special', new MembershipSpec(['App\\Service\\Special\\**'])),
         ]);
 
         $matches = $registry->resolveAll(SymbolPath::forClass('App\\Service\\Special', 'Foo'));
@@ -241,7 +242,7 @@ final class LayerRegistryTest extends TestCase
     public function resolveAll_returnsEmptyListWhenNoLayerMatches(): void
     {
         $registry = new LayerRegistry([
-            new LayerDefinition('service', ['App\\Service']),
+            new LayerDefinition('service', new MembershipSpec(['App\\Service'])),
         ]);
 
         self::assertSame([], $registry->resolveAll(SymbolPath::forClass('Other\\Place', 'Foo')));
@@ -251,8 +252,8 @@ final class LayerRegistryTest extends TestCase
     public function resolveAll_isCached(): void
     {
         $registry = new LayerRegistry([
-            new LayerDefinition('any', ['App\\**']),
-            new LayerDefinition('service', ['App\\Service\\**']),
+            new LayerDefinition('any', new MembershipSpec(['App\\**'])),
+            new LayerDefinition('service', new MembershipSpec(['App\\Service\\**'])),
         ]);
 
         $symbol = SymbolPath::forClass('App\\Service', 'Foo');
@@ -267,8 +268,8 @@ final class LayerRegistryTest extends TestCase
     public function resolveAll_andResolveLayer_shareTheSameCache(): void
     {
         $registry = new LayerRegistry([
-            new LayerDefinition('any', ['App\\**']),
-            new LayerDefinition('service', ['App\\Service\\**']),
+            new LayerDefinition('any', new MembershipSpec(['App\\**'])),
+            new LayerDefinition('service', new MembershipSpec(['App\\Service\\**'])),
         ]);
 
         $reflection = new ReflectionProperty(LayerRegistry::class, 'matchCache');
@@ -307,8 +308,8 @@ final class LayerRegistryTest extends TestCase
         $this->expectExceptionMessageMatches('/Duplicate layer name "service"/');
 
         new LayerRegistry([
-            new LayerDefinition('service', ['App\\Service']),
-            new LayerDefinition('service', ['App\\OtherService']),
+            new LayerDefinition('service', new MembershipSpec(['App\\Service'])),
+            new LayerDefinition('service', new MembershipSpec(['App\\OtherService'])),
         ]);
     }
 
@@ -322,7 +323,7 @@ final class LayerRegistryTest extends TestCase
     public function isEmpty_falseWhenLayersPresent(): void
     {
         $registry = new LayerRegistry([
-            new LayerDefinition('service', ['App\\Service']),
+            new LayerDefinition('service', new MembershipSpec(['App\\Service'])),
         ]);
 
         self::assertFalse($registry->isEmpty());
@@ -332,9 +333,9 @@ final class LayerRegistryTest extends TestCase
     public function layerNames_preservesDeclarationOrder(): void
     {
         $registry = new LayerRegistry([
-            new LayerDefinition('zebra', ['App\\Zebra']),
-            new LayerDefinition('alpha', ['App\\Alpha']),
-            new LayerDefinition('beta', ['App\\Beta']),
+            new LayerDefinition('zebra', new MembershipSpec(['App\\Zebra'])),
+            new LayerDefinition('alpha', new MembershipSpec(['App\\Alpha'])),
+            new LayerDefinition('beta', new MembershipSpec(['App\\Beta'])),
         ]);
 
         // NOT alphabetically sorted — declaration order is preserved.
@@ -351,8 +352,8 @@ final class LayerRegistryTest extends TestCase
     public function definitions_returnsConfiguredListInOrder(): void
     {
         $definitions = [
-            new LayerDefinition('service', ['App\\Service']),
-            new LayerDefinition('controller', ['App\\Controller']),
+            new LayerDefinition('service', new MembershipSpec(['App\\Service'])),
+            new LayerDefinition('controller', new MembershipSpec(['App\\Controller'])),
         ];
 
         $registry = new LayerRegistry($definitions);

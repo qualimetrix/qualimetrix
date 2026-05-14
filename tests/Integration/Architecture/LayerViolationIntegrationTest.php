@@ -14,6 +14,7 @@ use Qualimetrix\Core\Architecture\CoverageMode;
 use Qualimetrix\Core\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Core\Architecture\Layer\LayerPolicy;
 use Qualimetrix\Core\Architecture\Layer\LayerRegistry;
+use Qualimetrix\Core\Architecture\Layer\MembershipSpec;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
@@ -96,7 +97,7 @@ final class LayerViolationIntegrationTest extends TestCase
     {
         // Only declare 'controller'; service/repository/domain become out-of-layer
         $registry = new LayerRegistry([
-            new LayerDefinition('controller', ['Fixtures\\ArchitectureSample\\Controller']),
+            new LayerDefinition('controller', new MembershipSpec(['Fixtures\\ArchitectureSample\\Controller'])),
         ]);
         $policy = new LayerPolicy(['controller' => []]);
         $architecture = new ArchitectureConfiguration($registry, $policy, CoverageMode::Warn);
@@ -199,7 +200,7 @@ final class LayerViolationIntegrationTest extends TestCase
     public function ignoreCoverageModeSuppressesDiagnosticEvenWithUnmatchedEnds(): void
     {
         $registry = new LayerRegistry([
-            new LayerDefinition('controller', ['Fixtures\\ArchitectureSample\\Controller']),
+            new LayerDefinition('controller', new MembershipSpec(['Fixtures\\ArchitectureSample\\Controller'])),
         ]);
         $policy = new LayerPolicy(['controller' => []]);
         $architecture = new ArchitectureConfiguration($registry, $policy, CoverageMode::Ignore);
@@ -231,10 +232,10 @@ final class LayerViolationIntegrationTest extends TestCase
     private function buildPolicy(CoverageMode $coverage): ArchitectureConfiguration
     {
         $registry = new LayerRegistry([
-            new LayerDefinition('controller', ['Fixtures\\ArchitectureSample\\Controller']),
-            new LayerDefinition('service', ['Fixtures\\ArchitectureSample\\Service']),
-            new LayerDefinition('repository', ['Fixtures\\ArchitectureSample\\Repository']),
-            new LayerDefinition('domain', ['Fixtures\\ArchitectureSample\\Domain']),
+            new LayerDefinition('controller', new MembershipSpec(['Fixtures\\ArchitectureSample\\Controller'])),
+            new LayerDefinition('service', new MembershipSpec(['Fixtures\\ArchitectureSample\\Service'])),
+            new LayerDefinition('repository', new MembershipSpec(['Fixtures\\ArchitectureSample\\Repository'])),
+            new LayerDefinition('domain', new MembershipSpec(['Fixtures\\ArchitectureSample\\Domain'])),
         ]);
 
         $policy = new LayerPolicy([

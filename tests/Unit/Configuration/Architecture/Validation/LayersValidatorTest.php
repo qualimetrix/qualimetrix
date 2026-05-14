@@ -5,12 +5,17 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Configuration\Architecture\Validation;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Configuration\Architecture\Validation\LayersValidator;
 use Qualimetrix\Configuration\Exception\ConfigLoadException;
+use Qualimetrix\Core\Architecture\Layer\MatchMode;
+use Qualimetrix\Core\Architecture\Layer\MembershipSpec;
 
 #[CoversClass(LayersValidator::class)]
+#[CoversClass(MembershipSpec::class)]
+#[CoversClass(MatchMode::class)]
 final class LayersValidatorTest extends TestCase
 {
     private LayersValidator $validator;
@@ -168,6 +173,95 @@ final class LayersValidatorTest extends TestCase
 
         $this->validator->validate([
             ['name' => 'controller', 'patterns' => ['App\\Controller'], 'unexpected' => 'foo'],
+        ]);
+    }
+
+    /**
+     * @return iterable<string, array{0: string}>
+     */
+    public static function phase2ReservedKeyProvider(): iterable
+    {
+        yield 'suffix' => ['suffix'];
+        yield 'attributes' => ['attributes'];
+        yield 'implements' => ['implements'];
+        yield 'extends' => ['extends'];
+        yield 'exclude' => ['exclude'];
+    }
+
+    #[DataProvider('phase2ReservedKeyProvider')]
+    #[Test]
+    public function phase2ReservedKeyOnLayerEntryIsRejectedWithDedicatedHint(string $reservedKey): void
+    {
+        try {
+            $this->validator->validate([
+                ['name' => 'controller', 'patterns' => ['App\\Controller'], $reservedKey => ['placeholder']],
+            ]);
+            self::fail('Expected ConfigLoadException for reserved key "' . $reservedKey . '".');
+        } catch (ConfigLoadException $e) {
+            self::assertSame('architecture', $e->configPath);
+            self::assertStringContainsString('unknown key', $e->getMessage());
+            self::assertStringContainsString('"' . $reservedKey . '"', $e->getMessage());
+            self::assertStringContainsString('reserved for an upcoming Phase 2 feature', $e->getMessage());
+        }
+    }
+
+    #[Test]
+    public function omittedMatchKeyDefaultsToAny(): void
+    {
+        $registry = $this->validator->validate([
+            ['name' => 'service', 'patterns' => ['App\\Service']],
+        ]);
+
+        $definitions = $registry->definitions();
+        self::assertCount(1, $definitions);
+        self::assertSame(MatchMode::Any, $definitions[0]->membership()->mode);
+    }
+
+    #[Test]
+    public function explicitMatchAnyParsesToAny(): void
+    {
+        $registry = $this->validator->validate([
+            ['name' => 'service', 'patterns' => ['App\\Service'], 'match' => 'any'],
+        ]);
+
+        self::assertSame(MatchMode::Any, $registry->definitions()[0]->membership()->mode);
+    }
+
+    #[Test]
+    public function explicitMatchAllParsesToAll(): void
+    {
+        $registry = $this->validator->validate([
+            ['name' => 'service', 'patterns' => ['App\\Service'], 'match' => 'all'],
+        ]);
+
+        self::assertSame(MatchMode::All, $registry->definitions()[0]->membership()->mode);
+    }
+
+    #[Test]
+    public function unknownMatchValueIsRejected(): void
+    {
+        try {
+            $this->validator->validate([
+                ['name' => 'service', 'patterns' => ['App\\Service'], 'match' => 'maybe'],
+            ]);
+            self::fail('Expected ConfigLoadException for unknown match mode.');
+        } catch (ConfigLoadException $e) {
+            self::assertSame('architecture', $e->configPath);
+            self::assertStringContainsString('"match"', $e->getMessage());
+            self::assertStringContainsString('"any"', $e->getMessage());
+            self::assertStringContainsString('"all"', $e->getMessage());
+            self::assertStringContainsString('"maybe"', $e->getMessage());
+        }
+    }
+
+    #[Test]
+    public function nonStringMatchValueIsRejected(): void
+    {
+        $this->expectException(ConfigLoadException::class);
+        $this->expectExceptionMessageMatches('/"match".+int/');
+
+        $this->validator->validate([
+            ['name' => 'service', 'patterns' => ['App\\Service'], 'match' => 42],
         ]);
     }
 
