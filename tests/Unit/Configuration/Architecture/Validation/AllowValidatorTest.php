@@ -219,20 +219,60 @@ final class AllowValidatorTest extends TestCase
     }
 
     #[Test]
-    public function longFormAllowEntryWithReservedAllowCrossInstanceKeyIsRejected(): void
+    public function longFormAllowEntryAcceptsAllowCrossInstanceFlag(): void
+    {
+        $warnings = [];
+
+        $entries = $this->validator->validate(
+            [
+                'app-{m}' => [
+                    ['target' => 'domain-{m}', 'allow_cross_instance' => true],
+                ],
+            ],
+            ['app-Order', 'domain-Order'],
+            $warnings,
+        );
+
+        self::assertCount(1, $entries);
+        self::assertCount(1, $entries[0]->targets);
+        self::assertTrue($entries[0]->targets[0]->allowCrossInstance);
+        self::assertSame([], $warnings);
+    }
+
+    #[Test]
+    public function longFormAllowEntryDefaultsAllowCrossInstanceToFalse(): void
+    {
+        $warnings = [];
+
+        $entries = $this->validator->validate(
+            [
+                'app-{m}' => [
+                    ['target' => 'domain-{m}'],
+                ],
+            ],
+            ['app-Order', 'domain-Order'],
+            $warnings,
+        );
+
+        self::assertCount(1, $entries);
+        self::assertFalse($entries[0]->targets[0]->allowCrossInstance);
+    }
+
+    #[Test]
+    public function longFormAllowEntryRejectsNonBooleanAllowCrossInstance(): void
     {
         $warnings = [];
 
         $this->expectException(ConfigLoadException::class);
-        $this->expectExceptionMessage("long-form key 'allow_cross_instance' is reserved for Step E");
+        $this->expectExceptionMessage("'allow_cross_instance' must be a boolean, got string");
 
         $this->validator->validate(
             [
-                'controller' => [
-                    ['target' => 'service', 'allow_cross_instance' => true],
+                'app-{m}' => [
+                    ['target' => 'domain-{m}', 'allow_cross_instance' => 'yes'],
                 ],
             ],
-            ['controller', 'service'],
+            ['app-Order', 'domain-Order'],
             $warnings,
         );
     }
@@ -361,15 +401,20 @@ final class AllowValidatorTest extends TestCase
     #[Test]
     public function capturedTargetSelectorIsRecognised(): void
     {
+        // Captured target is accepted only when its capture variables are a
+        // subset of the source-side captures — otherwise the runtime binding
+        // would be undefined. Pair captured source with captured target sharing
+        // the same {@code m} variable.
         $warnings = [];
         $entries = $this->validator->validate(
-            ['controller' => ['domain-{m}']],
-            ['controller'],
+            ['app-{m}' => ['domain-{m}']],
+            ['app-Order', 'domain-Order'],
             $warnings,
         );
 
         self::assertCount(1, $entries);
         self::assertSame(SelectorKind::Captured, $entries[0]->targets[0]->target->kind);
+        self::assertFalse($entries[0]->targets[0]->allowCrossInstance);
     }
 
     // -------------------------------------------------------------------------
@@ -518,6 +563,179 @@ final class AllowValidatorTest extends TestCase
         } catch (ConfigLoadException $e) {
             self::assertSame('architecture', $e->configPath);
         }
+    }
+
+    // -------------------------------------------------------------------------
+    // Step E: capture-binding cross-validation
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function capturedTargetWithUndeclaredVariableIsRejected(): void
+    {
+        // 'app-{x}': ['domain-{y}'] — target {y} is not bound by source {x}.
+        $warnings = [];
+
+        $this->expectException(ConfigLoadException::class);
+        $this->expectExceptionMessage("captured target 'domain-{y}' references variable(s) 'y' not declared by source 'app-{x}'");
+
+        $this->validator->validate(
+            ['app-{x}' => ['domain-{y}']],
+            ['app-Order', 'domain-Order'],
+            $warnings,
+        );
+    }
+
+    #[Test]
+    public function capturedTargetWithGlobSourceIsRejected(): void
+    {
+        // 'shared-*': ['domain-{m}'] — source produces no binding for {m}.
+        $warnings = [];
+
+        $this->expectException(ConfigLoadException::class);
+        $this->expectExceptionMessage("source 'shared-*' is a glob selector and declares no capture variables");
+
+        $this->validator->validate(
+            ['shared-*' => ['domain-{m}']],
+            ['shared-Lib', 'domain-Order'],
+            $warnings,
+        );
+    }
+
+    #[Test]
+    public function capturedTargetWithExactSourceIsRejected(): void
+    {
+        // 'controller': ['domain-{m}'] — exact source has no captures.
+        $warnings = [];
+
+        $this->expectException(ConfigLoadException::class);
+        $this->expectExceptionMessage("source 'controller' is an exact layer name and declares no capture variables");
+
+        $this->validator->validate(
+            ['controller' => ['domain-{m}']],
+            ['controller', 'domain-Order'],
+            $warnings,
+        );
+    }
+
+    #[Test]
+    public function capturedTargetWithSubsetOfSourceVariablesIsAccepted(): void
+    {
+        // '{a}-{b}': ['domain-{a}'] — target uses {a} only, which IS declared
+        // by the source. Subset references are legal.
+        $warnings = [];
+
+        $entries = $this->validator->validate(
+            ['{a}-{b}' => ['domain-{a}']],
+            ['app-Order', 'domain-app'],
+            $warnings,
+        );
+
+        self::assertCount(1, $entries);
+        self::assertSame(SelectorKind::Captured, $entries[0]->targets[0]->target->kind);
+    }
+
+    #[Test]
+    public function exactTargetSkipsCrossValidation(): void
+    {
+        // 'domain-{m}': ['vendor'] — exact target ignores binding entirely;
+        // any captured-source-to-exact-target pairing is legal.
+        $warnings = [];
+
+        $entries = $this->validator->validate(
+            ['domain-{m}' => ['vendor']],
+            ['domain-Order', 'vendor'],
+            $warnings,
+        );
+
+        self::assertCount(1, $entries);
+        self::assertSame(SelectorKind::Exact, $entries[0]->targets[0]->target->kind);
+    }
+
+    #[Test]
+    public function globTargetSkipsCrossValidation(): void
+    {
+        // 'domain-{m}': ['shared-*'] — glob target ignores binding entirely.
+        $warnings = [];
+
+        $entries = $this->validator->validate(
+            ['domain-{m}' => ['shared-*']],
+            ['domain-Order', 'shared-Lib'],
+            $warnings,
+        );
+
+        self::assertCount(1, $entries);
+        self::assertSame(SelectorKind::Glob, $entries[0]->targets[0]->target->kind);
+    }
+
+    #[Test]
+    public function singleSegmentSourceWithMultiSegmentTargetIsRejected(): void
+    {
+        // 'app-{m}': ['domain-{m:**}'] — runtime substitutes the single-segment
+        // value, target's :** annotation would be silently ignored.
+        $warnings = [];
+
+        $this->expectException(ConfigLoadException::class);
+        $this->expectExceptionMessage("'m' (source: {var}, target: {var:**})");
+
+        $this->validator->validate(
+            ['app-{m}' => ['domain-{m:**}']],
+            ['app-Order', 'domain-Order'],
+            $warnings,
+        );
+    }
+
+    #[Test]
+    public function multiSegmentSourceWithSingleSegmentTargetIsRejected(): void
+    {
+        // Reverse direction: source binds multi-segment, target declares single.
+        $warnings = [];
+
+        $this->expectException(ConfigLoadException::class);
+        $this->expectExceptionMessage("'m' (source: {var:**}, target: {var})");
+
+        $this->validator->validate(
+            ['app-{m:**}' => ['domain-{m}']],
+            ['app-Order', 'domain-Order'],
+            $warnings,
+        );
+    }
+
+    #[Test]
+    public function matchingMultiSegmentShapesAreAccepted(): void
+    {
+        // 'app-{m:**}': ['domain-{m:**}'] — shapes match on both sides.
+        $warnings = [];
+
+        $entries = $this->validator->validate(
+            ['app-{m:**}' => ['domain-{m:**}']],
+            ['app-Order', 'domain-Order'],
+            $warnings,
+        );
+
+        self::assertCount(1, $entries);
+    }
+
+    #[Test]
+    public function allowCrossInstanceFlagDoesNotRelaxCaptureCrossValidation(): void
+    {
+        // The flag affects runtime binding identity, NOT the grammar — a
+        // captured target with an undeclared variable is rejected at config
+        // load regardless of the flag, because the variable would be
+        // meaningless at runtime even in cross-instance mode.
+        $warnings = [];
+
+        $this->expectException(ConfigLoadException::class);
+        $this->expectExceptionMessage("captured target 'domain-{y}' references variable(s) 'y' not declared by source 'app-{x}'");
+
+        $this->validator->validate(
+            [
+                'app-{x}' => [
+                    ['target' => 'domain-{y}', 'allow_cross_instance' => true],
+                ],
+            ],
+            ['app-Order', 'domain-Order'],
+            $warnings,
+        );
     }
 
     // -------------------------------------------------------------------------

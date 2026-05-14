@@ -651,6 +651,38 @@ YAML);
         self::assertSame(['app_service'], $config['architecture']['allow']['app_core']);
     }
 
+    public function testLoadPreservesLongFormTargetSnakeCaseKeysUnderArchitectureAllow(): void
+    {
+        // Subtree-preservation guarantee: long-form target maps below
+        // architecture.allow.* carry documented snake_case keys
+        // (allow_cross_instance, future relations) that must survive
+        // normalization untransformed so they reach AllowValidator as the
+        // user wrote them.
+        $path = $this->tempDir . '/config.yaml';
+        file_put_contents($path, <<<'YAML'
+architecture:
+  layers:
+    - name: 'app-orders'
+      patterns: ['App\Orders\App']
+    - name: 'domain-orders'
+      patterns: ['App\Orders\Domain']
+  allow:
+    'app-{m}':
+      - target: 'domain-{m}'
+        allow_cross_instance: true
+YAML);
+
+        $config = $this->loader->load($path);
+
+        $entry = $config['architecture']['allow']['app-{m}'][0];
+
+        self::assertArrayHasKey('target', $entry);
+        self::assertArrayHasKey('allow_cross_instance', $entry, 'snake_case long-form key must survive normalization.');
+        self::assertArrayNotHasKey('allowCrossInstance', $entry, 'long-form key must not be camelCased.');
+        self::assertSame('domain-{m}', $entry['target']);
+        self::assertTrue($entry['allow_cross_instance']);
+    }
+
     public function testLoadStillNormalizesCliKeysOutsideArchitecture(): void
     {
         $path = $this->tempDir . '/config.yaml';
