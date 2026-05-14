@@ -12,6 +12,7 @@ use Qualimetrix\Core\Architecture\Allow\AllowTarget;
 use Qualimetrix\Core\Architecture\Allow\LayerSelector;
 use Qualimetrix\Core\Architecture\Allow\LayerSelectorParser;
 use Qualimetrix\Core\Architecture\Layer\LayerPolicy;
+use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Tests\Support\Architecture\AllowListBuilder;
 
 #[CoversClass(LayerPolicy::class)]
@@ -285,5 +286,276 @@ final class LayerPolicyTest extends TestCase
         ]);
 
         self::assertTrue($policy->isAllowed('unknown', 'unknown'));
+    }
+
+    // -------------------------------------------------------------------------
+    // Step G: relations filter (edge-type-aware allow-list)
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function isAllowed_relationsFilter_acceptsListedDependencyType(): void
+    {
+        $policy = new LayerPolicy([
+            new AllowListEntry(
+                LayerSelector::exact('domain'),
+                [new AllowTarget(
+                    LayerSelector::exact('contracts'),
+                    relations: [DependencyType::Extends, DependencyType::Implements],
+                )],
+            ),
+        ]);
+
+        self::assertTrue($policy->isAllowed('domain', 'contracts', DependencyType::Extends));
+        self::assertTrue($policy->isAllowed('domain', 'contracts', DependencyType::Implements));
+    }
+
+    #[Test]
+    public function isAllowed_relationsFilter_rejectsUnlistedDependencyType(): void
+    {
+        $policy = new LayerPolicy([
+            new AllowListEntry(
+                LayerSelector::exact('domain'),
+                [new AllowTarget(
+                    LayerSelector::exact('contracts'),
+                    relations: [DependencyType::Extends, DependencyType::Implements],
+                )],
+            ),
+        ]);
+
+        self::assertFalse($policy->isAllowed('domain', 'contracts', DependencyType::StaticCall));
+        self::assertFalse($policy->isAllowed('domain', 'contracts', DependencyType::New_));
+    }
+
+    #[Test]
+    public function isAllowed_relationsNull_acceptsAnyDependencyType(): void
+    {
+        // The legacy semantics (and the bare-string short-form) leave
+        // relations=null on the AllowTarget — any DependencyType is accepted.
+        $policy = new LayerPolicy([
+            new AllowListEntry(
+                LayerSelector::exact('domain'),
+                [new AllowTarget(LayerSelector::exact('contracts'))],
+            ),
+        ]);
+
+        foreach (DependencyType::cases() as $type) {
+            self::assertTrue(
+                $policy->isAllowed('domain', 'contracts', $type),
+                "bare-string target must accept {$type->value}",
+            );
+        }
+    }
+
+    #[Test]
+    public function isAllowed_typeNullBypassesRelationsFilter(): void
+    {
+        // Callers that don't care about edge granularity (legacy tests, the
+        // reachability surface) can omit the type argument; the relations gate
+        // is then bypassed and the result depends only on selector matching.
+        $policy = new LayerPolicy([
+            new AllowListEntry(
+                LayerSelector::exact('domain'),
+                [new AllowTarget(
+                    LayerSelector::exact('contracts'),
+                    relations: [DependencyType::Extends],
+                )],
+            ),
+        ]);
+
+        self::assertTrue($policy->isAllowed('domain', 'contracts'));
+        self::assertTrue($policy->isAllowed('domain', 'contracts', null));
+    }
+
+    #[Test]
+    public function isAllowed_sameLayerAlwaysAllowedRegardlessOfRelations(): void
+    {
+        // Same-layer short-circuit precedes the entry walk and the relations
+        // gate. A class extending another class in the same layer is always
+        // permitted regardless of whether any allow entry mentions extends.
+        $policy = new LayerPolicy([
+            new AllowListEntry(
+                LayerSelector::exact('domain'),
+                [new AllowTarget(
+                    LayerSelector::exact('contracts'),
+                    relations: [DependencyType::StaticCall],
+                )],
+            ),
+        ]);
+
+        self::assertTrue($policy->isAllowed('domain', 'domain', DependencyType::Extends));
+        self::assertTrue($policy->isAllowed('domain', 'domain', DependencyType::Catch_));
+    }
+
+    #[Test]
+    public function isAllowed_overlappingAllowEntries_shortFormDominates(): void
+    {
+        // UNION semantics: when several targets within one source resolve to
+        // the same target layer, the broader (bare-string, relations=null)
+        // target dominates. Declaration order doesn't matter for the boolean
+        // accept result — every relation kind is allowed as long as one
+        // matching target has relations=null.
+        $bareFirst = new LayerPolicy([
+            new AllowListEntry(
+                LayerSelector::exact('domain'),
+                [
+                    new AllowTarget(LayerSelector::exact('contracts')),
+                    new AllowTarget(
+                        LayerSelector::exact('contracts'),
+                        relations: [DependencyType::Extends],
+                    ),
+                ],
+            ),
+        ]);
+
+        $longFormFirst = new LayerPolicy([
+            new AllowListEntry(
+                LayerSelector::exact('domain'),
+                [
+                    new AllowTarget(
+                        LayerSelector::exact('contracts'),
+                        relations: [DependencyType::Extends],
+                    ),
+                    new AllowTarget(LayerSelector::exact('contracts')),
+                ],
+            ),
+        ]);
+
+        // Edge type not listed by the long-form target — bare-string sibling
+        // must rescue it in BOTH declaration orders.
+        self::assertTrue($bareFirst->isAllowed('domain', 'contracts', DependencyType::StaticCall));
+        self::assertTrue($longFormFirst->isAllowed('domain', 'contracts', DependencyType::StaticCall));
+    }
+
+    #[Test]
+    public function isAllowed_overlappingAllowEntries_relationsUnion(): void
+    {
+        // Without a bare-string rescue, multiple long-form targets covering the
+        // same target layer combine into the union of their relations lists.
+        $policy = new LayerPolicy([
+            new AllowListEntry(
+                LayerSelector::exact('domain'),
+                [
+                    new AllowTarget(
+                        LayerSelector::exact('contracts'),
+                        relations: [DependencyType::Extends],
+                    ),
+                    new AllowTarget(
+                        LayerSelector::exact('contracts'),
+                        relations: [DependencyType::Implements],
+                    ),
+                ],
+            ),
+        ]);
+
+        self::assertTrue($policy->isAllowed('domain', 'contracts', DependencyType::Extends));
+        self::assertTrue($policy->isAllowed('domain', 'contracts', DependencyType::Implements));
+        self::assertFalse($policy->isAllowed('domain', 'contracts', DependencyType::StaticCall));
+    }
+
+    #[Test]
+    public function allowedTargets_surfaceRelationsTrailer_whenTargetHasRelations(): void
+    {
+        // M1 fix: the recommendation surface must tell the user that a
+        // long-form target only accepts certain edge kinds — otherwise the
+        // rendered "Allowed targets for layer X: vendor" message misleads.
+        $policy = new LayerPolicy([
+            new AllowListEntry(
+                LayerSelector::exact('domain'),
+                [
+                    new AllowTarget(LayerSelector::exact('contracts')),
+                    new AllowTarget(
+                        LayerSelector::exact('vendor'),
+                        relations: [DependencyType::Extends, DependencyType::Implements],
+                    ),
+                ],
+            ),
+        ]);
+
+        self::assertSame(
+            ['contracts', 'vendor (relations: extends, implements)'],
+            $policy->allowedTargets('domain'),
+        );
+    }
+
+    #[Test]
+    public function allowedTargets_dedupesBareAndLongFormDescriptorsSeparately(): void
+    {
+        // A bare 'vendor' and a 'vendor' with relations are semantically
+        // distinct (UNION semantics — see overlapping siblings test). The
+        // recommendation surface must reflect both: the user can either
+        // route any edge through the bare target or rely on the restricted
+        // sibling for the relation kinds it covers.
+        $policy = new LayerPolicy([
+            new AllowListEntry(
+                LayerSelector::exact('domain'),
+                [
+                    new AllowTarget(LayerSelector::exact('vendor')),
+                    new AllowTarget(
+                        LayerSelector::exact('vendor'),
+                        relations: [DependencyType::Extends],
+                    ),
+                ],
+            ),
+        ]);
+
+        self::assertSame(
+            ['vendor', 'vendor (relations: extends)'],
+            $policy->allowedTargets('domain'),
+        );
+    }
+
+    #[Test]
+    public function isAllowed_allowCrossInstanceCombinedWithRelations_appliesBothGates(): void
+    {
+        // M2 fix: end-to-end pin that allow_cross_instance and relations
+        // combine cleanly — the binding gate is lifted (any module instance
+        // of the captured target is accepted) AND the relation gate still
+        // restricts the edge kind.
+        $policy = new LayerPolicy([
+            new AllowListEntry(
+                LayerSelectorParser::parse('app-{m}'),
+                [
+                    new AllowTarget(
+                        LayerSelectorParser::parse('domain-{m}'),
+                        relations: [DependencyType::Extends],
+                        allowCrossInstance: true,
+                    ),
+                ],
+            ),
+        ]);
+
+        // Cross-module Extends: both gates pass.
+        self::assertTrue($policy->isAllowed('app-Order', 'domain-Inventory', DependencyType::Extends));
+        // Same-module StaticCall: relations rejects even when binding identity holds.
+        self::assertFalse($policy->isAllowed('app-Order', 'domain-Order', DependencyType::StaticCall));
+    }
+
+    #[Test]
+    public function isAllowed_relationsFilter_appliesAcrossEntriesNotJustTargets(): void
+    {
+        // The UNION property must hold across separate AllowListEntry rows
+        // too (not only across targets within one entry). This pins that the
+        // walk doesn't short-circuit on the first matching source-entry when
+        // the first entry's relations don't accept the edge.
+        $policy = new LayerPolicy([
+            new AllowListEntry(
+                LayerSelector::exact('domain'),
+                [new AllowTarget(
+                    LayerSelector::exact('contracts'),
+                    relations: [DependencyType::Extends],
+                )],
+            ),
+            new AllowListEntry(
+                LayerSelector::glob('*main'),
+                [new AllowTarget(
+                    LayerSelector::exact('contracts'),
+                    relations: [DependencyType::StaticCall],
+                )],
+            ),
+        ]);
+
+        self::assertTrue($policy->isAllowed('domain', 'contracts', DependencyType::Extends));
+        self::assertTrue($policy->isAllowed('domain', 'contracts', DependencyType::StaticCall));
+        self::assertFalse($policy->isAllowed('domain', 'contracts', DependencyType::Implements));
     }
 }

@@ -7,14 +7,17 @@ namespace Qualimetrix\Tests\Unit\Configuration\Architecture\Validation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Configuration\Architecture\Allow\AllowAliasExpander;
 use Qualimetrix\Configuration\Architecture\Validation\AllowValidator;
 use Qualimetrix\Configuration\Exception\ConfigLoadException;
 use Qualimetrix\Configuration\Pipeline\DeferredWarning;
 use Qualimetrix\Core\Architecture\Allow\AllowListEntry;
 use Qualimetrix\Core\Architecture\Allow\LayerSelector;
 use Qualimetrix\Core\Architecture\Allow\SelectorKind;
+use Qualimetrix\Core\Dependency\DependencyType;
 
 #[CoversClass(AllowValidator::class)]
+#[CoversClass(AllowAliasExpander::class)]
 #[CoversClass(DeferredWarning::class)]
 #[CoversClass(LayerSelector::class)]
 final class AllowValidatorTest extends TestCase
@@ -136,10 +139,18 @@ final class AllowValidatorTest extends TestCase
     }
 
     #[Test]
-    public function longFormAllowEntryWithTypesEmitsDeprecationWarning(): void
+    public function longFormAllowEntryWithLegacyTypesKeyIsRejectedAsUnknown(): void
     {
+        // The Step C/D forward-compat placeholder `types:` was renamed to
+        // `relations:` when Step G wired the filter. A stale `types:` key in
+        // a user config now surfaces as a plain "unknown long-form key" so the
+        // user can rename it confidently.
         $warnings = [];
-        $entries = $this->validator->validate(
+
+        $this->expectException(ConfigLoadException::class);
+        $this->expectExceptionMessage("unknown long-form key 'types'");
+
+        $this->validator->validate(
             [
                 'controller' => [
                     ['target' => 'service', 'types' => ['method_call']],
@@ -148,13 +159,6 @@ final class AllowValidatorTest extends TestCase
             ['controller', 'service'],
             $warnings,
         );
-
-        self::assertCount(1, $entries);
-        self::assertExactEntry($entries[0], 'controller', ['service']);
-        self::assertCount(1, $warnings);
-        self::assertSame('warning', $warnings[0]->level);
-        self::assertStringContainsString("'types' filter declared but not yet enforced", $warnings[0]->message);
-        self::assertStringContainsString('architecture.allow.controller', $warnings[0]->message);
     }
 
     #[Test]
@@ -168,7 +172,7 @@ final class AllowValidatorTest extends TestCase
         $this->validator->validate(
             [
                 'controller' => [
-                    ['types' => ['method_call']],
+                    ['relations' => ['extends']],
                 ],
             ],
             ['controller', 'service'],
@@ -196,25 +200,210 @@ final class AllowValidatorTest extends TestCase
     }
 
     #[Test]
-    public function longFormAllowEntryWithReservedRelationsKeyIsRejected(): void
+    public function longFormAllowEntryWithRelationsExpandsDirectValues(): void
     {
-        // ADR 0007 reserves `relations:` for Step G. Accepting it silently
-        // would let users write a constrained allow row that actually allows
-        // every dependency type — silent widening of policy. Reject at config
-        // load with an actionable error.
+        // Step G: `relations:` is fully wired. Each direct token round-trips
+        // through DependencyType::tryFrom() reflectively — adding a new enum
+        // case automatically becomes accepted by the YAML config.
         $warnings = [];
 
-        $this->expectException(ConfigLoadException::class);
-        $this->expectExceptionMessage("long-form key 'relations' is reserved for Step G");
-
-        $this->validator->validate(
+        $entries = $this->validator->validate(
             [
                 'controller' => [
-                    ['target' => 'service', 'relations' => ['extends']],
+                    ['target' => 'service', 'relations' => ['extends', 'implements']],
                 ],
             ],
             ['controller', 'service'],
             $warnings,
+        );
+
+        self::assertCount(1, $entries);
+        self::assertCount(1, $entries[0]->targets);
+        self::assertSame(
+            [DependencyType::Extends, DependencyType::Implements],
+            $entries[0]->targets[0]->relations,
+        );
+        self::assertSame([], $warnings);
+    }
+
+    #[Test]
+    public function longFormAllowEntryWithRelationsAliasExpandsToConstituents(): void
+    {
+        $warnings = [];
+
+        $entries = $this->validator->validate(
+            [
+                'controller' => [
+                    ['target' => 'service', 'relations' => ['inheritance']],
+                ],
+            ],
+            ['controller', 'service'],
+            $warnings,
+        );
+
+        self::assertCount(1, $entries);
+        self::assertSame(
+            [DependencyType::Extends, DependencyType::Implements, DependencyType::TraitUse],
+            $entries[0]->targets[0]->relations,
+        );
+    }
+
+    #[Test]
+    public function longFormAllowEntryWithRelationsAliasAndDirectMixDeduplicates(): void
+    {
+        $warnings = [];
+
+        $entries = $this->validator->validate(
+            [
+                'controller' => [
+                    ['target' => 'service', 'relations' => ['inheritance', 'extends', 'static_call']],
+                ],
+            ],
+            ['controller', 'service'],
+            $warnings,
+        );
+
+        // `inheritance` expands to [Extends, Implements, TraitUse]; the trailing
+        // `extends` is absorbed by dedup; `static_call` appends fresh.
+        self::assertSame(
+            [
+                DependencyType::Extends,
+                DependencyType::Implements,
+                DependencyType::TraitUse,
+                DependencyType::StaticCall,
+            ],
+            $entries[0]->targets[0]->relations,
+        );
+    }
+
+    #[Test]
+    public function longFormAllowEntryWithEmptyRelationsListIsRejected(): void
+    {
+        // An empty list is meaningless: the bare-string short form already
+        // expresses "any relation allowed". Reject so the user can choose
+        // between "remove the entry entirely" and "list at least one kind".
+        $warnings = [];
+
+        $this->expectException(ConfigLoadException::class);
+        $this->expectExceptionMessage('must list at least one relation kind');
+
+        $this->validator->validate(
+            [
+                'controller' => [
+                    ['target' => 'service', 'relations' => []],
+                ],
+            ],
+            ['controller', 'service'],
+            $warnings,
+        );
+    }
+
+    #[Test]
+    public function longFormAllowEntryWithNonListRelationsIsRejected(): void
+    {
+        $warnings = [];
+
+        $this->expectException(ConfigLoadException::class);
+        $this->expectExceptionMessage('architecture.allow.controller[0].relations: must be a list');
+
+        $this->validator->validate(
+            [
+                'controller' => [
+                    ['target' => 'service', 'relations' => 'extends'],
+                ],
+            ],
+            ['controller', 'service'],
+            $warnings,
+        );
+    }
+
+    #[Test]
+    public function longFormAllowEntryWithUnknownRelationTokenIsRejected(): void
+    {
+        $warnings = [];
+
+        $this->expectException(ConfigLoadException::class);
+        $this->expectExceptionMessage("unknown relation kind 'tipes'");
+
+        $this->validator->validate(
+            [
+                'controller' => [
+                    ['target' => 'service', 'relations' => ['tipes']],
+                ],
+            ],
+            ['controller', 'service'],
+            $warnings,
+        );
+    }
+
+    #[Test]
+    public function bareStringAllowTargetLeavesRelationsNull(): void
+    {
+        $warnings = [];
+
+        $entries = $this->validator->validate(
+            ['controller' => ['service']],
+            ['controller', 'service'],
+            $warnings,
+        );
+
+        self::assertNull($entries[0]->targets[0]->relations);
+    }
+
+    #[Test]
+    public function bareAndLongFormSiblings_bothReachPolicy_underUnionSemantics(): void
+    {
+        // Step G dedup boundary: a bare 'service' AND a long-form
+        // `[target: service, relations: [extends]]` are semantically distinct
+        // (UNION) — the validator must emit both AllowTargets so the policy
+        // can apply union semantics. Regression guard: if the dedup helper
+        // ever reverts to "skip duplicate exact name" without consulting the
+        // bare/long-form discriminator, this test fails.
+        $warnings = [];
+
+        $entries = $this->validator->validate(
+            [
+                'controller' => [
+                    ['target' => 'service', 'relations' => ['extends']],
+                    'service',
+                ],
+            ],
+            ['controller', 'service'],
+            $warnings,
+        );
+
+        self::assertCount(2, $entries[0]->targets);
+        self::assertSame([DependencyType::Extends], $entries[0]->targets[0]->relations);
+        self::assertNull($entries[0]->targets[1]->relations);
+    }
+
+    #[Test]
+    public function longFormAllowEntryAcceptsBothRelationsAndAllowCrossInstance(): void
+    {
+        // M2 coverage: `relations:` and `allow_cross_instance:` are
+        // independent long-form fields; both reach AllowTarget unchanged.
+        $warnings = [];
+
+        $entries = $this->validator->validate(
+            [
+                'app-{module}' => [
+                    [
+                        'target' => 'domain-{module}',
+                        'relations' => ['inheritance'],
+                        'allow_cross_instance' => true,
+                    ],
+                ],
+            ],
+            ['app-Order', 'domain-Order'],
+            $warnings,
+        );
+
+        self::assertCount(1, $entries[0]->targets);
+        $target = $entries[0]->targets[0];
+        self::assertTrue($target->allowCrossInstance);
+        self::assertSame(
+            [DependencyType::Extends, DependencyType::Implements, DependencyType::TraitUse],
+            $target->relations,
         );
     }
 
