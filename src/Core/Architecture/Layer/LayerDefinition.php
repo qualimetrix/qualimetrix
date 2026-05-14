@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Core\Architecture\Layer;
 
-use Qualimetrix\Core\Util\NamespaceMatcher;
-
 /**
  * Immutable Value Object describing a single architectural layer: a
  * human-readable name plus the {@see MembershipSpec} that decides which
@@ -19,14 +17,23 @@ use Qualimetrix\Core\Util\NamespaceMatcher;
  * {@code architecture.potential-shadow} diagnostic can report WHICH criterion
  * caught the class.
  *
+ * When {@see MembershipSpec::$exclude} is declared (Phase 2 direction 3), the
+ * exclude clause is evaluated as a hard filter AFTER the positive match
+ * succeeds. If the exclude criteria combine (per their own
+ * {@see ExcludeSpec::$mode}) into a hit, {@see matches()} returns
+ * {@see MembershipResult::noMatch()} — exclusion overrides positive match
+ * regardless of either side's match mode. Excluded classes are
+ * indistinguishable from non-matching classes at the rule layer; exclude
+ * does not surface a separate descriptor.
+ *
  * Under declaration-order resolution ({@see LayerRegistry}), layer entries are
  * scanned in declared order and the first matching entry decides the class's
  * layer (ADR 0006). Within each criterion list, entries are scanned in their
  * declared order and the first matching entry is recorded.
  *
- * Per-pattern FQN matching is delegated to {@see NamespaceMatcher::matchesSingle()}
- * so this class shares a single source of truth with the wider namespace
- * matching utility — no local copy of the glob-vs-prefix decision logic.
+ * Criterion-walking and per-pattern FQN matching are delegated to
+ * {@see LayerCriteriaMatcher}, which is the single source of truth for
+ * positive- and exclude-side evaluation alike.
  */
 final readonly class LayerDefinition
 {
@@ -48,11 +55,20 @@ final readonly class LayerDefinition
     private const string EXPANDED_NAME_REGEX = '/^[A-Za-z][A-Za-z0-9_-]*$/';
 
     /**
-     * Patterns with trailing backslashes stripped, used for matching.
+     * Positive patterns with trailing backslashes stripped, used for matching.
      *
      * @var list<string>
      */
     private array $normalizedPatterns;
+
+    /**
+     * Exclude patterns with trailing backslashes stripped, used for matching.
+     * Empty list when no exclude clause is declared or the exclude clause
+     * has no pattern criteria.
+     *
+     * @var list<string>
+     */
+    private array $normalizedExcludePatterns;
 
     /**
      * @param string $name Layer identifier — must match `[a-z][a-z0-9_-]*`
@@ -78,12 +94,10 @@ final readonly class LayerDefinition
     ) {
         $this->validateName($name, $expanded);
 
-        $normalized = [];
-        foreach ($membership->patterns as $pattern) {
-            $normalized[] = rtrim($pattern, '\\');
-        }
-
-        $this->normalizedPatterns = $normalized;
+        $this->normalizedPatterns = LayerCriteriaMatcher::normalizePatterns($membership->patterns);
+        $this->normalizedExcludePatterns = $membership->exclude !== null
+            ? LayerCriteriaMatcher::normalizePatterns($membership->exclude->patterns)
+            : [];
     }
 
     /**
@@ -142,8 +156,14 @@ final readonly class LayerDefinition
      * every declared kind must produce a match (empty kinds are trivially
      * satisfied and contribute nothing to the descriptor list).
      *
+     * When {@see MembershipSpec::$exclude} is declared, the exclude clause
+     * is evaluated AFTER positive criteria succeed and acts as a hard
+     * filter — if exclusion fires (per its own {@see MatchMode}), the
+     * result downgrades to {@see MembershipResult::noMatch()} regardless of
+     * the positive match.
+     *
      * An empty FQN is always a non-match. A {@see MembershipSpec} with all
-     * five criterion lists empty cannot exist (constructor invariant).
+     * five positive criterion lists empty cannot exist (constructor invariant).
      */
     public function matches(ClassContext $context): MembershipResult
     {
@@ -151,138 +171,78 @@ final readonly class LayerDefinition
             return MembershipResult::noMatch();
         }
 
-        $patternMatch = $this->matchPatterns($context);
-        $suffixMatch = $this->matchSuffix($context);
-        $attributeMatch = $this->matchAttributes($context);
-        $implementsMatch = $this->matchImplements($context);
-        $extendsMatch = $this->matchExtends($context);
-
-        $matched = array_values(array_filter(
-            [$patternMatch, $suffixMatch, $attributeMatch, $implementsMatch, $extendsMatch],
-            static fn(?MatchedCriterion $criterion): bool => $criterion !== null,
-        ));
+        $matched = LayerCriteriaMatcher::collectMatches(
+            $context,
+            $this->normalizedPatterns,
+            $this->membership->patterns,
+            $this->membership->suffix,
+            $this->membership->attributes,
+            $this->membership->implements,
+            $this->membership->extends,
+        );
 
         if ($matched === []) {
             return MembershipResult::noMatch();
         }
 
         if ($this->membership->mode === MatchMode::All) {
-            $declaredKinds = $this->declaredKindCount();
+            $declaredKinds = LayerCriteriaMatcher::declaredKindCount(
+                $this->membership->patterns,
+                $this->membership->suffix,
+                $this->membership->attributes,
+                $this->membership->implements,
+                $this->membership->extends,
+            );
             if (\count($matched) !== $declaredKinds) {
                 return MembershipResult::noMatch();
             }
         }
 
+        if ($this->exclusionFires($context)) {
+            return MembershipResult::noMatch();
+        }
+
         return MembershipResult::match($matched);
     }
 
-    private function matchPatterns(ClassContext $context): ?MatchedCriterion
-    {
-        if ($this->normalizedPatterns === []) {
-            return null;
-        }
-
-        foreach ($this->normalizedPatterns as $index => $pattern) {
-            if (NamespaceMatcher::matchesSingle($pattern, $context->fqn)) {
-                return new MatchedCriterion(
-                    MatchedCriterionKind::Pattern,
-                    $this->membership->patterns[$index],
-                );
-            }
-        }
-
-        return null;
-    }
-
-    private function matchSuffix(ClassContext $context): ?MatchedCriterion
-    {
-        if ($this->membership->suffix === [] || $context->shortName === '') {
-            return null;
-        }
-
-        foreach ($this->membership->suffix as $suffix) {
-            if (str_ends_with($context->shortName, $suffix)) {
-                return new MatchedCriterion(MatchedCriterionKind::Suffix, $suffix);
-            }
-        }
-
-        return null;
-    }
-
-    private function matchAttributes(ClassContext $context): ?MatchedCriterion
-    {
-        if ($this->membership->attributes === [] || $context->attributeFqns === []) {
-            return null;
-        }
-
-        $haystack = array_fill_keys($context->attributeFqns, true);
-        foreach ($this->membership->attributes as $attributeFqn) {
-            if (isset($haystack[$attributeFqn])) {
-                return new MatchedCriterion(MatchedCriterionKind::Attribute, $attributeFqn);
-            }
-        }
-
-        return null;
-    }
-
-    private function matchImplements(ClassContext $context): ?MatchedCriterion
-    {
-        if ($this->membership->implements === [] || $context->interfaces === []) {
-            return null;
-        }
-
-        $haystack = array_fill_keys($context->interfaces, true);
-        foreach ($this->membership->implements as $interfaceFqn) {
-            if (isset($haystack[$interfaceFqn])) {
-                return new MatchedCriterion(MatchedCriterionKind::Implements, $interfaceFqn);
-            }
-        }
-
-        return null;
-    }
-
-    private function matchExtends(ClassContext $context): ?MatchedCriterion
-    {
-        if ($this->membership->extends === [] || $context->parentClasses === []) {
-            return null;
-        }
-
-        $haystack = array_fill_keys($context->parentClasses, true);
-        foreach ($this->membership->extends as $parentFqn) {
-            if (isset($haystack[$parentFqn])) {
-                return new MatchedCriterion(MatchedCriterionKind::Extends, $parentFqn);
-            }
-        }
-
-        return null;
-    }
-
     /**
-     * Counts criterion kinds the spec actually declares (non-empty lists).
-     * Used by {@see MatchMode::All} to enforce "every declared kind must
-     * match" — empty kinds are trivially satisfied and excluded from both
-     * the declared count and the matched count.
+     * Returns true when the exclude clause is declared AND its criteria
+     * combine into a hit under {@see ExcludeSpec::$mode}.
      */
-    private function declaredKindCount(): int
+    private function exclusionFires(ClassContext $context): bool
     {
-        $count = 0;
-        if ($this->membership->patterns !== []) {
-            $count++;
-        }
-        if ($this->membership->suffix !== []) {
-            $count++;
-        }
-        if ($this->membership->attributes !== []) {
-            $count++;
-        }
-        if ($this->membership->implements !== []) {
-            $count++;
-        }
-        if ($this->membership->extends !== []) {
-            $count++;
+        $exclude = $this->membership->exclude;
+        if ($exclude === null) {
+            return false;
         }
 
-        return $count;
+        $matched = LayerCriteriaMatcher::collectMatches(
+            $context,
+            $this->normalizedExcludePatterns,
+            $exclude->patterns,
+            $exclude->suffix,
+            $exclude->attributes,
+            $exclude->implements,
+            $exclude->extends,
+        );
+
+        if ($matched === []) {
+            return false;
+        }
+
+        if ($exclude->mode === MatchMode::Any) {
+            return true;
+        }
+
+        $declaredKinds = LayerCriteriaMatcher::declaredKindCount(
+            $exclude->patterns,
+            $exclude->suffix,
+            $exclude->attributes,
+            $exclude->implements,
+            $exclude->extends,
+        );
+
+        return \count($matched) === $declaredKinds;
     }
 
     private function validateName(string $name, bool $expanded): void

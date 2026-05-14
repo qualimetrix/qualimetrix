@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Architecture;
 use Qualimetrix\Core\Architecture\Layer\CapturePattern;
 use Qualimetrix\Core\Architecture\Layer\ClassContext;
 use Qualimetrix\Core\Architecture\Layer\ClassSet;
+use Qualimetrix\Core\Architecture\Layer\ExcludeSpec;
 use Qualimetrix\Core\Architecture\Layer\InvalidLayerDefinitionException;
 use Qualimetrix\Core\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Core\Architecture\Layer\MatchMode;
@@ -458,6 +459,20 @@ final class LayerExpansionStage
             $membership->patterns,
         );
 
+        $exclude = $membership->exclude !== null
+            ? new ExcludeSpec(
+                patterns: array_map(
+                    static fn(string $pattern): string => CapturePattern::applySubstitution($pattern, $bindings),
+                    $membership->exclude->patterns,
+                ),
+                suffix: $membership->exclude->suffix,
+                attributes: $membership->exclude->attributes,
+                implements: $membership->exclude->implements,
+                extends: $membership->exclude->extends,
+                mode: $membership->exclude->mode,
+            )
+            : null;
+
         // Non-pattern criteria do not currently support captures; they pass
         // through verbatim. If/when captures are added to suffix or FQN
         // criteria, swap this for the same applySubstitution call.
@@ -468,6 +483,7 @@ final class LayerExpansionStage
             implements: $membership->implements,
             extends: $membership->extends,
             mode: $membership->mode,
+            exclude: $exclude,
         );
     }
 
