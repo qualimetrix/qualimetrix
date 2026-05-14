@@ -212,10 +212,11 @@ Control which severity levels cause a non-zero exit code:
 ```yaml
 fail_on: error    # Only fail on errors (default)
 # fail_on: warning  # Fail on warnings too
+# fail_on: info     # Fail on any violation, including informational ones
 # fail_on: none     # Never fail on violations
 ```
 
-The default is `error`: warnings are shown in the output but do not cause a non-zero exit code. Use `fail_on: warning` if you want warnings to also fail the build.
+The default is `error`: warnings and Info-level diagnostics are shown in the output but do not cause a non-zero exit code. Use `fail_on: warning` if you want warnings to also fail the build, or `fail_on: info` to additionally enforce Info diagnostics (for example, `architecture.unreachable-layer` and `architecture.potential-shadow`).
 
 ### Exclude Health
 
