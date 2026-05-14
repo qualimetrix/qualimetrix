@@ -19,8 +19,7 @@ use RuntimeException;
  *   characters satisfy the glob.
  * - {@see SelectorKind::Captured} — contains {@code {var}} placeholders, e.g.
  *   {@code 'app-{m}'}. Each placeholder captures a single namespace segment by
- *   default; {@code {var:**}} captures across separators (parsed in Step C,
- *   bound to a value in Step E).
+ *   default; {@code {var:**}} captures across separators.
  *
  * The constructor is private; instances are produced by {@see exact()},
  * {@see glob()}, {@see captured()}, or — for raw user input — by
@@ -35,8 +34,8 @@ use RuntimeException;
  *   and {@see SelectorKind::Glob}); on no match it returns {@code null}.
  * - {@see matchesTarget()} probes a concrete layer name on the RIGHT side of
  *   an allow entry, passing the source-side binding so captured target
- *   selectors can substitute the bound values. In Step C every binding is
- *   ignored on the target side; Step E switches to binding-aware matching.
+ *   selectors substitute the bound values into their captured segments
+ *   before matching.
  *
  * The split is required by D4: a single {@code matches()} method cannot extract
  * the source-side binding (the source-side captures must be visible to the
@@ -117,9 +116,19 @@ final readonly class LayerSelector
 
     /**
      * Probes a concrete layer name on the target side, given the binding
-     * produced by the source-side match. In Step C captured target selectors
-     * deliberately ignore the binding (any same-shape name matches); Step E
-     * switches to binding-aware substitution.
+     * produced by the source-side match. Captured target selectors substitute
+     * the source-bound values into their captured segments before matching, so
+     * {@code 'app-{m}' → 'domain-{m}'} accepts {@code app-Order → domain-Order}
+     * but rejects {@code app-Order → domain-Inventory}.
+     *
+     * The binding may be empty (exact / glob source kinds emit an empty
+     * binding); in that case captured target segments fall back to their
+     * per-segment default pattern ({@code [^\\]+} per segment, {@code
+     * [^\\]+(?:\\[^\\]+)*} for multi-segment) and match any layer name whose
+     * literal parts agree and whose capture slots contain non-empty
+     * identifier runs — this is the cross-instance escape hatch used by
+     * {@see LayerPolicy::isAllowed()} when the entry's
+     * {@code allow_cross_instance: true} flag is set.
      */
     public function matchesTarget(string $layerName, CaptureBinding $sourceBinding): bool
     {
@@ -155,6 +164,65 @@ final readonly class LayerSelector
         return $this->kind === SelectorKind::Captured;
     }
 
+    /**
+     * Returns the capture variable names declared by this selector in
+     * declaration order. Non-captured selectors return an empty list.
+     *
+     * Used by {@see \Qualimetrix\Configuration\Architecture\Validation\AllowValidator}
+     * to cross-validate that every variable referenced on the allow entry's
+     * target side is declared on the source side.
+     *
+     * @return list<string>
+     */
+    public function captureVariables(): array
+    {
+        if ($this->segments === null) {
+            return [];
+        }
+
+        $names = [];
+        foreach ($this->segments as $segment) {
+            if (!$segment->isCapture) {
+                continue;
+            }
+            \assert($segment->captureName !== null);
+            $names[] = $segment->captureName;
+        }
+
+        return $names;
+    }
+
+    /**
+     * Returns a map of capture variable name → {@code multiSegment} flag.
+     * Non-captured selectors return an empty map.
+     *
+     * Used by {@see \Qualimetrix\Configuration\Architecture\Validation\AllowValidator}
+     * to detect shape mismatches between source and target captures: a
+     * variable declared {@code {m}} on the source but referenced
+     * {@code {m:**}} on the target (or vice-versa) is rejected because the
+     * runtime substitution silently ignores the target's shape annotation.
+     *
+     * @return array<string, bool> Variable name → true if multi-segment ({@code {var:**}}),
+     *                             false if single-segment ({@code {var}}).
+     */
+    public function captureVariableShapes(): array
+    {
+        if ($this->segments === null) {
+            return [];
+        }
+
+        $shapes = [];
+        foreach ($this->segments as $segment) {
+            if (!$segment->isCapture) {
+                continue;
+            }
+            \assert($segment->captureName !== null);
+            $shapes[$segment->captureName] = $segment->multiSegment;
+        }
+
+        return $shapes;
+    }
+
     // -------------------------------------------------------------------------
     // Internals
     // -------------------------------------------------------------------------
@@ -188,12 +256,7 @@ final readonly class LayerSelector
 
     private function matchCapturedTarget(string $layerName, CaptureBinding $sourceBinding): bool
     {
-        // Step C scope: the source-side binding is threaded through the contract
-        // surface so Step E can light it up by switching to {@code buildRegex($sourceBinding)},
-        // but the target-side match itself currently ignores the binding. The
-        // parameter is named to match Step E's eventual signature; PHPStan does
-        // not flag unused match-arm parameters.
-        $regex = $this->buildRegex(null);
+        $regex = $this->buildRegex($sourceBinding);
         $result = preg_match($regex, $layerName);
         if ($result === false) {
             throw self::pcreFailure($regex);

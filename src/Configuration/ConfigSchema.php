@@ -203,17 +203,18 @@ final class ConfigSchema
     }
 
     /**
-     * Returns dot-separated paths whose immediate children are user-defined
-     * identifiers and must NOT be normalized to camelCase.
+     * Returns dot-separated paths whose entire subtree is preserved verbatim
+     * during key normalization (no snake_case → camelCase conversion below
+     * these roots).
      *
-     * Unlike {@see identifierKeySections()}, these are nested below the root:
-     * the path {@code architecture.allow} means the keys under
-     * {@code architecture.allow.*} (source layer names) are preserved verbatim.
-     *
-     * Preserving layer names ensures that error messages and downstream
-     * consumers see the names exactly as the user typed them — without this,
-     * a configuration line like {@code app_core: [domain]} would be silently
-     * turned into {@code appCore} during key normalization.
+     * Unlike {@see identifierKeySections()} — which preserves only the
+     * immediate children — these paths preserve all descendants. The
+     * {@code architecture.allow} subtree contains both user-defined layer
+     * names (immediate children, e.g. {@code app-{m}}) and documented
+     * snake_case long-form target keys (deeper descendants, e.g.
+     * {@code allow_cross_instance} on long-form target maps); both kinds must
+     * survive normalization untransformed, or the values would never reach
+     * the validator under the keys the user wrote.
      *
      * Note: under ADR 0006 (declaration-order matching) `architecture.layers`
      * is an ordered list of entries (each with a `name` field), not a map.

@@ -9,6 +9,7 @@ use Qualimetrix\Configuration\Architecture\Validation\AllowValidator;
 use Qualimetrix\Configuration\Architecture\Validation\CoverageValidator;
 use Qualimetrix\Configuration\Architecture\Validation\LayersValidator;
 use Qualimetrix\Configuration\Architecture\Validation\MutualAllowDetector;
+use Qualimetrix\Configuration\Architecture\Validation\WildcardSelfAllowDetector;
 use Qualimetrix\Configuration\Exception\ConfigLoadException;
 use Qualimetrix\Core\Architecture\ArchitectureConfiguration;
 use Qualimetrix\Core\Architecture\CoverageMode;
@@ -48,7 +49,7 @@ use Qualimetrix\Core\Architecture\Layer\TemplateLayerDefinition;
  * 1. Validates the top-level shape (`layers`, `allow`, `coverage` keys only).
  * 2. Runs the validators in a deterministic order
  *    ({@see LayersValidator} → {@see AllowValidator} → {@see CoverageValidator}
- *    → {@see MutualAllowDetector}).
+ *    → {@see MutualAllowDetector} → {@see WildcardSelfAllowDetector}).
  * 3. Assembles the typed {@see ArchitectureConfiguration} and returns it
  *    together with the deferred-warning list.
  *
@@ -81,16 +82,20 @@ final class ArchitectureConfigurationFactory
 
     private readonly MutualAllowDetector $mutualAllowDetector;
 
+    private readonly WildcardSelfAllowDetector $wildcardSelfAllowDetector;
+
     public function __construct(
         ?LayersValidator $layersValidator = null,
         ?AllowValidator $allowValidator = null,
         ?CoverageValidator $coverageValidator = null,
         ?MutualAllowDetector $mutualAllowDetector = null,
+        ?WildcardSelfAllowDetector $wildcardSelfAllowDetector = null,
     ) {
         $this->layersValidator = $layersValidator ?? new LayersValidator();
         $this->allowValidator = $allowValidator ?? new AllowValidator();
         $this->coverageValidator = $coverageValidator ?? new CoverageValidator();
         $this->mutualAllowDetector = $mutualAllowDetector ?? new MutualAllowDetector();
+        $this->wildcardSelfAllowDetector = $wildcardSelfAllowDetector ?? new WildcardSelfAllowDetector();
     }
 
     /**
@@ -137,6 +142,7 @@ final class ArchitectureConfigurationFactory
         );
 
         $this->mutualAllowDetector->detect($allowEntries, $warnings);
+        $this->wildcardSelfAllowDetector->detect($allowEntries, $warnings);
 
         return new ArchitectureFactoryResult(
             new ArchitectureConfiguration(
