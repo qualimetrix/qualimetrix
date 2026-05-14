@@ -36,12 +36,12 @@ final class AllowValidator
     private const string CONFIG_PATH = 'architecture';
 
     /**
-     * Long-form allow target keys recognised by Step C. Other forward-looking
-     * keys reserved by ADR 0007 ({@code relations} for Step G,
-     * {@code allow_cross_instance} for Step E) are rejected here as
-     * "not yet supported" so a user-side typo cannot silently widen the policy.
+     * Long-form allow target keys. Any other key is rejected here as
+     * "unknown long-form key" so a user-side typo cannot silently widen the
+     * policy (e.g. {@code relatons:} would otherwise allow every relation kind
+     * instead of the user's intended subset).
      */
-    private const array ALLOWED_LONG_FORM_KEYS = ['target', 'types'];
+    private const array ALLOWED_LONG_FORM_KEYS = ['target', 'types', 'allow_cross_instance'];
 
     /**
      * Reserved keys that ADR 0007 promises for future steps. Surfaced with a
@@ -50,7 +50,6 @@ final class AllowValidator
      */
     private const array RESERVED_LONG_FORM_KEYS = [
         'relations' => 'Step G',
-        'allow_cross_instance' => 'Step E',
     ];
 
     /**
@@ -95,7 +94,7 @@ final class AllowValidator
                 );
             }
 
-            $allowTargets = $this->normalizeAllowTargets($sourceRaw, $targets, $layerSet, $warnings);
+            $allowTargets = $this->normalizeAllowTargets($sourceRaw, $sourceSelector, $targets, $layerSet, $warnings);
             $entries[] = new AllowListEntry($sourceSelector, $allowTargets);
         }
 
@@ -108,8 +107,13 @@ final class AllowValidator
      *
      * @return list<AllowTarget>
      */
-    private function normalizeAllowTargets(string $source, mixed $targets, array $layerSet, array &$warnings): array
-    {
+    private function normalizeAllowTargets(
+        string $source,
+        LayerSelector $sourceSelector,
+        mixed $targets,
+        array $layerSet,
+        array &$warnings,
+    ): array {
         if ($targets === null) {
             return [];
         }
@@ -121,19 +125,199 @@ final class AllowValidator
             );
         }
 
+        $sourceShapes = $sourceSelector->captureVariableShapes();
+
         $result = [];
         $seenExact = [];
         foreach ($targets as $index => $entry) {
-            $targetSelector = $this->normalizeAllowEntry($source, $index, $entry, $warnings);
+            [$targetSelector, $allowCrossInstance] = $this->normalizeAllowEntry($source, $index, $entry, $warnings);
+
+            $this->crossValidateCapturedTarget($source, $index, $sourceSelector, $sourceShapes, $targetSelector);
 
             if ($this->shouldSkipExactTarget($source, $index, $targetSelector, $layerSet, $seenExact)) {
                 continue;
             }
 
-            $result[] = new AllowTarget($targetSelector);
+            $result[] = new AllowTarget($targetSelector, allowCrossInstance: $allowCrossInstance);
         }
 
         return $result;
+    }
+
+    /**
+     * Rejects captured target selectors that the runtime cannot satisfy
+     * consistently with what the user declared. Three rejection cases plus
+     * one shape-consistency check:
+     *
+     * - **Non-captured source.** {@code 'shared-*': ['domain-{m}']} or
+     *   {@code 'controller': ['domain-{m}']}: target captures cannot bind to
+     *   anything → reject with a hint to declare the variable on the source.
+     * - **Undeclared variable.** {@code 'app-{x}': ['domain-{y}']}: typo or
+     *   design error → reject with a hint to either match the name or fall
+     *   back to a glob target.
+     * - **Shape mismatch.** {@code 'app-{m}': ['domain-{m:**}']} or
+     *   {@code 'app-{m:**}': ['domain-{m}']}: the runtime substitutes the
+     *   bound value literally, so the target's multi-segment annotation
+     *   would be silently ignored → reject so the user can align the two
+     *   shapes explicitly.
+     * - **Subset of source variables with matching shapes.** OK.
+     *
+     * The check runs regardless of {@code allow_cross_instance} — the flag
+     * affects the **runtime** binding identity (whether the bound value is
+     * substituted), not the grammar of which variables may appear or what
+     * shape they have on the target side.
+     *
+     * @param array<string, bool> $sourceShapes Map of variable name → multi-segment
+     *                                          flag, from {@see LayerSelector::captureVariableShapes()}.
+     *                                          Empty when source is exact / glob.
+     */
+    private function crossValidateCapturedTarget(
+        string $source,
+        int $index,
+        LayerSelector $sourceSelector,
+        array $sourceShapes,
+        LayerSelector $targetSelector,
+    ): void {
+        if (!$targetSelector->isCaptured()) {
+            return;
+        }
+
+        $targetShapes = $targetSelector->captureVariableShapes();
+        $undeclared = [];
+        $shapeMismatches = [];
+
+        foreach ($targetShapes as $variable => $isMultiSegment) {
+            if (!\array_key_exists($variable, $sourceShapes)) {
+                $undeclared[] = $variable;
+                continue;
+            }
+
+            if ($sourceShapes[$variable] !== $isMultiSegment) {
+                $shapeMismatches[$variable] = [
+                    'source' => $sourceShapes[$variable],
+                    'target' => $isMultiSegment,
+                ];
+            }
+        }
+
+        if ($undeclared !== []) {
+            throw new ConfigLoadException(
+                self::CONFIG_PATH,
+                $this->renderUndeclaredCaptureMessage(
+                    $source,
+                    $index,
+                    $sourceSelector,
+                    $targetSelector,
+                    $undeclared,
+                ),
+            );
+        }
+
+        if ($shapeMismatches !== []) {
+            throw new ConfigLoadException(
+                self::CONFIG_PATH,
+                $this->renderShapeMismatchMessage(
+                    $source,
+                    $index,
+                    $sourceSelector,
+                    $targetSelector,
+                    $shapeMismatches,
+                ),
+            );
+        }
+    }
+
+    /**
+     * Builds the user-facing rejection message for "captured target with
+     * undeclared variables". The hint differs between the three flavours of
+     * the rejection: non-captured source, undeclared variable on captured
+     * source, etc.
+     *
+     * @param list<string> $undeclared
+     */
+    private function renderUndeclaredCaptureMessage(
+        string $source,
+        int $index,
+        LayerSelector $sourceSelector,
+        LayerSelector $targetSelector,
+        array $undeclared,
+    ): string {
+        $variableList = implode(', ', array_map(static fn(string $v): string => "'{$v}'", $undeclared));
+
+        if (!$sourceSelector->isCaptured()) {
+            // Glob / exact source: target captures have no binding to draw from.
+            return \sprintf(
+                "architecture.allow.%s[%d]: captured target '%s' references variable(s) %s, " .
+                "but source '%s' is %s and declares no capture variables. " .
+                'Either declare the variable on the source (e.g. `app-{module}` → `domain-{module}`) ' .
+                'so the runtime can bind it, or use a glob target (e.g. `domain-*`) so the target ' .
+                'matches independently of the binding.',
+                $source,
+                $index,
+                $targetSelector->originalString(),
+                $variableList,
+                $source,
+                $sourceSelector->isGlob() ? 'a glob selector' : 'an exact layer name',
+            );
+        }
+
+        // Captured source: variable is declared elsewhere but not on this source.
+        $sourceVariables = implode(', ', array_map(
+            static fn(string $v): string => "'{$v}'",
+            array_keys($sourceSelector->captureVariableShapes()),
+        ));
+
+        return \sprintf(
+            "architecture.allow.%s[%d]: captured target '%s' references variable(s) %s not declared by source '%s' " .
+            "(source declares %s). " .
+            'Rename the target variable to match the source, or use a glob target (e.g. `domain-*`) ' .
+            'when the target should match independently of the binding.',
+            $source,
+            $index,
+            $targetSelector->originalString(),
+            $variableList,
+            $source,
+            $sourceVariables,
+        );
+    }
+
+    /**
+     * Builds the user-facing rejection message for "captured target with
+     * shape mismatch". The runtime substitutes the bound value literally
+     * so a single-segment / multi-segment annotation conflict between
+     * source and target would silently fall through.
+     *
+     * @param array<string, array{source: bool, target: bool}> $mismatches
+     */
+    private function renderShapeMismatchMessage(
+        string $source,
+        int $index,
+        LayerSelector $sourceSelector,
+        LayerSelector $targetSelector,
+        array $mismatches,
+    ): string {
+        $rendered = implode(', ', array_map(
+            static fn(string $variable, array $shapes): string => \sprintf(
+                "'%s' (source: %s, target: %s)",
+                $variable,
+                $shapes['source'] ? '{var:**}' : '{var}',
+                $shapes['target'] ? '{var:**}' : '{var}',
+            ),
+            array_keys($mismatches),
+            array_values($mismatches),
+        ));
+
+        return \sprintf(
+            "architecture.allow.%s[%d]: captured target '%s' declares variable(s) %s with a different segment shape " .
+            "than source '%s'. The runtime substitutes the bound value literally, so a mismatched annotation would " .
+            'be silently ignored. Align the shapes on both sides (use `{var}` everywhere for single-segment ' .
+            'captures or `{var:**}` everywhere for multi-segment).',
+            $source,
+            $index,
+            $targetSelector->originalString(),
+            $rendered,
+            $sourceSelector->originalString(),
+        );
     }
 
     /**
@@ -185,18 +369,22 @@ final class AllowValidator
     }
 
     /**
-     * Normalizes a single allow-list entry to a {@see LayerSelector}.
+     * Normalizes a single allow-list entry to a (selector, allowCrossInstance) tuple.
      *
      * Supports two forms:
      * - Short: bare string {@code 'service'} (or {@code 'service-*'} / {@code 'app-{m}'}).
-     * - Long:  associative array {@code [target: 'service', types: ['method_call']]}.
+     *   {@code allowCrossInstance} is always false.
+     * - Long:  associative array
+     *   {@code [target: 'service', types: ['method_call'], allow_cross_instance: true]}.
      *
      * The long form's {@code types} key is accepted for forward compatibility but
      * not yet enforced; if present, append a deferred deprecation-style warning.
      *
      * @param list<DeferredWarning> $warnings Accumulator, mutated by reference for warning collection.
+     *
+     * @return array{0: LayerSelector, 1: bool}
      */
-    private function normalizeAllowEntry(string $source, int $index, mixed $entry, array &$warnings): LayerSelector
+    private function normalizeAllowEntry(string $source, int $index, mixed $entry, array &$warnings): array
     {
         if (\is_string($entry)) {
             if ($entry === '') {
@@ -206,10 +394,13 @@ final class AllowValidator
                 );
             }
 
-            return $this->parseSelector(
-                $entry,
-                \sprintf('architecture.allow.%s[%d]', $source, $index),
-            );
+            return [
+                $this->parseSelector(
+                    $entry,
+                    \sprintf('architecture.allow.%s[%d]', $source, $index),
+                ),
+                false,
+            ];
         }
 
         if (\is_array($entry) && !array_is_list($entry) && isset($entry['target']) && \is_string($entry['target']) && $entry['target'] !== '') {
@@ -222,10 +413,15 @@ final class AllowValidator
                 ));
             }
 
-            return $this->parseSelector(
-                $entry['target'],
-                \sprintf('architecture.allow.%s[%d]', $source, $index),
-            );
+            $allowCrossInstance = $this->parseAllowCrossInstanceFlag($source, $index, $entry);
+
+            return [
+                $this->parseSelector(
+                    $entry['target'],
+                    \sprintf('architecture.allow.%s[%d]', $source, $index),
+                ),
+                $allowCrossInstance,
+            ];
         }
 
         throw new ConfigLoadException(
@@ -236,6 +432,37 @@ final class AllowValidator
                 $index,
             ),
         );
+    }
+
+    /**
+     * Extracts the {@code allow_cross_instance} long-form flag. Absent → false.
+     * Non-boolean values are rejected so a user typo (e.g.
+     * {@code allow_cross_instance: 'yes'}) cannot silently fall through to the
+     * "false" default and surprise the user with mutual-allow warnings they
+     * thought they had silenced.
+     *
+     * @param array<string, mixed> $entry
+     */
+    private function parseAllowCrossInstanceFlag(string $source, int $index, array $entry): bool
+    {
+        if (!\array_key_exists('allow_cross_instance', $entry)) {
+            return false;
+        }
+
+        $value = $entry['allow_cross_instance'];
+        if (!\is_bool($value)) {
+            throw new ConfigLoadException(
+                self::CONFIG_PATH,
+                \sprintf(
+                    "architecture.allow.%s[%d]: 'allow_cross_instance' must be a boolean, got %s.",
+                    $source,
+                    $index,
+                    get_debug_type($value),
+                ),
+            );
+        }
+
+        return $value;
     }
 
     /**

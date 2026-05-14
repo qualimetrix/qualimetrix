@@ -21,10 +21,14 @@ use Qualimetrix\Core\Architecture\Allow\LayerSelector;
  *   "no targets allowed".
  *
  * The traversal uses {@see LayerSelector::matchSource()} so captured source
- * selectors emit a {@see CaptureBinding} that is then threaded into
- * {@see LayerSelector::matchesTarget()} on the target side — in Step C every
- * binding is empty (captured selectors are parse-only on the source side until
- * Step E wires the population path).
+ * selectors emit a populated {@see CaptureBinding} that is threaded into
+ * {@see LayerSelector::matchesTarget()} on the target side; this is how
+ * {@code 'app-{m}': ['domain-{m}']} accepts {@code app-Order → domain-Order}
+ * but rejects {@code app-Order → domain-Inventory}.
+ *
+ * When {@see AllowTarget::$allowCrossInstance} is true the policy substitutes
+ * an empty binding into the target match call, letting any same-shape target
+ * layer satisfy the entry regardless of the source-side capture values.
  *
  * Cross-validation against the layer registry (which preserves declaration
  * order) is the factory's responsibility — this class trusts the input.
@@ -70,7 +74,8 @@ final readonly class LayerPolicy
             }
 
             foreach ($entry->targets as $target) {
-                if ($target->target->matchesTarget($to, $binding)) {
+                $effectiveBinding = $target->allowCrossInstance ? CaptureBinding::empty() : $binding;
+                if ($target->target->matchesTarget($to, $effectiveBinding)) {
                     return true;
                 }
             }

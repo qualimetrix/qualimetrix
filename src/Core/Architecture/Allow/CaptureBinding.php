@@ -7,14 +7,13 @@ namespace Qualimetrix\Core\Architecture\Allow;
 /**
  * Immutable map of capture-variable name → captured value, produced by
  * {@see LayerSelector::matchSource()} when a captured selector matches a
- * layer name.
+ * layer name. {@see LayerPolicy::isAllowed()} threads the binding into
+ * {@see LayerSelector::matchesTarget()} so captured target selectors
+ * substitute the bound values before matching.
  *
- * In Phase 2 Step C the binding produced by source-side matching is always
- * empty (captured selectors parse but do not yet propagate values to the
- * target side — that flow lands in Step E together with template-layer
- * expansion). The shape is final so the source-side traversal already
- * threads a typed binding through {@see LayerSelector::matchesTarget()};
- * Step E only has to populate the map.
+ * Exact and glob source selectors always emit an empty binding; captured
+ * source selectors populate the map with one entry per
+ * {@see SelectorSegment::capture()} segment in the parsed source string.
  *
  * Variable names follow the D4 grammar {@code [A-Za-z_][A-Za-z0-9_]*} and
  * are case-sensitive.

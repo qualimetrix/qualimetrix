@@ -83,15 +83,19 @@ final class YamlConfigLoader implements ConfigLoaderInterface
      * Keys that are identifiers are preserved as-is. Two preservation modes:
      *
      * 1. Direct identifier sections (e.g. {@code rules}, {@code computedMetrics}):
-     *    children are identifiers (`group.rule-name` form) and must not be normalized.
-     *    Their nested option values ARE normalized again.
+     *    immediate children are identifiers (`group.rule-name` form) and must
+     *    not be normalized. Their nested option values ARE normalized again
+     *    (so {@code rules.complexity.cyclomatic.min_threshold} ends up as
+     *    {@code minThreshold}).
      *
-     * 2. Nested identifier paths (e.g. {@code architecture.layers},
-     *    {@code architecture.allow}): the immediate children of these grandparents
-     *    are user-defined identifiers (layer names) and must be preserved verbatim
-     *    so that error messages and downstream consumers see the names the user
-     *    wrote. Grand-grandchildren (allow-target lists) are scalars/lists and
-     *    require no key normalization either way.
+     * 2. Nested identifier subtrees (e.g. {@code architecture.allow}): once
+     *    the path enters one of {@see ConfigSchema::nestedIdentifierKeyPaths()},
+     *    **all descendants** preserve their keys verbatim. This covers both
+     *    user-defined identifiers (layer names like {@code app-{m}}) at the
+     *    immediate child level and the documented snake_case keys of nested
+     *    long-form target maps below them (e.g. {@code allow_cross_instance}).
+     *    Without subtree preservation, snake-case long-form keys would be
+     *    silently mangled to camelCase before reaching the validator.
      *
      * The current path is tracked as a dot-separated string built from already
      * normalized keys, so look-ups against {@see ConfigSchema::nestedIdentifierKeyPaths()}
@@ -120,14 +124,13 @@ final class YamlConfigLoader implements ConfigLoaderInterface
                     && $currentPath === ''
                     && \in_array($normalizedKey, ConfigSchema::identifierKeySections(), true);
 
-                // Nested identifier paths preserve the grandchildren keys, e.g.
-                // architecture.layers.<userLayerName> stays as the user wrote it.
-                $isNestedIdentifierParent = !$preserveKeys
-                    && \in_array($childPath, $nestedPaths, true);
+                // Subtree preservation: any path equal to or descended from a
+                // nested identifier path preserves every descendant key.
+                $isUnderNestedIdentifierPath = self::isUnderPreservedPath($childPath, $nestedPaths);
 
                 $result[$normalizedKey] = $this->normalizeKeys(
                     $value,
-                    $isIdentifierSection || $isNestedIdentifierParent,
+                    $isIdentifierSection || $isUnderNestedIdentifierPath,
                     $childPath,
                 );
             } else {
@@ -136,6 +139,25 @@ final class YamlConfigLoader implements ConfigLoaderInterface
         }
 
         return $result;
+    }
+
+    /**
+     * Returns true when {@code $path} equals one of {@code $preservedPaths} or
+     * lies strictly below one of them. Used to keep the {@code preserveKeys}
+     * flag sticky once we enter a subtree-preserved section
+     * ({@see ConfigSchema::nestedIdentifierKeyPaths()}).
+     *
+     * @param list<string> $preservedPaths
+     */
+    private static function isUnderPreservedPath(string $path, array $preservedPaths): bool
+    {
+        foreach ($preservedPaths as $preservedPath) {
+            if ($path === $preservedPath || str_starts_with($path, $preservedPath . '.')) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function snakeToCamel(string $input): string
