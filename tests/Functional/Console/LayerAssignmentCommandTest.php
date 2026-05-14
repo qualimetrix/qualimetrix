@@ -74,7 +74,7 @@ final class LayerAssignmentCommandTest extends TestCase
         $output = $tester->getDisplay();
         self::assertStringContainsString('Class: App\\Service\\UserService', $output);
         self::assertStringContainsString('Assigned to: service', $output);
-        self::assertStringContainsString('Matching pattern: App\\Service\\**', $output);
+        self::assertStringContainsString('Matched by: pattern "App\\Service\\**"', $output);
         self::assertStringContainsString('Would also match (in declaration order):', $output);
         self::assertStringContainsString('(none', $output);
         self::assertStringNotContainsString('Diagnostic hint:', $output);
@@ -99,10 +99,10 @@ final class LayerAssignmentCommandTest extends TestCase
         $output = $tester->getDisplay();
         self::assertStringContainsString('Class: App\\Service\\Foo', $output);
         self::assertStringContainsString('Assigned to: any-foo', $output);
-        self::assertStringContainsString('Matching pattern: App\\**\\Foo', $output);
+        self::assertStringContainsString('Matched by: pattern "App\\**\\Foo"', $output);
         self::assertStringContainsString('Would also match (in declaration order):', $output);
         self::assertStringContainsString('service', $output);
-        self::assertStringContainsString("pattern: 'App\\Service\\**'", $output);
+        self::assertStringContainsString("matched by: 'pattern \"App\\Service\\**\"'", $output);
         self::assertStringContainsString('Diagnostic hint:', $output);
         self::assertStringContainsString("would have matched 'service'", $output);
         self::assertStringContainsString('architecture.potential-shadow', $output);

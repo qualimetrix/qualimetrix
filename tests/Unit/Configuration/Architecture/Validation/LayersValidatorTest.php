@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Unit\Configuration\Architecture\Validation;
 
+use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -181,10 +182,10 @@ final class LayersValidatorTest extends TestCase
      */
     public static function phase2ReservedKeyProvider(): iterable
     {
-        yield 'suffix' => ['suffix'];
-        yield 'attributes' => ['attributes'];
-        yield 'implements' => ['implements'];
-        yield 'extends' => ['extends'];
+        // `suffix`, `attributes`, `implements`, `extends` are opened in Phase 2
+        // Step B and now produce regular per-criterion validation errors instead
+        // of the reserved-key sentinel. `exclude` remains reserved until Step F
+        // (direction 3) ships.
         yield 'exclude' => ['exclude'];
     }
 
@@ -266,10 +267,10 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function layerEntryWithoutPatternsIsRejected(): void
+    public function layerEntryWithoutAnyCriterionIsRejected(): void
     {
         $this->expectException(ConfigLoadException::class);
-        $this->expectExceptionMessageMatches('/missing "patterns"/');
+        $this->expectExceptionMessageMatches('/must declare at least one of "patterns", "suffix", "attributes", "implements" or "extends"/');
 
         $this->validator->validate([
             ['name' => 'controller'],
@@ -288,21 +289,24 @@ final class LayersValidatorTest extends TestCase
     }
 
     #[Test]
-    public function layerEntryWithPatternsAsScalarIsRejected(): void
+    public function layerEntryWithPatternsAsScalarIsAcceptedAsSingletonShorthand(): void
     {
-        $this->expectException(ConfigLoadException::class);
-        $this->expectExceptionMessageMatches('/"patterns" must be a non-empty list of strings/');
-
-        $this->validator->validate([
+        // YAML scalar shorthand: `patterns: 'App\Foo'` is equivalent to
+        // `patterns: ['App\Foo']`. The shorthand is consistent across all
+        // five criterion kinds (suffix / attributes / implements / extends
+        // documented examples in the Phase 2 design use the shorthand).
+        $registry = $this->validator->validate([
             ['name' => 'controller', 'patterns' => 'App\\Controller'],
         ]);
+
+        self::assertSame(['App\\Controller'], $registry->definitions()[0]->patterns());
     }
 
     #[Test]
     public function layerEntryWithPatternsAsMapIsRejected(): void
     {
         $this->expectException(ConfigLoadException::class);
-        $this->expectExceptionMessageMatches('/"patterns" must be a non-empty list of strings/');
+        $this->expectExceptionMessageMatches('/"patterns" must be a string or a non-empty list of strings/');
 
         $this->validator->validate([
             ['name' => 'controller', 'patterns' => ['foo' => 'App\\Controller']],
@@ -340,6 +344,197 @@ final class LayersValidatorTest extends TestCase
         $this->validator->validate([
             ['name' => 'UpperCaseName', 'patterns' => ['App\\Foo']],
         ]);
+    }
+
+    // -------------------------------------------------------------------------
+    // Per-criterion validation (Phase 2 direction 1)
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function suffixCriterionAcceptsShortName(): void
+    {
+        $registry = $this->validator->validate([
+            ['name' => 'repository', 'suffix' => 'Repository'],
+        ]);
+
+        self::assertSame(['Repository'], $registry->definitions()[0]->membership()->suffix);
+    }
+
+    #[Test]
+    public function suffixCriterionAcceptsListOfShortNames(): void
+    {
+        $registry = $this->validator->validate([
+            ['name' => 'persistence', 'suffix' => ['Repository', 'Dao']],
+        ]);
+
+        self::assertSame(['Repository', 'Dao'], $registry->definitions()[0]->membership()->suffix);
+    }
+
+    #[Test]
+    public function suffixCriterionRejectsBackslashEntry(): void
+    {
+        try {
+            $this->validator->validate([
+                ['name' => 'r', 'suffix' => 'App\\Repository'],
+            ]);
+            self::fail('Expected ConfigLoadException for FQN-shaped suffix.');
+        } catch (ConfigLoadException $e) {
+            self::assertSame('architecture', $e->configPath);
+            self::assertStringContainsString('"suffix"', $e->getMessage());
+            self::assertStringContainsString('short class-name suffix', $e->getMessage());
+            self::assertStringContainsString('App\\Repository', $e->getMessage());
+        }
+    }
+
+    /**
+     * @return iterable<string, array{0: string}>
+     */
+    public static function fqnCriterionProvider(): iterable
+    {
+        yield 'attributes' => ['attributes'];
+        yield 'implements' => ['implements'];
+        yield 'extends' => ['extends'];
+    }
+
+    #[DataProvider('fqnCriterionProvider')]
+    #[Test]
+    public function fqnCriterionAcceptsFqnString(string $kind): void
+    {
+        $registry = $this->validator->validate([
+            ['name' => 'r', $kind => 'App\\Some\\Fqn'],
+        ]);
+
+        self::assertSame(['App\\Some\\Fqn'], self::criterionField($registry->definitions()[0]->membership(), $kind));
+    }
+
+    #[DataProvider('fqnCriterionProvider')]
+    #[Test]
+    public function fqnCriterionAcceptsListOfFqns(string $kind): void
+    {
+        $registry = $this->validator->validate([
+            ['name' => 'r', $kind => ['App\\A', 'App\\B']],
+        ]);
+
+        self::assertSame(['App\\A', 'App\\B'], self::criterionField($registry->definitions()[0]->membership(), $kind));
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function criterionField(MembershipSpec $spec, string $kind): array
+    {
+        return match ($kind) {
+            'patterns' => $spec->patterns,
+            'suffix' => $spec->suffix,
+            'attributes' => $spec->attributes,
+            'implements' => $spec->implements,
+            'extends' => $spec->extends,
+            default => throw new InvalidArgumentException('Unknown criterion kind: ' . $kind),
+        };
+    }
+
+    #[DataProvider('fqnCriterionProvider')]
+    #[Test]
+    public function fqnCriterionRejectsShortNameEntry(string $kind): void
+    {
+        try {
+            $this->validator->validate([
+                ['name' => 'r', $kind => 'Entity'],
+            ]);
+            self::fail('Expected ConfigLoadException for short-name "' . $kind . '" entry.');
+        } catch (ConfigLoadException $e) {
+            self::assertSame('architecture', $e->configPath);
+            self::assertStringContainsString('"' . $kind . '"', $e->getMessage());
+            self::assertStringContainsString('fully-qualified', $e->getMessage());
+            self::assertStringContainsString('Entity', $e->getMessage());
+        }
+    }
+
+    /**
+     * @return iterable<string, array{0: string}>
+     */
+    public static function allCriterionKindsProvider(): iterable
+    {
+        yield 'patterns' => ['patterns'];
+        yield 'suffix' => ['suffix'];
+        yield 'attributes' => ['attributes'];
+        yield 'implements' => ['implements'];
+        yield 'extends' => ['extends'];
+    }
+
+    #[DataProvider('allCriterionKindsProvider')]
+    #[Test]
+    public function criterionEmptyListIsRejected(string $kind): void
+    {
+        try {
+            $this->validator->validate([
+                ['name' => 'r', $kind => []],
+            ]);
+            self::fail('Expected ConfigLoadException for empty "' . $kind . '" list.');
+        } catch (ConfigLoadException $e) {
+            self::assertStringContainsString('"' . $kind . '"', $e->getMessage());
+            self::assertStringContainsString('must contain at least one entry', $e->getMessage());
+        }
+    }
+
+    #[DataProvider('allCriterionKindsProvider')]
+    #[Test]
+    public function criterionEmptyStringEntryIsRejected(string $kind): void
+    {
+        // Empty-string entry must be rejected BEFORE any kind-specific
+        // semantic validation runs, so the index-0 spot is fine for every
+        // criterion kind (we can't seed it with a kind-shape-valid string
+        // first because suffix rejects backslashes and attributes/implements/
+        // extends require them — empty-first is the only universal probe).
+        try {
+            $this->validator->validate([
+                ['name' => 'r', $kind => ['']],
+            ]);
+            self::fail('Expected ConfigLoadException for empty entry in "' . $kind . '" list.');
+        } catch (ConfigLoadException $e) {
+            self::assertStringContainsString('non-empty string', $e->getMessage());
+        }
+    }
+
+    #[DataProvider('allCriterionKindsProvider')]
+    #[Test]
+    public function criterionMapShapeIsRejected(string $kind): void
+    {
+        try {
+            $this->validator->validate([
+                ['name' => 'r', $kind => ['foo' => 'App\\Foo']],
+            ]);
+            self::fail('Expected ConfigLoadException for map-shaped "' . $kind . '" value.');
+        } catch (ConfigLoadException $e) {
+            self::assertStringContainsString('"' . $kind . '"', $e->getMessage());
+            self::assertStringContainsString('string or a non-empty list of strings', $e->getMessage());
+        }
+    }
+
+    #[Test]
+    public function membershipSpecCarriesEveryDeclaredCriterion(): void
+    {
+        // End-to-end: a single layer entry with all five criteria flows through
+        // the validator and produces a MembershipSpec with the expected fields.
+        $registry = $this->validator->validate([
+            [
+                'name' => 'kitchen-sink',
+                'patterns' => ['App\\Foo'],
+                'suffix' => ['Bar'],
+                'attributes' => ['App\\Attr\\X'],
+                'implements' => ['App\\Iface\\Y'],
+                'extends' => ['App\\Base\\Z'],
+                'match' => 'all',
+            ],
+        ]);
+
+        $spec = $registry->definitions()[0]->membership();
+        self::assertSame(['App\\Foo'], $spec->patterns);
+        self::assertSame(['Bar'], $spec->suffix);
+        self::assertSame(['App\\Attr\\X'], $spec->attributes);
+        self::assertSame(['App\\Iface\\Y'], $spec->implements);
+        self::assertSame(['App\\Base\\Z'], $spec->extends);
+        self::assertSame(MatchMode::All, $spec->mode);
     }
 
     // -------------------------------------------------------------------------

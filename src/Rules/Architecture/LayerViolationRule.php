@@ -7,7 +7,10 @@ namespace Qualimetrix\Rules\Architecture;
 use Qualimetrix\Core\Architecture\ArchitectureConfiguration;
 use Qualimetrix\Core\Architecture\CoverageMode;
 use Qualimetrix\Core\Architecture\Layer\LayerDefinition;
+use Qualimetrix\Core\Architecture\Layer\LayerMatch;
 use Qualimetrix\Core\Architecture\Layer\LayerRegistry;
+use Qualimetrix\Core\Architecture\Layer\MatchedCriterion;
+use Qualimetrix\Core\Architecture\Layer\MatchedCriterionKind;
 use Qualimetrix\Core\Dependency\Dependency;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\RuleCategory;
@@ -142,6 +145,11 @@ final class LayerViolationRule extends AbstractRule
 
         $registry = $architecture->registry();
 
+        // Rebind the registry's ClassContextFactory to this run's dependency
+        // graph so `attributes` / `implements` / `extends` membership criteria
+        // see fresh data. Cache invalidation is handled by bindGraph().
+        $registry->bindGraph($context->dependencyGraph);
+
         // Per-class evidence (local — never fields; statelessness regression in tests).
         [$layerHits, $shadowEvidence] = $this->collectClassEvidence($registry, $context);
 
@@ -169,16 +177,18 @@ final class LayerViolationRule extends AbstractRule
      * 1. `layerHits` — per-layer count of classes that ended up in that layer
      *    (feeds `architecture.unreachable-layer`).
      * 2. `shadowEvidence` — per (assigned, shadowed) pair, list of evidence
-     *    entries carrying the class FQN plus the specific patterns that
-     *    matched on each side (feeds `architecture.potential-shadow` without
-     *    re-walking the layer list at emission time).
+     *    entries carrying the class FQN plus the specific criterion descriptors
+     *    that matched on each side (feeds `architecture.potential-shadow`
+     *    without re-walking the layer list at emission time). Descriptors
+     *    carry the criterion kind (pattern / suffix / attribute / implements
+     *    / extends) so the message can name the actual cause of the shadow.
      *
      * Both are LOCAL variables here. Per CLAUDE.md "stateless rules", the rule
      * instance is reused across `analyze()` invocations — any field-based
      * accumulator would leak counts. The dedicated statelessness regression
      * test pins this contract.
      *
-     * @return array{0: array<string, int>, 1: array<string, array<string, list<array{fqn: string, assignedPattern: string, shadowedPattern: string}>>>}
+     * @return array{0: array<string, int>, 1: array<string, array<string, list<array{fqn: string, assignedCriterion: MatchedCriterion, shadowedCriterion: MatchedCriterion}>>>}
      */
     private function collectClassEvidence(LayerRegistry $registry, AnalysisContext $context): array
     {
@@ -187,7 +197,7 @@ final class LayerViolationRule extends AbstractRule
             $layerHits[$layerName] = 0;
         }
 
-        /** @var array<string, array<string, list<array{fqn: string, assignedPattern: string, shadowedPattern: string}>>> $shadowEvidence */
+        /** @var array<string, array<string, list<array{fqn: string, assignedCriterion: MatchedCriterion, shadowedCriterion: MatchedCriterion}>>> $shadowEvidence */
         $shadowEvidence = [];
 
         foreach ($context->metrics->all(SymbolType::Class_) as $classSymbol) {
@@ -208,8 +218,8 @@ final class LayerViolationRule extends AbstractRule
             for ($i = 1; $i < $matchCount; $i++) {
                 $shadowEvidence[$assigned->layerName][$matches[$i]->layerName][] = [
                     'fqn' => $classFqn,
-                    'assignedPattern' => $assigned->matchingPattern,
-                    'shadowedPattern' => $matches[$i]->matchingPattern,
+                    'assignedCriterion' => $assigned->primaryCriterion(),
+                    'shadowedCriterion' => $matches[$i]->primaryCriterion(),
                 ];
             }
         }
@@ -239,20 +249,23 @@ final class LayerViolationRule extends AbstractRule
 
         $registry = $architecture->registry();
         foreach ($graph->getAllDependencies() as $dependency) {
-            $fromLayer = $registry->resolveLayer($dependency->source);
-            $toLayer = $registry->resolveLayer($dependency->target);
+            $fromMatches = $registry->resolveAll($dependency->source);
+            $toMatches = $registry->resolveAll($dependency->target);
 
-            if ($fromLayer === null) {
+            $fromMatch = $fromMatches[0] ?? null;
+            $toMatch = $toMatches[0] ?? null;
+
+            if ($fromMatch === null) {
                 $sourceEdges++;
                 $classes[$dependency->source->toCanonical()] = $dependency->source->toString();
             }
 
-            if ($toLayer === null) {
+            if ($toMatch === null) {
                 $targetEdges++;
                 $classes[$dependency->target->toCanonical()] = $dependency->target->toString();
             }
 
-            $violation = $this->buildViolation($dependency, $fromLayer, $toLayer, $architecture);
+            $violation = $this->buildViolation($dependency, $fromMatch, $toMatch, $architecture);
             if ($violation !== null) {
                 $violations[] = $violation;
             }
@@ -283,13 +296,16 @@ final class LayerViolationRule extends AbstractRule
 
     private function buildViolation(
         Dependency $dependency,
-        ?string $fromLayer,
-        ?string $toLayer,
+        ?LayerMatch $fromMatch,
+        ?LayerMatch $toMatch,
         ArchitectureConfiguration $architecture,
     ): ?Violation {
-        if ($fromLayer === null || $toLayer === null) {
+        if ($fromMatch === null || $toMatch === null) {
             return null;
         }
+
+        $fromLayer = $fromMatch->layerName;
+        $toLayer = $toMatch->layerName;
 
         if ($architecture->policy()->isAllowed($fromLayer, $toLayer)) {
             return null;
@@ -303,18 +319,95 @@ final class LayerViolationRule extends AbstractRule
             ruleName: self::NAME,
             violationCode: self::NAME,
             message: \sprintf(
-                'Layer "%s" must not depend on layer "%s" (%s → %s, %s)',
+                'Layer "%s" must not depend on layer "%s" (%s → %s, %s)%s',
                 $fromLayer,
                 $toLayer,
                 $dependency->source->toString(),
                 $dependency->target->toString(),
                 $dependency->type->description(),
+                self::describeMatchTrailer($fromMatch, $toMatch),
             ),
             severity: $this->options->severity,
             recommendation: $this->buildRecommendation($dependency, $fromLayer, $toLayer, $architecture),
             dependencyTarget: $dependency->target,
             dependencyType: $dependency->type,
         );
+    }
+
+    /**
+     * Appends a "[matched by ...]" trailer to the violation message when at
+     * least one side was assigned via a non-pattern criterion or when the
+     * match was multi-criterion (Phase 2 direction 1 diagnostic specificity).
+     *
+     * For Phase-1-shape patterns-only configs both sides always carry a
+     * single Pattern criterion — in that case the trailer collapses to an
+     * empty string, leaving the legacy message format byte-for-byte stable.
+     */
+    private static function describeMatchTrailer(LayerMatch $fromMatch, LayerMatch $toMatch): string
+    {
+        if (self::isPlainPatternMatch($fromMatch) && self::isPlainPatternMatch($toMatch)) {
+            return '';
+        }
+
+        return \sprintf(
+            ' [source matched by %s; target matched by %s]',
+            self::describeCriteriaList($fromMatch->matchedCriteria),
+            self::describeCriteriaList($toMatch->matchedCriteria),
+        );
+    }
+
+    private static function isPlainPatternMatch(LayerMatch $match): bool
+    {
+        return \count($match->matchedCriteria) === 1
+            && $match->matchedCriteria[0]->kind === MatchedCriterionKind::Pattern;
+    }
+
+    /**
+     * @param list<MatchedCriterion> $criteria
+     */
+    private static function describeCriteriaList(array $criteria): string
+    {
+        return implode(', ', array_map(
+            static fn(MatchedCriterion $criterion): string => $criterion->describe(),
+            $criteria,
+        ));
+    }
+
+    /**
+     * Renders a layer's declared criteria as a human-readable summary, used in
+     * the {@code architecture.unreachable-layer} message. Empty kinds are
+     * omitted so the message only mentions criteria the user actually wrote.
+     */
+    private static function describeLayerCriteria(LayerDefinition $definition): string
+    {
+        $membership = $definition->membership();
+        $segments = [];
+
+        if ($membership->patterns !== []) {
+            $segments[] = 'patterns: ' . self::quoteCsv($membership->patterns);
+        }
+        if ($membership->suffix !== []) {
+            $segments[] = 'suffix: ' . self::quoteCsv($membership->suffix);
+        }
+        if ($membership->attributes !== []) {
+            $segments[] = 'attributes: ' . self::quoteCsv($membership->attributes);
+        }
+        if ($membership->implements !== []) {
+            $segments[] = 'implements: ' . self::quoteCsv($membership->implements);
+        }
+        if ($membership->extends !== []) {
+            $segments[] = 'extends: ' . self::quoteCsv($membership->extends);
+        }
+
+        return implode('; ', $segments);
+    }
+
+    /**
+     * @param list<string> $values
+     */
+    private static function quoteCsv(array $values): string
+    {
+        return implode(', ', array_map(static fn(string $v): string => '"' . $v . '"', $values));
     }
 
     private function buildRecommendation(
@@ -426,12 +519,12 @@ final class LayerViolationRule extends AbstractRule
                 continue;
             }
 
-            $patterns = $definitionsByName[$layerName]->patterns();
+            $criteria = self::describeLayerCriteria($definitionsByName[$layerName]);
 
             $message = \sprintf(
-                'Layer "%s" was never matched during analysis. Possible causes: (1) it is shadowed by a broader layer earlier in the declaration order, (2) the pattern(s) [%s] match no class in the analysed codebase. Run "qmx debug:layer-assignment <class>" to inspect specific classes.',
+                'Layer "%s" was never matched during analysis. Possible causes: (1) it is shadowed by a broader layer earlier in the declaration order, (2) the declared criteria (%s) match no class in the analysed codebase. Run "qmx debug:layer-assignment <class>" to inspect specific classes.',
                 $layerName,
-                implode(', ', array_map(static fn(string $p): string => '"' . $p . '"', $patterns)),
+                $criteria,
             );
 
             $violations[] = new Violation(
@@ -457,11 +550,11 @@ final class LayerViolationRule extends AbstractRule
      * FQN and the pair list is sorted by (assigned, shadowed) before emission
      * so CI diffs are stable across runs.
      *
-     * Each evidence entry already carries the patterns that matched on each
-     * side (recorded during `collectClassEvidence()`), so no second walk over
-     * the layer list is necessary at emission time.
+     * Each evidence entry already carries the primary criterion that matched
+     * on each side (recorded during `collectClassEvidence()`), so no second
+     * walk over the layer list is necessary at emission time.
      *
-     * @param array<string, array<string, list<array{fqn: string, assignedPattern: string, shadowedPattern: string}>>> $shadowEvidence
+     * @param array<string, array<string, list<array{fqn: string, assignedCriterion: MatchedCriterion, shadowedCriterion: MatchedCriterion}>>> $shadowEvidence
      *
      * @return list<Violation>
      */
@@ -501,8 +594,8 @@ final class LayerViolationRule extends AbstractRule
             $sample = \array_slice($entries, 0, self::SHADOW_SAMPLE_LIMIT);
             $remaining = $total - \count($sample);
 
-            $assignedPattern = $sample[0]['assignedPattern'];
-            $shadowedPattern = $sample[0]['shadowedPattern'];
+            $assignedCriterion = $sample[0]['assignedCriterion'];
+            $shadowedCriterion = $sample[0]['shadowedCriterion'];
 
             $sampleFqns = array_map(static fn(array $entry): string => $entry['fqn'], $sample);
             $sampleList = implode(', ', $sampleFqns);
@@ -511,11 +604,11 @@ final class LayerViolationRule extends AbstractRule
             }
 
             $message = \sprintf(
-                'Layer "%s" (pattern: "%s") shadows layer "%s" (pattern: "%s") for %d class(es) including %s. Run "qmx debug:layer-assignment <class>" to inspect specific cases.',
+                'Layer "%s" (%s) shadows layer "%s" (%s) for %d class(es) including %s. Run "qmx debug:layer-assignment <class>" to inspect specific cases.',
                 $assignedLayer,
-                $assignedPattern,
+                $assignedCriterion->describe(),
                 $shadowedLayer,
-                $shadowedPattern,
+                $shadowedCriterion->describe(),
                 $total,
                 $sampleList,
             );
