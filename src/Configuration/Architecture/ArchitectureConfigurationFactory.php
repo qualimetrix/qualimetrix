@@ -121,7 +121,7 @@ final class ArchitectureConfigurationFactory
         $registry = $this->layersValidator->validate($raw['layers'] ?? []);
 
         $warnings = [];
-        $allowedTargets = $this->allowValidator->validate(
+        $allowEntries = $this->allowValidator->validate(
             $raw['allow'] ?? [],
             $registry->layerNames(),
             $warnings,
@@ -129,10 +129,10 @@ final class ArchitectureConfigurationFactory
 
         $coverage = $this->coverageValidator->validate($raw['coverage'] ?? null);
 
-        $this->mutualAllowDetector->detect($allowedTargets, $warnings);
+        $this->mutualAllowDetector->detect($allowEntries, $warnings);
 
         return new ArchitectureFactoryResult(
-            new ArchitectureConfiguration($registry, new LayerPolicy($allowedTargets), $coverage),
+            new ArchitectureConfiguration($registry, new LayerPolicy($allowEntries), $coverage),
             $warnings,
         );
     }
