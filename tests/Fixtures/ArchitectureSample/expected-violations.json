@@ -1,0 +1,12 @@
+{
+    "_comment": "Golden fixture for LayerViolationIntegrationTest::goldenFileMatchesFullPolicyOutput. Normalised projection of architecture violations emitted by the full four-layer policy against the ArchitectureSample fixture. Stored fields (per entry): rule, severity, source, target, type. Sorted by (rule, source, target, type) for stable diffs. Regenerate by setting QMX_GOLDEN_UPDATE=1.",
+    "violations": [
+        {
+            "rule": "architecture.layer-violation",
+            "severity": "warning",
+            "source": "Fixtures\\ArchitectureSample\\Controller\\UserController",
+            "target": "Fixtures\\ArchitectureSample\\Repository\\UserRepository",
+            "type": "type_hint"
+        }
+    ]
+}
