@@ -8,6 +8,7 @@ use Qualimetrix\Core\Architecture\Allow\AllowListEntry;
 use Qualimetrix\Core\Architecture\Allow\AllowTarget;
 use Qualimetrix\Core\Architecture\Allow\CaptureBinding;
 use Qualimetrix\Core\Architecture\Allow\LayerSelector;
+use Qualimetrix\Core\Dependency\DependencyType;
 
 /**
  * Immutable allow-list of inter-layer dependencies.
@@ -51,7 +52,27 @@ final readonly class LayerPolicy
     /**
      * Returns true if a dependency from `$from` to `$to` is permitted.
      *
-     * Same-layer dependencies (`$from === $to`) are always allowed.
+     * Same-layer dependencies (`$from === $to`) are always allowed regardless
+     * of `$type`.
+     *
+     * `$type` carries the dependency-edge kind from the collector and is
+     * checked against {@see AllowTarget::$relations}:
+     *
+     * - `$type === null` — relation filter is bypassed entirely. Used by tests
+     *   and callers that only care about layer-pair reachability without
+     *   per-edge granularity.
+     * - `$type !== null` — only allow targets whose `relations` field is null
+     *   (any relation) OR contains `$type` accept the edge. The Step G
+     *   `relations:` long-form key populates `relations`; bare-string targets
+     *   leave it null and continue to accept any relation kind.
+     *
+     * **Overlapping union semantics.** When several entries match the same
+     * (source, target) layer pair, the walk visits each target in declaration
+     * order and returns true on the first match-and-accept. A bare-string
+     * target (relations=null) therefore dominates any sibling long-form target
+     * with `relations:` — if the user wrote `allow: { domain: [contracts] }`
+     * the edge is accepted regardless of subsequent `[target: contracts,
+     * relations: [extends]]` siblings.
      *
      * Contract: callers MUST first resolve `$from` and `$to` to concrete layer
      * names via {@see LayerRegistry::resolveLayer()}. A source layer name with
@@ -61,7 +82,7 @@ final readonly class LayerPolicy
      * call (see {@see \Qualimetrix\Core\Architecture\CoverageMode} for how
      * out-of-layer classes are handled).
      */
-    public function isAllowed(string $from, string $to): bool
+    public function isAllowed(string $from, string $to, ?DependencyType $type = null): bool
     {
         if ($from === $to) {
             return true;
@@ -75,13 +96,36 @@ final readonly class LayerPolicy
 
             foreach ($entry->targets as $target) {
                 $effectiveBinding = $target->allowCrossInstance ? CaptureBinding::empty() : $binding;
-                if ($target->target->matchesTarget($to, $effectiveBinding)) {
-                    return true;
+                if (!$target->target->matchesTarget($to, $effectiveBinding)) {
+                    continue;
                 }
+
+                if (!self::acceptsRelation($target, $type)) {
+                    continue;
+                }
+
+                return true;
             }
         }
 
         return false;
+    }
+
+    /**
+     * Edge-relation gate. Returns true when:
+     *
+     * - the caller did not provide an edge type (callers that bypass the
+     *   filter), OR
+     * - the target accepts any relation (`relations === null`), OR
+     * - the target's whitelist contains the edge type.
+     */
+    private static function acceptsRelation(AllowTarget $target, ?DependencyType $type): bool
+    {
+        if ($type === null || $target->relations === null) {
+            return true;
+        }
+
+        return \in_array($type, $target->relations, true);
     }
 
     /**
@@ -95,8 +139,18 @@ final readonly class LayerPolicy
      * the original string is precisely the shape the user can copy back into
      * the YAML config to widen the policy.
      *
+     * When a target carries a non-null {@see AllowTarget::$relations} list,
+     * the descriptor gains a {@code "(relations: extends, implements)"}
+     * trailer so the rule's recommendation message tells the user that
+     * routing the violating edge through this target only works for specific
+     * relation kinds — otherwise the message would mislead users into
+     * believing the bare layer name accepts any dependency kind.
+     *
      * The list excludes `$from` itself (same-layer is implicit, not declared)
-     * and is order-preserved + deduplicated on the original string.
+     * and is order-preserved + deduplicated on the full descriptor
+     * (so {@code "vendor"} and {@code "vendor (relations: extends)"} are
+     * treated as distinct entries — both are surfaced when both shapes coexist
+     * in the allow-list).
      *
      * @return list<string>
      */
@@ -111,12 +165,14 @@ final readonly class LayerPolicy
             }
 
             foreach ($entry->targets as $target) {
-                $descriptor = $target->target->originalString();
+                $original = $target->target->originalString();
 
-                if ($target->target->isExact() && $descriptor === $from) {
+                if ($target->target->isExact() && $original === $from) {
                     // Same-layer is implicit; do not surface in recommendations.
                     continue;
                 }
+
+                $descriptor = self::renderTargetDescriptor($original, $target);
 
                 if (isset($seen[$descriptor])) {
                     continue;
@@ -128,5 +184,26 @@ final readonly class LayerPolicy
         }
 
         return $result;
+    }
+
+    /**
+     * Combines the target's user-written selector string with a
+     * {@code "(relations: ...)"} suffix when {@see AllowTarget::$relations}
+     * is non-null. Aliases are NOT round-tripped here — the user sees the
+     * expanded {@see DependencyType} values, which is the only honest
+     * representation of the actual filter.
+     */
+    private static function renderTargetDescriptor(string $original, AllowTarget $target): string
+    {
+        if ($target->relations === null) {
+            return $original;
+        }
+
+        $values = implode(', ', array_map(
+            static fn(DependencyType $type): string => $type->value,
+            $target->relations,
+        ));
+
+        return \sprintf('%s (relations: %s)', $original, $values);
     }
 }

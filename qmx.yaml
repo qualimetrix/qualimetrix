@@ -69,8 +69,19 @@ architecture:
     baseline:       [core]
     # Analysis orchestrates the rest of the pipeline.
     analysis:       [core, configuration, 'metrics-*', rules, reporting, baseline]
-    # Infrastructure is the outermost glue.
-    infrastructure: [core, configuration, analysis, reporting, baseline, 'metrics-*', rules]
+    # Infrastructure is the outermost glue. Edges to the metric collectors are
+    # constrained: the DI container wires collectors but never inherits from
+    # them — the long-form `relations:` filter codifies this rule so a future
+    # `class FooInfra extends BarCollector` is caught at config time.
+    infrastructure:
+      - core
+      - configuration
+      - analysis
+      - reporting
+      - baseline
+      - target: 'metrics-*'
+        relations: [type_reference, new, static_access, class_const_fetch, attribute, runtime_check]
+      - rules
   # Warn about edges touching classes outside our own namespaces (vendor, etc.).
   # The default ignore mode is fine for vendor noise; we keep this opt-in.
   coverage: ignore
@@ -110,6 +121,7 @@ rules:
       - Qualimetrix\Core\Symbol
       - Qualimetrix\Core\Metric
       - Qualimetrix\Core\Rule
+      - Qualimetrix\Core\Dependency
 
   # Distance: Core leaf namespaces are maximally concrete with few abstractions.
   # This is by design for value objects.
