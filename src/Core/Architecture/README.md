@@ -22,7 +22,10 @@ Architecture/
 │   ├── AllowListEntry.php                  # VO: source selector + list<AllowTarget>
 │   └── InvalidSelectorException.php        # Thrown by LayerSelectorParser::parse() on grammar errors
 └── Layer/
-    ├── LayerDefinition.php                 # VO: layer name + MembershipSpec
+    ├── LayerDefinition.php                 # VO: layer name + MembershipSpec (with `expanded()` factory for template-produced layers)
+    ├── TemplateLayerDefinition.php         # VO: parameterised layer (name template + MembershipSpec + variables)
+    ├── CapturePattern.php                  # PCRE compiler for FQN patterns with {var} / {var:**} captures
+    ├── ClassSet.php                        # VO: discovered class symbols + ClassContextFactory (input to expansion)
     ├── MembershipSpec.php                  # VO: criteria a class must match to join a layer
     ├── MatchMode.php                       # enum: any | all (cross-kind criterion combination)
     ├── ClassContext.php                    # VO: class view consumed by matches()
@@ -43,8 +46,14 @@ Architecture/
 Immutable VO describing a single layer: a name plus the `MembershipSpec` that
 decides which classes belong to it.
 
-- `__construct(string $name, MembershipSpec $membership)` — validates the name
-  regex `[a-z][a-z0-9_-]*`. Criterion-list validation lives on the spec.
+- `__construct(string $name, MembershipSpec $membership, bool $expanded = false)` —
+  validates the name regex. For user-declared layers (default), the strict
+  regex `[a-z][a-z0-9_-]*` applies. For layers produced by template expansion
+  (`$expanded = true`), a relaxed regex `[A-Za-z][A-Za-z0-9_-]*` accepts
+  PascalCase binding values (`domain-Order`). Criterion-list validation lives
+  on the spec.
+- `LayerDefinition::expanded(string $name, MembershipSpec $membership): self` —
+  static factory used by `LayerExpansionStage` for template-produced layers.
 - `matches(ClassContext $context): MembershipResult` — walks the five criterion
   kinds (patterns, suffix, attributes, implements, extends) and returns either
   a Match (carrying one `MatchedCriterion` per kind that fired, in declaration
@@ -53,6 +62,8 @@ decides which classes belong to it.
 - `patterns(): list<string>` — original patterns, for diagnostics (delegates
   to the membership spec).
 - `membership(): MembershipSpec`
+- `$expanded: bool` — readonly flag indicating whether this layer was produced
+  by template expansion. Diagnostic-only; Step D itself does not branch on it.
 
 Under `MatchMode::Any` (default) a match succeeds if at least one declared
 criterion kind fires. Under `MatchMode::All` every declared kind must fire;
@@ -62,6 +73,71 @@ There is no specificity scoring. Within a single criterion kind, scanning
 returns the first hit in declaration order; the disambiguation rule between
 overlapping layers is the user's declaration order on the layer list
 (`LayerRegistry`). See [ADR 0006](../../../docs/adr/0006-architecture-rules-declaration-order.md).
+
+### TemplateLayerDefinition
+
+Immutable VO describing a *parameterised* layer entry — Phase 2 direction 2.
+The `nameTemplate` and one or more `patterns` carry `{var}` placeholders;
+`LayerExpansionStage` walks the project's class set and produces one concrete
+`LayerDefinition` per observed binding tuple (NOT cartesian product).
+
+- `__construct(string $nameTemplate, MembershipSpec $membership)` — enforces:
+  (1) name template non-empty, (2) name template references at least one
+  capture variable, (3) every variable in the name template is bound by at
+  least one capture-producing pattern (otherwise expansion would be
+  non-deterministic).
+- `nameTemplate(): string`
+- `membership(): MembershipSpec`
+- `variables(): list<string>` — sorted, distinct list of every variable
+  referenced by either the name template or some capture-producing pattern.
+- `TemplateLayerDefinition::containsCaptureVariable(string $raw): bool` —
+  cheap structural check used by `LayersValidator` to decide between the
+  static and template construction paths.
+
+**D7 carve-out** (locked in ADR 0007): `MatchMode` governs only how the
+capture-producing patterns are combined. Non-capturing criteria (suffix /
+attributes / implements / extends / any non-capture pattern) ALWAYS act as
+an AND-filter regardless of the declared mode.
+
+Captures are currently allowed in `name` and `patterns` only. Suffix, attribute,
+implements, and extends entries are fixed strings; adding captures to them is
+out of scope for Step D.
+
+### CapturePattern
+
+Compiles an FQN glob pattern with capture variables (D4 grammar) into a PCRE
+regex with named subpatterns. Consumed by `TemplateLayerDefinition` (for the
+variable-extraction invariant) and `LayerExpansionStage` (for runtime
+tuple extraction).
+
+Grammar:
+
+| Source     | Regex                          | Semantics                                                     |
+| ---------- | ------------------------------ | ------------------------------------------------------------- |
+| `{var}`    | `(?P<var>[^\\]+)`              | Exactly one namespace segment.                                |
+| `{var:**}` | `(?P<var>[^\\]+(?:\\[^\\]+)*)` | One or more namespace segments.                               |
+| `**`       | `.+`                           | One or more characters, including separators (cross-segment). |
+| `*`        | `[^\\]*`                       | Any chars within one segment.                                 |
+| `?`        | `[^\\]`                        | One char within one segment.                                  |
+| `\`        | `\\`                           | Namespace separator (literal; no escape semantics).           |
+| other      | `preg_quote()`                 | Literal.                                                      |
+
+Rejects: unbalanced braces, empty captures, invalid identifier, unknown
+quantifier, duplicate capture name, **adjacent captures** (`{a}{b}` without
+a separator — almost always a typo).
+
+**Semantic note vs `NamespaceMatcher`.** For glob patterns the two engines
+agree. For non-glob non-capture patterns CapturePattern produces exact-match
+regex whereas `NamespaceMatcher` does prefix matching. Call sites that need
+Phase-1 prefix semantics for filter patterns (`LayerExpansionStage::passesNonCapturePatterns`)
+route through `NamespaceMatcher::matchesSingle` directly.
+
+### ClassSet
+
+Immutable VO bundling a list of class `SymbolPath`s with a `ClassContextFactory`.
+Built by `AnalysisPipeline` between collection and rule execution; consumed by
+`LayerExpansionStage::expand()` to walk the project's class set for each
+template.
 
 ### MembershipSpec
 
@@ -287,7 +363,14 @@ selector metacharacters.
 - The Phase 2 design (multi-criterion membership, template layers, exclude
   block, relation filters) is locked in
   [ADR 0007](../../../docs/adr/0007-architecture-rules-flexibility.md).
-  Step C (current) lands the D4 selector grammar — glob and captured
-  allow-list selectors with `LayerPolicy` migrated to entry-list traversal.
-  Steps D (template expansion), E (capture-binding identity), F
-  (`exclude:` block), and G (`relations:` filter) follow.
+  Step C landed the D4 selector grammar — glob and captured allow-list
+  selectors with `LayerPolicy` migrated to entry-list traversal. Step D
+  (current) lands template-layer expansion: `TemplateLayerDefinition` +
+  `CapturePattern` (Core) feed `LayerExpansionStage` (Analysis), which
+  walks the project's `ClassSet` after collection and produces one
+  concrete `LayerDefinition` per observed binding tuple. Templates that
+  observe zero tuples surface as the `architecture.empty-template`
+  warning diagnostic; cumulative expansion is bounded by
+  `architecture.max_expanded_layers` (default 500). Steps E
+  (capture-binding identity), F (`exclude:` block), and G (`relations:`
+  filter) follow.
