@@ -58,11 +58,14 @@ Configuration/
 ├── Architecture/                  # Architecture rules config (RFC: architecture rules)
 │   ├── ArchitectureConfigurationFactory.php  # YAML map under `architecture:` → typed Core\Architecture\ArchitectureConfiguration + DeferredWarnings
 │   ├── ArchitectureFactoryResult.php         # Result VO: configuration + list of deferred warnings
+│   ├── Allow/                     # Allow-list helpers (configuration layer)
+│   │   └── AllowAliasExpander.php            # Expands `relations:` tokens (direct + 4 aliases) into list<DependencyType>; validates direct tokens reflectively (Step G)
 │   └── Validation/                # Per-concern validators (composed by the factory)
 │       ├── LayersValidator.php                # Parses `layers:` block; rejects unknown keys; emits LayerDefinition / TemplateLayerDefinition
 │       ├── ExcludeBlockValidator.php          # Parses the optional `exclude:` sub-block on layer entries (Step F, direction 3)
 │       ├── LayerCriterionNormalizer.php       # Shared per-criterion shape/semantic normalizer (positive criteria + exclude)
-│       ├── AllowValidator.php                 # Parses `allow:` block; selector grammar + capture-variable cross-validation + allow_cross_instance long-form key
+│       ├── AllowValidator.php                 # Parses `allow:` block; selector grammar + capture-variable cross-validation; orchestrates LongFormAllowEntryNormalizer
+│       ├── LongFormAllowEntryNormalizer.php   # Parses `[target:, relations:, allow_cross_instance:]` long-form map; delegates relations to AllowAliasExpander (Step G)
 │       ├── CoverageValidator.php              # Parses `coverage:` mode
 │       ├── MutualAllowDetector.php            # Deferred warning for A↔B exact-allow pairs (suggest layer merge)
 │       └── WildcardSelfAllowDetector.php      # Deferred warning for `'foo-*' → 'foo-*'` self-glob entries (silence with allow_cross_instance: true)
