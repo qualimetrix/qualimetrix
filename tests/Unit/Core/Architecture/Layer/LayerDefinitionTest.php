@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Architecture\Layer\ClassContext;
+use Qualimetrix\Core\Architecture\Layer\ExcludeSpec;
 use Qualimetrix\Core\Architecture\Layer\InvalidLayerDefinitionException;
 use Qualimetrix\Core\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Core\Architecture\Layer\MatchedCriterion;
@@ -26,6 +27,7 @@ use stdClass;
 #[CoversClass(MatchedCriterionKind::class)]
 #[CoversClass(ClassContext::class)]
 #[CoversClass(MatchMode::class)]
+#[CoversClass(ExcludeSpec::class)]
 #[CoversClass(InvalidLayerDefinitionException::class)]
 final class LayerDefinitionTest extends TestCase
 {
@@ -755,6 +757,251 @@ final class LayerDefinitionTest extends TestCase
             ['any', 'all'],
             array_map(static fn(MatchMode $mode): string => $mode->value, MatchMode::cases()),
         );
+    }
+
+    // -------------------------------------------------------------------------
+    // exclude clause (Step F)
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function matches_excludePatternsFiltersSubtreeMatchedByPositive(): void
+    {
+        $definition = new LayerDefinition(
+            'service',
+            new MembershipSpec(
+                patterns: ['App\\Service\\**'],
+                exclude: new ExcludeSpec(patterns: ['App\\Service\\Legacy\\**']),
+            ),
+        );
+
+        self::assertTrue($definition->matches(self::context('App\\Service\\UserService'))->matched);
+        self::assertFalse($definition->matches(self::context('App\\Service\\Legacy\\OldService'))->matched);
+    }
+
+    #[Test]
+    public function matches_excludeReturnsNoMatchedCriteriaWhenExclusionFires(): void
+    {
+        $definition = new LayerDefinition(
+            'service',
+            new MembershipSpec(
+                patterns: ['App\\Service\\**'],
+                exclude: new ExcludeSpec(patterns: ['App\\Service\\Legacy\\**']),
+            ),
+        );
+
+        // Excluded class is indistinguishable from non-matching class at the
+        // rule layer — no descriptor surfaces.
+        $result = $definition->matches(self::context('App\\Service\\Legacy\\OldService'));
+        self::assertSame([], $result->matchedCriteria);
+    }
+
+    #[Test]
+    public function matches_excludeSuffixFiltersByShortName(): void
+    {
+        $definition = new LayerDefinition(
+            'repository',
+            new MembershipSpec(
+                suffix: ['Repository'],
+                exclude: new ExcludeSpec(patterns: ['App\\Test\\**']),
+            ),
+        );
+
+        self::assertTrue($definition->matches(self::context('App\\Repo\\UserRepository'))->matched);
+        self::assertFalse($definition->matches(self::context('App\\Test\\UserRepository'))->matched);
+    }
+
+    #[Test]
+    public function matches_excludeAttributesFiltersByAttribute(): void
+    {
+        $definition = new LayerDefinition(
+            'service',
+            new MembershipSpec(
+                patterns: ['App\\Service\\**'],
+                exclude: new ExcludeSpec(attributes: ['App\\Attr\\Deprecated']),
+            ),
+        );
+
+        $clean = new ClassContext('App\\Service\\UserService', 'UserService');
+        $deprecated = new ClassContext(
+            'App\\Service\\LegacyService',
+            'LegacyService',
+            attributeFqns: ['App\\Attr\\Deprecated'],
+        );
+
+        self::assertTrue($definition->matches($clean)->matched);
+        self::assertFalse($definition->matches($deprecated)->matched);
+    }
+
+    #[Test]
+    public function matches_excludeImplementsFiltersByInterface(): void
+    {
+        $definition = new LayerDefinition(
+            'service',
+            new MembershipSpec(
+                patterns: ['App\\Service\\**'],
+                exclude: new ExcludeSpec(implements: ['App\\Marker\\LegacyAdapter']),
+            ),
+        );
+
+        $clean = new ClassContext('App\\Service\\UserService', 'UserService');
+        $legacy = new ClassContext(
+            'App\\Service\\LegacyService',
+            'LegacyService',
+            interfaces: ['App\\Marker\\LegacyAdapter'],
+        );
+
+        self::assertTrue($definition->matches($clean)->matched);
+        self::assertFalse($definition->matches($legacy)->matched);
+    }
+
+    #[Test]
+    public function matches_excludeExtendsFiltersByParentClass(): void
+    {
+        $definition = new LayerDefinition(
+            'service',
+            new MembershipSpec(
+                patterns: ['App\\Service\\**'],
+                exclude: new ExcludeSpec(extends: ['App\\Service\\BaseLegacyService']),
+            ),
+        );
+
+        $clean = new ClassContext('App\\Service\\UserService', 'UserService');
+        $legacy = new ClassContext(
+            'App\\Service\\OldUserService',
+            'OldUserService',
+            parentClasses: ['App\\Service\\BaseLegacyService'],
+        );
+
+        self::assertTrue($definition->matches($clean)->matched);
+        self::assertFalse($definition->matches($legacy)->matched);
+    }
+
+    #[Test]
+    public function matches_excludeModeAnyFiresOnFirstMatchingCriterion(): void
+    {
+        $definition = new LayerDefinition(
+            'service',
+            new MembershipSpec(
+                patterns: ['App\\Service\\**'],
+                exclude: new ExcludeSpec(
+                    patterns: ['App\\Service\\Legacy\\**'],
+                    suffix: ['Bridge'],
+                    mode: MatchMode::Any,
+                ),
+            ),
+        );
+
+        // Matches exclude.patterns only.
+        self::assertFalse($definition->matches(self::context('App\\Service\\Legacy\\Foo'))->matched);
+        // Matches exclude.suffix only.
+        self::assertFalse($definition->matches(self::context('App\\Service\\PaymentBridge'))->matched);
+        // Matches neither — stays in the layer.
+        self::assertTrue($definition->matches(self::context('App\\Service\\UserService'))->matched);
+    }
+
+    #[Test]
+    public function matches_excludeModeAllRequiresEveryDeclaredCriterionToFire(): void
+    {
+        $definition = new LayerDefinition(
+            'service',
+            new MembershipSpec(
+                patterns: ['App\\Service\\**'],
+                exclude: new ExcludeSpec(
+                    patterns: ['App\\Service\\Legacy\\**'],
+                    suffix: ['Bridge'],
+                    mode: MatchMode::All,
+                ),
+            ),
+        );
+
+        // In Legacy subtree AND ends with Bridge → excluded.
+        self::assertFalse($definition->matches(self::context('App\\Service\\Legacy\\PaymentBridge'))->matched);
+        // In Legacy subtree but not Bridge → stays in layer.
+        self::assertTrue($definition->matches(self::context('App\\Service\\Legacy\\OldThing'))->matched);
+        // Bridge but not in Legacy → stays in layer.
+        self::assertTrue($definition->matches(self::context('App\\Service\\PaymentBridge'))->matched);
+    }
+
+    #[Test]
+    public function matches_excludeOverridesPositiveAllMode(): void
+    {
+        // Positive criteria require BOTH patterns and suffix to match; exclude
+        // is then evaluated as a hard filter regardless of the positive mode.
+        $definition = new LayerDefinition(
+            'service',
+            new MembershipSpec(
+                patterns: ['App\\Service\\**'],
+                suffix: ['Service'],
+                mode: MatchMode::All,
+                exclude: new ExcludeSpec(patterns: ['App\\Service\\Legacy\\**']),
+            ),
+        );
+
+        self::assertTrue($definition->matches(self::context('App\\Service\\UserService'))->matched);
+        self::assertFalse($definition->matches(self::context('App\\Service\\Legacy\\OldService'))->matched);
+    }
+
+    #[Test]
+    public function matches_positiveModeAllPairedWithExcludeModeAll(): void
+    {
+        // Both sides use MatchMode::All — exercises declaredKindCount on
+        // both the positive and exclude branches in a single matches() call.
+        $definition = new LayerDefinition(
+            'service',
+            new MembershipSpec(
+                patterns: ['App\\Service\\**'],
+                suffix: ['Service'],
+                mode: MatchMode::All,
+                exclude: new ExcludeSpec(
+                    patterns: ['App\\Service\\Legacy\\**'],
+                    suffix: ['Bridge'],
+                    mode: MatchMode::All,
+                ),
+            ),
+        );
+
+        // Positive match: in App\Service\** AND ends with Service.
+        // Excluded only if BOTH: in Legacy AND ends with Bridge.
+        self::assertTrue($definition->matches(self::context('App\\Service\\UserService'))->matched);
+        // In Legacy AND ends with Service (not Bridge) — kept; exclude does not fire.
+        self::assertTrue($definition->matches(self::context('App\\Service\\Legacy\\PaymentService'))->matched);
+        // In Legacy AND ends with Bridge — excluded.
+        self::assertFalse($definition->matches(self::context('App\\Service\\Legacy\\PaymentBridge'))->matched);
+        // Doesn't pass positive (no Service suffix) — exclude never even evaluated.
+        self::assertFalse($definition->matches(self::context('App\\Service\\PaymentBridge'))->matched);
+    }
+
+    #[Test]
+    public function matches_excludeIgnoredWhenPositiveDidNotMatch(): void
+    {
+        // Class outside the positive patterns is non-matching regardless of
+        // whether the exclude clause would also fire. NoMatch on positive
+        // short-circuits — exclude evaluation never runs.
+        $definition = new LayerDefinition(
+            'service',
+            new MembershipSpec(
+                patterns: ['App\\Service\\**'],
+                exclude: new ExcludeSpec(patterns: ['App\\Service\\Legacy\\**']),
+            ),
+        );
+
+        $result = $definition->matches(self::context('App\\Controller\\UserController'));
+        self::assertFalse($result->matched);
+        self::assertSame([], $result->matchedCriteria);
+    }
+
+    #[Test]
+    public function matches_membershipWithoutExcludeHasUnchangedSemantics(): void
+    {
+        // Regression pin: omitting exclude must keep the descriptor list and
+        // match outcome byte-for-byte identical to the pre-Step-F shape.
+        $definition = new LayerDefinition('service', new MembershipSpec(patterns: ['App\\Service\\**']));
+
+        $result = $definition->matches(self::context('App\\Service\\UserService'));
+        self::assertTrue($result->matched);
+        self::assertCount(1, $result->matchedCriteria);
+        self::assertSame(MatchedCriterionKind::Pattern, $result->matchedCriteria[0]->kind);
+        self::assertSame('App\\Service\\**', $result->matchedCriteria[0]->value);
     }
 
     /**

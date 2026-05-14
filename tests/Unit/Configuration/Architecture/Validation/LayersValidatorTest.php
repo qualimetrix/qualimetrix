@@ -11,6 +11,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Configuration\Architecture\Validation\LayersValidator;
 use Qualimetrix\Configuration\Exception\ConfigLoadException;
+use Qualimetrix\Core\Architecture\Layer\ExcludeSpec;
 use Qualimetrix\Core\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Core\Architecture\Layer\MatchMode;
 use Qualimetrix\Core\Architecture\Layer\MembershipSpec;
@@ -18,6 +19,7 @@ use Qualimetrix\Core\Architecture\Layer\TemplateLayerDefinition;
 
 #[CoversClass(LayersValidator::class)]
 #[CoversClass(MembershipSpec::class)]
+#[CoversClass(ExcludeSpec::class)]
 #[CoversClass(MatchMode::class)]
 final class LayersValidatorTest extends TestCase
 {
@@ -196,35 +198,6 @@ final class LayersValidatorTest extends TestCase
         $this->validator->validate([
             ['name' => 'controller', 'patterns' => ['App\\Controller'], 'unexpected' => 'foo'],
         ]);
-    }
-
-    /**
-     * @return iterable<string, array{0: string}>
-     */
-    public static function phase2ReservedKeyProvider(): iterable
-    {
-        // `suffix`, `attributes`, `implements`, `extends` are opened in Phase 2
-        // Step B and now produce regular per-criterion validation errors instead
-        // of the reserved-key sentinel. `exclude` remains reserved until Step F
-        // (direction 3) ships.
-        yield 'exclude' => ['exclude'];
-    }
-
-    #[DataProvider('phase2ReservedKeyProvider')]
-    #[Test]
-    public function phase2ReservedKeyOnLayerEntryIsRejectedWithDedicatedHint(string $reservedKey): void
-    {
-        try {
-            $this->validator->validate([
-                ['name' => 'controller', 'patterns' => ['App\\Controller'], $reservedKey => ['placeholder']],
-            ]);
-            self::fail('Expected ConfigLoadException for reserved key "' . $reservedKey . '".');
-        } catch (ConfigLoadException $e) {
-            self::assertSame('architecture', $e->configPath);
-            self::assertStringContainsString('unknown key', $e->getMessage());
-            self::assertStringContainsString('"' . $reservedKey . '"', $e->getMessage());
-            self::assertStringContainsString('reserved for an upcoming Phase 2 feature', $e->getMessage());
-        }
     }
 
     #[Test]
@@ -666,6 +639,326 @@ final class LayersValidatorTest extends TestCase
             self::fail('Expected ConfigLoadException');
         } catch (ConfigLoadException $e) {
             self::assertSame('architecture', $e->configPath);
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // exclude clause (Step F)
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function excludeBlockProducesExcludeSpec(): void
+    {
+        $entries = $this->validator->validate([
+            [
+                'name' => 'service',
+                'patterns' => ['App\\Service\\**'],
+                'exclude' => ['patterns' => ['App\\Service\\Legacy\\**']],
+            ],
+        ]);
+
+        self::assertCount(1, $entries);
+        $layer = $entries[0];
+        self::assertInstanceOf(LayerDefinition::class, $layer);
+        self::assertNotNull($layer->membership()->exclude);
+        self::assertSame(['App\\Service\\Legacy\\**'], $layer->membership()->exclude->patterns);
+        self::assertSame(MatchMode::Any, $layer->membership()->exclude->mode);
+    }
+
+    #[Test]
+    public function excludeBlockAcceptsStringShorthandForCriterionLists(): void
+    {
+        $entries = $this->validator->validate([
+            [
+                'name' => 'service',
+                'patterns' => ['App\\Service\\**'],
+                'exclude' => [
+                    'patterns' => 'App\\Service\\Legacy\\**',
+                    'suffix' => 'Bridge',
+                ],
+            ],
+        ]);
+
+        $layer = $entries[0];
+        self::assertInstanceOf(LayerDefinition::class, $layer);
+        self::assertNotNull($layer->membership()->exclude);
+        self::assertSame(['App\\Service\\Legacy\\**'], $layer->membership()->exclude->patterns);
+        self::assertSame(['Bridge'], $layer->membership()->exclude->suffix);
+    }
+
+    #[Test]
+    public function excludeMatchKeyParsesIntoExcludeSpecMode(): void
+    {
+        $entries = $this->validator->validate([
+            [
+                'name' => 'service',
+                'patterns' => ['App\\Service\\**'],
+                'exclude' => [
+                    'patterns' => ['App\\Service\\Legacy\\**'],
+                    'suffix' => ['Bridge'],
+                    'match' => 'all',
+                ],
+            ],
+        ]);
+
+        $layer = $entries[0];
+        self::assertInstanceOf(LayerDefinition::class, $layer);
+        self::assertNotNull($layer->membership()->exclude);
+        self::assertSame(MatchMode::All, $layer->membership()->exclude->mode);
+    }
+
+    #[Test]
+    public function excludeMatchKeyDefaultsToAny(): void
+    {
+        $entries = $this->validator->validate([
+            [
+                'name' => 'service',
+                'patterns' => ['App\\Service\\**'],
+                'exclude' => ['patterns' => ['App\\Service\\Legacy\\**']],
+            ],
+        ]);
+
+        $layer = $entries[0];
+        self::assertInstanceOf(LayerDefinition::class, $layer);
+        self::assertNotNull($layer->membership()->exclude);
+        self::assertSame(MatchMode::Any, $layer->membership()->exclude->mode);
+    }
+
+    #[Test]
+    public function omittedExcludeKeyLeavesMembershipExcludeNull(): void
+    {
+        $entries = $this->validator->validate([
+            ['name' => 'service', 'patterns' => ['App\\Service\\**']],
+        ]);
+
+        $layer = $entries[0];
+        self::assertInstanceOf(LayerDefinition::class, $layer);
+        self::assertNull($layer->membership()->exclude);
+    }
+
+    #[Test]
+    public function excludeBlockWithoutAnyCriterionIsRejected(): void
+    {
+        try {
+            $this->validator->validate([
+                [
+                    'name' => 'service',
+                    'patterns' => ['App\\Service\\**'],
+                    'exclude' => ['match' => 'any'],
+                ],
+            ]);
+            self::fail('Expected ConfigLoadException');
+        } catch (ConfigLoadException $e) {
+            self::assertStringContainsString('"exclude" must declare at least one of', $e->getMessage());
+            self::assertStringContainsString('omit the "exclude" key to leave it undeclared', $e->getMessage());
+        }
+    }
+
+    #[Test]
+    public function excludeBlockAsSequentialListIsRejected(): void
+    {
+        try {
+            $this->validator->validate([
+                [
+                    'name' => 'service',
+                    'patterns' => ['App\\Service\\**'],
+                    'exclude' => ['App\\Service\\Legacy\\**'],
+                ],
+            ]);
+            self::fail('Expected ConfigLoadException');
+        } catch (ConfigLoadException $e) {
+            self::assertStringContainsString('"exclude" must be a non-empty map', $e->getMessage());
+            self::assertStringContainsString('sequential list', $e->getMessage());
+        }
+    }
+
+    #[Test]
+    public function excludeBlockAsEmptyArrayIsRejected(): void
+    {
+        try {
+            $this->validator->validate([
+                [
+                    'name' => 'service',
+                    'patterns' => ['App\\Service\\**'],
+                    'exclude' => [],
+                ],
+            ]);
+            self::fail('Expected ConfigLoadException');
+        } catch (ConfigLoadException $e) {
+            self::assertStringContainsString('"exclude" must be a non-empty map', $e->getMessage());
+            self::assertStringContainsString('empty list', $e->getMessage());
+        }
+    }
+
+    #[Test]
+    public function excludeBlockAsScalarIsRejected(): void
+    {
+        try {
+            $this->validator->validate([
+                [
+                    'name' => 'service',
+                    'patterns' => ['App\\Service\\**'],
+                    'exclude' => 'App\\Service\\Legacy',
+                ],
+            ]);
+            self::fail('Expected ConfigLoadException');
+        } catch (ConfigLoadException $e) {
+            self::assertStringContainsString('"exclude" must be a non-empty map', $e->getMessage());
+            self::assertStringContainsString('got string', $e->getMessage());
+        }
+    }
+
+    #[Test]
+    public function excludeBlockWithUnknownKeyIsRejected(): void
+    {
+        try {
+            $this->validator->validate([
+                [
+                    'name' => 'service',
+                    'patterns' => ['App\\Service\\**'],
+                    'exclude' => [
+                        'patterns' => ['App\\Service\\Legacy\\**'],
+                        'mode' => 'all',
+                    ],
+                ],
+            ]);
+            self::fail('Expected ConfigLoadException');
+        } catch (ConfigLoadException $e) {
+            self::assertStringContainsString('unknown key(s) "mode" inside "exclude"', $e->getMessage());
+        }
+    }
+
+    #[Test]
+    public function nestedExcludeInsideExcludeIsRejectedWithHint(): void
+    {
+        try {
+            $this->validator->validate([
+                [
+                    'name' => 'service',
+                    'patterns' => ['App\\Service\\**'],
+                    'exclude' => [
+                        'patterns' => ['App\\Service\\Legacy\\**'],
+                        'exclude' => ['patterns' => ['App\\Service\\Legacy\\Internal\\**']],
+                    ],
+                ],
+            ]);
+            self::fail('Expected ConfigLoadException');
+        } catch (ConfigLoadException $e) {
+            self::assertStringContainsString('"exclude"', $e->getMessage());
+            self::assertStringContainsString('Nested "exclude" is not supported', $e->getMessage());
+        }
+    }
+
+    #[Test]
+    public function captureVariableInStaticLayerExcludePatternsIsRejected(): void
+    {
+        try {
+            $this->validator->validate([
+                [
+                    'name' => 'service',
+                    'patterns' => ['App\\Service\\**'],
+                    'exclude' => ['patterns' => ['App\\Service\\{module}\\Legacy\\**']],
+                ],
+            ]);
+            self::fail('Expected ConfigLoadException');
+        } catch (ConfigLoadException $e) {
+            self::assertStringContainsString('contains a capture variable', $e->getMessage());
+            self::assertStringContainsString('the layer name "service" has none', $e->getMessage());
+        }
+    }
+
+    #[Test]
+    public function captureVariableInStaticLayerExcludeSuffixIsRejected(): void
+    {
+        try {
+            $this->validator->validate([
+                [
+                    'name' => 'service',
+                    'patterns' => ['App\\Service\\**'],
+                    'exclude' => ['suffix' => ['{m}Bridge']],
+                ],
+            ]);
+            self::fail('Expected ConfigLoadException');
+        } catch (ConfigLoadException $e) {
+            self::assertStringContainsString('contains a capture variable', $e->getMessage());
+        }
+    }
+
+    #[Test]
+    public function captureVariableInTemplateExcludeSuffixIsRejected(): void
+    {
+        // Even for template layers, captures are accepted in exclude.patterns
+        // only — suffix/attributes/implements/extends remain fixed strings.
+        try {
+            $this->validator->validate([
+                [
+                    'name' => 'module-{m}',
+                    'patterns' => ['App\\Module\\{m}\\**'],
+                    'exclude' => ['suffix' => ['{m}Bridge']],
+                ],
+            ]);
+            self::fail('Expected ConfigLoadException');
+        } catch (ConfigLoadException $e) {
+            self::assertStringContainsString('contains a capture variable', $e->getMessage());
+            self::assertStringContainsString('only allowed in exclude.patterns', $e->getMessage());
+        }
+    }
+
+    #[Test]
+    public function captureVariableInTemplateExcludePatternsIsAcceptedWhenDeclared(): void
+    {
+        $entries = $this->validator->validate([
+            [
+                'name' => 'module-{m}',
+                'patterns' => ['App\\Module\\{m}\\**'],
+                'exclude' => ['patterns' => ['App\\Module\\{m}\\Generated\\**']],
+            ],
+        ]);
+
+        $template = $entries[0];
+        self::assertInstanceOf(TemplateLayerDefinition::class, $template);
+        self::assertNotNull($template->membership()->exclude);
+        self::assertSame(['App\\Module\\{m}\\Generated\\**'], $template->membership()->exclude->patterns);
+    }
+
+    #[Test]
+    public function captureVariableInTemplateExcludeNotDeclaredByTemplateIsRejected(): void
+    {
+        // `{n}` does not appear in the template name or capture-producing
+        // patterns — exclude can't introduce new variables.
+        try {
+            $this->validator->validate([
+                [
+                    'name' => 'module-{m}',
+                    'patterns' => ['App\\Module\\{m}\\**'],
+                    'exclude' => ['patterns' => ['App\\Module\\{n}\\Generated\\**']],
+                ],
+            ]);
+            self::fail('Expected ConfigLoadException');
+        } catch (ConfigLoadException $e) {
+            self::assertStringContainsString('exclude clause references undeclared variable(s) "n"', $e->getMessage());
+            self::assertStringContainsString('declared variables: "m"', $e->getMessage());
+        }
+    }
+
+    #[Test]
+    public function excludeRetainsLayerNameInErrorPathForCriterionValidation(): void
+    {
+        // The exclude-path layer name is "<layer>.exclude" so the user can
+        // tell which clause the per-criterion validation message refers to.
+        try {
+            $this->validator->validate([
+                [
+                    'name' => 'service',
+                    'patterns' => ['App\\Service\\**'],
+                    'exclude' => ['suffix' => ['App\\Backslash']],
+                ],
+            ]);
+            self::fail('Expected ConfigLoadException');
+        } catch (ConfigLoadException $e) {
+            self::assertStringContainsString('"service.exclude"', $e->getMessage());
+            self::assertStringContainsString('"suffix"', $e->getMessage());
+            self::assertStringContainsString('no backslash', $e->getMessage());
         }
     }
 }
