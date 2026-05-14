@@ -8,18 +8,19 @@ use Qualimetrix\Core\Util\NamespaceMatcher;
 
 /**
  * Immutable Value Object describing a single architectural layer: a
- * human-readable name plus the list of namespace patterns whose classes
- * belong to that layer.
+ * human-readable name plus the {@see MembershipSpec} that decides which
+ * classes belong to it.
  *
- * Boolean membership check is provided via {@see matches()}. Diagnostics
- * that need to report which specific pattern matched a class (the debug
- * command, the `architecture.potential-shadow` diagnostic) call
- * {@see firstMatchingPattern()}.
+ * Membership is evaluated by {@see matches()}, which returns a
+ * {@see MembershipResult}. On a Match the result carries the FIRST matching
+ * pattern (declaration order) so {@see LayerRegistry::resolveAll()} can
+ * record it on {@see LayerMatch} for the {@code architecture.potential-shadow}
+ * diagnostic and the {@code debug:layer-assignment} command.
  *
- * Under declaration-order matching ({@see LayerRegistry}), the layer's
+ * Under declaration-order resolution ({@see LayerRegistry}), the layer's
  * patterns are scanned in declaration order; the first matching pattern
  * decides the class's layer. There is no specificity scoring — the user's
- * declaration order is the disambiguation rule.
+ * declaration order is the disambiguation rule (see ADR 0006).
  *
  * Per-pattern matching is delegated to {@see NamespaceMatcher::matchesSingle()}
  * so this class shares a single source of truth with the wider namespace
@@ -38,19 +39,18 @@ final readonly class LayerDefinition
 
     /**
      * @param string $name Layer identifier — must match `[a-z][a-z0-9_-]*`.
-     * @param list<string> $patterns Non-empty list of non-empty namespace patterns.
+     * @param MembershipSpec $membership Criteria carrying at least one pattern.
      *
-     * @throws InvalidLayerDefinitionException If the name or any pattern is invalid.
+     * @throws InvalidLayerDefinitionException If the name is invalid.
      */
     public function __construct(
         public string $name,
-        public array $patterns,
+        public MembershipSpec $membership,
     ) {
         $this->validateName($name);
-        $this->validatePatterns($patterns);
 
         $normalized = [];
-        foreach ($patterns as $pattern) {
+        foreach ($membership->patterns as $pattern) {
             $normalized[] = rtrim($pattern, '\\');
         }
 
@@ -66,56 +66,43 @@ final readonly class LayerDefinition
     }
 
     /**
+     * Returns the membership spec.
+     */
+    public function membership(): MembershipSpec
+    {
+        return $this->membership;
+    }
+
+    /**
      * Returns the original (non-normalized) pattern list for diagnostics.
      *
      * @return list<string>
      */
     public function patterns(): array
     {
-        return $this->patterns;
+        return $this->membership->patterns;
     }
 
     /**
-     * Returns true when at least one of this layer's patterns matches `$fqn`.
+     * Evaluates the membership criteria against the given class context.
      *
-     * Empty `$fqn` is never a match.
+     * Step A walks only the {@code patterns} list and returns the FIRST
+     * matching pattern (declaration order) on a Match. An empty FQN is
+     * always a non-match.
      */
-    public function matches(string $fqn): bool
+    public function matches(ClassContext $context): MembershipResult
     {
-        if ($fqn === '') {
-            return false;
-        }
-
-        foreach ($this->normalizedPatterns as $pattern) {
-            if (NamespaceMatcher::matchesSingle($pattern, $fqn)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * Returns the FIRST pattern (in declaration order) that matches `$fqn`,
-     * or null if no pattern matches.
-     *
-     * The returned string is the user-supplied original pattern (with any
-     * trailing backslash preserved), so diagnostics quote the exact text
-     * the user wrote in YAML.
-     */
-    public function firstMatchingPattern(string $fqn): ?string
-    {
-        if ($fqn === '') {
-            return null;
+        if ($context->fqn === '') {
+            return MembershipResult::noMatch();
         }
 
         foreach ($this->normalizedPatterns as $index => $pattern) {
-            if (NamespaceMatcher::matchesSingle($pattern, $fqn)) {
-                return $this->patterns[$index];
+            if (NamespaceMatcher::matchesSingle($pattern, $context->fqn)) {
+                return MembershipResult::match($this->membership->patterns[$index]);
             }
         }
 
-        return null;
+        return MembershipResult::noMatch();
     }
 
     private function validateName(string $name): void
@@ -130,38 +117,6 @@ final readonly class LayerDefinition
                 $name,
                 self::NAME_REGEX,
             ));
-        }
-    }
-
-    /**
-     * @param list<string> $patterns
-     */
-    private function validatePatterns(array $patterns): void
-    {
-        if ($patterns === []) {
-            throw new InvalidLayerDefinitionException(\sprintf(
-                'Layer "%s" must declare at least one pattern.',
-                $this->name,
-            ));
-        }
-
-        foreach ($patterns as $index => $pattern) {
-            if (!\is_string($pattern)) {
-                throw new InvalidLayerDefinitionException(\sprintf(
-                    'Layer "%s" pattern at index %d must be a string, %s given.',
-                    $this->name,
-                    $index,
-                    get_debug_type($pattern),
-                ));
-            }
-
-            if ($pattern === '') {
-                throw new InvalidLayerDefinitionException(\sprintf(
-                    'Layer "%s" pattern at index %d must not be empty.',
-                    $this->name,
-                    $index,
-                ));
-            }
         }
     }
 }

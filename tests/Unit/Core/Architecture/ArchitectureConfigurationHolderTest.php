@@ -13,6 +13,7 @@ use Qualimetrix\Core\Architecture\CoverageMode;
 use Qualimetrix\Core\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Core\Architecture\Layer\LayerPolicy;
 use Qualimetrix\Core\Architecture\Layer\LayerRegistry;
+use Qualimetrix\Core\Architecture\Layer\MembershipSpec;
 
 #[CoversClass(ArchitectureConfigurationHolder::class)]
 final class ArchitectureConfigurationHolderTest extends TestCase
@@ -32,7 +33,7 @@ final class ArchitectureConfigurationHolderTest extends TestCase
     {
         $holder = new ArchitectureConfigurationHolder();
         $custom = new ArchitectureConfiguration(
-            new LayerRegistry([new LayerDefinition('core', ['App\\Core'])]),
+            new LayerRegistry([new LayerDefinition('core', new MembershipSpec(['App\\Core']))]),
             new LayerPolicy(['core' => []]),
             CoverageMode::Warn,
         );
@@ -47,7 +48,7 @@ final class ArchitectureConfigurationHolderTest extends TestCase
     {
         $holder = new ArchitectureConfigurationHolder();
         $custom = new ArchitectureConfiguration(
-            new LayerRegistry([new LayerDefinition('core', ['App\\Core'])]),
+            new LayerRegistry([new LayerDefinition('core', new MembershipSpec(['App\\Core']))]),
             new LayerPolicy(['core' => []]),
             CoverageMode::Error,
         );

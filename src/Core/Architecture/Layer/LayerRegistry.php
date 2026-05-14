@@ -113,13 +113,16 @@ final class LayerRegistry
             return $this->matchCache[$cacheKey] = [];
         }
 
+        $context = new ClassContext($fqn, self::deriveShortName($fqn));
+
         $matches = [];
         foreach ($this->layers as $layer) {
-            $pattern = $layer->firstMatchingPattern($fqn);
-            if ($pattern === null) {
+            $result = $layer->matches($context);
+            if (!$result->matched) {
                 continue;
             }
-            $matches[] = new LayerMatch($layer->name(), $pattern);
+            \assert($result->matchedPattern !== null);
+            $matches[] = new LayerMatch($layer->name(), $result->matchedPattern);
         }
 
         return $this->matchCache[$cacheKey] = $matches;
@@ -188,5 +191,17 @@ final class LayerRegistry
         }
 
         return $namespace . '\\' . $type;
+    }
+
+    /**
+     * Extracts the short name (the segment after the last backslash) from a
+     * fully-qualified name. Returns the input unchanged when it has no
+     * namespace separator — covers bare type names and pure-namespace FQNs.
+     */
+    private static function deriveShortName(string $fqn): string
+    {
+        $position = strrpos($fqn, '\\');
+
+        return $position === false ? $fqn : substr($fqn, $position + 1);
     }
 }

@@ -16,6 +16,7 @@ use Qualimetrix\Configuration\Pipeline\Stage\ConfigFileStage;
 use Qualimetrix\Configuration\Pipeline\Stage\DefaultsStage;
 use Qualimetrix\Core\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Core\Architecture\Layer\LayerRegistry;
+use Qualimetrix\Core\Architecture\Layer\MembershipSpec;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentCommand;
 use Symfony\Component\Console\Application;
@@ -279,8 +280,8 @@ final class LayerAssignmentCommandTest extends TestCase
     {
         // Two overlapping layers — order matters. Runtime assignment is `any-foo`.
         $layers = [
-            new LayerDefinition('any-foo', ['App\\**\\Foo']),
-            new LayerDefinition('service', ['App\\Service\\**']),
+            new LayerDefinition('any-foo', new MembershipSpec(['App\\**\\Foo'])),
+            new LayerDefinition('service', new MembershipSpec(['App\\Service\\**'])),
         ];
         $registry = new LayerRegistry($layers);
 

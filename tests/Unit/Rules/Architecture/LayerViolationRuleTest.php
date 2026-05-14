@@ -13,6 +13,7 @@ use Qualimetrix\Core\Architecture\CoverageMode;
 use Qualimetrix\Core\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Core\Architecture\Layer\LayerPolicy;
 use Qualimetrix\Core\Architecture\Layer\LayerRegistry;
+use Qualimetrix\Core\Architecture\Layer\MembershipSpec;
 use Qualimetrix\Core\Dependency\Dependency;
 use Qualimetrix\Core\Dependency\DependencyGraphInterface;
 use Qualimetrix\Core\Dependency\DependencyType;
@@ -640,7 +641,7 @@ final class LayerViolationRuleTest extends TestCase
     {
         $definitions = [];
         foreach ($layers as $name => $patterns) {
-            $definitions[] = new LayerDefinition($name, $patterns);
+            $definitions[] = new LayerDefinition($name, new MembershipSpec($patterns));
         }
 
         return new ArchitectureConfiguration(

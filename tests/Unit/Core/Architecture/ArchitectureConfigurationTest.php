@@ -12,6 +12,7 @@ use Qualimetrix\Core\Architecture\CoverageMode;
 use Qualimetrix\Core\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Core\Architecture\Layer\LayerPolicy;
 use Qualimetrix\Core\Architecture\Layer\LayerRegistry;
+use Qualimetrix\Core\Architecture\Layer\MembershipSpec;
 
 #[CoversClass(ArchitectureConfiguration::class)]
 final class ArchitectureConfigurationTest extends TestCase
@@ -19,7 +20,7 @@ final class ArchitectureConfigurationTest extends TestCase
     #[Test]
     public function gettersReturnConstructorArguments(): void
     {
-        $registry = new LayerRegistry([new LayerDefinition('core', ['App\\Core'])]);
+        $registry = new LayerRegistry([new LayerDefinition('core', new MembershipSpec(['App\\Core']))]);
         $policy = new LayerPolicy(['core' => []]);
         $coverage = CoverageMode::Warn;
 
@@ -46,7 +47,7 @@ final class ArchitectureConfigurationTest extends TestCase
     public function isEmptyReturnsFalseWhenAtLeastOneLayerIsDeclared(): void
     {
         $config = new ArchitectureConfiguration(
-            new LayerRegistry([new LayerDefinition('core', ['App\\Core'])]),
+            new LayerRegistry([new LayerDefinition('core', new MembershipSpec(['App\\Core']))]),
             new LayerPolicy([]),
             CoverageMode::Ignore,
         );

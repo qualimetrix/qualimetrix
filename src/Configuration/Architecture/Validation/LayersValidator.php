@@ -9,6 +9,8 @@ use Qualimetrix\Configuration\Exception\ConfigLoadException;
 use Qualimetrix\Core\Architecture\Layer\InvalidLayerDefinitionException;
 use Qualimetrix\Core\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Core\Architecture\Layer\LayerRegistry;
+use Qualimetrix\Core\Architecture\Layer\MatchMode;
+use Qualimetrix\Core\Architecture\Layer\MembershipSpec;
 
 /**
  * Parses and validates the {@code architecture.layers} sub-tree.
@@ -31,6 +33,15 @@ use Qualimetrix\Core\Architecture\Layer\LayerRegistry;
 final class LayersValidator
 {
     private const string CONFIG_PATH = 'architecture';
+
+    /**
+     * Keys reserved for upcoming Phase 2 features (Step B, Step F). They are
+     * rejected today with a friendlier message so the user understands the
+     * difference between "always invalid" and "planned, not yet shipped".
+     * Once Step B/F open the schema, these keys move out of the reserved
+     * list into the allowed list.
+     */
+    private const array RESERVED_FUTURE_KEYS = ['suffix', 'attributes', 'implements', 'extends', 'exclude'];
 
     /**
      * Parses the raw `layers` value into a {@see LayerRegistry}.
@@ -83,6 +94,32 @@ final class LayersValidator
      */
     private static function buildSingleLayerDefinition(int $index, mixed $entry, array &$seenNames): LayerDefinition
     {
+        $entry = self::ensureEntryIsAssociativeArray($index, $entry);
+        self::rejectUnknownKeys($index, $entry);
+
+        $name = self::extractValidName($index, $entry);
+        self::rejectDuplicateName($index, $name, $seenNames);
+        $seenNames[$name] = true;
+
+        $patterns = self::normalizeLayerPatterns($index, $name, $entry['patterns'] ?? null);
+        $mode = self::normalizeMatchMode($index, $name, $entry['match'] ?? null);
+
+        try {
+            return new LayerDefinition($name, new MembershipSpec($patterns, $mode));
+        } catch (InvalidLayerDefinitionException | InvalidArgumentException $e) {
+            throw new ConfigLoadException(
+                self::CONFIG_PATH,
+                \sprintf('architecture.layers[%d] ("%s"): %s', $index, $name, $e->getMessage()),
+                $e,
+            );
+        }
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private static function ensureEntryIsAssociativeArray(int $index, mixed $entry): array
+    {
         if (!\is_array($entry) || array_is_list($entry)) {
             throw new ConfigLoadException(
                 self::CONFIG_PATH,
@@ -94,51 +131,113 @@ final class LayersValidator
             );
         }
 
-        $allowedEntryKeys = ['name', 'patterns'];
+        return $entry;
+    }
+
+    /**
+     * @param array<string, mixed> $entry
+     */
+    private static function rejectUnknownKeys(int $index, array $entry): void
+    {
+        $allowedEntryKeys = ['name', 'patterns', 'match'];
         $unknown = array_diff(array_keys($entry), $allowedEntryKeys);
-        if ($unknown !== []) {
-            throw new ConfigLoadException(
-                self::CONFIG_PATH,
-                \sprintf(
-                    'architecture.layers[%d]: unknown key(s) %s. Allowed keys: %s.',
-                    $index,
-                    implode(', ', array_map(static fn($k): string => '"' . (string) $k . '"', $unknown)),
-                    implode(', ', array_map(static fn(string $k): string => '"' . $k . '"', $allowedEntryKeys)),
-                ),
+        if ($unknown === []) {
+            return;
+        }
+
+        $message = \sprintf(
+            'architecture.layers[%d]: unknown key(s) %s. Allowed keys: %s.',
+            $index,
+            self::quoteList($unknown),
+            self::quoteList($allowedEntryKeys),
+        );
+
+        $reservedSeen = array_values(array_intersect(self::RESERVED_FUTURE_KEYS, $unknown));
+        if ($reservedSeen !== []) {
+            $message .= \sprintf(
+                ' Key(s) %s are reserved for an upcoming Phase 2 feature and not yet supported in this version.',
+                self::quoteList($reservedSeen),
             );
         }
 
+        throw new ConfigLoadException(self::CONFIG_PATH, $message);
+    }
+
+    /**
+     * @param array<string, mixed> $entry
+     */
+    private static function extractValidName(int $index, array $entry): string
+    {
         if (!\array_key_exists('name', $entry) || !\is_string($entry['name']) || $entry['name'] === '') {
             throw new ConfigLoadException(
                 self::CONFIG_PATH,
                 \sprintf('architecture.layers[%d]: missing or empty "name" (must be a non-empty string).', $index),
             );
         }
-        $name = $entry['name'];
 
-        if (isset($seenNames[$name])) {
-            throw new ConfigLoadException(
-                self::CONFIG_PATH,
-                \sprintf(
-                    'architecture.layers[%d]: duplicate layer name "%s" — each layer must have a unique identifier.',
-                    $index,
-                    $name,
-                ),
-            );
+        return $entry['name'];
+    }
+
+    /**
+     * @param array<string, true> $seenNames
+     */
+    private static function rejectDuplicateName(int $index, string $name, array $seenNames): void
+    {
+        if (!isset($seenNames[$name])) {
+            return;
         }
-        $seenNames[$name] = true;
 
-        $patterns = self::normalizeLayerPatterns($index, $name, $entry['patterns'] ?? null);
+        throw new ConfigLoadException(
+            self::CONFIG_PATH,
+            \sprintf(
+                'architecture.layers[%d]: duplicate layer name "%s" — each layer must have a unique identifier.',
+                $index,
+                $name,
+            ),
+        );
+    }
 
-        try {
-            return new LayerDefinition($name, $patterns);
-        } catch (InvalidLayerDefinitionException $e) {
-            throw new ConfigLoadException(
-                self::CONFIG_PATH,
-                \sprintf('architecture.layers[%d] ("%s"): %s', $index, $name, $e->getMessage()),
-                $e,
-            );
+    /**
+     * @param iterable<int|string> $items
+     */
+    private static function quoteList(iterable $items): string
+    {
+        $quoted = [];
+        foreach ($items as $item) {
+            $quoted[] = '"' . (string) $item . '"';
         }
+
+        return implode(', ', $quoted);
+    }
+
+    private static function normalizeMatchMode(int $index, string $layerName, mixed $value): MatchMode
+    {
+        if ($value === null) {
+            return MatchMode::Any;
+        }
+
+        if (\is_string($value)) {
+            $candidate = MatchMode::tryFrom($value);
+            if ($candidate !== null) {
+                return $candidate;
+            }
+        }
+
+        $allowed = implode(', ', array_map(
+            static fn(MatchMode $mode): string => '"' . $mode->value . '"',
+            MatchMode::cases(),
+        ));
+
+        throw new ConfigLoadException(
+            self::CONFIG_PATH,
+            \sprintf(
+                'architecture.layers[%d] ("%s"): "match" must be one of %s, got %s.',
+                $index,
+                $layerName,
+                $allowed,
+                \is_string($value) ? '"' . $value . '"' : get_debug_type($value),
+            ),
+        );
     }
 
     /**
