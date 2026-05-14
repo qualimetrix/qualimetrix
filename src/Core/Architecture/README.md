@@ -146,9 +146,15 @@ layer. The shape evolves with Phase 2:
 
 - Step A: `patterns: list<string>` + `MatchMode $mode`.
 - Step B: adds `suffix`, `attributes`, `implements`, `extends`.
-- Step C (current): introduces the `Allow/` sub-package (`LayerSelector` and
+- Step C: introduces the `Allow/` sub-package (`LayerSelector` and
   the parser) and migrates `LayerPolicy` to entry-list traversal; the
   `MembershipSpec` shape itself is unchanged from Step B.
+- Step D: adds `TemplateLayerDefinition` and runtime template expansion;
+  `MembershipSpec` still unchanged.
+- Step E (current): wires captured allow entries end-to-end —
+  `LayerSelector::matchesTarget()` now substitutes the source-side binding into
+  captured target segments, and `LayerPolicy::isAllowed()` honours the new
+  `allow_cross_instance` long-form flag. `MembershipSpec` still unchanged.
 - Step F (planned): adds optional `ExcludeSpec $exclude`.
 
 Construction-time invariant: at least one of the five criterion lists must be
@@ -289,14 +295,16 @@ abstraction lets glob / captured allow entries flow end-to-end (see the
 - `isAllowed(string $from, string $to): bool` — `$from === $to` always allowed;
   otherwise traverses entries, runs `source->matchSource($from)` for each, and
   on a hit checks each `AllowTarget` via `target->matchesTarget($to, $binding)`.
-  Returns `true` on the first match. The Phase-1-shape (exact-only) allow-list
+  When `AllowTarget::$allowCrossInstance` is `true`, the policy substitutes
+  `CaptureBinding::empty()` into the target match call, letting captured
+  source instances reach any other instance on the target side. Returns
+  `true` on the first match. The Phase-1-shape (exact-only) allow-list
   preserves byte-for-byte truth values vs the pre-Step-C map lookup.
 - `allowedTargets(string $from): list<string>` — used by the rule's
-  human-readable recommendation. Only entries whose target is an **exact**
-  selector contribute; glob / captured targets are advisory-only and excluded
-  until Step E refines the recommendation surface.
-- `entries(): list<AllowListEntry>` — raw entry list, for detectors like
-  `MutualAllowDetector` and downstream rule helpers.
+  human-readable recommendation. Returns original selector strings for all
+  kinds (exact / glob / captured); the rule renders them verbatim because the
+  original string is precisely what the user can copy back into the YAML
+  config to widen the policy.
 
 Cross-validation against `LayerRegistry::layerNames()` is the factory's
 responsibility (and is intentionally limited to `exact` selectors so glob /
@@ -311,8 +319,14 @@ matching `architecture.allow` selectors per the D4 grammar (ADR 0007):
 - **`LayerSelector`** — sealed VO with private constructor + `exact()` /
   `glob()` / `captured()` factories. Two match methods:
   `matchSource(string $name): ?CaptureBinding` (source side; produces a
-  binding on success) and `matchesTarget(string $name, CaptureBinding $binding): bool`
-  (target side; substitutes bound values once Step E lights up the flow).
+  binding on success — populated for captured kinds, empty for exact / glob)
+  and `matchesTarget(string $name, CaptureBinding $binding): bool` (target
+  side; captured target segments substitute the source-bound values before
+  matching, so `'app-{m}' → 'domain-{m}'` accepts `app-Order → domain-Order`
+  but rejects `app-Order → domain-Inventory`). Two introspection helpers
+  used by `AllowValidator` cross-validation: `captureVariables(): list<string>`
+  and `captureVariableShapes(): array<string, bool>` (name → multi-segment
+  flag).
 - **`LayerSelectorParser`** — static, stateless parser. The single entry point
   for raw-string input: `LayerSelectorParser::parse('domain-*')` detects the
   kind from content (captured > glob > exact) and returns the appropriate
@@ -323,13 +337,15 @@ matching `architecture.allow` selectors per the D4 grammar (ADR 0007):
 - **`SelectorKind`** / **`SelectorSegment`** / **`ParseCapturedState`** —
   enum, VO, and transient parsing record used by the parser.
 - **`CaptureBinding`** — immutable `array<string, string>` carrying captured
-  variable → value pairs. In Step C the source-side binding is always built;
-  the target-side match deliberately ignores it (Step E enables binding
-  identity enforcement).
-- **`AllowTarget`** — VO bundling a target `LayerSelector` with two
-  forward-looking optional fields: `?list<DependencyType> $relations` (Step G)
-  and `bool $allowCrossInstance` (Step E). Both default to "off" in Step C so
-  Phase-1 BC is preserved.
+  variable → value pairs. Populated by `matchSource()` for captured selectors;
+  empty for exact and glob kinds. `LayerPolicy::isAllowed()` threads it into
+  `matchesTarget()` so captured target selectors substitute bound values.
+- **`AllowTarget`** — VO bundling a target `LayerSelector` with two optional
+  fields: `?list<DependencyType> $relations` (Step G, still inert) and
+  `bool $allowCrossInstance` (Step E). The latter is set per-target via the
+  `allow_cross_instance: true` long-form YAML key and instructs the policy
+  to pass an empty binding into the target match, lifting binding identity
+  for that one target.
 - **`AllowListEntry`** — VO pairing a source `LayerSelector` with a
   `list<AllowTarget>`. The unit `LayerPolicy` traverses linearly.
 - **`InvalidSelectorException`** — thrown by `LayerSelectorParser::parse()`
