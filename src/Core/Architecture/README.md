@@ -24,9 +24,12 @@ Architecture/
 └── Layer/
     ├── LayerDefinition.php                 # VO: layer name + MembershipSpec (with `expanded()` factory for template-produced layers)
     ├── TemplateLayerDefinition.php         # VO: parameterised layer (name template + MembershipSpec + variables)
+    ├── LayerCriteriaMatcher.php            # Stateless matcher: walks the five criterion kinds for positive AND exclude
     ├── CapturePattern.php                  # PCRE compiler for FQN patterns with {var} / {var:**} captures
     ├── ClassSet.php                        # VO: discovered class symbols + ClassContextFactory (input to expansion)
-    ├── MembershipSpec.php                  # VO: criteria a class must match to join a layer
+    ├── MembershipSpec.php                  # VO: positive criteria (+ optional ExcludeSpec) a class must match to join a layer
+    ├── ExcludeSpec.php                     # VO: hard-filter criteria mirroring MembershipSpec (Step F, direction 3)
+    ├── CriterionListValidator.php          # Internal helper: shared per-kind list validation for MembershipSpec + ExcludeSpec
     ├── MatchMode.php                       # enum: any | all (cross-kind criterion combination)
     ├── ClassContext.php                    # VO: class view consumed by matches()
     ├── ClassContextFactory.php             # Builds ClassContext from the run's dependency graph
@@ -54,10 +57,14 @@ decides which classes belong to it.
   on the spec.
 - `LayerDefinition::expanded(string $name, MembershipSpec $membership): self` —
   static factory used by `LayerExpansionStage` for template-produced layers.
-- `matches(ClassContext $context): MembershipResult` — walks the five criterion
-  kinds (patterns, suffix, attributes, implements, extends) and returns either
-  a Match (carrying one `MatchedCriterion` per kind that fired, in declaration
-  order) or NoMatch. An empty FQN is always NoMatch.
+- `matches(ClassContext $context): MembershipResult` — delegates the
+  criterion walk to `LayerCriteriaMatcher` (patterns, suffix, attributes,
+  implements, extends) and returns either a Match (carrying one
+  `MatchedCriterion` per kind that fired, in declaration order) or NoMatch.
+  An empty FQN is always NoMatch. When `MembershipSpec::$exclude` is
+  declared, exclude criteria are evaluated AFTER the positive match
+  succeeds — if exclusion fires under its own `MatchMode`, the result
+  downgrades to NoMatch regardless of the positive match (Step F).
 - `name(): string`
 - `patterns(): list<string>` — original patterns, for diagnostics (delegates
   to the membership spec).
@@ -85,7 +92,10 @@ The `nameTemplate` and one or more `patterns` carry `{var}` placeholders;
   (1) name template non-empty, (2) name template references at least one
   capture variable, (3) every variable in the name template is bound by at
   least one capture-producing pattern (otherwise expansion would be
-  non-deterministic).
+  non-deterministic), (4) if `$membership->exclude` is declared, every
+  variable in `exclude.patterns` must already appear in the template's
+  name or capture-producing patterns — exclude cannot introduce new
+  variables (Step F).
 - `nameTemplate(): string`
 - `membership(): MembershipSpec`
 - `variables(): list<string>` — sorted, distinct list of every variable
@@ -99,9 +109,10 @@ capture-producing patterns are combined. Non-capturing criteria (suffix /
 attributes / implements / extends / any non-capture pattern) ALWAYS act as
 an AND-filter regardless of the declared mode.
 
-Captures are currently allowed in `name` and `patterns` only. Suffix, attribute,
-implements, and extends entries are fixed strings; adding captures to them is
-out of scope for Step D.
+Captures are currently allowed in `name`, `patterns`, and (Step F)
+`exclude.patterns` only. Suffix, attribute, implements, and extends entries
+(both on positive criteria and inside the exclude block) are fixed strings;
+adding captures to them is out of scope.
 
 ### CapturePattern
 
@@ -151,11 +162,15 @@ layer. The shape evolves with Phase 2:
   `MembershipSpec` shape itself is unchanged from Step B.
 - Step D: adds `TemplateLayerDefinition` and runtime template expansion;
   `MembershipSpec` still unchanged.
-- Step E (current): wires captured allow entries end-to-end —
+- Step E: wires captured allow entries end-to-end —
   `LayerSelector::matchesTarget()` now substitutes the source-side binding into
   captured target segments, and `LayerPolicy::isAllowed()` honours the new
   `allow_cross_instance` long-form flag. `MembershipSpec` still unchanged.
-- Step F (planned): adds optional `ExcludeSpec $exclude`.
+- Step F (current): adds optional `ExcludeSpec $exclude` — a hard-filter
+  clause evaluated by `LayerDefinition::matches()` after the positive
+  criteria succeed. Construction-time invariant on `MembershipSpec` itself
+  remains "at least one positive criterion non-empty"; an exclude-only
+  spec is meaningless and rejected by the same invariant.
 
 Construction-time invariant: at least one of the five criterion lists must be
 non-empty; each entry is a non-empty string.
@@ -163,6 +178,62 @@ non-empty; each entry is a non-empty string.
 Within a single criterion kind, list entries are always OR'd. `MatchMode`
 controls how multiple criterion **kinds** combine. See
 [ADR 0007](../../../docs/adr/0007-architecture-rules-flexibility.md).
+
+### ExcludeSpec
+
+Immutable hard-filter VO attached to a `MembershipSpec` via the optional
+`$exclude` field (Step F, direction 3). Mirrors `MembershipSpec` exactly
+(five criterion lists + `MatchMode`) but **cannot nest another exclude** —
+the filter is single-level. Construction enforces "at least one
+non-empty criterion list" — an exclude clause that excludes nothing has
+no purpose and is almost certainly a config error.
+
+Evaluation flow inside `LayerDefinition::matches()`:
+
+1. Positive criteria evaluated first under `$membership->mode`.
+2. If positive match fails → NoMatch (exclude never runs).
+3. If positive match succeeds → exclude criteria walked under
+   `$exclude->mode`. Under `MatchMode::Any` (default) exclusion fires on
+   any single criterion match. Under `MatchMode::All` every declared
+   exclude kind must match.
+4. If exclusion fires → NoMatch. Excluded classes are indistinguishable
+   from non-matching classes at the rule layer; exclude does not surface
+   a separate descriptor.
+
+Captures inside exclude criteria are accepted **only** in
+`exclude.patterns` and **only** for template layers. Cross-template
+variable scoping (an exclude variable must already be declared by the
+template) is enforced by `TemplateLayerDefinition`'s constructor.
+
+### LayerCriteriaMatcher
+
+Stateless internal helper shared between positive-side (`MembershipSpec`)
+and exclude-side (`ExcludeSpec`) evaluation in `LayerDefinition::matches()`.
+The underlying matching semantics are identical for both specs; only the
+mode-combining rules differ at the call site.
+
+- `LayerCriteriaMatcher::collectMatches($context, $normalizedPatterns,
+  $rawPatterns, $suffix, $attributes, $implements, $extends): list<MatchedCriterion>`
+  — walks the five criterion kinds in declaration order and returns the
+  matched-criterion descriptor list.
+- `LayerCriteriaMatcher::declaredKindCount(...)` — counts non-empty
+  criterion lists for `MatchMode::All` invariants.
+- `LayerCriteriaMatcher::normalizePatterns(list<string>): list<string>`
+  — strips trailing backslashes from each pattern (the user-facing
+  `App\Service\` ≡ `App\Service` convention).
+
+Per-pattern FQN matching is delegated to `NamespaceMatcher::matchesSingle()`
+so this helper shares a single source of truth with the wider
+namespace-matching utility.
+
+### CriterionListValidator
+
+Internal helper shared by `MembershipSpec` and `ExcludeSpec` for per-kind
+list validation. Stateless; the two specs carry identical criterion
+lists (five `list<string>` fields) with identical invariants — every
+entry must be a non-empty string. Centralising the check here avoids
+the structural-duplication detector flagging two near-identical
+`validateList` methods carried in parallel by the specs.
 
 ### MatchMode
 
@@ -381,12 +452,16 @@ selector metacharacters.
   [ADR 0007](../../../docs/adr/0007-architecture-rules-flexibility.md).
   Step C landed the D4 selector grammar — glob and captured allow-list
   selectors with `LayerPolicy` migrated to entry-list traversal. Step D
-  (current) lands template-layer expansion: `TemplateLayerDefinition` +
+  landed template-layer expansion: `TemplateLayerDefinition` +
   `CapturePattern` (Core) feed `LayerExpansionStage` (Analysis), which
   walks the project's `ClassSet` after collection and produces one
   concrete `LayerDefinition` per observed binding tuple. Templates that
   observe zero tuples surface as the `architecture.empty-template`
   warning diagnostic; cumulative expansion is bounded by
-  `architecture.max_expanded_layers` (default 500). Steps E
-  (capture-binding identity), F (`exclude:` block), and G (`relations:`
-  filter) follow.
+  `architecture.max_expanded_layers` (default 500). Step E landed
+  capture-binding identity in allow targets plus the
+  `allow_cross_instance` long-form key. Step F (current) lands the
+  `exclude:` block on layer entries — see `ExcludeSpec`,
+  `LayerCriteriaMatcher`, and the YAML-side `ExcludeBlockValidator` /
+  `LayerCriterionNormalizer` in `Configuration/Architecture/Validation/`.
+  Step G (`relations:` filter) follows.

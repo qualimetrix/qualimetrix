@@ -60,6 +60,8 @@ Configuration/
 │   ├── ArchitectureFactoryResult.php         # Result VO: configuration + list of deferred warnings
 │   └── Validation/                # Per-concern validators (composed by the factory)
 │       ├── LayersValidator.php                # Parses `layers:` block; rejects unknown keys; emits LayerDefinition / TemplateLayerDefinition
+│       ├── ExcludeBlockValidator.php          # Parses the optional `exclude:` sub-block on layer entries (Step F, direction 3)
+│       ├── LayerCriterionNormalizer.php       # Shared per-criterion shape/semantic normalizer (positive criteria + exclude)
 │       ├── AllowValidator.php                 # Parses `allow:` block; selector grammar + capture-variable cross-validation + allow_cross_instance long-form key
 │       ├── CoverageValidator.php              # Parses `coverage:` mode
 │       ├── MutualAllowDetector.php            # Deferred warning for A↔B exact-allow pairs (suggest layer merge)
