@@ -346,6 +346,34 @@ final class LayersValidatorTest extends TestCase
         ]);
     }
 
+    /**
+     * @return iterable<string, array{0: string}>
+     */
+    public static function selectorMetacharsInLayerNameProvider(): iterable
+    {
+        // Phase 2 Step C / ADR 0007: selector metachars (`* ? [ { }`) reserved
+        // for the allow-list grammar must NOT appear in layer names. The
+        // existing layer-name regex {@code [a-z][a-z0-9_-]*} already enforces
+        // this; the dataset pins each individual metachar so a future regex
+        // relaxation cannot silently break selector parsing.
+        yield 'star' => ['foo*'];
+        yield 'question' => ['foo?'];
+        yield 'open bracket' => ['foo['];
+        yield 'open brace' => ['foo{'];
+        yield 'close brace' => ['foo}'];
+    }
+
+    #[Test]
+    #[\PHPUnit\Framework\Attributes\DataProvider('selectorMetacharsInLayerNameProvider')]
+    public function layerNameContainingSelectorMetacharIsRejected(string $invalidName): void
+    {
+        $this->expectException(ConfigLoadException::class);
+
+        $this->validator->validate([
+            ['name' => $invalidName, 'patterns' => ['App\\Foo']],
+        ]);
+    }
+
     // -------------------------------------------------------------------------
     // Per-criterion validation (Phase 2 direction 1)
     // -------------------------------------------------------------------------

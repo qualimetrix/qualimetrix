@@ -13,6 +13,7 @@ use Qualimetrix\Core\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Core\Architecture\Layer\LayerPolicy;
 use Qualimetrix\Core\Architecture\Layer\LayerRegistry;
 use Qualimetrix\Core\Architecture\Layer\MembershipSpec;
+use Qualimetrix\Tests\Support\Architecture\AllowListBuilder;
 
 #[CoversClass(ArchitectureConfiguration::class)]
 final class ArchitectureConfigurationTest extends TestCase
@@ -21,7 +22,7 @@ final class ArchitectureConfigurationTest extends TestCase
     public function gettersReturnConstructorArguments(): void
     {
         $registry = new LayerRegistry([new LayerDefinition('core', new MembershipSpec(['App\\Core']))]);
-        $policy = new LayerPolicy(['core' => []]);
+        $policy = AllowListBuilder::policyFromExactMap(['core' => []]);
         $coverage = CoverageMode::Warn;
 
         $config = new ArchitectureConfiguration($registry, $policy, $coverage);
