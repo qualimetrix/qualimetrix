@@ -11,6 +11,7 @@ use Qualimetrix\Core\Architecture\Allow\AllowTarget;
 use Qualimetrix\Core\Architecture\Allow\InvalidSelectorException;
 use Qualimetrix\Core\Architecture\Allow\LayerSelector;
 use Qualimetrix\Core\Architecture\Allow\LayerSelectorParser;
+use Qualimetrix\Core\Dependency\DependencyType;
 
 /**
  * Parses and validates the {@code architecture.allow} sub-tree.
@@ -27,30 +28,16 @@ use Qualimetrix\Core\Architecture\Allow\LayerSelectorParser;
  * the intent (the user may add layers later, or the template-expansion stage
  * may produce them); the rule executor will simply skip non-matching entries.
  *
- * The long form ({@code [target: 'service', types: ['method_call']]}) is
- * accepted for forward compatibility; the {@code types} key emits a deferred
- * deprecation warning (real wiring lands in Step G).
+ * The long form ({@code [target: 'service', relations: ['static_call']]}) is
+ * fully wired in Step G: {@code relations:} expands through
+ * {@see AllowAliasExpander} into a {@see DependencyType} list that
+ * {@see \Qualimetrix\Core\Architecture\Layer\LayerPolicy::isAllowed()} checks
+ * the actual dependency edge against. Bare-string targets keep the legacy
+ * "all relations allowed" semantics.
  */
 final class AllowValidator
 {
     private const string CONFIG_PATH = 'architecture';
-
-    /**
-     * Long-form allow target keys. Any other key is rejected here as
-     * "unknown long-form key" so a user-side typo cannot silently widen the
-     * policy (e.g. {@code relatons:} would otherwise allow every relation kind
-     * instead of the user's intended subset).
-     */
-    private const array ALLOWED_LONG_FORM_KEYS = ['target', 'types', 'allow_cross_instance'];
-
-    /**
-     * Reserved keys that ADR 0007 promises for future steps. Surfaced with a
-     * dedicated "reserved for later step" message so users who try them get a
-     * clear signal — not a generic "unknown key" complaint.
-     */
-    private const array RESERVED_LONG_FORM_KEYS = [
-        'relations' => 'Step G',
-    ];
 
     /**
      * @param list<string> $layerNames Names from the registry; used for cross-validation of exact selectors only.
@@ -94,7 +81,7 @@ final class AllowValidator
                 );
             }
 
-            $allowTargets = $this->normalizeAllowTargets($sourceRaw, $sourceSelector, $targets, $layerSet, $warnings);
+            $allowTargets = $this->normalizeAllowTargets($sourceRaw, $sourceSelector, $targets, $layerSet);
             $entries[] = new AllowListEntry($sourceSelector, $allowTargets);
         }
 
@@ -103,7 +90,6 @@ final class AllowValidator
 
     /**
      * @param array<string, int> $layerSet
-     * @param list<DeferredWarning> $warnings Accumulator, mutated by reference for warning collection.
      *
      * @return list<AllowTarget>
      */
@@ -112,7 +98,6 @@ final class AllowValidator
         LayerSelector $sourceSelector,
         mixed $targets,
         array $layerSet,
-        array &$warnings,
     ): array {
         if ($targets === null) {
             return [];
@@ -128,17 +113,18 @@ final class AllowValidator
         $sourceShapes = $sourceSelector->captureVariableShapes();
 
         $result = [];
-        $seenExact = [];
+        $seenBareExact = [];
         foreach ($targets as $index => $entry) {
-            [$targetSelector, $allowCrossInstance] = $this->normalizeAllowEntry($source, $index, $entry, $warnings);
+            [$targetSelector, $allowCrossInstance, $relations] = $this->normalizeAllowEntry($source, $index, $entry);
 
             $this->crossValidateCapturedTarget($source, $index, $sourceSelector, $sourceShapes, $targetSelector);
 
-            if ($this->shouldSkipExactTarget($source, $index, $targetSelector, $layerSet, $seenExact)) {
+            $isBare = $relations === null && !$allowCrossInstance;
+            if ($this->shouldSkipExactTarget($source, $index, $targetSelector, $layerSet, $isBare, $seenBareExact)) {
                 continue;
             }
 
-            $result[] = new AllowTarget($targetSelector, allowCrossInstance: $allowCrossInstance);
+            $result[] = new AllowTarget($targetSelector, relations: $relations, allowCrossInstance: $allowCrossInstance);
         }
 
         return $result;
@@ -327,19 +313,31 @@ final class AllowValidator
      * selectors are deliberately untouched here — only exact-shape targets are
      * cross-validated against the registry's layer names in Step C.
      *
-     * @param array<string, int> $layerSet
-     * @param array<string, true> $seenExact Map of exact-target names already
-     *                                       emitted for this source; mutated
-     *                                       by reference for dedup state.
+     * **Dedup scope.** Only bare-equivalent targets (no {@code relations}, no
+     * {@code allow_cross_instance}) are dedupped. A bare 'vendor' + long-form
+     * 'vendor' with {@code relations: [extends]} carry different semantics
+     * (the bare one rescues the relation gate via UNION) and MUST both reach
+     * {@see \Qualimetrix\Core\Architecture\Layer\LayerPolicy}; dedupping them
+     * would silently drop the broader sibling's effect.
      *
-     * @param-out array<string, true> $seenExact
+     * @param array<string, int> $layerSet
+     * @param bool $isBare True when the current target carries no Step E/G
+     *                     long-form fields (i.e. effectively equivalent to a
+     *                     short-form bare string entry).
+     * @param array<string, true> $seenBareExact Map of exact-target names
+     *                                           already emitted as bare-form
+     *                                           for this source; mutated by
+     *                                           reference for dedup state.
+     *
+     * @param-out array<string, true> $seenBareExact
      */
     private function shouldSkipExactTarget(
         string $source,
         int $index,
         LayerSelector $targetSelector,
         array $layerSet,
-        array &$seenExact,
+        bool $isBare,
+        array &$seenBareExact,
     ): bool {
         if (!$targetSelector->isExact()) {
             return false;
@@ -359,110 +357,64 @@ final class AllowValidator
             );
         }
 
-        if (isset($seenExact[$targetName])) {
+        if (!$isBare) {
+            return false;
+        }
+
+        if (isset($seenBareExact[$targetName])) {
             return true;
         }
 
-        $seenExact[$targetName] = true;
+        $seenBareExact[$targetName] = true;
 
         return false;
     }
 
     /**
-     * Normalizes a single allow-list entry to a (selector, allowCrossInstance) tuple.
+     * Discriminates the short- and long-form shapes and returns the
+     * (selector, allowCrossInstance, relations) triple consumed by
+     * {@see self::normalizeAllowTargets()}.
      *
-     * Supports two forms:
-     * - Short: bare string {@code 'service'} (or {@code 'service-*'} / {@code 'app-{m}'}).
-     *   {@code allowCrossInstance} is always false.
-     * - Long:  associative array
-     *   {@code [target: 'service', types: ['method_call'], allow_cross_instance: true]}.
+     * Short form: bare string {@code 'service'} (or {@code 'service-*'} /
+     * {@code 'app-{m}'}). {@code allowCrossInstance} is always false;
+     * {@code relations} is null (any relation allowed).
      *
-     * The long form's {@code types} key is accepted for forward compatibility but
-     * not yet enforced; if present, append a deferred deprecation-style warning.
+     * Long form: associative array
+     * {@code [target: 'service', relations: ['static_call', 'inheritance'],
+     * allow_cross_instance: true]}. The long-form vocabulary
+     * (allowed keys, per-key shape rules) lives in
+     * {@see LongFormAllowEntryNormalizer}.
      *
-     * @param list<DeferredWarning> $warnings Accumulator, mutated by reference for warning collection.
-     *
-     * @return array{0: LayerSelector, 1: bool}
+     * @return array{0: LayerSelector, 1: bool, 2: list<DependencyType>|null}
      */
-    private function normalizeAllowEntry(string $source, int $index, mixed $entry, array &$warnings): array
+    private function normalizeAllowEntry(string $source, int $index, mixed $entry): array
     {
+        $context = \sprintf('architecture.allow.%s[%d]', $source, $index);
+
         if (\is_string($entry)) {
             if ($entry === '') {
                 throw new ConfigLoadException(
                     self::CONFIG_PATH,
-                    \sprintf('architecture.allow.%s[%d]: target must be a non-empty string.', $source, $index),
+                    \sprintf('%s: target must be a non-empty string.', $context),
                 );
             }
 
-            return [
-                $this->parseSelector(
-                    $entry,
-                    \sprintf('architecture.allow.%s[%d]', $source, $index),
-                ),
-                false,
-            ];
+            return [$this->parseSelector($entry, $context), false, null];
         }
 
-        if (\is_array($entry) && !array_is_list($entry) && isset($entry['target']) && \is_string($entry['target']) && $entry['target'] !== '') {
-            $this->rejectUnsupportedLongFormKeys($source, $index, $entry);
+        if (\is_array($entry) && !array_is_list($entry)) {
+            [$targetRaw, $allowCrossInstance, $relations] = LongFormAllowEntryNormalizer::normalize($source, $index, $entry);
 
-            if (\array_key_exists('types', $entry)) {
-                $warnings[] = DeferredWarning::warning(\sprintf(
-                    "architecture.allow.%s: 'types' filter declared but not yet enforced (Phase 2).",
-                    $source,
-                ));
-            }
-
-            $allowCrossInstance = $this->parseAllowCrossInstanceFlag($source, $index, $entry);
-
-            return [
-                $this->parseSelector(
-                    $entry['target'],
-                    \sprintf('architecture.allow.%s[%d]', $source, $index),
-                ),
-                $allowCrossInstance,
-            ];
+            return [$this->parseSelector($targetRaw, $context), $allowCrossInstance, $relations];
         }
 
         throw new ConfigLoadException(
             self::CONFIG_PATH,
             \sprintf(
-                "architecture.allow.%s[%d]: each target must be a layer name (string) or a map with a non-empty 'target' key.",
-                $source,
-                $index,
+                "%s: each target must be a layer name (string) or a map with a non-empty 'target' key.",
+                $context,
             ),
         );
-    }
-
-    /**
-     * Extracts the {@code allow_cross_instance} long-form flag. Absent → false.
-     * Non-boolean values are rejected so a user typo (e.g.
-     * {@code allow_cross_instance: 'yes'}) cannot silently fall through to the
-     * "false" default and surprise the user with mutual-allow warnings they
-     * thought they had silenced.
-     *
-     * @param array<string, mixed> $entry
-     */
-    private function parseAllowCrossInstanceFlag(string $source, int $index, array $entry): bool
-    {
-        if (!\array_key_exists('allow_cross_instance', $entry)) {
-            return false;
-        }
-
-        $value = $entry['allow_cross_instance'];
-        if (!\is_bool($value)) {
-            throw new ConfigLoadException(
-                self::CONFIG_PATH,
-                \sprintf(
-                    "architecture.allow.%s[%d]: 'allow_cross_instance' must be a boolean, got %s.",
-                    $source,
-                    $index,
-                    get_debug_type($value),
-                ),
-            );
-        }
-
-        return $value;
     }
 
     /**
@@ -479,49 +431,6 @@ final class AllowValidator
                 self::CONFIG_PATH,
                 \sprintf('%s: %s', $context, $e->getMessage()),
                 $e,
-            );
-        }
-    }
-
-    /**
-     * Closes the silent-widening loophole in the long-form allow entry. Any
-     * key that is neither in the {@see ALLOWED_LONG_FORM_KEYS} whitelist nor
-     * recognised as a {@see RESERVED_LONG_FORM_KEYS} placeholder gets
-     * rejected with a user-actionable error: a `relations:` typo (e.g.
-     * `relatons:`) would otherwise silently allow every dependency kind
-     * instead of the user's intended subset.
-     *
-     * @param array<string, mixed> $entry
-     */
-    private function rejectUnsupportedLongFormKeys(string $source, int $index, array $entry): void
-    {
-        foreach (array_keys($entry) as $key) {
-            if (\in_array($key, self::ALLOWED_LONG_FORM_KEYS, true)) {
-                continue;
-            }
-
-            if (isset(self::RESERVED_LONG_FORM_KEYS[$key])) {
-                throw new ConfigLoadException(
-                    self::CONFIG_PATH,
-                    \sprintf(
-                        "architecture.allow.%s[%d]: long-form key '%s' is reserved for %s and not yet supported in this version.",
-                        $source,
-                        $index,
-                        $key,
-                        self::RESERVED_LONG_FORM_KEYS[$key],
-                    ),
-                );
-            }
-
-            throw new ConfigLoadException(
-                self::CONFIG_PATH,
-                \sprintf(
-                    "architecture.allow.%s[%d]: unknown long-form key '%s'. Allowed keys: %s.",
-                    $source,
-                    $index,
-                    (string) $key,
-                    implode(', ', array_map(static fn(string $k): string => "'" . $k . "'", self::ALLOWED_LONG_FORM_KEYS)),
-                ),
             );
         }
     }

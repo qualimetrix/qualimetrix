@@ -361,7 +361,7 @@ final class LayerViolationRule extends AbstractRule
         $fromLayer = $fromMatch->layerName;
         $toLayer = $toMatch->layerName;
 
-        if ($architecture->policy()->isAllowed($fromLayer, $toLayer)) {
+        if ($architecture->policy()->isAllowed($fromLayer, $toLayer, $dependency->type)) {
             return null;
         }
 
