@@ -9,11 +9,13 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Architecture\Layer\CapturePattern;
+use Qualimetrix\Core\Architecture\Layer\ExcludeSpec;
 use Qualimetrix\Core\Architecture\Layer\MembershipSpec;
 use Qualimetrix\Core\Architecture\Layer\TemplateLayerDefinition;
 
 #[CoversClass(TemplateLayerDefinition::class)]
 #[CoversClass(CapturePattern::class)]
+#[CoversClass(ExcludeSpec::class)]
 final class TemplateLayerDefinitionTest extends TestCase
 {
     #[Test]
@@ -123,5 +125,73 @@ final class TemplateLayerDefinitionTest extends TestCase
         self::assertTrue(TemplateLayerDefinition::containsCaptureVariable('App\\{tenant}\\**'));
         self::assertFalse(TemplateLayerDefinition::containsCaptureVariable('App\\Service\\**'));
         self::assertFalse(TemplateLayerDefinition::containsCaptureVariable('plain-name'));
+    }
+
+    // -------------------------------------------------------------------------
+    // exclude clause variable validation (Step F)
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function construct_excludePatternsWithDeclaredVariable_accepted(): void
+    {
+        $template = new TemplateLayerDefinition(
+            'domain-{module}',
+            new MembershipSpec(
+                patterns: ['App\\Module\\{module}\\Domain\\**'],
+                exclude: new ExcludeSpec(patterns: ['App\\Module\\{module}\\Domain\\Generated\\**']),
+            ),
+        );
+
+        self::assertNotNull($template->membership()->exclude);
+        self::assertSame(['App\\Module\\{module}\\Domain\\Generated\\**'], $template->membership()->exclude->patterns);
+    }
+
+    #[Test]
+    public function construct_excludePatternsWithoutCaptures_accepted(): void
+    {
+        // exclude.patterns without any capture variable is fine — they act as
+        // a plain glob filter on the template's expanded membership.
+        $template = new TemplateLayerDefinition(
+            'domain-{module}',
+            new MembershipSpec(
+                patterns: ['App\\Module\\{module}\\Domain\\**'],
+                exclude: new ExcludeSpec(patterns: ['App\\Module\\Shared\\**']),
+            ),
+        );
+
+        self::assertNotNull($template->membership()->exclude);
+        self::assertSame(['App\\Module\\Shared\\**'], $template->membership()->exclude->patterns);
+    }
+
+    #[Test]
+    public function construct_excludePatternsWithUndeclaredVariable_rejected(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('exclude clause references undeclared variable(s) "tenant"');
+        $this->expectExceptionMessage('declared variables: "module"');
+
+        new TemplateLayerDefinition(
+            'domain-{module}',
+            new MembershipSpec(
+                patterns: ['App\\Module\\{module}\\Domain\\**'],
+                exclude: new ExcludeSpec(patterns: ['App\\{tenant}\\Module\\{module}\\Generated\\**']),
+            ),
+        );
+    }
+
+    #[Test]
+    public function construct_excludePatternsWithInvalidGrammar_rejected(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('exclude pattern');
+
+        new TemplateLayerDefinition(
+            'domain-{module}',
+            new MembershipSpec(
+                patterns: ['App\\Module\\{module}\\Domain\\**'],
+                // Unbalanced brace in exclude pattern surfaces as a config error.
+                exclude: new ExcludeSpec(patterns: ['App\\Module\\{module\\Generated\\**']),
+            ),
+        );
     }
 }
