@@ -48,9 +48,12 @@ final readonly class TemplateLayerDefinition
      * @throws InvalidArgumentException If the name template is empty, the
      *                                  membership references no capture
      *                                  variables (templates must be
-     *                                  parameterised), or a variable
-     *                                  appears in the name but in no
-     *                                  capture-producing pattern.
+     *                                  parameterised), a variable appears
+     *                                  in the name but in no
+     *                                  capture-producing pattern, or the
+     *                                  exclude clause references a variable
+     *                                  not declared by the template's
+     *                                  name/pattern variables (Step F).
      */
     public function __construct(
         public string $nameTemplate,
@@ -86,6 +89,10 @@ final readonly class TemplateLayerDefinition
         sort($allVariables);
 
         $this->variables = $allVariables;
+
+        if ($membership->exclude !== null) {
+            self::validateExcludeVariables($nameTemplate, $allVariables, $membership->exclude);
+        }
     }
 
     public function nameTemplate(): string
@@ -161,5 +168,46 @@ final readonly class TemplateLayerDefinition
         }
 
         return array_keys($collected);
+    }
+
+    /**
+     * Enforces the Step F invariant: every variable referenced in the
+     * exclude clause's patterns must already be declared by the template's
+     * name or capture-producing patterns. Exclude cannot introduce new
+     * variables — it has no binding source of its own, so an unknown
+     * variable in exclude would never substitute and the rule would silently
+     * misbehave.
+     *
+     * Captures are accepted only in {@see ExcludeSpec::$patterns}; the
+     * other criterion kinds (suffix/attributes/implements/extends) are
+     * fixed strings, mirroring the positive-criteria carve-out documented
+     * above.
+     *
+     * @param list<string> $templateVariables Sorted union of name + capture-producing pattern variables.
+     */
+    private static function validateExcludeVariables(string $nameTemplate, array $templateVariables, ExcludeSpec $exclude): void
+    {
+        $excludeVariables = [];
+        foreach ($exclude->patterns as $pattern) {
+            foreach (self::collectVariablesFromString($pattern, 'exclude pattern') as $var) {
+                $excludeVariables[$var] = true;
+            }
+        }
+
+        if ($excludeVariables === []) {
+            return;
+        }
+
+        $unknown = array_values(array_diff(array_keys($excludeVariables), $templateVariables));
+        if ($unknown === []) {
+            return;
+        }
+
+        throw new InvalidArgumentException(\sprintf(
+            'TemplateLayerDefinition: exclude clause references undeclared variable(s) "%s" not bound by the template "%s" (declared variables: "%s"). Exclude can only refer to variables already declared in the name template or capture-producing patterns.',
+            implode('", "', $unknown),
+            $nameTemplate,
+            $templateVariables === [] ? '' : implode('", "', $templateVariables),
+        ));
     }
 }

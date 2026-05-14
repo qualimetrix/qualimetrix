@@ -6,6 +6,7 @@ namespace Qualimetrix\Configuration\Architecture\Validation;
 
 use InvalidArgumentException;
 use Qualimetrix\Configuration\Exception\ConfigLoadException;
+use Qualimetrix\Core\Architecture\Layer\ExcludeSpec;
 use Qualimetrix\Core\Architecture\Layer\InvalidLayerDefinitionException;
 use Qualimetrix\Core\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Core\Architecture\Layer\MatchMode;
@@ -16,7 +17,7 @@ use Qualimetrix\Core\Architecture\Layer\TemplateLayerDefinition;
  * Parses and validates the {@code architecture.layers} sub-tree.
  *
  * Accepts the long-form ordered list with five criterion kinds (Phase 2
- * direction 1):
+ * direction 1) plus the optional {@code exclude:} block (direction 3):
  *
  * ```yaml
  * layers:
@@ -25,11 +26,18 @@ use Qualimetrix\Core\Architecture\Layer\TemplateLayerDefinition;
  *     suffix: 'Repository'
  *     implements: 'Doctrine\Persistence\ObjectRepository'
  *     match: any
+ *     exclude:
+ *       patterns: ['App\Repository\Legacy\**']
  * ```
  *
  * Produces a typed {@see LayerRegistry} preserving declaration order. Rejects
  * duplicate patterns across layers — under declaration-order matching the
  * second occurrence is unreachable and always a configuration mistake.
+ *
+ * Per-criterion shape validation is delegated to
+ * {@see LayerCriterionNormalizer}; the {@code exclude:} sub-block is
+ * delegated to {@see ExcludeBlockValidator}. Both helpers stay inside the
+ * same namespace so the schema surface is co-located.
  *
  * All errors surface as {@see ConfigLoadException} with the logical path
  * {@code 'architecture'}.
@@ -39,12 +47,10 @@ final class LayersValidator
     private const string CONFIG_PATH = 'architecture';
 
     /**
-     * Keys still reserved for upcoming Phase 2 features. Step B opens
-     * {@code suffix}, {@code attributes}, {@code implements} and
-     * {@code extends}; {@code exclude} stays reserved until Step F (direction
-     * 3) ships.
+     * Keys still reserved for upcoming features. Step F opens
+     * {@code exclude}; no further keys remain reserved at this time.
      */
-    private const array RESERVED_FUTURE_KEYS = ['exclude'];
+    private const array RESERVED_FUTURE_KEYS = [];
 
     private const array ALLOWED_ENTRY_KEYS = [
         'name',
@@ -54,7 +60,15 @@ final class LayersValidator
         'implements',
         'extends',
         'match',
+        'exclude',
     ];
+
+    private readonly LayerCriterionNormalizer $normalizer;
+
+    public function __construct()
+    {
+        $this->normalizer = new LayerCriterionNormalizer();
+    }
 
     /**
      * Parses the raw {@code layers} value into the declaration-order list of
@@ -104,7 +118,7 @@ final class LayersValidator
         $entries = [];
         $seenNames = [];
         foreach ($layersRaw as $index => $entry) {
-            $entries[] = self::buildSingleLayerEntry($index, $entry, $seenNames);
+            $entries[] = $this->buildSingleLayerEntry($index, $entry, $seenNames);
         }
 
         return $entries;
@@ -115,7 +129,7 @@ final class LayersValidator
      *
      * @param-out array<string, true> $seenNames
      */
-    private static function buildSingleLayerEntry(int $index, mixed $entry, array &$seenNames): LayerDefinition|TemplateLayerDefinition
+    private function buildSingleLayerEntry(int $index, mixed $entry, array &$seenNames): LayerDefinition|TemplateLayerDefinition
     {
         $entry = self::ensureEntryIsAssociativeArray($index, $entry);
         self::rejectUnknownKeys($index, $entry);
@@ -124,37 +138,31 @@ final class LayersValidator
         self::rejectDuplicateName($index, $name, $seenNames);
         $seenNames[$name] = true;
 
-        $criteria = self::normalizeCriteria($index, $name, $entry);
-        $mode = self::normalizeMatchMode($index, $name, $entry['match'] ?? null);
+        $criteria = $this->normalizeCriteria($index, $name, $entry);
+        $mode = $this->normalizer->normalizeMatchMode($index, $name, $entry['match'] ?? null);
+        $isTemplate = TemplateLayerDefinition::containsCaptureVariable($name);
+        $exclude = ExcludeBlockValidator::parse($index, $name, $entry['exclude'] ?? null, $isTemplate, $this->normalizer);
 
-        if (TemplateLayerDefinition::containsCaptureVariable($name)) {
-            return self::buildTemplateDefinition($index, $name, $criteria, $mode);
+        if ($isTemplate) {
+            return self::buildTemplateDefinition($index, $name, $criteria, $mode, $exclude);
         }
 
-        return self::buildMembershipDefinition($index, $name, $criteria, $mode);
+        return self::buildMembershipDefinition($index, $name, $criteria, $mode, $exclude);
     }
 
     /**
      * Constructs a {@see TemplateLayerDefinition} from a parsed entry whose
      * name contains capture variables. Catches the construction-time
      * invariant violations (empty name, variable in name not bound by any
-     * capture-producing pattern, invalid capture grammar) and rewraps them
-     * as {@see ConfigLoadException} so the user sees a config-layer error.
+     * capture-producing pattern, invalid capture grammar, undeclared
+     * exclude variables) and rewraps them as {@see ConfigLoadException} so
+     * the user sees a config-layer error.
      *
      * @param array{patterns: list<string>, suffix: list<string>, attributes: list<string>, implements: list<string>, extends: list<string>} $criteria
      */
-    private static function buildTemplateDefinition(int $index, string $nameTemplate, array $criteria, MatchMode $mode): TemplateLayerDefinition
+    private static function buildTemplateDefinition(int $index, string $nameTemplate, array $criteria, MatchMode $mode, ?ExcludeSpec $exclude): TemplateLayerDefinition
     {
-        if (array_filter($criteria) === []) {
-            throw new ConfigLoadException(
-                self::CONFIG_PATH,
-                \sprintf(
-                    'architecture.layers[%d] ("%s"): must declare at least one of "patterns", "suffix", "attributes", "implements" or "extends".',
-                    $index,
-                    $nameTemplate,
-                ),
-            );
-        }
+        self::rejectAllEmptyCriteria($index, $nameTemplate, $criteria);
 
         try {
             return new TemplateLayerDefinition(
@@ -166,6 +174,7 @@ final class LayersValidator
                     implements: $criteria['implements'],
                     extends: $criteria['extends'],
                     mode: $mode,
+                    exclude: $exclude,
                 ),
             );
         } catch (InvalidArgumentException $e) {
@@ -184,32 +193,23 @@ final class LayersValidator
      *
      * @return array{patterns: list<string>, suffix: list<string>, attributes: list<string>, implements: list<string>, extends: list<string>}
      */
-    private static function normalizeCriteria(int $index, string $name, array $entry): array
+    private function normalizeCriteria(int $index, string $name, array $entry): array
     {
         return [
-            'patterns' => self::normalizePatternList($index, $name, $entry['patterns'] ?? null),
-            'suffix' => self::normalizeSuffixList($index, $name, $entry['suffix'] ?? null),
-            'attributes' => self::normalizeFqnList($index, $name, 'attributes', $entry['attributes'] ?? null),
-            'implements' => self::normalizeFqnList($index, $name, 'implements', $entry['implements'] ?? null),
-            'extends' => self::normalizeFqnList($index, $name, 'extends', $entry['extends'] ?? null),
+            'patterns' => $this->normalizer->normalizePatternList($index, $name, $entry['patterns'] ?? null),
+            'suffix' => $this->normalizer->normalizeSuffixList($index, $name, $entry['suffix'] ?? null),
+            'attributes' => $this->normalizer->normalizeFqnList($index, $name, 'attributes', $entry['attributes'] ?? null),
+            'implements' => $this->normalizer->normalizeFqnList($index, $name, 'implements', $entry['implements'] ?? null),
+            'extends' => $this->normalizer->normalizeFqnList($index, $name, 'extends', $entry['extends'] ?? null),
         ];
     }
 
     /**
      * @param array{patterns: list<string>, suffix: list<string>, attributes: list<string>, implements: list<string>, extends: list<string>} $criteria
      */
-    private static function buildMembershipDefinition(int $index, string $name, array $criteria, MatchMode $mode): LayerDefinition
+    private static function buildMembershipDefinition(int $index, string $name, array $criteria, MatchMode $mode, ?ExcludeSpec $exclude): LayerDefinition
     {
-        if (array_filter($criteria) === []) {
-            throw new ConfigLoadException(
-                self::CONFIG_PATH,
-                \sprintf(
-                    'architecture.layers[%d] ("%s"): must declare at least one of "patterns", "suffix", "attributes", "implements" or "extends".',
-                    $index,
-                    $name,
-                ),
-            );
-        }
+        self::rejectAllEmptyCriteria($index, $name, $criteria);
 
         try {
             return new LayerDefinition(
@@ -221,6 +221,7 @@ final class LayersValidator
                     implements: $criteria['implements'],
                     extends: $criteria['extends'],
                     mode: $mode,
+                    exclude: $exclude,
                 ),
             );
         } catch (InvalidLayerDefinitionException | InvalidArgumentException $e) {
@@ -230,6 +231,25 @@ final class LayersValidator
                 $e,
             );
         }
+    }
+
+    /**
+     * @param array{patterns: list<string>, suffix: list<string>, attributes: list<string>, implements: list<string>, extends: list<string>} $criteria
+     */
+    private static function rejectAllEmptyCriteria(int $index, string $name, array $criteria): void
+    {
+        if (array_filter($criteria) !== []) {
+            return;
+        }
+
+        throw new ConfigLoadException(
+            self::CONFIG_PATH,
+            \sprintf(
+                'architecture.layers[%d] ("%s"): must declare at least one of "patterns", "suffix", "attributes", "implements" or "extends".',
+                $index,
+                $name,
+            ),
+        );
     }
 
     /**
@@ -271,7 +291,7 @@ final class LayersValidator
         $reservedSeen = array_values(array_intersect(self::RESERVED_FUTURE_KEYS, $unknown));
         if ($reservedSeen !== []) {
             $message .= \sprintf(
-                ' Key(s) %s are reserved for an upcoming Phase 2 feature and not yet supported in this version.',
+                ' Key(s) %s are reserved for an upcoming feature and not yet supported in this version.',
                 self::quoteList($reservedSeen),
             );
         }
@@ -324,214 +344,6 @@ final class LayersValidator
         }
 
         return implode(', ', $quoted);
-    }
-
-    private static function normalizeMatchMode(int $index, string $layerName, mixed $value): MatchMode
-    {
-        if ($value === null) {
-            return MatchMode::Any;
-        }
-
-        if (\is_string($value)) {
-            $candidate = MatchMode::tryFrom($value);
-            if ($candidate !== null) {
-                return $candidate;
-            }
-        }
-
-        $allowed = implode(', ', array_map(
-            static fn(MatchMode $mode): string => '"' . $mode->value . '"',
-            MatchMode::cases(),
-        ));
-
-        throw new ConfigLoadException(
-            self::CONFIG_PATH,
-            \sprintf(
-                'architecture.layers[%d] ("%s"): "match" must be one of %s, got %s.',
-                $index,
-                $layerName,
-                $allowed,
-                \is_string($value) ? '"' . $value . '"' : get_debug_type($value),
-            ),
-        );
-    }
-
-    /**
-     * @return list<string>
-     */
-    private static function normalizePatternList(int $index, string $layerName, mixed $value): array
-    {
-        return self::normalizeStringList(
-            $index,
-            $layerName,
-            'patterns',
-            $value,
-            static fn(string $_): ?string => null,
-        );
-    }
-
-    /**
-     * @return list<string>
-     */
-    private static function normalizeSuffixList(int $index, string $layerName, mixed $value): array
-    {
-        return self::normalizeStringList(
-            $index,
-            $layerName,
-            'suffix',
-            $value,
-            static function (string $entry): ?string {
-                if (str_contains($entry, '\\')) {
-                    return 'must be a short class-name suffix (no backslash); got "' . $entry . '". '
-                        . 'Use "patterns" for FQN-shaped entries.';
-                }
-
-                return null;
-            },
-        );
-    }
-
-    /**
-     * @return list<string>
-     */
-    private static function normalizeFqnList(int $index, string $layerName, string $kind, mixed $value): array
-    {
-        return self::normalizeStringList(
-            $index,
-            $layerName,
-            $kind,
-            $value,
-            static function (string $entry) use ($kind): ?string {
-                if (!str_contains($entry, '\\')) {
-                    return \sprintf(
-                        'must be a fully-qualified class name (containing at least one namespace separator); got "%s". '
-                        . 'Short names are not accepted in "%s".',
-                        $entry,
-                        $kind,
-                    );
-                }
-
-                return null;
-            },
-        );
-    }
-
-    /**
-     * Shared list-validation helper. Accepts:
-     *
-     * - {@code null} → empty list (criterion not declared).
-     * - bare string → singleton list (YAML scalar shorthand).
-     * - sequential array of strings → the list itself.
-     *
-     * Each entry is type-checked, non-empty-checked, and passed to the
-     * caller-supplied semantic validator (suffix/FQN/etc.).
-     *
-     * @param callable(string): ?string $semanticCheck Returns null on success
-     *                                                 or an error fragment
-     *                                                 appended to the message.
-     *
-     * @return list<string>
-     */
-    private static function normalizeStringList(
-        int $index,
-        string $layerName,
-        string $kind,
-        mixed $value,
-        callable $semanticCheck,
-    ): array {
-        if ($value === null) {
-            return [];
-        }
-
-        $entries = self::coerceToStringList($index, $layerName, $kind, $value);
-
-        $normalized = [];
-        foreach ($entries as $entryIndex => $entry) {
-            $normalized[] = self::validateListEntry($index, $layerName, $kind, $entryIndex, $entry, $semanticCheck);
-        }
-
-        return $normalized;
-    }
-
-    /**
-     * Coerces a raw YAML scalar / list into a non-empty sequential list of
-     * strings, rejecting anything that doesn't fit the contract.
-     *
-     * @return list<mixed>
-     */
-    private static function coerceToStringList(int $index, string $layerName, string $kind, mixed $value): array
-    {
-        $entries = \is_string($value) ? [$value] : $value;
-
-        if (!\is_array($entries) || !array_is_list($entries)) {
-            throw new ConfigLoadException(
-                self::CONFIG_PATH,
-                \sprintf(
-                    'architecture.layers[%d] ("%s"): "%s" must be a string or a non-empty list of strings, got %s.',
-                    $index,
-                    $layerName,
-                    $kind,
-                    get_debug_type($value),
-                ),
-            );
-        }
-
-        if ($entries === []) {
-            throw new ConfigLoadException(
-                self::CONFIG_PATH,
-                \sprintf(
-                    'architecture.layers[%d] ("%s"): "%s" must contain at least one entry; omit the key to leave the criterion undeclared.',
-                    $index,
-                    $layerName,
-                    $kind,
-                ),
-            );
-        }
-
-        return $entries;
-    }
-
-    /**
-     * @param callable(string): ?string $semanticCheck
-     */
-    private static function validateListEntry(
-        int $index,
-        string $layerName,
-        string $kind,
-        int $entryIndex,
-        mixed $entry,
-        callable $semanticCheck,
-    ): string {
-        if (!\is_string($entry) || $entry === '') {
-            throw new ConfigLoadException(
-                self::CONFIG_PATH,
-                \sprintf(
-                    'architecture.layers[%d] ("%s"): "%s" entry at index %d must be a non-empty string (got %s).',
-                    $index,
-                    $layerName,
-                    $kind,
-                    $entryIndex,
-                    \is_string($entry) ? "''" : get_debug_type($entry),
-                ),
-            );
-        }
-
-        $semanticError = $semanticCheck($entry);
-        if ($semanticError !== null) {
-            throw new ConfigLoadException(
-                self::CONFIG_PATH,
-                \sprintf(
-                    'architecture.layers[%d] ("%s"): "%s" entry at index %d %s',
-                    $index,
-                    $layerName,
-                    $kind,
-                    $entryIndex,
-                    $semanticError,
-                ),
-            );
-        }
-
-        return $entry;
     }
 
     /**

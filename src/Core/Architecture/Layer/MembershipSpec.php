@@ -28,8 +28,9 @@ use InvalidArgumentException;
  * trivially satisfied under {@see MatchMode::All}.
  *
  * Validation at construction enforces the documented invariant: at least one of
- * the five criterion lists must be non-empty. Step F (Phase 2 direction 3) will
- * relax this by also accepting a spec carrying only an `exclude` clause.
+ * the five criterion lists must be non-empty. An exclude-only layer would have
+ * no classes (exclude filters from a non-empty positive set), so the invariant
+ * remains tight regardless of whether {@see $exclude} is declared.
  */
 final readonly class MembershipSpec
 {
@@ -48,6 +49,15 @@ final readonly class MembershipSpec
      *                              as {@code attributes}.
      * @param MatchMode $mode Cross-kind combination strategy. Defaults to
      *                        {@see MatchMode::Any} (migration-friendly).
+     * @param ExcludeSpec|null $exclude Optional hard-filter clause (Phase 2
+     *                                  direction 3). When set, evaluated by
+     *                                  {@see LayerDefinition::matches()}
+     *                                  AFTER the positive criteria succeed
+     *                                  — if exclude fires, the class does
+     *                                  NOT belong to the layer regardless of
+     *                                  the positive match. The exclude
+     *                                  clause's own {@see MatchMode} governs
+     *                                  how its criteria combine.
      *
      * @throws InvalidArgumentException If every criterion list is empty or any
      *                                  entry is a non-string / empty-string.
@@ -59,43 +69,19 @@ final readonly class MembershipSpec
         public array $implements = [],
         public array $extends = [],
         public MatchMode $mode = MatchMode::Any,
+        public ?ExcludeSpec $exclude = null,
     ) {
-        $this->validateList('patterns', $patterns);
-        $this->validateList('suffix', $suffix);
-        $this->validateList('attributes', $attributes);
-        $this->validateList('implements', $implements);
-        $this->validateList('extends', $extends);
+        CriterionListValidator::validate('MembershipSpec', 'patterns', $patterns);
+        CriterionListValidator::validate('MembershipSpec', 'suffix', $suffix);
+        CriterionListValidator::validate('MembershipSpec', 'attributes', $attributes);
+        CriterionListValidator::validate('MembershipSpec', 'implements', $implements);
+        CriterionListValidator::validate('MembershipSpec', 'extends', $extends);
 
         if ($patterns === [] && $suffix === [] && $attributes === [] && $implements === [] && $extends === []) {
             throw new InvalidArgumentException(
                 'MembershipSpec must declare at least one non-empty criterion list '
                 . '(patterns, suffix, attributes, implements, or extends).',
             );
-        }
-    }
-
-    /**
-     * @param list<mixed> $values
-     */
-    private function validateList(string $kind, array $values): void
-    {
-        foreach ($values as $index => $value) {
-            if (!\is_string($value)) {
-                throw new InvalidArgumentException(\sprintf(
-                    'MembershipSpec %s[%d] must be a string, %s given.',
-                    $kind,
-                    $index,
-                    get_debug_type($value),
-                ));
-            }
-
-            if ($value === '') {
-                throw new InvalidArgumentException(\sprintf(
-                    'MembershipSpec %s[%d] must not be empty.',
-                    $kind,
-                    $index,
-                ));
-            }
         }
     }
 }
