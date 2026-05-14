@@ -1,0 +1,12 @@
+{
+    "_comment": "Golden fixture for Phase1ConfigCompatibilityTest. Pins the Phase-1-shape (post-ADR 0006) YAML schema across Phase 2 steps. Stored fields: rule, severity, source, target, type. Sorted by (rule, source, target, type). Regenerate via QMX_GOLDEN_UPDATE=1.",
+    "violations": [
+        {
+            "rule": "architecture.layer-violation",
+            "severity": "warning",
+            "source": "Fixtures\\ArchitectureSample\\Controller\\UserController",
+            "target": "Fixtures\\ArchitectureSample\\Repository\\UserRepository",
+            "type": "type_hint"
+        }
+    ]
+}
