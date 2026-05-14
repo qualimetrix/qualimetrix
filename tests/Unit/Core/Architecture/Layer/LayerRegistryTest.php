@@ -195,6 +195,29 @@ final class LayerRegistryTest extends TestCase
     }
 
     #[Test]
+    public function resolveLayer_namespaceAndItsClass_routeToTheSameLayer(): void
+    {
+        // Pins the by-design contract: a prefix-mode pattern matches both the
+        // namespace symbol AND classes under it. Today only class-level lookups
+        // reach the registry, but future layer-aware metrics over namespace
+        // symbols inherit this consistent behavior.
+        $registry = new LayerRegistry([
+            new LayerDefinition('service', ['App\\Service']),
+        ]);
+
+        self::assertSame(
+            'service',
+            $registry->resolveLayer(SymbolPath::forNamespace('App\\Service')),
+            'Pure-namespace SymbolPath must route to the layer whose pattern is the namespace prefix.',
+        );
+        self::assertSame(
+            'service',
+            $registry->resolveLayer(SymbolPath::forClass('App\\Service', 'UserService')),
+            'Class under the same namespace must route to the same layer.',
+        );
+    }
+
+    #[Test]
     public function resolveAll_returnsEveryMatchingLayerInDeclarationOrder(): void
     {
         $registry = new LayerRegistry([

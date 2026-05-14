@@ -151,12 +151,21 @@ final class LayerRegistry
     }
 
     /**
-     * Builds the FQN string from a class-level SymbolPath.
+     * Builds the FQN string from a SymbolPath.
      *
      * Rules:
      * - Both `$namespace` and `$type` empty/null → null (no FQN, never a layer match).
      * - Namespace empty/null → bare type name.
      * - Both present → `namespace\\type`.
+     * - Pure-namespace SymbolPath (type null) → returns the namespace string by design,
+     *   so prefix-mode patterns like `App\Service` match both `App\Service\Foo` and the
+     *   `App\Service` namespace itself. This is intentional: a layer's patterns describe
+     *   "things in this namespace", which includes the namespace node as well as its
+     *   classes. Today only class-level lookups reach this method (the rule iterates
+     *   `metrics->all(SymbolType::Class_)`), but the behavior is pinned by
+     *   `LayerRegistryTest::resolveLayer_namespaceOnlyPath_isResolvable` so future
+     *   consumers (e.g. a layer-aware metric over namespace symbols) get a stable
+     *   contract.
      */
     private function buildFqn(SymbolPath $class): ?string
     {
