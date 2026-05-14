@@ -166,11 +166,16 @@ layer. The shape evolves with Phase 2:
   `LayerSelector::matchesTarget()` now substitutes the source-side binding into
   captured target segments, and `LayerPolicy::isAllowed()` honours the new
   `allow_cross_instance` long-form flag. `MembershipSpec` still unchanged.
-- Step F (current): adds optional `ExcludeSpec $exclude` — a hard-filter
+- Step F: adds optional `ExcludeSpec $exclude` — a hard-filter
   clause evaluated by `LayerDefinition::matches()` after the positive
   criteria succeed. Construction-time invariant on `MembershipSpec` itself
   remains "at least one positive criterion non-empty"; an exclude-only
   spec is meaningless and rejected by the same invariant.
+- Step G (current): wires `AllowTarget::$relations` end-to-end. The
+  `MembershipSpec` shape stays unchanged; the new contract lives entirely
+  on the allow-list side. `LayerPolicy::isAllowed()` gains a `?DependencyType`
+  parameter and consults `AllowTarget::$relations` (null = "any relation
+  allowed", non-null = whitelist of `DependencyType` values).
 
 Construction-time invariant: at least one of the five criterion lists must be
 non-empty; each entry is a non-empty string.
@@ -363,14 +368,22 @@ abstraction lets glob / captured allow entries flow end-to-end (see the
 `Allow/` subdirectory below).
 
 - `__construct(list<AllowListEntry> $entries)`.
-- `isAllowed(string $from, string $to): bool` — `$from === $to` always allowed;
-  otherwise traverses entries, runs `source->matchSource($from)` for each, and
-  on a hit checks each `AllowTarget` via `target->matchesTarget($to, $binding)`.
-  When `AllowTarget::$allowCrossInstance` is `true`, the policy substitutes
+- `isAllowed(string $from, string $to, ?DependencyType $type = null): bool` —
+  `$from === $to` always allowed (regardless of `$type`); otherwise traverses
+  entries, runs `source->matchSource($from)` for each, and on a hit checks
+  each `AllowTarget` via `target->matchesTarget($to, $binding)`. When
+  `AllowTarget::$allowCrossInstance` is `true`, the policy substitutes
   `CaptureBinding::empty()` into the target match call, letting captured
-  source instances reach any other instance on the target side. Returns
-  `true` on the first match. The Phase-1-shape (exact-only) allow-list
-  preserves byte-for-byte truth values vs the pre-Step-C map lookup.
+  source instances reach any other instance on the target side. **Relation
+  gate (Step G):** when `$type` is non-null and `AllowTarget::$relations` is
+  non-null, the target is only accepted when `$type` is in `$relations`. A
+  null `$type` (callers that don't care about per-edge granularity, like
+  reachability checks in tests) bypasses the gate entirely. The walk returns
+  `true` on the first match-and-accept, which gives UNION semantics across
+  overlapping siblings: a bare-string sibling (relations=null) rescues any
+  edge kind regardless of other siblings' relation lists, in either
+  declaration order. The Phase-1-shape (exact-only) allow-list preserves
+  byte-for-byte truth values vs the pre-Step-C map lookup.
 - `allowedTargets(string $from): list<string>` — used by the rule's
   human-readable recommendation. Returns original selector strings for all
   kinds (exact / glob / captured); the rule renders them verbatim because the
@@ -412,8 +425,13 @@ matching `architecture.allow` selectors per the D4 grammar (ADR 0007):
   empty for exact and glob kinds. `LayerPolicy::isAllowed()` threads it into
   `matchesTarget()` so captured target selectors substitute bound values.
 - **`AllowTarget`** — VO bundling a target `LayerSelector` with two optional
-  fields: `?list<DependencyType> $relations` (Step G, still inert) and
-  `bool $allowCrossInstance` (Step E). The latter is set per-target via the
+  fields: `?list<DependencyType> $relations` (Step G) and
+  `bool $allowCrossInstance` (Step E). The relations list is set per-target
+  via the `relations: [...]` long-form YAML key (aliases expand via
+  `Configuration\Architecture\Allow\AllowAliasExpander`); `LayerPolicy`
+  rejects edges whose `DependencyType` is not in the list. A null
+  `$relations` means "any relation allowed" — the same semantics as the
+  bare-string short form. `allowCrossInstance` is set via the
   `allow_cross_instance: true` long-form YAML key and instructs the policy
   to pass an empty binding into the target match, lifting binding identity
   for that one target.
@@ -460,8 +478,16 @@ selector metacharacters.
   warning diagnostic; cumulative expansion is bounded by
   `architecture.max_expanded_layers` (default 500). Step E landed
   capture-binding identity in allow targets plus the
-  `allow_cross_instance` long-form key. Step F (current) lands the
+  `allow_cross_instance` long-form key. Step F lands the
   `exclude:` block on layer entries — see `ExcludeSpec`,
   `LayerCriteriaMatcher`, and the YAML-side `ExcludeBlockValidator` /
   `LayerCriterionNormalizer` in `Configuration/Architecture/Validation/`.
-  Step G (`relations:` filter) follows.
+  Step G (current) wires the `relations:` long-form filter end-to-end —
+  `AllowTarget::$relations` carries the parsed `DependencyType` whitelist,
+  `LayerPolicy::isAllowed()` gains a `?DependencyType $type` parameter that
+  it cross-checks against each candidate target's relations, and
+  `LayerViolationRule` threads the dependency edge's `DependencyType`
+  through. The user-facing surface (`Configuration/Architecture/Allow/AllowAliasExpander`)
+  validates direct tokens reflectively against `DependencyType::cases()` so
+  a new enum case automatically reaches the YAML grammar without code
+  changes. Step H (docs) closes Phase 2.
