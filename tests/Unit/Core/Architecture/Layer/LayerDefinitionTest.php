@@ -496,6 +496,58 @@ final class LayerDefinitionTest extends TestCase
     }
 
     // -------------------------------------------------------------------------
+    // Expansion-mode name validation (Phase 2 direction 2)
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function expanded_acceptsPascalCaseName(): void
+    {
+        $definition = LayerDefinition::expanded(
+            'domain-Order',
+            new MembershipSpec(patterns: ['App\\Module\\Order\\Domain\\**']),
+        );
+
+        self::assertSame('domain-Order', $definition->name());
+        self::assertTrue($definition->expanded);
+    }
+
+    #[Test]
+    public function expanded_acceptsLowercaseName_keepingFlagSet(): void
+    {
+        $definition = LayerDefinition::expanded(
+            'domain-order',
+            new MembershipSpec(patterns: ['App\\Module\\order\\Domain\\**']),
+        );
+
+        self::assertSame('domain-order', $definition->name());
+        self::assertTrue($definition->expanded);
+    }
+
+    #[Test]
+    public function expanded_rejectsNameStartingWithDigit(): void
+    {
+        $this->expectException(InvalidLayerDefinitionException::class);
+
+        LayerDefinition::expanded('1domain', new MembershipSpec(patterns: ['App\\Foo']));
+    }
+
+    #[Test]
+    public function expanded_rejectsNameWithBackslash(): void
+    {
+        $this->expectException(InvalidLayerDefinitionException::class);
+
+        LayerDefinition::expanded('domain\\Order', new MembershipSpec(patterns: ['App\\Foo']));
+    }
+
+    #[Test]
+    public function strictConstructor_keepsPhase1Restriction_uppercaseRejected(): void
+    {
+        $this->expectException(InvalidLayerDefinitionException::class);
+
+        new LayerDefinition('Domain', new MembershipSpec(patterns: ['App\\Foo']));
+    }
+
+    // -------------------------------------------------------------------------
     // MembershipSpec invariants
     // -------------------------------------------------------------------------
 

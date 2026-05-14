@@ -11,8 +11,10 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Configuration\Architecture\Validation\LayersValidator;
 use Qualimetrix\Configuration\Exception\ConfigLoadException;
+use Qualimetrix\Core\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Core\Architecture\Layer\MatchMode;
 use Qualimetrix\Core\Architecture\Layer\MembershipSpec;
+use Qualimetrix\Core\Architecture\Layer\TemplateLayerDefinition;
 
 #[CoversClass(LayersValidator::class)]
 #[CoversClass(MembershipSpec::class)]
@@ -26,6 +28,24 @@ final class LayersValidatorTest extends TestCase
         $this->validator = new LayersValidator();
     }
 
+    /**
+     * Extracts display names from a mixed entry list (static layers expose
+     * {@code name()}; templates expose {@code nameTemplate()}).
+     *
+     * @param list<LayerDefinition|TemplateLayerDefinition> $entries
+     *
+     * @return list<string>
+     */
+    private static function namesOf(array $entries): array
+    {
+        return array_map(
+            static fn(LayerDefinition|TemplateLayerDefinition $entry): string => $entry instanceof TemplateLayerDefinition
+                ? $entry->nameTemplate()
+                : $entry->name(),
+            $entries,
+        );
+    }
+
     // -------------------------------------------------------------------------
     // Happy path
     // -------------------------------------------------------------------------
@@ -33,44 +53,45 @@ final class LayersValidatorTest extends TestCase
     #[Test]
     public function emptyInputProducesEmptyRegistry(): void
     {
-        $registry = $this->validator->validate([]);
+        $entries = $this->validator->validate([]);
 
-        self::assertTrue($registry->isEmpty());
-        self::assertSame([], $registry->layerNames());
+        self::assertSame([], $entries);
+        self::assertSame([], self::namesOf($entries));
     }
 
     #[Test]
     public function nullInputProducesEmptyRegistry(): void
     {
-        $registry = $this->validator->validate(null);
+        $entries = $this->validator->validate(null);
 
-        self::assertTrue($registry->isEmpty());
+        self::assertSame([], $entries);
     }
 
     #[Test]
     public function singleLayerWithListPatternRegistersAllPatterns(): void
     {
-        $registry = $this->validator->validate([
+        $entries = $this->validator->validate([
             ['name' => 'service', 'patterns' => ['App\\Service', 'App\\Domain\\Service']],
         ]);
 
-        $definitions = $registry->definitions();
-        self::assertCount(1, $definitions);
-        self::assertSame('service', $definitions[0]->name());
-        self::assertSame(['App\\Service', 'App\\Domain\\Service'], $definitions[0]->patterns());
+        self::assertCount(1, $entries);
+        $entry = $entries[0];
+        \assert($entry instanceof LayerDefinition);
+        self::assertSame('service', $entry->name());
+        self::assertSame(['App\\Service', 'App\\Domain\\Service'], $entry->patterns());
     }
 
     #[Test]
     public function layersListPreservesDeclarationOrder(): void
     {
-        $registry = $this->validator->validate([
+        $entries = $this->validator->validate([
             ['name' => 'zebra', 'patterns' => ['App\\Zebra']],
             ['name' => 'alpha', 'patterns' => ['App\\Alpha']],
             ['name' => 'beta', 'patterns' => ['App\\Beta']],
         ]);
 
         // NOT sorted — declaration order is preserved through the registry.
-        self::assertSame(['zebra', 'alpha', 'beta'], $registry->layerNames());
+        self::assertSame(['zebra', 'alpha', 'beta'], self::namesOf($entries));
     }
 
     // -------------------------------------------------------------------------
@@ -209,11 +230,11 @@ final class LayersValidatorTest extends TestCase
     #[Test]
     public function omittedMatchKeyDefaultsToAny(): void
     {
-        $registry = $this->validator->validate([
+        $entries = $this->validator->validate([
             ['name' => 'service', 'patterns' => ['App\\Service']],
         ]);
 
-        $definitions = $registry->definitions();
+        $definitions = $entries;
         self::assertCount(1, $definitions);
         self::assertSame(MatchMode::Any, $definitions[0]->membership()->mode);
     }
@@ -221,21 +242,21 @@ final class LayersValidatorTest extends TestCase
     #[Test]
     public function explicitMatchAnyParsesToAny(): void
     {
-        $registry = $this->validator->validate([
+        $entries = $this->validator->validate([
             ['name' => 'service', 'patterns' => ['App\\Service'], 'match' => 'any'],
         ]);
 
-        self::assertSame(MatchMode::Any, $registry->definitions()[0]->membership()->mode);
+        self::assertSame(MatchMode::Any, $entries[0]->membership()->mode);
     }
 
     #[Test]
     public function explicitMatchAllParsesToAll(): void
     {
-        $registry = $this->validator->validate([
+        $entries = $this->validator->validate([
             ['name' => 'service', 'patterns' => ['App\\Service'], 'match' => 'all'],
         ]);
 
-        self::assertSame(MatchMode::All, $registry->definitions()[0]->membership()->mode);
+        self::assertSame(MatchMode::All, $entries[0]->membership()->mode);
     }
 
     #[Test]
@@ -295,11 +316,13 @@ final class LayersValidatorTest extends TestCase
         // `patterns: ['App\Foo']`. The shorthand is consistent across all
         // five criterion kinds (suffix / attributes / implements / extends
         // documented examples in the Phase 2 design use the shorthand).
-        $registry = $this->validator->validate([
+        $entries = $this->validator->validate([
             ['name' => 'controller', 'patterns' => 'App\\Controller'],
         ]);
 
-        self::assertSame(['App\\Controller'], $registry->definitions()[0]->patterns());
+        $entry = $entries[0];
+        \assert($entry instanceof LayerDefinition);
+        self::assertSame(['App\\Controller'], $entry->patterns());
     }
 
     #[Test]
@@ -381,21 +404,21 @@ final class LayersValidatorTest extends TestCase
     #[Test]
     public function suffixCriterionAcceptsShortName(): void
     {
-        $registry = $this->validator->validate([
+        $entries = $this->validator->validate([
             ['name' => 'repository', 'suffix' => 'Repository'],
         ]);
 
-        self::assertSame(['Repository'], $registry->definitions()[0]->membership()->suffix);
+        self::assertSame(['Repository'], $entries[0]->membership()->suffix);
     }
 
     #[Test]
     public function suffixCriterionAcceptsListOfShortNames(): void
     {
-        $registry = $this->validator->validate([
+        $entries = $this->validator->validate([
             ['name' => 'persistence', 'suffix' => ['Repository', 'Dao']],
         ]);
 
-        self::assertSame(['Repository', 'Dao'], $registry->definitions()[0]->membership()->suffix);
+        self::assertSame(['Repository', 'Dao'], $entries[0]->membership()->suffix);
     }
 
     #[Test]
@@ -428,22 +451,22 @@ final class LayersValidatorTest extends TestCase
     #[Test]
     public function fqnCriterionAcceptsFqnString(string $kind): void
     {
-        $registry = $this->validator->validate([
+        $entries = $this->validator->validate([
             ['name' => 'r', $kind => 'App\\Some\\Fqn'],
         ]);
 
-        self::assertSame(['App\\Some\\Fqn'], self::criterionField($registry->definitions()[0]->membership(), $kind));
+        self::assertSame(['App\\Some\\Fqn'], self::criterionField($entries[0]->membership(), $kind));
     }
 
     #[DataProvider('fqnCriterionProvider')]
     #[Test]
     public function fqnCriterionAcceptsListOfFqns(string $kind): void
     {
-        $registry = $this->validator->validate([
+        $entries = $this->validator->validate([
             ['name' => 'r', $kind => ['App\\A', 'App\\B']],
         ]);
 
-        self::assertSame(['App\\A', 'App\\B'], self::criterionField($registry->definitions()[0]->membership(), $kind));
+        self::assertSame(['App\\A', 'App\\B'], self::criterionField($entries[0]->membership(), $kind));
     }
 
     /**
@@ -544,7 +567,7 @@ final class LayersValidatorTest extends TestCase
     {
         // End-to-end: a single layer entry with all five criteria flows through
         // the validator and produces a MembershipSpec with the expected fields.
-        $registry = $this->validator->validate([
+        $entries = $this->validator->validate([
             [
                 'name' => 'kitchen-sink',
                 'patterns' => ['App\\Foo'],
@@ -556,7 +579,7 @@ final class LayersValidatorTest extends TestCase
             ],
         ]);
 
-        $spec = $registry->definitions()[0]->membership();
+        $spec = $entries[0]->membership();
         self::assertSame(['App\\Foo'], $spec->patterns);
         self::assertSame(['Bar'], $spec->suffix);
         self::assertSame(['App\\Attr\\X'], $spec->attributes);
@@ -628,11 +651,11 @@ final class LayersValidatorTest extends TestCase
     public function samePatternWithinOneLayerIsNotADuplicate(): void
     {
         // Cross-layer duplicates are rejected; within-layer repetition is allowed.
-        $registry = $this->validator->validate([
+        $entries = $this->validator->validate([
             ['name' => 'a', 'patterns' => ['App\\Shared', 'App\\Shared']],
         ]);
 
-        self::assertSame(['a'], $registry->layerNames());
+        self::assertSame(['a'], self::namesOf($entries));
     }
 
     #[Test]

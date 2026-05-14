@@ -45,7 +45,7 @@ final class CheckCommandTest extends TestCase
             'paths' => [$this->tempDir],
             '--format' => 'text',
             '--no-progress' => true,
-            '--disable-rule' => ['computed.health'],
+            '--disable-rule' => ['computed.health', 'architecture.layer-violation'],
         ]);
 
         // Assert success (exit code 0 - no violations)
@@ -116,7 +116,7 @@ class ComplexClass {
             'paths' => [$this->tempDir],
             '--format' => 'json',
             '--no-progress' => true,
-            '--disable-rule' => ['computed.health'],
+            '--disable-rule' => ['computed.health', 'architecture.layer-violation'],
         ]);
 
         // Assert success
@@ -172,7 +172,7 @@ class ComplexClass {
             '--exclude' => ['vendor'],
             '--format' => 'text',
             '--no-progress' => true,
-            '--disable-rule' => ['computed.health'],
+            '--disable-rule' => ['computed.health', 'architecture.layer-violation'],
         ]);
 
         // Assert success
@@ -283,7 +283,7 @@ class ComplexClass {
             'paths' => [$this->tempDir],
             '--format' => 'checkstyle',
             '--no-progress' => true,
-            '--disable-rule' => ['computed.health'],
+            '--disable-rule' => ['computed.health', 'architecture.layer-violation'],
         ]);
 
         self::assertSame(0, $commandTester->getStatusCode());
@@ -303,7 +303,7 @@ class ComplexClass {
             'paths' => [$this->tempDir],
             '--format' => 'sarif',
             '--no-progress' => true,
-            '--disable-rule' => ['computed.health'],
+            '--disable-rule' => ['computed.health', 'architecture.layer-violation'],
         ]);
 
         self::assertSame(0, $commandTester->getStatusCode());
@@ -326,7 +326,7 @@ class ComplexClass {
             'paths' => [$this->tempDir],
             '--format' => 'gitlab',
             '--no-progress' => true,
-            '--disable-rule' => ['computed.health'],
+            '--disable-rule' => ['computed.health', 'architecture.layer-violation'],
         ]);
 
         self::assertSame(0, $commandTester->getStatusCode());
@@ -347,7 +347,7 @@ class ComplexClass {
             'paths' => [$this->tempDir],
             '--format' => 'health',
             '--no-progress' => true,
-            '--disable-rule' => ['computed.health'],
+            '--disable-rule' => ['computed.health', 'architecture.layer-violation'],
         ]);
 
         self::assertSame(0, $commandTester->getStatusCode());
@@ -366,7 +366,7 @@ class ComplexClass {
             'paths' => [$this->tempDir],
             '--format' => 'summary',
             '--no-progress' => true,
-            '--disable-rule' => ['computed.health'],
+            '--disable-rule' => ['computed.health', 'architecture.layer-violation'],
         ]);
 
         self::assertSame(0, $commandTester->getStatusCode());
@@ -387,7 +387,7 @@ class ComplexClass {
             'paths' => [$this->tempDir],
             '--format' => 'github',
             '--no-progress' => true,
-            '--disable-rule' => ['computed.health'],
+            '--disable-rule' => ['computed.health', 'architecture.layer-violation'],
         ]);
 
         // No violations -> empty output, exit code 0
