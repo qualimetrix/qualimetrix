@@ -112,6 +112,89 @@ final class LayerViolationIntegrationTest extends TestCase
         self::assertStringContainsString('Architecture coverage:', $diagnostic->message);
     }
 
+    /**
+     * Golden file regression: normalise the architecture-rule violation set
+     * down to `{rule, severity, source, target, type}` tuples (no line numbers,
+     * no full messages) and compare against a stored JSON snapshot. After an
+     * intentional algorithm change, regenerate the snapshot by re-running with
+     * `QMX_GOLDEN_UPDATE=1` in the environment — the test writes the file back.
+     *
+     * Storing the projection (not the raw violation objects) keeps the file
+     * stable across cosmetic message tweaks while still pinning the violation
+     * set itself.
+     */
+    #[Test]
+    public function goldenFileMatchesFullPolicyOutput(): void
+    {
+        $pipeline = $this->createPipelineWithArchitecture($this->buildPolicy(CoverageMode::Ignore));
+        $result = $pipeline->analyze(self::FIXTURE_PATH);
+
+        $actual = $this->projectArchitectureViolations($result->violations);
+        $goldenPath = self::FIXTURE_PATH . '/expected-violations.json';
+
+        if (getenv('QMX_GOLDEN_UPDATE') === '1') {
+            $payload = [
+                '_comment' => 'Golden fixture for LayerViolationIntegrationTest::goldenFileMatchesFullPolicyOutput. Normalised projection of architecture violations emitted by the full four-layer policy against the ArchitectureSample fixture. Stored fields (per entry): rule, severity, source, target, type. Sorted by (rule, source, target, type) for stable diffs. Regenerate by setting QMX_GOLDEN_UPDATE=1.',
+                'violations' => $actual,
+            ];
+            file_put_contents($goldenPath, json_encode($payload, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES) . "\n");
+            self::markTestSkipped('Golden file regenerated. Re-run without QMX_GOLDEN_UPDATE to verify.');
+        }
+
+        $contents = file_get_contents($goldenPath);
+        self::assertNotFalse($contents, 'Golden file must exist: ' . $goldenPath);
+
+        $decoded = json_decode($contents, true);
+        self::assertIsArray($decoded);
+        self::assertArrayHasKey('violations', $decoded);
+        self::assertIsArray($decoded['violations']);
+
+        self::assertSame(
+            $decoded['violations'],
+            $actual,
+            'Architecture violation set drifted from the golden file. Set QMX_GOLDEN_UPDATE=1 to regenerate after an intentional algorithm change.',
+        );
+    }
+
+    /**
+     * @param list<Violation> $violations
+     *
+     * @return list<array{rule: string, severity: string, source: string, target: string, type: string}>
+     */
+    private function projectArchitectureViolations(array $violations): array
+    {
+        $rows = [];
+        foreach ($violations as $violation) {
+            if (!str_starts_with($violation->ruleName, 'architecture.')) {
+                continue;
+            }
+            $rows[] = [
+                'rule' => $violation->ruleName,
+                'severity' => $violation->severity->value,
+                'source' => $violation->symbolPath->toString(),
+                'target' => $violation->dependencyTarget?->toString() ?? '',
+                'type' => $violation->dependencyType->value ?? '',
+            ];
+        }
+        usort($rows, static function (array $a, array $b): int {
+            $cmp = strcmp($a['rule'], $b['rule']);
+            if ($cmp !== 0) {
+                return $cmp;
+            }
+            $cmp = strcmp($a['source'], $b['source']);
+            if ($cmp !== 0) {
+                return $cmp;
+            }
+            $cmp = strcmp($a['target'], $b['target']);
+            if ($cmp !== 0) {
+                return $cmp;
+            }
+            return strcmp($a['type'], $b['type']);
+        });
+
+        return $rows;
+    }
+
     #[Test]
     public function ignoreCoverageModeSuppressesDiagnosticEvenWithUnmatchedEnds(): void
     {

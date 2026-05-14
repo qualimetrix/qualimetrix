@@ -60,6 +60,7 @@ __pycache__/
 examples/
 *.json
 !/docs/internal/benchmark-baselines.json
+!/tests/Fixtures/**/*.json
 
 # Node modules (HTML report build pipeline)
 node_modules/
