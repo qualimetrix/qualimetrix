@@ -25,6 +25,7 @@ use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Rules\Architecture\LayerViolationOptions;
 use Qualimetrix\Rules\Architecture\LayerViolationRule;
+use Qualimetrix\Tests\Support\Architecture\AllowListBuilder;
 
 #[CoversClass(LayerViolationRule::class)]
 final class LayerViolationRuleTest extends TestCase
@@ -195,6 +196,49 @@ final class LayerViolationRuleTest extends TestCase
         self::assertIsArray($decoded);
         self::assertSame('controller', $decoded['fromLayer']);
         self::assertSame('repository', $decoded['toLayer']);
+    }
+
+    #[Test]
+    public function recommendationListsGlobAllowTargetsAsTheirPatternStrings(): void
+    {
+        // Step C regression: when the source's allow row contains only
+        // glob / captured selectors, the recommendation must NOT fall back to
+        // "not allowed to depend on any other declared layer" — that wording
+        // would be factually wrong. Pattern strings render verbatim so the
+        // user sees the shape they can copy back into config.
+        $rule = new LayerViolationRule(new LayerViolationOptions());
+
+        $registry = new LayerRegistry([
+            new LayerDefinition('controller', new MembershipSpec(['App\\Controller'])),
+            new LayerDefinition('user-repository', new MembershipSpec(['App\\User\\Repository'])),
+            new LayerDefinition('service', new MembershipSpec(['App\\Service'])),
+        ]);
+        $policy = new \Qualimetrix\Core\Architecture\Layer\LayerPolicy([
+            new \Qualimetrix\Core\Architecture\Allow\AllowListEntry(
+                \Qualimetrix\Core\Architecture\Allow\LayerSelector::exact('controller'),
+                [new \Qualimetrix\Core\Architecture\Allow\AllowTarget(
+                    \Qualimetrix\Core\Architecture\Allow\LayerSelector::glob('*-repository'),
+                )],
+            ),
+        ]);
+        $arch = new ArchitectureConfiguration($registry, $policy, CoverageMode::Ignore);
+
+        $repo = new InMemoryMetricRepository();
+        $this->registerClass($repo, 'App\\Controller', 'UserController');
+        $this->registerClass($repo, 'App\\Service', 'UserService');
+        $this->registerClass($repo, 'App\\User\\Repository', 'UserRepository');
+
+        $graph = $this->buildGraph([
+            $this->buildDependency('App\\Controller', 'UserController', 'App\\Service', 'UserService'),
+        ]);
+
+        $violations = $this->filterByRule($rule->analyze($this->buildContext($graph, $arch, $repo)), LayerViolationRule::NAME);
+
+        self::assertCount(1, $violations);
+        $recommendation = $violations[0]->recommendation;
+        self::assertNotNull($recommendation);
+        self::assertStringContainsString('Allowed targets for layer "controller": *-repository', $recommendation);
+        self::assertStringNotContainsString('not allowed to depend on any', $recommendation);
     }
 
     #[Test]
@@ -646,7 +690,7 @@ final class LayerViolationRuleTest extends TestCase
 
         return new ArchitectureConfiguration(
             new LayerRegistry($definitions),
-            new LayerPolicy($allow),
+            AllowListBuilder::policyFromExactMap($allow),
             CoverageMode::Ignore,
         );
     }

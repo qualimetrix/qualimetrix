@@ -12,13 +12,13 @@ use Qualimetrix\Core\Architecture\ArchitectureConfiguration;
 use Qualimetrix\Core\Architecture\ArchitectureConfigurationHolder;
 use Qualimetrix\Core\Architecture\CoverageMode;
 use Qualimetrix\Core\Architecture\Layer\LayerDefinition;
-use Qualimetrix\Core\Architecture\Layer\LayerPolicy;
 use Qualimetrix\Core\Architecture\Layer\LayerRegistry;
 use Qualimetrix\Core\Architecture\Layer\MembershipSpec;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Rules\Architecture\LayerViolationRule;
+use Qualimetrix\Tests\Support\Architecture\AllowListBuilder;
 
 /**
  * End-to-end test: runs the real {@see AnalysisPipelineInterface} against a
@@ -99,7 +99,7 @@ final class LayerViolationIntegrationTest extends TestCase
         $registry = new LayerRegistry([
             new LayerDefinition('controller', new MembershipSpec(['Fixtures\\ArchitectureSample\\Controller'])),
         ]);
-        $policy = new LayerPolicy(['controller' => []]);
+        $policy = AllowListBuilder::policyFromExactMap(['controller' => []]);
         $architecture = new ArchitectureConfiguration($registry, $policy, CoverageMode::Warn);
 
         $pipeline = $this->createPipelineWithArchitecture($architecture);
@@ -202,7 +202,7 @@ final class LayerViolationIntegrationTest extends TestCase
         $registry = new LayerRegistry([
             new LayerDefinition('controller', new MembershipSpec(['Fixtures\\ArchitectureSample\\Controller'])),
         ]);
-        $policy = new LayerPolicy(['controller' => []]);
+        $policy = AllowListBuilder::policyFromExactMap(['controller' => []]);
         $architecture = new ArchitectureConfiguration($registry, $policy, CoverageMode::Ignore);
 
         $pipeline = $this->createPipelineWithArchitecture($architecture);
@@ -238,7 +238,7 @@ final class LayerViolationIntegrationTest extends TestCase
             new LayerDefinition('domain', new MembershipSpec(['Fixtures\\ArchitectureSample\\Domain'])),
         ]);
 
-        $policy = new LayerPolicy([
+        $policy = AllowListBuilder::policyFromExactMap([
             // Controllers may use domain DTOs for I/O typing, but not the data access layer.
             'controller' => ['service', 'domain'],
             'service' => ['repository', 'domain'],

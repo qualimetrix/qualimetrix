@@ -223,4 +223,121 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
             self::assertSame('architecture', $e->configPath);
         }
     }
+
+    // -------------------------------------------------------------------------
+    // Phase 2 Step C: glob / captured selectors flow end-to-end through the factory
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function globAllowTargetReachesPolicyAndMatchesConcreteLayers(): void
+    {
+        $result = $this->factory->fromArray([
+            'layers' => [
+                ['name' => 'controller', 'patterns' => ['App\\Controller']],
+                ['name' => 'user-repository', 'patterns' => ['App\\User\\Repository']],
+                ['name' => 'order-repository', 'patterns' => ['App\\Order\\Repository']],
+            ],
+            'allow' => [
+                'controller' => ['*-repository'],
+            ],
+        ]);
+
+        $policy = $result->configuration->policy();
+
+        self::assertTrue($policy->isAllowed('controller', 'user-repository'));
+        self::assertTrue($policy->isAllowed('controller', 'order-repository'));
+        // No glob match → forbidden.
+        self::assertFalse($policy->isAllowed('user-repository', 'controller'));
+    }
+
+    #[Test]
+    public function globAllowSourceReachesPolicyAndMatchesMultipleConcreteLayers(): void
+    {
+        $result = $this->factory->fromArray([
+            'layers' => [
+                ['name' => 'domain-orders', 'patterns' => ['App\\Domain\\Orders']],
+                ['name' => 'domain-inventory', 'patterns' => ['App\\Domain\\Inventory']],
+                ['name' => 'shared', 'patterns' => ['App\\Shared']],
+            ],
+            'allow' => [
+                'domain-*' => ['shared'],
+            ],
+        ]);
+
+        $policy = $result->configuration->policy();
+
+        self::assertTrue($policy->isAllowed('domain-orders', 'shared'));
+        self::assertTrue($policy->isAllowed('domain-inventory', 'shared'));
+        self::assertFalse($policy->isAllowed('shared', 'domain-orders'));
+    }
+
+    #[Test]
+    public function globAllowSelectorThatMatchesNoConcreteRegistryLayerIsAccepted(): void
+    {
+        // Glob / captured selectors are not cross-validated against registry
+        // layer names — Step D template-expansion will produce more layers
+        // post-config-load, so a glob with zero current registry matches is
+        // still legal at config-load time. The policy will accept any concrete
+        // target name that satisfies the glob.
+        $result = $this->factory->fromArray([
+            'layers' => [
+                ['name' => 'controller', 'patterns' => ['App\\Controller']],
+            ],
+            'allow' => [
+                'controller' => ['module-*'],
+            ],
+        ]);
+
+        $policy = $result->configuration->policy();
+
+        // Policy loaded without failure; glob target matches any layer whose
+        // name satisfies the wildcard.
+        self::assertTrue($policy->isAllowed('controller', 'module-billing'));
+        self::assertFalse($policy->isAllowed('controller', 'service'));
+    }
+
+    #[Test]
+    public function unbalancedBraceInAllowSelectorIsRejectedAtConfigLoad(): void
+    {
+        try {
+            $this->factory->fromArray([
+                'layers' => [
+                    ['name' => 'controller', 'patterns' => ['App\\Controller']],
+                ],
+                'allow' => [
+                    'controller' => ['domain-{m'],
+                ],
+            ]);
+            self::fail('Expected ConfigLoadException');
+        } catch (ConfigLoadException $e) {
+            self::assertSame('architecture', $e->configPath);
+            self::assertStringContainsString('architecture.allow.controller[0]', $e->getMessage());
+            self::assertStringContainsString("unbalanced '{'", $e->getMessage());
+        }
+    }
+
+    #[Test]
+    public function capturedSelectorWithSubstitutionParsesEndToEnd(): void
+    {
+        // Step C scope: captured selectors parse and the policy traversal sees
+        // their match-target loose semantics (any-segment shape match,
+        // bindings ignored on the target side until Step E).
+        $result = $this->factory->fromArray([
+            'layers' => [
+                ['name' => 'app-orders', 'patterns' => ['App\\Orders\\App']],
+                ['name' => 'domain-orders', 'patterns' => ['App\\Orders\\Domain']],
+                ['name' => 'domain-inventory', 'patterns' => ['App\\Inventory\\Domain']],
+            ],
+            'allow' => [
+                'app-{m}' => ['domain-{m}'],
+            ],
+        ]);
+
+        $policy = $result->configuration->policy();
+
+        // Same-{m} → allowed.
+        self::assertTrue($policy->isAllowed('app-orders', 'domain-orders'));
+        // Cross-instance — Step C currently allows (Step E tightens).
+        self::assertTrue($policy->isAllowed('app-orders', 'domain-inventory'));
+    }
 }

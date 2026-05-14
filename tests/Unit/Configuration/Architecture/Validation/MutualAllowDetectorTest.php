@@ -9,6 +9,10 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Configuration\Architecture\Validation\MutualAllowDetector;
 use Qualimetrix\Configuration\Pipeline\DeferredWarning;
+use Qualimetrix\Core\Architecture\Allow\AllowListEntry;
+use Qualimetrix\Core\Architecture\Allow\AllowTarget;
+use Qualimetrix\Core\Architecture\Allow\LayerSelector;
+use Qualimetrix\Tests\Support\Architecture\AllowListBuilder;
 
 #[CoversClass(MutualAllowDetector::class)]
 #[CoversClass(DeferredWarning::class)]
@@ -22,7 +26,7 @@ final class MutualAllowDetectorTest extends TestCase
     }
 
     #[Test]
-    public function emptyMapEmitsNoWarning(): void
+    public function emptyEntryListEmitsNoWarning(): void
     {
         $warnings = [];
         $this->detector->detect([], $warnings);
@@ -35,10 +39,10 @@ final class MutualAllowDetectorTest extends TestCase
     {
         $warnings = [];
         $this->detector->detect(
-            [
+            AllowListBuilder::entriesFromExactMap([
                 'a' => ['b'],
                 'b' => ['c'],
-            ],
+            ]),
             $warnings,
         );
 
@@ -50,10 +54,10 @@ final class MutualAllowDetectorTest extends TestCase
     {
         $warnings = [];
         $this->detector->detect(
-            [
+            AllowListBuilder::entriesFromExactMap([
                 'a' => ['b'],
                 'b' => ['a'],
-            ],
+            ]),
             $warnings,
         );
 
@@ -69,12 +73,12 @@ final class MutualAllowDetectorTest extends TestCase
     {
         $warnings = [];
         $this->detector->detect(
-            [
+            AllowListBuilder::entriesFromExactMap([
                 'a' => ['b'],
                 'b' => ['a'],
                 'c' => ['d'],
                 'd' => ['c'],
-            ],
+            ]),
             $warnings,
         );
 
@@ -89,10 +93,10 @@ final class MutualAllowDetectorTest extends TestCase
         // Both 'a' and 'b' mention each other; the pair (a, b) should appear only once.
         $warnings = [];
         $this->detector->detect(
-            [
+            AllowListBuilder::entriesFromExactMap([
                 'b' => ['a'],
                 'a' => ['b'],
-            ],
+            ]),
             $warnings,
         );
 
@@ -107,9 +111,9 @@ final class MutualAllowDetectorTest extends TestCase
         // 'a' allows 'a' — not a mutual cycle, just a self-reference.
         $warnings = [];
         $this->detector->detect(
-            [
+            AllowListBuilder::entriesFromExactMap([
                 'a' => ['a'],
-            ],
+            ]),
             $warnings,
         );
 
@@ -122,9 +126,9 @@ final class MutualAllowDetectorTest extends TestCase
         // 'a' allows 'b', but 'b' is not in the map at all.
         $warnings = [];
         $this->detector->detect(
-            [
+            AllowListBuilder::entriesFromExactMap([
                 'a' => ['b'],
-            ],
+            ]),
             $warnings,
         );
 
@@ -136,10 +140,10 @@ final class MutualAllowDetectorTest extends TestCase
     {
         $warnings = [DeferredWarning::warning('prior')];
         $this->detector->detect(
-            [
+            AllowListBuilder::entriesFromExactMap([
                 'a' => ['b'],
                 'b' => ['a'],
-            ],
+            ]),
             $warnings,
         );
 
@@ -154,15 +158,39 @@ final class MutualAllowDetectorTest extends TestCase
         // a↔b, b↔c, a↔c — three distinct mutual pairs.
         $warnings = [];
         $this->detector->detect(
-            [
+            AllowListBuilder::entriesFromExactMap([
                 'a' => ['b', 'c'],
                 'b' => ['a', 'c'],
                 'c' => ['a', 'b'],
-            ],
+            ]),
             $warnings,
         );
 
         self::assertCount(1, $warnings);
         self::assertSame(3, substr_count($warnings[0]->message, '↔'));
+    }
+
+    #[Test]
+    public function nonExactSelectorsAreSkipped(): void
+    {
+        // Step C scope: glob-source / glob-target mutual edges are deliberately
+        // ignored by the detector (cross-shape overlap is a Step E concern).
+        // Phase-1 byte-for-byte BC is preserved because Phase-1 configs use only
+        // exact selectors.
+        $entries = [
+            new AllowListEntry(
+                LayerSelector::glob('*-store'),
+                [new AllowTarget(LayerSelector::exact('orders'))],
+            ),
+            new AllowListEntry(
+                LayerSelector::exact('orders'),
+                [new AllowTarget(LayerSelector::glob('*-store'))],
+            ),
+        ];
+
+        $warnings = [];
+        $this->detector->detect($entries, $warnings);
+
+        self::assertSame([], $warnings);
     }
 }

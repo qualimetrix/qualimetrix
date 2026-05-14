@@ -12,13 +12,13 @@ use Qualimetrix\Core\Architecture\ArchitectureConfiguration;
 use Qualimetrix\Core\Architecture\ArchitectureConfigurationHolder;
 use Qualimetrix\Core\Architecture\CoverageMode;
 use Qualimetrix\Core\Architecture\Layer\LayerDefinition;
-use Qualimetrix\Core\Architecture\Layer\LayerPolicy;
 use Qualimetrix\Core\Architecture\Layer\LayerRegistry;
 use Qualimetrix\Core\Architecture\Layer\MatchMode;
 use Qualimetrix\Core\Architecture\Layer\MembershipSpec;
 use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Rules\Architecture\LayerViolationRule;
+use Qualimetrix\Tests\Support\Architecture\AllowListBuilder;
 
 /**
  * End-to-end integration test for the Phase 2 direction-1 membership criteria
@@ -72,7 +72,7 @@ final class LayerCriteriaIntegrationTest extends TestCase
 
         // Self-allow only — every cross-layer edge becomes a violation, which
         // is what we use as evidence of correct classification.
-        $policy = new LayerPolicy([
+        $policy = AllowListBuilder::policyFromExactMap([
             'contracts-impls' => ['markers'],
             'aggregates' => ['markers'],
             'tagged-services' => ['markers'],
@@ -136,7 +136,7 @@ final class LayerCriteriaIntegrationTest extends TestCase
             ),
         ]);
 
-        $policy = new LayerPolicy([
+        $policy = AllowListBuilder::policyFromExactMap([
             'strict-repository' => [],
         ]);
 
@@ -192,7 +192,7 @@ final class LayerCriteriaIntegrationTest extends TestCase
             ),
         ]);
 
-        $policy = new LayerPolicy([
+        $policy = AllowListBuilder::policyFromExactMap([
             'contracts-impls' => [],
             'aggregates' => [],
             'tagged-services' => [],

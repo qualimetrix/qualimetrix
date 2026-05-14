@@ -11,9 +11,9 @@ use Qualimetrix\Core\Architecture\ArchitectureConfiguration;
 use Qualimetrix\Core\Architecture\ArchitectureConfigurationHolder;
 use Qualimetrix\Core\Architecture\CoverageMode;
 use Qualimetrix\Core\Architecture\Layer\LayerDefinition;
-use Qualimetrix\Core\Architecture\Layer\LayerPolicy;
 use Qualimetrix\Core\Architecture\Layer\LayerRegistry;
 use Qualimetrix\Core\Architecture\Layer\MembershipSpec;
+use Qualimetrix\Tests\Support\Architecture\AllowListBuilder;
 
 #[CoversClass(ArchitectureConfigurationHolder::class)]
 final class ArchitectureConfigurationHolderTest extends TestCase
@@ -34,7 +34,7 @@ final class ArchitectureConfigurationHolderTest extends TestCase
         $holder = new ArchitectureConfigurationHolder();
         $custom = new ArchitectureConfiguration(
             new LayerRegistry([new LayerDefinition('core', new MembershipSpec(['App\\Core']))]),
-            new LayerPolicy(['core' => []]),
+            AllowListBuilder::policyFromExactMap(['core' => []]),
             CoverageMode::Warn,
         );
 
@@ -49,7 +49,7 @@ final class ArchitectureConfigurationHolderTest extends TestCase
         $holder = new ArchitectureConfigurationHolder();
         $custom = new ArchitectureConfiguration(
             new LayerRegistry([new LayerDefinition('core', new MembershipSpec(['App\\Core']))]),
-            new LayerPolicy(['core' => []]),
+            AllowListBuilder::policyFromExactMap(['core' => []]),
             CoverageMode::Error,
         );
         $holder->set($custom);

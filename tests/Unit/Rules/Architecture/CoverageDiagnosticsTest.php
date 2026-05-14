@@ -11,7 +11,6 @@ use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\Architecture\ArchitectureConfiguration;
 use Qualimetrix\Core\Architecture\CoverageMode;
 use Qualimetrix\Core\Architecture\Layer\LayerDefinition;
-use Qualimetrix\Core\Architecture\Layer\LayerPolicy;
 use Qualimetrix\Core\Architecture\Layer\LayerRegistry;
 use Qualimetrix\Core\Architecture\Layer\MembershipSpec;
 use Qualimetrix\Core\Dependency\Dependency;
@@ -24,6 +23,7 @@ use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Rules\Architecture\LayerViolationOptions;
 use Qualimetrix\Rules\Architecture\LayerViolationRule;
+use Qualimetrix\Tests\Support\Architecture\AllowListBuilder;
 
 #[CoversClass(LayerViolationRule::class)]
 final class CoverageDiagnosticsTest extends TestCase
@@ -221,7 +221,7 @@ final class CoverageDiagnosticsTest extends TestCase
 
         return new ArchitectureConfiguration(
             new LayerRegistry($definitions),
-            new LayerPolicy($allow),
+            AllowListBuilder::policyFromExactMap($allow),
             $coverage,
         );
     }
