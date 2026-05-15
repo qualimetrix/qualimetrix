@@ -262,6 +262,12 @@
   #   enabled: true
   #   max_cycle_size: 0          # 0 = report all sizes
 
+  # Layer violation rule — enforces the architecture defined under the top-level
+  # `architecture:` key (see below). Short-circuits when no layers are declared.
+  # architecture.layer-violation:
+  #   enabled: true              # default: true
+  #   severity: warning          # warning | error
+
   # — Code Smells —
   # Docs: https://qualimetrix.github.io/qualimetrix/rules/code-smells/
 
@@ -347,3 +353,59 @@
 # Exclude specific health dimensions from the overall score.
 # exclude_health:
 #   - typing                     # e.g., exclude typing from overall health
+
+
+# -----------------------------------------------------------------------------
+# Architecture (layer rules)
+# -----------------------------------------------------------------------------
+# Docs: https://qualimetrix.github.io/qualimetrix/rules/architecture/
+#
+# Declare your layers and the allowed inter-layer dependencies. The
+# `architecture.layer-violation` rule flags any dependency edge whose source
+# layer is not permitted to reach its target layer.
+#
+# Layers are an ordered list — first match wins. Vendor namespaces are
+# first-class layers (declare them and they participate in policy like any
+# other). Out-of-layer ends are silently skipped at violation level by
+# default; flip `coverage` to `warn` or `error` to surface them.
+
+# architecture:
+#   layers:                              # ordered — first match wins
+#     - name: controller
+#       patterns: ['App\Controller\**']
+#
+#     - name: service
+#       patterns: ['App\Service\**']
+#       suffix: ['Service']              # multi-criterion membership
+#       match: any                       # any (default) | all
+#
+#     - name: repository
+#       patterns: ['App\Repository\**']
+#       implements: ['Doctrine\Persistence\ObjectRepository']
+#       exclude:                         # hard filter on top of positive match
+#         patterns: ['App\Repository\Legacy\**']
+#
+#     # Template layer — one concrete instance per observed binding tuple.
+#     - name: 'domain-{module}'
+#       patterns: ['App\Module\{module}\Domain\**']
+#
+#     - name: doctrine                   # vendor as first-class layer
+#       patterns: ['Doctrine\**']
+#
+#   allow:
+#     controller: [service]
+#     service:    [repository]
+#
+#     # Captured allow — same-instance pairing. 'domain-Order' may use
+#     # 'repository-Order' but not 'repository-Inventory'.
+#     'domain-{m}': ['repository-{m}']
+#
+#     # Long-form target with relations: filter (whitelist of dependency
+#     # kinds). Aliases: inheritance, static_access, type_reference,
+#     # runtime_check.
+#     repository:
+#       - target: doctrine
+#         relations: [implements, extends, type_reference]
+#
+#   coverage: ignore                     # ignore (default) | warn | error
+#   max_expanded_layers: 500             # cumulative cap for template expansion
