@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Architecture\Domain\Layer\ClassContextFactory;
 use Qualimetrix\Architecture\Domain\Layer\ClassSet;
+use Qualimetrix\Architecture\Domain\Layer\ExcludeSpec;
 use Qualimetrix\Architecture\Domain\Layer\MatchMode;
 use Qualimetrix\Architecture\Domain\Layer\MembershipSpec;
 use Qualimetrix\Architecture\Domain\Layer\TemplateLayerDefinition;
@@ -204,6 +205,153 @@ final class TupleExtractorTest extends TestCase
         $tuples = $this->extractor->collect($template, $classes);
 
         self::assertSame([], $tuples);
+    }
+
+    // -------------------------------------------------------------------------
+    // M1 (Phase 5.1) — exclude applied during tuple observation
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function collect_excludePatternFiresPerInstance_dropsTuple(): void
+    {
+        // Template's exclude clause uses the same capture variable {m}.
+        // After binding {m}=Order from the capture pattern, exclude resolves
+        // to `App\Module\Order\Domain\Generated\**`, which matches every
+        // candidate class for that instance. The tuple must NOT be observed
+        // — otherwise template expansion would produce a phantom `module-Order`
+        // layer whose runtime membership is empty (every class falls under
+        // exclude).
+        $template = new TemplateLayerDefinition(
+            'module-{m}',
+            new MembershipSpec(
+                patterns: ['App\\Module\\{m}\\**'],
+                exclude: new ExcludeSpec(patterns: ['App\\Module\\{m}\\Domain\\Generated\\**']),
+            ),
+        );
+
+        $classes = self::classSet([
+            'App\\Module\\Order\\Domain\\Generated\\OrderProxy',     // excluded
+            'App\\Module\\Inventory\\Domain\\Stock',                  // not excluded
+        ]);
+
+        $tuples = $this->extractor->collect($template, $classes);
+
+        // Only Inventory survives — Order's only candidate is excluded, so
+        // no tuple for `m=Order` should be observed.
+        self::assertSame([['m' => 'Inventory']], $tuples);
+    }
+
+    #[Test]
+    public function collect_excludePatternPartialMatch_keepsTupleWhenAtLeastOneClassSurvives(): void
+    {
+        // Same template/exclude as above, but the {m}=Order instance has
+        // BOTH a Generated/ class (excluded) and a regular class (kept).
+        // The tuple for `m=Order` must remain because at least one class
+        // contributes a binding without firing exclude.
+        $template = new TemplateLayerDefinition(
+            'module-{m}',
+            new MembershipSpec(
+                patterns: ['App\\Module\\{m}\\**'],
+                exclude: new ExcludeSpec(patterns: ['App\\Module\\{m}\\Domain\\Generated\\**']),
+            ),
+        );
+
+        $classes = self::classSet([
+            'App\\Module\\Order\\Domain\\Generated\\OrderProxy',     // excluded
+            'App\\Module\\Order\\Domain\\Order',                      // kept
+            'App\\Module\\Inventory\\Domain\\Stock',                  // kept
+        ]);
+
+        $tuples = $this->extractor->collect($template, $classes);
+
+        self::assertSame(
+            [
+                ['m' => 'Inventory'],
+                ['m' => 'Order'],
+            ],
+            $tuples,
+        );
+    }
+
+    #[Test]
+    public function collect_excludeSuffix_filtersTupleObservation(): void
+    {
+        // Exclude by short-name suffix (no captures involved). Same shape as
+        // runtime membership.
+        $template = new TemplateLayerDefinition(
+            'module-{m}',
+            new MembershipSpec(
+                patterns: ['App\\Module\\{m}\\**'],
+                exclude: new ExcludeSpec(suffix: ['Proxy']),
+            ),
+        );
+
+        $classes = self::classSet([
+            'App\\Module\\Order\\OrderProxy',          // excluded by suffix
+            'App\\Module\\Audit\\AuditTrail',          // kept
+        ]);
+
+        $tuples = $this->extractor->collect($template, $classes);
+
+        self::assertSame([['m' => 'Audit']], $tuples);
+    }
+
+    #[Test]
+    public function collect_excludeModeAll_requiresEveryDeclaredKindToMatch(): void
+    {
+        // ExcludeSpec with `mode: all` requires every declared kind to match
+        // before exclusion fires. Classes that match only one declared kind
+        // survive — they contribute tuples.
+        $template = new TemplateLayerDefinition(
+            'module-{m}',
+            new MembershipSpec(
+                patterns: ['App\\Module\\{m}\\**'],
+                exclude: new ExcludeSpec(
+                    patterns: ['App\\Module\\{m}\\Generated\\**'],
+                    suffix: ['Proxy'],
+                    mode: MatchMode::All,
+                ),
+            ),
+        );
+
+        $classes = self::classSet([
+            'App\\Module\\Order\\Generated\\OrderProxy',           // both kinds match — excluded
+            'App\\Module\\Inventory\\Generated\\InventoryService', // only pattern matches — kept
+            'App\\Module\\Audit\\AuditProxy',                       // only suffix matches — kept
+        ]);
+
+        $tuples = $this->extractor->collect($template, $classes);
+
+        self::assertSame(
+            [
+                ['m' => 'Audit'],
+                ['m' => 'Inventory'],
+            ],
+            $tuples,
+        );
+    }
+
+    #[Test]
+    public function collect_staticExcludePatternWithoutCaptures_filtersTupleObservation(): void
+    {
+        // Exclude pattern with no capture variables — substitution is a no-op
+        // and behaves like a plain glob filter.
+        $template = new TemplateLayerDefinition(
+            'module-{m}',
+            new MembershipSpec(
+                patterns: ['App\\Module\\{m}\\**'],
+                exclude: new ExcludeSpec(patterns: ['App\\Module\\**\\Generated\\**']),
+            ),
+        );
+
+        $classes = self::classSet([
+            'App\\Module\\Order\\Generated\\OrderProxy',
+            'App\\Module\\Audit\\AuditTrail',
+        ]);
+
+        $tuples = $this->extractor->collect($template, $classes);
+
+        self::assertSame([['m' => 'Audit']], $tuples);
     }
 
     /**
