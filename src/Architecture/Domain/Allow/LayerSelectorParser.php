@@ -107,13 +107,21 @@ final class LayerSelectorParser
 
         self::flushLiteralBuffer($state);
 
-        // Unreachable guard for "captured selector with zero captures" is
-        // intentionally absent: every code path through the while-loop either
-        // produces at least one capture segment (via consumeCapture's
-        // buildCaptureSegment call) or throws (unbalancedClose / unbalancedOpen
-        // / empty capture). containsBrace() returning true is a sufficient
-        // precondition; the segment list is therefore guaranteed non-empty
-        // and to contain at least one capture by the time we reach this point.
+        // Invariant: containsBrace() returned true to dispatch here, and every
+        // code path through the while-loop either records at least one capture
+        // segment (via consumeCapture's buildCaptureSegment call) or throws
+        // (unbalancedClose / unbalancedOpen / empty capture). The segment list
+        // is therefore non-empty AND contains at least one capture by the time
+        // we reach this point — asserts make the invariant enforceable in
+        // debug builds without paying a production-mode cost.
+        \assert($state->segments !== [], 'parseCaptured invariant: segments must be non-empty');
+        \assert(
+            array_any(
+                $state->segments,
+                static fn(SelectorSegment $segment): bool => $segment->captureName !== null,
+            ),
+            'parseCaptured invariant: at least one segment must be a capture',
+        );
 
         return LayerSelector::captured($raw, $state->segments);
     }

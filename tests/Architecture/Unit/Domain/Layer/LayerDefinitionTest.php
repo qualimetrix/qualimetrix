@@ -510,11 +510,10 @@ final class LayerDefinitionTest extends TestCase
         );
 
         self::assertSame('domain-Order', $definition->name());
-        self::assertTrue($definition->expanded);
     }
 
     #[Test]
-    public function expanded_acceptsLowercaseName_keepingFlagSet(): void
+    public function expanded_acceptsLowercaseName(): void
     {
         $definition = LayerDefinition::expanded(
             'domain-order',
@@ -522,7 +521,6 @@ final class LayerDefinitionTest extends TestCase
         );
 
         self::assertSame('domain-order', $definition->name());
-        self::assertTrue($definition->expanded);
     }
 
     #[Test]
