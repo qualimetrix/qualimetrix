@@ -6,6 +6,7 @@ namespace Qualimetrix\Architecture\Configuration\Validation;
 
 use Qualimetrix\Architecture\Domain\Allow\AllowListEntry;
 use Qualimetrix\Configuration\Pipeline\DeferredWarning;
+use Qualimetrix\Core\Dependency\DependencyType;
 
 /**
  * Scans the parsed allow-list for symmetric {@code A → B}/{@code B → A} pairs
@@ -20,6 +21,16 @@ use Qualimetrix\Configuration\Pipeline\DeferredWarning;
  * fall outside the check — symmetric overlap between glob ranges is a Step E
  * concern (see ADR 0007). Phase-1 configs use only exact selectors, so the
  * pre-Step-C behaviour is preserved byte-for-byte.
+ *
+ * **Relations & opt-out awareness (Phase 2 Step G + D5).** An edge carrying a
+ * {@code relations:} whitelist contributes only a partial allow — the
+ * "mutual-allow" signal is meaningful only if the two opposing edges share at
+ * least one {@see DependencyType}, otherwise the layers are not actually
+ * symmetric (A can extend B, B can call A statically — the pair is not
+ * collapsible). Similarly, an edge that explicitly sets
+ * {@code allow_cross_instance: true} signals user intent to permit the
+ * directional pattern; firing a mutual-allow warning would be redundant noise
+ * (D5 caveat — opt-out silences related diagnostics).
  */
 final class MutualAllowDetector
 {
@@ -48,13 +59,17 @@ final class MutualAllowDetector
     }
 
     /**
-     * Projects allow-list entries to a {@code source → targets} map containing
-     * only exact↔exact edges. Glob / captured selectors on either side are
-     * silently skipped (see class-level docblock).
+     * Projects allow-list entries to a {@code source → (target → edge)} map
+     * containing only exact↔exact edges. Glob / captured selectors on either
+     * side are silently skipped (see class-level docblock).
+     *
+     * Each edge retains the {@code relations} whitelist ({@code null} = all
+     * relations) and the {@code allowCrossInstance} opt-out flag so the
+     * mutual-edge check can consult them.
      *
      * @param list<AllowListEntry> $entries
      *
-     * @return array<string, list<string>>
+     * @return array<string, array<string, array{relations: list<DependencyType>|null, allowCrossInstance: bool}>>
      */
     private static function projectExactEdges(array $entries): array
     {
@@ -64,32 +79,35 @@ final class MutualAllowDetector
                 continue;
             }
             $sourceName = $entry->source->originalString();
-            $targetNames = [];
+            $edges = [];
             foreach ($entry->targets as $target) {
                 if (!$target->target->isExact()) {
                     continue;
                 }
-                $targetNames[] = $target->target->originalString();
+                $edges[$target->target->originalString()] = [
+                    'relations' => $target->relations,
+                    'allowCrossInstance' => $target->allowCrossInstance,
+                ];
             }
-            $map[$sourceName] = $targetNames;
+            $map[$sourceName] = $edges;
         }
 
         return $map;
     }
 
     /**
-     * @param array<string, list<string>> $allowedTargets
+     * @param array<string, array<string, array{relations: list<DependencyType>|null, allowCrossInstance: bool}>> $exactEdges
      *
      * @return list<array{0: string, 1: string}>
      */
-    private static function collectMutualPairs(array $allowedTargets): array
+    private static function collectMutualPairs(array $exactEdges): array
     {
         $pairs = [];
         $seen = [];
 
-        foreach ($allowedTargets as $from => $targets) {
-            foreach ($targets as $to) {
-                if (!self::isMutualEdge($from, $to, $allowedTargets)) {
+        foreach ($exactEdges as $from => $edges) {
+            foreach ($edges as $to => $edgeForward) {
+                if (!self::isMutualEdge($from, $to, $exactEdges)) {
                     continue;
                 }
 
@@ -107,18 +125,50 @@ final class MutualAllowDetector
     }
 
     /**
-     * @param array<string, list<string>> $allowedTargets
+     * @param array<string, array<string, array{relations: list<DependencyType>|null, allowCrossInstance: bool}>> $exactEdges
      */
-    private static function isMutualEdge(string $from, string $to, array $allowedTargets): bool
+    private static function isMutualEdge(string $from, string $to, array $exactEdges): bool
     {
         if ($from === $to) {
             return false;
         }
 
-        if (!isset($allowedTargets[$to])) {
+        if (!isset($exactEdges[$to][$from])) {
             return false;
         }
 
-        return \in_array($from, $allowedTargets[$to], true);
+        $forward = $exactEdges[$from][$to];
+        $backward = $exactEdges[$to][$from];
+
+        // D5 opt-out: either direction explicitly accepts the directional
+        // pattern → user intent is documented, suppress redundant warning.
+        if ($forward['allowCrossInstance'] || $backward['allowCrossInstance']) {
+            return false;
+        }
+
+        return self::relationsIntersect($forward['relations'], $backward['relations']);
+    }
+
+    /**
+     * Returns true when the two relation filters share at least one
+     * {@see DependencyType}. {@code null} means "all relations" — it
+     * intersects with every other filter (null or non-empty list).
+     *
+     * @param list<DependencyType>|null $a
+     * @param list<DependencyType>|null $b
+     */
+    private static function relationsIntersect(?array $a, ?array $b): bool
+    {
+        if ($a === null || $b === null) {
+            return true;
+        }
+
+        foreach ($a as $type) {
+            if (\in_array($type, $b, true)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
