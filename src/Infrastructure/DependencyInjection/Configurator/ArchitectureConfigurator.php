@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
+use Qualimetrix\Architecture\Processing\ArchitectureProcessor;
+use Qualimetrix\Architecture\Processing\ArchitectureProcessorInterface;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -32,8 +34,12 @@ use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
  *
  * Cross-feature wiring (the shared {@code ArchitectureConfigurationHolder}
  * runtime holder and {@code LayerExpansionStage}) continues to live in
- * {@see AnalysisConfigurator} until Phase 4 replaces them with the
- * {@code ArchitectureProcessor}; see ADR 0008.
+ * {@see AnalysisConfigurator} until the holder is retired; see ADR 0008.
+ *
+ * The {@see ArchitectureProcessorInterface} alias registered here is the
+ * load-bearing handle for both rule injection (resolved by
+ * {@code RuleOptionsCompilerPass::resolveExtraDependencies()}) and pipeline
+ * wiring (referenced directly by {@code AnalysisConfigurator}).
  */
 final class ArchitectureConfigurator implements ContainerConfiguratorInterface
 {
@@ -47,11 +53,12 @@ final class ArchitectureConfigurator implements ContainerConfiguratorInterface
         $this->registerProcessing($container);
         $this->registerConfigurationValidation($container);
 
-        // TODO Phase 4 (ADR 0008):
-        // $container->setAlias(ArchitectureProcessorInterface::class, ArchitectureProcessor::class);
-        // ArchitectureProcessor / ArchitectureProcessorInterface do not exist yet;
-        // the alias is needed by RuleOptionsCompilerPass::resolveServiceId() once
-        // LayerViolationRule injects the interface (per ADR 0010 Part 1 / ADR 0008).
+        // Per ADR 0008: alias is required so RuleOptionsCompilerPass can
+        // resolve the interface as an extra dependency when injecting the
+        // processor into LayerViolationRule. AnalysisPipeline (and any other
+        // direct consumer) benefits from the same alias.
+        $container->setAlias(ArchitectureProcessorInterface::class, ArchitectureProcessor::class)
+            ->setPublic(true);
     }
 
     /**
@@ -83,10 +90,9 @@ final class ArchitectureConfigurator implements ContainerConfiguratorInterface
     /**
      * Registers Architecture processing services (autowired).
      *
-     * Today this picks up {@code LayerExpansionStage}-adjacent helpers.
-     * Phase 4 (ADR 0008) will introduce {@code ArchitectureProcessor},
-     * {@code TupleExtractor}, and {@code LayerInstantiator} into the same
-     * directory; they will be registered automatically by this scan.
+     * Picks up {@code ArchitectureProcessor}, {@code LayerExpansionStage},
+     * {@code TupleExtractor} and {@code LayerInstantiator} — every concrete
+     * helper under {@code src/Architecture/Processing/}.
      *
      * Exclusions follow the project convention (interfaces, abstracts,
      * VOs, exceptions, result types).
