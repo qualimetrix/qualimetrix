@@ -49,7 +49,7 @@ Items ordered by combined usefulness × marketing impact × effort efficiency.
   reflective alias map, `architecture.empty-template` diagnostic.
 - **Marketing claim (post-release):** "Drop deptrac from your CI — Qualimetrix covers the textbook DDD case AND the
   long-tail (custom membership, bounded-context partitioning, edge-kind whitelisting), 40x faster, no second tool."
-- **Reference:** deptrac (PHP), ArchUnit (Java), NetArchTest (.NET), Dependency Cruiser (JS); design records in
+- **Reference:** deptrac (PHP), ArchUnit (Java), ArchUnitNET (.NET — actively maintained ArchUnit port), Dependency Cruiser (JS); design records in
   [ADR 0005](../adr/0005-architecture-rules.md) (Phase 1), [ADR 0006](../adr/0006-architecture-rules-declaration-order.md)
   (declaration-order pivot), [ADR 0007](../adr/0007-architecture-rules-phase-2-design.md) (Phase 2 flexibility surface).
 
