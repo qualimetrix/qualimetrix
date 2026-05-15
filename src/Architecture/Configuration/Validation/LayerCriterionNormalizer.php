@@ -106,7 +106,11 @@ final class LayerCriterionNormalizer
         }
 
         if (\is_string($value)) {
-            $candidate = MatchMode::tryFrom($value);
+            // Case-insensitive: `ANY`, `Any`, `any`, `aLL`, etc. all resolve.
+            // `MatchMode::tryFrom()` itself is case-sensitive; normalize the
+            // user input before delegation so the enum cases stay the single
+            // source of truth for the canonical spelling.
+            $candidate = MatchMode::tryFrom(strtolower($value));
             if ($candidate !== null) {
                 return $candidate;
             }

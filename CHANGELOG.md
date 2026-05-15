@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - `architecture.layer-violation` no longer false-positives mutual-allow when the two directions use disjoint `relations:` filters or `allow_cross_instance: true`.
+- `architecture.layers[].match` accepts any case (`any`, `Any`, `ANY`, `all`, `All`, `ALL`) — normalization now lowercases before parsing.
 - Architecture configuration warnings (currently `mutual-allow` detection in the allow-list) now actually reach the user logger. Previously they were emitted to a placeholder `NullLogger` because configuration resolution ran before the user logger was wired up; the warnings are now buffered as `DeferredWarning`s and replayed once the logger is configured.
 - `architecture.layers` no longer false-positives "duplicate patterns across layers" when two entries share `patterns:` but at least one declares `mode: all` with non-empty non-pattern criteria (`suffix` / `attributes` / `implements` / `extends`) — under `match: all` the additional criteria disambiguate the layers, so the duplicate-pattern check is now mode-aware.
 - `architecture.max_expanded_layers` now actually takes effect when set in YAML. Previously the snake_case scalar leaf under the MIXED `architecture` root was silently camelCased to `maxExpandedLayers` and the factory's snake_case lookup fell back to the default. ADR 0009 introduces a per-section normalization policy that closes this class of bug.

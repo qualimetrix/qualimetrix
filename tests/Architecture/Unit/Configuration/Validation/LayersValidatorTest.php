@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Architecture\Configuration\Validation\LayerCriterionNormalizer;
 use Qualimetrix\Architecture\Configuration\Validation\LayersValidator;
 use Qualimetrix\Architecture\Domain\Layer\ExcludeSpec;
 use Qualimetrix\Architecture\Domain\Layer\LayerDefinition;
@@ -18,6 +19,7 @@ use Qualimetrix\Architecture\Domain\Layer\TemplateLayerDefinition;
 use Qualimetrix\Configuration\Exception\ConfigLoadException;
 
 #[CoversClass(LayersValidator::class)]
+#[CoversClass(LayerCriterionNormalizer::class)]
 #[CoversClass(MembershipSpec::class)]
 #[CoversClass(ExcludeSpec::class)]
 #[CoversClass(MatchMode::class)]
@@ -230,6 +232,31 @@ final class LayersValidatorTest extends TestCase
         ]);
 
         self::assertSame(MatchMode::All, $entries[0]->membership()->mode);
+    }
+
+    /**
+     * @return iterable<string, array{0: string, 1: MatchMode}>
+     */
+    public static function caseInsensitiveMatchModeProvider(): iterable
+    {
+        yield 'lowercase any' => ['any', MatchMode::Any];
+        yield 'mixed-case Any' => ['Any', MatchMode::Any];
+        yield 'uppercase ANY' => ['ANY', MatchMode::Any];
+        yield 'lowercase all' => ['all', MatchMode::All];
+        yield 'mixed-case aLL' => ['aLL', MatchMode::All];
+        yield 'titlecase All' => ['All', MatchMode::All];
+        yield 'uppercase ALL' => ['ALL', MatchMode::All];
+    }
+
+    #[Test]
+    #[DataProvider('caseInsensitiveMatchModeProvider')]
+    public function matchModeIsCaseInsensitive(string $rawValue, MatchMode $expected): void
+    {
+        $entries = $this->validator->validate([
+            ['name' => 'service', 'patterns' => ['App\\Service'], 'match' => $rawValue],
+        ]);
+
+        self::assertSame($expected, $entries[0]->membership()->mode);
     }
 
     #[Test]
