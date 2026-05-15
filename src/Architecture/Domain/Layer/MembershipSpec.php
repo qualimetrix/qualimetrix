@@ -39,7 +39,7 @@ final readonly class MembershipSpec
      *                               relies on other criterion kinds.
      * @param list<string> $suffix Class-name suffixes. Short names only — no
      *                             backslash. Validation lives in
-     *                             {@see \Qualimetrix\Configuration\Architecture\Validation\LayersValidator}.
+     *                             {@see \Qualimetrix\Architecture\Configuration\Validation\LayersValidator}.
      * @param list<string> $attributes Attribute class FQNs. Validation enforces
      *                                 the presence of at least one segment
      *                                 (no short names).

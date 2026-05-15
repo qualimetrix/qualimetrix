@@ -7,7 +7,7 @@ namespace Qualimetrix\Tests\Integration\Configuration;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Configuration\Architecture\ArchitectureConfigurationFactory;
+use Qualimetrix\Architecture\Configuration\ArchitectureConfigurationFactory;
 use Qualimetrix\Configuration\Discovery\ComposerReader;
 use Qualimetrix\Configuration\Loader\YamlConfigLoader;
 use Qualimetrix\Configuration\Pipeline\ConfigurationContext;

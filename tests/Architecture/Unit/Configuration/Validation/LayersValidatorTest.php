@@ -2,19 +2,19 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Unit\Configuration\Architecture\Validation;
+namespace Qualimetrix\Tests\Architecture\Unit\Configuration\Validation;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Architecture\Configuration\Validation\LayersValidator;
 use Qualimetrix\Architecture\Domain\Layer\ExcludeSpec;
 use Qualimetrix\Architecture\Domain\Layer\LayerDefinition;
 use Qualimetrix\Architecture\Domain\Layer\MatchMode;
 use Qualimetrix\Architecture\Domain\Layer\MembershipSpec;
 use Qualimetrix\Architecture\Domain\Layer\TemplateLayerDefinition;
-use Qualimetrix\Configuration\Architecture\Validation\LayersValidator;
 use Qualimetrix\Configuration\Exception\ConfigLoadException;
 
 #[CoversClass(LayersValidator::class)]

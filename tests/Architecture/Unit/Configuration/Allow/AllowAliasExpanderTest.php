@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Unit\Configuration\Architecture\Allow;
+namespace Qualimetrix\Tests\Architecture\Unit\Configuration\Allow;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Configuration\Architecture\Allow\AllowAliasExpander;
+use Qualimetrix\Architecture\Configuration\Allow\AllowAliasExpander;
 use Qualimetrix\Configuration\Exception\ConfigLoadException;
 use Qualimetrix\Core\Dependency\DependencyType;
 

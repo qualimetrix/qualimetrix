@@ -18,16 +18,16 @@ use Psr\Log\LogLevel;
  * forwards verbatim to the configured logger via {@see LoggerInterface::log()}.
  *
  * Configuration sources (e.g.,
- * {@see \Qualimetrix\Configuration\Architecture\ArchitectureConfigurationFactory})
+ * {@see \Qualimetrix\Architecture\Configuration\ArchitectureConfigurationFactory})
  * append `DeferredWarning`s into
- * {@see \Qualimetrix\Configuration\Architecture\ArchitectureFactoryResult::$warnings};
+ * {@see \Qualimetrix\Architecture\Configuration\ArchitectureFactoryResult::$warnings};
  * the pipeline forwards them through
  * {@see ResolvedConfiguration::$deferredWarnings} into the runtime configurator.
  *
  * Use {@see self::warning()} for the common case (level = {@see LogLevel::WARNING}).
  * For other severities pass {@see LogLevel} constants directly to the constructor.
  *
- * @see \Qualimetrix\Configuration\Architecture\ArchitectureFactoryResult
+ * @see \Qualimetrix\Architecture\Configuration\ArchitectureFactoryResult
  *
  * @phpstan-type LogLevelString 'emergency'|'alert'|'critical'|'error'|'warning'|'notice'|'info'|'debug'
  */

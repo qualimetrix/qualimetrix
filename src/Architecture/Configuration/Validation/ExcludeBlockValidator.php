@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Configuration\Architecture\Validation;
+namespace Qualimetrix\Architecture\Configuration\Validation;
 
 use InvalidArgumentException;
 use Qualimetrix\Architecture\Domain\Layer\ExcludeSpec;

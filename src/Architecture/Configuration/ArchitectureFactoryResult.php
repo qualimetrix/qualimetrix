@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Configuration\Architecture;
+namespace Qualimetrix\Architecture\Configuration;
 
 use Qualimetrix\Architecture\Domain\ArchitectureConfiguration;
 use Qualimetrix\Configuration\Pipeline\DeferredWarning;

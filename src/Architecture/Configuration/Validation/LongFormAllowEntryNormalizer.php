@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Configuration\Architecture\Validation;
+namespace Qualimetrix\Architecture\Configuration\Validation;
 
-use Qualimetrix\Configuration\Architecture\Allow\AllowAliasExpander;
+use Qualimetrix\Architecture\Configuration\Allow\AllowAliasExpander;
 use Qualimetrix\Configuration\Exception\ConfigLoadException;
 use Qualimetrix\Core\Dependency\DependencyType;
 

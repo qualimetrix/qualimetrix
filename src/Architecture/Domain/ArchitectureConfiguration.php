@@ -37,7 +37,7 @@ use Qualimetrix\Architecture\Domain\Layer\TemplateLayerDefinition;
  * pins this invariant.
  *
  * Validation and cross-checks happen in
- * {@see \Qualimetrix\Configuration\Architecture\ArchitectureConfigurationFactory};
+ * {@see \Qualimetrix\Architecture\Configuration\ArchitectureConfigurationFactory};
  * this VO trusts its inputs.
  *
  * An "empty" configuration (no entries declared) signals that the architecture

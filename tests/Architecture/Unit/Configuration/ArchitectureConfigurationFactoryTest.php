@@ -2,22 +2,22 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Unit\Configuration\Architecture;
+namespace Qualimetrix\Tests\Architecture\Unit\Configuration;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Architecture\Configuration\ArchitectureConfigurationFactory;
+use Qualimetrix\Architecture\Configuration\ArchitectureFactoryResult;
 use Qualimetrix\Architecture\Domain\ArchitectureConfiguration;
 use Qualimetrix\Architecture\Domain\CoverageMode;
-use Qualimetrix\Configuration\Architecture\ArchitectureConfigurationFactory;
-use Qualimetrix\Configuration\Architecture\ArchitectureFactoryResult;
 use Qualimetrix\Configuration\Exception\ConfigLoadException;
 use Qualimetrix\Configuration\Pipeline\DeferredWarning;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**
  * Orchestration-level coverage for the factory. Per-concern validator details
- * live in {@see \Qualimetrix\Tests\Unit\Configuration\Architecture\Validation}.
+ * live in {@see \Qualimetrix\Tests\Architecture\Unit\Configuration\Validation}.
  *
  * Cases retained here verify that:
  * - The factory composes the four validators in the expected order.
