@@ -631,6 +631,174 @@ final class LayersValidatorTest extends TestCase
         self::assertSame(['a'], self::namesOf($entries));
     }
 
+    // -------------------------------------------------------------------------
+    // Mode-aware duplicate-pattern skip (H1 remediation, Phase 1.2)
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function duplicatePatternIsRejectedWhenBothEntriesAreMatchAny(): void
+    {
+        // Pin OLD behavior: `match: any` (default) on both sides keeps the
+        // duplicate-pattern check active because pattern alone is sufficient
+        // for the earlier entry to claim every match.
+        $this->expectException(ConfigLoadException::class);
+        $this->expectExceptionMessageMatches('/unreachable/');
+
+        $this->validator->validate([
+            ['name' => 'a', 'patterns' => ['App\\Shared'], 'match' => 'any'],
+            ['name' => 'b', 'patterns' => ['App\\Shared'], 'match' => 'any'],
+        ]);
+    }
+
+    #[Test]
+    public function duplicatePatternIsAllowedWhenBothEntriesAreMatchAllWithNonPatternCriteria(): void
+    {
+        // H1 fix: when BOTH duplicates declare `match: all` together with a
+        // non-empty non-pattern criterion, each one narrows its pattern
+        // matches to a different subset and the patterns can legitimately
+        // overlap.
+        $entries = $this->validator->validate([
+            ['name' => 'a', 'patterns' => ['App\\Shared'], 'suffix' => 'Service', 'match' => 'all'],
+            ['name' => 'b', 'patterns' => ['App\\Shared'], 'suffix' => 'Repository', 'match' => 'all'],
+        ]);
+
+        self::assertSame(['a', 'b'], self::namesOf($entries));
+    }
+
+    #[Test]
+    public function duplicatePatternIsAllowedWhenOnlyEarlierEntryIsMatchAllWithNonPatternCriteria(): void
+    {
+        // H1 fix: the earlier entry narrows its claim with `suffix`, so the
+        // later entry can legitimately catch the residue of `App\Shared`
+        // classes whose short name does not end with "Service".
+        $entries = $this->validator->validate([
+            ['name' => 'a', 'patterns' => ['App\\Shared'], 'suffix' => 'Service', 'match' => 'all'],
+            ['name' => 'b', 'patterns' => ['App\\Shared']],
+        ]);
+
+        self::assertSame(['a', 'b'], self::namesOf($entries));
+    }
+
+    #[Test]
+    public function duplicatePatternIsAllowedWhenOnlyLaterEntryIsMatchAllWithNonPatternCriteria(): void
+    {
+        // H1 fix (order-symmetric "one or both" predicate): the later entry's
+        // narrowing condition is recognized even though, in isolation, this
+        // case is technically unreachable. Trade-off documented on
+        // `LayersValidator::rejectDuplicatePatterns`: losing a rare
+        // "unreachable layer" warning is preferred over false-positives.
+        $entries = $this->validator->validate([
+            ['name' => 'a', 'patterns' => ['App\\Shared']],
+            ['name' => 'b', 'patterns' => ['App\\Shared'], 'suffix' => 'Service', 'match' => 'all'],
+        ]);
+
+        self::assertSame(['a', 'b'], self::namesOf($entries));
+    }
+
+    /**
+     * @return iterable<string, array{0: string, 1: string|list<string>}>
+     */
+    public static function nonPatternCriterionProvider(): iterable
+    {
+        yield 'suffix' => ['suffix', 'Service'];
+        yield 'attributes' => ['attributes', 'App\\Attr\\Service'];
+        yield 'implements' => ['implements', 'App\\Iface\\Service'];
+        yield 'extends' => ['extends', 'App\\Base\\Service'];
+    }
+
+    /**
+     * @param string|list<string> $value
+     */
+    #[DataProvider('nonPatternCriterionProvider')]
+    #[Test]
+    public function duplicatePatternIsAllowedForEveryNonPatternCriterionUnderMatchAll(string $kind, string|array $value): void
+    {
+        // H1 fix: any of suffix / attributes / implements / extends qualifies
+        // as a narrowing non-pattern criterion under `match: all`.
+        $entries = $this->validator->validate([
+            ['name' => 'a', 'patterns' => ['App\\Shared'], $kind => $value, 'match' => 'all'],
+            ['name' => 'b', 'patterns' => ['App\\Shared']],
+        ]);
+
+        self::assertSame(['a', 'b'], self::namesOf($entries));
+    }
+
+    #[Test]
+    public function duplicatePatternIsRejectedWhenMatchAllHasNoNonPatternCriteria(): void
+    {
+        // Pin OLD behavior: `match: all` without any non-pattern criterion
+        // collapses to the same semantics as `match: any` (patterns alone
+        // claim every match), so the duplicate is still unreachable.
+        $this->expectException(ConfigLoadException::class);
+        $this->expectExceptionMessageMatches('/unreachable/');
+
+        $this->validator->validate([
+            ['name' => 'a', 'patterns' => ['App\\Shared'], 'match' => 'all'],
+            ['name' => 'b', 'patterns' => ['App\\Shared'], 'match' => 'all'],
+        ]);
+    }
+
+    #[Test]
+    public function duplicatePatternIsRejectedWhenEarlierIsMatchAnyAndLaterIsMatchAllWithoutNonPatternCriteria(): void
+    {
+        // Pin OLD behavior: neither side narrows — the earlier blanket
+        // `match: any` entry claims every match of the pattern and the
+        // later `match: all` entry without extra criteria is unreachable.
+        $this->expectException(ConfigLoadException::class);
+        $this->expectExceptionMessageMatches('/unreachable/');
+
+        $this->validator->validate([
+            ['name' => 'a', 'patterns' => ['App\\Shared']],
+            ['name' => 'b', 'patterns' => ['App\\Shared'], 'match' => 'all'],
+        ]);
+    }
+
+    #[Test]
+    public function duplicatePatternModeAwareSkipExtendsAcrossMoreThanTwoEntries(): void
+    {
+        // Mode-aware skip is pair-wise. When several entries share a pattern
+        // and at least one of any colliding pair narrows, all are accepted.
+        $entries = $this->validator->validate([
+            ['name' => 'a', 'patterns' => ['App\\Shared'], 'suffix' => 'Service', 'match' => 'all'],
+            ['name' => 'b', 'patterns' => ['App\\Shared'], 'suffix' => 'Repository', 'match' => 'all'],
+            ['name' => 'c', 'patterns' => ['App\\Shared'], 'suffix' => 'Controller', 'match' => 'all'],
+        ]);
+
+        self::assertSame(['a', 'b', 'c'], self::namesOf($entries));
+    }
+
+    #[Test]
+    public function duplicatePatternModeAwareSkipAppliesToTemplateLayerEntries(): void
+    {
+        // The skip walks LayerDefinition and TemplateLayerDefinition
+        // uniformly through `membership()`, so template-vs-template and
+        // template-vs-static collisions follow the same rule.
+        $entries = $this->validator->validate([
+            [
+                'name' => 'module-{m}',
+                'patterns' => ['App\\Module\\{m}\\**'],
+                'suffix' => 'Service',
+                'match' => 'all',
+            ],
+            ['name' => 'shared', 'patterns' => ['App\\Module\\{m}\\**']],
+        ]);
+
+        self::assertSame(['module-{m}', 'shared'], self::namesOf($entries));
+    }
+
+    #[Test]
+    public function duplicateWildcardPatternIsAllowedUnderMatchAllNarrowing(): void
+    {
+        // The normalized-pattern key is the same for both entries; the
+        // mode-aware skip still applies and the wildcard duplicate passes.
+        $entries = $this->validator->validate([
+            ['name' => 'a', 'patterns' => ['App\\**'], 'suffix' => 'Service', 'match' => 'all'],
+            ['name' => 'b', 'patterns' => ['App\\**'], 'suffix' => 'Repository', 'match' => 'all'],
+        ]);
+
+        self::assertSame(['a', 'b'], self::namesOf($entries));
+    }
+
     #[Test]
     public function configPathIsArchitectureForAllErrors(): void
     {
