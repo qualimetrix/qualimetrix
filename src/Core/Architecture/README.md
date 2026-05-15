@@ -182,7 +182,7 @@ non-empty; each entry is a non-empty string.
 
 Within a single criterion kind, list entries are always OR'd. `MatchMode`
 controls how multiple criterion **kinds** combine. See
-[ADR 0007](../../../docs/adr/0007-architecture-rules-flexibility.md).
+[ADR 0007](../../../docs/adr/0007-architecture-rules-phase-2-design.md).
 
 ### ExcludeSpec
 
@@ -467,7 +467,7 @@ selector metacharacters.
   [ADR 0005](../../../docs/adr/0005-architecture-rules.md) is marked Superseded.
 - The Phase 2 design (multi-criterion membership, template layers, exclude
   block, relation filters) is locked in
-  [ADR 0007](../../../docs/adr/0007-architecture-rules-flexibility.md).
+  [ADR 0007](../../../docs/adr/0007-architecture-rules-phase-2-design.md).
   Step C landed the D4 selector grammar — glob and captured allow-list
   selectors with `LayerPolicy` migrated to entry-list traversal. Step D
   landed template-layer expansion: `TemplateLayerDefinition` +

@@ -419,14 +419,34 @@ architecture:
   layers:                                  # ordered list — first match wins
     - name: controller
       patterns: ['App\Controller\**']
+
     - name: service
       patterns: ['App\Service\**']
+      suffix: ['Service']                  # Phase 2 Step B — multi-criterion membership
+      match: any                           # any (default) | all
+
     - name: repository
       patterns: ['App\Repository\**']
+      implements: ['Doctrine\Persistence\ObjectRepository']
+      exclude:                             # Phase 2 Step F — hard filter on top of positive match
+        patterns: ['App\Repository\Legacy\**']
+
+    # Phase 2 Step D — template layer; one concrete instance per observed binding tuple.
+    - name: 'domain-{module}'
+      patterns: ['App\Module\{module}\Domain\**']
+
   allow:
     controller: [service]
     service:    [repository]
-  coverage: ignore   # ignore | warn | error
+    # Phase 2 Step C/E — captured allow entries (same-instance pairing).
+    'domain-{m}': ['domain-{m}']
+    # Phase 2 Step G — relations: filter restricts how the dependency may be expressed.
+    domain:
+      - target: contracts
+        relations: [inheritance]           # alias — expands to extends + implements + trait_use
+
+  coverage: ignore                         # ignore | warn | error
+  max_expanded_layers: 500                 # cumulative cap for template expansion
 
 rules:
   architecture.layer-violation:
@@ -436,10 +456,15 @@ rules:
 
 **CLI:** `--layer-violation` (toggles `enabled`).
 
-**Membership semantics:**
-- Namespace-based only (no class-name suffix, no interface, no attribute)
-- Single layer per class; **declaration-order matching, first match wins** (see [ADR 0006](../../docs/adr/0006-architecture-rules-declaration-order.md))
-- Same-layer dependencies always allowed (MVP)
+**Membership semantics** (Phase 2 surface):
+
+- **Mode-aware multi-criterion membership** (ADR 0007). Each layer entry may combine `patterns`, `suffix`, `attributes`, `implements`, `extends`. The `match: any | all` switch controls how the criteria of different kinds combine (default `any`; empty/omitted kinds are trivially satisfied under `all`). Within one kind, list entries are OR'd.
+- **Single layer per class, declaration-order matching, first match wins** (ADR 0006). When patterns/criteria of multiple layers match the same class, the layer declared earlier in the list owns it.
+- **Template layers** (Phase 2 Step D). `name: 'domain-{module}'` + `patterns: ['App\Module\{module}\Domain\**']` walks the project's class set after collection and emits one concrete `LayerDefinition` per observed binding tuple — not the cartesian product. Capture variables must also appear in at least one capture-producing criterion. Cumulative expansion is bounded by `architecture.max_expanded_layers` (default `500`).
+- **Allow-list selectors** (Phase 2 Step C). Source and target selectors support three kinds — exact (`controller`), glob (`'domain-*'`), and captured (`'domain-{m}'`). Captured target segments substitute the source-side binding before matching, so `'app-{m}': ['domain-{m}']` enforces same-instance pairing. `allow_cross_instance: true` on a long-form target lifts that constraint.
+- **`exclude:` block on a layer** (Phase 2 Step F). Mirrors the membership criteria shape. Classes that match the exclude block are removed from the layer regardless of positive membership — `exclude:` is a hard filter that runs after the positive criteria. Empty `exclude:` is a configuration error.
+- **`relations:` filter on an allow target** (Phase 2 Step G). Long-form `target: contracts, relations: [implements, extends]` restricts which `DependencyType` values may flow over the edge. Direct tokens mirror `DependencyType::cases()` reflectively; aliases (`inheritance`, `static_access`, `type_reference`, `runtime_check`) expand at config-load time. When multiple matching allow targets resolve to the same target layer, their permissions union — a bare/short-form target (no `relations:`) dominates.
+- **Same-layer dependencies always allowed** (MVP — sub-module isolation is intentionally out of scope).
 
 **Reporting:**
 - One violation per offending dependency edge (use-site granularity)
@@ -448,15 +473,32 @@ rules:
 
 **Coverage diagnostic:** When `architecture.coverage` is `warn` or `error`, the rule emits **one** additional violation under `ruleName: architecture.coverage` summarising unmatched edges and listing up to 10 example unclassified classes. Severity is `Warning` for `warn`, `Error` for `error`.
 
-**Misorder safety nets (info severity):**
-- `architecture.unreachable-layer` — one info violation per declared layer that matched zero classes during the run (catches a broader layer earlier in the order silently swallowing everything).
-- `architecture.potential-shadow` — one info violation per (assigned, shadowed) layer pair observed in practice. Evidence-based: walks every class, records all matching layers, groups by (first-match, later-match). Catches prefix overlap, suffix-theft, and arbitrary intersection without re-introducing specificity scoring.
+**Misorder safety nets:**
+- `architecture.unreachable-layer` (info) — one info violation per declared layer (or template instance) that matched zero classes during the run. Catches a broader layer earlier in the order silently swallowing everything.
+- `architecture.potential-shadow` (info) — one info violation per (assigned, shadowed) layer pair observed in practice. Evidence-based: walks every class, records all matching layers, groups by (first-match, later-match). Catches prefix overlap, suffix-theft, and arbitrary intersection without re-introducing specificity scoring.
+- `architecture.empty-template` (warning) — one warning per template layer that expanded to zero concrete instances. Higher severity than the other safety nets because an empty template silently disables the policy attached to it.
 
 **Files:**
 - `src/Rules/Architecture/LayerViolationRule.php` — rule implementation
 - `src/Rules/Architecture/LayerViolationOptions.php` — rule options
-- `src/Core/Architecture/Layer/` — reusable layer primitives (`LayerDefinition`, `LayerRegistry`, `LayerPolicy`, `LayerMatch`)
+- `src/Core/Architecture/ArchitectureConfiguration.php` / `ArchitectureConfigurationHolder.php` / `CoverageMode.php` — typed runtime config
+- `src/Core/Architecture/Layer/` — reusable layer primitives:
+  `LayerDefinition`, `TemplateLayerDefinition`, `MembershipSpec`, `ExcludeSpec`, `MatchMode`,
+  `LayerCriteriaMatcher`, `CriterionListValidator`, `CapturePattern`, `ClassSet`,
+  `ClassContext` / `ClassContextFactory`, `MatchedCriterion` / `MatchedCriterionKind`,
+  `MembershipResult`, `LayerMatch`, `LayerRegistry`, `LayerPolicy`,
+  `InvalidLayerDefinitionException`
+- `src/Core/Architecture/Allow/` — allow-list selectors:
+  `LayerSelector`, `LayerSelectorParser`, `SelectorKind`, `SelectorSegment`, `ParseCapturedState`,
+  `CaptureBinding`, `AllowTarget`, `AllowListEntry`, `InvalidSelectorException`
 - `src/Configuration/Architecture/ArchitectureConfigurationFactory.php` — YAML → typed config
+- `src/Configuration/Architecture/Allow/AllowAliasExpander.php` — relation alias expansion (`inheritance` → `extends`/`implements`/`trait_use`, etc.)
+- `src/Configuration/Architecture/Validation/` — config-time validators and normalizers:
+  `LayersValidator`, `AllowValidator`, `CoverageValidator`,
+  `ExcludeBlockValidator`, `LayerCriterionNormalizer`, `LongFormAllowEntryNormalizer`,
+  `MutualAllowDetector`, `WildcardSelfAllowDetector`
+- `src/Analysis/Architecture/` — runtime template expansion:
+  `LayerExpansionStage`, `LayerExpansionResult`, `LayerExpansionException`
 
 ---
 
