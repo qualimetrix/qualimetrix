@@ -30,12 +30,31 @@ final class LayerSelectorParser
      * grammar (captured > glob > exact) and constructs the appropriate
      * {@see LayerSelector} variant.
      *
+     * Any unescaped {@code [} is rejected up-front with an actionable hint.
+     * Without this guard a confused {@code 'domain-[m]'} (user typing
+     * {@code [m]} expecting capture syntax) would silently dispatch to glob
+     * and be interpreted as a character class matching the single letter
+     * {@code m}, producing semantic divergence from the user's intent with
+     * no warning. The D4 grammar does not require character classes; the
+     * remaining glob metacharacters ({@code *}, {@code ?}) cover the
+     * documented use cases.
+     *
      * @throws InvalidSelectorException If the grammar is violated.
      */
     public static function parse(string $raw): LayerSelector
     {
         if ($raw === '') {
             throw new InvalidSelectorException('selector must be a non-empty string.');
+        }
+
+        $bracketAt = self::firstUnescapedBracket($raw);
+        if ($bracketAt !== null) {
+            throw new InvalidSelectorException(\sprintf(
+                "unsupported '[' at offset %d in selector \"%s\" — character classes are not part of the selector grammar. " .
+                'Did you mean a capture variable? Use {var} for single-segment captures (e.g. \'domain-{m}\') or {var:**} for cross-segment captures.',
+                $bracketAt,
+                $raw,
+            ));
         }
 
         if (self::containsBrace($raw)) {
@@ -254,8 +273,31 @@ final class LayerSelectorParser
         return false;
     }
 
+    /**
+     * Returns the byte offset of the first unescaped {@code [} in the raw
+     * selector, or {@code null} if none is present. Honours backslash escapes
+     * so a future {@code '\\['} syntax (if added) does not trip this guard.
+     */
+    private static function firstUnescapedBracket(string $raw): ?int
+    {
+        $length = \strlen($raw);
+        for ($i = 0; $i < $length; $i++) {
+            $char = $raw[$i];
+            if ($char === '\\' && $i + 1 < $length) {
+                $i++;
+
+                continue;
+            }
+            if ($char === '[') {
+                return $i;
+            }
+        }
+
+        return null;
+    }
+
     private static function containsGlobMetachar(string $raw): bool
     {
-        return strpbrk($raw, '*?[') !== false;
+        return strpbrk($raw, '*?') !== false;
     }
 }
