@@ -25,7 +25,6 @@ relation filters, exclude blocks).
 src/Architecture/
 ├── Domain/             # Pure VOs / enums / exceptions — no DI
 │   ├── ArchitectureConfiguration.php        # Top-level VO: registry + policy + coverage
-│   ├── ArchitectureConfigurationHolder.php  # Mutable runtime holder (DI-injected)
 │   ├── CoverageMode.php                     # ignore / warn / error enum
 │   ├── Allow/                               # Allow-list selectors (see below)
 │   └── Layer/                               # Layer primitives (see below)
@@ -35,7 +34,11 @@ src/Architecture/
 │   ├── Allow/AllowAliasExpander.php         # Relation aliases (inheritance → extends/implements/trait_use, etc.)
 │   └── Validation/                          # Pre-construction validators / normalizers
 ├── Processing/         # Analysis-time pipeline helpers
+│   ├── ArchitectureProcessor.php            # Single coordinator for the rules-pipeline lifecycle (ADR 0008)
+│   ├── ArchitectureProcessorInterface.php   # Public contract for the processor
 │   ├── LayerExpansionStage.php              # Template-layer expansion (runs after collection)
+│   ├── TupleExtractor.php                   # Observed-tuple collector (extracted from LayerExpansionStage)
+│   ├── LayerInstantiator.php                # Concrete-layer factory (extracted from LayerExpansionStage)
 │   ├── LayerExpansionResult.php             # Result VO (concrete LayerDefinitions + diagnostics)
 │   └── LayerExpansionException.php
 ├── Rules/              # User-facing rules — slice's only outward consumers
@@ -46,14 +49,6 @@ src/Architecture/
 └── README.md           # This file
 ```
 
-> **Note (Phase 2 of remediation).** `ArchitectureConfigurationHolder` is the
-> last cross-layer-bridge concession remaining from the layered design.
-> Phase 4 (ADR 0008) replaces it with `ArchitectureProcessor` and removes
-> the temporary `AnalysisContext::$architecture` field. Until then the
-> holder is registered in
-> [`AnalysisConfigurator`](../Infrastructure/DependencyInjection/Configurator/AnalysisConfigurator.php),
-> not in `ArchitectureConfigurator`.
-
 ## External boundary
 
 Per ADR 0010 the slice has a single explicit boundary:
@@ -62,8 +57,8 @@ Per ADR 0010 the slice has a single explicit boundary:
   `Severity`, `Dependency*`, `NamespaceMatcher`), `Rules` (only `RuleInterface`
   registration contract), `Configuration` (`YamlConfigLoader`, `ConfigSchema`),
   Symfony DI.
-- **Depended on by:** `Analysis.Pipeline` (will call
-  `ArchitectureProcessor::prepare()` post-Phase 4),
+- **Depended on by:** `Analysis.Pipeline` (calls
+  `ArchitectureProcessor::prepare()` between Collection and Enrichment),
   `Configuration` (consumes `ArchitectureConfigurationFactory` in
   `ConfigurationPipeline`),
   `Infrastructure.Console` (`LayerAssignmentCommand`, `RuntimeConfigurator`),
@@ -191,11 +186,11 @@ scans:
 are constructed by factories / context builders, not retrieved from the
 container.
 
-`ArchitectureConfigurationHolder` and `LayerExpansionStage` remain
-registered in [`AnalysisConfigurator`](../Infrastructure/DependencyInjection/Configurator/AnalysisConfigurator.php)
-because they bridge analysis-time pipeline state. Phase 4 / ADR 0008 will
-fold both behind `ArchitectureProcessor` and the registration will move
-here.
+`ArchitectureProcessor` (registered here via the
+`ArchitectureProcessorInterface` alias) coordinates the rules-pipeline
+lifecycle: `RuntimeConfigurator` calls `reset() + bind()`, `AnalysisPipeline`
+calls `prepare()`, and `LayerViolationRule` reads
+`getPreparedConfiguration()`. See ADR 0008.
 
 ## References
 
