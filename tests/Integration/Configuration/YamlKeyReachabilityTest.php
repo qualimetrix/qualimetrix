@@ -135,7 +135,7 @@ final class YamlKeyReachabilityTest extends TestCase
     }
 
     /**
-     * {@see \Qualimetrix\Configuration\Architecture\ArchitectureConfigurationFactory}
+     * {@see \Qualimetrix\Architecture\Configuration\ArchitectureConfigurationFactory}
      * sub-keys: {@code layers}, {@code allow}, {@code coverage},
      * {@code max_expanded_layers}. Sub-keys of a MIXED root are
      * validated by the factory, not the schema, so the loader's
@@ -158,8 +158,8 @@ final class YamlKeyReachabilityTest extends TestCase
     /**
      * Architecture layer entry keys — every documented key on a single
      * {@code architecture.layers[*]} entry plus its nested {@code exclude:}
-     * block ({@see \Qualimetrix\Configuration\Architecture\Validation\LayersValidator::ALLOWED_ENTRY_KEYS},
-     * {@see \Qualimetrix\Configuration\Architecture\Validation\ExcludeBlockValidator::ALLOWED_EXCLUDE_KEYS}).
+     * block ({@see \Qualimetrix\Architecture\Configuration\Validation\LayersValidator::ALLOWED_ENTRY_KEYS},
+     * {@see \Qualimetrix\Architecture\Configuration\Validation\ExcludeBlockValidator::ALLOWED_EXCLUDE_KEYS}).
      *
      * Layer entries are sequential list items — their inner keys are
      * leaf-level config and must survive untouched (and they do: every

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Configuration\Pipeline;
 
+use Qualimetrix\Architecture\Configuration\ArchitectureConfigurationFactory;
 use Qualimetrix\Configuration\AnalysisConfiguration;
-use Qualimetrix\Configuration\Architecture\ArchitectureConfigurationFactory;
 use Qualimetrix\Configuration\ConfigSchema;
 use Qualimetrix\Configuration\PathsConfiguration;
 use Qualimetrix\Configuration\Pipeline\Stage\ConfigurationStageInterface;
@@ -21,7 +21,7 @@ use Qualimetrix\Configuration\Pipeline\Stage\ConfigurationStageInterface;
  * {@see \Qualimetrix\Infrastructure\Console\RuntimeConfigurator::configureLogger()}
  * has wired up the user-facing logger, those warnings are captured in
  * {@see ResolvedConfiguration::$deferredWarnings} via
- * {@see \Qualimetrix\Configuration\Architecture\ArchitectureFactoryResult}.
+ * {@see \Qualimetrix\Architecture\Configuration\ArchitectureFactoryResult}.
  * {@see \Qualimetrix\Infrastructure\Console\RuntimeConfigurator} drains them
  * to the configured logger once the holder is populated.
  */

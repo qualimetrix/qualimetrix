@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Configuration\Architecture\Validation;
+namespace Qualimetrix\Architecture\Configuration\Validation;
 
 use Qualimetrix\Architecture\Domain\Allow\AllowListEntry;
 use Qualimetrix\Configuration\Pipeline\DeferredWarning;

@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Unit\Configuration\Architecture\Validation;
+namespace Qualimetrix\Tests\Architecture\Unit\Configuration\Validation;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Architecture\Configuration\Validation\CoverageValidator;
 use Qualimetrix\Architecture\Domain\CoverageMode;
-use Qualimetrix\Configuration\Architecture\Validation\CoverageValidator;
 use Qualimetrix\Configuration\Exception\ConfigLoadException;
 
 #[CoversClass(CoverageValidator::class)]

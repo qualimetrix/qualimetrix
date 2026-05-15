@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Configuration\Architecture\Allow;
+namespace Qualimetrix\Architecture\Configuration\Allow;
 
 use Qualimetrix\Configuration\Exception\ConfigLoadException;
 use Qualimetrix\Core\Dependency\DependencyType;
@@ -76,7 +76,7 @@ final class AllowAliasExpander
      * {@see \Qualimetrix\Architecture\Domain\Allow\AllowTarget::$relations} null
      * (= "any relation allowed").
      *
-     * Centralising shape validation here keeps {@see \Qualimetrix\Configuration\Architecture\Validation\AllowValidator}
+     * Centralising shape validation here keeps {@see \Qualimetrix\Architecture\Configuration\Validation\AllowValidator}
      * a thin orchestrator over four single-purpose helpers — the WMC cost of
      * the four shape checks (non-array, non-list, empty, expand) lives here
      * next to the rest of the alias-expansion concern.

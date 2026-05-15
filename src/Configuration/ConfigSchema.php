@@ -50,7 +50,7 @@ final class ConfigSchema
 
     // Note: `architecture.max_expanded_layers` (Phase 2 direction 2) is a
     // sub-key under the MIXED `architecture` root and lives in its sibling
-    // {@see \Qualimetrix\Configuration\Architecture\ArchitectureConfigurationFactory}
+    // {@see \Qualimetrix\Architecture\Configuration\ArchitectureConfigurationFactory}
     // alongside `layers`, `allow`, and `coverage`. The default value is
     // {@see \Qualimetrix\Architecture\Domain\ArchitectureConfiguration::DEFAULT_MAX_EXPANDED_LAYERS}.
     // It does not appear in ENTRIES because sub-keys of a MIXED root are

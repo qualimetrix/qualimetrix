@@ -17,7 +17,7 @@ use Qualimetrix\Architecture\Domain\Allow\SelectorKind;
 /**
  * Direct coverage of the D4 selector grammar — kind detection from content,
  * source/target match semantics, and parser error surface. Configuration-layer
- * tests in {@see \Qualimetrix\Tests\Unit\Configuration\Architecture\Validation\AllowValidatorTest}
+ * tests in {@see \Qualimetrix\Tests\Architecture\Unit\Configuration\Validation\AllowValidatorTest}
  * verify the rewrap-as-{@code ConfigLoadException} behaviour.
  */
 #[CoversClass(LayerSelector::class)]

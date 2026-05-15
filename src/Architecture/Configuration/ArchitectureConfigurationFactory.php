@@ -2,20 +2,20 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Configuration\Architecture;
+namespace Qualimetrix\Architecture\Configuration;
 
 use InvalidArgumentException;
+use Qualimetrix\Architecture\Configuration\Validation\AllowValidator;
+use Qualimetrix\Architecture\Configuration\Validation\CoverageValidator;
+use Qualimetrix\Architecture\Configuration\Validation\LayersValidator;
+use Qualimetrix\Architecture\Configuration\Validation\MutualAllowDetector;
+use Qualimetrix\Architecture\Configuration\Validation\WildcardSelfAllowDetector;
 use Qualimetrix\Architecture\Domain\ArchitectureConfiguration;
 use Qualimetrix\Architecture\Domain\CoverageMode;
 use Qualimetrix\Architecture\Domain\Layer\LayerDefinition;
 use Qualimetrix\Architecture\Domain\Layer\LayerPolicy;
 use Qualimetrix\Architecture\Domain\Layer\LayerRegistry;
 use Qualimetrix\Architecture\Domain\Layer\TemplateLayerDefinition;
-use Qualimetrix\Configuration\Architecture\Validation\AllowValidator;
-use Qualimetrix\Configuration\Architecture\Validation\CoverageValidator;
-use Qualimetrix\Configuration\Architecture\Validation\LayersValidator;
-use Qualimetrix\Configuration\Architecture\Validation\MutualAllowDetector;
-use Qualimetrix\Configuration\Architecture\Validation\WildcardSelfAllowDetector;
 use Qualimetrix\Configuration\Exception\ConfigLoadException;
 
 /**
@@ -43,7 +43,7 @@ use Qualimetrix\Configuration\Exception\ConfigLoadException;
  * {@see \Qualimetrix\Architecture\Domain\Layer\LayerRegistry} and ADR 0006.
  *
  * Responsibilities are delegated to focused validators living in
- * {@see \Qualimetrix\Configuration\Architecture\Validation}; this class is a
+ * {@see \Qualimetrix\Architecture\Configuration\Validation}; this class is a
  * thin orchestrator that:
  *
  * 1. Validates the top-level shape (`layers`, `allow`, `coverage` keys only).
