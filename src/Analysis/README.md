@@ -10,6 +10,14 @@ Analysis is the orchestrator of static analysis. It implements a five-phase pipe
 4. **RuleExecution** — generating violations based on metrics and graph
 5. **Reporting** — producing the report (performed in the Reporting module)
 
+> **Note.** The former `Analysis/Architecture/` sub-tree (template-layer
+> expansion stage) moved into the Architecture vertical slice
+> ([ADR 0010](../../docs/adr/0010-architecture-vertical-slice.md)). It now
+> lives at [`src/Architecture/Processing/`](../Architecture/README.md). The
+> pipeline still drives template expansion at Phase 2.6 by holding the same
+> stage reference — Phase 4 / [ADR 0008](../../docs/adr/0008-architecture-processor-service.md)
+> will replace it with `ArchitectureProcessor`.
+
 ## Structure
 
 ```
@@ -87,11 +95,6 @@ Analysis/
 │   ├── RuleExecutorInterface.php        # Rule executor contract
 │   └── RuleExecutor.php
 │
-├── Architecture/                        # Phase 2 direction 2: template-layer expansion
-│   ├── LayerExpansionStage.php          # Walks ClassSet per template; produces expanded LayerDefinitions
-│   ├── LayerExpansionResult.php         # VO: expandedLayers + emptyTemplateNames
-│   └── LayerExpansionException.php      # Raised on ceiling overflow, name collision, invalid substituted name
-│
 ├── Repository/
 │   └── InMemoryMetricRepository.php
 │
@@ -111,7 +114,7 @@ Analysis/
 
 Analysis sub-packages follow layered dependency rules:
 
-- **Leaf** (no Analysis siblings): Exception, Discovery, Namespace\_, Repository, Duplication, Architecture
+- **Leaf** (no Analysis siblings): Exception, Discovery, Namespace\_, Repository, Duplication
 - **Mid**: Aggregator depends on Exception; RuleExecution is standalone; Collection depends on Exception
 - **Orchestrator**: Pipeline depends on all sub-layers
 
@@ -136,15 +139,11 @@ Finding PHP files via `FileDiscoveryInterface`.
 - Building the dependency graph
 
 **Phase 2.6: Architecture template expansion** (only when configuration carries `TemplateLayerDefinition`s)
-- `LayerExpansionStage` walks the discovered class set per template, applies all criteria
-  (capture-producing AND non-capturing per D7), collects distinct observed binding tuples
-- Each tuple produces one concrete `LayerDefinition` (lex-sorted by binding values), inserted at the template's
-  declaration position
-- Empty templates (zero observed tuples) collected into `LayerExpansionResult::emptyTemplateNames` and surfaced
-  by `LayerViolationRule` as `architecture.empty-template` warnings
-- Result written back to `ArchitectureConfigurationHolder` via
-  `ArchitectureConfiguration::withExpansion()` so the rule sees the post-expansion registry via `AnalysisContext`
-- No-op for Phase-1 configurations (no templates) — pipeline runs unchanged
+- Delegated to `Qualimetrix\Architecture\Processing\LayerExpansionStage` —
+  see [`src/Architecture/README.md`](../Architecture/README.md) for the full
+  description (Phase 4 / [ADR 0008](../../docs/adr/0008-architecture-processor-service.md)
+  will fold this into `ArchitectureProcessor`).
+- No-op for Phase-1 configurations (no templates) — pipeline runs unchanged.
 
 **Phase 3: Aggregation**
 - Aggregating metrics by levels (method -> class -> namespace -> project)

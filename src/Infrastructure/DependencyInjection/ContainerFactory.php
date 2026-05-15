@@ -18,6 +18,7 @@ use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleCompilerPass
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleOptionsCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleRegistryCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\AnalysisConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\Configurator\ArchitectureConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\CollectorConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\ConfigurationConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\CoreServicesConfigurator;
@@ -73,6 +74,7 @@ final class ContainerFactory
             new ParserConfigurator(),
             new CollectorConfigurator($srcDir),
             new RuleConfigurator($srcDir),
+            new ArchitectureConfigurator($srcDir),
             new AnalysisConfigurator(),
             new OutputConfigurator($srcDir),
         ];
