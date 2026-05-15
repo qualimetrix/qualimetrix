@@ -15,7 +15,7 @@ Phase 1 (ADR 0005, ADR 0006) shipped `architecture.layer-violation` with namespa
 
 Without these extensions, teams either contort their YAML or fall back to deptrac for the long-tail cases — undermining the "one tool replaces five" promise.
 
-This ADR locks the design decisions for Phase 2's five flexibility directions. Three rounds of triple review (Claude + Gemini + Codex) on `docs/internal/plans/architecture-rules-phase2.md` converged on the decisions below. Implementation steps are deferred to Stage 2 of the same plan document.
+This ADR locks the design decisions for Phase 2's five flexibility directions. Three rounds of triple review (Claude + Gemini + Codex) on the Phase 2 design plan converged on the decisions below. The plan was deleted after the implementation landed (Steps A–H, 2026-05-15) because the ADR captures the locked design and the code + component READMEs hold the implementation detail.
 
 ## Decision
 
@@ -107,13 +107,13 @@ Whitelist-only: `forbid_relations` is rejected as redundant with whitelist seman
 - **`AllowAliasExpander` is reflective.** Future `DependencyType` additions surface automatically; the alias map is the only Phase-2-controlled vocabulary.
 - **Two new info-severity diagnostics specific to Phase 2.** `architecture.empty-template` (warning, not info — a typo silently disables policy and deserves attention) and the existing `unreachable-layer` extended to fire per concrete template instance.
 - **2a + 2b ship together.** The implementation plan does not split capture-binding into a fast-follower step; without 2b, direction 2's DDD partitioning value is incomplete (D5).
-- **Larger contract surface.** `LayerDefinition`, `MembershipSpec`, `TemplateLayerDefinition`, `LayerExpansionStage`, `LayerSelector`, `CaptureBinding`, `AllowTarget`, `AllowAliasExpander`, `ExcludeSpec` — most new under Phase 2. ADR 0007 locks the conceptual shape; signatures are in the plan; implementation lives in Stage 2.
+- **Larger contract surface.** `LayerDefinition`, `MembershipSpec`, `TemplateLayerDefinition`, `LayerExpansionStage`, `LayerSelector`, `CaptureBinding`, `AllowTarget`, `AllowAliasExpander`, `ExcludeSpec` — most new under Phase 2. ADR 0007 locks the conceptual shape; the live signatures live in `src/Core/Architecture/`; the user-facing surface lives in `website/docs/rules/architecture.md`.
 
 ## References
 
-- Stage 1 plan: `docs/internal/plans/architecture-rules-phase2.md` (Stage 2 implementation plan is appended after this ADR is accepted)
 - Builds on: [ADR 0005](0005-architecture-rules.md) (Phase 1 schema and contracts), [ADR 0006](0006-architecture-rules-declaration-order.md) (declaration-order foundation)
-- Foundation plan: `docs/internal/plans/architecture-rules-followup.md`
+- Implementation entry points: `src/Core/Architecture/`, `src/Configuration/Architecture/`, `src/Analysis/Architecture/LayerExpansionStage.php`, `src/Rules/Architecture/LayerViolationRule.php`
+- User-facing docs: `website/docs/rules/architecture.md` (and `.ru.md`)
 - `DependencyType` enum: `src/Core/Dependency/DependencyType.php`
 - Prior art:
   - [deptrac](https://github.com/qossmic/deptrac) — class-name suffix, multi-criteria membership (different syntax)

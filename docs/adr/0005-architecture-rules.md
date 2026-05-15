@@ -9,9 +9,7 @@ Qualimetrix already detected one kind of structural problem in the dependency gr
 
 The dependency graph (`Qualimetrix\Analysis\Collection\Dependency\DependencyGraph`) is already built during the Collection phase and exposed through `AnalysisContext::$dependencyGraph`, so the raw data is available. Adding a deptrac-style layer rule directly on top of that graph completes the "five tools in one" narrative (complexity, coupling, code smell, security, architecture) without a second tool in the CI pipeline.
 
-The design pass produced a long shortlist of mechanisms to lift from deptrac/ArchUnit (DSL for include/exclude, class-name suffix matching, attribute-based membership, per-pair severity overrides, dependency-type filtering, sub-module isolation, multiple layers per class, …). Triple review (Claude + Gemini + Codex) on the plan converged on a deliberately small MVP surface. This ADR captures the locked design decisions so a future maintainer does not re-litigate them.
-
-The implementation plan lives in `docs/internal/plans/architecture-rules.md`.
+The design pass produced a long shortlist of mechanisms to lift from deptrac/ArchUnit (DSL for include/exclude, class-name suffix matching, attribute-based membership, per-pair severity overrides, dependency-type filtering, sub-module isolation, multiple layers per class, …). Triple review (Claude + Gemini + Codex) converged on a deliberately small MVP surface for Phase 1. This ADR captures the locked Phase 1 design decisions so a future maintainer does not re-litigate them. The followups (declaration-order pivot in ADR 0006, flexibility extensions in ADR 0007) opened that surface in controlled steps.
 
 ## Decision
 
@@ -83,7 +81,6 @@ Documented explicitly so users (and future maintainers) know what to expect:
 
 ## References
 
-- Plan: `docs/internal/plans/architecture-rules.md`
 - Implementation:
     - `src/Core/Architecture/Layer/` — primitives (`LayerDefinition`, `LayerRegistry`, `LayerPolicy`)
     - `src/Core/Architecture/ArchitectureConfiguration.php`, `CoverageMode.php`

@@ -14,11 +14,9 @@ Post-implementation analysis (2026-05-12) surfaced that the algorithm required *
 2. A runtime `architecture.layer-collision` diagnostic that fired when specificity didn't disambiguate (symmetric globs)
 3. An ADR-documented limitation listing scenarios the algorithm couldn't handle cleanly
 
-When an algorithm needs three escape hatches, the algorithm is wrong, not the edges. Round-2 triple review (Claude + Gemini + Codex on `docs/internal/plans/architecture-rules-followup.md`) converged on a pivot: replace specificity with **declaration-order matching**, the same mechanism used by deptrac, ArchUnit, `.gitignore`, Apache config, and most RBAC engines.
+When an algorithm needs three escape hatches, the algorithm is wrong, not the edges. Round-2 triple review (Claude + Gemini + Codex) on the followup plan converged on a pivot: replace specificity with **declaration-order matching**, the same mechanism used by deptrac, ArchUnit, `.gitignore`, Apache config, and most RBAC engines.
 
 Backward compatibility was explicitly waived because the feature shipped in v0.17.0 but has not been released yet (post-merge, pre-tag), and the only active user is the project itself (dogfooding).
-
-The implementation plan lives in `docs/internal/plans/architecture-rules-followup.md`.
 
 ## Decision
 
@@ -85,7 +83,6 @@ Two methods, one cache, distinct hot/cold paths:
 
 ## References
 
-- Plan: `docs/internal/plans/architecture-rules-followup.md`
 - Implementation entry points (post-pivot): `src/Core/Architecture/Layer/`, `src/Configuration/Architecture/`, `src/Rules/Architecture/LayerViolationRule.php`, `src/Infrastructure/Console/Command/Debug/LayerAssignmentCommand.php`
 - Prior art:
   - [deptrac](https://github.com/qossmic/deptrac) — declaration-order matching, the closest neighbour
