@@ -6,7 +6,6 @@ namespace Qualimetrix\Analysis\Pipeline;
 
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
-use Qualimetrix\Analysis\Architecture\LayerExpansionStage;
 use Qualimetrix\Analysis\Collection\CollectionOrchestratorInterface;
 use Qualimetrix\Analysis\Collection\Dependency\DependencyGraphBuilder;
 use Qualimetrix\Analysis\Discovery\FileDiscoveryInterface;
@@ -17,6 +16,7 @@ use Qualimetrix\Analysis\RuleExecution\RuleExecutorInterface;
 use Qualimetrix\Architecture\Domain\ArchitectureConfigurationHolder;
 use Qualimetrix\Architecture\Domain\Layer\ClassContextFactory;
 use Qualimetrix\Architecture\Domain\Layer\ClassSet;
+use Qualimetrix\Architecture\Processing\LayerExpansionStage;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Core\Dependency\DependencyGraphInterface;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;

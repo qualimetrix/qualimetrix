@@ -101,7 +101,7 @@ final readonly class LayerDefinition
     }
 
     /**
-     * Static factory used by {@see \Qualimetrix\Analysis\Architecture\LayerExpansionStage}
+     * Static factory used by {@see \Qualimetrix\Architecture\Processing\LayerExpansionStage}
      * when instantiating layers produced by template expansion. Applies the
      * relaxed {@see EXPANDED_NAME_REGEX} so PascalCase binding values do not
      * have to be lowercased.

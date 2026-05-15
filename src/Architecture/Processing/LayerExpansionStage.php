@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Architecture;
+namespace Qualimetrix\Architecture\Processing;
 
 use Qualimetrix\Architecture\Domain\Layer\CapturePattern;
 use Qualimetrix\Architecture\Domain\Layer\ClassContext;

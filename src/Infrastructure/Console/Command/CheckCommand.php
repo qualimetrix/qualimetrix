@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console\Command;
 
 use InvalidArgumentException;
-use Qualimetrix\Analysis\Architecture\LayerExpansionException;
 use Qualimetrix\Analysis\Pipeline\AnalysisPipelineInterface;
+use Qualimetrix\Architecture\Processing\LayerExpansionException;
 use Qualimetrix\Configuration\Exception\ConfigLoadException;
 use Qualimetrix\Configuration\Pipeline\ConfigurationContext;
 use Qualimetrix\Configuration\Pipeline\ConfigurationPipeline;

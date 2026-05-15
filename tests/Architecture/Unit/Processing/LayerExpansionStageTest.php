@@ -2,20 +2,20 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Unit\Analysis\Architecture;
+namespace Qualimetrix\Tests\Architecture\Unit\Processing;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Architecture\LayerExpansionException;
-use Qualimetrix\Analysis\Architecture\LayerExpansionResult;
-use Qualimetrix\Analysis\Architecture\LayerExpansionStage;
 use Qualimetrix\Architecture\Domain\Layer\ClassContextFactory;
 use Qualimetrix\Architecture\Domain\Layer\ClassSet;
 use Qualimetrix\Architecture\Domain\Layer\LayerDefinition;
 use Qualimetrix\Architecture\Domain\Layer\MatchMode;
 use Qualimetrix\Architecture\Domain\Layer\MembershipSpec;
 use Qualimetrix\Architecture\Domain\Layer\TemplateLayerDefinition;
+use Qualimetrix\Architecture\Processing\LayerExpansionException;
+use Qualimetrix\Architecture\Processing\LayerExpansionResult;
+use Qualimetrix\Architecture\Processing\LayerExpansionStage;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 #[CoversClass(LayerExpansionStage::class)]

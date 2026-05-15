@@ -9,7 +9,7 @@ use InvalidArgumentException;
 /**
  * A layer entry parameterised by capture variables. Expanded into one or more
  * concrete {@see LayerDefinition} instances by
- * {@see \Qualimetrix\Analysis\Architecture\LayerExpansionStage} based on the
+ * {@see \Qualimetrix\Architecture\Processing\LayerExpansionStage} based on the
  * observed binding tuples in the project's class set.
  *
  * **Construction-time invariant.** Every variable referenced in
@@ -32,7 +32,7 @@ use InvalidArgumentException;
  * test case.
  *
  * Variables are sorted in alphabetic order at construction so the
- * {@see \Qualimetrix\Analysis\Architecture\LayerExpansionStage} can produce
+ * {@see \Qualimetrix\Architecture\Processing\LayerExpansionStage} can produce
  * stable tuple ordering regardless of declaration order in the YAML.
  */
 final readonly class TemplateLayerDefinition
@@ -120,7 +120,7 @@ final readonly class TemplateLayerDefinition
      *
      * Does NOT compile the pattern — that is left to the
      * {@see TemplateLayerDefinition} constructor (for name templates) and
-     * {@see \Qualimetrix\Analysis\Architecture\LayerExpansionStage} (for
+     * {@see \Qualimetrix\Architecture\Processing\LayerExpansionStage} (for
      * runtime pattern matching). Strings containing unbalanced or malformed
      * braces still return true here, so the call site surfaces a
      * config-load error (via the constructor) instead of a silent classify

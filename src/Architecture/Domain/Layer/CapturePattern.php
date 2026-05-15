@@ -10,7 +10,7 @@ use RuntimeException;
 /**
  * Compiles an FQN glob pattern containing capture variables (D4 grammar)
  * into a PCRE regex with named subpatterns. Used by
- * {@see \Qualimetrix\Analysis\Architecture\LayerExpansionStage} to extract
+ * {@see \Qualimetrix\Architecture\Processing\LayerExpansionStage} to extract
  * observed binding tuples from the project's class set when expanding a
  * {@see TemplateLayerDefinition}, and by {@see TemplateLayerDefinition}
  * itself for the construction-time "variable in name → variable in some
@@ -49,7 +49,7 @@ use RuntimeException;
  * already a full pattern in its own right. Call sites that need Phase-1
  * prefix semantics for non-capture filter patterns route through
  * {@see \Qualimetrix\Core\Util\NamespaceMatcher} directly (see
- * {@see \Qualimetrix\Analysis\Architecture\LayerExpansionStage}).
+ * {@see \Qualimetrix\Architecture\Processing\LayerExpansionStage}).
  *
  * **Variable name regex** ({@see VARIABLE_NAME_REGEX}) intentionally mirrors
  * {@see \Qualimetrix\Architecture\Domain\Allow\LayerSelectorParser::VARIABLE_NAME_REGEX}.
@@ -57,7 +57,7 @@ use RuntimeException;
  * namespaces so {@code Layer/} need not depend on {@code Allow/} — the
  * duplication is local and intentional.
  *
- * @internal Consumed by {@see TemplateLayerDefinition} and {@see \Qualimetrix\Analysis\Architecture\LayerExpansionStage}.
+ * @internal Consumed by {@see TemplateLayerDefinition} and {@see \Qualimetrix\Architecture\Processing\LayerExpansionStage}.
  */
 final readonly class CapturePattern
 {
