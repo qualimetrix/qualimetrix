@@ -103,6 +103,46 @@ final class LayerExcludeIntegrationTest extends TestCase
     }
 
     #[Test]
+    public function templateExcludeAppliedDuringObservation_dropsModuleWhoseCandidatesAreAllExcluded(): void
+    {
+        // M1 (Phase 5.1) regression pin: a module whose entire candidate set
+        // falls under the template's exclude clause must NOT produce a
+        // concrete layer. Pre-remediation, the `m=Cache` tuple was observed
+        // from `CacheProxy` regardless of exclude, producing a phantom
+        // `module-Cache` layer that runtime classification then left empty —
+        // surfacing as an `architecture.unreachable-layer` diagnostic.
+        //
+        // After M1, `m=Cache` is dropped during tuple observation, no
+        // `module-Cache` layer is created, and no unreachable-layer
+        // diagnostic mentions Cache.
+        $analysis = $this->runPipelineWithConfig($this->baseConfig());
+
+        $cacheProxyFqn = self::FIXTURE_NAMESPACE . '\\Module\\Cache\\Domain\\Generated\\CacheProxy';
+        $sourceFqns = $this->collectSourceFqns(
+            $this->filterByRule($analysis->violations, LayerViolationRule::NAME),
+        );
+
+        self::assertNotContains(
+            $cacheProxyFqn,
+            $sourceFqns,
+            'CacheProxy must remain unassigned — its entire module subtree is filtered by exclude.',
+        );
+
+        $unreachableMessages = array_map(
+            static fn(Violation $v): string => $v->message,
+            $this->filterByRule($analysis->violations, LayerViolationRule::UNREACHABLE_LAYER_DIAGNOSTIC_NAME),
+        );
+        foreach ($unreachableMessages as $message) {
+            self::assertStringNotContainsString(
+                'module-Cache',
+                $message,
+                'No unreachable-layer diagnostic should be produced for module-Cache — '
+                . 'the phantom layer must never have been created.',
+            );
+        }
+    }
+
+    #[Test]
     public function excludeBlockSurvivesYamlConfigLoaderNormalization(): void
     {
         // Step E regression-style guard: an end-to-end test through YAML must

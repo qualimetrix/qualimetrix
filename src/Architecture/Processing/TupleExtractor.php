@@ -7,6 +7,8 @@ namespace Qualimetrix\Architecture\Processing;
 use Qualimetrix\Architecture\Domain\Layer\CapturePattern;
 use Qualimetrix\Architecture\Domain\Layer\ClassContext;
 use Qualimetrix\Architecture\Domain\Layer\ClassSet;
+use Qualimetrix\Architecture\Domain\Layer\ExcludeSpec;
+use Qualimetrix\Architecture\Domain\Layer\LayerCriteriaMatcher;
 use Qualimetrix\Architecture\Domain\Layer\MatchMode;
 use Qualimetrix\Architecture\Domain\Layer\MembershipSpec;
 use Qualimetrix\Architecture\Domain\Layer\TemplateLayerDefinition;
@@ -17,8 +19,14 @@ use Qualimetrix\Core\Util\NamespaceMatcher;
  * tuples for a {@see TemplateLayerDefinition}.
  *
  * Extracted from {@see LayerExpansionStage} in Phase 4.1 of the remediation
- * (ADR 0008). Behavior-preserving — the algorithm and its public output
- * (deduplicated list of binding tuples, lex-sorted) are unchanged.
+ * (ADR 0008). The algorithm and its public output (deduplicated list of
+ * binding tuples, lex-sorted) are unchanged.
+ *
+ * **M1 (Phase 5.1, exclude during observation).** The template's
+ * {@see ExcludeSpec} is evaluated AFTER capture binding succeeds, using the
+ * substituted bindings — a class that would be removed from the concrete
+ * layer at runtime is also removed from tuple observation, so excluded
+ * classes do not contribute "phantom" concrete layers.
  *
  * **Capture-producing vs non-capturing criteria (D7 carve-out).** Within
  * {@see MembershipSpec::$patterns}, patterns are classified: a pattern that
@@ -83,6 +91,16 @@ final class TupleExtractor
 
             $tuple = self::extractTuple($captureProducing, $context->fqn, $membership->mode);
             if ($tuple === null) {
+                continue;
+            }
+
+            // M1 — apply the template's exclude clause AFTER capture binding
+            // succeeds, using the substituted bindings. A class that would be
+            // removed from the concrete layer at runtime must not contribute
+            // a tuple, otherwise template expansion produces a "phantom"
+            // concrete layer driven solely by classes that are then unassigned
+            // (and the layer itself would be empty under runtime classification).
+            if ($membership->exclude !== null && self::excludeFires($membership->exclude, $context, $tuple)) {
                 continue;
             }
 
@@ -171,6 +189,61 @@ final class TupleExtractor
         }
 
         return true;
+    }
+
+    /**
+     * Evaluates the template's exclude clause against the class using the
+     * bindings produced by the matched capture-producing pattern.
+     *
+     * Exclude patterns may reference the same capture variables as the
+     * template name; we substitute the bindings first, then evaluate the
+     * concrete exclude criteria with the same primitive (
+     * {@see LayerCriteriaMatcher::collectMatches()}) used by runtime
+     * membership in {@see \Qualimetrix\Architecture\Domain\Layer\LayerDefinition}.
+     * Non-pattern criteria on exclude do not currently support captures and
+     * pass through verbatim.
+     *
+     * The exclude clause's own {@see ExcludeSpec::$mode} governs combination:
+     * {@see MatchMode::Any} fires as soon as any declared kind matches;
+     * {@see MatchMode::All} requires every declared kind to match.
+     *
+     * @param array<string, string> $bindings
+     */
+    private static function excludeFires(ExcludeSpec $exclude, ClassContext $context, array $bindings): bool
+    {
+        $substitutedPatterns = array_map(
+            static fn(string $pattern): string => CapturePattern::applySubstitution($pattern, $bindings),
+            $exclude->patterns,
+        );
+        $normalizedPatterns = LayerCriteriaMatcher::normalizePatterns($substitutedPatterns);
+
+        $matched = LayerCriteriaMatcher::collectMatches(
+            $context,
+            $normalizedPatterns,
+            $substitutedPatterns,
+            $exclude->suffix,
+            $exclude->attributes,
+            $exclude->implements,
+            $exclude->extends,
+        );
+
+        if ($matched === []) {
+            return false;
+        }
+
+        if ($exclude->mode === MatchMode::Any) {
+            return true;
+        }
+
+        $declaredKinds = LayerCriteriaMatcher::declaredKindCount(
+            $exclude->patterns,
+            $exclude->suffix,
+            $exclude->attributes,
+            $exclude->implements,
+            $exclude->extends,
+        );
+
+        return \count($matched) === $declaredKinds;
     }
 
     /**
