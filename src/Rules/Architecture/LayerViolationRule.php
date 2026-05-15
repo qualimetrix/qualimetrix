@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Rules\Architecture;
 
-use Qualimetrix\Core\Architecture\ArchitectureConfiguration;
-use Qualimetrix\Core\Architecture\CoverageMode;
-use Qualimetrix\Core\Architecture\Layer\LayerDefinition;
-use Qualimetrix\Core\Architecture\Layer\LayerMatch;
-use Qualimetrix\Core\Architecture\Layer\LayerRegistry;
-use Qualimetrix\Core\Architecture\Layer\MatchedCriterion;
-use Qualimetrix\Core\Architecture\Layer\MatchedCriterionKind;
+use Qualimetrix\Architecture\Domain\ArchitectureConfiguration;
+use Qualimetrix\Architecture\Domain\CoverageMode;
+use Qualimetrix\Architecture\Domain\Layer\LayerDefinition;
+use Qualimetrix\Architecture\Domain\Layer\LayerMatch;
+use Qualimetrix\Architecture\Domain\Layer\LayerRegistry;
+use Qualimetrix\Architecture\Domain\Layer\MatchedCriterion;
+use Qualimetrix\Architecture\Domain\Layer\MatchedCriterionKind;
 use Qualimetrix\Core\Dependency\Dependency;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\RuleCategory;
@@ -180,7 +180,7 @@ final class LayerViolationRule extends AbstractRule
      * The list is populated by
      * {@see \Qualimetrix\Analysis\Architecture\LayerExpansionStage} and
      * threaded through
-     * {@see \Qualimetrix\Core\Architecture\ArchitectureConfigurationHolder}
+     * {@see \Qualimetrix\Architecture\Domain\ArchitectureConfigurationHolder}
      * to the architecture configuration consumed here via
      * {@see \Qualimetrix\Core\Rule\AnalysisContext}.
      *

@@ -37,7 +37,7 @@ final class LongFormAllowEntryNormalizer
     /**
      * Returns the parsed (targetRaw, allowCrossInstance, relations) triple for
      * a long-form entry. Caller is responsible for parsing {@code targetRaw}
-     * into a {@see \Qualimetrix\Core\Architecture\Allow\LayerSelector} (the
+     * into a {@see \Qualimetrix\Architecture\Domain\Allow\LayerSelector} (the
      * normalizer is intentionally selector-agnostic so it can live in
      * Configuration without dragging in the Core selector parser).
      *

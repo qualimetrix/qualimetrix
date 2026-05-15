@@ -22,9 +22,11 @@
     <testsuites>
         <testsuite name="Unit">
             <directory>tests/Unit</directory>
+            <directory>tests/Architecture/Unit</directory>
         </testsuite>
         <testsuite name="Integration">
             <directory>tests/Integration</directory>
+            <directory>tests/Architecture/Integration</directory>
         </testsuite>
         <testsuite name="Functional">
             <directory>tests/Functional</directory>

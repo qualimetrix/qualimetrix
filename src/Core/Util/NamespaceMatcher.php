@@ -20,7 +20,7 @@ namespace Qualimetrix\Core\Util;
  *   - `App\*Repository` matches `App\UserRepository`
  *
  * The static helpers {@see matchesSingle()} and {@see isGlob()} expose the
- * per-pattern primitives so other Core utilities (e.g. {@see \Qualimetrix\Core\Architecture\Layer\LayerDefinition})
+ * per-pattern primitives so other Core utilities (e.g. {@see \Qualimetrix\Architecture\Domain\Layer\LayerDefinition})
  * can reuse a single source of truth without rebuilding the instance pattern set.
  */
 final readonly class NamespaceMatcher

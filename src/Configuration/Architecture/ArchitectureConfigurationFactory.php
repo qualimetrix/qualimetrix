@@ -5,18 +5,18 @@ declare(strict_types=1);
 namespace Qualimetrix\Configuration\Architecture;
 
 use InvalidArgumentException;
+use Qualimetrix\Architecture\Domain\ArchitectureConfiguration;
+use Qualimetrix\Architecture\Domain\CoverageMode;
+use Qualimetrix\Architecture\Domain\Layer\LayerDefinition;
+use Qualimetrix\Architecture\Domain\Layer\LayerPolicy;
+use Qualimetrix\Architecture\Domain\Layer\LayerRegistry;
+use Qualimetrix\Architecture\Domain\Layer\TemplateLayerDefinition;
 use Qualimetrix\Configuration\Architecture\Validation\AllowValidator;
 use Qualimetrix\Configuration\Architecture\Validation\CoverageValidator;
 use Qualimetrix\Configuration\Architecture\Validation\LayersValidator;
 use Qualimetrix\Configuration\Architecture\Validation\MutualAllowDetector;
 use Qualimetrix\Configuration\Architecture\Validation\WildcardSelfAllowDetector;
 use Qualimetrix\Configuration\Exception\ConfigLoadException;
-use Qualimetrix\Core\Architecture\ArchitectureConfiguration;
-use Qualimetrix\Core\Architecture\CoverageMode;
-use Qualimetrix\Core\Architecture\Layer\LayerDefinition;
-use Qualimetrix\Core\Architecture\Layer\LayerPolicy;
-use Qualimetrix\Core\Architecture\Layer\LayerRegistry;
-use Qualimetrix\Core\Architecture\Layer\TemplateLayerDefinition;
 
 /**
  * Converts the raw YAML map under the {@code architecture:} key into a typed
@@ -40,7 +40,7 @@ use Qualimetrix\Core\Architecture\Layer\TemplateLayerDefinition;
  * `layers` is an **ordered list**; the first layer whose patterns match a class
  * FQN owns that class. There is no specificity scoring and no collision
  * detection — order is the user's tool to express intent. See
- * {@see \Qualimetrix\Core\Architecture\Layer\LayerRegistry} and ADR 0006.
+ * {@see \Qualimetrix\Architecture\Domain\Layer\LayerRegistry} and ADR 0006.
  *
  * Responsibilities are delegated to focused validators living in
  * {@see \Qualimetrix\Configuration\Architecture\Validation}; this class is a

@@ -14,10 +14,10 @@ use Qualimetrix\Analysis\Discovery\GeneratedFileFilter;
 use Qualimetrix\Analysis\Repository\DefaultMetricRepositoryFactory;
 use Qualimetrix\Analysis\Repository\MetricRepositoryFactoryInterface;
 use Qualimetrix\Analysis\RuleExecution\RuleExecutorInterface;
+use Qualimetrix\Architecture\Domain\ArchitectureConfigurationHolder;
+use Qualimetrix\Architecture\Domain\Layer\ClassContextFactory;
+use Qualimetrix\Architecture\Domain\Layer\ClassSet;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
-use Qualimetrix\Core\Architecture\ArchitectureConfigurationHolder;
-use Qualimetrix\Core\Architecture\Layer\ClassContextFactory;
-use Qualimetrix\Core\Architecture\Layer\ClassSet;
 use Qualimetrix\Core\Dependency\DependencyGraphInterface;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
@@ -311,7 +311,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
 
     /**
      * Runs the {@see LayerExpansionStage} when the active architecture
-     * configuration carries at least one {@see \Qualimetrix\Core\Architecture\Layer\TemplateLayerDefinition},
+     * configuration carries at least one {@see \Qualimetrix\Architecture\Domain\Layer\TemplateLayerDefinition},
      * and writes the post-expansion configuration back into the
      * {@see ArchitectureConfigurationHolder}.
      *

@@ -10,12 +10,12 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Architecture\LayerExpansionException;
 use Qualimetrix\Analysis\Architecture\LayerExpansionResult;
 use Qualimetrix\Analysis\Architecture\LayerExpansionStage;
-use Qualimetrix\Core\Architecture\Layer\ClassContextFactory;
-use Qualimetrix\Core\Architecture\Layer\ClassSet;
-use Qualimetrix\Core\Architecture\Layer\LayerDefinition;
-use Qualimetrix\Core\Architecture\Layer\MatchMode;
-use Qualimetrix\Core\Architecture\Layer\MembershipSpec;
-use Qualimetrix\Core\Architecture\Layer\TemplateLayerDefinition;
+use Qualimetrix\Architecture\Domain\Layer\ClassContextFactory;
+use Qualimetrix\Architecture\Domain\Layer\ClassSet;
+use Qualimetrix\Architecture\Domain\Layer\LayerDefinition;
+use Qualimetrix\Architecture\Domain\Layer\MatchMode;
+use Qualimetrix\Architecture\Domain\Layer\MembershipSpec;
+use Qualimetrix\Architecture\Domain\Layer\TemplateLayerDefinition;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 #[CoversClass(LayerExpansionStage::class)]

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Configuration\Architecture;
 
+use Qualimetrix\Architecture\Domain\ArchitectureConfiguration;
 use Qualimetrix\Configuration\Pipeline\DeferredWarning;
-use Qualimetrix\Core\Architecture\ArchitectureConfiguration;
 
 /**
  * Result of {@see ArchitectureConfigurationFactory::fromArray()}.

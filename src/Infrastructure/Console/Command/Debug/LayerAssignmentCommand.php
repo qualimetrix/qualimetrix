@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console\Command\Debug;
 
 use Exception;
+use Qualimetrix\Architecture\Domain\ArchitectureConfiguration;
+use Qualimetrix\Architecture\Domain\Layer\LayerMatch;
+use Qualimetrix\Architecture\Domain\Layer\LayerRegistry;
+use Qualimetrix\Architecture\Domain\Layer\MatchedCriterion;
 use Qualimetrix\Configuration\Exception\ConfigLoadException;
 use Qualimetrix\Configuration\Pipeline\ConfigurationContext;
 use Qualimetrix\Configuration\Pipeline\ConfigurationPipeline;
-use Qualimetrix\Core\Architecture\ArchitectureConfiguration;
-use Qualimetrix\Core\Architecture\Layer\LayerMatch;
-use Qualimetrix\Core\Architecture\Layer\LayerRegistry;
-use Qualimetrix\Core\Architecture\Layer\MatchedCriterion;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;

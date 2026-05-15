@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Qualimetrix\Configuration\Architecture\Validation;
 
 use InvalidArgumentException;
+use Qualimetrix\Architecture\Domain\Layer\ExcludeSpec;
+use Qualimetrix\Architecture\Domain\Layer\MatchMode;
+use Qualimetrix\Architecture\Domain\Layer\TemplateLayerDefinition;
 use Qualimetrix\Configuration\Exception\ConfigLoadException;
-use Qualimetrix\Core\Architecture\Layer\ExcludeSpec;
-use Qualimetrix\Core\Architecture\Layer\MatchMode;
-use Qualimetrix\Core\Architecture\Layer\TemplateLayerDefinition;
 
 /**
  * Parses and validates the optional {@code exclude:} block inside a single

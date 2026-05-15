@@ -52,7 +52,7 @@ final class ConfigSchema
     // sub-key under the MIXED `architecture` root and lives in its sibling
     // {@see \Qualimetrix\Configuration\Architecture\ArchitectureConfigurationFactory}
     // alongside `layers`, `allow`, and `coverage`. The default value is
-    // {@see \Qualimetrix\Core\Architecture\ArchitectureConfiguration::DEFAULT_MAX_EXPANDED_LAYERS}.
+    // {@see \Qualimetrix\Architecture\Domain\ArchitectureConfiguration::DEFAULT_MAX_EXPANDED_LAYERS}.
     // It does not appear in ENTRIES because sub-keys of a MIXED root are
     // validated by the dedicated factory, not by the generic schema.
 

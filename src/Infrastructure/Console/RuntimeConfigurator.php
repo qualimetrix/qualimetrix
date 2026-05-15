@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console;
 
 use Psr\Log\LogLevel;
+use Qualimetrix\Architecture\Domain\ArchitectureConfigurationHolder;
 use Qualimetrix\Configuration\AnalysisConfiguration;
 use Qualimetrix\Configuration\ComputedMetricsConfigResolver;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Configuration\Pipeline\ResolvedConfiguration;
 use Qualimetrix\Configuration\RuleOptionsParserFactory;
 use Qualimetrix\Configuration\RuleOptionsRegistry;
-use Qualimetrix\Core\Architecture\ArchitectureConfigurationHolder;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinitionHolder;
 use Qualimetrix\Core\Coupling\FrameworkNamespaces;
 use Qualimetrix\Core\Coupling\FrameworkNamespacesHolder;

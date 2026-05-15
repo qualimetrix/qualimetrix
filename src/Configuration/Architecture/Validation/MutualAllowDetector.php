@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Configuration\Architecture\Validation;
 
+use Qualimetrix\Architecture\Domain\Allow\AllowListEntry;
 use Qualimetrix\Configuration\Pipeline\DeferredWarning;
-use Qualimetrix\Core\Architecture\Allow\AllowListEntry;
 
 /**
  * Scans the parsed allow-list for symmetric {@code A → B}/{@code B → A} pairs

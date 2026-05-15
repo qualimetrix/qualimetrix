@@ -14,7 +14,7 @@ use RuntimeException;
  * - Name collision between a static layer and a template-expanded layer.
  * - Name collision between two template-expanded layers.
  * - Invalid concrete name produced by substitution (binding contains
- *   characters that violate {@see \Qualimetrix\Core\Architecture\Layer\LayerDefinition}'s
+ *   characters that violate {@see \Qualimetrix\Architecture\Domain\Layer\LayerDefinition}'s
  *   expanded-mode name regex).
  *
  * Surfaces as a runtime error rather than a configuration error because the

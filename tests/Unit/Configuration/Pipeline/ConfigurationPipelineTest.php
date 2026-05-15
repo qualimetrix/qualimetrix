@@ -7,12 +7,12 @@ namespace Qualimetrix\Tests\Unit\Configuration\Pipeline;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Architecture\Domain\CoverageMode;
 use Qualimetrix\Configuration\Pipeline\ConfigurationContext;
 use Qualimetrix\Configuration\Pipeline\ConfigurationLayer;
 use Qualimetrix\Configuration\Pipeline\ConfigurationPipeline;
 use Qualimetrix\Configuration\Pipeline\DeferredWarning;
 use Qualimetrix\Configuration\Pipeline\Stage\ConfigurationStageInterface;
-use Qualimetrix\Core\Architecture\CoverageMode;
 use Symfony\Component\Console\Input\ArrayInput;
 
 #[CoversClass(ConfigurationPipeline::class)]

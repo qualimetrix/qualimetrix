@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Configuration\Architecture\Validation;
 
 use InvalidArgumentException;
+use Qualimetrix\Architecture\Domain\CoverageMode;
 use Qualimetrix\Configuration\Exception\ConfigLoadException;
-use Qualimetrix\Core\Architecture\CoverageMode;
 
 /**
  * Parses and validates the {@code architecture.coverage} scalar.

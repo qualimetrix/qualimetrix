@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Configuration\Architecture\Validation;
 
+use Qualimetrix\Architecture\Domain\Allow\AllowListEntry;
 use Qualimetrix\Configuration\Pipeline\DeferredWarning;
-use Qualimetrix\Core\Architecture\Allow\AllowListEntry;
 
 /**
  * Scans the parsed allow-list for {@code 'foo-*' → 'foo-*'} self-glob entries
@@ -15,9 +15,9 @@ use Qualimetrix\Core\Architecture\Allow\AllowListEntry;
  * collapsing the partition the template was created to enforce.
  *
  * **Scope.** Only entries whose source AND target are both
- * {@see \Qualimetrix\Core\Architecture\Allow\SelectorKind::Glob} contribute.
+ * {@see \Qualimetrix\Architecture\Domain\Allow\SelectorKind::Glob} contribute.
  * Captured-on-both-sides entries enforce binding identity via
- * {@see \Qualimetrix\Core\Architecture\Allow\LayerSelector::matchesTarget()};
+ * {@see \Qualimetrix\Architecture\Domain\Allow\LayerSelector::matchesTarget()};
  * glob-source paired with captured-target is rejected at config load by
  * {@see AllowValidator}.
  *

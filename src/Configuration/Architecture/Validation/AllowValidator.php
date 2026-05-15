@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Configuration\Architecture\Validation;
 
+use Qualimetrix\Architecture\Domain\Allow\AllowListEntry;
+use Qualimetrix\Architecture\Domain\Allow\AllowTarget;
+use Qualimetrix\Architecture\Domain\Allow\InvalidSelectorException;
+use Qualimetrix\Architecture\Domain\Allow\LayerSelector;
+use Qualimetrix\Architecture\Domain\Allow\LayerSelectorParser;
 use Qualimetrix\Configuration\Exception\ConfigLoadException;
 use Qualimetrix\Configuration\Pipeline\DeferredWarning;
-use Qualimetrix\Core\Architecture\Allow\AllowListEntry;
-use Qualimetrix\Core\Architecture\Allow\AllowTarget;
-use Qualimetrix\Core\Architecture\Allow\InvalidSelectorException;
-use Qualimetrix\Core\Architecture\Allow\LayerSelector;
-use Qualimetrix\Core\Architecture\Allow\LayerSelectorParser;
 use Qualimetrix\Core\Dependency\DependencyType;
 
 /**
@@ -31,7 +31,7 @@ use Qualimetrix\Core\Dependency\DependencyType;
  * The long form ({@code [target: 'service', relations: ['static_call']]}) is
  * fully wired in Step G: {@code relations:} expands through
  * {@see AllowAliasExpander} into a {@see DependencyType} list that
- * {@see \Qualimetrix\Core\Architecture\Layer\LayerPolicy::isAllowed()} checks
+ * {@see \Qualimetrix\Architecture\Domain\Layer\LayerPolicy::isAllowed()} checks
  * the actual dependency edge against. Bare-string targets keep the legacy
  * "all relations allowed" semantics.
  */
@@ -317,7 +317,7 @@ final class AllowValidator
      * {@code allow_cross_instance}) are dedupped. A bare 'vendor' + long-form
      * 'vendor' with {@code relations: [extends]} carry different semantics
      * (the bare one rescues the relation gate via UNION) and MUST both reach
-     * {@see \Qualimetrix\Core\Architecture\Layer\LayerPolicy}; dedupping them
+     * {@see \Qualimetrix\Architecture\Domain\Layer\LayerPolicy}; dedupping them
      * would silently drop the broader sibling's effect.
      *
      * @param array<string, int> $layerSet
