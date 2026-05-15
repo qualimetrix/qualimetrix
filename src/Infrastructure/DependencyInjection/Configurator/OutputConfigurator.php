@@ -8,7 +8,7 @@ use Qualimetrix\Analysis\Collection\Dependency\DependencyGraphBuilder;
 use Qualimetrix\Analysis\Collection\Dependency\DependencyVisitor;
 use Qualimetrix\Analysis\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Analysis\Pipeline\AnalysisPipelineInterface;
-use Qualimetrix\Architecture\Domain\ArchitectureConfigurationHolder;
+use Qualimetrix\Architecture\Processing\ArchitectureProcessorInterface;
 use Qualimetrix\Baseline\BaselineGenerator;
 use Qualimetrix\Baseline\BaselineLoader;
 use Qualimetrix\Baseline\BaselineWriter;
@@ -180,7 +180,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(CacheFactory::class),
                 new Reference(ComputedMetricsConfigResolver::class),
                 new Reference(FrameworkNamespacesHolder::class),
-                new Reference(ArchitectureConfigurationHolder::class),
+                new Reference(ArchitectureProcessorInterface::class),
             ]);
 
         // HealthFormulaExcluder for exclude-health formula rebuilding

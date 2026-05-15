@@ -13,6 +13,7 @@ use Qualimetrix\Architecture\Domain\CoverageMode;
 use Qualimetrix\Architecture\Domain\Layer\LayerDefinition;
 use Qualimetrix\Architecture\Domain\Layer\LayerRegistry;
 use Qualimetrix\Architecture\Domain\Layer\MembershipSpec;
+use Qualimetrix\Architecture\Processing\ArchitectureProcessor;
 use Qualimetrix\Architecture\Rules\LayerViolationOptions;
 use Qualimetrix\Architecture\Rules\LayerViolationRule;
 use Qualimetrix\Core\Dependency\Dependency;
@@ -24,14 +25,22 @@ use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Tests\Architecture\Support\AllowListBuilder;
+use Qualimetrix\Tests\Architecture\Support\ProcessorBuilder;
 
 #[CoversClass(LayerViolationRule::class)]
 final class CoverageDiagnosticsTest extends TestCase
 {
+    private ArchitectureProcessor $processor;
+
+    protected function setUp(): void
+    {
+        $this->processor = new ArchitectureProcessor();
+    }
+
     #[Test]
     public function ignoreModeProducesNoDiagnosticEvenWithManyUnmatchedEdges(): void
     {
-        $rule = new LayerViolationRule(new LayerViolationOptions());
+        $rule = $this->buildRule(new LayerViolationOptions());
 
         $arch = $this->buildArchitecture(
             layers: ['controller' => ['App\\Controller']],
@@ -60,7 +69,7 @@ final class CoverageDiagnosticsTest extends TestCase
     #[Test]
     public function warnModeEmitsSingleDiagnosticWithInfoSeverity(): void
     {
-        $rule = new LayerViolationRule(new LayerViolationOptions());
+        $rule = $this->buildRule(new LayerViolationOptions());
 
         $arch = $this->buildArchitecture(
             layers: ['controller' => ['App\\Controller']],
@@ -96,7 +105,7 @@ final class CoverageDiagnosticsTest extends TestCase
     #[Test]
     public function errorModeEmitsDiagnosticWithErrorSeverity(): void
     {
-        $rule = new LayerViolationRule(new LayerViolationOptions());
+        $rule = $this->buildRule(new LayerViolationOptions());
 
         $arch = $this->buildArchitecture(
             layers: ['controller' => ['App\\Controller']],
@@ -118,7 +127,7 @@ final class CoverageDiagnosticsTest extends TestCase
     #[Test]
     public function noDiagnosticEmittedWhenAllEdgesAreFullyClassified(): void
     {
-        $rule = new LayerViolationRule(new LayerViolationOptions());
+        $rule = $this->buildRule(new LayerViolationOptions());
 
         $arch = $this->buildArchitecture(
             layers: [
@@ -141,7 +150,7 @@ final class CoverageDiagnosticsTest extends TestCase
     #[Test]
     public function diagnosticRecommendationListsUpToTenSampleClassesAlphabetically(): void
     {
-        $rule = new LayerViolationRule(new LayerViolationOptions());
+        $rule = $this->buildRule(new LayerViolationOptions());
 
         $arch = $this->buildArchitecture(
             layers: ['controller' => ['App\\Controller']],
@@ -181,7 +190,7 @@ final class CoverageDiagnosticsTest extends TestCase
     #[Test]
     public function diagnosticAccompaniesRealViolationsWhenForbiddenEdgesAreMixedIn(): void
     {
-        $rule = new LayerViolationRule(new LayerViolationOptions());
+        $rule = $this->buildRule(new LayerViolationOptions());
 
         $arch = $this->buildArchitecture(
             layers: [
@@ -252,12 +261,20 @@ final class CoverageDiagnosticsTest extends TestCase
         );
     }
 
+    private function buildRule(LayerViolationOptions $options): LayerViolationRule
+    {
+        return new LayerViolationRule($options, $this->processor);
+    }
+
     private function buildContext(?DependencyGraphInterface $graph, ?ArchitectureConfiguration $architecture): AnalysisContext
     {
+        $repository = new InMemoryMetricRepository();
+
+        ProcessorBuilder::prepared($architecture, $graph, $repository, $this->processor);
+
         return new AnalysisContext(
-            metrics: new InMemoryMetricRepository(),
+            metrics: $repository,
             dependencyGraph: $graph,
-            architecture: $architecture,
         );
     }
 

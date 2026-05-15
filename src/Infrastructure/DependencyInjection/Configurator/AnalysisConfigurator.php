@@ -25,8 +25,7 @@ use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Repository\MetricRepositoryFactoryInterface;
 use Qualimetrix\Analysis\RuleExecution\RuleExecutor;
 use Qualimetrix\Analysis\RuleExecution\RuleExecutorInterface;
-use Qualimetrix\Architecture\Domain\ArchitectureConfigurationHolder;
-use Qualimetrix\Architecture\Processing\LayerExpansionStage;
+use Qualimetrix\Architecture\Processing\ArchitectureProcessorInterface;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Configuration\RuleOptionsRegistry;
 use Qualimetrix\Core\Ast\FileParserInterface;
@@ -128,16 +127,10 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
                 new Reference(ComputedMetricEvaluator::class),
             ]);
 
-        // ArchitectureConfigurationHolder — shared between RuntimeConfigurator and AnalysisPipeline
-        // so that architecture-aware rules see the resolved layer policy in AnalysisContext.
-        $container->register(ArchitectureConfigurationHolder::class)
-            ->setPublic(true);
-
-        // LayerExpansionStage — runs template-layer expansion between collection and enrichment.
-        // No DI dependencies of its own; registered for clarity and to allow future overrides.
-        $container->register(LayerExpansionStage::class);
-
         // AnalysisPipeline - main orchestrator
+        // ArchitectureProcessor (via interface alias registered by
+        // ArchitectureConfigurator) is the per-run lifecycle coordinator for
+        // architecture rules — see ADR 0008.
         $container->register(AnalysisPipeline::class)
             ->setArguments([
                 new Reference(FileDiscoveryInterface::class),
@@ -149,8 +142,7 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
                 new Reference(DependencyGraphBuilder::class),
                 new Reference(DelegatingLogger::class),
                 new Reference(ProfilerHolder::class),
-                new Reference(ArchitectureConfigurationHolder::class),
-                new Reference(LayerExpansionStage::class),
+                new Reference(ArchitectureProcessorInterface::class),
             ])
             ->setPublic(true);
         $container->setAlias(AnalysisPipelineInterface::class, AnalysisPipeline::class)

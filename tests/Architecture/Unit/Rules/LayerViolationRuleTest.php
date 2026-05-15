@@ -14,6 +14,7 @@ use Qualimetrix\Architecture\Domain\Layer\LayerDefinition;
 use Qualimetrix\Architecture\Domain\Layer\LayerPolicy;
 use Qualimetrix\Architecture\Domain\Layer\LayerRegistry;
 use Qualimetrix\Architecture\Domain\Layer\MembershipSpec;
+use Qualimetrix\Architecture\Processing\ArchitectureProcessor;
 use Qualimetrix\Architecture\Rules\LayerViolationOptions;
 use Qualimetrix\Architecture\Rules\LayerViolationRule;
 use Qualimetrix\Core\Dependency\Dependency;
@@ -26,14 +27,28 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Tests\Architecture\Support\AllowListBuilder;
+use Qualimetrix\Tests\Architecture\Support\ProcessorBuilder;
 
 #[CoversClass(LayerViolationRule::class)]
 final class LayerViolationRuleTest extends TestCase
 {
+    /**
+     * Per-test scratch processor shared between {@see buildRule()} and
+     * {@see buildContext()}. {@see buildContext()} primes the processor
+     * with the architecture under test so the rule under test reads the
+     * prepared configuration through the injected processor instance.
+     */
+    private ArchitectureProcessor $processor;
+
+    protected function setUp(): void
+    {
+        $this->processor = new ArchitectureProcessor();
+    }
+
     #[Test]
     public function metadataMatchesContract(): void
     {
-        $rule = new LayerViolationRule(new LayerViolationOptions());
+        $rule = $this->buildRule(new LayerViolationOptions());
 
         self::assertSame('architecture.layer-violation', $rule->getName());
         self::assertSame(RuleCategory::Architecture, $rule->getCategory());
@@ -46,7 +61,7 @@ final class LayerViolationRuleTest extends TestCase
     #[Test]
     public function disabledRuleReturnsNoViolations(): void
     {
-        $rule = new LayerViolationRule(new LayerViolationOptions(enabled: false));
+        $rule = $this->buildRule(new LayerViolationOptions(enabled: false));
 
         $arch = $this->buildArchitecture(
             layers: [
@@ -66,7 +81,7 @@ final class LayerViolationRuleTest extends TestCase
     #[Test]
     public function nullArchitectureReturnsNoViolations(): void
     {
-        $rule = new LayerViolationRule(new LayerViolationOptions());
+        $rule = $this->buildRule(new LayerViolationOptions());
 
         $graph = $this->buildGraph([
             $this->buildDependency('App\\Controller', 'UserController', 'App\\Repository', 'UserRepository'),
@@ -78,7 +93,7 @@ final class LayerViolationRuleTest extends TestCase
     #[Test]
     public function emptyArchitectureReturnsNoViolations(): void
     {
-        $rule = new LayerViolationRule(new LayerViolationOptions());
+        $rule = $this->buildRule(new LayerViolationOptions());
 
         $arch = new ArchitectureConfiguration(
             new LayerRegistry([]),
@@ -98,7 +113,7 @@ final class LayerViolationRuleTest extends TestCase
     {
         // With no graph, layer-violation cannot fire, but the per-class iteration
         // still drives unreachable-layer / potential-shadow.
-        $rule = new LayerViolationRule(new LayerViolationOptions());
+        $rule = $this->buildRule(new LayerViolationOptions());
 
         $arch = $this->buildArchitecture(
             layers: ['controller' => ['App\\Controller']],
@@ -115,7 +130,7 @@ final class LayerViolationRuleTest extends TestCase
     #[Test]
     public function allowedEdgeProducesNoViolation(): void
     {
-        $rule = new LayerViolationRule(new LayerViolationOptions());
+        $rule = $this->buildRule(new LayerViolationOptions());
 
         $arch = $this->buildArchitecture(
             layers: [
@@ -142,7 +157,7 @@ final class LayerViolationRuleTest extends TestCase
     #[Test]
     public function forbiddenEdgeProducesViolationWithExpectedFields(): void
     {
-        $rule = new LayerViolationRule(new LayerViolationOptions(severity: Severity::Error));
+        $rule = $this->buildRule(new LayerViolationOptions(severity: Severity::Error));
 
         $arch = $this->buildArchitecture(
             layers: [
@@ -206,7 +221,7 @@ final class LayerViolationRuleTest extends TestCase
         // "not allowed to depend on any other declared layer" — that wording
         // would be factually wrong. Pattern strings render verbatim so the
         // user sees the shape they can copy back into config.
-        $rule = new LayerViolationRule(new LayerViolationOptions());
+        $rule = $this->buildRule(new LayerViolationOptions());
 
         $registry = new LayerRegistry([
             new LayerDefinition('controller', new MembershipSpec(['App\\Controller'])),
@@ -244,7 +259,7 @@ final class LayerViolationRuleTest extends TestCase
     #[Test]
     public function recommendationFallsBackToEmptyAllowListWording(): void
     {
-        $rule = new LayerViolationRule(new LayerViolationOptions());
+        $rule = $this->buildRule(new LayerViolationOptions());
 
         $arch = $this->buildArchitecture(
             layers: [
@@ -278,7 +293,7 @@ final class LayerViolationRuleTest extends TestCase
     #[Test]
     public function eachUseSiteProducesItsOwnViolation(): void
     {
-        $rule = new LayerViolationRule(new LayerViolationOptions());
+        $rule = $this->buildRule(new LayerViolationOptions());
 
         $arch = $this->buildArchitecture(
             layers: [
@@ -310,7 +325,7 @@ final class LayerViolationRuleTest extends TestCase
     #[Test]
     public function unmatchedSourceLayerEdgeIsIgnored(): void
     {
-        $rule = new LayerViolationRule(new LayerViolationOptions());
+        $rule = $this->buildRule(new LayerViolationOptions());
 
         $arch = $this->buildArchitecture(
             layers: ['repository' => ['App\\Repository']],
@@ -332,7 +347,7 @@ final class LayerViolationRuleTest extends TestCase
     #[Test]
     public function sameLayerEdgeIsIgnored(): void
     {
-        $rule = new LayerViolationRule(new LayerViolationOptions());
+        $rule = $this->buildRule(new LayerViolationOptions());
 
         $arch = $this->buildArchitecture(
             layers: ['service' => ['App\\Service']],
@@ -359,7 +374,7 @@ final class LayerViolationRuleTest extends TestCase
     #[Test]
     public function unreachableLayer_firesWhenPatternMatchesNoClass(): void
     {
-        $rule = new LayerViolationRule(new LayerViolationOptions());
+        $rule = $this->buildRule(new LayerViolationOptions());
 
         // Only the controller layer is declared, but no controller class exists.
         $arch = $this->buildArchitecture(
@@ -383,7 +398,7 @@ final class LayerViolationRuleTest extends TestCase
     #[Test]
     public function unreachableLayer_firesForShadowedLayer(): void
     {
-        $rule = new LayerViolationRule(new LayerViolationOptions());
+        $rule = $this->buildRule(new LayerViolationOptions());
 
         // The 'legacy' layer with pattern '**' captures everything; the
         // 'controller' layer declared afterwards is fully shadowed.
@@ -412,7 +427,7 @@ final class LayerViolationRuleTest extends TestCase
         // The DTO layer's classes exist but have NO outgoing dependencies.
         // Because hit counting is over metrics->all(Class_) (not the graph),
         // the DTO layer must register a hit and not fire unreachable-layer.
-        $rule = new LayerViolationRule(new LayerViolationOptions());
+        $rule = $this->buildRule(new LayerViolationOptions());
 
         $arch = $this->buildArchitecture(
             layers: ['dto' => ['App\\Dto\\**']],
@@ -439,7 +454,7 @@ final class LayerViolationRuleTest extends TestCase
         // Canonical example: 'any-foo' first matches anything ending in Foo;
         // 'service' second matches App\Service\*. App\Service\Foo matches both
         // and silently lands in any-foo.
-        $rule = new LayerViolationRule(new LayerViolationOptions());
+        $rule = $this->buildRule(new LayerViolationOptions());
 
         $arch = $this->buildArchitecture(
             layers: [
@@ -469,7 +484,7 @@ final class LayerViolationRuleTest extends TestCase
         // Suffix-theft: '**\*Service' captures any class ending in Service
         // regardless of namespace. The narrower App\Domain\** layer declared
         // afterwards loses every *Service class.
-        $rule = new LayerViolationRule(new LayerViolationOptions());
+        $rule = $this->buildRule(new LayerViolationOptions());
 
         $arch = $this->buildArchitecture(
             layers: [
@@ -496,7 +511,7 @@ final class LayerViolationRuleTest extends TestCase
     #[Test]
     public function potentialShadow_emptyClassSetEmitsNothing(): void
     {
-        $rule = new LayerViolationRule(new LayerViolationOptions());
+        $rule = $this->buildRule(new LayerViolationOptions());
 
         $arch = $this->buildArchitecture(
             layers: [
@@ -515,7 +530,7 @@ final class LayerViolationRuleTest extends TestCase
     #[Test]
     public function potentialShadow_disjointPatternsEmitNothing(): void
     {
-        $rule = new LayerViolationRule(new LayerViolationOptions());
+        $rule = $this->buildRule(new LayerViolationOptions());
 
         $arch = $this->buildArchitecture(
             layers: [
@@ -540,7 +555,7 @@ final class LayerViolationRuleTest extends TestCase
     {
         // Eight classes match both layers. The diagnostic shows the
         // alphabetically first five FQNs followed by "...and 3 more".
-        $rule = new LayerViolationRule(new LayerViolationOptions());
+        $rule = $this->buildRule(new LayerViolationOptions());
 
         $arch = $this->buildArchitecture(
             layers: [
@@ -577,7 +592,7 @@ final class LayerViolationRuleTest extends TestCase
     #[Test]
     public function potentialShadow_omitsRemainderHintWhenSampleFitsEntirely(): void
     {
-        $rule = new LayerViolationRule(new LayerViolationOptions());
+        $rule = $this->buildRule(new LayerViolationOptions());
 
         $arch = $this->buildArchitecture(
             layers: [
@@ -605,7 +620,7 @@ final class LayerViolationRuleTest extends TestCase
     {
         // Two runs against the same fixture must emit diagnostics in identical
         // order regardless of metrics->all() iteration order.
-        $rule = new LayerViolationRule(new LayerViolationOptions());
+        $rule = $this->buildRule(new LayerViolationOptions());
 
         $arch = $this->buildArchitecture(
             layers: [
@@ -647,7 +662,7 @@ final class LayerViolationRuleTest extends TestCase
     #[Test]
     public function statelessness_consecutiveAnalyzeCallsDoNotLeakHitCountsOrShadowEvidence(): void
     {
-        $rule = new LayerViolationRule(new LayerViolationOptions());
+        $rule = $this->buildRule(new LayerViolationOptions());
 
         $arch = $this->buildArchitecture(
             layers: [
@@ -721,15 +736,36 @@ final class LayerViolationRuleTest extends TestCase
         );
     }
 
+    /**
+     * Builds the rule under test wired against the test's scratch processor.
+     * Tests call {@see buildContext()} next to prime the processor with the
+     * architecture under test.
+     */
+    private function buildRule(LayerViolationOptions $options): LayerViolationRule
+    {
+        return new LayerViolationRule($options, $this->processor);
+    }
+
+    /**
+     * Primes the per-test processor with the supplied architecture (if any)
+     * and returns the {@see AnalysisContext} the rule consumes. Mirrors the
+     * production flow: AnalysisPipeline prepares the processor before
+     * calling LayerViolationRule::analyze().
+     */
     private function buildContext(
         ?DependencyGraphInterface $graph,
         ?ArchitectureConfiguration $architecture,
         ?InMemoryMetricRepository $metrics = null,
     ): AnalysisContext {
+        $repository = $metrics ?? new InMemoryMetricRepository();
+
+        // Re-prime the same processor instance the rule was constructed with
+        // so the prepared configuration is visible through that injection.
+        ProcessorBuilder::prepared($architecture, $graph, $repository, $this->processor);
+
         return new AnalysisContext(
-            metrics: $metrics ?? new InMemoryMetricRepository(),
+            metrics: $repository,
             dependencyGraph: $graph,
-            architecture: $architecture,
         );
     }
 

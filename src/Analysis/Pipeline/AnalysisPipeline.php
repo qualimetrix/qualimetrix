@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Pipeline;
 
+use LogicException;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Qualimetrix\Analysis\Collection\CollectionOrchestratorInterface;
@@ -13,12 +14,12 @@ use Qualimetrix\Analysis\Discovery\GeneratedFileFilter;
 use Qualimetrix\Analysis\Repository\DefaultMetricRepositoryFactory;
 use Qualimetrix\Analysis\Repository\MetricRepositoryFactoryInterface;
 use Qualimetrix\Analysis\RuleExecution\RuleExecutorInterface;
-use Qualimetrix\Architecture\Domain\ArchitectureConfigurationHolder;
+use Qualimetrix\Architecture\Domain\ArchitectureConfiguration;
 use Qualimetrix\Architecture\Domain\Layer\ClassContextFactory;
 use Qualimetrix\Architecture\Domain\Layer\ClassSet;
-use Qualimetrix\Architecture\Processing\LayerExpansionStage;
+use Qualimetrix\Architecture\Processing\ArchitectureProcessor;
+use Qualimetrix\Architecture\Processing\ArchitectureProcessorInterface;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
-use Qualimetrix\Core\Dependency\DependencyGraphInterface;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
 use Qualimetrix\Core\Rule\AnalysisContext;
@@ -47,6 +48,8 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
 {
     private readonly DependencyGraphBuilder $graphBuilder;
 
+    private readonly ArchitectureProcessorInterface $architectureProcessor;
+
     public function __construct(
         private readonly FileDiscoveryInterface $defaultDiscovery,
         private readonly CollectionOrchestratorInterface $collectionOrchestrator,
@@ -57,10 +60,19 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
         ?DependencyGraphBuilder $graphBuilder = null,
         private readonly LoggerInterface $logger = new NullLogger(),
         private readonly ?ProfilerHolder $profilerHolder = null,
-        private readonly ArchitectureConfigurationHolder $architectureHolder = new ArchitectureConfigurationHolder(),
-        private readonly LayerExpansionStage $layerExpansionStage = new LayerExpansionStage(),
+        ?ArchitectureProcessorInterface $architectureProcessor = null,
     ) {
         $this->graphBuilder = $graphBuilder ?? new DependencyGraphBuilder();
+
+        if ($architectureProcessor === null) {
+            // Default-constructed pipelines (mostly tests) get a self-managed
+            // processor preloaded with the no-op empty configuration so the
+            // ADR 0008 §3 "bind() before prepare()" invariant is satisfied.
+            $this->architectureProcessor = new ArchitectureProcessor();
+            $this->architectureProcessor->bind(ArchitectureConfiguration::empty());
+        } else {
+            $this->architectureProcessor = $architectureProcessor;
+        }
     }
 
     public function analyze(string|array $paths, ?FileDiscoveryInterface $discovery = null): AnalysisResult
@@ -127,13 +139,25 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
         unset($collectionOutput); // Free raw dependencies — no longer needed
         $profiler?->stop('dependency');
 
-        // Phase 2.6: Architecture layer template expansion (Phase 2 direction 2).
-        // Runs only when the user config carries at least one TemplateLayerDefinition.
-        // Updates ArchitectureConfigurationHolder so the rule sees the post-expansion
-        // registry and empty-template diagnostic list via AnalysisContext.
-        $profiler?->start('architecture-expansion', 'pipeline');
-        $this->expandArchitectureTemplatesIfNeeded($repository, $graph);
-        $profiler?->stop('architecture-expansion');
+        // Phase 2.6: Prepare ArchitectureProcessor with this run's graph and
+        // class set (ADR 0008). The processor expands template layers (when
+        // present), binds the registry's ClassContextFactory to $graph, and
+        // exposes the resulting ArchitectureConfiguration through
+        // getPreparedConfiguration() for the rule layer.
+        //
+        // Production: RuntimeConfigurator binds an ArchitectureConfiguration
+        // before this pipeline runs (ADR 0008 §3). Standalone-pipeline tests
+        // skip RuntimeConfigurator and rely on the fallback below — bind an
+        // empty configuration on first use so the lifecycle invariant holds.
+        $profiler?->start('architecture-prepare', 'pipeline');
+        $classSet = new ClassSet(self::collectClassPaths($repository), new ClassContextFactory());
+        try {
+            $this->architectureProcessor->prepare($graph, $classSet);
+        } catch (LogicException) {
+            $this->architectureProcessor->bind(ArchitectureConfiguration::empty());
+            $this->architectureProcessor->prepare($graph, $classSet);
+        }
+        $profiler?->stop('architecture-prepare');
 
         // Phases 3-3.8: Enrichment (aggregation, global collectors, computed metrics,
         // circular dependency detection, duplication detection)
@@ -157,7 +181,6 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
             $enrichmentResult->duplicateBlocks,
             $enrichmentResult->namespaceTree,
             $collectionResult->thresholdOverrides,
-            $this->architectureHolder->get(),
         );
         $violations = $this->ruleExecutor->execute($context);
 
@@ -310,54 +333,8 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
     }
 
     /**
-     * Runs the {@see LayerExpansionStage} when the active architecture
-     * configuration carries at least one {@see \Qualimetrix\Architecture\Domain\Layer\TemplateLayerDefinition},
-     * and writes the post-expansion configuration back into the
-     * {@see ArchitectureConfigurationHolder}.
-     *
-     * No-op for Phase-1-shape configurations (no templates) — the pipeline
-     * runs unchanged and the holder keeps its original
-     * {@see ArchitectureConfiguration}.
-     */
-    private function expandArchitectureTemplatesIfNeeded(
-        MetricRepositoryInterface $repository,
-        DependencyGraphInterface $graph,
-    ): void {
-        $architecture = $this->architectureHolder->get();
-        if (!$architecture->hasTemplates()) {
-            return;
-        }
-
-        $contextFactory = new ClassContextFactory();
-        $contextFactory->bindGraph($graph);
-
-        $classSet = new ClassSet(
-            self::collectClassPaths($repository),
-            $contextFactory,
-        );
-
-        $expansion = $this->layerExpansionStage->expand(
-            $architecture->entries(),
-            $classSet,
-            $architecture->maxExpandedLayers(),
-        );
-
-        $this->architectureHolder->set(
-            $architecture->withExpansion(
-                $expansion->expandedLayers,
-                $expansion->emptyTemplateNames,
-            ),
-        );
-
-        $this->logger->debug('Architecture template expansion completed', [
-            'expanded_layers' => \count($expansion->expandedLayers),
-            'empty_templates' => \count($expansion->emptyTemplateNames),
-        ]);
-    }
-
-    /**
      * Collects the {@see SymbolPath} for every class symbol recorded in the
-     * metric repository — the input set for template expansion.
+     * metric repository — the input set for architecture template expansion.
      *
      * @return list<SymbolPath>
      */

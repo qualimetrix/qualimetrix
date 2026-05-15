@@ -9,11 +9,11 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Architecture\Domain\ArchitectureConfiguration;
-use Qualimetrix\Architecture\Domain\ArchitectureConfigurationHolder;
 use Qualimetrix\Architecture\Domain\CoverageMode;
 use Qualimetrix\Architecture\Domain\Layer\LayerDefinition;
 use Qualimetrix\Architecture\Domain\Layer\LayerRegistry;
 use Qualimetrix\Architecture\Domain\Layer\MembershipSpec;
+use Qualimetrix\Architecture\Processing\ArchitectureProcessorInterface;
 use Qualimetrix\Architecture\Rules\LayerViolationRule;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
@@ -216,12 +216,13 @@ final class LayerViolationIntegrationTest extends TestCase
     {
         $container = (new ContainerFactory())->create();
 
-        $holder = $container->get(ArchitectureConfigurationHolder::class);
-        self::assertInstanceOf(ArchitectureConfigurationHolder::class, $holder);
+        $holder = $container->get(ArchitectureProcessorInterface::class);
+        self::assertInstanceOf(ArchitectureProcessorInterface::class, $holder);
 
-        if ($architecture !== null) {
-            $holder->set($architecture);
-        }
+        // ADR 0008 §3: bind() is mandatory before prepare(). Empty
+        // configuration mirrors the production flow when the user does
+        // not declare an `architecture:` YAML section.
+        $holder->bind($architecture ?? ArchitectureConfiguration::empty());
 
         $pipeline = $container->get(AnalysisPipelineInterface::class);
         self::assertInstanceOf(AnalysisPipelineInterface::class, $pipeline);

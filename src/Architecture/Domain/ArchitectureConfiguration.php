@@ -102,6 +102,24 @@ final readonly class ArchitectureConfiguration
         $this->entries = $entries ?? $registry->definitions();
     }
 
+    /**
+     * Builds an empty configuration (no layers, no policy, coverage = Ignore).
+     *
+     * Used by call sites that need to satisfy the ArchitectureProcessor
+     * lifecycle ({@code bind()} is mandatory before {@code prepare()} per
+     * ADR 0008 §3) when the user did not supply an `architecture:` YAML
+     * section. The rule layer's {@code isEmpty()} short-circuit ensures no
+     * downstream work happens.
+     */
+    public static function empty(): self
+    {
+        return new self(
+            new LayerRegistry([]),
+            new LayerPolicy([]),
+            CoverageMode::Ignore,
+        );
+    }
+
     public function registry(): LayerRegistry
     {
         return $this->registry;

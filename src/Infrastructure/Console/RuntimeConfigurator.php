@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console;
 
 use Psr\Log\LogLevel;
-use Qualimetrix\Architecture\Domain\ArchitectureConfigurationHolder;
+use Qualimetrix\Architecture\Domain\ArchitectureConfiguration;
+use Qualimetrix\Architecture\Processing\ArchitectureProcessorInterface;
 use Qualimetrix\Configuration\AnalysisConfiguration;
 use Qualimetrix\Configuration\ComputedMetricsConfigResolver;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
@@ -45,7 +46,7 @@ final class RuntimeConfigurator
         private readonly CacheFactory $cacheFactory,
         private readonly ComputedMetricsConfigResolver $computedMetricsResolver,
         private readonly FrameworkNamespacesHolder $frameworkNamespacesHolder,
-        private readonly ArchitectureConfigurationHolder $architectureHolder,
+        private readonly ArchitectureProcessorInterface $architectureProcessor,
     ) {}
 
     /**
@@ -62,7 +63,7 @@ final class RuntimeConfigurator
         ComputedMetricDefinitionHolder::reset();
         CollectorConfigHolder::reset();
         $this->frameworkNamespacesHolder->reset();
-        $this->architectureHolder->reset();
+        $this->architectureProcessor->reset();
 
         $this->configureLogger($input, $output);
 
@@ -107,13 +108,17 @@ final class RuntimeConfigurator
             );
         }
 
-        // Publish the resolved architecture configuration to the holder so that
-        // architecture-aware rules see the user's layer policy. When no
-        // `architecture:` YAML key was supplied, `$resolved->architecture` is
-        // null and the reset above already left the holder in its empty state.
-        if ($resolved->architecture !== null) {
-            $this->architectureHolder->set($resolved->architecture);
-        }
+        // Publish the resolved architecture configuration to the processor so
+        // that architecture-aware rules see the user's layer policy after
+        // AnalysisPipeline calls prepare() (ADR 0008). When no
+        // `architecture:` YAML key was supplied, $resolved->architecture is
+        // null and we bind an empty configuration so the processor lifecycle
+        // stays in the `bound` state — required by ADR 0008 §3 since
+        // AnalysisPipeline::analyze() always calls prepare(). The empty
+        // configuration's `isEmpty()` predicate short-circuits the rule.
+        $this->architectureProcessor->bind(
+            $resolved->architecture ?? ArchitectureConfiguration::empty(),
+        );
 
         // Resolve computed metrics definitions and store in holder. The resolver internally
         // applies exclude-health rewriting (merging in `health.*` metrics disabled via
