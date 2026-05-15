@@ -88,6 +88,13 @@ final class TupleExtractor
         /** @var array<string, array<string, string>> */
         $observed = [];
 
+        // Hoist the mode check out of the per-class loop: under MatchMode::Any
+        // the post-pattern criteria check is a no-op (a class that bound via
+        // the capture pattern is admitted regardless of non-pattern criteria),
+        // so we skip the function call entirely.
+        $checkNonPatternCriteria = $membership->mode === MatchMode::All;
+        $exclude = $membership->exclude;
+
         foreach ($classes->classes() as $classPath) {
             $context = $classes->contextFor($classPath);
             if ($context->fqn === '') {
@@ -103,7 +110,7 @@ final class TupleExtractor
                 continue;
             }
 
-            if (!self::passesNonPatternCriteria($membership, $context)) {
+            if ($checkNonPatternCriteria && !self::matchAllNonPatternCriteria($membership, $context)) {
                 continue;
             }
 
@@ -113,7 +120,7 @@ final class TupleExtractor
             // a tuple, otherwise template expansion produces a "phantom"
             // concrete layer driven solely by classes that are then unassigned
             // (and the layer itself would be empty under runtime classification).
-            if ($membership->exclude !== null && self::excludeFires($membership->exclude, $context, $tuple)) {
+            if ($exclude !== null && self::excludeFires($exclude, $context, $tuple)) {
                 continue;
             }
 
@@ -179,9 +186,8 @@ final class TupleExtractor
     }
 
     /**
-     * Returns true if the class context satisfies the declared non-pattern
-     * criteria (suffix / attributes / implements / extends) under the
-     * membership's match mode.
+     * Returns true if the class context satisfies every declared non-pattern
+     * criterion (suffix / attributes / implements / extends).
      *
      * **M2 Path B (Phase 5.2).** Pre-remediation, this method enforced AND
      * across every declared non-pattern criterion regardless of the
@@ -191,44 +197,33 @@ final class TupleExtractor
      * The remediation aligns the two:
      *
      * - {@see MatchMode::Any}: a class that already binds via the
-     *   capture-producing pattern passes here regardless of the non-pattern
-     *   criteria. If the caller supplied any non-pattern criteria, they
-     *   widen membership (OR) rather than narrow it — this matches the
-     *   runtime D2 "any declared kind matches" semantics. A class that
-     *   matches NEITHER the capture pattern (already filtered above) NOR
-     *   any non-pattern criterion is implicitly absent from this code path.
+     *   capture-producing pattern passes regardless of the non-pattern
+     *   criteria. Callers hoist this short-circuit out of the per-class
+     *   loop and skip the helper entirely under Any.
      *
      * - {@see MatchMode::All}: every declared non-pattern criterion must
-     *   match, mirroring the pre-remediation behavior. The capture pattern
-     *   matching has already been verified by the caller.
+     *   match (this method's contract). The capture pattern matching has
+     *   already been verified by the caller.
      *
-     * Empty (undeclared) criteria are trivially satisfied under either
-     * mode.
+     * Empty (undeclared) criteria are trivially satisfied — the early
+     * `$x !== []` guards make sure we only run the haystack check when the
+     * user actually declared a criterion of that kind.
      */
-    private static function passesNonPatternCriteria(MembershipSpec $membership, ClassContext $context): bool
+    private static function matchAllNonPatternCriteria(MembershipSpec $membership, ClassContext $context): bool
     {
-        if ($membership->mode === MatchMode::Any) {
-            // Capture pattern already matched in the caller — that alone
-            // establishes membership under D2. Non-pattern criteria, when
-            // declared, only widen the set, so a class that reaches this
-            // point trivially passes.
-            return true;
-        }
-
-        // MatchMode::All — every declared non-pattern criterion must match.
         if ($membership->suffix !== [] && !self::matchesAnySuffix($membership->suffix, $context->shortName)) {
             return false;
         }
 
-        if ($membership->attributes !== [] && !self::haystackContainsAny($membership->attributes, $context->attributeFqns)) {
+        if ($membership->attributes !== [] && !self::needleHits($membership->attributes, $context->attributeFqnSet)) {
             return false;
         }
 
-        if ($membership->implements !== [] && !self::haystackContainsAny($membership->implements, $context->interfaces)) {
+        if ($membership->implements !== [] && !self::needleHits($membership->implements, $context->interfaceSet)) {
             return false;
         }
 
-        if ($membership->extends !== [] && !self::haystackContainsAny($membership->extends, $context->parentClasses)) {
+        if ($membership->extends !== [] && !self::needleHits($membership->extends, $context->parentClassSet)) {
             return false;
         }
 
@@ -309,18 +304,23 @@ final class TupleExtractor
     }
 
     /**
+     * Returns true if any of {@code $needles} is present as a key in the
+     * already-prepared {@code $haystackSet}. Callers pass the precomputed
+     * lookup tables on {@see ClassContext} (e.g. {@see ClassContext::$interfaceSet})
+     * so the {@code array_fill_keys} cost is paid once per class — not once
+     * per layer per class.
+     *
      * @param list<string> $needles
-     * @param list<string> $haystack
+     * @param array<string, true> $haystackSet
      */
-    private static function haystackContainsAny(array $needles, array $haystack): bool
+    private static function needleHits(array $needles, array $haystackSet): bool
     {
-        if ($haystack === []) {
+        if ($haystackSet === []) {
             return false;
         }
 
-        $set = array_fill_keys($haystack, true);
         foreach ($needles as $needle) {
-            if (isset($set[$needle])) {
+            if (isset($haystackSet[$needle])) {
                 return true;
             }
         }
@@ -382,9 +382,15 @@ final class TupleExtractor
 
     /**
      * Builds a deterministic string key for tuple deduplication. The
-     * delimiter is unlikely to appear in any sane binding value (PHP FQN
-     * segments) but is fine even if it does — the only requirement is that
-     * (value list, variable order) is uniquely encoded.
+     * delimiter pair ({@code 0x1F} between entries, {@code 0x00} between
+     * name and value) is unlikely to appear in any sane binding value
+     * (PHP FQN segments) but is fine even if it does — the only requirement
+     * is that {@code (variable name, value)} pairs in canonical order
+     * are uniquely encoded.
+     *
+     * Accepts a mutable copy on purpose: {@code ksort} mutates in place and
+     * we want the local copy sorted without affecting the caller's tuple,
+     * which is also stored in {@code $observed} for later dedup hits.
      *
      * @param array<string, string> $tuple
      */
@@ -392,11 +398,12 @@ final class TupleExtractor
     {
         ksort($tuple);
 
-        return implode("\x1F", array_map(
-            static fn(string $name, string $value): string => $name . "\x00" . $value,
-            array_keys($tuple),
-            array_values($tuple),
-        ));
+        $parts = [];
+        foreach ($tuple as $name => $value) {
+            $parts[] = $name . "\x00" . $value;
+        }
+
+        return implode("\x1F", $parts);
     }
 
     /**

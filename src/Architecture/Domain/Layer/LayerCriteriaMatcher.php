@@ -178,13 +178,12 @@ final class LayerCriteriaMatcher
      */
     private static function matchAttributes(ClassContext $context, array $attributes): ?MatchedCriterion
     {
-        if ($attributes === [] || $context->attributeFqns === []) {
+        if ($attributes === [] || $context->attributeFqnSet === []) {
             return null;
         }
 
-        $haystack = array_fill_keys($context->attributeFqns, true);
         foreach ($attributes as $attributeFqn) {
-            if (isset($haystack[$attributeFqn])) {
+            if (isset($context->attributeFqnSet[$attributeFqn])) {
                 return new MatchedCriterion(MatchedCriterionKind::Attribute, $attributeFqn);
             }
         }
@@ -197,13 +196,12 @@ final class LayerCriteriaMatcher
      */
     private static function matchImplements(ClassContext $context, array $implements): ?MatchedCriterion
     {
-        if ($implements === [] || $context->interfaces === []) {
+        if ($implements === [] || $context->interfaceSet === []) {
             return null;
         }
 
-        $haystack = array_fill_keys($context->interfaces, true);
         foreach ($implements as $interfaceFqn) {
-            if (isset($haystack[$interfaceFqn])) {
+            if (isset($context->interfaceSet[$interfaceFqn])) {
                 return new MatchedCriterion(MatchedCriterionKind::Implements, $interfaceFqn);
             }
         }
@@ -216,13 +214,12 @@ final class LayerCriteriaMatcher
      */
     private static function matchExtends(ClassContext $context, array $extends): ?MatchedCriterion
     {
-        if ($extends === [] || $context->parentClasses === []) {
+        if ($extends === [] || $context->parentClassSet === []) {
             return null;
         }
 
-        $haystack = array_fill_keys($context->parentClasses, true);
         foreach ($extends as $parentFqn) {
-            if (isset($haystack[$parentFqn])) {
+            if (isset($context->parentClassSet[$parentFqn])) {
                 return new MatchedCriterion(MatchedCriterionKind::Extends, $parentFqn);
             }
         }

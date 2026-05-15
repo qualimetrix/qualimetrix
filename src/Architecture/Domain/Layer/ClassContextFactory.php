@@ -263,10 +263,15 @@ final class ClassContextFactory
     {
         $result = [];
         $seen = [];
+        // Index cursor instead of array_shift — array_shift re-indexes the
+        // entire backing array on every pop (O(n) per call). For deep parent /
+        // interface chains this turned into hot O(n²) behaviour.
         $queue = $seedQueue;
+        $cursor = 0;
+        $tail = \count($queue);
 
-        while ($queue !== []) {
-            $next = array_shift($queue);
+        while ($cursor < $tail) {
+            $next = $queue[$cursor++];
             if (isset($seen[$next])) {
                 continue;
             }
@@ -276,6 +281,7 @@ final class ClassContextFactory
             foreach ($adjacency[$next] ?? [] as $neighbour) {
                 if (!isset($seen[$neighbour])) {
                     $queue[] = $neighbour;
+                    $tail++;
                 }
             }
         }
