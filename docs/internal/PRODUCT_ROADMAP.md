@@ -1,6 +1,6 @@
 # Qualimetrix Product Roadmap
 
-**Updated:** 2026-05-13
+**Updated:** 2026-05-15
 **Based on:** [Competitive analysis](COMPETITOR_COMPARISON.md), cross-ecosystem research (SonarQube, ESLint, Semgrep,
 NDepend, CodeScene, RuboCop, Ruff, ArchUnit), triple expert evaluation (Gemini + Codex, 2026-03-25)
 
@@ -38,18 +38,20 @@ Items ordered by combined usefulness × marketing impact × effort efficiency.
 
 ### Tier 1 — Strategic (high value, higher effort)
 
-#### 1. Architecture Rules (deptrac replacement) — Phase 1 ✅ Implemented (pending release tag)
+#### 1. Architecture Rules (deptrac replacement) — Phase 1 + Phase 2 ✅ Implemented (pending release tag)
 
-- **Status:** Implementation merged on `main` as MVP; not yet tagged in a release (v0.17.0 predates the merge).
-  Namespace-pattern layer membership, allow-list policy, coverage modes (`ignore`/`warn`/`error`), vendor as first-class
-  layers, baseline-friendly edge identity, `@qmx-ignore architecture.layer-violation` suppression. Pivot from
-  specificity-based to declaration-order matching is tracked in
-  [docs/internal/plans/architecture-rules-followup.md](plans/architecture-rules-followup.md) and should land before
-  the release that ships this feature
-- **Marketing claim (post-release):** "Drop deptrac from your CI — Qualimetrix does it natively, 40x faster"
-- **What's deferred to Phase 2** (see Tier 2): membership beyond namespace, submodule isolation, negative patterns,
-  dependency type filter, explicit default layer
-- **Reference:** deptrac (PHP), ArchUnit (Java), NetArchTest (.NET), Dependency Cruiser (JS)
+- **Status:** Implementation merged on `main`; not yet tagged in a release (v0.17.0 predates the merge). Phase 1:
+  namespace-pattern layer membership, allow-list policy, coverage modes (`ignore`/`warn`/`error`), vendor as
+  first-class layers, baseline-friendly edge identity, `@qmx-ignore architecture.layer-violation` suppression,
+  declaration-order matching (per ADR 0006). Phase 2: multi-criterion membership (`patterns` + `suffix` + `attributes`
+  + `implements` + `extends` with `match: any | all`), template layers with capture-variable expansion + same-instance
+  allow-list binding (per ADR 0007), `exclude:` block, `relations:` whitelist on long-form allow targets with
+  reflective alias map, `architecture.empty-template` diagnostic.
+- **Marketing claim (post-release):** "Drop deptrac from your CI — Qualimetrix covers the textbook DDD case AND the
+  long-tail (custom membership, bounded-context partitioning, edge-kind whitelisting), 40x faster, no second tool."
+- **Reference:** deptrac (PHP), ArchUnit (Java), NetArchTest (.NET), Dependency Cruiser (JS); design records in
+  [ADR 0005](../adr/0005-architecture-rules.md) (Phase 1), [ADR 0006](../adr/0006-architecture-rules-declaration-order.md)
+  (declaration-order pivot), [ADR 0007](../adr/0007-architecture-rules-phase-2-design.md) (Phase 2 flexibility surface).
 
 #### 2. Trend Analysis & Quality Gates
 
@@ -71,59 +73,7 @@ Items ordered by combined usefulness × marketing impact × effort efficiency.
 
 ### Tier 2 — Depth & Breadth (valuable, can wait)
 
-#### 3. Architecture Rules — Phase 2 (Flexibility & Expressiveness)
-
-- **Why it matters:** Phase 1 covers the textbook DDD/Clean Architecture case where every class lives in a namespace
-  matching its architectural role. Real codebases routinely deviate: hybrid horizontal/vertical layouts, legacy
-  enclaves, classes identified by suffix or marker interface rather than namespace, intra-layer module isolation.
-  Without these extensions, teams either contort their YAML or fall back to deptrac for the long-tail cases —
-  undermining the "one tool replaces five" promise for non-textbook projects
-- **Origin:** Triage discussion 2026-05-13, after reviewing real-world flexibility friction on top of v0.17.0
-- **Design status:** Conceptual plan (Stage 1) with locked design decisions to be captured in ADR 0007 lives at
-  [plans/architecture-rules-phase2.md](plans/architecture-rules-phase2.md). The detailed implementation plan
-  (Stage 2) is appended to that document after Stage 1 triple review settles, and gets its own review pass before
-  code begins
-- **Five directions, ordered by priority:**
-
-  1. **Class-membership beyond namespace** — declare layers by class-name suffix (`*Repository`, `*Controller`),
-     interface implementation (`implements DoctrineRepositoryInterface`), or PHP attribute (`#[ORM\Entity]`).
-     Multiple membership sources within one layer combined via an explicit `match: any | all` flag (default `any`
-     for migration ergonomics; `all` for strict-convention enforcement). Solves the case where directory structure
-     does not align with architectural role. Ordering between layers is governed by declaration-order (per
-     followup-plan pivot), not by membership-kind specificity
-  2. **Template layers (submodule partitioning)** — declare a layer with a capture-variable name like
-     `'domain-{module}'` that expands to one concrete layer instance per **observed binding tuple** in the discovered
-     class set (NOT cartesian product). Cross-module edges become natural violations under existing allow-list
-     semantics — no separate `cross_partition` flag. Allow-list entries can reference template instances via glob
-     (`'domain-*': [shared-kernel]`) AND via capture-variable binding (`'app-{m}': ['domain-{m}']`) for
-     same-instance-only constraints. Capture-binding is **mandatory** in MVP — without it, the DDD bounded-context
-     promise leaks
-  3. **Negative patterns within a layer** — `exclude:` clause on a layer entry (with its own `match: any | all`) to
-     remove a subtree from the match. Substantially redundant under declaration-order matching for namespace-only
-     cases, but useful in combination with `suffix`/`attributes`/`implements` from direction 1
-  4. **Dependency type filter** — whitelist `relations:` on long-form allow entries restricting which edge kinds are
-     permitted. Hybrid API: direct `DependencyType` enum values (extends, implements, trait_use, new, static_call, …)
-     plus three curated aliases (`inheritance`, `static_access`, `type_reference`) for common groupings. Symmetric
-     blacklist (`forbid_relations`) deferred until a real use case surfaces — whitelist alone already implicitly
-     forbids everything else
-  5. **Catch-all layer as recipe** — declaring a final layer with pattern `**` captures unclassified classes.
-     Subsumed by declaration-order matching from `architecture-rules-followup.md`; remains a documentation recipe
-     rather than a separate feature
-- **Explicitly dropped:**
-  - Per-edge severity — no precedent in deptrac/ArchUnit/NDepend; can be emulated by splitting into two rules with
-    different severity if the use case ever surfaces
-  - Wildcard source/target in allow-list shorthand (e.g. `'*': [utils]`) — marginal; deferred until a real signal
-    appears
-  - Pure positional partitioning (`partition_by: 1`) — rejected during design in favour of symbolic capture
-    variables (see direction 2). Positional addressing is fragile under YAML edits — adding a wildcard silently
-    shifts indices
-- **Effort:** Medium per direction; (1) and (2) are the heaviest because they change membership semantics. Detailed
-  estimates land in the Stage 2 implementation plan
-- **Value:** High for adoption in projects that don't fit the textbook layout; closes the long tail of "I'd use this
-  but my project is X"
-- **Marketing angle:** "Architecture rules that fit your project, not the other way around"
-
-#### 4. Complexity Distribution (Box Plots)
+#### 3. Complexity Distribution (Box Plots)
 
 - **Why it matters:** Summary statistics (avg, p95) hide distribution shape. Two classes with avg CCN=10 look identical,
   but one might have 200 trivial methods + 3 monsters while the other is uniformly moderate. Box plots per
@@ -134,7 +84,7 @@ Items ordered by combined usefulness × marketing impact × effort efficiency.
 - **Value:** High for experienced teams, medium for general audience
 - **Marketing angle:** Visually impressive, appeals to data-oriented developers
 
-#### 5. Custom Rules API
+#### 4. Custom Rules API
 
 - **Why it matters:** Enterprise teams have domain-specific quality rules ("no direct DB queries outside Repository", "
   all DTOs must be readonly"). Without a plugin API, they either fork Qualimetrix or use a separate tool. A PHP plugin
@@ -151,7 +101,7 @@ Items ordered by combined usefulness × marketing impact × effort efficiency.
 - **Value:** High — critical for enterprise adoption, attracts community contributions
 - **Marketing angle:** "Platform maturity" signal. Less wow, more trust
 
-#### 6. Unused Variables Detection
+#### 5. Unused Variables Detection
 
 - **Why it matters:** Universally expected code quality check. Every linter in every language has it. Its absence is
   noticed. However, doing it well in PHP is hard due to `extract()`, variable variables (`$$x`), `compact()`, `list()`
@@ -167,7 +117,7 @@ Items ordered by combined usefulness × marketing impact × effort efficiency.
 - **Value:** High for adoption (expected feature), but overlap with PHPStan reduces unique value
 - **Marketing angle:** Checkbox feature — expected, not differentiating
 
-#### 7. Tech Debt Breakdown
+#### 6. Tech Debt Breakdown
 
 - **Why it matters:** Qualimetrix reports total tech debt as a single number ("4.2 hours"). But a tech lead planning a sprint
   needs to know: "2.5 hours is complexity, 1 hour is coupling, 0.7 hours is code smells". Category breakdown makes debt
@@ -184,7 +134,7 @@ Items ordered by combined usefulness × marketing impact × effort efficiency.
 
 ### Tier 3 — Nice to Have (low priority or high risk)
 
-#### 8. Feature Envy Detection
+#### 7. Feature Envy Detection
 
 - **Rule:** `code-smell.feature-envy`
 - **Logic:** Method uses more symbols from another class than from its own. Classic Fowler smell
@@ -195,7 +145,7 @@ Items ordered by combined usefulness × marketing impact × effort efficiency.
 - **Effort:** Medium-High (analysis + FP tuning)
 - **Value:** Medium — recognized smell, but risky in PHP
 
-#### 9. CRAP Index
+#### 8. CRAP Index
 
 - **Metric:** `crap` = CCN² × (1 − coverage)². Without coverage data: CRAP = CCN²
 - **Input:** Optional Clover XML coverage file (`--coverage=clover.xml`)
@@ -207,7 +157,7 @@ Items ordered by combined usefulness × marketing impact × effort efficiency.
 - **Effort:** Medium
 - **Value:** Low without coverage, Medium-High with coverage — conditional feature
 
-#### 10. Interactive Dependency Graph
+#### 9. Interactive Dependency Graph
 
 - **Visualization:** Force-directed graph (D3 force simulation). Nodes = classes/namespaces, edges = dependencies.
   Color = health, size = ClassRank
@@ -220,7 +170,7 @@ Items ordered by combined usefulness × marketing impact × effort efficiency.
 - **Value:** High for demos, Medium for daily use
 - **Marketing angle:** Best possible screenshot, but risk of overpromise
 
-#### 11. Health Radar Chart
+#### 10. Health Radar Chart
 
 - **Data:** 5 sub-health scores (complexity, cohesion, coupling, typing, maintainability)
 - **Visualization:** Spider/radar chart per class or namespace. Overlay two namespaces for comparison
@@ -229,7 +179,7 @@ Items ordered by combined usefulness × marketing impact × effort efficiency.
 - **Effort:** Low
 - **Value:** Low — visual garnish
 
-#### 12. Cyclomatic Density
+#### 11. Cyclomatic Density
 
 - **Metric:** `cyclomaticDensity` = CCN / LLOC
 - **Rule:** `complexity.cyclomatic-density`
@@ -240,7 +190,7 @@ Items ordered by combined usefulness × marketing impact × effort efficiency.
 - **Effort:** Low
 - **Value:** Low — better as internal signal than user-facing rule
 
-#### 13. Type Coverage Heatmap
+#### 12. Type Coverage Heatmap
 
 - **Data:** `typeCoverage.param`, `.return`, `.property` per class
 - **Visualization:** Heatmap grid. Rows = classes (grouped by namespace), columns = param/return/property. Color =
@@ -281,7 +231,7 @@ Items surfaced during expert evaluation that don't fit existing phases but deser
 After Tiers 1–2, Qualimetrix replaces: **phpmd + phpmetrics + phpcpd + deptrac** and offers capabilities no PHP tool has (
 architecture rules, quality gates).
 
-**Already delivered:** Effort-aware prioritization, cognitive complexity breakdown, analysis presets, Martin diagram.
+**Already delivered:** Effort-aware prioritization, cognitive complexity breakdown, analysis presets, Martin diagram, architecture layer rules (Phase 1 + Phase 2 — multi-criterion membership, template layers, capture-binding allow, `exclude:`, `relations:` whitelist).
 
 **Target value proposition:** "One tool. 40x faster. Deeper metrics. Quality gates. Replaces five tools."
 
