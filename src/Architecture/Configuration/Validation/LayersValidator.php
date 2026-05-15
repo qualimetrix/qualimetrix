@@ -46,12 +46,6 @@ final class LayersValidator
 {
     private const string CONFIG_PATH = 'architecture';
 
-    /**
-     * Keys still reserved for upcoming features. Step F opens
-     * {@code exclude}; no further keys remain reserved at this time.
-     */
-    private const array RESERVED_FUTURE_KEYS = [];
-
     private const array ALLOWED_ENTRY_KEYS = [
         'name',
         'patterns',
@@ -281,22 +275,15 @@ final class LayersValidator
             return;
         }
 
-        $message = \sprintf(
-            'architecture.layers[%d]: unknown key(s) %s. Allowed keys: %s.',
-            $index,
-            self::quoteList($unknown),
-            self::quoteList(self::ALLOWED_ENTRY_KEYS),
+        throw new ConfigLoadException(
+            self::CONFIG_PATH,
+            \sprintf(
+                'architecture.layers[%d]: unknown key(s) %s. Allowed keys: %s.',
+                $index,
+                self::quoteList($unknown),
+                self::quoteList(self::ALLOWED_ENTRY_KEYS),
+            ),
         );
-
-        $reservedSeen = array_values(array_intersect(self::RESERVED_FUTURE_KEYS, $unknown));
-        if ($reservedSeen !== []) {
-            $message .= \sprintf(
-                ' Key(s) %s are reserved for an upcoming feature and not yet supported in this version.',
-                self::quoteList($reservedSeen),
-            );
-        }
-
-        throw new ConfigLoadException(self::CONFIG_PATH, $message);
     }
 
     /**
@@ -388,7 +375,7 @@ final class LayersValidator
     private static function rejectDuplicatePatterns(array $entries): void
     {
         $owners = [];
-        foreach ($entries as $entry) {
+        foreach ($entries as $entryIndex => $entry) {
             $entryName = $entry instanceof TemplateLayerDefinition ? $entry->nameTemplate() : $entry->name();
             $membership = $entry->membership();
             $entryNarrows = self::narrowsByNonPatternCriteria($membership);
@@ -412,16 +399,18 @@ final class LayersValidator
                     throw new ConfigLoadException(
                         self::CONFIG_PATH,
                         \sprintf(
-                            'architecture.layers: pattern "%s" declared in both "%s" and "%s". Under declaration-order matching the second occurrence is unreachable; remove or refine one of them.',
+                            'architecture.layers: pattern "%s" declared in both "%s" (architecture.layers[%d]) and "%s" (architecture.layers[%d]). Under declaration-order matching the second occurrence is unreachable; remove or refine one of them.',
                             $normalized,
                             $owners[$normalized]['name'],
+                            $owners[$normalized]['index'],
                             $entryName,
+                            $entryIndex,
                         ),
                     );
                 }
 
                 if (!isset($owners[$normalized])) {
-                    $owners[$normalized] = ['name' => $entryName, 'narrows' => $entryNarrows];
+                    $owners[$normalized] = ['name' => $entryName, 'index' => $entryIndex, 'narrows' => $entryNarrows];
                 }
             }
         }

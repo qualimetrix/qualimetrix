@@ -168,7 +168,7 @@ final class LayerCriterionNormalizer
     {
         $entries = \is_string($value) ? [$value] : $value;
 
-        if (!\is_array($entries) || !array_is_list($entries)) {
+        if (!\is_array($entries)) {
             throw new ConfigLoadException(
                 self::CONFIG_PATH,
                 \sprintf(
@@ -177,6 +177,22 @@ final class LayerCriterionNormalizer
                     $layerName,
                     $kind,
                     get_debug_type($value),
+                ),
+            );
+        }
+
+        if (!array_is_list($entries)) {
+            // Associative map where an ordered list is required — the
+            // typical mistake is using YAML mapping syntax ({@code key: val})
+            // for what should be a sequence ({@code - val}).
+            throw new ConfigLoadException(
+                self::CONFIG_PATH,
+                \sprintf(
+                    'architecture.layers[%d] ("%s"): "%s" must be a string or a non-empty list of strings, got an associative map (keys: %s). Use sequence syntax (a "-" prefix per entry) or omit the key to leave the criterion undeclared.',
+                    $index,
+                    $layerName,
+                    $kind,
+                    self::renderMapKeysForError($entries),
                 ),
             );
         }
@@ -194,6 +210,23 @@ final class LayerCriterionNormalizer
         }
 
         return $entries;
+    }
+
+    /**
+     * Renders the keys of an associative map in a stable, bounded form for
+     * inclusion in an error message. Caps the list at four keys to keep the
+     * error one-line readable when the user paste a large map by accident.
+     *
+     * @param array<array-key, mixed> $map
+     */
+    private static function renderMapKeysForError(array $map): string
+    {
+        $keys = array_keys($map);
+        $shown = \array_slice($keys, 0, 4);
+        $quoted = array_map(static fn(int|string $k): string => '"' . (string) $k . '"', $shown);
+        $tail = \count($keys) > 4 ? ', …' : '';
+
+        return implode(', ', $quoted) . $tail;
     }
 
     /**
