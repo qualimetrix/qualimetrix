@@ -313,12 +313,22 @@ final class LayerExpansionStageTest extends TestCase
     }
 
     // -------------------------------------------------------------------------
-    // D7 carve-out — non-capturing filters always AND
+    // M2 Path B — non-pattern criteria are mode-aware (Phase 5.2)
+    //
+    // Non-capturing PATTERNS continue to act as a pure AND-filter regardless
+    // of mode (they describe "where the layer lives"), see the
+    // expand_d7CarveOut_* tests below.
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function expand_d7CarveOut_nonCapturingSuffixFiltersOutClassesEvenUnderMatchAny(): void
+    public function expand_matchAny_nonCaptureSuffixDoesNotNarrowTupleSet(): void
     {
+        // Path B (Phase 5.2 / M2): under `match: any`, non-pattern criteria
+        // (suffix here) widen membership alongside the capture pattern rather
+        // than acting as an AND filter. A class that binds via the capture
+        // pattern produces a tuple even if its short name does not end in any
+        // declared suffix. This matches the D2 runtime semantics in
+        // LayerDefinition::matches() — "any declared kind matches".
         $template = new TemplateLayerDefinition(
             'domain-{module}',
             new MembershipSpec(
@@ -328,7 +338,32 @@ final class LayerExpansionStageTest extends TestCase
             ),
         );
 
-        // Only the class ending in `Aggregate` should contribute a tuple.
+        $classes = self::classSet([
+            'App\\Module\\Order\\Domain\\OrderAggregate',
+            'App\\Module\\Audit\\Domain\\AuditService',   // pattern matches; suffix does not
+        ]);
+
+        $result = $this->stage->expand([$template], $classes, 500);
+
+        $names = array_map(static fn(LayerDefinition $l): string => $l->name(), $result->expandedLayers);
+        self::assertSame(['domain-Audit', 'domain-Order'], $names);
+    }
+
+    #[Test]
+    public function expand_matchAll_nonPatternSuffixFiltersTupleSet(): void
+    {
+        // Regression pin: under `match: all`, every declared non-pattern
+        // criterion must match (the pre-M2 behavior). Only the class ending
+        // in `Aggregate` should contribute a tuple.
+        $template = new TemplateLayerDefinition(
+            'domain-{module}',
+            new MembershipSpec(
+                patterns: ['App\\Module\\{module}\\Domain\\**'],
+                suffix: ['Aggregate'],
+                mode: MatchMode::All,
+            ),
+        );
+
         $classes = self::classSet([
             'App\\Module\\Order\\Domain\\OrderAggregate', // matches both
             'App\\Module\\Audit\\Domain\\AuditService',   // pattern only — suffix fails
@@ -338,6 +373,36 @@ final class LayerExpansionStageTest extends TestCase
 
         $names = array_map(static fn(LayerDefinition $l): string => $l->name(), $result->expandedLayers);
         self::assertSame(['domain-Order'], $names);
+    }
+
+    #[Test]
+    public function expand_matchAny_liberalNonPatternCriteriaTriggerCeilingOverflow(): void
+    {
+        // Ceiling guard for M2 Path B: under `match: any`, a liberal config
+        // (capture pattern with no narrowing non-pattern filter) can produce
+        // more tuples than pre-remediation. The `architecture.max_expanded_layers`
+        // ceiling catches the explosion with an actionable error so users
+        // who hit migration surprise see the lever to fix it.
+        $template = new TemplateLayerDefinition(
+            'domain-{module}',
+            new MembershipSpec(
+                patterns: ['App\\Module\\{module}\\Domain\\**'],
+                suffix: ['Aggregate'],  // pre-M2 narrowed to 1 tuple; post-M2 narrows to 0
+                mode: MatchMode::Any,
+            ),
+        );
+
+        $classes = self::classSet([
+            'App\\Module\\Order\\Domain\\X',
+            'App\\Module\\Audit\\Domain\\Y',
+            'App\\Module\\Billing\\Domain\\Z',
+        ]);
+
+        $this->expectException(LayerExpansionException::class);
+        $this->expectExceptionMessage('architecture.max_expanded_layers ceiling of 2');
+
+        // 3 observed tuples post-M2 (suffix no longer narrows); ceiling is 2 → fail.
+        $this->stage->expand([$template], $classes, 2);
     }
 
     #[Test]
