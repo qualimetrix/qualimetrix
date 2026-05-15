@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Breaking
 - `architecture.layers` YAML schema is now an **ordered list** (long form only), not a map. The first layer whose patterns match a class FQN owns the class — declaration order is meaningful. Migration: replace `layers: { name: pattern }` with `layers: [{ name: x, patterns: [pattern] }]`. See ADR 0006 (`docs/adr/0006-architecture-rules-declaration-order.md`) for the rationale.
 - `architecture.layers` merge semantics: when any configuration source defines `architecture.layers`, it **replaces the base list wholesale** (not merged/appended). Order is the user's disambiguation tool; deep-merge would silently destroy it.
+- `AnalysisContext::$architecture` removed (extension-author surface). Rules that need architecture configuration inject `ArchitectureProcessorInterface` and read via `getPreparedConfiguration()`. See ADR 0008.
 
 ### Changed
 - Architecture layer rules: declare layers in YAML and enforce allowed inter-layer dependencies via `architecture.layer-violation`. Supports vendor namespaces as first-class layers, namespace-based membership with declaration-order matching (first match wins), per-use-site reporting, and incremental adoption via the `architecture.coverage` diagnostic.
@@ -22,6 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New `architecture.unreachable-layer` diagnostic (info severity): fires once per declared layer whose patterns matched zero classes during analysis. Catches the loud failure mode where a broader pattern earlier in the order silently swallows everything.
 - New `architecture.potential-shadow` diagnostic (info severity): evidence-based detection of layers that silently steal classes from later, narrower layers (prefix overlap, suffix theft, arbitrary intersection). Output is deterministic across runs; sample of up to 5 class FQNs per (assigned, shadowed) pair.
 - New `debug:layer-assignment <fqn>` command for per-class introspection of layer assignment — reports which layer the class would be assigned to and which other layers' patterns would also have matched (a shadow source if declared earlier). Delegates to `LayerRegistry::resolveAll()` so the result matches runtime assignment by construction.
+- `architecture.layer-violation` rule now reads configuration through `ArchitectureProcessor` instead of a holder. Hot-path neutral, but the lifecycle is now explicit: `reset → bind → prepare → classify`. See ADR 0008.
+- `debug:layer-assignment` now runs full Discovery + Collection so its output matches `qmx check` byte-for-byte for template-layer and graph-criteria configs. Slower (~50–70% of `qmx check` time) but no more silent divergence — the previous disclaimer about `attributes` / `implements` / `extends` being silently skipped is gone.
 - YAML loader normalization is now driven by an explicit per-section policy (`SectionNormalizationPolicy`) declared in `ConfigSchema`. Missing policy for a registered root key fails fast with `LogicException`. See ADR 0009.
 
 ### Removed
