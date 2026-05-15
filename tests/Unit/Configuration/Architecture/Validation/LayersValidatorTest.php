@@ -9,13 +9,13 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Architecture\Domain\Layer\ExcludeSpec;
+use Qualimetrix\Architecture\Domain\Layer\LayerDefinition;
+use Qualimetrix\Architecture\Domain\Layer\MatchMode;
+use Qualimetrix\Architecture\Domain\Layer\MembershipSpec;
+use Qualimetrix\Architecture\Domain\Layer\TemplateLayerDefinition;
 use Qualimetrix\Configuration\Architecture\Validation\LayersValidator;
 use Qualimetrix\Configuration\Exception\ConfigLoadException;
-use Qualimetrix\Core\Architecture\Layer\ExcludeSpec;
-use Qualimetrix\Core\Architecture\Layer\LayerDefinition;
-use Qualimetrix\Core\Architecture\Layer\MatchMode;
-use Qualimetrix\Core\Architecture\Layer\MembershipSpec;
-use Qualimetrix\Core\Architecture\Layer\TemplateLayerDefinition;
 
 #[CoversClass(LayersValidator::class)]
 #[CoversClass(MembershipSpec::class)]

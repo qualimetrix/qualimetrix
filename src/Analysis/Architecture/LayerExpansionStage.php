@@ -4,27 +4,27 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Architecture;
 
-use Qualimetrix\Core\Architecture\Layer\CapturePattern;
-use Qualimetrix\Core\Architecture\Layer\ClassContext;
-use Qualimetrix\Core\Architecture\Layer\ClassSet;
-use Qualimetrix\Core\Architecture\Layer\ExcludeSpec;
-use Qualimetrix\Core\Architecture\Layer\InvalidLayerDefinitionException;
-use Qualimetrix\Core\Architecture\Layer\LayerDefinition;
-use Qualimetrix\Core\Architecture\Layer\MatchMode;
-use Qualimetrix\Core\Architecture\Layer\MembershipSpec;
-use Qualimetrix\Core\Architecture\Layer\TemplateLayerDefinition;
+use Qualimetrix\Architecture\Domain\Layer\CapturePattern;
+use Qualimetrix\Architecture\Domain\Layer\ClassContext;
+use Qualimetrix\Architecture\Domain\Layer\ClassSet;
+use Qualimetrix\Architecture\Domain\Layer\ExcludeSpec;
+use Qualimetrix\Architecture\Domain\Layer\InvalidLayerDefinitionException;
+use Qualimetrix\Architecture\Domain\Layer\LayerDefinition;
+use Qualimetrix\Architecture\Domain\Layer\MatchMode;
+use Qualimetrix\Architecture\Domain\Layer\MembershipSpec;
+use Qualimetrix\Architecture\Domain\Layer\TemplateLayerDefinition;
 use Qualimetrix\Core\Util\NamespaceMatcher;
 
 /**
  * Expands a mixed list of {@see LayerDefinition} and
  * {@see TemplateLayerDefinition} entries into the concrete declaration-order
- * layer list consumed by {@see \Qualimetrix\Core\Architecture\Layer\LayerRegistry}.
+ * layer list consumed by {@see \Qualimetrix\Architecture\Domain\Layer\LayerRegistry}.
  *
  * Plugs into {@see \Qualimetrix\Analysis\Pipeline\AnalysisPipeline} between
  * the collection and rule-execution phases (after {@code CollectionOrchestrator}
  * has produced the class set and the dependency graph, but before
  * {@code MetricEnricher} runs). Result is written into the existing
- * {@see \Qualimetrix\Core\Architecture\ArchitectureConfigurationHolder} so
+ * {@see \Qualimetrix\Architecture\Domain\ArchitectureConfigurationHolder} so
  * the rule layer reads it without any change to the {@code AnalysisContext}
  * surface.
  *

@@ -13,6 +13,7 @@ parameters:
         - tests
     excludePaths:
         - tests/Fixtures
+        - tests/Architecture/Fixtures
     tmpDir: .phpstan.cache
     reportUnmatchedIgnoredErrors: true
     treatPhpDocTypesAsCertain: false

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Configuration\Pipeline;
 
+use Qualimetrix\Architecture\Domain\ArchitectureConfiguration;
 use Qualimetrix\Configuration\AnalysisConfiguration;
 use Qualimetrix\Configuration\PathsConfiguration;
-use Qualimetrix\Core\Architecture\ArchitectureConfiguration;
 
 /**
  * Fully resolved configuration after pipeline processing.

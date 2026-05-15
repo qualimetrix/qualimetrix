@@ -7,12 +7,12 @@ namespace Qualimetrix\Tests\Unit\Configuration\Architecture;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Architecture\Domain\ArchitectureConfiguration;
+use Qualimetrix\Architecture\Domain\CoverageMode;
 use Qualimetrix\Configuration\Architecture\ArchitectureConfigurationFactory;
 use Qualimetrix\Configuration\Architecture\ArchitectureFactoryResult;
 use Qualimetrix\Configuration\Exception\ConfigLoadException;
 use Qualimetrix\Configuration\Pipeline\DeferredWarning;
-use Qualimetrix\Core\Architecture\ArchitectureConfiguration;
-use Qualimetrix\Core\Architecture\CoverageMode;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Architecture;
 
-use Qualimetrix\Core\Architecture\Layer\LayerDefinition;
+use Qualimetrix\Architecture\Domain\Layer\LayerDefinition;
 
 /**
  * Output of {@see LayerExpansionStage::expand()}.
@@ -12,9 +12,9 @@ use Qualimetrix\Core\Architecture\Layer\LayerDefinition;
  * Carries two pieces of information consumed downstream:
  *
  * 1. {@see expandedLayers} — the fully resolved declaration-order list of
- *    {@see LayerDefinition} instances that {@see \Qualimetrix\Core\Architecture\Layer\LayerRegistry}
+ *    {@see LayerDefinition} instances that {@see \Qualimetrix\Architecture\Domain\Layer\LayerRegistry}
  *    should use. Static (non-template) entries pass through verbatim;
- *    each {@see \Qualimetrix\Core\Architecture\Layer\TemplateLayerDefinition}
+ *    each {@see \Qualimetrix\Architecture\Domain\Layer\TemplateLayerDefinition}
  *    is replaced by one concrete {@see LayerDefinition} per observed binding
  *    tuple, inserted at the template's position in lexicographic order of
  *    captured values.
@@ -25,7 +25,7 @@ use Qualimetrix\Core\Architecture\Layer\LayerDefinition;
  *    diagnostic per template name at the end of the run.
  *
  * Stored on
- * {@see \Qualimetrix\Core\Architecture\ArchitectureConfigurationHolder}
+ * {@see \Qualimetrix\Architecture\Domain\ArchitectureConfigurationHolder}
  * between collection and rule execution; deliberately not threaded through
  * {@see \Qualimetrix\Core\Rule\AnalysisContext} so the rule-context boundary
  * stays Phase-1-stable.

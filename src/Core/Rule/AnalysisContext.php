@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Core\Rule;
 
-use Qualimetrix\Core\Architecture\ArchitectureConfiguration;
+use Qualimetrix\Architecture\Domain\ArchitectureConfiguration;
 use Qualimetrix\Core\Dependency\CycleInterface;
 use Qualimetrix\Core\Dependency\DependencyGraphInterface;
 use Qualimetrix\Core\Duplication\DuplicateBlock;

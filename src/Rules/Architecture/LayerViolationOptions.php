@@ -16,7 +16,7 @@ use Qualimetrix\Core\Violation\Severity;
  * - {@see $enabled} — short-circuits analysis when false.
  * - {@see $severity} — the severity of every reported violation.
  *
- * Layer definitions and the allow-list live in {@see \Qualimetrix\Core\Architecture\ArchitectureConfiguration}
+ * Layer definitions and the allow-list live in {@see \Qualimetrix\Architecture\Domain\ArchitectureConfiguration}
  * (passed through {@see \Qualimetrix\Core\Rule\AnalysisContext::$architecture}), not in this Options DTO,
  * because the data is shared between the rule and future architecture-aware metrics/reporters.
  */

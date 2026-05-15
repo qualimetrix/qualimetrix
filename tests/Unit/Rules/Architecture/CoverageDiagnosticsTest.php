@@ -8,11 +8,11 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
-use Qualimetrix\Core\Architecture\ArchitectureConfiguration;
-use Qualimetrix\Core\Architecture\CoverageMode;
-use Qualimetrix\Core\Architecture\Layer\LayerDefinition;
-use Qualimetrix\Core\Architecture\Layer\LayerRegistry;
-use Qualimetrix\Core\Architecture\Layer\MembershipSpec;
+use Qualimetrix\Architecture\Domain\ArchitectureConfiguration;
+use Qualimetrix\Architecture\Domain\CoverageMode;
+use Qualimetrix\Architecture\Domain\Layer\LayerDefinition;
+use Qualimetrix\Architecture\Domain\Layer\LayerRegistry;
+use Qualimetrix\Architecture\Domain\Layer\MembershipSpec;
 use Qualimetrix\Core\Dependency\Dependency;
 use Qualimetrix\Core\Dependency\DependencyGraphInterface;
 use Qualimetrix\Core\Dependency\DependencyType;
@@ -23,7 +23,7 @@ use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Rules\Architecture\LayerViolationOptions;
 use Qualimetrix\Rules\Architecture\LayerViolationRule;
-use Qualimetrix\Tests\Support\Architecture\AllowListBuilder;
+use Qualimetrix\Tests\Architecture\Support\AllowListBuilder;
 
 #[CoversClass(LayerViolationRule::class)]
 final class CoverageDiagnosticsTest extends TestCase

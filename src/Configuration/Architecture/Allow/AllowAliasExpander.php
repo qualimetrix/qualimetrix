@@ -73,7 +73,7 @@ final class AllowAliasExpander
      *
      * Returns null when {@code $raw} is absent (i.e. the user did not declare
      * {@code relations:} at all) so the caller can leave
-     * {@see \Qualimetrix\Core\Architecture\Allow\AllowTarget::$relations} null
+     * {@see \Qualimetrix\Architecture\Domain\Allow\AllowTarget::$relations} null
      * (= "any relation allowed").
      *
      * Centralising shape validation here keeps {@see \Qualimetrix\Configuration\Architecture\Validation\AllowValidator}

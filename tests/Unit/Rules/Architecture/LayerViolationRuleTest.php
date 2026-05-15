@@ -8,12 +8,12 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
-use Qualimetrix\Core\Architecture\ArchitectureConfiguration;
-use Qualimetrix\Core\Architecture\CoverageMode;
-use Qualimetrix\Core\Architecture\Layer\LayerDefinition;
-use Qualimetrix\Core\Architecture\Layer\LayerPolicy;
-use Qualimetrix\Core\Architecture\Layer\LayerRegistry;
-use Qualimetrix\Core\Architecture\Layer\MembershipSpec;
+use Qualimetrix\Architecture\Domain\ArchitectureConfiguration;
+use Qualimetrix\Architecture\Domain\CoverageMode;
+use Qualimetrix\Architecture\Domain\Layer\LayerDefinition;
+use Qualimetrix\Architecture\Domain\Layer\LayerPolicy;
+use Qualimetrix\Architecture\Domain\Layer\LayerRegistry;
+use Qualimetrix\Architecture\Domain\Layer\MembershipSpec;
 use Qualimetrix\Core\Dependency\Dependency;
 use Qualimetrix\Core\Dependency\DependencyGraphInterface;
 use Qualimetrix\Core\Dependency\DependencyType;
@@ -25,7 +25,7 @@ use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Rules\Architecture\LayerViolationOptions;
 use Qualimetrix\Rules\Architecture\LayerViolationRule;
-use Qualimetrix\Tests\Support\Architecture\AllowListBuilder;
+use Qualimetrix\Tests\Architecture\Support\AllowListBuilder;
 
 #[CoversClass(LayerViolationRule::class)]
 final class LayerViolationRuleTest extends TestCase
@@ -213,11 +213,11 @@ final class LayerViolationRuleTest extends TestCase
             new LayerDefinition('user-repository', new MembershipSpec(['App\\User\\Repository'])),
             new LayerDefinition('service', new MembershipSpec(['App\\Service'])),
         ]);
-        $policy = new \Qualimetrix\Core\Architecture\Layer\LayerPolicy([
-            new \Qualimetrix\Core\Architecture\Allow\AllowListEntry(
-                \Qualimetrix\Core\Architecture\Allow\LayerSelector::exact('controller'),
-                [new \Qualimetrix\Core\Architecture\Allow\AllowTarget(
-                    \Qualimetrix\Core\Architecture\Allow\LayerSelector::glob('*-repository'),
+        $policy = new \Qualimetrix\Architecture\Domain\Layer\LayerPolicy([
+            new \Qualimetrix\Architecture\Domain\Allow\AllowListEntry(
+                \Qualimetrix\Architecture\Domain\Allow\LayerSelector::exact('controller'),
+                [new \Qualimetrix\Architecture\Domain\Allow\AllowTarget(
+                    \Qualimetrix\Architecture\Domain\Allow\LayerSelector::glob('*-repository'),
                 )],
             ),
         ]);
