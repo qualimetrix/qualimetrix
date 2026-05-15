@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Architecture\Configuration\Allow\AllowAliasExpander;
 use Qualimetrix\Architecture\Configuration\Validation\AllowValidator;
+use Qualimetrix\Architecture\Configuration\Validation\LongFormAllowEntryNormalizer;
 use Qualimetrix\Architecture\Domain\Allow\AllowListEntry;
 use Qualimetrix\Architecture\Domain\Allow\LayerSelector;
 use Qualimetrix\Architecture\Domain\Allow\SelectorKind;
@@ -18,6 +19,7 @@ use Qualimetrix\Core\Dependency\DependencyType;
 
 #[CoversClass(AllowValidator::class)]
 #[CoversClass(AllowAliasExpander::class)]
+#[CoversClass(LongFormAllowEntryNormalizer::class)]
 #[CoversClass(DeferredWarning::class)]
 #[CoversClass(LayerSelector::class)]
 final class AllowValidatorTest extends TestCase
@@ -459,6 +461,115 @@ final class AllowValidatorTest extends TestCase
             [
                 'app-{m}' => [
                     ['target' => 'domain-{m}', 'allow_cross_instance' => 'yes'],
+                ],
+            ],
+            ['app-Order', 'domain-Order'],
+            $warnings,
+        );
+    }
+
+    #[Test]
+    public function longFormAllowEntryAcceptsCamelCaseAllowCrossInstanceFlag(): void
+    {
+        // M12: Phase 3.5 made the architecture subtree preserve user-supplied
+        // key spellings, so both `allow_cross_instance` (canonical) and
+        // `allowCrossInstance` (camelCase) need to resolve identically.
+        $warnings = [];
+
+        $entries = $this->validator->validate(
+            [
+                'app-{m}' => [
+                    ['target' => 'domain-{m}', 'allowCrossInstance' => true],
+                ],
+            ],
+            ['app-Order', 'domain-Order'],
+            $warnings,
+        );
+
+        self::assertCount(1, $entries);
+        self::assertCount(1, $entries[0]->targets);
+        self::assertTrue($entries[0]->targets[0]->allowCrossInstance);
+        self::assertSame([], $warnings);
+    }
+
+    #[Test]
+    public function longFormAllowEntrySnakeAndCamelCaseFlagsProduceIdenticalResult(): void
+    {
+        // Same fixture parsed twice, once per spelling — the resulting
+        // AllowTarget state must be bit-for-bit identical.
+        $warnings = [];
+        $snake = $this->validator->validate(
+            [
+                'app-{m}' => [
+                    ['target' => 'domain-{m}', 'allow_cross_instance' => true],
+                ],
+            ],
+            ['app-Order', 'domain-Order'],
+            $warnings,
+        );
+
+        $warnings = [];
+        $camel = $this->validator->validate(
+            [
+                'app-{m}' => [
+                    ['target' => 'domain-{m}', 'allowCrossInstance' => true],
+                ],
+            ],
+            ['app-Order', 'domain-Order'],
+            $warnings,
+        );
+
+        self::assertSame(
+            $snake[0]->targets[0]->allowCrossInstance,
+            $camel[0]->targets[0]->allowCrossInstance,
+        );
+        self::assertSame(
+            $snake[0]->targets[0]->relations,
+            $camel[0]->targets[0]->relations,
+        );
+        self::assertSame(
+            $snake[0]->source->originalString(),
+            $camel[0]->source->originalString(),
+        );
+    }
+
+    #[Test]
+    public function longFormAllowEntryRejectsBothSpellingsOnSameEntry(): void
+    {
+        // Ambiguity — silently picking one over the other based on key order
+        // would surprise the user. Reject explicitly.
+        $warnings = [];
+
+        $this->expectException(ConfigLoadException::class);
+        $this->expectExceptionMessage("specify either 'allow_cross_instance' or 'allowCrossInstance', not both");
+
+        $this->validator->validate(
+            [
+                'app-{m}' => [
+                    [
+                        'target' => 'domain-{m}',
+                        'allow_cross_instance' => true,
+                        'allowCrossInstance' => false,
+                    ],
+                ],
+            ],
+            ['app-Order', 'domain-Order'],
+            $warnings,
+        );
+    }
+
+    #[Test]
+    public function longFormAllowEntryRejectsNonBooleanCamelCaseAllowCrossInstance(): void
+    {
+        $warnings = [];
+
+        $this->expectException(ConfigLoadException::class);
+        $this->expectExceptionMessage("'allowCrossInstance' must be a boolean, got string");
+
+        $this->validator->validate(
+            [
+                'app-{m}' => [
+                    ['target' => 'domain-{m}', 'allowCrossInstance' => 'yes'],
                 ],
             ],
             ['app-Order', 'domain-Order'],

@@ -31,8 +31,20 @@ final class LongFormAllowEntryNormalizer
      * "unknown long-form key" so a user-side typo cannot silently widen the
      * policy (e.g. {@code relatons:} would otherwise allow every relation kind
      * instead of the user's intended subset).
+     *
+     * Both spellings of {@code allow_cross_instance} (canonical snake_case and
+     * the camelCase variant) are whitelisted. Phase 3.5 made the architecture
+     * config tree preserve subtree keys verbatim, so users can land either
+     * style from upstream YAML; the normalizer resolves them identically (see
+     * {@see ALLOW_CROSS_INSTANCE_KEYS}).
      */
-    private const array ALLOWED_KEYS = ['target', 'relations', 'allow_cross_instance'];
+    private const array ALLOWED_KEYS = ['target', 'relations', 'allow_cross_instance', 'allowCrossInstance'];
+
+    /**
+     * The two accepted spellings of the cross-instance opt-out flag. Listed
+     * canonical first so error messages prefer the snake_case form.
+     */
+    private const array ALLOW_CROSS_INSTANCE_KEYS = ['allow_cross_instance', 'allowCrossInstance'];
 
     /**
      * Returns the parsed (targetRaw, allowCrossInstance, relations) triple for
@@ -99,22 +111,47 @@ final class LongFormAllowEntryNormalizer
      * "false" default and surprise the user with mutual-allow warnings they
      * thought they had silenced.
      *
+     * Accepts the canonical snake_case spelling and the camelCase variant as
+     * synonyms — Phase 3.5 made the architecture subtree preserve user-supplied
+     * key spellings, so both shapes survive normalization and need to resolve
+     * to the same flag. Specifying **both** spellings on the same entry is a
+     * user-side ambiguity (different values would silently lose one to key
+     * order); reject it with an actionable message.
+     *
      * @param array<array-key, mixed> $entry
      */
     private static function parseAllowCrossInstanceFlag(string $source, int $index, array $entry): bool
     {
-        if (!\array_key_exists('allow_cross_instance', $entry)) {
+        $presentKeys = array_values(array_filter(
+            self::ALLOW_CROSS_INSTANCE_KEYS,
+            static fn(string $key): bool => \array_key_exists($key, $entry),
+        ));
+
+        if ($presentKeys === []) {
             return false;
         }
 
-        $value = $entry['allow_cross_instance'];
+        if (\count($presentKeys) > 1) {
+            throw new ConfigLoadException(
+                self::CONFIG_PATH,
+                \sprintf(
+                    "architecture.allow.%s[%d]: specify either 'allow_cross_instance' or 'allowCrossInstance', not both.",
+                    $source,
+                    $index,
+                ),
+            );
+        }
+
+        $key = $presentKeys[0];
+        $value = $entry[$key];
         if (!\is_bool($value)) {
             throw new ConfigLoadException(
                 self::CONFIG_PATH,
                 \sprintf(
-                    "architecture.allow.%s[%d]: 'allow_cross_instance' must be a boolean, got %s.",
+                    "architecture.allow.%s[%d]: '%s' must be a boolean, got %s.",
                     $source,
                     $index,
+                    $key,
                     get_debug_type($value),
                 ),
             );
@@ -127,6 +164,11 @@ final class LongFormAllowEntryNormalizer
      * Closes the silent-widening loophole in the long-form allow entry. Any
      * key that is not in the {@see ALLOWED_KEYS} whitelist gets rejected with
      * a user-actionable error.
+     *
+     * The "allowed keys" hint in the error message lists only the canonical
+     * spelling of {@code allow_cross_instance} — the camelCase synonym is an
+     * implementation detail of subtree-preserving YAML normalization, not a
+     * separately documented vocabulary.
      *
      * @param array<array-key, mixed> $entry
      */
@@ -144,9 +186,24 @@ final class LongFormAllowEntryNormalizer
                     $source,
                     $index,
                     (string) $key,
-                    implode(', ', array_map(static fn(string $k): string => "'" . $k . "'", self::ALLOWED_KEYS)),
+                    implode(', ', array_map(
+                        static fn(string $k): string => "'" . $k . "'",
+                        self::canonicalAllowedKeys(),
+                    )),
                 ),
             );
         }
+    }
+
+    /**
+     * Returns the canonical user-facing allowed-key list — i.e. the snake_case
+     * spelling for keys that accept both styles (currently only
+     * {@code allow_cross_instance}). Used in error message construction.
+     *
+     * @return list<string>
+     */
+    private static function canonicalAllowedKeys(): array
+    {
+        return ['target', 'relations', 'allow_cross_instance'];
     }
 }
