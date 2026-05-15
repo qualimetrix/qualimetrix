@@ -32,6 +32,32 @@ namespace Qualimetrix\Architecture\Domain\Layer;
 final readonly class ClassContext
 {
     /**
+     * Precomputed `array_fill_keys($attributeFqns, true)` lookup table for
+     * attribute haystack queries. Built once at construction so every
+     * layer-evaluation pass over this context avoids repeating the
+     * O(n) `array_fill_keys` call.
+     *
+     * @var array<string, true>
+     */
+    public array $attributeFqnSet;
+
+    /**
+     * Precomputed lookup table for the implements haystack. See
+     * {@see $attributeFqnSet}.
+     *
+     * @var array<string, true>
+     */
+    public array $interfaceSet;
+
+    /**
+     * Precomputed lookup table for the extends haystack. See
+     * {@see $attributeFqnSet}.
+     *
+     * @var array<string, true>
+     */
+    public array $parentClassSet;
+
+    /**
      * @param string $fqn Fully-qualified class name without a leading
      *                    backslash (e.g. {@code App\Service\UserService}).
      *                    Empty string is permitted; {@see LayerDefinition::matches()}
@@ -54,5 +80,9 @@ final readonly class ClassContext
         public array $attributeFqns = [],
         public array $interfaces = [],
         public array $parentClasses = [],
-    ) {}
+    ) {
+        $this->attributeFqnSet = $attributeFqns === [] ? [] : array_fill_keys($attributeFqns, true);
+        $this->interfaceSet = $interfaces === [] ? [] : array_fill_keys($interfaces, true);
+        $this->parentClassSet = $parentClasses === [] ? [] : array_fill_keys($parentClasses, true);
+    }
 }
