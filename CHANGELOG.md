@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New `architecture.unreachable-layer` diagnostic (info severity): fires once per declared layer whose patterns matched zero classes during analysis. Catches the loud failure mode where a broader pattern earlier in the order silently swallows everything.
 - New `architecture.potential-shadow` diagnostic (info severity): evidence-based detection of layers that silently steal classes from later, narrower layers (prefix overlap, suffix theft, arbitrary intersection). Output is deterministic across runs; sample of up to 5 class FQNs per (assigned, shadowed) pair.
 - New `debug:layer-assignment <fqn>` command for per-class introspection of layer assignment — reports which layer the class would be assigned to and which other layers' patterns would also have matched (a shadow source if declared earlier). Delegates to `LayerRegistry::resolveAll()` so the result matches runtime assignment by construction.
+- YAML loader normalization is now driven by an explicit per-section policy (`SectionNormalizationPolicy`) declared in `ConfigSchema`. Missing policy for a registered root key fails fast with `LogicException`. See ADR 0009.
 
 ### Removed
 - `architecture.layer-collision` diagnostic and the underlying `LayerCollisionException` machinery. Declaration-order matching eliminates the ambiguity case; the two new info-severity diagnostics replace its safety net.
@@ -29,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Architecture configuration warnings (currently `mutual-allow` detection in the allow-list) now actually reach the user logger. Previously they were emitted to a placeholder `NullLogger` because configuration resolution ran before the user logger was wired up; the warnings are now buffered as `DeferredWarning`s and replayed once the logger is configured.
 - `architecture.layers` no longer false-positives "duplicate patterns across layers" when two entries share `patterns:` but at least one declares `mode: all` with non-empty non-pattern criteria (`suffix` / `attributes` / `implements` / `extends`) — under `match: all` the additional criteria disambiguate the layers, so the duplicate-pattern check is now mode-aware.
+- `architecture.max_expanded_layers` now actually takes effect when set in YAML. Previously the snake_case scalar leaf under the MIXED `architecture` root was silently camelCased to `maxExpandedLayers` and the factory's snake_case lookup fell back to the default. ADR 0009 introduces a per-section normalization policy that closes this class of bug.
 
 ## [0.17.0] - 2026-05-12
 

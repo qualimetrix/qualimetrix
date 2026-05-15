@@ -283,26 +283,21 @@ final class YamlNormalizationCharacterizationTest extends TestCase
             ],
         ];
 
-        // --- ARCHITECTURE (MIXED with nested-identifier opt-out subtree) -----
+        // --- ARCHITECTURE (PRESERVE_SUBTREE since Phase 3.5, ADR 0009) -------
         //
-        // Current behavior pinned at the time of authoring (pre-Phase 3.5):
-        //   * `architecture.layers` is a list — items pass through with their
-        //     own (typically camelCase) keys.
-        //   * `architecture.allow` subtree is subtree-preserved via
-        //     `ConfigSchema::nestedIdentifierKeyPaths()` so snake_case layer
-        //     names and snake_case long-form keys (`allow_cross_instance`)
-        //     survive verbatim.
-        //   * `architecture.coverage` is a scalar — value preserved, key
-        //     already lowercase, no change.
-        //   * `architecture.max_expanded_layers` is a SCALAR LEAF — current
-        //     loader normalizes the key to `maxExpandedLayers`, which
-        //     `ArchitectureConfigurationFactory` does not look for. This is
-        //     the C1 bug pinned by ADR 0009; Phase 3.5 migrates `architecture`
-        //     to `PRESERVE_SUBTREE` and the row below flips to assert the
-        //     fixed behavior.
+        // Migrated to PRESERVE_SUBTREE in ADR 0009 / Phase 3.5. The entire
+        // descendant tree below the `architecture` root is preserved
+        // verbatim, including:
+        //   * `layers` list items (camelCase or single-word — pass through).
+        //   * `allow` subtree (user-defined layer names + snake_case
+        //     long-form keys like `allow_cross_instance` survive untouched).
+        //   * `coverage` scalar key (single-word — pass through).
+        //   * `max_expanded_layers` SCALAR LEAF — pre-3.5 was mangled to
+        //     `maxExpandedLayers` (C1 bug); since 3.5 reaches downstream
+        //     consumers as the user wrote it.
 
         yield 'architecture.layers (list, items preserved)' => [
-            'architecture.layers is a list; entries pass through as-is',
+            'architecture.layers is a list; entries pass through verbatim under PRESERVE_SUBTREE',
             "architecture:\n  layers:\n    - name: app\n      patterns: ['App']\n",
             [
                 'architecture' => [
@@ -314,7 +309,7 @@ final class YamlNormalizationCharacterizationTest extends TestCase
         ];
 
         yield 'architecture.allow subtree preserves snake_case verbatim' => [
-            'architecture.allow under nestedIdentifierKeyPaths — layer names AND long-form keys preserved at every depth',
+            'architecture.allow under PRESERVE_SUBTREE — layer names AND long-form keys preserved at every depth',
             "architecture:\n  allow:\n    app_core:\n      - target: app_service\n        allow_cross_instance: true\n",
             [
                 'architecture' => [
@@ -336,13 +331,13 @@ final class YamlNormalizationCharacterizationTest extends TestCase
             ['architecture' => ['coverage' => 'ignore']],
         ];
 
-        // Phase 3.5 will flip this row to assert
-        //   ['architecture' => ['max_expanded_layers' => 256]]
-        // alongside migrating `architecture` to PRESERVE_SUBTREE.
-        yield 'architecture.max_expanded_layers (CURRENT BUG: scalar leaf camelCased — flips in Phase 3.5)' => [
-            'architecture.max_expanded_layers — known C1 bug: scalar leaf under MIXED root is mangled, factory falls back to default',
+        // Migrated to PRESERVE_SUBTREE in ADR 0009 / Phase 3.5: closes the
+        // C1 bug. The scalar leaf reaches ArchitectureConfigurationFactory
+        // under the snake_case spelling the factory looks for.
+        yield 'architecture.max_expanded_layers (scalar leaf preserved under PRESERVE_SUBTREE)' => [
+            'architecture.max_expanded_layers — C1 closed in Phase 3.5: scalar leaf preserved verbatim, factory honors user value',
             "architecture:\n  max_expanded_layers: 256\n",
-            ['architecture' => ['maxExpandedLayers' => 256]],
+            ['architecture' => ['max_expanded_layers' => 256]],
         ];
     }
 

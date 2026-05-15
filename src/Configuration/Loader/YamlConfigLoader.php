@@ -91,12 +91,6 @@ final class YamlConfigLoader implements ConfigLoaderInterface
      *    including scalar leaves at every depth — closes the leaf-mangling
      *    bug class the previous opt-out model could not address.
      *
-     * The {@code architecture.allow} subtree is currently preserved via
-     * {@see ConfigSchema::nestedIdentifierKeyPaths()} during the Phase 3
-     * transition. Phase 3.5 migrates {@code architecture} to
-     * {@code PRESERVE_SUBTREE}, after which the sub-path opt-out is empty
-     * and Phase 3.6 removes the wrapper entirely.
-     *
      * See [ADR 0009](../../../docs/adr/0009-yaml-loader-normalization-model.md).
      *
      * @param array<string|int, mixed> $config
@@ -105,25 +99,20 @@ final class YamlConfigLoader implements ConfigLoaderInterface
      */
     private function normalizeKeys(array $config): array
     {
-        $nestedPaths = ConfigSchema::nestedIdentifierKeyPaths();
+        $policies = ConfigSchema::sectionPolicies();
         $result = [];
 
         foreach ($config as $key => $value) {
             $stringKey = (string) $key;
             $normalizedRoot = $this->snakeToCamel($stringKey);
 
-            // Lookup policy by normalized root key; unregistered roots throw
-            // LogicException via policyFor() — but only roots from
-            // allowedRootKeys() are reachable here, because validateRootKeys()
-            // runs later. For unknown roots (validation will reject them next),
-            // default to NORMALIZE_TO_CAMEL_CASE so we still produce a usable
-            // shape for the error path.
-            $policy = isset(ConfigSchema::sectionPolicies()[$normalizedRoot])
-                ? ConfigSchema::policyFor($normalizedRoot)
-                : SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE;
+            // Unregistered roots will be rejected by validateRootKeys() below;
+            // default them to NORMALIZE so we still produce a usable shape for
+            // the error path without throwing LogicException prematurely.
+            $policy = $policies[$normalizedRoot] ?? SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE;
 
             $result[$normalizedRoot] = \is_array($value)
-                ? $this->applyPolicy($value, $policy, $normalizedRoot, $nestedPaths)
+                ? $this->applyPolicy($value, $policy, depth: 0)
                 : $value;
         }
 
@@ -131,90 +120,47 @@ final class YamlConfigLoader implements ConfigLoaderInterface
     }
 
     /**
-     * Walks a sub-tree starting at {@code $currentPath} applying the section
-     * {@code $policy}. The {@code $nestedPreservePaths} list keeps the
-     * {@code architecture.allow} sub-path opt-out alive during the Phase 3
-     * transition; any path equal to or descended from one becomes implicitly
-     * {@code PRESERVE_SUBTREE} regardless of the section policy.
+     * Walks a sub-tree applying the section {@code $policy} according to
+     * {@code $depth}:
+     *
+     *  - {@code PRESERVE_SUBTREE}: preserve at every depth.
+     *  - {@code PRESERVE_IMMEDIATE_CHILDREN}: preserve at depth 0 (the
+     *    section root's children); resume normalization at depth >= 1.
+     *  - {@code NORMALIZE_TO_CAMEL_CASE}: never preserve.
+     *
+     * List items (integer keys) carry no user-facing snake_case; their keys
+     * pass through unchanged regardless of policy.
      *
      * @param array<string|int, mixed> $config
-     * @param list<string> $nestedPreservePaths
      *
      * @return array<string|int, mixed>
      */
-    private function applyPolicy(
-        array $config,
-        SectionNormalizationPolicy $policy,
-        string $currentPath,
-        array $nestedPreservePaths,
-    ): array {
-        // Determine effective preservation at THIS level. The depth-1
-        // preservation for PRESERVE_IMMEDIATE_CHILDREN is decided by
-        // looking at whether $currentPath equals the section root (no dot
-        // in it). PRESERVE_SUBTREE preserves at every depth.
-        $effectivelyPreserveSubtree = $policy === SectionNormalizationPolicy::PRESERVE_SUBTREE
-            || self::isUnderPreservedPath($currentPath, $nestedPreservePaths);
+    private function applyPolicy(array $config, SectionNormalizationPolicy $policy, int $depth): array
+    {
+        $preserveKeysHere = $policy === SectionNormalizationPolicy::PRESERVE_SUBTREE
+            || ($policy === SectionNormalizationPolicy::PRESERVE_IMMEDIATE_CHILDREN && $depth === 0);
 
-        $preserveImmediateLevel = $policy === SectionNormalizationPolicy::PRESERVE_IMMEDIATE_CHILDREN
-            && !str_contains($currentPath, '.');
-
-        $preserveKeysHere = $effectivelyPreserveSubtree || $preserveImmediateLevel;
+        // Below the immediate-children boundary, deeper levels resume
+        // NORMALIZE; PRESERVE_SUBTREE stays sticky forever.
+        $childPolicy = $policy === SectionNormalizationPolicy::PRESERVE_SUBTREE
+            ? SectionNormalizationPolicy::PRESERVE_SUBTREE
+            : SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE;
 
         $result = [];
 
         foreach ($config as $key => $value) {
-            $stringKey = (string) $key;
-
-            // List items (integer keys) carry no user-facing snake_case;
-            // the integer-as-string-key passes through both branches
-            // unchanged. Preserve the original key type so list shape is
-            // retained.
             if (\is_int($key)) {
                 $newKey = $key;
             } else {
-                $newKey = $preserveKeysHere ? $stringKey : $this->snakeToCamel($stringKey);
+                $newKey = $preserveKeysHere ? $key : $this->snakeToCamel($key);
             }
 
-            if (!\is_array($value)) {
-                $result[$newKey] = $value;
-
-                continue;
-            }
-
-            $childPath = $currentPath . '.' . (string) $newKey;
-
-            // For PRESERVE_SUBTREE (and the nested-path opt-out), descent
-            // keeps preserving forever. For PRESERVE_IMMEDIATE_CHILDREN,
-            // once we descend below the section root we resume normalization.
-            // For NORMALIZE_TO_CAMEL_CASE, no level preserves.
-            $childPolicy = $effectivelyPreserveSubtree
-                ? SectionNormalizationPolicy::PRESERVE_SUBTREE
-                : SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE;
-
-            $result[$newKey] = $this->applyPolicy($value, $childPolicy, $childPath, $nestedPreservePaths);
+            $result[$newKey] = \is_array($value)
+                ? $this->applyPolicy($value, $childPolicy, $depth + 1)
+                : $value;
         }
 
         return $result;
-    }
-
-    /**
-     * Returns true when {@code $path} equals one of {@code $preservedPaths} or
-     * lies strictly below one of them. Used by the Phase 3 transition to keep
-     * the {@code architecture.allow} sub-path opt-out alive
-     * ({@see ConfigSchema::nestedIdentifierKeyPaths()}) until Phase 3.5
-     * promotes {@code architecture} to {@code PRESERVE_SUBTREE}.
-     *
-     * @param list<string> $preservedPaths
-     */
-    private static function isUnderPreservedPath(string $path, array $preservedPaths): bool
-    {
-        foreach ($preservedPaths as $preservedPath) {
-            if ($path === $preservedPath || str_starts_with($path, $preservedPath . '.')) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private function snakeToCamel(string $input): string
