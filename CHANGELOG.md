@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Architecture configuration warnings (currently `mutual-allow` detection in the allow-list) now actually reach the user logger. Previously they were emitted to a placeholder `NullLogger` because configuration resolution ran before the user logger was wired up; the warnings are now buffered as `DeferredWarning`s and replayed once the logger is configured.
+- `architecture.layers` no longer false-positives "duplicate patterns across layers" when two entries share `patterns:` but at least one declares `mode: all` with non-empty non-pattern criteria (`suffix` / `attributes` / `implements` / `extends`) — under `match: all` the additional criteria disambiguate the layers, so the duplicate-pattern check is now mode-aware.
 
 ## [0.17.0] - 2026-05-12
 

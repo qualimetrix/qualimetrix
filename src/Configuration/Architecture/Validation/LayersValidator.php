@@ -365,6 +365,24 @@ final class LayersValidator
      * walked uniformly — a static entry's pattern colliding with a template's
      * raw pattern would also be unreachable under declaration order.
      *
+     * **Mode-aware skip (H1 remediation).** When at least one of the two
+     * colliding entries declares {@code match: all} together with a non-empty
+     * non-pattern criterion (suffix / attributes / implements / extends), the
+     * pattern overlap is NOT necessarily unreachable: the narrowing entry
+     * only claims the subset of pattern matches that also satisfy the extra
+     * criteria, leaving room for the sibling entry to legitimately catch the
+     * residue. The check is skipped in that case to avoid the false-positive
+     * documented in the architecture-rules remediation plan (Phase 1.2).
+     *
+     * Trade-off: a {@code match: any} entry sitting AFTER a {@code match: all}
+     * narrowing entry on the same pattern is technically reachable, while a
+     * {@code match: all} narrowing entry sitting AFTER a {@code match: any}
+     * blanket entry on the same pattern is technically unreachable. The skip
+     * accepts the latter false negative to eliminate the former false
+     * positive — losing a "rare unreachable layer" warning is less harmful
+     * than rejecting a valid config. Order-symmetric "one or both" predicate
+     * keeps the rule simple for users to reason about.
+     *
      * @param list<LayerDefinition|TemplateLayerDefinition> $entries
      */
     private static function rejectDuplicatePatterns(array $entries): void
@@ -372,9 +390,9 @@ final class LayersValidator
         $owners = [];
         foreach ($entries as $entry) {
             $entryName = $entry instanceof TemplateLayerDefinition ? $entry->nameTemplate() : $entry->name();
-            $patterns = $entry instanceof TemplateLayerDefinition
-                ? $entry->membership()->patterns
-                : $entry->patterns();
+            $membership = $entry->membership();
+            $entryNarrows = self::narrowsByNonPatternCriteria($membership);
+            $patterns = $membership->patterns;
             $seenInThisEntry = [];
             foreach ($patterns as $pattern) {
                 $normalized = rtrim($pattern, '\\');
@@ -383,19 +401,51 @@ final class LayersValidator
                 }
                 $seenInThisEntry[$normalized] = true;
 
-                if (isset($owners[$normalized]) && $owners[$normalized] !== $entryName) {
+                if (isset($owners[$normalized]) && $owners[$normalized]['name'] !== $entryName) {
+                    if ($owners[$normalized]['narrows'] || $entryNarrows) {
+                        // Either the earlier owner narrows its pattern matches
+                        // with non-pattern AND-criteria, or this entry does —
+                        // the second occurrence is not necessarily unreachable.
+                        continue;
+                    }
+
                     throw new ConfigLoadException(
                         self::CONFIG_PATH,
                         \sprintf(
                             'architecture.layers: pattern "%s" declared in both "%s" and "%s". Under declaration-order matching the second occurrence is unreachable; remove or refine one of them.',
                             $normalized,
-                            $owners[$normalized],
+                            $owners[$normalized]['name'],
                             $entryName,
                         ),
                     );
                 }
-                $owners[$normalized] = $entryName;
+
+                if (!isset($owners[$normalized])) {
+                    $owners[$normalized] = ['name' => $entryName, 'narrows' => $entryNarrows];
+                }
             }
         }
+    }
+
+    /**
+     * True when the entry declares {@code match: all} AND carries at least
+     * one non-empty non-pattern criterion (suffix / attributes / implements /
+     * extends). Such an entry only claims the subset of pattern matches that
+     * also satisfy the extra criteria — its patterns can legitimately overlap
+     * with siblings without rendering anyone unreachable.
+     *
+     * {@code match: any} entries never narrow: their patterns alone are
+     * sufficient to claim every match.
+     */
+    private static function narrowsByNonPatternCriteria(MembershipSpec $membership): bool
+    {
+        if ($membership->mode !== MatchMode::All) {
+            return false;
+        }
+
+        return $membership->suffix !== []
+            || $membership->attributes !== []
+            || $membership->implements !== []
+            || $membership->extends !== [];
     }
 }
