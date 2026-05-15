@@ -374,7 +374,7 @@ allow:
 
 `{m}` со стороны источника устанавливает binding; `{m}` со стороны цели требует **то же** захваченное значение. Имя переменной локально для записи — `{m}` здесь не связан ни с каким `{m}` в других местах.
 
-Запись с wildcard на обеих сторонах вроде `'domain-*': ['domain-*']` всё ещё легальна, но эмитит config-load **warning** (`architecture.warning`) — почти наверняка вы имели в виду `'domain-{m}': ['domain-{m}']`. Чтобы заглушить warning, когда all-to-all действительно намерен, переключитесь на long-form и поставьте `allow_cross_instance: true`:
+Запись с wildcard на обеих сторонах вроде `'domain-*': ['domain-*']` всё ещё легальна, но поднимает configuration-load **warning** через user logger — почти наверняка вы имели в виду `'domain-{m}': ['domain-{m}']`. Чтобы заглушить warning, когда all-to-all действительно намерен, переключитесь на long-form и поставьте `allow_cross_instance: true`:
 
 ```yaml
 allow:

@@ -374,7 +374,7 @@ allow:
 
 `{m}` on the source side establishes a binding; `{m}` on the target side requires the **same** captured value. The variable name is local to the entry — `{m}` here is unrelated to any `{m}` elsewhere.
 
-A wildcard-on-both-sides entry like `'domain-*': ['domain-*']` is still legal but emits a config-load **warning** (`architecture.warning`) — you almost certainly meant `'domain-{m}': ['domain-{m}']`. To silence the warning when the all-to-all permission is intentional, switch to long-form and set `allow_cross_instance: true`:
+A wildcard-on-both-sides entry like `'domain-*': ['domain-*']` is still legal but surfaces a configuration-load **warning** through the user logger — you almost certainly meant `'domain-{m}': ['domain-{m}']`. To silence the warning when the all-to-all permission is intentional, switch to long-form and set `allow_cross_instance: true`:
 
 ```yaml
 allow:
