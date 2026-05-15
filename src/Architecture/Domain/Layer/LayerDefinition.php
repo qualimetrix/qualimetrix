@@ -72,25 +72,22 @@ final readonly class LayerDefinition
 
     /**
      * @param string $name Layer identifier — must match `[a-z][a-z0-9_-]*`
-     *                     for user-declared layers, or
-     *                     `[A-Za-z][A-Za-z0-9_-]*` for layers produced by
-     *                     template expansion ({@see expanded()}).
+     *                     for user-declared layers. For layers produced by
+     *                     template expansion use the {@see expanded()} factory,
+     *                     which applies the relaxed {@see EXPANDED_NAME_REGEX}
+     *                     instead.
      * @param MembershipSpec $membership Criteria carrying at least one
      *                                   non-empty list.
-     * @param bool $expanded When true, the relaxed
-     *                       {@see EXPANDED_NAME_REGEX} is applied; flag is
-     *                       carried as a field because {@see LayerRegistry}
-     *                       and the rule layer may want to surface it in
-     *                       diagnostics (e.g. "{layer name} comes from
-     *                       template expansion"). Phase D itself never
-     *                       reads it.
+     * @param bool $expanded Internal flag toggling the regex variant used
+     *                       for name validation. Not exposed as a property —
+     *                       no downstream code reads it after construction.
      *
      * @throws InvalidLayerDefinitionException If the name is invalid.
      */
     public function __construct(
         public string $name,
         public MembershipSpec $membership,
-        public bool $expanded = false,
+        bool $expanded = false,
     ) {
         $this->validateName($name, $expanded);
 
