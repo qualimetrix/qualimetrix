@@ -645,7 +645,8 @@ YAML);
         $config = $this->loader->load($path);
 
         // Source layer name in `allow` is still a map key — preserved verbatim
-        // via ConfigSchema::nestedIdentifierKeyPaths().
+        // by the architecture section's PRESERVE_SUBTREE policy
+        // (ConfigSchema::sectionPolicies()).
         self::assertArrayHasKey('app_core', $config['architecture']['allow']);
         // Target list values are scalars — unaffected by key normalization
         self::assertSame(['app_service'], $config['architecture']['allow']['app_core']);

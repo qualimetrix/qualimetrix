@@ -9,7 +9,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Configuration\ConfigSchema;
-use Qualimetrix\Configuration\Loader\SectionNormalizationPolicy;
 
 /**
  * Coverage-invariant guard for {@see ConfigSchema::sectionPolicies()}.
@@ -65,21 +64,4 @@ final class ConfigSchemaCoverageTest extends TestCase
         ConfigSchema::policyFor('__definitely_not_a_real_root__');
     }
 
-    #[Test]
-    public function identifierKeySectionsWrapperDerivesFromSectionPolicies(): void
-    {
-        $expected = [];
-        foreach (ConfigSchema::sectionPolicies() as $key => $policy) {
-            if ($policy === SectionNormalizationPolicy::PRESERVE_IMMEDIATE_CHILDREN) {
-                $expected[] = $key;
-            }
-        }
-
-        self::assertSame(
-            $expected,
-            ConfigSchema::identifierKeySections(),
-            'identifierKeySections() must remain a wrapper deriving from sectionPolicies() during the '
-            . 'Phase 3 transition (removed in Phase 3.6).',
-        );
-    }
 }

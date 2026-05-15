@@ -240,12 +240,13 @@ final class ConfigSchema
             self::RULES => SectionNormalizationPolicy::PRESERVE_IMMEDIATE_CHILDREN,
             'computedMetrics' => SectionNormalizationPolicy::PRESERVE_IMMEDIATE_CHILDREN,
 
-            // Architecture — currently NORMALIZE; the architecture.allow
-            // subtree is preserved by a separate sub-path opt-out
-            // ({@see self::nestedIdentifierKeyPaths()}) during the Phase 3
-            // transition. Phase 3.5 migrates this entry to PRESERVE_SUBTREE
-            // and the sub-path opt-out becomes empty.
-            self::ARCHITECTURE => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE,
+            // Architecture — PRESERVE_SUBTREE since Phase 3.5 (ADR 0009).
+            // Closes the C1 max_expanded_layers scalar-leaf bug: the entire
+            // descendant tree is preserved verbatim, so snake_case keys at
+            // every depth (user-defined layer names, long-form target keys,
+            // and the max_expanded_layers scalar leaf) reach downstream
+            // consumers under the spelling the user wrote.
+            self::ARCHITECTURE => SectionNormalizationPolicy::PRESERVE_SUBTREE,
         ];
     }
 
@@ -271,50 +272,6 @@ final class ConfigSchema
         return $policies[$rootKey];
     }
 
-    /**
-     * Returns root keys whose child keys are identifiers (rule/metric names)
-     * that must not be normalized to camelCase.
-     *
-     * @deprecated Phase 3.6 removes this wrapper; consumers should query
-     *             {@see self::sectionPolicies()} directly.
-     *
-     * @return list<string>
-     */
-    public static function identifierKeySections(): array
-    {
-        $sections = [];
-
-        foreach (self::sectionPolicies() as $key => $policy) {
-            if ($policy === SectionNormalizationPolicy::PRESERVE_IMMEDIATE_CHILDREN) {
-                $sections[] = $key;
-            }
-        }
-
-        return $sections;
-    }
-
-    /**
-     * Returns dot-separated paths whose entire subtree is preserved verbatim
-     * during key normalization.
-     *
-     * Independent of {@see self::sectionPolicies()} during the Phase 3
-     * transition because the policy enum operates at the root level only;
-     * the {@code architecture.allow} sub-path preservation is the only
-     * remaining sub-path opt-out and becomes obsolete in Phase 3.5 when
-     * {@code architecture} migrates to {@code PRESERVE_SUBTREE} and the
-     * entire architecture subtree is preserved by policy.
-     *
-     * @deprecated Phase 3.6 removes this wrapper; preservation responsibility
-     *             moves entirely to {@see self::sectionPolicies()}.
-     *
-     * @return list<string>
-     */
-    public static function nestedIdentifierKeyPaths(): array
-    {
-        return [
-            self::ARCHITECTURE . '.allow',
-        ];
-    }
 
     /**
      * Returns root keys that must be associative maps (not scalars, not lists).

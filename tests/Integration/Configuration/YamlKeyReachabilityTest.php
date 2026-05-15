@@ -20,9 +20,10 @@ use Qualimetrix\Configuration\Loader\YamlConfigLoader;
  *
  *  1. `architecture.allow.*` subtree (user-defined layer names mangled).
  *  2. `allow_cross_instance` deep-descendant long-form key mangled.
- *  3. `max_expanded_layers` scalar-leaf MIXED-root sub-key mangled — still
- *     active at the time of writing (deferred to plan Phase 3.5 — see
- *     {@see provideArchitectureSubKeyCases()} for the regression pin).
+ *  3. `max_expanded_layers` scalar-leaf MIXED-root sub-key mangled — fixed
+ *     in Phase 3.5 by migrating `architecture` to PRESERVE_SUBTREE (ADR
+ *     0009); the row in {@see provideArchitectureSubKeyCases()} flipped
+ *     from inverse pin to positive assertion.
  *
  * For every documented YAML key in every consumer (factory or schema
  * entry), this test:
@@ -138,11 +139,10 @@ final class YamlKeyReachabilityTest extends TestCase
      * {@see \Qualimetrix\Architecture\Configuration\ArchitectureConfigurationFactory}
      * sub-keys: {@code layers}, {@code allow}, {@code coverage},
      * {@code max_expanded_layers}. Sub-keys of a MIXED root are
-     * validated by the factory, not the schema, so the loader's
-     * normalization decisions affect them differently. This is the
-     * regression surface — {@code max_expanded_layers} is currently
-     * mangled and pinned with an inverse assertion documenting the
-     * known bug (closes naturally via plan Phase 3.5 `PRESERVE_SUBTREE`).
+     * validated by the factory, not the schema. Since Phase 3.5 the
+     * {@code architecture} root has policy {@code PRESERVE_SUBTREE}, so
+     * every snake_case sub-key (including the {@code max_expanded_layers}
+     * scalar leaf) survives normalization verbatim.
      *
      * @param non-empty-list<string|int> $path
      */
@@ -177,8 +177,9 @@ final class YamlKeyReachabilityTest extends TestCase
     }
 
     /**
-     * Architecture allow subtree — verified verbatim under
-     * {@see ConfigSchema::nestedIdentifierKeyPaths()}. Covers:
+     * Architecture allow subtree — verified verbatim under the
+     * {@code architecture} section's {@code PRESERVE_SUBTREE} policy
+     * ({@see ConfigSchema::sectionPolicies()}). Covers:
      *  - source layer name keys (the immediate child level, user identifiers)
      *  - long-form target keys ({@code target}, {@code relations},
      *    {@code allow_cross_instance}) deep below.
@@ -446,21 +447,17 @@ final class YamlKeyReachabilityTest extends TestCase
             'ignore',
         ];
 
-        // KNOWN-BROKEN regression pin: `max_expanded_layers` is mangled
-        // by the current loader because `architecture.` is a MIXED root
-        // without subtree preservation for scalar leaves. The factory
-        // expects the snake_case form (`architecture.max_expanded_layers`)
-        // and falls back to its default, silently ignoring the user's
-        // value. Deferred to plan Phase 3.5 (architecture →
-        // PRESERVE_SUBTREE). When that lands, FLIP this row to the
-        // commented-out positive assertion below.
-        //
-        // Positive assertion (post-Phase-3.5):
-        //   ['architecture', 'max_expanded_layers'], 256
-        yield 'architecture.max_expanded_layers (CURRENTLY MANGLED — Phase 3.5 fix pending)' => [
-            'architecture.max_expanded_layers (currently camelCased — known bug)',
+        // FIXED in Phase 3.5 (ADR 0009): `architecture` migrated to
+        // PRESERVE_SUBTREE, so the `max_expanded_layers` scalar leaf
+        // survives normalization verbatim and reaches
+        // ArchitectureConfigurationFactory under the snake_case spelling
+        // it looks for. Independent consumer-expectation test at
+        // {@see \Qualimetrix\Tests\Integration\Architecture\MaxExpandedLayersFromYamlTest}
+        // verifies the end-to-end factory wiring.
+        yield 'architecture.max_expanded_layers (PRESERVE_SUBTREE — fixed in Phase 3.5)' => [
+            'architecture.max_expanded_layers (snake_case preserved verbatim by section policy)',
             "architecture:\n  layers:\n    - name: a\n      patterns: ['A']\n  max_expanded_layers: 256\n",
-            ['architecture', 'maxExpandedLayers'],
+            ['architecture', 'max_expanded_layers'],
             256,
         ];
     }
@@ -626,10 +623,11 @@ final class YamlKeyReachabilityTest extends TestCase
 
         // Documenting subtree preservation: even if a user invented a
         // snake_case key under allow (a typo or future field), it would
-        // survive verbatim — that's the contract of
-        // ConfigSchema::nestedIdentifierKeyPaths(). The downstream
-        // long-form normalizer will reject the unknown key, but the
-        // loader must NOT have mangled it on the way in.
+        // survive verbatim — that's the contract of the
+        // architecture section's PRESERVE_SUBTREE policy
+        // (ConfigSchema::sectionPolicies()). The downstream long-form
+        // normalizer will reject the unknown key, but the loader must
+        // NOT have mangled it on the way in.
         yield 'unknown long-form snake_case key reaches validator verbatim' => [
             'architecture.allow.<src>[].future_snake_key',
             $layers . "  allow:\n    a:\n      - target: b\n        future_snake_key: 'whatever'\n",

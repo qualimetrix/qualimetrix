@@ -7,9 +7,9 @@ namespace Qualimetrix\Configuration\Loader;
 /**
  * Per-section key normalization policy used by {@see YamlConfigLoader}.
  *
- * The loader's old opt-out model ({@code identifierKeySections() +
- * nestedIdentifierKeyPaths()}) protected only sub-array descendants; scalar
- * leaves under a MIXED root such as {@code architecture.max_expanded_layers}
+ * The loader's old opt-out model (removed `identifierKeySections()` /
+ * `nestedIdentifierKeyPaths()` wrappers) protected only sub-array descendants;
+ * scalar leaves under a MIXED root such as {@code architecture.max_expanded_layers}
  * were silently camelCased before downstream consumers could see them.
  * Three recurrences of this class of bug during Phase 2 (allow subtree,
  * {@code allow_cross_instance} long-form key, {@code max_expanded_layers}
@@ -46,7 +46,7 @@ enum SectionNormalizationPolicy
      * {@code complexity.cyclomatic}; the option {@code warning_threshold}
      * inside it becomes {@code warningThreshold}.
      *
-     * This is the exact semantic of the previous
+     * This is the exact semantic of the previous (now-removed)
      * {@code ConfigSchema::identifierKeySections()} list, made explicit.
      */
     case PRESERVE_IMMEDIATE_CHILDREN;
