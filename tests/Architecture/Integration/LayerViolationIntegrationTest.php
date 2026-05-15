@@ -14,10 +14,10 @@ use Qualimetrix\Architecture\Domain\CoverageMode;
 use Qualimetrix\Architecture\Domain\Layer\LayerDefinition;
 use Qualimetrix\Architecture\Domain\Layer\LayerRegistry;
 use Qualimetrix\Architecture\Domain\Layer\MembershipSpec;
+use Qualimetrix\Architecture\Rules\LayerViolationRule;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
-use Qualimetrix\Rules\Architecture\LayerViolationRule;
 use Qualimetrix\Tests\Architecture\Support\AllowListBuilder;
 
 /**

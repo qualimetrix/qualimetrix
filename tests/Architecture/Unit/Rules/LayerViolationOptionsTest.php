@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Unit\Rules\Architecture;
+namespace Qualimetrix\Tests\Architecture\Unit\Rules;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Architecture\Rules\LayerViolationOptions;
 use Qualimetrix\Core\Violation\Severity;
-use Qualimetrix\Rules\Architecture\LayerViolationOptions;
 
 #[CoversClass(LayerViolationOptions::class)]
 final class LayerViolationOptionsTest extends TestCase

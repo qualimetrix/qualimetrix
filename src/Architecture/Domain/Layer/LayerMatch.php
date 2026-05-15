@@ -23,7 +23,7 @@ use InvalidArgumentException;
  * produces both descriptors.
  *
  * Used by:
- * - {@see \Qualimetrix\Rules\Architecture\LayerViolationRule} for the
+ * - {@see \Qualimetrix\Architecture\Rules\LayerViolationRule} for the
  *   {@code architecture.potential-shadow} evidence-based diagnostic.
  * - {@see \Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentCommand}
  *   for per-class introspection.

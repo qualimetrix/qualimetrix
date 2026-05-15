@@ -265,7 +265,7 @@ final class LayerAssignmentCommandTest extends TestCase
      * Builds a {@see LayerRegistry} from the same overlapping configuration
      * the command will load, asks the registry directly what layer
      * `App\Service\Foo` resolves to ({@see LayerRegistry::resolveLayer()} —
-     * the value the runtime {@see \Qualimetrix\Rules\Architecture\LayerViolationRule}
+     * the value the runtime {@see \Qualimetrix\Architecture\Rules\LayerViolationRule}
      * sees on every dependency edge), runs the command against the same
      * config, and asserts both agree.
      *

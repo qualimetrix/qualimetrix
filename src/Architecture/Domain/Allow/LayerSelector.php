@@ -142,7 +142,7 @@ final readonly class LayerSelector
     /**
      * Returns the original selector string the user wrote — used for
      * diagnostics and the legacy "list of allowed targets" recommendation
-     * surface in {@see \Qualimetrix\Rules\Architecture\LayerViolationRule}.
+     * surface in {@see \Qualimetrix\Architecture\Rules\LayerViolationRule}.
      */
     public function originalString(): string
     {

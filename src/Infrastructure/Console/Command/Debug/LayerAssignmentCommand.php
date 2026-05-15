@@ -32,7 +32,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  *
  * Delegates resolution to {@see LayerRegistry::resolveAll()} so the
  * assignment reported here is identical to the one
- * {@see \Qualimetrix\Rules\Architecture\LayerViolationRule} would use at
+ * {@see \Qualimetrix\Architecture\Rules\LayerViolationRule} would use at
  * runtime — there is no second implementation of the matching algorithm
  * to drift from the registry's semantics.
  *

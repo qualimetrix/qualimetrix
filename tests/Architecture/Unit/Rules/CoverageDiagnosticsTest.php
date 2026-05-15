@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Unit\Rules\Architecture;
+namespace Qualimetrix\Tests\Architecture\Unit\Rules;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -13,6 +13,8 @@ use Qualimetrix\Architecture\Domain\CoverageMode;
 use Qualimetrix\Architecture\Domain\Layer\LayerDefinition;
 use Qualimetrix\Architecture\Domain\Layer\LayerRegistry;
 use Qualimetrix\Architecture\Domain\Layer\MembershipSpec;
+use Qualimetrix\Architecture\Rules\LayerViolationOptions;
+use Qualimetrix\Architecture\Rules\LayerViolationRule;
 use Qualimetrix\Core\Dependency\Dependency;
 use Qualimetrix\Core\Dependency\DependencyGraphInterface;
 use Qualimetrix\Core\Dependency\DependencyType;
@@ -21,8 +23,6 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
-use Qualimetrix\Rules\Architecture\LayerViolationOptions;
-use Qualimetrix\Rules\Architecture\LayerViolationRule;
 use Qualimetrix\Tests\Architecture\Support\AllowListBuilder;
 
 #[CoversClass(LayerViolationRule::class)]

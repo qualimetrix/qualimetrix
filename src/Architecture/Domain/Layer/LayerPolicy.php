@@ -134,7 +134,7 @@ final readonly class LayerPolicy
      * the original selector string the user wrote — an exact layer name for
      * {@see Allow\SelectorKind::Exact}, a glob/captured pattern for the other
      * kinds. The recommendation surface in
-     * {@see \Qualimetrix\Rules\Architecture\LayerViolationRule::buildRecommendation()}
+     * {@see \Qualimetrix\Architecture\Rules\LayerViolationRule::buildRecommendation()}
      * renders them verbatim, which is accurate for all three kinds because
      * the original string is precisely the shape the user can copy back into
      * the YAML config to widen the policy.

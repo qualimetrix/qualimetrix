@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Aggregator\GlobalCollectorRunner;
 use Qualimetrix\Analysis\Collection\Metric\CompositeCollector;
 use Qualimetrix\Analysis\Pipeline\EnrichmentResult;
 use Qualimetrix\Analysis\Pipeline\MetricEnricher;
+use Qualimetrix\Architecture\Rules\CircularDependencyRule;
 use Qualimetrix\Configuration\AnalysisConfiguration;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinitionHolder;
@@ -20,7 +21,6 @@ use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
-use Qualimetrix\Rules\Architecture\CircularDependencyRule;
 use Qualimetrix\Rules\Duplication\CodeDuplicationRule;
 use SplFileInfo;
 

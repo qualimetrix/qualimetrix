@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Aggregator\MetricAggregator;
 use Qualimetrix\Analysis\Collection\Dependency\CircularDependencyDetector;
 use Qualimetrix\Analysis\Collection\Metric\CompositeCollector;
 use Qualimetrix\Analysis\Duplication;
+use Qualimetrix\Architecture\Rules\CircularDependencyRule;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinitionHolder;
 use Qualimetrix\Core\Dependency\DependencyGraphInterface;
@@ -19,7 +20,6 @@ use Qualimetrix\Core\Metric\MetricDefinition;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
 use Qualimetrix\Metrics\ComputedMetric\ComputedMetricEvaluator;
-use Qualimetrix\Rules\Architecture\CircularDependencyRule;
 use Qualimetrix\Rules\Duplication\CodeDuplicationRule;
 use SplFileInfo;
 

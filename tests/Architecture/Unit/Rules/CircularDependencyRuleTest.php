@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Unit\Rules\Architecture;
+namespace Qualimetrix\Tests\Architecture\Unit\Rules;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Collection\Dependency\Cycle;
 use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
+use Qualimetrix\Architecture\Rules\CircularDependencyOptions;
+use Qualimetrix\Architecture\Rules\CircularDependencyRule;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Severity;
-use Qualimetrix\Rules\Architecture\CircularDependencyOptions;
-use Qualimetrix\Rules\Architecture\CircularDependencyRule;
 
 #[CoversClass(CircularDependencyRule::class)]
 final class CircularDependencyRuleTest extends TestCase

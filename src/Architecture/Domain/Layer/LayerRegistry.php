@@ -32,7 +32,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * The registry holds a {@see ClassContextFactory} that produces the
  * {@see ClassContext} consumed by {@see LayerDefinition::matches()}. The
  * factory is per-analysis-run state: the rule binds the dependency graph at
- * the start of every {@see \Qualimetrix\Rules\Architecture\LayerViolationRule::analyze()}
+ * the start of every {@see \Qualimetrix\Architecture\Rules\LayerViolationRule::analyze()}
  * call via {@see bindGraph()} and clears the registry's match cache via
  * {@see clearCache()} so the new graph's data is picked up. Before
  * {@see bindGraph()} is called the factory operates in no-graph mode (e.g.
@@ -42,7 +42,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * There is intentionally no specificity scoring, no collision detection,
  * and no exception class for ambiguity — declaration order is the user's
  * tool to express intent, and the engine does not second-guess it. The
- * {@see \Qualimetrix\Rules\Architecture\LayerViolationRule} emits
+ * {@see \Qualimetrix\Architecture\Rules\LayerViolationRule} emits
  * `architecture.unreachable-layer` and `architecture.potential-shadow`
  * info-level diagnostics to surface misordered or overlapping declarations.
  */
@@ -95,7 +95,7 @@ final class LayerRegistry
 
     /**
      * Returns the underlying {@see ClassContextFactory} so callers (chiefly
-     * {@see \Qualimetrix\Rules\Architecture\LayerViolationRule}) can bind it
+     * {@see \Qualimetrix\Architecture\Rules\LayerViolationRule}) can bind it
      * to the analysis-run dependency graph.
      */
     public function contextFactory(): ClassContextFactory
@@ -128,7 +128,7 @@ final class LayerRegistry
      * Returns the name of the first layer (in declaration order) whose
      * membership criteria match the class, or null if no layer matches.
      *
-     * This is the hot path for {@see \Qualimetrix\Rules\Architecture\LayerViolationRule}
+     * This is the hot path for {@see \Qualimetrix\Architecture\Rules\LayerViolationRule}
      * — called once per dependency-edge endpoint.
      */
     public function resolveLayer(SymbolPath $class): ?string

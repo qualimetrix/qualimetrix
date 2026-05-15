@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Rules\Architecture;
+namespace Qualimetrix\Architecture\Rules;
 
 use InvalidArgumentException;
 use Qualimetrix\Core\Rule\RuleOptionKey;
