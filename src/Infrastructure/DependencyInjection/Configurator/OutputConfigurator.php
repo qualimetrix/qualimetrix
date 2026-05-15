@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
+use Qualimetrix\Analysis\Collection\CollectionOrchestratorInterface;
 use Qualimetrix\Analysis\Collection\Dependency\DependencyGraphBuilder;
 use Qualimetrix\Analysis\Collection\Dependency\DependencyVisitor;
 use Qualimetrix\Analysis\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Analysis\Pipeline\AnalysisPipelineInterface;
+use Qualimetrix\Analysis\Repository\MetricRepositoryFactoryInterface;
 use Qualimetrix\Architecture\Processing\ArchitectureProcessorInterface;
 use Qualimetrix\Baseline\BaselineGenerator;
 use Qualimetrix\Baseline\BaselineLoader;
@@ -315,9 +317,16 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
             ->setPublic(true);
 
         // LayerAssignmentCommand (debug:layer-assignment)
+        // Runs full Discovery + Collection so the answer matches `qmx check`
+        // byte-for-byte for template-layer and graph-based configs (ADR 0008).
         $container->register(LayerAssignmentCommand::class)
             ->setArguments([
                 new Reference(ConfigurationPipeline::class),
+                new Reference(FileDiscoveryInterface::class),
+                new Reference(CollectionOrchestratorInterface::class),
+                new Reference(DependencyGraphBuilder::class),
+                new Reference(ArchitectureProcessorInterface::class),
+                new Reference(MetricRepositoryFactoryInterface::class),
             ])
             ->setPublic(true);
     }

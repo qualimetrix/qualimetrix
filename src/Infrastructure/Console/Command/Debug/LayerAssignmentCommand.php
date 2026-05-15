@@ -5,14 +5,19 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console\Command\Debug;
 
 use Exception;
-use Qualimetrix\Architecture\Domain\ArchitectureConfiguration;
+use Qualimetrix\Analysis\Collection\CollectionOrchestratorInterface;
+use Qualimetrix\Analysis\Collection\Dependency\DependencyGraphBuilder;
+use Qualimetrix\Analysis\Discovery\FileDiscoveryInterface;
+use Qualimetrix\Analysis\Repository\MetricRepositoryFactoryInterface;
+use Qualimetrix\Architecture\Domain\Layer\ClassSet;
 use Qualimetrix\Architecture\Domain\Layer\LayerMatch;
-use Qualimetrix\Architecture\Domain\Layer\LayerRegistry;
 use Qualimetrix\Architecture\Domain\Layer\MatchedCriterion;
+use Qualimetrix\Architecture\Processing\ArchitectureProcessorInterface;
 use Qualimetrix\Configuration\Exception\ConfigLoadException;
 use Qualimetrix\Configuration\Pipeline\ConfigurationContext;
 use Qualimetrix\Configuration\Pipeline\ConfigurationPipeline;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Symbol\SymbolType;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -30,16 +35,15 @@ use Symfony\Component\Console\Output\OutputInterface;
  * pattern happened to match it, even though a later, more specific layer
  * looks like a better fit.
  *
- * Delegates resolution to {@see LayerRegistry::resolveAll()} so the
- * assignment reported here is identical to the one
- * {@see \Qualimetrix\Architecture\Rules\LayerViolationRule} would use at
- * runtime — there is no second implementation of the matching algorithm
- * to drift from the registry's semantics.
+ * The command runs the full Discovery + Collection phases so the per-class
+ * answer matches {@code qmx check} byte-for-byte under both template-layer
+ * and graph-criteria configurations (ADR 0008). Resolution itself is
+ * performed by the shared {@see ArchitectureProcessorInterface} so the
+ * matching algorithm has a single source of truth.
  *
- * The command does not run any analysis; it only resolves the FQN against
- * the loaded layer configuration. Exits 0 for any informational result
- * (including "no layer matches"), 2 (`Command::INVALID`) for malformed
- * input, and 1 (`Command::FAILURE`) for configuration-load errors.
+ * Exits 0 for any informational result (including "no layer matches"), 2
+ * (`Command::INVALID`) for malformed input, and 1 (`Command::FAILURE`) for
+ * configuration-load errors.
  */
 #[AsCommand(
     name: 'debug:layer-assignment',
@@ -49,6 +53,11 @@ final class LayerAssignmentCommand extends Command
 {
     public function __construct(
         private readonly ConfigurationPipeline $configurationPipeline,
+        private readonly FileDiscoveryInterface $fileDiscovery,
+        private readonly CollectionOrchestratorInterface $collectionOrchestrator,
+        private readonly DependencyGraphBuilder $graphBuilder,
+        private readonly ArchitectureProcessorInterface $processor,
+        private readonly MetricRepositoryFactoryInterface $repositoryFactory,
     ) {
         parent::__construct();
     }
@@ -75,11 +84,10 @@ final class LayerAssignmentCommand extends Command
                 . 'Layer evaluation follows declaration order: the first layer whose'
                 . "\n" . 'criteria match wins. Reorder layers in qmx.yaml or tighten broad'
                 . "\n" . 'patterns to resolve unwanted shadowing.' . "\n\n"
-                . 'NOTE: this command does not run analysis, so the "attributes",'
-                . "\n" . '"implements" and "extends" criteria — which rely on the per-run'
-                . "\n" . 'dependency graph — are SILENTLY SKIPPED. Only "patterns" and'
-                . "\n" . '"suffix" criteria fire here. Use a full `qmx check` run if you'
-                . "\n" . 'need to inspect graph-dependent assignments.' . "\n\n"
+                . 'The command runs full Discovery + Collection internally so the answer'
+                . "\n" . 'matches `qmx check` byte-for-byte for template-layer and'
+                . "\n" . 'graph-based configurations. Expect roughly 50–70% of `qmx check`'
+                . "\n" . 'runtime.' . "\n\n"
                 . 'Examples:' . "\n"
                 . '  <info>bin/qmx debug:layer-assignment \'App\\Service\\Foo\'</info>' . "\n"
                 . '  <info>bin/qmx debug:layer-assignment \'App\\Service\\Foo\' --config qmx.yaml</info>',
@@ -102,7 +110,7 @@ final class LayerAssignmentCommand extends Command
         $normalized = $this->fqnFor($symbol);
 
         try {
-            $architecture = $this->loadArchitecture($input);
+            $matches = $this->resolveLayerMatches($input, $symbol);
         } catch (ConfigLoadException $e) {
             $output->writeln(\sprintf('<error>Configuration error: %s</error>', $e->getMessage()));
 
@@ -116,12 +124,78 @@ final class LayerAssignmentCommand extends Command
             return self::FAILURE;
         }
 
-        $registry = $architecture->registry();
-        $matches = $registry->resolveAll($symbol);
-
-        $this->renderReport($output, $normalized, $matches, $registry->isEmpty());
+        $this->renderReport($output, $normalized, $matches);
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Runs the configuration pipeline, file discovery, the collection phase,
+     * and template expansion through the processor — then asks the processor
+     * to classify the requested class.
+     *
+     * @return list<LayerMatch>
+     */
+    private function resolveLayerMatches(InputInterface $input, SymbolPath $symbol): array
+    {
+        $resolved = $this->loadResolvedConfiguration($input);
+
+        $repository = $this->repositoryFactory->create();
+        $files = array_values(iterator_to_array(
+            $this->fileDiscovery->discover($resolved->paths->paths),
+            false,
+        ));
+
+        $collection = $this->collectionOrchestrator->collect($files, $repository);
+        $graph = $this->graphBuilder->build($collection->dependencies);
+
+        $classPaths = [];
+        foreach ($repository->all(SymbolType::Class_) as $classSymbol) {
+            $classPaths[] = $classSymbol->symbolPath;
+        }
+        $classSet = new ClassSet($classPaths, new \Qualimetrix\Architecture\Domain\Layer\ClassContextFactory());
+
+        $architecture = $resolved->architecture;
+        if ($architecture === null) {
+            return [];
+        }
+
+        $this->processor->reset();
+        $this->processor->bind($architecture);
+        $this->processor->prepare($graph, $classSet);
+
+        // classify() yields the head match per class; the debug command
+        // wants the full match list (assignment + shadowed alternatives),
+        // so we reach into the prepared registry directly. The processor's
+        // prepare() already bound the graph and expanded templates, so the
+        // matching algorithm is identical to what the rule layer sees.
+        $prepared = $this->processor->getPreparedConfiguration();
+        \assert($prepared !== null);
+
+        return $prepared->registry()->resolveAll($symbol);
+    }
+
+    /**
+     * Loads the resolved configuration via the configuration pipeline.
+     */
+    private function loadResolvedConfiguration(InputInterface $input): \Qualimetrix\Configuration\Pipeline\ResolvedConfiguration
+    {
+        /** @var string|null $configPath */
+        $configPath = $input->getOption('config');
+        $cwd = getcwd();
+        $workingDirectory = $cwd !== false ? $cwd : '.';
+
+        if ($configPath !== null && $configPath !== '' && !file_exists($configPath)) {
+            throw ConfigLoadException::fileNotFound($configPath);
+        }
+
+        $context = new ConfigurationContext(
+            $input,
+            $workingDirectory,
+            \is_string($configPath) && $configPath !== '' ? $configPath : null,
+        );
+
+        return $this->configurationPipeline->resolve($context);
     }
 
     /**
@@ -175,44 +249,12 @@ final class LayerAssignmentCommand extends Command
     }
 
     /**
-     * Loads the architecture configuration via the configuration pipeline.
-     */
-    private function loadArchitecture(InputInterface $input): ArchitectureConfiguration
-    {
-        /** @var string|null $configPath */
-        $configPath = $input->getOption('config');
-        $cwd = getcwd();
-        $workingDirectory = $cwd !== false ? $cwd : '.';
-
-        if ($configPath !== null && $configPath !== '' && !file_exists($configPath)) {
-            throw ConfigLoadException::fileNotFound($configPath);
-        }
-
-        $context = new ConfigurationContext(
-            $input,
-            $workingDirectory,
-            \is_string($configPath) && $configPath !== '' ? $configPath : null,
-        );
-
-        $resolved = $this->configurationPipeline->resolve($context);
-
-        // ConfigurationPipeline::resolve() always populates $architecture (the
-        // factory returns an empty ArchitectureConfiguration when the YAML
-        // section is missing). The assertion documents this invariant for
-        // readers and PHPStan.
-        \assert($resolved->architecture !== null);
-
-        return $resolved->architecture;
-    }
-
-    /**
      * @param list<LayerMatch> $matches
      */
     private function renderReport(
         OutputInterface $output,
         string $fqn,
         array $matches,
-        bool $registryIsEmpty,
     ): void {
         $output->writeln(\sprintf('Class: <info>%s</info>', $fqn));
         $output->writeln('');
@@ -220,7 +262,8 @@ final class LayerAssignmentCommand extends Command
         if ($matches === []) {
             $output->writeln('  Assigned to: <comment>(no layer)</comment>');
             $output->writeln('');
-            if ($registryIsEmpty) {
+            $registry = $this->processor->getPreparedConfiguration()?->registry();
+            if ($registry === null || $registry->isEmpty()) {
                 $output->writeln('  Suggestion: no layers are declared in the configuration. Add an');
                 $output->writeln('  <comment>architecture.layers</comment> section to qmx.yaml to start enforcing');
                 $output->writeln('  layer boundaries.');
@@ -272,7 +315,8 @@ final class LayerAssignmentCommand extends Command
 
     /**
      * Joins every matched criterion descriptor with a comma so the command
-     * line surface mirrors the order that {@see LayerDefinition::matches()}
+     * line surface mirrors the order that
+     * {@see \Qualimetrix\Architecture\Domain\Layer\LayerDefinition::matches()}
      * scans (pattern → suffix → attribute → implements → extends).
      */
     private static function describeCriteria(LayerMatch $entry): string

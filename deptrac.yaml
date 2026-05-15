@@ -249,6 +249,7 @@ deptrac:
       - Analysis.Collection
       - Analysis.Discovery
       - Analysis.Namespace
+      - Analysis.Repository
       - Analysis.RuleExecution
       - Configuration
       - Baseline
