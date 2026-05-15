@@ -4,6 +4,11 @@
 
 Core contains base contracts, Value Objects and Enums used by all other domains. Core has no dependencies except PHP and php-parser (only for Node types).
 
+> **Note.** The former `Core/Architecture/` sub-tree moved into the
+> Architecture vertical slice ([ADR 0010](../../docs/adr/0010-architecture-vertical-slice.md)).
+> Layer primitives, allow-list types, capture grammar, registry, and policy
+> now live under [`src/Architecture/Domain/`](../Architecture/README.md).
+
 ## Structure
 
 ```
@@ -57,11 +62,6 @@ Core/
 │   ├── CycleInterface.php
 │   ├── DependencyType.php                 # Dependency type enum
 │   └── EmptyDependencyGraph.php           # No-op graph implementation
-├── Architecture/                          # Layer primitives + typed architecture configuration (see README in subdir)
-│   ├── ArchitectureConfiguration.php      # VO: registry + policy + coverage mode
-│   ├── ArchitectureConfigurationHolder.php # Static runtime holder for resolved config
-│   ├── CoverageMode.php                   # Enum: Ignore | Warn | Error
-│   └── Layer/                             # LayerDefinition, LayerRegistry, LayerPolicy, exceptions
 ├── Duplication/
 │   ├── DuplicateBlock.php                 # VO: a group of duplicate code locations
 │   └── DuplicateLocation.php              # VO: a single location within a duplicate block

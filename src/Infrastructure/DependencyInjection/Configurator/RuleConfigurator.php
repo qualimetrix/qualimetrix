@@ -29,17 +29,20 @@ final class RuleConfigurator implements ContainerConfiguratorInterface
     }
 
     /**
-     * Registers all rules automatically via registerClasses().
+     * Registers cross-cutting rules from src/Rules/**\/*Rule.php.
      *
-     * Rules are discovered from src/Rules/**\/*Rule.php (cross-cutting rules)
-     * and src/Architecture/Rules/*Rule.php (vertical-slice rules, ADR 0010)
-     * and auto-tagged via registerForAutoconfiguration(RuleInterface::class).
-     * Their Options are registered by RuleOptionsCompilerPass using
-     * Rule::getOptionsClass().
+     * Rules are auto-tagged via registerForAutoconfiguration(RuleInterface::class)
+     * in ContainerFactory. Their Options are registered by RuleOptionsCompilerPass
+     * using Rule::getOptionsClass().
      *
      * This approach eliminates manual registration when adding new rules:
      * just create the Rule class and Options class, and they're automatically
      * registered without touching ContainerFactory.
+     *
+     * Vertical-slice rules (currently {@code Qualimetrix\Architecture\Rules\*},
+     * per ADR 0010 / ADR 0012) are registered by their feature's configurator
+     * — see {@see ArchitectureConfigurator}. This scan only covers
+     * cross-cutting rules that live under src/Rules/.
      *
      * NOTE: Autowiring is DISABLED for rules because their constructor takes
      * RuleOptionsInterface which requires CompilerPass to resolve correctly.
@@ -49,7 +52,7 @@ final class RuleConfigurator implements ContainerConfiguratorInterface
     {
         $loader = new PhpFileLoader($container, new FileLocator($this->srcDir));
 
-        // Auto-register all *Rule.php from src/Rules/** and src/Architecture/Rules/**
+        // Auto-register all *Rule.php from src/Rules/**
         // Classes implementing RuleInterface will be auto-tagged and made lazy
         // via registerForAutoconfiguration() in create()
         // Autowiring is DISABLED - RuleOptionsCompilerPass handles argument injection
@@ -63,15 +66,6 @@ final class RuleConfigurator implements ContainerConfiguratorInterface
             'Qualimetrix\\Rules\\',
             $this->srcDir . '/Rules/**/*Rule.php',
             $this->srcDir . '/Rules/AbstractRule.php',
-        );
-
-        // Vertical-slice rules (ADR 0010 / Phase 2 architecture migration).
-        // Architecture rules live at src/Architecture/Rules/ and are no
-        // longer reachable from the src/Rules/** scan.
-        $loader->registerClasses(
-            $prototype,
-            'Qualimetrix\\Architecture\\Rules\\',
-            $this->srcDir . '/Architecture/Rules/*Rule.php',
         );
     }
 

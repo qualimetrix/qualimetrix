@@ -123,8 +123,10 @@ rules:
       - Qualimetrix\Core\Rule
       - Qualimetrix\Core\Dependency
 
-  # Distance: Core leaf namespaces are maximally concrete with few abstractions.
-  # This is by design for value objects.
+  # Distance: leaf namespaces holding pure value objects, enums, and exceptions
+  # are maximally concrete with few abstractions — that is the point of a
+  # domain-VO sub-namespace. The Architecture/Domain/* tree is the vertical
+  # slice's equivalent of the Core leaf VO namespaces (ADR 0010).
   coupling.distance:
     exclude_namespaces:
       - Qualimetrix\Core
@@ -133,6 +135,9 @@ rules:
       - Qualimetrix\Core\Suppression
       - Qualimetrix\Core\Violation
       - Qualimetrix\Core\Profiler
+      - Qualimetrix\Architecture\Domain
+      - Qualimetrix\Architecture\Domain\Allow
+      - Qualimetrix\Architecture\Domain\Layer
       - Qualimetrix\Reporting\Debt
       - Qualimetrix\Infrastructure\Serializer
       - Qualimetrix\Reporting\Formatter\Support
@@ -220,6 +225,11 @@ rules:
       - src/Infrastructure/Console
       - src/Reporting
       - src/Core
+      # Architecture vertical slice mirrors the Core/Rules categories that
+      # were excluded above (ADR 0010 moved these from src/Core/Architecture/
+      # and src/Rules/Architecture/ to src/Architecture/...).
+      - src/Architecture/Domain
+      - src/Architecture/Rules/*Options.php
 
   code-smell.error-suppression:
     allowed_functions:

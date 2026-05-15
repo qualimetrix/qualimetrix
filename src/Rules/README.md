@@ -7,6 +7,17 @@ Rules are analysis rule implementations for static analysis. Rules are **complet
 - They do not store state between calls
 - A single `analyze()` method is the only entry point
 
+> **Note.** Most rules live under `src/Rules/{Category}/` (this directory).
+> The Architecture rules (`architecture.layer-violation`,
+> `architecture.circular-dependency`) live in the Architecture vertical slice
+> at [`src/Architecture/Rules/`](../Architecture/README.md) — they qualify
+> for the slice per [ADR 0010](../../docs/adr/0010-architecture-vertical-slice.md)
+> because the layer-violation rule needs Analysis-time prepared state and
+> the feature carries an independent-lifecycle debug command. See
+> [ADR 0012](../../docs/adr/0012-hybrid-architectural-direction.md) for the
+> hybrid model. User-facing documentation of both rules is still in this
+> README (Layer Violation Rule, Circular Dependency Rule).
+
 ### Rule Types
 
 | Type         | Interface                   | Description                                |
@@ -407,9 +418,10 @@ rules:
 Reports dependency edges that cross declared architecture layers and are not in the policy allow-list.
 
 Layer definitions, allow-list, and `coverage` mode live in the top-level `architecture:` YAML section
-(see [`src/Configuration/Architecture/ArchitectureConfigurationFactory.php`](../Configuration/Architecture/ArchitectureConfigurationFactory.php))
-and reach the rule through `AnalysisContext::$architecture`. The Options class itself carries only
-the `enabled` flag and a single `severity` selector — there are no numeric thresholds.
+(see [`src/Architecture/Configuration/ArchitectureConfigurationFactory.php`](../Architecture/Configuration/ArchitectureConfigurationFactory.php))
+and reach the rule through `AnalysisContext::$architecture` (Phase 4 / [ADR 0008](../../docs/adr/0008-architecture-processor-service.md)
+will switch to a constructor-injected `ArchitectureProcessorInterface`). The Options class itself carries
+only the `enabled` flag and a single `severity` selector — there are no numeric thresholds.
 
 **Default:** `enabled: true`, `severity: warning`. The rule short-circuits immediately when `architecture.layers` is empty, so projects without architecture configuration pay zero cost.
 
@@ -478,27 +490,11 @@ rules:
 - `architecture.potential-shadow` (info) — one info violation per (assigned, shadowed) layer pair observed in practice. Evidence-based: walks every class, records all matching layers, groups by (first-match, later-match). Catches prefix overlap, suffix-theft, and arbitrary intersection without re-introducing specificity scoring.
 - `architecture.empty-template` (warning) — one warning per template layer that expanded to zero concrete instances. Higher severity than the other safety nets because an empty template silently disables the policy attached to it.
 
-**Files:**
-- `src/Rules/Architecture/LayerViolationRule.php` — rule implementation
-- `src/Rules/Architecture/LayerViolationOptions.php` — rule options
-- `src/Core/Architecture/ArchitectureConfiguration.php` / `ArchitectureConfigurationHolder.php` / `CoverageMode.php` — typed runtime config
-- `src/Core/Architecture/Layer/` — reusable layer primitives:
-  `LayerDefinition`, `TemplateLayerDefinition`, `MembershipSpec`, `ExcludeSpec`, `MatchMode`,
-  `LayerCriteriaMatcher`, `CriterionListValidator`, `CapturePattern`, `ClassSet`,
-  `ClassContext` / `ClassContextFactory`, `MatchedCriterion` / `MatchedCriterionKind`,
-  `MembershipResult`, `LayerMatch`, `LayerRegistry`, `LayerPolicy`,
-  `InvalidLayerDefinitionException`
-- `src/Core/Architecture/Allow/` — allow-list selectors:
-  `LayerSelector`, `LayerSelectorParser`, `SelectorKind`, `SelectorSegment`, `ParseCapturedState`,
-  `CaptureBinding`, `AllowTarget`, `AllowListEntry`, `InvalidSelectorException`
-- `src/Configuration/Architecture/ArchitectureConfigurationFactory.php` — YAML → typed config
-- `src/Configuration/Architecture/Allow/AllowAliasExpander.php` — relation alias expansion (`inheritance` → `extends`/`implements`/`trait_use`, etc.)
-- `src/Configuration/Architecture/Validation/` — config-time validators and normalizers:
-  `LayersValidator`, `AllowValidator`, `CoverageValidator`,
-  `ExcludeBlockValidator`, `LayerCriterionNormalizer`, `LongFormAllowEntryNormalizer`,
-  `MutualAllowDetector`, `WildcardSelfAllowDetector`
-- `src/Analysis/Architecture/` — runtime template expansion:
-  `LayerExpansionStage`, `LayerExpansionResult`, `LayerExpansionException`
+**Files:** the rule, options, layer/allow primitives, configuration factory, validators, and runtime
+template expansion all live inside the Architecture vertical slice — see
+[`src/Architecture/README.md`](../Architecture/README.md) for the full inventory. The
+slice covers `Domain/` (VOs and enums), `Configuration/` (YAML factory + validators),
+`Processing/` (template expansion), and `Rules/` (this rule plus `CircularDependencyRule`).
 
 ---
 
@@ -954,7 +950,13 @@ final class ExampleRule extends AbstractRule {
 **Automatic registration:**
 - Rules are registered automatically via Symfony DI (autoconfiguration)
 - No need to modify `ContainerFactory` manually
-- Rules must be in `src/Rules/{Category}/*Rule.php`
+- Thin layered rules belong in `src/Rules/{Category}/*Rule.php` — they are
+  registered by [`RuleConfigurator`](../Infrastructure/DependencyInjection/Configurator/RuleConfigurator.php)
+- Rules that belong to a vertical slice (currently
+  `src/Architecture/Rules/`) are registered by their feature's configurator
+  — see [`ArchitectureConfigurator`](../Infrastructure/DependencyInjection/Configurator/ArchitectureConfigurator.php).
+  Both registrations share the same `qmx.rule` autoconfiguration tag; the
+  rule is otherwise indistinguishable to the rest of the pipeline.
 
 ---
 

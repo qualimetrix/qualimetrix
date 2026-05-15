@@ -49,21 +49,64 @@ When starting a session in the web environment, `scripts/init-environment.sh` is
 
 ## Project Structure
 
+The project uses a **hybrid model** per [ADR 0012](docs/adr/0012-hybrid-architectural-direction.md):
+substantial domain features organize as vertical slices, thin metric/rule
+features stay layered, cross-cutting infrastructure is retained as horizontal
+layers, and adapters always live in `Infrastructure/`.
+
 ```
 src/
-├── Core/              # Contracts and primitives (no dependencies)
-├── Metrics/           # Metric collectors (by category subdirs)
-├── Rules/             # Analysis rules (by category subdirs)
+├── Core/              # Cross-cutting primitives (no dependencies)
+├── Architecture/      # Vertical slice — Architecture domain (ADR 0010 pilot)
+│   ├── Domain/             # VOs, enums, exceptions
+│   ├── Configuration/      # YAML factory + validators
+│   ├── Processing/         # Analysis-time helpers (template expansion etc.)
+│   └── Rules/              # Architecture rules (layer-violation, circular-dependency)
+├── Metrics/{Category}/     # Thin metric features (layered)
+├── Rules/{Category}/       # Thin rule features (layered)
 ├── Baseline/          # Baseline support and @qmx-ignore suppression
-├── Analysis/          # Pipeline orchestration, collection, aggregation
-├── Reporting/         # Output formatters
-├── Configuration/     # YAML config loading
-└── Infrastructure/    # CLI, DI, cache, git, profiler
+├── Analysis/          # Orchestration (pipeline, discovery, collection)
+├── Reporting/         # Output formatters (cross-cutting)
+├── Configuration/     # Cross-cutting config infrastructure (loader, schema, pipeline)
+└── Infrastructure/    # Adapters (CLI, DI, cache, git, profiler) — adapters for any feature live here
 benchmarks/            # Benchmark PHP projects for metric calibration (see benchmarks/README.md)
 scripts/               # Utility scripts (benchmark data collection, regression checks)
 ```
 
 Each domain has its own `README.md` with detailed structure, classes, and contracts.
+
+### Decision framework for new features
+
+When introducing a substantial new feature, decide between vertical slice and
+layered organization using ADR 0010 / ADR 0012 criteria:
+
+| Indicator                                                                                                                                                           | → Layout       |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
+| Compute one metric + emit one rule, reading pre-computed metrics                                                                                                    | Layered        |
+| Cross-layer-consuming rule (needs Analysis-time prepared state / dependency graph)<br>**AND** independent-lifecycle adapter (own multi-stage debug/inspection flow) | Vertical slice |
+| Analogous complexity — multi-stage processing + non-trivial config loader                                                                                           | Case-by-case   |
+| Cross-cutting (used by every feature: primitives, formatters, orchestration)                                                                                        | Retained layer |
+| CLI / HTTP / message-handler adapter                                                                                                                                | Infrastructure |
+
+For substantial features that warrant a vertical slice, start at
+`src/{Feature}/{Domain,Configuration,Processing,Rules}/` from day one — do
+not build a layered version first and migrate. Existing layered features
+migrate only opportunistically (major refactor or remediation), not
+proactively. Architecture is the **pilot** vertical slice; its playbook
+(subagent strategy, deptrac migration, DI configurator pattern, manifest
+format, rollback) is reused by subsequent qualified migrations.
+
+### Adapter-exclusion principle
+
+Adapters (CLI commands, HTTP endpoints, message handlers, shell hooks) live
+in `src/Infrastructure/` regardless of which feature they touch. They
+depend on the slice through its public service contracts. Example:
+`LayerAssignmentCommand` stays at
+`src/Infrastructure/Console/Command/Debug/LayerAssignmentCommand.php` and
+injects `ArchitectureProcessorInterface` (Phase 4) plus Discovery and
+Collection services — pulling the command into the Architecture slice would
+force the slice to depend on `symfony/console`, which is an infrastructure
+concern.
 
 ---
 
@@ -227,17 +270,43 @@ Standard Symfony practices are used: **autowiring** and **autoconfiguration**.
 4. All consumers must reference the constant, not a string literal
 
 **Adding a new rule:**
-1. Create a `*Rule.php` class in `src/Rules/{Category}/` (e.g., `src/Rules/Complexity/`)
-2. Implement `RuleInterface` (or extend `AbstractRule`)
-3. Add a `NAME` constant with the rule slug in `group.rule-name` format (e.g., `'complexity.cyclomatic'`)
-4. Add a static `getOptionsClass()` method returning the Options class
-5. Create an Options class in the same directory, implementing `RuleOptionsInterface`
-6. The class will be registered **automatically** — NO need to modify `ContainerFactory`
+
+Decide between the **layered** and **vertical-slice** layouts per ADR 0010
+/ ADR 0012:
+
+- **Thin rule** (computes from pre-existing metrics, no Analysis-time
+  preparation, no companion debug command):
+  1. Create a `*Rule.php` class in `src/Rules/{Category}/` (e.g.,
+     `src/Rules/Complexity/`)
+  2. Implement `RuleInterface` (or extend `AbstractRule`)
+  3. Add a `NAME` constant with the rule slug in `group.rule-name` format
+     (e.g., `'complexity.cyclomatic'`)
+  4. Add a static `getOptionsClass()` method returning the Options class
+  5. Create an Options class in the same directory, implementing
+     `RuleOptionsInterface`
+  6. The class is registered **automatically** by `RuleConfigurator` — no
+     need to modify `ContainerFactory`
+- **Complex domain rule** (the feature meets the ADR 0010 criteria —
+  cross-layer-consuming rule AND independent-lifecycle adapter, or
+  analogous-complexity per ADR 0012):
+  - Place the rule under `src/{Feature}/Rules/{Rule}.php` together with
+    the rest of the feature's slice (`Domain/`, `Configuration/`,
+    `Processing/`)
+  - Add (or extend) a `{Feature}Configurator` in
+    `src/Infrastructure/DependencyInjection/Configurator/` that scans the
+    slice's `Rules/`, `Processing/`, and `Configuration/Validation/`
+    directories
+  - Current example: `src/Architecture/Rules/` registered via
+    `ArchitectureConfigurator`
 
 **How rule registration works:**
-1. `registerClasses()` scans `src/Rules/**/*Rule.php`
-2. `registerForAutoconfiguration(RuleInterface::class)` adds the `qmx.rule` tag
-3. `RuleOptionsCompilerPass` automatically registers Options via `RuleOptionsFactory::create()`
+1. `RuleConfigurator::registerClasses()` scans `src/Rules/**/*Rule.php` for
+   layered rules; each feature's own configurator (e.g.
+   `ArchitectureConfigurator`) scans its slice's `Rules/` directory
+2. `registerForAutoconfiguration(RuleInterface::class)` adds the `qmx.rule`
+   tag in either case
+3. `RuleOptionsCompilerPass` automatically registers Options via
+   `RuleOptionsFactory::create()`
 4. `RuleCompilerPass` collects all rules into `RuleExecutor`
 
 **Important:** Rules do NOT use autowiring for the constructor (due to `RuleOptionsInterface`). The `$options` argument is injected via `RuleOptionsCompilerPass`.
@@ -440,6 +509,7 @@ Key rules:
 
 ### Component Documentation (in src/)
 - [src/Core/README.md](src/Core/README.md) — contracts and primitives
+- [src/Architecture/README.md](src/Architecture/README.md) — Architecture vertical slice (layer policy + circular dependency, ADR 0010 pilot)
 - [src/Metrics/README.md](src/Metrics/README.md) — metric collectors
 - [src/Rules/README.md](src/Rules/README.md) — analysis rules
 - [src/Analysis/README.md](src/Analysis/README.md) — orchestration
