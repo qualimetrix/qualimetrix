@@ -19,7 +19,6 @@ use Qualimetrix\Analysis\Collection\Metric\CompositeCollector;
 use Qualimetrix\Analysis\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Analysis\Pipeline\AnalysisPipeline;
 use Qualimetrix\Analysis\Pipeline\MetricEnricher;
-use Qualimetrix\Analysis\Repository\DefaultMetricRepositoryFactory;
 use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\RuleExecution\RuleExecutor;
 use Qualimetrix\Architecture\Rules\CircularDependencyOptions;
@@ -37,6 +36,7 @@ use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Metrics\Coupling\CouplingCollector;
+use Qualimetrix\Tests\Support\Pipeline\TestPipelineBuilder;
 use SplFileInfo;
 
 /**
@@ -328,14 +328,13 @@ final class AnalysisPipelineIntegrationTest extends TestCase
             configurationProvider: $this->configurationProvider,
         );
 
-        return new AnalysisPipeline(
-            defaultDiscovery: $discovery,
-            collectionOrchestrator: $orchestrator,
-            ruleExecutor: $ruleExecutor,
-            configurationProvider: $this->configurationProvider,
-            metricEnricher: $metricEnricher,
-            repositoryFactory: new DefaultMetricRepositoryFactory(),
-        );
+        return TestPipelineBuilder::create()
+            ->withDefaultDiscovery($discovery)
+            ->withCollectionOrchestrator($orchestrator)
+            ->withRuleExecutor($ruleExecutor)
+            ->withConfigurationProvider($this->configurationProvider)
+            ->withMetricEnricher($metricEnricher)
+            ->build();
     }
 
     /**
@@ -377,14 +376,13 @@ final class AnalysisPipelineIntegrationTest extends TestCase
             configurationProvider: $this->configurationProvider,
         );
 
-        return new AnalysisPipeline(
-            defaultDiscovery: $discovery,
-            collectionOrchestrator: $orchestrator,
-            ruleExecutor: $ruleExecutor,
-            configurationProvider: $this->configurationProvider,
-            metricEnricher: $metricEnricher,
-            repositoryFactory: new DefaultMetricRepositoryFactory(),
-        );
+        return TestPipelineBuilder::create()
+            ->withDefaultDiscovery($discovery)
+            ->withCollectionOrchestrator($orchestrator)
+            ->withRuleExecutor($ruleExecutor)
+            ->withConfigurationProvider($this->configurationProvider)
+            ->withMetricEnricher($metricEnricher)
+            ->build();
     }
 
     /**

@@ -18,7 +18,6 @@ use Qualimetrix\Analysis\Collection\Metric\CompositeCollector;
 use Qualimetrix\Analysis\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Analysis\Pipeline\AnalysisPipeline;
 use Qualimetrix\Analysis\Pipeline\MetricEnricher;
-use Qualimetrix\Analysis\Repository\DefaultMetricRepositoryFactory;
 use Qualimetrix\Analysis\RuleExecution\RuleExecutorInterface;
 use Qualimetrix\Configuration\AnalysisConfiguration;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
@@ -31,6 +30,7 @@ use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Rules\Complexity\ComplexityRule;
 use Qualimetrix\Rules\Design\GodClassRule;
+use Qualimetrix\Tests\Support\Pipeline\TestPipelineBuilder;
 use SplFileInfo;
 
 #[CoversClass(AnalysisPipeline::class)]
@@ -388,14 +388,13 @@ final class AnalysisPipelineTest extends TestCase
             logger: $resolvedLogger,
         );
 
-        return new AnalysisPipeline(
-            defaultDiscovery: $defaultDiscovery ?? $this->defaultDiscovery,
-            collectionOrchestrator: $collectionOrchestrator ?? $this->collectionOrchestrator,
-            ruleExecutor: $ruleExecutor ?? $this->ruleExecutor,
-            configurationProvider: $resolvedConfigProvider,
-            metricEnricher: $metricEnricher,
-            repositoryFactory: new DefaultMetricRepositoryFactory(),
-            logger: $resolvedLogger,
-        );
+        return TestPipelineBuilder::create()
+            ->withDefaultDiscovery($defaultDiscovery ?? $this->defaultDiscovery)
+            ->withCollectionOrchestrator($collectionOrchestrator ?? $this->collectionOrchestrator)
+            ->withRuleExecutor($ruleExecutor ?? $this->ruleExecutor)
+            ->withConfigurationProvider($resolvedConfigProvider)
+            ->withMetricEnricher($metricEnricher)
+            ->withLogger($resolvedLogger)
+            ->build();
     }
 }

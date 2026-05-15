@@ -138,11 +138,11 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
                 new Reference(RuleExecutorInterface::class),
                 new Reference(ConfigurationProviderInterface::class),
                 new Reference(MetricEnricher::class),
+                new Reference(ArchitectureProcessorInterface::class),
                 new Reference(MetricRepositoryFactoryInterface::class),
                 new Reference(DependencyGraphBuilder::class),
                 new Reference(DelegatingLogger::class),
                 new Reference(ProfilerHolder::class),
-                new Reference(ArchitectureProcessorInterface::class),
             ])
             ->setPublic(true);
         $container->setAlias(AnalysisPipelineInterface::class, AnalysisPipeline::class)
