@@ -213,21 +213,46 @@ final class ArchitectureConfigurationFactory
     /**
      * Validates the {@code max_expanded_layers} value. Accepts a positive
      * integer; rejects anything else with a config-load error pointing at
-     * the precise key.
+     * the precise key, showing the offending value and the default ceiling
+     * so the user knows what to put back.
      */
     private static function validateMaxExpandedLayers(mixed $value): int
     {
         if (!\is_int($value) || $value < 1) {
+            $offending = \is_int($value)
+                ? (string) $value
+                : \sprintf('%s (%s)', get_debug_type($value), self::renderScalarForError($value));
             throw new ConfigLoadException(
                 self::CONFIG_PATH,
                 \sprintf(
-                    'architecture.max_expanded_layers: must be a positive integer, got %s.',
-                    \is_int($value) ? (string) $value : get_debug_type($value),
+                    'architecture.max_expanded_layers: must be a positive integer (>= 1) — the cumulative ceiling on template-layer expansions. Got %s. Omit the key to use the default of %d, or set a higher integer if your config legitimately produces more layers.',
+                    $offending,
+                    ArchitectureConfiguration::DEFAULT_MAX_EXPANDED_LAYERS,
                 ),
             );
         }
 
         return $value;
+    }
+
+    /**
+     * Best-effort scalar rendering for error context. Strings are quoted;
+     * other scalars are stringified verbatim; non-scalars fall back to a
+     * placeholder since {@see get_debug_type()} already named the kind.
+     */
+    private static function renderScalarForError(mixed $value): string
+    {
+        if (\is_string($value)) {
+            return '"' . $value . '"';
+        }
+        if (\is_bool($value)) {
+            return $value ? 'true' : 'false';
+        }
+        if (\is_float($value) || \is_int($value)) {
+            return (string) $value;
+        }
+
+        return '<not scalar>';
     }
 
     /**
