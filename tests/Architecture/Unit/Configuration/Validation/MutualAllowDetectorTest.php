@@ -12,6 +12,7 @@ use Qualimetrix\Architecture\Domain\Allow\AllowListEntry;
 use Qualimetrix\Architecture\Domain\Allow\AllowTarget;
 use Qualimetrix\Architecture\Domain\Allow\LayerSelector;
 use Qualimetrix\Configuration\Pipeline\DeferredWarning;
+use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Tests\Architecture\Support\AllowListBuilder;
 
 #[CoversClass(MutualAllowDetector::class)]
@@ -185,6 +186,125 @@ final class MutualAllowDetectorTest extends TestCase
             new AllowListEntry(
                 LayerSelector::exact('orders'),
                 [new AllowTarget(LayerSelector::glob('*-store'))],
+            ),
+        ];
+
+        $warnings = [];
+        $this->detector->detect($entries, $warnings);
+
+        self::assertSame([], $warnings);
+    }
+
+    // -------------------------------------------------------------------------
+    // Phase 5 (M5): relations-aware + allow_cross_instance opt-out
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function disjointRelationsDoNotEmitMutualWarning(): void
+    {
+        // A → B restricted to `extends`; B → A restricted to `static_call`.
+        // No DependencyType in common → the two directions describe
+        // non-collapsible cross-relations, not a true mutual allow.
+        $entries = [
+            new AllowListEntry(
+                LayerSelector::exact('a'),
+                [new AllowTarget(LayerSelector::exact('b'), [DependencyType::Extends])],
+            ),
+            new AllowListEntry(
+                LayerSelector::exact('b'),
+                [new AllowTarget(LayerSelector::exact('a'), [DependencyType::StaticCall])],
+            ),
+        ];
+
+        $warnings = [];
+        $this->detector->detect($entries, $warnings);
+
+        self::assertSame([], $warnings);
+    }
+
+    #[Test]
+    public function intersectingRelationsEmitMutualWarning(): void
+    {
+        // A → B and B → A both whitelist `extends` (among others).
+        // The shared relation kind → genuine mutual allow → warning fires.
+        // (Regression pin: the existing non-filtered behaviour must keep firing
+        // when overlap exists.)
+        $entries = [
+            new AllowListEntry(
+                LayerSelector::exact('a'),
+                [new AllowTarget(LayerSelector::exact('b'), [DependencyType::Extends, DependencyType::TypeHint])],
+            ),
+            new AllowListEntry(
+                LayerSelector::exact('b'),
+                [new AllowTarget(LayerSelector::exact('a'), [DependencyType::Extends])],
+            ),
+        ];
+
+        $warnings = [];
+        $this->detector->detect($entries, $warnings);
+
+        self::assertCount(1, $warnings);
+        self::assertStringContainsString('a ↔ b', $warnings[0]->message);
+    }
+
+    #[Test]
+    public function nullRelationsIntersectsWithEveryFilter(): void
+    {
+        // Pre-Step-G bare entries (relations = null) keep "all relations"
+        // semantics; pairing one bare entry with a filtered one still counts
+        // as a mutual allow because the bare side trivially intersects every
+        // filter.
+        $entries = [
+            new AllowListEntry(
+                LayerSelector::exact('a'),
+                [new AllowTarget(LayerSelector::exact('b'))],
+            ),
+            new AllowListEntry(
+                LayerSelector::exact('b'),
+                [new AllowTarget(LayerSelector::exact('a'), [DependencyType::StaticCall])],
+            ),
+        ];
+
+        $warnings = [];
+        $this->detector->detect($entries, $warnings);
+
+        self::assertCount(1, $warnings);
+        self::assertStringContainsString('a ↔ b', $warnings[0]->message);
+    }
+
+    #[Test]
+    public function allowCrossInstanceForwardOptOutSilencesMutualWarning(): void
+    {
+        $entries = [
+            new AllowListEntry(
+                LayerSelector::exact('a'),
+                [new AllowTarget(LayerSelector::exact('b'), null, allowCrossInstance: true)],
+            ),
+            new AllowListEntry(
+                LayerSelector::exact('b'),
+                [new AllowTarget(LayerSelector::exact('a'))],
+            ),
+        ];
+
+        $warnings = [];
+        $this->detector->detect($entries, $warnings);
+
+        self::assertSame([], $warnings);
+    }
+
+    #[Test]
+    public function allowCrossInstanceBackwardOptOutSilencesMutualWarning(): void
+    {
+        // Either direction setting the flag is enough — the user signalled
+        // intent for the cross-edge pattern, suppress the redundant warning.
+        $entries = [
+            new AllowListEntry(
+                LayerSelector::exact('a'),
+                [new AllowTarget(LayerSelector::exact('b'))],
+            ),
+            new AllowListEntry(
+                LayerSelector::exact('b'),
+                [new AllowTarget(LayerSelector::exact('a'), null, allowCrossInstance: true)],
             ),
         ];
 
