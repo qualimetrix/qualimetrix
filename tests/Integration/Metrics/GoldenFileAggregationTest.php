@@ -8,6 +8,8 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Pipeline\AnalysisPipelineInterface;
+use Qualimetrix\Architecture\Domain\ArchitectureConfiguration;
+use Qualimetrix\Architecture\Processing\ArchitectureProcessorInterface;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefaults;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinitionHolder;
 use Qualimetrix\Core\Metric\AggregationMeta;
@@ -33,6 +35,12 @@ final class GoldenFileAggregationTest extends TestCase
 
         $containerFactory = new ContainerFactory();
         $container = $containerFactory->create();
+
+        // Normally done by RuntimeConfigurator (ADR 0008 §3: bind() before
+        // prepare()); replicated here because this test bypasses CheckCommand.
+        /** @var ArchitectureProcessorInterface $architectureProcessor */
+        $architectureProcessor = $container->get(ArchitectureProcessorInterface::class);
+        $architectureProcessor->bind(ArchitectureConfiguration::empty());
 
         /** @var AnalysisPipelineInterface $pipeline */
         $pipeline = $container->get(AnalysisPipelineInterface::class);

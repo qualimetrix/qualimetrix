@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Pipeline;
 
-use LogicException;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Qualimetrix\Analysis\Collection\CollectionOrchestratorInterface;
@@ -14,10 +13,8 @@ use Qualimetrix\Analysis\Discovery\GeneratedFileFilter;
 use Qualimetrix\Analysis\Repository\DefaultMetricRepositoryFactory;
 use Qualimetrix\Analysis\Repository\MetricRepositoryFactoryInterface;
 use Qualimetrix\Analysis\RuleExecution\RuleExecutorInterface;
-use Qualimetrix\Architecture\Domain\ArchitectureConfiguration;
 use Qualimetrix\Architecture\Domain\Layer\ClassContextFactory;
 use Qualimetrix\Architecture\Domain\Layer\ClassSet;
-use Qualimetrix\Architecture\Processing\ArchitectureProcessor;
 use Qualimetrix\Architecture\Processing\ArchitectureProcessorInterface;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
@@ -48,31 +45,19 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
 {
     private readonly DependencyGraphBuilder $graphBuilder;
 
-    private readonly ArchitectureProcessorInterface $architectureProcessor;
-
     public function __construct(
         private readonly FileDiscoveryInterface $defaultDiscovery,
         private readonly CollectionOrchestratorInterface $collectionOrchestrator,
         private readonly RuleExecutorInterface $ruleExecutor,
         private readonly ConfigurationProviderInterface $configurationProvider,
         private readonly MetricEnricher $metricEnricher,
+        private readonly ArchitectureProcessorInterface $architectureProcessor,
         private readonly MetricRepositoryFactoryInterface $repositoryFactory = new DefaultMetricRepositoryFactory(),
         ?DependencyGraphBuilder $graphBuilder = null,
         private readonly LoggerInterface $logger = new NullLogger(),
         private readonly ?ProfilerHolder $profilerHolder = null,
-        ?ArchitectureProcessorInterface $architectureProcessor = null,
     ) {
         $this->graphBuilder = $graphBuilder ?? new DependencyGraphBuilder();
-
-        if ($architectureProcessor === null) {
-            // Default-constructed pipelines (mostly tests) get a self-managed
-            // processor preloaded with the no-op empty configuration so the
-            // ADR 0008 §3 "bind() before prepare()" invariant is satisfied.
-            $this->architectureProcessor = new ArchitectureProcessor();
-            $this->architectureProcessor->bind(ArchitectureConfiguration::empty());
-        } else {
-            $this->architectureProcessor = $architectureProcessor;
-        }
     }
 
     public function analyze(string|array $paths, ?FileDiscoveryInterface $discovery = null): AnalysisResult
@@ -145,18 +130,13 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
         // exposes the resulting ArchitectureConfiguration through
         // getPreparedConfiguration() for the rule layer.
         //
-        // Production: RuntimeConfigurator binds an ArchitectureConfiguration
-        // before this pipeline runs (ADR 0008 §3). Standalone-pipeline tests
-        // skip RuntimeConfigurator and rely on the fallback below — bind an
-        // empty configuration on first use so the lifecycle invariant holds.
+        // ADR 0008 §3 fail-fast contract: bind() must have been called before
+        // prepare(). Production wiring (RuntimeConfigurator) binds before this
+        // pipeline runs. Tests that construct AnalysisPipeline directly must
+        // provide an already-bound processor — TestPipelineBuilder handles this.
         $profiler?->start('architecture-prepare', 'pipeline');
         $classSet = new ClassSet(self::collectClassPaths($repository), new ClassContextFactory());
-        try {
-            $this->architectureProcessor->prepare($graph, $classSet);
-        } catch (LogicException) {
-            $this->architectureProcessor->bind(ArchitectureConfiguration::empty());
-            $this->architectureProcessor->prepare($graph, $classSet);
-        }
+        $this->architectureProcessor->prepare($graph, $classSet);
         $profiler?->stop('architecture-prepare');
 
         // Phases 3-3.8: Enrichment (aggregation, global collectors, computed metrics,
