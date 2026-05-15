@@ -41,7 +41,6 @@ final class LayerSelectorTest extends TestCase
 
         yield 'star wildcard' => ['domain-*', SelectorKind::Glob];
         yield 'question wildcard' => ['domain-?', SelectorKind::Glob];
-        yield 'character class' => ['domain-[ab]', SelectorKind::Glob];
         yield 'leading star' => ['*-repository', SelectorKind::Glob];
 
         yield 'single capture' => ['app-{m}', SelectorKind::Captured];
@@ -113,15 +112,13 @@ final class LayerSelectorTest extends TestCase
         self::assertFalse($selector->matchesTarget('shared', CaptureBinding::empty()));
     }
 
-    #[Test]
-    public function globSelectorSupportsCharacterClasses(): void
-    {
-        $selector = LayerSelector::glob('layer-[ab]');
-
-        self::assertNotNull($selector->matchSource('layer-a'));
-        self::assertNotNull($selector->matchSource('layer-b'));
-        self::assertNull($selector->matchSource('layer-c'));
-    }
+    // Note: glob character classes (`[ab]`) are intentionally rejected at
+    // parse time — see {@see bracketInSelectorIsRejectedWithCaptureHint}
+    // below. The D4 grammar does not require character classes and silently
+    // dispatching {@code 'domain-[m]'} to glob produced semantic divergence
+    // from a confused user's capture-variable intent. The {@code LayerSelector::glob()}
+    // factory still exists for tests, but no production path constructs a
+    // glob selector containing {@code [}.
 
     // -------------------------------------------------------------------------
     // Captured selector
@@ -350,6 +347,66 @@ final class LayerSelectorTest extends TestCase
         $this->expectExceptionMessage("dangling '\\'");
 
         LayerSelectorParser::parse('app-{m}\\');
+    }
+
+    /**
+     * @return iterable<string, array{0: string}>
+     */
+    public static function bracketRejectionProvider(): iterable
+    {
+        // The canonical foot-gun: user types {@code [m]} expecting capture
+        // syntax. Previously the parser silently dispatched to glob and
+        // interpreted {@code [m]} as a character class matching the single
+        // letter `m`, leading to semantic divergence with no warning.
+        yield 'capture mimic single' => ['domain-[m]'];
+        yield 'capture mimic descriptive' => ['app-[var]-suffix'];
+
+        // Confirms the guard fires regardless of whether the bracket is at
+        // the start, middle, or end of the selector.
+        yield 'leading bracket' => ['[m]-suffix'];
+        yield 'trailing bracket' => ['prefix-[m]'];
+
+        // The legacy POSIX character class form is also rejected — fnmatch
+        // would accept it, but the D4 grammar does not require character
+        // classes and accepting them re-opens the foot-gun.
+        yield 'legacy character class' => ['layer-[abc]'];
+
+        // Bracket inside a captured selector also rejected (would be a
+        // literal character class meta inside literal segments).
+        yield 'bracket alongside capture' => ['app-{m}-[v]'];
+    }
+
+    #[Test]
+    #[DataProvider('bracketRejectionProvider')]
+    public function bracketInSelectorIsRejectedWithCaptureHint(string $raw): void
+    {
+        // M17: silent semantic divergence between confused capture intent
+        // (`'domain-[m]'` meaning "capture variable m") and the parser's
+        // historical glob dispatch (`[m]` as a character class) is eliminated
+        // by rejecting any unescaped `[` at parse time with an actionable
+        // hint pointing at the canonical `{var}` capture syntax.
+        try {
+            LayerSelectorParser::parse($raw);
+            self::fail('Expected InvalidSelectorException for selector containing [.');
+        } catch (InvalidSelectorException $e) {
+            self::assertStringContainsString("unsupported '['", $e->getMessage());
+            self::assertStringContainsString('{var}', $e->getMessage());
+        }
+    }
+
+    #[Test]
+    public function globAndCapturedPatternsWithoutBracketsStillParseSuccessfully(): void
+    {
+        // Regression pin: the bracket rejection must not interfere with
+        // valid selectors that don't use `[`. All three selector kinds keep
+        // working.
+        self::assertSame(SelectorKind::Exact, LayerSelectorParser::parse('controller')->kind);
+        self::assertSame(SelectorKind::Glob, LayerSelectorParser::parse('domain-*')->kind);
+        self::assertSame(SelectorKind::Glob, LayerSelectorParser::parse('domain-?')->kind);
+        self::assertSame(SelectorKind::Glob, LayerSelectorParser::parse('*-repository')->kind);
+        self::assertSame(SelectorKind::Captured, LayerSelectorParser::parse('app-{m}')->kind);
+        self::assertSame(SelectorKind::Captured, LayerSelectorParser::parse('{a}-{b}')->kind);
+        self::assertSame(SelectorKind::Captured, LayerSelectorParser::parse('app-{path:**}')->kind);
     }
 
     #[Test]
