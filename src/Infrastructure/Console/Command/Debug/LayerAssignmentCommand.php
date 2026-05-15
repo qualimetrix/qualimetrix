@@ -155,13 +155,8 @@ final class LayerAssignmentCommand extends Command
         }
         $classSet = new ClassSet($classPaths, new \Qualimetrix\Architecture\Domain\Layer\ClassContextFactory());
 
-        $architecture = $resolved->architecture;
-        if ($architecture === null) {
-            return [];
-        }
-
         $this->processor->reset();
-        $this->processor->bind($architecture);
+        $this->processor->bind($resolved->architecture);
         $this->processor->prepare($graph, $classSet);
 
         // classify() yields the head match per class; the debug command

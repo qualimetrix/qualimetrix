@@ -30,6 +30,10 @@ final class ConfigurationPipeline implements ConfigurationPipelineInterface
     /** @var list<ConfigurationStageInterface> */
     private array $stages = [];
 
+    public function __construct(
+        private readonly ArchitectureConfigurationFactory $architectureConfigurationFactory = new ArchitectureConfigurationFactory(),
+    ) {}
+
     public function resolve(ConfigurationContext $context): ResolvedConfiguration
     {
         // Sort by priority (lower = earlier)
@@ -83,7 +87,7 @@ final class ConfigurationPipeline implements ConfigurationPipelineInterface
         // detection) for downstream replay. They are collected into
         // ResolvedConfiguration::$deferredWarnings and drained by
         // RuntimeConfigurator after the user logger is wired up.
-        $factoryResult = (new ArchitectureConfigurationFactory())->fromArray(
+        $factoryResult = $this->architectureConfigurationFactory->fromArray(
             $this->getAssocArrayValue($merged, ConfigSchema::ARCHITECTURE, []),
         );
 
@@ -94,9 +98,9 @@ final class ConfigurationPipeline implements ConfigurationPipelineInterface
             ),
             analysis: AnalysisConfiguration::fromArray($merged),
             ruleOptions: $this->getAssocArrayValue($merged, ConfigSchema::RULES, []),
+            architecture: $factoryResult->configuration,
             computedMetrics: $this->getAssocArrayValue($merged, ConfigSchema::COMPUTED_METRICS, []),
             appliedSources: $appliedSources,
-            architecture: $factoryResult->configuration,
             deferredWarnings: $factoryResult->warnings,
         );
     }

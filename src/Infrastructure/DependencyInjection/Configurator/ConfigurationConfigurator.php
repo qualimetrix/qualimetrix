@@ -99,6 +99,13 @@ final class ConfigurationConfigurator implements ContainerConfiguratorInterface
             $this->srcDir . '/Configuration/Pipeline/Stage/*Interface.php',
         );
 
+        // Register ArchitectureConfigurationFactory so ConfigurationPipeline
+        // can inject it (Phase 4.6 of ADR 0008). The validation helpers under
+        // src/Architecture/Configuration/Validation/ are already auto-registered
+        // by ArchitectureConfigurator.
+        $container->register(\Qualimetrix\Architecture\Configuration\ArchitectureConfigurationFactory::class)
+            ->setAutowired(true);
+
         // ConfigurationPipeline will be populated by ConfigurationStageCompilerPass.
         // The pipeline runs before RuntimeConfigurator::configureLogger() and
         // therefore does NOT receive a logger: any warnings produced during
@@ -107,6 +114,7 @@ final class ConfigurationConfigurator implements ContainerConfiguratorInterface
         // ResolvedConfiguration and replayed once the user-facing logger is
         // ready. See RuntimeConfigurator::drainDeferredWarnings().
         $container->register(ConfigurationPipeline::class)
+            ->setAutowired(true)
             ->setPublic(true);
     }
 }

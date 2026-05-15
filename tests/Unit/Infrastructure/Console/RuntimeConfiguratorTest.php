@@ -10,6 +10,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LogLevel;
+use Qualimetrix\Architecture\Domain\ArchitectureConfiguration;
 use Qualimetrix\Architecture\Processing\ArchitectureProcessor;
 use Qualimetrix\Architecture\Processing\ArchitectureProcessorInterface;
 use Qualimetrix\Configuration\AnalysisConfiguration;
@@ -106,6 +107,7 @@ final class RuntimeConfiguratorTest extends TestCase
             paths: PathsConfiguration::defaults(),
             analysis: new AnalysisConfiguration(),
             ruleOptions: [],
+            architecture: ArchitectureConfiguration::empty(),
         );
 
         $input1 = $this->createCliInput([
@@ -129,6 +131,7 @@ final class RuntimeConfiguratorTest extends TestCase
             paths: PathsConfiguration::defaults(),
             analysis: new AnalysisConfiguration(),
             ruleOptions: [],
+            architecture: ArchitectureConfiguration::empty(),
         );
 
         $input2 = $this->createCliInput([]);
@@ -156,6 +159,7 @@ final class RuntimeConfiguratorTest extends TestCase
                     'exclude_namespaces' => ['App\\Tests'],
                 ],
             ],
+            architecture: ArchitectureConfiguration::empty(),
         );
 
         $input1 = $this->createCliInput([]);
@@ -183,6 +187,7 @@ final class RuntimeConfiguratorTest extends TestCase
             paths: PathsConfiguration::defaults(),
             analysis: new AnalysisConfiguration(),
             ruleOptions: [],
+            architecture: ArchitectureConfiguration::empty(),
         );
 
         $input2 = $this->createCliInput([]);
@@ -211,6 +216,7 @@ final class RuntimeConfiguratorTest extends TestCase
                     'enabled' => true,
                 ],
             ],
+            architecture: ArchitectureConfiguration::empty(),
         );
 
         $input = $this->createCliInput([
@@ -246,6 +252,7 @@ final class RuntimeConfiguratorTest extends TestCase
                     'warningThreshold' => 10,
                 ],
             ],
+            architecture: ArchitectureConfiguration::empty(),
         );
 
         $input = $this->createCliInput([
@@ -281,6 +288,7 @@ final class RuntimeConfiguratorTest extends TestCase
                     'errorThreshold' => 20,
                 ],
             ],
+            architecture: ArchitectureConfiguration::empty(),
         );
 
         $input = $this->createCliInput([
@@ -314,6 +322,7 @@ final class RuntimeConfiguratorTest extends TestCase
                     'warningThreshold' => 10,
                 ],
             ],
+            architecture: ArchitectureConfiguration::empty(),
         );
 
         $input = $this->createCliInput([
@@ -368,6 +377,7 @@ final class RuntimeConfiguratorTest extends TestCase
             paths: PathsConfiguration::defaults(),
             analysis: new AnalysisConfiguration(frameworkNamespaces: ['Symfony', 'Doctrine']),
             ruleOptions: [],
+            architecture: ArchitectureConfiguration::empty(),
         );
 
         $input = $this->createCliInput([]);
@@ -391,6 +401,7 @@ final class RuntimeConfiguratorTest extends TestCase
             paths: PathsConfiguration::defaults(),
             analysis: new AnalysisConfiguration(frameworkNamespaces: ['Symfony']),
             ruleOptions: [],
+            architecture: ArchitectureConfiguration::empty(),
         );
 
         $configProvider
@@ -410,6 +421,7 @@ final class RuntimeConfiguratorTest extends TestCase
             paths: PathsConfiguration::defaults(),
             analysis: new AnalysisConfiguration(),
             ruleOptions: [],
+            architecture: ArchitectureConfiguration::empty(),
         );
 
         $this->configurator->configure($resolved2, $this->createCliInput([]), $this->createOutput());
@@ -428,6 +440,7 @@ final class RuntimeConfiguratorTest extends TestCase
             paths: PathsConfiguration::defaults(),
             analysis: new AnalysisConfiguration(excludeHealth: ['typing']),
             ruleOptions: [],
+            architecture: ArchitectureConfiguration::empty(),
         );
 
         $input = $this->createCliInput([]);
@@ -475,6 +488,7 @@ final class RuntimeConfiguratorTest extends TestCase
                     'exclude_methods' => ['getName', 'getDescription'],
                 ],
             ],
+            architecture: ArchitectureConfiguration::empty(),
         );
 
         $this->configurator->configure($resolved, $this->createCliInput([]), $this->createOutput());
@@ -498,6 +512,7 @@ final class RuntimeConfiguratorTest extends TestCase
                     'exclude_methods' => 'getName, getDescription',
                 ],
             ],
+            architecture: ArchitectureConfiguration::empty(),
         );
 
         $this->configurator->configure($resolved, $this->createCliInput([]), $this->createOutput());
@@ -521,6 +536,7 @@ final class RuntimeConfiguratorTest extends TestCase
                     'exclude_methods' => 'getName',
                 ],
             ],
+            architecture: ArchitectureConfiguration::empty(),
         );
 
         $this->configurator->configure($resolved, $this->createCliInput([]), $this->createOutput());
@@ -544,6 +560,7 @@ final class RuntimeConfiguratorTest extends TestCase
                     'warning' => 5,
                 ],
             ],
+            architecture: ArchitectureConfiguration::empty(),
         );
 
         $this->configurator->configure($resolved, $this->createCliInput([]), $this->createOutput());
@@ -560,6 +577,7 @@ final class RuntimeConfiguratorTest extends TestCase
             paths: PathsConfiguration::defaults(),
             analysis: new AnalysisConfiguration(excludeHealth: ['health.complexity', 'cohesion']),
             ruleOptions: [],
+            architecture: ArchitectureConfiguration::empty(),
         );
 
         $input = $this->createCliInput([]);
@@ -598,6 +616,7 @@ final class RuntimeConfiguratorTest extends TestCase
             deferredWarnings: [
                 new DeferredWarning(LogLevel::WARNING, 'architecture.allow: mutual-allow detected between layer pair(s): a ↔ b.'),
             ],
+            architecture: ArchitectureConfiguration::empty(),
         );
 
         $this->configurator->configure($resolved, $this->createCliInput([]), $output);
@@ -623,6 +642,7 @@ final class RuntimeConfiguratorTest extends TestCase
             paths: PathsConfiguration::defaults(),
             analysis: new AnalysisConfiguration(),
             ruleOptions: [],
+            architecture: ArchitectureConfiguration::empty(),
         );
 
         $this->configurator->configure($resolved, $this->createCliInput([]), $output);
@@ -650,6 +670,7 @@ final class RuntimeConfiguratorTest extends TestCase
                 new DeferredWarning(LogLevel::WARNING, 'first warning'),
                 new DeferredWarning(LogLevel::ERROR, 'second error'),
             ],
+            architecture: ArchitectureConfiguration::empty(),
         );
 
         $this->configurator->configure($resolved, $this->createCliInput([]), $output);

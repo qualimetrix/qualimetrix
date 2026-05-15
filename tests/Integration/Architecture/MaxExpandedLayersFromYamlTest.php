@@ -116,13 +116,7 @@ final class MaxExpandedLayersFromYamlTest extends TestCase
 
     private function resolveArchitecture(): ArchitectureConfiguration
     {
-        $resolved = $this->resolveFullPipeline();
-        self::assertNotNull(
-            $resolved->architecture,
-            'ConfigurationPipeline must produce a non-null ArchitectureConfiguration when architecture is declared.',
-        );
-
-        return $resolved->architecture;
+        return $this->resolveFullPipeline()->architecture;
     }
 
     private function writeYaml(string $contents): void

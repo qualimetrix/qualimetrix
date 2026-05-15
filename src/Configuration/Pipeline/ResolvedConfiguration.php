@@ -11,13 +11,11 @@ use Qualimetrix\Configuration\PathsConfiguration;
 /**
  * Fully resolved configuration after pipeline processing.
  *
- * The `$architecture` field is nullable so that existing test fixtures and
- * non-architecture-aware call sites can construct a ResolvedConfiguration
- * without depending on the architecture domain. Production code in
- * {@see ConfigurationPipeline::resolve()} always populates this field with
- * a (possibly empty) {@see ArchitectureConfiguration}; consumers that want
- * a guaranteed non-null value can fall back to an empty configuration when
- * they encounter null.
+ * Phase 4.6 (ADR 0008): the `$architecture` field is non-nullable. Production
+ * code in {@see ConfigurationPipeline::resolve()} has always populated it with
+ * a (possibly empty) {@see ArchitectureConfiguration}; the type now matches
+ * that runtime invariant. Tests that construct fixtures explicitly pass
+ * {@see ArchitectureConfiguration::empty()}.
  *
  * **Deferred warnings.** {@see $deferredWarnings} carries PSR-3 records that
  * the configuration pipeline produced *before* the user-facing logger was
@@ -39,9 +37,9 @@ final readonly class ResolvedConfiguration
         public PathsConfiguration $paths,
         public AnalysisConfiguration $analysis,
         public array $ruleOptions,
+        public ArchitectureConfiguration $architecture,
         public array $computedMetrics = [],
         public array $appliedSources = [],
-        public ?ArchitectureConfiguration $architecture = null,
         public array $deferredWarnings = [],
     ) {}
 }
