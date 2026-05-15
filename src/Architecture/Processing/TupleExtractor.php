@@ -20,21 +20,34 @@ use Qualimetrix\Core\Util\NamespaceMatcher;
  *
  * Extracted from {@see LayerExpansionStage} in Phase 4.1 of the remediation
  * (ADR 0008). The algorithm and its public output (deduplicated list of
- * binding tuples, lex-sorted) are unchanged.
+ * binding tuples, lex-sorted) are unchanged. Phase 5 of the remediation
+ * tightens two semantic gaps:
  *
- * **M1 (Phase 5.1, exclude during observation).** The template's
- * {@see ExcludeSpec} is evaluated AFTER capture binding succeeds, using the
- * substituted bindings — a class that would be removed from the concrete
- * layer at runtime is also removed from tuple observation, so excluded
- * classes do not contribute "phantom" concrete layers.
+ * - **M1 (exclude during observation).** The template's {@see ExcludeSpec}
+ *   is evaluated AFTER capture binding succeeds, using the substituted
+ *   bindings — a class that would be removed from the concrete layer
+ *   at runtime is also removed from tuple observation, so excluded classes
+ *   do not contribute "phantom" concrete layers.
+ *
+ * - **M2 Path B (mode-aware non-pattern criteria).** Non-pattern criteria
+ *   ({@code suffix}, {@code attributes}, {@code implements}, {@code extends})
+ *   now respect the membership's {@see MatchMode}: under
+ *   {@see MatchMode::Any} they act as OR alongside the capture-producing
+ *   pattern (a class with a binding from the capture pattern is observed
+ *   even if none of the non-pattern criteria match); under
+ *   {@see MatchMode::All} every declared non-pattern criterion must match
+ *   (the previous AND behavior). This aligns template expansion with the
+ *   runtime D2 membership semantics implemented by
+ *   {@see \Qualimetrix\Architecture\Domain\Layer\LayerDefinition::matches()}.
  *
  * **Capture-producing vs non-capturing criteria (D7 carve-out).** Within
  * {@see MembershipSpec::$patterns}, patterns are classified: a pattern that
  * contains at least one `{var}` placeholder is capture-producing; a plain
  * glob is non-capturing. {@see MembershipSpec::$mode} (`match: any|all`)
- * governs only the combination of capture-producing patterns. Non-capturing
- * patterns plus the {@code suffix}, {@code attributes}, {@code implements},
- * and {@code extends} criteria ALWAYS act as an AND-filter.
+ * governs the combination of capture-producing patterns AND (post-M2 Path B)
+ * the non-pattern criteria above. Non-capturing patterns continue to act as
+ * a pure AND-filter regardless of mode — they describe "where the layer
+ * lives" and would never widen membership.
  *
  * **Determinism.** Observed tuples are sorted lexicographically by the
  * template's {@see TemplateLayerDefinition::$variables} order so the result
@@ -85,12 +98,12 @@ final class TupleExtractor
                 continue;
             }
 
-            if (!self::passesNonPatternCriteria($membership, $context)) {
+            $tuple = self::extractTuple($captureProducing, $context->fqn, $membership->mode);
+            if ($tuple === null) {
                 continue;
             }
 
-            $tuple = self::extractTuple($captureProducing, $context->fqn, $membership->mode);
-            if ($tuple === null) {
+            if (!self::passesNonPatternCriteria($membership, $context)) {
                 continue;
             }
 
@@ -166,12 +179,43 @@ final class TupleExtractor
     }
 
     /**
-     * Returns true if the class context satisfies every declared non-pattern
-     * criterion (suffix / attributes / implements / extends). Empty criteria
-     * trivially pass — D7 always AND.
+     * Returns true if the class context satisfies the declared non-pattern
+     * criteria (suffix / attributes / implements / extends) under the
+     * membership's match mode.
+     *
+     * **M2 Path B (Phase 5.2).** Pre-remediation, this method enforced AND
+     * across every declared non-pattern criterion regardless of the
+     * membership's {@see MatchMode} — a deviation from the D2 runtime
+     * semantics in
+     * {@see \Qualimetrix\Architecture\Domain\Layer\LayerDefinition::matches()}.
+     * The remediation aligns the two:
+     *
+     * - {@see MatchMode::Any}: a class that already binds via the
+     *   capture-producing pattern passes here regardless of the non-pattern
+     *   criteria. If the caller supplied any non-pattern criteria, they
+     *   widen membership (OR) rather than narrow it — this matches the
+     *   runtime D2 "any declared kind matches" semantics. A class that
+     *   matches NEITHER the capture pattern (already filtered above) NOR
+     *   any non-pattern criterion is implicitly absent from this code path.
+     *
+     * - {@see MatchMode::All}: every declared non-pattern criterion must
+     *   match, mirroring the pre-remediation behavior. The capture pattern
+     *   matching has already been verified by the caller.
+     *
+     * Empty (undeclared) criteria are trivially satisfied under either
+     * mode.
      */
     private static function passesNonPatternCriteria(MembershipSpec $membership, ClassContext $context): bool
     {
+        if ($membership->mode === MatchMode::Any) {
+            // Capture pattern already matched in the caller — that alone
+            // establishes membership under D2. Non-pattern criteria, when
+            // declared, only widen the set, so a class that reaches this
+            // point trivially passes.
+            return true;
+        }
+
+        // MatchMode::All — every declared non-pattern criterion must match.
         if ($membership->suffix !== [] && !self::matchesAnySuffix($membership->suffix, $context->shortName)) {
             return false;
         }

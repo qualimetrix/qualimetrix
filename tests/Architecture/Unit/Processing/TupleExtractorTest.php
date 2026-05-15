@@ -136,24 +136,62 @@ final class TupleExtractorTest extends TestCase
     }
 
     #[Test]
-    public function collect_appliesSuffixCriterionAsAndFilter(): void
+    public function collect_matchAll_suffixCriterionNarrowsTupleSet(): void
     {
+        // Pre-M2 (Phase 5.2 Path B), suffix acted as AND regardless of mode.
+        // Post-M2, suffix is mode-aware: under `match: all` it still narrows
+        // (this test), while under `match: any` it widens (see the dedicated
+        // mode-any test below).
         $template = new TemplateLayerDefinition(
             'domain-{module}',
             new MembershipSpec(
                 patterns: ['App\\Module\\{module}\\**'],
                 suffix: ['Service'],
+                mode: MatchMode::All,
             ),
         );
 
         $classes = self::classSet([
-            'App\\Module\\Order\\Domain\\OrderService',
-            'App\\Module\\Order\\Domain\\OrderRepository',
+            'App\\Module\\Order\\Domain\\OrderService',     // pattern + suffix
+            'App\\Module\\Audit\\Domain\\AuditRepository',  // pattern only — under `all`, no tuple
         ]);
 
         $tuples = $this->extractor->collect($template, $classes);
 
         self::assertSame([['module' => 'Order']], $tuples);
+    }
+
+    #[Test]
+    public function collect_matchAny_suffixCriterionDoesNotNarrowTupleSet(): void
+    {
+        // M2 Path B positive case: under `match: any`, a class that binds via
+        // the capture pattern produces a tuple even if it fails every
+        // declared non-pattern criterion. The previous AND-filter behavior
+        // is gone — non-pattern criteria now widen rather than narrow
+        // membership, aligning expansion with runtime D2 semantics.
+        $template = new TemplateLayerDefinition(
+            'domain-{module}',
+            new MembershipSpec(
+                patterns: ['App\\Module\\{module}\\**'],
+                suffix: ['Service'],
+                mode: MatchMode::Any,
+            ),
+        );
+
+        $classes = self::classSet([
+            'App\\Module\\Order\\Domain\\OrderService',
+            'App\\Module\\Audit\\Domain\\AuditRepository',  // captures `Audit` even though suffix fails
+        ]);
+
+        $tuples = $this->extractor->collect($template, $classes);
+
+        self::assertSame(
+            [
+                ['module' => 'Audit'],
+                ['module' => 'Order'],
+            ],
+            $tuples,
+        );
     }
 
     #[Test]

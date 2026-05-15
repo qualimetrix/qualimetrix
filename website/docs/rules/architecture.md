@@ -392,6 +392,28 @@ architecture:
   max_expanded_layers: 2000
 ```
 
+#### Semantic notes — `match: any | all` and non-pattern criteria
+
+Template expansion is **mode-aware** for the non-pattern criteria (`suffix`, `attributes`, `implements`, `extends`), aligning with the runtime membership semantics described under [Membership beyond namespace patterns](#membership-beyond-namespace-patterns).
+
+| Mode            | Capture-producing patterns                                               | Non-pattern criteria (`suffix` / `attributes` / `implements` / `extends`)                                                                                  |
+| --------------- | ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `any` (default) | At least one must match to bind                                          | Optional — they widen membership, never narrow it. A class that binds via the capture pattern produces a tuple regardless of declared non-pattern criteria |
+| `all`           | Every capture-producing pattern must match (bindings union consistently) | Every declared non-pattern criterion must also match — AND filter on top of the bindings                                                                   |
+
+> **Behavior change.** Pre-0.18, expansion ignored `match` for non-pattern criteria and treated them as AND regardless of mode. Under `match: any`, configurations with non-empty `suffix` / `attributes` / `implements` / `extends` may now produce **more** concrete layers than before. The `architecture.max_expanded_layers` ceiling guards against unintended explosion; raise it explicitly if your project genuinely produces more bounded contexts than the default permits.
+
+Non-capture **patterns** (plain globs without `{var}` placeholders) continue to act as a pure AND filter regardless of mode — they describe where the layer lives and would never widen membership. To opt into a strict-membership template, declare `match: all`:
+
+```yaml
+- name: 'aggregate-{module}'
+  match: all
+  patterns: ['App\Module\{module}\Domain\**']
+  suffix: ['Aggregate']
+  # Tuple is observed only for modules with a class matching BOTH the
+  # capture pattern AND the `Aggregate` short-name suffix.
+```
+
 ### Excluding subtrees within a layer (`exclude:`)
 
 A layer can carry an `exclude:` block with the same shape as the membership criteria (`patterns`, `suffix`, `attributes`, `implements`, `extends`). Classes that match the exclude block are removed from the layer regardless of positive membership — `exclude:` is a hard filter that runs after the positive criteria.
