@@ -61,7 +61,7 @@ use Qualimetrix\Core\Util\NamespaceMatcher;
  *
  * **Empty-template signal.** Templates that observe zero tuples are
  * collected into {@see LayerExpansionResult::$emptyTemplateNames}; the
- * {@see \Qualimetrix\Rules\Architecture\LayerViolationRule} drains the list
+ * {@see \Qualimetrix\Architecture\Rules\LayerViolationRule} drains the list
  * into one {@code architecture.empty-template} warning per name at the end
  * of the run.
  */

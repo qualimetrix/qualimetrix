@@ -11,10 +11,10 @@ use Qualimetrix\Analysis\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Architecture\Configuration\ArchitectureConfigurationFactory;
 use Qualimetrix\Architecture\Domain\ArchitectureConfigurationHolder;
 use Qualimetrix\Architecture\Processing\LayerExpansionException;
+use Qualimetrix\Architecture\Rules\LayerViolationRule;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
-use Qualimetrix\Rules\Architecture\LayerViolationRule;
 
 /**
  * End-to-end test for Phase 2 direction 2 (template layers). Loads a YAML

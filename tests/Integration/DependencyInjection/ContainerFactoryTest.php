@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Collection\Metric\CompositeCollector;
 use Qualimetrix\Analysis\Pipeline\AnalysisPipelineInterface;
+use Qualimetrix\Architecture\Rules\CircularDependencyRule;
 use Qualimetrix\Configuration\AnalysisConfiguration;
 use Qualimetrix\Configuration\ConfigurationHolder;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
@@ -30,7 +31,6 @@ use Qualimetrix\Metrics\Structure\MethodCountCollector;
 use Qualimetrix\Metrics\Structure\RfcCollector;
 use Qualimetrix\Metrics\Structure\TccLccCollector;
 use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
-use Qualimetrix\Rules\Architecture\CircularDependencyRule;
 use Qualimetrix\Rules\CodeSmell\BooleanArgumentRule;
 use Qualimetrix\Rules\CodeSmell\CountInLoopRule;
 use Qualimetrix\Rules\CodeSmell\DebugCodeRule;
@@ -361,7 +361,7 @@ final class ContainerFactoryTest extends TestCase
             CboRule::class,
             DistanceRule::class,
             CircularDependencyRule::class,
-            \Qualimetrix\Rules\Architecture\LayerViolationRule::class,
+            \Qualimetrix\Architecture\Rules\LayerViolationRule::class,
             LongParameterListRule::class,
             BooleanArgumentRule::class,
             CountInLoopRule::class,

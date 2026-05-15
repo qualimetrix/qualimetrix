@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Rules\Architecture;
+namespace Qualimetrix\Architecture\Rules;
 
 use Qualimetrix\Architecture\Domain\ArchitectureConfiguration;
 use Qualimetrix\Architecture\Domain\CoverageMode;

@@ -223,40 +223,55 @@ final class DocumentationConsistencyTest extends TestCase
     }
 
     /**
-     * Scans src/Rules/ for concrete RuleInterface implementations.
+     * Scans src/Rules/ and src/Architecture/Rules/ for concrete
+     * RuleInterface implementations.
+     *
+     * Architecture rules live under src/Architecture/Rules/ per the
+     * vertical-slice migration (ADR 0010); both directories are scanned
+     * so the documentation-consistency assertions stay accurate.
      *
      * @return iterable<array{fqcn: class-string<RuleInterface>, reflection: ReflectionClass<RuleInterface>}>
      */
     private function scanRuleClasses(): iterable
     {
-        $rulesDir = self::$projectRoot . '/src/Rules';
-        $iterator = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($rulesDir, FilesystemIterator::SKIP_DOTS),
-        );
+        $rulesDirs = [
+            self::$projectRoot . '/src/Rules',
+            self::$projectRoot . '/src/Architecture/Rules',
+        ];
 
-        foreach ($iterator as $file) {
-            if (!str_ends_with($file->getFilename(), 'Rule.php') || str_starts_with($file->getFilename(), 'Abstract')) {
+        foreach ($rulesDirs as $rulesDir) {
+            if (!is_dir($rulesDir)) {
                 continue;
             }
 
-            $content = file_get_contents($file->getPathname());
-            \assert($content !== false);
+            $iterator = new RecursiveIteratorIterator(
+                new RecursiveDirectoryIterator($rulesDir, FilesystemIterator::SKIP_DOTS),
+            );
 
-            if (preg_match('/^namespace\s+([\w\\\\]+);/m', $content, $nsMatch) === 1
-                && preg_match('/^(?:final\s+)?class\s+(\w+)/m', $content, $classMatch) === 1) {
-                $fqcn = $nsMatch[1] . '\\' . $classMatch[1];
-
-                if (!class_exists($fqcn)) {
+            foreach ($iterator as $file) {
+                if (!str_ends_with($file->getFilename(), 'Rule.php') || str_starts_with($file->getFilename(), 'Abstract')) {
                     continue;
                 }
 
-                $reflection = new ReflectionClass($fqcn);
+                $content = file_get_contents($file->getPathname());
+                \assert($content !== false);
 
-                if ($reflection->isAbstract() || !$reflection->implementsInterface(RuleInterface::class)) {
-                    continue;
+                if (preg_match('/^namespace\s+([\w\\\\]+);/m', $content, $nsMatch) === 1
+                    && preg_match('/^(?:final\s+)?class\s+(\w+)/m', $content, $classMatch) === 1) {
+                    $fqcn = $nsMatch[1] . '\\' . $classMatch[1];
+
+                    if (!class_exists($fqcn)) {
+                        continue;
+                    }
+
+                    $reflection = new ReflectionClass($fqcn);
+
+                    if ($reflection->isAbstract() || !$reflection->implementsInterface(RuleInterface::class)) {
+                        continue;
+                    }
+
+                    yield ['fqcn' => $fqcn, 'reflection' => $reflection]; // @phpstan-ignore generator.valueType
                 }
-
-                yield ['fqcn' => $fqcn, 'reflection' => $reflection]; // @phpstan-ignore generator.valueType
             }
         }
     }

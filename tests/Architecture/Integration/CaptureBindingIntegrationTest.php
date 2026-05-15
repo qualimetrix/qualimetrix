@@ -11,10 +11,10 @@ use Qualimetrix\Analysis\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Pipeline\AnalysisResult;
 use Qualimetrix\Architecture\Configuration\ArchitectureConfigurationFactory;
 use Qualimetrix\Architecture\Domain\ArchitectureConfigurationHolder;
+use Qualimetrix\Architecture\Rules\LayerViolationRule;
 use Qualimetrix\Configuration\Loader\YamlConfigLoader;
 use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
-use Qualimetrix\Rules\Architecture\LayerViolationRule;
 
 /**
  * End-to-end test for Phase 2 Step E (direction 2b). Loads a YAML config with

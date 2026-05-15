@@ -22,6 +22,8 @@ use Qualimetrix\Analysis\Pipeline\MetricEnricher;
 use Qualimetrix\Analysis\Repository\DefaultMetricRepositoryFactory;
 use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\RuleExecution\RuleExecutor;
+use Qualimetrix\Architecture\Rules\CircularDependencyOptions;
+use Qualimetrix\Architecture\Rules\CircularDependencyRule;
 use Qualimetrix\Configuration\AnalysisConfiguration;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Core\Dependency\Dependency;
@@ -35,8 +37,6 @@ use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Metrics\Coupling\CouplingCollector;
-use Qualimetrix\Rules\Architecture\CircularDependencyOptions;
-use Qualimetrix\Rules\Architecture\CircularDependencyRule;
 use SplFileInfo;
 
 /**

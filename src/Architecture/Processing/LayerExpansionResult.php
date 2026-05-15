@@ -20,7 +20,7 @@ use Qualimetrix\Architecture\Domain\Layer\LayerDefinition;
  *    captured values.
  *
  * 2. {@see emptyTemplateNames} — name templates that matched zero classes
- *    during expansion. {@see \Qualimetrix\Rules\Architecture\LayerViolationRule}
+ *    during expansion. {@see \Qualimetrix\Architecture\Rules\LayerViolationRule}
  *    drains this list into one {@code architecture.empty-template} warning
  *    diagnostic per template name at the end of the run.
  *
