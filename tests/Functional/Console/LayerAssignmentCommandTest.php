@@ -10,15 +10,9 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Architecture\Domain\Layer\LayerDefinition;
 use Qualimetrix\Architecture\Domain\Layer\LayerRegistry;
 use Qualimetrix\Architecture\Domain\Layer\MembershipSpec;
-use Qualimetrix\Configuration\Discovery\ComposerReader;
-use Qualimetrix\Configuration\Loader\YamlConfigLoader;
-use Qualimetrix\Configuration\Pipeline\ConfigurationPipeline;
-use Qualimetrix\Configuration\Pipeline\Stage\CliStage;
-use Qualimetrix\Configuration\Pipeline\Stage\ComposerDiscoveryStage;
-use Qualimetrix\Configuration\Pipeline\Stage\ConfigFileStage;
-use Qualimetrix\Configuration\Pipeline\Stage\DefaultsStage;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentCommand;
+use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -228,9 +222,15 @@ final class LayerAssignmentCommandTest extends TestCase
     #[Test]
     public function noLayersDeclared_reportsAbsenceWithoutCatchAllSuggestion(): void
     {
-        // Config file exists but has no architecture section.
+        // Config file exists but has no architecture section. Use an empty
+        // source path so the command's full Discovery + Collection phases
+        // run in milliseconds.
+        $emptyPath = $this->tempDir . '/empty-source';
+        if (!is_dir($emptyPath)) {
+            mkdir($emptyPath, 0o755, true);
+        }
         $configPath = $this->tempDir . '/qmx-empty.yaml';
-        file_put_contents($configPath, "paths: ['.']\n");
+        file_put_contents($configPath, "paths: ['{$emptyPath}']\n");
 
         $tester = $this->newTester();
         $exit = $tester->execute([
@@ -251,7 +251,7 @@ final class LayerAssignmentCommandTest extends TestCase
         // and surfaces under `list` output. This guards against accidental
         // removal of the #[AsCommand] attribute or the command-loader entry.
         $application = new Application();
-        $application->addCommand(new LayerAssignmentCommand($this->buildPipeline()));
+        $application->addCommand($this->buildCommand());
 
         self::assertTrue($application->has('debug:layer-assignment'));
         $command = $application->get('debug:layer-assignment');
@@ -319,21 +319,18 @@ final class LayerAssignmentCommandTest extends TestCase
 
     private function newTester(): CommandTester
     {
-        $command = new LayerAssignmentCommand($this->buildPipeline());
-
-        return new CommandTester($command);
+        return new CommandTester($this->buildCommand());
     }
 
-    private function buildPipeline(): ConfigurationPipeline
+    private function buildCommand(): LayerAssignmentCommand
     {
-        $pipeline = new ConfigurationPipeline();
-        $pipeline->addStage(new DefaultsStage());
-        $pipeline->addStage(new ComposerDiscoveryStage(new ComposerReader()));
-        $pipeline->addStage(new ConfigFileStage(new YamlConfigLoader()));
-        $pipeline->addStage(new CliStage());
+        $container = (new ContainerFactory())->create();
+        $command = $container->get(LayerAssignmentCommand::class);
+        \assert($command instanceof LayerAssignmentCommand);
 
-        return $pipeline;
+        return $command;
     }
+
 
     /**
      * Writes a qmx.yaml with the given ordered list of layers to the temp
@@ -356,7 +353,14 @@ final class LayerAssignmentCommandTest extends TestCase
             $allowYaml .= \sprintf("    %s: []\n", $name);
         }
 
-        $yaml = "architecture:\n  layers:\n{$layerYaml}  allow:\n{$allowYaml}  coverage: ignore\n";
+        // Use a non-existent path so file discovery yields zero project files
+        // — the per-class match is independent of the file set, and this
+        // avoids walking the full repository tree during functional tests.
+        $emptyPath = $this->tempDir . '/empty-source';
+        if (!is_dir($emptyPath)) {
+            mkdir($emptyPath, 0o755, true);
+        }
+        $yaml = "paths: ['{$emptyPath}']\narchitecture:\n  layers:\n{$layerYaml}  allow:\n{$allowYaml}  coverage: ignore\n";
 
         $path = $this->tempDir . '/qmx-' . uniqid() . '.yaml';
         file_put_contents($path, $yaml);
