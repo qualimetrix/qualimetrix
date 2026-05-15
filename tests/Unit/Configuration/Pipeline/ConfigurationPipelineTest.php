@@ -231,8 +231,6 @@ final class ConfigurationPipelineTest extends TestCase
         $context = new ConfigurationContext(new ArrayInput([]), '/tmp');
 
         $resolved = $pipeline->resolve($context);
-
-        self::assertNotNull($resolved->architecture);
         self::assertTrue($resolved->architecture->isEmpty());
         self::assertSame(CoverageMode::Ignore, $resolved->architecture->coverage());
     }
@@ -259,8 +257,6 @@ final class ConfigurationPipelineTest extends TestCase
 
         $context = new ConfigurationContext(new ArrayInput([]), '/tmp');
         $resolved = $pipeline->resolve($context);
-
-        self::assertNotNull($resolved->architecture);
         self::assertFalse($resolved->architecture->isEmpty());
         // Declaration order is preserved (not alphabetically sorted).
         self::assertSame(['controller', 'service'], $resolved->architecture->registry()->layerNames());
@@ -358,8 +354,6 @@ final class ConfigurationPipelineTest extends TestCase
 
         $context = new ConfigurationContext(new ArrayInput([]), '/tmp');
         $resolved = $pipeline->resolve($context);
-
-        self::assertNotNull($resolved->architecture);
         // Project's single 'domain' layer replaced the preset's two.
         self::assertSame(['domain'], $resolved->architecture->registry()->layerNames());
         self::assertSame(CoverageMode::Error, $resolved->architecture->coverage());
@@ -393,8 +387,6 @@ final class ConfigurationPipelineTest extends TestCase
 
         $context = new ConfigurationContext(new ArrayInput([]), '/tmp');
         $resolved = $pipeline->resolve($context);
-
-        self::assertNotNull($resolved->architecture);
         self::assertSame(['controller', 'service'], $resolved->architecture->registry()->layerNames());
         self::assertSame(CoverageMode::Error, $resolved->architecture->coverage());
     }

@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Discovery\FinderFileDiscovery;
+use Qualimetrix\Architecture\Domain\ArchitectureConfiguration;
 use Qualimetrix\Configuration\AnalysisConfiguration;
 use Qualimetrix\Configuration\PathsConfiguration;
 use Qualimetrix\Configuration\Pipeline\ResolvedConfiguration;
@@ -29,6 +30,7 @@ final class GitScopeResolverTest extends TestCase
             paths: new PathsConfiguration(['src']),
             analysis: new AnalysisConfiguration(projectRoot: $projectRoot),
             ruleOptions: [],
+            architecture: ArchitectureConfiguration::empty(),
         );
 
         $definition = new InputDefinition([
@@ -54,6 +56,7 @@ final class GitScopeResolverTest extends TestCase
             paths: new PathsConfiguration(['src']),
             analysis: new AnalysisConfiguration(projectRoot: '/some/project'),
             ruleOptions: [],
+            architecture: ArchitectureConfiguration::empty(),
         );
 
         $definition = new InputDefinition([
@@ -77,6 +80,7 @@ final class GitScopeResolverTest extends TestCase
             paths: new PathsConfiguration(['src'], ['vendor', 'tests']),
             analysis: new AnalysisConfiguration(projectRoot: $projectRoot),
             ruleOptions: [],
+            architecture: ArchitectureConfiguration::empty(),
         );
 
         $definition = new InputDefinition([
@@ -102,6 +106,7 @@ final class GitScopeResolverTest extends TestCase
             paths: new PathsConfiguration(['src']),
             analysis: new AnalysisConfiguration(projectRoot: '/some/project'),
             ruleOptions: [],
+            architecture: ArchitectureConfiguration::empty(),
         );
 
         $definition = new InputDefinition([
