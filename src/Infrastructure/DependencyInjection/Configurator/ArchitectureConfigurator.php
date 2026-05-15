@@ -32,9 +32,10 @@ use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
  * exceptions and are intentionally NOT scanned: they are constructed by
  * factories and helpers, not retrieved from the container.
  *
- * Cross-feature wiring (the shared {@code ArchitectureConfigurationHolder}
- * runtime holder and {@code LayerExpansionStage}) continues to live in
- * {@see AnalysisConfigurator} until the holder is retired; see ADR 0008.
+ * Cross-feature wiring lives in {@see AnalysisConfigurator}: it wires
+ * {@code ArchitectureProcessorInterface} into {@code AnalysisPipeline}
+ * so the rules-pipeline lifecycle (ADR 0008) is fed the per-run graph and
+ * class set.
  *
  * The {@see ArchitectureProcessorInterface} alias registered here is the
  * load-bearing handle for both rule injection (resolved by

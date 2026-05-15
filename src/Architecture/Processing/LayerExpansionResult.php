@@ -24,11 +24,11 @@ use Qualimetrix\Architecture\Domain\Layer\LayerDefinition;
  *    drains this list into one {@code architecture.empty-template} warning
  *    diagnostic per template name at the end of the run.
  *
- * Stored on
- * {@see \Qualimetrix\Architecture\Domain\ArchitectureConfigurationHolder}
- * between collection and rule execution; deliberately not threaded through
- * {@see \Qualimetrix\Core\Rule\AnalysisContext} so the rule-context boundary
- * stays Phase-1-stable.
+ * Consumed by
+ * {@see \Qualimetrix\Architecture\Processing\ArchitectureProcessor::prepare()}
+ * which folds the result into the prepared configuration; the rule layer
+ * reads the post-expansion state through
+ * {@see \Qualimetrix\Architecture\Processing\ArchitectureProcessorInterface::getPreparedConfiguration()}.
  */
 final readonly class LayerExpansionResult
 {

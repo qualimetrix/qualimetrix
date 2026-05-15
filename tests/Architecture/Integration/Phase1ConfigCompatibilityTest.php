@@ -20,8 +20,8 @@ use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
  *
  * The test loads a representative Phase-1 config through the real
  * {@see ArchitectureConfigurationFactory} (exercising the full YAML →
- * validators → typed-VO path), feeds the result into the
- * {@see ArchitectureConfigurationHolder}, runs the live pipeline against
+ * validators → typed-VO path), binds the result on the shared
+ * {@see ArchitectureProcessorInterface}, runs the live pipeline against
  * the canonical {@code ArchitectureSample} fixture, and asserts the
  * normalised violation set matches a golden JSON snapshot.
  *

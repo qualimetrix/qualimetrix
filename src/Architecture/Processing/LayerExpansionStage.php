@@ -16,10 +16,10 @@ use Qualimetrix\Architecture\Domain\Layer\TemplateLayerDefinition;
  * Plugs into {@see \Qualimetrix\Analysis\Pipeline\AnalysisPipeline} between
  * the collection and rule-execution phases (after {@code CollectionOrchestrator}
  * has produced the class set and the dependency graph, but before
- * {@code MetricEnricher} runs). Result is written into the existing
- * {@see \Qualimetrix\Architecture\Domain\ArchitectureConfigurationHolder} so
- * the rule layer reads it without any change to the {@code AnalysisContext}
- * surface.
+ * {@code MetricEnricher} runs). The
+ * {@see \Qualimetrix\Architecture\Processing\ArchitectureProcessor} delegates
+ * to this stage during {@code prepare()} and exposes the post-expansion
+ * configuration through {@code getPreparedConfiguration()}.
  *
  * **Observed-tuple expansion (NOT cartesian).** For each template, the stage
  * walks the project's class set, applies all of the template's criteria

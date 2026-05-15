@@ -22,8 +22,8 @@ use Qualimetrix\Tests\Architecture\Support\AllowListBuilder;
 
 /**
  * End-to-end test: runs the real {@see AnalysisPipelineInterface} against a
- * synthetic four-layer fixture project, with the layer policy injected
- * directly into {@see ArchitectureConfigurationHolder}.
+ * synthetic four-layer fixture project, with the layer policy bound on the
+ * shared {@see ArchitectureProcessorInterface} before the pipeline runs.
  *
  * The fixture is laid out so that:
  *   - Controller -> Service (allowed)
