@@ -317,6 +317,32 @@ aggregation:
   auto_depth: 2    # Auto-detect depth for namespace grouping
 ```
 
+### Architecture
+
+Layer rules and the allow-list for the `architecture.layer-violation` rule live under the top-level `architecture:` key. The full schema is documented in [Architecture Rules](../rules/architecture.md); the keys most relevant to general configuration are:
+
+```yaml
+architecture:
+  layers:
+    - name: 'domain-{module}'                         # template layer with capture variable
+      patterns: ['App\Module\{module}\Domain\**']
+    - name: shared-kernel
+      patterns: ['App\Shared\**']
+
+  allow:
+    'domain-{m}':
+      - shared-kernel
+      - target: 'domain-{m}'
+        relations: [implements, extends]              # whitelist of dependency kinds
+
+  coverage: ignore                                    # ignore | warn | error
+  max_expanded_layers: 500                            # cumulative cap on template expansion
+```
+
+**Capture variables** in layer names and patterns use the syntax `{name}` (single namespace segment) or `{name:**}` (cross-segment). The same variable name within one layer entry binds to one value (co-binding); variables in different entries are independent. See the [layer-templates section](../rules/architecture.md#layer-templates) for the full grammar.
+
+**`max_expanded_layers`** caps the total number of concrete layers produced by template expansion across all templates (default `500`). The cap protects against pathological broad templates whose binding tuples would blow up the layer count. Raise the ceiling explicitly when a monorepo legitimately has more bounded contexts than the default allows; overflow rejects at expansion with an actionable error.
+
 ---
 
 ## Presets
