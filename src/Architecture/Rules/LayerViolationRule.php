@@ -484,22 +484,43 @@ final class LayerViolationRule extends AbstractRule
         string $toLayer,
         ArchitectureConfiguration $architecture,
     ): string {
-        $allowed = $architecture->policy()->allowedTargets($fromLayer);
+        $guidance = self::buildRoutingGuidance($fromLayer, $architecture->policy()->allowedTargets($fromLayer));
+        $payload = self::encodeDependencyPayload($dependency, $fromLayer, $toLayer);
 
-        if ($allowed === []) {
-            $line1 = \sprintf(
+        return $guidance . "\n" . 'Dep data: ' . $payload;
+    }
+
+    /**
+     * Produces the routing-guidance prefix for the recommendation. When no
+     * outgoing edges are declared for the source layer, the guidance is the
+     * "no allowed targets" sentinel; otherwise it lists the declared targets.
+     *
+     * @param list<string> $allowedTargets
+     */
+    private static function buildRoutingGuidance(string $fromLayer, array $allowedTargets): string
+    {
+        if ($allowedTargets === []) {
+            return \sprintf(
                 'Layer "%s" is not allowed to depend on any other declared layer.',
                 $fromLayer,
             );
-        } else {
-            $line1 = \sprintf(
-                'Allowed targets for layer "%s": %s. Consider routing through one of them.',
-                $fromLayer,
-                implode(', ', $allowed),
-            );
         }
 
-        $payload = json_encode(
+        return \sprintf(
+            'Allowed targets for layer "%s": %s. Consider routing through one of them.',
+            $fromLayer,
+            implode(', ', $allowedTargets),
+        );
+    }
+
+    /**
+     * Serialises the structured dependency context the recommendation appends
+     * for AI-agent consumers. Kept beside {@see buildRecommendation()} so the
+     * JSON shape and the textual prefix evolve together.
+     */
+    private static function encodeDependencyPayload(Dependency $dependency, string $fromLayer, string $toLayer): string
+    {
+        return json_encode(
             [
                 'fromLayer' => $fromLayer,
                 'toLayer' => $toLayer,
@@ -509,8 +530,6 @@ final class LayerViolationRule extends AbstractRule
             ],
             \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR,
         );
-
-        return $line1 . "\n" . 'Dep data: ' . $payload;
     }
 
     /**

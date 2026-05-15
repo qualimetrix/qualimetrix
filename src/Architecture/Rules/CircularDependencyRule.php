@@ -69,12 +69,13 @@ final class CircularDependencyRule extends AbstractRule
                 continue; // Cycle too large or filtered out
             }
 
-            // Use the first class in the cycle as the violation location
+            // CircularDependencyDetector only emits cycles for SCCs of size > 1,
+            // so the class list is guaranteed non-empty by construction. The
+            // assert documents the invariant for static analysis and surfaces
+            // any future regression in debug builds.
             $classes = $cycle->getClasses();
-            $firstClass = $classes[0] ?? null;
-            if ($firstClass === null) {
-                continue; // Empty cycle
-            }
+            \assert($classes !== [], 'CircularDependencyRule invariant: cycle has at least one class');
+            $firstClass = $classes[0];
 
             $category = $cycle->getSizeCategory();
             $size = $cycle->getSize();
