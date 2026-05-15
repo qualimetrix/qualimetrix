@@ -78,64 +78,120 @@ final class YamlConfigLoader implements ConfigLoaderInterface
     }
 
     /**
-     * Recursively normalizes snake_case keys to camelCase.
+     * Normalizes the root-level config map using the per-section policy declared
+     * in {@see ConfigSchema::sectionPolicies()}.
      *
-     * Keys that are identifiers are preserved as-is. Two preservation modes:
+     * Each root key chooses one of three policies (see
+     * {@see SectionNormalizationPolicy}):
      *
-     * 1. Direct identifier sections (e.g. {@code rules}, {@code computedMetrics}):
-     *    immediate children are identifiers (`group.rule-name` form) and must
-     *    not be normalized. Their nested option values ARE normalized again
-     *    (so {@code rules.complexity.cyclomatic.min_threshold} ends up as
-     *    {@code minThreshold}).
+     *  - {@code NORMALIZE_TO_CAMEL_CASE}: keys are camelCased at every depth.
+     *  - {@code PRESERVE_IMMEDIATE_CHILDREN}: level-1 keys are preserved
+     *    verbatim (user identifiers); level-2 and deeper resume normalization.
+     *  - {@code PRESERVE_SUBTREE}: every descendant key is preserved verbatim,
+     *    including scalar leaves at every depth — closes the leaf-mangling
+     *    bug class the previous opt-out model could not address.
      *
-     * 2. Nested identifier subtrees (e.g. {@code architecture.allow}): once
-     *    the path enters one of {@see ConfigSchema::nestedIdentifierKeyPaths()},
-     *    **all descendants** preserve their keys verbatim. This covers both
-     *    user-defined identifiers (layer names like {@code app-{m}}) at the
-     *    immediate child level and the documented snake_case keys of nested
-     *    long-form target maps below them (e.g. {@code allow_cross_instance}).
-     *    Without subtree preservation, snake-case long-form keys would be
-     *    silently mangled to camelCase before reaching the validator.
+     * The {@code architecture.allow} subtree is currently preserved via
+     * {@see ConfigSchema::nestedIdentifierKeyPaths()} during the Phase 3
+     * transition. Phase 3.5 migrates {@code architecture} to
+     * {@code PRESERVE_SUBTREE}, after which the sub-path opt-out is empty
+     * and Phase 3.6 removes the wrapper entirely.
      *
-     * The current path is tracked as a dot-separated string built from already
-     * normalized keys, so look-ups against {@see ConfigSchema::nestedIdentifierKeyPaths()}
-     * use the canonical (camelCase) representation regardless of how the user
-     * spelled the parents.
+     * See [ADR 0009](../../../docs/adr/0009-yaml-loader-normalization-model.md).
      *
-     * @param array<string, mixed> $config
-     * @param bool $preserveKeys When true, keys at this level are preserved (identifier section).
-     * @param string $currentPath Dot-separated normalized path leading to {@code $config}.
+     * @param array<string|int, mixed> $config
      *
      * @return array<string, mixed>
      */
-    private function normalizeKeys(array $config, bool $preserveKeys = false, string $currentPath = ''): array
+    private function normalizeKeys(array $config): array
     {
         $nestedPaths = ConfigSchema::nestedIdentifierKeyPaths();
         $result = [];
 
         foreach ($config as $key => $value) {
             $stringKey = (string) $key;
-            $normalizedKey = $preserveKeys ? $stringKey : $this->snakeToCamel($stringKey);
+            $normalizedRoot = $this->snakeToCamel($stringKey);
 
-            if (\is_array($value)) {
-                $childPath = $currentPath === '' ? $normalizedKey : $currentPath . '.' . $normalizedKey;
+            // Lookup policy by normalized root key; unregistered roots throw
+            // LogicException via policyFor() — but only roots from
+            // allowedRootKeys() are reachable here, because validateRootKeys()
+            // runs later. For unknown roots (validation will reject them next),
+            // default to NORMALIZE_TO_CAMEL_CASE so we still produce a usable
+            // shape for the error path.
+            $policy = isset(ConfigSchema::sectionPolicies()[$normalizedRoot])
+                ? ConfigSchema::policyFor($normalizedRoot)
+                : SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE;
 
-                $isIdentifierSection = !$preserveKeys
-                    && $currentPath === ''
-                    && \in_array($normalizedKey, ConfigSchema::identifierKeySections(), true);
+            $result[$normalizedRoot] = \is_array($value)
+                ? $this->applyPolicy($value, $policy, $normalizedRoot, $nestedPaths)
+                : $value;
+        }
 
-                // Subtree preservation: any path equal to or descended from a
-                // nested identifier path preserves every descendant key.
-                $isUnderNestedIdentifierPath = self::isUnderPreservedPath($childPath, $nestedPaths);
+        return $result;
+    }
 
-                $result[$normalizedKey] = $this->normalizeKeys(
-                    $value,
-                    $isIdentifierSection || $isUnderNestedIdentifierPath,
-                    $childPath,
-                );
+    /**
+     * Walks a sub-tree starting at {@code $currentPath} applying the section
+     * {@code $policy}. The {@code $nestedPreservePaths} list keeps the
+     * {@code architecture.allow} sub-path opt-out alive during the Phase 3
+     * transition; any path equal to or descended from one becomes implicitly
+     * {@code PRESERVE_SUBTREE} regardless of the section policy.
+     *
+     * @param array<string|int, mixed> $config
+     * @param list<string> $nestedPreservePaths
+     *
+     * @return array<string|int, mixed>
+     */
+    private function applyPolicy(
+        array $config,
+        SectionNormalizationPolicy $policy,
+        string $currentPath,
+        array $nestedPreservePaths,
+    ): array {
+        // Determine effective preservation at THIS level. The depth-1
+        // preservation for PRESERVE_IMMEDIATE_CHILDREN is decided by
+        // looking at whether $currentPath equals the section root (no dot
+        // in it). PRESERVE_SUBTREE preserves at every depth.
+        $effectivelyPreserveSubtree = $policy === SectionNormalizationPolicy::PRESERVE_SUBTREE
+            || self::isUnderPreservedPath($currentPath, $nestedPreservePaths);
+
+        $preserveImmediateLevel = $policy === SectionNormalizationPolicy::PRESERVE_IMMEDIATE_CHILDREN
+            && !str_contains($currentPath, '.');
+
+        $preserveKeysHere = $effectivelyPreserveSubtree || $preserveImmediateLevel;
+
+        $result = [];
+
+        foreach ($config as $key => $value) {
+            $stringKey = (string) $key;
+
+            // List items (integer keys) carry no user-facing snake_case;
+            // the integer-as-string-key passes through both branches
+            // unchanged. Preserve the original key type so list shape is
+            // retained.
+            if (\is_int($key)) {
+                $newKey = $key;
             } else {
-                $result[$normalizedKey] = $value;
+                $newKey = $preserveKeysHere ? $stringKey : $this->snakeToCamel($stringKey);
             }
+
+            if (!\is_array($value)) {
+                $result[$newKey] = $value;
+
+                continue;
+            }
+
+            $childPath = $currentPath . '.' . (string) $newKey;
+
+            // For PRESERVE_SUBTREE (and the nested-path opt-out), descent
+            // keeps preserving forever. For PRESERVE_IMMEDIATE_CHILDREN,
+            // once we descend below the section root we resume normalization.
+            // For NORMALIZE_TO_CAMEL_CASE, no level preserves.
+            $childPolicy = $effectivelyPreserveSubtree
+                ? SectionNormalizationPolicy::PRESERVE_SUBTREE
+                : SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE;
+
+            $result[$newKey] = $this->applyPolicy($value, $childPolicy, $childPath, $nestedPreservePaths);
         }
 
         return $result;
@@ -143,9 +199,10 @@ final class YamlConfigLoader implements ConfigLoaderInterface
 
     /**
      * Returns true when {@code $path} equals one of {@code $preservedPaths} or
-     * lies strictly below one of them. Used to keep the {@code preserveKeys}
-     * flag sticky once we enter a subtree-preserved section
-     * ({@see ConfigSchema::nestedIdentifierKeyPaths()}).
+     * lies strictly below one of them. Used by the Phase 3 transition to keep
+     * the {@code architecture.allow} sub-path opt-out alive
+     * ({@see ConfigSchema::nestedIdentifierKeyPaths()}) until Phase 3.5
+     * promotes {@code architecture} to {@code PRESERVE_SUBTREE}.
      *
      * @param list<string> $preservedPaths
      */

@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Configuration;
 
+use LogicException;
+use Qualimetrix\Configuration\Loader\SectionNormalizationPolicy;
+
 /**
  * Single source of truth for all configuration keys.
  *
@@ -192,34 +195,117 @@ final class ConfigSchema
     }
 
     /**
+     * Returns the exhaustive normalization policy map: every root key in
+     * {@see self::allowedRootKeys()} has exactly one entry. The map is the
+     * single source of truth consulted by
+     * {@see \Qualimetrix\Configuration\Loader\YamlConfigLoader} to decide
+     * whether (and how deeply) snake_case → camelCase normalization applies.
+     *
+     * Adding a new root key MUST add a row here; the
+     * {@see self::policyFor()} lookup throws on missing entries, and a
+     * coverage-invariant test asserts exact equality between
+     * {@see self::allowedRootKeys()} and the keys of this map.
+     *
+     * See [ADR 0009](../../docs/adr/0009-yaml-loader-normalization-model.md).
+     *
+     * @return array<string, SectionNormalizationPolicy>
+     */
+    public static function sectionPolicies(): array
+    {
+        return [
+            // Top-level lists / scalars — leaf keys are typed; normalize.
+            // List items have integer keys (no normalization needed); the
+            // policy is consistent regardless.
+            self::PATHS => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE,
+            'exclude' => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE,
+            self::FORMAT => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE,
+            'disabledRules' => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE,
+            'onlyRules' => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE,
+            'excludePaths' => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE,
+            'excludeNamespaces' => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE,
+            'failOn' => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE,
+            'excludeHealth' => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE,
+            'includeGenerated' => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE,
+            'memoryLimit' => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE,
+
+            // Typed sections — sub-keys are schema-known options.
+            'cache' => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE,
+            'namespace' => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE,
+            'aggregation' => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE,
+            'parallel' => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE,
+            'coupling' => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE,
+
+            // Identifier sections — level-1 keys are user-defined identifiers
+            // (rule slugs / metric names); level-2+ are typed option keys.
+            self::RULES => SectionNormalizationPolicy::PRESERVE_IMMEDIATE_CHILDREN,
+            'computedMetrics' => SectionNormalizationPolicy::PRESERVE_IMMEDIATE_CHILDREN,
+
+            // Architecture — currently NORMALIZE; the architecture.allow
+            // subtree is preserved by a separate sub-path opt-out
+            // ({@see self::nestedIdentifierKeyPaths()}) during the Phase 3
+            // transition. Phase 3.5 migrates this entry to PRESERVE_SUBTREE
+            // and the sub-path opt-out becomes empty.
+            self::ARCHITECTURE => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE,
+        ];
+    }
+
+    /**
+     * Returns the policy for a single root key. Fails fast with
+     * {@see LogicException} when the key has no registered policy — the
+     * intended behavior for any new root added without updating
+     * {@see self::sectionPolicies()}.
+     */
+    public static function policyFor(string $rootKey): SectionNormalizationPolicy
+    {
+        $policies = self::sectionPolicies();
+
+        if (!isset($policies[$rootKey])) {
+            throw new LogicException(\sprintf(
+                'No SectionNormalizationPolicy registered for root key "%s". '
+                . 'Add an entry to ConfigSchema::sectionPolicies() — every key in allowedRootKeys() '
+                . 'must declare its normalization policy (ADR 0009).',
+                $rootKey,
+            ));
+        }
+
+        return $policies[$rootKey];
+    }
+
+    /**
      * Returns root keys whose child keys are identifiers (rule/metric names)
      * that must not be normalized to camelCase.
+     *
+     * @deprecated Phase 3.6 removes this wrapper; consumers should query
+     *             {@see self::sectionPolicies()} directly.
      *
      * @return list<string>
      */
     public static function identifierKeySections(): array
     {
-        return [self::RULES, 'computedMetrics'];
+        $sections = [];
+
+        foreach (self::sectionPolicies() as $key => $policy) {
+            if ($policy === SectionNormalizationPolicy::PRESERVE_IMMEDIATE_CHILDREN) {
+                $sections[] = $key;
+            }
+        }
+
+        return $sections;
     }
 
     /**
      * Returns dot-separated paths whose entire subtree is preserved verbatim
-     * during key normalization (no snake_case → camelCase conversion below
-     * these roots).
+     * during key normalization.
      *
-     * Unlike {@see identifierKeySections()} — which preserves only the
-     * immediate children — these paths preserve all descendants. The
-     * {@code architecture.allow} subtree contains both user-defined layer
-     * names (immediate children, e.g. {@code app-{m}}) and documented
-     * snake_case long-form target keys (deeper descendants, e.g.
-     * {@code allow_cross_instance} on long-form target maps); both kinds must
-     * survive normalization untransformed, or the values would never reach
-     * the validator under the keys the user wrote.
+     * Independent of {@see self::sectionPolicies()} during the Phase 3
+     * transition because the policy enum operates at the root level only;
+     * the {@code architecture.allow} sub-path preservation is the only
+     * remaining sub-path opt-out and becomes obsolete in Phase 3.5 when
+     * {@code architecture} migrates to {@code PRESERVE_SUBTREE} and the
+     * entire architecture subtree is preserved by policy.
      *
-     * Note: under ADR 0006 (declaration-order matching) `architecture.layers`
-     * is an ordered list of entries (each with a `name` field), not a map.
-     * List items have no user-defined keys, so the path no longer needs
-     * preservation.
+     * @deprecated Phase 3.6 removes this wrapper; preservation responsibility
+     *             moves entirely to {@see self::sectionPolicies()}.
      *
      * @return list<string>
      */
