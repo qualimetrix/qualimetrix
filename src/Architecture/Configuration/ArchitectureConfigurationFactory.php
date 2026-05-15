@@ -158,7 +158,7 @@ final class ArchitectureConfigurationFactory
 
     /**
      * Builds the registry seeded with the static-only subset of entries.
-     * Templates are deferred to {@see \Qualimetrix\Analysis\Architecture\LayerExpansionStage}
+     * Templates are deferred to {@see \Qualimetrix\Architecture\Processing\LayerExpansionStage}
      * (runtime expansion); if the config has no templates the registry is
      * already the final one and {@see ArchitectureConfiguration::hasTemplates()}
      * returns false.

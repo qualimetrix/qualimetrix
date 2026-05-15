@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
 use Qualimetrix\Analysis\Aggregator\GlobalCollectorRunner;
-use Qualimetrix\Analysis\Architecture\LayerExpansionStage;
 use Qualimetrix\Analysis\Collection\CollectionOrchestrator;
 use Qualimetrix\Analysis\Collection\CollectionOrchestratorInterface;
 use Qualimetrix\Analysis\Collection\Dependency\DependencyGraphBuilder;
@@ -27,6 +26,7 @@ use Qualimetrix\Analysis\Repository\MetricRepositoryFactoryInterface;
 use Qualimetrix\Analysis\RuleExecution\RuleExecutor;
 use Qualimetrix\Analysis\RuleExecution\RuleExecutorInterface;
 use Qualimetrix\Architecture\Domain\ArchitectureConfigurationHolder;
+use Qualimetrix\Architecture\Processing\LayerExpansionStage;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Configuration\RuleOptionsRegistry;
 use Qualimetrix\Core\Ast\FileParserInterface;

@@ -13,7 +13,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  *
  * Built by {@see \Qualimetrix\Analysis\Pipeline\AnalysisPipeline} once
  * collection and dependency-graph construction have completed; consumed by
- * {@see \Qualimetrix\Analysis\Architecture\LayerExpansionStage} to walk the
+ * {@see \Qualimetrix\Architecture\Processing\LayerExpansionStage} to walk the
  * class set for each {@see TemplateLayerDefinition} and collect observed
  * binding tuples.
  *

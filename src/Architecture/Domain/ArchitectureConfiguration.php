@@ -22,7 +22,7 @@ use Qualimetrix\Architecture\Domain\Layer\TemplateLayerDefinition;
  * 4. The unexpanded {@see entries()} list (Phase 2 direction 2) — may
  *    interleave {@see LayerDefinition} and {@see TemplateLayerDefinition}.
  * 5. The {@see maxExpandedLayers()} ceiling — used by
- *    {@see \Qualimetrix\Analysis\Architecture\LayerExpansionStage} to bound
+ *    {@see \Qualimetrix\Architecture\Processing\LayerExpansionStage} to bound
  *    template expansion.
  * 6. The {@see emptyTemplateNames()} list — name templates that observed zero
  *    binding tuples; surfaced as {@code architecture.empty-template} warnings
@@ -62,7 +62,7 @@ final readonly class ArchitectureConfiguration
      *                                For Phase-1 configs without templates,
      *                                this is identical to the static layer
      *                                list. For Phase-2 configs with templates,
-     *                                the {@see \Qualimetrix\Analysis\Architecture\LayerExpansionStage}
+     *                                the {@see \Qualimetrix\Architecture\Processing\LayerExpansionStage}
      *                                walks the project's class set and
      *                                produces this registry via
      *                                {@see withExpansion()}.
@@ -143,7 +143,7 @@ final readonly class ArchitectureConfiguration
     /**
      * Returns true if at least one entry is a {@see TemplateLayerDefinition}.
      * Used by {@see \Qualimetrix\Analysis\Pipeline\AnalysisPipeline} to decide
-     * whether to invoke the {@see \Qualimetrix\Analysis\Architecture\LayerExpansionStage}.
+     * whether to invoke the {@see \Qualimetrix\Architecture\Processing\LayerExpansionStage}.
      */
     public function hasTemplates(): bool
     {

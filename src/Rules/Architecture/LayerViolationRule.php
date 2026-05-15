@@ -178,7 +178,7 @@ final class LayerViolationRule extends AbstractRule
      * concrete layers during expansion (Phase 2 direction 2).
      *
      * The list is populated by
-     * {@see \Qualimetrix\Analysis\Architecture\LayerExpansionStage} and
+     * {@see \Qualimetrix\Architecture\Processing\LayerExpansionStage} and
      * threaded through
      * {@see \Qualimetrix\Architecture\Domain\ArchitectureConfigurationHolder}
      * to the architecture configuration consumed here via

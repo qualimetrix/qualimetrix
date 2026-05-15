@@ -79,7 +79,7 @@ final class LayersValidator
      * {@code name:} field per the {@see TemplateLayerDefinition} grammar.
      * Cross-template duplicate detection (e.g. two templates expanding to the
      * same instance name) happens at expansion time in
-     * {@see \Qualimetrix\Analysis\Architecture\LayerExpansionStage}, not here.
+     * {@see \Qualimetrix\Architecture\Processing\LayerExpansionStage}, not here.
      *
      * @return list<LayerDefinition|TemplateLayerDefinition>
      */
