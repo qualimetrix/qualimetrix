@@ -143,12 +143,8 @@ deptrac:
 
   ruleset:
     # ── Core ─────────────────────────────────────────────────────────
-    Core:
-      # TEMPORARY: removed in Phase 4.3 when AnalysisContext::$architecture
-      # field is dropped (the only Core → Architecture edge today is
-      # AnalysisContext::$architecture: ?ArchitectureConfiguration which now
-      # lives in Architecture\Domain).
-      - Architecture
+    # Core has no outward dependencies per ADR 0010. Phase 4.3 removed the
+    # last Core → Architecture edge (AnalysisContext::$architecture).
 
     # ── Domain layers ────────────────────────────────────────────────
     Metrics:

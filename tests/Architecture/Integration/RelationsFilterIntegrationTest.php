@@ -10,7 +10,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Pipeline\AnalysisResult;
 use Qualimetrix\Architecture\Configuration\ArchitectureConfigurationFactory;
-use Qualimetrix\Architecture\Domain\ArchitectureConfigurationHolder;
+use Qualimetrix\Architecture\Processing\ArchitectureProcessorInterface;
 use Qualimetrix\Architecture\Rules\LayerViolationRule;
 use Qualimetrix\Configuration\Loader\YamlConfigLoader;
 use Qualimetrix\Core\Violation\Violation;
@@ -205,9 +205,9 @@ final class RelationsFilterIntegrationTest extends TestCase
 
         $container = (new ContainerFactory())->create();
 
-        $holder = $container->get(ArchitectureConfigurationHolder::class);
-        self::assertInstanceOf(ArchitectureConfigurationHolder::class, $holder);
-        $holder->set($result->configuration);
+        $holder = $container->get(ArchitectureProcessorInterface::class);
+        self::assertInstanceOf(ArchitectureProcessorInterface::class, $holder);
+        $holder->bind($result->configuration);
 
         $pipeline = $container->get(AnalysisPipelineInterface::class);
         self::assertInstanceOf(AnalysisPipelineInterface::class, $pipeline);

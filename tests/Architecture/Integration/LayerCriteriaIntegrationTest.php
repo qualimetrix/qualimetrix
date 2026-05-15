@@ -9,12 +9,12 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Architecture\Domain\ArchitectureConfiguration;
-use Qualimetrix\Architecture\Domain\ArchitectureConfigurationHolder;
 use Qualimetrix\Architecture\Domain\CoverageMode;
 use Qualimetrix\Architecture\Domain\Layer\LayerDefinition;
 use Qualimetrix\Architecture\Domain\Layer\LayerRegistry;
 use Qualimetrix\Architecture\Domain\Layer\MatchMode;
 use Qualimetrix\Architecture\Domain\Layer\MembershipSpec;
+use Qualimetrix\Architecture\Processing\ArchitectureProcessorInterface;
 use Qualimetrix\Architecture\Rules\LayerViolationRule;
 use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
@@ -239,9 +239,9 @@ final class LayerCriteriaIntegrationTest extends TestCase
     {
         $container = (new ContainerFactory())->create();
 
-        $holder = $container->get(ArchitectureConfigurationHolder::class);
-        \assert($holder instanceof ArchitectureConfigurationHolder);
-        $holder->set($architecture);
+        $holder = $container->get(ArchitectureProcessorInterface::class);
+        \assert($holder instanceof ArchitectureProcessorInterface);
+        $holder->bind($architecture);
 
         $pipeline = $container->get(AnalysisPipelineInterface::class);
         \assert($pipeline instanceof AnalysisPipelineInterface);

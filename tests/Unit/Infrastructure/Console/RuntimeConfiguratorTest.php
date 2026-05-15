@@ -10,7 +10,8 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LogLevel;
-use Qualimetrix\Architecture\Domain\ArchitectureConfigurationHolder;
+use Qualimetrix\Architecture\Processing\ArchitectureProcessor;
+use Qualimetrix\Architecture\Processing\ArchitectureProcessorInterface;
 use Qualimetrix\Configuration\AnalysisConfiguration;
 use Qualimetrix\Configuration\ComputedMetricFormulaValidator;
 use Qualimetrix\Configuration\ComputedMetricsConfigResolver;
@@ -42,14 +43,14 @@ final class RuntimeConfiguratorTest extends TestCase
     private ConfigurationProviderInterface&Stub $configProvider;
     private RuleOptionsRegistry $ruleOptionsRegistry;
     private FrameworkNamespacesHolder $frameworkNamespacesHolder;
-    private ArchitectureConfigurationHolder $architectureHolder;
+    private ArchitectureProcessorInterface $architectureProcessor;
     private RuntimeConfigurator $configurator;
 
     protected function setUp(): void
     {
         $this->ruleOptionsRegistry = new RuleOptionsRegistry();
         $this->frameworkNamespacesHolder = new FrameworkNamespacesHolder();
-        $this->architectureHolder = new ArchitectureConfigurationHolder();
+        $this->architectureProcessor = new ArchitectureProcessor();
 
         $this->configProvider = self::createStub(ConfigurationProviderInterface::class);
         $this->configurator = $this->buildConfigurator($this->configProvider);
@@ -91,7 +92,7 @@ final class RuntimeConfiguratorTest extends TestCase
                 new HealthFormulaExcluder(),
             ),
             $this->frameworkNamespacesHolder,
-            $this->architectureHolder,
+            $this->architectureProcessor,
         );
     }
 
@@ -689,7 +690,7 @@ final class RuntimeConfiguratorTest extends TestCase
                 new HealthFormulaExcluder(),
             ),
             $this->frameworkNamespacesHolder,
-            $this->architectureHolder,
+            $this->architectureProcessor,
         );
 
         return $loggerHolder;

@@ -11,9 +11,11 @@ use Qualimetrix\Architecture\Domain\Layer\LayerMatch;
 use Qualimetrix\Architecture\Domain\Layer\LayerRegistry;
 use Qualimetrix\Architecture\Domain\Layer\MatchedCriterion;
 use Qualimetrix\Architecture\Domain\Layer\MatchedCriterionKind;
+use Qualimetrix\Architecture\Processing\ArchitectureProcessorInterface;
 use Qualimetrix\Core\Dependency\Dependency;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\RuleCategory;
+use Qualimetrix\Core\Rule\RuleOptionsInterface;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\Location;
@@ -24,7 +26,8 @@ use Qualimetrix\Rules\AbstractRule;
 /**
  * Reports dependencies that violate the user-declared architecture policy.
  *
- * The rule reads {@see AnalysisContext::$architecture} for the layer registry
+ * The rule reads the prepared {@see ArchitectureConfiguration} from the
+ * injected {@see ArchitectureProcessorInterface} for the layer registry
  * and allow-list, and {@see AnalysisContext::$dependencyGraph} for the set of
  * concrete dependency edges. Every edge whose source and target both fall into
  * declared layers and whose source→target pair is not in the policy's
@@ -88,6 +91,20 @@ final class LayerViolationRule extends AbstractRule
 
     private const int SHADOW_SAMPLE_LIMIT = 5;
 
+    /**
+     * The processor is injected by {@see \Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleOptionsCompilerPass::resolveExtraDependencies()}
+     * via the {@see ArchitectureProcessorInterface} alias registered in
+     * {@see \Qualimetrix\Infrastructure\DependencyInjection\Configurator\ArchitectureConfigurator}.
+     * Rules cannot use plain constructor autowiring (Critical Rule 7) so the
+     * compiler-pass injection is the supported flow.
+     */
+    public function __construct(
+        RuleOptionsInterface $options,
+        private readonly ArchitectureProcessorInterface $processor,
+    ) {
+        parent::__construct($options);
+    }
+
     public function getName(): string
     {
         return self::NAME;
@@ -140,17 +157,15 @@ final class LayerViolationRule extends AbstractRule
             return [];
         }
 
-        $architecture = $context->architecture;
+        $architecture = $this->processor->getPreparedConfiguration();
         if ($architecture === null || $architecture->isEmpty()) {
             return [];
         }
 
+        // Graph binding already happened inside ArchitectureProcessor::prepare()
+        // per ADR 0008 §2. The registry's ClassContextFactory therefore sees
+        // the current run's graph; no rebind needed here.
         $registry = $architecture->registry();
-
-        // Rebind the registry's ClassContextFactory to this run's dependency
-        // graph so `attributes` / `implements` / `extends` membership criteria
-        // see fresh data. Cache invalidation is handled by bindGraph().
-        $registry->bindGraph($context->dependencyGraph);
 
         // Per-class evidence (local — never fields; statelessness regression in tests).
         [$layerHits, $shadowEvidence] = $this->collectClassEvidence($registry, $context);
@@ -179,10 +194,9 @@ final class LayerViolationRule extends AbstractRule
      *
      * The list is populated by
      * {@see \Qualimetrix\Architecture\Processing\LayerExpansionStage} and
-     * threaded through
-     * {@see \Qualimetrix\Architecture\Domain\ArchitectureConfigurationHolder}
-     * to the architecture configuration consumed here via
-     * {@see \Qualimetrix\Core\Rule\AnalysisContext}.
+     * surfaced through
+     * {@see ArchitectureProcessorInterface::getPreparedConfiguration()} on
+     * the configuration returned to the rule.
      *
      * Severity is {@see Severity::Warning} rather than {@see Severity::Info}
      * because an empty template is usually a typo, missing dependency in the
