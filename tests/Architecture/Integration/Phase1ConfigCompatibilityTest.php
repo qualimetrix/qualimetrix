@@ -10,8 +10,8 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Architecture\Configuration\ArchitectureConfigurationFactory;
 use Qualimetrix\Architecture\Processing\ArchitectureProcessorInterface;
-use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Tests\Architecture\Support\ArchitectureViolationProjector;
 
 /**
  * Pins the Phase-1-shape (post-ADR 0006) YAML schema against every
@@ -75,7 +75,7 @@ final class Phase1ConfigCompatibilityTest extends TestCase
         self::assertInstanceOf(AnalysisPipelineInterface::class, $pipeline);
 
         $analysis = $pipeline->analyze(self::FIXTURE_PATH);
-        $actual = self::projectArchitectureViolations($analysis->violations);
+        $actual = ArchitectureViolationProjector::project($analysis->violations);
 
         if (getenv('QMX_GOLDEN_UPDATE') === '1') {
             $payload = [
@@ -149,45 +149,4 @@ final class Phase1ConfigCompatibilityTest extends TestCase
         ];
     }
 
-    /**
-     * Normalises the architecture-rule violation set down to a stable
-     * tuple shape so cosmetic message changes don't churn the golden file.
-     *
-     * @param list<Violation> $violations
-     *
-     * @return list<array{rule: string, severity: string, source: string, target: string, type: string}>
-     */
-    private static function projectArchitectureViolations(array $violations): array
-    {
-        $rows = [];
-        foreach ($violations as $violation) {
-            if (!str_starts_with($violation->ruleName, 'architecture.')) {
-                continue;
-            }
-            $rows[] = [
-                'rule' => $violation->ruleName,
-                'severity' => $violation->severity->value,
-                'source' => $violation->symbolPath->toString(),
-                'target' => $violation->dependencyTarget?->toString() ?? '',
-                'type' => $violation->dependencyType->value ?? '',
-            ];
-        }
-        usort($rows, static function (array $a, array $b): int {
-            $cmp = strcmp($a['rule'], $b['rule']);
-            if ($cmp !== 0) {
-                return $cmp;
-            }
-            $cmp = strcmp($a['source'], $b['source']);
-            if ($cmp !== 0) {
-                return $cmp;
-            }
-            $cmp = strcmp($a['target'], $b['target']);
-            if ($cmp !== 0) {
-                return $cmp;
-            }
-            return strcmp($a['type'], $b['type']);
-        });
-
-        return $rows;
-    }
 }

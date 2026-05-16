@@ -9,8 +9,10 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Architecture\Configuration\Validation\ExcludeBlockValidator;
 use Qualimetrix\Architecture\Configuration\Validation\LayerCriterionNormalizer;
 use Qualimetrix\Architecture\Configuration\Validation\LayersValidator;
+use Qualimetrix\Architecture\Domain\Layer\CriterionListValidator;
 use Qualimetrix\Architecture\Domain\Layer\ExcludeSpec;
 use Qualimetrix\Architecture\Domain\Layer\LayerDefinition;
 use Qualimetrix\Architecture\Domain\Layer\MatchMode;
@@ -20,9 +22,11 @@ use Qualimetrix\Configuration\Exception\ConfigLoadException;
 
 #[CoversClass(LayersValidator::class)]
 #[CoversClass(LayerCriterionNormalizer::class)]
+#[CoversClass(ExcludeBlockValidator::class)]
 #[CoversClass(MembershipSpec::class)]
 #[CoversClass(ExcludeSpec::class)]
 #[CoversClass(MatchMode::class)]
+#[CoversClass(CriterionListValidator::class)]
 final class LayersValidatorTest extends TestCase
 {
     private LayersValidator $validator;

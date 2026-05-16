@@ -16,11 +16,15 @@ use Qualimetrix\Architecture\Domain\Layer\TemplateLayerDefinition;
 use Qualimetrix\Architecture\Processing\LayerExpansionException;
 use Qualimetrix\Architecture\Processing\LayerExpansionResult;
 use Qualimetrix\Architecture\Processing\LayerExpansionStage;
+use Qualimetrix\Architecture\Processing\LayerInstantiator;
+use Qualimetrix\Architecture\Processing\TupleExtractor;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 #[CoversClass(LayerExpansionStage::class)]
 #[CoversClass(LayerExpansionResult::class)]
 #[CoversClass(LayerExpansionException::class)]
+#[CoversClass(TupleExtractor::class)]
+#[CoversClass(LayerInstantiator::class)]
 final class LayerExpansionStageTest extends TestCase
 {
     private LayerExpansionStage $stage;
