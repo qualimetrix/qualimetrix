@@ -16,6 +16,7 @@ use Qualimetrix\Analysis\RuleExecution\RuleExecutorInterface;
 use Qualimetrix\Architecture\Domain\Layer\ClassContextFactory;
 use Qualimetrix\Architecture\Domain\Layer\ClassSet;
 use Qualimetrix\Architecture\Processing\ArchitectureProcessorInterface;
+use Qualimetrix\Architecture\Rules\LayerViolationRule;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
@@ -130,14 +131,23 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
         // exposes the resulting ArchitectureConfiguration through
         // getPreparedConfiguration() for the rule layer.
         //
+        // Skipped when `architecture.layer-violation` is disabled — that is the
+        // only consumer of getPreparedConfiguration() (its diagnostics
+        // architecture.empty-template / .unreachable-layer / .potential-shadow
+        // are emitted from the same rule). Template expansion and graph bind
+        // are pure waste in that case. Symmetric with the duplication skip in
+        // MetricEnricher (CLAUDE.md §3).
+        //
         // ADR 0008 §3 fail-fast contract: bind() must have been called before
         // prepare(). Production wiring (RuntimeConfigurator) binds before this
         // pipeline runs. Tests that construct AnalysisPipeline directly must
         // provide an already-bound processor — TestPipelineBuilder handles this.
-        $profiler?->start('architecture-prepare', 'pipeline');
-        $classSet = new ClassSet(self::collectClassPaths($repository), new ClassContextFactory());
-        $this->architectureProcessor->prepare($graph, $classSet);
-        $profiler?->stop('architecture-prepare');
+        if ($config->isRuleEnabled(LayerViolationRule::NAME)) {
+            $profiler?->start('architecture-prepare', 'pipeline');
+            $classSet = new ClassSet(self::collectClassPaths($repository), new ClassContextFactory());
+            $this->architectureProcessor->prepare($graph, $classSet);
+            $profiler?->stop('architecture-prepare');
+        }
 
         // Phases 3-3.8: Enrichment (aggregation, global collectors, computed metrics,
         // circular dependency detection, duplication detection)
