@@ -20,6 +20,7 @@ use Qualimetrix\Metrics\CodeSmell\CodeSmellCollector;
 use Qualimetrix\Metrics\CodeSmell\CodeSmellVisitor;
 use Qualimetrix\Rules\CodeSmell\CodeSmellOptions;
 use Qualimetrix\Rules\CodeSmell\EvalRule;
+use Qualimetrix\Rules\CodeSmell\ExitRule;
 use SplFileInfo;
 
 /**
@@ -32,6 +33,7 @@ use SplFileInfo;
 #[CoversClass(CodeSmellCollector::class)]
 #[CoversClass(CodeSmellVisitor::class)]
 #[CoversClass(EvalRule::class)]
+#[CoversClass(ExitRule::class)]
 #[Group('regression')]
 final class CodeSmellLinePrecisionTest extends TestCase
 {
@@ -188,5 +190,87 @@ PHP;
 
         self::assertCount(1, $violations);
         self::assertSame(42, $violations[0]->location->line);
+    }
+
+    #[Test]
+    public function collectorRecordsNoEntriesAndRuleEmitsNoViolationsWhenCodeIsClean(): void
+    {
+        // Fixture: clean PHP without any eval()/exit()/die() — the collector
+        // must not record entries and the rule must not emit a spurious
+        // violation at line 1 (the original bug surfaced exactly there).
+        $code = <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+namespace App;
+
+final class Greeter
+{
+    public function greet(string $name): string
+    {
+        return 'Hello, ' . $name;
+    }
+}
+PHP;
+
+        $collector = new CodeSmellCollector();
+
+        $parser = (new ParserFactory())->createForHostVersion();
+        $ast = $parser->parse($code) ?? [];
+
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor($collector->getVisitor());
+        $traverser->traverse($ast);
+
+        $metrics = $collector->collect(new SplFileInfo(__FILE__), $ast);
+
+        // Collector should record zero entries for every smell type when
+        // the code contains none of them.
+        self::assertSame(0, $metrics->entryCount('codeSmell.eval'));
+        self::assertSame([], $metrics->entries('codeSmell.eval'));
+        self::assertSame(0, $metrics->entryCount('codeSmell.exit'));
+        self::assertSame([], $metrics->entries('codeSmell.exit'));
+
+        $symbolPath = SymbolPath::forFile('src/clean.php');
+        $fileInfo = new SymbolInfo($symbolPath, 'src/clean.php', null);
+
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::File ? [$fileInfo] : []);
+        $repository->method('get')
+            ->willReturn($metrics);
+
+        $context = new AnalysisContext($repository);
+
+        // The rule must produce no violations — not a single spurious one
+        // at line 1, which was the original symptom.
+        self::assertSame([], (new EvalRule(new CodeSmellOptions()))->analyze($context));
+    }
+
+    #[Test]
+    public function ruleEmitsNoViolationsWhenMetricBagHasNoEntriesForSmellType(): void
+    {
+        // Direct rule-level check: with an empty MetricBag (no entries at
+        // all for the smell key) the rule must return an empty list — not
+        // a single placeholder violation at line 1.
+        $rule = new ExitRule(new CodeSmellOptions());
+
+        $symbolPath = SymbolPath::forFile('src/empty.php');
+        $fileInfo = new SymbolInfo($symbolPath, 'src/empty.php', null);
+
+        $metricBag = new MetricBag();
+
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::File ? [$fileInfo] : []);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyze($context);
+
+        self::assertSame([], $violations);
+        self::assertSame(0, $metricBag->entryCount('codeSmell.exit'));
     }
 }
