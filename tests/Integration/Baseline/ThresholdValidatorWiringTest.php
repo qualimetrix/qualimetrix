@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Baseline\Suppression\RuleValidatorMapFactory;
 use Qualimetrix\Baseline\Suppression\ThresholdOverrideExtractor;
+use Qualimetrix\Core\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Core\Rule\Override\OverrideValidatorInterface;
 use Qualimetrix\Core\Rule\RuleInterface;
 use Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface;
@@ -58,22 +59,22 @@ final class ThresholdValidatorWiringTest extends TestCase
 
         foreach ($ruleClasses as $ruleClass) {
             $optionsClass = $ruleClass::getOptionsClass();
-            if (!is_subclass_of($optionsClass, ThresholdAwareOptionsInterface::class)) {
+            $expectedValidator = self::expectedValidatorFor($optionsClass);
+            if ($expectedValidator === null) {
                 continue;
             }
 
             $ruleName = self::resolveRuleName($ruleClass);
-            $expectedValidator = $optionsClass::getOverrideValidator();
 
             self::assertArrayHasKey(
                 $ruleName,
                 $validatorMap,
-                "Rule '{$ruleName}' implements ThresholdAwareOptionsInterface but the factory did not emit a validator for it.",
+                "Rule '{$ruleName}' supports threshold overrides but the factory did not emit a validator for it.",
             );
             self::assertSame(
                 $expectedValidator,
                 $validatorMap[$ruleName],
-                "Factory-emitted validator for '{$ruleName}' differs from the one returned by {$optionsClass}::getOverrideValidator().",
+                "Factory-emitted validator for '{$ruleName}' differs from the expected validator for {$optionsClass}.",
             );
 
             ++$checkedThresholdAware;
@@ -126,6 +127,36 @@ final class ThresholdValidatorWiringTest extends TestCase
         (new ThresholdValidatorMapCompilerPass())->process($container);
 
         self::assertFalse($container->hasDefinition(ThresholdOverrideExtractor::class));
+    }
+
+    /**
+     * Mirrors {@see RuleValidatorMapFactory::resolveValidator()} — walks
+     * hierarchical Options to find a level-specific ThresholdAware
+     * implementation, matching {@see \Qualimetrix\Analysis\Pipeline\AnalysisPipeline::ruleSupportsThresholdOverrides()}.
+     *
+     * @param class-string $optionsClass
+     */
+    private static function expectedValidatorFor(string $optionsClass): ?OverrideValidatorInterface
+    {
+        if (is_subclass_of($optionsClass, ThresholdAwareOptionsInterface::class)) {
+            return $optionsClass::getOverrideValidator();
+        }
+
+        if (!is_subclass_of($optionsClass, HierarchicalRuleOptionsInterface::class)) {
+            return null;
+        }
+
+        $rootOptions = $optionsClass::fromArray([]);
+        \assert($rootOptions instanceof HierarchicalRuleOptionsInterface);
+
+        foreach ($rootOptions->getSupportedLevels() as $level) {
+            $levelOptions = $rootOptions->forLevel($level);
+            if ($levelOptions instanceof ThresholdAwareOptionsInterface) {
+                return $levelOptions::getOverrideValidator();
+            }
+        }
+
+        return null;
     }
 
     /**

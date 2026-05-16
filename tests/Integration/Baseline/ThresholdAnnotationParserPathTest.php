@@ -14,6 +14,8 @@ use Qualimetrix\Core\Rule\Override\IndependentAxisValidator;
 use Qualimetrix\Core\Rule\Override\InvertedOverrideValidator;
 use Qualimetrix\Core\Rule\Override\StandardOverrideValidator;
 use Qualimetrix\Core\Rule\Override\WarningOnlyValidator;
+use Qualimetrix\Rules\Complexity\ComplexityOptions;
+use Qualimetrix\Rules\Complexity\ComplexityRule;
 use Qualimetrix\Rules\Design\DataClassOptions;
 use Qualimetrix\Rules\Design\DataClassRule;
 use Qualimetrix\Rules\Design\GodClassOptions;
@@ -41,6 +43,7 @@ use Qualimetrix\Rules\Size\MethodCountRule;
 #[CoversClass(DataClassRule::class)]
 #[CoversClass(GodClassRule::class)]
 #[CoversClass(MethodCountRule::class)]
+#[CoversClass(ComplexityRule::class)]
 final class ThresholdAnnotationParserPathTest extends TestCase
 {
     #[Test]
@@ -200,6 +203,32 @@ final class ThresholdAnnotationParserPathTest extends TestCase
         self::assertCount(0, $result->overrides);
         self::assertCount(1, $result->diagnostics);
         self::assertSame('error_not_supported', $result->diagnostics[0]->code);
+    }
+
+    #[Test]
+    public function hierarchicalRuleValidationDelegatesToLevelOptions(): void
+    {
+        // Regression test for the v0.19 bug class: ComplexityOptions is a
+        // HierarchicalRuleOptionsInterface (not directly ThresholdAware), but
+        // its level Options (MethodComplexityOptions, ClassComplexityOptions)
+        // are Standard ThresholdAware. The factory now walks levels so the
+        // parser actually receives a validator for complexity.cyclomatic
+        // instead of silently skipping it.
+        $rootOptions = ComplexityOptions::fromArray([]);
+        $levelOptions = $rootOptions->forLevel(\Qualimetrix\Core\Rule\RuleLevel::Method);
+        self::assertInstanceOf(\Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface::class, $levelOptions);
+        $validator = $levelOptions::getOverrideValidator();
+        self::assertSame(StandardOverrideValidator::instance(), $validator);
+
+        $result = $this->extract(
+            ruleName: ComplexityRule::NAME,
+            validator: $validator,
+            docblock: '/** @qmx-threshold complexity.cyclomatic warning=25 error=15 */',
+        );
+
+        self::assertCount(0, $result->overrides);
+        self::assertCount(1, $result->diagnostics);
+        self::assertSame('warning_exceeds_error', $result->diagnostics[0]->code);
     }
 
     #[Test]

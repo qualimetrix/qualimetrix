@@ -112,6 +112,7 @@ final readonly class ThresholdOverrideExtractor
                             line: $line,
                             message: \sprintf('@qmx-threshold %s: %s', $rulePattern, $failure->message),
                             code: $failure->code,
+                            hint: $failure->hint,
                         );
 
                         continue;
