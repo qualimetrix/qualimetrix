@@ -42,6 +42,7 @@ use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
 use Qualimetrix\Infrastructure\Console\ViolationFilterOrchestrator;
 use Qualimetrix\Infrastructure\Console\ViolationFilterPipeline;
 use Qualimetrix\Infrastructure\Git\GitRepositoryLocator;
+use Qualimetrix\Infrastructure\Git\GitRepositoryLocatorInterface;
 use Qualimetrix\Infrastructure\Logging\DelegatingLogger;
 use Qualimetrix\Infrastructure\Logging\LoggerFactory;
 use Qualimetrix\Infrastructure\Logging\LoggerHolder;
@@ -278,6 +279,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
 
         // GitRepositoryLocator (shared by hook commands)
         $container->register(GitRepositoryLocator::class);
+        $container->setAlias(GitRepositoryLocatorInterface::class, GitRepositoryLocator::class);
 
         // HookInstallCommand
         $container->register(HookInstallCommand::class)

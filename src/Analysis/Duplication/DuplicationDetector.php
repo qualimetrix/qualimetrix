@@ -26,7 +26,7 @@ use SplFileInfo;
  * - Hash index pruned before re-tokenization pass
  * - Only files with matches are re-tokenized
  */
-final class DuplicationDetector
+final class DuplicationDetector implements DuplicationDetectorInterface
 {
     private const HASH_BASE = 33;
     private const HASH_MOD = 1_000_000_007;
