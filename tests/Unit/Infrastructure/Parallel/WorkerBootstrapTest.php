@@ -288,10 +288,12 @@ final class WorkerBootstrapTest extends TestCase
     }
 
     #[Test]
-    public function itDetectsCollectorOrderChange(): void
+    public function itTreatsCollectorOrderAsIrrelevantInCacheKey(): void
     {
-        // Collector order SHOULD NOT affect cache since md5(implode('|', ...)) is used
-        // But to be sure, verify that different order creates a different cache key
+        // The same collector set in a different order must produce the same
+        // cache key — DI tag iteration order is deterministic within a process
+        // but the cache key should not depend on registration order across
+        // processes.
         $processor1 = WorkerBootstrap::getFileProcessor(
             projectRoot: '/tmp/test-project',
             collectorClasses: [CyclomaticComplexityCollector::class, LocCollector::class],
@@ -303,7 +305,7 @@ final class WorkerBootstrapTest extends TestCase
 
         WorkerBootstrap::reset();
 
-        $processor2 = WorkerBootstrap::getFileProcessor(
+        WorkerBootstrap::getFileProcessor(
             projectRoot: '/tmp/test-project',
             collectorClasses: [LocCollector::class, CyclomaticComplexityCollector::class],
             derivedCollectorClasses: [],
@@ -312,8 +314,7 @@ final class WorkerBootstrapTest extends TestCase
 
         $cacheKey2 = $this->getStaticCacheKey();
 
-        self::assertNotSame($processor1, $processor2, 'Expected different processor instances for different collector order');
-        self::assertNotSame($cacheKey1, $cacheKey2, 'Expected different cache keys for different collector order');
+        self::assertSame($cacheKey1, $cacheKey2, 'Cache key must be insensitive to collector order — sets are equal');
     }
 
     /**

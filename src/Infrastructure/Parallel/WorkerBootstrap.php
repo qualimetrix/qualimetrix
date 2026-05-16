@@ -120,9 +120,19 @@ final class WorkerBootstrap
         array $collectorConfig = [],
         array $ruleClasses = [],
     ): string {
-        // Include collector and rule classes in cache key to detect changes
-        $collectorsHash = md5(implode('|', $collectorClasses) . '||' . implode('|', $derivedCollectorClasses));
-        $rulesHash = md5(implode('|', $ruleClasses));
+        // Include collector and rule classes in cache key to detect changes.
+        // Sort each list so a permutation of the same set produces an identical
+        // hash — DI tag iteration is deterministic within a process, but the
+        // cache should not depend on registration order across processes.
+        $sortedCollectors = $collectorClasses;
+        sort($sortedCollectors);
+        $sortedDerived = $derivedCollectorClasses;
+        sort($sortedDerived);
+        $sortedRules = $ruleClasses;
+        sort($sortedRules);
+
+        $collectorsHash = md5(implode('|', $sortedCollectors) . '||' . implode('|', $sortedDerived));
+        $rulesHash = md5(implode('|', $sortedRules));
         $sortedConfig = $collectorConfig;
         ksort($sortedConfig);
         $configHash = $sortedConfig !== [] ? md5(serialize($sortedConfig)) : '';

@@ -341,6 +341,14 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
     /**
      * Converts threshold annotation diagnostics to warning-level violations.
      *
+     * The diagnostic's stable `code` (set by per-rule validators —
+     * `warning_exceeds_error`, `error_not_supported`, etc.) becomes a
+     * specific `annotation.invalid-threshold.<code>` violationCode so
+     * machine-readable formats (SARIF, JSON, GitLab Code Quality) can
+     * cross-reference the rejection class. The diagnostic's optional
+     * `hint` flows into `recommendation` so users see actionable
+     * follow-up.
+     *
      * @param array<string, list<ThresholdDiagnostic>> $diagnosticsByFile
      *
      * @return list<Violation>
@@ -351,13 +359,18 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
 
         foreach ($diagnosticsByFile as $file => $diagnostics) {
             foreach ($diagnostics as $diagnostic) {
+                $violationCode = $diagnostic->code !== null
+                    ? 'annotation.invalid-threshold.' . $diagnostic->code
+                    : 'annotation.invalid-threshold';
+
                 $violations[] = new Violation(
                     location: new Location($file, $diagnostic->line, precise: true),
                     symbolPath: SymbolPath::forFile($file),
                     ruleName: 'annotation.invalid-threshold',
-                    violationCode: 'annotation.invalid-threshold',
+                    violationCode: $violationCode,
                     message: $diagnostic->message,
                     severity: Severity::Warning,
+                    recommendation: $diagnostic->hint,
                 );
             }
         }

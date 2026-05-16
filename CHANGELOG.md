@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Breaking
 - `ThresholdAwareOptionsInterface` gains a static `getOverrideValidator()` accessor that returns the per-rule `OverrideValidatorInterface` strategy used to validate `@qmx-threshold` annotations. Custom Options classes in extension code must implement the new method or `use StandardOverrideValidatorTrait;` for the default `warning ≤ error + non-negative` semantics. See ADR 0013.
 
+### Changed
+- Invalid `@qmx-threshold` annotations now surface a rule-specific code (e.g. `warning_exceeds_error`, `error_exceeds_warning`, `error_not_supported`) as `violationCode: annotation.invalid-threshold.<code>` in JSON / SARIF / Checkstyle output; the human message is unchanged. Validators that provide a remediation hint (e.g. WarningOnly's "omit `error=...`") now flow through to `recommendation` so users see actionable follow-up.
+
 ### Fixed
 - `@qmx-threshold maintainability.index warning=N error=M` annotations with `N > M` were silently rejected by the parser, even though the rule's defaults are `warning=40 error=20` (inverted thresholds are the natural orientation). The bug was latent across releases — Maintainability annotations work for the first time in v0.19.
 - `@qmx-threshold design.type-coverage warning=N error=M` with `N > M` was rejected on the same parser invariant; type coverage is an inverted-threshold rule and now accepts the natural form.

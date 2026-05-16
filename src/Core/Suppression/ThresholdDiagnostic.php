@@ -24,5 +24,6 @@ final readonly class ThresholdDiagnostic
         public int $line,
         public string $message,
         public ?string $code = null,
+        public ?string $hint = null,
     ) {}
 }

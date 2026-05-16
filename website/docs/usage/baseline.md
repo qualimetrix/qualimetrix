@@ -258,7 +258,10 @@ Most rules accept the standard "warning threshold ≤ error threshold" form — 
 - **Independent axes** (`design.data-class`) — `warning` and `error` set unrelated metrics: warning maps to `wocThreshold` (minimum Weight of Class, high = more public surface) and error maps to `wmcThreshold` (maximum Weighted Method Count, low = simple methods). The two values are unrelated; W > E is just as valid as W < E.
 - **Warning-only** (`design.god-class`) — the rule has a single tunable knob (`minCriteria`); the error half of the annotation has no equivalent. Use the shorthand form `@qmx-threshold design.god-class N` (sets the warning threshold), or the explicit `warning=N` form. Supplying `error=N` is rejected with a clear diagnostic so the discarded value does not surprise you.
 
-Validation failures appear as `@qmx-threshold` diagnostics in the analyzer output and carry stable codes (`warning_exceeds_error`, `error_exceeds_warning`, `error_not_supported`, etc.) for cross-referencing in machine-readable output.
+Validation failures appear as `@qmx-threshold` diagnostics in the analyzer output and carry stable codes (`warning_exceeds_error`, `error_exceeds_warning`, `error_not_supported`, etc.) for cross-referencing in machine-readable output. The codes surface as `violationCode: annotation.invalid-threshold.<code>` in JSON/SARIF/Checkstyle output.
+
+!!! note "Partial overrides keep the default for the other half"
+    Validation is applied to the values you wrote — not to the resulting Options after the override merges with the defaults. If you set only one half (`@qmx-threshold complexity.cyclomatic warning=25`), the rule keeps its default `error` value, and that combination may produce a state the validator would have rejected if both halves had been written explicitly. Prefer the explicit form when tuning both thresholds.
 
 ---
 
