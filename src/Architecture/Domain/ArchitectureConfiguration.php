@@ -44,8 +44,10 @@ use Qualimetrix\Architecture\Domain\Layer\TemplateLayerDefinition;
  * rule should short-circuit during analysis. {@see isEmpty()} is the canonical
  * predicate for that check.
  *
- * Lives in the Core domain so that {@see \Qualimetrix\Core\Rule\AnalysisContext}
- * and rules (which cannot depend on Configuration) can reference it directly.
+ * Lives in {@code Qualimetrix\Architecture\Domain} (the vertical slice's
+ * pure-domain layer per ADR 0010). The architecture rule reaches it through
+ * {@see \Qualimetrix\Architecture\Processing\ArchitectureProcessorInterface::getPreparedConfiguration()},
+ * so Domain stays free of Configuration and Rules dependencies.
  */
 final readonly class ArchitectureConfiguration
 {

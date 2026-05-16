@@ -419,8 +419,8 @@ Reports dependency edges that cross declared architecture layers and are not in 
 
 Layer definitions, allow-list, and `coverage` mode live in the top-level `architecture:` YAML section
 (see [`src/Architecture/Configuration/ArchitectureConfigurationFactory.php`](../Architecture/Configuration/ArchitectureConfigurationFactory.php))
-and reach the rule through `AnalysisContext::$architecture` (Phase 4 / [ADR 0008](../../docs/adr/0008-architecture-processor-service.md)
-will switch to a constructor-injected `ArchitectureProcessorInterface`). The Options class itself carries
+and reach the rule through a constructor-injected `ArchitectureProcessorInterface`
+([ADR 0008](../../docs/adr/0008-architecture-processor-service.md)). The Options class itself carries
 only the `enabled` flag and a single `severity` selector — there are no numeric thresholds.
 
 **Default:** `enabled: true`, `severity: warning`. The rule short-circuits immediately when `architecture.layers` is empty, so projects without architecture configuration pay zero cost.

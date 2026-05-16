@@ -17,8 +17,9 @@ use InvalidArgumentException;
  * The enum carries the user-facing string representation as its case value so that
  * configuration can round-trip without a separate mapping table.
  *
- * Lives in the Core domain so that {@see \Qualimetrix\Core\Rule\AnalysisContext}
- * and rules (which cannot depend on Configuration) can reference it directly.
+ * Lives in {@code Qualimetrix\Architecture\Domain} (the vertical slice's
+ * pure-domain layer per ADR 0010) so it stays free of Configuration and
+ * Rules dependencies — both reach it through the slice's own surfaces.
  */
 enum CoverageMode: string
 {
@@ -29,10 +30,9 @@ enum CoverageMode: string
     /**
      * Resolves a case-insensitive string to a case.
      *
-     * Kept free of cross-domain exception types so that the enum stays in the
-     * Core domain. Configuration-layer factories translate the
-     * InvalidArgumentException into a domain-appropriate exception with a
-     * YAML-path hint.
+     * Kept free of cross-domain exception types so the enum stays in the
+     * slice's Domain layer. The slice's Configuration component translates
+     * the InvalidArgumentException into a YAML-path-hinting exception.
      *
      * @throws InvalidArgumentException If the string does not name a known case.
      */

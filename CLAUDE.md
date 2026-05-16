@@ -103,10 +103,9 @@ in `src/Infrastructure/` regardless of which feature they touch. They
 depend on the slice through its public service contracts. Example:
 `LayerAssignmentCommand` stays at
 `src/Infrastructure/Console/Command/Debug/LayerAssignmentCommand.php` and
-injects `ArchitectureProcessorInterface` (Phase 4) plus Discovery and
-Collection services — pulling the command into the Architecture slice would
-force the slice to depend on `symfony/console`, which is an infrastructure
-concern.
+injects `ArchitectureProcessorInterface` plus Collection services — pulling
+the command into the Architecture slice would force the slice to depend on
+`symfony/console`, which is an infrastructure concern.
 
 ---
 
