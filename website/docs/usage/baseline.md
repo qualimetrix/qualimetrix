@@ -250,6 +250,16 @@ class OrderProcessor
 !!! tip
     Use `@qmx-threshold` when a violation is expected but you still want Qualimetrix to enforce _some_ limit. Use `@qmx-ignore` when you want to suppress the violation entirely.
 
+### Rule-specific override semantics
+
+Most rules accept the standard "warning threshold ≤ error threshold" form — anything above the warning value is a warning, anything above the error value is an error. A handful of rules use different semantics because their metric is interpreted differently. Annotations are validated per-rule at parse time:
+
+- **Inverted thresholds** (`maintainability.index`, `design.type-coverage`) — higher metric values are *better*, so the override must use `warning ≥ error`. Example: `@qmx-threshold maintainability.index warning=50 error=30` warns when MI drops below 50 and errors when it drops below 30.
+- **Independent axes** (`design.data-class`) — `warning` and `error` set unrelated metrics: warning maps to `wocThreshold` (minimum Weight of Class, high = more public surface) and error maps to `wmcThreshold` (maximum Weighted Method Count, low = simple methods). The two values are unrelated; W > E is just as valid as W < E.
+- **Warning-only** (`design.god-class`) — the rule has a single tunable knob (`minCriteria`); the error half of the annotation has no equivalent. Use the shorthand form `@qmx-threshold design.god-class N` (sets the warning threshold), or the explicit `warning=N` form. Supplying `error=N` is rejected with a clear diagnostic so the discarded value does not surprise you.
+
+Validation failures appear as `@qmx-threshold` diagnostics in the analyzer output and carry stable codes (`warning_exceeds_error`, `error_exceeds_warning`, `error_not_supported`, etc.) for cross-referencing in machine-readable output.
+
 ---
 
 ## Best practices
