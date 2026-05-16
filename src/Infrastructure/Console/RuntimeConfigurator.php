@@ -154,12 +154,17 @@ final class RuntimeConfigurator
      *
      * Creates appropriate logger using LoggerFactory and sets it in LoggerHolder
      * so that all components (Analyzer, PhpFileParser) can use it.
+     *
+     * Defensive about option presence: commands other than `check` (e.g.
+     * `debug:layer-assignment`) reuse this configurator to apply the YAML
+     * `memory_limit` before parallel collection, but don't expose every
+     * logging/profiling option. Missing options fall back to defaults.
      */
     private function configureLogger(InputInterface $input, OutputInterface $output): void
     {
         // Get log file path and level from CLI options
-        $logFile = $input->getOption('log-file');
-        $logLevel = $input->getOption('log-level');
+        $logFile = $input->hasOption('log-file') ? $input->getOption('log-file') : null;
+        $logLevel = $input->hasOption('log-level') ? $input->getOption('log-level') : null;
 
         // Validate log file path
         if (!\is_string($logFile) && $logFile !== null) {
@@ -224,7 +229,7 @@ final class RuntimeConfigurator
         }
 
         // Explicit disable
-        if ($input->getOption('no-progress') === true) {
+        if ($input->hasOption('no-progress') && $input->getOption('no-progress') === true) {
             $this->progressReporterHolder->setReporter(new NullProgressReporter());
 
             return;
@@ -246,6 +251,11 @@ final class RuntimeConfigurator
      */
     private function configureProfiler(InputInterface $input): void
     {
+        if (!$input->hasOption('profile')) {
+            // Command does not expose `--profile`; profiler stays as NullProfiler.
+            return;
+        }
+
         $profileOption = $input->getOption('profile');
 
         // If --profile was not provided, profiler stays as NullProfiler (default)
