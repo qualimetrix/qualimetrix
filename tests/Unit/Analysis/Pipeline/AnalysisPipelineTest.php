@@ -250,8 +250,7 @@ final class AnalysisPipelineTest extends TestCase
         );
         $configProvider->method('getRuleOptions')->willReturn([]);
 
-        // DuplicationDetector is final, so we verify indirectly:
-        // with rule disabled, pipeline completes without calling detect()
+        // With rule disabled, pipeline completes without calling detect()
         $pipeline = $this->createPipeline(configurationProvider: $configProvider);
 
         $result = $pipeline->analyze('/path/to/src');

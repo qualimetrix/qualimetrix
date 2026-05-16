@@ -48,7 +48,7 @@ final class MetricEnricher
         private readonly ConfigurationProviderInterface $configurationProvider,
         private readonly LoggerInterface $logger = new NullLogger(),
         private readonly ?ProfilerHolder $profilerHolder = null,
-        private readonly ?Duplication\DuplicationDetector $duplicationDetector = null,
+        private readonly ?Duplication\DuplicationDetectorInterface $duplicationDetector = null,
         private readonly ?ComputedMetricEvaluator $computedMetricEvaluator = null,
     ) {
         // Collect ALL definitions from regular collectors, derived collectors, AND global collectors

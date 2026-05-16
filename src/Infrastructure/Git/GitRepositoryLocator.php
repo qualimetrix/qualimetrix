@@ -13,7 +13,7 @@ namespace Qualimetrix\Infrastructure\Git;
  * Fallback: manual directory traversal up the filesystem tree (for environments
  * where git is not in PATH).
  */
-final class GitRepositoryLocator
+final class GitRepositoryLocator implements GitRepositoryLocatorInterface
 {
     /**
      * Finds the .git directory for the current repository.
