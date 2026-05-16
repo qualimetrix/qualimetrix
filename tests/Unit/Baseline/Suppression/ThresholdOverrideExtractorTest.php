@@ -11,6 +11,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Baseline\Suppression\ThresholdOverrideExtractionResult;
 use Qualimetrix\Baseline\Suppression\ThresholdOverrideExtractor;
+use Qualimetrix\Core\Rule\Override\StandardOverrideValidator;
 
 #[CoversClass(ThresholdOverrideExtractor::class)]
 #[CoversClass(ThresholdOverrideExtractionResult::class)]
@@ -20,7 +21,12 @@ final class ThresholdOverrideExtractorTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->extractor = new ThresholdOverrideExtractor();
+        $validator = StandardOverrideValidator::instance();
+        $this->extractor = new ThresholdOverrideExtractor([
+            'complexity.cyclomatic' => $validator,
+            'coupling.instability' => $validator,
+            'coupling.cbo' => $validator,
+        ]);
     }
 
     public function testExtractsShorthandSyntax(): void

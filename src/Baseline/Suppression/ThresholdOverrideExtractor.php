@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Baseline\Suppression;
 
 use PhpParser\Node;
+use Qualimetrix\Core\Rule\Override\OverrideValidatorInterface;
 use Qualimetrix\Core\Suppression\ThresholdDiagnostic;
 use Qualimetrix\Core\Suppression\ThresholdOverride;
 
@@ -19,9 +20,15 @@ use Qualimetrix\Core\Suppression\ThresholdOverride;
  *
  * Invalid annotations produce diagnostics instead of being silently ignored:
  * - Unparseable value syntax
- * - Negative threshold values
- * - Warning threshold greater than error threshold
+ * - Rule-specific override violations enforced via {@see OverrideValidatorInterface}
+ *   (e.g. warning > error for standard rules, warning < error for inverted rules,
+ *   explicit error= for warning-only rules)
  * - Duplicate rule annotations on the same symbol
+ *
+ * The `$validators` map is keyed by rule name. Annotations targeting
+ * unknown rule names (or wildcard / prefix patterns) skip per-rule
+ * validation; the existing `annotation.unsupported-threshold` diagnostic
+ * surfaces these post-analysis.
  */
 final readonly class ThresholdOverrideExtractor
 {
@@ -31,6 +38,13 @@ final readonly class ThresholdOverrideExtractor
      * Capture group 2: threshold values (rest of line)
      */
     private const PATTERN = '/@qmx-threshold\s+([\w.*-]+)\s+([^\n\r]+)/';
+
+    /**
+     * @param array<string, OverrideValidatorInterface> $validators rule name => validator strategy
+     */
+    public function __construct(
+        private array $validators = [],
+    ) {}
 
     /**
      * Extracts threshold override annotations from node's docblock.
@@ -84,36 +98,24 @@ final readonly class ThresholdOverrideExtractor
                     continue;
                 }
 
-                [$warning, $error] = $parsed;
+                [$warning, $error, $errorWasExplicit] = $parsed;
 
-                // Validate: negative values are not allowed
-                if (($warning !== null && $warning < 0) || ($error !== null && $error < 0)) {
-                    $diagnostics[] = new ThresholdDiagnostic(
-                        line: $line,
-                        message: \sprintf(
-                            '@qmx-threshold %s: negative threshold values are not allowed (warning=%s, error=%s)',
-                            $rulePattern,
-                            self::formatValue($warning),
-                            self::formatValue($error),
-                        ),
-                    );
+                // Delegate validation to per-rule strategy.
+                // Unknown rule names (or wildcard / prefix patterns) skip validation —
+                // the post-analysis `annotation.unsupported-threshold` diagnostic
+                // surfaces those instead.
+                $validator = $this->validators[$rulePattern] ?? null;
+                if ($validator !== null) {
+                    $failure = $validator->validate($warning, $error, $errorWasExplicit);
+                    if ($failure !== null) {
+                        $diagnostics[] = new ThresholdDiagnostic(
+                            line: $line,
+                            message: \sprintf('@qmx-threshold %s: %s', $rulePattern, $failure->message),
+                            code: $failure->code,
+                        );
 
-                    continue;
-                }
-
-                // Validate: warning > error is not allowed
-                if ($warning !== null && $error !== null && $warning > $error) {
-                    $diagnostics[] = new ThresholdDiagnostic(
-                        line: $line,
-                        message: \sprintf(
-                            '@qmx-threshold %s: warning threshold (%s) must not exceed error threshold (%s)',
-                            $rulePattern,
-                            self::formatValue($warning),
-                            self::formatValue($error),
-                        ),
-                    );
-
-                    continue;
+                        continue;
+                    }
                 }
 
                 // Validate: duplicate rule pattern on the same symbol
@@ -148,9 +150,14 @@ final readonly class ThresholdOverrideExtractor
     /**
      * Parses the value portion of a `@qmx-threshold` annotation.
      *
-     * Returns [warning, error] or null if unparseable.
+     * Returns [warning, error, errorWasExplicit] or null if unparseable.
+     * `errorWasExplicit` distinguishes the shorthand form
+     * (`@qmx-threshold X N`, parsed as W=N, E=N, errorWasExplicit=false)
+     * from the explicit form (`@qmx-threshold X warning=N error=M`,
+     * errorWasExplicit=true) so warning-only rules can keep the shorthand
+     * working while rejecting deliberate error= values.
      *
-     * @return array{int|float|null, int|float|null}|null
+     * @return array{int|float|null, int|float|null, bool}|null
      */
     private static function parseValues(string $valueString): ?array
     {
@@ -164,12 +171,13 @@ final readonly class ThresholdOverrideExtractor
         if (preg_match('/^(\d+(?:\.\d+)?)$/', $valueString, $match) === 1) {
             $value = self::parseNumber($match[1]);
 
-            return [$value, $value];
+            return [$value, $value, false];
         }
 
         // Try explicit: warning=W and/or error=E
         $warning = null;
         $error = null;
+        $errorWasExplicit = false;
 
         if (preg_match('/warning=(\d+(?:\.\d+)?)/', $valueString, $match) === 1) {
             $warning = self::parseNumber($match[1]);
@@ -177,6 +185,7 @@ final readonly class ThresholdOverrideExtractor
 
         if (preg_match('/error=(\d+(?:\.\d+)?)/', $valueString, $match) === 1) {
             $error = self::parseNumber($match[1]);
+            $errorWasExplicit = true;
         }
 
         // If neither was found, syntax is invalid
@@ -184,7 +193,7 @@ final readonly class ThresholdOverrideExtractor
             return null;
         }
 
-        return [$warning, $error];
+        return [$warning, $error, $errorWasExplicit];
     }
 
     /**
@@ -213,17 +222,5 @@ final readonly class ThresholdOverrideExtractor
     private static function stripBacktickRegions(string $text): string
     {
         return preg_replace('/`[^`]*`/', '', $text) ?? $text;
-    }
-
-    /**
-     * Formats a threshold value for diagnostic messages.
-     */
-    private static function formatValue(int|float|null $value): string
-    {
-        if ($value === null) {
-            return 'null';
-        }
-
-        return (string) $value;
     }
 }

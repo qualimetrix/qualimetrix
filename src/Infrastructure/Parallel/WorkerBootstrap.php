@@ -9,10 +9,13 @@ use Qualimetrix\Analysis\Collection\Dependency\DependencyVisitor;
 use Qualimetrix\Analysis\Collection\FileProcessor;
 use Qualimetrix\Analysis\Collection\FileProcessorInterface;
 use Qualimetrix\Analysis\Collection\Metric\CompositeCollector;
+use Qualimetrix\Baseline\Suppression\RuleValidatorMapFactory;
+use Qualimetrix\Baseline\Suppression\ThresholdOverrideExtractor;
 use Qualimetrix\Core\Metric\CollectorConfigHolder;
 use Qualimetrix\Core\Metric\DerivedCollectorInterface;
 use Qualimetrix\Core\Metric\MetricCollectorInterface;
 use Qualimetrix\Core\Metric\ParallelSafeCollectorInterface;
+use Qualimetrix\Core\Rule\RuleInterface;
 use Qualimetrix\Infrastructure\Ast\CachedFileParser;
 use Qualimetrix\Infrastructure\Ast\PhpFileParser;
 use Qualimetrix\Infrastructure\Cache\CacheKeyGenerator;
@@ -57,6 +60,7 @@ final class WorkerBootstrap
      * @param list<class-string<DerivedCollectorInterface>> $derivedCollectorClasses Derived collector class names
      * @param string|null $cacheDir Cache directory (null to disable caching)
      * @param array<string, mixed> $collectorConfig Collector-level configuration (e.g., LCOM exclude methods)
+     * @param list<class-string<RuleInterface>> $ruleClasses Rule class names (worker rebuilds threshold-override validator map)
      */
     public static function getFileProcessor(
         string $projectRoot,
@@ -64,8 +68,9 @@ final class WorkerBootstrap
         array $derivedCollectorClasses = [],
         ?string $cacheDir = null,
         array $collectorConfig = [],
+        array $ruleClasses = [],
     ): FileProcessorInterface {
-        $newCacheKey = self::buildCacheKey($projectRoot, $collectorClasses, $derivedCollectorClasses, $cacheDir, $collectorConfig);
+        $newCacheKey = self::buildCacheKey($projectRoot, $collectorClasses, $derivedCollectorClasses, $cacheDir, $collectorConfig, $ruleClasses);
 
         // Return cached processor if configuration hasn't changed
         if (self::$processor !== null && self::$cacheKey === $newCacheKey) {
@@ -79,7 +84,7 @@ final class WorkerBootstrap
         }
 
         // Create new processor
-        self::$processor = self::createFileProcessor($projectRoot, $collectorClasses, $derivedCollectorClasses, $cacheDir);
+        self::$processor = self::createFileProcessor($projectRoot, $collectorClasses, $derivedCollectorClasses, $cacheDir, $ruleClasses);
         self::$cacheKey = $newCacheKey;
 
         // Apply collector config
@@ -105,6 +110,7 @@ final class WorkerBootstrap
      * @param list<class-string<MetricCollectorInterface>> $collectorClasses
      * @param list<class-string<DerivedCollectorInterface>> $derivedCollectorClasses
      * @param array<string, mixed> $collectorConfig
+     * @param list<class-string<RuleInterface>> $ruleClasses
      */
     private static function buildCacheKey(
         string $projectRoot,
@@ -112,14 +118,16 @@ final class WorkerBootstrap
         array $derivedCollectorClasses,
         ?string $cacheDir,
         array $collectorConfig = [],
+        array $ruleClasses = [],
     ): string {
-        // Include collector classes in cache key to detect changes
+        // Include collector and rule classes in cache key to detect changes
         $collectorsHash = md5(implode('|', $collectorClasses) . '||' . implode('|', $derivedCollectorClasses));
+        $rulesHash = md5(implode('|', $ruleClasses));
         $sortedConfig = $collectorConfig;
         ksort($sortedConfig);
         $configHash = $sortedConfig !== [] ? md5(serialize($sortedConfig)) : '';
 
-        return $projectRoot . '|' . ($cacheDir ?? 'no-cache') . '|' . $collectorsHash . '|' . $configHash;
+        return $projectRoot . '|' . ($cacheDir ?? 'no-cache') . '|' . $collectorsHash . '|' . $rulesHash . '|' . $configHash;
     }
 
     /**
@@ -127,12 +135,14 @@ final class WorkerBootstrap
      *
      * @param list<class-string<MetricCollectorInterface>> $collectorClasses
      * @param list<class-string<DerivedCollectorInterface>> $derivedCollectorClasses
+     * @param list<class-string<RuleInterface>> $ruleClasses
      */
     private static function createFileProcessor(
         string $projectRoot,
         array $collectorClasses,
         array $derivedCollectorClasses,
         ?string $cacheDir,
+        array $ruleClasses = [],
     ): FileProcessorInterface {
         // Create parser (with optional caching)
         $baseParser = new PhpFileParser();
@@ -155,7 +165,15 @@ final class WorkerBootstrap
         $dependencyVisitor = new DependencyVisitor(new DependencyResolver());
         $compositeCollector->setDependencyVisitor($dependencyVisitor);
 
-        return new FileProcessor($parser, $compositeCollector);
+        // Build per-rule threshold-override validator map (static lookup, no DI)
+        $validators = RuleValidatorMapFactory::build($ruleClasses);
+        $extractor = new ThresholdOverrideExtractor($validators);
+
+        return new FileProcessor(
+            parser: $parser,
+            collector: $compositeCollector,
+            thresholdOverrideExtractor: $extractor,
+        );
     }
 
     /**

@@ -10,6 +10,7 @@ use Amp\Sync\Channel;
 use Qualimetrix\Analysis\Collection\FileProcessingResult;
 use Qualimetrix\Core\Metric\DerivedCollectorInterface;
 use Qualimetrix\Core\Metric\MetricCollectorInterface;
+use Qualimetrix\Core\Rule\RuleInterface;
 use SplFileInfo;
 
 /**
@@ -34,6 +35,7 @@ final class FileProcessingTask implements Task
      * @param list<class-string<DerivedCollectorInterface>> $derivedCollectorClasses Derived collector class names
      * @param string|null $cacheDir Optional cache directory for AST caching
      * @param array<string, mixed> $collectorConfig Collector-level configuration (e.g., LCOM exclude methods)
+     * @param list<class-string<RuleInterface>> $ruleClasses Rule class names (worker rebuilds threshold-override validator map)
      */
     public function __construct(
         private readonly string $filePath,
@@ -42,6 +44,7 @@ final class FileProcessingTask implements Task
         private readonly array $derivedCollectorClasses = [],
         private readonly ?string $cacheDir = null,
         private readonly array $collectorConfig = [],
+        private readonly array $ruleClasses = [],
     ) {}
 
     /**
@@ -67,6 +70,7 @@ final class FileProcessingTask implements Task
             derivedCollectorClasses: $this->derivedCollectorClasses,
             cacheDir: $this->cacheDir,
             collectorConfig: $this->collectorConfig,
+            ruleClasses: $this->ruleClasses,
         );
 
         // Process the file
