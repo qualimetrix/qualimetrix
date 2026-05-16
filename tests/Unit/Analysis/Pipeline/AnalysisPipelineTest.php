@@ -16,6 +16,7 @@ use Qualimetrix\Analysis\Collection\CollectionPhaseOutput;
 use Qualimetrix\Analysis\Collection\CollectionResult;
 use Qualimetrix\Analysis\Collection\Metric\CompositeCollector;
 use Qualimetrix\Analysis\Discovery\FileDiscoveryInterface;
+use Qualimetrix\Analysis\Duplication\DuplicationDetectorInterface;
 use Qualimetrix\Analysis\Pipeline\AnalysisPipeline;
 use Qualimetrix\Analysis\Pipeline\MetricEnricher;
 use Qualimetrix\Analysis\RuleExecution\RuleExecutorInterface;
@@ -250,8 +251,23 @@ final class AnalysisPipelineTest extends TestCase
         );
         $configProvider->method('getRuleOptions')->willReturn([]);
 
-        // With rule disabled, pipeline completes without calling detect()
-        $pipeline = $this->createPipeline(configurationProvider: $configProvider);
+        $duplicationDetector = $this->createMock(DuplicationDetectorInterface::class);
+        $duplicationDetector->expects(self::never())->method('detect');
+
+        $pipeline = TestPipelineBuilder::create()
+            ->withDefaultDiscovery($this->defaultDiscovery)
+            ->withCollectionOrchestrator($this->collectionOrchestrator)
+            ->withRuleExecutor($this->ruleExecutor)
+            ->withConfigurationProvider($configProvider)
+            ->withMetricEnricher(new MetricEnricher(
+                compositeCollector: $this->compositeCollector,
+                globalCollectorRunner: $this->globalCollectorRunner,
+                configurationProvider: $configProvider,
+                logger: $this->logger,
+                duplicationDetector: $duplicationDetector,
+            ))
+            ->withLogger($this->logger)
+            ->build();
 
         $result = $pipeline->analyze('/path/to/src');
 
