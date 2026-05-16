@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Configuration;
 
+use Qualimetrix\Core\Rule\CliAliasReader;
 use Qualimetrix\Core\Rule\RuleInterface;
 use ReflectionClass;
 
@@ -24,8 +25,7 @@ final readonly class RuleOptionsParserFactory
         foreach ($rules as $rule) {
             $ruleName = $rule->getName();
 
-            /** @var array<string, string> $aliases */
-            $aliases = $rule::getCliAliases();
+            $aliases = CliAliasReader::read($rule::class);
 
             foreach ($aliases as $alias => $optionName) {
                 $shortAliases[$alias] = [
@@ -52,8 +52,7 @@ final readonly class RuleOptionsParserFactory
         foreach ($ruleClasses as $ruleClass) {
             $ruleName = $this->getRuleName($ruleClass);
 
-            /** @var array<string, string> $aliases */
-            $aliases = $ruleClass::getCliAliases();
+            $aliases = CliAliasReader::read($ruleClass);
 
             foreach ($aliases as $alias => $optionName) {
                 $shortAliases[$alias] = [

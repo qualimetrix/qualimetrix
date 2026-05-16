@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Command;
 
+use Qualimetrix\Core\Rule\CliAliasReader;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -50,7 +51,7 @@ final class RulesCommand extends Command
                 continue;
             }
 
-            $aliases = $rule::getCliAliases();
+            $aliases = CliAliasReader::read($rule::class);
 
             $rules[] = [
                 'name' => $name,

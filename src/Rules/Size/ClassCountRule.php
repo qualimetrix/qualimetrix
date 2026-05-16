@@ -7,6 +7,7 @@ namespace Qualimetrix\Rules\Size;
 use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\Location;
@@ -20,6 +21,8 @@ use Qualimetrix\Rules\AbstractRule;
  * Too many classes in a namespace indicate it may be doing too much
  * and should be split into sub-namespaces.
  */
+#[CliAlias('class-count-warning', 'warning')]
+#[CliAlias('class-count-error', 'error')]
 final class ClassCountRule extends AbstractRule
 {
     public const string NAME = 'size.class-count';
@@ -39,6 +42,8 @@ final class ClassCountRule extends AbstractRule
         return RuleCategory::Size;
     }
 
+
+
     /**
      * @return list<string>
      */
@@ -47,23 +52,14 @@ final class ClassCountRule extends AbstractRule
         return [MetricName::SIZE_CLASS_COUNT];
     }
 
+
+
     /**
      * @return class-string<ClassCountOptions>
      */
     public static function getOptionsClass(): string
     {
         return ClassCountOptions::class;
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    public static function getCliAliases(): array
-    {
-        return [
-            'class-count-warning' => 'warning',
-            'class-count-error' => 'error',
-        ];
     }
 
     /**
@@ -92,6 +88,8 @@ final class ClassCountRule extends AbstractRule
             if ($classCount === 0) {
                 continue;
             }
+
+
 
             /** @var ClassCountOptions $effectiveOptions */
             $effectiveOptions = $this->getEffectiveOptions($context, $this->options, $namespaceInfo->file, $namespaceInfo->line ?? 1);

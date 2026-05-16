@@ -6,6 +6,7 @@ namespace Qualimetrix\Rules\Design;
 
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\Location;
@@ -20,6 +21,13 @@ use Qualimetrix\Rules\AbstractRule;
  * Detection is based on 4 criteria: WMC, LCOM4, TCC, and class LOC.
  * A class is flagged when it matches minCriteria of the evaluable criteria.
  */
+#[CliAlias('god-class-wmc-threshold', 'wmcThreshold')]
+#[CliAlias('god-class-lcom-threshold', 'lcomThreshold')]
+#[CliAlias('god-class-tcc-threshold', 'tccThreshold')]
+#[CliAlias('god-class-class-loc-threshold', 'classLocThreshold')]
+#[CliAlias('god-class-min-criteria', 'minCriteria')]
+#[CliAlias('god-class-min-methods', 'minMethods')]
+#[CliAlias('god-class-exclude-readonly', 'excludeReadonly')]
 final class GodClassRule extends AbstractRule
 {
     public const string NAME = 'design.god-class';
@@ -186,21 +194,5 @@ final class GodClassRule extends AbstractRule
     public static function getOptionsClass(): string
     {
         return GodClassOptions::class;
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    public static function getCliAliases(): array
-    {
-        return [
-            'god-class-wmc-threshold' => 'wmcThreshold',
-            'god-class-lcom-threshold' => 'lcomThreshold',
-            'god-class-tcc-threshold' => 'tccThreshold',
-            'god-class-class-loc-threshold' => 'classLocThreshold',
-            'god-class-min-criteria' => 'minCriteria',
-            'god-class-min-methods' => 'minMethods',
-            'god-class-exclude-readonly' => 'excludeReadonly',
-        ];
     }
 }

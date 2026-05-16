@@ -11,6 +11,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Rule\CliAliasReader;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -65,7 +66,7 @@ final class LongParameterListRuleTest extends TestCase
                 'long-parameter-list-vo-warning' => 'vo-warning',
                 'long-parameter-list-vo-error' => 'vo-error',
             ],
-            LongParameterListRule::getCliAliases(),
+            CliAliasReader::read(LongParameterListRule::class),
         );
     }
 
@@ -475,7 +476,7 @@ final class LongParameterListRuleTest extends TestCase
 
     public function testGetCliAliasesIncludesVoOptions(): void
     {
-        $aliases = LongParameterListRule::getCliAliases();
+        $aliases = CliAliasReader::read(LongParameterListRule::class);
 
         self::assertArrayHasKey('long-parameter-list-vo-warning', $aliases);
         self::assertArrayHasKey('long-parameter-list-vo-error', $aliases);

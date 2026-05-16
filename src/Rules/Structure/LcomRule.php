@@ -6,6 +6,7 @@ namespace Qualimetrix\Rules\Structure;
 
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\Location;
@@ -20,6 +21,11 @@ use Qualimetrix\Rules\AbstractRule;
  * - LCOM = 1: all methods share at least one property (cohesive)
  * - LCOM > 1: class could potentially be split into multiple classes
  */
+#[CliAlias('lcom-warning', 'warning')]
+#[CliAlias('lcom-error', 'error')]
+#[CliAlias('lcom-exclude-readonly', 'excludeReadonly')]
+#[CliAlias('lcom-min-methods', 'minMethods')]
+#[CliAlias('lcom-exclude-methods', 'excludeMethods')]
 final class LcomRule extends AbstractRule
 {
     public const string NAME = 'design.lcom';
@@ -116,19 +122,5 @@ final class LcomRule extends AbstractRule
     public static function getOptionsClass(): string
     {
         return LcomOptions::class;
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    public static function getCliAliases(): array
-    {
-        return [
-            'lcom-warning' => 'warning',
-            'lcom-error' => 'error',
-            'lcom-exclude-readonly' => 'excludeReadonly',
-            'lcom-min-methods' => 'minMethods',
-            'lcom-exclude-methods' => 'excludeMethods',
-        ];
     }
 }

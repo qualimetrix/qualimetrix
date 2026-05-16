@@ -7,6 +7,7 @@ namespace Qualimetrix\Rules\Coupling;
 use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\HierarchicalRuleInterface;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Rule\RuleLevel;
@@ -26,6 +27,10 @@ use Qualimetrix\Rules\AbstractRule;
  * Classes/namespaces with high instability are fragile — they depend on many
  * other components, so changes in dependencies may break them.
  */
+#[CliAlias('instability-class-warning', 'class.max_warning')]
+#[CliAlias('instability-class-error', 'class.max_error')]
+#[CliAlias('instability-ns-warning', 'namespace.max_warning')]
+#[CliAlias('instability-ns-error', 'namespace.max_error')]
 final class InstabilityRule extends AbstractRule implements HierarchicalRuleInterface
 {
     public const string NAME = 'coupling.instability';
@@ -45,6 +50,8 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
         return RuleCategory::Coupling;
     }
 
+
+
     /**
      * @return list<string>
      */
@@ -53,6 +60,8 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
         return [MetricName::COUPLING_INSTABILITY, MetricName::COUPLING_CA, MetricName::COUPLING_CE];
     }
 
+
+
     /**
      * @return list<RuleLevel>
      */
@@ -60,6 +69,8 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
     {
         return [RuleLevel::Class_, RuleLevel::Namespace_];
     }
+
+
 
     /**
      * Analyzes at a specific level.
@@ -84,6 +95,8 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
         };
     }
 
+
+
     /**
      * @return list<Violation>
      */
@@ -100,25 +113,14 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
         return $violations;
     }
 
+
+
     /**
      * @return class-string<InstabilityOptions>
      */
     public static function getOptionsClass(): string
     {
         return InstabilityOptions::class;
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    public static function getCliAliases(): array
-    {
-        return [
-            'instability-class-warning' => 'class.max_warning',
-            'instability-class-error' => 'class.max_error',
-            'instability-ns-warning' => 'namespace.max_warning',
-            'instability-ns-error' => 'namespace.max_error',
-        ];
     }
 
     /**
@@ -185,6 +187,8 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
 
         return $violations;
     }
+
+
 
     /**
      * @return list<Violation>

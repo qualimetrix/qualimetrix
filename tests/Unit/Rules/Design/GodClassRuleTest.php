@@ -9,6 +9,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Rule\CliAliasReader;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -66,7 +67,7 @@ final class GodClassRuleTest extends TestCase
                 'god-class-min-methods' => 'minMethods',
                 'god-class-exclude-readonly' => 'excludeReadonly',
             ],
-            GodClassRule::getCliAliases(),
+            CliAliasReader::read(GodClassRule::class),
         );
     }
 

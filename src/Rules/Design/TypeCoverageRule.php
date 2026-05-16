@@ -8,6 +8,7 @@ use LogicException;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
@@ -24,6 +25,12 @@ use Qualimetrix\Rules\AbstractRule;
  * - Return type coverage below threshold
  * - Property type coverage below threshold
  */
+#[CliAlias('type-coverage-param-warning', 'param_warning')]
+#[CliAlias('type-coverage-param-error', 'param_error')]
+#[CliAlias('type-coverage-return-warning', 'return_warning')]
+#[CliAlias('type-coverage-return-error', 'return_error')]
+#[CliAlias('type-coverage-property-warning', 'property_warning')]
+#[CliAlias('type-coverage-property-error', 'property_error')]
 final class TypeCoverageRule extends AbstractRule
 {
     public const string NAME = 'design.type-coverage';
@@ -43,6 +50,8 @@ final class TypeCoverageRule extends AbstractRule
         return RuleCategory::Design;
     }
 
+
+
     /**
      * @return list<string>
      */
@@ -51,27 +60,14 @@ final class TypeCoverageRule extends AbstractRule
         return [MetricName::TYPE_COVERAGE_PARAM];
     }
 
+
+
     /**
      * @return class-string<TypeCoverageOptions>
      */
     public static function getOptionsClass(): string
     {
         return TypeCoverageOptions::class;
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    public static function getCliAliases(): array
-    {
-        return [
-            'type-coverage-param-warning' => 'param_warning',
-            'type-coverage-param-error' => 'param_error',
-            'type-coverage-return-warning' => 'return_warning',
-            'type-coverage-return-error' => 'return_error',
-            'type-coverage-property-warning' => 'property_warning',
-            'type-coverage-property-error' => 'property_error',
-        ];
     }
 
     /**

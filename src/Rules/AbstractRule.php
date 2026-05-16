@@ -42,14 +42,6 @@ abstract class AbstractRule implements RuleInterface
     abstract public function getCategory(): RuleCategory;
 
     /**
-     * @return array<string, string>
-     */
-    public static function getCliAliases(): array
-    {
-        return [];
-    }
-
-    /**
      * Returns options with `@qmx-threshold` overrides applied for a specific symbol.
      *
      * Use this when the rule needs to read threshold fields from the options

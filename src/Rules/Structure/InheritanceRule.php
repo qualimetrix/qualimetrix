@@ -6,6 +6,7 @@ namespace Qualimetrix\Rules\Structure;
 
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\Location;
@@ -20,6 +21,8 @@ use Qualimetrix\Rules\AbstractRule;
  * - Deep inheritance increases coupling and complexity
  * - Prefer composition over deep inheritance
  */
+#[CliAlias('dit-warning', 'warning')]
+#[CliAlias('dit-error', 'error')]
 final class InheritanceRule extends AbstractRule
 {
     public const string NAME = 'design.inheritance';
@@ -103,16 +106,5 @@ final class InheritanceRule extends AbstractRule
     public static function getOptionsClass(): string
     {
         return InheritanceOptions::class;
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    public static function getCliAliases(): array
-    {
-        return [
-            'dit-warning' => 'warning',
-            'dit-error' => 'error',
-        ];
     }
 }

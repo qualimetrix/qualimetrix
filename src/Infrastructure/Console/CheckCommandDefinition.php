@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
+use Qualimetrix\Core\Rule\CliAliasReader;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use ReflectionClass;
 use ReflectionNamedType;
@@ -359,7 +360,7 @@ final class CheckCommandDefinition
         $booleanAliases = [];
 
         foreach ($ruleRegistry->getClasses() as $ruleClass) {
-            $aliases = $ruleClass::getCliAliases();
+            $aliases = CliAliasReader::read($ruleClass);
             if ($aliases === []) {
                 continue;
             }

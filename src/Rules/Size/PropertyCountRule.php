@@ -6,6 +6,7 @@ namespace Qualimetrix\Rules\Size;
 
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\Location;
@@ -18,6 +19,10 @@ use Qualimetrix\Rules\AbstractRule;
  *
  * Too many properties may indicate a God Class that violates the Single Responsibility Principle.
  */
+#[CliAlias('property-count-warning', 'warning')]
+#[CliAlias('property-count-error', 'error')]
+#[CliAlias('property-exclude-readonly', 'excludeReadonly')]
+#[CliAlias('property-exclude-promoted-only', 'excludePromotedOnly')]
 final class PropertyCountRule extends AbstractRule
 {
     public const string NAME = 'size.property-count';
@@ -51,22 +56,7 @@ final class PropertyCountRule extends AbstractRule
     public static function getOptionsClass(): string
     {
         return PropertyCountOptions::class;
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    public static function getCliAliases(): array
-    {
-        return [
-            'property-count-warning' => 'warning',
-            'property-count-error' => 'error',
-            'property-exclude-readonly' => 'excludeReadonly',
-            'property-exclude-promoted-only' => 'excludePromotedOnly',
-        ];
-    }
-
-    public function analyze(AnalysisContext $context): array
+    }    public function analyze(AnalysisContext $context): array
     {
         if (!$this->options instanceof PropertyCountOptions || !$this->options->isEnabled()) {
             return [];

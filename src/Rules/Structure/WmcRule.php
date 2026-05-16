@@ -6,6 +6,7 @@ namespace Qualimetrix\Rules\Structure;
 
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\Location;
@@ -22,6 +23,9 @@ use Qualimetrix\Rules\AbstractRule;
  * - WMC 31-50: medium complexity
  * - WMC > 50: complex class requiring refactoring
  */
+#[CliAlias('wmc-warning', 'warning')]
+#[CliAlias('wmc-error', 'error')]
+#[CliAlias('wmc-exclude-data-classes', 'excludeDataClasses')]
 final class WmcRule extends AbstractRule
 {
     public const string NAME = 'complexity.wmc';
@@ -151,17 +155,5 @@ final class WmcRule extends AbstractRule
     public static function getOptionsClass(): string
     {
         return WmcOptions::class;
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    public static function getCliAliases(): array
-    {
-        return [
-            'wmc-warning' => 'warning',
-            'wmc-error' => 'error',
-            'wmc-exclude-data-classes' => 'excludeDataClasses',
-        ];
     }
 }

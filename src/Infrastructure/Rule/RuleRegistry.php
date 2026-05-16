@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Rule;
 
+use Qualimetrix\Core\Rule\CliAliasReader;
 use Qualimetrix\Core\Rule\RuleInterface;
 use Qualimetrix\Infrastructure\Rule\Exception\ConflictingCliAliasException;
 use ReflectionClass;
@@ -64,8 +65,7 @@ final readonly class RuleRegistry implements RuleRegistryInterface
         foreach ($this->ruleClasses as $ruleClass) {
             $ruleName = $this->getRuleName($ruleClass);
 
-            /** @var array<string, string> $ruleAliases */
-            $ruleAliases = $ruleClass::getCliAliases();
+            $ruleAliases = CliAliasReader::read($ruleClass);
 
             foreach ($ruleAliases as $alias => $optionName) {
                 if (isset($aliases[$alias])) {

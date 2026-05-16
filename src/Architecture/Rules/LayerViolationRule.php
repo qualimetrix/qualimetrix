@@ -14,6 +14,7 @@ use Qualimetrix\Architecture\Domain\Layer\MatchedCriterionKind;
 use Qualimetrix\Architecture\Processing\ArchitectureProcessorInterface;
 use Qualimetrix\Core\Dependency\Dependency;
 use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Rule\RuleOptionsInterface;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -75,6 +76,7 @@ use Qualimetrix\Rules\AbstractRule;
  * @qmx-ignore health.cohesion
  *             reason="Class-level cohesion score is dominated by the multiple diagnostic builders sharing the same registry/options. Splitting would not materially improve the structure (see `@qmx-ignore design.god-class` above)."
  */
+#[CliAlias('layer-violation', 'enabled')]
 final class LayerViolationRule extends AbstractRule
 {
     public const string NAME = 'architecture.layer-violation';
@@ -120,6 +122,8 @@ final class LayerViolationRule extends AbstractRule
         return RuleCategory::Architecture;
     }
 
+
+
     /**
      * @return list<string>
      */
@@ -128,22 +132,14 @@ final class LayerViolationRule extends AbstractRule
         return [];
     }
 
+
+
     /**
      * @return class-string<LayerViolationOptions>
      */
     public static function getOptionsClass(): string
     {
         return LayerViolationOptions::class;
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    public static function getCliAliases(): array
-    {
-        return [
-            'layer-violation' => 'enabled',
-        ];
     }
 
     /**
@@ -187,6 +183,8 @@ final class LayerViolationRule extends AbstractRule
             ...self::buildEmptyTemplateDiagnostics($architecture->emptyTemplateNames()),
         ];
     }
+
+
 
     /**
      * Emits one warning diagnostic per template name that produced zero
@@ -238,6 +236,8 @@ final class LayerViolationRule extends AbstractRule
         return $diagnostics;
     }
 
+
+
     /**
      * Walks `metrics->all(SymbolType::Class_)` once and collects two local
      * structures used downstream:
@@ -264,6 +264,8 @@ final class LayerViolationRule extends AbstractRule
         foreach ($registry->layerNames() as $layerName) {
             $layerHits[$layerName] = 0;
         }
+
+
 
         /** @var array<string, array<string, list<array{fqn: string, assignedCriterion: MatchedCriterion, shadowedCriterion: MatchedCriterion}>>> $shadowEvidence */
         $shadowEvidence = [];
@@ -294,6 +296,8 @@ final class LayerViolationRule extends AbstractRule
 
         return [$layerHits, $shadowEvidence];
     }
+
+
 
     /**
      * Walks the dependency graph and produces per-edge layer violations.
@@ -341,6 +345,8 @@ final class LayerViolationRule extends AbstractRule
 
         return [$violations, ['sourceEdges' => $sourceEdges, 'targetEdges' => $targetEdges, 'classes' => $classes]];
     }
+
+
 
     /**
      * Trivial wrapper around {@see buildCoverageDiagnostic()} so the spread
@@ -402,6 +408,8 @@ final class LayerViolationRule extends AbstractRule
         );
     }
 
+
+
     /**
      * Appends a "[matched by ...]" trailer to the violation message when at
      * least one side was assigned via a non-pattern criterion or when the
@@ -430,6 +438,8 @@ final class LayerViolationRule extends AbstractRule
             && $match->matchedCriteria[0]->kind === MatchedCriterionKind::Pattern;
     }
 
+
+
     /**
      * @param list<MatchedCriterion> $criteria
      */
@@ -440,6 +450,8 @@ final class LayerViolationRule extends AbstractRule
             $criteria,
         ));
     }
+
+
 
     /**
      * Renders a layer's declared criteria as a human-readable summary, used in
@@ -470,6 +482,8 @@ final class LayerViolationRule extends AbstractRule
         return implode('; ', $segments);
     }
 
+
+
     /**
      * @param list<string> $values
      */
@@ -489,6 +503,8 @@ final class LayerViolationRule extends AbstractRule
 
         return $guidance . "\n" . 'Dep data: ' . $payload;
     }
+
+
 
     /**
      * Produces the routing-guidance prefix for the recommendation. When no
@@ -513,6 +529,8 @@ final class LayerViolationRule extends AbstractRule
         );
     }
 
+
+
     /**
      * Serialises the structured dependency context the recommendation appends
      * for AI-agent consumers. Kept beside {@see buildRecommendation()} so the
@@ -531,6 +549,8 @@ final class LayerViolationRule extends AbstractRule
             \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR,
         );
     }
+
+
 
     /**
      * Builds the coverage diagnostic Violation when {@see CoverageMode} is not
@@ -586,6 +606,8 @@ final class LayerViolationRule extends AbstractRule
         );
     }
 
+
+
     /**
      * Emits one info diagnostic per declared layer whose patterns matched
      * zero classes during analysis.
@@ -627,6 +649,8 @@ final class LayerViolationRule extends AbstractRule
 
         return $violations;
     }
+
+
 
     /**
      * Emits one info diagnostic per (assigned, shadowed) layer pair observed

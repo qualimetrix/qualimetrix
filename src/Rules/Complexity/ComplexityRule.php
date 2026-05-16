@@ -8,6 +8,7 @@ use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\HierarchicalRuleInterface;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Rule\RuleLevel;
@@ -23,6 +24,10 @@ use Qualimetrix\Rules\AbstractRule;
  * - Method level: checks individual method CCN
  * - Class level: checks maximum CCN among class methods
  */
+#[CliAlias('cyclomatic-warning', 'method.warning')]
+#[CliAlias('cyclomatic-error', 'method.error')]
+#[CliAlias('cyclomatic-class-warning', 'class.max_warning')]
+#[CliAlias('cyclomatic-class-error', 'class.max_error')]
 final class ComplexityRule extends AbstractRule implements HierarchicalRuleInterface
 {
     public const string NAME = 'complexity.cyclomatic';
@@ -42,6 +47,8 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
         return RuleCategory::Complexity;
     }
 
+
+
     /**
      * Default cognitive complexity warning threshold.
      *
@@ -58,6 +65,8 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
         return [MetricName::COMPLEXITY_CCN, MetricName::COMPLEXITY_COGNITIVE];
     }
 
+
+
     /**
      * @return list<RuleLevel>
      */
@@ -65,6 +74,8 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
     {
         return [RuleLevel::Method, RuleLevel::Class_];
     }
+
+
 
     /**
      * Analyzes at a specific level.
@@ -87,6 +98,8 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
         };
     }
 
+
+
     /**
      * @return list<Violation>
      */
@@ -105,25 +118,14 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
         return $violations;
     }
 
+
+
     /**
      * @return class-string<ComplexityOptions>
      */
     public static function getOptionsClass(): string
     {
         return ComplexityOptions::class;
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    public static function getCliAliases(): array
-    {
-        return [
-            'cyclomatic-warning' => 'method.warning',
-            'cyclomatic-error' => 'method.error',
-            'cyclomatic-class-warning' => 'class.max_warning',
-            'cyclomatic-class-error' => 'class.max_error',
-        ];
     }
 
     /**
@@ -172,6 +174,8 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
         return $violations;
     }
 
+
+
     /**
      * Builds recommendation text for method-level CCN violations.
      *
@@ -194,6 +198,8 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
 
         return \sprintf('Cyclomatic complexity: %d (threshold: %d) — too many code paths', $ccnValue, $threshold);
     }
+
+
 
     /**
      * @return list<Violation>

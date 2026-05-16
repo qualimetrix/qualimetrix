@@ -6,6 +6,7 @@ namespace Qualimetrix\Rules\Maintainability;
 
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\Location;
@@ -21,6 +22,10 @@ use Qualimetrix\Rules\AbstractRule;
  * - MI 20-39: warning
  * - MI < 20: error
  */
+#[CliAlias('mi-warning', 'warning')]
+#[CliAlias('mi-error', 'error')]
+#[CliAlias('mi-exclude-tests', 'excludeTests')]
+#[CliAlias('mi-min-loc', 'minLoc')]
 final class MaintainabilityRule extends AbstractRule
 {
     public const string NAME = 'maintainability.index';
@@ -116,22 +121,7 @@ final class MaintainabilityRule extends AbstractRule
     public static function getOptionsClass(): string
     {
         return MaintainabilityOptions::class;
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    public static function getCliAliases(): array
-    {
-        return [
-            'mi-warning' => 'warning',
-            'mi-error' => 'error',
-            'mi-exclude-tests' => 'excludeTests',
-            'mi-min-loc' => 'minLoc',
-        ];
-    }
-
-    private function isTestFile(string $file): bool
+    }    private function isTestFile(string $file): bool
     {
         return str_ends_with($file, 'Test.php')
             || str_contains($file, '/tests/')

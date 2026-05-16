@@ -12,6 +12,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Rule\CliAliasReader;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -498,7 +499,7 @@ final class ClassRankRuleTest extends TestCase
     #[Test]
     public function getCliAliases_returnsExpectedAliases(): void
     {
-        $aliases = ClassRankRule::getCliAliases();
+        $aliases = CliAliasReader::read(ClassRankRule::class);
 
         self::assertArrayHasKey('class-rank-warning', $aliases);
         self::assertArrayHasKey('class-rank-error', $aliases);

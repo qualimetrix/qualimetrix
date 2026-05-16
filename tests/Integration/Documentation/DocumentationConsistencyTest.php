@@ -6,6 +6,7 @@ namespace Qualimetrix\Tests\Integration\Documentation;
 
 use FilesystemIterator;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Rule\CliAliasReader;
 use Qualimetrix\Core\Rule\RuleInterface;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
@@ -208,8 +209,7 @@ final class DocumentationConsistencyTest extends TestCase
                 continue;
             }
 
-            /** @var array<string, string> $ruleAliases */
-            $ruleAliases = $fqcn::getCliAliases();
+            $ruleAliases = CliAliasReader::read($fqcn);
 
             foreach ($ruleAliases as $alias => $option) {
                 $aliases[$alias] = [

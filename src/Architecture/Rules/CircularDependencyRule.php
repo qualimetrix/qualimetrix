@@ -6,6 +6,7 @@ namespace Qualimetrix\Architecture\Rules;
 
 use Qualimetrix\Core\Dependency\CycleInterface;
 use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Violation;
@@ -19,6 +20,8 @@ use Qualimetrix\Rules\AbstractRule;
  *
  * This rule reads cycles from the typed AnalysisContext::$cycles property.
  */
+#[CliAlias('circular-deps', 'enabled')]
+#[CliAlias('max-cycle-size', 'maxCycleSize')]
 final class CircularDependencyRule extends AbstractRule
 {
     public const string NAME = 'architecture.circular-dependency';
@@ -154,16 +157,5 @@ final class CircularDependencyRule extends AbstractRule
     public static function getOptionsClass(): string
     {
         return CircularDependencyOptions::class;
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    public static function getCliAliases(): array
-    {
-        return [
-            'circular-deps' => 'enabled',
-            'max-cycle-size' => 'maxCycleSize',
-        ];
     }
 }

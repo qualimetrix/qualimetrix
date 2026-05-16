@@ -6,6 +6,7 @@ namespace Qualimetrix\Rules\Structure;
 
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\Location;
@@ -23,6 +24,8 @@ use Qualimetrix\Rules\AbstractRule;
  * - Potential need for interface instead of class inheritance
  * - Possible violation of Liskov Substitution Principle
  */
+#[CliAlias('noc-warning', 'warning')]
+#[CliAlias('noc-error', 'error')]
 final class NocRule extends AbstractRule
 {
     public const string NAME = 'design.noc';
@@ -106,16 +109,5 @@ final class NocRule extends AbstractRule
     public static function getOptionsClass(): string
     {
         return NocOptions::class;
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    public static function getCliAliases(): array
-    {
-        return [
-            'noc-warning' => 'warning',
-            'noc-error' => 'error',
-        ];
     }
 }
