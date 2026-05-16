@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `architecture.layer-collision` diagnostic and the underlying `LayerCollisionException` machinery. Declaration-order matching eliminates the ambiguity case; the two new info-severity diagnostics replace its safety net.
 
 ### Fixed
+- `architecture.layer-violation` (and any future dependency-derived rule) now respects `@qmx-ignore` suppressions placed on the offending class. Previously the dependency visitor stamped each edge with the absolute file path while the per-file suppression map was keyed by the project-relative path, so the suppression filter never matched architecture rows. The path is now normalized via `PathNormalizer::relativize()` at collection time, matching every other rule.
 - `architecture.layer-violation` no longer false-positives mutual-allow when the two directions use disjoint `relations:` filters or `allow_cross_instance: true`.
 - `architecture.layers[].match` accepts any case (`any`, `Any`, `ANY`, `all`, `All`, `ALL`) — normalization now lowercases before parsing.
 - `allow_cross_instance` and `allowCrossInstance` are now accepted as synonyms in long-form allow entries.

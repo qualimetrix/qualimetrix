@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Collection\Dependency\DependencyVisitor;
 use Qualimetrix\Core\Metric\DerivedCollectorInterface;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricCollectorInterface;
+use Qualimetrix\Core\Util\PathNormalizer;
 use SplFileInfo;
 use Traversable;
 
@@ -79,9 +80,15 @@ final class CompositeCollector
             $traverser->addVisitor($collector->getVisitor());
         }
 
-        // Add dependency visitor if configured
+        // Add dependency visitor if configured. The file path is normalised
+        // to the project-relative form (same key shape used by
+        // {@see \Qualimetrix\Analysis\Collection\FileProcessor::process()}
+        // for `filePath` and the per-file suppression dict). Without this,
+        // dependency-derived violations (e.g. `architecture.layer-violation`)
+        // carry an absolute path that never matches the relative-keyed
+        // suppression map, so `@qmx-ignore` tags on classes can't drop them.
         if ($this->dependencyVisitor !== null) {
-            $this->dependencyVisitor->setFile($file->getPathname());
+            $this->dependencyVisitor->setFile(PathNormalizer::relativize($file->getPathname()));
             $traverser->addVisitor($this->dependencyVisitor);
         }
 
