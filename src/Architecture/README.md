@@ -188,9 +188,88 @@ container.
 
 `ArchitectureProcessor` (registered here via the
 `ArchitectureProcessorInterface` alias) coordinates the rules-pipeline
-lifecycle: `RuntimeConfigurator` calls `reset() + bind()`, `AnalysisPipeline`
-calls `prepare()`, and `LayerViolationRule` reads
-`getPreparedConfiguration()`. See ADR 0008.
+lifecycle: `RuntimeConfigurator` iterates `AnalysisLifecycleHookInterface`
+hooks (the slice ships `ArchitectureLifecycleHook` which calls
+`reset() + bind()` on the processor), `AnalysisPipeline` calls `prepare()`
+(skipping the call when `architecture.layer-violation` is disabled, since
+it is the sole consumer of `getPreparedConfiguration()`), and
+`LayerViolationRule` reads `getPreparedConfiguration()`. The hook
+indirection keeps `RuntimeConfigurator` feature-agnostic — future slices
+add their own hooks without modifying any Infrastructure type. See ADR 0008.
+
+## Testing approach
+
+The pilot's tests form a three-level pyramid. Future vertical slices should
+mirror this split so the playbook (the `vertical-slice-playbook` memory
+entry) stays applicable.
+
+### Unit — `tests/Architecture/Unit/`
+
+Pure-PHP tests of single classes. No DI, no fixtures on disk. Mirrors the
+`src/Architecture/{Domain,Configuration,Processing,Rules}/` shape:
+
+- `Unit/Domain/` — Value objects and enums (`ArchitectureConfigurationTest`,
+  `CoverageModeTest`).
+- `Unit/Processing/` — Helpers exercised in isolation
+  (`ArchitectureProcessorTest`, `LayerExpansionStageTest`,
+  `LayerInstantiatorTest`, `TupleExtractorTest`).
+- `Unit/Rules/` — Rules with mocked `AnalysisContext`
+  (`LayerViolationRuleTest`, `LayerViolationOptionsTest`,
+  `CircularDependencyRuleTest`, `CoverageDiagnosticsTest`).
+- `Unit/Configuration/` — Loaders and validators
+  (`ArchitectureConfigurationFactoryTest`, `Validation/*Test`,
+  `Allow/AllowAliasExpanderTest`).
+
+Use these for fast feedback while iterating on a single class. They
+typically run in milliseconds and dominate the slice's test count.
+
+### Integration — `tests/Architecture/Integration/`
+
+End-to-end pipeline tests using
+[`TestPipelineBuilder`](../../tests/Support/Pipeline/TestPipelineBuilder.php)
+against synthetic fixture projects under `tests/Architecture/Fixtures/`.
+They run the real `AnalysisPipeline` with a real `ArchitectureProcessor`
+pre-bound to a hand-crafted `ArchitectureConfiguration`, so every assertion
+covers the same code path production hits (Discovery → Collection →
+Architecture prepare → RuleExecution).
+
+Use these to verify cross-class behaviour: layer assignment under
+template expansion, allow-list filtering, relations filter, coverage
+diagnostics, inline suppression. The fixture per behaviour is the
+testability axis — adding a new behaviour usually means adding a new
+fixture sample directory plus one integration test class.
+
+Helpers in `tests/Architecture/Support/`:
+
+- `ProcessorBuilder` — fluent construction of a configured
+  `ArchitectureProcessor` for tests that don't need the full pipeline.
+- `AllowListBuilder` — builds an allow-list policy from exact maps
+  without reaching through configuration loaders.
+- `ArchitectureViolationProjector` — extracts a comparable summary from
+  the violation list (rule name, source/target layers, source FQN) so
+  tests assert on stable shape rather than full violation objects.
+
+### Functional — `tests/Functional/Console/`
+
+Full CLI invocation through the Symfony Console application. Today the
+slice contributes `LayerAssignmentCommandTest`, which exercises
+`debug:layer-assignment` end-to-end including configuration loading,
+discovery, collection, and per-class layer resolution. This level is
+small by design — most behaviour is covered cheaper at the integration
+level. Add a functional test only when CLI-specific concerns (option
+parsing, exit codes, output formatting) need pinning.
+
+### Choosing the right level
+
+- A behaviour visible from a single class → unit test.
+- A behaviour spanning the configuration → processor → rule pipeline →
+  integration test with a fixture.
+- A behaviour that only manifests at the CLI boundary (exit code,
+  human-readable output, argument parsing) → functional test.
+
+When in doubt, prefer the cheaper level. Integration and functional tests
+that could be unit tests slow the suite without adding signal; unit tests
+that could be integration tests miss bugs that live in the wiring.
 
 ## References
 
