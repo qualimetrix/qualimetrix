@@ -163,6 +163,72 @@ final class LayerCriteriaIntegrationTest extends TestCase
     }
 
     #[Test]
+    public function matchAllAcceptsClassSatisfyingEveryDeclaredCriterion(): void
+    {
+        // strict-repository = ends in `Repository` AND implements
+        // RepositoryInterface. CustomerRepository satisfies BOTH criteria, so
+        // it must be classified as a member of the strict-repository layer
+        // under `match: all` — proving the positive code path of the match:all
+        // gate (the negative-path test above only proves the gate excludes
+        // partial matches; this one proves the gate admits full matches).
+        //
+        // We declare a complementary `tagged` layer so a forbidden edge
+        // actually fires: layer-violations only emerge between two
+        // classified layers. Without `tagged`, the Notifier dependency on
+        // CustomerRepository would be out-of-layer and produce no signal.
+        $registry = new LayerRegistry([
+            new LayerDefinition(
+                'strict-repository',
+                new MembershipSpec(
+                    suffix: ['Repository'],
+                    implements: [self::FIXTURE_NAMESPACE . '\\Marker\\RepositoryInterface'],
+                    mode: MatchMode::All,
+                ),
+            ),
+            new LayerDefinition(
+                'tagged',
+                new MembershipSpec(attributes: [self::FIXTURE_NAMESPACE . '\\Marker\\ServiceTag']),
+            ),
+        ]);
+
+        // Self-allow only — every cross-layer edge becomes a violation. The
+        // Notifier edge on CustomerRepository is the load-bearing one: a
+        // violation under that source FQN proves the class was classified.
+        $policy = AllowListBuilder::policyFromExactMap([
+            'strict-repository' => [],
+            'tagged' => [],
+        ]);
+
+        $pipeline = $this->createPipelineWith(
+            new ArchitectureConfiguration($registry, $policy, CoverageMode::Ignore),
+        );
+
+        $result = $pipeline->analyze(self::FIXTURE_PATH);
+
+        $layerSources = $this->collectSourceFqns(
+            $this->filterByRule($result->violations, LayerViolationRule::NAME),
+        );
+
+        self::assertContains(
+            self::FIXTURE_NAMESPACE . '\\StrictRepo\\CustomerRepository',
+            $layerSources,
+            'CustomerRepository satisfies BOTH suffix and implements — must be in strict-repository under match: all.',
+        );
+
+        // The match:any negative cases must still be excluded under match:all.
+        self::assertNotContains(
+            self::FIXTURE_NAMESPACE . '\\ContractsImpl\\QueryBackend',
+            $layerSources,
+            'QueryBackend implements RepositoryInterface but has wrong suffix — still excluded.',
+        );
+        self::assertNotContains(
+            self::FIXTURE_NAMESPACE . '\\Suffixed\\OrderRepository',
+            $layerSources,
+            'OrderRepository has the suffix but does not implement — still excluded.',
+        );
+    }
+
+    #[Test]
     public function violationMessageNamesMatchedCriterionWhenNotPattern(): void
     {
         // Build a registry where every test class is caught by a different

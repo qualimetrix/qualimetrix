@@ -188,6 +188,53 @@ final class LayerRegistryTest extends TestCase
     }
 
     #[Test]
+    public function resolveLayer_unicodeNamespaceAndType_handledGracefully(): void
+    {
+        // PHP permits non-ASCII characters in namespace and class identifiers
+        // (see https://www.php.net/manual/en/language.namespaces.basics.php —
+        // identifiers follow the standard PHP rules). Layer matching must
+        // therefore route a class whose FQN contains multibyte characters to
+        // the layer whose pattern declares the same characters. The pattern
+        // matcher relies on byte-level operations (str_starts_with /
+        // NamespaceMatcher::matchesSingle), so byte-equal multibyte sequences
+        // must continue to match without surprises.
+        $registry = new LayerRegistry([
+            new LayerDefinition('domain', new MembershipSpec(['Приложение\\Домен'])),
+            new LayerDefinition('legacy-ascii', new MembershipSpec(['App\\Legacy'])),
+        ]);
+
+        // Direct hit on the Unicode prefix.
+        self::assertSame(
+            'domain',
+            $registry->resolveLayer(SymbolPath::forClass('Приложение\\Домен', 'Заказ')),
+            'Class whose FQN starts with the Unicode layer prefix must route to that layer.',
+        );
+
+        // Glob double-star against a multibyte prefix.
+        $globRegistry = new LayerRegistry([
+            new LayerDefinition('domain', new MembershipSpec(['Приложение\\Домен\\**'])),
+        ]);
+        self::assertSame(
+            'domain',
+            $globRegistry->resolveLayer(SymbolPath::forClass('Приложение\\Домен\\Заказы', 'Корзина')),
+            'Glob pattern with non-ASCII characters must match descendants.',
+        );
+
+        // Unicode FQN that does not match must fall through to null.
+        self::assertNull(
+            $registry->resolveLayer(SymbolPath::forClass('Другое\\Пространство', 'Класс')),
+            'Non-matching Unicode FQN must return null, not throw.',
+        );
+
+        // ASCII layer remains unaffected by the Unicode entry.
+        self::assertSame(
+            'legacy-ascii',
+            $registry->resolveLayer(SymbolPath::forClass('App\\Legacy', 'OldThing')),
+            'Pure-ASCII paths continue to match alongside Unicode entries.',
+        );
+    }
+
+    #[Test]
     public function resolveLayer_namespaceOnlyPath_isResolvable(): void
     {
         $registry = new LayerRegistry([
@@ -304,6 +351,47 @@ final class LayerRegistryTest extends TestCase
 
         $registry->resolveAll($other);
         self::assertCount(2, $reflection->getValue($registry), 'resolveAll after resolveLayer must hit the existing cache entry.');
+    }
+
+    #[Test]
+    public function bindGraph_dropsResolveAllCacheSoStaleMatchesCannotLeakBetweenRuns(): void
+    {
+        // Companion test to `bindGraph_dropsCacheSoStaleAssignmentsCannotLeakBetweenRuns`,
+        // which exercises the same invalidation invariant through resolveLayer().
+        // Since resolveAll() and resolveLayer() share the same `$matchCache`
+        // (see `resolveAll_andResolveLayer_shareTheSameCache`), bindGraph() must
+        // drop entries that resolveAll() observed too — otherwise a class
+        // could surface in the previous run's match list after the graph
+        // changed underneath it.
+        $registry = new LayerRegistry([
+            new LayerDefinition(
+                'aggregates',
+                new MembershipSpec(extends: ['App\\Domain\\Base']),
+            ),
+            new LayerDefinition(
+                'patterned',
+                new MembershipSpec(patterns: ['App\\Domain\\**']),
+            ),
+        ]);
+
+        $klass = SymbolPath::forClass('App\\Domain', 'User');
+        $base = SymbolPath::forClass('App\\Domain', 'Base');
+        $other = SymbolPath::forClass('App\\Domain', 'Other');
+
+        // Run 1: User extends Base AND matches the pattern layer → both layers fire.
+        $registry->bindGraph(self::graphWith([[$klass, $base, DependencyType::Extends]]));
+        $firstMatches = $registry->resolveAll($klass);
+        self::assertCount(2, $firstMatches, 'Both extends and pattern layers must fire under the bound graph.');
+        $firstNames = array_map(static fn(LayerMatch $m): string => $m->layerName, $firstMatches);
+        self::assertSame(['aggregates', 'patterned'], $firstNames);
+
+        // Run 2: User now extends Other (no longer Base). resolveAll() must
+        // observe the rebind and drop the `aggregates` membership; only the
+        // pattern-driven layer should remain.
+        $registry->bindGraph(self::graphWith([[$klass, $other, DependencyType::Extends]]));
+        $secondMatches = $registry->resolveAll($klass);
+        $secondNames = array_map(static fn(LayerMatch $m): string => $m->layerName, $secondMatches);
+        self::assertSame(['patterned'], $secondNames, 'bindGraph() must invalidate resolveAll cache so the rebind takes effect.');
     }
 
     #[Test]

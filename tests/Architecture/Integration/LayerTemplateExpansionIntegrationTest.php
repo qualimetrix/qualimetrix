@@ -86,6 +86,64 @@ final class LayerTemplateExpansionIntegrationTest extends TestCase
     }
 
     #[Test]
+    public function templateExpansion_ceilingCountsOnlyPopulatedTemplatesAcrossMixedConfig(): void
+    {
+        // Mix three signal sources: a static layer ("shared"), a populated
+        // template (`domain-{module}` → 3 layers), an empty template
+        // (`noop-{module}` → 0 layers, emits a diagnostic). The ceiling is
+        // documented as counting "cumulative template-produced layers" —
+        // static layers and empty-template sentinels are EXCLUDED. This test
+        // pins that interpretation: ceiling=3 (= populated count) must pass
+        // even though the overall layer roster is larger; ceiling=2 (= one
+        // below the populated count) must fail-fast.
+        $config = self::baseTemplateConfig();
+        $config['layers'][] = [
+            'name' => 'noop-{module}',
+            // Intentional typo: `Mdule` doesn't exist in the fixture.
+            'patterns' => ['Fixtures\\TemplateSample\\Mdule\\{module}\\Domain\\**'],
+        ];
+
+        // Ceiling = 2 is one below the 3-tuple expansion: fail-fast on the
+        // populated template, regardless of how many empty templates or
+        // static layers exist alongside.
+        $configTight = $config;
+        $configTight['max_expanded_layers'] = 2;
+
+        $caught = null;
+        try {
+            $this->runPipelineWithConfig($configTight);
+        } catch (LayerExpansionException $exception) {
+            $caught = $exception;
+        }
+        self::assertNotNull(
+            $caught,
+            'Mixed config: ceiling = 2 with a 3-tuple populated template must fail-fast.',
+        );
+        self::assertStringContainsString('ceiling of 2', $caught->getMessage());
+        self::assertStringContainsString(
+            'domain-{module}',
+            $caught->getMessage(),
+            'The exception must name the offending template, not the empty sibling.',
+        );
+
+        // Ceiling = 3 fits the populated count exactly: expansion succeeds
+        // even though the overall roster (1 static + 3 expanded + 1 empty
+        // sentinel) is larger. The empty-template diagnostic must still fire.
+        $configFits = $config;
+        $configFits['max_expanded_layers'] = 3;
+
+        $analysis = $this->runPipelineWithConfig($configFits);
+
+        $emptyTemplates = $this->filterByRule($analysis->violations, LayerViolationRule::EMPTY_TEMPLATE_DIAGNOSTIC_NAME);
+        self::assertCount(
+            1,
+            $emptyTemplates,
+            'Empty template diagnostic must still surface alongside successful expansion.',
+        );
+        self::assertStringContainsString('noop-{module}', $emptyTemplates[0]->message);
+    }
+
+    #[Test]
     public function templateExpansion_disallowedEdgeUsesExpandedLayerNameInMessage(): void
     {
         $config = self::baseTemplateConfig();
