@@ -156,7 +156,7 @@ final class RulesCommandTest extends TestCase
         RuleCategory $category,
         string $description,
     ): RuleInterface {
-        $rule = $this->createMock(RuleInterface::class);
+        $rule = self::createStub(RuleInterface::class);
         $rule->method('getName')->willReturn($name);
         $rule->method('getCategory')->willReturn($category);
         $rule->method('getDescription')->willReturn($description);

@@ -11,11 +11,9 @@ use Qualimetrix\Infrastructure\Console\Command\HookStatusCommand;
 use Qualimetrix\Infrastructure\Git\GitRepositoryLocator;
 
 /**
- * Smoke tests for HookStatusCommand.
- *
- * GitRepositoryLocator is a final class without an interface, so execute()
- * scenarios requiring a mock (e.g., "not a git repo") cannot be tested
- * at the unit level. Only configuration tests are included here.
+ * Smoke tests for HookStatusCommand. Configuration tests only — execute()
+ * scenarios such as "not a git repo" can now be added by stubbing
+ * GitRepositoryLocatorInterface.
  */
 #[CoversClass(HookStatusCommand::class)]
 final class HookStatusCommandTest extends TestCase
