@@ -56,7 +56,7 @@ final class SarifFormatterTest extends TestCase
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         // Verify SARIF structure
-        self::assertSame('https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json', $data['$schema']);
+        self::assertSame('https://raw.githubusercontent.com/oasis-tcs/sarif-spec/main/sarif-2.1/schema/sarif-schema-2.1.0.json', $data['$schema']);
         self::assertSame('2.1.0', $data['version']);
         self::assertArrayHasKey('runs', $data);
         self::assertCount(1, $data['runs']);
