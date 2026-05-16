@@ -361,7 +361,11 @@ A rule analyzes metrics and generates violations. **Completely stateless.**
 
 **Static:**
 - `getOptionsClass(): class-string<RuleOptionsInterface>` — rule options class
-- `getCliAliases(): array<string, string>` — CLI short aliases for options
+
+**CLI aliases** are declared via the repeatable class-level attribute
+`#[CliAlias('alias', 'optionName')]` (see `src/Core/Rule/Attribute/CliAlias.php`).
+They are read by `CliAliasReader::read(class-string): array<string, string>` via
+reflection, so no rule instantiation is required to enumerate them.
 
 **DI Tags:** `qmx.rule`
 

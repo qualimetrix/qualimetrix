@@ -51,7 +51,7 @@ If it manages a tool subsystem or resource → namespaced.
 
 ### Rule CLI aliases
 
-Dynamic options generated from rule classes via `getCliAliases()`.
+Dynamic options generated from rule classes via the repeatable class-level attribute `#[CliAlias('alias', 'optionName')]`, read at runtime by `CliAliasReader`.
 
 **Format:** `{rule-short-name}[-{level}]-{option}`
 
