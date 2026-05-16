@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Rules\Structure;
 
+use Qualimetrix\Core\Rule\Override\StandardOverrideValidatorTrait;
 use Qualimetrix\Core\Rule\RuleOptionKey;
 use Qualimetrix\Core\Rule\RuleOptionsInterface;
 use Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface;
@@ -22,6 +23,8 @@ use Qualimetrix\Rules\Support\ThresholdParser;
  */
 final readonly class LcomOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface
 {
+    use StandardOverrideValidatorTrait;
+
     /**
      * @param list<string>|null $excludeMethods Method names to exclude from LCOM graph (e.g., lifecycle hooks)
      */

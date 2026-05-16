@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Rules\CodeSmell;
 
+use Qualimetrix\Core\Rule\Override\StandardOverrideValidatorTrait;
 use Qualimetrix\Core\Rule\RuleOptionKey;
 use Qualimetrix\Core\Rule\RuleOptionsInterface;
 use Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface;
@@ -21,6 +22,8 @@ use Qualimetrix\Rules\Support\ThresholdParser;
  */
 final readonly class ConstructorOverinjectionOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface
 {
+    use StandardOverrideValidatorTrait;
+
     public function __construct(
         public bool $enabled = true,
         public int $warning = 8,

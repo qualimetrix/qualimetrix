@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Rules\Design;
 
+use Qualimetrix\Core\Rule\Override\OverrideValidatorInterface;
+use Qualimetrix\Core\Rule\Override\WarningOnlyValidator;
 use Qualimetrix\Core\Rule\RuleOptionKey;
 use Qualimetrix\Core\Rule\RuleOptionsInterface;
 use Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface;
@@ -93,5 +95,10 @@ final readonly class GodClassOptions implements RuleOptionsInterface, ThresholdA
             minMethods: $this->minMethods,
             excludeReadonly: $this->excludeReadonly,
         );
+    }
+
+    public static function getOverrideValidator(): OverrideValidatorInterface
+    {
+        return WarningOnlyValidator::instance();
     }
 }
