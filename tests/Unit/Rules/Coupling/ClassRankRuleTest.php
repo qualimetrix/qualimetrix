@@ -497,7 +497,7 @@ final class ClassRankRuleTest extends TestCase
     }
 
     #[Test]
-    public function getCliAliases_returnsExpectedAliases(): void
+    public function cliAliasAttributes_areDeclared(): void
     {
         $aliases = CliAliasReader::read(ClassRankRule::class);
 
