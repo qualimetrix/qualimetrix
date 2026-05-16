@@ -272,7 +272,6 @@ final class ConfigSchema
         return $policies[$rootKey];
     }
 
-
     /**
      * Returns root keys that must be associative maps (not scalars, not lists).
      *

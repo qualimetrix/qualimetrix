@@ -41,8 +41,6 @@ final class UnreachableCodeRule extends AbstractRule
         return RuleCategory::CodeSmell;
     }
 
-
-
     /**
      * @return list<string>
      */
@@ -50,8 +48,6 @@ final class UnreachableCodeRule extends AbstractRule
     {
         return [MetricName::CODE_SMELL_UNREACHABLE_CODE];
     }
-
-
 
     /**
      * @return class-string<UnreachableCodeOptions>

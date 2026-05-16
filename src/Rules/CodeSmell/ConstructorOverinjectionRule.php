@@ -42,8 +42,6 @@ final class ConstructorOverinjectionRule extends AbstractRule
         return RuleCategory::CodeSmell;
     }
 
-
-
     /**
      * @return list<string>
      */
@@ -51,8 +49,6 @@ final class ConstructorOverinjectionRule extends AbstractRule
     {
         return [MetricName::CODE_SMELL_PARAMETER_COUNT];
     }
-
-
 
     /**
      * @return class-string<ConstructorOverinjectionOptions>

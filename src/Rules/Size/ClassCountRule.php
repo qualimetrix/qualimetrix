@@ -42,8 +42,6 @@ final class ClassCountRule extends AbstractRule
         return RuleCategory::Size;
     }
 
-
-
     /**
      * @return list<string>
      */
@@ -51,8 +49,6 @@ final class ClassCountRule extends AbstractRule
     {
         return [MetricName::SIZE_CLASS_COUNT];
     }
-
-
 
     /**
      * @return class-string<ClassCountOptions>
@@ -88,8 +84,6 @@ final class ClassCountRule extends AbstractRule
             if ($classCount === 0) {
                 continue;
             }
-
-
 
             /** @var ClassCountOptions $effectiveOptions */
             $effectiveOptions = $this->getEffectiveOptions($context, $this->options, $namespaceInfo->file, $namespaceInfo->line ?? 1);

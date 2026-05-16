@@ -51,8 +51,6 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
         return RuleCategory::Complexity;
     }
 
-
-
     /**
      * @return list<string>
      */
@@ -61,8 +59,6 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
         return [MetricName::COMPLEXITY_NPATH];
     }
 
-
-
     /**
      * @return list<RuleLevel>
      */
@@ -70,8 +66,6 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
     {
         return [RuleLevel::Method, RuleLevel::Class_];
     }
-
-
 
     /**
      * Analyzes at a specific level.
@@ -94,8 +88,6 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
         };
     }
 
-
-
     /**
      * @return list<Violation>
      */
@@ -113,8 +105,6 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
 
         return $violations;
     }
-
-
 
     /**
      * @return class-string<NpathComplexityOptions>
@@ -138,8 +128,6 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
             default => 'moderate',
         };
     }
-
-
 
     /**
      * @return list<Violation>
@@ -189,8 +177,6 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
         return $violations;
     }
 
-
-
     /**
      * @return list<Violation>
      */
@@ -237,8 +223,6 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
 
         return $violations;
     }
-
-
 
     /**
      * Formats a compact multiplicative chain of top NPath factors.

@@ -47,6 +47,7 @@ return (new PhpCsFixer\Config())
         'concat_space' => ['spacing' => 'one'],
         'binary_operator_spaces' => ['default' => 'single_space'],
         'not_operator_with_successor_space' => false,
+        'no_extra_blank_lines' => true,
 
         // Other
         'yoda_style' => false,
