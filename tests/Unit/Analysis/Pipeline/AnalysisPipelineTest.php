@@ -19,6 +19,9 @@ use Qualimetrix\Analysis\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Analysis\Pipeline\AnalysisPipeline;
 use Qualimetrix\Analysis\Pipeline\MetricEnricher;
 use Qualimetrix\Analysis\RuleExecution\RuleExecutorInterface;
+use Qualimetrix\Architecture\Domain\ArchitectureConfiguration;
+use Qualimetrix\Architecture\Processing\ArchitectureProcessorInterface;
+use Qualimetrix\Architecture\Rules\LayerViolationRule;
 use Qualimetrix\Configuration\AnalysisConfiguration;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Core\Dependency\Dependency;
@@ -341,6 +344,83 @@ final class AnalysisPipelineTest extends TestCase
         $result = $pipeline->analyze('/path/to/src');
 
         self::assertSame([], $result->violations);
+    }
+
+    #[Test]
+    public function itSkipsArchitecturePrepareWhenLayerViolationRuleDisabled(): void
+    {
+        $this->defaultDiscovery->method('discover')->willReturn(new ArrayIterator([]));
+        $this->collectionOrchestrator->method('collect')->willReturn(
+            new CollectionPhaseOutput(new CollectionResult(0, 0), []),
+        );
+
+        $configProvider = self::createStub(ConfigurationProviderInterface::class);
+        $configProvider->method('getConfiguration')->willReturn(
+            new AnalysisConfiguration(disabledRules: [LayerViolationRule::NAME]),
+        );
+        $configProvider->method('getRuleOptions')->willReturn([]);
+
+        $processor = $this->createMock(ArchitectureProcessorInterface::class);
+        // bind() runs in the production wiring before the pipeline analyses —
+        // TestPipelineBuilder mimics that, then the pipeline must not call
+        // prepare() once it sees the rule is disabled (symmetric with the
+        // duplication detector skip in MetricEnricher).
+        $processor->expects(self::once())->method('bind');
+        $processor->expects(self::never())->method('prepare');
+
+        $pipeline = TestPipelineBuilder::create()
+            ->withDefaultDiscovery($this->defaultDiscovery)
+            ->withCollectionOrchestrator($this->collectionOrchestrator)
+            ->withRuleExecutor($this->ruleExecutor)
+            ->withConfigurationProvider($configProvider)
+            ->withMetricEnricher(new MetricEnricher(
+                compositeCollector: $this->compositeCollector,
+                globalCollectorRunner: $this->globalCollectorRunner,
+                configurationProvider: $configProvider,
+                logger: $this->logger,
+            ))
+            ->withArchitectureProcessor($processor)
+            ->withLogger($this->logger)
+            ->build();
+
+        // bind() simulates the production RuntimeConfigurator handshake.
+        $processor->bind(ArchitectureConfiguration::empty());
+
+        $pipeline->analyze('/path/to/src');
+    }
+
+    #[Test]
+    public function itPreparesArchitectureProcessorWhenLayerViolationRuleEnabled(): void
+    {
+        $this->defaultDiscovery->method('discover')->willReturn(new ArrayIterator([]));
+        $this->collectionOrchestrator->method('collect')->willReturn(
+            new CollectionPhaseOutput(new CollectionResult(0, 0), []),
+        );
+
+        // Default AnalysisConfiguration leaves disabledRules empty, so the
+        // layer-violation rule is enabled by default.
+        $processor = $this->createMock(ArchitectureProcessorInterface::class);
+        $processor->expects(self::once())->method('bind');
+        $processor->expects(self::once())->method('prepare');
+
+        $pipeline = TestPipelineBuilder::create()
+            ->withDefaultDiscovery($this->defaultDiscovery)
+            ->withCollectionOrchestrator($this->collectionOrchestrator)
+            ->withRuleExecutor($this->ruleExecutor)
+            ->withConfigurationProvider($this->configurationProvider)
+            ->withMetricEnricher(new MetricEnricher(
+                compositeCollector: $this->compositeCollector,
+                globalCollectorRunner: $this->globalCollectorRunner,
+                configurationProvider: $this->configurationProvider,
+                logger: $this->logger,
+            ))
+            ->withArchitectureProcessor($processor)
+            ->withLogger($this->logger)
+            ->build();
+
+        $processor->bind(ArchitectureConfiguration::empty());
+
+        $pipeline->analyze('/path/to/src');
     }
 
     #[Test]
