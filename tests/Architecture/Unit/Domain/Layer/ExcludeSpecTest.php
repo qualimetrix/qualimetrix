@@ -9,11 +9,13 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Architecture\Domain\Layer\CriterionListValidator;
 use Qualimetrix\Architecture\Domain\Layer\ExcludeSpec;
 use Qualimetrix\Architecture\Domain\Layer\MatchMode;
 use stdClass;
 
 #[CoversClass(ExcludeSpec::class)]
+#[CoversClass(CriterionListValidator::class)]
 final class ExcludeSpecTest extends TestCase
 {
     #[Test]

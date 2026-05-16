@@ -19,6 +19,7 @@ use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Tests\Architecture\Support\AllowListBuilder;
+use Qualimetrix\Tests\Architecture\Support\ArchitectureViolationProjector;
 
 /**
  * End-to-end test: runs the real {@see AnalysisPipelineInterface} against a
@@ -130,7 +131,7 @@ final class LayerViolationIntegrationTest extends TestCase
         $pipeline = $this->createPipelineWithArchitecture($this->buildPolicy(CoverageMode::Ignore));
         $result = $pipeline->analyze(self::FIXTURE_PATH);
 
-        $actual = $this->projectArchitectureViolations($result->violations);
+        $actual = ArchitectureViolationProjector::project($result->violations);
         $goldenPath = self::FIXTURE_PATH . '/expected-violations.json';
 
         if (getenv('QMX_GOLDEN_UPDATE') === '1') {
@@ -155,45 +156,6 @@ final class LayerViolationIntegrationTest extends TestCase
             $actual,
             'Architecture violation set drifted from the golden file. Set QMX_GOLDEN_UPDATE=1 to regenerate after an intentional algorithm change.',
         );
-    }
-
-    /**
-     * @param list<Violation> $violations
-     *
-     * @return list<array{rule: string, severity: string, source: string, target: string, type: string}>
-     */
-    private function projectArchitectureViolations(array $violations): array
-    {
-        $rows = [];
-        foreach ($violations as $violation) {
-            if (!str_starts_with($violation->ruleName, 'architecture.')) {
-                continue;
-            }
-            $rows[] = [
-                'rule' => $violation->ruleName,
-                'severity' => $violation->severity->value,
-                'source' => $violation->symbolPath->toString(),
-                'target' => $violation->dependencyTarget?->toString() ?? '',
-                'type' => $violation->dependencyType->value ?? '',
-            ];
-        }
-        usort($rows, static function (array $a, array $b): int {
-            $cmp = strcmp($a['rule'], $b['rule']);
-            if ($cmp !== 0) {
-                return $cmp;
-            }
-            $cmp = strcmp($a['source'], $b['source']);
-            if ($cmp !== 0) {
-                return $cmp;
-            }
-            $cmp = strcmp($a['target'], $b['target']);
-            if ($cmp !== 0) {
-                return $cmp;
-            }
-            return strcmp($a['type'], $b['type']);
-        });
-
-        return $rows;
     }
 
     #[Test]

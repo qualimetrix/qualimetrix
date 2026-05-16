@@ -10,8 +10,10 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Architecture\Domain\Layer\ClassContext;
+use Qualimetrix\Architecture\Domain\Layer\CriterionListValidator;
 use Qualimetrix\Architecture\Domain\Layer\ExcludeSpec;
 use Qualimetrix\Architecture\Domain\Layer\InvalidLayerDefinitionException;
+use Qualimetrix\Architecture\Domain\Layer\LayerCriteriaMatcher;
 use Qualimetrix\Architecture\Domain\Layer\LayerDefinition;
 use Qualimetrix\Architecture\Domain\Layer\MatchedCriterion;
 use Qualimetrix\Architecture\Domain\Layer\MatchedCriterionKind;
@@ -29,6 +31,8 @@ use stdClass;
 #[CoversClass(MatchMode::class)]
 #[CoversClass(ExcludeSpec::class)]
 #[CoversClass(InvalidLayerDefinitionException::class)]
+#[CoversClass(LayerCriteriaMatcher::class)]
+#[CoversClass(CriterionListValidator::class)]
 final class LayerDefinitionTest extends TestCase
 {
     #[Test]

@@ -10,6 +10,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Architecture\Domain\Layer\ClassContextFactory;
 use Qualimetrix\Architecture\Domain\Layer\ClassSet;
 use Qualimetrix\Architecture\Domain\Layer\ExcludeSpec;
+use Qualimetrix\Architecture\Domain\Layer\LayerCriteriaMatcher;
 use Qualimetrix\Architecture\Domain\Layer\MatchMode;
 use Qualimetrix\Architecture\Domain\Layer\MembershipSpec;
 use Qualimetrix\Architecture\Domain\Layer\TemplateLayerDefinition;
@@ -24,6 +25,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * surface in isolation.
  */
 #[CoversClass(TupleExtractor::class)]
+#[CoversClass(LayerCriteriaMatcher::class)]
 final class TupleExtractorTest extends TestCase
 {
     private TupleExtractor $extractor;
