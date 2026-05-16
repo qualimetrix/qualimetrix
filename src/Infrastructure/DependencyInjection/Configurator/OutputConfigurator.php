@@ -319,10 +319,13 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         // LayerAssignmentCommand (debug:layer-assignment)
         // Runs full Discovery + Collection so the answer matches `qmx check`
         // byte-for-byte for template-layer and graph-based configs (ADR 0008).
+        // File discovery is constructed per-run inside the command so it can
+        // honour the resolved `paths.excludes` (mirroring GitScopeResolver and
+        // AnalysisPipeline) — the DI-default FinderFileDiscovery has no access
+        // to runtime excludes.
         $container->register(LayerAssignmentCommand::class)
             ->setArguments([
                 new Reference(ConfigurationPipeline::class),
-                new Reference(FileDiscoveryInterface::class),
                 new Reference(CollectionOrchestratorInterface::class),
                 new Reference(DependencyGraphBuilder::class),
                 new Reference(ArchitectureProcessorInterface::class),

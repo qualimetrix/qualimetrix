@@ -7,7 +7,8 @@ namespace Qualimetrix\Infrastructure\Console\Command\Debug;
 use Exception;
 use Qualimetrix\Analysis\Collection\CollectionOrchestratorInterface;
 use Qualimetrix\Analysis\Collection\Dependency\DependencyGraphBuilder;
-use Qualimetrix\Analysis\Discovery\FileDiscoveryInterface;
+use Qualimetrix\Analysis\Discovery\FinderFileDiscovery;
+use Qualimetrix\Analysis\Discovery\GeneratedFileFilter;
 use Qualimetrix\Analysis\Repository\MetricRepositoryFactoryInterface;
 use Qualimetrix\Architecture\Domain\Layer\ClassSet;
 use Qualimetrix\Architecture\Domain\Layer\LayerMatch;
@@ -53,7 +54,6 @@ final class LayerAssignmentCommand extends Command
 {
     public function __construct(
         private readonly ConfigurationPipeline $configurationPipeline,
-        private readonly FileDiscoveryInterface $fileDiscovery,
         private readonly CollectionOrchestratorInterface $collectionOrchestrator,
         private readonly DependencyGraphBuilder $graphBuilder,
         private readonly ArchitectureProcessorInterface $processor,
@@ -141,10 +141,22 @@ final class LayerAssignmentCommand extends Command
         $resolved = $this->loadResolvedConfiguration($input);
 
         $repository = $this->repositoryFactory->create();
+
+        // Honour `paths.excludes` and `analysis.include_generated` exactly like
+        // `qmx check` does ({@see \Qualimetrix\Analysis\Pipeline\AnalysisPipeline::analyze()}).
+        // Without this, classes inside excluded directories or `@generated`
+        // files would silently enter the class set, drift the
+        // ArchitectureProcessor's template-layer expansion, and break the
+        // byte-for-byte parity contract documented above.
+        $fileDiscovery = new FinderFileDiscovery($resolved->paths->excludes);
         $files = array_values(iterator_to_array(
-            $this->fileDiscovery->discover($resolved->paths->paths),
+            $fileDiscovery->discover($resolved->paths->paths),
             false,
         ));
+
+        if (!$resolved->analysis->includeGenerated) {
+            $files = (new GeneratedFileFilter())->filter($files);
+        }
 
         $collection = $this->collectionOrchestrator->collect($files, $repository);
         $graph = $this->graphBuilder->build($collection->dependencies);
