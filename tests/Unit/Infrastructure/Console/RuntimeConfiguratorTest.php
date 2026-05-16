@@ -11,6 +11,7 @@ use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LogLevel;
 use Qualimetrix\Architecture\Domain\ArchitectureConfiguration;
+use Qualimetrix\Architecture\Processing\ArchitectureLifecycleHook;
 use Qualimetrix\Architecture\Processing\ArchitectureProcessor;
 use Qualimetrix\Architecture\Processing\ArchitectureProcessorInterface;
 use Qualimetrix\Configuration\AnalysisConfiguration;
@@ -93,7 +94,7 @@ final class RuntimeConfiguratorTest extends TestCase
                 new HealthFormulaExcluder(),
             ),
             $this->frameworkNamespacesHolder,
-            $this->architectureProcessor,
+            [new ArchitectureLifecycleHook($this->architectureProcessor)],
         );
     }
 
@@ -717,7 +718,7 @@ final class RuntimeConfiguratorTest extends TestCase
                 new HealthFormulaExcluder(),
             ),
             $this->frameworkNamespacesHolder,
-            $this->architectureProcessor,
+            [new ArchitectureLifecycleHook($this->architectureProcessor)],
         );
 
         return $loggerHolder;

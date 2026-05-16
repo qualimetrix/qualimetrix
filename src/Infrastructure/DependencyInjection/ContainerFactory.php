@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\DependencyInjection;
 
+use Qualimetrix\Analysis\Lifecycle\AnalysisLifecycleHookInterface;
 use Qualimetrix\Configuration\Pipeline\Stage\ConfigurationStageInterface;
 use Qualimetrix\Core\Metric\DerivedCollectorInterface;
 use Qualimetrix\Core\Metric\GlobalContextCollectorInterface;
@@ -122,6 +123,14 @@ final class ContainerFactory
         // Configuration stages autoconfiguration
         $container->registerForAutoconfiguration(ConfigurationStageInterface::class)
             ->addTag(ConfigurationStageCompilerPass::TAG);
+
+        // Lifecycle hooks autoconfiguration. Slice features (Architecture
+        // today, Computed Metrics potentially next) implement
+        // AnalysisLifecycleHookInterface and register an autowired service
+        // in their own configurator; RuntimeConfigurator consumes them as a
+        // tagged iterator so Infrastructure never imports a feature type.
+        $container->registerForAutoconfiguration(AnalysisLifecycleHookInterface::class)
+            ->addTag('qmx.analysis.lifecycle_hook');
     }
 
     /**
