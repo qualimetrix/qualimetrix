@@ -85,6 +85,11 @@ deptrac:
         - type: directory
           value: src/Analysis/Collection/.*
 
+    - name: Analysis.Lifecycle
+      collectors:
+        - type: directory
+          value: src/Analysis/Lifecycle/.*
+
     - name: Analysis.Pipeline
       collectors:
         - type: directory
@@ -168,6 +173,7 @@ deptrac:
       - Core
       - Rules
       - Configuration
+      - Analysis.Lifecycle
 
     # ── Analysis sub-layers ──────────────────────────────────────────
     Analysis.Exception:
@@ -192,6 +198,10 @@ deptrac:
       - Core
       - Baseline
       - Analysis.Exception
+
+    Analysis.Lifecycle:
+      - Core
+      - Configuration
     Analysis.Pipeline:
       - Core
       - Metrics
@@ -251,6 +261,7 @@ deptrac:
       - Analysis.Namespace
       - Analysis.Repository
       - Analysis.RuleExecution
+      - Analysis.Lifecycle
       - Configuration
       - Baseline
       - Reporting
@@ -278,6 +289,7 @@ deptrac:
       - Analysis.Aggregator
       - Analysis.RuleExecution
       - Analysis.Collection
+      - Analysis.Lifecycle
       - Analysis.Pipeline
       - Infra.Serializer
       - Infra.Logging

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console;
 
 use Psr\Log\LogLevel;
-use Qualimetrix\Architecture\Processing\ArchitectureProcessorInterface;
+use Qualimetrix\Analysis\Lifecycle\AnalysisLifecycleHookInterface;
 use Qualimetrix\Configuration\AnalysisConfiguration;
 use Qualimetrix\Configuration\ComputedMetricsConfigResolver;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
@@ -34,6 +34,9 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 final class RuntimeConfigurator
 {
+    /**
+     * @param iterable<AnalysisLifecycleHookInterface> $lifecycleHooks
+     */
     public function __construct(
         private readonly LoggerFactory $loggerFactory,
         private readonly LoggerHolder $loggerHolder,
@@ -45,7 +48,7 @@ final class RuntimeConfigurator
         private readonly CacheFactory $cacheFactory,
         private readonly ComputedMetricsConfigResolver $computedMetricsResolver,
         private readonly FrameworkNamespacesHolder $frameworkNamespacesHolder,
-        private readonly ArchitectureProcessorInterface $architectureProcessor,
+        private readonly iterable $lifecycleHooks,
     ) {}
 
     /**
@@ -62,7 +65,6 @@ final class RuntimeConfigurator
         ComputedMetricDefinitionHolder::reset();
         CollectorConfigHolder::reset();
         $this->frameworkNamespacesHolder->reset();
-        $this->architectureProcessor->reset();
 
         $this->configureLogger($input, $output);
 
@@ -107,14 +109,14 @@ final class RuntimeConfigurator
             );
         }
 
-        // Publish the resolved architecture configuration to the processor so
-        // that architecture-aware rules see the user's layer policy after
-        // AnalysisPipeline calls prepare() (ADR 0008). Phase 4.6 made the
-        // ResolvedConfiguration field non-nullable; the factory always returns
-        // an ArchitectureConfiguration::empty() instance when no
-        // `architecture:` YAML key is supplied, so the lifecycle invariant
-        // (bind() before prepare()) holds unconditionally.
-        $this->architectureProcessor->bind($resolved->architecture);
+        // Apply feature-side lifecycle hooks (e.g. Architecture binds the
+        // resolved layer policy to its processor so the rules pipeline sees
+        // the user's configuration once AnalysisPipeline calls prepare()
+        // — ADR 0008). Slice configurators register their own hooks; the
+        // runtime configurator stays feature-agnostic.
+        foreach ($this->lifecycleHooks as $hook) {
+            $hook->applyResolvedConfiguration($resolved);
+        }
 
         // Resolve computed metrics definitions and store in holder. The resolver internally
         // applies exclude-health rewriting (merging in `health.*` metrics disabled via

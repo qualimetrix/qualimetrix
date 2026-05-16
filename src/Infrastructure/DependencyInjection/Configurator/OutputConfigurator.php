@@ -4,13 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
-use Qualimetrix\Analysis\Collection\CollectionOrchestratorInterface;
 use Qualimetrix\Analysis\Collection\Dependency\DependencyGraphBuilder;
 use Qualimetrix\Analysis\Collection\Dependency\DependencyVisitor;
 use Qualimetrix\Analysis\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Analysis\Pipeline\AnalysisPipelineInterface;
-use Qualimetrix\Analysis\Repository\MetricRepositoryFactoryInterface;
-use Qualimetrix\Architecture\Processing\ArchitectureProcessorInterface;
 use Qualimetrix\Baseline\BaselineGenerator;
 use Qualimetrix\Baseline\BaselineLoader;
 use Qualimetrix\Baseline\BaselineWriter;
@@ -31,7 +28,6 @@ use Qualimetrix\Infrastructure\Cache\CacheFactory;
 use Qualimetrix\Infrastructure\Console\BaselinePresenter;
 use Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
-use Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentCommand;
 use Qualimetrix\Infrastructure\Console\Command\GraphExportCommand;
 use Qualimetrix\Infrastructure\Console\Command\HookInstallCommand;
 use Qualimetrix\Infrastructure\Console\Command\HookStatusCommand;
@@ -57,6 +53,7 @@ use Qualimetrix\Reporting\Formatter\Support\DetailedViolationRenderer;
 use Qualimetrix\Reporting\Health\SummaryEnricher;
 use Qualimetrix\Reporting\Profile\ProfileSummaryRenderer;
 use Symfony\Component\Config\FileLocator;
+use Symfony\Component\DependencyInjection\Argument\TaggedIteratorArgument;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
@@ -169,6 +166,12 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         // RuntimeConfigurator for runtime service configuration. Public so the
         // deferred-warning integration test can retrieve it from the compiled
         // container and exercise the production drain path end-to-end.
+        //
+        // The final argument is the tagged iterator of feature lifecycle hooks
+        // (Architecture today; future vertical slices add their own). Keeping
+        // the registration agnostic preserves OutputConfigurator's
+        // cross-cutting-only contract — slice configurators own the hook
+        // registration.
         $container->register(RuntimeConfigurator::class)
             ->setPublic(true)
             ->setArguments([
@@ -182,7 +185,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(CacheFactory::class),
                 new Reference(ComputedMetricsConfigResolver::class),
                 new Reference(FrameworkNamespacesHolder::class),
-                new Reference(ArchitectureProcessorInterface::class),
+                new TaggedIteratorArgument('qmx.analysis.lifecycle_hook'),
             ]);
 
         // HealthFormulaExcluder for exclude-health formula rebuilding
@@ -313,28 +316,6 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(DependencyVisitor::class),
                 new Reference(DependencyGraphBuilder::class),
                 new Reference(DelegatingLogger::class),
-            ])
-            ->setPublic(true);
-
-        // LayerAssignmentCommand (debug:layer-assignment)
-        // Runs full Discovery + Collection so the answer matches `qmx check`
-        // byte-for-byte for template-layer and graph-based configs (ADR 0008).
-        // File discovery is constructed per-run inside the command so it can
-        // honour the resolved `paths.excludes` (mirroring GitScopeResolver and
-        // AnalysisPipeline) — the DI-default FinderFileDiscovery has no access
-        // to runtime excludes. RuntimeConfigurator is injected so the command
-        // performs the same per-run setup as `CheckCommand` — most importantly
-        // applying `memory_limit` from `qmx.yaml` before the parallel worker
-        // pool spins up. Without it the default 128MB exhausts on any
-        // non-trivial codebase mid-collection.
-        $container->register(LayerAssignmentCommand::class)
-            ->setArguments([
-                new Reference(ConfigurationPipeline::class),
-                new Reference(CollectionOrchestratorInterface::class),
-                new Reference(DependencyGraphBuilder::class),
-                new Reference(ArchitectureProcessorInterface::class),
-                new Reference(MetricRepositoryFactoryInterface::class),
-                new Reference(RuntimeConfigurator::class),
             ])
             ->setPublic(true);
     }
