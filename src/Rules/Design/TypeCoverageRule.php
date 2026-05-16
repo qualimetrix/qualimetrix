@@ -90,6 +90,15 @@ final class TypeCoverageRule extends AbstractRule
 
             $location = new Location($classInfo->file, $classInfo->line);
 
+            // Apply @qmx-threshold overrides for this class
+            $effectiveOptions = $this->getEffectiveOptions(
+                $context,
+                $this->options,
+                $classInfo->file,
+                $classInfo->line ?? 1,
+            );
+            \assert($effectiveOptions instanceof TypeCoverageOptions);
+
             $paramViolation = $this->checkCoverage(
                 $metrics,
                 $classInfo->symbolPath,
@@ -97,8 +106,8 @@ final class TypeCoverageRule extends AbstractRule
                 MetricName::TYPE_COVERAGE_PARAM_TOTAL,
                 MetricName::TYPE_COVERAGE_PARAM,
                 'Parameter',
-                $this->options->paramWarning,
-                $this->options->paramError,
+                $effectiveOptions->paramWarning,
+                $effectiveOptions->paramError,
             );
 
             if ($paramViolation !== null) {
@@ -112,8 +121,8 @@ final class TypeCoverageRule extends AbstractRule
                 MetricName::TYPE_COVERAGE_RETURN_TOTAL,
                 MetricName::TYPE_COVERAGE_RETURN,
                 'Return',
-                $this->options->returnWarning,
-                $this->options->returnError,
+                $effectiveOptions->returnWarning,
+                $effectiveOptions->returnError,
             );
 
             if ($returnViolation !== null) {
@@ -127,8 +136,8 @@ final class TypeCoverageRule extends AbstractRule
                 MetricName::TYPE_COVERAGE_PROPERTY_TOTAL,
                 MetricName::TYPE_COVERAGE_PROPERTY,
                 'Property',
-                $this->options->propertyWarning,
-                $this->options->propertyError,
+                $effectiveOptions->propertyWarning,
+                $effectiveOptions->propertyError,
             );
 
             if ($propertyViolation !== null) {

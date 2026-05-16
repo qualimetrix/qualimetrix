@@ -25,6 +25,9 @@ use Qualimetrix\Rules\Complexity\MethodComplexityOptions;
 use Qualimetrix\Rules\Coupling\ClassCboOptions;
 use Qualimetrix\Rules\Coupling\DistanceOptions;
 use Qualimetrix\Rules\Coupling\NamespaceInstabilityOptions;
+use Qualimetrix\Rules\Design\DataClassOptions;
+use Qualimetrix\Rules\Design\GodClassOptions;
+use Qualimetrix\Rules\Design\TypeCoverageOptions;
 use Qualimetrix\Rules\Duplication\CodeDuplicationOptions;
 use Qualimetrix\Rules\Maintainability\MaintainabilityOptions;
 use Qualimetrix\Rules\Size\MethodCountOptions;
@@ -57,6 +60,9 @@ use RuntimeException;
 #[CoversClass(PropertyCountOptions::class)]
 #[CoversClass(LcomOptions::class)]
 #[CoversClass(WmcOptions::class)]
+#[CoversClass(TypeCoverageOptions::class)]
+#[CoversClass(GodClassOptions::class)]
+#[CoversClass(DataClassOptions::class)]
 final class ThresholdOverrideIntegrationTest extends TestCase
 {
     public function testWithOverrideOnMethodComplexityOptions(): void
@@ -349,6 +355,65 @@ final class ThresholdOverrideIntegrationTest extends TestCase
         );
         $npathOverridden = $npath->withOverride(400, 900);
         self::assertTrue($npathOverridden->enabled, 'NPath: enabled must be preserved');
+
+        // TypeCoverageOptions — overrides all 3 dimensions uniformly with the same (warning, error)
+        $typeCov = new TypeCoverageOptions(
+            enabled: false,
+            paramWarning: 90.0,
+            paramError: 70.0,
+            returnWarning: 85.0,
+            returnError: 60.0,
+            propertyWarning: 95.0,
+            propertyError: 75.0,
+        );
+        $typeCovOverridden = $typeCov->withOverride(60.0, 30.0);
+        self::assertFalse($typeCovOverridden->enabled, 'TypeCoverage: enabled must be preserved');
+        self::assertSame(60.0, $typeCovOverridden->paramWarning, 'TypeCoverage: paramWarning must take warning override');
+        self::assertSame(30.0, $typeCovOverridden->paramError, 'TypeCoverage: paramError must take error override');
+        self::assertSame(60.0, $typeCovOverridden->returnWarning, 'TypeCoverage: returnWarning must take warning override');
+        self::assertSame(30.0, $typeCovOverridden->returnError, 'TypeCoverage: returnError must take error override');
+        self::assertSame(60.0, $typeCovOverridden->propertyWarning, 'TypeCoverage: propertyWarning must take warning override');
+        self::assertSame(30.0, $typeCovOverridden->propertyError, 'TypeCoverage: propertyError must take error override');
+
+        // GodClassOptions — warning overrides minCriteria; per-criterion thresholds preserved
+        $godClass = new GodClassOptions(
+            enabled: false,
+            wmcThreshold: 50,
+            lcomThreshold: 4,
+            tccThreshold: 0.25,
+            classLocThreshold: 350,
+            minCriteria: 3,
+            minMethods: 4,
+            excludeReadonly: false,
+        );
+        $godClassOverridden = $godClass->withOverride(2, null);
+        self::assertFalse($godClassOverridden->enabled, 'GodClass: enabled must be preserved');
+        self::assertSame(2, $godClassOverridden->minCriteria, 'GodClass: minCriteria must take warning override');
+        self::assertSame(50, $godClassOverridden->wmcThreshold, 'GodClass: wmcThreshold must be preserved');
+        self::assertSame(4, $godClassOverridden->lcomThreshold, 'GodClass: lcomThreshold must be preserved');
+        self::assertSame(0.25, $godClassOverridden->tccThreshold, 'GodClass: tccThreshold must be preserved');
+        self::assertSame(350, $godClassOverridden->classLocThreshold, 'GodClass: classLocThreshold must be preserved');
+        self::assertSame(4, $godClassOverridden->minMethods, 'GodClass: minMethods must be preserved');
+        self::assertFalse($godClassOverridden->excludeReadonly, 'GodClass: excludeReadonly must be preserved');
+
+        // DataClassOptions — warning -> wocThreshold, error -> wmcThreshold
+        $dataClass = new DataClassOptions(
+            enabled: false,
+            wocThreshold: 80,
+            wmcThreshold: 10,
+            minMethods: 4,
+            excludeReadonly: false,
+            excludePromotedOnly: false,
+            excludeExceptions: false,
+        );
+        $dataClassOverridden = $dataClass->withOverride(90, 5);
+        self::assertFalse($dataClassOverridden->enabled, 'DataClass: enabled must be preserved');
+        self::assertSame(90, $dataClassOverridden->wocThreshold, 'DataClass: wocThreshold must take warning override');
+        self::assertSame(5, $dataClassOverridden->wmcThreshold, 'DataClass: wmcThreshold must take error override');
+        self::assertSame(4, $dataClassOverridden->minMethods, 'DataClass: minMethods must be preserved');
+        self::assertFalse($dataClassOverridden->excludeReadonly, 'DataClass: excludeReadonly must be preserved');
+        self::assertFalse($dataClassOverridden->excludePromotedOnly, 'DataClass: excludePromotedOnly must be preserved');
+        self::assertFalse($dataClassOverridden->excludeExceptions, 'DataClass: excludeExceptions must be preserved');
     }
 
     /**
@@ -394,8 +459,8 @@ final class ThresholdOverrideIntegrationTest extends TestCase
             }
         }
 
-        // Sanity: we should have tested all 24 classes
-        self::assertGreaterThanOrEqual(24, $testedClasses, 'Expected at least 24 ThresholdAwareOptions classes');
+        // Sanity: we should have tested all 27 classes
+        self::assertGreaterThanOrEqual(27, $testedClasses, 'Expected at least 27 ThresholdAwareOptions classes');
     }
 
     /**

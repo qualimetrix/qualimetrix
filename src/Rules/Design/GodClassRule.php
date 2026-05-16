@@ -68,14 +68,23 @@ final class GodClassRule extends AbstractRule
         foreach ($context->metrics->all(SymbolType::Class_) as $classInfo) {
             $metrics = $context->metrics->get($classInfo->symbolPath);
 
+            // Apply @qmx-threshold overrides for this class
+            $effectiveOptions = $this->getEffectiveOptions(
+                $context,
+                $this->options,
+                $classInfo->file,
+                $classInfo->line ?? 1,
+            );
+            \assert($effectiveOptions instanceof GodClassOptions);
+
             // Skip readonly classes if configured
-            if ($this->options->excludeReadonly && $metrics->get(MetricName::STRUCTURE_IS_READONLY) === 1) {
+            if ($effectiveOptions->excludeReadonly && $metrics->get(MetricName::STRUCTURE_IS_READONLY) === 1) {
                 continue;
             }
 
             // Skip classes with too few methods
             $methodCount = (int) ($metrics->get(MetricName::STRUCTURE_METHOD_COUNT) ?? 0);
-            if ($methodCount < $this->options->minMethods) {
+            if ($methodCount < $effectiveOptions->minMethods) {
                 continue;
             }
 
@@ -89,9 +98,9 @@ final class GodClassRule extends AbstractRule
             if ($wmc !== null) {
                 $wmcValue = (int) $wmc;
                 $evaluableCount++;
-                if ($wmcValue >= $this->options->wmcThreshold) {
+                if ($wmcValue >= $effectiveOptions->wmcThreshold) {
                     $matchedCount++;
-                    $matchedCriteria[] = \sprintf('high WMC (%d >= %d)', $wmcValue, $this->options->wmcThreshold);
+                    $matchedCriteria[] = \sprintf('high WMC (%d >= %d)', $wmcValue, $effectiveOptions->wmcThreshold);
                 }
             }
 
@@ -107,9 +116,9 @@ final class GodClassRule extends AbstractRule
                     // TCC >= 0.5 means the class IS cohesive — don't count LCOM at all
                 } else {
                     $evaluableCount++;
-                    if ($lcomValue >= $this->options->lcomThreshold) {
+                    if ($lcomValue >= $effectiveOptions->lcomThreshold) {
                         $matchedCount++;
-                        $matchedCriteria[] = \sprintf('high LCOM (%d >= %d)', $lcomValue, $this->options->lcomThreshold);
+                        $matchedCriteria[] = \sprintf('high LCOM (%d >= %d)', $lcomValue, $effectiveOptions->lcomThreshold);
                     }
                 }
             }
@@ -117,9 +126,9 @@ final class GodClassRule extends AbstractRule
             // 3. TCC < tccThreshold (inverted — low TCC is bad)
             if ($tccValue !== null) {
                 $evaluableCount++;
-                if ($tccValue < $this->options->tccThreshold) {
+                if ($tccValue < $effectiveOptions->tccThreshold) {
                     $matchedCount++;
-                    $matchedCriteria[] = \sprintf('low TCC (%.2f < %.2f)', $tccValue, $this->options->tccThreshold);
+                    $matchedCriteria[] = \sprintf('low TCC (%.2f < %.2f)', $tccValue, $effectiveOptions->tccThreshold);
                 }
             }
 
@@ -128,14 +137,14 @@ final class GodClassRule extends AbstractRule
             if ($classLoc !== null) {
                 $classLocValue = (int) $classLoc;
                 $evaluableCount++;
-                if ($classLocValue >= $this->options->classLocThreshold) {
+                if ($classLocValue >= $effectiveOptions->classLocThreshold) {
                     $matchedCount++;
-                    $matchedCriteria[] = \sprintf('large size (%d >= %d LOC)', $classLocValue, $this->options->classLocThreshold);
+                    $matchedCriteria[] = \sprintf('large size (%d >= %d LOC)', $classLocValue, $effectiveOptions->classLocThreshold);
                 }
             }
 
             // Not enough evaluable criteria
-            if ($evaluableCount < $this->options->minCriteria) {
+            if ($evaluableCount < $effectiveOptions->minCriteria) {
                 continue;
             }
 
@@ -143,7 +152,7 @@ final class GodClassRule extends AbstractRule
             $severity = null;
             if ($matchedCount === $evaluableCount) {
                 $severity = Severity::Error;
-            } elseif ($matchedCount >= $this->options->minCriteria) {
+            } elseif ($matchedCount >= $effectiveOptions->minCriteria) {
                 $severity = Severity::Warning;
             }
 

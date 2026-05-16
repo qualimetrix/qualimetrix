@@ -72,6 +72,15 @@ final class DataClassRule extends AbstractRule
         foreach ($context->metrics->all(SymbolType::Class_) as $classInfo) {
             $metrics = $context->metrics->get($classInfo->symbolPath);
 
+            // Apply @qmx-threshold overrides for this class
+            $effectiveOptions = $this->getEffectiveOptions(
+                $context,
+                $this->options,
+                $classInfo->file,
+                $classInfo->line ?? 1,
+            );
+            \assert($effectiveOptions instanceof DataClassOptions);
+
             // Interfaces are contracts, not data classes — 100% WOC by definition
             if ($metrics->get(MetricName::STRUCTURE_IS_INTERFACE) === 1) {
                 continue;
@@ -89,23 +98,23 @@ final class DataClassRule extends AbstractRule
             }
 
             // Exception classes are DTOs by design — they hold error context, not behavior
-            if ($this->options->excludeExceptions && $metrics->get(MetricName::STRUCTURE_IS_EXCEPTION) === 1) {
+            if ($effectiveOptions->excludeExceptions && $metrics->get(MetricName::STRUCTURE_IS_EXCEPTION) === 1) {
                 continue;
             }
 
             // Skip readonly classes if configured
-            if ($this->options->excludeReadonly && $metrics->get(MetricName::STRUCTURE_IS_READONLY) === 1) {
+            if ($effectiveOptions->excludeReadonly && $metrics->get(MetricName::STRUCTURE_IS_READONLY) === 1) {
                 continue;
             }
 
             // Skip promoted-properties-only classes if configured
-            if ($this->options->excludePromotedOnly && $metrics->get(MetricName::STRUCTURE_IS_PROMOTED_PROPERTIES_ONLY) === 1) {
+            if ($effectiveOptions->excludePromotedOnly && $metrics->get(MetricName::STRUCTURE_IS_PROMOTED_PROPERTIES_ONLY) === 1) {
                 continue;
             }
 
             // Skip classes with too few methods
             $methodCount = (int) ($metrics->get(MetricName::STRUCTURE_METHOD_COUNT) ?? 0);
-            if ($methodCount < $this->options->minMethods) {
+            if ($methodCount < $effectiveOptions->minMethods) {
                 continue;
             }
 
@@ -123,7 +132,7 @@ final class DataClassRule extends AbstractRule
             $wmcValue = (int) ($metrics->get(MetricName::STRUCTURE_WMC) ?? 0);
 
             // Data Class: high WOC (public surface) + low WMC (complexity)
-            if ($wocValue >= $this->options->wocThreshold && $wmcValue <= $this->options->wmcThreshold) {
+            if ($wocValue >= $effectiveOptions->wocThreshold && $wmcValue <= $effectiveOptions->wmcThreshold) {
                 $violations[] = new Violation(
                     location: new Location($classInfo->file, $classInfo->line),
                     symbolPath: $classInfo->symbolPath,
@@ -132,9 +141,9 @@ final class DataClassRule extends AbstractRule
                     message: \sprintf(
                         'Data Class detected: high public surface (WOC=%d%%, threshold %d%%) with low complexity (WMC=%d, threshold %d). Consider encapsulating behavior or using a DTO pattern',
                         $wocValue,
-                        $this->options->wocThreshold,
+                        $effectiveOptions->wocThreshold,
                         $wmcValue,
-                        $this->options->wmcThreshold,
+                        $effectiveOptions->wmcThreshold,
                     ),
                     severity: Severity::Warning,
                     metricValue: $wocValue,

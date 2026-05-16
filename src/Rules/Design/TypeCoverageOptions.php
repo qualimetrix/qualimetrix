@@ -6,6 +6,7 @@ namespace Qualimetrix\Rules\Design;
 
 use Qualimetrix\Core\Rule\RuleOptionKey;
 use Qualimetrix\Core\Rule\RuleOptionsInterface;
+use Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Rules\Support\ThresholdParser;
 
@@ -18,8 +19,11 @@ use Qualimetrix\Rules\Support\ThresholdParser;
  * Default thresholds:
  * - warning: below 80% coverage
  * - error: below 50% coverage
+ *
+ * `@qmx-threshold design.type-coverage W E` overrides all three dimensions
+ * (param/return/property) uniformly with the same (warning, error) pair.
  */
-final readonly class TypeCoverageOptions implements RuleOptionsInterface
+final readonly class TypeCoverageOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface
 {
     public function __construct(
         public bool $enabled = true,
@@ -108,5 +112,22 @@ final readonly class TypeCoverageOptions implements RuleOptionsInterface
         }
 
         return null;
+    }
+
+    /**
+     * Applies `@qmx-threshold` override uniformly to all three dimensions
+     * (param/return/property). Null keeps the original value per dimension.
+     */
+    public function withOverride(int|float|null $warning, int|float|null $error): static
+    {
+        return new static(
+            enabled: $this->enabled,
+            paramWarning: $warning !== null ? (float) $warning : $this->paramWarning,
+            paramError: $error !== null ? (float) $error : $this->paramError,
+            returnWarning: $warning !== null ? (float) $warning : $this->returnWarning,
+            returnError: $error !== null ? (float) $error : $this->returnError,
+            propertyWarning: $warning !== null ? (float) $warning : $this->propertyWarning,
+            propertyError: $error !== null ? (float) $error : $this->propertyError,
+        );
     }
 }
