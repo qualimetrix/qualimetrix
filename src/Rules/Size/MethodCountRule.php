@@ -6,6 +6,7 @@ namespace Qualimetrix\Rules\Size;
 
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\Location;
@@ -19,6 +20,8 @@ use Qualimetrix\Rules\AbstractRule;
  * Too many methods indicate a class may be doing too much
  * and should be split into smaller focused classes.
  */
+#[CliAlias('method-count-warning', 'warning')]
+#[CliAlias('method-count-error', 'error')]
 final class MethodCountRule extends AbstractRule
 {
     public const string NAME = 'size.method-count';
@@ -38,6 +41,8 @@ final class MethodCountRule extends AbstractRule
         return RuleCategory::Size;
     }
 
+
+
     /**
      * @return list<string>
      */
@@ -46,23 +51,14 @@ final class MethodCountRule extends AbstractRule
         return [MetricName::STRUCTURE_METHOD_COUNT];
     }
 
+
+
     /**
      * @return class-string<MethodCountOptions>
      */
     public static function getOptionsClass(): string
     {
         return MethodCountOptions::class;
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    public static function getCliAliases(): array
-    {
-        return [
-            'method-count-warning' => 'warning',
-            'method-count-error' => 'error',
-        ];
     }
 
     /**

@@ -8,6 +8,7 @@ use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\HierarchicalRuleInterface;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Rule\RuleLevel;
@@ -23,6 +24,10 @@ use Qualimetrix\Rules\AbstractRule;
  * - Method level: checks individual method cognitive complexity
  * - Class level: checks maximum cognitive complexity among class methods
  */
+#[CliAlias('cognitive-warning', 'method.warning')]
+#[CliAlias('cognitive-error', 'method.error')]
+#[CliAlias('cognitive-class-warning', 'class.max_warning')]
+#[CliAlias('cognitive-class-error', 'class.max_error')]
 final class CognitiveComplexityRule extends AbstractRule implements HierarchicalRuleInterface
 {
     public const string NAME = 'complexity.cognitive';
@@ -42,6 +47,8 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
         return RuleCategory::Complexity;
     }
 
+
+
     /**
      * @return list<string>
      */
@@ -50,6 +57,8 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
         return [MetricName::COMPLEXITY_COGNITIVE];
     }
 
+
+
     /**
      * @return list<RuleLevel>
      */
@@ -57,6 +66,8 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
     {
         return [RuleLevel::Method, RuleLevel::Class_];
     }
+
+
 
     /**
      * Analyzes at a specific level.
@@ -79,6 +90,8 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
         };
     }
 
+
+
     /**
      * @return list<Violation>
      */
@@ -97,27 +110,14 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
         return $violations;
     }
 
+
+
     /**
      * @return class-string<CognitiveComplexityOptions>
      */
     public static function getOptionsClass(): string
     {
         return CognitiveComplexityOptions::class;
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    public static function getCliAliases(): array
-    {
-        return [
-            // Method-level aliases
-            'cognitive-warning' => 'method.warning',
-            'cognitive-error' => 'method.error',
-            // Class-level aliases
-            'cognitive-class-warning' => 'class.max_warning',
-            'cognitive-class-error' => 'class.max_error',
-        ];
     }
 
     /**
@@ -166,6 +166,8 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
         return $violations;
     }
 
+
+
     /**
      * @return list<Violation>
      */
@@ -211,6 +213,8 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
         return $violations;
     }
 
+
+
     /**
      * Formats a compact breakdown of top complexity contributors.
      *
@@ -242,6 +246,8 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
 
         return 'Top: ' . implode(', ', $parts);
     }
+
+
 
     /**
      * Returns a human-readable label for a complexity increment.

@@ -11,6 +11,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Rule\CliAliasReader;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Rule\RuleLevel;
 use Qualimetrix\Core\Symbol\SymbolInfo;
@@ -81,7 +82,7 @@ final class InstabilityRuleTest extends TestCase
             'instability-class-error' => 'class.max_error',
             'instability-ns-warning' => 'namespace.max_warning',
             'instability-ns-error' => 'namespace.max_error',
-        ], InstabilityRule::getCliAliases());
+        ], CliAliasReader::read(InstabilityRule::class));
     }
 
     public function testConstructorThrowsForInvalidOptions(): void

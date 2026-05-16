@@ -43,14 +43,4 @@ interface RuleInterface
      * @return class-string<RuleOptionsInterface>
      */
     public static function getOptionsClass(): string;
-
-    /**
-     * Returns CLI short aliases for rule options.
-     *
-     * Format: ['alias' => 'optionName']
-     * Example: ['cyclomatic-warning' => 'warningThreshold', 'cyclomatic-error' => 'errorThreshold']
-     *
-     * @return array<string, string>
-     */
-    public static function getCliAliases(): array;
 }

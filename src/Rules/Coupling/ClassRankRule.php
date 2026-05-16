@@ -6,6 +6,7 @@ namespace Qualimetrix\Rules\Coupling;
 
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\Location;
@@ -20,6 +21,8 @@ use Qualimetrix\Rules\AbstractRule;
  * the dependency graph using the PageRank algorithm. Classes with high ClassRank
  * are critical hubs where changes have wide-reaching impact.
  */
+#[CliAlias('class-rank-warning', 'warning')]
+#[CliAlias('class-rank-error', 'error')]
 final class ClassRankRule extends AbstractRule
 {
     public const string NAME = 'coupling.class-rank';
@@ -155,16 +158,5 @@ final class ClassRankRule extends AbstractRule
     public static function getOptionsClass(): string
     {
         return ClassRankOptions::class;
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    public static function getCliAliases(): array
-    {
-        return [
-            'class-rank-warning' => 'warning',
-            'class-rank-error' => 'error',
-        ];
     }
 }

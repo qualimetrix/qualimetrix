@@ -22,6 +22,7 @@ use Qualimetrix\Core\Dependency\DependencyGraphInterface;
 use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Rule\CliAliasReader;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
@@ -54,7 +55,7 @@ final class LayerViolationRuleTest extends TestCase
         self::assertSame(RuleCategory::Architecture, $rule->getCategory());
         self::assertSame([], $rule->requires());
         self::assertSame(LayerViolationOptions::class, LayerViolationRule::getOptionsClass());
-        self::assertSame(['layer-violation' => 'enabled'], LayerViolationRule::getCliAliases());
+        self::assertSame(['layer-violation' => 'enabled'], CliAliasReader::read(LayerViolationRule::class));
         self::assertStringContainsString('layer', strtolower($rule->getDescription()));
     }
 

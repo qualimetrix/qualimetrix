@@ -9,6 +9,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Rule\CliAliasReader;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -98,7 +99,7 @@ final class DataClassRuleTest extends TestCase
 
     public function testGetCliAliases(): void
     {
-        $aliases = DataClassRule::getCliAliases();
+        $aliases = CliAliasReader::read(DataClassRule::class);
 
         self::assertArrayHasKey('data-class-woc-threshold', $aliases);
         self::assertArrayHasKey('data-class-wmc-threshold', $aliases);

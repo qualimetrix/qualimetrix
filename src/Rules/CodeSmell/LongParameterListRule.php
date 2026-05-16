@@ -6,6 +6,7 @@ namespace Qualimetrix\Rules\CodeSmell;
 
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolType;
@@ -20,6 +21,10 @@ use Qualimetrix\Rules\AbstractRule;
  * Too many parameters indicate a method may need a parameter object
  * or the method is doing too much.
  */
+#[CliAlias('long-parameter-list-warning', 'warning')]
+#[CliAlias('long-parameter-list-error', 'error')]
+#[CliAlias('long-parameter-list-vo-warning', 'vo-warning')]
+#[CliAlias('long-parameter-list-vo-error', 'vo-error')]
 final class LongParameterListRule extends AbstractRule
 {
     public const string NAME = 'code-smell.long-parameter-list';
@@ -39,6 +44,8 @@ final class LongParameterListRule extends AbstractRule
         return RuleCategory::CodeSmell;
     }
 
+
+
     /**
      * @return list<string>
      */
@@ -50,25 +57,14 @@ final class LongParameterListRule extends AbstractRule
         ];
     }
 
+
+
     /**
      * @return class-string<LongParameterListOptions>
      */
     public static function getOptionsClass(): string
     {
         return LongParameterListOptions::class;
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    public static function getCliAliases(): array
-    {
-        return [
-            'long-parameter-list-warning' => 'warning',
-            'long-parameter-list-error' => 'error',
-            'long-parameter-list-vo-warning' => 'vo-warning',
-            'long-parameter-list-vo-error' => 'vo-error',
-        ];
     }
 
     /**
@@ -132,6 +128,8 @@ final class LongParameterListRule extends AbstractRule
                 threshold: $threshold,
             );
         }
+
+
 
         /** @var LongParameterListOptions $effectiveOptions */
         $effectiveOptions = $this->getEffectiveOptions($context, $options, $symbolInfo->file, $symbolInfo->line ?? 1);

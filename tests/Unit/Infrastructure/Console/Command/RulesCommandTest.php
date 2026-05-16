@@ -120,12 +120,7 @@ final class RulesCommandTest extends TestCase
     #[Test]
     public function displaysCliAliases(): void
     {
-        $rule = $this->createRuleMock(
-            'complexity.cyclomatic',
-            RuleCategory::Complexity,
-            'Cyclomatic complexity',
-            ['cyclomatic-warning' => 'warning_threshold'],
-        );
+        $rule = $this->createCyclomaticRuleWithAlias();
 
         $registry = self::createStub(RuleRegistryInterface::class);
         $registry->method('getAll')->willReturn([$rule]);
@@ -156,71 +151,22 @@ final class RulesCommandTest extends TestCase
         self::assertStringContainsString('--rule-opt', $display);
     }
 
-    /**
-     * @param array<string, string> $cliAliases
-     */
     private function createRuleMock(
         string $name,
         RuleCategory $category,
         string $description,
-        array $cliAliases = [],
     ): RuleInterface {
-        // getCliAliases() is static — mocks can't handle it, so we use an anonymous class.
-        // Caveat: $staticAliases is shared across all instances of this anonymous class.
-        // This is safe as long as getCliAliases() is read before creating the next instance.
-        $ruleClass = new class ($name, $category, $description, $cliAliases) implements RuleInterface {
-            /** @var array<string, string> */
-            private static array $staticAliases = [];
+        $rule = $this->createMock(RuleInterface::class);
+        $rule->method('getName')->willReturn($name);
+        $rule->method('getCategory')->willReturn($category);
+        $rule->method('getDescription')->willReturn($description);
 
-            /**
-             * @param array<string, string> $cliAliases
-             */
-            public function __construct(
-                private readonly string $name,
-                private readonly RuleCategory $category,
-                private readonly string $description,
-                array $cliAliases,
-            ) {
-                self::$staticAliases = $cliAliases;
-            }
+        return $rule;
+    }
 
-            public function getName(): string
-            {
-                return $this->name;
-            }
-
-            public function getDescription(): string
-            {
-                return $this->description;
-            }
-
-            public function getCategory(): RuleCategory
-            {
-                return $this->category;
-            }
-
-            public function requires(): array
-            {
-                return [];
-            }
-
-            public function analyze(\Qualimetrix\Core\Rule\AnalysisContext $context): array
-            {
-                return [];
-            }
-
-            public static function getCliAliases(): array
-            {
-                return self::$staticAliases;
-            }
-
-            public static function getOptionsClass(): string
-            {
-                return StubRuleOptions::class;
-            }
-        };
-
-        return $ruleClass;
+    private function createCyclomaticRuleWithAlias(): RuleInterface
+    {
+        return new FixtureRuleWithCyclomaticAlias();
     }
 }
 
@@ -244,5 +190,42 @@ final readonly class StubRuleOptions implements RuleOptionsInterface
     public function getSeverity(int|float $value): ?Severity
     {
         return null;
+    }
+}
+
+/**
+ * @internal
+ */
+#[\Qualimetrix\Core\Rule\Attribute\CliAlias('cyclomatic-warning', 'warning_threshold')]
+final class FixtureRuleWithCyclomaticAlias implements RuleInterface
+{
+    public function getName(): string
+    {
+        return 'complexity.cyclomatic';
+    }
+
+    public function getDescription(): string
+    {
+        return 'Cyclomatic complexity';
+    }
+
+    public function getCategory(): RuleCategory
+    {
+        return RuleCategory::Complexity;
+    }
+
+    public function requires(): array
+    {
+        return [];
+    }
+
+    public function analyze(\Qualimetrix\Core\Rule\AnalysisContext $context): array
+    {
+        return [];
+    }
+
+    public static function getOptionsClass(): string
+    {
+        return StubRuleOptions::class;
     }
 }

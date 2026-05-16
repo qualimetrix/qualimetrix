@@ -8,6 +8,7 @@ use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\HierarchicalRuleInterface;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Rule\RuleLevel;
@@ -26,6 +27,10 @@ use Qualimetrix\Rules\AbstractRule;
  * - Method level: checks individual method NPath
  * - Class level: checks maximum NPath among class methods
  */
+#[CliAlias('npath-warning', 'method.warning')]
+#[CliAlias('npath-error', 'method.error')]
+#[CliAlias('npath-class-warning', 'class.max_warning')]
+#[CliAlias('npath-class-error', 'class.max_error')]
 final class NpathComplexityRule extends AbstractRule implements HierarchicalRuleInterface
 {
     public const string NAME = 'complexity.npath';
@@ -46,6 +51,8 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
         return RuleCategory::Complexity;
     }
 
+
+
     /**
      * @return list<string>
      */
@@ -54,6 +61,8 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
         return [MetricName::COMPLEXITY_NPATH];
     }
 
+
+
     /**
      * @return list<RuleLevel>
      */
@@ -61,6 +70,8 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
     {
         return [RuleLevel::Method, RuleLevel::Class_];
     }
+
+
 
     /**
      * Analyzes at a specific level.
@@ -83,6 +94,8 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
         };
     }
 
+
+
     /**
      * @return list<Violation>
      */
@@ -101,27 +114,14 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
         return $violations;
     }
 
+
+
     /**
      * @return class-string<NpathComplexityOptions>
      */
     public static function getOptionsClass(): string
     {
         return NpathComplexityOptions::class;
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    public static function getCliAliases(): array
-    {
-        return [
-            // Method-level aliases
-            'npath-warning' => 'method.warning',
-            'npath-error' => 'method.error',
-            // Class-level aliases
-            'npath-class-warning' => 'class.max_warning',
-            'npath-class-error' => 'class.max_error',
-        ];
     }
 
     /**
@@ -138,6 +138,8 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
             default => 'moderate',
         };
     }
+
+
 
     /**
      * @return list<Violation>
@@ -187,6 +189,8 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
         return $violations;
     }
 
+
+
     /**
      * @return list<Violation>
      */
@@ -233,6 +237,8 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
 
         return $violations;
     }
+
+
 
     /**
      * Formats a compact multiplicative chain of top NPath factors.

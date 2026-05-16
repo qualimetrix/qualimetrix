@@ -11,6 +11,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Rule\CliAliasReader;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -283,7 +284,7 @@ final class LcomRuleTest extends TestCase
 
     public function testGetCliAliases(): void
     {
-        $aliases = LcomRule::getCliAliases();
+        $aliases = CliAliasReader::read(LcomRule::class);
 
         self::assertArrayHasKey('lcom-warning', $aliases);
         self::assertArrayHasKey('lcom-error', $aliases);

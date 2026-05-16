@@ -6,6 +6,7 @@ namespace Qualimetrix\Rules\CodeSmell;
 
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolType;
@@ -20,6 +21,8 @@ use Qualimetrix\Rules\AbstractRule;
  * Too many constructor parameters indicate a class has too many dependencies
  * and likely violates the Single Responsibility Principle.
  */
+#[CliAlias('constructor-overinjection-warning', 'warning')]
+#[CliAlias('constructor-overinjection-error', 'error')]
 final class ConstructorOverinjectionRule extends AbstractRule
 {
     public const string NAME = 'code-smell.constructor-overinjection';
@@ -39,6 +42,8 @@ final class ConstructorOverinjectionRule extends AbstractRule
         return RuleCategory::CodeSmell;
     }
 
+
+
     /**
      * @return list<string>
      */
@@ -47,23 +52,14 @@ final class ConstructorOverinjectionRule extends AbstractRule
         return [MetricName::CODE_SMELL_PARAMETER_COUNT];
     }
 
+
+
     /**
      * @return class-string<ConstructorOverinjectionOptions>
      */
     public static function getOptionsClass(): string
     {
         return ConstructorOverinjectionOptions::class;
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    public static function getCliAliases(): array
-    {
-        return [
-            'constructor-overinjection-warning' => 'warning',
-            'constructor-overinjection-error' => 'error',
-        ];
     }
 
     /**

@@ -6,6 +6,7 @@ namespace Qualimetrix\Rules\CodeSmell;
 
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolType;
@@ -19,6 +20,8 @@ use Qualimetrix\Rules\AbstractRule;
  * Statements after return, throw, exit/die, continue, or break
  * are unreachable and should be removed.
  */
+#[CliAlias('unreachable-code-warning', 'warning')]
+#[CliAlias('unreachable-code-error', 'error')]
 final class UnreachableCodeRule extends AbstractRule
 {
     public const string NAME = 'code-smell.unreachable-code';
@@ -38,6 +41,8 @@ final class UnreachableCodeRule extends AbstractRule
         return RuleCategory::CodeSmell;
     }
 
+
+
     /**
      * @return list<string>
      */
@@ -46,23 +51,14 @@ final class UnreachableCodeRule extends AbstractRule
         return [MetricName::CODE_SMELL_UNREACHABLE_CODE];
     }
 
+
+
     /**
      * @return class-string<UnreachableCodeOptions>
      */
     public static function getOptionsClass(): string
     {
         return UnreachableCodeOptions::class;
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    public static function getCliAliases(): array
-    {
-        return [
-            'unreachable-code-warning' => 'warning',
-            'unreachable-code-error' => 'error',
-        ];
     }
 
     /**

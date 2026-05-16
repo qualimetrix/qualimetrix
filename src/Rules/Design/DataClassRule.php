@@ -6,6 +6,7 @@ namespace Qualimetrix\Rules\Design;
 
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\Location;
@@ -20,6 +21,12 @@ use Qualimetrix\Rules\AbstractRule;
  * suggesting it only holds data without encapsulating behavior.
  * Pure DTOs (readonly, promoted-properties-only, or marked as data class) are excluded.
  */
+#[CliAlias('data-class-woc-threshold', 'wocThreshold')]
+#[CliAlias('data-class-wmc-threshold', 'wmcThreshold')]
+#[CliAlias('data-class-min-methods', 'minMethods')]
+#[CliAlias('data-class-exclude-readonly', 'excludeReadonly')]
+#[CliAlias('data-class-exclude-promoted-only', 'excludePromotedOnly')]
+#[CliAlias('data-class-exclude-exceptions', 'excludeExceptions')]
 final class DataClassRule extends AbstractRule
 {
     public const string NAME = 'design.data-class';
@@ -161,20 +168,5 @@ final class DataClassRule extends AbstractRule
     public static function getOptionsClass(): string
     {
         return DataClassOptions::class;
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    public static function getCliAliases(): array
-    {
-        return [
-            'data-class-woc-threshold' => 'wocThreshold',
-            'data-class-wmc-threshold' => 'wmcThreshold',
-            'data-class-min-methods' => 'minMethods',
-            'data-class-exclude-readonly' => 'excludeReadonly',
-            'data-class-exclude-promoted-only' => 'excludePromotedOnly',
-            'data-class-exclude-exceptions' => 'excludeExceptions',
-        ];
     }
 }

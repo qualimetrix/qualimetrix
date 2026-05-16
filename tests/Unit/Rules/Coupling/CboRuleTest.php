@@ -14,6 +14,7 @@ use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Rule\CliAliasReader;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Rule\RuleLevel;
 use Qualimetrix\Core\Symbol\SymbolInfo;
@@ -85,7 +86,7 @@ final class CboRuleTest extends TestCase
             'cbo-error' => 'class.error',
             'cbo-ns-warning' => 'namespace.warning',
             'cbo-ns-error' => 'namespace.error',
-        ], CboRule::getCliAliases());
+        ], CliAliasReader::read(CboRule::class));
     }
 
     public function testConstructorThrowsForInvalidOptions(): void

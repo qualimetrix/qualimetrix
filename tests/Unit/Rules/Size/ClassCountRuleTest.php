@@ -11,6 +11,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Rule\CliAliasReader;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -59,7 +60,7 @@ final class ClassCountRuleTest extends TestCase
     {
         self::assertSame(
             ['class-count-warning' => 'warning', 'class-count-error' => 'error'],
-            ClassCountRule::getCliAliases(),
+            CliAliasReader::read(ClassCountRule::class),
         );
     }
 

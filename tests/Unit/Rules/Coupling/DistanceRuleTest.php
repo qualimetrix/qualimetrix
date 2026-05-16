@@ -13,6 +13,7 @@ use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Namespace_\ProjectNamespaceResolverInterface;
 use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Rule\CliAliasReader;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -68,7 +69,7 @@ final class DistanceRuleTest extends TestCase
         self::assertSame([
             'distance-warning' => 'max_distance_warning',
             'distance-error' => 'max_distance_error',
-        ], DistanceRule::getCliAliases());
+        ], CliAliasReader::read(DistanceRule::class));
     }
 
     public function testAnalyzeReturnsEmptyWhenDisabled(): void

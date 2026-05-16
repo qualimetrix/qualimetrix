@@ -9,6 +9,7 @@ use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Namespace_\ProjectNamespaceResolverInterface;
 use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Rule\RuleOptionsInterface;
 use Qualimetrix\Core\Symbol\SymbolType;
@@ -36,6 +37,8 @@ use Qualimetrix\Rules\AbstractRule;
  * - Use `includeNamespaces` option to override auto-detection
  * - Use `exclude_namespaces` (universal per-rule option) to exclude specific namespaces
  */
+#[CliAlias('distance-warning', 'max_distance_warning')]
+#[CliAlias('distance-error', 'max_distance_error')]
 final class DistanceRule extends AbstractRule
 {
     public const string NAME = 'coupling.distance';
@@ -211,16 +214,5 @@ final class DistanceRule extends AbstractRule
     public static function getOptionsClass(): string
     {
         return DistanceOptions::class;
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    public static function getCliAliases(): array
-    {
-        return [
-            'distance-warning' => 'max_distance_warning',
-            'distance-error' => 'max_distance_error',
-        ];
     }
 }

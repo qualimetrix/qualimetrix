@@ -11,6 +11,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Rule\CliAliasReader;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -305,7 +306,7 @@ final class MaintainabilityRuleTest extends TestCase
 
     public function testGetCliAliases(): void
     {
-        $aliases = MaintainabilityRule::getCliAliases();
+        $aliases = CliAliasReader::read(MaintainabilityRule::class);
 
         self::assertArrayHasKey('mi-warning', $aliases);
         self::assertArrayHasKey('mi-error', $aliases);
