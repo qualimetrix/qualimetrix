@@ -5,13 +5,29 @@ declare(strict_types=1);
 namespace Qualimetrix\Core\Coupling;
 
 /**
- * Mutable holder for FrameworkNamespaces configuration.
+ * Late-init holder for FrameworkNamespaces.
  *
- * Set at runtime after configuration pipeline resolves, consumed by
- * CouplingCollector during the global collection phase.
+ * The container is built before configuration is parsed, but
+ * CouplingCollector — registered at container build time — needs a
+ * FrameworkNamespaces value that only exists after the configuration
+ * pipeline resolves. The Holder bridges that gap: same instance is shared
+ * by writer (RuntimeConfigurator::configure) and readers (CouplingCollector
+ * and other coupling-aware collectors).
  *
- * Lives in Core to maintain the dependency direction:
- * Metrics -> Core (not Metrics -> Configuration).
+ * Lifecycle (single process, sequential):
+ *   1. Container build registers Holder with a default-constructed empty
+ *      FrameworkNamespaces.
+ *   2. RuntimeConfigurator::configure() resets the Holder and calls set()
+ *      with the resolved FrameworkNamespaces before any analysis runs.
+ *   3. Global collection phase reads the value via get().
+ *
+ * Not used in parallel workers: CouplingCollector implements
+ * GlobalContextCollectorInterface and runs in the main process after the
+ * parallel collection phase, so there is no cross-process visibility
+ * problem.
+ *
+ * Lives in Core to keep the dependency direction Metrics -> Core (rather
+ * than Metrics -> Configuration).
  */
 final class FrameworkNamespacesHolder
 {
