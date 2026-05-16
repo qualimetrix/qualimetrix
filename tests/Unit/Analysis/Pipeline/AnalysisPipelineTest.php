@@ -31,8 +31,8 @@ use Qualimetrix\Core\Suppression\ThresholdOverride;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
+use Qualimetrix\Rules\CodeSmell\BooleanArgumentRule;
 use Qualimetrix\Rules\Complexity\ComplexityRule;
-use Qualimetrix\Rules\Design\GodClassRule;
 use Qualimetrix\Tests\Support\Pipeline\TestPipelineBuilder;
 use SplFileInfo;
 
@@ -285,7 +285,7 @@ final class AnalysisPipelineTest extends TestCase
 
         $overrides = [
             'src/Foo.php' => [
-                new ThresholdOverride('design.god-class', 50.0, 100.0, 10, 50),
+                new ThresholdOverride('code-smell.boolean-argument', 50.0, 100.0, 10, 50),
             ],
         ];
 
@@ -296,14 +296,14 @@ final class AnalysisPipelineTest extends TestCase
             ),
         );
 
-        // GodClassRule doesn't support ThresholdAwareOptionsInterface
-        $godClassRule = new GodClassRule(GodClassRule::getOptionsClass()::fromArray([]));
+        // BooleanArgumentRule has a boolean-only Options class — no ThresholdAwareOptionsInterface
+        $booleanArgRule = new BooleanArgumentRule(BooleanArgumentRule::getOptionsClass()::fromArray([]));
         // ComplexityRule supports it
         $complexityRule = new ComplexityRule(ComplexityRule::getOptionsClass()::fromArray([]));
 
         $ruleExecutor = self::createStub(RuleExecutorInterface::class);
         $ruleExecutor->method('execute')->willReturn([]);
-        $ruleExecutor->method('getAllRules')->willReturn([$godClassRule, $complexityRule]);
+        $ruleExecutor->method('getAllRules')->willReturn([$booleanArgRule, $complexityRule]);
 
         $pipeline = $this->createPipeline(ruleExecutor: $ruleExecutor);
         $result = $pipeline->analyze('/path/to/src');
@@ -312,7 +312,7 @@ final class AnalysisPipelineTest extends TestCase
         self::assertCount(1, $result->violations);
         self::assertSame('annotation.unsupported-threshold', $result->violations[0]->ruleName);
         self::assertSame(Severity::Warning, $result->violations[0]->severity);
-        self::assertStringContainsString('design.god-class', $result->violations[0]->message);
+        self::assertStringContainsString('code-smell.boolean-argument', $result->violations[0]->message);
         self::assertStringContainsString('does not support', $result->violations[0]->message);
     }
 

@@ -6,6 +6,7 @@ namespace Qualimetrix\Rules\Design;
 
 use Qualimetrix\Core\Rule\RuleOptionKey;
 use Qualimetrix\Core\Rule\RuleOptionsInterface;
+use Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Core\Violation\Severity;
 
 /**
@@ -18,8 +19,16 @@ use Qualimetrix\Core\Violation\Severity;
  * - classLoc >= 300 (large size)
  *
  * A class is a God Class when it matches minCriteria out of evaluable criteria.
+ *
+ * `@qmx-threshold design.god-class W` maps W to `minCriteria` (the gate
+ * deciding how many matched criteria are required to flag the class). The
+ * `error` value has no separate threshold in this rule — Error severity is
+ * emitted when all evaluable criteria match — so the `error` parameter of
+ * the annotation is ignored. Use the `wmc_threshold`, `lcom_threshold`,
+ * `tcc_threshold`, `class_loc_threshold` config keys to tune per-criterion
+ * thresholds.
  */
-final readonly class GodClassOptions implements RuleOptionsInterface
+final readonly class GodClassOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface
 {
     public function __construct(
         public bool $enabled = true,
@@ -66,5 +75,23 @@ final readonly class GodClassOptions implements RuleOptionsInterface
     {
         // Severity is determined inline in analyze() based on matchedCount vs evaluableCount
         return $value > 0 ? Severity::Warning : null;
+    }
+
+    /**
+     * Maps `@qmx-threshold design.god-class W` to `minCriteria` override.
+     * The `error` parameter is ignored — this rule has no separate error threshold.
+     */
+    public function withOverride(int|float|null $warning, int|float|null $error): static
+    {
+        return new static(
+            enabled: $this->enabled,
+            wmcThreshold: $this->wmcThreshold,
+            lcomThreshold: $this->lcomThreshold,
+            tccThreshold: $this->tccThreshold,
+            classLocThreshold: $this->classLocThreshold,
+            minCriteria: $warning !== null ? (int) $warning : $this->minCriteria,
+            minMethods: $this->minMethods,
+            excludeReadonly: $this->excludeReadonly,
+        );
     }
 }

@@ -6,6 +6,7 @@ namespace Qualimetrix\Rules\Design;
 
 use Qualimetrix\Core\Rule\RuleOptionKey;
 use Qualimetrix\Core\Rule\RuleOptionsInterface;
+use Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Core\Violation\Severity;
 
 /**
@@ -13,8 +14,12 @@ use Qualimetrix\Core\Violation\Severity;
  *
  * A Data Class has high public surface (WOC) but low complexity (WMC),
  * suggesting it only holds data without encapsulating behavior.
+ *
+ * `@qmx-threshold design.data-class W E` maps W to `wocThreshold`
+ * (minimum WOC to flag) and E to `wmcThreshold` (maximum WMC to flag).
+ * Both conditions must hold for the rule to flag a class.
  */
-final readonly class DataClassOptions implements RuleOptionsInterface
+final readonly class DataClassOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface
 {
     public function __construct(
         public bool $enabled = true,
@@ -59,5 +64,22 @@ final readonly class DataClassOptions implements RuleOptionsInterface
     public function getSeverity(int|float $value): Severity
     {
         return Severity::Warning;
+    }
+
+    /**
+     * Maps `@qmx-threshold design.data-class W E` to (`wocThreshold`,
+     * `wmcThreshold`). Null keeps the original value per threshold.
+     */
+    public function withOverride(int|float|null $warning, int|float|null $error): static
+    {
+        return new static(
+            enabled: $this->enabled,
+            wocThreshold: $warning !== null ? (int) $warning : $this->wocThreshold,
+            wmcThreshold: $error !== null ? (int) $error : $this->wmcThreshold,
+            minMethods: $this->minMethods,
+            excludeReadonly: $this->excludeReadonly,
+            excludePromotedOnly: $this->excludePromotedOnly,
+            excludeExceptions: $this->excludeExceptions,
+        );
     }
 }
