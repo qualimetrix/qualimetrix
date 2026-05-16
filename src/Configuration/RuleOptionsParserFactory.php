@@ -14,31 +14,6 @@ use ReflectionClass;
 final readonly class RuleOptionsParserFactory
 {
     /**
-     * Creates parser with aliases from given rules.
-     *
-     * @param iterable<RuleInterface> $rules
-     */
-    public function create(iterable $rules): RuleOptionsParser
-    {
-        $shortAliases = [];
-
-        foreach ($rules as $rule) {
-            $ruleName = $rule->getName();
-
-            $aliases = CliAliasReader::read($rule::class);
-
-            foreach ($aliases as $alias => $optionName) {
-                $shortAliases[$alias] = [
-                    'rule' => $ruleName,
-                    'option' => $optionName,
-                ];
-            }
-        }
-
-        return new RuleOptionsParser($shortAliases);
-    }
-
-    /**
      * Creates parser with aliases from given rule classes.
      *
      * Uses reflection to get rule NAME constant without instantiation.
