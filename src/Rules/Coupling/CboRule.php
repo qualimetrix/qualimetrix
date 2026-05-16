@@ -52,8 +52,6 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
         return RuleCategory::Coupling;
     }
 
-
-
     /**
      * @return list<string>
      */
@@ -62,8 +60,6 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
         return [MetricName::COUPLING_CBO, MetricName::COUPLING_CA, MetricName::COUPLING_CE, MetricName::COUPLING_CBO_APP, MetricName::COUPLING_CE_FRAMEWORK];
     }
 
-
-
     /**
      * @return list<RuleLevel>
      */
@@ -71,8 +67,6 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
     {
         return [RuleLevel::Class_, RuleLevel::Namespace_];
     }
-
-
 
     /**
      * Analyzes at a specific level.
@@ -97,8 +91,6 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
         };
     }
 
-
-
     /**
      * @return list<Violation>
      */
@@ -114,8 +106,6 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
 
         return $violations;
     }
-
-
 
     /**
      * @return class-string<CboOptions>
@@ -162,8 +152,6 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
         return $violations;
     }
 
-
-
     /**
      * @return list<Violation>
      */
@@ -199,8 +187,6 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
 
         return $violations;
     }
-
-
 
     /**
      * Checks CBO threshold for a symbol.
@@ -256,8 +242,6 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
         return null;
     }
 
-
-
     /**
      * Determines coupling direction and builds a direction-aware violation message.
      *
@@ -300,8 +284,6 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
             ),
         };
     }
-
-
 
     /**
      * Builds a direction-aware recommendation, optionally including top dependencies.
@@ -346,8 +328,6 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
 
         return $base;
     }
-
-
 
     /**
      * Returns a formatted string of top-5 efferent dependencies for a class, sorted by occurrence count.
@@ -399,8 +379,6 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
 
         return 'Top dependencies: ' . implode(', ', $topNames);
     }
-
-
 
     /**
      * Determines coupling direction: 'afferent', 'efferent', or 'balanced'.

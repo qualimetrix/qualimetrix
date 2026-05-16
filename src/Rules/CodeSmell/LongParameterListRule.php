@@ -44,8 +44,6 @@ final class LongParameterListRule extends AbstractRule
         return RuleCategory::CodeSmell;
     }
 
-
-
     /**
      * @return list<string>
      */
@@ -56,8 +54,6 @@ final class LongParameterListRule extends AbstractRule
             MetricName::CODE_SMELL_IS_VO_CONSTRUCTOR,
         ];
     }
-
-
 
     /**
      * @return class-string<LongParameterListOptions>
@@ -128,8 +124,6 @@ final class LongParameterListRule extends AbstractRule
                 threshold: $threshold,
             );
         }
-
-
 
         /** @var LongParameterListOptions $effectiveOptions */
         $effectiveOptions = $this->getEffectiveOptions($context, $options, $symbolInfo->file, $symbolInfo->line ?? 1);

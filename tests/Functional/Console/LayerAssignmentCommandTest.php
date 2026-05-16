@@ -493,7 +493,6 @@ final class LayerAssignmentCommandTest extends TestCase
         return $command;
     }
 
-
     /**
      * Writes a qmx.yaml with the given ordered list of layers to the temp
      * directory and returns its absolute path.

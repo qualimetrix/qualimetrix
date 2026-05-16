@@ -50,8 +50,6 @@ final class TypeCoverageRule extends AbstractRule
         return RuleCategory::Design;
     }
 
-
-
     /**
      * @return list<string>
      */
@@ -59,8 +57,6 @@ final class TypeCoverageRule extends AbstractRule
     {
         return [MetricName::TYPE_COVERAGE_PARAM];
     }
-
-
 
     /**
      * @return class-string<TypeCoverageOptions>

@@ -41,8 +41,6 @@ final class MethodCountRule extends AbstractRule
         return RuleCategory::Size;
     }
 
-
-
     /**
      * @return list<string>
      */
@@ -50,8 +48,6 @@ final class MethodCountRule extends AbstractRule
     {
         return [MetricName::STRUCTURE_METHOD_COUNT];
     }
-
-
 
     /**
      * @return class-string<MethodCountOptions>

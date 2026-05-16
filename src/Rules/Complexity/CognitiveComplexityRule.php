@@ -47,8 +47,6 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
         return RuleCategory::Complexity;
     }
 
-
-
     /**
      * @return list<string>
      */
@@ -57,8 +55,6 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
         return [MetricName::COMPLEXITY_COGNITIVE];
     }
 
-
-
     /**
      * @return list<RuleLevel>
      */
@@ -66,8 +62,6 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
     {
         return [RuleLevel::Method, RuleLevel::Class_];
     }
-
-
 
     /**
      * Analyzes at a specific level.
@@ -90,8 +84,6 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
         };
     }
 
-
-
     /**
      * @return list<Violation>
      */
@@ -109,8 +101,6 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
 
         return $violations;
     }
-
-
 
     /**
      * @return class-string<CognitiveComplexityOptions>
@@ -166,8 +156,6 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
         return $violations;
     }
 
-
-
     /**
      * @return list<Violation>
      */
@@ -213,8 +201,6 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
         return $violations;
     }
 
-
-
     /**
      * Formats a compact breakdown of top complexity contributors.
      *
@@ -246,8 +232,6 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
 
         return 'Top: ' . implode(', ', $parts);
     }
-
-
 
     /**
      * Returns a human-readable label for a complexity increment.

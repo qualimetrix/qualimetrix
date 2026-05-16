@@ -47,8 +47,6 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
         return RuleCategory::Complexity;
     }
 
-
-
     /**
      * Default cognitive complexity warning threshold.
      *
@@ -65,8 +63,6 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
         return [MetricName::COMPLEXITY_CCN, MetricName::COMPLEXITY_COGNITIVE];
     }
 
-
-
     /**
      * @return list<RuleLevel>
      */
@@ -74,8 +70,6 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
     {
         return [RuleLevel::Method, RuleLevel::Class_];
     }
-
-
 
     /**
      * Analyzes at a specific level.
@@ -98,8 +92,6 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
         };
     }
 
-
-
     /**
      * @return list<Violation>
      */
@@ -117,8 +109,6 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
 
         return $violations;
     }
-
-
 
     /**
      * @return class-string<ComplexityOptions>
@@ -174,8 +164,6 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
         return $violations;
     }
 
-
-
     /**
      * Builds recommendation text for method-level CCN violations.
      *
@@ -198,8 +186,6 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
 
         return \sprintf('Cyclomatic complexity: %d (threshold: %d) — too many code paths', $ccnValue, $threshold);
     }
-
-
 
     /**
      * @return list<Violation>

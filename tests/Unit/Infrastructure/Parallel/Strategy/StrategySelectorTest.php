@@ -33,7 +33,6 @@ final class StrategySelectorTest extends TestCase
         $this->configProvider = self::createStub(ConfigurationProviderInterface::class);
     }
 
-
     #[Test]
     public function itSelectsSequentialWhenWorkersIsZero(): void
     {
@@ -59,7 +58,6 @@ final class StrategySelectorTest extends TestCase
 
         self::assertSame($this->sequentialStrategy, $strategy);
     }
-
 
     #[Test]
     public function itSelectsSequentialWhenRequestedWorkersIsOne(): void

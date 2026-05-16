@@ -50,8 +50,6 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
         return RuleCategory::Coupling;
     }
 
-
-
     /**
      * @return list<string>
      */
@@ -60,8 +58,6 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
         return [MetricName::COUPLING_INSTABILITY, MetricName::COUPLING_CA, MetricName::COUPLING_CE];
     }
 
-
-
     /**
      * @return list<RuleLevel>
      */
@@ -69,8 +65,6 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
     {
         return [RuleLevel::Class_, RuleLevel::Namespace_];
     }
-
-
 
     /**
      * Analyzes at a specific level.
@@ -95,8 +89,6 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
         };
     }
 
-
-
     /**
      * @return list<Violation>
      */
@@ -112,8 +104,6 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
 
         return $violations;
     }
-
-
 
     /**
      * @return class-string<InstabilityOptions>
@@ -187,8 +177,6 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
 
         return $violations;
     }
-
-
 
     /**
      * @return list<Violation>
