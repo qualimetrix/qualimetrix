@@ -157,9 +157,9 @@ template entries into concrete layers.
 
 The slice's user-facing consumers.
 
-- `LayerViolationRule` — reads `AnalysisContext::$architecture` (Phase 4
-  will switch this to constructor-injected `ArchitectureProcessorInterface`),
-  binds the registry to the run's dependency graph, then walks all
+- `LayerViolationRule` — pulls the prepared configuration from the
+  constructor-injected `ArchitectureProcessorInterface` (ADR 0008), reads its
+  registry already bound to the run's dependency graph, then walks all
   dependency edges. Emits four violation kinds: `architecture.layer-violation`,
   `architecture.coverage` (when `coverage != ignore`),
   `architecture.unreachable-layer` (info), `architecture.potential-shadow`

@@ -139,11 +139,12 @@ Finding PHP files via `FileDiscoveryInterface`.
 - Building the dependency graph
 
 **Phase 2.6: Architecture template expansion** (only when configuration carries `TemplateLayerDefinition`s)
-- Delegated to `Qualimetrix\Architecture\Processing\LayerExpansionStage` —
-  see [`src/Architecture/README.md`](../Architecture/README.md) for the full
-  description (Phase 4 / [ADR 0008](../../docs/adr/0008-architecture-processor-service.md)
-  will fold this into `ArchitectureProcessor`).
-- No-op for Phase-1 configurations (no templates) — pipeline runs unchanged.
+- Owned by `Qualimetrix\Architecture\Processing\ArchitectureProcessor`
+  ([ADR 0008](../../docs/adr/0008-architecture-processor-service.md)); the
+  pipeline calls `prepare($graph, $classSet)` to bind the per-run graph and
+  expand templates in one step. See [`src/Architecture/README.md`](../Architecture/README.md)
+  for the full description.
+- No-op for configurations without templates — pipeline runs unchanged.
 
 **Phase 3: Aggregation**
 - Aggregating metrics by levels (method -> class -> namespace -> project)

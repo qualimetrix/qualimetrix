@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `architecture.layers` merge semantics: when any configuration source defines `architecture.layers`, it **replaces the base list wholesale** (not merged/appended). Order is the user's disambiguation tool; deep-merge would silently destroy it.
 - `AnalysisContext::$architecture` removed (extension-author surface). Rules that need architecture configuration inject `ArchitectureProcessorInterface` and read via `getPreparedConfiguration()`. See ADR 0008.
 - `architecture.layers` template expansion under `match: any` now uses OR across non-pattern criteria (`suffix` / `attributes` / `implements` / `extends`) — matching runtime membership semantics (ADR 0007 D2). Previously expansion used AND regardless of mode, producing fewer concrete layers than membership would suggest. Configurations with `match: any` + non-empty non-pattern criteria may produce more concrete layers; verify against `architecture.max_expanded_layers` ceiling.
+- Internal namespace migration for extension authors: Architecture-feature classes moved from `Qualimetrix\Core\Architecture`, `Qualimetrix\Configuration\Architecture`, `Qualimetrix\Analysis\Architecture`, and `Qualimetrix\Rules\Architecture` into a vertical slice under `Qualimetrix\Architecture\{Domain, Configuration, Processing, Rules}` per ADR 0010. Extension authors importing classes from the old namespaces must update their imports. Adapter classes (`LayerAssignmentCommand`) stay in `Qualimetrix\Infrastructure\Console\Command\Debug\` per the adapter-exclusion principle.
 
 ### Changed
 - Architecture layer rules: declare layers in YAML and enforce allowed inter-layer dependencies via `architecture.layer-violation`. Supports vendor namespaces as first-class layers, namespace-based membership with declaration-order matching (first match wins), per-use-site reporting, and incremental adoption via the `architecture.coverage` diagnostic.
@@ -32,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 - `architecture.layer-collision` diagnostic and the underlying `LayerCollisionException` machinery. Declaration-order matching eliminates the ambiguity case; the two new info-severity diagnostics replace its safety net.
+- `Qualimetrix\Architecture\Domain\ArchitectureConfigurationHolder` removed. Its role (per-run shared architecture state) is now owned by `ArchitectureProcessor` (see ADR 0008). Extension authors who relied on the holder should switch to injecting `ArchitectureProcessorInterface` and reading via `getPreparedConfiguration()`.
 
 ### Fixed
 - `architecture.layer-violation` (and any future dependency-derived rule) now respects `@qmx-ignore` suppressions placed on the offending class. Previously the dependency visitor stamped each edge with the absolute file path while the per-file suppression map was keyed by the project-relative path, so the suppression filter never matched architecture rows. The path is now normalized via `PathNormalizer::relativize()` at collection time, matching every other rule.

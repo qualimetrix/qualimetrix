@@ -17,10 +17,10 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * class set for each {@see TemplateLayerDefinition} and collect observed
  * binding tuples.
  *
- * Lives in {@code Core/Architecture/Layer/} (next to the other layer
- * primitives) because both the {@code Analysis/} expansion stage and any
- * future architecture-aware code can consume it without crossing the Core
- * boundary.
+ * Lives in {@code Qualimetrix\Architecture\Domain\Layer} (next to the other
+ * layer primitives, per ADR 0010's vertical-slice layout). The pipeline
+ * constructs it during Phase 2.6 (architecture-prepare) and hands it to
+ * {@see \Qualimetrix\Architecture\Processing\ArchitectureProcessorInterface::prepare()}.
  *
  * **No internal caching.** Repeated {@see contextFor()} calls delegate
  * straight to the factory, which already memoises per-FQN contexts. The
