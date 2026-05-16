@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Rules\Design;
 
+use Qualimetrix\Core\Rule\Override\InvertedOverrideValidator;
+use Qualimetrix\Core\Rule\Override\OverrideValidatorInterface;
 use Qualimetrix\Core\Rule\RuleOptionKey;
 use Qualimetrix\Core\Rule\RuleOptionsInterface;
 use Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface;
@@ -129,5 +131,10 @@ final readonly class TypeCoverageOptions implements RuleOptionsInterface, Thresh
             propertyWarning: $warning !== null ? (float) $warning : $this->propertyWarning,
             propertyError: $error !== null ? (float) $error : $this->propertyError,
         );
+    }
+
+    public static function getOverrideValidator(): OverrideValidatorInterface
+    {
+        return InvertedOverrideValidator::instance();
     }
 }

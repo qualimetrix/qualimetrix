@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Rules\Maintainability;
 
+use Qualimetrix\Core\Rule\Override\InvertedOverrideValidator;
+use Qualimetrix\Core\Rule\Override\OverrideValidatorInterface;
 use Qualimetrix\Core\Rule\RuleOptionKey;
 use Qualimetrix\Core\Rule\RuleOptionsInterface;
 use Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface;
@@ -85,5 +87,10 @@ final readonly class MaintainabilityOptions implements RuleOptionsInterface, Thr
             excludeTests: $this->excludeTests,
             minLoc: $this->minLoc,
         );
+    }
+
+    public static function getOverrideValidator(): OverrideValidatorInterface
+    {
+        return InvertedOverrideValidator::instance();
     }
 }

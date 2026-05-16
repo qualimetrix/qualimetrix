@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Rules\Coupling;
 
+use Qualimetrix\Core\Rule\Override\StandardOverrideValidatorTrait;
 use Qualimetrix\Core\Rule\RuleOptionKey;
 use Qualimetrix\Core\Rule\RuleOptionsInterface;
 use Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface;
@@ -26,6 +27,8 @@ use Qualimetrix\Rules\Support\ThresholdParser;
  */
 final readonly class DistanceOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface
 {
+    use StandardOverrideValidatorTrait;
+
     /**
      * @param bool $enabled Enable distance rule
      * @param float $maxDistanceWarning Warning threshold for distance

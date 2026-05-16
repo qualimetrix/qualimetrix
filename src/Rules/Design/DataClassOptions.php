@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Rules\Design;
 
+use Qualimetrix\Core\Rule\Override\IndependentAxisValidator;
+use Qualimetrix\Core\Rule\Override\OverrideValidatorInterface;
 use Qualimetrix\Core\Rule\RuleOptionKey;
 use Qualimetrix\Core\Rule\RuleOptionsInterface;
 use Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface;
@@ -81,5 +83,10 @@ final readonly class DataClassOptions implements RuleOptionsInterface, Threshold
             excludePromotedOnly: $this->excludePromotedOnly,
             excludeExceptions: $this->excludeExceptions,
         );
+    }
+
+    public static function getOverrideValidator(): OverrideValidatorInterface
+    {
+        return IndependentAxisValidator::instance();
     }
 }

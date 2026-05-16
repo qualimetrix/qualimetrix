@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Rules\Coupling;
 
 use Qualimetrix\Core\Rule\LevelOptionsInterface;
+use Qualimetrix\Core\Rule\Override\StandardOverrideValidatorTrait;
 use Qualimetrix\Core\Rule\RuleOptionKey;
 use Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Core\Violation\Severity;
@@ -24,6 +25,8 @@ use Qualimetrix\Rules\Support\ThresholdParser;
  */
 final readonly class ClassCboOptions implements LevelOptionsInterface, ThresholdAwareOptionsInterface
 {
+    use StandardOverrideValidatorTrait;
+
     public function __construct(
         public bool $enabled = true,
         public int $warning = 14,
