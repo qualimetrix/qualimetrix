@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.18.0] - 2026-05-16
+
 ### Breaking
 - `architecture.layers` YAML schema is now an **ordered list** (long form only), not a map. The first layer whose patterns match a class FQN owns the class — declaration order is meaningful. Migration: replace `layers: { name: pattern }` with `layers: [{ name: x, patterns: [pattern] }]`. See ADR 0006.
 - `RuleInterface::getCliAliases()` removed. CLI aliases are now declared via the repeatable class-level attribute `#[CliAlias('alias', 'optionName')]`. Custom rules in extension code must drop the method and add attributes on the class.
@@ -317,7 +319,8 @@ Initial release.
 [0.9.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/qualimetrix/qualimetrix/compare/v0.7.0...v0.7.1
-[Unreleased]: https://github.com/qualimetrix/qualimetrix/compare/v0.17.0...HEAD
+[Unreleased]: https://github.com/qualimetrix/qualimetrix/compare/v0.18.0...HEAD
+[0.18.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.17.0...v0.18.0
 [0.17.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.16.0...v0.17.0
 [0.16.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.15.0...v0.16.0
 [0.15.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.14.0...v0.15.0
