@@ -322,7 +322,11 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         // File discovery is constructed per-run inside the command so it can
         // honour the resolved `paths.excludes` (mirroring GitScopeResolver and
         // AnalysisPipeline) — the DI-default FinderFileDiscovery has no access
-        // to runtime excludes.
+        // to runtime excludes. RuntimeConfigurator is injected so the command
+        // performs the same per-run setup as `CheckCommand` — most importantly
+        // applying `memory_limit` from `qmx.yaml` before the parallel worker
+        // pool spins up. Without it the default 128MB exhausts on any
+        // non-trivial codebase mid-collection.
         $container->register(LayerAssignmentCommand::class)
             ->setArguments([
                 new Reference(ConfigurationPipeline::class),
@@ -330,6 +334,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(DependencyGraphBuilder::class),
                 new Reference(ArchitectureProcessorInterface::class),
                 new Reference(MetricRepositoryFactoryInterface::class),
+                new Reference(RuntimeConfigurator::class),
             ])
             ->setPublic(true);
     }

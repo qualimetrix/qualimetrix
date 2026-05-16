@@ -37,10 +37,14 @@ final class LayerAssignmentCommandTest extends TestCase
 {
     private string $tempDir;
 
+    private string $originalMemoryLimit = '';
+
     protected function setUp(): void
     {
         $this->tempDir = sys_get_temp_dir() . '/qmx-debug-layer-test-' . uniqid();
         mkdir($this->tempDir, 0o755, true);
+        $current = \ini_get('memory_limit');
+        $this->originalMemoryLimit = $current !== false ? $current : '-1';
     }
 
     protected function tearDown(): void
@@ -48,6 +52,9 @@ final class LayerAssignmentCommandTest extends TestCase
         if (is_dir($this->tempDir)) {
             $this->removeDirectory($this->tempDir);
         }
+        // Restore the original memory_limit so tests that exercise the
+        // RuntimeConfigurator hook don't leak ini state into subsequent tests.
+        ini_set('memory_limit', $this->originalMemoryLimit);
     }
 
     #[Test]
@@ -408,6 +415,68 @@ final class LayerAssignmentCommandTest extends TestCase
         self::assertSame(Command::SUCCESS, $exit);
         self::assertStringContainsString('Assigned to: (no layer)', $tester->getDisplay());
         self::assertStringNotContainsString('mod-Generated', $tester->getDisplay());
+    }
+
+    /**
+     * Regression test for the Phase 7 Step E HIGH-severity bug.
+     *
+     * Phase 4.5 made `debug:layer-assignment` run a full Discovery + Collection
+     * pass (matching `qmx check` byte-for-byte), but the per-run
+     * {@see \Qualimetrix\Infrastructure\Console\RuntimeConfigurator::configure()}
+     * hook — which applies the YAML `memory_limit` to the PHP runtime before
+     * the parallel-worker pool spins up — was wired only into `CheckCommand`.
+     * On any non-trivial codebase the workers exhausted the default 128MB
+     * limit and crashed mid-collection.
+     *
+     * Functional smoke verified the symptom on qualimetrix self, symfony-demo,
+     * and composer; the workaround
+     * `php -d memory_limit=1G bin/qmx debug:layer-assignment …` confirmed the
+     * root cause was the missing `configure()` call.
+     *
+     * The test pins the fix by configuring an unusual `memory_limit` via
+     * `qmx.yaml` and asserting that `\ini_get('memory_limit')` reflects it
+     * after the command runs. Without
+     * `RuntimeConfigurator::configure()` being invoked from
+     * {@see LayerAssignmentCommand::resolveLayerMatches()} the ini value
+     * stays at its pre-run default, so the assertion fails — that's the
+     * regression guard.
+     */
+    #[Test]
+    public function appliesMemoryLimitFromConfigBeforeCollection(): void
+    {
+        // Pick an obvious sentinel that ini_get() will return verbatim and
+        // that is well below any realistic PHP test runner default (so the
+        // assertion can't pass by coincidence on a wildly different baseline).
+        $sentinelLimit = '513M';
+        self::assertNotSame(
+            $sentinelLimit,
+            \ini_get('memory_limit'),
+            'Pre-condition: chosen memory_limit must differ from current ini value to prove the configurator ran.',
+        );
+
+        // Empty source tree so the command's Discovery + Collection pass is
+        // a no-op — we are exercising the configurator hook, not the
+        // collector machinery.
+        $emptyPath = $this->tempDir . '/empty-source';
+        mkdir($emptyPath, 0o755, true);
+        $configPath = $this->tempDir . '/qmx-memory.yaml';
+        file_put_contents(
+            $configPath,
+            "paths: ['{$emptyPath}']\nmemory_limit: '{$sentinelLimit}'\n",
+        );
+
+        $tester = $this->newTester();
+        $exit = $tester->execute([
+            'fqn' => 'Anything\\At\\All',
+            '--config' => $configPath,
+        ]);
+
+        self::assertSame(Command::SUCCESS, $exit);
+        self::assertSame(
+            $sentinelLimit,
+            \ini_get('memory_limit'),
+            'LayerAssignmentCommand must invoke RuntimeConfigurator::configure() so the YAML memory_limit reaches PHP before Collection.',
+        );
     }
 
     private function newTester(): CommandTester

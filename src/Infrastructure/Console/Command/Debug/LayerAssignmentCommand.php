@@ -19,6 +19,7 @@ use Qualimetrix\Configuration\Pipeline\ConfigurationContext;
 use Qualimetrix\Configuration\Pipeline\ConfigurationPipeline;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -58,6 +59,7 @@ final class LayerAssignmentCommand extends Command
         private readonly DependencyGraphBuilder $graphBuilder,
         private readonly ArchitectureProcessorInterface $processor,
         private readonly MetricRepositoryFactoryInterface $repositoryFactory,
+        private readonly RuntimeConfigurator $runtimeConfigurator,
     ) {
         parent::__construct();
     }
@@ -110,7 +112,7 @@ final class LayerAssignmentCommand extends Command
         $normalized = $this->fqnFor($symbol);
 
         try {
-            $matches = $this->resolveLayerMatches($input, $symbol);
+            $matches = $this->resolveLayerMatches($input, $output, $symbol);
         } catch (ConfigLoadException $e) {
             $output->writeln(\sprintf('<error>Configuration error: %s</error>', $e->getMessage()));
 
@@ -136,9 +138,18 @@ final class LayerAssignmentCommand extends Command
      *
      * @return list<LayerMatch>
      */
-    private function resolveLayerMatches(InputInterface $input, SymbolPath $symbol): array
+    private function resolveLayerMatches(InputInterface $input, OutputInterface $output, SymbolPath $symbol): array
     {
         $resolved = $this->loadResolvedConfiguration($input);
+
+        // Apply the same per-run setup `qmx check` performs: raise PHP
+        // `memory_limit` from `qmx.yaml`, bind the ArchitectureProcessor,
+        // reset stateful holders, wire the logger/profiler/progress reporter.
+        // Phase 4.5 makes this command run a full Discovery + Collection pass
+        // through the parallel worker pool, which exhausts the default 128MB
+        // limit on any non-trivial codebase without this hook (matches the
+        // behaviour `CheckCommand::doExecute()` relies on).
+        $this->runtimeConfigurator->configure($resolved, $input, $output);
 
         $repository = $this->repositoryFactory->create();
 
@@ -167,8 +178,10 @@ final class LayerAssignmentCommand extends Command
         }
         $classSet = new ClassSet($classPaths, new \Qualimetrix\Architecture\Domain\Layer\ClassContextFactory());
 
-        $this->processor->reset();
-        $this->processor->bind($resolved->architecture);
+        // RuntimeConfigurator already invoked reset() and bind() on the
+        // processor above; calling them again here would be redundant. We
+        // still prepare() explicitly because that step is command-specific
+        // (graph + classSet built from this command's own collection pass).
         $this->processor->prepare($graph, $classSet);
 
         // classify() yields the head match per class; the debug command

@@ -19,22 +19,24 @@ final readonly class CliOptionsParser
     /**
      * Parse CLI input into rule options.
      *
+     * Defensive about option presence: commands other than `check` (e.g.
+     * `debug:layer-assignment`) reuse {@see RuntimeConfigurator}, which calls
+     * this parser, but do not expose `--rule-opt` or per-rule short aliases.
+     * Missing options are treated as "no value supplied".
+     *
      * @return array<string, array<string, mixed>>
      */
     public function parseRuleOptions(InputInterface $input): array
     {
-        $ruleOptions = [];
-
-        // Parse generic --rule-opt options
-        $genericOptions = $input->getOption('rule-opt');
-        if (\is_array($genericOptions)) {
-            /** @var list<string> $genericOptions */
-            $ruleOptions = $this->ruleOptionsParser->parseRuleOptions($genericOptions);
-        }
+        /** @var list<string> $genericOptions */
+        $genericOptions = $this->optionValue($input, 'rule-opt', []);
+        $ruleOptions = \is_array($genericOptions)
+            ? $this->ruleOptionsParser->parseRuleOptions($genericOptions)
+            : [];
 
         // Parse all registered short aliases (from rule definitions)
         foreach ($this->ruleOptionsParser->getAliasNames() as $alias) {
-            $value = $input->getOption($alias);
+            $value = $this->optionValue($input, $alias);
 
             // VALUE_REQUIRED: null when not provided; VALUE_NONE: false when not provided
             if ($value === null || $value === false) {
@@ -49,17 +51,24 @@ final readonly class CliOptionsParser
             $ruleName = $parsed['rule'];
             $optionName = $parsed['option'];
 
-            if (!isset($ruleOptions[$ruleName])) {
-                $ruleOptions[$ruleName] = [];
-            }
-
             // Short aliases have lower priority than --rule-opt
-            if (!isset($ruleOptions[$ruleName][$optionName])) {
-                $ruleOptions[$ruleName][$optionName] = $parsed['value'];
-            }
+            $ruleOptions[$ruleName] ??= [];
+            $ruleOptions[$ruleName][$optionName] ??= $parsed['value'];
         }
 
         return $ruleOptions;
+    }
+
+    /**
+     * Returns the option value when the input defines it, or `$default` when
+     * the command does not expose this option at all.
+     *
+     * Centralising the `hasOption()` guard keeps {@see parseRuleOptions()}
+     * focused on the parsing flow.
+     */
+    private function optionValue(InputInterface $input, string $name, mixed $default = null): mixed
+    {
+        return $input->hasOption($name) ? $input->getOption($name) : $default;
     }
 
     /**

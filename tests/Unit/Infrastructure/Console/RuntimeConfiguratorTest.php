@@ -366,6 +366,12 @@ final class RuntimeConfiguratorTest extends TestCase
                 };
             },
         );
+        // RuntimeConfigurator / CliOptionsParser now probe `hasOption()` before
+        // calling `getOption()` so the configurator can be reused from commands
+        // that don't expose the full `check`-command option set
+        // (`debug:layer-assignment`). The stub mirrors `CheckCommand`'s surface
+        // by reporting every known check-command option as present.
+        $input->method('hasOption')->willReturn(true);
 
         return $input;
     }
