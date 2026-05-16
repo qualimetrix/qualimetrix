@@ -34,6 +34,7 @@ final class StrategySelector implements StrategySelectorInterface
     /**
      * @param list<class-string<MetricCollectorInterface>> $collectorClasses
      * @param list<class-string<DerivedCollectorInterface>> $derivedCollectorClasses
+     * @param list<class-string<\Qualimetrix\Core\Rule\RuleInterface>> $ruleClasses
      */
     public function __construct(
         private readonly AmphpParallelStrategy $amphpStrategy,
@@ -43,6 +44,7 @@ final class StrategySelector implements StrategySelectorInterface
         private readonly LoggerInterface $logger = new NullLogger(),
         private readonly array $collectorClasses = [],
         private readonly array $derivedCollectorClasses = [],
+        private readonly array $ruleClasses = [],
     ) {}
 
     /**
@@ -101,9 +103,10 @@ final class StrategySelector implements StrategySelectorInterface
         // Configure parallel strategy
         $this->amphpStrategy->setWorkerCount($workerCount);
 
-        // Set collector classes for worker synchronization
+        // Set collector and rule classes for worker synchronization
         $this->amphpStrategy->setCollectorClasses($this->collectorClasses);
         $this->amphpStrategy->setDerivedCollectorClasses($this->derivedCollectorClasses);
+        $this->amphpStrategy->setRuleClasses($this->ruleClasses);
 
         // Set project root (resolve to absolute path)
         $projectRoot = $config->projectRoot;

@@ -18,6 +18,7 @@ use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ParallelCollecto
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleOptionsCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleRegistryCompilerPass;
+use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ThresholdValidatorMapCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\AnalysisConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\ArchitectureConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\CollectorConfigurator;
@@ -142,6 +143,7 @@ final class ContainerFactory
         $container->addCompilerPass(new GlobalCollectorCompilerPass());
         $container->addCompilerPass(new ParallelCollectorClassesCompilerPass());
         $container->addCompilerPass(new RuleRegistryCompilerPass());
+        $container->addCompilerPass(new ThresholdValidatorMapCompilerPass());
         // RuleOptionsCompilerPass MUST run AFTER autoconfiguration (TYPE_OPTIMIZE)
         // but BEFORE RuleCompilerPass. Using TYPE_BEFORE_REMOVING with high priority.
         $container->addCompilerPass(

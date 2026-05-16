@@ -64,6 +64,9 @@ final class AmphpParallelStrategy implements ExecutionStrategyInterface, Paralle
     /** @var list<class-string<DerivedCollectorInterface>> */
     private array $derivedCollectorClasses = [];
 
+    /** @var list<class-string<\Qualimetrix\Core\Rule\RuleInterface>> */
+    private array $ruleClasses = [];
+
     /** @var array<string, mixed> */
     private array $collectorConfig = [];
 
@@ -148,6 +151,20 @@ final class AmphpParallelStrategy implements ExecutionStrategyInterface, Paralle
     public function setDerivedCollectorClasses(array $classes): void
     {
         $this->derivedCollectorClasses = $classes;
+    }
+
+    /**
+     * Sets the rule class names from DI container.
+     *
+     * These classes are forwarded to worker processes so each worker can
+     * rebuild its own threshold-override validator map via
+     * {@see \Qualimetrix\Baseline\Suppression\RuleValidatorMapFactory}.
+     *
+     * @param list<class-string<\Qualimetrix\Core\Rule\RuleInterface>> $classes
+     */
+    public function setRuleClasses(array $classes): void
+    {
+        $this->ruleClasses = $classes;
     }
 
     /**
@@ -333,6 +350,7 @@ final class AmphpParallelStrategy implements ExecutionStrategyInterface, Paralle
                 derivedCollectorClasses: $this->derivedCollectorClasses,
                 cacheDir: $this->cacheDir,
                 collectorConfig: $this->collectorConfig,
+                ruleClasses: $this->ruleClasses,
             );
             $executions[] = [
                 'file' => $file,

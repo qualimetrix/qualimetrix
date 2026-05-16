@@ -247,6 +247,7 @@ deptrac:
     Infra.Parallel:
       - Core
       - Configuration
+      - Baseline
       - Analysis.Collection
       - Infra.Serializer
       - Infra.Ast

@@ -9,14 +9,16 @@ use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 /**
- * Collects collector class names and passes them to StrategySelector.
+ * Collects collector and rule class names and passes them to StrategySelector.
  *
- * This ensures that parallel workers use the same set of collectors
- * as configured in the DI container, avoiding manual synchronization.
+ * This ensures that parallel workers use the same set of collectors and
+ * rules as configured in the DI container, avoiding manual synchronization.
  *
  * The class names are extracted from tagged services and passed as
  * constructor arguments to StrategySelector, which then configures
- * AmphpParallelStrategy.
+ * AmphpParallelStrategy. Rule classes flow through the same channel so
+ * each worker can rebuild its own threshold-override validator map via
+ * {@see \Qualimetrix\Baseline\Suppression\RuleValidatorMapFactory}.
  */
 final class ParallelCollectorClassesCompilerPass implements CompilerPassInterface
 {
@@ -40,9 +42,17 @@ final class ParallelCollectorClassesCompilerPass implements CompilerPassInterfac
             $derivedCollectorClasses[] = $definition->getClass() ?? $id;
         }
 
-        // Pass collector classes to StrategySelector
+        // Collect rule class names (workers rebuild the threshold-override validator map locally)
+        $ruleClasses = [];
+        foreach ($container->findTaggedServiceIds(RuleRegistryCompilerPass::TAG) as $id => $tags) {
+            $definition = $container->getDefinition($id);
+            $ruleClasses[] = $definition->getClass() ?? $id;
+        }
+
+        // Pass collector and rule classes to StrategySelector
         $definition = $container->getDefinition(StrategySelector::class);
         $definition->setArgument('$collectorClasses', $collectorClasses);
         $definition->setArgument('$derivedCollectorClasses', $derivedCollectorClasses);
+        $definition->setArgument('$ruleClasses', $ruleClasses);
     }
 }

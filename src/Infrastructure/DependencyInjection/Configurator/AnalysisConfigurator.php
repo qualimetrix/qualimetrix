@@ -27,6 +27,7 @@ use Qualimetrix\Analysis\Repository\MetricRepositoryFactoryInterface;
 use Qualimetrix\Analysis\RuleExecution\RuleExecutor;
 use Qualimetrix\Analysis\RuleExecution\RuleExecutorInterface;
 use Qualimetrix\Architecture\Processing\ArchitectureProcessorInterface;
+use Qualimetrix\Baseline\Suppression\ThresholdOverrideExtractor;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Configuration\RuleOptionsRegistry;
 use Qualimetrix\Core\Ast\FileParserInterface;
@@ -62,11 +63,19 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
         $container->register(DefaultMetricRepositoryFactory::class);
         $container->setAlias(MetricRepositoryFactoryInterface::class, DefaultMetricRepositoryFactory::class);
 
+        // ThresholdOverrideExtractor - per-rule @qmx-threshold validator map injected
+        // by ThresholdValidatorMapCompilerPass after RuleRegistryCompilerPass runs
+        $container->register(ThresholdOverrideExtractor::class)
+            ->setArguments(['$validators' => []]);
+
         // FileProcessor - processes single files
+        // Named arguments — the 3rd positional is SuppressionExtractor (uses default new()),
+        // ThresholdOverrideExtractor is the 4th constructor parameter
         $container->register(FileProcessor::class)
             ->setArguments([
-                new Reference(FileParserInterface::class),
-                new Reference(CompositeCollector::class),
+                '$parser' => new Reference(FileParserInterface::class),
+                '$collector' => new Reference(CompositeCollector::class),
+                '$thresholdOverrideExtractor' => new Reference(ThresholdOverrideExtractor::class),
             ]);
         $container->setAlias(FileProcessorInterface::class, FileProcessor::class);
 
