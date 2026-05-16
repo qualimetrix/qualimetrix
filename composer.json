@@ -38,6 +38,7 @@
     "require-dev": {
         "deptrac/deptrac": "^2.0",
         "friendsofphp/php-cs-fixer": "^3.0",
+        "justinrainbow/json-schema": "^6.6.4",
         "phpstan/phpstan": "^2.0",
         "phpstan/phpstan-phpunit": "^2.0",
         "phpstan/phpstan-strict-rules": "^2.0",
