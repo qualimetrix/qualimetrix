@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- The project's own dogfooding `qmx.yaml` now declares the full 27-layer architecture topology (Core + Configuration + Architecture slice + per-category `metrics-{Category}` template + 10 `analysis-*` sub-layers + 10 `infra-*` sub-layers) that previously lived in `deptrac.yaml`. Sub-layer enforcement (e.g. `analysis-discovery → analysis-pipeline` is now caught) gained, on top of features deptrac never had: per-category metric isolation via template expansion, and a `relations:` filter that permits `infra-di → metrics-*` references but forbids inheritance. ADR 0014.
+
+### Removed
+- `deptrac/deptrac` dev-dependency. `composer check` is now `cs-check + test + phpstan + selfcheck`; architecture enforcement runs entirely through Qualimetrix's own `architecture.layer-violation` rule.
+
 ## [0.19.0] - 2026-05-17
 
 ### Breaking

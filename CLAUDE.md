@@ -361,13 +361,12 @@ When referencing `@qmx-ignore` or `@qmx-threshold` in docblocks as documentation
 | PHPUnit                      | ^12.0          | Tests                    |
 | PHPStan                      | ^2.0, level 8  | Static analysis          |
 | PHP-CS-Fixer                 | ^3.0           | Code style (PER-CS 2.0)  |
-| Deptrac                      | ^2.0           | Architecture layers      |
 
 ## Essential Commands
 
 ```bash
 # Project validation
-composer check          # tests + phpstan + deptrac
+composer check          # cs-check + tests + phpstan + selfcheck (architecture enforced via qmx.yaml)
 composer test           # PHPUnit
 composer phpstan        # PHPStan level 8
 
@@ -413,7 +412,7 @@ bin/qmx check --help
 **Before implementation:** read README.md in the corresponding `src/` directory
 
 **Project-specific steps** (in addition to the global workflow):
-- **Validation**: `composer check` (tests + phpstan + deptrac). When modifying `src/Reporting/Template/`, also run `composer test:js` and `composer build:js`
+- **Validation**: `composer check` (cs-check + tests + phpstan + selfcheck — selfcheck enforces architecture via `qmx.yaml`). When modifying `src/Reporting/Template/`, also run `composer test:js` and `composer build:js`
 - **Documentation**: Update `README.md` in the affected `src/` directory (add new files, fix outdated info). Update website documentation (see [Website Documentation](#website-documentation) section below)
 
 **Architecture Decision Records:** After implementing a feature with non-obvious design decisions, create an ADR in `docs/adr/` (see [docs/adr/README.md](docs/adr/README.md) for format). If a spec existed during design (`docs/internal/SPEC_*.md`), it can be archived or deleted after the ADR captures key decisions. ADRs preserve the "why" — implementation details live in code and component READMEs.

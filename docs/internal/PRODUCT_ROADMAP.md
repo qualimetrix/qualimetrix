@@ -38,17 +38,19 @@ Items ordered by combined usefulness × marketing impact × effort efficiency.
 
 ### Tier 1 — Strategic (high value, higher effort)
 
-#### 1. Architecture Rules (deptrac replacement) — Phase 1 + Phase 2 ✅ Implemented (pending release tag)
+#### 1. Architecture Rules (deptrac replacement) — Phase 1 + Phase 2 ✅ Shipped in v0.18 + dogfooded since v0.20-dev
 
-- **Status:** Implementation merged on `main`; not yet tagged in a release (v0.17.0 predates the merge). Phase 1:
+- **Status:** Shipped in v0.18. The project itself retired `deptrac/deptrac` from its dev-dependencies on 2026-05-17
+  (ADR 0014); `composer check` enforces architecture exclusively through `bin/qmx check src/`. Phase 1:
   namespace-pattern layer membership, allow-list policy, coverage modes (`ignore`/`warn`/`error`), vendor as
   first-class layers, baseline-friendly edge identity, `@qmx-ignore architecture.layer-violation` suppression,
   declaration-order matching (per ADR 0006). Phase 2: multi-criterion membership (`patterns` + `suffix` + `attributes`
   + `implements` + `extends` with `match: any | all`), template layers with capture-variable expansion + same-instance
   allow-list binding (per ADR 0007), `exclude:` block, `relations:` whitelist on long-form allow targets with
   reflective alias map, `architecture.empty-template` diagnostic.
-- **Marketing claim (post-release):** "Drop deptrac from your CI — Qualimetrix covers the textbook DDD case AND the
-  long-tail (custom membership, bounded-context partitioning, edge-kind whitelisting), 40x faster, no second tool."
+- **Marketing claim (now honest — we dogfood it):** "Drop deptrac from your CI — Qualimetrix covers the textbook DDD
+  case AND the long-tail (custom membership, bounded-context partitioning, edge-kind whitelisting), 40x faster, no
+  second tool. We removed deptrac from our own `composer.lock` to prove it."
 - **Reference:** deptrac (PHP), ArchUnit (Java), ArchUnitNET (.NET — actively maintained ArchUnit port), Dependency Cruiser (JS); design records in
   [ADR 0005](../adr/0005-architecture-rules.md) (Phase 1), [ADR 0006](../adr/0006-architecture-rules-declaration-order.md)
   (declaration-order pivot), [ADR 0007](../adr/0007-architecture-rules-phase-2-design.md) (Phase 2 flexibility surface).
