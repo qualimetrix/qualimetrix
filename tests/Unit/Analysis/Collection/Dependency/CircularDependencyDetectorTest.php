@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Analysis\Collection\Dependency;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Collection\Dependency\CircularDependencyDetector;
 use Qualimetrix\Analysis\Collection\Dependency\DependencyGraph;
@@ -23,7 +24,8 @@ final class CircularDependencyDetectorTest extends TestCase
         $this->detector = new CircularDependencyDetector();
     }
 
-    public function testDetectsDirectCycle(): void
+    #[Test]
+    public function itDetectsDirectCycle(): void
     {
         // A -> B -> A
         $graph = $this->buildGraph([
@@ -40,7 +42,8 @@ final class CircularDependencyDetectorTest extends TestCase
         self::assertContains('B', $classStrings);
     }
 
-    public function testDetectsTransitiveCycle(): void
+    #[Test]
+    public function itDetectsTransitiveCycle(): void
     {
         // A -> B -> C -> A
         $graph = $this->buildGraph([
@@ -59,7 +62,8 @@ final class CircularDependencyDetectorTest extends TestCase
         self::assertContains('C', $classStrings);
     }
 
-    public function testDetectsMultipleCycles(): void
+    #[Test]
+    public function itDetectsMultipleCycles(): void
     {
         // A -> B -> A  and  C -> D -> C
         $graph = $this->buildGraph([
@@ -74,7 +78,8 @@ final class CircularDependencyDetectorTest extends TestCase
         self::assertCount(2, $cycles);
     }
 
-    public function testNoCyclesInDAG(): void
+    #[Test]
+    public function itHasNoCyclesInDAG(): void
     {
         // A -> B -> C (no cycle)
         $graph = $this->buildGraph([
@@ -88,7 +93,8 @@ final class CircularDependencyDetectorTest extends TestCase
         self::assertEmpty($cycles);
     }
 
-    public function testHandlesComplexGraph(): void
+    #[Test]
+    public function itHandlesComplexGraph(): void
     {
         // UserService -> OrderService -> UserService (cycle)
         // NotificationService -> (no cycle)
@@ -104,7 +110,8 @@ final class CircularDependencyDetectorTest extends TestCase
         self::assertSame(2, $cycles[0]->getSize());
     }
 
-    public function testFindsPathInCycle(): void
+    #[Test]
+    public function itFindsPathInCycle(): void
     {
         // A -> B -> C -> A
         $graph = $this->buildGraph([
@@ -124,7 +131,8 @@ final class CircularDependencyDetectorTest extends TestCase
         self::assertGreaterThanOrEqual(4, \count($path));
     }
 
-    public function testEmptyGraph(): void
+    #[Test]
+    public function itHandlesEmptyGraph(): void
     {
         $graph = $this->buildGraph([]);
 
@@ -133,7 +141,8 @@ final class CircularDependencyDetectorTest extends TestCase
         self::assertEmpty($cycles);
     }
 
-    public function testSingleNodeNoCycle(): void
+    #[Test]
+    public function itHasNoCycleForSingleNode(): void
     {
         // A (no dependencies)
         $graph = $this->buildGraph([
@@ -145,7 +154,8 @@ final class CircularDependencyDetectorTest extends TestCase
         self::assertEmpty($cycles);
     }
 
-    public function testDisconnectedComponents(): void
+    #[Test]
+    public function itHandlesDisconnectedComponents(): void
     {
         // A -> B (no cycle)  and  C -> D (no cycle)
         $graph = $this->buildGraph([

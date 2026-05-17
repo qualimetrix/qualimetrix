@@ -6,6 +6,7 @@ namespace Qualimetrix\Tests\Unit\Core\Violation;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Violation\Severity;
 
@@ -13,7 +14,8 @@ use Qualimetrix\Core\Violation\Severity;
 final class SeverityTest extends TestCase
 {
     #[DataProvider('exitCodeDataProvider')]
-    public function testGetExitCode(Severity $severity, int $expectedExitCode): void
+    #[Test]
+    public function itGetExitCode(Severity $severity, int $expectedExitCode): void
     {
         self::assertSame($expectedExitCode, $severity->getExitCode());
     }
@@ -29,7 +31,8 @@ final class SeverityTest extends TestCase
     }
 
     #[DataProvider('displayNameDataProvider')]
-    public function testDisplayName(Severity $severity, string $expectedDisplayName): void
+    #[Test]
+    public function itDisplayName(Severity $severity, string $expectedDisplayName): void
     {
         self::assertSame($expectedDisplayName, $severity->displayName());
     }
@@ -44,19 +47,22 @@ final class SeverityTest extends TestCase
         yield 'error display name' => [Severity::Error, 'Error'];
     }
 
-    public function testSeverityValues(): void
+    #[Test]
+    public function itSeverityValues(): void
     {
         self::assertSame('info', Severity::Info->value);
         self::assertSame('warning', Severity::Warning->value);
         self::assertSame('error', Severity::Error->value);
     }
 
-    public function testInfoFromStringValue(): void
+    #[Test]
+    public function itInfoFromStringValue(): void
     {
         self::assertSame(Severity::Info, Severity::from('info'));
     }
 
-    public function testAllCasesHaveDisplayName(): void
+    #[Test]
+    public function itAllCasesHaveDisplayName(): void
     {
         foreach (Severity::cases() as $severity) {
             $displayName = $severity->displayName();
@@ -64,7 +70,8 @@ final class SeverityTest extends TestCase
         }
     }
 
-    public function testInfoIsExitCodeZeroAllOthersNonZero(): void
+    #[Test]
+    public function itInfoIsExitCodeZeroAllOthersNonZero(): void
     {
         self::assertSame(0, Severity::Info->getExitCode());
 
@@ -80,7 +87,8 @@ final class SeverityTest extends TestCase
         }
     }
 
-    public function testExitCodesAreUniqueAcrossNonInfoSeverities(): void
+    #[Test]
+    public function itExitCodesAreUniqueAcrossNonInfoSeverities(): void
     {
         $exitCodes = array_map(
             static fn(Severity $severity) => $severity->getExitCode(),
@@ -95,7 +103,8 @@ final class SeverityTest extends TestCase
         );
     }
 
-    public function testSeverityOrderingByExitCode(): void
+    #[Test]
+    public function itSeverityOrderingByExitCode(): void
     {
         // Priority order: Info (0) < Warning (1) < Error (2)
         self::assertLessThan(Severity::Warning->getExitCode(), Severity::Info->getExitCode());

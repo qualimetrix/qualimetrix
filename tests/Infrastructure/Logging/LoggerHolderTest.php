@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\Logging;
 
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
@@ -11,7 +12,8 @@ use Qualimetrix\Infrastructure\Logging\LoggerHolder;
 
 final class LoggerHolderTest extends TestCase
 {
-    public function testInitiallyContainsNullLogger(): void
+    #[Test]
+    public function itInitiallyContainsNullLogger(): void
     {
         $holder = new LoggerHolder();
 
@@ -20,7 +22,8 @@ final class LoggerHolderTest extends TestCase
         self::assertInstanceOf(NullLogger::class, $logger);
     }
 
-    public function testCanSetCustomLogger(): void
+    #[Test]
+    public function itCanSetCustomLogger(): void
     {
         $holder = new LoggerHolder();
         $customLogger = self::createStub(LoggerInterface::class);
@@ -30,7 +33,8 @@ final class LoggerHolderTest extends TestCase
         self::assertSame($customLogger, $holder->getLogger());
     }
 
-    public function testCanReplaceLogger(): void
+    #[Test]
+    public function itCanReplaceLogger(): void
     {
         $holder = new LoggerHolder();
 
@@ -43,7 +47,8 @@ final class LoggerHolderTest extends TestCase
         self::assertSame($secondLogger, $holder->getLogger());
     }
 
-    public function testMultipleGettersReturnSameInstance(): void
+    #[Test]
+    public function itReturnsTheSameInstanceOnMultipleGetterCalls(): void
     {
         $holder = new LoggerHolder();
         $logger = self::createStub(LoggerInterface::class);

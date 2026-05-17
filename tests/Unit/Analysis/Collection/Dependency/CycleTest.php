@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Analysis\Collection\Dependency;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Collection\Dependency\Cycle;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -12,7 +13,8 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 #[CoversClass(Cycle::class)]
 final class CycleTest extends TestCase
 {
-    public function testGetSize(): void
+    #[Test]
+    public function itGetsSize(): void
     {
         $cycle = new Cycle(
             classes: $this->paths(['App\\A', 'App\\B', 'App\\C']),
@@ -24,7 +26,8 @@ final class CycleTest extends TestCase
         self::assertCount(4, $cycle->getPath());
     }
 
-    public function testToString(): void
+    #[Test]
+    public function itConvertsToString(): void
     {
         $cycle = new Cycle(
             classes: $this->paths(['App\\A', 'App\\B', 'App\\C']),
@@ -37,7 +40,8 @@ final class CycleTest extends TestCase
         );
     }
 
-    public function testToShortString(): void
+    #[Test]
+    public function itConvertsToShortString(): void
     {
         $cycle = new Cycle(
             classes: $this->paths(['App\\Service\\UserService', 'App\\Service\\OrderService']),
@@ -50,7 +54,8 @@ final class CycleTest extends TestCase
         );
     }
 
-    public function testToShortStringWithoutNamespace(): void
+    #[Test]
+    public function itConvertsToShortStringWithoutNamespace(): void
     {
         $cycle = new Cycle(
             classes: $this->paths(['A', 'B']),
@@ -63,7 +68,8 @@ final class CycleTest extends TestCase
         );
     }
 
-    public function testDirectCycle(): void
+    #[Test]
+    public function itRepresentsDirectCycle(): void
     {
         $cycle = new Cycle(
             classes: $this->paths(['App\\A', 'App\\B']),
@@ -75,7 +81,8 @@ final class CycleTest extends TestCase
         self::assertSame('A → B → A', $cycle->toShortString());
     }
 
-    public function testToTruncatedShortStringSmallCycle(): void
+    #[Test]
+    public function itDoesNotTruncateShortStringForSmallCycle(): void
     {
         $cycle = new Cycle(
             classes: $this->paths(['A', 'B', 'C']),
@@ -86,7 +93,8 @@ final class CycleTest extends TestCase
         self::assertSame('A → B → C → A', $cycle->toTruncatedShortString(5));
     }
 
-    public function testToTruncatedShortStringLargeCycle(): void
+    #[Test]
+    public function itTruncatesShortStringForLargeCycle(): void
     {
         $classes = [];
         $path = [];
@@ -105,7 +113,8 @@ final class CycleTest extends TestCase
         self::assertSame('C0 → C1 → C2 → C3 → C4 → ... (5 more)', $truncated);
     }
 
-    public function testToTruncatedShortStringExactlyAtLimit(): void
+    #[Test]
+    public function itDoesNotTruncateShortStringExactlyAtLimit(): void
     {
         $classes = [];
         $path = [];
@@ -124,7 +133,8 @@ final class CycleTest extends TestCase
         self::assertSame('C0 → C1 → C2 → C3 → C4 → C0', $cycle->toTruncatedShortString(5));
     }
 
-    public function testGetSizeCategorySmall(): void
+    #[Test]
+    public function itReturnsSmallSizeCategory(): void
     {
         $cycle = new Cycle(
             classes: $this->paths(['A', 'B', 'C']),
@@ -133,7 +143,8 @@ final class CycleTest extends TestCase
         self::assertSame('small', $cycle->getSizeCategory());
     }
 
-    public function testGetSizeCategorySmallBoundary(): void
+    #[Test]
+    public function itReturnsSmallSizeCategoryAtBoundary(): void
     {
         $classes = [];
         $path = [];
@@ -150,7 +161,8 @@ final class CycleTest extends TestCase
         self::assertSame('small', $cycle->getSizeCategory());
     }
 
-    public function testGetSizeCategoryMedium(): void
+    #[Test]
+    public function itReturnsMediumSizeCategory(): void
     {
         $classes = [];
         $path = [];
@@ -167,7 +179,8 @@ final class CycleTest extends TestCase
         self::assertSame('medium', $cycle->getSizeCategory());
     }
 
-    public function testGetSizeCategoryMediumBoundary(): void
+    #[Test]
+    public function itReturnsMediumSizeCategoryAtBoundary(): void
     {
         $classes = [];
         $path = [];
@@ -184,7 +197,8 @@ final class CycleTest extends TestCase
         self::assertSame('medium', $cycle->getSizeCategory());
     }
 
-    public function testGetSizeCategoryLarge(): void
+    #[Test]
+    public function itReturnsLargeSizeCategory(): void
     {
         $classes = [];
         $path = [];
@@ -201,7 +215,8 @@ final class CycleTest extends TestCase
         self::assertSame('large', $cycle->getSizeCategory());
     }
 
-    public function testToStructuredData(): void
+    #[Test]
+    public function itConvertsToStructuredData(): void
     {
         $cycle = new Cycle(
             classes: $this->paths(['App\\A', 'App\\B', 'App\\C']),
@@ -215,7 +230,8 @@ final class CycleTest extends TestCase
         self::assertSame('small', $data['category']);
     }
 
-    public function testToStructuredDataLargeCycleContainsFullPath(): void
+    #[Test]
+    public function itContainsFullPathInStructuredDataForLargeCycle(): void
     {
         $classes = [];
         $path = [];

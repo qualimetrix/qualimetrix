@@ -8,6 +8,7 @@ use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Metrics\Structure\RfcVisitor;
 
@@ -17,8 +18,9 @@ final class RfcVisitorTest extends TestCase
     /**
      * @param array<string, array{rfc: int, own: int, external: int}> $expected
      */
+    #[Test]
     #[DataProvider('provideRfcCases')]
-    public function testRfcCalculation(string $code, array $expected): void
+    public function itCalculatesRfcCorrectly(string $code, array $expected): void
     {
         $visitor = new RfcVisitor();
         $parser = (new ParserFactory())->createForHostVersion();
@@ -536,7 +538,8 @@ PHP,
     /**
      * NullsafeMethodCall should count in RFC response set.
      */
-    public function testNullsafeMethodCallCountsInRfc(): void
+    #[Test]
+    public function itCountsNullsafeMethodCallInRfc(): void
     {
         $code = <<<'PHP'
 <?php
@@ -570,7 +573,8 @@ PHP;
     /**
      * Multiple nullsafe method calls with different names should count separately.
      */
-    public function testMultipleNullsafeMethodCalls(): void
+    #[Test]
+    public function itCountsMultipleNullsafeCallsSeparately(): void
     {
         $code = <<<'PHP'
 <?php
@@ -605,7 +609,8 @@ PHP;
     /**
      * new self()/new static()/new parent() should NOT count as external constructor calls.
      */
-    public function testNewSelfStaticParentAreNotExternal(): void
+    #[Test]
+    public function itTreatsNewSelfStaticParentAsInternal(): void
     {
         $code = <<<'PHP'
 <?php
@@ -654,7 +659,8 @@ PHP;
     /**
      * Method chains on different receivers should each count as unique external calls.
      */
-    public function testMethodChainsOnDifferentReceiversCountSeparately(): void
+    #[Test]
+    public function itCountsMethodChainsOnDifferentReceiversSeparately(): void
     {
         $code = <<<'PHP'
 <?php
@@ -688,7 +694,8 @@ PHP;
     /**
      * Nullsafe and regular method calls on the same receiver+method should dedup.
      */
-    public function testNullsafeAndRegularCallsDedup(): void
+    #[Test]
+    public function itDeduplicatesNullsafeAndRegularCalls(): void
     {
         $code = <<<'PHP'
 <?php
@@ -720,7 +727,8 @@ PHP;
         self::assertSame(1, $data->getExternalMethodsCount());
     }
 
-    public function testReset(): void
+    #[Test]
+    public function itClearsStateOnReset(): void
     {
         $visitor = new RfcVisitor();
         $parser = (new ParserFactory())->createForHostVersion();

@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Reporting\Formatter;
 use DOMDocument;
 use DOMElement;
 use PHPUnit\Framework\Attributes\CoversNothing;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Architecture\Rules\CircularDependencyRule;
 use Qualimetrix\Architecture\Rules\LayerViolationRule;
@@ -71,7 +72,8 @@ final class ArchitectureViolationSmokeTest extends TestCase
     private const string SOURCE_FILE = 'src/Infrastructure/Console/UserCommand.php';
     private const int SOURCE_LINE = 42;
 
-    public function testTextFormatterRendersArchitectureViolations(): void
+    #[Test]
+    public function itRendersArchitectureViolationsViaTextFormatter(): void
     {
         $formatter = $this->createTextFormatter();
         $report = $this->buildArchitectureReport();
@@ -91,7 +93,8 @@ final class ArchitectureViolationSmokeTest extends TestCase
         self::assertStringContainsString(DependencyType::Extends->description(), $output);
     }
 
-    public function testTextVerboseFormatterRendersArchitectureViolations(): void
+    #[Test]
+    public function itRendersArchitectureViolationsViaTextVerboseFormatter(): void
     {
         $debtCalculator = new DebtCalculator(new RemediationTimeRegistry());
         $detailedRenderer = new DetailedViolationRenderer($debtCalculator);
@@ -114,7 +117,8 @@ final class ArchitectureViolationSmokeTest extends TestCase
         );
     }
 
-    public function testJsonFormatterRendersArchitectureViolations(): void
+    #[Test]
+    public function itRendersArchitectureViolationsViaJsonFormatter(): void
     {
         $hintProvider = new MetricHintProvider();
         $namespaceDrillDown = new NamespaceDrillDown($hintProvider);
@@ -151,7 +155,8 @@ final class ArchitectureViolationSmokeTest extends TestCase
         }
     }
 
-    public function testMetricsJsonFormatterRunsOnArchitectureOnlyReport(): void
+    #[Test]
+    public function itRunsMetricsJsonFormatterOnArchitectureOnlyReport(): void
     {
         $formatter = new MetricsJsonFormatter();
         $report = $this->buildArchitectureReport();
@@ -171,7 +176,8 @@ final class ArchitectureViolationSmokeTest extends TestCase
         self::assertSame([], $data['symbols']);
     }
 
-    public function testHtmlFormatterRendersArchitectureViolations(): void
+    #[Test]
+    public function itRendersArchitectureViolationsViaHtmlFormatter(): void
     {
         $formatter = new HtmlFormatter(
             new DebtCalculator(new RemediationTimeRegistry()),
@@ -195,7 +201,8 @@ final class ArchitectureViolationSmokeTest extends TestCase
         self::assertStringContainsString('"totalViolations":' . $this->expectedViolationCount(), $output);
     }
 
-    public function testCheckstyleFormatterRendersArchitectureViolations(): void
+    #[Test]
+    public function itRendersArchitectureViolationsViaCheckstyleFormatter(): void
     {
         $formatter = new CheckstyleFormatter();
         $report = $this->buildArchitectureReport();
@@ -232,7 +239,8 @@ final class ArchitectureViolationSmokeTest extends TestCase
         }
     }
 
-    public function testSarifFormatterRendersArchitectureViolations(): void
+    #[Test]
+    public function itRendersArchitectureViolationsViaSarifFormatter(): void
     {
         $formatter = new SarifFormatter(new SarifRuleCollector());
         $report = $this->buildArchitectureReport();
@@ -264,7 +272,8 @@ final class ArchitectureViolationSmokeTest extends TestCase
         self::assertSame($this->expectedViolationCount(), \count($run['results']));
     }
 
-    public function testGitLabCodeQualityFormatterRendersArchitectureViolations(): void
+    #[Test]
+    public function itRendersArchitectureViolationsViaGitLabCodeQualityFormatter(): void
     {
         $formatter = new GitLabCodeQualityFormatter();
         $report = $this->buildArchitectureReport();
@@ -294,7 +303,8 @@ final class ArchitectureViolationSmokeTest extends TestCase
         self::assertContains('_project', $paths, 'Project-level diagnostics should map to _project path');
     }
 
-    public function testHealthFormatterRunsOnArchitectureOnlyReport(): void
+    #[Test]
+    public function itRunsHealthFormatterOnArchitectureOnlyReport(): void
     {
         $hintProvider = new MetricHintProvider();
         $drillDown = new NamespaceDrillDown($hintProvider);
@@ -310,7 +320,8 @@ final class ArchitectureViolationSmokeTest extends TestCase
         self::assertNonEmptyOutput($output);
     }
 
-    public function testSummaryFormatterRendersArchitectureViolations(): void
+    #[Test]
+    public function itRendersArchitectureViolationsViaSummaryFormatter(): void
     {
         $registry = new RemediationTimeRegistry();
         $debtCalculator = new DebtCalculator($registry);
@@ -339,7 +350,8 @@ final class ArchitectureViolationSmokeTest extends TestCase
         self::assertStringContainsString('info', $output);
     }
 
-    public function testGithubActionsFormatterRendersArchitectureViolations(): void
+    #[Test]
+    public function itRendersArchitectureViolationsViaGithubActionsFormatter(): void
     {
         $formatter = new GithubActionsFormatter();
         $report = $this->buildArchitectureReport();

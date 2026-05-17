@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Metrics\Complexity;
 use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\SymbolLevel;
@@ -25,17 +26,20 @@ final class CognitiveComplexityCollectorTest extends TestCase
         $this->collector = new CognitiveComplexityCollector();
     }
 
-    public function testGetName(): void
+    #[Test]
+    public function itGetsName(): void
     {
         self::assertSame('cognitive-complexity', $this->collector->getName());
     }
 
-    public function testProvides(): void
+    #[Test]
+    public function itProvides(): void
     {
         self::assertSame(['cognitive'], $this->collector->provides());
     }
 
-    public function testSimpleMethodHasComplexityZero(): void
+    #[Test]
+    public function itAssignsZeroComplexityToSimpleMethod(): void
     {
         $code = <<<'PHP'
 <?php
@@ -56,7 +60,8 @@ PHP;
         self::assertSame(0, $metrics->get('cognitive:App\Service\Calculator::add'));
     }
 
-    public function testMethodWithSingleIf(): void
+    #[Test]
+    public function itCountsSingleIfAsOnePoint(): void
     {
         $code = <<<'PHP'
 <?php
@@ -81,7 +86,8 @@ PHP;
         self::assertSame(1, $metrics->get('cognitive:App\Test::check'));
     }
 
-    public function testMethodWithNestedIf(): void
+    #[Test]
+    public function itCountsNestedIfWithNestingBonus(): void
     {
         $code = <<<'PHP'
 <?php
@@ -108,7 +114,8 @@ PHP;
         self::assertSame(3, $metrics->get('cognitive:App\Test::nested'));
     }
 
-    public function testMethodWithLogicalOperators(): void
+    #[Test]
+    public function itCountsLogicalOperators(): void
     {
         $code = <<<'PHP'
 <?php
@@ -138,7 +145,8 @@ PHP;
         self::assertSame(4, $metrics->get('cognitive:App\BooleanTest::check'));
     }
 
-    public function testMethodWithSwitch(): void
+    #[Test]
+    public function itCountsSwitchAsOnePoint(): void
     {
         $code = <<<'PHP'
 <?php
@@ -169,7 +177,8 @@ PHP;
         self::assertSame(1, $metrics->get('cognitive:App\SwitchTest::dayName'));
     }
 
-    public function testMethodWithTryCatch(): void
+    #[Test]
+    public function itCountsEachCatchClause(): void
     {
         $code = <<<'PHP'
 <?php
@@ -197,7 +206,8 @@ PHP;
         self::assertSame(2, $metrics->get('cognitive:App\ExceptionTest::risky'));
     }
 
-    public function testMethodWithTernaryOperator(): void
+    #[Test]
+    public function itCountsTernaryAsOnePoint(): void
     {
         $code = <<<'PHP'
 <?php
@@ -219,7 +229,8 @@ PHP;
         self::assertSame(1, $metrics->get('cognitive:App\TernaryTest::max'));
     }
 
-    public function testMethodWithNullCoalescing(): void
+    #[Test]
+    public function itCountsNullCoalescingAsOnePoint(): void
     {
         $code = <<<'PHP'
 <?php
@@ -241,7 +252,8 @@ PHP;
         self::assertSame(1, $metrics->get('cognitive:App\NullCoalescingTest::getName'));
     }
 
-    public function testGlobalFunction(): void
+    #[Test]
+    public function itMeasuresGlobalFunctions(): void
     {
         $code = <<<'PHP'
 <?php
@@ -263,7 +275,8 @@ PHP;
         self::assertSame(1, $metrics->get('cognitive:App\Utils\validate'));
     }
 
-    public function testGlobalFunctionWithoutNamespace(): void
+    #[Test]
+    public function itMeasuresGlobalFunctionsWithoutNamespace(): void
     {
         $code = <<<'PHP'
 <?php
@@ -282,7 +295,8 @@ PHP;
         self::assertSame(1, $metrics->get('cognitive:globalHelper'));
     }
 
-    public function testClosure(): void
+    #[Test]
+    public function itMeasuresClosures(): void
     {
         $code = <<<'PHP'
 <?php
@@ -312,7 +326,8 @@ PHP;
         self::assertSame(1, $metrics->get('cognitive:App\ClosureTest::{closure#1}'));
     }
 
-    public function testMultipleMethods(): void
+    #[Test]
+    public function itMeasuresMultipleMethods(): void
     {
         $code = <<<'PHP'
 <?php
@@ -344,7 +359,8 @@ PHP;
         self::assertSame(1, $metrics->get('cognitive:App\MultiMethod::withLoop'));
     }
 
-    public function testReset(): void
+    #[Test]
+    public function itResetsState(): void
     {
         $code1 = <<<'PHP'
 <?php
@@ -387,7 +403,8 @@ PHP;
         self::assertSame(0, $metrics->get('cognitive:App\Second::otherMethod'));
     }
 
-    public function testComplexMethod(): void
+    #[Test]
+    public function itMeasuresComplexMethod(): void
     {
         $code = <<<'PHP'
 <?php
@@ -437,7 +454,8 @@ PHP;
         self::assertSame(14, $metrics->get('cognitive:App\Service\ComplexService::process'));
     }
 
-    public function testRecursiveFunction(): void
+    #[Test]
+    public function itCountsRecursiveCall(): void
     {
         $code = <<<'PHP'
 <?php
@@ -457,7 +475,8 @@ PHP;
         self::assertSame(2, $metrics->get('cognitive:factorial'));
     }
 
-    public function testGetMetricDefinitions(): void
+    #[Test]
+    public function itProvidesMetricDefinitions(): void
     {
         $definitions = $this->collector->getMetricDefinitions();
 

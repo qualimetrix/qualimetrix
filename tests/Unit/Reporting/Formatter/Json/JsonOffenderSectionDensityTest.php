@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Reporting\Formatter\Json;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Reporting\Filter\ViolationFilter;
@@ -29,7 +30,8 @@ final class JsonOffenderSectionDensityTest extends TestCase
         );
     }
 
-    public function testNamespaceOutputIncludesViolationDensity(): void
+    #[Test]
+    public function itIncludesViolationDensityInNamespaceOutput(): void
     {
         $offender = new WorstOffender(
             symbolPath: SymbolPath::forNamespace('App\\Payment'),
@@ -51,7 +53,8 @@ final class JsonOffenderSectionDensityTest extends TestCase
         self::assertSame(8, $result[0]['violationCount']);
     }
 
-    public function testClassOutputIncludesViolationDensity(): void
+    #[Test]
+    public function itIncludesViolationDensityInClassOutput(): void
     {
         $offender = new WorstOffender(
             symbolPath: SymbolPath::forClass('App\\Service', 'UserService'),
@@ -86,7 +89,8 @@ final class JsonOffenderSectionDensityTest extends TestCase
         self::assertSame(6.0, $result[0]['violationDensity']);
     }
 
-    public function testNullDensityPreservedInOutput(): void
+    #[Test]
+    public function itPreservesNullDensityInOutput(): void
     {
         $offender = new WorstOffender(
             symbolPath: SymbolPath::forNamespace('App\\Legacy'),
@@ -107,7 +111,8 @@ final class JsonOffenderSectionDensityTest extends TestCase
         self::assertNull($result[0]['violationDensity']);
     }
 
-    public function testRankByDensityReordersNamespaces(): void
+    #[Test]
+    public function itReordersNamespacesByDensity(): void
     {
         $highDensity = new WorstOffender(
             symbolPath: SymbolPath::forNamespace('App\\Small'),
@@ -141,7 +146,8 @@ final class JsonOffenderSectionDensityTest extends TestCase
         self::assertSame('App\\Large', $result[1]['symbolPath']);
     }
 
-    public function testRankByCountPreservesOrder(): void
+    #[Test]
+    public function itPreservesOrderWhenRankingByCount(): void
     {
         $highDensity = new WorstOffender(
             symbolPath: SymbolPath::forNamespace('App\\Small'),

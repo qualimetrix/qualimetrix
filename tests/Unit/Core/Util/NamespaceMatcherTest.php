@@ -6,34 +6,39 @@ namespace Qualimetrix\Tests\Unit\Core\Util;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Util\NamespaceMatcher;
 
 #[CoversClass(NamespaceMatcher::class)]
 final class NamespaceMatcherTest extends TestCase
 {
-    public function testIsEmptyReturnsTrueForEmptyPrefixes(): void
+    #[Test]
+    public function itIsEmptyReturnsTrueForEmptyPrefixes(): void
     {
         $matcher = new NamespaceMatcher([]);
 
         self::assertTrue($matcher->isEmpty());
     }
 
-    public function testIsEmptyReturnsFalseWhenPrefixesExist(): void
+    #[Test]
+    public function itIsEmptyReturnsFalseWhenPrefixesExist(): void
     {
         $matcher = new NamespaceMatcher(['App\\Entity']);
 
         self::assertFalse($matcher->isEmpty());
     }
 
-    public function testMatchesReturnsFalseForEmptyPrefixes(): void
+    #[Test]
+    public function itMatchesReturnsFalseForEmptyPrefixes(): void
     {
         $matcher = new NamespaceMatcher([]);
 
         self::assertFalse($matcher->matches('App\\Entity\\User'));
     }
 
-    public function testMatchesReturnsFalseForEmptyNamespace(): void
+    #[Test]
+    public function itMatchesReturnsFalseForEmptyNamespace(): void
     {
         $matcher = new NamespaceMatcher(['App\\Entity']);
 
@@ -44,7 +49,8 @@ final class NamespaceMatcherTest extends TestCase
      * @param list<string> $prefixes
      */
     #[DataProvider('matchingPrefixesProvider')]
-    public function testMatchesReturnsTrue(string $description, array $prefixes, string $namespace): void
+    #[Test]
+    public function itMatchesReturnsTrue(string $description, array $prefixes, string $namespace): void
     {
         $matcher = new NamespaceMatcher($prefixes);
 
@@ -55,7 +61,8 @@ final class NamespaceMatcherTest extends TestCase
      * @param list<string> $prefixes
      */
     #[DataProvider('nonMatchingPrefixesProvider')]
-    public function testMatchesReturnsFalse(string $description, array $prefixes, string $namespace): void
+    #[Test]
+    public function itMatchesReturnsFalse(string $description, array $prefixes, string $namespace): void
     {
         $matcher = new NamespaceMatcher($prefixes);
 
@@ -152,37 +159,44 @@ final class NamespaceMatcherTest extends TestCase
     // Static helper: NamespaceMatcher::matchesSingle
     // ------------------------------------------------------------------
 
-    public function testMatchesSingleReturnsFalseForEmptyPattern(): void
+    #[Test]
+    public function itMatchesSingleReturnsFalseForEmptyPattern(): void
     {
         self::assertFalse(NamespaceMatcher::matchesSingle('', 'App\\Entity'));
     }
 
-    public function testMatchesSingleReturnsFalseForEmptyNamespace(): void
+    #[Test]
+    public function itMatchesSingleReturnsFalseForEmptyNamespace(): void
     {
         self::assertFalse(NamespaceMatcher::matchesSingle('App\\Entity', ''));
     }
 
-    public function testMatchesSingleReturnsFalseWhenBothEmpty(): void
+    #[Test]
+    public function itMatchesSingleReturnsFalseWhenBothEmpty(): void
     {
         self::assertFalse(NamespaceMatcher::matchesSingle('', ''));
     }
 
-    public function testMatchesSinglePrefixExact(): void
+    #[Test]
+    public function itMatchesSinglePrefixExact(): void
     {
         self::assertTrue(NamespaceMatcher::matchesSingle('App\\Entity', 'App\\Entity'));
     }
 
-    public function testMatchesSinglePrefixChild(): void
+    #[Test]
+    public function itMatchesSinglePrefixChild(): void
     {
         self::assertTrue(NamespaceMatcher::matchesSingle('App\\Entity', 'App\\Entity\\User'));
     }
 
-    public function testMatchesSinglePrefixDeeplyNested(): void
+    #[Test]
+    public function itMatchesSinglePrefixDeeplyNested(): void
     {
         self::assertTrue(NamespaceMatcher::matchesSingle('App\\Entity', 'App\\Entity\\Sub\\Deep'));
     }
 
-    public function testMatchesSinglePrefixRespectsNamespaceBoundary(): void
+    #[Test]
+    public function itMatchesSinglePrefixRespectsNamespaceBoundary(): void
     {
         self::assertFalse(
             NamespaceMatcher::matchesSingle('App\\Entity', 'App\\EntityManager\\Foo'),
@@ -190,39 +204,46 @@ final class NamespaceMatcherTest extends TestCase
         );
     }
 
-    public function testMatchesSinglePrefixDoesNotMatchSibling(): void
+    #[Test]
+    public function itMatchesSinglePrefixDoesNotMatchSibling(): void
     {
         self::assertFalse(
             NamespaceMatcher::matchesSingle('App\\Entity\\User', 'App\\Entity\\UserService'),
         );
     }
 
-    public function testMatchesSingleGlobStarWildcard(): void
+    #[Test]
+    public function itMatchesSingleGlobStarWildcard(): void
     {
         self::assertTrue(NamespaceMatcher::matchesSingle('App\\*Repository', 'App\\UserRepository'));
     }
 
-    public function testMatchesSingleGlobStarMiddle(): void
+    #[Test]
+    public function itMatchesSingleGlobStarMiddle(): void
     {
         self::assertTrue(NamespaceMatcher::matchesSingle('App\\*\\User', 'App\\Entity\\User'));
     }
 
-    public function testMatchesSingleGlobQuestionMark(): void
+    #[Test]
+    public function itMatchesSingleGlobQuestionMark(): void
     {
         self::assertTrue(NamespaceMatcher::matchesSingle('App\\?oo', 'App\\Foo'));
     }
 
-    public function testMatchesSingleGlobCharClass(): void
+    #[Test]
+    public function itMatchesSingleGlobCharClass(): void
     {
         self::assertTrue(NamespaceMatcher::matchesSingle('App\\[ABC]oo', 'App\\Aoo'));
     }
 
-    public function testMatchesSingleGlobNoMatch(): void
+    #[Test]
+    public function itMatchesSingleGlobNoMatch(): void
     {
         self::assertFalse(NamespaceMatcher::matchesSingle('App\\*Repository', 'App\\UserService'));
     }
 
-    public function testMatchesSingleDoesNotNormalizeTrailingBackslash(): void
+    #[Test]
+    public function itMatchesSingleDoesNotNormalizeTrailingBackslash(): void
     {
         // matchesSingle is the per-pattern primitive — caller normalizes if needed.
         // A trailing backslash makes the prefix-mode boundary check fail because
@@ -238,13 +259,15 @@ final class NamespaceMatcherTest extends TestCase
     // ------------------------------------------------------------------
 
     #[DataProvider('globPatternProvider')]
-    public function testIsGlobReturnsTrueForGlobCharacters(string $pattern): void
+    #[Test]
+    public function itIsGlobReturnsTrueForGlobCharacters(string $pattern): void
     {
         self::assertTrue(NamespaceMatcher::isGlob($pattern));
     }
 
     #[DataProvider('nonGlobPatternProvider')]
-    public function testIsGlobReturnsFalseForLiteralPatterns(string $pattern): void
+    #[Test]
+    public function itIsGlobReturnsFalseForLiteralPatterns(string $pattern): void
     {
         self::assertFalse(NamespaceMatcher::isGlob($pattern));
     }

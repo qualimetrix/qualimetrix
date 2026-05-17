@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Reporting\Formatter\Html;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinition;
@@ -40,7 +41,8 @@ final class HtmlTreeBuilderTest extends TestCase
         ComputedMetricDefinitionHolder::reset();
     }
 
-    public function testBuildWithNullMetrics(): void
+    #[Test]
+    public function itBuildsWithNullMetrics(): void
     {
         $report = ReportBuilder::create()
             ->filesAnalyzed(5)
@@ -66,7 +68,8 @@ final class HtmlTreeBuilderTest extends TestCase
         self::assertSame(0, $summary['totalViolations']);
     }
 
-    public function testBuildWithEmptyMetrics(): void
+    #[Test]
+    public function itBuildsWithEmptyMetrics(): void
     {
         $metrics = new InMemoryMetricRepository();
 
@@ -86,7 +89,8 @@ final class HtmlTreeBuilderTest extends TestCase
         self::assertSame(0, $result['summary']['totalClasses']);
     }
 
-    public function testBuildSingleNamespace(): void
+    #[Test]
+    public function itBuildsSingleNamespace(): void
     {
         $metrics = new InMemoryMetricRepository();
 
@@ -149,7 +153,8 @@ final class HtmlTreeBuilderTest extends TestCase
         self::assertSame(2, $result['summary']['totalClasses']);
     }
 
-    public function testBuildMultipleRootNamespaces(): void
+    #[Test]
+    public function itBuildsMultipleRootNamespaces(): void
     {
         $metrics = new InMemoryMetricRepository();
 
@@ -186,7 +191,8 @@ final class HtmlTreeBuilderTest extends TestCase
         self::assertContains('Domain', $rootNames);
     }
 
-    public function testBuildNestedNamespaces(): void
+    #[Test]
+    public function itBuildsNestedNamespaces(): void
     {
         $metrics = new InMemoryMetricRepository();
 
@@ -230,7 +236,8 @@ final class HtmlTreeBuilderTest extends TestCase
         self::assertSame('PaymentProcessor', $processingNode['children'][0]['name']);
     }
 
-    public function testBuildProceduralFiles(): void
+    #[Test]
+    public function itBuildsProceduralFiles(): void
     {
         $metrics = new InMemoryMetricRepository();
 
@@ -261,7 +268,8 @@ final class HtmlTreeBuilderTest extends TestCase
         self::assertSame('GlobalHelper', $noNsNode['children'][0]['name']);
     }
 
-    public function testBuildViolationAttachment(): void
+    #[Test]
+    public function itAttachesViolationToTreeNode(): void
     {
         $metrics = new InMemoryMetricRepository();
 
@@ -311,7 +319,8 @@ final class HtmlTreeBuilderTest extends TestCase
         self::assertSame(25, $v['line']);
     }
 
-    public function testBuildViolationCountTotalBottomUp(): void
+    #[Test]
+    public function itCountsViolationsTotalBottomUp(): void
     {
         $metrics = new InMemoryMetricRepository();
 
@@ -394,7 +403,8 @@ final class HtmlTreeBuilderTest extends TestCase
         self::assertSame(1, $bNode['violationCountTotal']);
     }
 
-    public function testBuildNanInfMetrics(): void
+    #[Test]
+    public function itNullsNanAndInfMetricValues(): void
     {
         $metrics = new InMemoryMetricRepository();
 
@@ -424,7 +434,8 @@ final class HtmlTreeBuilderTest extends TestCase
         self::assertNull($classMetrics['inf_val']);
     }
 
-    public function testBuildDebtCalculation(): void
+    #[Test]
+    public function itCalculatesDebtDuringBuild(): void
     {
         $metrics = new InMemoryMetricRepository();
 
@@ -465,7 +476,8 @@ final class HtmlTreeBuilderTest extends TestCase
         self::assertSame(30, $classNode['debtMinutes']);
     }
 
-    public function testBuildHealthScoresInSummary(): void
+    #[Test]
+    public function itIncludesHealthScoresInSummary(): void
     {
         $metrics = new InMemoryMetricRepository();
 
@@ -497,7 +509,8 @@ final class HtmlTreeBuilderTest extends TestCase
         self::assertArrayNotHasKey('classes.count', $healthScores);
     }
 
-    public function testBuildJsonHexTag(): void
+    #[Test]
+    public function itEscapesHtmlTagsInJsonEncoding(): void
     {
         $metrics = new InMemoryMetricRepository();
 
@@ -527,7 +540,8 @@ final class HtmlTreeBuilderTest extends TestCase
         self::assertStringContainsString('\\u003C', $json);
     }
 
-    public function testBuildProjectMetadataWithScopedReporting(): void
+    #[Test]
+    public function itIncludesProjectMetadataWithScopedReporting(): void
     {
         $report = ReportBuilder::create()
             ->filesAnalyzed(1)
@@ -544,7 +558,8 @@ final class HtmlTreeBuilderTest extends TestCase
         self::assertTrue($project['scopedReporting']);
     }
 
-    public function testBuildScopedReportingFalseByDefault(): void
+    #[Test]
+    public function itSetsScopedReportingFalseByDefault(): void
     {
         $report = ReportBuilder::create()
             ->filesAnalyzed(1)
@@ -557,7 +572,8 @@ final class HtmlTreeBuilderTest extends TestCase
         self::assertFalse($result['project']['scopedReporting']);
     }
 
-    public function testBuildComputedMetricDefinitions(): void
+    #[Test]
+    public function itIncludesOnlyHealthComputedMetricDefinitions(): void
     {
         ComputedMetricDefinitionHolder::setDefinitions([
             new ComputedMetricDefinition(
@@ -594,7 +610,8 @@ final class HtmlTreeBuilderTest extends TestCase
         self::assertFalse($healthDef['inverted']);
     }
 
-    public function testBuildInternalMetricsFiltered(): void
+    #[Test]
+    public function itFiltersInternalMetricsFromOutput(): void
     {
         $metrics = new InMemoryMetricRepository();
 
@@ -625,7 +642,8 @@ final class HtmlTreeBuilderTest extends TestCase
         self::assertArrayNotHasKey('some:internal:value', $classMetrics);
     }
 
-    public function testBuildViolationWithNanMetricValue(): void
+    #[Test]
+    public function itNullsNanMetricValueInViolation(): void
     {
         $metrics = new InMemoryMetricRepository();
 
@@ -660,7 +678,8 @@ final class HtmlTreeBuilderTest extends TestCase
         self::assertNull($classNode['violations'][0]['metricValue']);
     }
 
-    public function testBuildLocSumAggregatedBottomUp(): void
+    #[Test]
+    public function itAggregatesLocSumBottomUpDuringBuild(): void
     {
         $metrics = new InMemoryMetricRepository();
 
@@ -700,7 +719,8 @@ final class HtmlTreeBuilderTest extends TestCase
         self::assertSame(250, $rootMetrics['loc.sum']);
     }
 
-    public function testBuildEmptyMetricsForceObjectInJson(): void
+    #[Test]
+    public function itForcesEmptyMetricsToJsonObject(): void
     {
         $metrics = new InMemoryMetricRepository();
 
@@ -726,7 +746,8 @@ final class HtmlTreeBuilderTest extends TestCase
         self::assertSame('{}', $json);
     }
 
-    public function testToArrayOmitsChildrenWhenEmpty(): void
+    #[Test]
+    public function itOmitsChildrenFromArrayWhenEmpty(): void
     {
         $node = new HtmlTreeNode('test', 'test', 'class');
         $array = $node->toArray();
@@ -734,7 +755,8 @@ final class HtmlTreeBuilderTest extends TestCase
         self::assertArrayNotHasKey('children', $array);
     }
 
-    public function testToArrayIncludesChildrenWhenPresent(): void
+    #[Test]
+    public function itIncludesChildrenInArrayWhenPresent(): void
     {
         $parent = new HtmlTreeNode('parent', 'parent', 'namespace');
         $child = new HtmlTreeNode('child', 'child', 'class');
@@ -747,7 +769,8 @@ final class HtmlTreeBuilderTest extends TestCase
         self::assertSame('child', $array['children'][0]['name']);
     }
 
-    public function testBuildFileViolationSkipped(): void
+    #[Test]
+    public function itSkipsFileViolationDuringBuild(): void
     {
         $metrics = new InMemoryMetricRepository();
 
@@ -784,7 +807,8 @@ final class HtmlTreeBuilderTest extends TestCase
         self::assertSame(0, $tree['violationCountTotal']);
     }
 
-    public function testBuildRelativizesFilePaths(): void
+    #[Test]
+    public function itRelativizesFilePathsDuringBuild(): void
     {
         $metrics = new InMemoryMetricRepository();
 
@@ -819,7 +843,8 @@ final class HtmlTreeBuilderTest extends TestCase
         self::assertSame('src/Service.php', $classNode['violations'][0]['file']);
     }
 
-    public function testTotalDebtMinutesUsesReportTechDebtWhenAvailable(): void
+    #[Test]
+    public function itUsesReportTechDebtForTotalDebtMinutesWhenAvailable(): void
     {
         $metrics = new InMemoryMetricRepository();
 

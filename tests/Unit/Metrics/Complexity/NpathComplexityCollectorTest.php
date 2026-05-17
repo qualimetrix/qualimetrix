@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Metrics\Complexity;
 use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\SymbolLevel;
@@ -25,17 +26,20 @@ final class NpathComplexityCollectorTest extends TestCase
         $this->collector = new NpathComplexityCollector();
     }
 
-    public function testGetName(): void
+    #[Test]
+    public function itGetsName(): void
     {
         self::assertSame('npath-complexity', $this->collector->getName());
     }
 
-    public function testProvides(): void
+    #[Test]
+    public function itProvides(): void
     {
         self::assertSame(['npath'], $this->collector->provides());
     }
 
-    public function testGetMetricDefinitions(): void
+    #[Test]
+    public function itProvidesMetricDefinitions(): void
     {
         $definitions = $this->collector->getMetricDefinitions();
 
@@ -48,7 +52,8 @@ final class NpathComplexityCollectorTest extends TestCase
         );
     }
 
-    public function testEmptyMethodHasNpathOne(): void
+    #[Test]
+    public function itAssignsNpathOneToEmptyMethod(): void
     {
         $code = <<<'PHP'
 <?php
@@ -68,7 +73,8 @@ PHP;
         self::assertSame(1, $metrics->get('npath:App\Test::empty'));
     }
 
-    public function testSimpleMethodHasNpathOne(): void
+    #[Test]
+    public function itAssignsNpathOneToSimpleMethod(): void
     {
         $code = <<<'PHP'
 <?php
@@ -89,7 +95,8 @@ PHP;
         self::assertSame(1, $metrics->get('npath:App\Service\Calculator::add'));
     }
 
-    public function testMethodWithSingleIf(): void
+    #[Test]
+    public function itCalculatesNpathForSingleIf(): void
     {
         $code = <<<'PHP'
 <?php
@@ -114,7 +121,8 @@ PHP;
         self::assertSame(2, $metrics->get('npath:App\Test::check'));
     }
 
-    public function testMethodWithIfElse(): void
+    #[Test]
+    public function itCalculatesNpathForIfElse(): void
     {
         $code = <<<'PHP'
 <?php
@@ -140,7 +148,8 @@ PHP;
         self::assertSame(2, $metrics->get('npath:App\Test::check'));
     }
 
-    public function testMethodWithTwoSequentialIfs(): void
+    #[Test]
+    public function itMultipliesNpathForTwoSequentialIfs(): void
     {
         $code = <<<'PHP'
 <?php
@@ -169,7 +178,8 @@ PHP;
         self::assertSame(4, $metrics->get('npath:App\Test::check'));
     }
 
-    public function testMethodWithNestedIf(): void
+    #[Test]
+    public function itCalculatesNpathForNestedIf(): void
     {
         $code = <<<'PHP'
 <?php
@@ -196,7 +206,8 @@ PHP;
         self::assertSame(3, $metrics->get('npath:App\Test::check'));
     }
 
-    public function testMethodWithWhileLoop(): void
+    #[Test]
+    public function itCalculatesNpathForWhileLoop(): void
     {
         $code = <<<'PHP'
 <?php
@@ -220,7 +231,8 @@ PHP;
         self::assertSame(2, $metrics->get('npath:App\Test::loop'));
     }
 
-    public function testMethodWithForLoop(): void
+    #[Test]
+    public function itCalculatesNpathForForLoop(): void
     {
         $code = <<<'PHP'
 <?php
@@ -244,7 +256,8 @@ PHP;
         self::assertSame(2, $metrics->get('npath:App\Test::loop'));
     }
 
-    public function testMethodWithForeach(): void
+    #[Test]
+    public function itCalculatesNpathForForeach(): void
     {
         $code = <<<'PHP'
 <?php
@@ -268,7 +281,8 @@ PHP;
         self::assertSame(2, $metrics->get('npath:App\Test::iterate'));
     }
 
-    public function testMethodWithSwitch(): void
+    #[Test]
+    public function itCalculatesNpathForSwitch(): void
     {
         $code = <<<'PHP'
 <?php
@@ -297,7 +311,8 @@ PHP;
         self::assertSame(3, $metrics->get('npath:App\Test::grade'));
     }
 
-    public function testMethodWithTryCatch(): void
+    #[Test]
+    public function itCalculatesNpathForTryCatch(): void
     {
         $code = <<<'PHP'
 <?php
@@ -323,7 +338,8 @@ PHP;
         self::assertSame(3, $metrics->get('npath:App\Test::risky'));
     }
 
-    public function testMethodWithTernary(): void
+    #[Test]
+    public function itCalculatesNpathForTernary(): void
     {
         $code = <<<'PHP'
 <?php
@@ -345,7 +361,8 @@ PHP;
         self::assertSame(2, $metrics->get('npath:App\Test::conditional'));
     }
 
-    public function testMethodWithBooleanAnd(): void
+    #[Test]
+    public function itCalculatesNpathForBooleanAnd(): void
     {
         $code = <<<'PHP'
 <?php
@@ -367,7 +384,8 @@ PHP;
         self::assertSame(1, $metrics->get('npath:App\Test::check'));
     }
 
-    public function testMethodWithBooleanOr(): void
+    #[Test]
+    public function itCalculatesNpathForBooleanOr(): void
     {
         $code = <<<'PHP'
 <?php
@@ -389,7 +407,8 @@ PHP;
         self::assertSame(1, $metrics->get('npath:App\Test::check'));
     }
 
-    public function testMethodWithNullCoalesce(): void
+    #[Test]
+    public function itCalculatesNpathForNullCoalesce(): void
     {
         $code = <<<'PHP'
 <?php
@@ -411,7 +430,8 @@ PHP;
         self::assertSame(1, $metrics->get('npath:App\Test::check'));
     }
 
-    public function testMethodWithMatch(): void
+    #[Test]
+    public function itCalculatesNpathForMatchExpression(): void
     {
         $code = <<<'PHP'
 <?php
@@ -438,7 +458,8 @@ PHP;
         self::assertSame(1, $metrics->get('npath:App\Test::grade'));
     }
 
-    public function testMaxValueCap(): void
+    #[Test]
+    public function itCapsNpathAtMaxValue(): void
     {
         // Create many sequential ifs to exceed MAX_NPATH
         // Each if has NPath = cond(0)+then(1)+skip(1) = 2, so 30 sequential ifs give 2^30 > 10^9
@@ -454,7 +475,8 @@ PHP;
         self::assertSame(1_000_000_000, $metrics->get('npath:Test::deep'));
     }
 
-    public function testAnonymousClassMethodsAreNotAttributedToOuterClass(): void
+    #[Test]
+    public function itDoesNotAttributeAnonymousClassMethodsToOuterClass(): void
     {
         $code = <<<'PHP'
 <?php
@@ -505,7 +527,8 @@ PHP;
         self::assertNull($metrics->get('npath:App\Outer::innerComplex'));
     }
 
-    public function testWhileWithBooleanAndCondition(): void
+    #[Test]
+    public function itCalculatesNpathForWhileWithBooleanAndCondition(): void
     {
         $code = <<<'PHP'
 <?php
@@ -529,7 +552,8 @@ PHP;
         self::assertSame(3, $metrics->get('npath:App\Test::loop'));
     }
 
-    public function testWhileWithTripleBooleanOrCondition(): void
+    #[Test]
+    public function itCalculatesNpathForWhileWithTripleBooleanOrCondition(): void
     {
         $code = <<<'PHP'
 <?php
@@ -554,7 +578,8 @@ PHP;
         self::assertSame(4, $metrics->get('npath:App\Test::loop'));
     }
 
-    public function testDoWhileWithBooleanAndCondition(): void
+    #[Test]
+    public function itCalculatesNpathForDoWhileWithBooleanAndCondition(): void
     {
         $code = <<<'PHP'
 <?php
@@ -578,7 +603,8 @@ PHP;
         self::assertSame(3, $metrics->get('npath:App\Test::loop'));
     }
 
-    public function testForWithBooleanAndCondition(): void
+    #[Test]
+    public function itCalculatesNpathForForWithBooleanAndCondition(): void
     {
         $code = <<<'PHP'
 <?php
@@ -602,7 +628,8 @@ PHP;
         self::assertSame(3, $metrics->get('npath:App\Test::loop'));
     }
 
-    public function testForeachHasNoConditionExpression(): void
+    #[Test]
+    public function itCalculatesNpathForForeachWithNoConditionExpression(): void
     {
         $code = <<<'PHP'
 <?php
@@ -626,7 +653,8 @@ PHP;
         self::assertSame(2, $metrics->get('npath:App\Test::iterate'));
     }
 
-    public function testWhileWithTernaryCondition(): void
+    #[Test]
+    public function itCalculatesNpathForWhileWithTernaryCondition(): void
     {
         $code = <<<'PHP'
 <?php
@@ -654,7 +682,8 @@ PHP;
     /**
      * Fix 3: if ($a && $b) should have NPath reflecting the condition complexity.
      */
-    public function testIfWithBooleanAndCondition(): void
+    #[Test]
+    public function itCalculatesNpathForIfWithBooleanAndCondition(): void
     {
         $code = <<<'PHP'
 <?php
@@ -681,7 +710,8 @@ PHP;
     /**
      * Fix 3: elseif condition should also be evaluated.
      */
-    public function testIfElseifWithBooleanConditions(): void
+    #[Test]
+    public function itCalculatesNpathForIfElseifWithBooleanConditions(): void
     {
         $code = <<<'PHP'
 <?php
@@ -712,7 +742,8 @@ PHP;
     /**
      * Fix 5: Arrow function with conditional logic should be handled by NPath.
      */
-    public function testArrowFunctionWithTernary(): void
+    #[Test]
+    public function itCalculatesNpathForArrowFunctionWithTernary(): void
     {
         $code = <<<'PHP'
 <?php
@@ -740,7 +771,8 @@ PHP;
     /**
      * Fix 5: Arrow function with simple expression.
      */
-    public function testArrowFunctionSimple(): void
+    #[Test]
+    public function itAssignsNpathOneToSimpleArrowFunction(): void
     {
         $code = <<<'PHP'
 <?php
@@ -765,7 +797,8 @@ PHP;
     /**
      * Ternary inside an assignment should be detected via Assign recursion.
      */
-    public function testTernaryInAssignment(): void
+    #[Test]
+    public function itDetectsTernaryInAssignmentViaAssignRecursion(): void
     {
         $code = <<<'PHP'
 <?php
@@ -782,7 +815,8 @@ PHP;
     /**
      * Null coalesce inside an assignment should be detected via Assign recursion.
      */
-    public function testCoalesceInAssignment(): void
+    #[Test]
+    public function itDetectsCoalesceInAssignmentViaAssignRecursion(): void
     {
         $code = <<<'PHP'
 <?php
@@ -799,7 +833,8 @@ PHP;
     /**
      * Closure inside anonymous class method should NOT appear in NPath metrics of outer class.
      */
-    public function testClosureInsideAnonymousClassNotInOuterMetrics(): void
+    #[Test]
+    public function itExcludesClosureInsideAnonymousClassFromOuterMetrics(): void
     {
         $code = <<<'PHP'
 <?php
@@ -832,7 +867,8 @@ PHP;
     /**
      * ArrowFunction inside anonymous class method should NOT appear in NPath metrics of outer class.
      */
-    public function testArrowFunctionInsideAnonymousClassNotInOuterMetrics(): void
+    #[Test]
+    public function itExcludesArrowFunctionInsideAnonymousClassFromOuterMetrics(): void
     {
         $code = <<<'PHP'
 <?php
@@ -862,7 +898,8 @@ PHP;
     /**
      * BooleanNot should recurse into its operand for NPath calculation.
      */
-    public function testBooleanNotRecursion(): void
+    #[Test]
+    public function itRecursesIntoBooleanNotOperandForNpathCalculation(): void
     {
         $code = <<<'PHP'
 <?php
@@ -890,7 +927,8 @@ PHP;
     /**
      * Try-catch-finally: NPath should multiply try-catch by finally.
      */
-    public function testTryCatchFinallyMultiplication(): void
+    #[Test]
+    public function itMultipliesTryCatchByFinallyForNpathCalculation(): void
     {
         $code = <<<'PHP'
 <?php
@@ -944,7 +982,8 @@ PHP;
         return $collector->collect($file, $ast ?? []);
     }
 
-    public function testFactorsTrackedForMultiplicativeStatements(): void
+    #[Test]
+    public function itTracksFactorsForMultiplicativeStatements(): void
     {
         $code = <<<'PHP'
 <?php
@@ -999,7 +1038,8 @@ PHP;
         }
     }
 
-    public function testFactorsPassedViaMethodsWithMetrics(): void
+    #[Test]
+    public function itPassesFactorsViaMethodsWithMetrics(): void
     {
         $code = <<<'PHP'
 <?php

@@ -5,13 +5,15 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Baseline;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Baseline\BaselineEntry;
 
 #[CoversClass(BaselineEntry::class)]
 final class BaselineEntryTest extends TestCase
 {
-    public function testFromArrayCreatesEntry(): void
+    #[Test]
+    public function itFromArrayCreatesEntry(): void
     {
         $data = [
             'rule' => 'complexity',
@@ -24,7 +26,8 @@ final class BaselineEntryTest extends TestCase
         self::assertSame('a1b2c3d4', $entry->hash);
     }
 
-    public function testToArrayReturnsCorrectStructure(): void
+    #[Test]
+    public function itToArrayReturnsCorrectStructure(): void
     {
         $entry = new BaselineEntry(
             rule: 'complexity',
@@ -41,7 +44,8 @@ final class BaselineEntryTest extends TestCase
         self::assertSame($expected, $array);
     }
 
-    public function testRoundTripConversion(): void
+    #[Test]
+    public function itRoundTripConversion(): void
     {
         $original = new BaselineEntry(
             rule: 'coupling',

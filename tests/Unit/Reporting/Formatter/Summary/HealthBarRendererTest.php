@@ -6,6 +6,7 @@ namespace Qualimetrix\Tests\Unit\Reporting\Formatter\Summary;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
@@ -35,7 +36,8 @@ final class HealthBarRendererTest extends TestCase
         $this->color = new AnsiColor(false);
     }
 
-    public function testRenderShowsInsufficientDataWhenNoScores(): void
+    #[Test]
+    public function itRendersInsufficientDataWhenNoScores(): void
     {
         $report = $this->createReport();
         $lines = [];
@@ -46,7 +48,8 @@ final class HealthBarRendererTest extends TestCase
         self::assertStringContainsString('Health: insufficient data', $output);
     }
 
-    public function testRenderOverallAndDimensions(): void
+    #[Test]
+    public function itRendersOverallAndDimensions(): void
     {
         $report = $this->createReport(healthScores: [
             'overall' => new HealthScore('overall', 75.3, 'Acceptable', 60.0, 30.0),
@@ -67,7 +70,8 @@ final class HealthBarRendererTest extends TestCase
         self::assertStringContainsString('45.5%', $output);
     }
 
-    public function testRenderBoundaryScoreZero(): void
+    #[Test]
+    public function itRendersBoundaryScoreZero(): void
     {
         $report = $this->createReport(healthScores: [
             'overall' => new HealthScore('overall', 0.0, 'Critical', 60.0, 30.0),
@@ -81,7 +85,8 @@ final class HealthBarRendererTest extends TestCase
         self::assertStringContainsString('Critical', $output);
     }
 
-    public function testRenderBoundaryScoreHundred(): void
+    #[Test]
+    public function itRendersBoundaryScoreHundred(): void
     {
         $report = $this->createReport(healthScores: [
             'overall' => new HealthScore('overall', 100.0, 'Excellent', 60.0, 30.0),
@@ -94,7 +99,8 @@ final class HealthBarRendererTest extends TestCase
         self::assertStringContainsString('100%', $output);
     }
 
-    public function testRenderNanScoreHandled(): void
+    #[Test]
+    public function itRendersNanScoreHandled(): void
     {
         $report = $this->createReport(healthScores: [
             'overall' => new HealthScore('overall', \NAN, 'N/A', 60.0, 30.0),
@@ -108,7 +114,8 @@ final class HealthBarRendererTest extends TestCase
         self::assertStringContainsString('—%', $output);
     }
 
-    public function testRenderAsciiBar(): void
+    #[Test]
+    public function itRendersAsciiBar(): void
     {
         $report = $this->createReport(healthScores: [
             'overall' => new HealthScore('overall', 50.0, 'Needs work', 60.0, 30.0),
@@ -125,7 +132,8 @@ final class HealthBarRendererTest extends TestCase
         self::assertStringContainsString('.', $output);
     }
 
-    public function testRenderUnicodeBar(): void
+    #[Test]
+    public function itRendersUnicodeBar(): void
     {
         $report = $this->createReport(healthScores: [
             'overall' => new HealthScore('overall', 50.0, 'Needs work', 60.0, 30.0),
@@ -139,7 +147,8 @@ final class HealthBarRendererTest extends TestCase
         self::assertStringContainsString('░', $output);
     }
 
-    public function testRenderNullScoreDimensionShowsNA(): void
+    #[Test]
+    public function itRendersNullScoreDimensionShowsNA(): void
     {
         $report = $this->createReport(healthScores: [
             'overall' => new HealthScore('overall', 80.0, 'Good', 60.0, 30.0),
@@ -154,7 +163,8 @@ final class HealthBarRendererTest extends TestCase
         self::assertStringContainsString('N/A', $output);
     }
 
-    public function testRenderNarrowTerminalSkipsBars(): void
+    #[Test]
+    public function itRendersNarrowTerminalSkipsBars(): void
     {
         $report = $this->createReport(healthScores: [
             'overall' => new HealthScore('overall', 70.0, 'Acceptable', 60.0, 30.0),
@@ -176,7 +186,8 @@ final class HealthBarRendererTest extends TestCase
         }
     }
 
-    public function testRenderShowsNamespaceHeader(): void
+    #[Test]
+    public function itRendersNamespaceHeader(): void
     {
         $report = $this->createReport(healthScores: [
             'overall' => new HealthScore('overall', 60.0, 'Needs work', 60.0, 30.0),
@@ -190,7 +201,8 @@ final class HealthBarRendererTest extends TestCase
         self::assertStringContainsString('[namespace: App\\Service]', $output);
     }
 
-    public function testRenderShowsClassHeader(): void
+    #[Test]
+    public function itRendersClassHeader(): void
     {
         $report = $this->createReport(healthScores: [
             'overall' => new HealthScore('overall', 60.0, 'Needs work', 60.0, 30.0),
@@ -204,7 +216,8 @@ final class HealthBarRendererTest extends TestCase
         self::assertStringContainsString('[class: App\\Service\\UserService]', $output);
     }
 
-    public function testRenderDecompositionItems(): void
+    #[Test]
+    public function itRendersDecompositionItems(): void
     {
         $decomposition = [
             new DecompositionItem(
@@ -233,7 +246,8 @@ final class HealthBarRendererTest extends TestCase
         self::assertStringContainsString('Average cyclomatic complexity per method', $output);
     }
 
-    public function testRenderShowsScaleExplanationWhenDifferentThresholds(): void
+    #[Test]
+    public function itRendersScaleExplanationWhenDifferentThresholds(): void
     {
         $report = $this->createReport(healthScores: [
             'overall' => new HealthScore('overall', 70.0, 'Acceptable', 60.0, 30.0),
@@ -248,7 +262,8 @@ final class HealthBarRendererTest extends TestCase
         self::assertStringContainsString('Labels reflect per-dimension scales', $output);
     }
 
-    public function testRenderNoScaleExplanationWhenSameThresholds(): void
+    #[Test]
+    public function itRendersNoScaleExplanationWhenSameThresholds(): void
     {
         $report = $this->createReport(healthScores: [
             'overall' => new HealthScore('overall', 70.0, 'Acceptable', 60.0, 30.0),
@@ -263,7 +278,8 @@ final class HealthBarRendererTest extends TestCase
         self::assertStringNotContainsString('Labels reflect per-dimension scales', $output);
     }
 
-    public function testRenderC2DeltaLargeExplains(): void
+    #[Test]
+    public function itRendersC2DeltaLargeExplains(): void
     {
         [$report, $context] = $this->createC2DeltaFixture(
             overallScore: 75.0,
@@ -279,7 +295,8 @@ final class HealthBarRendererTest extends TestCase
         self::assertStringContainsString('sub-namespaces raise the score', $output);
     }
 
-    public function testRenderC2DeltaMediumShowsCompact(): void
+    #[Test]
+    public function itRendersC2DeltaMediumShowsCompact(): void
     {
         [$report, $context] = $this->createC2DeltaFixture(
             overallScore: 75.0,
@@ -295,7 +312,8 @@ final class HealthBarRendererTest extends TestCase
         self::assertStringNotContainsString('sub-namespaces raise the score', $output);
     }
 
-    public function testRenderC2DeltaSmallHidden(): void
+    #[Test]
+    public function itRendersC2DeltaSmallHidden(): void
     {
         [$report, $context] = $this->createC2DeltaFixture(
             overallScore: 75.0,
@@ -310,7 +328,8 @@ final class HealthBarRendererTest extends TestCase
         self::assertStringNotContainsString('direct', $output);
     }
 
-    public function testRenderOnlyOverallNoException(): void
+    #[Test]
+    public function itRendersOnlyOverallWithoutException(): void
     {
         $report = $this->createReport(healthScores: [
             'overall' => new HealthScore('overall', 90.0, 'Excellent', 60.0, 30.0),
@@ -329,7 +348,8 @@ final class HealthBarRendererTest extends TestCase
     /**
      * Verifies bar fill character count for a known score.
      */
-    public function testBarWidthCorrectness(): void
+    #[Test]
+    public function itCalculatesBarWidthCorrectly(): void
     {
         // At terminal width 80, barWidth = max(20, min(30, 80-50)) = 30
         // Score 50% => filled = round(50/100 * 30) = 15
@@ -364,7 +384,8 @@ final class HealthBarRendererTest extends TestCase
     }
 
     #[DataProvider('colorRangeProvider')]
-    public function testScoreColorByRange(float $score, string $expectedColor): void
+    #[Test]
+    public function itColorsScoreByRange(float $score, string $expectedColor): void
     {
         $ansiColor = new AnsiColor(true);
         $resolver = new HealthScoreResolver(new NamespaceDrillDown(new MetricHintProvider()));
@@ -382,7 +403,8 @@ final class HealthBarRendererTest extends TestCase
         self::assertStringContainsString($ansiCodes[$expectedColor], $output);
     }
 
-    public function testRenderNegativeScoreTreatedAsZero(): void
+    #[Test]
+    public function itRendersNegativeScoreTreatedAsZero(): void
     {
         $report = $this->createReport(healthScores: [
             'overall' => new HealthScore('overall', -10.0, 'Critical', 60.0, 30.0),
@@ -399,7 +421,8 @@ final class HealthBarRendererTest extends TestCase
         self::assertSame(0, substr_count($matches[1], '#'));
     }
 
-    public function testRenderInfiniteScoreHandled(): void
+    #[Test]
+    public function itRendersInfiniteScoreHandled(): void
     {
         $report = $this->createReport(healthScores: [
             'overall' => new HealthScore('overall', \INF, 'N/A', 60.0, 30.0),
@@ -412,7 +435,8 @@ final class HealthBarRendererTest extends TestCase
         self::assertStringContainsString('—%', $output);
     }
 
-    public function testRenderIntegerScoreOmitsDecimal(): void
+    #[Test]
+    public function itRendersIntegerScoreOmittingDecimal(): void
     {
         $report = $this->createReport(healthScores: [
             'overall' => new HealthScore('overall', 80.0, 'Good', 60.0, 30.0),

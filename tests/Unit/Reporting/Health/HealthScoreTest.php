@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Reporting\Health;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Reporting\Health\DecompositionItem;
 use Qualimetrix\Reporting\Health\HealthScore;
@@ -12,7 +13,8 @@ use Qualimetrix\Reporting\Health\HealthScore;
 #[CoversClass(HealthScore::class)]
 final class HealthScoreTest extends TestCase
 {
-    public function testConstructionWithDefaults(): void
+    #[Test]
+    public function itConstructsWithDefaults(): void
     {
         $score = new HealthScore(
             name: 'health.complexity',
@@ -30,7 +32,8 @@ final class HealthScoreTest extends TestCase
         self::assertSame([], $score->decomposition);
     }
 
-    public function testConstructionWithDecomposition(): void
+    #[Test]
+    public function itConstructsWithDecomposition(): void
     {
         $item = new DecompositionItem(
             metricKey: 'ccn.avg',

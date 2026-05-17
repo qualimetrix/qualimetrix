@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Metrics\CodeSmell;
 use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\SymbolLevel;
@@ -25,17 +26,20 @@ final class UnreachableCodeCollectorTest extends TestCase
         $this->collector = new UnreachableCodeCollector();
     }
 
-    public function testGetName(): void
+    #[Test]
+    public function itReturnsCollectorName(): void
     {
         self::assertSame('unreachable-code', $this->collector->getName());
     }
 
-    public function testProvides(): void
+    #[Test]
+    public function itProvidesExpectedMetricKeys(): void
     {
         self::assertSame(['unreachableCode', 'unreachableCode.firstLine'], $this->collector->provides());
     }
 
-    public function testNoUnreachableCode(): void
+    #[Test]
+    public function itProducesZeroForMethodWithNoUnreachableCode(): void
     {
         $code = <<<'PHP'
 <?php
@@ -58,7 +62,8 @@ PHP;
         self::assertNull($metrics->get('unreachableCode.firstLine:App\Service\Calculator::add'));
     }
 
-    public function testReturnFollowedByCode(): void
+    #[Test]
+    public function itDetectsCodeAfterReturn(): void
     {
         $code = <<<'PHP'
 <?php
@@ -81,7 +86,8 @@ PHP;
         self::assertSame(10, $metrics->get('unreachableCode.firstLine:App\Service\Calculator::add'));
     }
 
-    public function testThrowFollowedByCode(): void
+    #[Test]
+    public function itDetectsCodeAfterThrow(): void
     {
         $code = <<<'PHP'
 <?php
@@ -103,7 +109,8 @@ PHP;
         self::assertSame(1, $metrics->get('unreachableCode:App\Service\Validator::validate'));
     }
 
-    public function testExitFollowedByCode(): void
+    #[Test]
+    public function itDetectsCodeAfterExit(): void
     {
         $code = <<<'PHP'
 <?php
@@ -132,7 +139,8 @@ PHP;
         self::assertSame(1, $metrics->get('unreachableCode:App\Runner::runDie'));
     }
 
-    public function testContinueFollowedByCode(): void
+    #[Test]
+    public function itDoesNotCountCodeAfterContinueInsideIfBlock(): void
     {
         $code = <<<'PHP'
 <?php
@@ -160,7 +168,8 @@ PHP;
         self::assertSame(0, $metrics->get('unreachableCode:App\Processor::process'));
     }
 
-    public function testBreakFollowedByCode(): void
+    #[Test]
+    public function itDoesNotCountCodeAfterBreakInsideIfBlock(): void
     {
         $code = <<<'PHP'
 <?php
@@ -188,7 +197,8 @@ PHP;
         self::assertSame(0, $metrics->get('unreachableCode:App\Finder::find'));
     }
 
-    public function testMultipleUnreachableStatements(): void
+    #[Test]
+    public function itCountsMultipleUnreachableStatements(): void
     {
         $code = <<<'PHP'
 <?php
@@ -212,7 +222,8 @@ PHP;
         self::assertSame(10, $metrics->get('unreachableCode.firstLine:App\Service::execute'));
     }
 
-    public function testReturnWithinIfDoesNotMakeCodeAfterIfUnreachable(): void
+    #[Test]
+    public function itDoesNotMarkCodeAfterIfUnreachableWhenReturnIsInsideIf(): void
     {
         $code = <<<'PHP'
 <?php
@@ -236,7 +247,8 @@ PHP;
         self::assertSame(0, $metrics->get('unreachableCode:App\Guard::check'));
     }
 
-    public function testOnlyReturnNoCodeAfter(): void
+    #[Test]
+    public function itProducesZeroWhenOnlyReturnWithNoCodeAfter(): void
     {
         $code = <<<'PHP'
 <?php
@@ -257,7 +269,8 @@ PHP;
         self::assertSame(0, $metrics->get('unreachableCode:App\Simple::getValue'));
     }
 
-    public function testReset(): void
+    #[Test]
+    public function itClearsStateOnReset(): void
     {
         $code1 = <<<'PHP'
 <?php
@@ -302,7 +315,8 @@ PHP;
         self::assertSame(0, $metrics->get('unreachableCode:App\Second::otherMethod'));
     }
 
-    public function testGetMetricDefinitions(): void
+    #[Test]
+    public function itReturnsCorrectMetricDefinitions(): void
     {
         $definitions = $this->collector->getMetricDefinitions();
 
@@ -337,7 +351,8 @@ PHP;
         self::assertEmpty($firstLineDefinition->getStrategiesForLevel(SymbolLevel::Project));
     }
 
-    public function testGlobalFunction(): void
+    #[Test]
+    public function itDetectsUnreachableCodeInGlobalFunction(): void
     {
         $code = <<<'PHP'
 <?php
@@ -357,7 +372,8 @@ PHP;
         self::assertSame(8, $metrics->get('unreachableCode.firstLine:App\Utils\helper'));
     }
 
-    public function testGotoFollowedByCode(): void
+    #[Test]
+    public function itDetectsCodeAfterGoto(): void
     {
         $code = <<<'PHP'
 <?php
@@ -384,7 +400,8 @@ PHP;
         self::assertSame(1, $metrics->get('unreachableCode:App\Navigator::navigate'));
     }
 
-    public function testGotoAsTerminalSimple(): void
+    #[Test]
+    public function itTreatsGotoAsTerminalAndDetectsUnreachableStatement(): void
     {
         $code = <<<'PHP'
 <?php
@@ -409,7 +426,8 @@ PHP;
         self::assertSame(10, $metrics->get('unreachableCode.firstLine:App\GotoTest::test'));
     }
 
-    public function testAnonymousClassInsideNamedClass(): void
+    #[Test]
+    public function itSkipsAnonymousClassMethodsInsideNamedClass(): void
     {
         $code = <<<'PHP'
 <?php
@@ -454,7 +472,8 @@ PHP;
      * Comments after return should not be counted as unreachable code.
      * PHP parser represents standalone comments as Stmt\Nop nodes.
      */
-    public function testCommentAfterReturnIsNotUnreachable(): void
+    #[Test]
+    public function itDoesNotCountCommentAfterReturnAsUnreachable(): void
     {
         $code = <<<'PHP'
 <?php
@@ -479,7 +498,8 @@ PHP;
     /**
      * A goto label resets reachability — code after the label is reachable via the goto jump.
      */
-    public function testGotoLabelResetsReachability(): void
+    #[Test]
+    public function itResetsReachabilityAtGotoLabel(): void
     {
         $code = <<<'PHP'
 <?php
@@ -510,7 +530,8 @@ PHP;
     /**
      * Multiple goto labels: each label resets reachability independently.
      */
-    public function testMultipleGotoLabelsResetReachability(): void
+    #[Test]
+    public function itResetsReachabilityAtEachGotoLabel(): void
     {
         $code = <<<'PHP'
 <?php
@@ -542,7 +563,8 @@ PHP;
     /**
      * Code after goto with no subsequent label remains unreachable.
      */
-    public function testGotoWithoutSubsequentLabel(): void
+    #[Test]
+    public function itKeepsCodeUnreachableWhenGotoHasNoSubsequentLabel(): void
     {
         $code = <<<'PHP'
 <?php

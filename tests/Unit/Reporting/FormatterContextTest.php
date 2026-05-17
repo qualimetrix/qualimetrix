@@ -5,13 +5,15 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Reporting;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Reporting\FormatterContext;
 
 #[CoversClass(FormatterContext::class)]
 final class FormatterContextTest extends TestCase
 {
-    public function testDefaultValues(): void
+    #[Test]
+    public function itHasNullDefaultFilterValues(): void
     {
         $context = new FormatterContext();
 
@@ -19,7 +21,8 @@ final class FormatterContextTest extends TestCase
         self::assertNull($context->class);
     }
 
-    public function testNamespaceFilter(): void
+    #[Test]
+    public function itStoresNamespaceFilter(): void
     {
         $context = new FormatterContext(namespace: 'App\Service');
 
@@ -27,7 +30,8 @@ final class FormatterContextTest extends TestCase
         self::assertNull($context->class);
     }
 
-    public function testClassFilter(): void
+    #[Test]
+    public function itStoresClassFilter(): void
     {
         $context = new FormatterContext(class: 'App\Service\UserService');
 
@@ -35,7 +39,8 @@ final class FormatterContextTest extends TestCase
         self::assertSame('App\Service\UserService', $context->class);
     }
 
-    public function testRelativizePath(): void
+    #[Test]
+    public function itRelativizesPathAgainstBasePath(): void
     {
         $context = new FormatterContext(basePath: '/home/user/project');
 
@@ -43,35 +48,40 @@ final class FormatterContextTest extends TestCase
         self::assertSame('/other/path/Foo.php', $context->relativizePath('/other/path/Foo.php'));
     }
 
-    public function testRelativizePathEmptyBasePath(): void
+    #[Test]
+    public function itReturnsAbsolutePathWhenBasePathEmpty(): void
     {
         $context = new FormatterContext(basePath: '');
 
         self::assertSame('/absolute/path.php', $context->relativizePath('/absolute/path.php'));
     }
 
-    public function testDetailLimitNullMeansDetailDisabled(): void
+    #[Test]
+    public function itDisablesDetailWhenLimitIsNull(): void
     {
         $context = new FormatterContext();
 
         self::assertFalse($context->isDetailEnabled());
     }
 
-    public function testDetailLimitZeroMeansUnlimited(): void
+    #[Test]
+    public function itEnablesDetailWhenLimitIsZero(): void
     {
         $context = new FormatterContext(detailLimit: 0);
 
         self::assertTrue($context->isDetailEnabled());
     }
 
-    public function testDetailLimitPositiveMeansLimited(): void
+    #[Test]
+    public function itEnablesDetailWhenLimitIsPositive(): void
     {
         $context = new FormatterContext(detailLimit: 200);
 
         self::assertTrue($context->isDetailEnabled());
     }
 
-    public function testWithDetailTrueSetsLimitZero(): void
+    #[Test]
+    public function itSetsLimitToZeroWhenDetailIsTrue(): void
     {
         $context = new FormatterContext();
         $result = $context->withDetail(true);
@@ -79,7 +89,8 @@ final class FormatterContextTest extends TestCase
         self::assertSame(0, $result->detailLimit);
     }
 
-    public function testWithDetailFalseSetsLimitNull(): void
+    #[Test]
+    public function itSetsLimitToNullWhenDetailIsFalse(): void
     {
         $context = new FormatterContext(detailLimit: 100);
         $result = $context->withDetail(false);
@@ -87,7 +98,8 @@ final class FormatterContextTest extends TestCase
         self::assertNull($result->detailLimit);
     }
 
-    public function testWithDetailLimitPreservesOtherFields(): void
+    #[Test]
+    public function itPreservesOtherFieldsWhenChangingDetailLimit(): void
     {
         $context = new FormatterContext(
             useColor: false,

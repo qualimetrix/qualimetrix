@@ -343,6 +343,27 @@ When referencing `@qmx-ignore` or `@qmx-threshold` in docblocks as documentation
  */
 ```
 
+### 9. Test Method Naming: `itXxx` + `#[Test]`
+
+All PHPUnit test methods use the BDD-style `itXxx` naming and the `#[Test]` attribute. The legacy `testXxx` prefix is **not** used.
+
+```php
+use PHPUnit\Framework\Attributes\Test;
+
+final class HealthScoreTest extends TestCase
+{
+    #[Test]
+    public function itClampsValuesToTheZeroOneRange(): void
+    {
+        // ...
+    }
+}
+```
+
+- The `#[Test]` attribute is what PHPUnit relies on for discovery; the `it` prefix is just a convention readers can pattern-match on.
+- New tests must follow this convention. Do not introduce `testXxx` methods.
+- Data providers and helper methods keep their normal names (e.g., `provideFooCases`, `setUp`) — only test cases use `itXxx`.
+
 ---
 
 ## Technology Stack

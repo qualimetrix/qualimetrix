@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Core\Rule;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Rule\AnalysisContext;
@@ -13,7 +14,8 @@ use Qualimetrix\Core\Suppression\ThresholdOverride;
 #[CoversClass(AnalysisContext::class)]
 final class AnalysisContextThresholdTest extends TestCase
 {
-    public function testGetThresholdOverrideReturnsNullWhenNoOverrides(): void
+    #[Test]
+    public function itGetThresholdOverrideReturnsNullWhenNoOverrides(): void
     {
         $context = new AnalysisContext(
             metrics: self::createStub(MetricRepositoryInterface::class),
@@ -22,7 +24,8 @@ final class AnalysisContextThresholdTest extends TestCase
         self::assertNull($context->getThresholdOverride('complexity.cyclomatic', 'src/Foo.php', 10));
     }
 
-    public function testGetThresholdOverrideReturnsNullForUnknownFile(): void
+    #[Test]
+    public function itGetThresholdOverrideReturnsNullForUnknownFile(): void
     {
         $context = new AnalysisContext(
             metrics: self::createStub(MetricRepositoryInterface::class),
@@ -36,7 +39,8 @@ final class AnalysisContextThresholdTest extends TestCase
         self::assertNull($context->getThresholdOverride('complexity.cyclomatic', 'src/Foo.php', 10));
     }
 
-    public function testGetThresholdOverrideMatchesExact(): void
+    #[Test]
+    public function itGetThresholdOverrideMatchesExact(): void
     {
         $override = new ThresholdOverride('complexity.cyclomatic', 15, 25, 10, 50);
         $context = new AnalysisContext(
@@ -51,7 +55,8 @@ final class AnalysisContextThresholdTest extends TestCase
         self::assertSame($override, $result);
     }
 
-    public function testGetThresholdOverrideMatchesPrefix(): void
+    #[Test]
+    public function itGetThresholdOverrideMatchesPrefix(): void
     {
         $override = new ThresholdOverride('complexity', 15, 25, 10, 50);
         $context = new AnalysisContext(
@@ -66,7 +71,8 @@ final class AnalysisContextThresholdTest extends TestCase
         self::assertSame($override, $result);
     }
 
-    public function testGetThresholdOverrideRespectsLineScope(): void
+    #[Test]
+    public function itGetThresholdOverrideRespectsLineScope(): void
     {
         $override = new ThresholdOverride('complexity.cyclomatic', 15, 25, 10, 50);
         $context = new AnalysisContext(
@@ -86,7 +92,8 @@ final class AnalysisContextThresholdTest extends TestCase
         self::assertNull($context->getThresholdOverride('complexity.cyclomatic', 'src/Foo.php', 51));
     }
 
-    public function testGetThresholdOverrideReturnsNullForNonMatchingRule(): void
+    #[Test]
+    public function itGetThresholdOverrideReturnsNullForNonMatchingRule(): void
     {
         $override = new ThresholdOverride('complexity.cyclomatic', 15, 25, 10, 50);
         $context = new AnalysisContext(
@@ -99,7 +106,8 @@ final class AnalysisContextThresholdTest extends TestCase
         self::assertNull($context->getThresholdOverride('coupling.cbo', 'src/Foo.php', 20));
     }
 
-    public function testGetThresholdOverrideWithNullEndLine(): void
+    #[Test]
+    public function itGetThresholdOverrideWithNullEndLine(): void
     {
         $override = new ThresholdOverride('complexity.cyclomatic', 15, 25, 10, null);
         $context = new AnalysisContext(
@@ -115,7 +123,8 @@ final class AnalysisContextThresholdTest extends TestCase
         self::assertSame($override, $context->getThresholdOverride('complexity.cyclomatic', 'src/Foo.php', 1000));
     }
 
-    public function testGetThresholdOverrideReturnsSameSpanFirstMatch(): void
+    #[Test]
+    public function itGetThresholdOverrideReturnsSameSpanFirstMatch(): void
     {
         $override1 = new ThresholdOverride('complexity', 15, 25, 10, 50);
         $override2 = new ThresholdOverride('complexity.cyclomatic', 20, 30, 10, 50);
@@ -131,7 +140,8 @@ final class AnalysisContextThresholdTest extends TestCase
         self::assertSame($override1, $result);
     }
 
-    public function testMethodLevelOverrideTakesPriorityOverClassLevel(): void
+    #[Test]
+    public function itMethodLevelOverrideTakesPriorityOverClassLevel(): void
     {
         // Class-level override: line 10-100 (span 90)
         $classOverride = new ThresholdOverride('complexity.cyclomatic', 15, 25, 10, 100);
@@ -154,7 +164,8 @@ final class AnalysisContextThresholdTest extends TestCase
         self::assertSame($classOverride, $result);
     }
 
-    public function testBoundedOverrideWinsOverUnbounded(): void
+    #[Test]
+    public function itBoundedOverrideWinsOverUnbounded(): void
     {
         // Unbounded override (null endLine)
         $unbounded = new ThresholdOverride('complexity.cyclomatic', 10, 20, 1, null);
@@ -177,7 +188,8 @@ final class AnalysisContextThresholdTest extends TestCase
         self::assertSame($unbounded, $result);
     }
 
-    public function testGetThresholdOverrideWithWildcard(): void
+    #[Test]
+    public function itGetThresholdOverrideWithWildcard(): void
     {
         $override = new ThresholdOverride('*', 30, 50, 10, 100);
         $context = new AnalysisContext(

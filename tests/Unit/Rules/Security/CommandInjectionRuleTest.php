@@ -6,6 +6,7 @@ namespace Qualimetrix\Tests\Unit\Rules\Security;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
@@ -21,7 +22,8 @@ use Qualimetrix\Rules\Security\SecurityPatternOptions;
 #[CoversClass(SecurityPatternOptions::class)]
 final class CommandInjectionRuleTest extends TestCase
 {
-    public function testNameAndCategory(): void
+    #[Test]
+    public function itHasCorrectNameAndCategory(): void
     {
         $rule = new CommandInjectionRule(new SecurityPatternOptions());
 
@@ -30,14 +32,16 @@ final class CommandInjectionRuleTest extends TestCase
         self::assertSame('Detects potential command injection vulnerabilities', $rule->getDescription());
     }
 
-    public function testRequires(): void
+    #[Test]
+    public function itRequires(): void
     {
         $rule = new CommandInjectionRule(new SecurityPatternOptions());
 
         self::assertSame(['security.command_injection'], $rule->requires());
     }
 
-    public function testDisabledReturnsNoViolations(): void
+    #[Test]
+    public function itReturnsNoViolationsWhenDisabled(): void
     {
         $rule = new CommandInjectionRule(new SecurityPatternOptions(enabled: false));
 
@@ -48,7 +52,8 @@ final class CommandInjectionRuleTest extends TestCase
         self::assertCount(0, $rule->analyze($context));
     }
 
-    public function testNoFindingsReturnsNoViolations(): void
+    #[Test]
+    public function itReturnsNoViolationsWhenNoFindings(): void
     {
         $rule = new CommandInjectionRule(new SecurityPatternOptions());
 
@@ -57,7 +62,8 @@ final class CommandInjectionRuleTest extends TestCase
         self::assertCount(0, $rule->analyze($context));
     }
 
-    public function testSingleFindingCreatesViolation(): void
+    #[Test]
+    public function itCreatesViolationForSingleFinding(): void
     {
         $rule = new CommandInjectionRule(new SecurityPatternOptions());
 
@@ -75,7 +81,8 @@ final class CommandInjectionRuleTest extends TestCase
         self::assertStringContainsString('command injection', $violations[0]->message);
     }
 
-    public function testMultipleFindingsCreateMultipleViolations(): void
+    #[Test]
+    public function itCreatesMultipleViolationsForMultipleFindings(): void
     {
         $rule = new CommandInjectionRule(new SecurityPatternOptions());
 
@@ -92,7 +99,8 @@ final class CommandInjectionRuleTest extends TestCase
         self::assertSame(30, $violations[1]->location->line);
     }
 
-    public function testSuperglobalIncludedInViolationMessage(): void
+    #[Test]
+    public function itIncludesSuperglobalInViolationMessage(): void
     {
         $rule = new CommandInjectionRule(new SecurityPatternOptions());
 
@@ -108,7 +116,8 @@ final class CommandInjectionRuleTest extends TestCase
         self::assertStringContainsString('command injection', $violations[0]->message);
     }
 
-    public function testConstructorRejectsWrongOptionsType(): void
+    #[Test]
+    public function itRejectsWrongOptionsTypeInConstructor(): void
     {
         self::expectException(InvalidArgumentException::class);
 

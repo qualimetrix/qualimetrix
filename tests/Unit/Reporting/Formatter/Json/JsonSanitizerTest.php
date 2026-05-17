@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Reporting\Formatter\Json;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Reporting\Formatter\Json\JsonSanitizer;
 
@@ -20,71 +21,84 @@ final class JsonSanitizerTest extends TestCase
 
     // --- sanitizeFloat ---
 
-    public function testSanitizeFloatPassesThroughNormalValue(): void
+    #[Test]
+    public function itSanitizesFloatPassesThroughNormalValue(): void
     {
         self::assertSame(3.14, $this->sanitizer->sanitizeFloat(3.14));
     }
 
-    public function testSanitizeFloatPassesThroughZero(): void
+    #[Test]
+    public function itSanitizesFloatPassesThroughZero(): void
     {
         self::assertSame(0.0, $this->sanitizer->sanitizeFloat(0.0));
     }
 
-    public function testSanitizeFloatPassesThroughNegative(): void
+    #[Test]
+    public function itSanitizesFloatPassesThroughNegative(): void
     {
         self::assertSame(-42.5, $this->sanitizer->sanitizeFloat(-42.5));
     }
 
-    public function testSanitizeFloatConvertsNanToNull(): void
+    #[Test]
+    public function itSanitizesFloatConvertsNanToNull(): void
     {
         self::assertNull($this->sanitizer->sanitizeFloat(\NAN));
     }
 
-    public function testSanitizeFloatConvertsInfinityToNull(): void
+    #[Test]
+    public function itSanitizesFloatConvertsInfinityToNull(): void
     {
         self::assertNull($this->sanitizer->sanitizeFloat(\INF));
     }
 
-    public function testSanitizeFloatConvertsNegativeInfinityToNull(): void
+    #[Test]
+    public function itSanitizesFloatConvertsNegativeInfinityToNull(): void
     {
         self::assertNull($this->sanitizer->sanitizeFloat(-\INF));
     }
 
     // --- sanitizeNumeric ---
 
-    public function testSanitizeNumericPassesThroughInt(): void
+    #[Test]
+    public function itSanitizesNumericPassesThroughInt(): void
     {
         self::assertSame(42, $this->sanitizer->sanitizeNumeric(42));
     }
 
-    public function testSanitizeNumericPassesThroughFloat(): void
+    #[Test]
+    public function itSanitizesNumericPassesThroughFloat(): void
     {
         self::assertSame(1.5, $this->sanitizer->sanitizeNumeric(1.5));
     }
 
-    public function testSanitizeNumericPassesThroughNull(): void
+    #[Test]
+    public function itSanitizesNumericPassesThroughNull(): void
     {
         self::assertNull($this->sanitizer->sanitizeNumeric(null));
     }
 
-    public function testSanitizeNumericConvertsNanToNull(): void
+    #[Test]
+    public function itSanitizesNumericConvertsNanToNull(): void
     {
         self::assertNull($this->sanitizer->sanitizeNumeric(\NAN));
     }
 
-    public function testSanitizeNumericConvertsInfinityToNull(): void
+    #[Test]
+    public function itSanitizesNumericConvertsInfinityToNull(): void
     {
         self::assertNull($this->sanitizer->sanitizeNumeric(\INF));
     }
 
-    public function testSanitizeNumericConvertsNegativeInfinityToNull(): void
+    #[Test]
+    public function itSanitizesNumericConvertsNegativeInfinityToNull(): void
     {
         self::assertNull($this->sanitizer->sanitizeNumeric(-\INF));
     }
 
     // --- sanitizeFloatArray ---
 
-    public function testSanitizeFloatArrayPassesThroughCleanValues(): void
+    #[Test]
+    public function itSanitizesFloatArrayPassesThroughCleanValues(): void
     {
         $input = ['a' => 1.0, 'b' => 2, 'c' => 3.5];
         $expected = ['a' => 1.0, 'b' => 2, 'c' => 3.5];
@@ -92,7 +106,8 @@ final class JsonSanitizerTest extends TestCase
         self::assertSame($expected, $this->sanitizer->sanitizeFloatArray($input));
     }
 
-    public function testSanitizeFloatArrayConvertsNonFiniteValues(): void
+    #[Test]
+    public function itSanitizesFloatArrayConvertsNonFiniteValues(): void
     {
         $input = ['ok' => 5.0, 'nan' => \NAN, 'inf' => \INF, 'neg_inf' => -\INF, 'int' => 10];
         $result = $this->sanitizer->sanitizeFloatArray($input);
@@ -104,7 +119,8 @@ final class JsonSanitizerTest extends TestCase
         self::assertSame(10, $result['int']);
     }
 
-    public function testSanitizeFloatArrayHandlesEmptyArray(): void
+    #[Test]
+    public function itSanitizesFloatArrayHandlesEmptyArray(): void
     {
         self::assertSame([], $this->sanitizer->sanitizeFloatArray([]));
     }

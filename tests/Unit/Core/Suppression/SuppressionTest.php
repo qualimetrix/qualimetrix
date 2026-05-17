@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Core\Suppression;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Suppression\Suppression;
 use Qualimetrix\Core\Suppression\SuppressionType;
@@ -12,7 +13,8 @@ use Qualimetrix\Core\Suppression\SuppressionType;
 #[CoversClass(Suppression::class)]
 final class SuppressionTest extends TestCase
 {
-    public function testMatchesExactRule(): void
+    #[Test]
+    public function itMatchesExactRule(): void
     {
         $suppression = new Suppression(
             rule: 'complexity.cyclomatic',
@@ -25,7 +27,8 @@ final class SuppressionTest extends TestCase
         self::assertFalse($suppression->matches('complexity.cognitive'));
     }
 
-    public function testMatchesPrefixRule(): void
+    #[Test]
+    public function itMatchesPrefixRule(): void
     {
         $suppression = new Suppression(
             rule: 'complexity',
@@ -41,7 +44,8 @@ final class SuppressionTest extends TestCase
         self::assertFalse($suppression->matches('coupling'));
     }
 
-    public function testWildcardMatchesAllRules(): void
+    #[Test]
+    public function itWildcardMatchesAllRules(): void
     {
         $suppression = new Suppression(
             rule: '*',
@@ -55,7 +59,8 @@ final class SuppressionTest extends TestCase
         self::assertTrue($suppression->matches('size.method-count'));
     }
 
-    public function testConstructorProperties(): void
+    #[Test]
+    public function itConstructorProperties(): void
     {
         $suppression = new Suppression(
             rule: 'complexity.cyclomatic',
@@ -70,7 +75,8 @@ final class SuppressionTest extends TestCase
         self::assertSame(SuppressionType::NextLine, $suppression->type);
     }
 
-    public function testConstructorWithNullReason(): void
+    #[Test]
+    public function itConstructorWithNullReason(): void
     {
         $suppression = new Suppression(
             rule: 'complexity',
@@ -82,7 +88,8 @@ final class SuppressionTest extends TestCase
         self::assertNull($suppression->reason);
     }
 
-    public function testReverseDoesNotMatch(): void
+    #[Test]
+    public function itReverseDoesNotMatch(): void
     {
         $suppression = new Suppression(
             rule: 'complexity.cyclomatic.method',

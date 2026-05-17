@@ -6,6 +6,7 @@ namespace Qualimetrix\Tests\Unit\Core\Rule;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Rule\RuleMatcher;
 
@@ -42,34 +43,40 @@ final class RuleMatcherTest extends TestCase
     }
 
     #[DataProvider('matchesProvider')]
-    public function testMatches(string $pattern, string $subject, bool $expected): void
+    #[Test]
+    public function itMatches(string $pattern, string $subject, bool $expected): void
     {
         self::assertSame($expected, RuleMatcher::matches($pattern, $subject));
     }
 
-    public function testAnyMatchesReturnsTrueWhenOneMatches(): void
+    #[Test]
+    public function itAnyMatchesReturnsTrueWhenOneMatches(): void
     {
         self::assertTrue(RuleMatcher::anyMatches(['size', 'coupling'], 'size.method-count'));
     }
 
-    public function testAnyMatchesReturnsFalseWhenNoneMatch(): void
+    #[Test]
+    public function itAnyMatchesReturnsFalseWhenNoneMatch(): void
     {
         self::assertFalse(RuleMatcher::anyMatches(['size', 'coupling'], 'complexity.cyclomatic'));
     }
 
-    public function testAnyMatchesWithEmptyPatterns(): void
+    #[Test]
+    public function itAnyMatchesWithEmptyPatterns(): void
     {
         self::assertFalse(RuleMatcher::anyMatches([], 'complexity'));
     }
 
-    public function testAnyMatchesExactAndPrefix(): void
+    #[Test]
+    public function itAnyMatchesExactAndPrefix(): void
     {
         self::assertTrue(RuleMatcher::anyMatches(['complexity.cyclomatic'], 'complexity.cyclomatic'));
         self::assertTrue(RuleMatcher::anyMatches(['complexity.cyclomatic'], 'complexity.cyclomatic.method'));
         self::assertFalse(RuleMatcher::anyMatches(['complexity.cyclomatic'], 'complexity'));
     }
 
-    public function testAnyReverseMatchesSubjectIsPrefixOfPattern(): void
+    #[Test]
+    public function itAnyReverseMatchesSubjectIsPrefixOfPattern(): void
     {
         // 'complexity' is prefix of 'complexity.method' → true
         self::assertTrue(RuleMatcher::anyReverseMatches(['complexity.method'], 'complexity'));
@@ -77,17 +84,20 @@ final class RuleMatcherTest extends TestCase
         self::assertTrue(RuleMatcher::anyReverseMatches(['complexity.cyclomatic.method'], 'complexity'));
     }
 
-    public function testAnyReverseMatchesNoMatch(): void
+    #[Test]
+    public function itAnyReverseMatchesNoMatch(): void
     {
         self::assertFalse(RuleMatcher::anyReverseMatches(['size.method-count'], 'complexity'));
     }
 
-    public function testAnyReverseMatchesExact(): void
+    #[Test]
+    public function itAnyReverseMatchesExact(): void
     {
         self::assertTrue(RuleMatcher::anyReverseMatches(['complexity'], 'complexity'));
     }
 
-    public function testAnyReverseMatchesEmpty(): void
+    #[Test]
+    public function itAnyReverseMatchesEmpty(): void
     {
         self::assertFalse(RuleMatcher::anyReverseMatches([], 'complexity'));
     }

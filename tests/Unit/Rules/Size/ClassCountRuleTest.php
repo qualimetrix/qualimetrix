@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Rules\Size;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
@@ -23,40 +24,46 @@ use Qualimetrix\Rules\Size\ClassCountRule;
 #[CoversClass(ClassCountOptions::class)]
 final class ClassCountRuleTest extends TestCase
 {
-    public function testGetName(): void
+    #[Test]
+    public function itGetsName(): void
     {
         $rule = new ClassCountRule(new ClassCountOptions());
 
         self::assertSame('size.class-count', $rule->getName());
     }
 
-    public function testGetDescription(): void
+    #[Test]
+    public function itGetsDescription(): void
     {
         $rule = new ClassCountRule(new ClassCountOptions());
 
         self::assertSame('Checks number of classes per namespace', $rule->getDescription());
     }
 
-    public function testGetCategory(): void
+    #[Test]
+    public function itGetsCategory(): void
     {
         $rule = new ClassCountRule(new ClassCountOptions());
 
         self::assertSame(RuleCategory::Size, $rule->getCategory());
     }
 
-    public function testRequires(): void
+    #[Test]
+    public function itRequiresClassCount(): void
     {
         $rule = new ClassCountRule(new ClassCountOptions());
 
         self::assertSame(['classCount'], $rule->requires());
     }
 
-    public function testGetOptionsClass(): void
+    #[Test]
+    public function itGetsOptionsClass(): void
     {
         self::assertSame(ClassCountOptions::class, ClassCountRule::getOptionsClass());
     }
 
-    public function testGetCliAliases(): void
+    #[Test]
+    public function itGetsCliAliases(): void
     {
         self::assertSame(
             ['class-count-warning' => 'warning', 'class-count-error' => 'error'],
@@ -64,7 +71,8 @@ final class ClassCountRuleTest extends TestCase
         );
     }
 
-    public function testConstructorRejectsWrongOptionsType(): void
+    #[Test]
+    public function itRejectsWrongOptionsTypeInConstructor(): void
     {
         self::expectException(InvalidArgumentException::class);
 
@@ -86,7 +94,8 @@ final class ClassCountRuleTest extends TestCase
         });
     }
 
-    public function testAnalyzeDisabledReturnsEmpty(): void
+    #[Test]
+    public function itReturnsEmptyWhenDisabled(): void
     {
         $rule = new ClassCountRule(new ClassCountOptions(enabled: false));
 
@@ -98,7 +107,8 @@ final class ClassCountRuleTest extends TestCase
         self::assertSame([], $rule->analyze($context));
     }
 
-    public function testAnalyzeReturnsEmptyWhenBelowThreshold(): void
+    #[Test]
+    public function itReturnsEmptyWhenBelowThreshold(): void
     {
         $rule = new ClassCountRule(new ClassCountOptions());
 
@@ -118,7 +128,8 @@ final class ClassCountRuleTest extends TestCase
         self::assertSame([], $rule->analyze($context));
     }
 
-    public function testAnalyzeGeneratesWarning(): void
+    #[Test]
+    public function itGeneratesWarning(): void
     {
         $rule = new ClassCountRule(new ClassCountOptions());
 
@@ -145,7 +156,8 @@ final class ClassCountRuleTest extends TestCase
         self::assertSame('size.class-count', $violations[0]->violationCode);
     }
 
-    public function testAnalyzeGeneratesError(): void
+    #[Test]
+    public function itGeneratesError(): void
     {
         $rule = new ClassCountRule(new ClassCountOptions());
 
@@ -169,8 +181,9 @@ final class ClassCountRuleTest extends TestCase
         self::assertSame('Class count is 30, exceeds threshold of 25. Consider splitting into sub-namespaces', $violations[0]->message);
     }
 
+    #[Test]
     #[DataProvider('thresholdDataProvider')]
-    public function testThresholdBoundaries(
+    public function itRespectsBoundaryThresholds(
         int $classCount,
         int $warning,
         int $error,
@@ -212,7 +225,8 @@ final class ClassCountRuleTest extends TestCase
         yield 'above error' => [20, 10, 15, Severity::Error];
     }
 
-    public function testOptionsFromArrayDefaults(): void
+    #[Test]
+    public function itLoadsOptionsDefaultsFromArray(): void
     {
         $options = ClassCountOptions::fromArray(['enabled' => true]);
 
@@ -221,7 +235,8 @@ final class ClassCountRuleTest extends TestCase
         self::assertSame(25, $options->error);
     }
 
-    public function testOptionsFromArrayCustomValues(): void
+    #[Test]
+    public function itLoadsOptionsCustomValuesFromArray(): void
     {
         $options = ClassCountOptions::fromArray([
             'enabled' => true,
@@ -234,7 +249,8 @@ final class ClassCountRuleTest extends TestCase
         self::assertSame(20, $options->error);
     }
 
-    public function testOptionsFromEmptyArrayDisabled(): void
+    #[Test]
+    public function itDisablesOptionsWhenLoadedFromEmptyArray(): void
     {
         $options = ClassCountOptions::fromArray([]);
 

@@ -6,6 +6,7 @@ namespace Qualimetrix\Tests\Unit\Reporting\Health;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Reporting\Health\MetricHintProvider;
 
@@ -21,7 +22,8 @@ final class MetricHintProviderTest extends TestCase
 
     // --- getLabel ---
 
-    public function testGetLabelForKnownKey(): void
+    #[Test]
+    public function itGetLabelForKnownKey(): void
     {
         self::assertSame('Cyclomatic', $this->provider->getLabel('ccn'));
         self::assertSame('Cyclomatic (avg)', $this->provider->getLabel('ccn.avg'));
@@ -29,12 +31,14 @@ final class MetricHintProviderTest extends TestCase
         self::assertSame('LOC', $this->provider->getLabel('loc'));
     }
 
-    public function testGetLabelForUnknownKey(): void
+    #[Test]
+    public function itGetLabelForUnknownKey(): void
     {
         self::assertNull($this->provider->getLabel('nonexistent'));
     }
 
-    public function testGetLabelWithSuffixResolution(): void
+    #[Test]
+    public function itGetLabelWithSuffixResolution(): void
     {
         // ccn.max is not explicitly defined, but ccn is — should resolve via suffix stripping
         self::assertSame('Cyclomatic', $this->provider->getLabel('ccn.max'));
@@ -42,7 +46,8 @@ final class MetricHintProviderTest extends TestCase
         self::assertSame('CBO', $this->provider->getLabel('cbo.sum'));
     }
 
-    public function testGetLabelPreferExactMatch(): void
+    #[Test]
+    public function itGetLabelPreferExactMatch(): void
     {
         // ccn.avg is explicitly defined — should return its own label, not ccn's
         self::assertSame('Cyclomatic (avg)', $this->provider->getLabel('ccn.avg'));
@@ -50,73 +55,85 @@ final class MetricHintProviderTest extends TestCase
 
     // --- getExplanation ---
 
-    public function testGetExplanationLowerIsBetterBadValue(): void
+    #[Test]
+    public function itGetExplanationLowerIsBetterBadValue(): void
     {
         // ccn good = "below 4", value 10 is bad
         self::assertSame('too many code paths', $this->provider->getExplanation('ccn', 10.0));
     }
 
-    public function testGetExplanationLowerIsBetterGoodValue(): void
+    #[Test]
+    public function itGetExplanationLowerIsBetterGoodValue(): void
     {
         // ccn good = "below 4", value 3 is good
         self::assertSame('manageable branching', $this->provider->getExplanation('ccn', 3.0));
     }
 
-    public function testGetExplanationLowerIsBetterAtThreshold(): void
+    #[Test]
+    public function itGetExplanationLowerIsBetterAtThreshold(): void
     {
         // ccn good = "below 4", value exactly 4 is still good (<=)
         self::assertSame('manageable branching', $this->provider->getExplanation('ccn', 4.0));
     }
 
-    public function testGetExplanationHigherIsBetterBadValue(): void
+    #[Test]
+    public function itGetExplanationHigherIsBetterBadValue(): void
     {
         // tcc good = "above 0.5", value 0.2 is bad
         self::assertSame('methods share few common fields', $this->provider->getExplanation('tcc', 0.2));
     }
 
-    public function testGetExplanationHigherIsBetterGoodValue(): void
+    #[Test]
+    public function itGetExplanationHigherIsBetterGoodValue(): void
     {
         // tcc good = "above 0.5", value 0.8 is good
         self::assertSame('methods share common fields', $this->provider->getExplanation('tcc', 0.8));
     }
 
-    public function testGetExplanationHigherIsBetterAtThreshold(): void
+    #[Test]
+    public function itGetExplanationHigherIsBetterAtThreshold(): void
     {
         // tcc good = "above 0.5", value exactly 0.5 is good (>=)
         self::assertSame('methods share common fields', $this->provider->getExplanation('tcc', 0.5));
     }
 
-    public function testGetExplanationRangeBadValue(): void
+    #[Test]
+    public function itGetExplanationRangeBadValue(): void
     {
         // instability good = "0.3 – 0.7", value 0.1 is outside range
         self::assertSame('package is highly unstable', $this->provider->getExplanation('instability', 0.1));
         self::assertSame('package is highly unstable', $this->provider->getExplanation('instability', 0.9));
     }
 
-    public function testGetExplanationRangeGoodValue(): void
+    #[Test]
+    public function itGetExplanationRangeGoodValue(): void
     {
         // instability good = "0.3 – 0.7", value 0.5 is in range
         self::assertSame('balanced stability', $this->provider->getExplanation('instability', 0.5));
     }
 
-    public function testGetExplanationRangeAtBoundaries(): void
+    #[Test]
+    public function itGetExplanationRangeAtBoundaries(): void
     {
         self::assertSame('balanced stability', $this->provider->getExplanation('instability', 0.3));
         self::assertSame('balanced stability', $this->provider->getExplanation('instability', 0.7));
     }
 
-    public function testGetExplanationNeutral(): void
+    #[Test]
+    public function itGetExplanationNeutral(): void
     {
         self::assertSame('', $this->provider->getExplanation('loc', 100.0));
         self::assertSame('', $this->provider->getExplanation('lloc', 50.0));
     }
 
-    public function testGetExplanationUnknownKey(): void
+    #[Test]
+    public function itGetExplanationUnknownKey(): void
     {
         self::assertSame('', $this->provider->getExplanation('nonexistent', 5.0));
     }
 
-    public function testGetExplanationLcomPlaceholder(): void
+    #[Test]
+    public function itGetExplanationLcomPlaceholder(): void
     {
         // lcom bad = "class has {value} unrelated method groups"
         self::assertSame(
@@ -125,19 +142,22 @@ final class MetricHintProviderTest extends TestCase
         );
     }
 
-    public function testGetExplanationLcomGoodValue(): void
+    #[Test]
+    public function itGetExplanationLcomGoodValue(): void
     {
         // lcom good = "1 or less"
         self::assertSame('class is cohesive', $this->provider->getExplanation('lcom', 1.0));
     }
 
-    public function testGetExplanationWithSuffixResolution(): void
+    #[Test]
+    public function itGetExplanationWithSuffixResolution(): void
     {
         // ccn.max resolves to ccn entry
         self::assertSame('too many code paths', $this->provider->getExplanation('ccn.max', 10.0));
     }
 
-    public function testGetExplanationTypeCoveragePercentage(): void
+    #[Test]
+    public function itGetExplanationTypeCoveragePercentage(): void
     {
         // typeCoverage.pct good = "above 80%", value 90 is good
         self::assertSame('well-typed code', $this->provider->getExplanation('typeCoverage.pct', 90.0));
@@ -146,26 +166,30 @@ final class MetricHintProviderTest extends TestCase
 
     // --- getGoodValue ---
 
-    public function testGetGoodValueKnown(): void
+    #[Test]
+    public function itGetGoodValueKnown(): void
     {
         self::assertSame('below 4', $this->provider->getGoodValue('ccn'));
         self::assertSame('above 0.5', $this->provider->getGoodValue('tcc'));
         self::assertSame('0.3 – 0.7', $this->provider->getGoodValue('instability'));
     }
 
-    public function testGetGoodValueNeutral(): void
+    #[Test]
+    public function itGetGoodValueNeutral(): void
     {
         self::assertNull($this->provider->getGoodValue('loc'));
     }
 
-    public function testGetGoodValueUnknown(): void
+    #[Test]
+    public function itGetGoodValueUnknown(): void
     {
         self::assertNull($this->provider->getGoodValue('nonexistent'));
     }
 
     // --- getDirection ---
 
-    public function testGetDirectionKnown(): void
+    #[Test]
+    public function itGetDirectionKnown(): void
     {
         self::assertSame('lower_is_better', $this->provider->getDirection('ccn'));
         self::assertSame('higher_is_better', $this->provider->getDirection('tcc'));
@@ -173,14 +197,16 @@ final class MetricHintProviderTest extends TestCase
         self::assertSame('neutral', $this->provider->getDirection('loc'));
     }
 
-    public function testGetDirectionUnknown(): void
+    #[Test]
+    public function itGetDirectionUnknown(): void
     {
         self::assertNull($this->provider->getDirection('nonexistent'));
     }
 
     // --- getDecomposition ---
 
-    public function testGetDecompositionKnownDimension(): void
+    #[Test]
+    public function itGetDecompositionKnownDimension(): void
     {
         self::assertSame(['ccn.avg', 'cognitive.avg', 'ccn.p95', 'cognitive.p95'], $this->provider->getDecomposition('health.complexity'));
         self::assertSame(['tcc.avg', 'lcom.avg'], $this->provider->getDecomposition('health.cohesion'));
@@ -190,7 +216,8 @@ final class MetricHintProviderTest extends TestCase
         self::assertSame([], $this->provider->getDecomposition('health.overall'));
     }
 
-    public function testGetDecompositionUnknownDimension(): void
+    #[Test]
+    public function itGetDecompositionUnknownDimension(): void
     {
         self::assertSame([], $this->provider->getDecomposition('health.unknown'));
     }
@@ -233,14 +260,16 @@ final class MetricHintProviderTest extends TestCase
     }
 
     #[DataProvider('scoreLabelProvider')]
-    public function testGetScoreLabel(float $score, float $warnThreshold, float $errThreshold, string $expected): void
+    #[Test]
+    public function itGetScoreLabel(float $score, float $warnThreshold, float $errThreshold, string $expected): void
     {
         self::assertSame($expected, $this->provider->getScoreLabel($score, $warnThreshold, $errThreshold));
     }
 
     // --- getHealthDimensionLabel ---
 
-    public function testGetHealthDimensionLabelBad(): void
+    #[Test]
+    public function itGetHealthDimensionLabelBad(): void
     {
         self::assertSame('high complexity', $this->provider->getHealthDimensionLabel('complexity', true));
         self::assertSame('low cohesion', $this->provider->getHealthDimensionLabel('cohesion', true));
@@ -249,7 +278,8 @@ final class MetricHintProviderTest extends TestCase
         self::assertSame('hard to maintain', $this->provider->getHealthDimensionLabel('maintainability', true));
     }
 
-    public function testGetHealthDimensionLabelGood(): void
+    #[Test]
+    public function itGetHealthDimensionLabelGood(): void
     {
         self::assertSame('low complexity', $this->provider->getHealthDimensionLabel('complexity', false));
         self::assertSame('good cohesion', $this->provider->getHealthDimensionLabel('cohesion', false));
@@ -258,7 +288,8 @@ final class MetricHintProviderTest extends TestCase
         self::assertSame('maintainable', $this->provider->getHealthDimensionLabel('maintainability', false));
     }
 
-    public function testGetHealthDimensionLabelUnknown(): void
+    #[Test]
+    public function itGetHealthDimensionLabelUnknown(): void
     {
         self::assertSame('unknown', $this->provider->getHealthDimensionLabel('unknown', true));
         self::assertSame('unknown', $this->provider->getHealthDimensionLabel('unknown', false));
@@ -266,7 +297,8 @@ final class MetricHintProviderTest extends TestCase
 
     // --- exportForHtml ---
 
-    public function testExportForHtmlReturnsExpectedTopLevelKeys(): void
+    #[Test]
+    public function itExportForHtmlReturnsExpectedTopLevelKeys(): void
     {
         $result = $this->provider->exportForHtml();
 
@@ -274,7 +306,8 @@ final class MetricHintProviderTest extends TestCase
         self::assertArrayHasKey('healthDecomposition', $result);
     }
 
-    public function testExportForHtmlMetricHintsContainsAllRangedMetrics(): void
+    #[Test]
+    public function itExportForHtmlMetricHintsContainsAllRangedMetrics(): void
     {
         $result = $this->provider->exportForHtml();
         $hints = $result['metricHints'];
@@ -303,7 +336,8 @@ final class MetricHintProviderTest extends TestCase
         self::assertArrayNotHasKey('cloc', $hints);
     }
 
-    public function testExportForHtmlLabelsAreDescriptive(): void
+    #[Test]
+    public function itExportForHtmlLabelsAreDescriptive(): void
     {
         $result = $this->provider->exportForHtml();
 
@@ -314,7 +348,8 @@ final class MetricHintProviderTest extends TestCase
         self::assertSame('Maintainability Index', $result['metricHints']['mi']['label']);
     }
 
-    public function testExportForHtmlEveryRangedMetricHasLabel(): void
+    #[Test]
+    public function itExportForHtmlEveryRangedMetricHasLabel(): void
     {
         $result = $this->provider->exportForHtml();
 
@@ -325,7 +360,8 @@ final class MetricHintProviderTest extends TestCase
         }
     }
 
-    public function testExportForHtmlRangesEndWithAbove(): void
+    #[Test]
+    public function itExportForHtmlRangesEndWithAbove(): void
     {
         $result = $this->provider->exportForHtml();
 
@@ -336,7 +372,8 @@ final class MetricHintProviderTest extends TestCase
         }
     }
 
-    public function testExportForHtmlFormatTemplateOnlyOnLcom(): void
+    #[Test]
+    public function itExportForHtmlFormatTemplateOnlyOnLcom(): void
     {
         $result = $this->provider->exportForHtml();
 
@@ -350,7 +387,8 @@ final class MetricHintProviderTest extends TestCase
         }
     }
 
-    public function testExportForHtmlHealthDecompositionHasAllDimensions(): void
+    #[Test]
+    public function itExportForHtmlHealthDecompositionHasAllDimensions(): void
     {
         $result = $this->provider->exportForHtml();
         $decomp = $result['healthDecomposition'];
@@ -370,7 +408,8 @@ final class MetricHintProviderTest extends TestCase
         }
     }
 
-    public function testExportForHtmlHealthInputsHaveRequiredFields(): void
+    #[Test]
+    public function itExportForHtmlHealthInputsHaveRequiredFields(): void
     {
         $result = $this->provider->exportForHtml();
 

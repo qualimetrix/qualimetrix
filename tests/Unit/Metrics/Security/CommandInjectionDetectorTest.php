@@ -16,6 +16,7 @@ use PhpParser\Node\Scalar\InterpolatedString;
 use PhpParser\Node\Scalar\String_;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Metrics\Security\CommandInjectionDetector;
 use Qualimetrix\Metrics\Security\SuperglobalAnalyzer;
@@ -32,8 +33,9 @@ final class CommandInjectionDetectorTest extends TestCase
 
     // --- True positives: direct superglobal in command functions ---
 
+    #[Test]
     #[DataProvider('provideCommandFunctions')]
-    public function testDetectsDirectSuperglobalInCommandFunction(string $functionName): void
+    public function itDetectsDirectSuperglobalInCommandFunction(string $functionName): void
     {
         $funcCall = $this->createFuncCall($functionName, [$this->createGetAccess('cmd')]);
 
@@ -60,7 +62,8 @@ final class CommandInjectionDetectorTest extends TestCase
 
     // --- True positives: interpolated string ---
 
-    public function testDetectsInterpolatedSuperglobalInExec(): void
+    #[Test]
+    public function itDetectsInterpolatedSuperglobalInExec(): void
     {
         $interpolated = new InterpolatedString([
             new InterpolatedStringPart('ls '),
@@ -75,7 +78,8 @@ final class CommandInjectionDetectorTest extends TestCase
 
     // --- True positives: concatenation ---
 
-    public function testDetectsConcatSuperglobalInExec(): void
+    #[Test]
+    public function itDetectsConcatSuperglobalInExec(): void
     {
         $concat = new Concat(
             new String_('ls '),
@@ -90,7 +94,8 @@ final class CommandInjectionDetectorTest extends TestCase
 
     // --- True negatives: sanitized ---
 
-    public function testNoDetectionForEscapeshellarg(): void
+    #[Test]
+    public function itDoesNotDetectForEscapeshellarg(): void
     {
         $sanitized = new FuncCall(
             new Name('escapeshellarg'),
@@ -103,7 +108,8 @@ final class CommandInjectionDetectorTest extends TestCase
         self::assertCount(0, $locations);
     }
 
-    public function testNoDetectionForEscapeshellcmd(): void
+    #[Test]
+    public function itDoesNotDetectForEscapeshellcmd(): void
     {
         $sanitized = new FuncCall(
             new Name('escapeshellcmd'),
@@ -116,7 +122,8 @@ final class CommandInjectionDetectorTest extends TestCase
         self::assertCount(0, $locations);
     }
 
-    public function testNoDetectionForIntCastInConcat(): void
+    #[Test]
+    public function itDoesNotDetectForIntCastInConcat(): void
     {
         $cast = new Cast\Int_($this->createGetAccess('pid'));
         $concat = new Concat(new String_('kill '), $cast);
@@ -129,7 +136,8 @@ final class CommandInjectionDetectorTest extends TestCase
 
     // --- True negatives: safe inputs ---
 
-    public function testNoDetectionForSafeVariable(): void
+    #[Test]
+    public function itDoesNotDetectForSafeVariable(): void
     {
         $funcCall = $this->createFuncCall('exec', [new Variable('safeCommand')]);
 
@@ -138,7 +146,8 @@ final class CommandInjectionDetectorTest extends TestCase
         self::assertCount(0, $locations);
     }
 
-    public function testNoDetectionForLiteral(): void
+    #[Test]
+    public function itDoesNotDetectForLiteral(): void
     {
         $funcCall = $this->createFuncCall('exec', [new String_('ls -la')]);
 
@@ -147,7 +156,8 @@ final class CommandInjectionDetectorTest extends TestCase
         self::assertCount(0, $locations);
     }
 
-    public function testNoDetectionForNonDangerousSuperglobal(): void
+    #[Test]
+    public function itDoesNotDetectForNonDangerousSuperglobal(): void
     {
         $sessionAccess = new ArrayDimFetch(new Variable('_SESSION'), new String_('cmd'));
         $funcCall = $this->createFuncCall('exec', [$sessionAccess]);
@@ -159,7 +169,8 @@ final class CommandInjectionDetectorTest extends TestCase
 
     // --- Edge cases ---
 
-    public function testNoDetectionForNonCommandFunction(): void
+    #[Test]
+    public function itDoesNotDetectForNonCommandFunction(): void
     {
         $funcCall = $this->createFuncCall('array_map', [$this->createGetAccess('cmd')]);
 
@@ -168,7 +179,8 @@ final class CommandInjectionDetectorTest extends TestCase
         self::assertCount(0, $locations);
     }
 
-    public function testNoDetectionForDynamicFunctionName(): void
+    #[Test]
+    public function itDoesNotDetectForDynamicFunctionName(): void
     {
         $funcCall = new FuncCall(new Variable('func'));
 
@@ -177,7 +189,8 @@ final class CommandInjectionDetectorTest extends TestCase
         self::assertCount(0, $locations);
     }
 
-    public function testDetectsNestedArrayAccessInSuperglobal(): void
+    #[Test]
+    public function itDetectsNestedArrayAccessInSuperglobal(): void
     {
         $nested = new ArrayDimFetch(
             $this->createGetAccess('cmd'),

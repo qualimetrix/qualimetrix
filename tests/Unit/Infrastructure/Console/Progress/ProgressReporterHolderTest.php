@@ -4,20 +4,23 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Unit\Infrastructure\Console\Progress;
 
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Progress\NullProgressReporter;
 use Qualimetrix\Infrastructure\Console\Progress\ProgressReporterHolder;
 
 final class ProgressReporterHolderTest extends TestCase
 {
-    public function testInitializesWithNullProgressReporter(): void
+    #[Test]
+    public function itInitializesWithNullProgressReporter(): void
     {
         $holder = new ProgressReporterHolder();
 
         self::assertInstanceOf(NullProgressReporter::class, $holder->getReporter());
     }
 
-    public function testCanSetAndGetReporter(): void
+    #[Test]
+    public function itCanSetAndGetReporter(): void
     {
         $holder = new ProgressReporterHolder();
         $reporter = new NullProgressReporter();
@@ -27,7 +30,8 @@ final class ProgressReporterHolderTest extends TestCase
         self::assertSame($reporter, $holder->getReporter());
     }
 
-    public function testCanReplaceReporter(): void
+    #[Test]
+    public function itCanReplaceReporter(): void
     {
         $holder = new ProgressReporterHolder();
         $reporter1 = new NullProgressReporter();

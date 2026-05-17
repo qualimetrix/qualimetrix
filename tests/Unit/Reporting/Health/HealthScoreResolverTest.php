@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Reporting\Health;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Symbol\SymbolInfo;
@@ -30,7 +31,8 @@ final class HealthScoreResolverTest extends TestCase
         );
     }
 
-    public function testReturnsProjectHealthScoresWhenNoFilter(): void
+    #[Test]
+    public function itReturnsProjectHealthScoresWhenNoFilter(): void
     {
         $projectScores = [
             'complexity' => new HealthScore('complexity', 80.0, 'Good', 50.0, 25.0),
@@ -54,7 +56,8 @@ final class HealthScoreResolverTest extends TestCase
         self::assertSame($projectScores, $result);
     }
 
-    public function testReturnsProjectHealthScoresWhenNoMetrics(): void
+    #[Test]
+    public function itReturnsProjectHealthScoresWhenNoMetrics(): void
     {
         $projectScores = [
             'complexity' => new HealthScore('complexity', 80.0, 'Good', 50.0, 25.0),
@@ -79,7 +82,8 @@ final class HealthScoreResolverTest extends TestCase
         self::assertSame($projectScores, $result);
     }
 
-    public function testNamespaceFilterReturnsSubtreeHealthScores(): void
+    #[Test]
+    public function itNamespaceFilterReturnsSubtreeHealthScores(): void
     {
         $nsPath = SymbolPath::forNamespace('App\\Service');
         $nsSymbol = new SymbolInfo($nsPath, '', null);
@@ -115,7 +119,8 @@ final class HealthScoreResolverTest extends TestCase
         self::assertArrayHasKey('complexity', $result);
     }
 
-    public function testNamespaceFilterReturnsEmptyWhenNoMatchingNamespaces(): void
+    #[Test]
+    public function itNamespaceFilterReturnsEmptyWhenNoMatchingNamespaces(): void
     {
         $metrics = $this->createMetricRepository(new MetricBag());
 
@@ -137,7 +142,8 @@ final class HealthScoreResolverTest extends TestCase
         self::assertSame([], $result);
     }
 
-    public function testClassFilterReturnsClassHealthScores(): void
+    #[Test]
+    public function itClassFilterReturnsClassHealthScores(): void
     {
         $classPath = SymbolPath::forClass('App', 'UserService');
         $classSymbol = new SymbolInfo($classPath, 'src/UserService.php', null);
@@ -172,7 +178,8 @@ final class HealthScoreResolverTest extends TestCase
         self::assertArrayHasKey('complexity', $result);
     }
 
-    public function testClassFilterFallsBackToProjectWhenClassNotFound(): void
+    #[Test]
+    public function itClassFilterFallsBackToProjectWhenClassNotFound(): void
     {
         $projectScores = [
             'complexity' => new HealthScore('complexity', 80.0, 'Good', 50.0, 25.0),

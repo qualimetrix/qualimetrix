@@ -9,6 +9,7 @@ use PhpParser\Node\Stmt\Trait_;
 use PhpParser\Node\Stmt\TraitUse;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Metrics\Structure\TraitUsageResolver;
 use Qualimetrix\Metrics\Structure\UnusedPrivateClassData;
@@ -16,7 +17,8 @@ use Qualimetrix\Metrics\Structure\UnusedPrivateClassData;
 #[CoversClass(TraitUsageResolver::class)]
 final class TraitUsageResolverTest extends TestCase
 {
-    public function testSimpleTraitUsageRecordsMethodCall(): void
+    #[Test]
+    public function itRecordsMethodCallsFromSimpleTraitUsage(): void
     {
         $code = <<<'PHP'
 <?php
@@ -49,7 +51,8 @@ PHP;
         self::assertArrayHasKey('helper', $data->usedMethods);
     }
 
-    public function testSimpleTraitUsageRecordsPropertyAndConstant(): void
+    #[Test]
+    public function itRecordsPropertyAndConstantFromTraitUsage(): void
     {
         $code = <<<'PHP'
 <?php
@@ -79,7 +82,8 @@ PHP;
         self::assertArrayHasKey('VALUE', $data->usedConstants);
     }
 
-    public function testNestedTraitResolution(): void
+    #[Test]
+    public function itResolvesNestedTraitUsage(): void
     {
         $code = <<<'PHP'
 <?php
@@ -117,7 +121,8 @@ PHP;
         self::assertArrayHasKey('deepHelper', $data->usedMethods);
     }
 
-    public function testCycleDetectionPreventsinfiniteRecursion(): void
+    #[Test]
+    public function itDetectsCyclesAndPreventsInfiniteRecursion(): void
     {
         $code = <<<'PHP'
 <?php
@@ -160,7 +165,8 @@ PHP;
         self::assertArrayHasKey('helperB', $data->usedMethods);
     }
 
-    public function testMultipleTraitsOnOneClass(): void
+    #[Test]
+    public function itResolvesMultipleTraitsOnSameClass(): void
     {
         $code = <<<'PHP'
 <?php
@@ -197,7 +203,8 @@ PHP;
         self::assertArrayHasKey('fromB', $data->usedMethods);
     }
 
-    public function testTraitNotFoundInClassMapIsSkipped(): void
+    #[Test]
+    public function itSkipsTraitNotFoundInClassMap(): void
     {
         $data = new UnusedPrivateClassData('App', 'MyClass', 1);
         $classStmts = [new TraitUse([new Name('NonExistent')])];
@@ -210,7 +217,8 @@ PHP;
         self::assertSame([], $data->usedConstants);
     }
 
-    public function testEmptyClassStmtsDoesNothing(): void
+    #[Test]
+    public function itDoesNothingForEmptyClassStatements(): void
     {
         $data = new UnusedPrivateClassData('App', 'MyClass', 1);
 
@@ -220,7 +228,8 @@ PHP;
         self::assertSame([], $data->usedMethods);
     }
 
-    public function testEmptyTraitDefinitionsWithNoTraitUseStatements(): void
+    #[Test]
+    public function itHandlesEmptyTraitWithNoTraitUseStatements(): void
     {
         $code = <<<'PHP'
 <?php
@@ -245,7 +254,8 @@ PHP;
         self::assertSame([], $data->usedMethods);
     }
 
-    public function testThreeLevelsDeepTraitHierarchy(): void
+    #[Test]
+    public function itResolvesThreeLevelsDeepTraitHierarchy(): void
     {
         $code = <<<'PHP'
 <?php
@@ -299,7 +309,8 @@ PHP;
         self::assertArrayHasKey('staticFromC', $data->usedMethods);
     }
 
-    public function testTraitLookupByFqn(): void
+    #[Test]
+    public function itLooksUpTraitByFullyQualifiedName(): void
     {
         $code = <<<'PHP'
 <?php
@@ -328,7 +339,8 @@ PHP;
         self::assertArrayHasKey('found', $data->usedMethods);
     }
 
-    public function testTraitLookupByShortName(): void
+    #[Test]
+    public function itLooksUpTraitByShortName(): void
     {
         $code = <<<'PHP'
 <?php
@@ -357,7 +369,8 @@ PHP;
         self::assertArrayHasKey('found', $data->usedMethods);
     }
 
-    public function testTraitWithoutNamespace(): void
+    #[Test]
+    public function itHandlesTraitWithoutNamespace(): void
     {
         $code = <<<'PHP'
 <?php
@@ -385,7 +398,8 @@ PHP;
         self::assertArrayHasKey('helper', $data->usedMethods);
     }
 
-    public function testCollectTraitDefinitionsSkipsAnonymousTraitName(): void
+    #[Test]
+    public function itSkipsAnonymousTraitNamesWhenCollecting(): void
     {
         // Trait_ with null name should be skipped
         $traitNode = new Trait_('TemporaryTrait');
@@ -395,14 +409,16 @@ PHP;
         self::assertSame([], $definitions);
     }
 
-    public function testCollectTraitDefinitionsFromEmptyAst(): void
+    #[Test]
+    public function itReturnsEmptyDefinitionsForEmptyAst(): void
     {
         $definitions = TraitUsageResolver::collectTraitDefinitions([]);
 
         self::assertSame([], $definitions);
     }
 
-    public function testTraitWithAbstractMethodIsSkipped(): void
+    #[Test]
+    public function itSkipsAbstractMethodsInTrait(): void
     {
         $code = <<<'PHP'
 <?php
@@ -434,7 +450,8 @@ PHP;
         self::assertArrayHasKey('helper', $data->usedMethods);
     }
 
-    public function testStaticUsagesInTrait(): void
+    #[Test]
+    public function itRecordsStaticMethodPropertyAndConstantUsagesFromTrait(): void
     {
         $code = <<<'PHP'
 <?php
@@ -466,7 +483,8 @@ PHP;
         self::assertArrayHasKey('MY_CONST', $data->usedConstants);
     }
 
-    public function testNonTraitUseStatementsAreIgnored(): void
+    #[Test]
+    public function itIgnoresNonTraitUseStatements(): void
     {
         $code = <<<'PHP'
 <?php
@@ -497,7 +515,8 @@ PHP;
         self::assertArrayHasKey('helper', $data->usedMethods);
     }
 
-    public function testSelfClassConstNotTrackedAsConstant(): void
+    #[Test]
+    public function itDoesNotTrackSelfClassAsConstant(): void
     {
         $code = <<<'PHP'
 <?php
@@ -526,7 +545,8 @@ PHP;
         self::assertSame([], $data->usedConstants);
     }
 
-    public function testMultipleTraitUseStatements(): void
+    #[Test]
+    public function itHandlesMultipleSeparateTraitUseStatements(): void
     {
         $code = <<<'PHP'
 <?php

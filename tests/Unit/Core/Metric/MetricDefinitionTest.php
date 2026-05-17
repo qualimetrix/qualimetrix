@@ -6,6 +6,7 @@ namespace Qualimetrix\Tests\Unit\Core\Metric;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\MetricDefinition;
@@ -14,7 +15,8 @@ use Qualimetrix\Core\Metric\SymbolLevel;
 #[CoversClass(MetricDefinition::class)]
 final class MetricDefinitionTest extends TestCase
 {
-    public function testConstructorSetsProperties(): void
+    #[Test]
+    public function itConstructorSetsProperties(): void
     {
         $aggregations = [
             SymbolLevel::Class_->value => [AggregationStrategy::Sum, AggregationStrategy::Average],
@@ -32,7 +34,8 @@ final class MetricDefinitionTest extends TestCase
         self::assertSame($aggregations, $definition->aggregations);
     }
 
-    public function testConstructorWithDefaultAggregations(): void
+    #[Test]
+    public function itConstructorWithDefaultAggregations(): void
     {
         $definition = new MetricDefinition(
             name: 'loc',
@@ -45,7 +48,8 @@ final class MetricDefinitionTest extends TestCase
     }
 
     #[DataProvider('aggregatedNameProvider')]
-    public function testAggregatedName(string $metricName, AggregationStrategy $strategy, string $expected): void
+    #[Test]
+    public function itAggregatedName(string $metricName, AggregationStrategy $strategy, string $expected): void
     {
         $definition = new MetricDefinition(
             name: $metricName,
@@ -69,7 +73,8 @@ final class MetricDefinitionTest extends TestCase
         yield 'classCount with sum' => ['classCount', AggregationStrategy::Sum, 'classCount.sum'];
     }
 
-    public function testGetStrategiesForLevelReturnsStrategies(): void
+    #[Test]
+    public function itGetStrategiesForLevelReturnsStrategies(): void
     {
         $definition = new MetricDefinition(
             name: 'ccn',
@@ -94,7 +99,8 @@ final class MetricDefinitionTest extends TestCase
         );
     }
 
-    public function testGetStrategiesForLevelReturnsEmptyArrayForUndefinedLevel(): void
+    #[Test]
+    public function itGetStrategiesForLevelReturnsEmptyArrayForUndefinedLevel(): void
     {
         $definition = new MetricDefinition(
             name: 'ccn',
@@ -108,7 +114,8 @@ final class MetricDefinitionTest extends TestCase
         self::assertSame([], $definition->getStrategiesForLevel(SymbolLevel::Namespace_));
     }
 
-    public function testHasAggregationsForLevelReturnsTrueWhenDefined(): void
+    #[Test]
+    public function itHasAggregationsForLevelReturnsTrueWhenDefined(): void
     {
         $definition = new MetricDefinition(
             name: 'ccn',
@@ -121,7 +128,8 @@ final class MetricDefinitionTest extends TestCase
         self::assertTrue($definition->hasAggregationsForLevel(SymbolLevel::Class_));
     }
 
-    public function testHasAggregationsForLevelReturnsFalseWhenNotDefined(): void
+    #[Test]
+    public function itHasAggregationsForLevelReturnsFalseWhenNotDefined(): void
     {
         $definition = new MetricDefinition(
             name: 'ccn',
@@ -135,7 +143,8 @@ final class MetricDefinitionTest extends TestCase
         self::assertFalse($definition->hasAggregationsForLevel(SymbolLevel::Project));
     }
 
-    public function testHasAggregationsForLevelReturnsFalseForEmptyArray(): void
+    #[Test]
+    public function itHasAggregationsForLevelReturnsFalseForEmptyArray(): void
     {
         $definition = new MetricDefinition(
             name: 'ccn',

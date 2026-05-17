@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\Export;
 
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Collection\Dependency\DependencyGraph;
 use Qualimetrix\Analysis\Collection\Dependency\Export\JsonGraphExporter;
@@ -14,7 +15,8 @@ use Qualimetrix\Core\Violation\Location;
 
 final class JsonGraphExporterTest extends TestCase
 {
-    public function testExportsValidJson(): void
+    #[Test]
+    public function itExportsValidJson(): void
     {
         $dependencies = [
             new Dependency(
@@ -38,7 +40,8 @@ final class JsonGraphExporterTest extends TestCase
         self::assertArrayHasKey('edges', $data);
     }
 
-    public function testMetaSection(): void
+    #[Test]
+    public function itHasMetaSection(): void
     {
         $graph = $this->createGraph([]);
         $exporter = new JsonGraphExporter();
@@ -49,7 +52,8 @@ final class JsonGraphExporterTest extends TestCase
         self::assertArrayHasKey('timestamp', $data['meta']);
     }
 
-    public function testStatisticsSection(): void
+    #[Test]
+    public function itHasStatisticsSection(): void
     {
         $dependencies = [
             new Dependency(
@@ -74,7 +78,8 @@ final class JsonGraphExporterTest extends TestCase
         self::assertSame(2, $data['statistics']['edgeCount']);
     }
 
-    public function testNodesContainFqnAndNamespace(): void
+    #[Test]
+    public function itIncludesFqnAndNamespaceInNodes(): void
     {
         $dependencies = [
             new Dependency(
@@ -98,7 +103,8 @@ final class JsonGraphExporterTest extends TestCase
         self::assertSame('App\\Service', $data['nodes'][1]['namespace']);
     }
 
-    public function testEdgesAreAggregated(): void
+    #[Test]
+    public function itAggregatesEdges(): void
     {
         $dependencies = [
             new Dependency(
@@ -136,7 +142,8 @@ final class JsonGraphExporterTest extends TestCase
         self::assertSame(3, $edge['count']);
     }
 
-    public function testEdgesSortedByFromThenTo(): void
+    #[Test]
+    public function itSortsEdgesByFromThenTo(): void
     {
         $dependencies = [
             new Dependency(
@@ -171,7 +178,8 @@ final class JsonGraphExporterTest extends TestCase
         self::assertSame('App\\A', $data['edges'][2]['to']);
     }
 
-    public function testEmptyGraph(): void
+    #[Test]
+    public function itHandlesEmptyGraph(): void
     {
         $graph = $this->createGraph([]);
         $exporter = new JsonGraphExporter();
@@ -183,7 +191,8 @@ final class JsonGraphExporterTest extends TestCase
         self::assertSame([], $data['edges']);
     }
 
-    public function testFiltersIncludeNamespaces(): void
+    #[Test]
+    public function itFiltersIncludeNamespaces(): void
     {
         $dependencies = [
             new Dependency(
@@ -214,7 +223,8 @@ final class JsonGraphExporterTest extends TestCase
         self::assertSame(1, $data['statistics']['edgeCount']);
     }
 
-    public function testFiltersExcludeNamespaces(): void
+    #[Test]
+    public function itFiltersExcludeNamespaces(): void
     {
         $dependencies = [
             new Dependency(
@@ -240,7 +250,8 @@ final class JsonGraphExporterTest extends TestCase
         self::assertSame(1, $data['statistics']['edgeCount']);
     }
 
-    public function testFiltersEdgesWhenNodesAreFiltered(): void
+    #[Test]
+    public function itFiltersEdgesWhenNodesAreFiltered(): void
     {
         $dependencies = [
             new Dependency(
@@ -260,19 +271,22 @@ final class JsonGraphExporterTest extends TestCase
         self::assertSame([], $data['edges']);
     }
 
-    public function testGetFormat(): void
+    #[Test]
+    public function itGetsFormat(): void
     {
         $exporter = new JsonGraphExporter();
         self::assertSame('json', $exporter->getFormat());
     }
 
-    public function testGetFileExtension(): void
+    #[Test]
+    public function itGetsFileExtension(): void
     {
         $exporter = new JsonGraphExporter();
         self::assertSame('json', $exporter->getFileExtension());
     }
 
-    public function testAllDependencyTypesPreserved(): void
+    #[Test]
+    public function itPreservesAllDependencyTypes(): void
     {
         $dependencies = [
             new Dependency(
@@ -304,7 +318,8 @@ final class JsonGraphExporterTest extends TestCase
         self::assertSame(3, $edge['count']);
     }
 
-    public function testOutputIsPrettyPrintedJson(): void
+    #[Test]
+    public function itOutputsPrettyPrintedJson(): void
     {
         $graph = $this->createGraph([]);
         $exporter = new JsonGraphExporter();

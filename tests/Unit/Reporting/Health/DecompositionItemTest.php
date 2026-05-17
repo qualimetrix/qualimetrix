@@ -5,13 +5,15 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Reporting\Health;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Reporting\Health\DecompositionItem;
 
 #[CoversClass(DecompositionItem::class)]
 final class DecompositionItemTest extends TestCase
 {
-    public function testConstruction(): void
+    #[Test]
+    public function itConstructs(): void
     {
         $item = new DecompositionItem(
             metricKey: 'ccn.avg',

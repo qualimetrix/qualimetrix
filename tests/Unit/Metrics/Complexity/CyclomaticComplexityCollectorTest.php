@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Metrics\Complexity;
 use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\SymbolLevel;
@@ -25,17 +26,20 @@ final class CyclomaticComplexityCollectorTest extends TestCase
         $this->collector = new CyclomaticComplexityCollector();
     }
 
-    public function testGetName(): void
+    #[Test]
+    public function itGetsName(): void
     {
         self::assertSame('cyclomatic-complexity', $this->collector->getName());
     }
 
-    public function testProvides(): void
+    #[Test]
+    public function itProvides(): void
     {
         self::assertSame(['ccn'], $this->collector->provides());
     }
 
-    public function testSimpleMethodHasComplexityOne(): void
+    #[Test]
+    public function itAssignsComplexityOneToSimpleMethod(): void
     {
         $code = <<<'PHP'
 <?php
@@ -56,7 +60,8 @@ PHP;
         self::assertSame(1, $metrics->get('ccn:App\Service\Calculator::add'));
     }
 
-    public function testMethodWithSingleIf(): void
+    #[Test]
+    public function itCountsSingleIfAsOneDecisionPoint(): void
     {
         $code = <<<'PHP'
 <?php
@@ -81,7 +86,8 @@ PHP;
         self::assertSame(2, $metrics->get('ccn:App\Test::check'));
     }
 
-    public function testMethodWithIfElseIf(): void
+    #[Test]
+    public function itCountsElseifBranchesAsSeparateDecisionPoints(): void
     {
         $code = <<<'PHP'
 <?php
@@ -110,7 +116,8 @@ PHP;
         self::assertSame(4, $metrics->get('ccn:App\Test::grade'));
     }
 
-    public function testMethodWithLoops(): void
+    #[Test]
+    public function itCountsLoopsAsDecisionPoints(): void
     {
         $code = <<<'PHP'
 <?php
@@ -146,7 +153,8 @@ PHP;
         self::assertSame(5, $metrics->get('ccn:App\LoopTest::process'));
     }
 
-    public function testMethodWithSwitchCase(): void
+    #[Test]
+    public function itCountsSwitchCasesAsDecisionPoints(): void
     {
         $code = <<<'PHP'
 <?php
@@ -177,7 +185,8 @@ PHP;
         self::assertSame(4, $metrics->get('ccn:App\SwitchTest::dayName'));
     }
 
-    public function testMethodWithTryCatch(): void
+    #[Test]
+    public function itCountsCatchClausesAsDecisionPoints(): void
     {
         $code = <<<'PHP'
 <?php
@@ -205,7 +214,8 @@ PHP;
         self::assertSame(3, $metrics->get('ccn:App\ExceptionTest::risky'));
     }
 
-    public function testMethodWithMatchExpression(): void
+    #[Test]
+    public function itCountsMatchArmsAsDecisionPoints(): void
     {
         $code = <<<'PHP'
 <?php
@@ -231,7 +241,8 @@ PHP;
         self::assertSame(3, $metrics->get('ccn:App\MatchTest::label'));
     }
 
-    public function testMethodWithBooleanOperators(): void
+    #[Test]
+    public function itCountsBooleanOperatorsAsDecisionPoints(): void
     {
         $code = <<<'PHP'
 <?php
@@ -261,7 +272,8 @@ PHP;
         self::assertSame(7, $metrics->get('ccn:App\BooleanTest::check'));
     }
 
-    public function testMethodWithTernaryOperator(): void
+    #[Test]
+    public function itCountsTernaryAsDecisionPoint(): void
     {
         $code = <<<'PHP'
 <?php
@@ -283,7 +295,8 @@ PHP;
         self::assertSame(2, $metrics->get('ccn:App\TernaryTest::max'));
     }
 
-    public function testMethodWithNullCoalescing(): void
+    #[Test]
+    public function itCountsNullCoalescingAsDecisionPoint(): void
     {
         $code = <<<'PHP'
 <?php
@@ -305,7 +318,8 @@ PHP;
         self::assertSame(2, $metrics->get('ccn:App\NullCoalescingTest::getName'));
     }
 
-    public function testMethodWithNullsafeOperator(): void
+    #[Test]
+    public function itCountsNullsafeOperatorAsDecisionPoint(): void
     {
         $code = <<<'PHP'
 <?php
@@ -327,7 +341,8 @@ PHP;
         self::assertSame(3, $metrics->get('ccn:App\NullsafeTest::getLength'));
     }
 
-    public function testGlobalFunction(): void
+    #[Test]
+    public function itMeasuresGlobalFunctions(): void
     {
         $code = <<<'PHP'
 <?php
@@ -349,7 +364,8 @@ PHP;
         self::assertSame(2, $metrics->get('ccn:App\Utils\validate'));
     }
 
-    public function testGlobalFunctionWithoutNamespace(): void
+    #[Test]
+    public function itMeasuresGlobalFunctionsWithoutNamespace(): void
     {
         $code = <<<'PHP'
 <?php
@@ -368,7 +384,8 @@ PHP;
         self::assertSame(2, $metrics->get('ccn:globalHelper'));
     }
 
-    public function testClosure(): void
+    #[Test]
+    public function itMeasuresClosures(): void
     {
         $code = <<<'PHP'
 <?php
@@ -398,7 +415,8 @@ PHP;
         self::assertSame(2, $metrics->get('ccn:App\ClosureTest::{closure#1}'));
     }
 
-    public function testMultipleMethods(): void
+    #[Test]
+    public function itMeasuresMultipleMethods(): void
     {
         $code = <<<'PHP'
 <?php
@@ -430,7 +448,8 @@ PHP;
         self::assertSame(2, $metrics->get('ccn:App\MultiMethod::withLoop'));
     }
 
-    public function testReset(): void
+    #[Test]
+    public function itResetsState(): void
     {
         $code1 = <<<'PHP'
 <?php
@@ -473,7 +492,8 @@ PHP;
         self::assertSame(1, $metrics->get('ccn:App\Second::otherMethod'));
     }
 
-    public function testComplexMethod(): void
+    #[Test]
+    public function itMeasuresComplexMethod(): void
     {
         $code = <<<'PHP'
 <?php
@@ -522,7 +542,8 @@ PHP;
         self::assertSame(11, $metrics->get('ccn:App\Service\ComplexService::process'));
     }
 
-    public function testTraitMethod(): void
+    #[Test]
+    public function itMeasuresTraitMethods(): void
     {
         $code = <<<'PHP'
 <?php
@@ -546,7 +567,8 @@ PHP;
         self::assertSame(2, $metrics->get('ccn:App\Traits\LoggableTrait::log'));
     }
 
-    public function testInterfaceMethodsAreIgnored(): void
+    #[Test]
+    public function itCountsInterfaceMethodsWithBaseComplexity(): void
     {
         $code = <<<'PHP'
 <?php
@@ -565,7 +587,8 @@ PHP;
         self::assertSame(1, $metrics->get('ccn:App\Contracts\ServiceInterface::execute'));
     }
 
-    public function testEnumMethod(): void
+    #[Test]
+    public function itMeasuresEnumMethods(): void
     {
         $code = <<<'PHP'
 <?php
@@ -590,7 +613,8 @@ PHP;
         self::assertSame(1, $metrics->get('ccn:App\Enums\Status::isActive'));
     }
 
-    public function testGetMetricDefinitions(): void
+    #[Test]
+    public function itProvidesMetricDefinitions(): void
     {
         $definitions = $this->collector->getMetricDefinitions();
 
@@ -624,7 +648,8 @@ PHP;
         self::assertContains(AggregationStrategy::Percentile95, $projectStrategies);
     }
 
-    public function testAnonymousClassMethodsAreNotAttributedToOuterClass(): void
+    #[Test]
+    public function itDoesNotAttributeAnonymousClassMethodsToOuterClass(): void
     {
         $code = <<<'PHP'
 <?php
@@ -680,7 +705,8 @@ PHP;
     /**
      * Fix 5: Arrow function with conditional logic should be handled by CCN.
      */
-    public function testArrowFunctionWithTernary(): void
+    #[Test]
+    public function itCountsTernaryInArrowFunctionAsDecisionPoint(): void
     {
         $code = <<<'PHP'
 <?php
@@ -708,7 +734,8 @@ PHP;
     /**
      * Fix 5: Arrow function with no branching.
      */
-    public function testArrowFunctionSimple(): void
+    #[Test]
+    public function itAssignsBaseComplexityToSimpleArrowFunction(): void
     {
         $code = <<<'PHP'
 <?php
@@ -733,7 +760,8 @@ PHP;
     /**
      * Fix 5: Arrow function with boolean operator.
      */
-    public function testArrowFunctionWithBooleanOperator(): void
+    #[Test]
+    public function itCountsBooleanOperatorInArrowFunctionAsDecisionPoint(): void
     {
         $code = <<<'PHP'
 <?php
@@ -758,7 +786,8 @@ PHP;
     /**
      * Closure inside anonymous class method should NOT appear in CCN metrics of outer class.
      */
-    public function testClosureInsideAnonymousClassNotInOuterMetrics(): void
+    #[Test]
+    public function itExcludesClosureInsideAnonymousClassFromOuterMetrics(): void
     {
         $code = <<<'PHP'
 <?php
@@ -791,7 +820,8 @@ PHP;
     /**
      * MatchArm with multiple conditions should add +N (one per condition value).
      */
-    public function testMatchArmMultipleConditionsCountsEach(): void
+    #[Test]
+    public function itCountsEachConditionValueInMatchArmSeparately(): void
     {
         $code = <<<'PHP'
 <?php
@@ -820,7 +850,8 @@ PHP;
     /**
      * LogicalXor (xor) should add +1 to cyclomatic complexity (CCN2+).
      */
-    public function testLogicalXorCountsAsDecisionPoint(): void
+    #[Test]
+    public function itCountsLogicalXorAsDecisionPoint(): void
     {
         $code = <<<'PHP'
 <?php
@@ -848,7 +879,8 @@ PHP;
     /**
      * Standalone xor (without wrapping if) should still add +1 to complexity.
      */
-    public function testStandaloneXorWithoutIf(): void
+    #[Test]
+    public function itCountsStandaloneXorWithoutIfAsDecisionPoint(): void
     {
         $code = <<<'PHP'
 <?php

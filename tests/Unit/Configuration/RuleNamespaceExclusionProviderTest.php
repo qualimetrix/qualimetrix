@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Configuration;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Configuration\RuleNamespaceExclusionProvider;
 
@@ -18,13 +19,15 @@ final class RuleNamespaceExclusionProviderTest extends TestCase
         $this->provider = new RuleNamespaceExclusionProvider();
     }
 
-    public function testRuleWithNoExclusionsReturnsFalse(): void
+    #[Test]
+    public function itReturnsFalseForRuleWithNoExclusions(): void
     {
         self::assertFalse($this->provider->isExcluded('some.rule', 'App\\Core'));
         self::assertSame([], $this->provider->getExclusions('some.rule'));
     }
 
-    public function testExactMatch(): void
+    #[Test]
+    public function itMatchesExactNamespace(): void
     {
         $this->provider->setExclusions('rule1', ['App\\Core']);
 
@@ -32,7 +35,8 @@ final class RuleNamespaceExclusionProviderTest extends TestCase
         self::assertFalse($this->provider->isExcluded('rule1', 'App\\Service'));
     }
 
-    public function testPrefixMatch(): void
+    #[Test]
+    public function itMatchesByNamespacePrefix(): void
     {
         $this->provider->setExclusions('rule1', ['App\\Core']);
 
@@ -40,14 +44,16 @@ final class RuleNamespaceExclusionProviderTest extends TestCase
         self::assertTrue($this->provider->isExcluded('rule1', 'App\\Core\\Symbol\\Deep'));
     }
 
-    public function testNoFalsePrefixMatch(): void
+    #[Test]
+    public function itDoesNotFalselyMatchPrefix(): void
     {
         $this->provider->setExclusions('rule1', ['App\\Core']);
 
         self::assertFalse($this->provider->isExcluded('rule1', 'App\\CoreExtra'));
     }
 
-    public function testTrailingBackslashHandled(): void
+    #[Test]
+    public function itHandlesTrailingBackslash(): void
     {
         $this->provider->setExclusions('rule1', ['App\\Core\\']);
 
@@ -55,7 +61,8 @@ final class RuleNamespaceExclusionProviderTest extends TestCase
         self::assertTrue($this->provider->isExcluded('rule1', 'App\\Core\\Sub'));
     }
 
-    public function testDifferentRulesHaveIndependentExclusions(): void
+    #[Test]
+    public function itKeepsDifferentRulesExclusionsIndependent(): void
     {
         $this->provider->setExclusions('rule1', ['App\\Core']);
         $this->provider->setExclusions('rule2', ['App\\Service']);
@@ -67,7 +74,8 @@ final class RuleNamespaceExclusionProviderTest extends TestCase
         self::assertTrue($this->provider->isExcluded('rule2', 'App\\Service'));
     }
 
-    public function testEmptyArrayNotStored(): void
+    #[Test]
+    public function itDoesNotStoreEmptyArray(): void
     {
         $this->provider->setExclusions('rule1', []);
 
@@ -75,7 +83,8 @@ final class RuleNamespaceExclusionProviderTest extends TestCase
         self::assertFalse($this->provider->isExcluded('rule1', 'App\\Core'));
     }
 
-    public function testResetClearsAllExclusions(): void
+    #[Test]
+    public function itClearsAllExclusionsOnReset(): void
     {
         $this->provider->setExclusions('rule1', ['App\\Core']);
         $this->provider->setExclusions('rule2', ['App\\Service']);
@@ -87,7 +96,8 @@ final class RuleNamespaceExclusionProviderTest extends TestCase
         self::assertSame([], $this->provider->getExclusions('rule1'));
     }
 
-    public function testGetExclusions(): void
+    #[Test]
+    public function itGetsExclusions(): void
     {
         $prefixes = ['App\\Core', 'App\\Tests'];
         $this->provider->setExclusions('rule1', $prefixes);
@@ -95,7 +105,8 @@ final class RuleNamespaceExclusionProviderTest extends TestCase
         self::assertSame($prefixes, $this->provider->getExclusions('rule1'));
     }
 
-    public function testMultiplePrefixes(): void
+    #[Test]
+    public function itHandlesMultiplePrefixes(): void
     {
         $this->provider->setExclusions('rule1', ['App\\Core', 'App\\Tests']);
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Reporting\Health;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Symbol\SymbolInfo;
@@ -41,7 +42,8 @@ final class ViolationDensityTest extends TestCase
         );
     }
 
-    public function testClassDensityComputedCorrectly(): void
+    #[Test]
+    public function itClassDensityComputedCorrectly(): void
     {
         // 200-line class with 10 violations => density = 10/200*100 = 5.0
         $classSymbol = SymbolPath::forClass('App\\Service', 'HeavyService');
@@ -75,7 +77,8 @@ final class ViolationDensityTest extends TestCase
         self::assertSame(5.0, $result->worstClasses[0]->violationDensity);
     }
 
-    public function testNamespaceDensityUsesLocSum(): void
+    #[Test]
+    public function itNamespaceDensityUsesLocSum(): void
     {
         // Namespace with 1000 total LOC and 5 violations => density = 5/1000*100 = 0.5
         $nsSymbol = SymbolPath::forNamespace('App\\Payment');
@@ -110,7 +113,8 @@ final class ViolationDensityTest extends TestCase
         self::assertSame(0.5, $result->worstNamespaces[0]->violationDensity);
     }
 
-    public function testDensityZeroWhenNoViolations(): void
+    #[Test]
+    public function itDensityZeroWhenNoViolations(): void
     {
         $classSymbol = SymbolPath::forClass('App\\Service', 'CleanService');
         $classMetrics = MetricBag::fromArray([
@@ -141,7 +145,8 @@ final class ViolationDensityTest extends TestCase
         self::assertSame(0.0, $result->worstClasses[0]->violationDensity);
     }
 
-    public function testDensityNullWhenLocZero(): void
+    #[Test]
+    public function itDensityNullWhenLocZero(): void
     {
         $classSymbol = SymbolPath::forClass('App\\Service', 'EmptyClass');
         $classMetrics = MetricBag::fromArray([
@@ -174,7 +179,8 @@ final class ViolationDensityTest extends TestCase
         self::assertNull($result->worstClasses[0]->violationDensity);
     }
 
-    public function testDensityNullWhenLocMissing(): void
+    #[Test]
+    public function itDensityNullWhenLocMissing(): void
     {
         $classSymbol = SymbolPath::forClass('App\\Service', 'NoLocClass');
         $classMetrics = MetricBag::fromArray([
@@ -207,7 +213,8 @@ final class ViolationDensityTest extends TestCase
         self::assertNull($result->worstClasses[0]->violationDensity);
     }
 
-    public function testDensityRoundedToOneDecimal(): void
+    #[Test]
+    public function itDensityRoundedToOneDecimal(): void
     {
         // 300-line class with 7 violations => density = 7/300*100 = 2.333... => 2.3
         $classSymbol = SymbolPath::forClass('App\\Service', 'OddClass');
@@ -241,7 +248,8 @@ final class ViolationDensityTest extends TestCase
         self::assertSame(2.3, $result->worstClasses[0]->violationDensity);
     }
 
-    public function testWorstOffenderDefaultDensityIsNull(): void
+    #[Test]
+    public function itWorstOffenderDefaultDensityIsNull(): void
     {
         $offender = new WorstOffender(
             symbolPath: SymbolPath::forClass('App', 'Test'),

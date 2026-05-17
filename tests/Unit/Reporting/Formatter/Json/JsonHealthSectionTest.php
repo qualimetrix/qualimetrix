@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Reporting\Formatter\Json;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Reporting\Formatter\Json\JsonHealthSection;
 use Qualimetrix\Reporting\Formatter\Json\JsonSanitizer;
@@ -44,7 +45,8 @@ final class JsonHealthSectionTest extends TestCase
         );
     }
 
-    public function testFormatReturnsNullWhenNoHealthScoresWithNamespaceFilter(): void
+    #[Test]
+    public function itReturnsNullWhenNoHealthScoresWithNamespaceFilter(): void
     {
         $report = $this->buildReport();
         $context = new FormatterContext(namespace: 'App\\Service');
@@ -52,7 +54,8 @@ final class JsonHealthSectionTest extends TestCase
         self::assertNull($this->section->format($report, $context));
     }
 
-    public function testFormatReturnsNullForEmptyScoresWithoutNamespace(): void
+    #[Test]
+    public function itReturnsNullForEmptyScoresWithoutNamespace(): void
     {
         $report = $this->buildReport();
         $context = new FormatterContext();
@@ -60,7 +63,8 @@ final class JsonHealthSectionTest extends TestCase
         self::assertNull($this->section->format($report, $context));
     }
 
-    public function testFormatReturnsCorrectStructure(): void
+    #[Test]
+    public function itReturnsCorrectStructure(): void
     {
         $decomposition = new DecompositionItem(
             metricKey: 'ccn_avg',
@@ -119,7 +123,8 @@ final class JsonHealthSectionTest extends TestCase
         self::assertSame(200, $contrib['metrics']['loc']);
     }
 
-    public function testFormatSanitizesNonFiniteValues(): void
+    #[Test]
+    public function itSanitizesNonFiniteValues(): void
     {
         $decomposition = new DecompositionItem(
             metricKey: 'mi_avg',
@@ -162,7 +167,8 @@ final class JsonHealthSectionTest extends TestCase
         self::assertSame(50, $maint['worstContributors'][0]['metrics']['loc']);
     }
 
-    public function testFormatWithNullScore(): void
+    #[Test]
+    public function itFormatsWithNullScore(): void
     {
         $healthScore = new HealthScore(
             name: 'cohesion',
@@ -183,7 +189,8 @@ final class JsonHealthSectionTest extends TestCase
         self::assertSame([], $result['cohesion']['worstContributors']);
     }
 
-    public function testFormatMultipleHealthScores(): void
+    #[Test]
+    public function itFormatsMultipleHealthScores(): void
     {
         $scores = [
             'complexity' => new HealthScore(

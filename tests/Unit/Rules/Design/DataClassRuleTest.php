@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Rules\Design;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
@@ -55,14 +56,16 @@ final class DataClassRuleTest extends TestCase
         return $bag;
     }
 
-    public function testGetName(): void
+    #[Test]
+    public function itGetsName(): void
     {
         $rule = new DataClassRule(new DataClassOptions());
 
         self::assertSame('design.data-class', $rule->getName());
     }
 
-    public function testGetDescription(): void
+    #[Test]
+    public function itGetsDescription(): void
     {
         $rule = new DataClassRule(new DataClassOptions());
 
@@ -72,14 +75,16 @@ final class DataClassRuleTest extends TestCase
         );
     }
 
-    public function testGetCategory(): void
+    #[Test]
+    public function itGetsCategory(): void
     {
         $rule = new DataClassRule(new DataClassOptions());
 
         self::assertSame(RuleCategory::Design, $rule->getCategory());
     }
 
-    public function testRequires(): void
+    #[Test]
+    public function itRequires(): void
     {
         $rule = new DataClassRule(new DataClassOptions());
 
@@ -89,7 +94,8 @@ final class DataClassRuleTest extends TestCase
         );
     }
 
-    public function testGetOptionsClass(): void
+    #[Test]
+    public function itGetsOptionsClass(): void
     {
         self::assertSame(
             DataClassOptions::class,
@@ -97,7 +103,8 @@ final class DataClassRuleTest extends TestCase
         );
     }
 
-    public function testGetCliAliases(): void
+    #[Test]
+    public function itGetsCliAliases(): void
     {
         $aliases = CliAliasReader::read(DataClassRule::class);
 
@@ -115,7 +122,8 @@ final class DataClassRuleTest extends TestCase
         self::assertSame('excludeExceptions', $aliases['data-class-exclude-exceptions']);
     }
 
-    public function testAnalyzeDisabledReturnsEmpty(): void
+    #[Test]
+    public function itAnalyzeDisabledReturnsEmpty(): void
     {
         $rule = new DataClassRule(new DataClassOptions(enabled: false));
 
@@ -127,7 +135,8 @@ final class DataClassRuleTest extends TestCase
         self::assertSame([], $rule->analyze($context));
     }
 
-    public function testMinMethodsFilter(): void
+    #[Test]
+    public function itFiltersOnMinMethods(): void
     {
         $rule = new DataClassRule(new DataClassOptions(minMethods: 3));
 
@@ -145,7 +154,8 @@ final class DataClassRuleTest extends TestCase
         self::assertCount(0, $rule->analyze($context));
     }
 
-    public function testReadonlySkipped(): void
+    #[Test]
+    public function itSkipsReadonlyWhenExcluded(): void
     {
         $rule = new DataClassRule(new DataClassOptions(excludeReadonly: true));
 
@@ -163,7 +173,8 @@ final class DataClassRuleTest extends TestCase
         self::assertCount(0, $rule->analyze($context));
     }
 
-    public function testReadonlyNotSkippedWhenOptionFalse(): void
+    #[Test]
+    public function itDoesNotSkipReadonlyWhenOptionFalse(): void
     {
         $rule = new DataClassRule(new DataClassOptions(excludeReadonly: false));
 
@@ -183,7 +194,8 @@ final class DataClassRuleTest extends TestCase
         self::assertSame(Severity::Warning, $violations[0]->severity);
     }
 
-    public function testPromotedOnlySkipped(): void
+    #[Test]
+    public function itSkipsPromotedOnlyWhenExcluded(): void
     {
         $rule = new DataClassRule(new DataClassOptions(excludePromotedOnly: true));
 
@@ -201,7 +213,8 @@ final class DataClassRuleTest extends TestCase
         self::assertCount(0, $rule->analyze($context));
     }
 
-    public function testPromotedOnlyNotSkippedWhenOptionFalse(): void
+    #[Test]
+    public function itDoesNotSkipPromotedOnlyWhenOptionFalse(): void
     {
         $rule = new DataClassRule(new DataClassOptions(excludePromotedOnly: false));
 
@@ -221,7 +234,8 @@ final class DataClassRuleTest extends TestCase
         self::assertSame(Severity::Warning, $violations[0]->severity);
     }
 
-    public function testIsDataClassSkipped(): void
+    #[Test]
+    public function itSkipsNativeDataClass(): void
     {
         $rule = new DataClassRule(new DataClassOptions());
 
@@ -239,7 +253,8 @@ final class DataClassRuleTest extends TestCase
         self::assertCount(0, $rule->analyze($context));
     }
 
-    public function testHighWocLowWmc(): void
+    #[Test]
+    public function itDetectsHighWocLowWmc(): void
     {
         $rule = new DataClassRule(new DataClassOptions());
 
@@ -266,7 +281,8 @@ final class DataClassRuleTest extends TestCase
         self::assertSame('design.data-class', $violations[0]->violationCode);
     }
 
-    public function testLowWoc(): void
+    #[Test]
+    public function itDoesNotFlagLowWoc(): void
     {
         $rule = new DataClassRule(new DataClassOptions());
 
@@ -284,7 +300,8 @@ final class DataClassRuleTest extends TestCase
         self::assertCount(0, $rule->analyze($context));
     }
 
-    public function testHighWmc(): void
+    #[Test]
+    public function itDoesNotFlagHighWmc(): void
     {
         $rule = new DataClassRule(new DataClassOptions());
 
@@ -302,7 +319,8 @@ final class DataClassRuleTest extends TestCase
         self::assertCount(0, $rule->analyze($context));
     }
 
-    public function testNullWocSkipped(): void
+    #[Test]
+    public function itSkipsNullWoc(): void
     {
         $rule = new DataClassRule(new DataClassOptions());
 
@@ -332,7 +350,8 @@ final class DataClassRuleTest extends TestCase
 
     // --- New tests for false positive reduction ---
 
-    public function testInterfaceSkipped(): void
+    #[Test]
+    public function itSkipsInterfaces(): void
     {
         $rule = new DataClassRule(new DataClassOptions());
 
@@ -350,7 +369,8 @@ final class DataClassRuleTest extends TestCase
         self::assertCount(0, $rule->analyze($context));
     }
 
-    public function testAbstractClassSkipped(): void
+    #[Test]
+    public function itSkipsAbstractClasses(): void
     {
         $rule = new DataClassRule(new DataClassOptions());
 
@@ -368,7 +388,8 @@ final class DataClassRuleTest extends TestCase
         self::assertCount(0, $rule->analyze($context));
     }
 
-    public function testZeroPropertyClassSkipped(): void
+    #[Test]
+    public function itSkipsZeroPropertyClasses(): void
     {
         $rule = new DataClassRule(new DataClassOptions());
 
@@ -386,7 +407,8 @@ final class DataClassRuleTest extends TestCase
         self::assertCount(0, $rule->analyze($context));
     }
 
-    public function testExceptionClassSkipped(): void
+    #[Test]
+    public function itSkipsExceptionClassWhenExcluded(): void
     {
         $rule = new DataClassRule(new DataClassOptions(excludeExceptions: true));
 
@@ -404,7 +426,8 @@ final class DataClassRuleTest extends TestCase
         self::assertCount(0, $rule->analyze($context));
     }
 
-    public function testExceptionClassNotSkippedWhenOptionFalse(): void
+    #[Test]
+    public function itDoesNotSkipExceptionClassWhenOptionFalse(): void
     {
         $rule = new DataClassRule(new DataClassOptions(excludeExceptions: false));
 
@@ -426,7 +449,8 @@ final class DataClassRuleTest extends TestCase
 
     // --- Options tests ---
 
-    public function testOptionsFromArrayDefaults(): void
+    #[Test]
+    public function itHasOptionsDefaults(): void
     {
         $options = new DataClassOptions();
 
@@ -439,7 +463,8 @@ final class DataClassRuleTest extends TestCase
         self::assertTrue($options->excludeExceptions);
     }
 
-    public function testOptionsFromArrayCustomValues(): void
+    #[Test]
+    public function itLoadsOptionsFromArrayWithCustomValues(): void
     {
         $options = DataClassOptions::fromArray([
             'enabled' => true,
@@ -460,7 +485,8 @@ final class DataClassRuleTest extends TestCase
         self::assertFalse($options->excludeExceptions);
     }
 
-    public function testOptionsFromArrayDualKey(): void
+    #[Test]
+    public function itLoadsOptionsFromArrayWithDualKey(): void
     {
         $options = DataClassOptions::fromArray([
             'wocThreshold' => 75,
@@ -479,7 +505,8 @@ final class DataClassRuleTest extends TestCase
         self::assertFalse($options->excludeExceptions);
     }
 
-    public function testOptionsFromEmptyArrayDisabled(): void
+    #[Test]
+    public function itDisablesWhenLoadedFromEmptyArray(): void
     {
         $options = DataClassOptions::fromArray([]);
 

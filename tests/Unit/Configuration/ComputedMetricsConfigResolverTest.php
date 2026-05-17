@@ -6,6 +6,7 @@ namespace Qualimetrix\Tests\Unit\Configuration;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Configuration\ComputedMetricFormulaValidator;
 use Qualimetrix\Configuration\ComputedMetricsConfigResolver;
@@ -28,7 +29,8 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         );
     }
 
-    public function testResolveWithEmptyConfigReturns6Defaults(): void
+    #[Test]
+    public function itResolveWithEmptyConfigReturns6Defaults(): void
     {
         $result = $this->resolver->resolve([]);
 
@@ -43,7 +45,8 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         self::assertContains('health.overall', $names);
     }
 
-    public function testOverrideHealthThresholdOnly(): void
+    #[Test]
+    public function itOverridesHealthThresholdOnly(): void
     {
         $result = $this->resolver->resolve([
             'health.complexity' => [
@@ -61,7 +64,8 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         self::assertSame('Complexity health score (0-100, higher is better)', $complexity->description);
     }
 
-    public function testOverrideHealthFormulaSingular(): void
+    #[Test]
+    public function itOverridesHealthFormulaSingular(): void
     {
         $result = $this->resolver->resolve([
             'health.complexity' => [
@@ -77,7 +81,8 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         self::assertSame('100 - ccn__avg * 10', $complexity->getFormulaForLevel(SymbolType::Project));
     }
 
-    public function testOverrideHealthFormulasPerLevel(): void
+    #[Test]
+    public function itOverridesHealthFormulasPerLevel(): void
     {
         $result = $this->resolver->resolve([
             'health.complexity' => [
@@ -95,7 +100,8 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         self::assertStringContainsString('ccn__sum', (string) $complexity->getFormulaForLevel(SymbolType::Namespace_));
     }
 
-    public function testDisableHealthMetricRebuildsOverall(): void
+    #[Test]
+    public function itDisablesHealthMetricAndRebuildsOverall(): void
     {
         // Disabling a single health.* dimension via `enabled: false` must NOT break
         // health.overall — instead, weights are renormalized exactly like exclude_health.
@@ -123,7 +129,8 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         self::assertEqualsWithDelta(1.0, array_sum($weights), 0.001);
     }
 
-    public function testDisableOverallDimensionDirectly(): void
+    #[Test]
+    public function itDisablesOverallDimensionDirectly(): void
     {
         // Disabling health.overall directly is also supported — it has no dependents,
         // so sub-dimensions are untouched.
@@ -139,7 +146,8 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         self::assertContains('health.typing', $names);
     }
 
-    public function testEnabledFalseAndExcludeHealthCombine(): void
+    #[Test]
+    public function itCombinesEnabledFalseAndExcludeHealth(): void
     {
         // Combining `enabled: false` on one dimension with `exclude_health` on another
         // removes both; health.overall is rebuilt with the remaining weights.
@@ -162,7 +170,8 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         self::assertStringNotContainsString('health__maintainability', $overall->formulas['namespace'] ?? '');
     }
 
-    public function testDisableUserComputedMetric(): void
+    #[Test]
+    public function itDisablesUserComputedMetric(): void
     {
         // Custom `computed.*` metrics disabled via `enabled: false` are simply removed —
         // no formula renormalization applies (no health.overall reference path).
@@ -179,7 +188,8 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         self::assertNotContains('computed.foo', $names);
     }
 
-    public function testDisableUnknownHealthDimensionThrowsTailoredError(): void
+    #[Test]
+    public function itDisablingUnknownHealthDimensionThrowsTailoredError(): void
     {
         // Typo in the YAML key for `enabled: false` on a health metric must produce an
         // error that points at the actual source (`computed_metrics.health.X.enabled`),
@@ -195,7 +205,8 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         ]);
     }
 
-    public function testExcludeHealthAcceptsBothNameForms(): void
+    #[Test]
+    public function itExcludeHealthAcceptsBothNameForms(): void
     {
         // Both bare ('typing') and fully-qualified ('health.typing') forms must be accepted
         // in the excludeHealth arg, and dedupe across them.
@@ -207,7 +218,8 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         self::assertNotContains('health.typing', $names);
     }
 
-    public function testUnknownExcludeHealthArgThrows(): void
+    #[Test]
+    public function itThrowsForUnknownExcludeHealthArg(): void
     {
         // Unknown name in the excludeHealth arg must surface as an error from
         // HealthFormulaExcluder (different source than enabled:false, different message).
@@ -217,7 +229,8 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         $this->resolver->resolve([], ['nonexistent']);
     }
 
-    public function testCreateNewComputedMetric(): void
+    #[Test]
+    public function itCreatesNewComputedMetric(): void
     {
         $result = $this->resolver->resolve([
             'computed.my_score' => [
@@ -243,7 +256,8 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         self::assertNotContains(SymbolType::Project, $custom->levels);
     }
 
-    public function testInvalidPrefixThrows(): void
+    #[Test]
+    public function itThrowsForInvalidPrefix(): void
     {
         self::expectException(InvalidArgumentException::class);
         self::expectExceptionMessage('must start with "health." or "computed."');
@@ -255,7 +269,8 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         ]);
     }
 
-    public function testFormulaSyntaxErrorThrows(): void
+    #[Test]
+    public function itThrowsForFormulaSyntaxError(): void
     {
         self::expectException(RuntimeException::class);
         self::expectExceptionMessage('Invalid formula syntax');
@@ -268,7 +283,8 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         ]);
     }
 
-    public function testCircularDependencyThrows(): void
+    #[Test]
+    public function itThrowsForCircularDependency(): void
     {
         self::expectException(RuntimeException::class);
         self::expectExceptionMessage('Circular dependency');
@@ -285,7 +301,8 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         ]);
     }
 
-    public function testReferenceToNonExistentComputedMetricThrows(): void
+    #[Test]
+    public function itThrowsForReferenceToNonExistentComputedMetric(): void
     {
         self::expectException(RuntimeException::class);
         self::expectExceptionMessage('references unknown metric "computed.nonexistent"');
@@ -298,7 +315,8 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         ]);
     }
 
-    public function testMissingFormulaForLevelThrows(): void
+    #[Test]
+    public function itThrowsForMissingFormulaForLevel(): void
     {
         self::expectException(RuntimeException::class);
         self::expectExceptionMessage('has no formula for level');
@@ -313,7 +331,8 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         ]);
     }
 
-    public function testReservedHealthPrefixForNewMetricThrows(): void
+    #[Test]
+    public function itThrowsForReservedHealthPrefixOnNewMetric(): void
     {
         self::expectException(RuntimeException::class);
         self::expectExceptionMessage('reserved "health.*" prefix');
@@ -325,7 +344,8 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         ]);
     }
 
-    public function testFormulaAndFormulasInteraction(): void
+    #[Test]
+    public function itHandlesFormulaAndFormulasInteraction(): void
     {
         $result = $this->resolver->resolve([
             'health.complexity' => [
@@ -344,7 +364,8 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         self::assertSame('ccn__avg * 10', $complexity->getFormulaForLevel(SymbolType::Namespace_));
     }
 
-    public function testLevelsFullReplacement(): void
+    #[Test]
+    public function itSupportsLevelsFullReplacement(): void
     {
         $result = $this->resolver->resolve([
             'health.complexity' => [
@@ -357,7 +378,8 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         self::assertSame([SymbolType::Class_], $complexity->levels);
     }
 
-    public function testDefaultLevelsForUserDefined(): void
+    #[Test]
+    public function itUsesDefaultLevelsForUserDefined(): void
     {
         $result = $this->resolver->resolve([
             'computed.simple' => [
@@ -373,7 +395,8 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         self::assertNotContains(SymbolType::Class_, $custom->levels);
     }
 
-    public function testThresholdShorthandSetsBothValues(): void
+    #[Test]
+    public function itThresholdShorthandSetsBothValues(): void
     {
         $result = $this->resolver->resolve([
             'health.complexity' => [
@@ -387,7 +410,8 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         self::assertSame(45.0, $complexity->errorThreshold);
     }
 
-    public function testThresholdNullFallsBackToDefaults(): void
+    #[Test]
+    public function itThresholdNullFallsBackToDefaults(): void
     {
         $result = $this->resolver->resolve([
             'health.complexity' => [
@@ -402,7 +426,8 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         self::assertSame(25.0, $complexity->errorThreshold);
     }
 
-    public function testThresholdMixedWithWarningThrows(): void
+    #[Test]
+    public function itThrowsWhenThresholdMixedWithWarning(): void
     {
         self::expectException(InvalidArgumentException::class);
         self::expectExceptionMessage('Cannot mix "threshold"');
@@ -415,7 +440,8 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         ]);
     }
 
-    public function testThresholdMixedWithErrorThrows(): void
+    #[Test]
+    public function itThrowsWhenThresholdMixedWithError(): void
     {
         self::expectException(InvalidArgumentException::class);
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Reporting\Formatter;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Reporting\Formatter\Health\HealthTextFormatter;
 use Qualimetrix\Reporting\FormatterContext;
@@ -31,17 +32,20 @@ final class HealthTextFormatterTest extends TestCase
         $this->formatter = new HealthTextFormatter($resolver);
     }
 
-    public function testGetNameReturnsHealth(): void
+    #[Test]
+    public function itReturnsHealthAsName(): void
     {
         self::assertSame('health', $this->formatter->getName());
     }
 
-    public function testGetDefaultGroupByReturnsNone(): void
+    #[Test]
+    public function itReturnsNoneAsDefaultGroupBy(): void
     {
         self::assertSame(GroupBy::None, $this->formatter->getDefaultGroupBy());
     }
 
-    public function testFormatWithNoHealthData(): void
+    #[Test]
+    public function itFormatsWithNoHealthData(): void
     {
         $report = ReportBuilder::create()
             ->filesAnalyzed(10)
@@ -57,7 +61,8 @@ final class HealthTextFormatterTest extends TestCase
         self::assertStringContainsString('computed metrics enabled', $output);
     }
 
-    public function testFormatWithAllDimensions(): void
+    #[Test]
+    public function itFormatsWithAllDimensions(): void
     {
         $report = $this->createReportWithHealthScores([
             'complexity' => new HealthScore('complexity', 72.3, 'Good', 60.0, 40.0, [
@@ -97,7 +102,8 @@ final class HealthTextFormatterTest extends TestCase
         self::assertStringContainsString('err < 40', $output);
     }
 
-    public function testFormatShowsDecomposition(): void
+    #[Test]
+    public function itShowsDecompositionInOutput(): void
     {
         $report = $this->createReportWithHealthScores([
             'complexity' => new HealthScore('complexity', 72.3, 'Good', 60.0, 40.0, [
@@ -118,7 +124,8 @@ final class HealthTextFormatterTest extends TestCase
         self::assertStringContainsString('4.5', $output);
     }
 
-    public function testFormatWithNullScore(): void
+    #[Test]
+    public function itFormatsWithNullScore(): void
     {
         $report = $this->createReportWithHealthScores([
             'typing' => new HealthScore('typing', null, '0 classes analyzed', 80.0, 50.0),
@@ -133,7 +140,8 @@ final class HealthTextFormatterTest extends TestCase
         self::assertStringContainsString('0 classes analyzed', $output);
     }
 
-    public function testFormatWithColorEnabled(): void
+    #[Test]
+    public function itFormatsWithColorEnabled(): void
     {
         $report = $this->createReportWithHealthScores([
             'complexity' => new HealthScore('complexity', 72.3, 'Good', 60.0, 40.0),
@@ -150,7 +158,8 @@ final class HealthTextFormatterTest extends TestCase
         self::assertStringContainsString("\e[33m", $output);
     }
 
-    public function testFormatWithNoColor(): void
+    #[Test]
+    public function itFormatsWithNoColor(): void
     {
         $report = $this->createReportWithHealthScores([
             'complexity' => new HealthScore('complexity', 72.3, 'Good', 60.0, 40.0),
@@ -164,7 +173,8 @@ final class HealthTextFormatterTest extends TestCase
         self::assertStringNotContainsString("\e[", $output);
     }
 
-    public function testFormatNarrowTerminal(): void
+    #[Test]
+    public function itFormatsOnNarrowTerminal(): void
     {
         $report = $this->createReportWithHealthScores([
             'complexity' => new HealthScore('complexity', 72.3, 'Good', 60.0, 40.0, [
@@ -187,7 +197,8 @@ final class HealthTextFormatterTest extends TestCase
         self::assertStringNotContainsString('Thresholds', $output);
     }
 
-    public function testFormatWithNamespaceFilter(): void
+    #[Test]
+    public function itFormatsWithNamespaceFilter(): void
     {
         $report = $this->createReportWithHealthScores([
             'complexity' => new HealthScore('complexity', 72.3, 'Good', 60.0, 40.0),
@@ -200,7 +211,8 @@ final class HealthTextFormatterTest extends TestCase
         self::assertStringContainsString('[namespace: App\\Core]', $output);
     }
 
-    public function testFormatWithClassFilter(): void
+    #[Test]
+    public function itFormatsWithClassFilter(): void
     {
         $report = $this->createReportWithHealthScores([
             'complexity' => new HealthScore('complexity', 72.3, 'Good', 60.0, 40.0),
@@ -213,7 +225,8 @@ final class HealthTextFormatterTest extends TestCase
         self::assertStringContainsString('[class: App\\Service\\UserService]', $output);
     }
 
-    public function testFormatWithErrorScore(): void
+    #[Test]
+    public function itFormatsWithErrorScore(): void
     {
         $report = $this->createReportWithHealthScores([
             'cohesion' => new HealthScore('cohesion', 20.0, 'Critical', 50.0, 30.0),
@@ -227,7 +240,8 @@ final class HealthTextFormatterTest extends TestCase
         self::assertStringContainsString("\e[31m", $output);
     }
 
-    public function testFormatEmptyDecompositionSkipped(): void
+    #[Test]
+    public function itSkipsEmptyDecompositionSection(): void
     {
         $report = $this->createReportWithHealthScores([
             'complexity' => new HealthScore('complexity', 72.3, 'Good', 60.0, 40.0, []),
@@ -240,7 +254,8 @@ final class HealthTextFormatterTest extends TestCase
         self::assertStringNotContainsString('decomposition:', $output);
     }
 
-    public function testFileCountInHeader(): void
+    #[Test]
+    public function itShowsFileCountInHeader(): void
     {
         $report = $this->createReportWithHealthScores(
             healthScores: [
@@ -257,7 +272,8 @@ final class HealthTextFormatterTest extends TestCase
         self::assertStringNotContainsString('1 files', $output);
     }
 
-    public function testFormatShowsContributors(): void
+    #[Test]
+    public function itShowsContributorsInOutput(): void
     {
         $report = $this->createReportWithHealthScores([
             'complexity' => new HealthScore('complexity', 42.0, 'Poor', 50.0, 30.0, [
@@ -294,7 +310,8 @@ final class HealthTextFormatterTest extends TestCase
         self::assertStringContainsString('ExpressionValidator', $output);
     }
 
-    public function testContributorsHiddenWhenContributorsZero(): void
+    #[Test]
+    public function itHidesContributorsWhenContributorsOptionIsZero(): void
     {
         $report = $this->createReportWithHealthScores([
             'cohesion' => new HealthScore('cohesion', 46.7, 'Poor', 50.0, 30.0, [
@@ -312,7 +329,8 @@ final class HealthTextFormatterTest extends TestCase
         self::assertStringNotContainsString('SomeClass', $output);
     }
 
-    public function testContributorsLimitedByFormatOption(): void
+    #[Test]
+    public function itLimitsContributorsByFormatOption(): void
     {
         $report = $this->createReportWithHealthScores([
             'cohesion' => new HealthScore('cohesion', 46.7, 'Poor', 50.0, 30.0, [
@@ -333,7 +351,8 @@ final class HealthTextFormatterTest extends TestCase
         self::assertStringNotContainsString('ClassC', $output);
     }
 
-    public function testContributorsNotShownInNarrowTerminal(): void
+    #[Test]
+    public function itDoesNotShowContributorsInNarrowTerminal(): void
     {
         $report = $this->createReportWithHealthScores([
             'cohesion' => new HealthScore('cohesion', 46.7, 'Poor', 50.0, 30.0, [
@@ -350,7 +369,8 @@ final class HealthTextFormatterTest extends TestCase
         self::assertStringNotContainsString('Worst contributors:', $output);
     }
 
-    public function testContributorsEmptyShowsNoSection(): void
+    #[Test]
+    public function itShowsNoContributorsSectionWhenEmpty(): void
     {
         $report = $this->createReportWithHealthScores([
             'cohesion' => new HealthScore('cohesion', 80.0, 'Good', 50.0, 30.0, [

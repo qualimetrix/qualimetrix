@@ -5,13 +5,15 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Reporting\Formatter\Support;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Reporting\Formatter\Support\AnsiColor;
 
 #[CoversClass(AnsiColor::class)]
 final class AnsiColorTest extends TestCase
 {
-    public function testEnabledReturnsAnsiWrappedText(): void
+    #[Test]
+    public function itReturnsAnsiWrappedTextWhenEnabled(): void
     {
         $color = new AnsiColor(true);
 
@@ -21,7 +23,8 @@ final class AnsiColorTest extends TestCase
         self::assertSame("\e[1mhello\e[0m", $color->bold('hello'));
     }
 
-    public function testDisabledReturnsPlainText(): void
+    #[Test]
+    public function itReturnsPlainTextWhenDisabled(): void
     {
         $color = new AnsiColor(false);
 
@@ -36,7 +39,8 @@ final class AnsiColorTest extends TestCase
         self::assertSame('hello', $color->boldGreen('hello'));
     }
 
-    public function testCombinedCodes(): void
+    #[Test]
+    public function itReturnsCombinedAnsiCodes(): void
     {
         $color = new AnsiColor(true);
 

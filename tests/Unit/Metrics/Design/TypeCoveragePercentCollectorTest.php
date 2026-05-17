@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Metrics\Design;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricName;
@@ -21,22 +22,26 @@ final class TypeCoveragePercentCollectorTest extends TestCase
         $this->collector = new TypeCoveragePercentCollector();
     }
 
-    public function testGetName(): void
+    #[Test]
+    public function itReturnsCollectorName(): void
     {
         self::assertSame('type-coverage-pct', $this->collector->getName());
     }
 
-    public function testRequiresTypeCoverage(): void
+    #[Test]
+    public function itRequiresTypeCoverageDependency(): void
     {
         self::assertSame(['type-coverage'], $this->collector->requires());
     }
 
-    public function testProvidesTypeCoveragePct(): void
+    #[Test]
+    public function itProvidesTypeCoveragePctMetric(): void
     {
         self::assertSame([MetricName::TYPE_COVERAGE_PCT], $this->collector->provides());
     }
 
-    public function testMetricDefinitionsReturnClassLevelWithNoAggregation(): void
+    #[Test]
+    public function itReturnsClassLevelMetricDefinitionWithNoAggregation(): void
     {
         $definitions = $this->collector->getMetricDefinitions();
 
@@ -46,7 +51,8 @@ final class TypeCoveragePercentCollectorTest extends TestCase
         self::assertSame([], $definitions[0]->aggregations);
     }
 
-    public function testFullyTypedClassReturns100Percent(): void
+    #[Test]
+    public function itReturns100PercentForFullyTypedClass(): void
     {
         $bag = (new MetricBag())
             ->with(MetricName::TYPE_COVERAGE_PARAM_TOTAL, 3)
@@ -61,7 +67,8 @@ final class TypeCoveragePercentCollectorTest extends TestCase
         self::assertSame(100.0, $result->get(MetricName::TYPE_COVERAGE_PCT));
     }
 
-    public function testPartiallyTypedClassReturnsCorrectPercentage(): void
+    #[Test]
+    public function itReturnsCorrectPercentageForPartiallyTypedClass(): void
     {
         $bag = (new MetricBag())
             ->with(MetricName::TYPE_COVERAGE_PARAM_TOTAL, 2)
@@ -76,7 +83,8 @@ final class TypeCoveragePercentCollectorTest extends TestCase
         self::assertSame(50.0, $result->get(MetricName::TYPE_COVERAGE_PCT));
     }
 
-    public function testUntypedClassReturns0Percent(): void
+    #[Test]
+    public function itReturns0PercentForUntypedClass(): void
     {
         $bag = (new MetricBag())
             ->with(MetricName::TYPE_COVERAGE_PARAM_TOTAL, 4)
@@ -91,7 +99,8 @@ final class TypeCoveragePercentCollectorTest extends TestCase
         self::assertSame(0.0, $result->get(MetricName::TYPE_COVERAGE_PCT));
     }
 
-    public function testClassWithZeroTotalsReturns100Percent(): void
+    #[Test]
+    public function itReturns100PercentWhenAllTotalsAreZero(): void
     {
         $bag = (new MetricBag())
             ->with(MetricName::TYPE_COVERAGE_PARAM_TOTAL, 0)
@@ -106,14 +115,16 @@ final class TypeCoveragePercentCollectorTest extends TestCase
         self::assertSame(100.0, $result->get(MetricName::TYPE_COVERAGE_PCT));
     }
 
-    public function testEmptyBagReturns100Percent(): void
+    #[Test]
+    public function itReturns100PercentForEmptyBag(): void
     {
         $result = $this->collector->calculate(new MetricBag());
 
         self::assertSame(100.0, $result->get(MetricName::TYPE_COVERAGE_PCT));
     }
 
-    public function testMissingTypedCountsDefaultToZero(): void
+    #[Test]
+    public function itDefaultsMissingTypedCountsToZero(): void
     {
         $bag = (new MetricBag())
             ->with(MetricName::TYPE_COVERAGE_PARAM_TOTAL, 3)

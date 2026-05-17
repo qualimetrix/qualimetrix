@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Metrics\CodeSmell;
 use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\SymbolLevel;
@@ -25,17 +26,20 @@ final class ParameterCountCollectorTest extends TestCase
         $this->collector = new ParameterCountCollector();
     }
 
-    public function testGetName(): void
+    #[Test]
+    public function itReturnsCollectorName(): void
     {
         self::assertSame('parameter-count', $this->collector->getName());
     }
 
-    public function testProvides(): void
+    #[Test]
+    public function itProvidesExpectedMetricKeys(): void
     {
         self::assertSame(['parameterCount', 'isVoConstructor'], $this->collector->provides());
     }
 
-    public function testMethodWithNoParameters(): void
+    #[Test]
+    public function itCountsZeroForMethodWithNoParameters(): void
     {
         $code = <<<'PHP'
 <?php
@@ -55,7 +59,8 @@ PHP;
         self::assertSame(0, $metrics->get('parameterCount:App\Service\Calculator::reset'));
     }
 
-    public function testMethodWithThreeParameters(): void
+    #[Test]
+    public function itCountsThreeForMethodWithThreeParameters(): void
     {
         $code = <<<'PHP'
 <?php
@@ -76,7 +81,8 @@ PHP;
         self::assertSame(3, $metrics->get('parameterCount:App\Service\Calculator::add'));
     }
 
-    public function testConstructorWithPromotedProperties(): void
+    #[Test]
+    public function itCountsPromotedPropertiesAsParameters(): void
     {
         $code = <<<'PHP'
 <?php
@@ -99,7 +105,8 @@ PHP;
         self::assertSame(4, $metrics->get('parameterCount:App\Service\UserService::__construct'));
     }
 
-    public function testGlobalFunction(): void
+    #[Test]
+    public function itCountsParametersForGlobalFunction(): void
     {
         $code = <<<'PHP'
 <?php
@@ -117,7 +124,8 @@ PHP;
         self::assertSame(2, $metrics->get('parameterCount:App\Utils\formatName'));
     }
 
-    public function testVariadicParameter(): void
+    #[Test]
+    public function itCountsVariadicParameterAsOne(): void
     {
         $code = <<<'PHP'
 <?php
@@ -137,7 +145,8 @@ PHP;
         self::assertSame(2, $metrics->get('parameterCount:App\Logger::log'));
     }
 
-    public function testDefaultValues(): void
+    #[Test]
+    public function itCountsParametersWithDefaultValues(): void
     {
         $code = <<<'PHP'
 <?php
@@ -157,7 +166,8 @@ PHP;
         self::assertSame(3, $metrics->get('parameterCount:App\Config::setup'));
     }
 
-    public function testMultipleMethods(): void
+    #[Test]
+    public function itCountsParametersForMultipleMethods(): void
     {
         $code = <<<'PHP'
 <?php
@@ -187,7 +197,8 @@ PHP;
         self::assertSame(3, $metrics->get('parameterCount:App\Service::threeParams'));
     }
 
-    public function testReset(): void
+    #[Test]
+    public function itClearsStateOnReset(): void
     {
         $code1 = <<<'PHP'
 <?php
@@ -229,7 +240,8 @@ PHP;
         self::assertSame(1, $metrics->get('parameterCount:App\Second::otherMethod'));
     }
 
-    public function testGetMetricDefinitions(): void
+    #[Test]
+    public function itReturnsCorrectMetricDefinitions(): void
     {
         $definitions = $this->collector->getMetricDefinitions();
 
@@ -265,7 +277,8 @@ PHP;
         self::assertSame(SymbolLevel::Method, $voDefinition->collectedAt);
     }
 
-    public function testInterfaceMethod(): void
+    #[Test]
+    public function itCountsParametersForInterfaceMethod(): void
     {
         $code = <<<'PHP'
 <?php
@@ -283,7 +296,8 @@ PHP;
         self::assertSame(2, $metrics->get('parameterCount:App\Contracts\ServiceInterface::execute'));
     }
 
-    public function testAbstractMethod(): void
+    #[Test]
+    public function itCountsParametersForAbstractMethod(): void
     {
         $code = <<<'PHP'
 <?php
@@ -301,7 +315,8 @@ PHP;
         self::assertSame(3, $metrics->get('parameterCount:App\AbstractHandler::handle'));
     }
 
-    public function testVoConstructorReadonlyClassAllPromotedEmptyBody(): void
+    #[Test]
+    public function itDetectsVoConstructorForReadonlyClassWithAllPromotedEmptyBody(): void
     {
         $code = <<<'PHP'
 <?php
@@ -325,7 +340,8 @@ PHP;
         self::assertSame(1, $metrics->get('isVoConstructor:App\Dto\UserDto::__construct'));
     }
 
-    public function testVoConstructorFinalReadonlyClass(): void
+    #[Test]
+    public function itDetectsVoConstructorForFinalReadonlyClass(): void
     {
         $code = <<<'PHP'
 <?php
@@ -347,7 +363,8 @@ PHP;
         self::assertSame(1, $metrics->get('isVoConstructor:App\Dto\Point::__construct'));
     }
 
-    public function testNotVoConstructorNonReadonlyClass(): void
+    #[Test]
+    public function itDoesNotDetectVoConstructorForNonReadonlyClass(): void
     {
         $code = <<<'PHP'
 <?php
@@ -369,7 +386,8 @@ PHP;
         self::assertNull($metrics->get('isVoConstructor:App\Service\UserService::__construct'));
     }
 
-    public function testNotVoConstructorMixedPromotedAndNonPromoted(): void
+    #[Test]
+    public function itDoesNotDetectVoConstructorWhenMixedPromotedAndNonPromoted(): void
     {
         $code = <<<'PHP'
 <?php
@@ -390,7 +408,8 @@ PHP;
         self::assertNull($metrics->get('isVoConstructor:App\Dto\MixedDto::__construct'));
     }
 
-    public function testNotVoConstructorWithBodyLogic(): void
+    #[Test]
+    public function itDoesNotDetectVoConstructorWhenBodyHasLogic(): void
     {
         $code = <<<'PHP'
 <?php
@@ -413,7 +432,8 @@ PHP;
         self::assertNull($metrics->get('isVoConstructor:App\Dto\ValidatedDto::__construct'));
     }
 
-    public function testNotVoConstructorWithParentCall(): void
+    #[Test]
+    public function itDoesNotDetectVoConstructorWhenBodyHasParentCall(): void
     {
         $code = <<<'PHP'
 <?php
@@ -436,7 +456,8 @@ PHP;
         self::assertNull($metrics->get('isVoConstructor:App\Dto\ChildDto::__construct'));
     }
 
-    public function testVoConstructorWithDefaultValues(): void
+    #[Test]
+    public function itDetectsVoConstructorWithDefaultValues(): void
     {
         $code = <<<'PHP'
 <?php
@@ -458,7 +479,8 @@ PHP;
         self::assertSame(1, $metrics->get('isVoConstructor:App\Dto\ConfigDto::__construct'));
     }
 
-    public function testVoDetectionOnlyAppliesToConstruct(): void
+    #[Test]
+    public function itAppliesVoDetectionOnlyToConstructMethod(): void
     {
         $code = <<<'PHP'
 <?php
@@ -481,7 +503,8 @@ PHP;
         self::assertNull($metrics->get('isVoConstructor:App\Dto\SomeDto::process'));
     }
 
-    public function testAbstractReadonlyClassVoConstructor(): void
+    #[Test]
+    public function itDetectsVoConstructorForAbstractReadonlyClass(): void
     {
         $code = <<<'PHP'
 <?php
@@ -502,7 +525,8 @@ PHP;
         self::assertSame(1, $metrics->get('isVoConstructor:App\Dto\BaseDto::__construct'));
     }
 
-    public function testReadonlyClassNoConstructor(): void
+    #[Test]
+    public function itProducesNoMetricsForReadonlyClassWithNoConstructor(): void
     {
         $code = <<<'PHP'
 <?php
@@ -521,7 +545,8 @@ PHP;
         self::assertNull($metrics->get('isVoConstructor:App\Dto\EmptyDto::__construct'));
     }
 
-    public function testReadonlyClassEmptyConstructor(): void
+    #[Test]
+    public function itDoesNotDetectVoConstructorForEmptyConstructor(): void
     {
         $code = <<<'PHP'
 <?php
@@ -541,7 +566,8 @@ PHP;
         self::assertNull($metrics->get('isVoConstructor:App\Dto\NoParamDto::__construct'));
     }
 
-    public function testAnonymousClassInsideNamedClass(): void
+    #[Test]
+    public function itSkipsAnonymousClassMethodsInsideNamedClass(): void
     {
         $code = <<<'PHP'
 <?php

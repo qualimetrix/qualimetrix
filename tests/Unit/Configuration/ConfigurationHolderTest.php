@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Configuration;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Configuration\AnalysisConfiguration;
 use Qualimetrix\Configuration\ConfigurationHolder;
@@ -13,14 +14,16 @@ use RuntimeException;
 #[CoversClass(ConfigurationHolder::class)]
 final class ConfigurationHolderTest extends TestCase
 {
-    public function testInitiallyHasNoConfiguration(): void
+    #[Test]
+    public function itInitiallyHasNoConfiguration(): void
     {
         $provider = new ConfigurationHolder();
 
         self::assertFalse($provider->hasConfiguration());
     }
 
-    public function testGetConfigurationThrowsWhenNotSet(): void
+    #[Test]
+    public function itThrowsWhenGettingConfigurationNotSet(): void
     {
         $provider = new ConfigurationHolder();
 
@@ -30,7 +33,8 @@ final class ConfigurationHolderTest extends TestCase
         $provider->getConfiguration();
     }
 
-    public function testSetAndGetConfiguration(): void
+    #[Test]
+    public function itSetsAndGetsConfiguration(): void
     {
         $provider = new ConfigurationHolder();
         $config = new AnalysisConfiguration(
@@ -44,14 +48,16 @@ final class ConfigurationHolderTest extends TestCase
         self::assertSame($config, $provider->getConfiguration());
     }
 
-    public function testRuleOptionsInitiallyEmpty(): void
+    #[Test]
+    public function itHasRuleOptionsInitiallyEmpty(): void
     {
         $provider = new ConfigurationHolder();
 
         self::assertSame([], $provider->getRuleOptions());
     }
 
-    public function testSetAndGetRuleOptions(): void
+    #[Test]
+    public function itSetsAndGetsRuleOptions(): void
     {
         $provider = new ConfigurationHolder();
         $options = [
@@ -64,7 +70,8 @@ final class ConfigurationHolderTest extends TestCase
         self::assertSame($options, $provider->getRuleOptions());
     }
 
-    public function testConfigurationCanBeReplaced(): void
+    #[Test]
+    public function itAllowsConfigurationToBeReplaced(): void
     {
         $provider = new ConfigurationHolder();
         $config1 = new AnalysisConfiguration(format: 'text');
@@ -76,7 +83,8 @@ final class ConfigurationHolderTest extends TestCase
         self::assertSame($config2, $provider->getConfiguration());
     }
 
-    public function testRuleOptionsCanBeReplaced(): void
+    #[Test]
+    public function itAllowsRuleOptionsToBeReplaced(): void
     {
         $provider = new ConfigurationHolder();
 

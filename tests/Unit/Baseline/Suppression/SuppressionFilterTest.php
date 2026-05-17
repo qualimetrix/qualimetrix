@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Baseline\Suppression;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Baseline\Suppression\SuppressionFilter;
 use Qualimetrix\Core\Suppression\Suppression;
@@ -17,7 +18,8 @@ use Qualimetrix\Core\Violation\Violation;
 #[CoversClass(SuppressionFilter::class)]
 final class SuppressionFilterTest extends TestCase
 {
-    public function testFileLevelSuppressesAllMatchingViolationsInFile(): void
+    #[Test]
+    public function itFileLevelSuppressesAllMatchingViolationsInFile(): void
     {
         $filter = new SuppressionFilter();
         $filter->setSuppressions('src/Foo.php', [
@@ -33,7 +35,8 @@ final class SuppressionFilterTest extends TestCase
         self::assertTrue($filter->shouldInclude($violation3), 'File suppression should not suppress non-matching violation');
     }
 
-    public function testSymbolLevelSuppressesViolationsAtOrAfterSuppressionLine(): void
+    #[Test]
+    public function itSymbolLevelSuppressesViolationsAtOrAfterSuppressionLine(): void
     {
         $filter = new SuppressionFilter();
         $filter->setSuppressions('src/Foo.php', [
@@ -49,7 +52,8 @@ final class SuppressionFilterTest extends TestCase
         self::assertFalse($filter->shouldInclude($violationAfter), 'Symbol suppression should suppress violations after suppression line');
     }
 
-    public function testSymbolLevelDoesNotAffectViolationsBeforeSuppressionLine(): void
+    #[Test]
+    public function itSymbolLevelDoesNotAffectViolationsBeforeSuppressionLine(): void
     {
         $filter = new SuppressionFilter();
         $filter->setSuppressions('src/Foo.php', [
@@ -61,7 +65,8 @@ final class SuppressionFilterTest extends TestCase
         self::assertTrue($filter->shouldInclude($violation), 'Symbol suppression must not affect violations before its line');
     }
 
-    public function testNextLineSuppressesOnlySpecificNextLine(): void
+    #[Test]
+    public function itNextLineSuppressesOnlySpecificNextLine(): void
     {
         $filter = new SuppressionFilter();
         $filter->setSuppressions('src/Foo.php', [
@@ -79,7 +84,8 @@ final class SuppressionFilterTest extends TestCase
         self::assertTrue($filter->shouldInclude($violationBefore), 'NextLine suppression should NOT suppress violation before suppression');
     }
 
-    public function testNextLineDoesNotSuppressLinePlus2(): void
+    #[Test]
+    public function itNextLineDoesNotSuppressLinePlus2(): void
     {
         $filter = new SuppressionFilter();
         $filter->setSuppressions('src/Foo.php', [
@@ -91,7 +97,8 @@ final class SuppressionFilterTest extends TestCase
         self::assertTrue($filter->shouldInclude($violation), 'NextLine suppression must not affect line+2');
     }
 
-    public function testWildcardFileSuppressesAllRules(): void
+    #[Test]
+    public function itWildcardFileSuppressesAllRules(): void
     {
         $filter = new SuppressionFilter();
         $filter->setSuppressions('src/Foo.php', [
@@ -105,7 +112,8 @@ final class SuppressionFilterTest extends TestCase
         self::assertFalse($filter->shouldInclude($violation2));
     }
 
-    public function testPassesThroughWhenNoSuppressions(): void
+    #[Test]
+    public function itPassesThroughWhenNoSuppressions(): void
     {
         $filter = new SuppressionFilter();
 
@@ -114,7 +122,8 @@ final class SuppressionFilterTest extends TestCase
         self::assertTrue($filter->shouldInclude($violation), 'Violation should pass when no suppressions');
     }
 
-    public function testPassesThroughWhenDifferentFile(): void
+    #[Test]
+    public function itPassesThroughWhenDifferentFile(): void
     {
         $filter = new SuppressionFilter();
         $filter->setSuppressions('src/Foo.php', [
@@ -126,7 +135,8 @@ final class SuppressionFilterTest extends TestCase
         self::assertTrue($filter->shouldInclude($violation));
     }
 
-    public function testGetSuppressedViolations(): void
+    #[Test]
+    public function itGetSuppressedViolations(): void
     {
         $filter = new SuppressionFilter();
         $filter->setSuppressions('src/Foo.php', [
@@ -142,7 +152,8 @@ final class SuppressionFilterTest extends TestCase
         self::assertSame($violation1, $suppressed[0]);
     }
 
-    public function testSuppressionMatchesViolationCodeWithPrefixMatching(): void
+    #[Test]
+    public function itSuppressionMatchesViolationCodeWithPrefixMatching(): void
     {
         $filter = new SuppressionFilter();
         // Suppress 'complexity' — should match all complexity.* violation codes
@@ -172,7 +183,8 @@ final class SuppressionFilterTest extends TestCase
         self::assertTrue($filter->shouldInclude($violation2), 'coupling.distance should not be suppressed by complexity');
     }
 
-    public function testMultipleSuppressionsForSameFile(): void
+    #[Test]
+    public function itMultipleSuppressionsForSameFile(): void
     {
         $filter = new SuppressionFilter();
         $filter->setSuppressions('src/Foo.php', [
@@ -189,7 +201,8 @@ final class SuppressionFilterTest extends TestCase
         self::assertTrue($filter->shouldInclude($violation3));
     }
 
-    public function testPassesNonSuppressedViolation(): void
+    #[Test]
+    public function itPassesNonSuppressedViolation(): void
     {
         $filter = new SuppressionFilter();
         $filter->setSuppressions('src/Foo.php', [
@@ -201,7 +214,8 @@ final class SuppressionFilterTest extends TestCase
         self::assertTrue($filter->shouldInclude($violation), 'Non-suppressed violation should pass through');
     }
 
-    public function testClearSuppressionsResetsState(): void
+    #[Test]
+    public function itClearSuppressionsResetsState(): void
     {
         $filter = new SuppressionFilter();
         $filter->setSuppressions('src/Foo.php', [
@@ -216,7 +230,8 @@ final class SuppressionFilterTest extends TestCase
         self::assertTrue($filter->shouldInclude($violation), 'Violation should pass after clearSuppressions');
     }
 
-    public function testSuppressionsDoNotAccumulateAcrossMultipleLoads(): void
+    #[Test]
+    public function itSuppressionsDoNotAccumulateAcrossMultipleLoads(): void
     {
         $filter = new SuppressionFilter();
 
@@ -241,7 +256,8 @@ final class SuppressionFilterTest extends TestCase
         self::assertFalse($filter->shouldInclude($barViolation), 'New suppression for Bar.php should work');
     }
 
-    public function testSymbolSuppressionDoesNotSuppressNullLineViolation(): void
+    #[Test]
+    public function itSymbolSuppressionDoesNotSuppressNullLineViolation(): void
     {
         $filter = new SuppressionFilter();
         $filter->setSuppressions('src/Foo.php', [
@@ -261,7 +277,8 @@ final class SuppressionFilterTest extends TestCase
         self::assertTrue($filter->shouldInclude($violation), 'Symbol-level suppression must not suppress violations with null line');
     }
 
-    public function testSymbolSuppressionDoesNotAffectViolationsAfterSymbolEndLine(): void
+    #[Test]
+    public function itSymbolSuppressionDoesNotAffectViolationsAfterSymbolEndLine(): void
     {
         $filter = new SuppressionFilter();
         // Suppression on first class (lines 10-50), should NOT suppress second class (line 60)
@@ -278,7 +295,8 @@ final class SuppressionFilterTest extends TestCase
         self::assertTrue($filter->shouldInclude($violationInSecondClass), 'Violation after symbol end line should NOT be suppressed');
     }
 
-    public function testSymbolSuppressionWithoutEndLineActsUntilEndOfFile(): void
+    #[Test]
+    public function itSymbolSuppressionWithoutEndLineActsUntilEndOfFile(): void
     {
         $filter = new SuppressionFilter();
         // Legacy behavior: no endLine means suppress until EOF

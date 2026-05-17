@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Analysis\Duplication;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Duplication\NormalizedToken;
 use Qualimetrix\Analysis\Duplication\TokenNormalizer;
@@ -20,7 +21,8 @@ final class TokenNormalizerTest extends TestCase
         $this->normalizer = new TokenNormalizer();
     }
 
-    public function testStripsWhitespaceAndComments(): void
+    #[Test]
+    public function itStripsWhitespaceAndComments(): void
     {
         $code = <<<'PHP'
 <?php
@@ -37,7 +39,8 @@ PHP;
         self::assertNotContains('/* block comment */', $values);
     }
 
-    public function testNormalizesVariables(): void
+    #[Test]
+    public function itNormalizesVariables(): void
     {
         $code = '<?php $longVariableName = $anotherVar;';
 
@@ -49,7 +52,8 @@ PHP;
         }
     }
 
-    public function testNormalizesStringLiterals(): void
+    #[Test]
+    public function itNormalizesStringLiterals(): void
     {
         $code = "<?php \$x = 'hello world';";
 
@@ -61,7 +65,8 @@ PHP;
         }
     }
 
-    public function testNormalizesNumbers(): void
+    #[Test]
+    public function itNormalizesNumbers(): void
     {
         $code = '<?php $x = 42; $y = 3.14;';
 
@@ -73,7 +78,8 @@ PHP;
         }
     }
 
-    public function testPreservesStructuralTokens(): void
+    #[Test]
+    public function itPreservesStructuralTokens(): void
     {
         $code = '<?php function foo() { return true; }';
 
@@ -89,7 +95,8 @@ PHP;
         self::assertContains(')', $values);
     }
 
-    public function testIdenticalStructureWithDifferentVariablesAndLiterals(): void
+    #[Test]
+    public function itProducesSameTokensForIdenticalStructureWithDifferentVariablesAndLiterals(): void
     {
         // Only variables and literals differ — should produce same tokens
         $code1 = '<?php $foo = $bar + 1; $baz = "hello";';
@@ -104,7 +111,8 @@ PHP;
         self::assertSame($values1, $values2);
     }
 
-    public function testFunctionNamesAreNotNormalized(): void
+    #[Test]
+    public function itDoesNotNormalizeFunctionNames(): void
     {
         // Function names (T_STRING) are preserved — different names ≠ duplicate
         $code1 = '<?php function foo() {}';
@@ -119,7 +127,8 @@ PHP;
         self::assertNotSame($values1, $values2);
     }
 
-    public function testDifferentStructureProducesDifferentTokens(): void
+    #[Test]
+    public function itProducesDifferentTokensForDifferentStructure(): void
     {
         $code1 = '<?php function foo($bar) { return $bar + 1; }';
         $code2 = '<?php function foo($bar) { echo $bar; }';
@@ -133,14 +142,16 @@ PHP;
         self::assertNotSame($values1, $values2);
     }
 
-    public function testEmptyFileReturnsEmptyTokens(): void
+    #[Test]
+    public function itReturnsEmptyTokensForEmptyFile(): void
     {
         $tokens = $this->normalizer->normalize('<?php');
 
         self::assertSame([], $tokens);
     }
 
-    public function testPreservesLineNumbers(): void
+    #[Test]
+    public function itPreservesLineNumbers(): void
     {
         $code = <<<'PHP'
 <?php

@@ -6,6 +6,7 @@ namespace Qualimetrix\Tests\Unit\Rules\Security;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
@@ -21,7 +22,8 @@ use Qualimetrix\Rules\Security\SensitiveParameterRule;
 #[CoversClass(SensitiveParameterOptions::class)]
 final class SensitiveParameterRuleTest extends TestCase
 {
-    public function testNameAndCategory(): void
+    #[Test]
+    public function itHasCorrectNameAndCategory(): void
     {
         $rule = new SensitiveParameterRule(new SensitiveParameterOptions());
 
@@ -30,14 +32,16 @@ final class SensitiveParameterRuleTest extends TestCase
         self::assertStringContainsString('SensitiveParameter', $rule->getDescription());
     }
 
-    public function testRequires(): void
+    #[Test]
+    public function itRequires(): void
     {
         $rule = new SensitiveParameterRule(new SensitiveParameterOptions());
 
         self::assertSame(['security.sensitiveParameter'], $rule->requires());
     }
 
-    public function testDisabledReturnsNoViolations(): void
+    #[Test]
+    public function itReturnsNoViolationsWhenDisabled(): void
     {
         $rule = new SensitiveParameterRule(new SensitiveParameterOptions(enabled: false));
 
@@ -50,7 +54,8 @@ final class SensitiveParameterRuleTest extends TestCase
         self::assertCount(0, $rule->analyze($context));
     }
 
-    public function testNoFindingsReturnsNoViolations(): void
+    #[Test]
+    public function itReturnsNoViolationsWhenNoFindings(): void
     {
         $rule = new SensitiveParameterRule(new SensitiveParameterOptions());
 
@@ -59,7 +64,8 @@ final class SensitiveParameterRuleTest extends TestCase
         self::assertCount(0, $rule->analyze($context));
     }
 
-    public function testSingleFindingCreatesViolation(): void
+    #[Test]
+    public function itCreatesViolationForSingleFinding(): void
     {
         $rule = new SensitiveParameterRule(new SensitiveParameterOptions());
 
@@ -77,7 +83,8 @@ final class SensitiveParameterRuleTest extends TestCase
         self::assertStringContainsString('SensitiveParameter', $violations[0]->message);
     }
 
-    public function testMultipleFindingsCreateMultipleViolations(): void
+    #[Test]
+    public function itCreatesMultipleViolationsForMultipleFindings(): void
     {
         $rule = new SensitiveParameterRule(new SensitiveParameterOptions());
 
@@ -96,7 +103,8 @@ final class SensitiveParameterRuleTest extends TestCase
         self::assertSame(22, $violations[2]->location->line);
     }
 
-    public function testOptionsFromArray(): void
+    #[Test]
+    public function itLoadsOptionsFromArray(): void
     {
         $options = SensitiveParameterOptions::fromArray(['enabled' => false]);
         self::assertFalse($options->isEnabled());
@@ -105,7 +113,8 @@ final class SensitiveParameterRuleTest extends TestCase
         self::assertTrue($options->isEnabled());
     }
 
-    public function testGetSeverity(): void
+    #[Test]
+    public function itComputesSeverityCorrectly(): void
     {
         $options = new SensitiveParameterOptions();
 
@@ -113,7 +122,8 @@ final class SensitiveParameterRuleTest extends TestCase
         self::assertNull($options->getSeverity(0));
     }
 
-    public function testConstructorRejectsWrongOptionsType(): void
+    #[Test]
+    public function itRejectsWrongOptionsTypeInConstructor(): void
     {
         self::expectException(InvalidArgumentException::class);
 

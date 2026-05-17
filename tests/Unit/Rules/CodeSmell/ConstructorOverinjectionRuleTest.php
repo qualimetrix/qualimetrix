@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Rules\CodeSmell;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
@@ -24,40 +25,46 @@ use Qualimetrix\Rules\CodeSmell\ConstructorOverinjectionRule;
 #[CoversClass(ConstructorOverinjectionOptions::class)]
 final class ConstructorOverinjectionRuleTest extends TestCase
 {
-    public function testGetName(): void
+    #[Test]
+    public function itGetName(): void
     {
         $rule = new ConstructorOverinjectionRule(new ConstructorOverinjectionOptions());
 
         self::assertSame('code-smell.constructor-overinjection', $rule->getName());
     }
 
-    public function testGetDescription(): void
+    #[Test]
+    public function itGetDescription(): void
     {
         $rule = new ConstructorOverinjectionRule(new ConstructorOverinjectionOptions());
 
         self::assertSame('Checks number of constructor parameters (dependencies)', $rule->getDescription());
     }
 
-    public function testGetCategory(): void
+    #[Test]
+    public function itGetCategory(): void
     {
         $rule = new ConstructorOverinjectionRule(new ConstructorOverinjectionOptions());
 
         self::assertSame(RuleCategory::CodeSmell, $rule->getCategory());
     }
 
-    public function testRequires(): void
+    #[Test]
+    public function itRequires(): void
     {
         $rule = new ConstructorOverinjectionRule(new ConstructorOverinjectionOptions());
 
         self::assertSame(['parameterCount'], $rule->requires());
     }
 
-    public function testGetOptionsClass(): void
+    #[Test]
+    public function itGetOptionsClass(): void
     {
         self::assertSame(ConstructorOverinjectionOptions::class, ConstructorOverinjectionRule::getOptionsClass());
     }
 
-    public function testGetCliAliases(): void
+    #[Test]
+    public function itGetCliAliases(): void
     {
         self::assertSame(
             ['constructor-overinjection-warning' => 'warning', 'constructor-overinjection-error' => 'error'],
@@ -65,7 +72,8 @@ final class ConstructorOverinjectionRuleTest extends TestCase
         );
     }
 
-    public function testConstructorRejectsWrongOptionsType(): void
+    #[Test]
+    public function itConstructorRejectsWrongOptionsType(): void
     {
         self::expectException(InvalidArgumentException::class);
 
@@ -87,7 +95,8 @@ final class ConstructorOverinjectionRuleTest extends TestCase
         });
     }
 
-    public function testAnalyzeDisabledReturnsEmpty(): void
+    #[Test]
+    public function itAnalyzeDisabledReturnsEmpty(): void
     {
         $rule = new ConstructorOverinjectionRule(new ConstructorOverinjectionOptions(enabled: false));
 
@@ -99,7 +108,8 @@ final class ConstructorOverinjectionRuleTest extends TestCase
         self::assertSame([], $rule->analyze($context));
     }
 
-    public function testNonConstructorMethodsSkipped(): void
+    #[Test]
+    public function itNonConstructorMethodsSkipped(): void
     {
         $rule = new ConstructorOverinjectionRule(new ConstructorOverinjectionOptions(warning: 2, error: 4));
 
@@ -119,7 +129,8 @@ final class ConstructorOverinjectionRuleTest extends TestCase
         self::assertSame([], $rule->analyze($context));
     }
 
-    public function testGlobalFunctionConstructSkipped(): void
+    #[Test]
+    public function itGlobalFunctionConstructSkipped(): void
     {
         $rule = new ConstructorOverinjectionRule(new ConstructorOverinjectionOptions(warning: 2, error: 4));
 
@@ -139,7 +150,8 @@ final class ConstructorOverinjectionRuleTest extends TestCase
         self::assertSame([], $rule->analyze($context));
     }
 
-    public function testBelowWarningThreshold(): void
+    #[Test]
+    public function itBelowWarningThreshold(): void
     {
         $rule = new ConstructorOverinjectionRule(new ConstructorOverinjectionOptions(warning: 8, error: 12));
 
@@ -159,7 +171,8 @@ final class ConstructorOverinjectionRuleTest extends TestCase
         self::assertSame([], $rule->analyze($context));
     }
 
-    public function testAtWarningThreshold(): void
+    #[Test]
+    public function itAtWarningThreshold(): void
     {
         $rule = new ConstructorOverinjectionRule(new ConstructorOverinjectionOptions(warning: 8, error: 12));
 
@@ -185,7 +198,8 @@ final class ConstructorOverinjectionRuleTest extends TestCase
         self::assertSame('code-smell.constructor-overinjection', $violations[0]->violationCode);
     }
 
-    public function testAtErrorThreshold(): void
+    #[Test]
+    public function itAtErrorThreshold(): void
     {
         $rule = new ConstructorOverinjectionRule(new ConstructorOverinjectionOptions(warning: 8, error: 12));
 
@@ -208,7 +222,8 @@ final class ConstructorOverinjectionRuleTest extends TestCase
         self::assertSame('Constructor of UserService has 12 parameters (threshold 12). Consider using a parameter object or splitting responsibilities', $violations[0]->message);
     }
 
-    public function testAboveErrorThreshold(): void
+    #[Test]
+    public function itAboveErrorThreshold(): void
     {
         $rule = new ConstructorOverinjectionRule(new ConstructorOverinjectionOptions(warning: 8, error: 12));
 
@@ -232,7 +247,8 @@ final class ConstructorOverinjectionRuleTest extends TestCase
     }
 
     #[DataProvider('thresholdDataProvider')]
-    public function testThresholdBoundaries(
+    #[Test]
+    public function itThresholdBoundaries(
         int $parameterCount,
         int $warning,
         int $error,
@@ -274,7 +290,8 @@ final class ConstructorOverinjectionRuleTest extends TestCase
         yield 'above error' => [15, 8, 12, Severity::Error];
     }
 
-    public function testNullParameterCountSkipped(): void
+    #[Test]
+    public function itNullParameterCountSkipped(): void
     {
         $rule = new ConstructorOverinjectionRule(new ConstructorOverinjectionOptions(warning: 8, error: 12));
 
@@ -294,7 +311,8 @@ final class ConstructorOverinjectionRuleTest extends TestCase
         self::assertSame([], $rule->analyze($context));
     }
 
-    public function testOptionsFromArrayDefaults(): void
+    #[Test]
+    public function itOptionsFromArrayDefaults(): void
     {
         $options = ConstructorOverinjectionOptions::fromArray(['enabled' => true]);
 
@@ -303,7 +321,8 @@ final class ConstructorOverinjectionRuleTest extends TestCase
         self::assertSame(12, $options->error);
     }
 
-    public function testOptionsFromArrayCustomValues(): void
+    #[Test]
+    public function itOptionsFromArrayCustomValues(): void
     {
         $options = ConstructorOverinjectionOptions::fromArray([
             'enabled' => true,
@@ -316,7 +335,8 @@ final class ConstructorOverinjectionRuleTest extends TestCase
         self::assertSame(10, $options->error);
     }
 
-    public function testOptionsFromEmptyArrayDisabled(): void
+    #[Test]
+    public function itOptionsFromEmptyArrayDisabled(): void
     {
         $options = ConstructorOverinjectionOptions::fromArray([]);
 

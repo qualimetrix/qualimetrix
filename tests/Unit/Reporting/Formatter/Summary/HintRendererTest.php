@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Reporting\Formatter\Summary;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
@@ -35,7 +36,8 @@ final class HintRendererTest extends TestCase
         $this->color = new AnsiColor(false);
     }
 
-    public function testHintDetailShownWhenNotInDetailMode(): void
+    #[Test]
+    public function itShowsHintDetailWhenNotInDetailMode(): void
     {
         // Report must be non-empty (has violations) for --detail hint to appear
         $violation = new Violation(
@@ -65,7 +67,8 @@ final class HintRendererTest extends TestCase
         self::assertStringContainsString('--detail to see violations', $output);
     }
 
-    public function testHintDetailHiddenInDetailMode(): void
+    #[Test]
+    public function itHidesHintDetailInDetailMode(): void
     {
         $violation = new Violation(
             location: new Location('/src/Service.php', 10),
@@ -94,7 +97,8 @@ final class HintRendererTest extends TestCase
         self::assertStringNotContainsString('--detail', $output);
     }
 
-    public function testHintScopedReporting(): void
+    #[Test]
+    public function itShowsHintForScopedReporting(): void
     {
         $report = $this->createNonEmptyReport();
         $context = new FormatterContext(scopedReporting: true);
@@ -107,7 +111,8 @@ final class HintRendererTest extends TestCase
         self::assertStringContainsString('violations filtered to changed files only', $output);
     }
 
-    public function testHintProjectLevelDrillDown(): void
+    #[Test]
+    public function itShowsProjectLevelDrillDownHint(): void
     {
         $worstNs = new WorstOffender(
             symbolPath: SymbolPath::forNamespace('App\\Service'),
@@ -142,7 +147,8 @@ final class HintRendererTest extends TestCase
         self::assertStringContainsString('to drill down', $output);
     }
 
-    public function testHintAlwaysShowsHtmlFormat(): void
+    #[Test]
+    public function itAlwaysShowsHtmlFormatHint(): void
     {
         $report = $this->createNonEmptyReport();
         $context = new FormatterContext(detailLimit: 200);
@@ -154,7 +160,8 @@ final class HintRendererTest extends TestCase
         self::assertStringContainsString('--format=html -o report.html', $output);
     }
 
-    public function testHintEscapesBackslashesInNamespace(): void
+    #[Test]
+    public function itEscapesBackslashesInNamespaceHint(): void
     {
         $worstNs = new WorstOffender(
             symbolPath: SymbolPath::forNamespace('App\\Service\\Payment'),
@@ -189,7 +196,8 @@ final class HintRendererTest extends TestCase
         self::assertStringContainsString("'App\\Service\\Payment'", $output);
     }
 
-    public function testHintNoHealthScoresSkipsDrillDown(): void
+    #[Test]
+    public function itSkipsDrillDownHintWhenNoHealthScores(): void
     {
         $report = new Report(
             violations: [],
@@ -211,7 +219,8 @@ final class HintRendererTest extends TestCase
         self::assertStringNotContainsString('--class=', $output);
     }
 
-    public function testHintClassScopeSkipsDrillDown(): void
+    #[Test]
+    public function itSkipsDrillDownHintInClassScope(): void
     {
         $report = new Report(
             violations: [],
@@ -236,7 +245,8 @@ final class HintRendererTest extends TestCase
         self::assertStringNotContainsString('--class=', $output);
     }
 
-    public function testHintsPipeSeparated(): void
+    #[Test]
+    public function itSeparatesHintsWithPipe(): void
     {
         $report = $this->createNonEmptyReport();
         $context = new FormatterContext(scopedReporting: true);
@@ -250,7 +260,8 @@ final class HintRendererTest extends TestCase
         self::assertStringStartsWith('Hints: ', $output);
     }
 
-    public function testHintDetailHiddenWhenReportIsEmpty(): void
+    #[Test]
+    public function itHidesHintDetailWhenReportIsEmpty(): void
     {
         // isEmpty() returns true when violations === []
         $report = new Report(

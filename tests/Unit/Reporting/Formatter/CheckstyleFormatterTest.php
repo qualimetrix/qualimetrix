@@ -6,6 +6,7 @@ namespace Qualimetrix\Tests\Unit\Reporting\Formatter;
 
 use DOMDocument;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
@@ -27,12 +28,14 @@ final class CheckstyleFormatterTest extends TestCase
         $this->formatter = new CheckstyleFormatter();
     }
 
-    public function testGetNameReturnsCheckstyle(): void
+    #[Test]
+    public function itReturnsCheckstyleAsName(): void
     {
         self::assertSame('checkstyle', $this->formatter->getName());
     }
 
-    public function testFormatReturnsValidXml(): void
+    #[Test]
+    public function itReturnsValidXml(): void
     {
         $report = ReportBuilder::create()
             ->filesAnalyzed(10)
@@ -48,7 +51,8 @@ final class CheckstyleFormatterTest extends TestCase
         self::assertTrue($loaded, 'Output should be valid XML');
     }
 
-    public function testFormatEmptyReport(): void
+    #[Test]
+    public function itFormatsEmptyReport(): void
     {
         $report = ReportBuilder::create()
             ->filesAnalyzed(42)
@@ -67,7 +71,8 @@ final class CheckstyleFormatterTest extends TestCase
         self::assertSame(0, $xml->getElementsByTagName('file')->length);
     }
 
-    public function testFormatReportWithViolations(): void
+    #[Test]
+    public function itFormatsReportWithViolations(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -121,7 +126,8 @@ final class CheckstyleFormatterTest extends TestCase
         self::assertSame('warning', $error2->getAttribute('severity'));
     }
 
-    public function testFormatGroupsViolationsByFile(): void
+    #[Test]
+    public function itGroupsViolationsByFile(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -176,7 +182,8 @@ final class CheckstyleFormatterTest extends TestCase
         self::assertSame(1, $fileBErrors);
     }
 
-    public function testFormatNamespaceLevelViolationWithoutLine(): void
+    #[Test]
+    public function itFormatsNamespaceLevelViolationWithoutLine(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -205,7 +212,8 @@ final class CheckstyleFormatterTest extends TestCase
         self::assertSame('qmx.namespace-size', $error->getAttribute('source'));
     }
 
-    public function testFormatEscapesXmlSpecialCharacters(): void
+    #[Test]
+    public function itEscapesXmlSpecialCharacters(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -231,7 +239,8 @@ final class CheckstyleFormatterTest extends TestCase
         self::assertSame('Message with <special> & "characters"', $error->getAttribute('message'));
     }
 
-    public function testXmlDeclarationIsPresent(): void
+    #[Test]
+    public function itIncludesXmlDeclaration(): void
     {
         $report = new Report([], 0, 0, 0.0, 0, 0);
         $output = $this->formatter->format($report, new FormatterContext());
@@ -239,7 +248,8 @@ final class CheckstyleFormatterTest extends TestCase
         self::assertStringStartsWith('<?xml version="1.0" encoding="UTF-8"?>', $output);
     }
 
-    public function testSourceUsesViolationCode(): void
+    #[Test]
+    public function itUsesViolationCodeAsSource(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -273,12 +283,14 @@ final class CheckstyleFormatterTest extends TestCase
         return $xml;
     }
 
-    public function testGetDefaultGroupBy(): void
+    #[Test]
+    public function itReturnsNoneAsDefaultGroupBy(): void
     {
         self::assertSame(GroupBy::None, $this->formatter->getDefaultGroupBy());
     }
 
-    public function testFormatRendersInfoSeverityAsLowercaseInfo(): void
+    #[Test]
+    public function itRendersInfoSeverityAsLowercaseInfo(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -302,7 +314,8 @@ final class CheckstyleFormatterTest extends TestCase
         self::assertSame('info', $error->getAttribute('severity'));
     }
 
-    public function testRelativizesPathsWithBasePath(): void
+    #[Test]
+    public function itRelativizesPathsWithBasePath(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(

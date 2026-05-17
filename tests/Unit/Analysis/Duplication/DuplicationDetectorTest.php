@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Analysis\Duplication;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Duplication\DuplicationDetector;
 use Qualimetrix\Analysis\Duplication\NormalizedToken;
@@ -34,7 +35,8 @@ final class DuplicationDetectorTest extends TestCase
         $this->removeDir($this->tmpDir);
     }
 
-    public function testDetectsExactDuplicateAcrossFiles(): void
+    #[Test]
+    public function itDetectsExactDuplicateAcrossFiles(): void
     {
         $code = <<<'PHP'
 <?php
@@ -64,7 +66,8 @@ PHP;
         self::assertGreaterThanOrEqual(3, $block->lines);
     }
 
-    public function testDetectsNearMissDuplication(): void
+    #[Test]
+    public function itDetectsNearMissDuplication(): void
     {
         $code1 = <<<'PHP'
 <?php
@@ -104,7 +107,8 @@ PHP;
         self::assertNotEmpty($blocks, 'Should detect near-miss duplication (different variable names)');
     }
 
-    public function testNoDuplicationInDifferentCode(): void
+    #[Test]
+    public function itFindsNoDuplicationInDifferentCode(): void
     {
         $code1 = <<<'PHP'
 <?php
@@ -133,7 +137,8 @@ PHP;
         self::assertEmpty($blocks, 'Should not detect duplication in structurally different code');
     }
 
-    public function testMinLinesFilter(): void
+    #[Test]
+    public function itAppliesMinLinesFilter(): void
     {
         // Short duplicate — 2 lines
         $code1 = <<<'PHP'
@@ -157,7 +162,8 @@ PHP;
         self::assertEmpty($blocks, 'Should not detect duplication below minLines threshold');
     }
 
-    public function testMinTokensFilter(): void
+    #[Test]
+    public function itAppliesMinTokensFilter(): void
     {
         // Very short code below minTokens
         $code = '<?php $x = 1;';
@@ -171,7 +177,8 @@ PHP;
         self::assertEmpty($blocks, 'Should skip files with fewer tokens than minTokens');
     }
 
-    public function testSameFileDuplication(): void
+    #[Test]
+    public function itDetectsSameFileDuplication(): void
     {
         $code = <<<'PHP'
 <?php
@@ -205,7 +212,8 @@ PHP;
         self::assertNotEmpty($blocks, 'Should detect duplication within the same file');
     }
 
-    public function testSameFileSelfDuplicationIsNotReported(): void
+    #[Test]
+    public function itDoesNotReportSameFileSelfDuplication(): void
     {
         // Create a file with a large repetitive array constant where different
         // token windows can hash-match but extend to the same line range
@@ -236,7 +244,8 @@ PHP;
         }
     }
 
-    public function testEmptyFileList(): void
+    #[Test]
+    public function itHandlesEmptyFileList(): void
     {
         $detector = $this->createDetector();
         $blocks = $detector->detect([]);
@@ -244,7 +253,8 @@ PHP;
         self::assertSame([], $blocks);
     }
 
-    public function testDuplicateBlockVOmethods(): void
+    #[Test]
+    public function itExercisesDuplicateBlockVoMethods(): void
     {
         $block = new DuplicateBlock(
             locations: [
@@ -262,7 +272,8 @@ PHP;
         self::assertSame('b.php', $block->relatedLocations()[0]->file);
     }
 
-    public function testDuplicateLocationVO(): void
+    #[Test]
+    public function itExercisesDuplicateLocationVo(): void
     {
         $loc = new DuplicateLocation('src/Foo.php', 10, 25);
 

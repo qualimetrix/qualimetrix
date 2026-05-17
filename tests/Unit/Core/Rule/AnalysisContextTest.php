@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Core\Rule;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Dependency\CycleInterface;
 use Qualimetrix\Core\Dependency\EmptyDependencyGraph;
@@ -14,7 +15,8 @@ use Qualimetrix\Core\Rule\AnalysisContext;
 #[CoversClass(AnalysisContext::class)]
 final class AnalysisContextTest extends TestCase
 {
-    public function testConstructorWithMinimalParameters(): void
+    #[Test]
+    public function itConstructorWithMinimalParameters(): void
     {
         $metrics = self::createStub(MetricRepositoryInterface::class);
         $context = new AnalysisContext($metrics);
@@ -25,7 +27,8 @@ final class AnalysisContextTest extends TestCase
         self::assertSame([], $context->cycles);
     }
 
-    public function testConstructorWithAllParameters(): void
+    #[Test]
+    public function itConstructorWithAllParameters(): void
     {
         $metrics = self::createStub(MetricRepositoryInterface::class);
         $dependencyGraph = new EmptyDependencyGraph();
@@ -50,7 +53,8 @@ final class AnalysisContextTest extends TestCase
         self::assertSame($cycles, $context->cycles);
     }
 
-    public function testGetOptionsForRuleReturnsOptionsWhenExists(): void
+    #[Test]
+    public function itGetOptionsForRuleReturnsOptionsWhenExists(): void
     {
         $metrics = self::createStub(MetricRepositoryInterface::class);
         $ruleOptions = [
@@ -68,7 +72,8 @@ final class AnalysisContextTest extends TestCase
         );
     }
 
-    public function testGetOptionsForRuleReturnsEmptyArrayWhenNotExists(): void
+    #[Test]
+    public function itGetOptionsForRuleReturnsEmptyArrayWhenNotExists(): void
     {
         $metrics = self::createStub(MetricRepositoryInterface::class);
         $ruleOptions = [
@@ -80,7 +85,8 @@ final class AnalysisContextTest extends TestCase
         self::assertSame([], $context->getOptionsForRule('nonexistent'));
     }
 
-    public function testGetOptionsForRuleReturnsEmptyArrayWhenNoRuleOptions(): void
+    #[Test]
+    public function itGetOptionsForRuleReturnsEmptyArrayWhenNoRuleOptions(): void
     {
         $metrics = self::createStub(MetricRepositoryInterface::class);
         $context = new AnalysisContext($metrics);
@@ -88,7 +94,8 @@ final class AnalysisContextTest extends TestCase
         self::assertSame([], $context->getOptionsForRule('complexity'));
     }
 
-    public function testCyclesPropertyWithValues(): void
+    #[Test]
+    public function itCyclesPropertyWithValues(): void
     {
         $metrics = self::createStub(MetricRepositoryInterface::class);
         $cycle = self::createStub(CycleInterface::class);
@@ -102,7 +109,8 @@ final class AnalysisContextTest extends TestCase
         self::assertSame($cycle, $context->cycles[0]);
     }
 
-    public function testCyclesPropertyDefaultsToEmpty(): void
+    #[Test]
+    public function itCyclesPropertyDefaultsToEmpty(): void
     {
         $metrics = self::createStub(MetricRepositoryInterface::class);
         $context = new AnalysisContext($metrics);
@@ -110,7 +118,8 @@ final class AnalysisContextTest extends TestCase
         self::assertSame([], $context->cycles);
     }
 
-    public function testContextIsReadonly(): void
+    #[Test]
+    public function itContextIsReadonly(): void
     {
         $metrics = self::createStub(MetricRepositoryInterface::class);
         $context = new AnalysisContext($metrics);
@@ -120,7 +129,8 @@ final class AnalysisContextTest extends TestCase
         self::assertInstanceOf(AnalysisContext::class, $context); // @phpstan-ignore staticMethod.alreadyNarrowedType
     }
 
-    public function testGetOptionsForRuleWithComplexNestedStructure(): void
+    #[Test]
+    public function itGetOptionsForRuleWithComplexNestedStructure(): void
     {
         $metrics = self::createStub(MetricRepositoryInterface::class);
         $ruleOptions = [

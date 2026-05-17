@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Baseline;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Baseline\BaselineGenerator;
 use Qualimetrix\Baseline\ViolationHasher;
@@ -23,7 +24,8 @@ final class BaselineGeneratorTest extends TestCase
         $this->generator = new BaselineGenerator(new ViolationHasher());
     }
 
-    public function testGeneratesBaselineFromViolations(): void
+    #[Test]
+    public function itGeneratesBaselineFromViolations(): void
     {
         $violations = [
             new Violation(
@@ -44,7 +46,8 @@ final class BaselineGeneratorTest extends TestCase
         self::assertCount(1, $baseline->entries['method:App\Foo::bar']);
     }
 
-    public function testGroupsViolationsByFile(): void
+    #[Test]
+    public function itGroupsViolationsByFile(): void
     {
         $violations = [
             new Violation(
@@ -81,7 +84,8 @@ final class BaselineGeneratorTest extends TestCase
         self::assertCount(1, $baseline->entries['method:App\Bar::baz']);
     }
 
-    public function testSortsEntriesByRuleAndHash(): void
+    #[Test]
+    public function itSortsEntriesByRuleAndHash(): void
     {
         $violations = [
             new Violation(
@@ -120,7 +124,8 @@ final class BaselineGeneratorTest extends TestCase
         self::assertSame('size', $entries[2]->rule);
     }
 
-    public function testGeneratesEmptyBaselineForNoViolations(): void
+    #[Test]
+    public function itGeneratesEmptyBaselineForNoViolations(): void
     {
         $baseline = $this->generator->generate([]);
 
@@ -128,7 +133,8 @@ final class BaselineGeneratorTest extends TestCase
         self::assertEmpty($baseline->entries);
     }
 
-    public function testDeduplicatesIdenticalViolations(): void
+    #[Test]
+    public function itDeduplicatesIdenticalViolations(): void
     {
         $violation = new Violation(
             location: new Location('src/Foo.php', 45),
@@ -145,7 +151,8 @@ final class BaselineGeneratorTest extends TestCase
         self::assertCount(1, $baseline->entries['method:App\Foo::bar']);
     }
 
-    public function testHandlesViolationsWithoutLineNumber(): void
+    #[Test]
+    public function itHandlesViolationsWithoutLineNumber(): void
     {
         $violations = [
             new Violation(

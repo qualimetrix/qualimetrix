@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Core\Violation\Filter;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Util\PathMatcher;
@@ -16,7 +17,8 @@ use Qualimetrix\Core\Violation\Violation;
 #[CoversClass(PathExclusionFilter::class)]
 final class PathExclusionFilterTest extends TestCase
 {
-    public function testFiltersSuppressedPath(): void
+    #[Test]
+    public function itFiltersSuppressedPath(): void
     {
         $filter = new PathExclusionFilter(new PathMatcher(['src/Entity']));
 
@@ -25,7 +27,8 @@ final class PathExclusionFilterTest extends TestCase
         self::assertFalse($filter->shouldInclude($violation), 'Violation matching exclusion prefix should be suppressed');
     }
 
-    public function testPassesNonMatchingPath(): void
+    #[Test]
+    public function itPassesNonMatchingPath(): void
     {
         $filter = new PathExclusionFilter(new PathMatcher(['src/Entity']));
 
@@ -34,7 +37,8 @@ final class PathExclusionFilterTest extends TestCase
         self::assertTrue($filter->shouldInclude($violation), 'Violation not matching exclusion prefix should pass through');
     }
 
-    public function testPassesEmptyFilePath(): void
+    #[Test]
+    public function itPassesEmptyFilePath(): void
     {
         $filter = new PathExclusionFilter(new PathMatcher(['src']));
 
@@ -50,7 +54,8 @@ final class PathExclusionFilterTest extends TestCase
         self::assertTrue($filter->shouldInclude($violation), 'Violation with empty file path should never be filtered');
     }
 
-    public function testFiltersGlobPattern(): void
+    #[Test]
+    public function itFiltersGlobPattern(): void
     {
         $filter = new PathExclusionFilter(new PathMatcher(['src/Metrics/*Visitor.php']));
 
@@ -59,7 +64,8 @@ final class PathExclusionFilterTest extends TestCase
         self::assertFalse($filter->shouldInclude($violation), 'Violation matching glob pattern should be suppressed');
     }
 
-    public function testPassesWhenNoPrefixes(): void
+    #[Test]
+    public function itPassesWhenNoPrefixes(): void
     {
         $filter = new PathExclusionFilter(new PathMatcher([]));
 

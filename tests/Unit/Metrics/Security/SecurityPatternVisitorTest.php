@@ -8,14 +8,16 @@ use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Metrics\Security\SecurityPatternVisitor;
 
 #[CoversClass(SecurityPatternVisitor::class)]
 final class SecurityPatternVisitorTest extends TestCase
 {
+    #[Test]
     #[DataProvider('provideSqlInjectionCases')]
-    public function testSqlInjectionDetection(string $code, int $expectedCount): void
+    public function itDetectsSqlInjection(string $code, int $expectedCount): void
     {
         $locations = $this->analyze($code, 'sql_injection');
         self::assertCount($expectedCount, $locations, \sprintf(
@@ -26,8 +28,9 @@ final class SecurityPatternVisitorTest extends TestCase
         ));
     }
 
+    #[Test]
     #[DataProvider('provideXssCases')]
-    public function testXssDetection(string $code, int $expectedCount): void
+    public function itDetectsXss(string $code, int $expectedCount): void
     {
         $locations = $this->analyze($code, 'xss');
         self::assertCount($expectedCount, $locations, \sprintf(
@@ -38,8 +41,9 @@ final class SecurityPatternVisitorTest extends TestCase
         ));
     }
 
+    #[Test]
     #[DataProvider('provideCommandInjectionCases')]
-    public function testCommandInjectionDetection(string $code, int $expectedCount): void
+    public function itDetectsCommandInjection(string $code, int $expectedCount): void
     {
         $locations = $this->analyze($code, 'command_injection');
         self::assertCount($expectedCount, $locations, \sprintf(
@@ -407,7 +411,8 @@ final class SecurityPatternVisitorTest extends TestCase
         ];
     }
 
-    public function testResetClearsState(): void
+    #[Test]
+    public function itResetsClearsState(): void
     {
         $visitor = new SecurityPatternVisitor();
 
@@ -425,7 +430,8 @@ final class SecurityPatternVisitorTest extends TestCase
         self::assertCount(0, $visitor->getLocations());
     }
 
-    public function testGetLocationsByType(): void
+    #[Test]
+    public function itGetsLocationsByType(): void
     {
         $visitor = new SecurityPatternVisitor();
 

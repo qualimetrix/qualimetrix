@@ -6,34 +6,39 @@ namespace Qualimetrix\Tests\Unit\Core\Util;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Util\PathMatcher;
 
 #[CoversClass(PathMatcher::class)]
 final class PathMatcherTest extends TestCase
 {
-    public function testIsEmptyReturnsTrueForEmptyPatterns(): void
+    #[Test]
+    public function itIsEmptyReturnsTrueForEmptyPatterns(): void
     {
         $matcher = new PathMatcher([]);
 
         self::assertTrue($matcher->isEmpty());
     }
 
-    public function testIsEmptyReturnsFalseWhenPatternsExist(): void
+    #[Test]
+    public function itIsEmptyReturnsFalseWhenPatternsExist(): void
     {
         $matcher = new PathMatcher(['src/Entity']);
 
         self::assertFalse($matcher->isEmpty());
     }
 
-    public function testMatchesReturnsFalseForEmptyPatterns(): void
+    #[Test]
+    public function itMatchesReturnsFalseForEmptyPatterns(): void
     {
         $matcher = new PathMatcher([]);
 
         self::assertFalse($matcher->matches('src/Entity/User.php'));
     }
 
-    public function testMatchesReturnsFalseForEmptyFilePath(): void
+    #[Test]
+    public function itMatchesReturnsFalseForEmptyFilePath(): void
     {
         $matcher = new PathMatcher(['src/Entity']);
 
@@ -44,7 +49,8 @@ final class PathMatcherTest extends TestCase
      * @param list<string> $patterns
      */
     #[DataProvider('matchingPatternsProvider')]
-    public function testMatchesReturnsTrue(string $description, array $patterns, string $filePath): void
+    #[Test]
+    public function itMatchesReturnsTrue(string $description, array $patterns, string $filePath): void
     {
         $matcher = new PathMatcher($patterns);
 
@@ -55,7 +61,8 @@ final class PathMatcherTest extends TestCase
      * @param list<string> $patterns
      */
     #[DataProvider('nonMatchingPatternsProvider')]
-    public function testMatchesReturnsFalse(string $description, array $patterns, string $filePath): void
+    #[Test]
+    public function itMatchesReturnsFalse(string $description, array $patterns, string $filePath): void
     {
         $matcher = new PathMatcher($patterns);
 

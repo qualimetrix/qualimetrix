@@ -16,6 +16,7 @@ use PhpParser\Node\Scalar\InterpolatedString;
 use PhpParser\Node\Scalar\String_;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Metrics\Security\SuperglobalAnalyzer;
 
@@ -31,8 +32,9 @@ final class SuperglobalAnalyzerTest extends TestCase
 
     // --- isDangerousSuperglobal ---
 
+    #[Test]
     #[DataProvider('provideDangerousSuperglobals')]
-    public function testIsDangerousSuperglobalReturnsTrueForDangerous(string $name): void
+    public function itReturnsTrueForDangerousSuperglobal(string $name): void
     {
         $variable = new Variable($name);
 
@@ -50,8 +52,9 @@ final class SuperglobalAnalyzerTest extends TestCase
         yield '$_COOKIE' => ['_COOKIE'];
     }
 
+    #[Test]
     #[DataProvider('provideNonDangerousSuperglobals')]
-    public function testIsDangerousSuperglobalReturnsFalseForNonDangerous(string $name): void
+    public function itReturnsFalseForNonDangerousSuperglobal(string $name): void
     {
         $variable = new Variable($name);
 
@@ -71,14 +74,16 @@ final class SuperglobalAnalyzerTest extends TestCase
         yield '$regular' => ['regular'];
     }
 
-    public function testIsDangerousSuperglobalForArrayDimFetch(): void
+    #[Test]
+    public function itDetectsDangerousSuperglobalForArrayDimFetch(): void
     {
         $arrayAccess = new ArrayDimFetch(new Variable('_GET'), new String_('id'));
 
         self::assertTrue($this->analyzer->isDangerousSuperglobal($arrayAccess));
     }
 
-    public function testIsDangerousSuperglobalForNestedArrayDimFetch(): void
+    #[Test]
+    public function itDetectsDangerousSuperglobalForNestedArrayDimFetch(): void
     {
         $nested = new ArrayDimFetch(
             new ArrayDimFetch(new Variable('_POST'), new String_('data')),
@@ -88,7 +93,8 @@ final class SuperglobalAnalyzerTest extends TestCase
         self::assertTrue($this->analyzer->isDangerousSuperglobal($nested));
     }
 
-    public function testIsDangerousSuperglobalReturnsFalseForOtherExpressions(): void
+    #[Test]
+    public function itReturnsFalseForOtherExpressions(): void
     {
         $funcCall = new FuncCall(new Name('someFunc'));
 
@@ -97,7 +103,8 @@ final class SuperglobalAnalyzerTest extends TestCase
 
     // --- containsSuperglobal ---
 
-    public function testContainsSuperglobalInConcat(): void
+    #[Test]
+    public function itContainsSuperglobalInConcat(): void
     {
         $concat = new Concat(
             new String_('prefix'),
@@ -107,7 +114,8 @@ final class SuperglobalAnalyzerTest extends TestCase
         self::assertTrue($this->analyzer->containsSuperglobal($concat));
     }
 
-    public function testContainsSuperglobalInNestedConcat(): void
+    #[Test]
+    public function itContainsSuperglobalInNestedConcat(): void
     {
         $concat = new Concat(
             new Concat(
@@ -120,7 +128,8 @@ final class SuperglobalAnalyzerTest extends TestCase
         self::assertTrue($this->analyzer->containsSuperglobal($concat));
     }
 
-    public function testContainsSuperglobalReturnsFalseForSafeConcat(): void
+    #[Test]
+    public function itReturnsFalseForSafeConcat(): void
     {
         $concat = new Concat(
             new String_('hello'),
@@ -132,21 +141,24 @@ final class SuperglobalAnalyzerTest extends TestCase
 
     // --- getSuperglobalName ---
 
-    public function testGetSuperglobalNameForVariable(): void
+    #[Test]
+    public function itGetsSuperglobalNameForVariable(): void
     {
         $variable = new Variable('_GET');
 
         self::assertSame('_GET', $this->analyzer->getSuperglobalName($variable));
     }
 
-    public function testGetSuperglobalNameForArrayAccess(): void
+    #[Test]
+    public function itGetsSuperglobalNameForArrayAccess(): void
     {
         $access = new ArrayDimFetch(new Variable('_POST'), new String_('key'));
 
         self::assertSame('_POST', $this->analyzer->getSuperglobalName($access));
     }
 
-    public function testGetSuperglobalNameReturnsUnknownForOtherExpr(): void
+    #[Test]
+    public function itReturnsUnknownSuperglobalNameForOtherExpr(): void
     {
         $funcCall = new FuncCall(new Name('someFunc'));
 
@@ -155,7 +167,8 @@ final class SuperglobalAnalyzerTest extends TestCase
 
     // --- findSuperglobalName ---
 
-    public function testFindSuperglobalNameInConcat(): void
+    #[Test]
+    public function itFindsSuperglobalNameInConcat(): void
     {
         $concat = new Concat(
             new String_('prefix'),
@@ -165,7 +178,8 @@ final class SuperglobalAnalyzerTest extends TestCase
         self::assertSame('_REQUEST', $this->analyzer->findSuperglobalName($concat));
     }
 
-    public function testFindSuperglobalNameInLeftBranch(): void
+    #[Test]
+    public function itFindsSuperglobalNameInLeftBranch(): void
     {
         $concat = new Concat(
             new ArrayDimFetch(new Variable('_COOKIE'), new String_('token')),
@@ -177,14 +191,16 @@ final class SuperglobalAnalyzerTest extends TestCase
 
     // --- isUnsanitizedSuperglobal ---
 
-    public function testIsUnsanitizedForDirectSuperglobal(): void
+    #[Test]
+    public function itIsUnsanitizedForDirectSuperglobal(): void
     {
         $access = new ArrayDimFetch(new Variable('_GET'), new String_('id'));
 
         self::assertTrue($this->analyzer->isUnsanitizedSuperglobal($access, ['htmlspecialchars']));
     }
 
-    public function testIsNotUnsanitizedForSanitizedCall(): void
+    #[Test]
+    public function itIsNotUnsanitizedForSanitizedCall(): void
     {
         $sanitized = new FuncCall(
             new Name('htmlspecialchars'),
@@ -194,21 +210,24 @@ final class SuperglobalAnalyzerTest extends TestCase
         self::assertFalse($this->analyzer->isUnsanitizedSuperglobal($sanitized, ['htmlspecialchars']));
     }
 
-    public function testIsNotUnsanitizedForIntCast(): void
+    #[Test]
+    public function itIsNotUnsanitizedForIntCast(): void
     {
         $cast = new Cast\Int_(new ArrayDimFetch(new Variable('_GET'), new String_('id')));
 
         self::assertFalse($this->analyzer->isUnsanitizedSuperglobal($cast, []));
     }
 
-    public function testIsNotUnsanitizedForDoubleCast(): void
+    #[Test]
+    public function itIsNotUnsanitizedForDoubleCast(): void
     {
         $cast = new Cast\Double(new ArrayDimFetch(new Variable('_GET'), new String_('price')));
 
         self::assertFalse($this->analyzer->isUnsanitizedSuperglobal($cast, []));
     }
 
-    public function testIsNotUnsanitizedForIntvalCall(): void
+    #[Test]
+    public function itIsNotUnsanitizedForIntvalCall(): void
     {
         $intval = new FuncCall(
             new Name('intval'),
@@ -220,7 +239,8 @@ final class SuperglobalAnalyzerTest extends TestCase
 
     // --- containsUnsanitizedSuperglobalInExpr ---
 
-    public function testContainsUnsanitizedInConcatChain(): void
+    #[Test]
+    public function itContainsUnsanitizedInConcatChain(): void
     {
         $concat = new Concat(
             new String_('prefix'),
@@ -230,7 +250,8 @@ final class SuperglobalAnalyzerTest extends TestCase
         self::assertTrue($this->analyzer->containsUnsanitizedSuperglobalInExpr($concat, ['htmlspecialchars']));
     }
 
-    public function testDoesNotContainUnsanitizedWhenAllSanitized(): void
+    #[Test]
+    public function itDoesNotContainUnsanitizedWhenAllSanitized(): void
     {
         $sanitized = new FuncCall(
             new Name('htmlspecialchars'),
@@ -243,7 +264,8 @@ final class SuperglobalAnalyzerTest extends TestCase
 
     // --- findUnsanitizedSuperglobalName ---
 
-    public function testFindUnsanitizedSuperglobalNameInConcat(): void
+    #[Test]
+    public function itFindsUnsanitizedSuperglobalNameInConcat(): void
     {
         $concat = new Concat(
             new String_('prefix'),
@@ -253,7 +275,8 @@ final class SuperglobalAnalyzerTest extends TestCase
         self::assertSame('_POST', $this->analyzer->findUnsanitizedSuperglobalName($concat, []));
     }
 
-    public function testFindUnsanitizedSuperglobalNameReturnsNullWhenSanitized(): void
+    #[Test]
+    public function itReturnsNullForUnsanitizedSuperglobalNameWhenSanitized(): void
     {
         $sanitized = new FuncCall(
             new Name('escapeshellarg'),
@@ -265,7 +288,8 @@ final class SuperglobalAnalyzerTest extends TestCase
 
     // --- findSuperglobalInInterpolatedString ---
 
-    public function testFindSuperglobalInInterpolatedString(): void
+    #[Test]
+    public function itFindsSuperglobalInInterpolatedString(): void
     {
         $interpolated = new InterpolatedString([
             new InterpolatedStringPart('Hello '),
@@ -275,7 +299,8 @@ final class SuperglobalAnalyzerTest extends TestCase
         self::assertSame('_GET', $this->analyzer->findSuperglobalInInterpolatedString($interpolated));
     }
 
-    public function testFindSuperglobalInInterpolatedStringReturnsNullForSafe(): void
+    #[Test]
+    public function itReturnsNullForSuperglobalInSafeInterpolatedString(): void
     {
         $interpolated = new InterpolatedString([
             new InterpolatedStringPart('Hello '),
@@ -287,7 +312,8 @@ final class SuperglobalAnalyzerTest extends TestCase
 
     // --- flattenConcat ---
 
-    public function testFlattenConcatSimple(): void
+    #[Test]
+    public function itFlattensSimpleConcat(): void
     {
         $concat = new Concat(new String_('a'), new String_('b'));
 
@@ -296,7 +322,8 @@ final class SuperglobalAnalyzerTest extends TestCase
         self::assertCount(2, $parts);
     }
 
-    public function testFlattenConcatNested(): void
+    #[Test]
+    public function itFlattensNestedConcat(): void
     {
         $concat = new Concat(
             new Concat(new String_('a'), new String_('b')),
@@ -308,7 +335,8 @@ final class SuperglobalAnalyzerTest extends TestCase
         self::assertCount(3, $parts);
     }
 
-    public function testFlattenConcatDeeplyNested(): void
+    #[Test]
+    public function itFlattensDeeplyNestedConcat(): void
     {
         $concat = new Concat(
             new Concat(new String_('a'), new String_('b')),

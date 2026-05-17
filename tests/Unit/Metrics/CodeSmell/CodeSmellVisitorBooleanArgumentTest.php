@@ -8,6 +8,7 @@ use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Metrics\CodeSmell\CodeSmellLocation;
 use Qualimetrix\Metrics\CodeSmell\CodeSmellVisitor;
@@ -16,8 +17,9 @@ use Qualimetrix\Metrics\CodeSmell\CodeSmellVisitor;
 #[CoversClass(CodeSmellLocation::class)]
 final class CodeSmellVisitorBooleanArgumentTest extends TestCase
 {
+    #[Test]
     #[DataProvider('provideBooleanArgumentCases')]
-    public function testBooleanArgumentDetection(string $code, int $expectedCount, string $description): void
+    public function itDetectsBooleanArgumentSmells(string $code, int $expectedCount, string $description): void
     {
         $visitor = new CodeSmellVisitor();
         $parser = (new ParserFactory())->createForHostVersion();

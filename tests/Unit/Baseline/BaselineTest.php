@@ -6,6 +6,7 @@ namespace Qualimetrix\Tests\Unit\Baseline;
 
 use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Baseline\Baseline;
 use Qualimetrix\Baseline\BaselineEntry;
@@ -13,7 +14,8 @@ use Qualimetrix\Baseline\BaselineEntry;
 #[CoversClass(Baseline::class)]
 final class BaselineTest extends TestCase
 {
-    public function testContainsReturnsTrueForExistingViolation(): void
+    #[Test]
+    public function itContainsReturnsTrueForExistingViolation(): void
     {
         $baseline = new Baseline(
             version: 1,
@@ -28,7 +30,8 @@ final class BaselineTest extends TestCase
         self::assertTrue($baseline->contains('method:App\Foo::bar', 'a1b2c3d4'));
     }
 
-    public function testContainsReturnsFalseForNonExistingViolation(): void
+    #[Test]
+    public function itContainsReturnsFalseForNonExistingViolation(): void
     {
         $baseline = new Baseline(
             version: 1,
@@ -43,7 +46,8 @@ final class BaselineTest extends TestCase
         self::assertFalse($baseline->contains('method:App\Foo::bar', 'different'));
     }
 
-    public function testContainsReturnsFalseForNonExistingFile(): void
+    #[Test]
+    public function itContainsReturnsFalseForNonExistingFile(): void
     {
         $baseline = new Baseline(
             version: 1,
@@ -58,7 +62,8 @@ final class BaselineTest extends TestCase
         self::assertFalse($baseline->contains('method:App\Bar::baz', 'a1b2c3d4'));
     }
 
-    public function testCountReturnsCorrectTotal(): void
+    #[Test]
+    public function itCountReturnsCorrectTotal(): void
     {
         $baseline = new Baseline(
             version: 1,
@@ -79,7 +84,8 @@ final class BaselineTest extends TestCase
         self::assertSame(3, $baseline->count());
     }
 
-    public function testCountReturnsZeroForEmptyBaseline(): void
+    #[Test]
+    public function itCountReturnsZeroForEmptyBaseline(): void
     {
         $baseline = new Baseline(
             version: 1,
@@ -90,7 +96,8 @@ final class BaselineTest extends TestCase
         self::assertSame(0, $baseline->count());
     }
 
-    public function testDiffReturnsResolvedViolations(): void
+    #[Test]
+    public function itDiffReturnsResolvedViolations(): void
     {
         $entry1 = new BaselineEntry('complexity', 'a1b2c3d4');
         $entry2 = new BaselineEntry('size', 'e5f6g7h8');
@@ -119,7 +126,8 @@ final class BaselineTest extends TestCase
         self::assertSame($entry2, $resolved['class:App\Foo'][0]);
     }
 
-    public function testDiffReturnsEmptyWhenNothingResolved(): void
+    #[Test]
+    public function itDiffReturnsEmptyWhenNothingResolved(): void
     {
         $baseline = new Baseline(
             version: 1,
@@ -140,7 +148,8 @@ final class BaselineTest extends TestCase
         self::assertEmpty($resolved);
     }
 
-    public function testGetStaleKeysReturnsNonExistentKeys(): void
+    #[Test]
+    public function itGetStaleKeysReturnsNonExistentKeys(): void
     {
         $baseline = new Baseline(
             version: 1,
@@ -165,7 +174,8 @@ final class BaselineTest extends TestCase
         self::assertSame(['class:App\Deleted'], $staleKeys);
     }
 
-    public function testGetStaleKeysReturnsEmptyWhenAllKeysExist(): void
+    #[Test]
+    public function itGetStaleKeysReturnsEmptyWhenAllKeysExist(): void
     {
         $baseline = new Baseline(
             version: 1,

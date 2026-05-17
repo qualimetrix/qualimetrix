@@ -6,6 +6,7 @@ namespace Qualimetrix\Tests\Unit\Rules\Complexity;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
@@ -27,14 +28,16 @@ use Qualimetrix\Rules\Complexity\MethodCognitiveComplexityOptions;
 #[CoversClass(ClassCognitiveComplexityOptions::class)]
 final class CognitiveComplexityRuleTest extends TestCase
 {
-    public function testGetName(): void
+    #[Test]
+    public function itGetName(): void
     {
         $rule = new CognitiveComplexityRule(new CognitiveComplexityOptions());
 
         self::assertSame('complexity.cognitive', $rule->getName());
     }
 
-    public function testGetDescription(): void
+    #[Test]
+    public function itGetDescription(): void
     {
         $rule = new CognitiveComplexityRule(new CognitiveComplexityOptions());
 
@@ -44,21 +47,24 @@ final class CognitiveComplexityRuleTest extends TestCase
         );
     }
 
-    public function testGetCategory(): void
+    #[Test]
+    public function itGetCategory(): void
     {
         $rule = new CognitiveComplexityRule(new CognitiveComplexityOptions());
 
         self::assertSame(RuleCategory::Complexity, $rule->getCategory());
     }
 
-    public function testRequires(): void
+    #[Test]
+    public function itRequires(): void
     {
         $rule = new CognitiveComplexityRule(new CognitiveComplexityOptions());
 
         self::assertSame(['cognitive'], $rule->requires());
     }
 
-    public function testGetOptionsClass(): void
+    #[Test]
+    public function itGetOptionsClass(): void
     {
         self::assertSame(
             CognitiveComplexityOptions::class,
@@ -66,7 +72,8 @@ final class CognitiveComplexityRuleTest extends TestCase
         );
     }
 
-    public function testGetSupportedLevels(): void
+    #[Test]
+    public function itGetSupportedLevels(): void
     {
         $rule = new CognitiveComplexityRule(new CognitiveComplexityOptions());
 
@@ -75,7 +82,8 @@ final class CognitiveComplexityRuleTest extends TestCase
 
     // Method-level tests
 
-    public function testAnalyzeLevelMethodReturnsEmptyWhenDisabled(): void
+    #[Test]
+    public function itAnalyzeLevelMethodReturnsEmptyWhenDisabled(): void
     {
         $rule = new CognitiveComplexityRule(
             new CognitiveComplexityOptions(
@@ -91,7 +99,8 @@ final class CognitiveComplexityRuleTest extends TestCase
         self::assertSame([], $rule->analyzeLevel(RuleLevel::Method, $context));
     }
 
-    public function testAnalyzeLevelMethodReturnsEmptyWhenNoMethods(): void
+    #[Test]
+    public function itAnalyzeLevelMethodReturnsEmptyWhenNoMethods(): void
     {
         $rule = new CognitiveComplexityRule(new CognitiveComplexityOptions());
 
@@ -104,7 +113,8 @@ final class CognitiveComplexityRuleTest extends TestCase
         self::assertSame([], $rule->analyzeLevel(RuleLevel::Method, $context));
     }
 
-    public function testAnalyzeLevelMethodGeneratesWarning(): void
+    #[Test]
+    public function itAnalyzeLevelMethodGeneratesWarning(): void
     {
         $rule = new CognitiveComplexityRule(new CognitiveComplexityOptions());
 
@@ -130,7 +140,8 @@ final class CognitiveComplexityRuleTest extends TestCase
         self::assertSame(RuleLevel::Method, $violations[0]->level);
     }
 
-    public function testAnalyzeLevelMethodGeneratesError(): void
+    #[Test]
+    public function itAnalyzeLevelMethodGeneratesError(): void
     {
         $rule = new CognitiveComplexityRule(new CognitiveComplexityOptions());
 
@@ -155,7 +166,8 @@ final class CognitiveComplexityRuleTest extends TestCase
 
     // Class-level tests
 
-    public function testAnalyzeLevelClassReturnsEmptyWhenDisabled(): void
+    #[Test]
+    public function itAnalyzeLevelClassReturnsEmptyWhenDisabled(): void
     {
         $rule = new CognitiveComplexityRule(
             new CognitiveComplexityOptions(
@@ -171,7 +183,8 @@ final class CognitiveComplexityRuleTest extends TestCase
         self::assertSame([], $rule->analyzeLevel(RuleLevel::Class_, $context));
     }
 
-    public function testAnalyzeLevelClassGeneratesWarning(): void
+    #[Test]
+    public function itAnalyzeLevelClassGeneratesWarning(): void
     {
         $rule = new CognitiveComplexityRule(new CognitiveComplexityOptions());
 
@@ -196,7 +209,8 @@ final class CognitiveComplexityRuleTest extends TestCase
         self::assertSame(RuleLevel::Class_, $violations[0]->level);
     }
 
-    public function testAnalyzeLevelClassGeneratesError(): void
+    #[Test]
+    public function itAnalyzeLevelClassGeneratesError(): void
     {
         $rule = new CognitiveComplexityRule(new CognitiveComplexityOptions());
 
@@ -221,7 +235,8 @@ final class CognitiveComplexityRuleTest extends TestCase
 
     // Legacy analyze() tests
 
-    public function testAnalyzeCallsBothLevels(): void
+    #[Test]
+    public function itAnalyzeCallsBothLevels(): void
     {
         $rule = new CognitiveComplexityRule(new CognitiveComplexityOptions());
 
@@ -258,7 +273,8 @@ final class CognitiveComplexityRuleTest extends TestCase
 
     // Options tests
 
-    public function testMethodOptionsFromArray(): void
+    #[Test]
+    public function itMethodOptionsFromArray(): void
     {
         $options = MethodCognitiveComplexityOptions::fromArray([
             'enabled' => false,
@@ -271,7 +287,8 @@ final class CognitiveComplexityRuleTest extends TestCase
         self::assertSame(40, $options->error);
     }
 
-    public function testMethodOptionsFromEmptyArray(): void
+    #[Test]
+    public function itMethodOptionsFromEmptyArray(): void
     {
         $options = MethodCognitiveComplexityOptions::fromArray([]);
 
@@ -280,7 +297,8 @@ final class CognitiveComplexityRuleTest extends TestCase
         self::assertSame(30, $options->error);
     }
 
-    public function testClassOptionsFromArray(): void
+    #[Test]
+    public function itClassOptionsFromArray(): void
     {
         $options = ClassCognitiveComplexityOptions::fromArray([
             'enabled' => false,
@@ -293,7 +311,8 @@ final class CognitiveComplexityRuleTest extends TestCase
         self::assertSame(60, $options->maxError);
     }
 
-    public function testCognitiveComplexityOptionsFromHierarchicalArray(): void
+    #[Test]
+    public function itCognitiveComplexityOptionsFromHierarchicalArray(): void
     {
         $options = CognitiveComplexityOptions::fromArray([
             'method' => [
@@ -313,7 +332,8 @@ final class CognitiveComplexityRuleTest extends TestCase
         self::assertSame(40, $options->class->maxWarning);
     }
 
-    public function testCognitiveComplexityOptionsFromLegacyArray(): void
+    #[Test]
+    public function itCognitiveComplexityOptionsFromLegacyArray(): void
     {
         $options = CognitiveComplexityOptions::fromArray([
             'enabled' => true,
@@ -329,7 +349,8 @@ final class CognitiveComplexityRuleTest extends TestCase
         self::assertFalse($options->class->isEnabled());
     }
 
-    public function testCognitiveComplexityOptionsForLevel(): void
+    #[Test]
+    public function itCognitiveComplexityOptionsForLevel(): void
     {
         $options = new CognitiveComplexityOptions();
 
@@ -337,7 +358,8 @@ final class CognitiveComplexityRuleTest extends TestCase
         self::assertSame($options->class, $options->forLevel(RuleLevel::Class_));
     }
 
-    public function testCognitiveComplexityOptionsIsLevelEnabled(): void
+    #[Test]
+    public function itCognitiveComplexityOptionsIsLevelEnabled(): void
     {
         $options = new CognitiveComplexityOptions(
             method: new MethodCognitiveComplexityOptions(enabled: true),
@@ -349,7 +371,8 @@ final class CognitiveComplexityRuleTest extends TestCase
     }
 
     #[DataProvider('methodThresholdDataProvider')]
-    public function testMethodThresholdBoundaries(
+    #[Test]
+    public function itMethodThresholdBoundaries(
         int $cognitive,
         int $warning,
         int $error,
@@ -398,7 +421,8 @@ final class CognitiveComplexityRuleTest extends TestCase
         yield 'above error threshold' => [40, 15, 30, Severity::Error];
     }
 
-    public function testLegacyDefaultErrorThresholdMatchesMethodDefault(): void
+    #[Test]
+    public function itLegacyDefaultErrorThresholdMatchesMethodDefault(): void
     {
         // Legacy format without explicit errorThreshold should use 30 (same as MethodCognitiveComplexityOptions)
         $options = CognitiveComplexityOptions::fromArray([
@@ -408,7 +432,8 @@ final class CognitiveComplexityRuleTest extends TestCase
         self::assertSame(30, $options->method->error);
     }
 
-    public function testLegacyPartialConfigUsesCorrectDefaults(): void
+    #[Test]
+    public function itLegacyPartialConfigUsesCorrectDefaults(): void
     {
         $options = CognitiveComplexityOptions::fromArray([
             'errorThreshold' => 40,
@@ -418,7 +443,8 @@ final class CognitiveComplexityRuleTest extends TestCase
         self::assertSame(40, $options->method->error);
     }
 
-    public function testMethodViolationIncludesBreakdownWhenEntriesPresent(): void
+    #[Test]
+    public function itMethodViolationIncludesBreakdownWhenEntriesPresent(): void
     {
         $rule = new CognitiveComplexityRule(new CognitiveComplexityOptions());
 
@@ -450,7 +476,8 @@ final class CognitiveComplexityRuleTest extends TestCase
         self::assertStringContainsString('— deeply nested', $violations[0]->recommendation);
     }
 
-    public function testBreakdownWithSingleIncrementAndClosureLabel(): void
+    #[Test]
+    public function itBreakdownWithSingleIncrementAndClosureLabel(): void
     {
         $rule = new CognitiveComplexityRule(new CognitiveComplexityOptions());
 
@@ -475,7 +502,8 @@ final class CognitiveComplexityRuleTest extends TestCase
         self::assertStringContainsString('Top: closure +3 L15.', $violations[0]->message); // trailing "." from message format, not from breakdown
     }
 
-    public function testMethodViolationNoBreakdownWhenNoEntries(): void
+    #[Test]
+    public function itMethodViolationNoBreakdownWhenNoEntries(): void
     {
         $rule = new CognitiveComplexityRule(new CognitiveComplexityOptions());
 

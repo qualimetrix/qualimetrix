@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Reporting\Health;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Symbol\SymbolInfo;
@@ -24,7 +25,8 @@ final class ContributorRankerTest extends TestCase
         $this->ranker = new ContributorRanker(new MetricHintProvider());
     }
 
-    public function testReturnsEmptyForZeroLimit(): void
+    #[Test]
+    public function itReturnsEmptyForZeroLimit(): void
     {
         $metrics = $this->createMetricRepository(new MetricBag());
 
@@ -33,7 +35,8 @@ final class ContributorRankerTest extends TestCase
         self::assertSame([], $result);
     }
 
-    public function testReturnsEmptyForNegativeLimit(): void
+    #[Test]
+    public function itReturnsEmptyForNegativeLimit(): void
     {
         $metrics = $this->createMetricRepository(new MetricBag());
 
@@ -42,7 +45,8 @@ final class ContributorRankerTest extends TestCase
         self::assertSame([], $result);
     }
 
-    public function testReturnsEmptyForUnknownDimension(): void
+    #[Test]
+    public function itReturnsEmptyForUnknownDimension(): void
     {
         $metrics = $this->createMetricRepository(new MetricBag());
 
@@ -51,7 +55,8 @@ final class ContributorRankerTest extends TestCase
         self::assertSame([], $result);
     }
 
-    public function testReturnsEmptyWhenNoClassSymbols(): void
+    #[Test]
+    public function itReturnsEmptyWhenNoClassSymbols(): void
     {
         $metrics = $this->createMetricRepository(new MetricBag());
 
@@ -60,7 +65,8 @@ final class ContributorRankerTest extends TestCase
         self::assertSame([], $result);
     }
 
-    public function testSkipsClassesWithoutPrimaryMetric(): void
+    #[Test]
+    public function itSkipsClassesWithoutPrimaryMetric(): void
     {
         $classPath = SymbolPath::forClass('App', 'Empty');
         $classSymbol = new SymbolInfo($classPath, 'src/Empty.php', null);
@@ -76,7 +82,8 @@ final class ContributorRankerTest extends TestCase
         self::assertSame([], $result);
     }
 
-    public function testRanksClassesByPrimaryMetricDescendingForLowerIsBetter(): void
+    #[Test]
+    public function itRanksClassesByPrimaryMetricDescendingForLowerIsBetter(): void
     {
         // Complexity: primary metric is ccn.sum (altKey), direction = lower, so worst = highest
         $classA = SymbolPath::forClass('App', 'ClassA');
@@ -110,7 +117,8 @@ final class ContributorRankerTest extends TestCase
         self::assertSame('ClassA', $result[2]->className);
     }
 
-    public function testRanksClassesByPrimaryMetricAscendingForHigherIsBetter(): void
+    #[Test]
+    public function itRanksClassesByPrimaryMetricAscendingForHigherIsBetter(): void
     {
         // Cohesion: primary metric is tcc (altKey), direction = higher, so worst = lowest
         $classA = SymbolPath::forClass('App', 'ClassA');
@@ -140,7 +148,8 @@ final class ContributorRankerTest extends TestCase
         self::assertSame('ClassA', $result[1]->className);
     }
 
-    public function testRespectsLimit(): void
+    #[Test]
+    public function itRespectsLimit(): void
     {
         $classA = SymbolPath::forClass('App', 'ClassA');
         $classB = SymbolPath::forClass('App', 'ClassB');
@@ -172,7 +181,8 @@ final class ContributorRankerTest extends TestCase
         self::assertSame('ClassC', $result[1]->className);
     }
 
-    public function testTiedPrimaryMetricSortsByClassName(): void
+    #[Test]
+    public function itTiedPrimaryMetricSortsByClassName(): void
     {
         $classA = SymbolPath::forClass('App', 'Alpha');
         $classB = SymbolPath::forClass('App', 'Beta');
@@ -201,7 +211,8 @@ final class ContributorRankerTest extends TestCase
         self::assertSame('Beta', $result[1]->className);
     }
 
-    public function testContributorIncludesAllDecompositionMetrics(): void
+    #[Test]
+    public function itContributorIncludesAllDecompositionMetrics(): void
     {
         $classPath = SymbolPath::forClass('App', 'Service');
         $symbol = new SymbolInfo($classPath, 'src/Service.php', null);

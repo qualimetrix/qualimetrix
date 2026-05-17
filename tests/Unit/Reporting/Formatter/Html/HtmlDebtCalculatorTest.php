@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Reporting\Formatter\Html;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
@@ -27,7 +28,8 @@ final class HtmlDebtCalculatorTest extends TestCase
         );
     }
 
-    public function testComputeDebtNoViolations(): void
+    #[Test]
+    public function itComputesZeroDebtWithNoViolations(): void
     {
         $node = new HtmlTreeNode('Service', 'App\\Service', 'class');
 
@@ -36,7 +38,8 @@ final class HtmlDebtCalculatorTest extends TestCase
         self::assertSame(0, $node->debtMinutes);
     }
 
-    public function testComputeDebtWithViolations(): void
+    #[Test]
+    public function itComputesDebtWithViolations(): void
     {
         $node = new HtmlTreeNode('Service', 'App\\Service', 'class');
 
@@ -59,7 +62,8 @@ final class HtmlDebtCalculatorTest extends TestCase
         self::assertSame(30, $node->debtMinutes);
     }
 
-    public function testComputeDebtSkipsUnknownNodePaths(): void
+    #[Test]
+    public function itSkipsUnknownNodePathsWhenComputingDebt(): void
     {
         $node = new HtmlTreeNode('Service', 'App\\Service', 'class');
 
@@ -80,7 +84,8 @@ final class HtmlDebtCalculatorTest extends TestCase
         self::assertSame(0, $node->debtMinutes);
     }
 
-    public function testAggregateBottomUpWithNoChildren(): void
+    #[Test]
+    public function itAggregatesBottomUpWithNoChildren(): void
     {
         $node = new HtmlTreeNode('Service', 'App\\Service', 'class');
         $node->violations = [
@@ -96,7 +101,8 @@ final class HtmlDebtCalculatorTest extends TestCase
         self::assertSame(60, $node->debtMinutes); // No children, debt unchanged
     }
 
-    public function testAggregateBottomUpSumsChildViolationsAndDebt(): void
+    #[Test]
+    public function itSumsChildViolationsAndDebtWhenAggregatingBottomUp(): void
     {
         $root = new HtmlTreeNode('project', '<project>', 'project');
 
@@ -126,7 +132,8 @@ final class HtmlDebtCalculatorTest extends TestCase
         self::assertSame(75, $root->debtMinutes);
     }
 
-    public function testAggregateBottomUpDeepHierarchy(): void
+    #[Test]
+    public function itAggregatesBottomUpForDeepHierarchy(): void
     {
         // Root -> NS -> ClassA (1 violation, 20min debt)
         //                ClassB (2 violations, 40min debt)

@@ -6,13 +6,15 @@ namespace Qualimetrix\Tests\Unit\Reporting\Debt;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Reporting\Debt\DebtSummary;
 
 #[CoversClass(DebtSummary::class)]
 final class DebtSummaryTest extends TestCase
 {
-    public function testConstructorAndProperties(): void
+    #[Test]
+    public function itStoresConstructorProperties(): void
     {
         $summary = new DebtSummary(
             totalMinutes: 120,
@@ -44,20 +46,23 @@ final class DebtSummaryTest extends TestCase
         yield '3d 7h 59min' => [1919, '3d 7h 59min'];
     }
 
+    #[Test]
     #[DataProvider('formatMinutesProvider')]
-    public function testFormatMinutesStatic(int $minutes, string $expected): void
+    public function itFormatsMinutesStatically(int $minutes, string $expected): void
     {
         self::assertSame($expected, DebtSummary::formatMinutes($minutes));
     }
 
-    public function testFormatTotalDelegatesToFormatMinutes(): void
+    #[Test]
+    public function itFormatsTotalByDelegatingToFormatMinutes(): void
     {
         $summary = new DebtSummary(90, [], []);
 
         self::assertSame('1h 30min', $summary->formatTotal());
     }
 
-    public function testFormatTotalZero(): void
+    #[Test]
+    public function itFormatsTotalAsZeroMinutes(): void
     {
         $summary = new DebtSummary(0, [], []);
 

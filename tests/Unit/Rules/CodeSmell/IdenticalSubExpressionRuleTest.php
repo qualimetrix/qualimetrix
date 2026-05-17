@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Rules\CodeSmell;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
@@ -21,25 +22,29 @@ use Qualimetrix\Rules\CodeSmell\IdenticalSubExpressionRule;
 #[CoversClass(IdenticalSubExpressionOptions::class)]
 final class IdenticalSubExpressionRuleTest extends TestCase
 {
-    public function testGetName(): void
+    #[Test]
+    public function itGetName(): void
     {
         $rule = new IdenticalSubExpressionRule(new IdenticalSubExpressionOptions());
         self::assertSame('code-smell.identical-subexpression', $rule->getName());
     }
 
-    public function testGetDescription(): void
+    #[Test]
+    public function itGetDescription(): void
     {
         $rule = new IdenticalSubExpressionRule(new IdenticalSubExpressionOptions());
         self::assertNotEmpty($rule->getDescription());
     }
 
-    public function testGetCategory(): void
+    #[Test]
+    public function itGetCategory(): void
     {
         $rule = new IdenticalSubExpressionRule(new IdenticalSubExpressionOptions());
         self::assertSame(RuleCategory::CodeSmell, $rule->getCategory());
     }
 
-    public function testRequires(): void
+    #[Test]
+    public function itRequires(): void
     {
         $rule = new IdenticalSubExpressionRule(new IdenticalSubExpressionOptions());
         $requires = $rule->requires();
@@ -51,12 +56,14 @@ final class IdenticalSubExpressionRuleTest extends TestCase
         self::assertContains('identicalSubExpression.duplicate_switch_case', $requires);
     }
 
-    public function testGetOptionsClass(): void
+    #[Test]
+    public function itGetOptionsClass(): void
     {
         self::assertSame(IdenticalSubExpressionOptions::class, IdenticalSubExpressionRule::getOptionsClass());
     }
 
-    public function testAnalyzeDisabledReturnsEmpty(): void
+    #[Test]
+    public function itAnalyzeDisabledReturnsEmpty(): void
     {
         $rule = new IdenticalSubExpressionRule(new IdenticalSubExpressionOptions(enabled: false));
 
@@ -67,7 +74,8 @@ final class IdenticalSubExpressionRuleTest extends TestCase
         self::assertSame([], $rule->analyze($context));
     }
 
-    public function testNoFindings(): void
+    #[Test]
+    public function itNoFindings(): void
     {
         $rule = new IdenticalSubExpressionRule(new IdenticalSubExpressionOptions());
 
@@ -77,7 +85,8 @@ final class IdenticalSubExpressionRuleTest extends TestCase
         self::assertSame([], $rule->analyze($context));
     }
 
-    public function testWithIdenticalOperands(): void
+    #[Test]
+    public function itWithIdenticalOperands(): void
     {
         $rule = new IdenticalSubExpressionRule(new IdenticalSubExpressionOptions());
 
@@ -95,7 +104,8 @@ final class IdenticalSubExpressionRuleTest extends TestCase
         self::assertSame(1.0, $violations[0]->metricValue);
     }
 
-    public function testWithDuplicateCondition(): void
+    #[Test]
+    public function itWithDuplicateCondition(): void
     {
         $rule = new IdenticalSubExpressionRule(new IdenticalSubExpressionOptions());
 
@@ -109,7 +119,8 @@ final class IdenticalSubExpressionRuleTest extends TestCase
         self::assertStringContainsString('if/elseif', $violations[0]->message);
     }
 
-    public function testWithIdenticalTernary(): void
+    #[Test]
+    public function itWithIdenticalTernary(): void
     {
         $rule = new IdenticalSubExpressionRule(new IdenticalSubExpressionOptions());
 
@@ -123,7 +134,8 @@ final class IdenticalSubExpressionRuleTest extends TestCase
         self::assertStringContainsString('ternary', $violations[0]->message);
     }
 
-    public function testWithDuplicateMatchArm(): void
+    #[Test]
+    public function itWithDuplicateMatchArm(): void
     {
         $rule = new IdenticalSubExpressionRule(new IdenticalSubExpressionOptions());
 
@@ -137,7 +149,8 @@ final class IdenticalSubExpressionRuleTest extends TestCase
         self::assertStringContainsString('match', $violations[0]->message);
     }
 
-    public function testMultipleFindings(): void
+    #[Test]
+    public function itMultipleFindings(): void
     {
         $rule = new IdenticalSubExpressionRule(new IdenticalSubExpressionOptions());
 
@@ -154,37 +167,43 @@ final class IdenticalSubExpressionRuleTest extends TestCase
 
     // -- Options Tests ---------------------------------------------------
 
-    public function testOptionsDefaultEnabled(): void
+    #[Test]
+    public function itOptionsDefaultEnabled(): void
     {
         $options = new IdenticalSubExpressionOptions();
         self::assertTrue($options->isEnabled());
     }
 
-    public function testOptionsFromArrayEnabled(): void
+    #[Test]
+    public function itOptionsFromArrayEnabled(): void
     {
         $options = IdenticalSubExpressionOptions::fromArray(['enabled' => true]);
         self::assertTrue($options->isEnabled());
     }
 
-    public function testOptionsFromArrayDisabled(): void
+    #[Test]
+    public function itOptionsFromArrayDisabled(): void
     {
         $options = IdenticalSubExpressionOptions::fromArray(['enabled' => false]);
         self::assertFalse($options->isEnabled());
     }
 
-    public function testOptionsFromEmptyArray(): void
+    #[Test]
+    public function itOptionsFromEmptyArray(): void
     {
         $options = IdenticalSubExpressionOptions::fromArray([]);
         self::assertTrue($options->isEnabled());
     }
 
-    public function testOptionsSeverityPositiveValue(): void
+    #[Test]
+    public function itOptionsSeverityPositiveValue(): void
     {
         $options = new IdenticalSubExpressionOptions();
         self::assertSame(Severity::Warning, $options->getSeverity(1));
     }
 
-    public function testOptionsSeverityZeroValue(): void
+    #[Test]
+    public function itOptionsSeverityZeroValue(): void
     {
         $options = new IdenticalSubExpressionOptions();
         self::assertNull($options->getSeverity(0));

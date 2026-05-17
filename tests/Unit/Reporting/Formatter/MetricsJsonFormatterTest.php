@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Reporting\Formatter;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
@@ -26,17 +27,20 @@ final class MetricsJsonFormatterTest extends TestCase
         $this->formatter = new MetricsJsonFormatter();
     }
 
-    public function testGetName(): void
+    #[Test]
+    public function itReturnsMetricsName(): void
     {
         self::assertSame('metrics', $this->formatter->getName());
     }
 
-    public function testGetDefaultGroupBy(): void
+    #[Test]
+    public function itReturnsDefaultGroupByNone(): void
     {
         self::assertSame(GroupBy::None, $this->formatter->getDefaultGroupBy());
     }
 
-    public function testFormatWithNullMetrics(): void
+    #[Test]
+    public function itFormatsWithNullMetrics(): void
     {
         $report = new Report(
             violations: [],
@@ -63,7 +67,8 @@ final class MetricsJsonFormatterTest extends TestCase
         self::assertSame(0, $data['summary']['warnings']);
     }
 
-    public function testFormatWithMetrics(): void
+    #[Test]
+    public function itFormatsWithMetrics(): void
     {
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
         $methodPath = SymbolPath::forMethod('App\\Service', 'UserService', 'calculate');
@@ -124,7 +129,8 @@ final class MetricsJsonFormatterTest extends TestCase
         self::assertSame(3, $methodSymbol['metrics']['parameterCount']);
     }
 
-    public function testFormatSkipsEmptyMetrics(): void
+    #[Test]
+    public function itSkipsEmptyMetrics(): void
     {
         $classPath = SymbolPath::forClass('App', 'Empty');
 
@@ -157,7 +163,8 @@ final class MetricsJsonFormatterTest extends TestCase
         self::assertSame([], $data['symbols']);
     }
 
-    public function testFormatFiltersNonFiniteValues(): void
+    #[Test]
+    public function itFiltersNonFiniteValues(): void
     {
         $classPath = SymbolPath::forClass('App', 'Test');
 
@@ -206,7 +213,8 @@ final class MetricsJsonFormatterTest extends TestCase
         self::assertNull($metrics['neg_inf']);
     }
 
-    public function testFormatFiltersInternalDerivedMetricKeys(): void
+    #[Test]
+    public function itFiltersInternalDerivedMetricKeys(): void
     {
         $filePath = SymbolPath::forFile('src/Service/UserService.php');
 
@@ -255,7 +263,8 @@ final class MetricsJsonFormatterTest extends TestCase
         }
     }
 
-    public function testJsonIsValid(): void
+    #[Test]
+    public function itProducesValidJson(): void
     {
         $report = new Report(
             violations: [],

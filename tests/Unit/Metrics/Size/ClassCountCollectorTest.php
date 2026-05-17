@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Metrics\Size;
 use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\SymbolLevel;
@@ -27,12 +28,14 @@ final class ClassCountCollectorTest extends TestCase
         $this->testFilePath = '/test/file.php';
     }
 
-    public function testGetName(): void
+    #[Test]
+    public function itGetsName(): void
     {
         self::assertSame('class-count', $this->collector->getName());
     }
 
-    public function testProvides(): void
+    #[Test]
+    public function itProvides(): void
     {
         self::assertSame(
             ['classCount', 'abstractClassCount', 'interfaceCount', 'traitCount', 'enumCount', 'functionCount'],
@@ -40,7 +43,8 @@ final class ClassCountCollectorTest extends TestCase
         );
     }
 
-    public function testEmptyFile(): void
+    #[Test]
+    public function itHandlesEmptyFile(): void
     {
         $code = '<?php';
 
@@ -53,7 +57,8 @@ final class ClassCountCollectorTest extends TestCase
         self::assertSame(0, $metrics->get('functionCount'));
     }
 
-    public function testSingleClass(): void
+    #[Test]
+    public function itCountsSingleClass(): void
     {
         $code = <<<'PHP'
 <?php
@@ -74,7 +79,8 @@ PHP;
         self::assertSame(0, $metrics->get('enumCount'));
     }
 
-    public function testMultipleClasses(): void
+    #[Test]
+    public function itCountsMultipleClasses(): void
     {
         $code = <<<'PHP'
 <?php
@@ -91,7 +97,8 @@ PHP;
         self::assertSame(3, $metrics->get('classCount'));
     }
 
-    public function testInterface(): void
+    #[Test]
+    public function itCountsInterface(): void
     {
         $code = <<<'PHP'
 <?php
@@ -110,7 +117,8 @@ PHP;
         self::assertSame(1, $metrics->get('interfaceCount'));
     }
 
-    public function testMultipleInterfaces(): void
+    #[Test]
+    public function itCountsMultipleInterfaces(): void
     {
         $code = <<<'PHP'
 <?php
@@ -127,7 +135,8 @@ PHP;
         self::assertSame(3, $metrics->get('interfaceCount'));
     }
 
-    public function testTrait(): void
+    #[Test]
+    public function itCountsTrait(): void
     {
         $code = <<<'PHP'
 <?php
@@ -149,7 +158,8 @@ PHP;
         self::assertSame(1, $metrics->get('traitCount'));
     }
 
-    public function testMultipleTraits(): void
+    #[Test]
+    public function itCountsMultipleTraits(): void
     {
         $code = <<<'PHP'
 <?php
@@ -165,7 +175,8 @@ PHP;
         self::assertSame(2, $metrics->get('traitCount'));
     }
 
-    public function testEnum(): void
+    #[Test]
+    public function itCountsEnum(): void
     {
         $code = <<<'PHP'
 <?php
@@ -185,7 +196,8 @@ PHP;
         self::assertSame(1, $metrics->get('enumCount'));
     }
 
-    public function testMultipleEnums(): void
+    #[Test]
+    public function itCountsMultipleEnums(): void
     {
         $code = <<<'PHP'
 <?php
@@ -202,7 +214,8 @@ PHP;
         self::assertSame(3, $metrics->get('enumCount'));
     }
 
-    public function testMixedTypes(): void
+    #[Test]
+    public function itCountsMixedTypes(): void
     {
         $code = <<<'PHP'
 <?php
@@ -227,7 +240,8 @@ PHP;
         self::assertSame(0, $metrics->get('functionCount'));
     }
 
-    public function testAnonymousClassIsIgnored(): void
+    #[Test]
+    public function itIgnoresAnonymousClass(): void
     {
         $code = <<<'PHP'
 <?php
@@ -251,7 +265,8 @@ PHP;
         self::assertSame(1, $metrics->get('classCount'));
     }
 
-    public function testMultipleAnonymousClassesIgnored(): void
+    #[Test]
+    public function itIgnoresMultipleAnonymousClasses(): void
     {
         $code = <<<'PHP'
 <?php
@@ -283,7 +298,8 @@ PHP;
         self::assertSame(1, $metrics->get('classCount'));
     }
 
-    public function testNestedNamedClassInAnonymousClass(): void
+    #[Test]
+    public function itHandlesNestedNamedClassInAnonymousClass(): void
     {
         // This is a rare edge case in PHP
         $code = <<<'PHP'
@@ -309,7 +325,8 @@ PHP;
         self::assertSame(2, $metrics->get('classCount'));
     }
 
-    public function testStandaloneFunction(): void
+    #[Test]
+    public function itCountsStandaloneFunction(): void
     {
         $code = <<<'PHP'
 <?php
@@ -328,7 +345,8 @@ PHP;
         self::assertSame(1, $metrics->get('functionCount'));
     }
 
-    public function testMultipleStandaloneFunctions(): void
+    #[Test]
+    public function itCountsMultipleStandaloneFunctions(): void
     {
         $code = <<<'PHP'
 <?php
@@ -345,7 +363,8 @@ PHP;
         self::assertSame(3, $metrics->get('functionCount'));
     }
 
-    public function testClassMethodsNotCountedAsFunctions(): void
+    #[Test]
+    public function itDoesNotCountClassMethodsAsFunctions(): void
     {
         $code = <<<'PHP'
 <?php
@@ -372,7 +391,8 @@ PHP;
         self::assertSame(0, $metrics->get('functionCount'));
     }
 
-    public function testMixedFunctionsAndClasses(): void
+    #[Test]
+    public function itCountsMixedFunctionsAndClasses(): void
     {
         $code = <<<'PHP'
 <?php
@@ -398,7 +418,8 @@ PHP;
         self::assertSame(2, $metrics->get('functionCount'));
     }
 
-    public function testReset(): void
+    #[Test]
+    public function itResetsState(): void
     {
         $code1 = <<<'PHP'
 <?php
@@ -426,7 +447,8 @@ PHP;
         self::assertSame(1, $metrics->get('classCount'));
     }
 
-    public function testAbstractClass(): void
+    #[Test]
+    public function itCountsAbstractClass(): void
     {
         $code = <<<'PHP'
 <?php
@@ -445,7 +467,8 @@ PHP;
         self::assertSame(1, $metrics->get('abstractClassCount'));
     }
 
-    public function testAbstractClassCount(): void
+    #[Test]
+    public function itCountsMultipleAbstractClasses(): void
     {
         $code = <<<'PHP'
 <?php
@@ -464,7 +487,8 @@ PHP;
         self::assertSame(2, $metrics->get('abstractClassCount'));
     }
 
-    public function testFinalClass(): void
+    #[Test]
+    public function itCountsFinalClass(): void
     {
         $code = <<<'PHP'
 <?php
@@ -481,7 +505,8 @@ PHP;
         self::assertSame(1, $metrics->get('classCount'));
     }
 
-    public function testReadonlyClass(): void
+    #[Test]
+    public function itCountsReadonlyClass(): void
     {
         $code = <<<'PHP'
 <?php
@@ -501,7 +526,8 @@ PHP;
         self::assertSame(1, $metrics->get('classCount'));
     }
 
-    public function testBackedEnum(): void
+    #[Test]
+    public function itCountsBackedEnum(): void
     {
         $code = <<<'PHP'
 <?php
@@ -521,7 +547,8 @@ PHP;
         self::assertSame(1, $metrics->get('enumCount'));
     }
 
-    public function testUnitEnum(): void
+    #[Test]
+    public function itCountsUnitEnum(): void
     {
         $code = <<<'PHP'
 <?php
@@ -542,7 +569,8 @@ PHP;
         self::assertSame(1, $metrics->get('enumCount'));
     }
 
-    public function testGetMetricDefinitions(): void
+    #[Test]
+    public function itGetsMetricDefinitions(): void
     {
         $definitions = $this->collector->getMetricDefinitions();
 

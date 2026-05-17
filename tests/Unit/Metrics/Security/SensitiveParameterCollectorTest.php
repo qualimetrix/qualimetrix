@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Metrics\Security;
 use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Metrics\Security\SensitiveParameterCollector;
@@ -22,17 +23,20 @@ final class SensitiveParameterCollectorTest extends TestCase
         $this->collector = new SensitiveParameterCollector();
     }
 
-    public function testGetName(): void
+    #[Test]
+    public function itReturnsCorrectName(): void
     {
         self::assertSame('sensitive-parameter', $this->collector->getName());
     }
 
-    public function testProvides(): void
+    #[Test]
+    public function itProvidesExpectedMetrics(): void
     {
         self::assertSame(['security.sensitiveParameter'], $this->collector->provides());
     }
 
-    public function testCollectWithFindings(): void
+    #[Test]
+    public function itCollectsWithFindings(): void
     {
         $code = <<<'PHP'
 <?php
@@ -48,7 +52,8 @@ PHP;
         self::assertArrayHasKey('line', $entries[1]);
     }
 
-    public function testCollectWithNoFindings(): void
+    #[Test]
+    public function itCollectsWithNoFindings(): void
     {
         $code = <<<'PHP'
 <?php
@@ -60,7 +65,8 @@ PHP;
         self::assertSame(0, $metrics->entryCount('security.sensitiveParameter'));
     }
 
-    public function testCollectWithAttribute(): void
+    #[Test]
+    public function itSkipsParametersWithSensitiveParameterAttribute(): void
     {
         $code = <<<'PHP'
 <?php
@@ -72,7 +78,8 @@ PHP;
         self::assertSame(0, $metrics->entryCount('security.sensitiveParameter'));
     }
 
-    public function testReset(): void
+    #[Test]
+    public function itResetsState(): void
     {
         $code1 = '<?php function login(string $password) {}';
         $this->collectMetrics($code1);

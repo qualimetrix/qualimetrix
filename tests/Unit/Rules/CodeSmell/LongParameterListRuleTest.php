@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Rules\CodeSmell;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
@@ -24,40 +25,46 @@ use Qualimetrix\Rules\CodeSmell\LongParameterListRule;
 #[CoversClass(LongParameterListOptions::class)]
 final class LongParameterListRuleTest extends TestCase
 {
-    public function testGetName(): void
+    #[Test]
+    public function itGetName(): void
     {
         $rule = new LongParameterListRule(new LongParameterListOptions());
 
         self::assertSame('code-smell.long-parameter-list', $rule->getName());
     }
 
-    public function testGetDescription(): void
+    #[Test]
+    public function itGetDescription(): void
     {
         $rule = new LongParameterListRule(new LongParameterListOptions());
 
         self::assertSame('Checks number of parameters per method', $rule->getDescription());
     }
 
-    public function testGetCategory(): void
+    #[Test]
+    public function itGetCategory(): void
     {
         $rule = new LongParameterListRule(new LongParameterListOptions());
 
         self::assertSame(RuleCategory::CodeSmell, $rule->getCategory());
     }
 
-    public function testRequires(): void
+    #[Test]
+    public function itRequires(): void
     {
         $rule = new LongParameterListRule(new LongParameterListOptions());
 
         self::assertSame(['parameterCount', 'isVoConstructor'], $rule->requires());
     }
 
-    public function testGetOptionsClass(): void
+    #[Test]
+    public function itGetOptionsClass(): void
     {
         self::assertSame(LongParameterListOptions::class, LongParameterListRule::getOptionsClass());
     }
 
-    public function testGetCliAliases(): void
+    #[Test]
+    public function itGetCliAliases(): void
     {
         self::assertSame(
             [
@@ -70,7 +77,8 @@ final class LongParameterListRuleTest extends TestCase
         );
     }
 
-    public function testConstructorRejectsWrongOptionsType(): void
+    #[Test]
+    public function itConstructorRejectsWrongOptionsType(): void
     {
         self::expectException(InvalidArgumentException::class);
 
@@ -92,7 +100,8 @@ final class LongParameterListRuleTest extends TestCase
         });
     }
 
-    public function testAnalyzeDisabledReturnsEmpty(): void
+    #[Test]
+    public function itAnalyzeDisabledReturnsEmpty(): void
     {
         $rule = new LongParameterListRule(new LongParameterListOptions(enabled: false));
 
@@ -104,7 +113,8 @@ final class LongParameterListRuleTest extends TestCase
         self::assertSame([], $rule->analyze($context));
     }
 
-    public function testBelowWarningThreshold(): void
+    #[Test]
+    public function itBelowWarningThreshold(): void
     {
         $rule = new LongParameterListRule(new LongParameterListOptions(warning: 4, error: 6));
 
@@ -124,7 +134,8 @@ final class LongParameterListRuleTest extends TestCase
         self::assertSame([], $rule->analyze($context));
     }
 
-    public function testAtWarningThreshold(): void
+    #[Test]
+    public function itAtWarningThreshold(): void
     {
         $rule = new LongParameterListRule(new LongParameterListOptions(warning: 4, error: 6));
 
@@ -150,7 +161,8 @@ final class LongParameterListRuleTest extends TestCase
         self::assertSame('code-smell.long-parameter-list', $violations[0]->violationCode);
     }
 
-    public function testAtErrorThreshold(): void
+    #[Test]
+    public function itAtErrorThreshold(): void
     {
         $rule = new LongParameterListRule(new LongParameterListOptions(warning: 4, error: 6));
 
@@ -173,7 +185,8 @@ final class LongParameterListRuleTest extends TestCase
         self::assertSame('Method has 6 parameters, exceeds threshold of 6. Consider introducing a parameter object', $violations[0]->message);
     }
 
-    public function testAboveErrorThreshold(): void
+    #[Test]
+    public function itAboveErrorThreshold(): void
     {
         $rule = new LongParameterListRule(new LongParameterListOptions(warning: 4, error: 6));
 
@@ -196,7 +209,8 @@ final class LongParameterListRuleTest extends TestCase
         self::assertSame(8, $violations[0]->metricValue);
     }
 
-    public function testCustomThresholds(): void
+    #[Test]
+    public function itCustomThresholds(): void
     {
         $options = LongParameterListOptions::fromArray([
             'enabled' => true,
@@ -210,7 +224,8 @@ final class LongParameterListRuleTest extends TestCase
     }
 
     #[DataProvider('thresholdDataProvider')]
-    public function testThresholdBoundaries(
+    #[Test]
+    public function itThresholdBoundaries(
         int $parameterCount,
         int $warning,
         int $error,
@@ -252,7 +267,8 @@ final class LongParameterListRuleTest extends TestCase
         yield 'above error' => [8, 4, 6, Severity::Error];
     }
 
-    public function testOptionsFromArrayDefaults(): void
+    #[Test]
+    public function itOptionsFromArrayDefaults(): void
     {
         $options = LongParameterListOptions::fromArray(['enabled' => true]);
 
@@ -261,7 +277,8 @@ final class LongParameterListRuleTest extends TestCase
         self::assertSame(6, $options->error);
     }
 
-    public function testOptionsFromArrayCustomValues(): void
+    #[Test]
+    public function itOptionsFromArrayCustomValues(): void
     {
         $options = LongParameterListOptions::fromArray([
             'enabled' => true,
@@ -274,7 +291,8 @@ final class LongParameterListRuleTest extends TestCase
         self::assertSame(5, $options->error);
     }
 
-    public function testOptionsFromEmptyArrayDisabled(): void
+    #[Test]
+    public function itOptionsFromEmptyArrayDisabled(): void
     {
         $options = LongParameterListOptions::fromArray([]);
 
@@ -283,7 +301,8 @@ final class LongParameterListRuleTest extends TestCase
 
     // -- VO Constructor Tests ------------------------------------------------
 
-    public function testOptionsDefaultVoThresholds(): void
+    #[Test]
+    public function itOptionsDefaultVoThresholds(): void
     {
         $options = new LongParameterListOptions();
 
@@ -291,7 +310,8 @@ final class LongParameterListRuleTest extends TestCase
         self::assertSame(12, $options->voError);
     }
 
-    public function testOptionsFromArrayVoThresholds(): void
+    #[Test]
+    public function itOptionsFromArrayVoThresholds(): void
     {
         $options = LongParameterListOptions::fromArray([
             'warning' => 4,
@@ -304,7 +324,8 @@ final class LongParameterListRuleTest extends TestCase
         self::assertSame(15, $options->voError);
     }
 
-    public function testOptionsFromArrayVoDefaultsWhenNotSpecified(): void
+    #[Test]
+    public function itOptionsFromArrayVoDefaultsWhenNotSpecified(): void
     {
         $options = LongParameterListOptions::fromArray([
             'warning' => 3,
@@ -315,35 +336,40 @@ final class LongParameterListRuleTest extends TestCase
         self::assertSame(12, $options->voError);
     }
 
-    public function testGetVoSeverityBelowWarning(): void
+    #[Test]
+    public function itGetVoSeverityBelowWarning(): void
     {
         $options = new LongParameterListOptions(voWarning: 8, voError: 12);
 
         self::assertNull($options->getVoSeverity(7));
     }
 
-    public function testGetVoSeverityAtWarning(): void
+    #[Test]
+    public function itGetVoSeverityAtWarning(): void
     {
         $options = new LongParameterListOptions(voWarning: 8, voError: 12);
 
         self::assertSame(Severity::Warning, $options->getVoSeverity(8));
     }
 
-    public function testGetVoSeverityBetweenWarningAndError(): void
+    #[Test]
+    public function itGetVoSeverityBetweenWarningAndError(): void
     {
         $options = new LongParameterListOptions(voWarning: 8, voError: 12);
 
         self::assertSame(Severity::Warning, $options->getVoSeverity(10));
     }
 
-    public function testGetVoSeverityAtError(): void
+    #[Test]
+    public function itGetVoSeverityAtError(): void
     {
         $options = new LongParameterListOptions(voWarning: 8, voError: 12);
 
         self::assertSame(Severity::Error, $options->getVoSeverity(12));
     }
 
-    public function testVoConstructorBelowVoThresholdNoViolation(): void
+    #[Test]
+    public function itVoConstructorBelowVoThresholdNoViolation(): void
     {
         $rule = new LongParameterListRule(new LongParameterListOptions(
             warning: 4,
@@ -371,7 +397,8 @@ final class LongParameterListRuleTest extends TestCase
         self::assertSame([], $rule->analyze($context));
     }
 
-    public function testVoConstructorAtVoWarningThreshold(): void
+    #[Test]
+    public function itVoConstructorAtVoWarningThreshold(): void
     {
         $rule = new LongParameterListRule(new LongParameterListOptions(
             warning: 4,
@@ -404,7 +431,8 @@ final class LongParameterListRuleTest extends TestCase
         self::assertSame(8, $violations[0]->threshold);
     }
 
-    public function testVoConstructorAtVoErrorThreshold(): void
+    #[Test]
+    public function itVoConstructorAtVoErrorThreshold(): void
     {
         $rule = new LongParameterListRule(new LongParameterListOptions(
             warning: 4,
@@ -436,7 +464,8 @@ final class LongParameterListRuleTest extends TestCase
         self::assertSame(12, $violations[0]->threshold);
     }
 
-    public function testNonVoConstructorStillUsesStandardThresholds(): void
+    #[Test]
+    public function itNonVoConstructorStillUsesStandardThresholds(): void
     {
         $rule = new LongParameterListRule(new LongParameterListOptions(
             warning: 4,
@@ -467,14 +496,16 @@ final class LongParameterListRuleTest extends TestCase
         self::assertSame(4, $violations[0]->threshold);
     }
 
-    public function testRequiresIncludesVoConstructorMetric(): void
+    #[Test]
+    public function itRequiresIncludesVoConstructorMetric(): void
     {
         $rule = new LongParameterListRule(new LongParameterListOptions());
 
         self::assertContains('isVoConstructor', $rule->requires());
     }
 
-    public function testGetCliAliasesIncludesVoOptions(): void
+    #[Test]
+    public function itGetCliAliasesIncludesVoOptions(): void
     {
         $aliases = CliAliasReader::read(LongParameterListRule::class);
 
@@ -485,7 +516,8 @@ final class LongParameterListRuleTest extends TestCase
     }
 
     #[DataProvider('voThresholdDataProvider')]
-    public function testVoThresholdBoundaries(
+    #[Test]
+    public function itVoThresholdBoundaries(
         int $parameterCount,
         int $voWarning,
         int $voError,
@@ -536,7 +568,8 @@ final class LongParameterListRuleTest extends TestCase
 
     // -- Threshold shorthand tests (regression for VO reuse bug) ----------------
 
-    public function testThresholdShorthandKeepsVoDefaults(): void
+    #[Test]
+    public function itThresholdShorthandKeepsVoDefaults(): void
     {
         $options = LongParameterListOptions::fromArray([
             'threshold' => 5,
@@ -550,7 +583,8 @@ final class LongParameterListRuleTest extends TestCase
         self::assertSame(12, $options->voError);
     }
 
-    public function testThresholdShorthandWithExplicitVoWarning(): void
+    #[Test]
+    public function itThresholdShorthandWithExplicitVoWarning(): void
     {
         $options = LongParameterListOptions::fromArray([
             'threshold' => 5,
@@ -563,7 +597,8 @@ final class LongParameterListRuleTest extends TestCase
         self::assertSame(12, $options->voError);
     }
 
-    public function testVoThresholdShorthand(): void
+    #[Test]
+    public function itVoThresholdShorthand(): void
     {
         $options = LongParameterListOptions::fromArray([
             'threshold' => 5,
@@ -576,7 +611,8 @@ final class LongParameterListRuleTest extends TestCase
         self::assertSame(10, $options->voError);
     }
 
-    public function testThresholdShorthandCannotMixWithVoWarningAndVoThreshold(): void
+    #[Test]
+    public function itThresholdShorthandCannotMixWithVoWarningAndVoThreshold(): void
     {
         self::expectException(InvalidArgumentException::class);
 

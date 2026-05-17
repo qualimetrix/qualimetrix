@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Core\ComputedMetric;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinition;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinitionHolder;
@@ -18,14 +19,16 @@ final class ComputedMetricDefinitionHolderTest extends TestCase
         ComputedMetricDefinitionHolder::reset();
     }
 
-    public function testDefaultReturnsEmptyArray(): void
+    #[Test]
+    public function itDefaultReturnsEmptyArray(): void
     {
         ComputedMetricDefinitionHolder::reset();
 
         self::assertSame([], ComputedMetricDefinitionHolder::getDefinitions());
     }
 
-    public function testSetAndGetDefinitions(): void
+    #[Test]
+    public function itSetAndGetDefinitions(): void
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.test',
@@ -41,7 +44,8 @@ final class ComputedMetricDefinitionHolderTest extends TestCase
         self::assertSame($definition, $result[0]);
     }
 
-    public function testReset(): void
+    #[Test]
+    public function itReset(): void
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.test',
@@ -57,7 +61,8 @@ final class ComputedMetricDefinitionHolderTest extends TestCase
         self::assertSame([], ComputedMetricDefinitionHolder::getDefinitions());
     }
 
-    public function testSetDefinitionsReplacePrevious(): void
+    #[Test]
+    public function itSetDefinitionsReplacePrevious(): void
     {
         $definition1 = new ComputedMetricDefinition(
             name: 'health.first',

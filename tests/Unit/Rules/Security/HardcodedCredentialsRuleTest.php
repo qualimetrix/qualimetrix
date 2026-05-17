@@ -6,6 +6,7 @@ namespace Qualimetrix\Tests\Unit\Rules\Security;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
@@ -21,7 +22,8 @@ use Qualimetrix\Rules\Security\HardcodedCredentialsRule;
 #[CoversClass(HardcodedCredentialsOptions::class)]
 final class HardcodedCredentialsRuleTest extends TestCase
 {
-    public function testNameAndCategory(): void
+    #[Test]
+    public function itHasCorrectNameAndCategory(): void
     {
         $rule = new HardcodedCredentialsRule(new HardcodedCredentialsOptions());
 
@@ -30,14 +32,16 @@ final class HardcodedCredentialsRuleTest extends TestCase
         self::assertSame('Detects hardcoded credentials in code', $rule->getDescription());
     }
 
-    public function testRequires(): void
+    #[Test]
+    public function itRequires(): void
     {
         $rule = new HardcodedCredentialsRule(new HardcodedCredentialsOptions());
 
         self::assertSame(['security.hardcodedCredentials'], $rule->requires());
     }
 
-    public function testDisabledReturnsNoViolations(): void
+    #[Test]
+    public function itReturnsNoViolationsWhenDisabled(): void
     {
         $rule = new HardcodedCredentialsRule(new HardcodedCredentialsOptions(enabled: false));
 
@@ -52,7 +56,8 @@ final class HardcodedCredentialsRuleTest extends TestCase
         self::assertCount(0, $violations);
     }
 
-    public function testNoFindingsReturnsNoViolations(): void
+    #[Test]
+    public function itReturnsNoViolationsWhenNoFindings(): void
     {
         $rule = new HardcodedCredentialsRule(new HardcodedCredentialsOptions());
 
@@ -63,7 +68,8 @@ final class HardcodedCredentialsRuleTest extends TestCase
         self::assertCount(0, $violations);
     }
 
-    public function testSingleFindingCreatesOneViolation(): void
+    #[Test]
+    public function itCreatesOneViolationForSingleFinding(): void
     {
         $rule = new HardcodedCredentialsRule(new HardcodedCredentialsOptions());
 
@@ -81,7 +87,8 @@ final class HardcodedCredentialsRuleTest extends TestCase
         self::assertStringContainsString('variable assignment', $violations[0]->message);
     }
 
-    public function testMultipleFindingsCreateMultipleViolations(): void
+    #[Test]
+    public function itCreatesMultipleViolationsForMultipleFindings(): void
     {
         $rule = new HardcodedCredentialsRule(new HardcodedCredentialsOptions());
 
@@ -100,7 +107,8 @@ final class HardcodedCredentialsRuleTest extends TestCase
         self::assertSame(42, $violations[2]->location->line);
     }
 
-    public function testEnumCasePatternProducesCorrectMessage(): void
+    #[Test]
+    public function itProducesCorrectMessageForEnumCasePattern(): void
     {
         $rule = new HardcodedCredentialsRule(new HardcodedCredentialsOptions());
 
@@ -116,7 +124,8 @@ final class HardcodedCredentialsRuleTest extends TestCase
         self::assertSame('security.hardcoded-credentials', $violations[0]->violationCode);
     }
 
-    public function testOptionsFromArray(): void
+    #[Test]
+    public function itLoadsOptionsFromArray(): void
     {
         $options = HardcodedCredentialsOptions::fromArray(['enabled' => false]);
         self::assertFalse($options->isEnabled());
@@ -125,7 +134,8 @@ final class HardcodedCredentialsRuleTest extends TestCase
         self::assertTrue($options->isEnabled());
     }
 
-    public function testGetSeverity(): void
+    #[Test]
+    public function itComputesSeverityCorrectly(): void
     {
         $options = new HardcodedCredentialsOptions();
 
@@ -133,7 +143,8 @@ final class HardcodedCredentialsRuleTest extends TestCase
         self::assertNull($options->getSeverity(0));
     }
 
-    public function testConstructorRejectsWrongOptionsType(): void
+    #[Test]
+    public function itRejectsWrongOptionsTypeInConstructor(): void
     {
         self::expectException(InvalidArgumentException::class);
 

@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Rules\Structure;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
@@ -23,14 +24,16 @@ use Qualimetrix\Rules\Structure\NocRule;
 #[CoversClass(NocOptions::class)]
 final class NocRuleTest extends TestCase
 {
-    public function testGetName(): void
+    #[Test]
+    public function itGetsName(): void
     {
         $rule = new NocRule(new NocOptions());
 
         self::assertSame('design.noc', $rule->getName());
     }
 
-    public function testGetDescription(): void
+    #[Test]
+    public function itGetsDescription(): void
     {
         $rule = new NocRule(new NocOptions());
 
@@ -40,21 +43,24 @@ final class NocRuleTest extends TestCase
         );
     }
 
-    public function testGetCategory(): void
+    #[Test]
+    public function itGetsCategory(): void
     {
         $rule = new NocRule(new NocOptions());
 
         self::assertSame(RuleCategory::Design, $rule->getCategory());
     }
 
-    public function testRequires(): void
+    #[Test]
+    public function itRequiresNoc(): void
     {
         $rule = new NocRule(new NocOptions());
 
         self::assertSame(['noc'], $rule->requires());
     }
 
-    public function testGetOptionsClass(): void
+    #[Test]
+    public function itGetsOptionsClass(): void
     {
         self::assertSame(
             NocOptions::class,
@@ -62,7 +68,8 @@ final class NocRuleTest extends TestCase
         );
     }
 
-    public function testThrowsExceptionForWrongOptionsType(): void
+    #[Test]
+    public function itThrowsExceptionForWrongOptionsType(): void
     {
         $wrongOptions = self::createStub(\Qualimetrix\Core\Rule\RuleOptionsInterface::class);
 
@@ -72,7 +79,8 @@ final class NocRuleTest extends TestCase
         new NocRule($wrongOptions);
     }
 
-    public function testAnalyzeReturnsEmptyWhenDisabled(): void
+    #[Test]
+    public function itReturnsEmptyWhenDisabled(): void
     {
         $rule = new NocRule(new NocOptions(enabled: false));
 
@@ -84,7 +92,8 @@ final class NocRuleTest extends TestCase
         self::assertSame([], $rule->analyze($context));
     }
 
-    public function testAnalyzeReturnsEmptyWhenNoClasses(): void
+    #[Test]
+    public function itReturnsEmptyWhenNoClasses(): void
     {
         $rule = new NocRule(new NocOptions());
 
@@ -97,7 +106,8 @@ final class NocRuleTest extends TestCase
         self::assertSame([], $rule->analyze($context));
     }
 
-    public function testAnalyzeSkipsClassesWithZeroNoc(): void
+    #[Test]
+    public function itSkipsClassesWithZeroNoc(): void
     {
         $rule = new NocRule(new NocOptions());
 
@@ -119,7 +129,8 @@ final class NocRuleTest extends TestCase
         self::assertCount(0, $violations);
     }
 
-    public function testAnalyzeGeneratesWarning(): void
+    #[Test]
+    public function itGeneratesWarning(): void
     {
         $rule = new NocRule(new NocOptions());
 
@@ -147,7 +158,8 @@ final class NocRuleTest extends TestCase
         self::assertSame('design.noc', $violations[0]->ruleName);
     }
 
-    public function testAnalyzeGeneratesError(): void
+    #[Test]
+    public function itGeneratesError(): void
     {
         $rule = new NocRule(new NocOptions());
 
@@ -171,7 +183,8 @@ final class NocRuleTest extends TestCase
         self::assertSame(20, $violations[0]->metricValue);
     }
 
-    public function testAnalyzeNoViolationForFewChildren(): void
+    #[Test]
+    public function itProducesNoViolationForFewChildren(): void
     {
         $rule = new NocRule(new NocOptions());
 
@@ -193,7 +206,8 @@ final class NocRuleTest extends TestCase
         self::assertCount(0, $violations);
     }
 
-    public function testAnalyzeSkipsClassWithoutNocMetric(): void
+    #[Test]
+    public function itSkipsClassWithoutNocMetric(): void
     {
         $rule = new NocRule(new NocOptions());
 
@@ -217,7 +231,8 @@ final class NocRuleTest extends TestCase
 
     // Options tests
 
-    public function testOptionsFromArray(): void
+    #[Test]
+    public function itLoadsOptionsFromArray(): void
     {
         $options = NocOptions::fromArray([
             'enabled' => false,
@@ -230,14 +245,16 @@ final class NocRuleTest extends TestCase
         self::assertSame(20, $options->error);
     }
 
-    public function testOptionsFromEmptyArray(): void
+    #[Test]
+    public function itDisablesOptionsWhenLoadedFromEmptyArray(): void
     {
         $options = NocOptions::fromArray([]);
 
         self::assertFalse($options->enabled);
     }
 
-    public function testOptionsDefaults(): void
+    #[Test]
+    public function itHasCorrectOptionDefaults(): void
     {
         $options = new NocOptions();
 
@@ -246,8 +263,9 @@ final class NocRuleTest extends TestCase
         self::assertSame(15, $options->error);
     }
 
+    #[Test]
     #[DataProvider('thresholdDataProvider')]
-    public function testThresholdBoundaries(
+    public function itRespectsBoundaryThresholds(
         int $noc,
         int $warning,
         int $error,
@@ -295,7 +313,8 @@ final class NocRuleTest extends TestCase
         yield 'above error threshold' => [25, 7, 15, Severity::Error];
     }
 
-    public function testGetCliAliases(): void
+    #[Test]
+    public function itGetsCliAliases(): void
     {
         $aliases = CliAliasReader::read(NocRule::class);
 

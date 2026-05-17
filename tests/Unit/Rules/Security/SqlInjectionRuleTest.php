@@ -6,6 +6,7 @@ namespace Qualimetrix\Tests\Unit\Rules\Security;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
@@ -21,7 +22,8 @@ use Qualimetrix\Rules\Security\SqlInjectionRule;
 #[CoversClass(SecurityPatternOptions::class)]
 final class SqlInjectionRuleTest extends TestCase
 {
-    public function testNameAndCategory(): void
+    #[Test]
+    public function itHasCorrectNameAndCategory(): void
     {
         $rule = new SqlInjectionRule(new SecurityPatternOptions());
 
@@ -30,14 +32,16 @@ final class SqlInjectionRuleTest extends TestCase
         self::assertSame('Detects potential SQL injection vulnerabilities', $rule->getDescription());
     }
 
-    public function testRequires(): void
+    #[Test]
+    public function itRequires(): void
     {
         $rule = new SqlInjectionRule(new SecurityPatternOptions());
 
         self::assertSame(['security.sql_injection'], $rule->requires());
     }
 
-    public function testDisabledReturnsNoViolations(): void
+    #[Test]
+    public function itReturnsNoViolationsWhenDisabled(): void
     {
         $rule = new SqlInjectionRule(new SecurityPatternOptions(enabled: false));
 
@@ -48,7 +52,8 @@ final class SqlInjectionRuleTest extends TestCase
         self::assertCount(0, $rule->analyze($context));
     }
 
-    public function testNoFindingsReturnsNoViolations(): void
+    #[Test]
+    public function itReturnsNoViolationsWhenNoFindings(): void
     {
         $rule = new SqlInjectionRule(new SecurityPatternOptions());
 
@@ -57,7 +62,8 @@ final class SqlInjectionRuleTest extends TestCase
         self::assertCount(0, $rule->analyze($context));
     }
 
-    public function testSingleFindingCreatesViolation(): void
+    #[Test]
+    public function itCreatesViolationForSingleFinding(): void
     {
         $rule = new SqlInjectionRule(new SecurityPatternOptions());
 
@@ -75,7 +81,8 @@ final class SqlInjectionRuleTest extends TestCase
         self::assertStringContainsString('SQL injection', $violations[0]->message);
     }
 
-    public function testMultipleFindingsCreateMultipleViolations(): void
+    #[Test]
+    public function itCreatesMultipleViolationsForMultipleFindings(): void
     {
         $rule = new SqlInjectionRule(new SecurityPatternOptions());
 
@@ -94,7 +101,8 @@ final class SqlInjectionRuleTest extends TestCase
         self::assertSame(42, $violations[2]->location->line);
     }
 
-    public function testSuperglobalIncludedInViolationMessage(): void
+    #[Test]
+    public function itIncludesSuperglobalInViolationMessage(): void
     {
         $rule = new SqlInjectionRule(new SecurityPatternOptions());
 
@@ -110,7 +118,8 @@ final class SqlInjectionRuleTest extends TestCase
         self::assertStringContainsString('SQL injection', $violations[0]->message);
     }
 
-    public function testOptionsFromArray(): void
+    #[Test]
+    public function itLoadsOptionsFromArray(): void
     {
         $options = SecurityPatternOptions::fromArray(['enabled' => false]);
         self::assertFalse($options->isEnabled());
@@ -119,7 +128,8 @@ final class SqlInjectionRuleTest extends TestCase
         self::assertTrue($options->isEnabled());
     }
 
-    public function testGetSeverity(): void
+    #[Test]
+    public function itComputesSeverityCorrectly(): void
     {
         $options = new SecurityPatternOptions();
 
@@ -127,7 +137,8 @@ final class SqlInjectionRuleTest extends TestCase
         self::assertNull($options->getSeverity(0));
     }
 
-    public function testConstructorRejectsWrongOptionsType(): void
+    #[Test]
+    public function itRejectsWrongOptionsTypeInConstructor(): void
     {
         self::expectException(InvalidArgumentException::class);
 

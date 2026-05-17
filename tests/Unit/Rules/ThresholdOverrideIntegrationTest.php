@@ -6,6 +6,7 @@ namespace Qualimetrix\Tests\Unit\Rules;
 
 use FilesystemIterator;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricName;
@@ -65,7 +66,8 @@ use RuntimeException;
 #[CoversClass(DataClassOptions::class)]
 final class ThresholdOverrideIntegrationTest extends TestCase
 {
-    public function testWithOverrideOnMethodComplexityOptions(): void
+    #[Test]
+    public function itOverridesMethodComplexityOptions(): void
     {
         $options = new MethodComplexityOptions(warning: 10, error: 20);
 
@@ -75,7 +77,8 @@ final class ThresholdOverrideIntegrationTest extends TestCase
         self::assertSame(25, $overridden->error);
     }
 
-    public function testWithOverridePreservesNullValues(): void
+    #[Test]
+    public function itPreservesNullValuesOnOverride(): void
     {
         $options = new MethodComplexityOptions(warning: 10, error: 20);
 
@@ -90,7 +93,8 @@ final class ThresholdOverrideIntegrationTest extends TestCase
         self::assertSame(30, $overridden->error);
     }
 
-    public function testWithOverrideOnMethodCountOptions(): void
+    #[Test]
+    public function itOverridesMethodCountOptions(): void
     {
         $options = new MethodCountOptions(warning: 20, error: 30);
 
@@ -105,7 +109,8 @@ final class ThresholdOverrideIntegrationTest extends TestCase
         self::assertSame(Severity::Error, $overridden->getSeverity(40));
     }
 
-    public function testMethodCountRuleUsesOverriddenThreshold(): void
+    #[Test]
+    public function itAppliesOverriddenThresholdInMethodCountRule(): void
     {
         $symbolPath = SymbolPath::forClass('App\\Service', 'BigService');
         $symbolInfo = new SymbolInfo($symbolPath, 'src/Service/BigService.php', 10);
@@ -139,7 +144,8 @@ final class ThresholdOverrideIntegrationTest extends TestCase
         self::assertCount(0, $violationsWithOverride);
     }
 
-    public function testClassLevelOverrideAppliesToMethodsInClass(): void
+    #[Test]
+    public function itAppliesClassLevelOverrideToMethodsInClass(): void
     {
         // Class-level annotation scope: line 10-50
         // Method at line 20 falls within scope
@@ -181,7 +187,8 @@ final class ThresholdOverrideIntegrationTest extends TestCase
         self::assertCount(0, $violationsWithOverride);
     }
 
-    public function testMethodLevelOverrideOnlyAppliesToSpecificMethod(): void
+    #[Test]
+    public function itAppliesMethodLevelOverrideOnlyToSpecificMethod(): void
     {
         $method1Path = SymbolPath::forMethod('App\\Service', 'Service', 'complexMethod');
         $method1Info = new SymbolInfo($method1Path, 'src/Service/Service.php', 20);
@@ -230,7 +237,8 @@ final class ThresholdOverrideIntegrationTest extends TestCase
      * warning/error values, silently resetting enabled, scope, minClassCount,
      * excludeReadonly, voWarning/voError, etc. to defaults.
      */
-    public function testWithOverridePreservesNonThresholdFields(): void
+    #[Test]
+    public function itPreservesNonThresholdFieldsOnOverride(): void
     {
         // LongParameterListOptions — has voWarning/voError
         $lpl = new LongParameterListOptions(
@@ -423,7 +431,8 @@ final class ThresholdOverrideIntegrationTest extends TestCase
      * This catches the "forgotten field" bug automatically when new properties are added
      * to any Options class without updating its withOverride() method.
      */
-    public function testAllThresholdAwareOptionsPreserveFieldsViaReflection(): void
+    #[Test]
+    public function itPreservesAllFieldsViaReflectionForAllThresholdAwareOptions(): void
     {
         $optionsDir = \dirname(__DIR__, 3) . '/src/Rules';
         $optionsFiles = new RecursiveIteratorIterator(
@@ -532,7 +541,8 @@ final class ThresholdOverrideIntegrationTest extends TestCase
         };
     }
 
-    public function testViolationMessageContainsOverriddenThreshold(): void
+    #[Test]
+    public function itIncludesOverriddenThresholdInViolationMessage(): void
     {
         $symbolPath = SymbolPath::forClass('App\\Service', 'BigService');
         $symbolInfo = new SymbolInfo($symbolPath, 'src/Service/BigService.php', 10);
@@ -578,7 +588,8 @@ final class ThresholdOverrideIntegrationTest extends TestCase
         self::assertStringContainsString('threshold of 30', $violations[0]->message);
     }
 
-    public function testMethodLevelOverridePriorityInRule(): void
+    #[Test]
+    public function itPrioritizesMethodLevelOverrideInRule(): void
     {
         $symbolPath = SymbolPath::forClass('App\\Service', 'BigService');
         $symbolInfo = new SymbolInfo($symbolPath, 'src/Service/BigService.php', 20);
@@ -610,7 +621,8 @@ final class ThresholdOverrideIntegrationTest extends TestCase
         self::assertSame(22, $violations[0]->threshold);
     }
 
-    public function testPrefixOverrideAppliesToMultipleRules(): void
+    #[Test]
+    public function itAppliesPrefixOverrideToMultipleRules(): void
     {
         $options = new MethodComplexityOptions(warning: 10, error: 20);
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Reporting\Filter;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
@@ -26,7 +27,8 @@ final class ViolationFilterTest extends TestCase
 
     // --- filterViolations ---
 
-    public function testFilterViolationsReturnsAllWhenNoFilter(): void
+    #[Test]
+    public function itReturnsAllViolationsWhenNoFilter(): void
     {
         $violations = [
             $this->createViolation('App\\Service', 'Foo'),
@@ -40,7 +42,8 @@ final class ViolationFilterTest extends TestCase
         self::assertCount(2, $result);
     }
 
-    public function testFilterViolationsByNamespaceExactMatch(): void
+    #[Test]
+    public function itFiltersViolationsByNamespaceExactMatch(): void
     {
         $violations = [
             $this->createViolation('App\\Service', 'Foo'),
@@ -55,7 +58,8 @@ final class ViolationFilterTest extends TestCase
         self::assertSame('Foo', $result[0]->symbolPath->type);
     }
 
-    public function testFilterViolationsByNamespaceMatchesChildren(): void
+    #[Test]
+    public function itFiltersViolationsByNamespaceMatchingChildren(): void
     {
         $violations = [
             $this->createViolation('App\\Service\\Payment', 'Gateway'),
@@ -70,7 +74,8 @@ final class ViolationFilterTest extends TestCase
         self::assertSame('Gateway', $result[0]->symbolPath->type);
     }
 
-    public function testFilterViolationsByNamespaceDoesNotMatchSimilarPrefix(): void
+    #[Test]
+    public function itDoesNotMatchViolationsBySimilarNamespacePrefix(): void
     {
         $violations = [
             $this->createViolation('App\\ServiceManager', 'Handler'),
@@ -83,7 +88,8 @@ final class ViolationFilterTest extends TestCase
         self::assertSame([], $result);
     }
 
-    public function testFilterViolationsByClassExactMatch(): void
+    #[Test]
+    public function itFiltersViolationsByClassExactMatch(): void
     {
         $violations = [
             $this->createViolation('App\\Service', 'UserService'),
@@ -98,7 +104,8 @@ final class ViolationFilterTest extends TestCase
         self::assertSame('UserService', $result[0]->symbolPath->type);
     }
 
-    public function testFilterViolationsByClassReturnsFalseWhenNoType(): void
+    #[Test]
+    public function itExcludesViolationByClassWhenNoType(): void
     {
         // Namespace-level violation (no type)
         $violation = new Violation(
@@ -117,7 +124,8 @@ final class ViolationFilterTest extends TestCase
         self::assertSame([], $result);
     }
 
-    public function testFilterViolationsByClassWithGlobalNamespace(): void
+    #[Test]
+    public function itFiltersViolationsByClassWithGlobalNamespace(): void
     {
         $violations = [
             $this->createViolation('', 'GlobalClass'),
@@ -132,7 +140,8 @@ final class ViolationFilterTest extends TestCase
 
     // --- filterWorstOffenders ---
 
-    public function testFilterWorstOffendersReturnsAllWhenNoFilter(): void
+    #[Test]
+    public function itReturnsAllWorstOffendersWhenNoFilter(): void
     {
         $offenders = [
             $this->createOffender('App\\Service', 'Foo'),
@@ -146,7 +155,8 @@ final class ViolationFilterTest extends TestCase
         self::assertCount(2, $result);
     }
 
-    public function testFilterWorstOffendersByNamespace(): void
+    #[Test]
+    public function itFiltersWorstOffendersByNamespace(): void
     {
         $offenders = [
             $this->createOffender('App\\Service', 'Foo'),
@@ -161,7 +171,8 @@ final class ViolationFilterTest extends TestCase
         self::assertSame('Foo', $result[0]->symbolPath->type);
     }
 
-    public function testFilterWorstOffendersByNamespaceMatchesChildren(): void
+    #[Test]
+    public function itFiltersWorstOffendersByNamespaceMatchingChildren(): void
     {
         $offenders = [
             $this->createOffender('App\\Service\\Sub', 'Handler'),
@@ -176,7 +187,8 @@ final class ViolationFilterTest extends TestCase
         self::assertSame('Handler', $result[0]->symbolPath->type);
     }
 
-    public function testFilterWorstOffendersByClass(): void
+    #[Test]
+    public function itFiltersWorstOffendersByClass(): void
     {
         $offenders = [
             $this->createOffender('App\\Service', 'UserService'),
@@ -191,7 +203,8 @@ final class ViolationFilterTest extends TestCase
         self::assertSame('UserService', $result[0]->symbolPath->type);
     }
 
-    public function testFilterWorstOffendersByClassNoMatch(): void
+    #[Test]
+    public function itReturnsEmptyWhenWorstOffendersByClassNoMatch(): void
     {
         $offenders = [
             $this->createOffender('App\\Service', 'OrderService'),

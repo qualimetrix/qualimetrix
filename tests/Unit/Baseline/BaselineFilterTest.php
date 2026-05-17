@@ -6,6 +6,7 @@ namespace Qualimetrix\Tests\Unit\Baseline;
 
 use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Baseline\Baseline;
 use Qualimetrix\Baseline\BaselineEntry;
@@ -26,7 +27,8 @@ final class BaselineFilterTest extends TestCase
         $this->hasher = new ViolationHasher();
     }
 
-    public function testFiltersOutKnownViolation(): void
+    #[Test]
+    public function itFiltersOutKnownViolation(): void
     {
         $violation = new Violation(
             location: new Location('src/Foo.php', 45),
@@ -54,7 +56,8 @@ final class BaselineFilterTest extends TestCase
         self::assertFalse($filter->shouldInclude($violation), 'Known violation should be filtered out');
     }
 
-    public function testPassesNewViolation(): void
+    #[Test]
+    public function itPassesNewViolation(): void
     {
         $violation = new Violation(
             location: new Location('src/Foo.php', 45),
@@ -76,7 +79,8 @@ final class BaselineFilterTest extends TestCase
         self::assertTrue($filter->shouldInclude($violation), 'New violation should pass through');
     }
 
-    public function testPassesViolationFromDifferentFile(): void
+    #[Test]
+    public function itPassesViolationFromDifferentFile(): void
     {
         $violation = new Violation(
             location: new Location('src/Bar.php', 45),
@@ -102,7 +106,8 @@ final class BaselineFilterTest extends TestCase
         self::assertTrue($filter->shouldInclude($violation));
     }
 
-    public function testDetectsResolvedViolations(): void
+    #[Test]
+    public function itDetectsResolvedViolations(): void
     {
         // Current run has only the first violation (second was fixed)
         $violation1 = new Violation(
@@ -147,7 +152,8 @@ final class BaselineFilterTest extends TestCase
         self::assertSame('size', $resolved['class:App\Foo'][0]->rule);
     }
 
-    public function testReturnsEmptyWhenNothingResolved(): void
+    #[Test]
+    public function itReturnsEmptyWhenNothingResolved(): void
     {
         $violation = new Violation(
             location: new Location('src/Foo.php', 45),
@@ -176,7 +182,8 @@ final class BaselineFilterTest extends TestCase
         self::assertEmpty($resolved);
     }
 
-    public function testHashStableAcrossLineChanges(): void
+    #[Test]
+    public function itHashStableAcrossLineChanges(): void
     {
         // Violation originally at line 45
         $violation1 = new Violation(

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Unit\Infrastructure\Profiler;
 
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Profiler\NullProfiler;
 
@@ -16,38 +17,44 @@ final class NullProfilerTest extends TestCase
         $this->profiler = new NullProfiler();
     }
 
-    public function testIsEnabledReturnsFalse(): void
+    #[Test]
+    public function itIsNotEnabled(): void
     {
         self::assertFalse($this->profiler->isEnabled());
     }
 
-    public function testGetRootSpanReturnsNull(): void
+    #[Test]
+    public function itReturnsNullForRootSpan(): void
     {
         self::assertNull($this->profiler->getRootSpan());
     }
 
-    public function testStartIsNoOp(): void
+    #[Test]
+    public function itIgnoresStart(): void
     {
         $this->profiler->start('test', 'category');
 
         self::assertNull($this->profiler->getRootSpan());
     }
 
-    public function testStopIsNoOp(): void
+    #[Test]
+    public function itIgnoresStop(): void
     {
         $this->profiler->stop('test');
 
         self::assertNull($this->profiler->getRootSpan());
     }
 
-    public function testSnapshotIsNoOp(): void
+    #[Test]
+    public function itIgnoresSnapshot(): void
     {
         $this->profiler->snapshot();
 
         self::assertNull($this->profiler->getRootSpan());
     }
 
-    public function testGetSummaryReturnsEmptyArray(): void
+    #[Test]
+    public function itReturnsEmptySummary(): void
     {
         $this->profiler->start('test');
         $this->profiler->stop('test');
@@ -55,7 +62,8 @@ final class NullProfilerTest extends TestCase
         self::assertSame([], $this->profiler->getSummary());
     }
 
-    public function testExportReturnsEmptyString(): void
+    #[Test]
+    public function itReturnsEmptyStringOnExport(): void
     {
         $this->profiler->start('test');
         $this->profiler->stop('test');

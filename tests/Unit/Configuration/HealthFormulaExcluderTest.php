@@ -6,6 +6,7 @@ namespace Qualimetrix\Tests\Unit\Configuration;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Configuration\HealthFormulaExcluder;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefaults;
@@ -22,7 +23,8 @@ final class HealthFormulaExcluderTest extends TestCase
         $this->excluder = new HealthFormulaExcluder();
     }
 
-    public function testNoExclusionsReturnsSameDefinitions(): void
+    #[Test]
+    public function itReturnsUnchangedDefinitionsWhenNoExclusions(): void
     {
         $definitions = ComputedMetricDefaults::getDefaults();
         $definitions = array_values($definitions);
@@ -32,7 +34,8 @@ final class HealthFormulaExcluderTest extends TestCase
         self::assertSame($definitions, $result);
     }
 
-    public function testExcludeOneDimensionRemovesIt(): void
+    #[Test]
+    public function itExcludesOneDimensionAndRemovesIt(): void
     {
         $definitions = array_values(ComputedMetricDefaults::getDefaults());
 
@@ -47,7 +50,8 @@ final class HealthFormulaExcluderTest extends TestCase
         self::assertContains('health.overall', $names);
     }
 
-    public function testExcludeWithFullPrefixAlsoWorks(): void
+    #[Test]
+    public function itExcludesWithFullPrefixAlsoWorks(): void
     {
         $definitions = array_values(ComputedMetricDefaults::getDefaults());
 
@@ -57,7 +61,8 @@ final class HealthFormulaExcluderTest extends TestCase
         self::assertNotContains('health.typing', $names);
     }
 
-    public function testExcludeOneDimensionRenormalizesWeights(): void
+    #[Test]
+    public function itExcludingOneDimensionRenormalizesWeights(): void
     {
         // Create simple definitions with a known overall formula
         $definitions = $this->createSimpleDefinitions([
@@ -87,7 +92,8 @@ final class HealthFormulaExcluderTest extends TestCase
         self::assertEqualsWithDelta(0.5, $weights[1], 0.001);
     }
 
-    public function testExcludeMultipleDimensions(): void
+    #[Test]
+    public function itExcludesMultipleDimensions(): void
     {
         $definitions = $this->createSimpleDefinitions([
             'health.a' => 0.5,
@@ -112,7 +118,8 @@ final class HealthFormulaExcluderTest extends TestCase
         self::assertEqualsWithDelta(1.0, (float) $matches[1][0], 0.001);
     }
 
-    public function testExcludeAllSubDimensionsRemovesOverall(): void
+    #[Test]
+    public function itExcludingAllSubDimensionsRemovesOverall(): void
     {
         $definitions = $this->createSimpleDefinitions([
             'health.a' => 0.5,
@@ -128,7 +135,8 @@ final class HealthFormulaExcluderTest extends TestCase
         self::assertSame([], $result);
     }
 
-    public function testUnknownDimensionThrowsException(): void
+    #[Test]
+    public function itThrowsForUnknownDimension(): void
     {
         $excluder = new HealthFormulaExcluder();
         $definitions = array_values(ComputedMetricDefaults::getDefaults());
@@ -139,7 +147,8 @@ final class HealthFormulaExcluderTest extends TestCase
         $excluder->applyExcludeHealth($definitions, ['nonexistent']);
     }
 
-    public function testExcludingOverallDimensionDoesNotThrow(): void
+    #[Test]
+    public function itExcludingOverallDimensionDoesNotThrow(): void
     {
         $excluder = new HealthFormulaExcluder();
         $definitions = array_values(ComputedMetricDefaults::getDefaults());
@@ -153,7 +162,8 @@ final class HealthFormulaExcluderTest extends TestCase
         self::assertContains('health.complexity', $names);
     }
 
-    public function testOverallFormulaMultipleLevelsAreAllRebuilt(): void
+    #[Test]
+    public function itRebuildsAllLevelsOfOverallFormula(): void
     {
         $definitions = array_values(ComputedMetricDefaults::getDefaults());
 
@@ -171,7 +181,8 @@ final class HealthFormulaExcluderTest extends TestCase
         self::assertStringNotContainsString('health__typing', $overall->formulas['namespace']);
     }
 
-    public function testRebuiltFormulaWrappedInClamp(): void
+    #[Test]
+    public function itWrapsRebuiltFormulaInClamp(): void
     {
         $definitions = $this->createSimpleDefinitions([
             'health.a' => 0.6,
@@ -188,7 +199,8 @@ final class HealthFormulaExcluderTest extends TestCase
         self::assertStringEndsWith(', 0, 100)', $formula);
     }
 
-    public function testCustomNonWeightedOverallFormulaThrowsExplicitly(): void
+    #[Test]
+    public function itThrowsExplicitlyForCustomNonWeightedOverallFormula(): void
     {
         // A user-defined `health.overall` formula that does not follow the canonical
         // `(health__dim ?? 75) * weight` shape cannot be auto-renormalized. Refuse
@@ -217,7 +229,8 @@ final class HealthFormulaExcluderTest extends TestCase
         $this->excluder->applyExcludeHealth($definitions, ['a']);
     }
 
-    public function testRebuiltDefinitionPreservesOtherFields(): void
+    #[Test]
+    public function itPreservesOtherFieldsInRebuiltDefinition(): void
     {
         $definitions = array_values(ComputedMetricDefaults::getDefaults());
 

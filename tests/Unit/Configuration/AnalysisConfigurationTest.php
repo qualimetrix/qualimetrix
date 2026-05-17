@@ -6,6 +6,7 @@ namespace Qualimetrix\Tests\Unit\Configuration;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Configuration\AnalysisConfiguration;
 use Qualimetrix\Configuration\ConfigSchema;
@@ -14,7 +15,8 @@ use Qualimetrix\Core\Violation\Severity;
 #[CoversClass(AnalysisConfiguration::class)]
 final class AnalysisConfigurationTest extends TestCase
 {
-    public function testDefaultValues(): void
+    #[Test]
+    public function itHasDefaultValues(): void
     {
         $config = new AnalysisConfiguration();
 
@@ -32,7 +34,8 @@ final class AnalysisConfigurationTest extends TestCase
         self::assertNull($config->failOn);
     }
 
-    public function testFromArrayWithDefaults(): void
+    #[Test]
+    public function itCreatesFromArrayWithDefaults(): void
     {
         $config = AnalysisConfiguration::fromArray([]);
 
@@ -41,7 +44,8 @@ final class AnalysisConfigurationTest extends TestCase
         self::assertSame('summary', $config->format);
     }
 
-    public function testFromArrayWithValues(): void
+    #[Test]
+    public function itCreatesFromArrayWithValues(): void
     {
         $config = AnalysisConfiguration::fromArray([
             'cache' => [
@@ -74,7 +78,8 @@ final class AnalysisConfigurationTest extends TestCase
         self::assertSame(['src/Generated/*', 'src/Legacy/*'], $config->excludePaths);
     }
 
-    public function testMerge(): void
+    #[Test]
+    public function itMergesConfigurations(): void
     {
         $base = new AnalysisConfiguration(
             cacheDir: '/original/cache',
@@ -99,7 +104,8 @@ final class AnalysisConfigurationTest extends TestCase
         self::assertSame('chain', $merged->namespaceStrategy);
     }
 
-    public function testMergeAccumulatesDisabledRules(): void
+    #[Test]
+    public function itMergeAccumulatesDisabledRules(): void
     {
         $base = new AnalysisConfiguration(
             disabledRules: ['rule-a'],
@@ -114,7 +120,8 @@ final class AnalysisConfigurationTest extends TestCase
         self::assertContains('rule-c', $merged->disabledRules);
     }
 
-    public function testMergeAccumulatesExcludePaths(): void
+    #[Test]
+    public function itMergeAccumulatesExcludePaths(): void
     {
         $base = new AnalysisConfiguration(
             excludePaths: ['src/Generated/*'],
@@ -127,7 +134,8 @@ final class AnalysisConfigurationTest extends TestCase
         self::assertSame(['src/Generated/*', 'src/Legacy/*', 'src/Vendor/*'], $merged->excludePaths);
     }
 
-    public function testMergeExcludePathsDeduplicates(): void
+    #[Test]
+    public function itMergeExcludePathsDeduplicates(): void
     {
         $base = new AnalysisConfiguration(
             excludePaths: ['src/Generated/*'],
@@ -140,7 +148,8 @@ final class AnalysisConfigurationTest extends TestCase
         self::assertSame(['src/Generated/*', 'src/Legacy/*'], $merged->excludePaths);
     }
 
-    public function testFromArrayParsesExcludeNamespaces(): void
+    #[Test]
+    public function itFromArrayParsesExcludeNamespaces(): void
     {
         $config = AnalysisConfiguration::fromArray([
             'exclude_namespaces' => ['App\\Generated', 'App\\Legacy'],
@@ -149,7 +158,8 @@ final class AnalysisConfigurationTest extends TestCase
         self::assertSame(['App\\Generated', 'App\\Legacy'], $config->excludeNamespaces);
     }
 
-    public function testMergeAccumulatesExcludeNamespaces(): void
+    #[Test]
+    public function itMergeAccumulatesExcludeNamespaces(): void
     {
         $base = new AnalysisConfiguration(
             excludeNamespaces: ['App\\Generated'],
@@ -162,7 +172,8 @@ final class AnalysisConfigurationTest extends TestCase
         self::assertSame(['App\\Generated', 'App\\Legacy', 'App\\Vendor'], $merged->excludeNamespaces);
     }
 
-    public function testMergeExcludeNamespacesDeduplicates(): void
+    #[Test]
+    public function itMergeExcludeNamespacesDeduplicates(): void
     {
         $base = new AnalysisConfiguration(
             excludeNamespaces: ['App\\Generated'],
@@ -175,7 +186,8 @@ final class AnalysisConfigurationTest extends TestCase
         self::assertSame(['App\\Generated', 'App\\Legacy'], $merged->excludeNamespaces);
     }
 
-    public function testMergeEmptyOnlyRulesResetsToEmpty(): void
+    #[Test]
+    public function itMergeEmptyOnlyRulesResetsToEmpty(): void
     {
         $base = new AnalysisConfiguration(
             onlyRules: ['complexity', 'size'],
@@ -188,7 +200,8 @@ final class AnalysisConfigurationTest extends TestCase
         self::assertSame([], $merged->onlyRules);
     }
 
-    public function testMergeEmptyAggregationPrefixesResetsToEmpty(): void
+    #[Test]
+    public function itMergeEmptyAggregationPrefixesResetsToEmpty(): void
     {
         $base = new AnalysisConfiguration(
             aggregationPrefixes: ['App\\Domain', 'App\\Infrastructure'],
@@ -203,7 +216,8 @@ final class AnalysisConfigurationTest extends TestCase
         self::assertSame([], $merged->aggregationPrefixes);
     }
 
-    public function testMergeWithoutOnlyRulesPreservesExisting(): void
+    #[Test]
+    public function itMergeWithoutOnlyRulesPreservesExisting(): void
     {
         $base = new AnalysisConfiguration(
             onlyRules: ['complexity'],
@@ -216,7 +230,8 @@ final class AnalysisConfigurationTest extends TestCase
         self::assertSame(['complexity'], $merged->onlyRules);
     }
 
-    public function testMergeWithoutAggregationPrefixesPreservesExisting(): void
+    #[Test]
+    public function itMergeWithoutAggregationPrefixesPreservesExisting(): void
     {
         $base = new AnalysisConfiguration(
             aggregationPrefixes: ['App\\Domain'],
@@ -229,14 +244,16 @@ final class AnalysisConfigurationTest extends TestCase
         self::assertSame(['App\\Domain'], $merged->aggregationPrefixes);
     }
 
-    public function testIsRuleEnabledWithNoRestrictions(): void
+    #[Test]
+    public function itIsRuleEnabledWithNoRestrictions(): void
     {
         $config = new AnalysisConfiguration();
 
         self::assertTrue($config->isRuleEnabled('any-rule'));
     }
 
-    public function testIsRuleEnabledWithDisabledRules(): void
+    #[Test]
+    public function itIsRuleEnabledWithDisabledRules(): void
     {
         $config = new AnalysisConfiguration(
             disabledRules: ['disabled-rule'],
@@ -246,7 +263,8 @@ final class AnalysisConfigurationTest extends TestCase
         self::assertTrue($config->isRuleEnabled('other-rule'));
     }
 
-    public function testIsRuleEnabledWithOnlyRules(): void
+    #[Test]
+    public function itIsRuleEnabledWithOnlyRules(): void
     {
         $config = new AnalysisConfiguration(
             onlyRules: ['allowed-rule'],
@@ -256,7 +274,8 @@ final class AnalysisConfigurationTest extends TestCase
         self::assertFalse($config->isRuleEnabled('other-rule'));
     }
 
-    public function testIsRuleEnabledDisabledTakesPrecedence(): void
+    #[Test]
+    public function itIsRuleEnabledDisabledTakesPrecedence(): void
     {
         $config = new AnalysisConfiguration(
             disabledRules: ['my-rule'],
@@ -267,7 +286,8 @@ final class AnalysisConfigurationTest extends TestCase
         self::assertFalse($config->isRuleEnabled('my-rule'));
     }
 
-    public function testFromArrayRejectsInvalidCacheDir(): void
+    #[Test]
+    public function itFromArrayRejectsInvalidCacheDir(): void
     {
         self::expectException(InvalidArgumentException::class);
         self::expectExceptionMessage('cache.dir');
@@ -277,7 +297,8 @@ final class AnalysisConfigurationTest extends TestCase
         ]);
     }
 
-    public function testFromArrayRejectsNonBoolCacheEnabled(): void
+    #[Test]
+    public function itFromArrayRejectsNonBoolCacheEnabled(): void
     {
         self::expectException(InvalidArgumentException::class);
         self::expectExceptionMessage('expected boolean');
@@ -287,7 +308,8 @@ final class AnalysisConfigurationTest extends TestCase
         ]);
     }
 
-    public function testFromArrayRejectsNonStringFormat(): void
+    #[Test]
+    public function itFromArrayRejectsNonStringFormat(): void
     {
         self::expectException(InvalidArgumentException::class);
         self::expectExceptionMessage('format');
@@ -297,7 +319,8 @@ final class AnalysisConfigurationTest extends TestCase
         ]);
     }
 
-    public function testFromArrayRejectsInvalidNamespaceStrategy(): void
+    #[Test]
+    public function itFromArrayRejectsInvalidNamespaceStrategy(): void
     {
         self::expectException(InvalidArgumentException::class);
         self::expectExceptionMessage('Allowed values: chain, psr4, tokenizer');
@@ -307,7 +330,8 @@ final class AnalysisConfigurationTest extends TestCase
         ]);
     }
 
-    public function testFromArrayRejectsNegativeWorkers(): void
+    #[Test]
+    public function itFromArrayRejectsNegativeWorkers(): void
     {
         self::expectException(InvalidArgumentException::class);
         self::expectExceptionMessage('must be non-negative');
@@ -317,7 +341,8 @@ final class AnalysisConfigurationTest extends TestCase
         ]);
     }
 
-    public function testFromArrayRejectsZeroAutoDepth(): void
+    #[Test]
+    public function itFromArrayRejectsZeroAutoDepth(): void
     {
         self::expectException(InvalidArgumentException::class);
         self::expectExceptionMessage('must be positive');
@@ -327,7 +352,8 @@ final class AnalysisConfigurationTest extends TestCase
         ]);
     }
 
-    public function testFromArrayRejectsNonArrayPrefixes(): void
+    #[Test]
+    public function itFromArrayRejectsNonArrayPrefixes(): void
     {
         self::expectException(InvalidArgumentException::class);
         self::expectExceptionMessage('expected array');
@@ -337,7 +363,8 @@ final class AnalysisConfigurationTest extends TestCase
         ]);
     }
 
-    public function testFromArrayAcceptsAbsentKeysWithDefaults(): void
+    #[Test]
+    public function itFromArrayAcceptsAbsentKeysWithDefaults(): void
     {
         $config = AnalysisConfiguration::fromArray([]);
 
@@ -360,7 +387,8 @@ final class AnalysisConfigurationTest extends TestCase
         self::assertNull($config->memoryLimit);
     }
 
-    public function testFromArrayAcceptsNullWorkers(): void
+    #[Test]
+    public function itFromArrayAcceptsNullWorkers(): void
     {
         $config = AnalysisConfiguration::fromArray([
             'parallel' => ['workers' => null],
@@ -369,7 +397,8 @@ final class AnalysisConfigurationTest extends TestCase
         self::assertNull($config->workers);
     }
 
-    public function testFromArrayTreatsExplicitNullAsDefault(): void
+    #[Test]
+    public function itFromArrayTreatsExplicitNullAsDefault(): void
     {
         // YAML `format: ~` or `format:` (no value) parses as null
         $config = AnalysisConfiguration::fromArray([
@@ -384,7 +413,8 @@ final class AnalysisConfigurationTest extends TestCase
         self::assertSame([], $config->disabledRules);
     }
 
-    public function testFromArrayRejectsNonStringListElements(): void
+    #[Test]
+    public function itFromArrayRejectsNonStringListElements(): void
     {
         self::expectException(InvalidArgumentException::class);
         self::expectExceptionMessage('expected string, got int');
@@ -396,7 +426,8 @@ final class AnalysisConfigurationTest extends TestCase
 
     // --- Prefix matching tests ---
 
-    public function testIsRuleEnabledPrefixMatchDisablesGroup(): void
+    #[Test]
+    public function itIsRuleEnabledPrefixMatchDisablesGroup(): void
     {
         $config = new AnalysisConfiguration(
             disabledRules: ['complexity'],
@@ -412,7 +443,8 @@ final class AnalysisConfigurationTest extends TestCase
         self::assertTrue($config->isRuleEnabled('size.method-count'));
     }
 
-    public function testIsRuleEnabledPrefixMatchDisablesSpecificRule(): void
+    #[Test]
+    public function itIsRuleEnabledPrefixMatchDisablesSpecificRule(): void
     {
         $config = new AnalysisConfiguration(
             disabledRules: ['complexity.cyclomatic'],
@@ -424,7 +456,8 @@ final class AnalysisConfigurationTest extends TestCase
         self::assertTrue($config->isRuleEnabled('complexity'));
     }
 
-    public function testIsRuleEnabledOnlyRulesPrefixMatch(): void
+    #[Test]
+    public function itIsRuleEnabledOnlyRulesPrefixMatch(): void
     {
         $config = new AnalysisConfiguration(
             onlyRules: ['complexity'],
@@ -439,7 +472,8 @@ final class AnalysisConfigurationTest extends TestCase
         self::assertFalse($config->isRuleEnabled('size.method-count'));
     }
 
-    public function testIsRuleEnabledOnlyRulesSpecificRule(): void
+    #[Test]
+    public function itIsRuleEnabledOnlyRulesSpecificRule(): void
     {
         $config = new AnalysisConfiguration(
             onlyRules: ['complexity.cyclomatic'],
@@ -451,7 +485,8 @@ final class AnalysisConfigurationTest extends TestCase
         self::assertTrue($config->isRuleEnabled('complexity'));
     }
 
-    public function testIsRuleEnabledOnlyRulesMultiplePatterns(): void
+    #[Test]
+    public function itIsRuleEnabledOnlyRulesMultiplePatterns(): void
     {
         $config = new AnalysisConfiguration(
             onlyRules: ['complexity', 'size.method-count'],
@@ -466,14 +501,16 @@ final class AnalysisConfigurationTest extends TestCase
 
     // --- isViolationCodeEnabled tests ---
 
-    public function testIsViolationCodeEnabledNoRestrictions(): void
+    #[Test]
+    public function itIsViolationCodeEnabledNoRestrictions(): void
     {
         $config = new AnalysisConfiguration();
 
         self::assertTrue($config->isViolationCodeEnabled('complexity.cyclomatic.method'));
     }
 
-    public function testIsViolationCodeEnabledDisabledGroup(): void
+    #[Test]
+    public function itIsViolationCodeEnabledDisabledGroup(): void
     {
         $config = new AnalysisConfiguration(
             disabledRules: ['complexity'],
@@ -484,7 +521,8 @@ final class AnalysisConfigurationTest extends TestCase
         self::assertTrue($config->isViolationCodeEnabled('size.method-count'));
     }
 
-    public function testIsViolationCodeEnabledDisabledSpecificCode(): void
+    #[Test]
+    public function itIsViolationCodeEnabledDisabledSpecificCode(): void
     {
         $config = new AnalysisConfiguration(
             disabledRules: ['complexity.cyclomatic.class'],
@@ -494,7 +532,8 @@ final class AnalysisConfigurationTest extends TestCase
         self::assertTrue($config->isViolationCodeEnabled('complexity.cyclomatic.method'));
     }
 
-    public function testIsViolationCodeEnabledOnlyRules(): void
+    #[Test]
+    public function itIsViolationCodeEnabledOnlyRules(): void
     {
         $config = new AnalysisConfiguration(
             onlyRules: ['complexity.cyclomatic'],
@@ -505,7 +544,8 @@ final class AnalysisConfigurationTest extends TestCase
         self::assertFalse($config->isViolationCodeEnabled('complexity.cognitive.method'));
     }
 
-    public function testIsViolationCodeEnabledDisabledTakesPrecedence(): void
+    #[Test]
+    public function itIsViolationCodeEnabledDisabledTakesPrecedence(): void
     {
         $config = new AnalysisConfiguration(
             disabledRules: ['complexity.cyclomatic.class'],
@@ -518,35 +558,40 @@ final class AnalysisConfigurationTest extends TestCase
 
     // --- failOn tests ---
 
-    public function testFromArrayParsesFailOnWarning(): void
+    #[Test]
+    public function itFromArrayParsesFailOnWarning(): void
     {
         $config = AnalysisConfiguration::fromArray(['fail_on' => 'warning']);
 
         self::assertSame(Severity::Warning, $config->failOn);
     }
 
-    public function testFromArrayParsesFailOnError(): void
+    #[Test]
+    public function itFromArrayParsesFailOnError(): void
     {
         $config = AnalysisConfiguration::fromArray(['fail_on' => 'error']);
 
         self::assertSame(Severity::Error, $config->failOn);
     }
 
-    public function testFromArrayParsesFailOnInfo(): void
+    #[Test]
+    public function itFromArrayParsesFailOnInfo(): void
     {
         $config = AnalysisConfiguration::fromArray(['fail_on' => 'info']);
 
         self::assertSame(Severity::Info, $config->failOn);
     }
 
-    public function testFromArrayFailOnNullByDefault(): void
+    #[Test]
+    public function itFromArrayFailOnNullByDefault(): void
     {
         $config = AnalysisConfiguration::fromArray([]);
 
         self::assertNull($config->failOn);
     }
 
-    public function testFromArrayFailOnInvalidStringThrowsException(): void
+    #[Test]
+    public function itFromArrayFailOnInvalidStringThrowsException(): void
     {
         self::expectException(InvalidArgumentException::class);
         self::expectExceptionMessage('Invalid value "invalid" for "fail_on"');
@@ -554,14 +599,16 @@ final class AnalysisConfigurationTest extends TestCase
         AnalysisConfiguration::fromArray(['fail_on' => 'invalid']);
     }
 
-    public function testFromArrayFailOnSeverityEnum(): void
+    #[Test]
+    public function itFromArrayFailOnSeverityEnum(): void
     {
         $config = AnalysisConfiguration::fromArray(['fail_on' => Severity::Error]);
 
         self::assertSame(Severity::Error, $config->failOn);
     }
 
-    public function testMergeFailOnOverridesWhenPresent(): void
+    #[Test]
+    public function itMergeFailOnOverridesWhenPresent(): void
     {
         $base = new AnalysisConfiguration(failOn: Severity::Warning);
 
@@ -570,7 +617,8 @@ final class AnalysisConfigurationTest extends TestCase
         self::assertSame(Severity::Error, $merged->failOn);
     }
 
-    public function testMergeFailOnPreservesWhenNotInOverrides(): void
+    #[Test]
+    public function itMergeFailOnPreservesWhenNotInOverrides(): void
     {
         $base = new AnalysisConfiguration(failOn: Severity::Error);
 
@@ -579,7 +627,8 @@ final class AnalysisConfigurationTest extends TestCase
         self::assertSame(Severity::Error, $merged->failOn);
     }
 
-    public function testMergeFailOnPreservesNullWhenNotInOverrides(): void
+    #[Test]
+    public function itMergeFailOnPreservesNullWhenNotInOverrides(): void
     {
         $base = new AnalysisConfiguration();
 
@@ -588,14 +637,16 @@ final class AnalysisConfigurationTest extends TestCase
         self::assertNull($merged->failOn);
     }
 
-    public function testFromArrayParsesFailOnNone(): void
+    #[Test]
+    public function itFromArrayParsesFailOnNone(): void
     {
         $config = AnalysisConfiguration::fromArray(['fail_on' => 'none']);
 
         self::assertFalse($config->failOn);
     }
 
-    public function testMergeFailOnNoneOverridesWhenPresent(): void
+    #[Test]
+    public function itMergeFailOnNoneOverridesWhenPresent(): void
     {
         $base = new AnalysisConfiguration(failOn: Severity::Warning);
 
@@ -604,7 +655,8 @@ final class AnalysisConfigurationTest extends TestCase
         self::assertFalse($merged->failOn);
     }
 
-    public function testMergeFailOnNonePreservedWhenNotOverridden(): void
+    #[Test]
+    public function itMergeFailOnNonePreservedWhenNotOverridden(): void
     {
         $base = new AnalysisConfiguration(failOn: false);
 
@@ -615,14 +667,16 @@ final class AnalysisConfigurationTest extends TestCase
 
     // Framework namespaces tests
 
-    public function testDefaultFrameworkNamespacesEmpty(): void
+    #[Test]
+    public function itHasDefaultFrameworkNamespacesEmpty(): void
     {
         $config = new AnalysisConfiguration();
 
         self::assertSame([], $config->frameworkNamespaces);
     }
 
-    public function testFromArrayParsesFrameworkNamespaces(): void
+    #[Test]
+    public function itFromArrayParsesFrameworkNamespaces(): void
     {
         $config = AnalysisConfiguration::fromArray([
             'coupling.framework_namespaces' => ['Symfony', 'PhpParser', 'Psr'],
@@ -631,7 +685,8 @@ final class AnalysisConfigurationTest extends TestCase
         self::assertSame(['Symfony', 'PhpParser', 'Psr'], $config->frameworkNamespaces);
     }
 
-    public function testFromArrayParsesNestedFrameworkNamespaces(): void
+    #[Test]
+    public function itFromArrayParsesNestedFrameworkNamespaces(): void
     {
         $config = AnalysisConfiguration::fromArray([
             'coupling' => [
@@ -642,7 +697,8 @@ final class AnalysisConfigurationTest extends TestCase
         self::assertSame(['Symfony', 'Psr'], $config->frameworkNamespaces);
     }
 
-    public function testMergeFrameworkNamespacesOverrides(): void
+    #[Test]
+    public function itMergeFrameworkNamespacesOverrides(): void
     {
         $base = new AnalysisConfiguration(
             frameworkNamespaces: ['Symfony'],
@@ -655,7 +711,8 @@ final class AnalysisConfigurationTest extends TestCase
         self::assertSame(['PhpParser', 'Psr'], $merged->frameworkNamespaces);
     }
 
-    public function testMergeFrameworkNamespacesPreservesWhenNotInOverrides(): void
+    #[Test]
+    public function itMergeFrameworkNamespacesPreservesWhenNotInOverrides(): void
     {
         $base = new AnalysisConfiguration(
             frameworkNamespaces: ['Symfony', 'Psr'],
@@ -668,35 +725,40 @@ final class AnalysisConfigurationTest extends TestCase
 
     // --- memoryLimit tests ---
 
-    public function testDefaultMemoryLimitIsNull(): void
+    #[Test]
+    public function itHasDefaultMemoryLimitAsNull(): void
     {
         $config = new AnalysisConfiguration();
 
         self::assertNull($config->memoryLimit);
     }
 
-    public function testFromArrayParsesMemoryLimitString(): void
+    #[Test]
+    public function itFromArrayParsesMemoryLimitString(): void
     {
         $config = AnalysisConfiguration::fromArray(['memory_limit' => '1G']);
 
         self::assertSame('1G', $config->memoryLimit);
     }
 
-    public function testFromArrayParsesMemoryLimitWithMegabytes(): void
+    #[Test]
+    public function itFromArrayParsesMemoryLimitWithMegabytes(): void
     {
         $config = AnalysisConfiguration::fromArray(['memory_limit' => '512M']);
 
         self::assertSame('512M', $config->memoryLimit);
     }
 
-    public function testFromArrayParsesMemoryLimitUnlimited(): void
+    #[Test]
+    public function itFromArrayParsesMemoryLimitUnlimited(): void
     {
         $config = AnalysisConfiguration::fromArray(['memory_limit' => '-1']);
 
         self::assertSame('-1', $config->memoryLimit);
     }
 
-    public function testFromArrayParsesMemoryLimitInteger(): void
+    #[Test]
+    public function itFromArrayParsesMemoryLimitInteger(): void
     {
         // YAML without quotes: memory_limit: 134217728
         $config = AnalysisConfiguration::fromArray(['memory_limit' => 134217728]);
@@ -704,21 +766,24 @@ final class AnalysisConfigurationTest extends TestCase
         self::assertSame('134217728', $config->memoryLimit);
     }
 
-    public function testFromArrayParsesMemoryLimitLowercaseSuffix(): void
+    #[Test]
+    public function itFromArrayParsesMemoryLimitLowercaseSuffix(): void
     {
         $config = AnalysisConfiguration::fromArray(['memory_limit' => '512m']);
 
         self::assertSame('512m', $config->memoryLimit);
     }
 
-    public function testFromArrayMemoryLimitNullByDefault(): void
+    #[Test]
+    public function itFromArrayMemoryLimitNullByDefault(): void
     {
         $config = AnalysisConfiguration::fromArray([]);
 
         self::assertNull($config->memoryLimit);
     }
 
-    public function testFromArrayMemoryLimitInvalidStringThrowsException(): void
+    #[Test]
+    public function itFromArrayMemoryLimitInvalidStringThrowsException(): void
     {
         self::expectException(InvalidArgumentException::class);
         self::expectExceptionMessage('Invalid value "banana" for "memory_limit"');
@@ -726,7 +791,8 @@ final class AnalysisConfigurationTest extends TestCase
         AnalysisConfiguration::fromArray(['memory_limit' => 'banana']);
     }
 
-    public function testFromArrayMemoryLimitInvalidNegativeThrowsException(): void
+    #[Test]
+    public function itFromArrayMemoryLimitInvalidNegativeThrowsException(): void
     {
         self::expectException(InvalidArgumentException::class);
         self::expectExceptionMessage('Invalid value "-2" for "memory_limit"');
@@ -734,7 +800,8 @@ final class AnalysisConfigurationTest extends TestCase
         AnalysisConfiguration::fromArray(['memory_limit' => '-2']);
     }
 
-    public function testFromArrayMemoryLimitZeroThrowsException(): void
+    #[Test]
+    public function itFromArrayMemoryLimitZeroThrowsException(): void
     {
         self::expectException(InvalidArgumentException::class);
         self::expectExceptionMessage('Invalid value "0" for "memory_limit"');
@@ -742,7 +809,8 @@ final class AnalysisConfigurationTest extends TestCase
         AnalysisConfiguration::fromArray(['memory_limit' => '0']);
     }
 
-    public function testMergeMemoryLimitOverridesWhenPresent(): void
+    #[Test]
+    public function itMergeMemoryLimitOverridesWhenPresent(): void
     {
         $base = new AnalysisConfiguration(memoryLimit: '512M');
 
@@ -751,7 +819,8 @@ final class AnalysisConfigurationTest extends TestCase
         self::assertSame('1G', $merged->memoryLimit);
     }
 
-    public function testMergeMemoryLimitPreservesWhenNotInOverrides(): void
+    #[Test]
+    public function itMergeMemoryLimitPreservesWhenNotInOverrides(): void
     {
         $base = new AnalysisConfiguration(memoryLimit: '1G');
 
@@ -760,7 +829,8 @@ final class AnalysisConfigurationTest extends TestCase
         self::assertSame('1G', $merged->memoryLimit);
     }
 
-    public function testMergeMemoryLimitPreservesNullWhenNotInOverrides(): void
+    #[Test]
+    public function itMergeMemoryLimitPreservesNullWhenNotInOverrides(): void
     {
         $base = new AnalysisConfiguration();
 

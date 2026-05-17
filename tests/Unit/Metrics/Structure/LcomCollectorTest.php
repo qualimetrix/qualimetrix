@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Metrics\Structure;
 use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\CollectorConfigHolder;
@@ -29,19 +30,22 @@ final class LcomCollectorTest extends TestCase
         $this->collector = new LcomCollector();
     }
 
-    public function testGetName(): void
+    #[Test]
+    public function itGetsName(): void
     {
         self::assertSame('lcom', $this->collector->getName());
     }
 
-    public function testProvides(): void
+    #[Test]
+    public function itProvides(): void
     {
         $provides = $this->collector->provides();
 
         self::assertContains('lcom', $provides);
     }
 
-    public function testEmptyClass(): void
+    #[Test]
+    public function itReturnsZeroLcomForEmptyClass(): void
     {
         $code = <<<'PHP'
 <?php
@@ -59,7 +63,8 @@ PHP;
         self::assertSame(0, $metrics->get('lcom:App\EmptyClass'));
     }
 
-    public function testClassWithSingleMethod(): void
+    #[Test]
+    public function itReturnsOneLcomForClassWithSingleMethod(): void
     {
         $code = <<<'PHP'
 <?php
@@ -83,7 +88,8 @@ PHP;
         self::assertSame(1, $metrics->get('lcom:App\SingleMethod'));
     }
 
-    public function testPerfectlyCohesiveClass(): void
+    #[Test]
+    public function itReturnsOneLcomForPerfectlyCohesiveClass(): void
     {
         $code = <<<'PHP'
 <?php
@@ -117,7 +123,8 @@ PHP;
         self::assertSame(1, $metrics->get('lcom:App\CohesiveClass'));
     }
 
-    public function testTwoDisconnectedGroups(): void
+    #[Test]
+    public function itReturnsTwoLcomForTwoDisconnectedGroups(): void
     {
         $code = <<<'PHP'
 <?php
@@ -157,7 +164,8 @@ PHP;
         self::assertSame(2, $metrics->get('lcom:App\DisconnectedClass'));
     }
 
-    public function testCompletelyDisconnectedMethods(): void
+    #[Test]
+    public function itReturnsHighLcomForCompletelyDisconnectedMethods(): void
     {
         $code = <<<'PHP'
 <?php
@@ -193,7 +201,8 @@ PHP;
         self::assertSame(3, $metrics->get('lcom:App\NoSharedProperties'));
     }
 
-    public function testMethodsWithNoPropertyAccess(): void
+    #[Test]
+    public function itCalculatesLcomForMethodsWithNoPropertyAccess(): void
     {
         $code = <<<'PHP'
 <?php
@@ -220,7 +229,8 @@ PHP;
         self::assertSame(2, $metrics->get('lcom:App\StatelessClass'));
     }
 
-    public function testPartiallyConnectedGraph(): void
+    #[Test]
+    public function itReturnsOneLcomForPartiallyConnectedGraph(): void
     {
         $code = <<<'PHP'
 <?php
@@ -258,7 +268,8 @@ PHP;
         self::assertSame(1, $metrics->get('lcom:App\PartiallyConnected'));
     }
 
-    public function testInterfaceIsIgnored(): void
+    #[Test]
+    public function itIgnoresInterface(): void
     {
         $code = <<<'PHP'
 <?php
@@ -278,7 +289,8 @@ PHP;
         self::assertNull($metrics->get('lcom:App\MyInterface'));
     }
 
-    public function testTraitIsIgnored(): void
+    #[Test]
+    public function itIgnoresTrait(): void
     {
         $code = <<<'PHP'
 <?php
@@ -308,7 +320,8 @@ PHP;
         self::assertNull($metrics->get('lcom:App\MyTrait'));
     }
 
-    public function testAnonymousClassIgnored(): void
+    #[Test]
+    public function itIgnoresAnonymousClass(): void
     {
         $code = <<<'PHP'
 <?php
@@ -339,7 +352,8 @@ PHP;
         self::assertNull($metrics->get('lcom:'));
     }
 
-    public function testClassWithoutNamespace(): void
+    #[Test]
+    public function itHandlesClassWithoutNamespace(): void
     {
         $code = <<<'PHP'
 <?php
@@ -359,7 +373,8 @@ PHP;
         self::assertSame(1, $metrics->get('lcom:GlobalClass'));
     }
 
-    public function testMultipleClasses(): void
+    #[Test]
+    public function itCalculatesLcomForMultipleClasses(): void
     {
         $code = <<<'PHP'
 <?php
@@ -387,7 +402,8 @@ PHP;
         self::assertSame(2, $metrics->get('lcom:App\Second'));
     }
 
-    public function testReset(): void
+    #[Test]
+    public function itResetsState(): void
     {
         $code1 = <<<'PHP'
 <?php
@@ -425,7 +441,8 @@ PHP;
         self::assertSame(1, $metrics->get('lcom:App\Second'));
     }
 
-    public function testGetMetricDefinitions(): void
+    #[Test]
+    public function itGetsMetricDefinitions(): void
     {
         $definitions = $this->collector->getMetricDefinitions();
 
@@ -446,7 +463,8 @@ PHP;
         self::assertContains(AggregationStrategy::Percentile95, $projectStrategies);
     }
 
-    public function testGodClass(): void
+    #[Test]
+    public function itCalculatesHighLcomForGodClass(): void
     {
         $code = <<<'PHP'
 <?php
@@ -487,7 +505,8 @@ PHP;
         self::assertSame(5, $metrics->get('lcom:App\GodClass'));
     }
 
-    public function testMethodCallsConnectMethods(): void
+    #[Test]
+    public function itConnectsMethodsViaMethodCalls(): void
     {
         $code = <<<'PHP'
 <?php
@@ -519,7 +538,8 @@ PHP;
         self::assertSame(1, $metrics->get('lcom:App\MethodCallCohesion'));
     }
 
-    public function testMethodCallChainConnectsAllMethods(): void
+    #[Test]
+    public function itConnectsAllMethodsViaCallChain(): void
     {
         $code = <<<'PHP'
 <?php
@@ -550,7 +570,8 @@ PHP;
         self::assertSame(1, $metrics->get('lcom:App\MethodCallChain'));
     }
 
-    public function testMethodCallWithoutSharedProperties(): void
+    #[Test]
+    public function itConnectsMethodsViaCallWithoutSharedProperties(): void
     {
         $code = <<<'PHP'
 <?php
@@ -576,7 +597,8 @@ PHP;
         self::assertSame(1, $metrics->get('lcom:App\DirectMethodCall'));
     }
 
-    public function testStaticMethodsExcludedFromLcom(): void
+    #[Test]
+    public function itExcludesStaticMethodsFromLcom(): void
     {
         $code = <<<'PHP'
 <?php
@@ -610,7 +632,8 @@ PHP;
         self::assertSame(1, $metrics->get('lcom:App\WithStaticMethod'));
     }
 
-    public function testStaticMethodDoesNotInflateLcom(): void
+    #[Test]
+    public function itDoesNotInflateLcomWithStaticMethod(): void
     {
         $code = <<<'PHP'
 <?php
@@ -643,7 +666,8 @@ PHP;
         self::assertSame(1, $metrics->get('lcom:App\StaticInflation'));
     }
 
-    public function testSelfAndStaticCallsDoNotCreateEdges(): void
+    #[Test]
+    public function itDoesNotCreateEdgesForSelfAndStaticCalls(): void
     {
         $code = <<<'PHP'
 <?php
@@ -684,7 +708,8 @@ PHP;
         self::assertSame(2, $metrics->get('lcom:App\StaticCallClass'));
     }
 
-    public function testOnlyStaticMethodsResultsInZeroLcom(): void
+    #[Test]
+    public function itReturnsZeroLcomWhenOnlyStaticMethods(): void
     {
         $code = <<<'PHP'
 <?php
@@ -704,7 +729,8 @@ PHP;
         self::assertSame(0, $metrics->get('lcom:App\AllStatic'));
     }
 
-    public function testAbstractMethodsExcludedFromLcom(): void
+    #[Test]
+    public function itExcludesAbstractMethodsFromLcom(): void
     {
         $code = <<<'PHP'
 <?php
@@ -738,7 +764,8 @@ PHP;
         self::assertSame(1, $metrics->get('lcom:App\AbstractClass'));
     }
 
-    public function testAbstractMethodsDoNotInflateLcom(): void
+    #[Test]
+    public function itDoesNotInflateLcomWithAbstractMethods(): void
     {
         $code = <<<'PHP'
 <?php
@@ -768,7 +795,8 @@ PHP;
         self::assertSame(1, $metrics->get('lcom:App\ManyAbstract'));
     }
 
-    public function testEnumIsIgnored(): void
+    #[Test]
+    public function itIgnoresEnum(): void
     {
         $code = <<<'PHP'
 <?php
@@ -802,7 +830,8 @@ PHP;
         self::assertNull($metrics->get('lcom:App\Status'));
     }
 
-    public function testEnumDoesNotAppearInMetrics(): void
+    #[Test]
+    public function itDoesNotProduceLcomMetricsForEnum(): void
     {
         $code = <<<'PHP'
 <?php
@@ -835,7 +864,8 @@ PHP;
         self::assertNull($metrics->get('lcom:App\Color'));
     }
 
-    public function testNullObjectPatternReturnsLcomOne(): void
+    #[Test]
+    public function itReturnsOneLcomForNullObjectPattern(): void
     {
         $code = <<<'PHP'
 <?php
@@ -857,7 +887,8 @@ PHP;
         self::assertSame(1, $metrics->get('lcom:App\NullLogger'));
     }
 
-    public function testTrivialReturnMethodsGetLcomOne(): void
+    #[Test]
+    public function itReturnsOneLcomForTrivialReturnMethods(): void
     {
         $code = <<<'PHP'
 <?php
@@ -880,7 +911,8 @@ PHP;
         self::assertSame(1, $metrics->get('lcom:App\NullCache'));
     }
 
-    public function testClassWithMixedTrivialAndNonTrivialMethodsGetsCalculatedLcom(): void
+    #[Test]
+    public function itCalculatesLcomForClassWithMixedTrivialAndNonTrivialMethods(): void
     {
         $code = <<<'PHP'
 <?php
@@ -904,7 +936,8 @@ PHP;
         self::assertSame(2, $metrics->get('lcom:App\Service'));
     }
 
-    public function testNonEmptyArrayOfConstantsReturnIsTrivialAndStateless(): void
+    #[Test]
+    public function itTreatsNonEmptyArrayOfConstantsReturnAsTrivialAndStateless(): void
     {
         $code = <<<'PHP'
 <?php
@@ -925,7 +958,8 @@ PHP;
         self::assertSame(1, $metrics->get('lcom:App\Config'));
     }
 
-    public function testDynamicPropertyAccessIgnored(): void
+    #[Test]
+    public function itIgnoresDynamicPropertyAccess(): void
     {
         $code = <<<'PHP'
 <?php
@@ -955,7 +989,8 @@ PHP;
         self::assertSame(2, $metrics->get('lcom:App\DynamicAccess'));
     }
 
-    public function testAnonymousClassDoesNotCorruptMethodTracking(): void
+    #[Test]
+    public function itDoesNotCorruptMethodTrackingForAnonymousClass(): void
     {
         $code = <<<'PHP'
 <?php
@@ -994,7 +1029,8 @@ PHP;
     // Stateless method grouping tests
     // ──────────────────────────────────────────────────────────────────
 
-    public function testStatelessMethodsGroupedReducesLcom(): void
+    #[Test]
+    public function itReducesLcomByGroupingStatelessMethods(): void
     {
         $code = <<<'PHP'
 <?php
@@ -1022,7 +1058,8 @@ PHP;
         self::assertSame(2, $metrics->get('lcom:App\Rule'));
     }
 
-    public function testAllStatelessMethodsGiveLcomOne(): void
+    #[Test]
+    public function itReturnsOneLcomWhenAllMethodsAreStateless(): void
     {
         $code = <<<'PHP'
 <?php
@@ -1043,7 +1080,8 @@ PHP;
         self::assertSame(1, $metrics->get('lcom:App\MetadataOnly'));
     }
 
-    public function testNoStatelessMethodsBehaviorUnchanged(): void
+    #[Test]
+    public function itKeepsStandardLcomCalculationWhenNoStatelessMethods(): void
     {
         $code = <<<'PHP'
 <?php
@@ -1066,7 +1104,8 @@ PHP;
         self::assertSame(2, $metrics->get('lcom:App\AllStateful'));
     }
 
-    public function testGetterAccessingPropertyNotStateless(): void
+    #[Test]
+    public function itDoesNotTreatGetterAccessingPropertyAsStateless(): void
     {
         $code = <<<'PHP'
 <?php
@@ -1089,7 +1128,8 @@ PHP;
         self::assertSame(2, $metrics->get('lcom:App\WithGetter'));
     }
 
-    public function testMethodCallingInstanceMethodNotStateless(): void
+    #[Test]
+    public function itDoesNotTreatMethodCallingInstanceMethodAsStateless(): void
     {
         $code = <<<'PHP'
 <?php
@@ -1117,7 +1157,8 @@ PHP;
         self::assertSame(2, $metrics->get('lcom:App\WithDelegation'));
     }
 
-    public function testStaticCallsDoNotMakeMethodStateful(): void
+    #[Test]
+    public function itDoesNotMakeMethodStatefulDueToStaticCalls(): void
     {
         $code = <<<'PHP'
 <?php
@@ -1154,7 +1195,8 @@ PHP;
         self::assertSame(1, $metrics->get('lcom:App\WithStaticCall'));
     }
 
-    public function testOneStatelessWithTwoDisconnectedStatefulGroups(): void
+    #[Test]
+    public function itCalculatesThreeLcomForOneStatelessAndTwoDisconnectedStatefulGroups(): void
     {
         $code = <<<'PHP'
 <?php
@@ -1180,7 +1222,8 @@ PHP;
         self::assertSame(3, $metrics->get('lcom:App\ThreeGroups'));
     }
 
-    public function testStatefulMethodCallingStatelessConnectsToVirtualNode(): void
+    #[Test]
+    public function itConnectsStatefulMethodCallingStatelessToVirtualNode(): void
     {
         $code = <<<'PHP'
 <?php
@@ -1217,7 +1260,8 @@ PHP;
         self::assertSame(1, $metrics->get('lcom:App\WithStatelessCall'));
     }
 
-    public function testReturnSelfConstantIsStateless(): void
+    #[Test]
+    public function itTreatsReturnSelfConstantAsStateless(): void
     {
         $code = <<<'PHP'
 <?php
@@ -1240,7 +1284,8 @@ PHP;
         self::assertSame(1, $metrics->get('lcom:App\WithConstants'));
     }
 
-    public function testReturnArrayOfConstantsIsStateless(): void
+    #[Test]
+    public function itTreatsReturnArrayOfConstantsAsStateless(): void
     {
         $code = <<<'PHP'
 <?php
@@ -1269,7 +1314,8 @@ PHP;
         self::assertSame(1, $metrics->get('lcom:App\WithConstantArray'));
     }
 
-    public function testMethodAccessingPropertyViaCallNotStateless(): void
+    #[Test]
+    public function itDoesNotTreatMethodAccessingPropertyViaCallAsStateless(): void
     {
         $code = <<<'PHP'
 <?php
@@ -1297,7 +1343,8 @@ PHP;
         self::assertSame(2, $metrics->get('lcom:App\WithPropertyViaCall'));
     }
 
-    public function testStatelessMethodCallingAnotherStatelessMergesInternally(): void
+    #[Test]
+    public function itMergesStatelessMethodCallingAnotherStatelessInternally(): void
     {
         $code = <<<'PHP'
 <?php
@@ -1322,7 +1369,8 @@ PHP;
         self::assertSame(2, $metrics->get('lcom:App\StatelessCalling'));
     }
 
-    public function testExistingTrivialClassExemptionStillWorks(): void
+    #[Test]
+    public function itStillAppliesTotalTrivialClassExemption(): void
     {
         $code = <<<'PHP'
 <?php
@@ -1344,7 +1392,8 @@ PHP;
         self::assertSame(1, $metrics->get('lcom:App\AllTrivial'));
     }
 
-    public function testMatchReturningDifferentConstantsIsNotStateless(): void
+    #[Test]
+    public function itDoesNotTreatMatchReturningDifferentConstantsAsStateless(): void
     {
         $code = <<<'PHP'
 <?php
@@ -1376,7 +1425,8 @@ PHP;
         self::assertSame(2, $metrics->get('lcom:App\WithMatch'));
     }
 
-    public function testCollectorRespectsExcludeMethodsFromConfig(): void
+    #[Test]
+    public function itRespectsExcludeMethodsFromConfig(): void
     {
         CollectorConfigHolder::set(CollectorConfigHolder::LCOM_EXCLUDE_METHODS, ['getName']);
 

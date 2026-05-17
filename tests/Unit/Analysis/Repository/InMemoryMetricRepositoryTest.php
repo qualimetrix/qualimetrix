@@ -347,7 +347,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
     }
 
     #[Test]
-    public function testAddScalarDoesNotDuplicateDataBagEntries(): void
+    public function itAddScalarDoesNotDuplicateDataBagEntries(): void
     {
         $repository = new InMemoryMetricRepository();
 
@@ -367,7 +367,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
     }
 
     #[Test]
-    public function testAddScalarIgnoresNonExistentSymbol(): void
+    public function itAddScalarIgnoresNonExistentSymbol(): void
     {
         $repository = new InMemoryMetricRepository();
 
@@ -379,7 +379,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
     }
 
     #[Test]
-    public function testAddScalarUpdatesExistingMetric(): void
+    public function itAddScalarUpdatesExistingMetric(): void
     {
         $repository = new InMemoryMetricRepository();
 

@@ -5,13 +5,15 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Metrics\Structure;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Metrics\Structure\TccLccClassData;
 
 #[CoversClass(TccLccClassData::class)]
 final class TccLccClassDataTest extends TestCase
 {
-    public function testNoMethods(): void
+    #[Test]
+    public function itReturnsPerfectCohesionWhenNoMethods(): void
     {
         $data = new TccLccClassData();
 
@@ -20,7 +22,8 @@ final class TccLccClassDataTest extends TestCase
         self::assertSame(1.0, $data->calculateLcc());
     }
 
-    public function testSingleMethod(): void
+    #[Test]
+    public function itReturnsPerfectCohesionForSingleMethod(): void
     {
         $data = new TccLccClassData();
         $data->addMethod('method1');
@@ -31,7 +34,8 @@ final class TccLccClassDataTest extends TestCase
         self::assertSame(1.0, $data->calculateLcc());
     }
 
-    public function testPerfectCohesion(): void
+    #[Test]
+    public function itReturnsPerfectCohesionWhenAllMethodsShareProperty(): void
     {
         $data = new TccLccClassData();
         $data->addMethod('method1');
@@ -47,7 +51,8 @@ final class TccLccClassDataTest extends TestCase
         self::assertSame(1.0, $data->calculateLcc());
     }
 
-    public function testNoCohesion(): void
+    #[Test]
+    public function itReturnsZeroCohesionWhenNoSharedProperties(): void
     {
         $data = new TccLccClassData();
         $data->addMethod('method1');
@@ -62,7 +67,8 @@ final class TccLccClassDataTest extends TestCase
         self::assertSame(0.0, $data->calculateLcc());
     }
 
-    public function testPartialCohesionThreeMethods(): void
+    #[Test]
+    public function itCalculatesPartialCohesionForThreeMethods(): void
     {
         // 3 methods: m1-m2 share prop 'a', m2-m3 share prop 'b', m1-m3 don't share
         $data = new TccLccClassData();
@@ -86,7 +92,8 @@ final class TccLccClassDataTest extends TestCase
         self::assertSame(1.0, $data->calculateLcc());
     }
 
-    public function testPartialCohesionFourMethods(): void
+    #[Test]
+    public function itCalculatesPartialCohesionForFourMethods(): void
     {
         // 4 methods: m1-m2 connected, m3-m4 connected, but two groups disconnected
         $data = new TccLccClassData();
@@ -110,7 +117,8 @@ final class TccLccClassDataTest extends TestCase
         self::assertEqualsWithDelta(0.333, $data->calculateLcc(), 0.01);
     }
 
-    public function testComplexTransitiveClosure(): void
+    #[Test]
+    public function itCalculatesTransitiveClosureForChainedMethods(): void
     {
         // 5 methods in a chain: m1-m2-m3-m4-m5
         $data = new TccLccClassData();
@@ -143,7 +151,8 @@ final class TccLccClassDataTest extends TestCase
         self::assertSame(1.0, $data->calculateLcc());
     }
 
-    public function testMethodsWithNoPropertyAccess(): void
+    #[Test]
+    public function itReturnsZeroCohesionForMethodsWithoutPropertyAccess(): void
     {
         $data = new TccLccClassData();
         $data->addMethod('method1');
@@ -156,7 +165,8 @@ final class TccLccClassDataTest extends TestCase
         self::assertSame(0.0, $data->calculateLcc());
     }
 
-    public function testMethodAccessingMultipleProperties(): void
+    #[Test]
+    public function itHandlesMethodAccessingMultipleProperties(): void
     {
         $data = new TccLccClassData();
         $data->addMethod('m1');
@@ -178,7 +188,8 @@ final class TccLccClassDataTest extends TestCase
         self::assertSame(1.0, $data->calculateLcc());
     }
 
-    public function testGetMethods(): void
+    #[Test]
+    public function itReturnsAllRegisteredMethods(): void
     {
         $data = new TccLccClassData();
         $data->addMethod('methodA');
@@ -190,7 +201,8 @@ final class TccLccClassDataTest extends TestCase
         self::assertContains('methodB', $methods);
     }
 
-    public function testGetPropertiesAccessedBy(): void
+    #[Test]
+    public function itReturnsPropertiesAccessedByMethod(): void
     {
         $data = new TccLccClassData();
         $data->addMethod('method1');
@@ -203,7 +215,8 @@ final class TccLccClassDataTest extends TestCase
         self::assertContains('prop2', $props);
     }
 
-    public function testGetPropertiesAccessedByNonexistentMethod(): void
+    #[Test]
+    public function itReturnsEmptyForNonexistentMethod(): void
     {
         $data = new TccLccClassData();
 
@@ -211,7 +224,8 @@ final class TccLccClassDataTest extends TestCase
         self::assertEmpty($props);
     }
 
-    public function testRealWorldRectangleExample(): void
+    #[Test]
+    public function itHandlesRealWorldRectangleExample(): void
     {
         // Rectangle class: all methods use width and/or height
         $data = new TccLccClassData();
@@ -244,7 +258,8 @@ final class TccLccClassDataTest extends TestCase
         self::assertSame(1.0, $data->calculateLcc());
     }
 
-    public function testRealWorldGodClassExample(): void
+    #[Test]
+    public function itHandlesRealWorldGodClassExample(): void
     {
         // God class: methods use completely different properties
         $data = new TccLccClassData();

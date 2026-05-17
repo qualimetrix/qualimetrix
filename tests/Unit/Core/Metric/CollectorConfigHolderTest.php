@@ -18,7 +18,7 @@ final class CollectorConfigHolderTest extends TestCase
     }
 
     #[Test]
-    public function testSetAndGet(): void
+    public function itSetAndGet(): void
     {
         CollectorConfigHolder::set('test.key', ['value1', 'value2']);
 
@@ -26,7 +26,7 @@ final class CollectorConfigHolderTest extends TestCase
     }
 
     #[Test]
-    public function testGetWithDefault(): void
+    public function itGetWithDefault(): void
     {
         self::assertNull(CollectorConfigHolder::get('nonexistent'));
         self::assertSame('fallback', CollectorConfigHolder::get('nonexistent', 'fallback'));
@@ -34,7 +34,7 @@ final class CollectorConfigHolderTest extends TestCase
     }
 
     #[Test]
-    public function testReset(): void
+    public function itReset(): void
     {
         CollectorConfigHolder::set('test.key', 'value');
         self::assertSame('value', CollectorConfigHolder::get('test.key'));
@@ -45,7 +45,7 @@ final class CollectorConfigHolderTest extends TestCase
     }
 
     #[Test]
-    public function testAll(): void
+    public function itAll(): void
     {
         CollectorConfigHolder::set('key1', 'value1');
         CollectorConfigHolder::set('key2', ['a', 'b']);

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Reporting\Formatter\Html;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Reporting\Formatter\Html\HtmlMetricAggregator;
 use Qualimetrix\Reporting\Formatter\Html\HtmlTreeNode;
@@ -19,7 +20,8 @@ final class HtmlMetricAggregatorTest extends TestCase
         $this->aggregator = new HtmlMetricAggregator();
     }
 
-    public function testLeafNodeUnchanged(): void
+    #[Test]
+    public function itLeavesLeafNodeMetricsUnchanged(): void
     {
         $leaf = new HtmlTreeNode('Service', 'App\\Service', 'class');
         $leaf->metrics = ['loc.sum' => 100, 'health.overall' => 85.0];
@@ -30,7 +32,8 @@ final class HtmlMetricAggregatorTest extends TestCase
         self::assertSame(85.0, $leaf->metrics['health.overall']);
     }
 
-    public function testEmptyMetricsNoError(): void
+    #[Test]
+    public function itHandlesEmptyMetricsWithoutError(): void
     {
         $root = new HtmlTreeNode('project', '<project>', 'project');
         $child = new HtmlTreeNode('App', 'App', 'namespace');
@@ -43,7 +46,8 @@ final class HtmlMetricAggregatorTest extends TestCase
         self::assertArrayNotHasKey('health.overall', $root->metrics);
     }
 
-    public function testLocSumAggregatedFromChildren(): void
+    #[Test]
+    public function itAggregatesLocSumFromChildren(): void
     {
         $root = new HtmlTreeNode('project', '<project>', 'project');
 
@@ -60,7 +64,8 @@ final class HtmlMetricAggregatorTest extends TestCase
         self::assertSame(300, $root->metrics['loc.sum']);
     }
 
-    public function testLocSumNotOverwrittenIfAlreadySet(): void
+    #[Test]
+    public function itDoesNotOverwriteLocSumIfAlreadySet(): void
     {
         $root = new HtmlTreeNode('project', '<project>', 'project');
         $root->metrics = ['loc.sum' => 999];
@@ -75,7 +80,8 @@ final class HtmlMetricAggregatorTest extends TestCase
         self::assertSame(999, $root->metrics['loc.sum']);
     }
 
-    public function testHealthScoresWeightedAverageByLoc(): void
+    #[Test]
+    public function itComputesHealthScoresAsWeightedAverageByLoc(): void
     {
         $root = new HtmlTreeNode('project', '<project>', 'project');
 
@@ -95,7 +101,8 @@ final class HtmlMetricAggregatorTest extends TestCase
         self::assertSame(87.5, $root->metrics['health.overall']);
     }
 
-    public function testHealthScoreDefaultWeightOneWhenNoLocSum(): void
+    #[Test]
+    public function itDefaultsHealthScoreWeightToOneWhenNoLocSum(): void
     {
         $root = new HtmlTreeNode('project', '<project>', 'project');
 
@@ -114,7 +121,8 @@ final class HtmlMetricAggregatorTest extends TestCase
         self::assertSame(80.0, $root->metrics['health.complexity']);
     }
 
-    public function testHealthScoreNotOverwrittenIfAlreadySet(): void
+    #[Test]
+    public function itDoesNotOverwriteHealthScoreIfAlreadySet(): void
     {
         $root = new HtmlTreeNode('project', '<project>', 'project');
         $root->metrics = ['health.overall' => 50.0];
@@ -128,7 +136,8 @@ final class HtmlMetricAggregatorTest extends TestCase
         self::assertSame(50.0, $root->metrics['health.overall']);
     }
 
-    public function testMultipleHealthKeysAggregated(): void
+    #[Test]
+    public function itAggregatesMultipleHealthKeys(): void
     {
         $root = new HtmlTreeNode('project', '<project>', 'project');
 
@@ -155,7 +164,8 @@ final class HtmlMetricAggregatorTest extends TestCase
         self::assertSame(75.0, $root->metrics['health.maintainability']);
     }
 
-    public function testDeepHierarchyAggregation(): void
+    #[Test]
+    public function itAggregatesMetricsForDeepHierarchy(): void
     {
         // Root -> NS -> ClassA (loc=100, health.overall=80)
         //               ClassB (loc=100, health.overall=60)
@@ -182,7 +192,8 @@ final class HtmlMetricAggregatorTest extends TestCase
         self::assertSame(200, $root->metrics['loc.sum']);
     }
 
-    public function testChildWithoutHealthScoreSkippedInWeighting(): void
+    #[Test]
+    public function itSkipsChildWithoutHealthScoreInWeighting(): void
     {
         $root = new HtmlTreeNode('project', '<project>', 'project');
 

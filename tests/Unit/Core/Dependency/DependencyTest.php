@@ -6,6 +6,7 @@ namespace Qualimetrix\Tests\Unit\Core\Dependency;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Dependency\Dependency;
 use Qualimetrix\Core\Dependency\DependencyType;
@@ -15,7 +16,8 @@ use Qualimetrix\Core\Violation\Location;
 #[CoversClass(Dependency::class)]
 final class DependencyTest extends TestCase
 {
-    public function testConstructorWithAllProperties(): void
+    #[Test]
+    public function itConstructorWithAllProperties(): void
     {
         $location = new Location('src/Service/UserService.php', 42);
         $source = SymbolPath::fromClassFqn('App\Service\UserService');
@@ -34,7 +36,8 @@ final class DependencyTest extends TestCase
     }
 
     #[DataProvider('crossNamespaceDataProvider')]
-    public function testIsCrossNamespace(
+    #[Test]
+    public function itIsCrossNamespace(
         string $sourceClass,
         string $targetClass,
         bool $expectedIsCrossNamespace,
@@ -92,7 +95,8 @@ final class DependencyTest extends TestCase
     }
 
     #[DataProvider('strongCouplingDataProvider')]
-    public function testIsStrongCoupling(DependencyType $type, bool $expectedIsStrongCoupling): void
+    #[Test]
+    public function itIsStrongCoupling(DependencyType $type, bool $expectedIsStrongCoupling): void
     {
         $dependency = new Dependency(
             source: SymbolPath::fromClassFqn('App\Service\UserService'),
@@ -119,7 +123,8 @@ final class DependencyTest extends TestCase
     }
 
     #[DataProvider('toStringDataProvider')]
-    public function testToString(
+    #[Test]
+    public function itToString(
         string $sourceClass,
         string $targetClass,
         DependencyType $type,
@@ -174,7 +179,8 @@ final class DependencyTest extends TestCase
         ];
     }
 
-    public function testDependencyIsReadonly(): void
+    #[Test]
+    public function itDependencyIsReadonly(): void
     {
         $dependency = new Dependency(
             source: SymbolPath::fromClassFqn('Source'),

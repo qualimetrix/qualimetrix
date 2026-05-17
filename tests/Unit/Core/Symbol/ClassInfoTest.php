@@ -6,6 +6,7 @@ namespace Qualimetrix\Tests\Unit\Core\Symbol;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Symbol\ClassInfo;
 use Qualimetrix\Core\Symbol\ClassType;
@@ -14,7 +15,8 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 #[CoversClass(ClassInfo::class)]
 final class ClassInfoTest extends TestCase
 {
-    public function testConstructorWithAllProperties(): void
+    #[Test]
+    public function itConstructorWithAllProperties(): void
     {
         $classInfo = new ClassInfo(
             fqn: 'App\Service\UserService',
@@ -34,7 +36,8 @@ final class ClassInfoTest extends TestCase
     }
 
     #[DataProvider('classTypeDataProvider')]
-    public function testConstructorWithDifferentClassTypes(ClassType $classType): void
+    #[Test]
+    public function itConstructorWithDifferentClassTypes(ClassType $classType): void
     {
         $classInfo = new ClassInfo(
             fqn: 'App\Test',
@@ -59,7 +62,8 @@ final class ClassInfoTest extends TestCase
         yield 'enum' => [ClassType::Enum_];
     }
 
-    public function testGetSymbolPathReturnsCorrectSymbolPath(): void
+    #[Test]
+    public function itGetSymbolPathReturnsCorrectSymbolPath(): void
     {
         $classInfo = new ClassInfo(
             fqn: 'App\Service\UserService',
@@ -79,7 +83,8 @@ final class ClassInfoTest extends TestCase
         self::assertSame('class:App\Service\UserService', $symbolPath->toCanonical());
     }
 
-    public function testGetSymbolPathForClassWithoutNamespace(): void
+    #[Test]
+    public function itGetSymbolPathForClassWithoutNamespace(): void
     {
         $classInfo = new ClassInfo(
             fqn: 'GlobalClass',
@@ -97,7 +102,8 @@ final class ClassInfoTest extends TestCase
         self::assertSame('class:GlobalClass', $symbolPath->toCanonical());
     }
 
-    public function testGetSymbolPathForInterface(): void
+    #[Test]
+    public function itGetSymbolPathForInterface(): void
     {
         $classInfo = new ClassInfo(
             fqn: 'App\Contract\UserRepositoryInterface',
@@ -113,7 +119,8 @@ final class ClassInfoTest extends TestCase
         self::assertSame('class:App\Contract\UserRepositoryInterface', $symbolPath->toCanonical());
     }
 
-    public function testGetSymbolPathForTrait(): void
+    #[Test]
+    public function itGetSymbolPathForTrait(): void
     {
         $classInfo = new ClassInfo(
             fqn: 'App\Trait\Timestampable',
@@ -129,7 +136,8 @@ final class ClassInfoTest extends TestCase
         self::assertSame('class:App\Trait\Timestampable', $symbolPath->toCanonical());
     }
 
-    public function testGetSymbolPathForEnum(): void
+    #[Test]
+    public function itGetSymbolPathForEnum(): void
     {
         $classInfo = new ClassInfo(
             fqn: 'App\Enum\Status',
@@ -145,7 +153,8 @@ final class ClassInfoTest extends TestCase
         self::assertSame('class:App\Enum\Status', $symbolPath->toCanonical());
     }
 
-    public function testClassInfoIsReadonly(): void
+    #[Test]
+    public function itClassInfoIsReadonly(): void
     {
         $classInfo = new ClassInfo(
             fqn: 'Test',

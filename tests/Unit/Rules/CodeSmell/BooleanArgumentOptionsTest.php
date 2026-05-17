@@ -6,13 +6,15 @@ namespace Qualimetrix\Tests\Unit\Rules\CodeSmell;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Rules\CodeSmell\BooleanArgumentOptions;
 
 #[CoversClass(BooleanArgumentOptions::class)]
 final class BooleanArgumentOptionsTest extends TestCase
 {
-    public function testDefaultsHaveExpectedPrefixes(): void
+    #[Test]
+    public function itDefaultsHaveExpectedPrefixes(): void
     {
         $options = new BooleanArgumentOptions();
 
@@ -20,7 +22,8 @@ final class BooleanArgumentOptionsTest extends TestCase
         self::assertSame(['is', 'has', 'can', 'should', 'will', 'did', 'was'], $options->allowedPrefixes);
     }
 
-    public function testFromArrayEmpty(): void
+    #[Test]
+    public function itFromArrayEmpty(): void
     {
         $options = BooleanArgumentOptions::fromArray([]);
 
@@ -28,7 +31,8 @@ final class BooleanArgumentOptionsTest extends TestCase
         self::assertSame(['is', 'has', 'can', 'should', 'will', 'did', 'was'], $options->allowedPrefixes);
     }
 
-    public function testFromArrayWithCustomPrefixes(): void
+    #[Test]
+    public function itFromArrayWithCustomPrefixes(): void
     {
         $options = BooleanArgumentOptions::fromArray([
             'allowed_prefixes' => ['is', 'has'],
@@ -37,7 +41,8 @@ final class BooleanArgumentOptionsTest extends TestCase
         self::assertSame(['is', 'has'], $options->allowedPrefixes);
     }
 
-    public function testFromArrayWithCamelCaseKey(): void
+    #[Test]
+    public function itFromArrayWithCamelCaseKey(): void
     {
         $options = BooleanArgumentOptions::fromArray([
             'allowedPrefixes' => ['can'],
@@ -46,7 +51,8 @@ final class BooleanArgumentOptionsTest extends TestCase
         self::assertSame(['can'], $options->allowedPrefixes);
     }
 
-    public function testFromArrayDisabledWithEmptyPrefixes(): void
+    #[Test]
+    public function itFromArrayDisabledWithEmptyPrefixes(): void
     {
         $options = BooleanArgumentOptions::fromArray([
             'allowed_prefixes' => [],
@@ -56,7 +62,8 @@ final class BooleanArgumentOptionsTest extends TestCase
     }
 
     #[DataProvider('prefixMatchingProvider')]
-    public function testIsAllowedPrefix(string $paramName, bool $expected): void
+    #[Test]
+    public function itIsAllowedPrefix(string $paramName, bool $expected): void
     {
         $options = new BooleanArgumentOptions();
 
@@ -106,7 +113,8 @@ final class BooleanArgumentOptionsTest extends TestCase
         yield 'dollar only' => ['$', false];
     }
 
-    public function testEmptyPrefixListMatchesNothing(): void
+    #[Test]
+    public function itEmptyPrefixListMatchesNothing(): void
     {
         $options = new BooleanArgumentOptions(allowedPrefixes: []);
 

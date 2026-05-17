@@ -6,6 +6,7 @@ namespace Qualimetrix\Tests\Unit\Reporting\Formatter;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
 use Qualimetrix\Reporting\Formatter\FormatterRegistry;
@@ -16,14 +17,16 @@ use Qualimetrix\Reporting\Report;
 #[CoversClass(FormatterRegistry::class)]
 final class FormatterRegistryTest extends TestCase
 {
-    public function testEmptyRegistryHasNoFormatters(): void
+    #[Test]
+    public function itHasNoFormattersWhenEmpty(): void
     {
         $registry = new FormatterRegistry();
 
         self::assertSame([], $registry->getAvailableNames());
     }
 
-    public function testRegisterAddsFormatter(): void
+    #[Test]
+    public function itAddsFormatterOnRegister(): void
     {
         $formatter = $this->createMockFormatter('text');
         $registry = new FormatterRegistry();
@@ -33,7 +36,8 @@ final class FormatterRegistryTest extends TestCase
         self::assertSame(['text'], $registry->getAvailableNames());
     }
 
-    public function testConstructorAcceptsIterableOfFormatters(): void
+    #[Test]
+    public function itAcceptsIterableOfFormattersInConstructor(): void
     {
         $text = $this->createMockFormatter('text');
         $json = $this->createMockFormatter('json');
@@ -45,7 +49,8 @@ final class FormatterRegistryTest extends TestCase
         self::assertSame(['json', 'text'], $registry->getAvailableNames());
     }
 
-    public function testGetReturnsRegisteredFormatter(): void
+    #[Test]
+    public function itReturnsRegisteredFormatterOnGet(): void
     {
         $formatter = $this->createMockFormatter('text');
         $registry = new FormatterRegistry([$formatter]);
@@ -53,7 +58,8 @@ final class FormatterRegistryTest extends TestCase
         self::assertSame($formatter, $registry->get('text'));
     }
 
-    public function testGetThrowsExceptionForUnknownFormatter(): void
+    #[Test]
+    public function itThrowsExceptionForUnknownFormatterOnGet(): void
     {
         $registry = new FormatterRegistry();
 
@@ -63,7 +69,8 @@ final class FormatterRegistryTest extends TestCase
         $registry->get('unknown');
     }
 
-    public function testGetThrowsExceptionWithAvailableFormatters(): void
+    #[Test]
+    public function itIncludesAvailableFormattersInExceptionMessage(): void
     {
         $text = $this->createMockFormatter('text');
         $json = $this->createMockFormatter('json');
@@ -75,14 +82,16 @@ final class FormatterRegistryTest extends TestCase
         $registry->get('xml');
     }
 
-    public function testHasReturnsFalseForUnregisteredFormatter(): void
+    #[Test]
+    public function itReturnsFalseForUnregisteredFormatter(): void
     {
         $registry = new FormatterRegistry();
 
         self::assertFalse($registry->has('text'));
     }
 
-    public function testGetAvailableNamesReturnsSortedList(): void
+    #[Test]
+    public function itReturnsSortedListOfAvailableNames(): void
     {
         $xml = $this->createMockFormatter('xml');
         $json = $this->createMockFormatter('json');
@@ -94,7 +103,8 @@ final class FormatterRegistryTest extends TestCase
         self::assertSame(['checkstyle', 'json', 'text', 'xml'], $registry->getAvailableNames());
     }
 
-    public function testRegisterOverwritesExistingFormatter(): void
+    #[Test]
+    public function itOverwritesExistingFormatterOnRegister(): void
     {
         $first = $this->createMockFormatter('text', 'first');
         $second = $this->createMockFormatter('text', 'second');

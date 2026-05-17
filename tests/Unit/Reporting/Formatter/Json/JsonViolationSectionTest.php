@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Reporting\Formatter\Json;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
@@ -30,14 +31,16 @@ final class JsonViolationSectionTest extends TestCase
 
     // --- format ---
 
-    public function testFormatEmptyViolations(): void
+    #[Test]
+    public function itFormatsEmptyViolations(): void
     {
         $result = $this->section->format([], new FormatterContext());
 
         self::assertSame([], $result);
     }
 
-    public function testFormatSingleViolation(): void
+    #[Test]
+    public function itFormatsSingleViolation(): void
     {
         $violation = new Violation(
             location: new Location('src/Service/UserService.php', 42),
@@ -72,7 +75,8 @@ final class JsonViolationSectionTest extends TestCase
         self::assertArrayHasKey('techDebtMinutes', $item);
     }
 
-    public function testFormatViolationWithNoneLocation(): void
+    #[Test]
+    public function itFormatsViolationWithNoneLocation(): void
     {
         $violation = new Violation(
             location: Location::none(),
@@ -90,7 +94,8 @@ final class JsonViolationSectionTest extends TestCase
         self::assertNull($result[0]['file']);
     }
 
-    public function testFormatViolationWithEmptyNamespace(): void
+    #[Test]
+    public function itFormatsViolationWithEmptyNamespace(): void
     {
         $violation = new Violation(
             location: new Location('src/helpers.php', 1),
@@ -108,7 +113,8 @@ final class JsonViolationSectionTest extends TestCase
         self::assertNull($result[0]['namespace']);
     }
 
-    public function testFormatSanitizesNonFiniteMetricValues(): void
+    #[Test]
+    public function itSanitizesNonFiniteMetricValues(): void
     {
         $violation = new Violation(
             location: new Location('src/Bad.php', 10),
@@ -130,7 +136,8 @@ final class JsonViolationSectionTest extends TestCase
 
     // --- sort ---
 
-    public function testSortErrorsBeforeWarnings(): void
+    #[Test]
+    public function itSortsErrorsBeforeWarnings(): void
     {
         $warning = new Violation(
             location: new Location('a.php', 1),
@@ -156,7 +163,8 @@ final class JsonViolationSectionTest extends TestCase
         self::assertSame(Severity::Warning, $sorted[1]->severity);
     }
 
-    public function testSortByExceedanceDescending(): void
+    #[Test]
+    public function itSortsByExceedanceDescending(): void
     {
         $low = new Violation(
             location: new Location('a.php', 1),
@@ -186,7 +194,8 @@ final class JsonViolationSectionTest extends TestCase
         self::assertSame('low exceedance', $sorted[1]->message);
     }
 
-    public function testSortByFileThenLineThenCode(): void
+    #[Test]
+    public function itSortsByFileThenLineThenCode(): void
     {
         $v1 = new Violation(
             location: new Location('b.php', 10),
@@ -222,7 +231,8 @@ final class JsonViolationSectionTest extends TestCase
         self::assertSame('v1', $sorted[2]->message); // b.php:10
     }
 
-    public function testSortWithNonFiniteExceedancesTreatedAsZero(): void
+    #[Test]
+    public function itSortsWithNonFiniteExceedancesTreatedAsZero(): void
     {
         $inf = new Violation(
             location: new Location('a.php', 1),
@@ -255,12 +265,14 @@ final class JsonViolationSectionTest extends TestCase
 
     // --- countByRule ---
 
-    public function testCountByRuleEmpty(): void
+    #[Test]
+    public function itCountsByRuleWhenEmpty(): void
     {
         self::assertSame([], $this->section->countByRule([]));
     }
 
-    public function testCountByRuleGroupsAndSortsDescending(): void
+    #[Test]
+    public function itCountsByRuleGroupsAndSortsDescending(): void
     {
         $makeViolation = static fn(string $rule): Violation => new Violation(
             location: new Location('f.php', 1),

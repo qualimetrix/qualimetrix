@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Reporting\Health;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Reporting\Health\WorstOffender;
@@ -12,7 +13,8 @@ use Qualimetrix\Reporting\Health\WorstOffender;
 #[CoversClass(WorstOffender::class)]
 final class WorstOffenderTest extends TestCase
 {
-    public function testConstructionWithDefaults(): void
+    #[Test]
+    public function itConstructsWithDefaults(): void
     {
         $symbolPath = SymbolPath::forNamespace('App\\Service');
 
@@ -37,7 +39,8 @@ final class WorstOffenderTest extends TestCase
         self::assertSame([], $offender->healthScores);
     }
 
-    public function testConstructionWithMetricsAndHealthScores(): void
+    #[Test]
+    public function itConstructsWithMetricsAndHealthScores(): void
     {
         $symbolPath = SymbolPath::forClass('App\\Service', 'UserService');
 

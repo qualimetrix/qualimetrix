@@ -61,7 +61,7 @@ final class GoldenFileAggregationTest extends TestCase
     // ──────────────────────────────────────────────────────────────────
 
     #[Test]
-    public function testMethodLevelComplexity(): void
+    public function itVerifiesMethodLevelComplexity(): void
     {
         $cases = [
             ['GoldenMetrics\App\Repository', 'UserRepository', 'findById', 2, 1, 2],
@@ -118,7 +118,7 @@ final class GoldenFileAggregationTest extends TestCase
     // ──────────────────────────────────────────────────────────────────
 
     #[Test]
-    public function testClassLevelAggregation(): void
+    public function itVerifiesClassLevelAggregation(): void
     {
         // UserRepository
         $m = self::$repository->get(SymbolPath::forClass('GoldenMetrics\App\Repository', 'UserRepository'));
@@ -195,7 +195,7 @@ final class GoldenFileAggregationTest extends TestCase
     // ──────────────────────────────────────────────────────────────────
 
     #[Test]
-    public function testClassLevelCohesion(): void
+    public function itVerifiesClassLevelCohesion(): void
     {
         // UserRepository: tcc=1, lcc=1, lcom=1
         $m = self::$repository->get(SymbolPath::forClass('GoldenMetrics\App\Repository', 'UserRepository'));
@@ -237,7 +237,7 @@ final class GoldenFileAggregationTest extends TestCase
     // ──────────────────────────────────────────────────────────────────
 
     #[Test]
-    public function testClassLevelCoupling(): void
+    public function itVerifiesClassLevelCoupling(): void
     {
         // UserRepository: cbo=3 (implements UserRepositoryInterface + used by UserService, OrderService)
         // ca=2 (UserService, OrderService), ce=1 (UserRepositoryInterface), instability=1/3
@@ -269,7 +269,7 @@ final class GoldenFileAggregationTest extends TestCase
     // ──────────────────────────────────────────────────────────────────
 
     #[Test]
-    public function testInheritanceMetrics(): void
+    public function itVerifiesInheritanceMetrics(): void
     {
         // SessionManager extends TokenValidator (dit=1)
         $m = self::$repository->get(SymbolPath::forClass('GoldenMetrics\App\Service\Auth', 'SessionManager'));
@@ -293,7 +293,7 @@ final class GoldenFileAggregationTest extends TestCase
     // ──────────────────────────────────────────────────────────────────
 
     #[Test]
-    public function testFileLevelMetrics(): void
+    public function itVerifiesFileLevelMetrics(): void
     {
         $fixturesPath = 'tests/Fixtures/GoldenMetrics';
 
@@ -322,7 +322,7 @@ final class GoldenFileAggregationTest extends TestCase
     // ──────────────────────────────────────────────────────────────────
 
     #[Test]
-    public function testLeafNamespaceAggregation(): void
+    public function itVerifiesLeafNamespaceAggregation(): void
     {
         // GoldenMetrics\App\Repository
         $m = self::$repository->get(SymbolPath::forNamespace('GoldenMetrics\App\Repository'));
@@ -347,7 +347,7 @@ final class GoldenFileAggregationTest extends TestCase
     // ──────────────────────────────────────────────────────────────────
 
     #[Test]
-    public function testParentNamespaceAggregation(): void
+    public function itVerifiesParentNamespaceAggregation(): void
     {
         // GoldenMetrics\App\Service — has own classes (UserService, OrderService) + child Auth
         $m = self::$repository->get(SymbolPath::forNamespace('GoldenMetrics\App\Service'));
@@ -364,7 +364,7 @@ final class GoldenFileAggregationTest extends TestCase
     // ──────────────────────────────────────────────────────────────────
 
     #[Test]
-    public function testRootNamespaceAggregation(): void
+    public function itVerifiesRootNamespaceAggregation(): void
     {
         // GoldenMetrics\App — root parent with no own classes, aggregates all children
         $m = self::$repository->get(SymbolPath::forNamespace('GoldenMetrics\App'));
@@ -377,7 +377,7 @@ final class GoldenFileAggregationTest extends TestCase
     }
 
     #[Test]
-    public function testSyntheticRootNamespaceAggregation(): void
+    public function itVerifiesSyntheticRootNamespaceAggregation(): void
     {
         // GoldenMetrics — synthetic root with single child (GoldenMetrics\App)
         // Should have identical values to GoldenMetrics\App since it's the only child
@@ -401,7 +401,7 @@ final class GoldenFileAggregationTest extends TestCase
     // ──────────────────────────────────────────────────────────────────
 
     #[Test]
-    public function testProjectLevelAggregation(): void
+    public function itVerifiesProjectLevelAggregation(): void
     {
         $m = self::$repository->get(SymbolPath::forProject());
         self::assertSame(46, $m->get('ccn.sum'), 'project ccn.sum');
@@ -420,7 +420,7 @@ final class GoldenFileAggregationTest extends TestCase
     // ──────────────────────────────────────────────────────────────────
 
     #[Test]
-    public function testHealthScoresExist(): void
+    public function itConfirmsHealthScoresExist(): void
     {
         $m = self::$repository->get(SymbolPath::forProject());
 
@@ -446,7 +446,7 @@ final class GoldenFileAggregationTest extends TestCase
     // ──────────────────────────────────────────────────────────────────
 
     #[Test]
-    public function testGlobalNamespaceHandling(): void
+    public function itHandlesGlobalNamespace(): void
     {
         // GlobalHelper is in the global namespace (empty string)
         $m = self::$repository->get(SymbolPath::forClass('', 'GlobalHelper'));

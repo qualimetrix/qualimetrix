@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Unit\Infrastructure\Profiler;
 
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Profiler\Span;
 
 final class SpanTest extends TestCase
 {
-    public function testGetDurationReturnsNullForRunningSpan(): void
+    #[Test]
+    public function itReturnsNullDurationForRunningSpan(): void
     {
         $span = new Span(
             name: 'test',
@@ -21,7 +23,8 @@ final class SpanTest extends TestCase
         self::assertNull($span->getDuration());
     }
 
-    public function testGetDurationReturnsMilliseconds(): void
+    #[Test]
+    public function itReturnsDurationInMilliseconds(): void
     {
         $span = new Span(
             name: 'test',
@@ -35,7 +38,8 @@ final class SpanTest extends TestCase
         self::assertSame(1.0, $span->getDuration());
     }
 
-    public function testGetMemoryDeltaReturnsNullForRunningSpan(): void
+    #[Test]
+    public function itReturnsNullMemoryDeltaForRunningSpan(): void
     {
         $span = new Span(
             name: 'test',
@@ -47,7 +51,8 @@ final class SpanTest extends TestCase
         self::assertNull($span->getMemoryDelta());
     }
 
-    public function testGetMemoryDeltaReturnsBytes(): void
+    #[Test]
+    public function itReturnsMemoryDeltaInBytes(): void
     {
         $span = new Span(
             name: 'test',
@@ -61,7 +66,8 @@ final class SpanTest extends TestCase
         self::assertSame(150, $span->getMemoryDelta());
     }
 
-    public function testIsRunningReturnsTrueForRunningSpan(): void
+    #[Test]
+    public function itIsTrueWhenRunning(): void
     {
         $span = new Span(
             name: 'test',
@@ -73,7 +79,8 @@ final class SpanTest extends TestCase
         self::assertTrue($span->isRunning());
     }
 
-    public function testIsRunningReturnsFalseForCompletedSpan(): void
+    #[Test]
+    public function itIsFalseWhenCompleted(): void
     {
         $span = new Span(
             name: 'test',
@@ -87,7 +94,8 @@ final class SpanTest extends TestCase
         self::assertFalse($span->isRunning());
     }
 
-    public function testParentChildRelationship(): void
+    #[Test]
+    public function itMaintainsParentChildRelationship(): void
     {
         $parent = new Span(
             name: 'parent',
@@ -111,7 +119,8 @@ final class SpanTest extends TestCase
         self::assertSame($child, $parent->children[0]);
     }
 
-    public function testSpanWithoutCategory(): void
+    #[Test]
+    public function itAcceptsNullCategory(): void
     {
         $span = new Span(
             name: 'test',
@@ -123,7 +132,8 @@ final class SpanTest extends TestCase
         self::assertNull($span->category);
     }
 
-    public function testPeakMemoryInitializedToStartMemory(): void
+    #[Test]
+    public function itInitializesPeakMemoryToStartMemory(): void
     {
         $span = new Span(
             name: 'test',
@@ -135,7 +145,8 @@ final class SpanTest extends TestCase
         self::assertSame(1000, $span->peakMemory);
     }
 
-    public function testUpdatePeakUpdatesWhenHigher(): void
+    #[Test]
+    public function itUpdatesPeakWhenValueIsHigher(): void
     {
         $span = new Span(
             name: 'test',
@@ -152,7 +163,8 @@ final class SpanTest extends TestCase
         self::assertSame(5000, $span->peakMemory);
     }
 
-    public function testGetPeakMemoryDeltaReturnsNullForRunningSpan(): void
+    #[Test]
+    public function itReturnsNullPeakMemoryDeltaForRunningSpan(): void
     {
         $span = new Span(
             name: 'test',
@@ -165,7 +177,8 @@ final class SpanTest extends TestCase
         self::assertNull($span->getPeakMemoryDelta());
     }
 
-    public function testGetPeakMemoryDeltaReturnsDeltaAboveStart(): void
+    #[Test]
+    public function itReturnsPeakMemoryDeltaAboveStart(): void
     {
         $span = new Span(
             name: 'test',
@@ -180,7 +193,8 @@ final class SpanTest extends TestCase
         self::assertSame(4000, $span->getPeakMemoryDelta());
     }
 
-    public function testGetPeakMemoryDeltaWithNoPeakUpdate(): void
+    #[Test]
+    public function itReturnsPeakMemoryDeltaOfZeroWithNoPeakUpdate(): void
     {
         $span = new Span(
             name: 'test',

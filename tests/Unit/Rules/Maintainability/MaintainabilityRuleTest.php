@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Rules\Maintainability;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
@@ -23,14 +24,16 @@ use Qualimetrix\Rules\Maintainability\MaintainabilityRule;
 #[CoversClass(MaintainabilityOptions::class)]
 final class MaintainabilityRuleTest extends TestCase
 {
-    public function testGetName(): void
+    #[Test]
+    public function itGetsName(): void
     {
         $rule = new MaintainabilityRule(new MaintainabilityOptions());
 
         self::assertSame('maintainability.index', $rule->getName());
     }
 
-    public function testGetDescription(): void
+    #[Test]
+    public function itGetsDescription(): void
     {
         $rule = new MaintainabilityRule(new MaintainabilityOptions());
 
@@ -40,21 +43,24 @@ final class MaintainabilityRuleTest extends TestCase
         );
     }
 
-    public function testGetCategory(): void
+    #[Test]
+    public function itGetsCategory(): void
     {
         $rule = new MaintainabilityRule(new MaintainabilityOptions());
 
         self::assertSame(RuleCategory::Maintainability, $rule->getCategory());
     }
 
-    public function testRequires(): void
+    #[Test]
+    public function itRequires(): void
     {
         $rule = new MaintainabilityRule(new MaintainabilityOptions());
 
         self::assertSame(['mi', 'methodLoc'], $rule->requires());
     }
 
-    public function testGetOptionsClass(): void
+    #[Test]
+    public function itGetsOptionsClass(): void
     {
         self::assertSame(
             MaintainabilityOptions::class,
@@ -62,7 +68,8 @@ final class MaintainabilityRuleTest extends TestCase
         );
     }
 
-    public function testThrowsExceptionForWrongOptionsType(): void
+    #[Test]
+    public function itThrowsExceptionForWrongOptionsType(): void
     {
         $wrongOptions = self::createStub(\Qualimetrix\Core\Rule\RuleOptionsInterface::class);
 
@@ -72,7 +79,8 @@ final class MaintainabilityRuleTest extends TestCase
         new MaintainabilityRule($wrongOptions);
     }
 
-    public function testAnalyzeReturnsEmptyWhenDisabled(): void
+    #[Test]
+    public function itAnalyzeReturnsEmptyWhenDisabled(): void
     {
         $rule = new MaintainabilityRule(new MaintainabilityOptions(enabled: false));
 
@@ -84,7 +92,8 @@ final class MaintainabilityRuleTest extends TestCase
         self::assertSame([], $rule->analyze($context));
     }
 
-    public function testAnalyzeReturnsEmptyWhenNoMethods(): void
+    #[Test]
+    public function itAnalyzeReturnsEmptyWhenNoMethods(): void
     {
         $rule = new MaintainabilityRule(new MaintainabilityOptions());
 
@@ -97,7 +106,8 @@ final class MaintainabilityRuleTest extends TestCase
         self::assertSame([], $rule->analyze($context));
     }
 
-    public function testAnalyzeGeneratesWarning(): void
+    #[Test]
+    public function itGeneratesWarningForBorderlineMi(): void
     {
         $rule = new MaintainabilityRule(new MaintainabilityOptions());
 
@@ -125,7 +135,8 @@ final class MaintainabilityRuleTest extends TestCase
         self::assertSame('maintainability.index', $violations[0]->ruleName);
     }
 
-    public function testAnalyzeGeneratesError(): void
+    #[Test]
+    public function itGeneratesErrorForVeryLowMi(): void
     {
         $rule = new MaintainabilityRule(new MaintainabilityOptions());
 
@@ -151,7 +162,8 @@ final class MaintainabilityRuleTest extends TestCase
         self::assertSame(15.0, $violations[0]->metricValue);
     }
 
-    public function testAnalyzeNoViolationForHighMi(): void
+    #[Test]
+    public function itProducesNoViolationForHighMi(): void
     {
         $rule = new MaintainabilityRule(new MaintainabilityOptions());
 
@@ -175,7 +187,8 @@ final class MaintainabilityRuleTest extends TestCase
         self::assertCount(0, $violations);
     }
 
-    public function testMetricValueIsFloatWithOneDecimal(): void
+    #[Test]
+    public function itRoundsMetricValueToOneDecimal(): void
     {
         $rule = new MaintainabilityRule(new MaintainabilityOptions());
 
@@ -200,7 +213,8 @@ final class MaintainabilityRuleTest extends TestCase
         self::assertIsFloat($violations[0]->metricValue);
     }
 
-    public function testAnalyzeSkipsMethodWithoutMiMetric(): void
+    #[Test]
+    public function itSkipsMethodWithoutMiMetric(): void
     {
         $rule = new MaintainabilityRule(new MaintainabilityOptions());
 
@@ -224,7 +238,8 @@ final class MaintainabilityRuleTest extends TestCase
 
     // Options tests
 
-    public function testOptionsFromArray(): void
+    #[Test]
+    public function itLoadsOptionsFromArray(): void
     {
         $options = MaintainabilityOptions::fromArray([
             'enabled' => false,
@@ -237,14 +252,16 @@ final class MaintainabilityRuleTest extends TestCase
         self::assertSame(55.0, $options->error);
     }
 
-    public function testOptionsFromEmptyArray(): void
+    #[Test]
+    public function itDisablesWhenLoadedFromEmptyArray(): void
     {
         $options = MaintainabilityOptions::fromArray([]);
 
         self::assertFalse($options->enabled);
     }
 
-    public function testOptionsDefaults(): void
+    #[Test]
+    public function itHasOptionsDefaults(): void
     {
         $options = new MaintainabilityOptions();
 
@@ -253,8 +270,9 @@ final class MaintainabilityRuleTest extends TestCase
         self::assertSame(20.0, $options->error);
     }
 
+    #[Test]
     #[DataProvider('thresholdDataProvider')]
-    public function testThresholdBoundaries(
+    public function itRespectsThresholdBoundaries(
         float $mi,
         float $warning,
         float $error,
@@ -304,7 +322,8 @@ final class MaintainabilityRuleTest extends TestCase
         yield 'below error threshold' => [40.0, 65.0, 50.0, Severity::Error];
     }
 
-    public function testGetCliAliases(): void
+    #[Test]
+    public function itGetsCliAliases(): void
     {
         $aliases = CliAliasReader::read(MaintainabilityRule::class);
 
@@ -318,7 +337,8 @@ final class MaintainabilityRuleTest extends TestCase
         self::assertSame('minLoc', $aliases['mi-min-loc']);
     }
 
-    public function testOptionsFromArrayWithExcludeTests(): void
+    #[Test]
+    public function itLoadsOptionsFromArrayWithExcludeTests(): void
     {
         $options = MaintainabilityOptions::fromArray([
             'exclude_tests' => false,
@@ -329,7 +349,8 @@ final class MaintainabilityRuleTest extends TestCase
         self::assertSame(20, $options->minLoc);
     }
 
-    public function testOptionsFromArrayWithCamelCase(): void
+    #[Test]
+    public function itLoadsOptionsFromArrayWithCamelCase(): void
     {
         $options = MaintainabilityOptions::fromArray([
             'excludeTests' => false,
@@ -340,7 +361,8 @@ final class MaintainabilityRuleTest extends TestCase
         self::assertSame(15, $options->minLoc);
     }
 
-    public function testAnalyzeSkipsTestFiles(): void
+    #[Test]
+    public function itSkipsTestFilesWhenExcluded(): void
     {
         $rule = new MaintainabilityRule(new MaintainabilityOptions(excludeTests: true));
 
@@ -365,7 +387,8 @@ final class MaintainabilityRuleTest extends TestCase
         self::assertCount(0, $violations);
     }
 
-    public function testAnalyzeIncludesTestFilesWhenNotExcluded(): void
+    #[Test]
+    public function itIncludesTestFilesWhenNotExcluded(): void
     {
         $rule = new MaintainabilityRule(new MaintainabilityOptions(excludeTests: false));
 
@@ -391,7 +414,8 @@ final class MaintainabilityRuleTest extends TestCase
         self::assertSame(Severity::Error, $violations[0]->severity);
     }
 
-    public function testAnalyzeSkipsMethodsWithLowLoc(): void
+    #[Test]
+    public function itSkipsMethodsWithLowLoc(): void
     {
         $rule = new MaintainabilityRule(new MaintainabilityOptions(minLoc: 15));
 
@@ -416,7 +440,8 @@ final class MaintainabilityRuleTest extends TestCase
         self::assertCount(0, $violations);
     }
 
-    public function testAnalyzeIncludesMethodsWithSufficientLoc(): void
+    #[Test]
+    public function itIncludesMethodsWithSufficientLoc(): void
     {
         $rule = new MaintainabilityRule(new MaintainabilityOptions(minLoc: 15));
 

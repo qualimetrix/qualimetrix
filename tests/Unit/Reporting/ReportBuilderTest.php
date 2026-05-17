@@ -6,6 +6,7 @@ namespace Qualimetrix\Tests\Unit\Reporting;
 
 use ArrayIterator;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -17,14 +18,16 @@ use Qualimetrix\Reporting\ReportBuilder;
 #[CoversClass(ReportBuilder::class)]
 final class ReportBuilderTest extends TestCase
 {
-    public function testCreateReturnsNewInstance(): void
+    #[Test]
+    public function itCreatesNewInstance(): void
     {
         $builder = ReportBuilder::create();
 
         self::assertInstanceOf(ReportBuilder::class, $builder); // @phpstan-ignore staticMethod.alreadyNarrowedType
     }
 
-    public function testBuildEmptyReport(): void
+    #[Test]
+    public function itBuildsEmptyReport(): void
     {
         $report = ReportBuilder::create()->build();
 
@@ -36,7 +39,8 @@ final class ReportBuilderTest extends TestCase
         self::assertSame(0, $report->warningCount);
     }
 
-    public function testAddViolation(): void
+    #[Test]
+    public function itAddsViolation(): void
     {
         $violation = $this->createViolation(Severity::Error);
 
@@ -49,7 +53,8 @@ final class ReportBuilderTest extends TestCase
         self::assertSame(0, $report->warningCount);
     }
 
-    public function testAddViolations(): void
+    #[Test]
+    public function itAddsViolations(): void
     {
         $error = $this->createViolation(Severity::Error);
         $warning = $this->createViolation(Severity::Warning);
@@ -63,7 +68,8 @@ final class ReportBuilderTest extends TestCase
         self::assertSame(1, $report->warningCount);
     }
 
-    public function testAddViolationsAcceptsIterator(): void
+    #[Test]
+    public function itAddsViolationsFromIterator(): void
     {
         $violations = new ArrayIterator([
             $this->createViolation(Severity::Warning),
@@ -78,7 +84,8 @@ final class ReportBuilderTest extends TestCase
         self::assertSame(2, $report->warningCount);
     }
 
-    public function testFilesAnalyzed(): void
+    #[Test]
+    public function itSetsFilesAnalyzed(): void
     {
         $report = ReportBuilder::create()
             ->filesAnalyzed(42)
@@ -87,7 +94,8 @@ final class ReportBuilderTest extends TestCase
         self::assertSame(42, $report->filesAnalyzed);
     }
 
-    public function testFilesSkipped(): void
+    #[Test]
+    public function itSetsFilesSkipped(): void
     {
         $report = ReportBuilder::create()
             ->filesSkipped(5)
@@ -96,7 +104,8 @@ final class ReportBuilderTest extends TestCase
         self::assertSame(5, $report->filesSkipped);
     }
 
-    public function testDuration(): void
+    #[Test]
+    public function itSetsDuration(): void
     {
         $report = ReportBuilder::create()
             ->duration(1.234)
@@ -105,7 +114,8 @@ final class ReportBuilderTest extends TestCase
         self::assertSame(1.234, $report->duration);
     }
 
-    public function testFluentInterface(): void
+    #[Test]
+    public function itSupportsFluentInterface(): void
     {
         $error = $this->createViolation(Severity::Error);
         $warning = $this->createViolation(Severity::Warning);
@@ -126,7 +136,8 @@ final class ReportBuilderTest extends TestCase
         self::assertSame(1, $report->warningCount);
     }
 
-    public function testCountsAreCalculatedCorrectly(): void
+    #[Test]
+    public function itCalculatesViolationCountsCorrectly(): void
     {
         $report = ReportBuilder::create()
             ->addViolation($this->createViolation(Severity::Error))
@@ -141,14 +152,16 @@ final class ReportBuilderTest extends TestCase
         self::assertSame(5, $report->getTotalViolations());
     }
 
-    public function testMetricsDefaultsToNull(): void
+    #[Test]
+    public function itDefaultsMetricsToNull(): void
     {
         $report = ReportBuilder::create()->build();
 
         self::assertNull($report->metrics);
     }
 
-    public function testMetricsPassedThrough(): void
+    #[Test]
+    public function itPassesMetricsThrough(): void
     {
         $metrics = self::createStub(MetricRepositoryInterface::class);
 

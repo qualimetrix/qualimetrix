@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\Logging;
 
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LogLevel;
 use Psr\Log\NullLogger;
@@ -39,7 +40,8 @@ final class LoggerFactoryTest extends TestCase
         }
     }
 
-    public function testCreatesConsoleLoggerAtDefaultVerbosity(): void
+    #[Test]
+    public function itCreatesConsoleLoggerAtDefaultVerbosity(): void
     {
         $factory = new LoggerFactory();
         $output = new BufferedOutput(OutputInterface::VERBOSITY_NORMAL);
@@ -57,7 +59,8 @@ final class LoggerFactoryTest extends TestCase
         self::assertStringNotContainsString('Test info', $content);
     }
 
-    public function testCreatesNullLoggerWhenQuiet(): void
+    #[Test]
+    public function itCreatesNullLoggerWhenQuiet(): void
     {
         $factory = new LoggerFactory();
         $output = new BufferedOutput(OutputInterface::VERBOSITY_QUIET);
@@ -67,7 +70,8 @@ final class LoggerFactoryTest extends TestCase
         self::assertInstanceOf(NullLogger::class, $logger);
     }
 
-    public function testCreatesConsoleLoggerWithVerbosity(): void
+    #[Test]
+    public function itCreatesConsoleLoggerWithVerbosity(): void
     {
         $factory = new LoggerFactory();
         $output = new BufferedOutput(OutputInterface::VERBOSITY_VERBOSE);
@@ -80,7 +84,8 @@ final class LoggerFactoryTest extends TestCase
         self::assertStringContainsString('Test message', $content);
     }
 
-    public function testCreatesFileLoggerWhenPathProvided(): void
+    #[Test]
+    public function itCreatesFileLoggerWhenPathProvided(): void
     {
         $factory = new LoggerFactory();
         $output = new BufferedOutput(OutputInterface::VERBOSITY_NORMAL);
@@ -96,7 +101,8 @@ final class LoggerFactoryTest extends TestCase
         self::assertStringContainsString('Test', $content);
     }
 
-    public function testCreatesCompositeLogger(): void
+    #[Test]
+    public function itCreatesCompositeLogger(): void
     {
         $factory = new LoggerFactory();
         $output = new BufferedOutput(OutputInterface::VERBOSITY_VERBOSE);
@@ -116,7 +122,8 @@ final class LoggerFactoryTest extends TestCase
         self::assertStringContainsString('Test message', $fileContent);
     }
 
-    public function testRespectsLogLevel(): void
+    #[Test]
+    public function itRespectsLogLevel(): void
     {
         $factory = new LoggerFactory();
         $output = new BufferedOutput(OutputInterface::VERBOSITY_VERBOSE);
@@ -131,7 +138,8 @@ final class LoggerFactoryTest extends TestCase
         self::assertStringContainsString('Warning message', $content);
     }
 
-    public function testFileLoggerRespectsLogLevel(): void
+    #[Test]
+    public function itAppliesLogLevelToFileLogger(): void
     {
         $factory = new LoggerFactory();
         $output = new BufferedOutput(OutputInterface::VERBOSITY_NORMAL);
@@ -150,7 +158,8 @@ final class LoggerFactoryTest extends TestCase
         self::assertStringContainsString('Info message', $content);
     }
 
-    public function testHandlesEmptyLogFile(): void
+    #[Test]
+    public function itHandlesEmptyLogFilePath(): void
     {
         $factory = new LoggerFactory();
         $output = new BufferedOutput(OutputInterface::VERBOSITY_VERBOSE);

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Core\Symbol;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Symbol\MethodInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -12,7 +13,8 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 #[CoversClass(MethodInfo::class)]
 final class MethodInfoTest extends TestCase
 {
-    public function testConstructorWithAllProperties(): void
+    #[Test]
+    public function itConstructorWithAllProperties(): void
     {
         $methodInfo = new MethodInfo(
             fqn: 'App\Service\UserService::calculate',
@@ -31,7 +33,8 @@ final class MethodInfoTest extends TestCase
         self::assertSame(42, $methodInfo->line);
     }
 
-    public function testGetSymbolPathReturnsCorrectSymbolPath(): void
+    #[Test]
+    public function itGetSymbolPathReturnsCorrectSymbolPath(): void
     {
         $methodInfo = new MethodInfo(
             fqn: 'App\Service\UserService::calculate',
@@ -51,7 +54,8 @@ final class MethodInfoTest extends TestCase
         self::assertSame('method:App\Service\UserService::calculate', $symbolPath->toCanonical());
     }
 
-    public function testGetSymbolPathForMethodWithoutNamespace(): void
+    #[Test]
+    public function itGetSymbolPathForMethodWithoutNamespace(): void
     {
         $methodInfo = new MethodInfo(
             fqn: 'GlobalClass::method',
@@ -70,7 +74,8 @@ final class MethodInfoTest extends TestCase
         self::assertSame('method:GlobalClass::method', $symbolPath->toCanonical());
     }
 
-    public function testGetSymbolPathForConstructor(): void
+    #[Test]
+    public function itGetSymbolPathForConstructor(): void
     {
         $methodInfo = new MethodInfo(
             fqn: 'App\Domain\User::__construct',
@@ -87,7 +92,8 @@ final class MethodInfoTest extends TestCase
         self::assertSame('method:App\Domain\User::__construct', $symbolPath->toCanonical());
     }
 
-    public function testGetSymbolPathForMagicMethod(): void
+    #[Test]
+    public function itGetSymbolPathForMagicMethod(): void
     {
         $methodInfo = new MethodInfo(
             fqn: 'App\Model\User::__toString',
@@ -104,7 +110,8 @@ final class MethodInfoTest extends TestCase
         self::assertSame('method:App\Model\User::__toString', $symbolPath->toCanonical());
     }
 
-    public function testGetSymbolPathForStaticMethod(): void
+    #[Test]
+    public function itGetSymbolPathForStaticMethod(): void
     {
         $methodInfo = new MethodInfo(
             fqn: 'App\Factory\UserFactory::create',
@@ -120,7 +127,8 @@ final class MethodInfoTest extends TestCase
         self::assertSame('method:App\Factory\UserFactory::create', $symbolPath->toCanonical());
     }
 
-    public function testMethodInfoIsReadonly(): void
+    #[Test]
+    public function itMethodInfoIsReadonly(): void
     {
         $methodInfo = new MethodInfo(
             fqn: 'Test::method',
@@ -136,7 +144,8 @@ final class MethodInfoTest extends TestCase
         self::assertInstanceOf(MethodInfo::class, $methodInfo); // @phpstan-ignore staticMethod.alreadyNarrowedType
     }
 
-    public function testConstructorWithDeepNestedNamespace(): void
+    #[Test]
+    public function itConstructorWithDeepNestedNamespace(): void
     {
         $methodInfo = new MethodInfo(
             fqn: 'App\Module\SubModule\Service\UserService::process',

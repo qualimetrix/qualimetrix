@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Metrics\CodeSmell;
 use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Metrics\CodeSmell\CodeSmellCollector;
 use SplFileInfo;
@@ -21,12 +22,14 @@ final class CodeSmellCollectorTest extends TestCase
         $this->collector = new CodeSmellCollector();
     }
 
-    public function testGetName(): void
+    #[Test]
+    public function itReturnsCollectorName(): void
     {
         self::assertSame('code-smell', $this->collector->getName());
     }
 
-    public function testProvides(): void
+    #[Test]
+    public function itProvidesExpectedMetricKeys(): void
     {
         $provides = $this->collector->provides();
 
@@ -42,7 +45,8 @@ final class CodeSmellCollectorTest extends TestCase
         self::assertCount(9, $provides);
     }
 
-    public function testCollectWithEmptyInput(): void
+    #[Test]
+    public function itCollectsNoSmellsForEmptyInput(): void
     {
         $code = '<?php // nothing here';
 
@@ -53,7 +57,8 @@ final class CodeSmellCollectorTest extends TestCase
         }
     }
 
-    public function testCollectWithSingleSmell(): void
+    #[Test]
+    public function itCollectsSingleSmellEntry(): void
     {
         $code = '<?php eval("echo 1;");';
 
@@ -64,7 +69,8 @@ final class CodeSmellCollectorTest extends TestCase
         self::assertArrayHasKey('line', $evalEntries[0]);
     }
 
-    public function testCollectWithMultipleSmells(): void
+    #[Test]
+    public function itCollectsMultipleDistinctSmells(): void
     {
         $code = <<<'PHP'
 <?php
@@ -83,7 +89,8 @@ PHP;
         self::assertCount(1, $bag->entries('codeSmell.goto'));
     }
 
-    public function testCollectWithMultipleSmellsOfSameType(): void
+    #[Test]
+    public function itCollectsMultipleSmellsOfSameType(): void
     {
         $code = <<<'PHP'
 <?php
@@ -98,7 +105,8 @@ PHP;
         self::assertCount(3, $bag->entries('codeSmell.eval'));
     }
 
-    public function testCollectWithExtraField(): void
+    #[Test]
+    public function itIncludesExtraFieldInSmellEntry(): void
     {
         $code = <<<'PHP'
 <?php
@@ -114,7 +122,8 @@ PHP;
         self::assertSame('var_dump', $entries[0]['extra']);
     }
 
-    public function testCollectWithSuperglobal(): void
+    #[Test]
+    public function itCollectsSuperglobalSmells(): void
     {
         $code = <<<'PHP'
 <?php
@@ -129,7 +138,8 @@ PHP;
         self::assertCount(2, $entries);
     }
 
-    public function testResetClearsState(): void
+    #[Test]
+    public function itClearsStateOnReset(): void
     {
         $code1 = '<?php eval("code");';
         $this->collectMetrics($code1);

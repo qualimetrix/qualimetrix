@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Rules\Structure;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
@@ -24,14 +25,16 @@ use RuntimeException;
 #[CoversClass(WmcOptions::class)]
 final class WmcRuleTest extends TestCase
 {
-    public function testGetName(): void
+    #[Test]
+    public function itGetsName(): void
     {
         $rule = new WmcRule(new WmcOptions());
 
         self::assertSame('complexity.wmc', $rule->getName());
     }
 
-    public function testGetDescription(): void
+    #[Test]
+    public function itGetsDescription(): void
     {
         $rule = new WmcRule(new WmcOptions());
 
@@ -41,21 +44,24 @@ final class WmcRuleTest extends TestCase
         );
     }
 
-    public function testGetCategory(): void
+    #[Test]
+    public function itGetsCategory(): void
     {
         $rule = new WmcRule(new WmcOptions());
 
         self::assertSame(RuleCategory::Complexity, $rule->getCategory());
     }
 
-    public function testRequires(): void
+    #[Test]
+    public function itRequiresWmcIsDataClassAndMethodCount(): void
     {
         $rule = new WmcRule(new WmcOptions());
 
         self::assertSame(['wmc', 'isDataClass', 'methodCount'], $rule->requires());
     }
 
-    public function testGetOptionsClass(): void
+    #[Test]
+    public function itGetsOptionsClass(): void
     {
         self::assertSame(
             WmcOptions::class,
@@ -63,7 +69,8 @@ final class WmcRuleTest extends TestCase
         );
     }
 
-    public function testThrowsExceptionForWrongOptionsType(): void
+    #[Test]
+    public function itThrowsExceptionForWrongOptionsType(): void
     {
         $wrongOptions = self::createStub(\Qualimetrix\Core\Rule\RuleOptionsInterface::class);
 
@@ -73,7 +80,8 @@ final class WmcRuleTest extends TestCase
         new WmcRule($wrongOptions);
     }
 
-    public function testAnalyzeReturnsEmptyWhenDisabled(): void
+    #[Test]
+    public function itReturnsEmptyWhenDisabled(): void
     {
         $rule = new WmcRule(new WmcOptions(enabled: false));
 
@@ -85,7 +93,8 @@ final class WmcRuleTest extends TestCase
         self::assertSame([], $rule->analyze($context));
     }
 
-    public function testAnalyzeReturnsEmptyWhenNoClasses(): void
+    #[Test]
+    public function itReturnsEmptyWhenNoClasses(): void
     {
         $rule = new WmcRule(new WmcOptions());
 
@@ -98,7 +107,8 @@ final class WmcRuleTest extends TestCase
         self::assertSame([], $rule->analyze($context));
     }
 
-    public function testNoViolationBelowThreshold(): void
+    #[Test]
+    public function itProducesNoViolationBelowThreshold(): void
     {
         $rule = new WmcRule(new WmcOptions());
 
@@ -120,7 +130,8 @@ final class WmcRuleTest extends TestCase
         self::assertCount(0, $violations);
     }
 
-    public function testWarningAboveWarningThreshold(): void
+    #[Test]
+    public function itGeneratesWarningAboveWarningThreshold(): void
     {
         $rule = new WmcRule(new WmcOptions());
 
@@ -152,7 +163,8 @@ final class WmcRuleTest extends TestCase
         self::assertStringContainsString('weighted method complexity is high', $violations[0]->recommendation);
     }
 
-    public function testErrorAboveErrorThreshold(): void
+    #[Test]
+    public function itGeneratesErrorAboveErrorThreshold(): void
     {
         $rule = new WmcRule(new WmcOptions());
 
@@ -183,7 +195,8 @@ final class WmcRuleTest extends TestCase
         self::assertStringContainsString('some methods are very complex', $violations[0]->recommendation);
     }
 
-    public function testRecommendationManySimpleMethods(): void
+    #[Test]
+    public function itRecommendsWhenManySimpleMethods(): void
     {
         $rule = new WmcRule(new WmcOptions());
 
@@ -209,7 +222,8 @@ final class WmcRuleTest extends TestCase
         self::assertStringContainsString('weighted method complexity is high', $violations[0]->recommendation);
     }
 
-    public function testRecommendationManyVerySimpleMethods(): void
+    #[Test]
+    public function itRecommendsWhenManyVerySimpleMethods(): void
     {
         $rule = new WmcRule(new WmcOptions());
 
@@ -235,7 +249,8 @@ final class WmcRuleTest extends TestCase
         self::assertStringContainsString('many methods, consider splitting', $violations[0]->recommendation);
     }
 
-    public function testRecommendationWithoutMethodCount(): void
+    #[Test]
+    public function itProvidesRecommendationWithoutMethodCount(): void
     {
         $rule = new WmcRule(new WmcOptions());
 
@@ -262,7 +277,8 @@ final class WmcRuleTest extends TestCase
         self::assertStringNotContainsString('across', $violations[0]->recommendation);
     }
 
-    public function testCustomThresholds(): void
+    #[Test]
+    public function itRespectsCustomThresholds(): void
     {
         $rule = new WmcRule(new WmcOptions(warning: 20, error: 40));
 
@@ -285,7 +301,8 @@ final class WmcRuleTest extends TestCase
         self::assertSame(Severity::Warning, $violations[0]->severity);
     }
 
-    public function testClassWithoutMethods(): void
+    #[Test]
+    public function itProducesNoViolationForClassWithoutMethods(): void
     {
         $rule = new WmcRule(new WmcOptions());
 
@@ -307,7 +324,8 @@ final class WmcRuleTest extends TestCase
         self::assertCount(0, $violations);
     }
 
-    public function testMultipleClasses(): void
+    #[Test]
+    public function itAnalyzesMultipleClasses(): void
     {
         $rule = new WmcRule(new WmcOptions());
 
@@ -342,7 +360,8 @@ final class WmcRuleTest extends TestCase
         self::assertSame($symbolPath2, $violations[0]->symbolPath);
     }
 
-    public function testAnalyzeSkipsClassWithoutWmcMetric(): void
+    #[Test]
+    public function itSkipsClassWithoutWmcMetric(): void
     {
         $rule = new WmcRule(new WmcOptions());
 
@@ -366,7 +385,8 @@ final class WmcRuleTest extends TestCase
 
     // Options tests
 
-    public function testOptionsFromArray(): void
+    #[Test]
+    public function itLoadsOptionsFromArray(): void
     {
         $options = WmcOptions::fromArray([
             'enabled' => false,
@@ -379,14 +399,16 @@ final class WmcRuleTest extends TestCase
         self::assertSame(40, $options->error);
     }
 
-    public function testOptionsFromEmptyArray(): void
+    #[Test]
+    public function itDisablesOptionsWhenLoadedFromEmptyArray(): void
     {
         $options = WmcOptions::fromArray([]);
 
         self::assertFalse($options->enabled);
     }
 
-    public function testOptionsDefaults(): void
+    #[Test]
+    public function itHasCorrectOptionDefaults(): void
     {
         $options = new WmcOptions();
 
@@ -395,8 +417,9 @@ final class WmcRuleTest extends TestCase
         self::assertSame(80, $options->error);
     }
 
+    #[Test]
     #[DataProvider('thresholdDataProvider')]
-    public function testThresholdBoundaries(
+    public function itRespectsBoundaryThresholds(
         int $wmc,
         int $warning,
         int $error,
@@ -446,7 +469,8 @@ final class WmcRuleTest extends TestCase
         yield 'far above error threshold' => [100, 30, 50, Severity::Error];
     }
 
-    public function testGetCliAliases(): void
+    #[Test]
+    public function itGetsCliAliases(): void
     {
         $aliases = CliAliasReader::read(WmcRule::class);
 
@@ -458,14 +482,16 @@ final class WmcRuleTest extends TestCase
         self::assertSame('excludeDataClasses', $aliases['wmc-exclude-data-classes']);
     }
 
-    public function testExcludeDataClassesOptionDefault(): void
+    #[Test]
+    public function itHasExcludeDataClassesDisabledByDefault(): void
     {
         $options = new WmcOptions();
 
         self::assertFalse($options->excludeDataClasses);
     }
 
-    public function testExcludeDataClassesFromArray(): void
+    #[Test]
+    public function itLoadsExcludeDataClassesFromArray(): void
     {
         $options = WmcOptions::fromArray([
             'exclude_data_classes' => true,
@@ -474,7 +500,8 @@ final class WmcRuleTest extends TestCase
         self::assertTrue($options->excludeDataClasses);
     }
 
-    public function testExcludeDataClassesFromArrayCamelCase(): void
+    #[Test]
+    public function itLoadsExcludeDataClassesFromArrayCamelCase(): void
     {
         $options = WmcOptions::fromArray([
             'excludeDataClasses' => true,
@@ -483,7 +510,8 @@ final class WmcRuleTest extends TestCase
         self::assertTrue($options->excludeDataClasses);
     }
 
-    public function testExcludeDataClassesSkipsDataClasses(): void
+    #[Test]
+    public function itSkipsDataClassesWhenExcludeDataClassesEnabled(): void
     {
         $rule = new WmcRule(new WmcOptions(excludeDataClasses: true));
 
@@ -508,7 +536,8 @@ final class WmcRuleTest extends TestCase
         self::assertCount(0, $violations);
     }
 
-    public function testExcludeDataClassesDisabledDoesNotSkip(): void
+    #[Test]
+    public function itDoesNotSkipDataClassesWhenExcludeDataClassesDisabled(): void
     {
         $rule = new WmcRule(new WmcOptions(excludeDataClasses: false));
 

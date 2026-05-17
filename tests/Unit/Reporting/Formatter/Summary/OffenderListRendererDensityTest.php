@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Reporting\Formatter\Summary;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Reporting\Filter\ViolationFilter;
@@ -29,7 +30,8 @@ final class OffenderListRendererDensityTest extends TestCase
         );
     }
 
-    public function testDensityDisplayedInWorstClassesMeta(): void
+    #[Test]
+    public function itDisplaysDensityInWorstClassesMeta(): void
     {
         $offender = new WorstOffender(
             symbolPath: SymbolPath::forClass('App\\Service', 'HeavyService'),
@@ -63,7 +65,8 @@ final class OffenderListRendererDensityTest extends TestCase
         self::assertStringContainsString('5.0/100 LOC', $output);
     }
 
-    public function testDensityNotDisplayedWhenZero(): void
+    #[Test]
+    public function itDoesNotDisplayDensityWhenZero(): void
     {
         $offender = new WorstOffender(
             symbolPath: SymbolPath::forClass('App\\Service', 'CleanService'),
@@ -96,7 +99,8 @@ final class OffenderListRendererDensityTest extends TestCase
         self::assertStringNotContainsString('/100 LOC', $output);
     }
 
-    public function testDensityNotDisplayedWhenNull(): void
+    #[Test]
+    public function itDoesNotDisplayDensityWhenNull(): void
     {
         $offender = new WorstOffender(
             symbolPath: SymbolPath::forClass('App\\Service', 'NoLocService'),
@@ -130,7 +134,8 @@ final class OffenderListRendererDensityTest extends TestCase
         self::assertStringContainsString('5 violations', $output);
     }
 
-    public function testRankByDensityReordersOffenders(): void
+    #[Test]
+    public function itReordersOffendersWhenRankingByDensity(): void
     {
         // Class A: 5 violations, 100 LOC => density = 5.0 (highest density)
         $offenderA = new WorstOffender(
@@ -181,7 +186,8 @@ final class OffenderListRendererDensityTest extends TestCase
         self::assertLessThan($posBigBad, $posSmallBad, 'SmallBad should appear before BigBad when ranked by density');
     }
 
-    public function testRankByCountPreservesOriginalOrder(): void
+    #[Test]
+    public function itPreservesOriginalOrderWhenRankingByCount(): void
     {
         $offenderA = new WorstOffender(
             symbolPath: SymbolPath::forClass('App', 'SmallBad'),
@@ -230,7 +236,8 @@ final class OffenderListRendererDensityTest extends TestCase
         self::assertLessThan($posSmallBad, $posBigBad, 'BigBad should appear before SmallBad with default ranking');
     }
 
-    public function testNullDensityOffendersSortedLastWhenRankByDensity(): void
+    #[Test]
+    public function itSortsNullDensityOffendersLastWhenRankingByDensity(): void
     {
         $offenderWithDensity = new WorstOffender(
             symbolPath: SymbolPath::forClass('App', 'ClassA'),
