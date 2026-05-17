@@ -637,6 +637,7 @@ final class MetricHintProvider
      */
     public function exportForHtml(): array
     {
+        /** @var array<string, array{label: string, ranges: list<array{max?: float, above?: true, text: string}>, formatTemplate: string|null}> $metricHints */
         $metricHints = [];
 
         foreach (self::RANGES as $key => $ranges) {

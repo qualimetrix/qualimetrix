@@ -523,6 +523,9 @@ final class SuppressionExtractorTest extends TestCase
             $byType[$s->type->value] = $s;
         }
 
+        self::assertArrayHasKey('file', $byType);
+        self::assertArrayHasKey('next-line', $byType);
+        self::assertArrayHasKey('symbol', $byType);
         self::assertSame('size', $byType['file']->rule);
         self::assertSame('coupling', $byType['next-line']->rule);
         self::assertSame('complexity', $byType['symbol']->rule);
