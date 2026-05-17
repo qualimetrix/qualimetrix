@@ -25,65 +25,220 @@ coupling:
     - Amp
 
 # Architecture: enforce the layered design documented in CLAUDE.md.
-# Dependency direction: Infrastructure -> Analysis -> Metrics/Rules/Reporting/Configuration -> Core
-# Baseline and Configuration are siblings consumed by higher layers. The Analysis sub-tree forms the
-# pipeline glue and may pull from every domain layer.
 #
-# Declaration order matters (ADR 0006: first match wins). Since each layer's
-# pattern is a disjoint namespace under Qualimetrix\*, order within the list
-# only affects diagnostics (architecture.potential-shadow / architecture.unreachable-layer).
+# This topology replaces the former deptrac.yaml — every Analysis.* and
+# Infrastructure.* sub-namespace is its own layer with an explicit allow-list,
+# so cross-sublayer coupling (e.g. analysis-discovery → analysis-pipeline)
+# is caught instead of hidden inside a flat parent layer.
+#
+# Dependency direction (high-level):
+#   Infra → Analysis sub-layers → Metrics/Rules/Reporting/Configuration/Architecture → Core
+#
+# Declaration order matters (ADR 0006: first match wins). All layer patterns
+# below are disjoint namespaces under Qualimetrix\*, so order only affects
+# diagnostics (architecture.potential-shadow / architecture.unreachable-layer).
 architecture:
   layers:
+    # ── Core ───────────────────────────────────────────────────────
     - name: core
       patterns: ['Qualimetrix\Core\**']
+
+    # ── Cross-cutting configuration infrastructure ─────────────────
     - name: configuration
       patterns: ['Qualimetrix\Configuration\**']
-    # Template layer (Phase 2 direction 2). Expands to one concrete layer
-    # per observed metric category under src/Metrics/. The metric collector
-    # subtree is naturally module-like — each category (Complexity, Coupling,
-    # CodeSmell, ...) is independent — so per-category layer visibility helps
-    # catch cross-category coupling that the single flat `metrics` layer used
-    # to mask.
+
+    # ── Architecture vertical slice (ADR 0010 pilot, ADR 0012) ─────
+    - name: architecture
+      patterns: ['Qualimetrix\Architecture\**']
+
+    # ── Metrics — per-category template layer (Phase 2 direction 2)
+    # Each metric category (Complexity, Coupling, CodeSmell, ...) is
+    # independent; per-category layer visibility catches cross-category
+    # coupling that a single flat `metrics` layer would mask.
     - name: 'metrics-{Category}'
       patterns: ['Qualimetrix\Metrics\{Category}\**']
+
     - name: rules
       patterns: ['Qualimetrix\Rules\**']
     - name: reporting
       patterns: ['Qualimetrix\Reporting\**']
     - name: baseline
       patterns: ['Qualimetrix\Baseline\**']
-    - name: analysis
-      patterns: ['Qualimetrix\Analysis\**']
-    - name: infrastructure
-      patterns: ['Qualimetrix\Infrastructure\**']
+
+    # ── Analysis sub-layers (10) — pipeline glue ───────────────────
+    - name: analysis-exception
+      patterns: ['Qualimetrix\Analysis\Exception\**']
+    - name: analysis-discovery
+      patterns: ['Qualimetrix\Analysis\Discovery\**']
+    - name: analysis-namespace
+      patterns: ['Qualimetrix\Analysis\Namespace_\**']
+    - name: analysis-repository
+      patterns: ['Qualimetrix\Analysis\Repository\**']
+    - name: analysis-duplication
+      patterns: ['Qualimetrix\Analysis\Duplication\**']
+    - name: analysis-aggregator
+      patterns: ['Qualimetrix\Analysis\Aggregator\**']
+    - name: analysis-ruleexecution
+      patterns: ['Qualimetrix\Analysis\RuleExecution\**']
+    - name: analysis-collection
+      patterns: ['Qualimetrix\Analysis\Collection\**']
+    - name: analysis-lifecycle
+      patterns: ['Qualimetrix\Analysis\Lifecycle\**']
+    - name: analysis-pipeline
+      patterns: ['Qualimetrix\Analysis\Pipeline\**']
+
+    # ── Infrastructure sub-layers (10) — adapters / glue ───────────
+    - name: infra-serializer
+      patterns: ['Qualimetrix\Infrastructure\Serializer\**']
+    - name: infra-logging
+      patterns: ['Qualimetrix\Infrastructure\Logging\**']
+    - name: infra-profiler
+      patterns: ['Qualimetrix\Infrastructure\Profiler\**']
+    - name: infra-rule
+      patterns: ['Qualimetrix\Infrastructure\Rule\**']
+    - name: infra-git
+      patterns: ['Qualimetrix\Infrastructure\Git\**']
+    - name: infra-cache
+      patterns: ['Qualimetrix\Infrastructure\Cache\**']
+    - name: infra-ast
+      patterns: ['Qualimetrix\Infrastructure\Ast\**']
+    - name: infra-parallel
+      patterns: ['Qualimetrix\Infrastructure\Parallel\**']
+    - name: infra-console
+      patterns: ['Qualimetrix\Infrastructure\Console\**']
+    - name: infra-di
+      patterns: ['Qualimetrix\Infrastructure\DependencyInjection\**']
+
   allow:
-    # Core sits at the bottom — no upward deps.
-    core:           []
-    # Domain layers depend on Core only.
-    configuration:  [core]
-    # Every metric category depends on Core; the wildcard selector matches
-    # all `metrics-*` concrete layers produced by template expansion.
-    'metrics-*':    [core]
-    rules:          [core, configuration]
-    reporting:      [core, configuration]
-    baseline:       [core]
-    # Analysis orchestrates the rest of the pipeline.
-    analysis:       [core, configuration, 'metrics-*', rules, reporting, baseline]
-    # Infrastructure is the outermost glue. Edges to the metric collectors are
-    # constrained: the DI container wires collectors but never inherits from
-    # them — the long-form `relations:` filter codifies this rule so a future
-    # `class FooInfra extends BarCollector` is caught at config time.
-    infrastructure:
+    # ── Core: no upward deps ───────────────────────────────────────
+    core: []
+
+    # ── Configuration: Core + Architecture (ConfigurationPipeline
+    # consumes ArchitectureConfigurationFactory; ResolvedConfiguration
+    # exposes ArchitectureConfiguration VO) ────────────────────────
+    configuration: [core, architecture]
+
+    # ── Architecture vertical slice ────────────────────────────────
+    # External boundary (per ADR 0010): Core, Rules (RuleInterface),
+    # Configuration (YamlConfigLoader/ConfigSchema), Analysis.Lifecycle.
+    architecture: [core, rules, configuration, analysis-lifecycle]
+
+    # ── Domain leaves: each metric category and Rules/Reporting/
+    # Baseline depend on Core only (parity with former deptrac) ────
+    'metrics-*': [core]
+    rules:       [core]
+    reporting:   [core]
+    baseline:    [core]
+
+    # ── Analysis sub-layers ────────────────────────────────────────
+    analysis-exception:     [core]
+    analysis-discovery:     [core]
+    analysis-namespace:     [core, configuration]
+    analysis-repository:    [core]
+    analysis-duplication:   [core, configuration]
+    analysis-aggregator:    [core, analysis-exception]
+    analysis-ruleexecution: [core, configuration]
+    analysis-collection:    [core, baseline, analysis-exception]
+    analysis-lifecycle:     [core, configuration]
+    # Pipeline is the orchestration hub — sees every domain plus all
+    # other Analysis sub-layers, but not other Infra sub-layers.
+    analysis-pipeline:
       - core
       - configuration
-      - analysis
-      - reporting
       - baseline
+      - reporting
+      - architecture
+      - rules
+      - 'metrics-*'
+      - analysis-exception
+      - analysis-discovery
+      - analysis-namespace
+      - analysis-repository
+      - analysis-duplication
+      - analysis-aggregator
+      - analysis-ruleexecution
+      - analysis-collection
+      - analysis-lifecycle
+
+    # ── Infrastructure leaves ──────────────────────────────────────
+    infra-serializer: [core]
+    infra-logging:    [core]
+    infra-profiler:   [core]
+    infra-rule:       [core, configuration]
+    infra-git:        [core, configuration, analysis-discovery]
+
+    # ── Infrastructure mid-level ───────────────────────────────────
+    infra-cache:    [core, configuration, infra-serializer]
+    infra-ast:      [core, configuration, infra-cache]
+    infra-parallel:
+      - core
+      - configuration
+      - baseline
+      - analysis-collection
+      - infra-serializer
+      - infra-ast
+      - infra-cache
+
+    # ── Infrastructure hubs ────────────────────────────────────────
+    # Console wires the user-facing CLI; pulls every Analysis sub-layer
+    # it orchestrates plus Reporting/Baseline/Architecture and most
+    # Infra leaves. Does NOT see Metrics directly (those go through DI).
+    infra-console:
+      - core
+      - configuration
+      - baseline
+      - reporting
+      - architecture
+      - analysis-pipeline
+      - analysis-collection
+      - analysis-discovery
+      - analysis-namespace
+      - analysis-repository
+      - analysis-ruleexecution
+      - analysis-lifecycle
+      - infra-git
+      - infra-rule
+      - infra-cache
+      - infra-logging
+      - infra-profiler
+      - infra-parallel
+
+    # DI configurator wires every service. Edges to the metric
+    # collectors are constrained by `relations:` — the container
+    # references collectors but must NEVER inherit from them, so a
+    # future `class FooInfra extends BarCollector` is caught at
+    # config time.
+    infra-di:
+      - core
+      - configuration
+      - baseline
+      - reporting
+      - architecture
+      - rules
+      - analysis-exception
+      - analysis-discovery
+      - analysis-namespace
+      - analysis-repository
+      - analysis-duplication
+      - analysis-aggregator
+      - analysis-ruleexecution
+      - analysis-collection
+      - analysis-lifecycle
+      - analysis-pipeline
+      - infra-serializer
+      - infra-logging
+      - infra-profiler
+      - infra-rule
+      - infra-git
+      - infra-cache
+      - infra-ast
+      - infra-parallel
+      - infra-console
       - target: 'metrics-*'
         relations: [type_reference, new, static_access, class_const_fetch, attribute, runtime_check]
-      - rules
-  # Warn about edges touching classes outside our own namespaces (vendor, etc.).
-  # The default ignore mode is fine for vendor noise; we keep this opt-in.
+
+  # Warn about edges touching classes outside our own namespaces
+  # (vendor, etc.). Default ignore mode is fine for vendor noise.
   coverage: ignore
 
 rules:
