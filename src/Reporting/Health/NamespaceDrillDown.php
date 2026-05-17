@@ -81,7 +81,7 @@ final readonly class NamespaceDrillDown
 
         foreach ($allDimensions as $dim) {
             $dimension = $dim->value;
-            if (!isset($weightedSums[$dimension])) {
+            if (!isset($weightedSums[$dimension], $dimensionWeights[$dimension])) {
                 continue;
             }
 
