@@ -49,12 +49,15 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
 
-  # Self-analysis: Direct execution (existing workflow)
-  analyze-direct:
-    name: Self-Analysis (Direct)
+  # Full validation: cs-check + PHPUnit + PHPStan + selfcheck.
+  # `composer check` ends with `bin/qmx check src/`, so this job subsumes
+  # the previous "Self-Analysis (Direct)" step.
+  check:
+    name: Full validation (composer check)
     runs-on: ubuntu-latest
 
     strategy:
+      fail-fast: false
       matrix:
         php-version: ['8.4', '8.5']
 
@@ -77,16 +80,16 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ steps.composer-cache.outputs.dir }}
-          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
-          restore-keys: ${{ runner.os }}-composer-
+          key: ${{ runner.os }}-composer-${{ matrix.php-version }}-${{ hashFiles('**/composer.json') }}
+          restore-keys: ${{ runner.os }}-composer-${{ matrix.php-version }}-
 
       - name: Install dependencies
         run: composer install --no-progress --prefer-dist --optimize-autoloader
 
-      - name: Run Qualimetrix
-        run: bin/qmx check src/
+      - name: Run full validation
+        run: composer check
 
-      - name: Upload results (if failed)
+      - name: Upload qmx results (if failed)
         if: failure()
         uses: actions/upload-artifact@v4
         with:
