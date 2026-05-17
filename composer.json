@@ -36,7 +36,6 @@
         "symfony/yaml": "^7.4 || ^8.0"
     },
     "require-dev": {
-        "deptrac/deptrac": "^2.0",
         "friendsofphp/php-cs-fixer": "^3.0",
         "justinrainbow/json-schema": "^6.6.4",
         "phpstan/phpstan": "^2.0",
@@ -69,7 +68,6 @@
         "test": "phpunit --no-coverage",
         "test:coverage": "phpunit --coverage-html coverage",
         "phpstan": "phpstan analyse --memory-limit=512M",
-        "deptrac": "deptrac analyse",
         "test:js": "cd src/Reporting/Template && npm test",
         "build:js": "cd src/Reporting/Template && npm run build",
         "cs-check": "php-cs-fixer fix --dry-run --diff",
@@ -81,7 +79,6 @@
             "@cs-check",
             "@test",
             "@phpstan",
-            "@deptrac",
             "@selfcheck"
         ]
     },
@@ -90,7 +87,6 @@
         "test": "Run PHPUnit tests",
         "test:coverage": "Run PHPUnit tests with HTML coverage report",
         "phpstan": "Run PHPStan static analysis (level 8)",
-        "deptrac": "Check architectural layer dependencies",
         "test:js": "Run JS tests for HTML report (vitest)",
         "build:js": "Rebuild HTML report JS bundle (vite)",
         "cs-check": "Check code style without fixing",
@@ -98,7 +94,7 @@
         "benchmark:check": "Run benchmark regression check for health score formulas",
         "benchmark:update": "Update benchmark baselines with current scores (±10 margin)",
         "selfcheck": "Run Qualimetrix on its own source code",
-        "check": "Run all checks: cs-check, tests, phpstan, deptrac, selfcheck"
+        "check": "Run all checks: cs-check, tests, phpstan, selfcheck (selfcheck enforces architecture via qmx.yaml)"
     },
     "config": {
         "sort-packages": true,
