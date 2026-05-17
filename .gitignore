@@ -1,6 +1,5 @@
 # Composer
 /vendor/
-composer.lock
 
 # IDE
 /.idea/
@@ -68,6 +67,6 @@ node_modules/
 # Playwright CLI artifacts
 .playwright-cli/
 
-# Benchmarks (vendor is downloaded, only composer.json is tracked)
+# Benchmarks (vendor is downloaded; composer.lock is tracked so health-score
+# calibration stays reproducible against fixed Laravel/Symfony/Doctrine versions)
 /benchmarks/vendor/
-/benchmarks/composer.lock
