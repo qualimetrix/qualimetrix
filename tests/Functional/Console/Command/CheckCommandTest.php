@@ -123,8 +123,8 @@ class ComplexClass {
         self::assertSame(0, $commandTester->getStatusCode());
         $output = $commandTester->getDisplay();
 
-        // Verify JSON output
-        $json = json_decode($output, true);
+        // Verify JSON output (config warnings may precede the document in stdout)
+        $json = json_decode(self::extractJsonObject($output), true);
         self::assertIsArray($json);
         // JSON format uses summary structure with meta, health, worst offenders, and violations
         self::assertArrayHasKey('meta', $json);
@@ -308,7 +308,7 @@ class ComplexClass {
 
         self::assertSame(0, $commandTester->getStatusCode());
         $output = $commandTester->getDisplay();
-        $json = json_decode($output, true);
+        $json = json_decode(self::extractJsonObject($output), true);
         self::assertIsArray($json);
         self::assertArrayHasKey('$schema', $json);
         self::assertSame('2.1.0', $json['version']);
@@ -332,7 +332,7 @@ class ComplexClass {
         self::assertSame(0, $commandTester->getStatusCode());
         $output = $commandTester->getDisplay();
         // GitLab format outputs a JSON array (empty when no violations)
-        $json = json_decode($output, true);
+        $json = json_decode(self::extractJsonArrayOrObject($output), true);
         self::assertIsArray($json);
     }
 
@@ -476,6 +476,49 @@ class SimpleClass {
         $application->addCommand($command);
 
         return new CommandTester($command);
+    }
+
+    /**
+     * Extracts a JSON object document from the captured stdout. Configuration
+     * warnings (e.g. architecture mutual-allow notices) are written to the same
+     * stream before the document; we anchor on the first byte offset from which
+     * {@see json_decode} succeeds.
+     */
+    private static function extractJsonObject(string $output): string
+    {
+        return self::firstParseableJsonFragment($output, ['{']);
+    }
+
+    /**
+     * Like {@see extractJsonObject()} but tolerant of either a `{...}` document
+     * or a `[...]` array (used by the GitLab Code Quality format).
+     */
+    private static function extractJsonArrayOrObject(string $output): string
+    {
+        return self::firstParseableJsonFragment($output, ['{', '[']);
+    }
+
+    /**
+     * Scans every occurrence of an opening token in {@code $output} and returns
+     * the suffix starting at the first position that produces valid JSON. This
+     * naturally skips a `[` inside a `[12:34:56]` warning timestamp because the
+     * remainder of the line will not parse as JSON.
+     *
+     * @param list<string> $openers
+     */
+    private static function firstParseableJsonFragment(string $output, array $openers): string
+    {
+        foreach (str_split($output) as $offset => $char) {
+            if (!\in_array($char, $openers, true)) {
+                continue;
+            }
+            $candidate = substr($output, $offset);
+            json_decode($candidate, true);
+            if (json_last_error() === \JSON_ERROR_NONE) {
+                return $candidate;
+            }
+        }
+        return $output;
     }
 
     /**
