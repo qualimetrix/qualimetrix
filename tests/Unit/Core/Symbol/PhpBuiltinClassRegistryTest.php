@@ -6,6 +6,7 @@ namespace Qualimetrix\Tests\Unit\Core\Symbol;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry;
 
@@ -31,7 +32,8 @@ final class PhpBuiltinClassRegistryTest extends TestCase
     }
 
     #[DataProvider('commonBuiltinClassesProvider')]
-    public function testCommonBuiltinClassesAreRecognized(string $className): void
+    #[Test]
+    public function itCommonBuiltinClassesAreRecognized(string $className): void
     {
         self::assertTrue(PhpBuiltinClassRegistry::isBuiltin($className));
     }
@@ -48,12 +50,14 @@ final class PhpBuiltinClassRegistryTest extends TestCase
     }
 
     #[DataProvider('userClassesProvider')]
-    public function testUserClassesAreNotBuiltin(string $className): void
+    #[Test]
+    public function itUserClassesAreNotBuiltin(string $className): void
     {
         self::assertFalse(PhpBuiltinClassRegistry::isBuiltin($className));
     }
 
-    public function testCaseSensitivity(): void
+    #[Test]
+    public function itCaseSensitivity(): void
     {
         // PHP class names in the registry are case-sensitive
         self::assertFalse(PhpBuiltinClassRegistry::isBuiltin('exception'));

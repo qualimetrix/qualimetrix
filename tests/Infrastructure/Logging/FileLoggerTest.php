@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\Logging;
 
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LogLevel;
 use Qualimetrix\Infrastructure\Logging\FileLogger;
@@ -46,7 +47,8 @@ final class FileLoggerTest extends TestCase
         rmdir($dir);
     }
 
-    public function testWritesToFile(): void
+    #[Test]
+    public function itWritesToFile(): void
     {
         $path = $this->tempDir . '/test.log';
         $logger = new FileLogger($path);
@@ -59,7 +61,8 @@ final class FileLoggerTest extends TestCase
         self::assertStringContainsString('Test message', $content);
     }
 
-    public function testCreatesDirectory(): void
+    #[Test]
+    public function itCreatesDirectory(): void
     {
         $path = $this->tempDir . '/nested/dir/log.log';
         $logger = new FileLogger($path);
@@ -69,7 +72,8 @@ final class FileLoggerTest extends TestCase
         self::assertFileExists($path);
     }
 
-    public function testWritesJsonLines(): void
+    #[Test]
+    public function itWritesJsonLines(): void
     {
         $path = $this->tempDir . '/test.log';
         $logger = new FileLogger($path);
@@ -89,7 +93,8 @@ final class FileLoggerTest extends TestCase
         self::assertArrayHasKey('timestamp', $data);
     }
 
-    public function testInterpolatesPlaceholders(): void
+    #[Test]
+    public function itInterpolatesPlaceholders(): void
     {
         $path = $this->tempDir . '/test.log';
         $logger = new FileLogger($path);
@@ -107,7 +112,8 @@ final class FileLoggerTest extends TestCase
         self::assertSame(['file' => 'test.php', 'extra' => 'data'], $data['context']);
     }
 
-    public function testRespectsMinLevel(): void
+    #[Test]
+    public function itRespectsMinLevel(): void
     {
         $path = $this->tempDir . '/test.log';
         $logger = new FileLogger($path, LogLevel::WARNING);
@@ -126,7 +132,8 @@ final class FileLoggerTest extends TestCase
         self::assertStringContainsString('Error message', $content);
     }
 
-    public function testMultipleLogEntries(): void
+    #[Test]
+    public function itWritesMultipleLogEntries(): void
     {
         $path = $this->tempDir . '/test.log';
         $logger = new FileLogger($path);
@@ -150,7 +157,8 @@ final class FileLoggerTest extends TestCase
         }
     }
 
-    public function testAppendsToExistingFile(): void
+    #[Test]
+    public function itAppendsToExistingFile(): void
     {
         $path = $this->tempDir . '/test.log';
 
@@ -174,7 +182,8 @@ final class FileLoggerTest extends TestCase
         self::assertStringContainsString('Second', $lines[1]);
     }
 
-    public function testHandlesEmptyContext(): void
+    #[Test]
+    public function itHandlesEmptyContext(): void
     {
         $path = $this->tempDir . '/test.log';
         $logger = new FileLogger($path);
@@ -189,7 +198,8 @@ final class FileLoggerTest extends TestCase
         self::assertSame([], $data['context']);
     }
 
-    public function testTimestampFormat(): void
+    #[Test]
+    public function itWritesTimestampInIso8601Format(): void
     {
         $path = $this->tempDir . '/test.log';
         $logger = new FileLogger($path);

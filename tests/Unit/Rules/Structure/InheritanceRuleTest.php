@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Rules\Structure;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
@@ -23,14 +24,16 @@ use Qualimetrix\Rules\Structure\InheritanceRule;
 #[CoversClass(InheritanceOptions::class)]
 final class InheritanceRuleTest extends TestCase
 {
-    public function testGetName(): void
+    #[Test]
+    public function itGetsName(): void
     {
         $rule = new InheritanceRule(new InheritanceOptions());
 
         self::assertSame('design.inheritance', $rule->getName());
     }
 
-    public function testGetDescription(): void
+    #[Test]
+    public function itGetsDescription(): void
     {
         $rule = new InheritanceRule(new InheritanceOptions());
 
@@ -40,21 +43,24 @@ final class InheritanceRuleTest extends TestCase
         );
     }
 
-    public function testGetCategory(): void
+    #[Test]
+    public function itGetsCategory(): void
     {
         $rule = new InheritanceRule(new InheritanceOptions());
 
         self::assertSame(RuleCategory::Design, $rule->getCategory());
     }
 
-    public function testRequires(): void
+    #[Test]
+    public function itRequiresDit(): void
     {
         $rule = new InheritanceRule(new InheritanceOptions());
 
         self::assertSame(['dit'], $rule->requires());
     }
 
-    public function testGetOptionsClass(): void
+    #[Test]
+    public function itGetsOptionsClass(): void
     {
         self::assertSame(
             InheritanceOptions::class,
@@ -62,7 +68,8 @@ final class InheritanceRuleTest extends TestCase
         );
     }
 
-    public function testThrowsExceptionForWrongOptionsType(): void
+    #[Test]
+    public function itThrowsExceptionForWrongOptionsType(): void
     {
         $wrongOptions = self::createStub(\Qualimetrix\Core\Rule\RuleOptionsInterface::class);
 
@@ -72,7 +79,8 @@ final class InheritanceRuleTest extends TestCase
         new InheritanceRule($wrongOptions);
     }
 
-    public function testAnalyzeReturnsEmptyWhenDisabled(): void
+    #[Test]
+    public function itReturnsEmptyWhenDisabled(): void
     {
         $rule = new InheritanceRule(new InheritanceOptions(enabled: false));
 
@@ -84,7 +92,8 @@ final class InheritanceRuleTest extends TestCase
         self::assertSame([], $rule->analyze($context));
     }
 
-    public function testAnalyzeReturnsEmptyWhenNoClasses(): void
+    #[Test]
+    public function itReturnsEmptyWhenNoClasses(): void
     {
         $rule = new InheritanceRule(new InheritanceOptions());
 
@@ -97,7 +106,8 @@ final class InheritanceRuleTest extends TestCase
         self::assertSame([], $rule->analyze($context));
     }
 
-    public function testAnalyzeGeneratesWarning(): void
+    #[Test]
+    public function itGeneratesWarning(): void
     {
         $rule = new InheritanceRule(new InheritanceOptions());
 
@@ -125,7 +135,8 @@ final class InheritanceRuleTest extends TestCase
         self::assertSame('design.inheritance', $violations[0]->ruleName);
     }
 
-    public function testAnalyzeGeneratesError(): void
+    #[Test]
+    public function itGeneratesError(): void
     {
         $rule = new InheritanceRule(new InheritanceOptions());
 
@@ -149,7 +160,8 @@ final class InheritanceRuleTest extends TestCase
         self::assertSame(8, $violations[0]->metricValue);
     }
 
-    public function testAnalyzeNoViolationForShallowDit(): void
+    #[Test]
+    public function itProducesNoViolationForShallowDit(): void
     {
         $rule = new InheritanceRule(new InheritanceOptions());
 
@@ -171,7 +183,8 @@ final class InheritanceRuleTest extends TestCase
         self::assertCount(0, $violations);
     }
 
-    public function testAnalyzeSkipsClassWithoutDitMetric(): void
+    #[Test]
+    public function itSkipsClassWithoutDitMetric(): void
     {
         $rule = new InheritanceRule(new InheritanceOptions());
 
@@ -195,7 +208,8 @@ final class InheritanceRuleTest extends TestCase
 
     // Options tests
 
-    public function testOptionsFromArray(): void
+    #[Test]
+    public function itLoadsOptionsFromArray(): void
     {
         $options = InheritanceOptions::fromArray([
             'enabled' => false,
@@ -208,14 +222,16 @@ final class InheritanceRuleTest extends TestCase
         self::assertSame(6, $options->error);
     }
 
-    public function testOptionsFromEmptyArray(): void
+    #[Test]
+    public function itDisablesOptionsWhenLoadedFromEmptyArray(): void
     {
         $options = InheritanceOptions::fromArray([]);
 
         self::assertFalse($options->enabled);
     }
 
-    public function testOptionsDefaults(): void
+    #[Test]
+    public function itHasCorrectOptionDefaults(): void
     {
         $options = new InheritanceOptions();
 
@@ -224,8 +240,9 @@ final class InheritanceRuleTest extends TestCase
         self::assertSame(6, $options->error);
     }
 
+    #[Test]
     #[DataProvider('thresholdDataProvider')]
-    public function testThresholdBoundaries(
+    public function itRespectsBoundaryThresholds(
         int $dit,
         int $warning,
         int $error,
@@ -273,7 +290,8 @@ final class InheritanceRuleTest extends TestCase
         yield 'above error threshold' => [10, 5, 7, Severity::Error];
     }
 
-    public function testGetCliAliases(): void
+    #[Test]
+    public function itGetsCliAliases(): void
     {
         $aliases = CliAliasReader::read(InheritanceRule::class);
 

@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Metrics\Security;
 use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Metrics\Security\HardcodedCredentialsCollector;
@@ -22,17 +23,20 @@ final class HardcodedCredentialsCollectorTest extends TestCase
         $this->collector = new HardcodedCredentialsCollector();
     }
 
-    public function testGetName(): void
+    #[Test]
+    public function itReturnsCorrectName(): void
     {
         self::assertSame('hardcoded-credentials', $this->collector->getName());
     }
 
-    public function testProvides(): void
+    #[Test]
+    public function itProvidesExpectedMetrics(): void
     {
         self::assertSame(['security.hardcodedCredentials'], $this->collector->provides());
     }
 
-    public function testCollectWithTwoFindings(): void
+    #[Test]
+    public function itCollectsWithTwoFindings(): void
     {
         $code = <<<'PHP'
 <?php
@@ -48,7 +52,8 @@ PHP;
         self::assertSame(3, $entries[1]['line']);
     }
 
-    public function testCollectWithNoFindings(): void
+    #[Test]
+    public function itCollectsWithNoFindings(): void
     {
         $code = <<<'PHP'
 <?php
@@ -61,7 +66,8 @@ PHP;
         self::assertSame(0, $metrics->entryCount('security.hardcodedCredentials'));
     }
 
-    public function testReset(): void
+    #[Test]
+    public function itResetsState(): void
     {
         $code1 = '<?php $password = "secret123";';
         $code2 = '<?php $username = "admin";';

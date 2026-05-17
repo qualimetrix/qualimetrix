@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Metrics\Security;
 use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Metrics\Security\SecurityPatternCollector;
@@ -22,12 +23,14 @@ final class SecurityPatternCollectorTest extends TestCase
         $this->collector = new SecurityPatternCollector();
     }
 
-    public function testGetName(): void
+    #[Test]
+    public function itReturnsCorrectName(): void
     {
         self::assertSame('security-pattern', $this->collector->getName());
     }
 
-    public function testProvides(): void
+    #[Test]
+    public function itProvidesExpectedMetrics(): void
     {
         $provides = $this->collector->provides();
 
@@ -36,7 +39,8 @@ final class SecurityPatternCollectorTest extends TestCase
         self::assertContains('security.command_injection', $provides);
     }
 
-    public function testCollectWithMultiplePatterns(): void
+    #[Test]
+    public function itCollectsMultipleSecurityPatterns(): void
     {
         $code = <<<'PHP'
 <?php
@@ -62,7 +66,8 @@ PHP;
         self::assertSame(4, $sqlEntries[0]['line']);
     }
 
-    public function testCollectWithNoFindings(): void
+    #[Test]
+    public function itCollectsWithNoFindings(): void
     {
         $code = <<<'PHP'
 <?php
@@ -77,7 +82,8 @@ PHP;
         self::assertSame(0, $metrics->entryCount('security.sql_injection'));
     }
 
-    public function testReset(): void
+    #[Test]
+    public function itResetsState(): void
     {
         $code1 = '<?php echo $_GET["name"];';
         $this->collectMetrics($code1);

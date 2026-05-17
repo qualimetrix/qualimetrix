@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Reporting\Formatter\Support;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
@@ -16,7 +17,8 @@ use Qualimetrix\Reporting\GroupBy;
 #[CoversClass(ViolationSorter::class)]
 final class ViolationSorterTest extends TestCase
 {
-    public function testSortNoneGroupBySeverityThenFileThenLine(): void
+    #[Test]
+    public function itSortsNoneGroupBySeverityThenFileThenLine(): void
     {
         $warningB5 = $this->violation('b.php', 5, Severity::Warning, 'complexity');
         $errorA10 = $this->violation('a.php', 10, Severity::Error, 'complexity');
@@ -27,7 +29,8 @@ final class ViolationSorterTest extends TestCase
         self::assertSame([$errorA3, $errorA10, $warningB5], $sorted);
     }
 
-    public function testSortFileGroupByFileThenSeverityThenLine(): void
+    #[Test]
+    public function itSortsFileGroupByFileThenSeverityThenLine(): void
     {
         $warningB5 = $this->violation('b.php', 5, Severity::Warning, 'complexity');
         $errorA10 = $this->violation('a.php', 10, Severity::Error, 'complexity');
@@ -38,7 +41,8 @@ final class ViolationSorterTest extends TestCase
         self::assertSame([$errorA3, $errorA10, $warningB5], $sorted);
     }
 
-    public function testSortRuleGroupByRuleThenFile(): void
+    #[Test]
+    public function itSortsRuleGroupByRuleThenFile(): void
     {
         $sizeB = $this->violation('b.php', 1, Severity::Error, 'size');
         $complexityA = $this->violation('a.php', 1, Severity::Error, 'complexity');
@@ -49,14 +53,16 @@ final class ViolationSorterTest extends TestCase
         self::assertSame([$complexityA, $sizeA, $sizeB], $sorted);
     }
 
-    public function testSortEmptyArray(): void
+    #[Test]
+    public function itSortsEmptyArrayToEmptyArray(): void
     {
         $sorted = ViolationSorter::sort([], GroupBy::None);
 
         self::assertSame([], $sorted);
     }
 
-    public function testGroupByFile(): void
+    #[Test]
+    public function itGroupsByFile(): void
     {
         $v1 = $this->violation('a.php', 1, Severity::Error, 'complexity');
         $v2 = $this->violation('a.php', 5, Severity::Warning, 'complexity');
@@ -71,7 +77,8 @@ final class ViolationSorterTest extends TestCase
         self::assertSame([$v3], $groups['b.php']);
     }
 
-    public function testGroupByNoneReturnsSingleGroup(): void
+    #[Test]
+    public function itGroupsByNoneReturningSingleGroup(): void
     {
         $v1 = $this->violation('a.php', 1, Severity::Error, 'complexity');
         $v2 = $this->violation('b.php', 2, Severity::Warning, 'size');
@@ -83,7 +90,8 @@ final class ViolationSorterTest extends TestCase
         self::assertSame([$v1, $v2], $groups['']);
     }
 
-    public function testGroupBySeverity(): void
+    #[Test]
+    public function itGroupsBySeverity(): void
     {
         $v1 = $this->violation('a.php', 1, Severity::Error, 'complexity');
         $v2 = $this->violation('b.php', 2, Severity::Warning, 'size');
@@ -98,7 +106,8 @@ final class ViolationSorterTest extends TestCase
         self::assertSame([$v2], $groups['warning']);
     }
 
-    public function testSortClassNameGroupByClassThenSeverityThenLine(): void
+    #[Test]
+    public function itSortsClassNameGroupByClassThenSeverityThenLine(): void
     {
         $v1 = $this->violationWithSymbol('a.php', 5, Severity::Warning, 'complexity', 'App\B', 'ClassB');
         $v2 = $this->violationWithSymbol('b.php', 1, Severity::Error, 'complexity', 'App\A', 'ClassA');
@@ -110,7 +119,8 @@ final class ViolationSorterTest extends TestCase
         self::assertSame([$v3, $v2, $v1], $sorted);
     }
 
-    public function testSortNamespaceNameGroupByNamespaceThenSeverityThenLine(): void
+    #[Test]
+    public function itSortsNamespaceNameGroupByNamespaceThenSeverityThenLine(): void
     {
         $v1 = $this->violationWithSymbol('a.php', 5, Severity::Warning, 'complexity', 'App\Service', 'Foo');
         $v2 = $this->violationWithSymbol('b.php', 1, Severity::Error, 'complexity', 'App\Model', 'Bar');
@@ -122,7 +132,8 @@ final class ViolationSorterTest extends TestCase
         self::assertSame([$v3, $v2, $v1], $sorted);
     }
 
-    public function testGroupByClassName(): void
+    #[Test]
+    public function itGroupsByClassName(): void
     {
         $v1 = $this->violationWithSymbol('a.php', 1, Severity::Error, 'complexity', 'App', 'ClassA');
         $v2 = $this->violationWithSymbol('a.php', 5, Severity::Warning, 'complexity', 'App', 'ClassA');
@@ -137,7 +148,8 @@ final class ViolationSorterTest extends TestCase
         self::assertSame([$v3], $groups['App\ClassB']);
     }
 
-    public function testGroupByClassNameFallsBackToFileForNamespaceLevelViolation(): void
+    #[Test]
+    public function itGroupsByClassNameFallingBackToFileForNamespaceLevelViolation(): void
     {
         $v1 = new Violation(
             location: new Location('src/Service.php', 1),
@@ -154,7 +166,8 @@ final class ViolationSorterTest extends TestCase
         self::assertArrayHasKey('src/Service.php', $groups);
     }
 
-    public function testGroupByNamespaceName(): void
+    #[Test]
+    public function itGroupsByNamespaceName(): void
     {
         $v1 = $this->violationWithSymbol('a.php', 1, Severity::Error, 'complexity', 'App\Service', 'Foo');
         $v2 = $this->violationWithSymbol('b.php', 2, Severity::Warning, 'complexity', 'App\Service', 'Bar');
@@ -169,7 +182,8 @@ final class ViolationSorterTest extends TestCase
         self::assertSame([$v3], $groups['App\Model']);
     }
 
-    public function testGroupByNamespaceNameUsesGlobalForEmptyNamespace(): void
+    #[Test]
+    public function itGroupsByNamespaceNameUsingGlobalForEmptyNamespace(): void
     {
         $v1 = new Violation(
             location: new Location('a.php', 1),

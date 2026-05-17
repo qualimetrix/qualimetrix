@@ -13,7 +13,7 @@ use Qualimetrix\Metrics\Structure\LcomClassData;
 final class LcomClassDataTest extends TestCase
 {
     #[Test]
-    public function testCalculateLcomWithExcludedMethods(): void
+    public function itCalculatesLcomWithExcludedMethods(): void
     {
         $classData = new LcomClassData(namespace: 'App', className: 'Service');
 
@@ -42,7 +42,7 @@ final class LcomClassDataTest extends TestCase
     }
 
     #[Test]
-    public function testCalculateLcomExcludeNonexistentMethod(): void
+    public function itCalculatesLcomWhenExcludingNonexistentMethod(): void
     {
         $classData = new LcomClassData(namespace: 'App', className: 'Service');
 
@@ -61,7 +61,7 @@ final class LcomClassDataTest extends TestCase
     }
 
     #[Test]
-    public function testCalculateLcomExcludeAllMethods(): void
+    public function itCalculatesLcomWhenExcludingAllMethods(): void
     {
         $classData = new LcomClassData(namespace: 'App', className: 'Service');
 

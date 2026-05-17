@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\Logging;
 
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
 use Qualimetrix\Infrastructure\Logging\DelegatingLogger;
@@ -12,7 +13,8 @@ use Stringable;
 
 final class DelegatingLoggerTest extends TestCase
 {
-    public function testDelegatesToLoggerInHolder(): void
+    #[Test]
+    public function itDelegatesToLoggerInHolder(): void
     {
         $holder = new LoggerHolder();
         $testLogger = new InMemoryLogger();
@@ -27,7 +29,8 @@ final class DelegatingLoggerTest extends TestCase
         self::assertSame('Test message', $testLogger->records[0]['message']);
     }
 
-    public function testDelegatesToMultipleLogLevels(): void
+    #[Test]
+    public function itDelegatesToMultipleLogLevels(): void
     {
         $holder = new LoggerHolder();
         $testLogger = new InMemoryLogger();
@@ -47,7 +50,8 @@ final class DelegatingLoggerTest extends TestCase
         self::assertSame('error', $testLogger->records[3]['level']);
     }
 
-    public function testDelegatesToContextData(): void
+    #[Test]
+    public function itDelegatesToContextData(): void
     {
         $holder = new LoggerHolder();
         $testLogger = new InMemoryLogger();
@@ -61,7 +65,8 @@ final class DelegatingLoggerTest extends TestCase
         self::assertSame(['key' => 'value', 'count' => 42], $testLogger->records[0]['context']);
     }
 
-    public function testReactsToDynamicLoggerChange(): void
+    #[Test]
+    public function itReactsToDynamicLoggerChange(): void
     {
         $holder = new LoggerHolder();
         $firstLogger = new InMemoryLogger();
@@ -84,7 +89,8 @@ final class DelegatingLoggerTest extends TestCase
         self::assertSame('Second message', $secondLogger->records[0]['message']);
     }
 
-    public function testDelegatesToNullLoggerInitially(): void
+    #[Test]
+    public function itDelegatesToNullLoggerInitially(): void
     {
         $holder = new LoggerHolder(); // Contains NullLogger by default
         $delegating = new DelegatingLogger($holder);
@@ -97,7 +103,8 @@ final class DelegatingLoggerTest extends TestCase
         self::expectNotToPerformAssertions();
     }
 
-    public function testSupportsStringableMessages(): void
+    #[Test]
+    public function itSupportsStringableMessages(): void
     {
         $holder = new LoggerHolder();
         $testLogger = new InMemoryLogger();
@@ -118,7 +125,8 @@ final class DelegatingLoggerTest extends TestCase
         self::assertSame('Stringable message', $testLogger->records[0]['message']);
     }
 
-    public function testSupportsAllPsrLogLevels(): void
+    #[Test]
+    public function itSupportsAllPsrLogLevels(): void
     {
         $holder = new LoggerHolder();
         $testLogger = new InMemoryLogger();

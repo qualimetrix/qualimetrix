@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Metrics\Structure;
 use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\MetricBag;
@@ -27,19 +28,22 @@ final class InheritanceDepthCollectorTest extends TestCase
         $this->collector = new InheritanceDepthCollector();
     }
 
-    public function testGetName(): void
+    #[Test]
+    public function itGetsName(): void
     {
         self::assertSame('inheritance-depth', $this->collector->getName());
     }
 
-    public function testProvides(): void
+    #[Test]
+    public function itProvides(): void
     {
         $provides = $this->collector->provides();
 
         self::assertContains('dit', $provides);
     }
 
-    public function testClassWithNoParent(): void
+    #[Test]
+    public function itReturnsZeroForClassWithNoParent(): void
     {
         $code = <<<'PHP'
 <?php
@@ -56,7 +60,8 @@ PHP;
         self::assertSame(0, $metrics->get('dit:App\NoParent'));
     }
 
-    public function testClassExtendsStandardException(): void
+    #[Test]
+    public function itCountsDitForClassExtendingStandardException(): void
     {
         $code = <<<'PHP'
 <?php
@@ -74,7 +79,8 @@ PHP;
         self::assertSame(1, $metrics->get('dit:App\MyException'));
     }
 
-    public function testClassExtendsStdClass(): void
+    #[Test]
+    public function itCountsDitForClassExtendingStdClass(): void
     {
         $code = <<<'PHP'
 <?php
@@ -91,7 +97,8 @@ PHP;
         self::assertSame(1, $metrics->get('dit:App\MyClass'));
     }
 
-    public function testSingleLevelInheritanceInSameFile(): void
+    #[Test]
+    public function itCountsSingleLevelInheritanceInSameFile(): void
     {
         $code = <<<'PHP'
 <?php
@@ -113,7 +120,8 @@ PHP;
         self::assertSame(1, $metrics->get('dit:App\Child'));
     }
 
-    public function testTwoLevelInheritanceInSameFile(): void
+    #[Test]
+    public function itCountsTwoLevelInheritanceInSameFile(): void
     {
         $code = <<<'PHP'
 <?php
@@ -140,7 +148,8 @@ PHP;
         self::assertSame(2, $metrics->get('dit:App\Child'));
     }
 
-    public function testThreeLevelInheritance(): void
+    #[Test]
+    public function itCountsThreeLevelInheritance(): void
     {
         $code = <<<'PHP'
 <?php
@@ -161,7 +170,8 @@ PHP;
         self::assertSame(3, $metrics->get('dit:App\D'));
     }
 
-    public function testClassExtendsRuntimeException(): void
+    #[Test]
+    public function itCountsDitForClassExtendingRuntimeException(): void
     {
         $code = <<<'PHP'
 <?php
@@ -179,7 +189,8 @@ PHP;
         self::assertSame(1, $metrics->get('dit:App\MyRuntimeException'));
     }
 
-    public function testMultipleBranches(): void
+    #[Test]
+    public function itCountsDitForMultipleBranches(): void
     {
         $code = <<<'PHP'
 <?php
@@ -204,7 +215,8 @@ PHP;
         self::assertSame(2, $metrics->get('dit:App\LeafB'));
     }
 
-    public function testClassWithoutNamespace(): void
+    #[Test]
+    public function itHandlesClassWithoutNamespace(): void
     {
         $code = <<<'PHP'
 <?php
@@ -219,7 +231,8 @@ PHP;
         self::assertSame(1, $metrics->get('dit:GlobalChild'));
     }
 
-    public function testAnonymousClassIgnored(): void
+    #[Test]
+    public function itIgnoresAnonymousClass(): void
     {
         $code = <<<'PHP'
 <?php
@@ -241,7 +254,8 @@ PHP;
         self::assertSame(0, $metrics->get('dit:App\Factory'));
     }
 
-    public function testReset(): void
+    #[Test]
+    public function itResetsState(): void
     {
         $code1 = <<<'PHP'
 <?php
@@ -273,7 +287,8 @@ PHP;
         self::assertSame(0, $metrics->get('dit:App\Second'));
     }
 
-    public function testGetMetricDefinitions(): void
+    #[Test]
+    public function itGetsMetricDefinitions(): void
     {
         $definitions = $this->collector->getMetricDefinitions();
 
@@ -294,7 +309,8 @@ PHP;
         self::assertContains(AggregationStrategy::Percentile95, $projectStrategies);
     }
 
-    public function testExtendsExternalClass(): void
+    #[Test]
+    public function itCountsDitForClassExtendingExternalClass(): void
     {
         // This extends a real PHPUnit class
         $code = <<<'PHP'
@@ -316,7 +332,8 @@ PHP;
         self::assertGreaterThanOrEqual(1, $dit);
     }
 
-    public function testClassWithFullyQualifiedExtends(): void
+    #[Test]
+    public function itHandlesFullyQualifiedExtends(): void
     {
         $code = <<<'PHP'
 <?php
@@ -338,7 +355,8 @@ PHP;
         self::assertSame(1, $metrics->get('dit:App\MyRuntimeException'));
     }
 
-    public function testRelativeExtends(): void
+    #[Test]
+    public function itHandlesRelativeExtends(): void
     {
         $code = <<<'PHP'
 <?php
@@ -356,7 +374,8 @@ PHP;
         self::assertSame(1, $metrics->get('dit:App\Child'));
     }
 
-    public function testDateTimeClasses(): void
+    #[Test]
+    public function itCountsDitForDateTimeClasses(): void
     {
         $code = <<<'PHP'
 <?php
@@ -373,7 +392,8 @@ PHP;
         self::assertSame(1, $metrics->get('dit:App\MyDateTimeImmutable'));
     }
 
-    public function testSplClasses(): void
+    #[Test]
+    public function itCountsDitForSplClasses(): void
     {
         $code = <<<'PHP'
 <?php
@@ -390,7 +410,8 @@ PHP;
         self::assertSame(1, $metrics->get('dit:App\MyIterator'));
     }
 
-    public function testClassExtendsSplStack(): void
+    #[Test]
+    public function itCountsDitForClassExtendingSplStack(): void
     {
         $code = <<<'PHP'
 <?php
@@ -408,7 +429,8 @@ PHP;
         self::assertSame(1, $metrics->get('dit:App\MyStack'));
     }
 
-    public function testReflectionDitCountsStandardPhpClassInChain(): void
+    #[Test]
+    public function itCountsStandardPhpClassInReflectionDitChain(): void
     {
         // DitTestCustomException is defined at the bottom of this file.
         // It extends \RuntimeException (a standard PHP class).
@@ -443,7 +465,8 @@ PHP;
         self::assertSame(2, $dit, 'DIT should count standard PHP class in external chain');
     }
 
-    public function testNamespacedExceptionIsNotStandardPhpClass(): void
+    #[Test]
+    public function itDoesNotTreatNamespacedExceptionAsStandardPhpClass(): void
     {
         // Bug 9: App\Exception should NOT match standard Exception
         $code = <<<'PHP'
@@ -468,7 +491,8 @@ PHP;
         self::assertSame(1, $metrics->get('dit:App\MyException'));
     }
 
-    public function testNamespacedErrorIsNotStandardPhpClass(): void
+    #[Test]
+    public function itDoesNotTreatNamespacedErrorAsStandardPhpClass(): void
     {
         // App\Error should NOT match standard Error
         $code = <<<'PHP'
@@ -491,7 +515,8 @@ PHP;
         self::assertSame(1, $metrics->get('dit:App\Domain\MyError'));
     }
 
-    public function testUnqualifiedExceptionIsStandardPhpClass(): void
+    #[Test]
+    public function itTreatsUnqualifiedExceptionAsStandardPhpClass(): void
     {
         // Unqualified "Exception" (no namespace) IS a standard PHP class
         $code = <<<'PHP'

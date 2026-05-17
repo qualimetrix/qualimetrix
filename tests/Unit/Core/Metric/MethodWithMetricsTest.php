@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Core\Metric;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MethodWithMetrics;
 use Qualimetrix\Core\Metric\MetricBag;
@@ -12,7 +13,8 @@ use Qualimetrix\Core\Metric\MetricBag;
 #[CoversClass(MethodWithMetrics::class)]
 final class MethodWithMetricsTest extends TestCase
 {
-    public function testGetSymbolPathForClassMethod(): void
+    #[Test]
+    public function itGetSymbolPathForClassMethod(): void
     {
         $metrics = (new MetricBag())->with('ccn', 5);
 
@@ -30,7 +32,8 @@ final class MethodWithMetricsTest extends TestCase
         self::assertSame('method:App\\Service\\UserService::calculate', $symbolPath->toCanonical());
     }
 
-    public function testGetSymbolPathForGlobalFunction(): void
+    #[Test]
+    public function itGetSymbolPathForGlobalFunction(): void
     {
         $metrics = (new MetricBag())->with('ccn', 2);
 
@@ -48,7 +51,8 @@ final class MethodWithMetricsTest extends TestCase
         self::assertSame('func:App\\Utils::helper', $symbolPath->toCanonical());
     }
 
-    public function testGetSymbolPathForGlobalFunctionWithoutNamespace(): void
+    #[Test]
+    public function itGetSymbolPathForGlobalFunctionWithoutNamespace(): void
     {
         $metrics = (new MetricBag())->with('ccn', 1);
 
@@ -66,7 +70,8 @@ final class MethodWithMetricsTest extends TestCase
         self::assertSame('func::globalHelper', $symbolPath->toCanonical());
     }
 
-    public function testGetSymbolPathReturnsNullForClosure(): void
+    #[Test]
+    public function itGetSymbolPathReturnsNullForClosure(): void
     {
         $metrics = (new MetricBag())->with('ccn', 3);
 
@@ -81,7 +86,8 @@ final class MethodWithMetricsTest extends TestCase
         self::assertNull($method->getSymbolPath());
     }
 
-    public function testGetSymbolPathReturnsNullForClosureWithDifferentFormat(): void
+    #[Test]
+    public function itGetSymbolPathReturnsNullForClosureWithDifferentFormat(): void
     {
         $metrics = new MetricBag();
 
@@ -96,7 +102,8 @@ final class MethodWithMetricsTest extends TestCase
         self::assertNull($method->getSymbolPath());
     }
 
-    public function testPropertiesAreAccessible(): void
+    #[Test]
+    public function itPropertiesAreAccessible(): void
     {
         $metrics = (new MetricBag())->with('ccn', 7);
 

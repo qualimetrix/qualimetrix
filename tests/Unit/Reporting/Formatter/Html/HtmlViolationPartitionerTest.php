@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Reporting\Formatter\Html;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
@@ -26,7 +27,8 @@ final class HtmlViolationPartitionerTest extends TestCase
 
     // --- partition() tests ---
 
-    public function testPartitionNoViolations(): void
+    #[Test]
+    public function itPartitionsEmptyViolationsList(): void
     {
         $node = new HtmlTreeNode('Service', 'App\\Service', 'class');
 
@@ -35,7 +37,8 @@ final class HtmlViolationPartitionerTest extends TestCase
         self::assertSame([], $result);
     }
 
-    public function testPartitionClassViolationAttachedToClass(): void
+    #[Test]
+    public function itAttachesClassViolationToClassNode(): void
     {
         $node = new HtmlTreeNode('Service', 'App\\Service', 'class');
 
@@ -55,7 +58,8 @@ final class HtmlViolationPartitionerTest extends TestCase
         self::assertSame([$violation], $result['App\\Service']);
     }
 
-    public function testPartitionMethodViolationAttachedToParentClass(): void
+    #[Test]
+    public function itAttachesMethodViolationToParentClassNode(): void
     {
         $classNode = new HtmlTreeNode('Service', 'App\\Service', 'class');
 
@@ -75,7 +79,8 @@ final class HtmlViolationPartitionerTest extends TestCase
         self::assertSame([$violation], $result['App\\Service']);
     }
 
-    public function testPartitionNamespaceViolation(): void
+    #[Test]
+    public function itPartitionsNamespaceViolation(): void
     {
         $nsNode = new HtmlTreeNode('App\\Service', 'App\\Service', 'namespace');
 
@@ -94,7 +99,8 @@ final class HtmlViolationPartitionerTest extends TestCase
         self::assertArrayHasKey('App\\Service', $result);
     }
 
-    public function testPartitionFileViolationSkipped(): void
+    #[Test]
+    public function itSkipsFileViolationDuringPartition(): void
     {
         $classNode = new HtmlTreeNode('Service', 'App\\Service', 'class');
 
@@ -112,7 +118,8 @@ final class HtmlViolationPartitionerTest extends TestCase
         self::assertSame([], $result);
     }
 
-    public function testPartitionMethodFallsBackToNamespaceWhenClassMissing(): void
+    #[Test]
+    public function itFallsBackToNamespaceNodeForMethodWhenClassNodeMissing(): void
     {
         $nsNode = new HtmlTreeNode('App', 'App', 'namespace');
 
@@ -133,7 +140,8 @@ final class HtmlViolationPartitionerTest extends TestCase
         self::assertSame([$violation], $result['App']);
     }
 
-    public function testPartitionClassFallsBackToNamespaceWhenClassNodeMissing(): void
+    #[Test]
+    public function itFallsBackToNamespaceNodeForClassWhenClassNodeMissing(): void
     {
         $nsNode = new HtmlTreeNode('App', 'App', 'namespace');
 
@@ -152,7 +160,8 @@ final class HtmlViolationPartitionerTest extends TestCase
         self::assertArrayHasKey('App', $result);
     }
 
-    public function testPartitionMethodDroppedWhenNoClassAndNoNamespaceNode(): void
+    #[Test]
+    public function itDropsMethodViolationWhenNoClassAndNoNamespaceNode(): void
     {
         $violation = new Violation(
             location: new Location('src/Service.php', 10),
@@ -168,7 +177,8 @@ final class HtmlViolationPartitionerTest extends TestCase
         self::assertSame([], $result);
     }
 
-    public function testPartitionMultipleFilesAndTypes(): void
+    #[Test]
+    public function itPartitionsViolationsAcrossMultipleFilesAndTypes(): void
     {
         $classA = new HtmlTreeNode('ClassA', 'App\\A\\ClassA', 'class');
         $classB = new HtmlTreeNode('ClassB', 'App\\B\\ClassB', 'class');
@@ -212,7 +222,8 @@ final class HtmlViolationPartitionerTest extends TestCase
 
     // --- attach() tests ---
 
-    public function testAttachNoViolations(): void
+    #[Test]
+    public function itAttachesNothingWhenNoViolations(): void
     {
         $node = new HtmlTreeNode('Service', 'App\\Service', 'class');
 
@@ -225,7 +236,8 @@ final class HtmlViolationPartitionerTest extends TestCase
         self::assertSame([], $node->violations);
     }
 
-    public function testAttachFormatsViolationData(): void
+    #[Test]
+    public function itFormatsViolationDataOnAttach(): void
     {
         $node = new HtmlTreeNode('Service', 'App\\Service', 'class');
 
@@ -259,7 +271,8 @@ final class HtmlViolationPartitionerTest extends TestCase
         self::assertSame(10, $v['line']);
     }
 
-    public function testAttachNanAndInfMetricValuesNulled(): void
+    #[Test]
+    public function itNullsNanAndInfMetricValuesOnAttach(): void
     {
         $node = new HtmlTreeNode('Service', 'App\\Service', 'class');
 
@@ -294,7 +307,8 @@ final class HtmlViolationPartitionerTest extends TestCase
         self::assertNull($node->violations[1]['metricValue']);
     }
 
-    public function testAttachSkipsUnknownNodePaths(): void
+    #[Test]
+    public function itSkipsUnknownNodePathsOnAttach(): void
     {
         $node = new HtmlTreeNode('Service', 'App\\Service', 'class');
 
@@ -316,7 +330,8 @@ final class HtmlViolationPartitionerTest extends TestCase
         self::assertSame([], $node->violations);
     }
 
-    public function testAttachLocationNoneProducesEmptyFile(): void
+    #[Test]
+    public function itProducesEmptyFileWhenAttachingLocationNone(): void
     {
         $node = new HtmlTreeNode('NS', 'App', 'namespace');
 

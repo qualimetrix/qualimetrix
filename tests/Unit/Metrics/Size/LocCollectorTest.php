@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Metrics\Size;
 use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\SymbolLevel;
@@ -44,17 +45,20 @@ final class LocCollectorTest extends TestCase
         }
     }
 
-    public function testGetName(): void
+    #[Test]
+    public function itGetsName(): void
     {
         self::assertSame('loc', $this->collector->getName());
     }
 
-    public function testProvides(): void
+    #[Test]
+    public function itProvides(): void
     {
         self::assertSame(['loc', 'lloc', 'cloc', 'classLoc'], $this->collector->provides());
     }
 
-    public function testEmptyFile(): void
+    #[Test]
+    public function itHandlesEmptyFile(): void
     {
         $metrics = $this->collectMetrics('');
 
@@ -63,7 +67,8 @@ final class LocCollectorTest extends TestCase
         self::assertSame(0, $metrics->get('cloc'));
     }
 
-    public function testSingleLine(): void
+    #[Test]
+    public function itCountsSingleLine(): void
     {
         $code = '<?php echo "hello";';
 
@@ -74,7 +79,8 @@ final class LocCollectorTest extends TestCase
         self::assertSame(0, $metrics->get('cloc'));
     }
 
-    public function testMultipleLines(): void
+    #[Test]
+    public function itCountsMultipleLines(): void
     {
         $code = <<<'PHP'
 <?php
@@ -99,7 +105,8 @@ PHP;
         self::assertSame(0, $metrics->get('cloc'));
     }
 
-    public function testWithSingleLineComment(): void
+    #[Test]
+    public function itCountsSingleLineComment(): void
     {
         $code = <<<'PHP'
 <?php
@@ -119,7 +126,8 @@ PHP;
         self::assertSame(2, $metrics->get('lloc'));
     }
 
-    public function testWithMultiLineComment(): void
+    #[Test]
+    public function itCountsMultiLineComment(): void
     {
         $code = <<<'PHP'
 <?php
@@ -142,7 +150,8 @@ PHP;
         self::assertSame(2, $metrics->get('lloc'));
     }
 
-    public function testWithDocBlock(): void
+    #[Test]
+    public function itCountsDocBlock(): void
     {
         $code = <<<'PHP'
 <?php
@@ -168,7 +177,8 @@ PHP;
         self::assertSame(7, $metrics->get('cloc'));
     }
 
-    public function testWithHashComment(): void
+    #[Test]
+    public function itCountsHashComment(): void
     {
         $code = <<<'PHP'
 <?php
@@ -185,7 +195,8 @@ PHP;
         self::assertSame(1, $metrics->get('cloc'));
     }
 
-    public function testWithInlineComment(): void
+    #[Test]
+    public function itHandlesInlineComment(): void
     {
         $code = <<<'PHP'
 <?php
@@ -203,7 +214,8 @@ PHP;
         self::assertSame(2, $metrics->get('lloc'));
     }
 
-    public function testInlineCommentDoesNotReduceLloc(): void
+    #[Test]
+    public function itDoesNotReduceLlocForInlineComment(): void
     {
         $code = <<<'PHP'
 <?php
@@ -224,7 +236,8 @@ PHP;
         self::assertSame(4, $metrics->get('lloc'));
     }
 
-    public function testMixedCommentStyles(): void
+    #[Test]
+    public function itCountsMixedCommentStyles(): void
     {
         $code = <<<'PHP'
 <?php
@@ -246,7 +259,8 @@ PHP;
         self::assertSame(6, $metrics->get('cloc'));
     }
 
-    public function testOnlyEmptyLines(): void
+    #[Test]
+    public function itHandlesOnlyEmptyLines(): void
     {
         $code = "\n\n\n";
 
@@ -259,7 +273,8 @@ PHP;
         self::assertSame(0, $metrics->get('cloc'));
     }
 
-    public function testOnlyComments(): void
+    #[Test]
+    public function itHandlesOnlyComments(): void
     {
         $code = <<<'PHP'
 <?php
@@ -278,7 +293,8 @@ PHP;
         self::assertSame(1, $metrics->get('lloc'));
     }
 
-    public function testComplexFile(): void
+    #[Test]
+    public function itCountsComplexFile(): void
     {
         $code = <<<'PHP'
 <?php
@@ -321,7 +337,8 @@ PHP;
         self::assertSame(10, $metrics->get('cloc'));
     }
 
-    public function testReset(): void
+    #[Test]
+    public function itResetsState(): void
     {
         // LocCollector doesn't have state to reset, but we test it doesn't break
         $this->collector->reset();
@@ -333,7 +350,8 @@ PHP;
         self::assertSame(1, $metrics->get('loc'));
     }
 
-    public function testWhitespaceOnlyLines(): void
+    #[Test]
+    public function itHandlesWhitespaceOnlyLines(): void
     {
         $code = "<?php\n   \n\t\nclass Test {}";
 
@@ -347,7 +365,8 @@ PHP;
         self::assertSame(0, $metrics->get('cloc'));
     }
 
-    public function testTrailingNewline(): void
+    #[Test]
+    public function itHandlesTrailingNewline(): void
     {
         $code = "<?php\nclass Test {}\n";
 
@@ -360,7 +379,8 @@ PHP;
         self::assertSame(2, $metrics->get('lloc'));
     }
 
-    public function testGetMetricDefinitions(): void
+    #[Test]
+    public function itGetsMetricDefinitions(): void
     {
         $definitions = $this->collector->getMetricDefinitions();
 
@@ -399,7 +419,8 @@ PHP;
         self::assertContains(AggregationStrategy::Percentile95, $namespaceStrategies);
     }
 
-    public function testClassLocSingleClass(): void
+    #[Test]
+    public function itMeasuresClassLocForSingleClass(): void
     {
         $code = <<<'PHP'
 <?php
@@ -424,7 +445,8 @@ PHP;
         self::assertSame(12, $metrics->get('classLoc:App\Service\UserService'));
     }
 
-    public function testClassLocMultipleClasses(): void
+    #[Test]
+    public function itMeasuresClassLocForMultipleClasses(): void
     {
         $code = <<<'PHP'
 <?php
@@ -446,7 +468,8 @@ PHP;
         self::assertNotNull($metrics->get('classLoc:App\Baz'));
     }
 
-    public function testClassLocAnonymousClassSkipped(): void
+    #[Test]
+    public function itSkipsAnonymousClassForClassLoc(): void
     {
         $code = <<<'PHP'
 <?php
@@ -460,7 +483,8 @@ PHP;
         self::assertNull($metrics->get('classLoc:'));
     }
 
-    public function testClassLocNoNamespace(): void
+    #[Test]
+    public function itMeasuresClassLocWithoutNamespace(): void
     {
         $code = <<<'PHP'
 <?php
@@ -474,7 +498,8 @@ PHP;
         self::assertNotNull($metrics->get('classLoc:GlobalClass'));
     }
 
-    public function testGetClassesWithMetrics(): void
+    #[Test]
+    public function itGetsClassesWithMetrics(): void
     {
         $code = <<<'PHP'
 <?php
@@ -495,7 +520,8 @@ PHP;
         self::assertNotNull($classes[0]->metrics->get('classLoc'));
     }
 
-    public function testGetClassesWithMetricsNoNamespace(): void
+    #[Test]
+    public function itGetsClassesWithMetricsWithoutNamespace(): void
     {
         $code = <<<'PHP'
 <?php

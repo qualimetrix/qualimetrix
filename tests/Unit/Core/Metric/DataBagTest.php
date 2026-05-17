@@ -5,13 +5,15 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Core\Metric;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\DataBag;
 
 #[CoversClass(DataBag::class)]
 final class DataBagTest extends TestCase
 {
-    public function testEmptyBag(): void
+    #[Test]
+    public function itEmptyBag(): void
     {
         $bag = DataBag::empty();
 
@@ -22,7 +24,8 @@ final class DataBagTest extends TestCase
         self::assertFalse($bag->has('nonexistent'));
     }
 
-    public function testAddEntry(): void
+    #[Test]
+    public function itAddEntry(): void
     {
         $bag = DataBag::empty()
             ->add('findings', ['line' => 10, 'type' => 'error']);
@@ -33,7 +36,8 @@ final class DataBagTest extends TestCase
         self::assertSame([['line' => 10, 'type' => 'error']], $bag->get('findings'));
     }
 
-    public function testAddMultipleEntriesSameKey(): void
+    #[Test]
+    public function itAddMultipleEntriesSameKey(): void
     {
         $bag = DataBag::empty()
             ->add('findings', ['line' => 10])
@@ -43,7 +47,8 @@ final class DataBagTest extends TestCase
         self::assertSame(3, $bag->count('findings'));
     }
 
-    public function testAddMultipleEntriesDifferentKeys(): void
+    #[Test]
+    public function itAddMultipleEntriesDifferentKeys(): void
     {
         $bag = DataBag::empty()
             ->add('errors', ['line' => 10])
@@ -55,7 +60,8 @@ final class DataBagTest extends TestCase
         self::assertSame(1, $bag->count('warnings'));
     }
 
-    public function testImmutability(): void
+    #[Test]
+    public function itImmutability(): void
     {
         $original = DataBag::empty();
         $modified = $original->add('key', ['line' => 1]);
@@ -64,7 +70,8 @@ final class DataBagTest extends TestCase
         self::assertFalse($modified->isEmpty());
     }
 
-    public function testFromArray(): void
+    #[Test]
+    public function itFromArray(): void
     {
         $entries = [
             'findings' => [
@@ -86,7 +93,8 @@ final class DataBagTest extends TestCase
 
     // --- merge ---
 
-    public function testMergeEmptyBags(): void
+    #[Test]
+    public function itMergeEmptyBags(): void
     {
         $bag1 = DataBag::empty();
         $bag2 = DataBag::empty();
@@ -96,7 +104,8 @@ final class DataBagTest extends TestCase
         self::assertTrue($merged->isEmpty());
     }
 
-    public function testMergeWithEmptyReturnsSelf(): void
+    #[Test]
+    public function itMergeWithEmptyReturnsSelf(): void
     {
         $bag = DataBag::empty()->add('key', ['line' => 1]);
         $empty = DataBag::empty();
@@ -104,7 +113,8 @@ final class DataBagTest extends TestCase
         self::assertSame($bag, $bag->merge($empty));
     }
 
-    public function testMergeEmptyWithNonEmptyReturnsOther(): void
+    #[Test]
+    public function itMergeEmptyWithNonEmptyReturnsOther(): void
     {
         $empty = DataBag::empty();
         $bag = DataBag::empty()->add('key', ['line' => 1]);
@@ -112,7 +122,8 @@ final class DataBagTest extends TestCase
         self::assertSame($bag, $empty->merge($bag));
     }
 
-    public function testMergeDisjointKeys(): void
+    #[Test]
+    public function itMergeDisjointKeys(): void
     {
         $bag1 = DataBag::empty()->add('a', ['line' => 1]);
         $bag2 = DataBag::empty()->add('b', ['line' => 2]);
@@ -123,7 +134,8 @@ final class DataBagTest extends TestCase
         self::assertTrue($merged->has('b'));
     }
 
-    public function testMergeOverlappingKeysConcatenates(): void
+    #[Test]
+    public function itMergeOverlappingKeysConcatenates(): void
     {
         $bag1 = DataBag::empty()->add('findings', ['line' => 10]);
         $bag2 = DataBag::empty()->add('findings', ['line' => 20]);
@@ -133,7 +145,8 @@ final class DataBagTest extends TestCase
         self::assertSame(2, $merged->count('findings'));
     }
 
-    public function testMergeDoesNotModifyOriginals(): void
+    #[Test]
+    public function itMergeDoesNotModifyOriginals(): void
     {
         $bag1 = DataBag::empty()->add('a', ['line' => 1]);
         $bag2 = DataBag::empty()->add('a', ['line' => 2]);
@@ -146,7 +159,8 @@ final class DataBagTest extends TestCase
 
     // --- has edge case ---
 
-    public function testHasReturnsFalseForEmptyList(): void
+    #[Test]
+    public function itHasReturnsFalseForEmptyList(): void
     {
         // fromArray with empty list for a key
         $bag = DataBag::fromArray(['key' => []]);

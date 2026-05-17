@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Metrics\Structure;
 use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\MetricBag;
@@ -28,12 +29,14 @@ final class TccLccCollectorTest extends TestCase
         $this->collector = new TccLccCollector();
     }
 
-    public function testGetName(): void
+    #[Test]
+    public function itReturnsCollectorName(): void
     {
         self::assertSame('tcc_lcc', $this->collector->getName());
     }
 
-    public function testProvides(): void
+    #[Test]
+    public function itProvidesExpectedMetricNames(): void
     {
         $provides = $this->collector->provides();
 
@@ -43,7 +46,8 @@ final class TccLccCollectorTest extends TestCase
         self::assertContains('pureMethodCount_cohesion', $provides);
     }
 
-    public function testEmptyClass(): void
+    #[Test]
+    public function itDoesNotEmitTccLccForEmptyClass(): void
     {
         $code = <<<'PHP'
 <?php
@@ -62,7 +66,8 @@ PHP;
         self::assertNull($metrics->get('lcc:App\EmptyClass'));
     }
 
-    public function testClassWithSinglePublicMethod(): void
+    #[Test]
+    public function itDoesNotEmitTccLccForSinglePublicMethod(): void
     {
         $code = <<<'PHP'
 <?php
@@ -87,7 +92,8 @@ PHP;
         self::assertNull($metrics->get('lcc:App\SingleMethod'));
     }
 
-    public function testPerfectlyCohesiveClass(): void
+    #[Test]
+    public function itReturnsPerfectTccLccForFullySharedProperty(): void
     {
         $code = <<<'PHP'
 <?php
@@ -123,7 +129,8 @@ PHP;
         self::assertSame(1.0, $metrics->get('lcc:App\CohesiveClass'));
     }
 
-    public function testNoCohesion(): void
+    #[Test]
+    public function itReturnsZeroTccLccWhenNoSharedProperties(): void
     {
         $code = <<<'PHP'
 <?php
@@ -161,7 +168,8 @@ PHP;
         self::assertSame(0.0, $metrics->get('lcc:App\GodClass'));
     }
 
-    public function testTransitiveClosure(): void
+    #[Test]
+    public function itComputesLccViaTransitiveClosure(): void
     {
         $code = <<<'PHP'
 <?php
@@ -202,7 +210,8 @@ PHP;
         self::assertSame(1.0, $metrics->get('lcc:App\TransitiveExample'));
     }
 
-    public function testIgnoresPrivateMethods(): void
+    #[Test]
+    public function itIgnoresPrivateMethodsInTccLcc(): void
     {
         $code = <<<'PHP'
 <?php
@@ -239,7 +248,8 @@ PHP;
         self::assertSame(1.0, $metrics->get('lcc:App\WithPrivateMethods'));
     }
 
-    public function testIgnoresProtectedMethods(): void
+    #[Test]
+    public function itIgnoresProtectedMethodsInTccLcc(): void
     {
         $code = <<<'PHP'
 <?php
@@ -277,7 +287,8 @@ PHP;
         self::assertSame(0.0, $metrics->get('lcc:App\WithProtectedMethods'));
     }
 
-    public function testIgnoresAbstractMethods(): void
+    #[Test]
+    public function itIgnoresAbstractMethodsInTccLcc(): void
     {
         $code = <<<'PHP'
 <?php
@@ -311,7 +322,8 @@ PHP;
         self::assertSame(1.0, $metrics->get('lcc:App\AbstractClass'));
     }
 
-    public function testInterface(): void
+    #[Test]
+    public function itSkipsInterfacesForTccLcc(): void
     {
         $code = <<<'PHP'
 <?php
@@ -332,7 +344,8 @@ PHP;
         self::assertNull($metrics->get('lcc:App\MyInterface'));
     }
 
-    public function testAnonymousClassIgnored(): void
+    #[Test]
+    public function itIgnoresAnonymousClassesInTccLcc(): void
     {
         $code = <<<'PHP'
 <?php
@@ -365,7 +378,8 @@ PHP;
         self::assertNull($metrics->get('lcc:'));
     }
 
-    public function testClassWithoutNamespace(): void
+    #[Test]
+    public function itHandlesClassWithoutNamespace(): void
     {
         $code = <<<'PHP'
 <?php
@@ -386,7 +400,8 @@ PHP;
         self::assertSame(1.0, $metrics->get('lcc:GlobalClass'));
     }
 
-    public function testMultipleClasses(): void
+    #[Test]
+    public function itTracksMultipleClassesIndependently(): void
     {
         $code = <<<'PHP'
 <?php
@@ -419,7 +434,8 @@ PHP;
         self::assertSame(0.0, $metrics->get('lcc:App\Second'));
     }
 
-    public function testReset(): void
+    #[Test]
+    public function itClearsStateOnReset(): void
     {
         $code1 = <<<'PHP'
 <?php
@@ -459,7 +475,8 @@ PHP;
         self::assertNull($metrics->get('lcc:App\Second'));
     }
 
-    public function testGetMetricDefinitions(): void
+    #[Test]
+    public function itReturnsCorrectMetricDefinitions(): void
     {
         $definitions = $this->collector->getMetricDefinitions();
 
@@ -486,7 +503,8 @@ PHP;
         self::assertSame([], $pureDef->getStrategiesForLevel(SymbolLevel::Namespace_));
     }
 
-    public function testDynamicPropertyAccessIgnored(): void
+    #[Test]
+    public function itIgnoresDynamicPropertyAccess(): void
     {
         $code = <<<'PHP'
 <?php
@@ -517,7 +535,8 @@ PHP;
         self::assertSame(0.0, $metrics->get('lcc:App\DynamicAccess'));
     }
 
-    public function testRoundingToThreeDecimals(): void
+    #[Test]
+    public function itRoundsTccToThreeDecimals(): void
     {
         $code = <<<'PHP'
 <?php
@@ -541,7 +560,8 @@ PHP;
         self::assertSame(0.667, $metrics->get('tcc:App\RoundingTest'));
     }
 
-    public function testRealWorldRectangleExample(): void
+    #[Test]
+    public function itHandlesRealWorldRectangleExample(): void
     {
         $code = <<<'PHP'
 <?php
@@ -585,7 +605,8 @@ PHP;
         self::assertSame(1.0, $metrics->get('lcc:App\Rectangle'));
     }
 
-    public function testGetClassesWithMetrics(): void
+    #[Test]
+    public function itReturnsClassesWithComputedMetrics(): void
     {
         $code = <<<'PHP'
 <?php
@@ -630,7 +651,8 @@ PHP;
         self::assertSame(0, $class->metrics->get('pureMethodCount_cohesion'));
     }
 
-    public function testStaticMethodsExcluded(): void
+    #[Test]
+    public function itExcludesStaticMethodsFromTccLcc(): void
     {
         $code = <<<'PHP'
 <?php
@@ -666,7 +688,8 @@ PHP;
         self::assertSame(1.0, $metrics->get('lcc:App\WithStatic'));
     }
 
-    public function testStaticMethodDoesNotInflateTccLcc(): void
+    #[Test]
+    public function itPreventsStaticMethodsFromInflatingTccLcc(): void
     {
         $code = <<<'PHP'
 <?php
@@ -710,7 +733,8 @@ PHP;
         self::assertSame(0.0, $metrics->get('lcc:App\StaticInflation'));
     }
 
-    public function testOnlyStaticMethods(): void
+    #[Test]
+    public function itDoesNotEmitTccLccForAllStaticClass(): void
     {
         $code = <<<'PHP'
 <?php
@@ -731,7 +755,8 @@ PHP;
         self::assertNull($metrics->get('lcc:App\AllStatic'));
     }
 
-    public function testAllStaticUtilityClassNotEmitted(): void
+    #[Test]
+    public function itDoesNotEmitTccLccForStaticUtilityClass(): void
     {
         $code = <<<'PHP'
 <?php
@@ -754,7 +779,8 @@ PHP;
         self::assertNull($metrics->get('lcc:App\StringHelper'));
     }
 
-    public function testAnonymousClassDoesNotCorruptMethodTracking(): void
+    #[Test]
+    public function itDoesNotCorruptMethodTrackingWithAnonymousClass(): void
     {
         $code = <<<'PHP'
 <?php
@@ -790,7 +816,8 @@ PHP;
         self::assertSame(1.0, $metrics->get('lcc:App\OuterClass'));
     }
 
-    public function testConstructorExcludedFromTccLcc(): void
+    #[Test]
+    public function itExcludesConstructorFromTccLcc(): void
     {
         $code = <<<'PHP'
 <?php
@@ -830,7 +857,8 @@ PHP;
         self::assertSame(0.0, $metrics->get('lcc:App\WithConstructor'));
     }
 
-    public function testDestructorExcludedFromTccLcc(): void
+    #[Test]
+    public function itExcludesDestructorFromTccLcc(): void
     {
         $code = <<<'PHP'
 <?php
@@ -866,7 +894,8 @@ PHP;
         self::assertSame(1.0, $metrics->get('lcc:App\WithDestructor'));
     }
 
-    public function testConstructorInflationPrevented(): void
+    #[Test]
+    public function itPreventsConstructorFromInflatingTccLcc(): void
     {
         $code = <<<'PHP'
 <?php
@@ -912,7 +941,8 @@ PHP;
         self::assertSame(0.0, $metrics->get('lcc:App\InflationCheck'));
     }
 
-    public function testClassWithMethodsButNoPropertiesNotEmitted(): void
+    #[Test]
+    public function itDoesNotEmitTccLccForStatelessClass(): void
     {
         $code = <<<'PHP'
 <?php
@@ -942,7 +972,8 @@ PHP;
         self::assertNull($metrics->get('lcc:App\Stateless'));
     }
 
-    public function testClassWithStaticPropertiesOnlyNotEmitted(): void
+    #[Test]
+    public function itDoesNotEmitTccLccForClassWithOnlyStaticProperties(): void
     {
         $code = <<<'PHP'
 <?php
@@ -975,7 +1006,8 @@ PHP;
         self::assertNull($metrics->get('lcc:App\Registry'));
     }
 
-    public function testEnumExcludedFromTccLcc(): void
+    #[Test]
+    public function itExcludesEnumsFromTccLcc(): void
     {
         $code = <<<'PHP'
 <?php
@@ -1010,7 +1042,8 @@ PHP;
         self::assertNull($metrics->get('lcc:App\Status'));
     }
 
-    public function testEnumWithMethodsNotTracked(): void
+    #[Test]
+    public function itDoesNotTrackEnumMethods(): void
     {
         $code = <<<'PHP'
 <?php
@@ -1060,7 +1093,8 @@ PHP;
         self::assertSame(1.0, $metrics->get('lcc:App\Palette'));
     }
 
-    public function testClassWithOnlyConstructorAndDestructor(): void
+    #[Test]
+    public function itDoesNotEmitTccLccWithOnlyLifecycleMethods(): void
     {
         $code = <<<'PHP'
 <?php
@@ -1091,7 +1125,8 @@ PHP;
         self::assertNull($metrics->get('lcc:App\OnlyLifecycle'));
     }
 
-    public function testClassWithPromotedConstructorPropertiesIsEmitted(): void
+    #[Test]
+    public function itEmitsTccLccForClassWithPromotedConstructorProperties(): void
     {
         $code = <<<'PHP'
 <?php
@@ -1126,7 +1161,8 @@ PHP;
         self::assertSame(0.0, $metrics->get('lcc:App\OrderService'));
     }
 
-    public function testClassWithPromotedAndSharedPropertiesHasCohesion(): void
+    #[Test]
+    public function itDetectsCohesionViaPromotedSharedProperty(): void
     {
         $code = <<<'PHP'
 <?php
@@ -1158,7 +1194,8 @@ PHP;
         self::assertSame(1.0, $metrics->get('lcc:App\UserService'));
     }
 
-    public function testPureMethodCount_allPure(): void
+    #[Test]
+    public function itCountsAllPureMethods(): void
     {
         // Class with interface contract getters — all methods are "pure" (no property access)
         $code = <<<'PHP'
@@ -1185,7 +1222,8 @@ PHP;
         self::assertSame(4, $metrics->get('pureMethodCount_cohesion:App\DistanceRule'));
     }
 
-    public function testPureMethodCount_noPure(): void
+    #[Test]
+    public function itReturnsZeroPureMethodCountWhenAllMethodsAccessProperties(): void
     {
         // All methods access properties → pureMethodCount = 0
         $code = <<<'PHP'
@@ -1209,7 +1247,8 @@ PHP;
         self::assertSame(0, $metrics->get('pureMethodCount_cohesion:App\Rectangle'));
     }
 
-    public function testPureMethodCount_skippedWhenTooFewMethods(): void
+    #[Test]
+    public function itSkipsPureMethodCountWhenTooFewMethods(): void
     {
         // Class with fewer than 2 public methods — TCC/LCC and pureMethodCount not emitted
         $code = <<<'PHP'

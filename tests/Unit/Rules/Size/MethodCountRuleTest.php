@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Rules\Size;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
@@ -23,40 +24,46 @@ use Qualimetrix\Rules\Size\MethodCountRule;
 #[CoversClass(MethodCountOptions::class)]
 final class MethodCountRuleTest extends TestCase
 {
-    public function testGetName(): void
+    #[Test]
+    public function itGetsName(): void
     {
         $rule = new MethodCountRule(new MethodCountOptions());
 
         self::assertSame('size.method-count', $rule->getName());
     }
 
-    public function testGetDescription(): void
+    #[Test]
+    public function itGetsDescription(): void
     {
         $rule = new MethodCountRule(new MethodCountOptions());
 
         self::assertSame('Checks number of methods per class', $rule->getDescription());
     }
 
-    public function testGetCategory(): void
+    #[Test]
+    public function itGetsCategory(): void
     {
         $rule = new MethodCountRule(new MethodCountOptions());
 
         self::assertSame(RuleCategory::Size, $rule->getCategory());
     }
 
-    public function testRequires(): void
+    #[Test]
+    public function itRequiresMethodCount(): void
     {
         $rule = new MethodCountRule(new MethodCountOptions());
 
         self::assertSame(['methodCount'], $rule->requires());
     }
 
-    public function testGetOptionsClass(): void
+    #[Test]
+    public function itGetsOptionsClass(): void
     {
         self::assertSame(MethodCountOptions::class, MethodCountRule::getOptionsClass());
     }
 
-    public function testGetCliAliases(): void
+    #[Test]
+    public function itGetsCliAliases(): void
     {
         self::assertSame(
             ['method-count-warning' => 'warning', 'method-count-error' => 'error'],
@@ -64,7 +71,8 @@ final class MethodCountRuleTest extends TestCase
         );
     }
 
-    public function testConstructorRejectsWrongOptionsType(): void
+    #[Test]
+    public function itRejectsWrongOptionsTypeInConstructor(): void
     {
         self::expectException(InvalidArgumentException::class);
 
@@ -86,7 +94,8 @@ final class MethodCountRuleTest extends TestCase
         });
     }
 
-    public function testAnalyzeDisabledReturnsEmpty(): void
+    #[Test]
+    public function itReturnsEmptyWhenDisabled(): void
     {
         $rule = new MethodCountRule(new MethodCountOptions(enabled: false));
 
@@ -98,7 +107,8 @@ final class MethodCountRuleTest extends TestCase
         self::assertSame([], $rule->analyze($context));
     }
 
-    public function testAnalyzeReturnsEmptyWhenBelowThreshold(): void
+    #[Test]
+    public function itReturnsEmptyWhenBelowThreshold(): void
     {
         $rule = new MethodCountRule(new MethodCountOptions());
 
@@ -118,7 +128,8 @@ final class MethodCountRuleTest extends TestCase
         self::assertSame([], $rule->analyze($context));
     }
 
-    public function testAnalyzeGeneratesWarning(): void
+    #[Test]
+    public function itGeneratesWarning(): void
     {
         $rule = new MethodCountRule(new MethodCountOptions(warning: 10, error: 20));
 
@@ -144,7 +155,8 @@ final class MethodCountRuleTest extends TestCase
         self::assertSame('size.method-count', $violations[0]->violationCode);
     }
 
-    public function testAnalyzeGeneratesError(): void
+    #[Test]
+    public function itGeneratesError(): void
     {
         $rule = new MethodCountRule(new MethodCountOptions(warning: 10, error: 20));
 
@@ -167,8 +179,9 @@ final class MethodCountRuleTest extends TestCase
         self::assertSame('Method count is 25, exceeds threshold of 20. Consider splitting into smaller focused classes', $violations[0]->message);
     }
 
+    #[Test]
     #[DataProvider('thresholdDataProvider')]
-    public function testThresholdBoundaries(
+    public function itRespectsBoundaryThresholds(
         int $methodCount,
         int $warning,
         int $error,
@@ -210,7 +223,8 @@ final class MethodCountRuleTest extends TestCase
         yield 'above error' => [30, 15, 25, Severity::Error];
     }
 
-    public function testOptionsFromArrayDefaults(): void
+    #[Test]
+    public function itLoadsOptionsDefaultsFromArray(): void
     {
         $options = MethodCountOptions::fromArray(['enabled' => true]);
 
@@ -219,7 +233,8 @@ final class MethodCountRuleTest extends TestCase
         self::assertSame(30, $options->error);
     }
 
-    public function testOptionsFromArrayCustomValues(): void
+    #[Test]
+    public function itLoadsOptionsCustomValuesFromArray(): void
     {
         $options = MethodCountOptions::fromArray([
             'enabled' => true,
@@ -232,7 +247,8 @@ final class MethodCountRuleTest extends TestCase
         self::assertSame(20, $options->error);
     }
 
-    public function testOptionsFromEmptyArrayDisabled(): void
+    #[Test]
+    public function itDisablesOptionsWhenLoadedFromEmptyArray(): void
     {
         $options = MethodCountOptions::fromArray([]);
 

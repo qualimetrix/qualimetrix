@@ -6,6 +6,7 @@ namespace Qualimetrix\Tests\Unit\Rules\Complexity;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
@@ -27,14 +28,16 @@ use Qualimetrix\Rules\Complexity\MethodComplexityOptions;
 #[CoversClass(ClassComplexityOptions::class)]
 final class ComplexityRuleTest extends TestCase
 {
-    public function testGetName(): void
+    #[Test]
+    public function itGetName(): void
     {
         $rule = new ComplexityRule(new ComplexityOptions());
 
         self::assertSame('complexity.cyclomatic', $rule->getName());
     }
 
-    public function testGetDescription(): void
+    #[Test]
+    public function itGetDescription(): void
     {
         $rule = new ComplexityRule(new ComplexityOptions());
 
@@ -44,21 +47,24 @@ final class ComplexityRuleTest extends TestCase
         );
     }
 
-    public function testGetCategory(): void
+    #[Test]
+    public function itGetCategory(): void
     {
         $rule = new ComplexityRule(new ComplexityOptions());
 
         self::assertSame(RuleCategory::Complexity, $rule->getCategory());
     }
 
-    public function testRequires(): void
+    #[Test]
+    public function itRequires(): void
     {
         $rule = new ComplexityRule(new ComplexityOptions());
 
         self::assertSame(['ccn', 'cognitive'], $rule->requires());
     }
 
-    public function testGetOptionsClass(): void
+    #[Test]
+    public function itGetOptionsClass(): void
     {
         self::assertSame(
             ComplexityOptions::class,
@@ -66,7 +72,8 @@ final class ComplexityRuleTest extends TestCase
         );
     }
 
-    public function testGetSupportedLevels(): void
+    #[Test]
+    public function itGetSupportedLevels(): void
     {
         $rule = new ComplexityRule(new ComplexityOptions());
 
@@ -75,7 +82,8 @@ final class ComplexityRuleTest extends TestCase
 
     // Method-level tests
 
-    public function testAnalyzeLevelMethodReturnsEmptyWhenDisabled(): void
+    #[Test]
+    public function itAnalyzeLevelMethodReturnsEmptyWhenDisabled(): void
     {
         $rule = new ComplexityRule(
             new ComplexityOptions(
@@ -91,7 +99,8 @@ final class ComplexityRuleTest extends TestCase
         self::assertSame([], $rule->analyzeLevel(RuleLevel::Method, $context));
     }
 
-    public function testAnalyzeLevelMethodReturnsEmptyWhenNoMethods(): void
+    #[Test]
+    public function itAnalyzeLevelMethodReturnsEmptyWhenNoMethods(): void
     {
         $rule = new ComplexityRule(new ComplexityOptions());
 
@@ -104,7 +113,8 @@ final class ComplexityRuleTest extends TestCase
         self::assertSame([], $rule->analyzeLevel(RuleLevel::Method, $context));
     }
 
-    public function testAnalyzeLevelMethodGeneratesWarning(): void
+    #[Test]
+    public function itAnalyzeLevelMethodGeneratesWarning(): void
     {
         $rule = new ComplexityRule(new ComplexityOptions());
 
@@ -132,7 +142,8 @@ final class ComplexityRuleTest extends TestCase
         self::assertSame('Cyclomatic complexity: 15 (threshold: 10) — too many code paths', $violations[0]->recommendation);
     }
 
-    public function testAnalyzeLevelMethodDivergenceRecommendation(): void
+    #[Test]
+    public function itAnalyzeLevelMethodDivergenceRecommendation(): void
     {
         $rule = new ComplexityRule(new ComplexityOptions());
 
@@ -159,7 +170,8 @@ final class ComplexityRuleTest extends TestCase
         self::assertStringContainsString('cognitive complexity (5)', $violations[0]->recommendation);
     }
 
-    public function testAnalyzeLevelMethodNoCognitiveFallsBackToStandardRecommendation(): void
+    #[Test]
+    public function itAnalyzeLevelMethodNoCognitiveFallsBackToStandardRecommendation(): void
     {
         $rule = new ComplexityRule(new ComplexityOptions());
 
@@ -182,7 +194,8 @@ final class ComplexityRuleTest extends TestCase
         self::assertSame('Cyclomatic complexity: 15 (threshold: 10) — too many code paths', $violations[0]->recommendation);
     }
 
-    public function testAnalyzeLevelMethodCognitiveAtThresholdNoSpecialRecommendation(): void
+    #[Test]
+    public function itAnalyzeLevelMethodCognitiveAtThresholdNoSpecialRecommendation(): void
     {
         $rule = new ComplexityRule(new ComplexityOptions());
 
@@ -205,7 +218,8 @@ final class ComplexityRuleTest extends TestCase
         self::assertSame('Cyclomatic complexity: 15 (threshold: 10) — too many code paths', $violations[0]->recommendation);
     }
 
-    public function testAnalyzeLevelMethodGeneratesError(): void
+    #[Test]
+    public function itAnalyzeLevelMethodGeneratesError(): void
     {
         $rule = new ComplexityRule(new ComplexityOptions());
 
@@ -230,7 +244,8 @@ final class ComplexityRuleTest extends TestCase
 
     // Class-level tests
 
-    public function testAnalyzeLevelClassReturnsEmptyWhenDisabled(): void
+    #[Test]
+    public function itAnalyzeLevelClassReturnsEmptyWhenDisabled(): void
     {
         $rule = new ComplexityRule(
             new ComplexityOptions(
@@ -246,7 +261,8 @@ final class ComplexityRuleTest extends TestCase
         self::assertSame([], $rule->analyzeLevel(RuleLevel::Class_, $context));
     }
 
-    public function testAnalyzeLevelClassGeneratesWarning(): void
+    #[Test]
+    public function itAnalyzeLevelClassGeneratesWarning(): void
     {
         $rule = new ComplexityRule(new ComplexityOptions());
 
@@ -271,7 +287,8 @@ final class ComplexityRuleTest extends TestCase
         self::assertSame(RuleLevel::Class_, $violations[0]->level);
     }
 
-    public function testAnalyzeLevelClassGeneratesError(): void
+    #[Test]
+    public function itAnalyzeLevelClassGeneratesError(): void
     {
         $rule = new ComplexityRule(new ComplexityOptions());
 
@@ -296,7 +313,8 @@ final class ComplexityRuleTest extends TestCase
 
     // Legacy analyze() tests
 
-    public function testAnalyzeCallsBothLevels(): void
+    #[Test]
+    public function itAnalyzeCallsBothLevels(): void
     {
         $rule = new ComplexityRule(new ComplexityOptions());
 
@@ -333,7 +351,8 @@ final class ComplexityRuleTest extends TestCase
 
     // Options tests
 
-    public function testMethodOptionsFromArray(): void
+    #[Test]
+    public function itMethodOptionsFromArray(): void
     {
         $options = MethodComplexityOptions::fromArray([
             'enabled' => false,
@@ -346,7 +365,8 @@ final class ComplexityRuleTest extends TestCase
         self::assertSame(30, $options->error);
     }
 
-    public function testMethodOptionsFromEmptyArray(): void
+    #[Test]
+    public function itMethodOptionsFromEmptyArray(): void
     {
         $options = MethodComplexityOptions::fromArray([]);
 
@@ -355,7 +375,8 @@ final class ComplexityRuleTest extends TestCase
         self::assertSame(20, $options->error);
     }
 
-    public function testClassOptionsFromArray(): void
+    #[Test]
+    public function itClassOptionsFromArray(): void
     {
         $options = ClassComplexityOptions::fromArray([
             'enabled' => false,
@@ -368,7 +389,8 @@ final class ComplexityRuleTest extends TestCase
         self::assertSame(60, $options->maxError);
     }
 
-    public function testComplexityOptionsFromHierarchicalArray(): void
+    #[Test]
+    public function itComplexityOptionsFromHierarchicalArray(): void
     {
         $options = ComplexityOptions::fromArray([
             'method' => [
@@ -388,7 +410,8 @@ final class ComplexityRuleTest extends TestCase
         self::assertSame(40, $options->class->maxWarning);
     }
 
-    public function testComplexityOptionsFromLegacyArray(): void
+    #[Test]
+    public function itComplexityOptionsFromLegacyArray(): void
     {
         $options = ComplexityOptions::fromArray([
             'enabled' => true,
@@ -404,7 +427,8 @@ final class ComplexityRuleTest extends TestCase
         self::assertFalse($options->class->isEnabled());
     }
 
-    public function testComplexityOptionsForLevel(): void
+    #[Test]
+    public function itComplexityOptionsForLevel(): void
     {
         $options = new ComplexityOptions();
 
@@ -412,7 +436,8 @@ final class ComplexityRuleTest extends TestCase
         self::assertSame($options->class, $options->forLevel(RuleLevel::Class_));
     }
 
-    public function testComplexityOptionsIsLevelEnabled(): void
+    #[Test]
+    public function itComplexityOptionsIsLevelEnabled(): void
     {
         $options = new ComplexityOptions(
             method: new MethodComplexityOptions(enabled: true),
@@ -424,7 +449,8 @@ final class ComplexityRuleTest extends TestCase
     }
 
     #[DataProvider('methodThresholdDataProvider')]
-    public function testMethodThresholdBoundaries(
+    #[Test]
+    public function itMethodThresholdBoundaries(
         int $ccn,
         int $warning,
         int $error,

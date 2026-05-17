@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Core\Violation;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Rule\RuleLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -15,7 +16,8 @@ use Qualimetrix\Core\Violation\Violation;
 #[CoversClass(Violation::class)]
 final class ViolationTest extends TestCase
 {
-    public function testGetFingerprintForMethod(): void
+    #[Test]
+    public function itGetFingerprintForMethod(): void
     {
         $violation = new Violation(
             location: new Location('src/Service/UserService.php', 42),
@@ -33,7 +35,8 @@ final class ViolationTest extends TestCase
         );
     }
 
-    public function testGetFingerprintForClass(): void
+    #[Test]
+    public function itGetFingerprintForClass(): void
     {
         $violation = new Violation(
             location: new Location('src/Service/UserService.php', 10),
@@ -50,7 +53,8 @@ final class ViolationTest extends TestCase
         );
     }
 
-    public function testGetFingerprintForNamespace(): void
+    #[Test]
+    public function itGetFingerprintForNamespace(): void
     {
         $violation = new Violation(
             location: new Location('src/Service/UserService.php'),
@@ -68,7 +72,8 @@ final class ViolationTest extends TestCase
         );
     }
 
-    public function testGetFingerprintForFile(): void
+    #[Test]
+    public function itGetFingerprintForFile(): void
     {
         $violation = new Violation(
             location: new Location('src/bootstrap.php'),
@@ -85,7 +90,8 @@ final class ViolationTest extends TestCase
         );
     }
 
-    public function testGetFingerprintForGlobalFunction(): void
+    #[Test]
+    public function itGetFingerprintForGlobalFunction(): void
     {
         $violation = new Violation(
             location: new Location('src/functions.php', 5),
@@ -102,7 +108,8 @@ final class ViolationTest extends TestCase
         );
     }
 
-    public function testViolationProperties(): void
+    #[Test]
+    public function itViolationProperties(): void
     {
         $location = new Location('src/test.php', 42);
         $symbolPath = SymbolPath::forMethod('App', 'Test', 'method');
@@ -125,7 +132,8 @@ final class ViolationTest extends TestCase
         self::assertSame(10, $violation->metricValue);
     }
 
-    public function testViolationWithNullMetricValue(): void
+    #[Test]
+    public function itViolationWithNullMetricValue(): void
     {
         $violation = new Violation(
             location: new Location('src/test.php'),
@@ -139,7 +147,8 @@ final class ViolationTest extends TestCase
         self::assertNull($violation->metricValue);
     }
 
-    public function testViolationWithLevel(): void
+    #[Test]
+    public function itViolationWithLevel(): void
     {
         $violation = new Violation(
             location: new Location('src/Service/UserService.php', 42),
@@ -155,7 +164,8 @@ final class ViolationTest extends TestCase
         self::assertSame(RuleLevel::Method, $violation->level);
     }
 
-    public function testViolationWithNullLevel(): void
+    #[Test]
+    public function itViolationWithNullLevel(): void
     {
         $violation = new Violation(
             location: new Location('src/test.php'),
@@ -169,7 +179,8 @@ final class ViolationTest extends TestCase
         self::assertNull($violation->level);
     }
 
-    public function testGetDisplayMessageReturnsHumanMessageWhenAvailable(): void
+    #[Test]
+    public function itGetDisplayMessageReturnsHumanMessageWhenAvailable(): void
     {
         $violation = new Violation(
             location: new Location('src/test.php', 10),
@@ -187,7 +198,8 @@ final class ViolationTest extends TestCase
         );
     }
 
-    public function testGetDisplayMessageFallsBackToMessageWhenHumanMessageNull(): void
+    #[Test]
+    public function itGetDisplayMessageFallsBackToMessageWhenHumanMessageNull(): void
     {
         $violation = new Violation(
             location: new Location('src/test.php', 10),

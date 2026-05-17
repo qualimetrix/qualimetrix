@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Metrics\Halstead;
 use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\MetricBag;
@@ -28,12 +29,14 @@ final class HalsteadCollectorTest extends TestCase
         $this->collector = new HalsteadCollector();
     }
 
-    public function testGetName(): void
+    #[Test]
+    public function itGetsName(): void
     {
         self::assertSame('halstead', $this->collector->getName());
     }
 
-    public function testProvides(): void
+    #[Test]
+    public function itProvides(): void
     {
         $provides = $this->collector->provides();
 
@@ -44,7 +47,8 @@ final class HalsteadCollectorTest extends TestCase
         self::assertContains('halstead.time', $provides);
     }
 
-    public function testEmptyMethodHasZeroMetrics(): void
+    #[Test]
+    public function itReportsZeroMetricsForEmptyMethod(): void
     {
         $code = <<<'PHP'
 <?php
@@ -68,7 +72,8 @@ PHP;
         self::assertSame(0.0, $metrics->get('halstead.time:App\Test::empty'));
     }
 
-    public function testSimpleMethodWithAssignment(): void
+    #[Test]
+    public function itCalculatesVolumeForSimpleMethodWithAssignment(): void
     {
         $code = <<<'PHP'
 <?php
@@ -94,7 +99,8 @@ PHP;
         self::assertGreaterThan(0, $volume);
     }
 
-    public function testSimpleAddMethodWithExactHalsteadValues(): void
+    #[Test]
+    public function itCalculatesExactHalsteadValuesForSimpleAddMethod(): void
     {
         $code = <<<'PHP'
 <?php
@@ -136,7 +142,8 @@ PHP;
         self::assertEqualsWithDelta(1.3333, $halstead->time(), 0.001);
     }
 
-    public function testMethodWithMultipleOperators(): void
+    #[Test]
+    public function itCalculatesMetricsForMethodWithMultipleOperators(): void
     {
         $code = <<<'PHP'
 <?php
@@ -167,7 +174,8 @@ PHP;
         self::assertGreaterThan(0, $difficulty);
     }
 
-    public function testMethodWithControlFlow(): void
+    #[Test]
+    public function itCalculatesMetricsForMethodWithControlFlow(): void
     {
         $code = <<<'PHP'
 <?php
@@ -196,7 +204,8 @@ PHP;
         self::assertGreaterThan(0, $volume);
     }
 
-    public function testMethodWithMethodCalls(): void
+    #[Test]
+    public function itCalculatesMetricsForMethodWithMethodCalls(): void
     {
         $code = <<<'PHP'
 <?php
@@ -221,7 +230,8 @@ PHP;
         self::assertGreaterThan(0, $volume);
     }
 
-    public function testMethodWithBooleanOperators(): void
+    #[Test]
+    public function itCalculatesMetricsForMethodWithBooleanOperators(): void
     {
         $code = <<<'PHP'
 <?php
@@ -246,7 +256,8 @@ PHP;
         self::assertGreaterThan(0, $volume);
     }
 
-    public function testMethodWithNewOperator(): void
+    #[Test]
+    public function itCalculatesMetricsForMethodWithNewOperator(): void
     {
         $code = <<<'PHP'
 <?php
@@ -271,7 +282,8 @@ PHP;
         self::assertGreaterThan(0, $volume);
     }
 
-    public function testMethodWithArrayOperations(): void
+    #[Test]
+    public function itCalculatesMetricsForMethodWithArrayOperations(): void
     {
         $code = <<<'PHP'
 <?php
@@ -296,7 +308,8 @@ PHP;
         self::assertGreaterThan(0, $volume);
     }
 
-    public function testMethodWithTernary(): void
+    #[Test]
+    public function itCalculatesMetricsForMethodWithTernary(): void
     {
         $code = <<<'PHP'
 <?php
@@ -321,7 +334,8 @@ PHP;
         self::assertGreaterThan(0, $volume);
     }
 
-    public function testMethodWithNullCoalescing(): void
+    #[Test]
+    public function itCalculatesMetricsForMethodWithNullCoalescing(): void
     {
         $code = <<<'PHP'
 <?php
@@ -346,7 +360,8 @@ PHP;
         self::assertGreaterThan(0, $volume);
     }
 
-    public function testClosure(): void
+    #[Test]
+    public function itCalculatesMetricsForClosure(): void
     {
         $code = <<<'PHP'
 <?php
@@ -375,7 +390,8 @@ PHP;
         self::assertGreaterThan(0, $closureVolume);
     }
 
-    public function testArrowFunction(): void
+    #[Test]
+    public function itCalculatesMetricsForArrowFunction(): void
     {
         $code = <<<'PHP'
 <?php
@@ -399,7 +415,8 @@ PHP;
         self::assertGreaterThan(0, $arrowVolume);
     }
 
-    public function testGlobalFunction(): void
+    #[Test]
+    public function itCalculatesMetricsForGlobalFunction(): void
     {
         $code = <<<'PHP'
 <?php
@@ -419,7 +436,8 @@ PHP;
         self::assertGreaterThan(0, $volume);
     }
 
-    public function testComplexMethod(): void
+    #[Test]
+    public function itCalculatesMetricsForComplexMethod(): void
     {
         $code = <<<'PHP'
 <?php
@@ -460,7 +478,8 @@ PHP;
         self::assertGreaterThan(0, $time);
     }
 
-    public function testReset(): void
+    #[Test]
+    public function itResetsState(): void
     {
         $code1 = <<<'PHP'
 <?php
@@ -504,7 +523,8 @@ PHP;
         self::assertNotNull($metrics->get('halstead.volume:App\Second::other'));
     }
 
-    public function testGetMetricDefinitions(): void
+    #[Test]
+    public function itProvidesMetricDefinitions(): void
     {
         $definitions = $this->collector->getMetricDefinitions();
 
@@ -535,7 +555,8 @@ PHP;
         self::assertContains(AggregationStrategy::Percentile95, $projectStrategies);
     }
 
-    public function testGetMethodsWithMetrics(): void
+    #[Test]
+    public function itProvidesMethodsWithMetrics(): void
     {
         $code = <<<'PHP'
 <?php
@@ -568,7 +589,8 @@ PHP;
         self::assertNotNull($method1->metrics->get('halstead.volume'));
     }
 
-    public function testMethodWithCastOperators(): void
+    #[Test]
+    public function itCalculatesMetricsForMethodWithCastOperators(): void
     {
         $code = <<<'PHP'
 <?php
@@ -591,7 +613,8 @@ PHP;
         self::assertGreaterThan(0, $volume);
     }
 
-    public function testMethodWithIncrementDecrement(): void
+    #[Test]
+    public function itCalculatesMetricsForMethodWithIncrementDecrement(): void
     {
         $code = <<<'PHP'
 <?php
@@ -618,7 +641,8 @@ PHP;
         self::assertGreaterThan(0, $volume);
     }
 
-    public function testMethodWithCompoundAssignment(): void
+    #[Test]
+    public function itCalculatesMetricsForMethodWithCompoundAssignment(): void
     {
         $code = <<<'PHP'
 <?php
@@ -645,7 +669,8 @@ PHP;
         self::assertGreaterThan(0, $volume);
     }
 
-    public function testMethodWithTryCatch(): void
+    #[Test]
+    public function itCalculatesMetricsForMethodWithTryCatch(): void
     {
         $code = <<<'PHP'
 <?php
@@ -672,7 +697,8 @@ PHP;
         self::assertGreaterThan(0, $volume);
     }
 
-    public function testMethodWithLoops(): void
+    #[Test]
+    public function itCalculatesMetricsForMethodWithLoops(): void
     {
         $code = <<<'PHP'
 <?php
@@ -705,7 +731,8 @@ PHP;
         self::assertGreaterThan(50, $volume); // Complex method
     }
 
-    public function testAnonymousClassMethodsAreNotAttributedToOuterClass(): void
+    #[Test]
+    public function itDoesNotAttributeAnonymousClassMethodsToOuterClass(): void
     {
         $code = <<<'PHP'
 <?php
@@ -764,7 +791,8 @@ PHP;
     /**
      * Closure inside anonymous class method should NOT appear in Halstead metrics of outer class.
      */
-    public function testClosureInsideAnonymousClassNotInOuterMetrics(): void
+    #[Test]
+    public function itExcludesClosureInsideAnonymousClassFromOuterMetrics(): void
     {
         $code = <<<'PHP'
 <?php
@@ -803,7 +831,8 @@ PHP;
     /**
      * Echo statement should be counted as an operator, symmetrically with print.
      */
-    public function testEchoIsCountedAsOperator(): void
+    #[Test]
+    public function itCountsEchoAsOperator(): void
     {
         $code = <<<'PHP'
 <?php
@@ -831,7 +860,8 @@ PHP;
     /**
      * Echo and print should be counted as separate operators.
      */
-    public function testEchoAndPrintAreSeparateOperators(): void
+    #[Test]
+    public function itCountsEchoAndPrintAsSeparateOperators(): void
     {
         $code = <<<'PHP'
 <?php
@@ -858,7 +888,8 @@ PHP;
     /**
      * Match arms should be counted as operators, symmetrically with case in switch.
      */
-    public function testMatchArmIsCountedAsOperator(): void
+    #[Test]
+    public function itCountsMatchArmAsOperator(): void
     {
         $code = <<<'PHP'
 <?php
@@ -888,7 +919,8 @@ PHP;
     /**
      * Match with default arm should also count the default arm as operator.
      */
-    public function testMatchWithDefaultArmCountsAllArms(): void
+    #[Test]
+    public function itCountsAllArmsIncludingDefaultInMatchWithDefaultArm(): void
     {
         $code = <<<'PHP'
 <?php
@@ -918,7 +950,8 @@ PHP;
     /**
      * Symmetry: switch/case and match should count branch operators similarly.
      */
-    public function testMatchAndSwitchOperatorSymmetry(): void
+    #[Test]
+    public function itCountsMatchAndSwitchOperatorsSymmetrically(): void
     {
         $switchCode = <<<'PHP'
 <?php

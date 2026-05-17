@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Integration\Documentation;
 
 use FilesystemIterator;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Rule\CliAliasReader;
 use Qualimetrix\Core\Rule\RuleInterface;
@@ -33,7 +34,8 @@ final class DocumentationConsistencyTest extends TestCase
     /**
      * Every rule NAME constant must appear in default-thresholds.md.
      */
-    public function testAllRuleNamesDocumentedInDefaultThresholds(): void
+    #[Test]
+    public function itDocumentsAllRuleNamesInDefaultThresholds(): void
     {
         $ruleNames = $this->collectAllRuleNames();
         $thresholdsContent = $this->readFile('website/docs/reference/default-thresholds.md');
@@ -69,7 +71,8 @@ final class DocumentationConsistencyTest extends TestCase
     /**
      * Every CLI alias from rule classes must appear in src/Configuration/README.md.
      */
-    public function testAllCliAliasesDocumentedInConfigurationReadme(): void
+    #[Test]
+    public function itDocumentsAllCliAliasesInConfigurationReadme(): void
     {
         $aliases = $this->collectAllCliAliases();
         $configReadme = $this->readFile('src/Configuration/README.md');
@@ -94,7 +97,8 @@ final class DocumentationConsistencyTest extends TestCase
     /**
      * YAML examples in README.md must parse and reference existing rule names.
      */
-    public function testReadmeYamlExamplesAreValid(): void
+    #[Test]
+    public function itValidatesReadmeYamlExamples(): void
     {
         $readme = $this->readFile('README.md');
         $ruleNames = $this->collectAllRuleNames();
@@ -127,7 +131,8 @@ final class DocumentationConsistencyTest extends TestCase
      * must list every actual rule NAME. Drift here makes llms-full.txt lie to
      * agents about which rules exist.
      */
-    public function testLlmsOnlyRuleCatalogListsAllRules(): void
+    #[Test]
+    public function itListsAllRulesInLlmsOnlyRuleCatalog(): void
     {
         $index = $this->readFile('website/docs/rules/index.md');
 

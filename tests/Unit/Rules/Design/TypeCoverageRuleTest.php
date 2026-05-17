@@ -6,6 +6,7 @@ namespace Qualimetrix\Tests\Unit\Rules\Design;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
@@ -22,14 +23,16 @@ use Qualimetrix\Rules\Design\TypeCoverageRule;
 #[CoversClass(TypeCoverageOptions::class)]
 final class TypeCoverageRuleTest extends TestCase
 {
-    public function testGetName(): void
+    #[Test]
+    public function itGetsName(): void
     {
         $rule = new TypeCoverageRule(new TypeCoverageOptions());
 
         self::assertSame('design.type-coverage', $rule->getName());
     }
 
-    public function testGetDescription(): void
+    #[Test]
+    public function itGetsDescription(): void
     {
         $rule = new TypeCoverageRule(new TypeCoverageOptions());
 
@@ -39,26 +42,30 @@ final class TypeCoverageRuleTest extends TestCase
         );
     }
 
-    public function testGetCategory(): void
+    #[Test]
+    public function itGetsCategory(): void
     {
         $rule = new TypeCoverageRule(new TypeCoverageOptions());
 
         self::assertSame(RuleCategory::Design, $rule->getCategory());
     }
 
-    public function testRequires(): void
+    #[Test]
+    public function itRequires(): void
     {
         $rule = new TypeCoverageRule(new TypeCoverageOptions());
 
         self::assertSame(['typeCoverage.param'], $rule->requires());
     }
 
-    public function testGetOptionsClass(): void
+    #[Test]
+    public function itGetsOptionsClass(): void
     {
         self::assertSame(TypeCoverageOptions::class, TypeCoverageRule::getOptionsClass());
     }
 
-    public function testGetCliAliases(): void
+    #[Test]
+    public function itGetsCliAliases(): void
     {
         self::assertSame(
             [
@@ -73,7 +80,8 @@ final class TypeCoverageRuleTest extends TestCase
         );
     }
 
-    public function testConstructorRejectsWrongOptionsType(): void
+    #[Test]
+    public function itRejectsWrongOptionsTypeInConstructor(): void
     {
         self::expectException(InvalidArgumentException::class);
 
@@ -95,7 +103,8 @@ final class TypeCoverageRuleTest extends TestCase
         });
     }
 
-    public function testAnalyzeDisabledReturnsEmpty(): void
+    #[Test]
+    public function itAnalyzeDisabledReturnsEmpty(): void
     {
         $rule = new TypeCoverageRule(new TypeCoverageOptions(enabled: false));
 
@@ -107,7 +116,8 @@ final class TypeCoverageRuleTest extends TestCase
         self::assertSame([], $rule->analyze($context));
     }
 
-    public function testFullCoverageNoViolations(): void
+    #[Test]
+    public function itProducesNoViolationsWithFullCoverage(): void
     {
         $rule = new TypeCoverageRule(new TypeCoverageOptions());
 
@@ -136,7 +146,8 @@ final class TypeCoverageRuleTest extends TestCase
         self::assertSame([], $rule->analyze($context));
     }
 
-    public function testLowParamCoverageWarning(): void
+    #[Test]
+    public function itWarnsOnLowParamCoverage(): void
     {
         $rule = new TypeCoverageRule(new TypeCoverageOptions(
             paramWarning: 80.0,
@@ -169,7 +180,8 @@ final class TypeCoverageRuleTest extends TestCase
         self::assertStringContainsString('80.0%', $violations[0]->message);
     }
 
-    public function testLowParamCoverageError(): void
+    #[Test]
+    public function itErrorsOnLowParamCoverage(): void
     {
         $rule = new TypeCoverageRule(new TypeCoverageOptions(
             paramWarning: 80.0,
@@ -200,7 +212,8 @@ final class TypeCoverageRuleTest extends TestCase
         self::assertSame('design.type-coverage.param', $violations[0]->violationCode);
     }
 
-    public function testLowReturnCoverage(): void
+    #[Test]
+    public function itFlagsLowReturnCoverage(): void
     {
         $rule = new TypeCoverageRule(new TypeCoverageOptions(
             returnWarning: 80.0,
@@ -231,7 +244,8 @@ final class TypeCoverageRuleTest extends TestCase
         self::assertSame(Severity::Error, $violations[0]->severity);
     }
 
-    public function testLowPropertyCoverage(): void
+    #[Test]
+    public function itFlagsLowPropertyCoverage(): void
     {
         $rule = new TypeCoverageRule(new TypeCoverageOptions(
             propertyWarning: 80.0,
@@ -262,7 +276,8 @@ final class TypeCoverageRuleTest extends TestCase
         self::assertSame(Severity::Warning, $violations[0]->severity);
     }
 
-    public function testMultipleViolationsPerClass(): void
+    #[Test]
+    public function itProducesMultipleViolationsPerClass(): void
     {
         $rule = new TypeCoverageRule(new TypeCoverageOptions(
             paramWarning: 80.0,
@@ -302,7 +317,8 @@ final class TypeCoverageRuleTest extends TestCase
         self::assertSame('design.type-coverage.property', $violations[2]->violationCode);
     }
 
-    public function testClassWithNoMethodsNoViolation(): void
+    #[Test]
+    public function itProducesNoViolationForClassWithNoMethods(): void
     {
         $rule = new TypeCoverageRule(new TypeCoverageOptions());
 
@@ -325,7 +341,8 @@ final class TypeCoverageRuleTest extends TestCase
         self::assertSame([], $rule->analyze($context));
     }
 
-    public function testCustomThresholds(): void
+    #[Test]
+    public function itLoadsCustomThresholds(): void
     {
         $options = TypeCoverageOptions::fromArray([
             'enabled' => true,
@@ -346,14 +363,16 @@ final class TypeCoverageRuleTest extends TestCase
         self::assertSame(60.0, $options->propertyError);
     }
 
-    public function testOptionsFromEmptyArrayDisabled(): void
+    #[Test]
+    public function itDisablesWhenLoadedFromEmptyArray(): void
     {
         $options = TypeCoverageOptions::fromArray([]);
 
         self::assertFalse($options->isEnabled());
     }
 
-    public function testOptionsFromArrayDefaults(): void
+    #[Test]
+    public function itHasOptionsDefaults(): void
     {
         $options = TypeCoverageOptions::fromArray(['enabled' => true]);
 
@@ -366,7 +385,8 @@ final class TypeCoverageRuleTest extends TestCase
         self::assertSame(50.0, $options->propertyError);
     }
 
-    public function testOptionsSeverityMethods(): void
+    #[Test]
+    public function itComputesSeverityViaOptionsMethods(): void
     {
         $options = new TypeCoverageOptions(
             paramWarning: 80.0,

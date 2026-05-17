@@ -6,6 +6,7 @@ namespace Qualimetrix\Tests\Unit\Baseline;
 
 use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Baseline\Baseline;
 use Qualimetrix\Baseline\BaselineEntry;
@@ -31,7 +32,8 @@ final class BaselineWriterTest extends TestCase
         }
     }
 
-    public function testWritesValidJson(): void
+    #[Test]
+    public function itWritesValidJson(): void
     {
         $baseline = new Baseline(
             version: 1,
@@ -59,7 +61,8 @@ final class BaselineWriterTest extends TestCase
         self::assertArrayHasKey('method:App\Foo::bar', $data['violations']);
     }
 
-    public function testCreatesDirectoryIfNotExists(): void
+    #[Test]
+    public function itCreatesDirectoryIfNotExists(): void
     {
         $baseline = new Baseline(
             version: 1,
@@ -74,7 +77,8 @@ final class BaselineWriterTest extends TestCase
         self::assertDirectoryExists($this->tempDir . '/subdir');
     }
 
-    public function testAtomicWrite(): void
+    #[Test]
+    public function itAtomicWrite(): void
     {
         $baseline = new Baseline(
             version: 1,
@@ -94,7 +98,8 @@ final class BaselineWriterTest extends TestCase
         self::assertEmpty($files, 'Temporary files should be cleaned up');
     }
 
-    public function testOverwritesExistingFile(): void
+    #[Test]
+    public function itOverwritesExistingFile(): void
     {
         $path = $this->tempDir . '/baseline.json';
 
@@ -131,7 +136,8 @@ final class BaselineWriterTest extends TestCase
         self::assertArrayNotHasKey('method:App\Foo::bar', $data['violations']);
     }
 
-    public function testWritesEmptyBaseline(): void
+    #[Test]
+    public function itWritesEmptyBaseline(): void
     {
         $baseline = new Baseline(
             version: 1,
@@ -150,7 +156,8 @@ final class BaselineWriterTest extends TestCase
         self::assertEmpty($data['violations']);
     }
 
-    public function testRelativizesAbsoluteFilePathsInBaseline(): void
+    #[Test]
+    public function itRelativizesAbsoluteFilePathsInBaseline(): void
     {
         $projectRoot = '/home/user/project';
         $baseline = new Baseline(
@@ -179,7 +186,8 @@ final class BaselineWriterTest extends TestCase
         self::assertArrayHasKey('method:App\Foo::bar', $data['violations'], 'Non-file keys should not change');
     }
 
-    public function testDotProjectRootNormalizesToAbsolutePath(): void
+    #[Test]
+    public function itDotProjectRootNormalizesToAbsolutePath(): void
     {
         $cwd = (string) getcwd();
         $baseline = new Baseline(
@@ -201,7 +209,8 @@ final class BaselineWriterTest extends TestCase
         self::assertArrayNotHasKey('file:' . $cwd . '/src/Foo.php', $data['violations']);
     }
 
-    public function testKeepsAlreadyRelativeFilePaths(): void
+    #[Test]
+    public function itKeepsAlreadyRelativeFilePaths(): void
     {
         $baseline = new Baseline(
             version: 4,

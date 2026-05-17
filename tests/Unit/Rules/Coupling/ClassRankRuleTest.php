@@ -206,8 +206,9 @@ final class ClassRankRuleTest extends TestCase
         self::assertEqualsWithDelta(0.08, $violations[0]->metricValue, 0.001);
     }
 
+    #[Test]
     #[DataProvider('thresholdDataProvider')]
-    public function testThresholdBoundaries(
+    public function itRespectsBoundaryThresholds(
         float $classRank,
         float $warning,
         float $error,

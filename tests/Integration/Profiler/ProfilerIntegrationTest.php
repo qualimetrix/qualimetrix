@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Integration\Profiler;
 
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
 use Qualimetrix\Infrastructure\Profiler\Profiler;
@@ -51,7 +52,8 @@ final class ProfilerIntegrationTest extends TestCase
         }
     }
 
-    public function testProfilerHolderReturnsNullProfilerByDefault(): void
+    #[Test]
+    public function itReturnsNullProfilerByDefault(): void
     {
         $profiler = ProfilerHolder::get();
 
@@ -60,7 +62,8 @@ final class ProfilerIntegrationTest extends TestCase
         self::assertSame([], $profiler->getSummary());
     }
 
-    public function testProfilerHolderReturnsSameNullProfilerInstance(): void
+    #[Test]
+    public function itReturnsSameNullProfilerInstance(): void
     {
         $profiler1 = ProfilerHolder::get();
         $profiler2 = ProfilerHolder::get();
@@ -68,7 +71,8 @@ final class ProfilerIntegrationTest extends TestCase
         self::assertSame($profiler1, $profiler2, 'get() should return the same NullProfiler instance');
     }
 
-    public function testProfilerHolderUsesSetProfiler(): void
+    #[Test]
+    public function itUsesSetProfiler(): void
     {
         $profiler = new Profiler();
         ProfilerHolder::set($profiler);
@@ -79,7 +83,8 @@ final class ProfilerIntegrationTest extends TestCase
         self::assertSame($profiler, $retrieved);
     }
 
-    public function testProfilerCollectsSpansDuringSimulatedAnalysis(): void
+    #[Test]
+    public function itCollectsSpansDuringSimulatedAnalysis(): void
     {
         $profiler = new Profiler();
         ProfilerHolder::set($profiler);
@@ -119,7 +124,8 @@ final class ProfilerIntegrationTest extends TestCase
         self::assertGreaterThan(0, $summary['analysis']['total']);
     }
 
-    public function testExportToJsonFormat(): void
+    #[Test]
+    public function itExportsToJsonFormat(): void
     {
         $profiler = new Profiler();
         $profiler->start('test', 'category');
@@ -142,7 +148,8 @@ final class ProfilerIntegrationTest extends TestCase
         self::assertSame('child', $data['children'][0]['name']);
     }
 
-    public function testExportToChromeTracingFormat(): void
+    #[Test]
+    public function itExportsToChromeTracingFormat(): void
     {
         $profiler = new Profiler();
         $profiler->start('test', 'category');
@@ -167,7 +174,8 @@ final class ProfilerIntegrationTest extends TestCase
         self::assertSame('E', $endEvent['ph']); // End
     }
 
-    public function testAtomicFileWrite(): void
+    #[Test]
+    public function itPerformsAtomicFileWrite(): void
     {
         $profiler = new Profiler();
         $profiler->start('test');
@@ -193,7 +201,8 @@ final class ProfilerIntegrationTest extends TestCase
         self::assertFileDoesNotExist($tmpFile);
     }
 
-    public function testProfilerClearResetsState(): void
+    #[Test]
+    public function itClearsAndResetsState(): void
     {
         $profiler = new Profiler();
         $profiler->start('test');
@@ -207,7 +216,8 @@ final class ProfilerIntegrationTest extends TestCase
         self::assertSame([], $profiler->getSummary());
     }
 
-    public function testNestedSpansWithSameName(): void
+    #[Test]
+    public function itCountsBothSpansForNestedSpansWithSameName(): void
     {
         $profiler = new Profiler();
 

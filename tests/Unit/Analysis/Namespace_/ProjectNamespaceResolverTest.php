@@ -6,6 +6,7 @@ namespace Qualimetrix\Tests\Unit\Analysis\Namespace_;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Namespace_\ProjectNamespaceResolver;
 
@@ -47,7 +48,8 @@ final class ProjectNamespaceResolverTest extends TestCase
         rmdir($dir);
     }
 
-    public function testOverridePrefixesTakesPrecedence(): void
+    #[Test]
+    public function itOverridePrefixesTakePrecedence(): void
     {
         $resolver = new ProjectNamespaceResolver(
             composerJsonPath: null,
@@ -61,7 +63,8 @@ final class ProjectNamespaceResolverTest extends TestCase
         self::assertSame(['Tests', 'App'], $resolver->getProjectPrefixes());
     }
 
-    public function testExtractPrefixesFromComposerJson(): void
+    #[Test]
+    public function itExtractsPrefixesFromComposerJson(): void
     {
         $composerJson = <<<JSON
 {
@@ -88,7 +91,8 @@ JSON;
         self::assertFalse($resolver->isProjectNamespace('Vendor\\Package'));
     }
 
-    public function testPrefixesAreSortedByLengthDescending(): void
+    #[Test]
+    public function itSortsPrefixesByLengthDescending(): void
     {
         $resolver = new ProjectNamespaceResolver(
             composerJsonPath: null,
@@ -100,7 +104,8 @@ JSON;
         self::assertSame(['App\\Service', 'App', 'A'], $prefixes);
     }
 
-    public function testDuplicatePrefixesAreRemoved(): void
+    #[Test]
+    public function itRemovesDuplicatePrefixes(): void
     {
         $resolver = new ProjectNamespaceResolver(
             composerJsonPath: null,
@@ -110,7 +115,8 @@ JSON;
         self::assertSame(['Tests', 'App'], $resolver->getProjectPrefixes());
     }
 
-    public function testEmptyNamespaceIsConsideredProjectNamespace(): void
+    #[Test]
+    public function itConsidersEmptyNamespaceAsProjectNamespace(): void
     {
         $resolver = new ProjectNamespaceResolver(
             composerJsonPath: null,
@@ -120,8 +126,9 @@ JSON;
         self::assertTrue($resolver->isProjectNamespace(''));
     }
 
+    #[Test]
     #[DataProvider('namespaceMatchingProvider')]
-    public function testNamespaceMatching(string $prefix, string $namespace, bool $expected): void
+    public function itMatchesNamespace(string $prefix, string $namespace, bool $expected): void
     {
         $resolver = new ProjectNamespaceResolver(
             composerJsonPath: null,
@@ -148,7 +155,8 @@ JSON;
         yield 'with trailing backslash' => ['App\\', 'App\\Service', true];
     }
 
-    public function testGracefullyDegradeIfComposerJsonNotFound(): void
+    #[Test]
+    public function itGracefullyDegradeIfComposerJsonNotFound(): void
     {
         $resolver = new ProjectNamespaceResolver(composerJsonPath: $this->tempDir . '/nonexistent.json');
 
@@ -157,7 +165,8 @@ JSON;
         self::assertSame([], $resolver->getProjectPrefixes());
     }
 
-    public function testGracefullyDegradeIfComposerJsonIsInvalid(): void
+    #[Test]
+    public function itGracefullyDegradeIfComposerJsonIsInvalid(): void
     {
         $path = $this->tempDir . '/composer.json';
         file_put_contents($path, 'invalid json');
@@ -168,7 +177,8 @@ JSON;
         self::assertSame([], $resolver->getProjectPrefixes());
     }
 
-    public function testGracefullyDegradeIfNoPsr4ConfigFound(): void
+    #[Test]
+    public function itGracefullyDegradeIfNoPsr4ConfigFound(): void
     {
         $composerJson = <<<JSON
 {
@@ -185,7 +195,8 @@ JSON;
         self::assertSame([], $resolver->getProjectPrefixes());
     }
 
-    public function testUsesComposerJsonFromCwdWhenNoPathGiven(): void
+    #[Test]
+    public function itUsesComposerJsonFromCwdWhenNoPathGiven(): void
     {
         $composerJson = <<<JSON
 {
@@ -215,7 +226,8 @@ JSON;
         }
     }
 
-    public function testGracefullyDegradeIfComposerJsonNotInCwd(): void
+    #[Test]
+    public function itGracefullyDegradeIfComposerJsonNotInCwd(): void
     {
         // Subdirectory without composer.json — no longer searches parent dirs
         $subDir = $this->tempDir . '/subdir';
@@ -238,7 +250,8 @@ JSON;
         }
     }
 
-    public function testHandlesMultiplePsr4Prefixes(): void
+    #[Test]
+    public function itHandlesMultiplePsr4Prefixes(): void
     {
         $composerJson = <<<JSON
 {
@@ -267,7 +280,8 @@ JSON;
         self::assertSame(['Infrastructure', 'Domain', 'App'], $prefixes);
     }
 
-    public function testEmptyPrefixMatchesEverything(): void
+    #[Test]
+    public function itMatchesEverythingWithEmptyPrefix(): void
     {
         $resolver = new ProjectNamespaceResolver(
             composerJsonPath: null,

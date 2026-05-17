@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Unit\Infrastructure\Console\Progress;
 
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Progress\ProgressReporter;
 use Qualimetrix\Infrastructure\Console\Progress\DelegatingProgressReporter;
@@ -11,7 +12,8 @@ use Qualimetrix\Infrastructure\Console\Progress\ProgressReporterHolder;
 
 final class DelegatingProgressReporterTest extends TestCase
 {
-    public function testDelegatesToHeldReporter(): void
+    #[Test]
+    public function itDelegatesToHeldReporter(): void
     {
         $mockReporter = $this->createMock(ProgressReporter::class);
         $mockReporter->expects($this->once())
@@ -36,7 +38,8 @@ final class DelegatingProgressReporterTest extends TestCase
         $delegating->finish();
     }
 
-    public function testDelegatesToNewReporterAfterChange(): void
+    #[Test]
+    public function itDelegatesToNewReporterAfterChange(): void
     {
         $firstReporter = $this->createMock(ProgressReporter::class);
         $firstReporter->expects($this->once())

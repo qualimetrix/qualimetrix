@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Reporting\Health;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Reporting\Health\HealthReasonBuilder;
 use Qualimetrix\Reporting\Health\MetricHintProvider;
@@ -19,12 +20,14 @@ final class HealthReasonBuilderTest extends TestCase
         $this->builder = new HealthReasonBuilder(new MetricHintProvider());
     }
 
-    public function testReturnsEmptyStringForEmptyInput(): void
+    #[Test]
+    public function itReturnsEmptyStringForEmptyInput(): void
     {
         self::assertSame('', $this->builder->buildReason([]));
     }
 
-    public function testReturnsEmptyStringWhenAllAboveWarningThreshold(): void
+    #[Test]
+    public function itReturnsEmptyStringWhenAllAboveWarningThreshold(): void
     {
         // Default warning threshold for health dimensions is 50.0
         $scores = [
@@ -36,7 +39,8 @@ final class HealthReasonBuilderTest extends TestCase
         self::assertSame('', $this->builder->buildReason($scores));
     }
 
-    public function testReturnsSingleReasonForOneBadDimension(): void
+    #[Test]
+    public function itReturnsSingleReasonForOneBadDimension(): void
     {
         $scores = [
             'complexity' => 20.0, // Below 50 -> bad
@@ -49,7 +53,8 @@ final class HealthReasonBuilderTest extends TestCase
         self::assertSame('high complexity', $reason);
     }
 
-    public function testReturnsUpToTwoWorstReasons(): void
+    #[Test]
+    public function itReturnsUpToTwoWorstReasons(): void
     {
         $scores = [
             'complexity' => 10.0,     // Very bad
@@ -67,7 +72,8 @@ final class HealthReasonBuilderTest extends TestCase
         self::assertStringContainsString('high complexity', $reason);
     }
 
-    public function testDimensionExactlyAtThresholdIsBad(): void
+    #[Test]
+    public function itDimensionExactlyAtThresholdIsBad(): void
     {
         // Delta = score - warnThreshold = 50.0 - 50.0 = 0 -> bad (not strictly above)
         $scores = [
@@ -79,7 +85,8 @@ final class HealthReasonBuilderTest extends TestCase
         self::assertSame('high complexity', $reason);
     }
 
-    public function testDimensionJustAboveThresholdIsGood(): void
+    #[Test]
+    public function itDimensionJustAboveThresholdIsGood(): void
     {
         $scores = [
             'complexity' => 50.1,
@@ -90,7 +97,8 @@ final class HealthReasonBuilderTest extends TestCase
         self::assertSame('', $reason);
     }
 
-    public function testUnknownDimensionNameUsedAsIs(): void
+    #[Test]
+    public function itUnknownDimensionNameUsedAsIs(): void
     {
         // Unknown dimensions that fall below threshold use the dimension name directly
         $scores = [

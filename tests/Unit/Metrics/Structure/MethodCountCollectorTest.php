@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Metrics\Structure;
 use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\MetricBag;
@@ -28,12 +29,14 @@ final class MethodCountCollectorTest extends TestCase
         $this->collector = new MethodCountCollector();
     }
 
-    public function testGetName(): void
+    #[Test]
+    public function itGetsName(): void
     {
         self::assertSame('method-count', $this->collector->getName());
     }
 
-    public function testProvides(): void
+    #[Test]
+    public function itProvides(): void
     {
         $provides = $this->collector->provides();
 
@@ -51,7 +54,8 @@ final class MethodCountCollectorTest extends TestCase
         self::assertContains('promotedPropertyCount', $provides);
     }
 
-    public function testEmptyClass(): void
+    #[Test]
+    public function itReturnsZeroCountsForEmptyClass(): void
     {
         $code = <<<'PHP'
 <?php
@@ -74,7 +78,8 @@ PHP;
         self::assertSame(0, $metrics->get('setterCount:App\EmptyClass'));
     }
 
-    public function testClassWithPublicMethods(): void
+    #[Test]
+    public function itCountsPublicMethods(): void
     {
         $code = <<<'PHP'
 <?php
@@ -98,7 +103,8 @@ PHP;
         self::assertSame(0, $metrics->get('methodCountPrivate:App\PublicClass'));
     }
 
-    public function testClassWithMixedVisibility(): void
+    #[Test]
+    public function itCountsMethodsWithMixedVisibility(): void
     {
         $code = <<<'PHP'
 <?php
@@ -124,7 +130,8 @@ PHP;
         self::assertSame(2, $metrics->get('methodCountPrivate:App\MixedVisibility'));
     }
 
-    public function testClassWithGetters(): void
+    #[Test]
+    public function itCountsGetters(): void
     {
         $code = <<<'PHP'
 <?php
@@ -148,7 +155,8 @@ PHP;
         self::assertSame(4, $metrics->get('methodCountTotal:App\WithGetters'));
     }
 
-    public function testClassWithSetters(): void
+    #[Test]
+    public function itCountsSetters(): void
     {
         $code = <<<'PHP'
 <?php
@@ -171,7 +179,8 @@ PHP;
         self::assertSame(3, $metrics->get('methodCountTotal:App\WithSetters'));
     }
 
-    public function testClassWithGettersAndSetters(): void
+    #[Test]
+    public function itCountsGettersAndSettersSeparately(): void
     {
         $code = <<<'PHP'
 <?php
@@ -200,7 +209,8 @@ PHP;
         self::assertSame(8, $metrics->get('methodCountTotal:App\Entity'));
     }
 
-    public function testInterface(): void
+    #[Test]
+    public function itCountsInterfaceMethods(): void
     {
         $code = <<<'PHP'
 <?php
@@ -223,7 +233,8 @@ PHP;
         self::assertSame(1, $metrics->get('setterCount:App\MyInterface'));
     }
 
-    public function testTrait(): void
+    #[Test]
+    public function itCountsTraitMethods(): void
     {
         $code = <<<'PHP'
 <?php
@@ -246,7 +257,8 @@ PHP;
         self::assertSame(1, $metrics->get('methodCountProtected:App\MyTrait'));
     }
 
-    public function testEnum(): void
+    #[Test]
+    public function itCountsEnumMethods(): void
     {
         $code = <<<'PHP'
 <?php
@@ -280,7 +292,8 @@ PHP;
         self::assertSame(2, $metrics->get('getterCount:App\Status')); // getLabel, isActive
     }
 
-    public function testMultipleClasses(): void
+    #[Test]
+    public function itCountsMethodsForMultipleClasses(): void
     {
         $code = <<<'PHP'
 <?php
@@ -311,7 +324,8 @@ PHP;
         self::assertSame(2, $metrics->get('methodCountPrivate:App\Second'));
     }
 
-    public function testAnonymousClassIgnored(): void
+    #[Test]
+    public function itIgnoresAnonymousClass(): void
     {
         $code = <<<'PHP'
 <?php
@@ -336,7 +350,8 @@ PHP;
         self::assertNull($metrics->get('methodCount:'));
     }
 
-    public function testClassWithoutNamespace(): void
+    #[Test]
+    public function itHandlesClassWithoutNamespace(): void
     {
         $code = <<<'PHP'
 <?php
@@ -355,7 +370,8 @@ PHP;
         self::assertSame(1, $metrics->get('getterCount:GlobalClass'));
     }
 
-    public function testReset(): void
+    #[Test]
+    public function itResetsState(): void
     {
         $code1 = <<<'PHP'
 <?php
@@ -393,7 +409,8 @@ PHP;
         self::assertSame(1, $metrics->get('methodCount:App\Second'));
     }
 
-    public function testGetMetricDefinitions(): void
+    #[Test]
+    public function itGetsMetricDefinitions(): void
     {
         $definitions = $this->collector->getMetricDefinitions();
 
@@ -437,7 +454,8 @@ PHP;
         self::assertContains(AggregationStrategy::Percentile95, $projectStrategies);
     }
 
-    public function testGetterSetterCaseInsensitive(): void
+    #[Test]
+    public function itDetectsGetterSetterCaseInsensitively(): void
     {
         $code = <<<'PHP'
 <?php
@@ -463,7 +481,8 @@ PHP;
         self::assertSame(1, $metrics->get('methodCount:App\CaseTest')); // HAS_permission
     }
 
-    public function testConstructorNotCountedAsGetter(): void
+    #[Test]
+    public function itDoesNotCountConstructorAsGetter(): void
     {
         $code = <<<'PHP'
 <?php
@@ -485,7 +504,8 @@ PHP;
         self::assertSame(3, $metrics->get('methodCount:App\WithConstructor'));
     }
 
-    public function testExactPrefixMatchIsAccessor(): void
+    #[Test]
+    public function itDetectsExactPrefixMatchAsAccessor(): void
     {
         $code = <<<'PHP'
 <?php
@@ -508,7 +528,8 @@ PHP;
         self::assertSame(0, $metrics->get('methodCount:App\ExactPrefixes'));
     }
 
-    public function testFalsePositiveGetterSetterPrefixes(): void
+    #[Test]
+    public function itDoesNotDetectFalsePositiveGetterSetterPrefixes(): void
     {
         $code = <<<'PHP'
 <?php
@@ -536,7 +557,8 @@ PHP;
         self::assertSame(9, $metrics->get('methodCount:App\FalsePositives'));
     }
 
-    public function testCountsPublicProperties(): void
+    #[Test]
+    public function itCountsPublicProperties(): void
     {
         $code = <<<'PHP'
 <?php
@@ -559,7 +581,8 @@ PHP;
         self::assertSame(0, $metrics->get('propertyCountPrivate:App\WithPublicProperties'));
     }
 
-    public function testCountsProtectedProperties(): void
+    #[Test]
+    public function itCountsProtectedProperties(): void
     {
         $code = <<<'PHP'
 <?php
@@ -581,7 +604,8 @@ PHP;
         self::assertSame(0, $metrics->get('propertyCountPrivate:App\WithProtectedProperties'));
     }
 
-    public function testCountsPrivateProperties(): void
+    #[Test]
+    public function itCountsPrivateProperties(): void
     {
         $code = <<<'PHP'
 <?php
@@ -605,7 +629,8 @@ PHP;
         self::assertSame(4, $metrics->get('propertyCountPrivate:App\WithPrivateProperties'));
     }
 
-    public function testCountsPromotedProperties(): void
+    #[Test]
+    public function itCountsPromotedProperties(): void
     {
         $code = <<<'PHP'
 <?php
@@ -631,7 +656,8 @@ PHP;
         self::assertSame(3, $metrics->get('promotedPropertyCount:App\WithPromotedProperties'));
     }
 
-    public function testMultiplePropsInDeclaration(): void
+    #[Test]
+    public function itCountsMultiplePropsInDeclaration(): void
     {
         $code = <<<'PHP'
 <?php
@@ -652,7 +678,8 @@ PHP;
         self::assertSame(2, $metrics->get('propertyCountPrivate:App\MultiDeclaration'));
     }
 
-    public function testStaticPropertiesIncluded(): void
+    #[Test]
+    public function itIncludesStaticProperties(): void
     {
         $code = <<<'PHP'
 <?php
@@ -675,7 +702,8 @@ PHP;
         self::assertSame(1, $metrics->get('propertyCountPrivate:App\WithStaticProperties'));
     }
 
-    public function testTypedProperties(): void
+    #[Test]
+    public function itCountsTypedProperties(): void
     {
         $code = <<<'PHP'
 <?php
@@ -696,7 +724,8 @@ PHP;
         self::assertSame(4, $metrics->get('propertyCount:App\TypedProperties'));
     }
 
-    public function testReadonlyProperties(): void
+    #[Test]
+    public function itCountsReadonlyProperties(): void
     {
         $code = <<<'PHP'
 <?php
@@ -717,7 +746,8 @@ PHP;
         self::assertSame(1, $metrics->get('propertyCountPrivate:App\ReadonlyProperties'));
     }
 
-    public function testNoPropertiesReturnsZero(): void
+    #[Test]
+    public function itReturnsZeroWhenNoProperties(): void
     {
         $code = <<<'PHP'
 <?php
@@ -737,7 +767,8 @@ PHP;
         self::assertSame(0, $metrics->get('promotedPropertyCount:App\NoProperties'));
     }
 
-    public function testMixedPropertiesAndPromoted(): void
+    #[Test]
+    public function itCountsMixedPropertiesAndPromoted(): void
     {
         $code = <<<'PHP'
 <?php
@@ -763,7 +794,8 @@ PHP;
         self::assertSame(2, $metrics->get('promotedPropertyCount:App\MixedProperties'));
     }
 
-    public function testWocIncludesPublicGettersAndSetters(): void
+    #[Test]
+    public function itIncludesPublicGettersAndSettersInWoc(): void
     {
         // Class with 3 public getters + 2 public setters + 1 private method = 6 total
         // All public methods (including getters/setters) = 5, WOC = round(5/6 * 100) = 83
@@ -788,7 +820,8 @@ PHP;
         self::assertSame(83, $metrics->get('woc:App\EntityWithAccessors'));
     }
 
-    public function testWocAllPublicGettersSettersGives100(): void
+    #[Test]
+    public function itReturns100WocWhenAllPublicGettersAndSetters(): void
     {
         // Class with only public getters/setters: WOC = 100
         $code = <<<'PHP'
@@ -810,7 +843,8 @@ PHP;
         self::assertSame(100, $metrics->get('woc:App\PureDto'));
     }
 
-    public function testWocEmptyClassGivesZero(): void
+    #[Test]
+    public function itReturnsZeroWocForEmptyClass(): void
     {
         $code = <<<'PHP'
 <?php

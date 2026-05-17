@@ -6,6 +6,7 @@ namespace Qualimetrix\Tests\Unit\Rules\ComputedMetric;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinition;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinitionHolder;
@@ -29,40 +30,46 @@ final class ComputedMetricRuleTest extends TestCase
         ComputedMetricDefinitionHolder::reset();
     }
 
-    public function testGetName(): void
+    #[Test]
+    public function itReturnsCorrectName(): void
     {
         $rule = new ComputedMetricRule(new ComputedMetricRuleOptions());
 
         self::assertSame('computed.health', $rule->getName());
     }
 
-    public function testGetDescription(): void
+    #[Test]
+    public function itReturnsCorrectDescription(): void
     {
         $rule = new ComputedMetricRule(new ComputedMetricRuleOptions());
 
         self::assertSame('Checks computed health metrics against thresholds', $rule->getDescription());
     }
 
-    public function testGetCategory(): void
+    #[Test]
+    public function itReturnsMaintainabilityCategory(): void
     {
         $rule = new ComputedMetricRule(new ComputedMetricRuleOptions());
 
         self::assertSame(RuleCategory::Maintainability, $rule->getCategory());
     }
 
-    public function testRequiresReturnsEmpty(): void
+    #[Test]
+    public function itRequiresNothing(): void
     {
         $rule = new ComputedMetricRule(new ComputedMetricRuleOptions());
 
         self::assertSame([], $rule->requires());
     }
 
-    public function testGetOptionsClass(): void
+    #[Test]
+    public function itReturnsCorrectOptionsClass(): void
     {
         self::assertSame(ComputedMetricRuleOptions::class, ComputedMetricRule::getOptionsClass());
     }
 
-    public function testDisabledRuleReturnsNoViolations(): void
+    #[Test]
+    public function itReturnsNoViolationsWhenDisabled(): void
     {
         $rule = new ComputedMetricRule(new ComputedMetricRuleOptions(enabled: false));
 
@@ -74,7 +81,8 @@ final class ComputedMetricRuleTest extends TestCase
         self::assertSame([], $rule->analyze($context));
     }
 
-    public function testNoViolationWhenInvertedMetricAboveWarningThreshold(): void
+    #[Test]
+    public function itEmitsNoViolationWhenInvertedMetricAboveWarningThreshold(): void
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.score',
@@ -100,7 +108,8 @@ final class ComputedMetricRuleTest extends TestCase
         self::assertCount(0, $violations);
     }
 
-    public function testWarningForInvertedMetricBelowWarningAboveError(): void
+    #[Test]
+    public function itEmitsWarningWhenInvertedMetricBelowWarningAboveError(): void
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.score',
@@ -130,7 +139,8 @@ final class ComputedMetricRuleTest extends TestCase
         self::assertSame(40.0, $violations[0]->metricValue);
     }
 
-    public function testErrorForInvertedMetricBelowErrorThreshold(): void
+    #[Test]
+    public function itEmitsErrorWhenInvertedMetricBelowErrorThreshold(): void
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.score',
@@ -157,7 +167,8 @@ final class ComputedMetricRuleTest extends TestCase
         self::assertSame(Severity::Error, $violations[0]->severity);
     }
 
-    public function testWarningForNormalMetricAboveWarningBelowError(): void
+    #[Test]
+    public function itEmitsWarningWhenNormalMetricAboveWarningBelowError(): void
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.complexity',
@@ -184,7 +195,8 @@ final class ComputedMetricRuleTest extends TestCase
         self::assertSame(Severity::Warning, $violations[0]->severity);
     }
 
-    public function testErrorForNormalMetricAboveErrorThreshold(): void
+    #[Test]
+    public function itEmitsErrorWhenNormalMetricAboveErrorThreshold(): void
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.complexity',
@@ -211,7 +223,8 @@ final class ComputedMetricRuleTest extends TestCase
         self::assertSame(Severity::Error, $violations[0]->severity);
     }
 
-    public function testNoViolationWhenMetricAbsent(): void
+    #[Test]
+    public function itEmitsNoViolationWhenMetricAbsent(): void
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.score',
@@ -237,7 +250,8 @@ final class ComputedMetricRuleTest extends TestCase
         self::assertCount(0, $violations);
     }
 
-    public function testNoViolationsWhenNoThresholdsDefined(): void
+    #[Test]
+    public function itEmitsNoViolationsWhenNoThresholdsDefined(): void
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.info',
@@ -256,7 +270,8 @@ final class ComputedMetricRuleTest extends TestCase
         self::assertCount(0, $violations);
     }
 
-    public function testViolationMessageFormat(): void
+    #[Test]
+    public function itFormatsViolationMessageCorrectly(): void
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.score',
@@ -289,7 +304,8 @@ final class ComputedMetricRuleTest extends TestCase
         self::assertSame(25.0, $violations[0]->metricValue);
     }
 
-    public function testViolationCodeEqualsDefinitionName(): void
+    #[Test]
+    public function itSetsViolationCodeToDefinitionName(): void
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.custom',
@@ -316,7 +332,8 @@ final class ComputedMetricRuleTest extends TestCase
         self::assertSame('computed.health', $violations[0]->ruleName);
     }
 
-    public function testMultipleDefinitionsProcessed(): void
+    #[Test]
+    public function itProcessesMultipleDefinitions(): void
     {
         $def1 = new ComputedMetricDefinition(
             name: 'health.alpha',
@@ -357,7 +374,8 @@ final class ComputedMetricRuleTest extends TestCase
         self::assertContains('health.beta', $codes);
     }
 
-    public function testMultipleLevels(): void
+    #[Test]
+    public function itProcessesMultipleLevels(): void
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.multi',
@@ -394,7 +412,8 @@ final class ComputedMetricRuleTest extends TestCase
         self::assertCount(2, $violations);
     }
 
-    public function testProjectLevelUsesLocationNone(): void
+    #[Test]
+    public function itUsesNoneLocationForProjectLevel(): void
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.project',
@@ -419,7 +438,8 @@ final class ComputedMetricRuleTest extends TestCase
         self::assertSame(Severity::Warning, $violations[0]->severity);
     }
 
-    public function testNamespaceLevelUsesLocationNone(): void
+    #[Test]
+    public function itUsesNoneLocationForNamespaceLevel(): void
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.ns',
@@ -444,7 +464,8 @@ final class ComputedMetricRuleTest extends TestCase
         self::assertTrue($violations[0]->location->isNone());
     }
 
-    public function testClassLevelUsesFileAndLine(): void
+    #[Test]
+    public function itUsesFileAndLineForClassLevel(): void
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.cls',
@@ -471,7 +492,8 @@ final class ComputedMetricRuleTest extends TestCase
         self::assertSame(42, $violations[0]->location->line);
     }
 
-    public function testMetricValueIsRoundedToOneDecimal(): void
+    #[Test]
+    public function itRoundsMetricValueToOneDecimal(): void
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.precise',
@@ -497,7 +519,8 @@ final class ComputedMetricRuleTest extends TestCase
         self::assertSame(15.7, $violations[0]->metricValue);
     }
 
-    public function testNormalMetricMessageUsesAbove(): void
+    #[Test]
+    public function itUsesAboveInNormalMetricMessage(): void
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.norm',
@@ -524,7 +547,8 @@ final class ComputedMetricRuleTest extends TestCase
         self::assertStringNotContainsString('below', $violations[0]->message);
     }
 
-    public function testInvertedMetricMessageUsesBelow(): void
+    #[Test]
+    public function itUsesBelowInInvertedMetricMessage(): void
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.inv',
@@ -551,7 +575,8 @@ final class ComputedMetricRuleTest extends TestCase
         self::assertStringNotContainsString('above', $violations[0]->message);
     }
 
-    public function testRecommendationIncludesDimensionScoreAndThreshold(): void
+    #[Test]
+    public function itIncludesDimensionScoreAndThresholdInRecommendation(): void
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.complexity',
@@ -583,7 +608,8 @@ final class ComputedMetricRuleTest extends TestCase
         self::assertStringContainsString('Reduce complexity', $recommendation);
     }
 
-    public function testRecommendationDimensionLabelExtraction(): void
+    #[Test]
+    public function itExtractsDimensionLabelInRecommendation(): void
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.cohesion',
@@ -611,7 +637,8 @@ final class ComputedMetricRuleTest extends TestCase
         self::assertStringContainsString('Cohesion health: 30.0 (threshold: 50.0)', $recommendation);
     }
 
-    public function testViolationCarriesThresholdField(): void
+    #[Test]
+    public function itCarriesThresholdFieldInViolation(): void
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.complexity',
@@ -654,8 +681,9 @@ final class ComputedMetricRuleTest extends TestCase
         ];
     }
 
+    #[Test]
     #[DataProvider('dimensionRecommendationProvider')]
-    public function testViolationHasDimensionSpecificRecommendation(string $dimensionName, string $expectedPrefix): void
+    public function itHasDimensionSpecificRecommendation(string $dimensionName, string $expectedPrefix): void
     {
         $definition = new ComputedMetricDefinition(
             name: $dimensionName,

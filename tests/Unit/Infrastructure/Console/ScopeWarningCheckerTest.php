@@ -28,7 +28,7 @@ final class ScopeWarningCheckerTest extends TestCase
     }
 
     #[Test]
-    public function testNoComposerJsonReturnsNoWarnings(): void
+    public function itReturnsNoWarningsWhenComposerJsonIsMissing(): void
     {
         // Missing composer.json is reported by CheckCommand, not ScopeWarningChecker
         $warnings = $this->checker->check($this->tempDir, ['src']);
@@ -37,7 +37,7 @@ final class ScopeWarningCheckerTest extends TestCase
     }
 
     #[Test]
-    public function testFullCoverageReturnsNoWarnings(): void
+    public function itReturnsNoWarningsForFullCoverage(): void
     {
         $this->writeComposerJson([
             'autoload' => [
@@ -54,7 +54,7 @@ final class ScopeWarningCheckerTest extends TestCase
     }
 
     #[Test]
-    public function testPartialCoverageReturnsWarning(): void
+    public function itReturnsWarningForPartialCoverage(): void
     {
         $this->writeComposerJson([
             'autoload' => [
@@ -74,7 +74,7 @@ final class ScopeWarningCheckerTest extends TestCase
     }
 
     #[Test]
-    public function testAutoloadDevNotChecked(): void
+    public function itDoesNotCheckAutoloadDev(): void
     {
         $this->writeComposerJson([
             'autoload' => [
@@ -98,7 +98,7 @@ final class ScopeWarningCheckerTest extends TestCase
     }
 
     #[Test]
-    public function testDotPathCoversEverything(): void
+    public function itTreatsDotPathAsFullCoverage(): void
     {
         $this->writeComposerJson([
             'autoload' => [
@@ -121,7 +121,7 @@ final class ScopeWarningCheckerTest extends TestCase
     }
 
     #[Test]
-    public function testNonexistentAutoloadPathSkipped(): void
+    public function itSkipsNonexistentAutoloadPaths(): void
     {
         $this->writeComposerJson([
             'autoload' => [

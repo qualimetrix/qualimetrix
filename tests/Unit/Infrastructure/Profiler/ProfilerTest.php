@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Infrastructure\Profiler;
 
 use InvalidArgumentException;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\Profiler\Profiler;
 
@@ -17,17 +18,20 @@ final class ProfilerTest extends TestCase
         $this->profiler = new Profiler();
     }
 
-    public function testIsEnabledReturnsTrue(): void
+    #[Test]
+    public function itIsEnabled(): void
     {
         self::assertTrue($this->profiler->isEnabled());
     }
 
-    public function testGetRootSpanReturnsNullInitially(): void
+    #[Test]
+    public function itReturnsNullForRootSpanInitially(): void
     {
         self::assertNull($this->profiler->getRootSpan());
     }
 
-    public function testStartCreatesRootSpan(): void
+    #[Test]
+    public function itCreatesRootSpanOnStart(): void
     {
         $this->profiler->start('test', 'category');
 
@@ -38,7 +42,8 @@ final class ProfilerTest extends TestCase
         self::assertTrue($root->isRunning());
     }
 
-    public function testStopEndsSpan(): void
+    #[Test]
+    public function itEndsSpanOnStop(): void
     {
         $this->profiler->start('test');
         $this->profiler->stop('test');
@@ -48,7 +53,8 @@ final class ProfilerTest extends TestCase
         self::assertFalse($root->isRunning());
     }
 
-    public function testStopWithNonExistentNameIsNoOp(): void
+    #[Test]
+    public function itIgnoresStopForNonExistentName(): void
     {
         $this->profiler->start('test');
         $this->profiler->stop('non-existent');
@@ -58,7 +64,8 @@ final class ProfilerTest extends TestCase
         self::assertTrue($root->isRunning());
     }
 
-    public function testNestedSpansCreateTree(): void
+    #[Test]
+    public function itCreatesTreeFromNestedSpans(): void
     {
         $this->profiler->start('parent');
         $this->profiler->start('child1');
@@ -75,7 +82,8 @@ final class ProfilerTest extends TestCase
         self::assertSame('child2', $root->children[1]->name);
     }
 
-    public function testDeeplyNestedSpans(): void
+    #[Test]
+    public function itHandlesDeeplyNestedSpans(): void
     {
         $this->profiler->start('level1');
         $this->profiler->start('level2');
@@ -93,12 +101,14 @@ final class ProfilerTest extends TestCase
         self::assertSame('level3', $root->children[0]->children[0]->name);
     }
 
-    public function testGetSummaryReturnsEmptyArrayInitially(): void
+    #[Test]
+    public function itReturnsEmptySummaryInitially(): void
     {
         self::assertSame([], $this->profiler->getSummary());
     }
 
-    public function testGetSummaryAggregatesStats(): void
+    #[Test]
+    public function itAggregatesStatsInSummary(): void
     {
         $this->profiler->start('root');
         $this->profiler->start('operation');
@@ -117,7 +127,8 @@ final class ProfilerTest extends TestCase
         self::assertGreaterThan(0, $summary['operation']['avg']);
     }
 
-    public function testGetSummaryWithNestedSpans(): void
+    #[Test]
+    public function itIncludesNestedSpansInSummary(): void
     {
         $this->profiler->start('parent');
         $this->profiler->start('child');
@@ -131,7 +142,8 @@ final class ProfilerTest extends TestCase
         self::assertSame(1, $summary['child']['count']);
     }
 
-    public function testExportJsonFormat(): void
+    #[Test]
+    public function itExportsJsonFormat(): void
     {
         $this->profiler->start('test');
         $this->profiler->stop('test');
@@ -145,7 +157,8 @@ final class ProfilerTest extends TestCase
         self::assertArrayHasKey('memory_delta_bytes', $data);
     }
 
-    public function testExportChromeTracingFormat(): void
+    #[Test]
+    public function itExportsChromeTracingFormat(): void
     {
         $this->profiler->start('test');
         $this->profiler->stop('test');
@@ -160,7 +173,8 @@ final class ProfilerTest extends TestCase
         self::assertSame('E', $data['traceEvents'][1]['ph']);
     }
 
-    public function testExportThrowsExceptionForUnsupportedFormat(): void
+    #[Test]
+    public function itThrowsExceptionForUnsupportedExportFormat(): void
     {
         self::expectException(InvalidArgumentException::class);
         self::expectExceptionMessage('Unsupported export format: invalid');
@@ -169,7 +183,8 @@ final class ProfilerTest extends TestCase
         $this->profiler->export('invalid');
     }
 
-    public function testStopFindsCorrectSpanInStack(): void
+    #[Test]
+    public function itStopsCorrectSpanInStack(): void
     {
         // Test that stop() finds the most recent span with the given name
         $this->profiler->start('outer');
@@ -189,7 +204,8 @@ final class ProfilerTest extends TestCase
         self::assertFalse($root->children[0]->children[0]->isRunning()); // Second "outer" stopped
     }
 
-    public function testOutOfOrderStopEnforcesLifo(): void
+    #[Test]
+    public function itEnforcesLifoOnOutOfOrderStop(): void
     {
         // Start: outer -> inner1 -> inner2
         // Stop 'inner1' out-of-order (inner2 is on top)
@@ -224,7 +240,8 @@ final class ProfilerTest extends TestCase
         self::assertSame('inner3', $root->children[1]->name);
     }
 
-    public function testClearResetsProfiler(): void
+    #[Test]
+    public function itResetsProfilerOnClear(): void
     {
         $this->profiler->start('test');
         $this->profiler->start('nested');
@@ -240,7 +257,8 @@ final class ProfilerTest extends TestCase
         self::assertSame([], $this->profiler->getSummary());
     }
 
-    public function testClearAllowsNewSpansAfterReset(): void
+    #[Test]
+    public function itAllowsNewSpansAfterClear(): void
     {
         $this->profiler->start('first');
         $this->profiler->stop('first');
@@ -254,7 +272,8 @@ final class ProfilerTest extends TestCase
         self::assertSame('second', $root->name);
     }
 
-    public function testStopRecordsPeakMemory(): void
+    #[Test]
+    public function itRecordsPeakMemoryOnStop(): void
     {
         $this->profiler->start('test');
         $this->profiler->stop('test');
@@ -268,7 +287,8 @@ final class ProfilerTest extends TestCase
         self::assertGreaterThanOrEqual(0, $root->getPeakMemoryDelta());
     }
 
-    public function testChildPeakPropagatedToParent(): void
+    #[Test]
+    public function itPropagatesChildPeakToParent(): void
     {
         $this->profiler->start('parent');
         $this->profiler->start('child');
@@ -295,7 +315,8 @@ final class ProfilerTest extends TestCase
         self::assertGreaterThanOrEqual($peakDuringChild, $root->peakMemory);
     }
 
-    public function testSnapshotUpdatesPeakForAllActiveSpans(): void
+    #[Test]
+    public function itUpdatesPeakForAllActiveSpansOnSnapshot(): void
     {
         $this->profiler->start('outer');
         $this->profiler->start('inner');
@@ -313,14 +334,16 @@ final class ProfilerTest extends TestCase
         $this->profiler->stop('outer');
     }
 
-    public function testSnapshotOnEmptyStackIsNoOp(): void
+    #[Test]
+    public function itIgnoresSnapshotOnEmptyStack(): void
     {
         // Should not throw
         $this->profiler->snapshot();
         self::assertNull($this->profiler->getRootSpan());
     }
 
-    public function testGetSummaryIncludesPeakMemory(): void
+    #[Test]
+    public function itIncludesPeakMemoryInSummary(): void
     {
         $this->profiler->start('root');
         $this->profiler->start('operation');
@@ -334,7 +357,8 @@ final class ProfilerTest extends TestCase
         self::assertGreaterThanOrEqual(0, $summary['operation']['peak_memory']);
     }
 
-    public function testPeakMemoryMaxAcrossMultipleInstances(): void
+    #[Test]
+    public function itTakesPeakMemoryMaxAcrossInstances(): void
     {
         $this->profiler->start('root');
 

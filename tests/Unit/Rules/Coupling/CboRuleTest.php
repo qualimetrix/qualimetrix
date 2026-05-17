@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Rules\Coupling;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Dependency\Dependency;
 use Qualimetrix\Core\Dependency\DependencyGraphInterface;
@@ -33,14 +34,16 @@ use Qualimetrix\Rules\Coupling\NamespaceCboOptions;
 #[CoversClass(NamespaceCboOptions::class)]
 final class CboRuleTest extends TestCase
 {
-    public function testGetName(): void
+    #[Test]
+    public function itReturnsCorrectName(): void
     {
         $rule = new CboRule(new CboOptions());
 
         self::assertSame('coupling.cbo', $rule->getName());
     }
 
-    public function testGetDescription(): void
+    #[Test]
+    public function itReturnsCorrectDescription(): void
     {
         $rule = new CboRule(new CboOptions());
 
@@ -50,21 +53,24 @@ final class CboRuleTest extends TestCase
         );
     }
 
-    public function testGetCategory(): void
+    #[Test]
+    public function itReturnsCouplingCategory(): void
     {
         $rule = new CboRule(new CboOptions());
 
         self::assertSame(RuleCategory::Coupling, $rule->getCategory());
     }
 
-    public function testRequires(): void
+    #[Test]
+    public function itRequiresCboMetrics(): void
     {
         $rule = new CboRule(new CboOptions());
 
         self::assertSame(['cbo', 'ca', 'ce', 'cbo_app', 'ce_framework'], $rule->requires());
     }
 
-    public function testGetOptionsClass(): void
+    #[Test]
+    public function itReturnsCorrectOptionsClass(): void
     {
         self::assertSame(
             CboOptions::class,
@@ -72,14 +78,16 @@ final class CboRuleTest extends TestCase
         );
     }
 
-    public function testGetSupportedLevels(): void
+    #[Test]
+    public function itReturnsClassAndNamespaceLevels(): void
     {
         $rule = new CboRule(new CboOptions());
 
         self::assertSame([RuleLevel::Class_, RuleLevel::Namespace_], $rule->getSupportedLevels());
     }
 
-    public function testGetCliAliases(): void
+    #[Test]
+    public function itDeclaresCorrectCliAliases(): void
     {
         self::assertSame([
             'cbo-warning' => 'class.warning',
@@ -89,7 +97,8 @@ final class CboRuleTest extends TestCase
         ], CliAliasReader::read(CboRule::class));
     }
 
-    public function testConstructorThrowsForInvalidOptions(): void
+    #[Test]
+    public function itThrowsForInvalidOptionsType(): void
     {
         self::expectException(InvalidArgumentException::class);
         self::expectExceptionMessage('Expected');
@@ -100,7 +109,8 @@ final class CboRuleTest extends TestCase
 
     // Class-level tests
 
-    public function testAnalyzeLevelClassReturnsEmptyWhenDisabled(): void
+    #[Test]
+    public function itReturnsEmptyWhenClassLevelDisabled(): void
     {
         $rule = new CboRule(
             new CboOptions(
@@ -116,7 +126,8 @@ final class CboRuleTest extends TestCase
         self::assertSame([], $rule->analyzeLevel(RuleLevel::Class_, $context));
     }
 
-    public function testAnalyzeLevelClassReturnsEmptyWhenNoClasses(): void
+    #[Test]
+    public function itReturnsEmptyWhenNoClasses(): void
     {
         $rule = new CboRule(new CboOptions());
 
@@ -129,7 +140,8 @@ final class CboRuleTest extends TestCase
         self::assertSame([], $rule->analyzeLevel(RuleLevel::Class_, $context));
     }
 
-    public function testAnalyzeLevelClassSkipsWhenNoCboMetric(): void
+    #[Test]
+    public function itSkipsClassesWithoutCboMetric(): void
     {
         $rule = new CboRule(new CboOptions());
 
@@ -149,7 +161,8 @@ final class CboRuleTest extends TestCase
         self::assertSame([], $rule->analyzeLevel(RuleLevel::Class_, $context));
     }
 
-    public function testAnalyzeLevelClassNoViolationBelowThreshold(): void
+    #[Test]
+    public function itEmitsNoViolationWhenCboBelowThreshold(): void
     {
         $rule = new CboRule(new CboOptions());
 
@@ -174,7 +187,8 @@ final class CboRuleTest extends TestCase
         self::assertCount(0, $violations);
     }
 
-    public function testAnalyzeLevelClassCboGeneratesWarning(): void
+    #[Test]
+    public function itGeneratesClassCboWarning(): void
     {
         $rule = new CboRule(new CboOptions());
 
@@ -205,7 +219,8 @@ final class CboRuleTest extends TestCase
         self::assertSame(RuleLevel::Class_, $violations[0]->level);
     }
 
-    public function testAnalyzeLevelClassCboGeneratesError(): void
+    #[Test]
+    public function itGeneratesClassCboError(): void
     {
         $rule = new CboRule(new CboOptions());
 
@@ -233,7 +248,8 @@ final class CboRuleTest extends TestCase
         self::assertSame(25.0, $violations[0]->metricValue);
     }
 
-    public function testAnalyzeLevelClassCboCustomThresholds(): void
+    #[Test]
+    public function itRespectsCustomClassCboThresholds(): void
     {
         $rule = new CboRule(
             new CboOptions(
@@ -269,7 +285,8 @@ final class CboRuleTest extends TestCase
 
     // Direction-aware message tests
 
-    public function testAfferentDominantMessageWhenCaExceedsCeTwoToOne(): void
+    #[Test]
+    public function itShowsAfferentDominantMessageWhenCaExceedsCeTwoToOne(): void
     {
         $rule = new CboRule(new CboOptions());
 
@@ -297,7 +314,8 @@ final class CboRuleTest extends TestCase
         self::assertStringContainsString('coupling magnet', $violations[0]->recommendation);
     }
 
-    public function testEfferentDominantMessageWhenCeExceedsCaTwoToOne(): void
+    #[Test]
+    public function itShowsEfferentDominantMessageWhenCeExceedsCaTwoToOne(): void
     {
         $rule = new CboRule(new CboOptions());
 
@@ -325,7 +343,8 @@ final class CboRuleTest extends TestCase
         self::assertStringContainsString('extract dependencies', $violations[0]->recommendation);
     }
 
-    public function testBalancedMessageWhenCaAndCeRoughlyEqual(): void
+    #[Test]
+    public function itShowsBalancedMessageWhenCaAndCeRoughlyEqual(): void
     {
         $rule = new CboRule(new CboOptions());
 
@@ -355,7 +374,8 @@ final class CboRuleTest extends TestCase
 
     // Namespace-level tests
 
-    public function testAnalyzeLevelNamespaceReturnsEmptyWhenDisabled(): void
+    #[Test]
+    public function itReturnsEmptyWhenNamespaceLevelDisabled(): void
     {
         $rule = new CboRule(
             new CboOptions(
@@ -371,7 +391,8 @@ final class CboRuleTest extends TestCase
         self::assertSame([], $rule->analyzeLevel(RuleLevel::Namespace_, $context));
     }
 
-    public function testAnalyzeLevelNamespaceCboGeneratesWarning(): void
+    #[Test]
+    public function itGeneratesNamespaceCboWarning(): void
     {
         $rule = new CboRule(new CboOptions());
 
@@ -401,7 +422,8 @@ final class CboRuleTest extends TestCase
         self::assertSame(RuleLevel::Namespace_, $violations[0]->level);
     }
 
-    public function testAnalyzeLevelNamespaceCboGeneratesError(): void
+    #[Test]
+    public function itGeneratesNamespaceCboError(): void
     {
         $rule = new CboRule(new CboOptions());
 
@@ -431,7 +453,8 @@ final class CboRuleTest extends TestCase
 
     // Namespace minClassCount tests
 
-    public function testAnalyzeLevelNamespaceSkipsWhenBelowMinClassCount(): void
+    #[Test]
+    public function itSkipsNamespaceBelowMinClassCount(): void
     {
         $rule = new CboRule(new CboOptions());
 
@@ -459,7 +482,8 @@ final class CboRuleTest extends TestCase
 
     // Legacy analyze() tests
 
-    public function testAnalyzeCallsBothLevels(): void
+    #[Test]
+    public function itAnalyzesBothLevels(): void
     {
         $rule = new CboRule(new CboOptions());
 
@@ -503,7 +527,8 @@ final class CboRuleTest extends TestCase
 
     // Options tests
 
-    public function testClassOptionsFromArray(): void
+    #[Test]
+    public function itParsesClassOptionsFromArray(): void
     {
         $options = ClassCboOptions::fromArray([
             'enabled' => false,
@@ -516,7 +541,8 @@ final class CboRuleTest extends TestCase
         self::assertSame(15, $options->error);
     }
 
-    public function testClassOptionsFromEmptyArray(): void
+    #[Test]
+    public function itUsesClassOptionDefaults(): void
     {
         $options = ClassCboOptions::fromArray([]);
 
@@ -525,7 +551,8 @@ final class CboRuleTest extends TestCase
         self::assertSame(20, $options->error);
     }
 
-    public function testNamespaceOptionsFromArray(): void
+    #[Test]
+    public function itParsesNamespaceOptionsFromArray(): void
     {
         $options = NamespaceCboOptions::fromArray([
             'enabled' => false,
@@ -538,7 +565,8 @@ final class CboRuleTest extends TestCase
         self::assertSame(16, $options->error);
     }
 
-    public function testCboOptionsFromHierarchicalArray(): void
+    #[Test]
+    public function itParsesCboOptionsFromHierarchicalArray(): void
     {
         $options = CboOptions::fromArray([
             'class' => [
@@ -558,7 +586,8 @@ final class CboRuleTest extends TestCase
         self::assertSame(12, $options->namespace->warning);
     }
 
-    public function testCboOptionsForLevel(): void
+    #[Test]
+    public function itReturnsCorrectOptionsForLevel(): void
     {
         $options = new CboOptions();
 
@@ -566,7 +595,8 @@ final class CboRuleTest extends TestCase
         self::assertSame($options->namespace, $options->forLevel(RuleLevel::Namespace_));
     }
 
-    public function testCboOptionsForLevelThrowsForUnsupportedLevel(): void
+    #[Test]
+    public function itThrowsForUnsupportedLevel(): void
     {
         $options = new CboOptions();
 
@@ -576,7 +606,8 @@ final class CboRuleTest extends TestCase
         $options->forLevel(RuleLevel::Method);
     }
 
-    public function testCboOptionsIsLevelEnabled(): void
+    #[Test]
+    public function itChecksWhetherLevelIsEnabled(): void
     {
         $options = new CboOptions(
             class: new ClassCboOptions(enabled: true),
@@ -587,14 +618,16 @@ final class CboRuleTest extends TestCase
         self::assertFalse($options->isLevelEnabled(RuleLevel::Namespace_));
     }
 
-    public function testCboOptionsGetSupportedLevels(): void
+    #[Test]
+    public function itGetsSupportedLevels(): void
     {
         $options = new CboOptions();
 
         self::assertSame([RuleLevel::Class_, RuleLevel::Namespace_], $options->getSupportedLevels());
     }
 
-    public function testNamespaceOptionsFromArrayIncludesMinClassCount(): void
+    #[Test]
+    public function itParsesNamespaceMinClassCountFromArray(): void
     {
         $options = NamespaceCboOptions::fromArray([
             'min_class_count' => 5,
@@ -603,7 +636,8 @@ final class CboRuleTest extends TestCase
         self::assertSame(5, $options->minClassCount);
     }
 
-    public function testNamespaceOptionsFromArrayMinClassCountDefaultsToThree(): void
+    #[Test]
+    public function itDefaultsNamespaceMinClassCountToThree(): void
     {
         $options = NamespaceCboOptions::fromArray([
             'enabled' => true,
@@ -612,7 +646,8 @@ final class CboRuleTest extends TestCase
         self::assertSame(3, $options->minClassCount);
     }
 
-    public function testNamespaceOptionsFromArrayMinClassCountCamelCaseAlias(): void
+    #[Test]
+    public function itParsesNamespaceMinClassCountCamelCaseAlias(): void
     {
         $options = NamespaceCboOptions::fromArray([
             'minClassCount' => 7,
@@ -623,7 +658,8 @@ final class CboRuleTest extends TestCase
 
     // Dependency list in recommendation tests
 
-    public function testRecommendationIncludesTopDependenciesWhenGraphAvailable(): void
+    #[Test]
+    public function itIncludesTopDependenciesInRecommendationWhenGraphAvailable(): void
     {
         $rule = new CboRule(new CboOptions());
 
@@ -673,7 +709,8 @@ final class CboRuleTest extends TestCase
         self::assertStringContainsString('extract dependencies to reduce outbound coupling', $violations[0]->recommendation);
     }
 
-    public function testRecommendationLimitsToFiveDependencies(): void
+    #[Test]
+    public function itLimitsRecommendationToFiveDependencies(): void
     {
         $rule = new CboRule(new CboOptions());
 
@@ -729,7 +766,8 @@ final class CboRuleTest extends TestCase
         self::assertStringNotContainsString('Golf', $recommendation);
     }
 
-    public function testRecommendationWithoutDependencyGraphFallsBackToBaseMessage(): void
+    #[Test]
+    public function itFallsBackToBaseMessageWithoutDependencyGraph(): void
     {
         $rule = new CboRule(new CboOptions());
 
@@ -756,7 +794,8 @@ final class CboRuleTest extends TestCase
         self::assertStringNotContainsString('Top dependencies:', $violations[0]->recommendation);
     }
 
-    public function testRecommendationWithEmptyDependencyListFallsBackToBaseMessage(): void
+    #[Test]
+    public function itFallsBackToBaseMessageWithEmptyDependencyList(): void
     {
         $rule = new CboRule(new CboOptions());
 
@@ -788,7 +827,8 @@ final class CboRuleTest extends TestCase
         self::assertStringContainsString('coupling magnet', $violations[0]->recommendation);
     }
 
-    public function testNamespaceLevelDoesNotIncludeDependencyList(): void
+    #[Test]
+    public function itOmitsDependencyListFromNamespaceLevelRecommendation(): void
     {
         $rule = new CboRule(new CboOptions());
 
@@ -817,7 +857,8 @@ final class CboRuleTest extends TestCase
         self::assertStringNotContainsString('Top dependencies:', $violations[0]->recommendation);
     }
 
-    public function testRecommendationWithGlobalClassDependency(): void
+    #[Test]
+    public function itHandlesGlobalClassDependencyInRecommendation(): void
     {
         $rule = new CboRule(new CboOptions());
 
@@ -854,8 +895,9 @@ final class CboRuleTest extends TestCase
         self::assertStringContainsString('Top dependencies: stdClass', $violations[0]->recommendation);
     }
 
+    #[Test]
     #[DataProvider('cboThresholdDataProvider')]
-    public function testCboThresholdBoundaries(
+    public function itRespectsCboThresholdBoundaries(
         int $cbo,
         int $warning,
         int $error,
@@ -909,7 +951,8 @@ final class CboRuleTest extends TestCase
 
     // Scope tests
 
-    public function testScopeApplicationUsesCboApp(): void
+    #[Test]
+    public function itUsesCboAppMetricForApplicationScope(): void
     {
         $rule = new CboRule(
             new CboOptions(
@@ -944,7 +987,8 @@ final class CboRuleTest extends TestCase
         self::assertCount(0, $violations);
     }
 
-    public function testScopeApplicationGeneratesWarningFromCboApp(): void
+    #[Test]
+    public function itGeneratesWarningFromCboAppWhenApplicationScope(): void
     {
         $rule = new CboRule(
             new CboOptions(
@@ -986,7 +1030,8 @@ final class CboRuleTest extends TestCase
         self::assertStringContainsString('framework: 23 classes excluded', $violations[0]->message);
     }
 
-    public function testScopeAllDefaultUsesCbo(): void
+    #[Test]
+    public function itUsesCboMetricForDefaultScopeAll(): void
     {
         // Default scope is 'all', should use CBO
         $rule = new CboRule(
@@ -1025,7 +1070,8 @@ final class CboRuleTest extends TestCase
 
     // Scope options parsing tests
 
-    public function testClassCboOptionsParsesScope(): void
+    #[Test]
+    public function itParsesScopeInClassCboOptions(): void
     {
         $options = ClassCboOptions::fromArray([
             'scope' => 'application',
@@ -1034,14 +1080,16 @@ final class CboRuleTest extends TestCase
         self::assertSame('application', $options->scope);
     }
 
-    public function testClassCboOptionsDefaultsToScopeAll(): void
+    #[Test]
+    public function itDefaultsClassCboScopeToAll(): void
     {
         $options = ClassCboOptions::fromArray([]);
 
         self::assertSame('all', $options->scope);
     }
 
-    public function testClassCboOptionsInvalidScopeDefaultsToAll(): void
+    #[Test]
+    public function itDefaultsInvalidScopeToAll(): void
     {
         $options = ClassCboOptions::fromArray([
             'scope' => 'invalid',
@@ -1050,7 +1098,8 @@ final class CboRuleTest extends TestCase
         self::assertSame('all', $options->scope);
     }
 
-    public function testCboOptionsTopLevelScopePropagates(): void
+    #[Test]
+    public function itPropagatesTopLevelScopeToClassOptions(): void
     {
         $options = CboOptions::fromArray([
             'scope' => 'application',
@@ -1059,7 +1108,8 @@ final class CboRuleTest extends TestCase
         self::assertSame('application', $options->class->scope);
     }
 
-    public function testCboOptionsClassLevelScopeOverridesTopLevel(): void
+    #[Test]
+    public function itAllowsClassLevelScopeToOverrideTopLevel(): void
     {
         $options = CboOptions::fromArray([
             'scope' => 'application',

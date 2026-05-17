@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Metrics\Structure;
 use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\MetricBag;
@@ -26,12 +27,14 @@ final class RfcCollectorTest extends TestCase
         $this->collector = new RfcCollector();
     }
 
-    public function testGetName(): void
+    #[Test]
+    public function itReturnsCollectorName(): void
     {
         self::assertSame('rfc', $this->collector->getName());
     }
 
-    public function testProvides(): void
+    #[Test]
+    public function itProvidesExpectedMetricNames(): void
     {
         $provides = $this->collector->provides();
 
@@ -41,7 +44,8 @@ final class RfcCollectorTest extends TestCase
         self::assertCount(3, $provides);
     }
 
-    public function testGetMetricDefinitions(): void
+    #[Test]
+    public function itReturnsCorrectMetricDefinitions(): void
     {
         $definitions = $this->collector->getMetricDefinitions();
 
@@ -75,7 +79,8 @@ final class RfcCollectorTest extends TestCase
         self::assertSame(SymbolLevel::Class_, $rfcExternalDef->collectedAt);
     }
 
-    public function testEmptyClass(): void
+    #[Test]
+    public function itReturnsZeroRfcForEmptyClass(): void
     {
         $code = <<<'PHP'
 <?php
@@ -93,7 +98,8 @@ PHP;
         self::assertSame(0, $metrics->get('rfc_external:App\EmptyClass'));
     }
 
-    public function testSimpleCalculator(): void
+    #[Test]
+    public function itCountsOwnMethodsForSimpleCalculator(): void
     {
         $code = <<<'PHP'
 <?php
@@ -118,7 +124,8 @@ PHP;
         self::assertSame(0, $metrics->get('rfc_external:Calculator'));
     }
 
-    public function testClassWithExternalCalls(): void
+    #[Test]
+    public function itCountsExternalCallsSeparately(): void
     {
         $code = <<<'PHP'
 <?php
@@ -146,7 +153,8 @@ PHP;
         self::assertSame(3, $metrics->get('rfc_external:App\OrderService'));
     }
 
-    public function testDuplicateExternalCalls(): void
+    #[Test]
+    public function itDeduplicatesExternalCallsByName(): void
     {
         $code = <<<'PHP'
 <?php
@@ -171,7 +179,8 @@ PHP;
         self::assertSame(1, $metrics->get('rfc_external:Logger'));
     }
 
-    public function testInternalCallsNotCounted(): void
+    #[Test]
+    public function itDoesNotCountInternalThisCalls(): void
     {
         $code = <<<'PHP'
 <?php
@@ -196,7 +205,8 @@ PHP;
         self::assertSame(0, $metrics->get('rfc_external:InternalCalls'));
     }
 
-    public function testStaticCalls(): void
+    #[Test]
+    public function itCountsStaticCallsAsExternal(): void
     {
         $code = <<<'PHP'
 <?php
@@ -217,7 +227,8 @@ PHP;
         self::assertSame(2, $metrics->get('rfc_external:StaticCalls'));
     }
 
-    public function testGlobalFunctionCalls(): void
+    #[Test]
+    public function itCountsGlobalFunctionCallsAsExternal(): void
     {
         $code = <<<'PHP'
 <?php
@@ -239,7 +250,8 @@ PHP;
         self::assertSame(2, $metrics->get('rfc_external:GlobalFunctions'));
     }
 
-    public function testConstructorCalls(): void
+    #[Test]
+    public function itCountsConstructorCallsAsExternal(): void
     {
         $code = <<<'PHP'
 <?php
@@ -260,7 +272,8 @@ PHP;
         self::assertSame(2, $metrics->get('rfc_external:Factory'));
     }
 
-    public function testMultipleClasses(): void
+    #[Test]
+    public function itTracksMultipleClassesIndependently(): void
     {
         $code = <<<'PHP'
 <?php
@@ -301,7 +314,8 @@ PHP;
         self::assertSame(2, $metrics->get('rfc_external:App\Second'));
     }
 
-    public function testGetClassesWithMetrics(): void
+    #[Test]
+    public function itReturnsClassesWithComputedMetrics(): void
     {
         $code = <<<'PHP'
 <?php
@@ -338,7 +352,8 @@ PHP;
         self::assertSame(2, $bag->get('rfc_external'));
     }
 
-    public function testReset(): void
+    #[Test]
+    public function itClearsStateOnReset(): void
     {
         $code1 = <<<'PHP'
 <?php
@@ -372,7 +387,8 @@ PHP;
         self::assertSame(1, $metrics2->get('rfc:Second'));
     }
 
-    public function testAbstractMethodsNotCounted(): void
+    #[Test]
+    public function itDoesNotCountAbstractMethodsInRfc(): void
     {
         $code = <<<'PHP'
 <?php
@@ -394,7 +410,8 @@ PHP;
         self::assertSame(1, $metrics->get('rfc_external:AbstractClass'));
     }
 
-    public function testComplexRealWorldExample(): void
+    #[Test]
+    public function itHandlesComplexRealWorldOrderProcessor(): void
     {
         $code = <<<'PHP'
 <?php

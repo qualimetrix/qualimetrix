@@ -8,14 +8,16 @@ use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Metrics\Security\SensitiveParameterVisitor;
 
 #[CoversClass(SensitiveParameterVisitor::class)]
 final class SensitiveParameterVisitorTest extends TestCase
 {
+    #[Test]
     #[DataProvider('provideDetectionCases')]
-    public function testDetection(string $code, int $expectedCount, ?string $expectedParamName = null): void
+    public function itDetectsSensitiveParameters(string $code, int $expectedCount, ?string $expectedParamName = null): void
     {
         $visitor = new SensitiveParameterVisitor();
 
@@ -144,7 +146,8 @@ PHP,
         ];
     }
 
-    public function testResetClearsState(): void
+    #[Test]
+    public function itResetsClearsState(): void
     {
         $visitor = new SensitiveParameterVisitor();
 

@@ -6,20 +6,23 @@ namespace Qualimetrix\Tests\Unit\Core\Rule;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Rule\RuleLevel;
 
 #[CoversClass(RuleLevel::class)]
 final class RuleLevelTest extends TestCase
 {
-    public function testEnumValues(): void
+    #[Test]
+    public function itEnumValues(): void
     {
         self::assertSame('method', RuleLevel::Method->value);
         self::assertSame('class', RuleLevel::Class_->value);
         self::assertSame('namespace', RuleLevel::Namespace_->value);
     }
 
-    public function testAllCases(): void
+    #[Test]
+    public function itAllCases(): void
     {
         $cases = RuleLevel::cases();
 
@@ -30,7 +33,8 @@ final class RuleLevelTest extends TestCase
     }
 
     #[DataProvider('displayNameProvider')]
-    public function testDisplayName(RuleLevel $level, string $expected): void
+    #[Test]
+    public function itDisplayName(RuleLevel $level, string $expected): void
     {
         self::assertSame($expected, $level->displayName());
     }
@@ -45,14 +49,16 @@ final class RuleLevelTest extends TestCase
         yield 'namespace' => [RuleLevel::Namespace_, 'Namespace'];
     }
 
-    public function testFromString(): void
+    #[Test]
+    public function itFromString(): void
     {
         self::assertSame(RuleLevel::Method, RuleLevel::from('method'));
         self::assertSame(RuleLevel::Class_, RuleLevel::from('class'));
         self::assertSame(RuleLevel::Namespace_, RuleLevel::from('namespace'));
     }
 
-    public function testTryFromWithInvalidValue(): void
+    #[Test]
+    public function itTryFromWithInvalidValue(): void
     {
         self::assertNull(RuleLevel::tryFrom('invalid'));
         self::assertNull(RuleLevel::tryFrom('function'));

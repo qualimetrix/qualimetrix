@@ -6,6 +6,7 @@ namespace Qualimetrix\Tests\Unit\Metrics\Security;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Metrics\Security\SensitiveNameMatcher;
 
@@ -19,14 +20,16 @@ final class SensitiveNameMatcherTest extends TestCase
         $this->matcher = new SensitiveNameMatcher();
     }
 
+    #[Test]
     #[DataProvider('provideSensitiveNames')]
-    public function testSensitiveNames(string $name): void
+    public function itMatchesSensitiveNames(string $name): void
     {
         self::assertTrue($this->matcher->isSensitive($name), "Expected '{$name}' to be sensitive");
     }
 
+    #[Test]
     #[DataProvider('provideNonSensitiveNames')]
-    public function testNonSensitiveNames(string $name): void
+    public function itDoesNotMatchNonSensitiveNames(string $name): void
     {
         self::assertFalse($this->matcher->isSensitive($name), "Expected '{$name}' to NOT be sensitive");
     }
@@ -155,7 +158,8 @@ final class SensitiveNameMatcherTest extends TestCase
         yield 'count' => ['count'];
     }
 
-    public function testExtraSensitiveNamesAreDetected(): void
+    #[Test]
+    public function itDetectsExtraSensitiveNames(): void
     {
         $matcher = new SensitiveNameMatcher(['connection_string']);
 
@@ -165,7 +169,8 @@ final class SensitiveNameMatcherTest extends TestCase
         self::assertTrue($matcher->isSensitive('CONNECTION_STRING'));
     }
 
-    public function testExtraSensitiveNamesRespectSuffixBlacklist(): void
+    #[Test]
+    public function itRespectsSuffixBlacklistForExtraSensitiveNames(): void
     {
         $matcher = new SensitiveNameMatcher(['connection_string']);
 
@@ -175,7 +180,8 @@ final class SensitiveNameMatcherTest extends TestCase
         self::assertFalse($matcher->isSensitive('configConnectionString'));
     }
 
-    public function testExtraSensitiveNamesDoNotAffectDefaultBehavior(): void
+    #[Test]
+    public function itDoesNotAffectDefaultBehaviorWithExtraSensitiveNames(): void
     {
         $matcher = new SensitiveNameMatcher(['connection_string']);
 

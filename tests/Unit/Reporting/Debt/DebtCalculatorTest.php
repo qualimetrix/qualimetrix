@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Reporting\Debt;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
@@ -23,7 +24,8 @@ final class DebtCalculatorTest extends TestCase
         $this->calculator = new DebtCalculator(new RemediationTimeRegistry());
     }
 
-    public function testEmptyViolations(): void
+    #[Test]
+    public function itCalculatesZeroDebtForEmptyViolations(): void
     {
         $summary = $this->calculator->calculate([]);
 
@@ -32,7 +34,8 @@ final class DebtCalculatorTest extends TestCase
         self::assertSame([], $summary->perRule);
     }
 
-    public function testSingleViolation(): void
+    #[Test]
+    public function itCalculatesDebtForSingleViolation(): void
     {
         $violations = [
             $this->createViolation('src/Foo.php', 'complexity.cyclomatic'),
@@ -45,7 +48,8 @@ final class DebtCalculatorTest extends TestCase
         self::assertSame(['complexity.cyclomatic' => 30], $summary->perRule);
     }
 
-    public function testMultipleViolationsSameRule(): void
+    #[Test]
+    public function itAccumulatesDebtForMultipleViolationsSameRule(): void
     {
         $violations = [
             $this->createViolation('src/Foo.php', 'complexity.cyclomatic'),
@@ -60,7 +64,8 @@ final class DebtCalculatorTest extends TestCase
         self::assertSame(['complexity.cyclomatic' => 90], $summary->perRule);
     }
 
-    public function testMixedRules(): void
+    #[Test]
+    public function itCalculatesDebtForMixedRules(): void
     {
         $violations = [
             $this->createViolation('src/Foo.php', 'complexity.cyclomatic'),   // 30
@@ -79,7 +84,8 @@ final class DebtCalculatorTest extends TestCase
         ], $summary->perRule);
     }
 
-    public function testUnknownRuleUsesDefault(): void
+    #[Test]
+    public function itUsesDefaultDebtForUnknownRule(): void
     {
         $violations = [
             $this->createViolation('src/Foo.php', 'custom.unknown-rule'),
@@ -92,7 +98,8 @@ final class DebtCalculatorTest extends TestCase
         self::assertSame(['custom.unknown-rule' => 15], $summary->perRule);
     }
 
-    public function testViolationWithNoFileIsExcludedFromPerFile(): void
+    #[Test]
+    public function itExcludesViolationWithNoFileFromPerFile(): void
     {
         $violation = new Violation(
             location: Location::none(),
@@ -110,7 +117,8 @@ final class DebtCalculatorTest extends TestCase
         self::assertSame(['architecture.circular-dependency' => 120], $summary->perRule);
     }
 
-    public function testScaledDebtForViolationWithMetricAndThreshold(): void
+    #[Test]
+    public function itScalesDebtForViolationWithMetricAndThreshold(): void
     {
         // CCN=50, threshold=20: ratio=2.5, ln(2.5)=0.916, max(1, 0.916)=1 → 30*1=30
         $violation = new Violation(
@@ -131,7 +139,8 @@ final class DebtCalculatorTest extends TestCase
         self::assertSame(['complexity.cyclomatic' => 30], $summary->perRule);
     }
 
-    public function testMixedScaledAndFlatDebt(): void
+    #[Test]
+    public function itCombinesScaledAndFlatDebt(): void
     {
         $violations = [
             // With metric data: ratio=2.5, max(1, ln(2.5))=1 → 30*1=30

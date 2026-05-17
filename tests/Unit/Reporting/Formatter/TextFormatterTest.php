@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Reporting\Formatter;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
@@ -31,17 +32,20 @@ final class TextFormatterTest extends TestCase
         $this->plainContext = new FormatterContext(useColor: false);
     }
 
-    public function testGetNameReturnsText(): void
+    #[Test]
+    public function itReturnsTextName(): void
     {
         self::assertSame('text', $this->formatter->getName());
     }
 
-    public function testGetDefaultGroupByReturnsNone(): void
+    #[Test]
+    public function itReturnsDefaultGroupByNone(): void
     {
         self::assertSame(GroupBy::None, $this->formatter->getDefaultGroupBy());
     }
 
-    public function testFormatEmptyReport(): void
+    #[Test]
+    public function itFormatsEmptyReport(): void
     {
         $report = ReportBuilder::create()
             ->filesAnalyzed(42)
@@ -56,7 +60,8 @@ final class TextFormatterTest extends TestCase
         self::assertStringContainsString("Technical debt: 0min\n", $output);
     }
 
-    public function testFormatSingleViolation(): void
+    #[Test]
+    public function itFormatsSingleViolation(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -88,7 +93,8 @@ final class TextFormatterTest extends TestCase
         self::assertStringEndsWith("\n", $output);
     }
 
-    public function testFormatMultipleViolations(): void
+    #[Test]
+    public function itFormatsMultipleViolations(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -127,7 +133,8 @@ final class TextFormatterTest extends TestCase
         self::assertStringEndsWith("\n", $output);
     }
 
-    public function testFormatClassLevelViolation(): void
+    #[Test]
+    public function itFormatsClassLevelViolation(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -148,7 +155,8 @@ final class TextFormatterTest extends TestCase
         self::assertStringContainsString('warning[lcom]: LCOM is 5 (UserService)', $output);
     }
 
-    public function testFormatNamespaceLevelViolation(): void
+    #[Test]
+    public function itFormatsNamespaceLevelViolation(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -169,7 +177,8 @@ final class TextFormatterTest extends TestCase
         self::assertStringContainsString('src/Service/UserService.php: error[namespace-size]: Namespace contains 16 classes (namespace: App\Service)', $output);
     }
 
-    public function testFormatFileLevelViolation(): void
+    #[Test]
+    public function itFormatsFileLevelViolation(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -190,7 +199,8 @@ final class TextFormatterTest extends TestCase
         self::assertStringContainsString('src/Service/UserService.php: warning[file-size]: File is too large', $output);
     }
 
-    public function testFormatGlobalFunctionViolation(): void
+    #[Test]
+    public function itFormatsGlobalFunctionViolation(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -211,7 +221,8 @@ final class TextFormatterTest extends TestCase
         self::assertStringContainsString('src/functions.php: warning[cyclomatic-complexity]: Function has complexity of 20 (myComplexFunction)', $output);
     }
 
-    public function testOutputIsParseable(): void
+    #[Test]
+    public function itProducesParseableOutput(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -242,7 +253,8 @@ final class TextFormatterTest extends TestCase
         self::assertSame('Test message (Foo::bar)', $matches[5]);
     }
 
-    public function testViolationCodeUsedInBrackets(): void
+    #[Test]
+    public function itUsesViolationCodeInBrackets(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -264,7 +276,8 @@ final class TextFormatterTest extends TestCase
         self::assertStringNotContainsString('[complexity]', $output);
     }
 
-    public function testColoredOutputContainsAnsiCodes(): void
+    #[Test]
+    public function itProducesColoredOutputWithAnsiCodes(): void
     {
         $colorContext = new FormatterContext(useColor: true);
 
@@ -290,7 +303,8 @@ final class TextFormatterTest extends TestCase
         self::assertStringContainsString("\e[31merror\e[0m", $output);
     }
 
-    public function testNoAnsiCodesWithColorDisabled(): void
+    #[Test]
+    public function itProducesNoAnsiCodesWithColorDisabled(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -311,7 +325,8 @@ final class TextFormatterTest extends TestCase
         self::assertStringNotContainsString("\e[", $output);
     }
 
-    public function testSortingBySeverityThenFile(): void
+    #[Test]
+    public function itSortsBySeverityThenFile(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -346,7 +361,8 @@ final class TextFormatterTest extends TestCase
         self::assertLessThan($posWarning, $posError);
     }
 
-    public function testSummaryColoredRedForErrors(): void
+    #[Test]
+    public function itColorsSummaryRedForErrors(): void
     {
         $colorContext = new FormatterContext(useColor: true);
 
@@ -371,7 +387,8 @@ final class TextFormatterTest extends TestCase
         self::assertStringContainsString('1 error(s)', $output);
     }
 
-    public function testRelativizesAbsolutePathsWithBasePath(): void
+    #[Test]
+    public function itRelativizesAbsolutePathsWithBasePath(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -394,7 +411,8 @@ final class TextFormatterTest extends TestCase
         self::assertStringNotContainsString('/home/user/project/', $output);
     }
 
-    public function testSummaryColoredGreenForNoViolations(): void
+    #[Test]
+    public function itColorsSummaryGreenForNoViolations(): void
     {
         $colorContext = new FormatterContext(useColor: true);
 
@@ -411,7 +429,8 @@ final class TextFormatterTest extends TestCase
         self::assertStringContainsString('0 error(s)', $output);
     }
 
-    public function testDetailModeGroupsByFile(): void
+    #[Test]
+    public function itGroupsByFileInDetailMode(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -462,7 +481,8 @@ final class TextFormatterTest extends TestCase
         self::assertStringContainsString('1 error(s), 1 warning(s) in 2 file(s)', $output);
     }
 
-    public function testDetailModeEmptyReport(): void
+    #[Test]
+    public function itHandlesEmptyReportInDetailMode(): void
     {
         $report = ReportBuilder::create()
             ->filesAnalyzed(5)
@@ -477,7 +497,8 @@ final class TextFormatterTest extends TestCase
         self::assertStringContainsString('0 error(s), 0 warning(s) in 5 file(s)', $output);
     }
 
-    public function testDetailModeRespectsExplicitGroupByRule(): void
+    #[Test]
+    public function itRespectsExplicitGroupByRuleInDetailMode(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -506,7 +527,8 @@ final class TextFormatterTest extends TestCase
         self::assertStringNotContainsString('src/Foo.php (1', $output);
     }
 
-    public function testDebtBreakdownIncludesAllRulesWhenDetailLimitTruncates(): void
+    #[Test]
+    public function itIncludesAllRulesInDebtBreakdownWhenDetailLimitTruncates(): void
     {
         $builder = ReportBuilder::create()
             ->filesAnalyzed(3)

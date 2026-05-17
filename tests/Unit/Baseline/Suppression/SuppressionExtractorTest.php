@@ -9,6 +9,7 @@ use PhpParser\Comment\Doc;
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\ClassMethod;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Baseline\Suppression\SuppressionExtractor;
 use Qualimetrix\Core\Suppression\SuppressionType;
@@ -23,7 +24,8 @@ final class SuppressionExtractorTest extends TestCase
         $this->extractor = new SuppressionExtractor();
     }
 
-    public function testExtractsSuppressionTag(): void
+    #[Test]
+    public function itExtractsSuppressionTag(): void
     {
         $docComment = new Doc(
             <<<'DOC'
@@ -47,7 +49,8 @@ final class SuppressionExtractorTest extends TestCase
         self::assertSame(SuppressionType::Symbol, $suppressions[0]->type);
     }
 
-    public function testExtractsSuppressionWithReason(): void
+    #[Test]
+    public function itExtractsSuppressionWithReason(): void
     {
         $docComment = new Doc(
             <<<'DOC'
@@ -70,7 +73,8 @@ final class SuppressionExtractorTest extends TestCase
         self::assertSame(SuppressionType::Symbol, $suppressions[0]->type);
     }
 
-    public function testExtractsMultipleSuppressions(): void
+    #[Test]
+    public function itExtractsMultipleSuppressions(): void
     {
         $docComment = new Doc(
             <<<'DOC'
@@ -95,7 +99,8 @@ final class SuppressionExtractorTest extends TestCase
         self::assertSame(SuppressionType::Symbol, $suppressions[1]->type);
     }
 
-    public function testExtractsWildcardSuppression(): void
+    #[Test]
+    public function itExtractsWildcardSuppression(): void
     {
         $docComment = new Doc(
             <<<'DOC'
@@ -117,7 +122,8 @@ final class SuppressionExtractorTest extends TestCase
         self::assertSame(SuppressionType::Symbol, $suppressions[0]->type);
     }
 
-    public function testExtractsNextLineSuppression(): void
+    #[Test]
+    public function itExtractsNextLineSuppression(): void
     {
         $docComment = new Doc(
             <<<'DOC'
@@ -139,7 +145,8 @@ final class SuppressionExtractorTest extends TestCase
         self::assertSame(SuppressionType::NextLine, $suppressions[0]->type);
     }
 
-    public function testExtractsDottedRuleName(): void
+    #[Test]
+    public function itExtractsDottedRuleName(): void
     {
         $docComment = new Doc(
             <<<'DOC'
@@ -162,7 +169,8 @@ final class SuppressionExtractorTest extends TestCase
         self::assertSame(SuppressionType::Symbol, $suppressions[0]->type);
     }
 
-    public function testExtractsRuleNameWithDashes(): void
+    #[Test]
+    public function itExtractsRuleNameWithDashes(): void
     {
         $docComment = new Doc(
             <<<'DOC'
@@ -184,7 +192,8 @@ final class SuppressionExtractorTest extends TestCase
         self::assertSame(SuppressionType::Symbol, $suppressions[0]->type);
     }
 
-    public function testReturnsEmptyWhenNoDocComment(): void
+    #[Test]
+    public function itReturnsEmptyWhenNoDocComment(): void
     {
         $node = new Class_('Foo');
 
@@ -193,7 +202,8 @@ final class SuppressionExtractorTest extends TestCase
         self::assertEmpty($suppressions);
     }
 
-    public function testReturnsEmptyWhenNoSuppressionTags(): void
+    #[Test]
+    public function itReturnsEmptyWhenNoSuppressionTags(): void
     {
         $docComment = new Doc(
             <<<'DOC'
@@ -215,7 +225,8 @@ final class SuppressionExtractorTest extends TestCase
         self::assertEmpty($suppressions);
     }
 
-    public function testExtractsFileLevelSuppression(): void
+    #[Test]
+    public function itExtractsFileLevelSuppression(): void
     {
         $docComment = new Doc(
             <<<'DOC'
@@ -237,7 +248,8 @@ final class SuppressionExtractorTest extends TestCase
         self::assertSame(SuppressionType::File, $suppressions[0]->type);
     }
 
-    public function testFileLevelSuppressionReturnsEmptyWhenNotPresent(): void
+    #[Test]
+    public function itFileLevelSuppressionReturnsEmptyWhenNotPresent(): void
     {
         $docComment = new Doc(
             <<<'DOC'
@@ -257,7 +269,8 @@ final class SuppressionExtractorTest extends TestCase
         self::assertEmpty($suppressions);
     }
 
-    public function testFileLevelSuppressionWithoutArgumentDefaultsToWildcard(): void
+    #[Test]
+    public function itFileLevelSuppressionWithoutArgumentDefaultsToWildcard(): void
     {
         $docComment = new Doc(
             <<<'DOC'
@@ -279,7 +292,8 @@ final class SuppressionExtractorTest extends TestCase
         self::assertSame(SuppressionType::File, $suppressions[0]->type);
     }
 
-    public function testFileLevelSuppressionWithRule(): void
+    #[Test]
+    public function itFileLevelSuppressionWithRule(): void
     {
         $docComment = new Doc(
             <<<'DOC'
@@ -301,7 +315,8 @@ final class SuppressionExtractorTest extends TestCase
         self::assertSame(SuppressionType::File, $suppressions[0]->type);
     }
 
-    public function testNextLineSuppressionInMultiLineDocblockUsesEndLine(): void
+    #[Test]
+    public function itNextLineSuppressionInMultiLineDocblockUsesEndLine(): void
     {
         // Multi-line docblock: starts at line 10, ends at line 14
         $docComment = new Doc(
@@ -328,7 +343,8 @@ final class SuppressionExtractorTest extends TestCase
         self::assertSame(14, $suppressions[0]->line);
     }
 
-    public function testSymbolSuppressionHasEndLineFromNode(): void
+    #[Test]
+    public function itSymbolSuppressionHasEndLineFromNode(): void
     {
         $docComment = new Doc(
             <<<'DOC'
@@ -350,7 +366,8 @@ final class SuppressionExtractorTest extends TestCase
         self::assertSame(50, $suppressions[0]->endLine);
     }
 
-    public function testNextLineSuppressionHasNoEndLine(): void
+    #[Test]
+    public function itNextLineSuppressionHasNoEndLine(): void
     {
         $docComment = new Doc(
             <<<'DOC'
@@ -372,7 +389,8 @@ final class SuppressionExtractorTest extends TestCase
         self::assertNull($suppressions[0]->endLine);
     }
 
-    public function testFileSuppressionHasNoEndLine(): void
+    #[Test]
+    public function itFileSuppressionHasNoEndLine(): void
     {
         $docComment = new Doc(
             <<<'DOC'
@@ -394,7 +412,8 @@ final class SuppressionExtractorTest extends TestCase
         self::assertNull($suppressions[0]->endLine);
     }
 
-    public function testIgnoreFileSectionDoesNotMatchAsFileLevel(): void
+    #[Test]
+    public function itIgnoreFileSectionDoesNotMatchAsFileLevel(): void
     {
         $docComment = new Doc(
             <<<'DOC'
@@ -414,7 +433,8 @@ final class SuppressionExtractorTest extends TestCase
         self::assertEmpty($suppressions);
     }
 
-    public function testIgnoreFileSectionDoesNotMatchAsFileLevelViaExtract(): void
+    #[Test]
+    public function itIgnoreFileSectionDoesNotMatchAsFileLevelViaExtract(): void
     {
         $docComment = new Doc(
             <<<'DOC'
@@ -435,7 +455,8 @@ final class SuppressionExtractorTest extends TestCase
         self::assertEmpty($suppressions);
     }
 
-    public function testIgnoreNextLineExtraWordDoesNotMatch(): void
+    #[Test]
+    public function itIgnoreNextLineExtraWordDoesNotMatch(): void
     {
         $docComment = new Doc(
             <<<'DOC'
@@ -455,7 +476,8 @@ final class SuppressionExtractorTest extends TestCase
         self::assertEmpty($suppressions);
     }
 
-    public function testReasonContainingAsteriskIsNotTruncated(): void
+    #[Test]
+    public function itReasonContainingAsteriskIsNotTruncated(): void
     {
         $docComment = new Doc(
             <<<'DOC'
@@ -477,7 +499,8 @@ final class SuppressionExtractorTest extends TestCase
         self::assertSame('Legacy code * needs refactoring', $suppressions[0]->reason);
     }
 
-    public function testReasonTrailingDocblockClosingIsStripped(): void
+    #[Test]
+    public function itReasonTrailingDocblockClosingIsStripped(): void
     {
         // Single-line docblock where reason runs into closing */
         $docComment = new Doc(
@@ -496,7 +519,8 @@ final class SuppressionExtractorTest extends TestCase
         self::assertSame('Some reason', $suppressions[0]->reason);
     }
 
-    public function testExtractMixedSuppressionTypes(): void
+    #[Test]
+    public function itExtractMixedSuppressionTypes(): void
     {
         $docComment = new Doc(
             <<<'DOC'
@@ -533,7 +557,8 @@ final class SuppressionExtractorTest extends TestCase
 
     // ---- Regular comment support tests ----
 
-    public function testExtractsSuppressionFromLineComment(): void
+    #[Test]
+    public function itExtractsSuppressionFromLineComment(): void
     {
         $comment = new Comment(
             '// @qmx-ignore complexity.cyclomatic',
@@ -554,7 +579,8 @@ final class SuppressionExtractorTest extends TestCase
         self::assertSame(20, $suppressions[0]->endLine);
     }
 
-    public function testExtractsSuppressionFromBlockComment(): void
+    #[Test]
+    public function itExtractsSuppressionFromBlockComment(): void
     {
         $comment = new Comment(
             '/* @qmx-ignore complexity.cyclomatic */',
@@ -572,7 +598,8 @@ final class SuppressionExtractorTest extends TestCase
         self::assertSame(SuppressionType::Symbol, $suppressions[0]->type);
     }
 
-    public function testExtractsNextLineFromLineComment(): void
+    #[Test]
+    public function itExtractsNextLineFromLineComment(): void
     {
         $comment = new Comment(
             '// @qmx-ignore-next-line complexity.cyclomatic',
@@ -592,7 +619,8 @@ final class SuppressionExtractorTest extends TestCase
         self::assertSame(15, $suppressions[0]->line);
     }
 
-    public function testExtractsFileLevelFromLineComment(): void
+    #[Test]
+    public function itExtractsFileLevelFromLineComment(): void
     {
         $comment = new Comment(
             '// @qmx-ignore-file',
@@ -611,7 +639,8 @@ final class SuppressionExtractorTest extends TestCase
         self::assertSame(3, $suppressions[0]->line);
     }
 
-    public function testLineCommentWithReason(): void
+    #[Test]
+    public function itLineCommentWithReason(): void
     {
         $comment = new Comment(
             '// @qmx-ignore complexity.cyclomatic Legacy algorithm, too costly to refactor',
@@ -629,7 +658,8 @@ final class SuppressionExtractorTest extends TestCase
         self::assertSame('Legacy algorithm, too costly to refactor', $suppressions[0]->reason);
     }
 
-    public function testDocCommentStillWorksAfterRefactor(): void
+    #[Test]
+    public function itDocCommentStillWorksAfterRefactor(): void
     {
         $docComment = new Doc(
             '/** @qmx-ignore complexity */',
@@ -648,7 +678,8 @@ final class SuppressionExtractorTest extends TestCase
         self::assertSame(50, $suppressions[0]->endLine);
     }
 
-    public function testMixedDocblockAndLineComments(): void
+    #[Test]
+    public function itMixedDocblockAndLineComments(): void
     {
         $lineComment = new Comment(
             '// @qmx-ignore coupling.cbo',
@@ -676,7 +707,8 @@ final class SuppressionExtractorTest extends TestCase
         self::assertSame(['complexity', 'coupling.cbo'], $rules);
     }
 
-    public function testReturnsEmptyWhenNoCommentsAndNoDocblock(): void
+    #[Test]
+    public function itReturnsEmptyWhenNoCommentsAndNoDocblock(): void
     {
         $node = new ClassMethod('doSomething');
 
@@ -685,7 +717,8 @@ final class SuppressionExtractorTest extends TestCase
         self::assertEmpty($suppressions);
     }
 
-    public function testFileLevelFromBlockComment(): void
+    #[Test]
+    public function itFileLevelFromBlockComment(): void
     {
         $comment = new Comment(
             '/* @qmx-ignore-file complexity */',
@@ -703,7 +736,8 @@ final class SuppressionExtractorTest extends TestCase
         self::assertSame(SuppressionType::File, $suppressions[0]->type);
     }
 
-    public function testNextLineFromMultiLineBlockComment(): void
+    #[Test]
+    public function itNextLineFromMultiLineBlockComment(): void
     {
         $comment = new Comment(
             <<<'COMMENT'
@@ -727,7 +761,8 @@ final class SuppressionExtractorTest extends TestCase
         self::assertSame(12, $suppressions[0]->line);
     }
 
-    public function testLineCommentWithoutRuleProducesNoSuppression(): void
+    #[Test]
+    public function itLineCommentWithoutRuleProducesNoSuppression(): void
     {
         $comment = new Comment(
             '// @qmx-ignore',
@@ -743,7 +778,8 @@ final class SuppressionExtractorTest extends TestCase
         self::assertEmpty($suppressions);
     }
 
-    public function testBacktickEscapedIgnoreIsNotExtracted(): void
+    #[Test]
+    public function itBacktickEscapedIgnoreIsNotExtracted(): void
     {
         $docComment = new Doc(
             <<<'DOC'
@@ -763,7 +799,8 @@ final class SuppressionExtractorTest extends TestCase
         self::assertEmpty($suppressions);
     }
 
-    public function testBacktickEscapedIgnoreFileIsNotExtracted(): void
+    #[Test]
+    public function itBacktickEscapedIgnoreFileIsNotExtracted(): void
     {
         $docComment = new Doc(
             <<<'DOC'
@@ -784,7 +821,8 @@ final class SuppressionExtractorTest extends TestCase
         self::assertEmpty($suppressions);
     }
 
-    public function testBacktickEscapedIgnoreFileNotExtractedAtFileLevel(): void
+    #[Test]
+    public function itBacktickEscapedIgnoreFileNotExtractedAtFileLevel(): void
     {
         $docComment = new Doc(
             <<<'DOC'
@@ -804,7 +842,8 @@ final class SuppressionExtractorTest extends TestCase
         self::assertEmpty($suppressions);
     }
 
-    public function testBacktickEscapedNextLineIsNotExtracted(): void
+    #[Test]
+    public function itBacktickEscapedNextLineIsNotExtracted(): void
     {
         $docComment = new Doc(
             <<<'DOC'
@@ -824,7 +863,8 @@ final class SuppressionExtractorTest extends TestCase
         self::assertEmpty($suppressions);
     }
 
-    public function testMixedRealAndBacktickEscapedTags(): void
+    #[Test]
+    public function itMixedRealAndBacktickEscapedTags(): void
     {
         $docComment = new Doc(
             <<<'DOC'
@@ -847,7 +887,8 @@ final class SuppressionExtractorTest extends TestCase
         self::assertSame('Real suppression', $suppressions[0]->reason);
     }
 
-    public function testUnpairedBacktickDoesNotSuppressTag(): void
+    #[Test]
+    public function itUnpairedBacktickDoesNotSuppressTag(): void
     {
         $docComment = new Doc(
             <<<'DOC'
@@ -869,7 +910,8 @@ final class SuppressionExtractorTest extends TestCase
         self::assertSame('complexity', $suppressions[0]->rule);
     }
 
-    public function testBacktickEscapedIgnoreFileInRegularComment(): void
+    #[Test]
+    public function itBacktickEscapedIgnoreFileInRegularComment(): void
     {
         $comment = new Comment(
             '// Use `@qmx-ignore-file` to suppress all rules',

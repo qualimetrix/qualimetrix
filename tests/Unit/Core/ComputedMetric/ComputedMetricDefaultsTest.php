@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Core\ComputedMetric;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefaults;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinition;
@@ -13,14 +14,16 @@ use Qualimetrix\Core\Symbol\SymbolType;
 #[CoversClass(ComputedMetricDefaults::class)]
 final class ComputedMetricDefaultsTest extends TestCase
 {
-    public function testReturnsSixDefaults(): void
+    #[Test]
+    public function itReturnsSixDefaults(): void
     {
         $defaults = ComputedMetricDefaults::getDefaults();
 
         self::assertCount(6, $defaults);
     }
 
-    public function testAllKeysAreHealthPrefixed(): void
+    #[Test]
+    public function itAllKeysAreHealthPrefixed(): void
     {
         $defaults = ComputedMetricDefaults::getDefaults();
 
@@ -29,7 +32,8 @@ final class ComputedMetricDefaultsTest extends TestCase
         }
     }
 
-    public function testAllDefaultsAreInverted(): void
+    #[Test]
+    public function itAllDefaultsAreInverted(): void
     {
         $defaults = ComputedMetricDefaults::getDefaults();
 
@@ -38,7 +42,8 @@ final class ComputedMetricDefaultsTest extends TestCase
         }
     }
 
-    public function testAllDefaultsHaveClassNamespaceProjectLevels(): void
+    #[Test]
+    public function itAllDefaultsHaveClassNamespaceProjectLevels(): void
     {
         $defaults = ComputedMetricDefaults::getDefaults();
 
@@ -58,7 +63,8 @@ final class ComputedMetricDefaultsTest extends TestCase
         }
     }
 
-    public function testAllDefaultsHaveClassAndNamespaceFormulas(): void
+    #[Test]
+    public function itAllDefaultsHaveClassAndNamespaceFormulas(): void
     {
         $defaults = ComputedMetricDefaults::getDefaults();
 
@@ -74,7 +80,8 @@ final class ComputedMetricDefaultsTest extends TestCase
         }
     }
 
-    public function testProjectFormulaInheritance(): void
+    #[Test]
+    public function itProjectFormulaInheritance(): void
     {
         $defaults = ComputedMetricDefaults::getDefaults();
 
@@ -91,7 +98,8 @@ final class ComputedMetricDefaultsTest extends TestCase
         }
     }
 
-    public function testExplicitProjectFormulas(): void
+    #[Test]
+    public function itExplicitProjectFormulas(): void
     {
         $defaults = ComputedMetricDefaults::getDefaults();
 
@@ -108,7 +116,8 @@ final class ComputedMetricDefaultsTest extends TestCase
         }
     }
 
-    public function testExpectedKeys(): void
+    #[Test]
+    public function itExpectedKeys(): void
     {
         $defaults = ComputedMetricDefaults::getDefaults();
 
@@ -124,7 +133,8 @@ final class ComputedMetricDefaultsTest extends TestCase
         self::assertSame($expectedKeys, array_keys($defaults));
     }
 
-    public function testAllDefaultsAreComputedMetricDefinitionInstances(): void
+    #[Test]
+    public function itAllDefaultsAreComputedMetricDefinitionInstances(): void
     {
         $defaults = ComputedMetricDefaults::getDefaults();
 
@@ -133,7 +143,8 @@ final class ComputedMetricDefaultsTest extends TestCase
         }
     }
 
-    public function testAllDefaultsHaveThresholds(): void
+    #[Test]
+    public function itAllDefaultsHaveThresholds(): void
     {
         $defaults = ComputedMetricDefaults::getDefaults();
 

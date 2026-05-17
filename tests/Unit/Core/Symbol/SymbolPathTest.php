@@ -6,6 +6,7 @@ namespace Qualimetrix\Tests\Unit\Core\Symbol;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
@@ -14,7 +15,8 @@ use Qualimetrix\Core\Symbol\SymbolType;
 final class SymbolPathTest extends TestCase
 {
     #[DataProvider('canonicalDataProvider')]
-    public function testToCanonical(SymbolPath $symbolPath, string $expected): void
+    #[Test]
+    public function itToCanonical(SymbolPath $symbolPath, string $expected): void
     {
         self::assertSame($expected, $symbolPath->toCanonical());
     }
@@ -75,7 +77,8 @@ final class SymbolPathTest extends TestCase
         ];
     }
 
-    public function testForMethodCreatesCorrectSymbolPath(): void
+    #[Test]
+    public function itForMethodCreatesCorrectSymbolPath(): void
     {
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
 
@@ -84,7 +87,8 @@ final class SymbolPathTest extends TestCase
         self::assertSame('calculate', $symbolPath->member);
     }
 
-    public function testForClassCreatesCorrectSymbolPath(): void
+    #[Test]
+    public function itForClassCreatesCorrectSymbolPath(): void
     {
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
 
@@ -93,7 +97,8 @@ final class SymbolPathTest extends TestCase
         self::assertNull($symbolPath->member);
     }
 
-    public function testForNamespaceCreatesCorrectSymbolPath(): void
+    #[Test]
+    public function itForNamespaceCreatesCorrectSymbolPath(): void
     {
         $symbolPath = SymbolPath::forNamespace('App\Service');
 
@@ -102,7 +107,8 @@ final class SymbolPathTest extends TestCase
         self::assertNull($symbolPath->member);
     }
 
-    public function testForFileCreatesCorrectSymbolPath(): void
+    #[Test]
+    public function itForFileCreatesCorrectSymbolPath(): void
     {
         $symbolPath = SymbolPath::forFile('src/test.php');
 
@@ -111,7 +117,8 @@ final class SymbolPathTest extends TestCase
         self::assertNull($symbolPath->member);
     }
 
-    public function testForGlobalFunctionCreatesCorrectSymbolPath(): void
+    #[Test]
+    public function itForGlobalFunctionCreatesCorrectSymbolPath(): void
     {
         $symbolPath = SymbolPath::forGlobalFunction('', 'myFunction');
 
@@ -120,7 +127,8 @@ final class SymbolPathTest extends TestCase
         self::assertSame('myFunction', $symbolPath->member);
     }
 
-    public function testForGlobalFunctionToStringOmitsNamespace(): void
+    #[Test]
+    public function itForGlobalFunctionToStringOmitsNamespace(): void
     {
         $symbolPath = SymbolPath::forGlobalFunction('', 'myFunction');
 
@@ -128,7 +136,8 @@ final class SymbolPathTest extends TestCase
     }
 
     #[DataProvider('typeDataProvider')]
-    public function testGetType(SymbolPath $symbolPath, SymbolType $expected): void
+    #[Test]
+    public function itGetType(SymbolPath $symbolPath, SymbolType $expected): void
     {
         self::assertSame($expected, $symbolPath->getType());
     }
@@ -189,7 +198,8 @@ final class SymbolPathTest extends TestCase
         ];
     }
 
-    public function testGlobalNamespaceIsDistinctFromProject(): void
+    #[Test]
+    public function itGlobalNamespaceIsDistinctFromProject(): void
     {
         $globalNs = SymbolPath::forNamespace('');
         $project = SymbolPath::forProject();
@@ -200,18 +210,21 @@ final class SymbolPathTest extends TestCase
         self::assertNotSame($globalNs->toString(), $project->toString());
     }
 
-    public function testForProjectToString(): void
+    #[Test]
+    public function itForProjectToString(): void
     {
         self::assertSame('(project)', SymbolPath::forProject()->toString());
     }
 
-    public function testForGlobalNamespaceToString(): void
+    #[Test]
+    public function itForGlobalNamespaceToString(): void
     {
         self::assertSame('(global)', SymbolPath::forNamespace('')->toString());
     }
 
     #[DataProvider('symbolNameDataProvider')]
-    public function testGetSymbolName(SymbolPath $symbolPath, ?string $expected): void
+    #[Test]
+    public function itGetSymbolName(SymbolPath $symbolPath, ?string $expected): void
     {
         self::assertSame($expected, $symbolPath->getSymbolName());
     }
@@ -268,7 +281,8 @@ final class SymbolPathTest extends TestCase
     }
 
     #[DataProvider('fromClassFqnDataProvider')]
-    public function testFromClassFqn(string $fqn, ?string $expectedNamespace, string $expectedType): void
+    #[Test]
+    public function itFromClassFqn(string $fqn, ?string $expectedNamespace, string $expectedType): void
     {
         $path = SymbolPath::fromClassFqn($fqn);
 
@@ -308,7 +322,8 @@ final class SymbolPathTest extends TestCase
         ];
     }
 
-    public function testFromNamespaceFqn(): void
+    #[Test]
+    public function itFromNamespaceFqn(): void
     {
         $path = SymbolPath::fromNamespaceFqn('App\Service');
 
@@ -318,7 +333,8 @@ final class SymbolPathTest extends TestCase
         self::assertSame(SymbolType::Namespace_, $path->getType());
     }
 
-    public function testFromClassFqnProducesEquivalentToForClass(): void
+    #[Test]
+    public function itFromClassFqnProducesEquivalentToForClass(): void
     {
         $fromFqn = SymbolPath::fromClassFqn('App\Service\UserService');
         $forClass = SymbolPath::forClass('App\Service', 'UserService');
@@ -327,14 +343,16 @@ final class SymbolPathTest extends TestCase
         self::assertSame($forClass->toString(), $fromFqn->toString());
     }
 
-    public function testFromClassFqnNormalizesLeadingBackslash(): void
+    #[Test]
+    public function itFromClassFqnNormalizesLeadingBackslash(): void
     {
         $path = SymbolPath::fromClassFqn('\\App\\Service\\Foo');
         self::assertSame('App\\Service', $path->namespace);
         self::assertSame('Foo', $path->type);
     }
 
-    public function testFromClassFqnLeadingBackslashEquivalentToForClass(): void
+    #[Test]
+    public function itFromClassFqnLeadingBackslashEquivalentToForClass(): void
     {
         $fromFqn = SymbolPath::fromClassFqn('\\App\\Service\\UserService');
         $forClass = SymbolPath::forClass('App\\Service', 'UserService');
@@ -343,7 +361,8 @@ final class SymbolPathTest extends TestCase
         self::assertSame($forClass->toString(), $fromFqn->toString());
     }
 
-    public function testFromNamespaceFqnNormalizesLeadingBackslash(): void
+    #[Test]
+    public function itFromNamespaceFqnNormalizesLeadingBackslash(): void
     {
         $withBackslash = SymbolPath::fromNamespaceFqn('\\App\\Service');
         $withoutBackslash = SymbolPath::fromNamespaceFqn('App\\Service');
@@ -352,7 +371,8 @@ final class SymbolPathTest extends TestCase
         self::assertSame('App\\Service', $withBackslash->namespace);
     }
 
-    public function testFromClassFqnGlobalEquivalentToForClass(): void
+    #[Test]
+    public function itFromClassFqnGlobalEquivalentToForClass(): void
     {
         $fromFqn = SymbolPath::fromClassFqn('GlobalClass');
         $forClass = SymbolPath::forClass('', 'GlobalClass');

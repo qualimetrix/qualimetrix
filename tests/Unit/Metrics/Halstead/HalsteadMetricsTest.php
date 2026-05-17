@@ -5,13 +5,15 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Metrics\Halstead;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Metrics\Halstead\HalsteadMetrics;
 
 #[CoversClass(HalsteadMetrics::class)]
 final class HalsteadMetricsTest extends TestCase
 {
-    public function testVocabulary(): void
+    #[Test]
+    public function itCalculatesVocabulary(): void
     {
         $metrics = new HalsteadMetrics(n1: 5, n2: 10, N1: 20, N2: 30);
 
@@ -19,7 +21,8 @@ final class HalsteadMetricsTest extends TestCase
         self::assertSame(15, $metrics->vocabulary());
     }
 
-    public function testLength(): void
+    #[Test]
+    public function itCalculatesLength(): void
     {
         $metrics = new HalsteadMetrics(n1: 5, n2: 10, N1: 20, N2: 30);
 
@@ -27,7 +30,8 @@ final class HalsteadMetricsTest extends TestCase
         self::assertSame(50, $metrics->length());
     }
 
-    public function testVolume(): void
+    #[Test]
+    public function itCalculatesVolume(): void
     {
         $metrics = new HalsteadMetrics(n1: 5, n2: 10, N1: 20, N2: 30);
 
@@ -35,14 +39,16 @@ final class HalsteadMetricsTest extends TestCase
         self::assertEqualsWithDelta(195.35, $metrics->volume(), 0.1);
     }
 
-    public function testVolumeWithZeroVocabulary(): void
+    #[Test]
+    public function itReturnsZeroVolumeForZeroVocabulary(): void
     {
         $metrics = new HalsteadMetrics(n1: 0, n2: 0, N1: 0, N2: 0);
 
         self::assertSame(0.0, $metrics->volume());
     }
 
-    public function testDifficulty(): void
+    #[Test]
+    public function itCalculatesDifficulty(): void
     {
         $metrics = new HalsteadMetrics(n1: 5, n2: 10, N1: 20, N2: 30);
 
@@ -50,21 +56,24 @@ final class HalsteadMetricsTest extends TestCase
         self::assertSame(7.5, $metrics->difficulty());
     }
 
-    public function testDifficultyWithZeroOperands(): void
+    #[Test]
+    public function itReturnsZeroDifficultyForZeroOperands(): void
     {
         $metrics = new HalsteadMetrics(n1: 5, n2: 0, N1: 20, N2: 0);
 
         self::assertSame(0.0, $metrics->difficulty());
     }
 
-    public function testDifficultyWithZeroOperators(): void
+    #[Test]
+    public function itReturnsZeroDifficultyForZeroOperators(): void
     {
         $metrics = new HalsteadMetrics(n1: 0, n2: 10, N1: 0, N2: 30);
 
         self::assertSame(0.0, $metrics->difficulty());
     }
 
-    public function testEffort(): void
+    #[Test]
+    public function itCalculatesEffort(): void
     {
         $metrics = new HalsteadMetrics(n1: 5, n2: 10, N1: 20, N2: 30);
 
@@ -73,7 +82,8 @@ final class HalsteadMetricsTest extends TestCase
         self::assertEqualsWithDelta($expected, $metrics->effort(), 0.01);
     }
 
-    public function testBugs(): void
+    #[Test]
+    public function itCalculatesBugs(): void
     {
         $metrics = new HalsteadMetrics(n1: 5, n2: 10, N1: 20, N2: 30);
 
@@ -82,7 +92,8 @@ final class HalsteadMetricsTest extends TestCase
         self::assertEqualsWithDelta($expected, $metrics->bugs(), 0.0001);
     }
 
-    public function testTime(): void
+    #[Test]
+    public function itCalculatesTime(): void
     {
         $metrics = new HalsteadMetrics(n1: 5, n2: 10, N1: 20, N2: 30);
 
@@ -91,7 +102,8 @@ final class HalsteadMetricsTest extends TestCase
         self::assertEqualsWithDelta($expected, $metrics->time(), 0.01);
     }
 
-    public function testEmpty(): void
+    #[Test]
+    public function itCreatesEmptyMetrics(): void
     {
         $metrics = HalsteadMetrics::empty();
 
@@ -102,7 +114,8 @@ final class HalsteadMetricsTest extends TestCase
         self::assertTrue($metrics->isEmpty());
     }
 
-    public function testIsEmpty(): void
+    #[Test]
+    public function itDetectsWhenMetricsAreEmpty(): void
     {
         $empty = new HalsteadMetrics(n1: 0, n2: 0, N1: 0, N2: 0);
         $nonEmpty = new HalsteadMetrics(n1: 1, n2: 1, N1: 1, N2: 1);
@@ -111,7 +124,8 @@ final class HalsteadMetricsTest extends TestCase
         self::assertFalse($nonEmpty->isEmpty());
     }
 
-    public function testIsEmptyWithOnlyUniqueOperators(): void
+    #[Test]
+    public function itTreatsMetricsWithOnlyUniqueOperatorsAsEmpty(): void
     {
         // Has unique operators but no total usage
         $metrics = new HalsteadMetrics(n1: 5, n2: 3, N1: 0, N2: 0);
@@ -119,7 +133,8 @@ final class HalsteadMetricsTest extends TestCase
         self::assertTrue($metrics->isEmpty());
     }
 
-    public function testRealWorldExample(): void
+    #[Test]
+    public function itCalculatesAllMetricsForRealWorldExample(): void
     {
         // Example: a simple method with 3 unique operators (+, =, return)
         // 5 unique operands ($a, $b, $result)

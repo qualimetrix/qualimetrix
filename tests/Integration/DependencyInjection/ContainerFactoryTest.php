@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Integration\DependencyInjection;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Collection\Metric\CompositeCollector;
 use Qualimetrix\Analysis\Pipeline\AnalysisPipelineInterface;
@@ -81,14 +82,16 @@ final class ContainerFactoryTest extends TestCase
         $this->removeDirectory($this->tempDir);
     }
 
-    public function testCreateReturnsCompiledContainer(): void
+    #[Test]
+    public function itCreatesCompiledContainer(): void
     {
         $container = $this->factory->create();
 
         self::assertTrue($container->isCompiled());
     }
 
-    public function testContainerHasAnalysisPipeline(): void
+    #[Test]
+    public function itHasAnalysisPipeline(): void
     {
         $container = $this->factory->create();
 
@@ -96,7 +99,8 @@ final class ContainerFactoryTest extends TestCase
         self::assertInstanceOf(AnalysisPipelineInterface::class, $container->get(AnalysisPipelineInterface::class));
     }
 
-    public function testContainerHasFormatterRegistry(): void
+    #[Test]
+    public function itHasFormatterRegistry(): void
     {
         $container = $this->factory->create();
 
@@ -107,7 +111,8 @@ final class ContainerFactoryTest extends TestCase
         );
     }
 
-    public function testContainerHasCache(): void
+    #[Test]
+    public function itHasCache(): void
     {
         $container = $this->factory->create();
 
@@ -115,7 +120,8 @@ final class ContainerFactoryTest extends TestCase
         self::assertInstanceOf(CacheInterface::class, $container->get(CacheInterface::class));
     }
 
-    public function testContainerHasRuleRegistry(): void
+    #[Test]
+    public function itHasRuleRegistry(): void
     {
         $container = $this->factory->create();
 
@@ -128,7 +134,8 @@ final class ContainerFactoryTest extends TestCase
         self::assertNotEmpty($classes);
     }
 
-    public function testContainerHasCheckCommand(): void
+    #[Test]
+    public function itHasCheckCommand(): void
     {
         $container = $this->factory->create();
 
@@ -136,7 +143,8 @@ final class ContainerFactoryTest extends TestCase
         self::assertInstanceOf(CheckCommand::class, $container->get(CheckCommand::class));
     }
 
-    public function testCollectorCompilerPassRegistersAllCollectors(): void
+    #[Test]
+    public function itRegistersAllCollectorsViaCompilerPass(): void
     {
         $container = $this->factory->create();
 
@@ -145,7 +153,8 @@ final class ContainerFactoryTest extends TestCase
         self::assertInstanceOf(AnalysisPipelineInterface::class, $pipeline);
     }
 
-    public function testRulesAreInjectedIntoRuleExecutor(): void
+    #[Test]
+    public function itInjectsRulesIntoRuleExecutor(): void
     {
         $container = $this->factory->create();
         $pipeline = $container->get(AnalysisPipelineInterface::class);
@@ -155,7 +164,8 @@ final class ContainerFactoryTest extends TestCase
         self::assertInstanceOf(AnalysisPipelineInterface::class, $pipeline);
     }
 
-    public function testFormatterCompilerPassRegistersFormatters(): void
+    #[Test]
+    public function itRegistersFormattersViaCompilerPass(): void
     {
         $container = $this->factory->create();
         $registry = $container->get(FormatterRegistryInterface::class);
@@ -164,7 +174,8 @@ final class ContainerFactoryTest extends TestCase
         self::assertTrue($registry->has('text'));
     }
 
-    public function testFileParserAndNamespaceDetectorAreWiredCorrectly(): void
+    #[Test]
+    public function itWiresFileParserAndNamespaceDetectorCorrectly(): void
     {
         $container = $this->factory->create();
 
@@ -173,7 +184,8 @@ final class ContainerFactoryTest extends TestCase
         self::assertInstanceOf(AnalysisPipelineInterface::class, $pipeline);
     }
 
-    public function testRuleOptionsCanBeConfiguredAtRuntime(): void
+    #[Test]
+    public function itAllowsConfiguringRuleOptionsAtRuntime(): void
     {
         $container = $this->factory->create();
 
@@ -190,7 +202,8 @@ final class ContainerFactoryTest extends TestCase
         self::assertTrue($container->isCompiled());
     }
 
-    public function testConfigurationHolderCanBeConfiguredAtRuntime(): void
+    #[Test]
+    public function itAllowsConfiguringConfigurationHolderAtRuntime(): void
     {
         $container = $this->factory->create();
 
@@ -208,7 +221,8 @@ final class ContainerFactoryTest extends TestCase
         self::assertSame($config, $configProvider->getConfiguration());
     }
 
-    public function testCreateWithDefaultConfiguration(): void
+    #[Test]
+    public function itCreatesContainerWithDefaultConfiguration(): void
     {
         // ContainerFactory is created without arguments
         $container = $this->factory->create();
@@ -222,7 +236,8 @@ final class ContainerFactoryTest extends TestCase
      * This test protects against accidental exclusion of formatters due to
      * changes in registerClasses() patterns.
      */
-    public function testAllFormattersAreRegistered(): void
+    #[Test]
+    public function itRegistersAllFormatters(): void
     {
         $container = $this->factory->create();
         $registry = $container->get(FormatterRegistryInterface::class);
@@ -264,7 +279,8 @@ final class ContainerFactoryTest extends TestCase
      * This test protects against accidental exclusion of collectors due to
      * changes in registerClasses() patterns.
      */
-    public function testAllMetricCollectorsAreRegistered(): void
+    #[Test]
+    public function itRegistersAllMetricCollectors(): void
     {
         $container = $this->factory->create();
 
@@ -302,7 +318,8 @@ final class ContainerFactoryTest extends TestCase
     /**
      * Verifies that derived collectors (DerivedCollectorInterface) are registered.
      */
-    public function testDerivedCollectorsAreRegistered(): void
+    #[Test]
+    public function itRegistersDerivedCollectors(): void
     {
         $container = $this->factory->create();
 
@@ -326,7 +343,8 @@ final class ContainerFactoryTest extends TestCase
      * These collectors are private services that get inlined by Symfony DI.
      * We verify they work by checking that the pipeline can be instantiated.
      */
-    public function testGlobalContextCollectorsAreWired(): void
+    #[Test]
+    public function itWiresGlobalContextCollectors(): void
     {
         $container = $this->factory->create();
 
@@ -339,7 +357,8 @@ final class ContainerFactoryTest extends TestCase
      * Verifies that all expected rules are registered in RuleRegistry.
      * This test protects against accidental omission of rules in ContainerFactory.
      */
-    public function testAllRulesAreRegistered(): void
+    #[Test]
+    public function itRegistersAllRules(): void
     {
         $container = $this->factory->create();
         $registry = $container->get(RuleRegistryInterface::class);
@@ -407,7 +426,8 @@ final class ContainerFactoryTest extends TestCase
         );
     }
 
-    public function testDistanceRuleHasProjectNamespaceResolverInjected(): void
+    #[Test]
+    public function itInjectsProjectNamespaceResolverIntoDistanceRule(): void
     {
         $container = $this->factory->create();
 

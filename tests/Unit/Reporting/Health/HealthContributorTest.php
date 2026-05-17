@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Reporting\Health;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Symbol\SymbolInfo;
@@ -35,7 +36,8 @@ final class HealthContributorTest extends TestCase
         );
     }
 
-    public function testContributorVO(): void
+    #[Test]
+    public function itContributorVO(): void
     {
         $contributor = new HealthContributor(
             className: 'UserService',
@@ -48,7 +50,8 @@ final class HealthContributorTest extends TestCase
         self::assertSame(['ccn.sum' => 15, 'cognitive.sum' => 12], $contributor->metricValues);
     }
 
-    public function testComplexityContributorsRankedByHighestCcn(): void
+    #[Test]
+    public function itComplexityContributorsRankedByHighestCcn(): void
     {
         $report = $this->buildReportWithClasses([
             ['ns' => 'App\\Service', 'name' => 'LowComplexity', 'ccn' => 2, 'cognitive' => 1],
@@ -72,7 +75,8 @@ final class HealthContributorTest extends TestCase
         self::assertSame(20, $contributors[0]->metricValues['cognitive.sum']);
     }
 
-    public function testCohesionContributorsRankedByLowestTcc(): void
+    #[Test]
+    public function itCohesionContributorsRankedByLowestTcc(): void
     {
         $report = $this->buildReportWithClasses([
             ['ns' => 'App', 'name' => 'WellCohesive', 'tcc' => 0.9, 'lcom' => 1],
@@ -92,7 +96,8 @@ final class HealthContributorTest extends TestCase
         self::assertSame('WellCohesive', $contributors[2]->className);
     }
 
-    public function testCouplingContributorsRankedByHighestCe(): void
+    #[Test]
+    public function itCouplingContributorsRankedByHighestCe(): void
     {
         $report = $this->buildReportWithClasses([
             ['ns' => 'App', 'name' => 'Isolated', 'ce' => 2, 'distance' => 0.1],
@@ -109,7 +114,8 @@ final class HealthContributorTest extends TestCase
         self::assertSame(20, $contributors[0]->metricValues['ce']);
     }
 
-    public function testMaintainabilityContributorsRankedByLowestMi(): void
+    #[Test]
+    public function itMaintainabilityContributorsRankedByLowestMi(): void
     {
         $report = $this->buildReportWithClasses([
             ['ns' => 'App', 'name' => 'WellMaintained', 'mi' => 85.0],
@@ -130,7 +136,8 @@ final class HealthContributorTest extends TestCase
         self::assertSame('WellMaintained', $contributors[2]->className);
     }
 
-    public function testFewerClassesThanLimitShowsAll(): void
+    #[Test]
+    public function itFewerClassesThanLimitShowsAll(): void
     {
         $report = $this->buildReportWithClasses([
             ['ns' => 'App', 'name' => 'OnlyOne', 'ccn' => 5, 'cognitive' => 3],
@@ -143,7 +150,8 @@ final class HealthContributorTest extends TestCase
         self::assertSame('OnlyOne', $contributors[0]->className);
     }
 
-    public function testClassWithNullMetricSkipped(): void
+    #[Test]
+    public function itClassWithNullMetricSkipped(): void
     {
         // Build manually with one class missing the primary metric
         $classes = [
@@ -183,7 +191,8 @@ final class HealthContributorTest extends TestCase
         self::assertSame('HasCcn', $contributors[0]->className);
     }
 
-    public function testTieBreaksByClassNameAlphabetically(): void
+    #[Test]
+    public function itTieBreaksByClassNameAlphabetically(): void
     {
         $report = $this->buildReportWithClasses([
             ['ns' => 'App', 'name' => 'Zeta', 'ccn' => 10, 'cognitive' => 5],
@@ -200,7 +209,8 @@ final class HealthContributorTest extends TestCase
         self::assertSame('Zeta', $contributors[2]->className);
     }
 
-    public function testOverallDimensionHasNoContributors(): void
+    #[Test]
+    public function itOverallDimensionHasNoContributors(): void
     {
         $report = $this->buildReportWithClasses([
             ['ns' => 'App', 'name' => 'SomeClass', 'ccn' => 5, 'cognitive' => 3],
@@ -212,7 +222,8 @@ final class HealthContributorTest extends TestCase
         self::assertSame([], $result->healthScores['overall']->worstContributors);
     }
 
-    public function testContributorSymbolPath(): void
+    #[Test]
+    public function itContributorSymbolPath(): void
     {
         $report = $this->buildReportWithClasses([
             ['ns' => 'App\\Domain', 'name' => 'SomeService', 'ccn' => 15, 'cognitive' => 10],

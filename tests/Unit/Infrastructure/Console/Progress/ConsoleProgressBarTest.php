@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Unit\Infrastructure\Console\Progress;
 
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\Console\Progress\ConsoleProgressBar;
 use Symfony\Component\Console\Output\BufferedOutput;
@@ -11,7 +12,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 final class ConsoleProgressBarTest extends TestCase
 {
-    public function testSkipsProgressBarForFewFiles(): void
+    #[Test]
+    public function itSkipsProgressBarForFewFiles(): void
     {
         self::expectNotToPerformAssertions();
 
@@ -25,7 +27,8 @@ final class ConsoleProgressBarTest extends TestCase
         $reporter->finish();
     }
 
-    public function testSkipsProgressBarForNonConsoleOutput(): void
+    #[Test]
+    public function itSkipsProgressBarForNonConsoleOutput(): void
     {
         // BufferedOutput is not ConsoleOutputInterface
         $output = new BufferedOutput();
@@ -41,7 +44,8 @@ final class ConsoleProgressBarTest extends TestCase
         self::assertSame('', $output->fetch());
     }
 
-    public function testHandlesAdvanceBeforeStart(): void
+    #[Test]
+    public function itHandlesAdvanceBeforeStart(): void
     {
         self::expectNotToPerformAssertions();
 
@@ -54,7 +58,8 @@ final class ConsoleProgressBarTest extends TestCase
         $reporter->finish();
     }
 
-    public function testCanBeFinishedMultipleTimes(): void
+    #[Test]
+    public function itCanBeFinishedMultipleTimes(): void
     {
         self::expectNotToPerformAssertions();
 

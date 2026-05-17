@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Baseline;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Baseline\ViolationHasher;
 use Qualimetrix\Core\Dependency\DependencyType;
@@ -23,7 +24,8 @@ final class ViolationHasherTest extends TestCase
         $this->hasher = new ViolationHasher();
     }
 
-    public function testGeneratesConsistentHash(): void
+    #[Test]
+    public function itGeneratesConsistentHash(): void
     {
         $violation = $this->createViolation(
             line: 42,
@@ -37,7 +39,8 @@ final class ViolationHasherTest extends TestCase
         self::assertSame(16, \strlen($hash1), 'Hash should be 16 characters long');
     }
 
-    public function testHashStableAcrossLineChanges(): void
+    #[Test]
+    public function itHashStableAcrossLineChanges(): void
     {
         $violation1 = $this->createViolation(line: 45, message: 'Complexity 15 exceeds 10');
         $violation2 = $this->createViolation(line: 55, message: 'Complexity 15 exceeds 10');
@@ -52,7 +55,8 @@ final class ViolationHasherTest extends TestCase
         );
     }
 
-    public function testHashStableAcrossMessageChanges(): void
+    #[Test]
+    public function itHashStableAcrossMessageChanges(): void
     {
         $violation1 = $this->createViolation(line: 42, message: 'Complexity 15 exceeds 10');
         $violation2 = $this->createViolation(line: 42, message: 'Completely different message text');
@@ -67,7 +71,8 @@ final class ViolationHasherTest extends TestCase
         );
     }
 
-    public function testHashChangesWhenViolationCodeChanges(): void
+    #[Test]
+    public function itHashChangesWhenViolationCodeChanges(): void
     {
         $violation1 = new Violation(
             location: new Location('src/Foo.php', 42),
@@ -97,7 +102,8 @@ final class ViolationHasherTest extends TestCase
         );
     }
 
-    public function testSameViolationCodeProducesSameHash(): void
+    #[Test]
+    public function itSameViolationCodeProducesSameHash(): void
     {
         $violation1 = new Violation(
             location: new Location('src/Foo.php', 42),
@@ -127,7 +133,8 @@ final class ViolationHasherTest extends TestCase
         );
     }
 
-    public function testHashStableAcrossSeverityChanges(): void
+    #[Test]
+    public function itHashStableAcrossSeverityChanges(): void
     {
         $violation1 = new Violation(
             location: new Location('src/Foo.php', 42),
@@ -157,7 +164,8 @@ final class ViolationHasherTest extends TestCase
         );
     }
 
-    public function testHashChangesWhenRuleChanges(): void
+    #[Test]
+    public function itHashChangesWhenRuleChanges(): void
     {
         $violation1 = new Violation(
             location: new Location('src/Foo.php', 42),
@@ -187,7 +195,8 @@ final class ViolationHasherTest extends TestCase
         );
     }
 
-    public function testHashChangesWhenMethodNameChanges(): void
+    #[Test]
+    public function itHashChangesWhenMethodNameChanges(): void
     {
         $violation1 = new Violation(
             location: new Location('src/Foo.php', 42),
@@ -217,7 +226,8 @@ final class ViolationHasherTest extends TestCase
         );
     }
 
-    public function testHashChangesWhenClassChanges(): void
+    #[Test]
+    public function itHashChangesWhenClassChanges(): void
     {
         $violation1 = new Violation(
             location: new Location('src/Foo.php', 42),
@@ -247,7 +257,8 @@ final class ViolationHasherTest extends TestCase
         );
     }
 
-    public function testHashForClassLevelViolation(): void
+    #[Test]
+    public function itHashForClassLevelViolation(): void
     {
         $violation = new Violation(
             location: new Location('src/Service/UserService.php', 10),
@@ -263,7 +274,8 @@ final class ViolationHasherTest extends TestCase
         self::assertSame(16, \strlen($hash));
     }
 
-    public function testHashForNamespaceLevelViolation(): void
+    #[Test]
+    public function itHashForNamespaceLevelViolation(): void
     {
         $violation = new Violation(
             location: new Location('src/Service/UserService.php'),
@@ -279,7 +291,8 @@ final class ViolationHasherTest extends TestCase
         self::assertSame(16, \strlen($hash));
     }
 
-    public function testHashForFileLevelViolation(): void
+    #[Test]
+    public function itHashForFileLevelViolation(): void
     {
         $violation = new Violation(
             location: new Location('src/bootstrap.php'),
@@ -306,7 +319,8 @@ final class ViolationHasherTest extends TestCase
      *   xxh3   (first 16 chars): 5c20ffa65ac250af
      *   sha256 (first 16 chars): 2db0f10a4622890d
      */
-    public function testRegressionPinForMethodLevelViolation(): void
+    #[Test]
+    public function itRegressionPinForMethodLevelViolation(): void
     {
         $violation = new Violation(
             location: new Location('src/Service/UserService.php', 42),
@@ -335,7 +349,8 @@ final class ViolationHasherTest extends TestCase
      *   xxh3   (first 16 chars): 3cfded211c0e63b3
      *   sha256 (first 16 chars): fc6229c5c897635b
      */
-    public function testRegressionPinForClassLevelViolation(): void
+    #[Test]
+    public function itRegressionPinForClassLevelViolation(): void
     {
         $violation = new Violation(
             location: new Location('src/Service/OrderProcessor.php', 10),
@@ -354,7 +369,8 @@ final class ViolationHasherTest extends TestCase
         self::assertSame($expected, $this->hasher->hash($violation));
     }
 
-    public function testNullDependencyTargetMatchesRegressionPin(): void
+    #[Test]
+    public function itNullDependencyTargetMatchesRegressionPin(): void
     {
         // Same shape as the CCN regression pin but explicit null dependency fields.
         // Asserts that explicitly passing null dependencyTarget/dependencyType is
@@ -378,7 +394,8 @@ final class ViolationHasherTest extends TestCase
         self::assertSame($expected, $this->hasher->hash($violation));
     }
 
-    public function testDependencyHashStableAcrossLineChanges(): void
+    #[Test]
+    public function itDependencyHashStableAcrossLineChanges(): void
     {
         $violation1 = $this->createDependencyViolation(
             line: 12,
@@ -398,7 +415,8 @@ final class ViolationHasherTest extends TestCase
         );
     }
 
-    public function testDependencyHashChangesWhenTargetChanges(): void
+    #[Test]
+    public function itDependencyHashChangesWhenTargetChanges(): void
     {
         $violation1 = $this->createDependencyViolation(
             line: 12,
@@ -418,7 +436,8 @@ final class ViolationHasherTest extends TestCase
         );
     }
 
-    public function testDependencyHashChangesWhenDependencyTypeChanges(): void
+    #[Test]
+    public function itDependencyHashChangesWhenDependencyTypeChanges(): void
     {
         $target = SymbolPath::forClass('App\Repository', 'UserRepository');
 
@@ -440,7 +459,8 @@ final class ViolationHasherTest extends TestCase
         );
     }
 
-    public function testDependencyHashDiffersFromNonDependencyHashForSameSource(): void
+    #[Test]
+    public function itDependencyHashDiffersFromNonDependencyHashForSameSource(): void
     {
         $nonDep = new Violation(
             location: new Location('src/Controller/UserController.php', 12),

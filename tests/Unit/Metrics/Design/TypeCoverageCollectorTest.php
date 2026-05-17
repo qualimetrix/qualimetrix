@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Metrics\Design;
 use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\MetricBag;
@@ -26,12 +27,14 @@ final class TypeCoverageCollectorTest extends TestCase
         $this->collector = new TypeCoverageCollector();
     }
 
-    public function testGetName(): void
+    #[Test]
+    public function itReturnsCollectorName(): void
     {
         self::assertSame('type-coverage', $this->collector->getName());
     }
 
-    public function testProvides(): void
+    #[Test]
+    public function itProvidesExpectedMetricKeys(): void
     {
         self::assertSame([
             'typeCoverage.paramTotal',
@@ -46,7 +49,8 @@ final class TypeCoverageCollectorTest extends TestCase
         ], $this->collector->provides());
     }
 
-    public function testFullyTypedClass(): void
+    #[Test]
+    public function itReports100PercentForFullyTypedClass(): void
     {
         $code = <<<'PHP'
 <?php
@@ -77,7 +81,8 @@ PHP;
         self::assertSame(100.0, $metrics->get('typeCoverage.property:App\Service\UserService'));
     }
 
-    public function testNoTypesAtAll(): void
+    #[Test]
+    public function itReports0PercentWhenNoTypesAtAll(): void
     {
         $code = <<<'PHP'
 <?php
@@ -108,7 +113,8 @@ PHP;
         self::assertSame(0.0, $metrics->get('typeCoverage.property:App\Service\LegacyService'));
     }
 
-    public function testMixedTypeCoverage(): void
+    #[Test]
+    public function itReportsCorrectPercentageForMixedTypeCoverage(): void
     {
         $code = <<<'PHP'
 <?php
@@ -132,7 +138,8 @@ PHP;
         self::assertSame(0.0, $metrics->get('typeCoverage.return:App\MixedService'));
     }
 
-    public function testPromotedPropertiesCountAsBoth(): void
+    #[Test]
+    public function itCountsPromotedPropertiesAsBothParamAndProperty(): void
     {
         $code = <<<'PHP'
 <?php
@@ -164,7 +171,8 @@ PHP;
         self::assertSame(2, $metrics->get('typeCoverage.propertyTyped:App\ValueObject'));
     }
 
-    public function testClassWithNoMethods(): void
+    #[Test]
+    public function itHandlesClassWithNoMethods(): void
     {
         $code = <<<'PHP'
 <?php
@@ -189,7 +197,8 @@ PHP;
         self::assertSame(100.0, $metrics->get('typeCoverage.property:App\EmptyClass'));
     }
 
-    public function testClassWithNoProperties(): void
+    #[Test]
+    public function itHandlesClassWithNoProperties(): void
     {
         $code = <<<'PHP'
 <?php
@@ -210,7 +219,8 @@ PHP;
         self::assertSame(0, $metrics->get('typeCoverage.propertyTotal:App\NoPropsClass'));
     }
 
-    public function testConstructorExcludedFromReturnTypeCount(): void
+    #[Test]
+    public function itExcludesConstructorFromReturnTypeCount(): void
     {
         $code = <<<'PHP'
 <?php
@@ -238,7 +248,8 @@ PHP;
         self::assertSame(100.0, $metrics->get('typeCoverage.return:App\WithConstructor'));
     }
 
-    public function testDestructorExcludedFromReturnTypeCount(): void
+    #[Test]
+    public function itExcludesDestructorFromReturnTypeCount(): void
     {
         $code = <<<'PHP'
 <?php
@@ -264,7 +275,8 @@ PHP;
         self::assertSame(100.0, $metrics->get('typeCoverage.return:App\WithDestructor'));
     }
 
-    public function testToStringIncludedInReturnTypeCount(): void
+    #[Test]
+    public function itIncludesToStringInReturnTypeCount(): void
     {
         $code = <<<'PHP'
 <?php
@@ -288,7 +300,8 @@ PHP;
         self::assertSame(100.0, $metrics->get('typeCoverage.return:App\Stringable'));
     }
 
-    public function testNullableType(): void
+    #[Test]
+    public function itCountsNullableTypeAsTyped(): void
     {
         $code = <<<'PHP'
 <?php
@@ -313,7 +326,8 @@ PHP;
         self::assertSame(100.0, $metrics->get('typeCoverage.property:App\NullableTest'));
     }
 
-    public function testUnionType(): void
+    #[Test]
+    public function itCountsUnionTypeAsTyped(): void
     {
         $code = <<<'PHP'
 <?php
@@ -338,7 +352,8 @@ PHP;
         self::assertSame(100.0, $metrics->get('typeCoverage.property:App\UnionTest'));
     }
 
-    public function testMixedType(): void
+    #[Test]
+    public function itCountsMixedTypeAsTyped(): void
     {
         $code = <<<'PHP'
 <?php
@@ -363,7 +378,8 @@ PHP;
         self::assertSame(100.0, $metrics->get('typeCoverage.property:App\MixedTypeTest'));
     }
 
-    public function testInterfaceMethods(): void
+    #[Test]
+    public function itCollectsTypeCoverageForInterfaceMethods(): void
     {
         $code = <<<'PHP'
 <?php
@@ -386,7 +402,8 @@ PHP;
         self::assertSame(50.0, $metrics->get('typeCoverage.return:App\Contracts\ServiceInterface'));
     }
 
-    public function testReset(): void
+    #[Test]
+    public function itClearsStateOnReset(): void
     {
         $code1 = <<<'PHP'
 <?php
@@ -427,7 +444,8 @@ PHP;
         self::assertSame(0.0, $metrics->get('typeCoverage.return:App\Second'));
     }
 
-    public function testGetMetricDefinitions(): void
+    #[Test]
+    public function itReturnsCorrectMetricDefinitions(): void
     {
         $definitions = $this->collector->getMetricDefinitions();
 
@@ -448,7 +466,8 @@ PHP;
         self::assertEmpty($paramPercent->getStrategiesForLevel(SymbolLevel::Project));
     }
 
-    public function testCloneExcludedFromReturnTypeCount(): void
+    #[Test]
+    public function itExcludesCloneFromReturnTypeCount(): void
     {
         $code = <<<'PHP'
 <?php
@@ -474,7 +493,8 @@ PHP;
         self::assertSame(100.0, $metrics->get('typeCoverage.return:App\Cloneable'));
     }
 
-    public function testTraitMethods(): void
+    #[Test]
+    public function itCollectsTypeCoverageForTraitMethods(): void
     {
         $code = <<<'PHP'
 <?php
@@ -498,7 +518,8 @@ PHP;
         self::assertSame(100.0, $metrics->get('typeCoverage.property:App\Traits\LoggableTrait'));
     }
 
-    public function testEnumMethods(): void
+    #[Test]
+    public function itCollectsTypeCoverageForEnumMethods(): void
     {
         $code = <<<'PHP'
 <?php
@@ -522,7 +543,8 @@ PHP;
         self::assertSame(100.0, $metrics->get('typeCoverage.return:App\Enums\Status'));
     }
 
-    public function testAnonymousClassIsSkipped(): void
+    #[Test]
+    public function itSkipsAnonymousClass(): void
     {
         $code = <<<'PHP'
 <?php
@@ -545,7 +567,8 @@ PHP;
         self::assertSame([], $metrics->all());
     }
 
-    public function testMultiplePropertiesInSingleDeclaration(): void
+    #[Test]
+    public function itCountsAllPropertiesInSingleDeclaration(): void
     {
         $code = <<<'PHP'
 <?php
@@ -567,7 +590,8 @@ PHP;
         self::assertSame(75.0, $metrics->get('typeCoverage.property:App\MultiProp'));
     }
 
-    public function testReadonlyPromotedPropertyWithoutVisibilityDetected(): void
+    #[Test]
+    public function itDetectsReadonlyPromotedPropertyWithoutVisibility(): void
     {
         $code = <<<'PHP'
 <?php
@@ -596,7 +620,8 @@ PHP;
         self::assertSame(100.0, $metrics->get('typeCoverage.property:App\ReadonlyVO'));
     }
 
-    public function testReadonlyPromotedPropertyWithoutTypeDetected(): void
+    #[Test]
+    public function itDetectsMixedReadonlyAndVisibilityPromotedProperties(): void
     {
         $code = <<<'PHP'
 <?php

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Infrastructure\Logging;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use Qualimetrix\Infrastructure\Logging\LoggerFactory;
@@ -21,7 +22,8 @@ final class LoggerFactoryTest extends TestCase
         $this->factory = new LoggerFactory();
     }
 
-    public function testCreateReturnsConsoleLoggerAtDefaultVerbosity(): void
+    #[Test]
+    public function itCreatesConsoleLoggerAtDefaultVerbosity(): void
     {
         $output = new BufferedOutput(OutputInterface::VERBOSITY_NORMAL);
 
@@ -30,7 +32,8 @@ final class LoggerFactoryTest extends TestCase
         self::assertNotInstanceOf(NullLogger::class, $logger);
     }
 
-    public function testCreateReturnsNullLoggerWhenQuiet(): void
+    #[Test]
+    public function itCreatesNullLoggerWhenQuiet(): void
     {
         $output = new BufferedOutput(OutputInterface::VERBOSITY_QUIET);
 
@@ -39,7 +42,8 @@ final class LoggerFactoryTest extends TestCase
         self::assertInstanceOf(NullLogger::class, $logger);
     }
 
-    public function testWarningVisibleAtDefaultVerbosity(): void
+    #[Test]
+    public function itShowsWarningAtDefaultVerbosity(): void
     {
         $output = new BufferedOutput(OutputInterface::VERBOSITY_NORMAL);
         $logger = $this->factory->create($output);
@@ -49,7 +53,8 @@ final class LoggerFactoryTest extends TestCase
         self::assertStringContainsString('Something is wrong', $output->fetch());
     }
 
-    public function testInfoNotVisibleAtDefaultVerbosity(): void
+    #[Test]
+    public function itHidesInfoAtDefaultVerbosity(): void
     {
         $output = new BufferedOutput(OutputInterface::VERBOSITY_NORMAL);
         $logger = $this->factory->create($output);
@@ -59,7 +64,8 @@ final class LoggerFactoryTest extends TestCase
         self::assertSame('', $output->fetch());
     }
 
-    public function testInfoVisibleAtVerboseLevel(): void
+    #[Test]
+    public function itShowsInfoAtVerboseLevel(): void
     {
         $output = new BufferedOutput(OutputInterface::VERBOSITY_VERBOSE);
         $logger = $this->factory->create($output);

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Reporting\Formatter;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Reporting\Debt\DebtCalculator;
 use Qualimetrix\Reporting\Debt\RemediationTimeRegistry;
@@ -27,17 +28,20 @@ final class HtmlFormatterTest extends TestCase
         );
     }
 
-    public function testGetNameReturnsHtml(): void
+    #[Test]
+    public function itReturnsHtmlAsName(): void
     {
         self::assertSame('html', $this->formatter->getName());
     }
 
-    public function testGetDefaultGroupByReturnsNone(): void
+    #[Test]
+    public function itReturnsNoneAsDefaultGroupBy(): void
     {
         self::assertSame(GroupBy::None, $this->formatter->getDefaultGroupBy());
     }
 
-    public function testFormatProducesValidHtml(): void
+    #[Test]
+    public function itProducesValidHtml(): void
     {
         $report = ReportBuilder::create()
             ->filesAnalyzed(10)
@@ -53,7 +57,8 @@ final class HtmlFormatterTest extends TestCase
         self::assertStringContainsString('id="report-data"', $output);
     }
 
-    public function testFormatEmbedsCssInline(): void
+    #[Test]
+    public function itEmbedsCssInline(): void
     {
         $report = ReportBuilder::create()
             ->filesAnalyzed(1)
@@ -68,7 +73,8 @@ final class HtmlFormatterTest extends TestCase
         self::assertStringContainsString('--bg-primary', $output);
     }
 
-    public function testFormatEmbedsJsInline(): void
+    #[Test]
+    public function itEmbedsJsInline(): void
     {
         $report = ReportBuilder::create()
             ->filesAnalyzed(1)
@@ -83,7 +89,8 @@ final class HtmlFormatterTest extends TestCase
         self::assertStringNotContainsString('__APP_JS__', $output);
     }
 
-    public function testFormatEmbedsJsonData(): void
+    #[Test]
+    public function itEmbedsJsonData(): void
     {
         $report = ReportBuilder::create()
             ->filesAnalyzed(5)
@@ -100,7 +107,8 @@ final class HtmlFormatterTest extends TestCase
         self::assertStringContainsString('"tree"', $output);
     }
 
-    public function testFormatUsesJsonHexTag(): void
+    #[Test]
+    public function itUsesJsonHexTagEncoding(): void
     {
         // The tree node name contains </script> which could break the HTML
         // JSON_HEX_TAG must escape < and > to prevent XSS
@@ -119,7 +127,8 @@ final class HtmlFormatterTest extends TestCase
         self::assertStringNotContainsString('"<project>"', $output);
     }
 
-    public function testFormatScopedReporting(): void
+    #[Test]
+    public function itEncodesScopedReportingFlag(): void
     {
         $report = ReportBuilder::create()
             ->filesAnalyzed(3)
@@ -133,7 +142,8 @@ final class HtmlFormatterTest extends TestCase
         self::assertStringContainsString('"scopedReporting":true', $output);
     }
 
-    public function testFormatWithNullMetrics(): void
+    #[Test]
+    public function itFormatsWithNullMetrics(): void
     {
         $report = ReportBuilder::create()
             ->filesAnalyzed(0)
@@ -148,7 +158,8 @@ final class HtmlFormatterTest extends TestCase
         self::assertStringContainsString('"totalViolations":0', $output);
     }
 
-    public function testFormatEmbedsHintsData(): void
+    #[Test]
+    public function itEmbedsHintsData(): void
     {
         $report = ReportBuilder::create()
             ->filesAnalyzed(1)

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Reporting\Formatter\Summary;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
@@ -28,7 +29,8 @@ final class TopIssuesRendererTest extends TestCase
         $this->color = new AnsiColor(false);
     }
 
-    public function testRenderShowsTopIssues(): void
+    #[Test]
+    public function itRendersTopIssues(): void
     {
         $report = new Report(
             violations: [],
@@ -68,7 +70,8 @@ final class TopIssuesRendererTest extends TestCase
         self::assertStringContainsString('(LowImpactService::process)', $output);
     }
 
-    public function testRenderSkipsWhenNoTopIssues(): void
+    #[Test]
+    public function itSkipsRenderingWhenNoTopIssues(): void
     {
         $report = new Report(
             violations: [],
@@ -88,7 +91,8 @@ final class TopIssuesRendererTest extends TestCase
         self::assertSame([], $lines);
     }
 
-    public function testRenderSkipsWhenLimitIsZero(): void
+    #[Test]
+    public function itSkipsRenderingWhenLimitIsZero(): void
     {
         $report = new Report(
             violations: [],
@@ -110,7 +114,8 @@ final class TopIssuesRendererTest extends TestCase
         self::assertSame([], $lines);
     }
 
-    public function testRenderRespectsLimit(): void
+    #[Test]
+    public function itRespectsLimit(): void
     {
         $report = new Report(
             violations: [],
@@ -137,7 +142,8 @@ final class TopIssuesRendererTest extends TestCase
         self::assertStringNotContainsString('2.', $output);
     }
 
-    public function testRenderRelativizesPaths(): void
+    #[Test]
+    public function itRelativizesPaths(): void
     {
         $report = new Report(
             violations: [],
@@ -164,7 +170,8 @@ final class TopIssuesRendererTest extends TestCase
         self::assertStringNotContainsString(':25', $output);
     }
 
-    public function testRenderShowsLineNumberWhenPrecise(): void
+    #[Test]
+    public function itRendersLineNumberWhenPrecise(): void
     {
         $violation = new Violation(
             location: new Location('/project/src/Service.php', 42, precise: true),
@@ -203,7 +210,8 @@ final class TopIssuesRendererTest extends TestCase
         self::assertStringContainsString('src/Service.php:42', $output);
     }
 
-    public function testRenderShowsNamespaceLevelViolations(): void
+    #[Test]
+    public function itRendersNamespaceLevelViolations(): void
     {
         $violation = new Violation(
             location: new Location('/project/src/Common/ApiResource/AbstractApiKey.php', null),
@@ -249,7 +257,8 @@ final class TopIssuesRendererTest extends TestCase
         self::assertStringContainsString('(namespace: App\Common\ApiResource)', $output);
     }
 
-    public function testRenderShowsClassLevelWithoutSymbolSuffix(): void
+    #[Test]
+    public function itRendersClassLevelWithoutSymbolSuffix(): void
     {
         $violation = new Violation(
             location: new Location('/project/src/Service/UserService.php', 5),
@@ -292,7 +301,8 @@ final class TopIssuesRendererTest extends TestCase
         self::assertStringNotContainsString('(UserService)', $output);
     }
 
-    public function testRenderShowsFunctionLevelSymbol(): void
+    #[Test]
+    public function itRendersFunctionLevelSymbol(): void
     {
         $violation = new Violation(
             location: new Location('/project/src/helpers.php', 10, precise: true),
@@ -325,7 +335,8 @@ final class TopIssuesRendererTest extends TestCase
         self::assertStringContainsString('(calculateHash)', $output);
     }
 
-    public function testRenderShowsFileLevelWithoutSymbolSuffix(): void
+    #[Test]
+    public function itRendersFileLevelWithoutSymbolSuffix(): void
     {
         $violation = new Violation(
             location: new Location('/project/src/config.php', null),
@@ -360,7 +371,8 @@ final class TopIssuesRendererTest extends TestCase
         self::assertStringNotContainsString('(src/config.php)', $output);
     }
 
-    public function testRenderHandlesLocationNone(): void
+    #[Test]
+    public function itHandlesLocationNone(): void
     {
         $violation = new Violation(
             location: Location::none(),
@@ -394,7 +406,8 @@ final class TopIssuesRendererTest extends TestCase
         self::assertStringContainsString('architecture.circular-dependency: Circular dependency detected', $output);
     }
 
-    public function testRenderPrefersRecommendationOverMessage(): void
+    #[Test]
+    public function itPrefersRecommendationOverMessage(): void
     {
         $violation = new Violation(
             location: new Location('/project/src/Service.php', 5),

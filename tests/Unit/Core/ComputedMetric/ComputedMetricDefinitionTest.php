@@ -6,6 +6,7 @@ namespace Qualimetrix\Tests\Unit\Core\ComputedMetric;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinition;
 use Qualimetrix\Core\Symbol\SymbolType;
@@ -13,7 +14,8 @@ use Qualimetrix\Core\Symbol\SymbolType;
 #[CoversClass(ComputedMetricDefinition::class)]
 final class ComputedMetricDefinitionTest extends TestCase
 {
-    public function testValidHealthName(): void
+    #[Test]
+    public function itValidHealthName(): void
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.complexity',
@@ -25,7 +27,8 @@ final class ComputedMetricDefinitionTest extends TestCase
         self::assertSame('health.complexity', $definition->name);
     }
 
-    public function testValidComputedName(): void
+    #[Test]
+    public function itValidComputedName(): void
     {
         $definition = new ComputedMetricDefinition(
             name: 'computed.myMetric',
@@ -37,7 +40,8 @@ final class ComputedMetricDefinitionTest extends TestCase
         self::assertSame('computed.myMetric', $definition->name);
     }
 
-    public function testValidMultiSegmentName(): void
+    #[Test]
+    public function itValidMultiSegmentName(): void
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.complexity.sub1',
@@ -49,7 +53,8 @@ final class ComputedMetricDefinitionTest extends TestCase
         self::assertSame('health.complexity.sub1', $definition->name);
     }
 
-    public function testInvalidNameNoPrefix(): void
+    #[Test]
+    public function itInvalidNameNoPrefix(): void
     {
         self::expectException(InvalidArgumentException::class);
         self::expectExceptionMessage('must start with "health." or "computed."');
@@ -62,7 +67,8 @@ final class ComputedMetricDefinitionTest extends TestCase
         );
     }
 
-    public function testInvalidNameContainsDoubleUnderscore(): void
+    #[Test]
+    public function itInvalidNameContainsDoubleUnderscore(): void
     {
         self::expectException(InvalidArgumentException::class);
         self::expectExceptionMessage('must not contain "__"');
@@ -75,7 +81,8 @@ final class ComputedMetricDefinitionTest extends TestCase
         );
     }
 
-    public function testInvalidNameSegmentStartsWithDigit(): void
+    #[Test]
+    public function itInvalidNameSegmentStartsWithDigit(): void
     {
         self::expectException(InvalidArgumentException::class);
         self::expectExceptionMessage('must match [a-zA-Z][a-zA-Z0-9_]*');
@@ -88,7 +95,8 @@ final class ComputedMetricDefinitionTest extends TestCase
         );
     }
 
-    public function testInvalidNameSegmentWithSpecialChars(): void
+    #[Test]
+    public function itInvalidNameSegmentWithSpecialChars(): void
     {
         self::expectException(InvalidArgumentException::class);
         self::expectExceptionMessage('must match [a-zA-Z][a-zA-Z0-9_]*');
@@ -101,7 +109,8 @@ final class ComputedMetricDefinitionTest extends TestCase
         );
     }
 
-    public function testGetFormulaForLevelClass(): void
+    #[Test]
+    public function itGetFormulaForLevelClass(): void
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.test',
@@ -116,7 +125,8 @@ final class ComputedMetricDefinitionTest extends TestCase
         self::assertSame('class_formula', $definition->getFormulaForLevel(SymbolType::Class_));
     }
 
-    public function testGetFormulaForLevelNamespace(): void
+    #[Test]
+    public function itGetFormulaForLevelNamespace(): void
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.test',
@@ -131,7 +141,8 @@ final class ComputedMetricDefinitionTest extends TestCase
         self::assertSame('namespace_formula', $definition->getFormulaForLevel(SymbolType::Namespace_));
     }
 
-    public function testGetFormulaForLevelProjectExplicit(): void
+    #[Test]
+    public function itGetFormulaForLevelProjectExplicit(): void
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.test',
@@ -147,7 +158,8 @@ final class ComputedMetricDefinitionTest extends TestCase
         self::assertSame('project_formula', $definition->getFormulaForLevel(SymbolType::Project));
     }
 
-    public function testGetFormulaForLevelProjectInheritsFromNamespace(): void
+    #[Test]
+    public function itGetFormulaForLevelProjectInheritsFromNamespace(): void
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.test',
@@ -162,7 +174,8 @@ final class ComputedMetricDefinitionTest extends TestCase
         self::assertSame('namespace_formula', $definition->getFormulaForLevel(SymbolType::Project));
     }
 
-    public function testGetFormulaForLevelReturnsNullForMethod(): void
+    #[Test]
+    public function itGetFormulaForLevelReturnsNullForMethod(): void
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.test',
@@ -174,7 +187,8 @@ final class ComputedMetricDefinitionTest extends TestCase
         self::assertNull($definition->getFormulaForLevel(SymbolType::Method));
     }
 
-    public function testGetFormulaForLevelReturnsNullForMissingClass(): void
+    #[Test]
+    public function itGetFormulaForLevelReturnsNullForMissingClass(): void
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.test',
@@ -186,7 +200,8 @@ final class ComputedMetricDefinitionTest extends TestCase
         self::assertNull($definition->getFormulaForLevel(SymbolType::Class_));
     }
 
-    public function testHasLevel(): void
+    #[Test]
+    public function itHasLevel(): void
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.test',
@@ -201,7 +216,8 @@ final class ComputedMetricDefinitionTest extends TestCase
         self::assertFalse($definition->hasLevel(SymbolType::Method));
     }
 
-    public function testThresholdFields(): void
+    #[Test]
+    public function itThresholdFields(): void
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.test',
@@ -219,7 +235,8 @@ final class ComputedMetricDefinitionTest extends TestCase
         self::assertSame('Test description', $definition->description);
     }
 
-    public function testDefaultThresholdValues(): void
+    #[Test]
+    public function itDefaultThresholdValues(): void
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.test',

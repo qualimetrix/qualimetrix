@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Reporting\Health;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Symbol\SymbolInfo;
@@ -29,7 +30,8 @@ final class NamespaceDrillDownTest extends TestCase
 
     // --- buildSubtreeHealthScores ---
 
-    public function testSubtreeHealthScoresReturnsEmptyForNoMatchingNamespaces(): void
+    #[Test]
+    public function itSubtreeHealthScoresReturnsEmptyForNoMatchingNamespaces(): void
     {
         $metrics = $this->createMetricRepository(
             projectMetrics: new MetricBag(),
@@ -50,7 +52,8 @@ final class NamespaceDrillDownTest extends TestCase
         self::assertSame([], $result);
     }
 
-    public function testSubtreeHealthScoresMatchesExactNamespace(): void
+    #[Test]
+    public function itSubtreeHealthScoresMatchesExactNamespace(): void
     {
         $metrics = $this->createMetricRepository(
             projectMetrics: new MetricBag(),
@@ -74,7 +77,8 @@ final class NamespaceDrillDownTest extends TestCase
         self::assertEqualsWithDelta(75.0, $result['overall']->score, 0.01);
     }
 
-    public function testSubtreeHealthScoresMatchesChildNamespaces(): void
+    #[Test]
+    public function itSubtreeHealthScoresMatchesChildNamespaces(): void
     {
         $metrics = $this->createMetricRepository(
             projectMetrics: new MetricBag(),
@@ -95,7 +99,8 @@ final class NamespaceDrillDownTest extends TestCase
         self::assertEqualsWithDelta(90.0, $result['complexity']->score, 0.01);
     }
 
-    public function testSubtreeHealthScoresDoesNotMatchSimilarPrefix(): void
+    #[Test]
+    public function itSubtreeHealthScoresDoesNotMatchSimilarPrefix(): void
     {
         // App\ServiceManager should NOT match prefix App\Service
         $metrics = $this->createMetricRepository(
@@ -116,7 +121,8 @@ final class NamespaceDrillDownTest extends TestCase
         self::assertSame([], $result);
     }
 
-    public function testSubtreeHealthScoresWeightedAverageAcrossNamespaces(): void
+    #[Test]
+    public function itSubtreeHealthScoresWeightedAverageAcrossNamespaces(): void
     {
         $metrics = $this->createMetricRepository(
             projectMetrics: new MetricBag(),
@@ -143,7 +149,8 @@ final class NamespaceDrillDownTest extends TestCase
         self::assertEqualsWithDelta(62.5, $result['complexity']->score, 0.01);
     }
 
-    public function testSubtreeHealthScoresUsesMinimumClassCountOfOne(): void
+    #[Test]
+    public function itSubtreeHealthScoresUsesMinimumClassCountOfOne(): void
     {
         $metrics = $this->createMetricRepository(
             projectMetrics: new MetricBag(),
@@ -166,7 +173,8 @@ final class NamespaceDrillDownTest extends TestCase
 
     // --- buildWorstClasses ---
 
-    public function testBuildWorstClassesReturnsEmptyWhenNoClassesMatch(): void
+    #[Test]
+    public function itBuildWorstClassesReturnsEmptyWhenNoClassesMatch(): void
     {
         $metrics = $this->createMetricRepository(
             projectMetrics: new MetricBag(),
@@ -185,7 +193,8 @@ final class NamespaceDrillDownTest extends TestCase
         self::assertSame([], $result);
     }
 
-    public function testBuildWorstClassesSortedByHealthAscending(): void
+    #[Test]
+    public function itBuildWorstClassesSortedByHealthAscending(): void
     {
         $classA = SymbolPath::forClass('App\\Service', 'Alpha');
         $classB = SymbolPath::forClass('App\\Service', 'Beta');
@@ -216,7 +225,8 @@ final class NamespaceDrillDownTest extends TestCase
         self::assertSame('Alpha', $result[1]->symbolPath->type);
     }
 
-    public function testBuildWorstClassesCountsViolationsPerClass(): void
+    #[Test]
+    public function itBuildWorstClassesCountsViolationsPerClass(): void
     {
         $classPath = SymbolPath::forClass('App\\Service', 'Foo');
         $methodPath = SymbolPath::forMethod('App\\Service', 'Foo', 'bar');
@@ -260,7 +270,8 @@ final class NamespaceDrillDownTest extends TestCase
         self::assertSame(2, $result[0]->violationCount);
     }
 
-    public function testBuildWorstClassesSkipsNamespaceLevelViolations(): void
+    #[Test]
+    public function itBuildWorstClassesSkipsNamespaceLevelViolations(): void
     {
         $classPath = SymbolPath::forClass('App\\Service', 'Foo');
         $nsPath = SymbolPath::forNamespace('App\\Service');
@@ -294,7 +305,8 @@ final class NamespaceDrillDownTest extends TestCase
         self::assertSame(0, $result[0]->violationCount);
     }
 
-    public function testBuildWorstClassesSkipsClassesWithoutHealthOverall(): void
+    #[Test]
+    public function itBuildWorstClassesSkipsClassesWithoutHealthOverall(): void
     {
         $classPath = SymbolPath::forClass('App\\Service', 'NoHealth');
 
@@ -316,7 +328,8 @@ final class NamespaceDrillDownTest extends TestCase
         self::assertSame([], $result);
     }
 
-    public function testBuildWorstClassesIncludesNotableMetricsWhenRequested(): void
+    #[Test]
+    public function itBuildWorstClassesIncludesNotableMetricsWhenRequested(): void
     {
         $classPath = SymbolPath::forClass('App\\Service', 'Rich');
 
@@ -344,7 +357,8 @@ final class NamespaceDrillDownTest extends TestCase
         self::assertArrayHasKey('loc', $result[0]->metrics);
     }
 
-    public function testBuildWorstClassesOmitsNotableMetricsByDefault(): void
+    #[Test]
+    public function itBuildWorstClassesOmitsNotableMetricsByDefault(): void
     {
         $classPath = SymbolPath::forClass('App\\Service', 'Simple');
 
@@ -369,7 +383,8 @@ final class NamespaceDrillDownTest extends TestCase
 
     // --- buildClassHealthScores ---
 
-    public function testBuildClassHealthScoresReturnsEmptyWhenClassNotFound(): void
+    #[Test]
+    public function itBuildClassHealthScoresReturnsEmptyWhenClassNotFound(): void
     {
         $metrics = $this->createMetricRepository(
             projectMetrics: new MetricBag(),
@@ -381,7 +396,8 @@ final class NamespaceDrillDownTest extends TestCase
         self::assertSame([], $result);
     }
 
-    public function testBuildClassHealthScoresReturnsDimensionScores(): void
+    #[Test]
+    public function itBuildClassHealthScoresReturnsDimensionScores(): void
     {
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
 
@@ -415,7 +431,8 @@ final class NamespaceDrillDownTest extends TestCase
         self::assertEqualsWithDelta(82.0, $result['overall']->score, 0.01);
     }
 
-    public function testBuildClassHealthScoresSkipsMissingDimensions(): void
+    #[Test]
+    public function itBuildClassHealthScoresSkipsMissingDimensions(): void
     {
         $classPath = SymbolPath::forClass('App\\Service', 'Partial');
 
@@ -438,7 +455,8 @@ final class NamespaceDrillDownTest extends TestCase
         self::assertCount(1, $result);
     }
 
-    public function testBuildClassHealthScoresMatchesGlobalClass(): void
+    #[Test]
+    public function itBuildClassHealthScoresMatchesGlobalClass(): void
     {
         $classPath = SymbolPath::forClass('', 'GlobalClass');
 

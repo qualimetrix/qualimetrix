@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Reporting\Formatter;
 use DateTimeImmutable;
 use DateTimeInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
@@ -51,17 +52,20 @@ final class JsonFormatterTest extends TestCase
         );
     }
 
-    public function testGetNameReturnsJson(): void
+    #[Test]
+    public function itReturnsJsonName(): void
     {
         self::assertSame('json', $this->formatter->getName());
     }
 
-    public function testGetDefaultGroupBy(): void
+    #[Test]
+    public function itReturnsDefaultGroupByNone(): void
     {
         self::assertSame(GroupBy::None, $this->formatter->getDefaultGroupBy());
     }
 
-    public function testFormatReturnsValidJson(): void
+    #[Test]
+    public function itReturnsValidJson(): void
     {
         $report = ReportBuilder::create()
             ->filesAnalyzed(10)
@@ -74,7 +78,8 @@ final class JsonFormatterTest extends TestCase
         self::assertJson($output);
     }
 
-    public function testFormatEmptyReport(): void
+    #[Test]
+    public function itFormatsEmptyReport(): void
     {
         $report = ReportBuilder::create()
             ->filesAnalyzed(42)
@@ -107,7 +112,8 @@ final class JsonFormatterTest extends TestCase
         self::assertSame([], $data['violations']);
     }
 
-    public function testTimestampIsIso8601(): void
+    #[Test]
+    public function itProducesIso8601Timestamp(): void
     {
         $report = new Report([], 0, 0, 0.0, 0, 0);
         $output = $this->formatter->format($report, new FormatterContext());
@@ -118,7 +124,8 @@ final class JsonFormatterTest extends TestCase
         self::assertInstanceOf(DateTimeImmutable::class, $parsed);
     }
 
-    public function testFormatReportWithViolations(): void
+    #[Test]
+    public function itFormatsReportWithViolations(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -178,7 +185,8 @@ final class JsonFormatterTest extends TestCase
         self::assertSame(1, $data['summary']['warningCount']);
     }
 
-    public function testViolationUsesDisplayMessageFallback(): void
+    #[Test]
+    public function itUsesDisplayMessageFallbackForViolation(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -201,7 +209,8 @@ final class JsonFormatterTest extends TestCase
         self::assertSame('Technical message only', $data['violations'][0]['message']);
     }
 
-    public function testHealthScoresIncluded(): void
+    #[Test]
+    public function itIncludesHealthScores(): void
     {
         $report = new Report(
             violations: [],
@@ -264,7 +273,8 @@ final class JsonFormatterTest extends TestCase
         self::assertSame([], $data['health']['cohesion']['decomposition']);
     }
 
-    public function testScopedReportingStillShowsHealth(): void
+    #[Test]
+    public function itShowsHealthInScopedReporting(): void
     {
         $report = new Report(
             violations: [],
@@ -287,7 +297,8 @@ final class JsonFormatterTest extends TestCase
         self::assertArrayHasKey('complexity', $data['health']);
     }
 
-    public function testWorstNamespaces(): void
+    #[Test]
+    public function itIncludesWorstNamespaces(): void
     {
         $report = new Report(
             violations: [],
@@ -327,7 +338,8 @@ final class JsonFormatterTest extends TestCase
         self::assertEquals(['complexity' => 28.0, 'cohesion' => 25.0], $ns['healthScores']);
     }
 
-    public function testWorstClasses(): void
+    #[Test]
+    public function itIncludesWorstClasses(): void
     {
         $report = new Report(
             violations: [],
@@ -366,7 +378,8 @@ final class JsonFormatterTest extends TestCase
         self::assertEquals(['complexity' => 12.0, 'cohesion' => 8.0], $cls['healthScores']);
     }
 
-    public function testAllViolationsIncludedByDefault(): void
+    #[Test]
+    public function itIncludesAllViolationsByDefault(): void
     {
         $builder = ReportBuilder::create()
             ->filesAnalyzed(1)
@@ -393,7 +406,8 @@ final class JsonFormatterTest extends TestCase
         self::assertSame(55, $data['summary']['violationCount']);
     }
 
-    public function testDetailImpliesAllViolations(): void
+    #[Test]
+    public function itShowsAllViolationsWhenDetailEnabled(): void
     {
         $builder = ReportBuilder::create()
             ->filesAnalyzed(1)
@@ -419,7 +433,8 @@ final class JsonFormatterTest extends TestCase
         self::assertCount(55, $data['violations']);
     }
 
-    public function testFormatOptViolationsOverridesDetail(): void
+    #[Test]
+    public function itOverridesDetailWithFormatOptViolations(): void
     {
         $builder = ReportBuilder::create()
             ->filesAnalyzed(1)
@@ -447,7 +462,8 @@ final class JsonFormatterTest extends TestCase
         self::assertCount(5, $data['violations']);
     }
 
-    public function testFormatOptViolationsZero(): void
+    #[Test]
+    public function itShowsNoViolationsWhenFormatOptViolationsIsZero(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -471,7 +487,8 @@ final class JsonFormatterTest extends TestCase
         self::assertSame(1, $data['summary']['violationCount']);
     }
 
-    public function testFormatOptViolationsAll(): void
+    #[Test]
+    public function itShowsAllViolationsWhenFormatOptViolationsIsAll(): void
     {
         $builder = ReportBuilder::create()
             ->filesAnalyzed(1)
@@ -497,7 +514,8 @@ final class JsonFormatterTest extends TestCase
         self::assertCount(55, $data['violations']);
     }
 
-    public function testNamespaceFilter(): void
+    #[Test]
+    public function itFiltersViolationsByNamespace(): void
     {
         // Violations are pre-filtered by ResultPresenter before reaching the formatter.
         // Only in-scope violations are passed to the report builder.
@@ -542,7 +560,8 @@ final class JsonFormatterTest extends TestCase
         self::assertSame(30, $data['summary']['techDebtMinutes']);
     }
 
-    public function testNamespaceFilterBoundaryAware(): void
+    #[Test]
+    public function itFiltersViolationsByNamespaceBoundaryAware(): void
     {
         // App\PaymentGateway is NOT in App\Payment scope — ResultPresenter
         // would filter it out before reaching the formatter. Empty report.
@@ -559,7 +578,8 @@ final class JsonFormatterTest extends TestCase
         self::assertSame([], $data['violations']);
     }
 
-    public function testClassFilter(): void
+    #[Test]
+    public function itFiltersViolationsByClass(): void
     {
         // Only the matching class violation is passed (pre-filtered by ResultPresenter)
         $report = ReportBuilder::create()
@@ -587,7 +607,8 @@ final class JsonFormatterTest extends TestCase
         self::assertSame(1, $data['summary']['violationCount']);
     }
 
-    public function testNanAndInfMetricValuesProduceNull(): void
+    #[Test]
+    public function itProducesNullForNanAndInfMetricValues(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -622,7 +643,8 @@ final class JsonFormatterTest extends TestCase
         self::assertNull($data['violations'][1]['metricValue']);
     }
 
-    public function testViolationsSortedBySeverityThenExceedance(): void
+    #[Test]
+    public function itSortsViolationsBySeverityThenExceedance(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -680,7 +702,8 @@ final class JsonFormatterTest extends TestCase
         self::assertSame('test.a', $data['violations'][3]['code']); // warning, exceedance=1
     }
 
-    public function testInfoViolationRendersInfoSeverityAndSortsAfterWarning(): void
+    #[Test]
+    public function itRendersInfoSeverityAndSortsAfterWarning(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -735,7 +758,8 @@ final class JsonFormatterTest extends TestCase
         self::assertSame('info', $infoViolation['severity']);
     }
 
-    public function testNullThresholdViolationsStillSorted(): void
+    #[Test]
+    public function itSortsNullThresholdViolations(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -769,7 +793,8 @@ final class JsonFormatterTest extends TestCase
         self::assertSame('code-smell.eval', $data['violations'][1]['code']);
     }
 
-    public function testRelativizesPathsWithBasePath(): void
+    #[Test]
+    public function itRelativizesPathsWithBasePath(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -792,7 +817,8 @@ final class JsonFormatterTest extends TestCase
         self::assertSame('src/Service/UserService.php', $data['violations'][0]['file']);
     }
 
-    public function testNamespaceLevelViolation(): void
+    #[Test]
+    public function itFormatsNamespaceLevelViolation(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -818,7 +844,8 @@ final class JsonFormatterTest extends TestCase
         self::assertSame('App\Service', $v['namespace']);
     }
 
-    public function testFilelessViolation(): void
+    #[Test]
+    public function itFormatsFilelessViolation(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -842,7 +869,8 @@ final class JsonFormatterTest extends TestCase
         self::assertNull($v['line']);
     }
 
-    public function testFormatOptTopN(): void
+    #[Test]
+    public function itLimitsWorstNamespacesWithTopNOption(): void
     {
         $report = new Report(
             violations: [],
@@ -865,7 +893,8 @@ final class JsonFormatterTest extends TestCase
         self::assertCount(2, $data['worstNamespaces']);
     }
 
-    public function testNanInHealthScoresSanitized(): void
+    #[Test]
+    public function itSanitizesNanInHealthScores(): void
     {
         $report = new Report(
             violations: [],
@@ -896,7 +925,8 @@ final class JsonFormatterTest extends TestCase
         self::assertNull($data['health']['test']['decomposition'][0]['value']);
     }
 
-    public function testEmptyHealthScoresProducesNull(): void
+    #[Test]
+    public function itProducesNullForEmptyHealthScores(): void
     {
         $report = new Report([], 10, 0, 0.5, 0, 0);
 
@@ -906,7 +936,8 @@ final class JsonFormatterTest extends TestCase
         self::assertNull($data['health']);
     }
 
-    public function testWorstOffendersFilteredByNamespace(): void
+    #[Test]
+    public function itFiltersWorstOffendersByNamespace(): void
     {
         $report = new Report(
             violations: [],
@@ -931,7 +962,8 @@ final class JsonFormatterTest extends TestCase
         self::assertSame('App\Payment\Gateway', $data['worstNamespaces'][1]['symbolPath']);
     }
 
-    public function testInvalidViolationsOptionFallsBackToDefault(): void
+    #[Test]
+    public function itFallsBackToDefaultForInvalidViolationsOption(): void
     {
         $builder = ReportBuilder::create()
             ->filesAnalyzed(1)
@@ -958,7 +990,8 @@ final class JsonFormatterTest extends TestCase
         self::assertCount(55, $data['violations']);
     }
 
-    public function testWorstClassFileRelativized(): void
+    #[Test]
+    public function itRelativizesWorstClassFile(): void
     {
         $report = new Report(
             violations: [],
@@ -987,7 +1020,8 @@ final class JsonFormatterTest extends TestCase
         self::assertSame('src/Foo.php', $data['worstClasses'][0]['file']);
     }
 
-    public function testScopedReportingShowsOffenders(): void
+    #[Test]
+    public function itShowsOffendersInScopedReporting(): void
     {
         $report = new Report(
             violations: [],
@@ -1013,7 +1047,8 @@ final class JsonFormatterTest extends TestCase
         self::assertNotEmpty($data['worstClasses']);
     }
 
-    public function testNanMetricValueSortedCorrectly(): void
+    #[Test]
+    public function itSortsNanMetricValueCorrectly(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -1050,7 +1085,8 @@ final class JsonFormatterTest extends TestCase
         self::assertSame('test.a', $data['violations'][1]['code']);
     }
 
-    public function testNamespaceFilterShowsNamespaceHealthScores(): void
+    #[Test]
+    public function itShowsNamespaceHealthScoresWithNamespaceFilter(): void
     {
         $nsPath = SymbolPath::forNamespace('App\Service');
         $nsMetrics = \Qualimetrix\Core\Metric\MetricBag::fromArray([
@@ -1102,7 +1138,8 @@ final class JsonFormatterTest extends TestCase
         self::assertEquals(25.0, $data['health']['cohesion']['score']);
     }
 
-    public function testNamespaceFilterBuildsWorstClassesFromMetrics(): void
+    #[Test]
+    public function itBuildsWorstClassesFromMetricsWithNamespaceFilter(): void
     {
         $classPath = SymbolPath::forClass('App\Service', 'UserService');
         $classMetrics = \Qualimetrix\Core\Metric\MetricBag::fromArray([
@@ -1161,7 +1198,8 @@ final class JsonFormatterTest extends TestCase
         self::assertSame(32, $data['worstClasses'][0]['metrics']['methodCount']);
     }
 
-    public function testNamespaceFilterFallsBackToProjectWhenNoNsMetrics(): void
+    #[Test]
+    public function itReturnsNullHealthWhenNoNsMetricsWithNamespaceFilter(): void
     {
         $metrics = self::createStub(\Qualimetrix\Core\Metric\MetricRepositoryInterface::class);
         $metrics->method('has')->willReturn(false);
@@ -1189,7 +1227,8 @@ final class JsonFormatterTest extends TestCase
         self::assertNull($data['health']);
     }
 
-    public function testViolationsMetaIncludesShownCount(): void
+    #[Test]
+    public function itIncludesShownCountInViolationsMeta(): void
     {
         $builder = ReportBuilder::create()
             ->filesAnalyzed(1)
@@ -1217,7 +1256,8 @@ final class JsonFormatterTest extends TestCase
         self::assertFalse($data['violationsMeta']['truncated']);
     }
 
-    public function testViolationsMetaShownEqualsTotal(): void
+    #[Test]
+    public function itShowsShownEqualsTotalInViolationsMeta(): void
     {
         $builder = ReportBuilder::create()
             ->filesAnalyzed(1)
@@ -1244,7 +1284,8 @@ final class JsonFormatterTest extends TestCase
         self::assertFalse($data['violationsMeta']['truncated']);
     }
 
-    public function testFormatOptLimitOverridesDefault(): void
+    #[Test]
+    public function itOverridesDefaultWithFormatOptLimit(): void
     {
         $builder = ReportBuilder::create()
             ->filesAnalyzed(1)
@@ -1273,7 +1314,8 @@ final class JsonFormatterTest extends TestCase
         self::assertTrue($data['violationsMeta']['truncated']);
     }
 
-    public function testFormatOptLimitZeroShowsAllViolations(): void
+    #[Test]
+    public function itShowsAllViolationsWhenFormatOptLimitIsZero(): void
     {
         $builder = ReportBuilder::create()
             ->filesAnalyzed(1)
@@ -1303,7 +1345,8 @@ final class JsonFormatterTest extends TestCase
         self::assertFalse($data['violationsMeta']['truncated']);
     }
 
-    public function testFormatOptViolationsTakesPrecedenceOverLimit(): void
+    #[Test]
+    public function itPrioritizesFormatOptViolationsOverLimit(): void
     {
         $builder = ReportBuilder::create()
             ->filesAnalyzed(1)
@@ -1332,7 +1375,8 @@ final class JsonFormatterTest extends TestCase
         self::assertSame(3, $data['violationsMeta']['shown']);
     }
 
-    public function testGroupByNoneDoesNotIncludeViolationGroups(): void
+    #[Test]
+    public function itDoesNotIncludeViolationGroupsWhenGroupByNone(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -1356,7 +1400,8 @@ final class JsonFormatterTest extends TestCase
         self::assertArrayHasKey('violations', $data);
     }
 
-    public function testGroupByClassNameIncludesViolationGroups(): void
+    #[Test]
+    public function itIncludesViolationGroupsWhenGroupByClassName(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -1414,7 +1459,8 @@ final class JsonFormatterTest extends TestCase
         self::assertCount(1, $orderGroup['violations']);
     }
 
-    public function testGroupByNamespaceNameIncludesViolationGroups(): void
+    #[Test]
+    public function itIncludesViolationGroupsWhenGroupByNamespaceName(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -1469,7 +1515,8 @@ final class JsonFormatterTest extends TestCase
         self::assertSame(1, $data['violationGroups']['App\Service']['count']);
     }
 
-    public function testGroupByFileIncludesViolationGroups(): void
+    #[Test]
+    public function itIncludesViolationGroupsWhenGroupByFile(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -1505,7 +1552,8 @@ final class JsonFormatterTest extends TestCase
         self::assertCount(2, $data['violationGroups']);
     }
 
-    public function testViolationGroupsBuiltFromTruncatedList(): void
+    #[Test]
+    public function itBuildsViolationGroupsFromTruncatedList(): void
     {
         $builder = ReportBuilder::create()
             ->filesAnalyzed(1)
@@ -1558,7 +1606,8 @@ final class JsonFormatterTest extends TestCase
         self::assertSame(4, $totalGrouped);
     }
 
-    public function testViolationGroupsEmptyWhenNoViolations(): void
+    #[Test]
+    public function itReturnsEmptyViolationGroupsWhenNoViolations(): void
     {
         $report = ReportBuilder::create()
             ->filesAnalyzed(1)
@@ -1577,7 +1626,8 @@ final class JsonFormatterTest extends TestCase
         self::assertSame([], $data['violationGroups']);
     }
 
-    public function testViolationGroupsSortedByCountDescending(): void
+    #[Test]
+    public function itSortsViolationGroupsByCountDescending(): void
     {
         $builder = ReportBuilder::create()
             ->filesAnalyzed(1)

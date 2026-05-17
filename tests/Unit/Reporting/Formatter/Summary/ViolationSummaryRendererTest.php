@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Reporting\Formatter\Summary;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
@@ -32,7 +33,8 @@ final class ViolationSummaryRendererTest extends TestCase
         $this->color = new AnsiColor(false);
     }
 
-    public function testNoViolationsEmptyReport(): void
+    #[Test]
+    public function itShowsNoViolationsFoundForEmptyReport(): void
     {
         $report = new Report(
             violations: [],
@@ -50,7 +52,8 @@ final class ViolationSummaryRendererTest extends TestCase
         self::assertStringContainsString('No violations found.', $output);
     }
 
-    public function testNoViolationsInNamespaceScope(): void
+    #[Test]
+    public function itShowsNoViolationsInNamespaceScope(): void
     {
         // Report has violations in a different namespace so isEmpty() is false,
         // but the filtered violations for this namespace are empty.
@@ -74,7 +77,8 @@ final class ViolationSummaryRendererTest extends TestCase
         self::assertStringContainsString('No violations in this scope.', $output);
     }
 
-    public function testNoViolationsInClassScope(): void
+    #[Test]
+    public function itShowsNoViolationsInClassScope(): void
     {
         $otherViolation = $this->createViolation(Severity::Error, 'App\\Service', 'OtherService');
 
@@ -96,7 +100,8 @@ final class ViolationSummaryRendererTest extends TestCase
         self::assertStringContainsString('No violations in this scope.', $output);
     }
 
-    public function testNoViolationsNonEmptyReportNoScopeShowsNothing(): void
+    #[Test]
+    public function itShowsNoViolationsFoundForNonEmptyReportWithNoScope(): void
     {
         // Non-empty report (filesAnalyzed > 0) with no violations and no scope filter
         // isEmpty() returns true => shows "No violations found."
@@ -116,7 +121,8 @@ final class ViolationSummaryRendererTest extends TestCase
         self::assertSame(['No violations found.', ''], $lines);
     }
 
-    public function testSingleError(): void
+    #[Test]
+    public function itFormatsSingleError(): void
     {
         $violation = $this->createViolation(Severity::Error);
 
@@ -139,7 +145,8 @@ final class ViolationSummaryRendererTest extends TestCase
         self::assertStringNotContainsString('1 errors', $output);
     }
 
-    public function testSingleWarning(): void
+    #[Test]
+    public function itFormatsSingleWarning(): void
     {
         $violation = $this->createViolation(Severity::Warning);
 
@@ -161,7 +168,8 @@ final class ViolationSummaryRendererTest extends TestCase
         self::assertStringNotContainsString('1 warnings', $output);
     }
 
-    public function testMixedErrorsAndWarnings(): void
+    #[Test]
+    public function itFormatsMixedErrorsAndWarnings(): void
     {
         $violations = [
             $this->createViolation(Severity::Error),
@@ -189,7 +197,8 @@ final class ViolationSummaryRendererTest extends TestCase
         self::assertStringContainsString('3 warnings', $output);
     }
 
-    public function testTechDebtDisplayed(): void
+    #[Test]
+    public function itDisplaysTechDebt(): void
     {
         $violations = [$this->createViolation(Severity::Error)];
 
@@ -210,7 +219,8 @@ final class ViolationSummaryRendererTest extends TestCase
         self::assertStringContainsString('Tech debt: 1h 30min', $output);
     }
 
-    public function testTechDebtWithDensity(): void
+    #[Test]
+    public function itDisplaysTechDebtWithDensity(): void
     {
         $violations = [$this->createViolation(Severity::Error)];
 
@@ -233,7 +243,8 @@ final class ViolationSummaryRendererTest extends TestCase
         self::assertStringContainsString('2.5 min/kLOC to fix', $output);
     }
 
-    public function testTechDebtZeroNotDisplayed(): void
+    #[Test]
+    public function itDoesNotDisplayZeroTechDebt(): void
     {
         $violations = [$this->createViolation(Severity::Warning)];
 
@@ -254,7 +265,8 @@ final class ViolationSummaryRendererTest extends TestCase
         self::assertStringNotContainsString('Tech debt', $output);
     }
 
-    public function testScopedDebtCalculated(): void
+    #[Test]
+    public function itCalculatesScopedDebt(): void
     {
         $violation = new Violation(
             location: new Location('/src/Service.php', 10),
@@ -288,7 +300,8 @@ final class ViolationSummaryRendererTest extends TestCase
         self::assertStringContainsString('Tech debt:', $output);
     }
 
-    public function testErrorsSummaryColorBold(): void
+    #[Test]
+    public function itColorsSummaryBoldForErrors(): void
     {
         $ansiColor = new AnsiColor(true);
         $violations = [$this->createViolation(Severity::Error)];
@@ -310,7 +323,8 @@ final class ViolationSummaryRendererTest extends TestCase
         self::assertStringContainsString("\e[1;31m", $output);
     }
 
-    public function testWarningsOnlySummaryColorBold(): void
+    #[Test]
+    public function itColorsSummaryBoldForWarningsOnly(): void
     {
         $ansiColor = new AnsiColor(true);
         $violations = [$this->createViolation(Severity::Warning)];

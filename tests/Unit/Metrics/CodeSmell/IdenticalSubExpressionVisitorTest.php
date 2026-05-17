@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Metrics\CodeSmell;
 use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Metrics\CodeSmell\IdenticalSubExpressionCollector;
 use Qualimetrix\Metrics\CodeSmell\IdenticalSubExpressionFinding;
@@ -27,7 +28,8 @@ final class IdenticalSubExpressionVisitorTest extends TestCase
 
     // ── Identical Operands ───────────────────────────────────────────
 
-    public function testIdenticalComparisonOperands(): void
+    #[Test]
+    public function itFlagsIdenticalComparisonOperands(): void
     {
         $code = <<<'PHP'
 <?php
@@ -42,7 +44,8 @@ PHP;
         self::assertStringContainsString('===', $findings[0]->detail);
     }
 
-    public function testIdenticalEqualOperands(): void
+    #[Test]
+    public function itFlagsIdenticalEqualOperands(): void
     {
         $code = <<<'PHP'
 <?php
@@ -55,7 +58,8 @@ PHP;
         self::assertStringContainsString('==', $findings[0]->detail);
     }
 
-    public function testIdenticalNotIdenticalOperands(): void
+    #[Test]
+    public function itFlagsIdenticalNotIdenticalOperands(): void
     {
         $code = <<<'PHP'
 <?php
@@ -67,68 +71,79 @@ PHP;
         self::assertStringContainsString('!==', $findings[0]->detail);
     }
 
-    public function testIdenticalGreaterOperands(): void
+    #[Test]
+    public function itFlagsIdenticalGreaterOperands(): void
     {
         $code = '<?php $result = $a > $a;';
         self::assertCount(1, $this->analyze($code));
     }
 
-    public function testIdenticalSmallerOperands(): void
+    #[Test]
+    public function itFlagsIdenticalSmallerOperands(): void
     {
         $code = '<?php $result = $a < $a;';
         self::assertCount(1, $this->analyze($code));
     }
 
-    public function testIdenticalGreaterOrEqualOperands(): void
+    #[Test]
+    public function itFlagsIdenticalGreaterOrEqualOperands(): void
     {
         $code = '<?php $result = $a >= $a;';
         self::assertCount(1, $this->analyze($code));
     }
 
-    public function testIdenticalSmallerOrEqualOperands(): void
+    #[Test]
+    public function itFlagsIdenticalSmallerOrEqualOperands(): void
     {
         $code = '<?php $result = $a <= $a;';
         self::assertCount(1, $this->analyze($code));
     }
 
-    public function testIdenticalSpaceshipOperands(): void
+    #[Test]
+    public function itFlagsIdenticalSpaceshipOperands(): void
     {
         $code = '<?php $result = $a <=> $a;';
         self::assertCount(1, $this->analyze($code));
     }
 
-    public function testIdenticalBooleanAndOperands(): void
+    #[Test]
+    public function itFlagsIdenticalBooleanAndOperands(): void
     {
         $code = '<?php $result = $a && $a;';
         self::assertCount(1, $this->analyze($code));
     }
 
-    public function testIdenticalBooleanOrOperands(): void
+    #[Test]
+    public function itFlagsIdenticalBooleanOrOperands(): void
     {
         $code = '<?php $result = $a || $a;';
         self::assertCount(1, $this->analyze($code));
     }
 
-    public function testIdenticalLogicalAndOperands(): void
+    #[Test]
+    public function itFlagsIdenticalLogicalAndOperands(): void
     {
         // Parentheses needed because `and` has lower precedence than `=`
         $code = '<?php if ($a and $a) {}';
         self::assertCount(1, $this->analyze($code));
     }
 
-    public function testIdenticalLogicalOrOperands(): void
+    #[Test]
+    public function itFlagsIdenticalLogicalOrOperands(): void
     {
         $code = '<?php if ($a or $a) {}';
         self::assertCount(1, $this->analyze($code));
     }
 
-    public function testIdenticalLogicalXorOperands(): void
+    #[Test]
+    public function itFlagsIdenticalLogicalXorOperands(): void
     {
         $code = '<?php if ($a xor $a) {}';
         self::assertCount(1, $this->analyze($code));
     }
 
-    public function testIdenticalMinusOperands(): void
+    #[Test]
+    public function itFlagsIdenticalMinusOperands(): void
     {
         $code = '<?php $result = $a - $a;';
         $findings = $this->analyze($code);
@@ -136,25 +151,29 @@ PHP;
         self::assertStringContainsString('-', $findings[0]->detail);
     }
 
-    public function testIdenticalDivOperands(): void
+    #[Test]
+    public function itFlagsIdenticalDivOperands(): void
     {
         $code = '<?php $result = $a / $a;';
         self::assertCount(1, $this->analyze($code));
     }
 
-    public function testIdenticalModOperands(): void
+    #[Test]
+    public function itFlagsIdenticalModOperands(): void
     {
         $code = '<?php $result = $a % $a;';
         self::assertCount(1, $this->analyze($code));
     }
 
-    public function testIdenticalBitwiseXorOperands(): void
+    #[Test]
+    public function itFlagsIdenticalBitwiseXorOperands(): void
     {
         $code = '<?php $result = $a ^ $a;';
         self::assertCount(1, $this->analyze($code));
     }
 
-    public function testIdenticalCoalesceOperands(): void
+    #[Test]
+    public function itFlagsIdenticalCoalesceOperands(): void
     {
         $code = '<?php $result = $a ?? $a;';
         self::assertCount(1, $this->analyze($code));
@@ -162,43 +181,50 @@ PHP;
 
     // ── Operators that should NOT be flagged ─────────────────────────
 
-    public function testPlusNotFlagged(): void
+    #[Test]
+    public function itDoesNotFlagPlusOperator(): void
     {
         $code = '<?php $result = $a + $a;';
         self::assertCount(0, $this->analyze($code));
     }
 
-    public function testMultiplyNotFlagged(): void
+    #[Test]
+    public function itDoesNotFlagMultiplyOperator(): void
     {
         $code = '<?php $result = $a * $a;';
         self::assertCount(0, $this->analyze($code));
     }
 
-    public function testConcatNotFlagged(): void
+    #[Test]
+    public function itDoesNotFlagConcatOperator(): void
     {
         $code = '<?php $result = $a . $a;';
         self::assertCount(0, $this->analyze($code));
     }
 
-    public function testBitwiseAndNotFlagged(): void
+    #[Test]
+    public function itDoesNotFlagBitwiseAndOperator(): void
     {
         $code = '<?php $result = $a & $a;';
         self::assertCount(0, $this->analyze($code));
     }
 
-    public function testBitwiseOrNotFlagged(): void
+    #[Test]
+    public function itDoesNotFlagBitwiseOrOperator(): void
     {
         $code = '<?php $result = $a | $a;';
         self::assertCount(0, $this->analyze($code));
     }
 
-    public function testShiftLeftNotFlagged(): void
+    #[Test]
+    public function itDoesNotFlagShiftLeftOperator(): void
     {
         $code = '<?php $result = $a << $a;';
         self::assertCount(0, $this->analyze($code));
     }
 
-    public function testShiftRightNotFlagged(): void
+    #[Test]
+    public function itDoesNotFlagShiftRightOperator(): void
     {
         $code = '<?php $result = $a >> $a;';
         self::assertCount(0, $this->analyze($code));
@@ -206,37 +232,43 @@ PHP;
 
     // ── Side effects — should NOT be flagged ────────────────────────
 
-    public function testFunctionCallNotFlagged(): void
+    #[Test]
+    public function itDoesNotFlagFunctionCallOperands(): void
     {
         $code = '<?php $result = foo() === foo();';
         self::assertCount(0, $this->analyze($code));
     }
 
-    public function testMethodCallNotFlagged(): void
+    #[Test]
+    public function itDoesNotFlagMethodCallOperands(): void
     {
         $code = '<?php $result = $obj->get() === $obj->get();';
         self::assertCount(0, $this->analyze($code));
     }
 
-    public function testStaticCallNotFlagged(): void
+    #[Test]
+    public function itDoesNotFlagStaticCallOperands(): void
     {
         $code = '<?php $result = Foo::bar() === Foo::bar();';
         self::assertCount(0, $this->analyze($code));
     }
 
-    public function testPreIncrementNotFlagged(): void
+    #[Test]
+    public function itDoesNotFlagPreIncrementOperands(): void
     {
         $code = '<?php $result = ++$a === ++$a;';
         self::assertCount(0, $this->analyze($code));
     }
 
-    public function testNewNotFlagged(): void
+    #[Test]
+    public function itDoesNotFlagNewExpressionOperands(): void
     {
         $code = '<?php $result = new Foo() === new Foo();';
         self::assertCount(0, $this->analyze($code));
     }
 
-    public function testNestedFunctionCallNotFlagged(): void
+    #[Test]
+    public function itDoesNotFlagNestedFunctionCallOperands(): void
     {
         $code = '<?php $result = ($a + foo()) === ($a + foo());';
         self::assertCount(0, $this->analyze($code));
@@ -244,19 +276,22 @@ PHP;
 
     // ── Pure complex expressions — SHOULD be flagged ─────────────────
 
-    public function testPropertyAccessFlagged(): void
+    #[Test]
+    public function itFlagsIdenticalPropertyAccessOperands(): void
     {
         $code = '<?php $result = $obj->prop === $obj->prop;';
         self::assertCount(1, $this->analyze($code));
     }
 
-    public function testArrayAccessFlagged(): void
+    #[Test]
+    public function itFlagsIdenticalArrayAccessOperands(): void
     {
         $code = '<?php $result = $arr[0] === $arr[0];';
         self::assertCount(1, $this->analyze($code));
     }
 
-    public function testComplexExpressionFlagged(): void
+    #[Test]
+    public function itFlagsIdenticalComplexExpressionOperands(): void
     {
         $code = '<?php $result = ($a + $b * $c) === ($a + $b * $c);';
         self::assertCount(1, $this->analyze($code));
@@ -264,13 +299,15 @@ PHP;
 
     // ── Different operands — should NOT be flagged ──────────────────
 
-    public function testDifferentOperandsNotFlagged(): void
+    #[Test]
+    public function itDoesNotFlagDifferentOperands(): void
     {
         $code = '<?php $result = $a === $b;';
         self::assertCount(0, $this->analyze($code));
     }
 
-    public function testDifferentComplexExpressionsNotFlagged(): void
+    #[Test]
+    public function itDoesNotFlagDifferentComplexExpressions(): void
     {
         $code = '<?php $result = ($a + $b) === ($a - $b);';
         self::assertCount(0, $this->analyze($code));
@@ -278,7 +315,8 @@ PHP;
 
     // ── Duplicate Conditions ────────────────────────────────────────
 
-    public function testDuplicateIfElseifCondition(): void
+    #[Test]
+    public function itFlagsDuplicateIfElseifCondition(): void
     {
         $code = <<<'PHP'
 <?php
@@ -296,7 +334,8 @@ PHP;
         self::assertSame(4, $findings[0]->line);
     }
 
-    public function testDuplicateConditionThreeWay(): void
+    #[Test]
+    public function itFlagsDuplicateConditionThreeWay(): void
     {
         $code = <<<'PHP'
 <?php
@@ -314,7 +353,8 @@ PHP;
         self::assertSame(6, $findings[0]->line);
     }
 
-    public function testNoDuplicateConditions(): void
+    #[Test]
+    public function itDoesNotFlagDistinctConditions(): void
     {
         $code = <<<'PHP'
 <?php
@@ -330,13 +370,15 @@ PHP;
         self::assertCount(0, $this->analyze($code));
     }
 
-    public function testIfWithoutElseifNotChecked(): void
+    #[Test]
+    public function itDoesNotCheckIfWithoutElseif(): void
     {
         $code = '<?php if ($x > 0) { echo "a"; }';
         self::assertCount(0, $this->analyze($code));
     }
 
-    public function testDuplicateComplexCondition(): void
+    #[Test]
+    public function itFlagsDuplicateComplexCondition(): void
     {
         $code = <<<'PHP'
 <?php
@@ -352,7 +394,8 @@ PHP;
 
     // ── Identical Ternary Branches ──────────────────────────────────
 
-    public function testIdenticalTernaryBranches(): void
+    #[Test]
+    public function itFlagsIdenticalTernaryBranches(): void
     {
         $code = '<?php $result = $cond ? $a : $a;';
 
@@ -363,19 +406,22 @@ PHP;
         self::assertSame(1, $findings[0]->line);
     }
 
-    public function testDifferentTernaryBranchesNotFlagged(): void
+    #[Test]
+    public function itDoesNotFlagDifferentTernaryBranches(): void
     {
         $code = '<?php $result = $cond ? $a : $b;';
         self::assertCount(0, $this->analyze($code));
     }
 
-    public function testShortTernaryNotFlagged(): void
+    #[Test]
+    public function itDoesNotFlagShortTernaryWithDifferentBranches(): void
     {
         $code = '<?php $result = $a ?: $b;';
         self::assertCount(0, $this->analyze($code));
     }
 
-    public function testTernaryWithSideEffectsNotFlagged(): void
+    #[Test]
+    public function itDoesNotFlagTernaryWithSideEffects(): void
     {
         $code = '<?php $result = $cond ? foo() : foo();';
         self::assertCount(0, $this->analyze($code));
@@ -383,7 +429,8 @@ PHP;
 
     // ── Duplicate Match Arms ────────────────────────────────────────
 
-    public function testDuplicateMatchArmCondition(): void
+    #[Test]
+    public function itFlagsDuplicateMatchArmCondition(): void
     {
         $code = <<<'PHP'
 <?php
@@ -401,7 +448,8 @@ PHP;
         self::assertSame(5, $findings[0]->line);
     }
 
-    public function testNoDuplicateMatchArms(): void
+    #[Test]
+    public function itDoesNotFlagDistinctMatchArms(): void
     {
         $code = <<<'PHP'
 <?php
@@ -415,7 +463,8 @@ PHP;
         self::assertCount(0, $this->analyze($code));
     }
 
-    public function testMatchDefaultNotCompared(): void
+    #[Test]
+    public function itDoesNotCompareMatchDefaultArm(): void
     {
         $code = <<<'PHP'
 <?php
@@ -428,7 +477,8 @@ PHP;
         self::assertCount(0, $this->analyze($code));
     }
 
-    public function testDuplicateMatchArmComplexCondition(): void
+    #[Test]
+    public function itFlagsDuplicateMatchArmComplexCondition(): void
     {
         $code = <<<'PHP'
 <?php
@@ -444,7 +494,8 @@ PHP;
 
     // ── Edge Cases ──────────────────────────────────────────────────
 
-    public function testMultipleFindingsInSameFile(): void
+    #[Test]
+    public function itReportsMultipleFindingsInSameFile(): void
     {
         $code = <<<'PHP'
 <?php
@@ -456,7 +507,8 @@ PHP;
         self::assertCount(3, $this->analyze($code));
     }
 
-    public function testNestedTernary(): void
+    #[Test]
+    public function itFlagsIdenticalBranchesInNestedTernary(): void
     {
         $code = '<?php $result = $cond1 ? ($cond2 ? $a : $a) : $b;';
 
@@ -465,7 +517,8 @@ PHP;
         self::assertSame('identical_ternary', $findings[0]->type);
     }
 
-    public function testCleanCode(): void
+    #[Test]
+    public function itProducesNoFindingsForCleanCode(): void
     {
         $code = <<<'PHP'
 <?php
@@ -499,7 +552,8 @@ PHP;
         self::assertCount(0, $this->analyze($code));
     }
 
-    public function testReset(): void
+    #[Test]
+    public function itClearsStateOnReset(): void
     {
         $code1 = '<?php $a = $x === $x;';
         $code2 = '<?php $b = $y + $z;';
@@ -513,43 +567,50 @@ PHP;
         self::assertCount(0, $this->visitor->getFindings());
     }
 
-    public function testNullsafeMethodCallNotFlagged(): void
+    #[Test]
+    public function itDoesNotFlagNullsafeMethodCallOperands(): void
     {
         $code = '<?php $result = $a?->get() === $a?->get();';
         self::assertCount(0, $this->analyze($code));
     }
 
-    public function testYieldNotFlagged(): void
+    #[Test]
+    public function itDoesNotFlagYieldExpressionOperands(): void
     {
         $code = '<?php function gen() { $result = (yield 1) === (yield 1); }';
         self::assertCount(0, $this->analyze($code));
     }
 
-    public function testAssignNotFlagged(): void
+    #[Test]
+    public function itDoesNotFlagAssignmentOperands(): void
     {
         $code = '<?php $result = ($a = 1) === ($a = 1);';
         self::assertCount(0, $this->analyze($code));
     }
 
-    public function testAssignOpNotFlagged(): void
+    #[Test]
+    public function itDoesNotFlagCompoundAssignmentOperands(): void
     {
         $code = '<?php $result = ($a += 1) === ($a += 1);';
         self::assertCount(0, $this->analyze($code));
     }
 
-    public function testShellExecNotFlagged(): void
+    #[Test]
+    public function itDoesNotFlagShellExecOperands(): void
     {
         $code = '<?php $result = `ls` === `ls`;';
         self::assertCount(0, $this->analyze($code));
     }
 
-    public function testEvalNotFlagged(): void
+    #[Test]
+    public function itDoesNotFlagEvalExpressionOperands(): void
     {
         $code = '<?php $result = eval("1") === eval("1");';
         self::assertCount(0, $this->analyze($code));
     }
 
-    public function testPrintNotFlagged(): void
+    #[Test]
+    public function itDoesNotFlagPrintExpressionOperands(): void
     {
         $code = '<?php $result = print("a") === print("a");';
         self::assertCount(0, $this->analyze($code));
@@ -557,7 +618,8 @@ PHP;
 
     // ── Short Ternary ───────────────────────────────────────────────
 
-    public function testShortTernaryIdentical(): void
+    #[Test]
+    public function itFlagsShortTernaryWithIdenticalBranches(): void
     {
         $code = '<?php $result = $a ?: $a;';
         $findings = $this->analyze($code);
@@ -565,13 +627,15 @@ PHP;
         self::assertSame('identical_ternary', $findings[0]->type);
     }
 
-    public function testShortTernaryDifferent(): void
+    #[Test]
+    public function itDoesNotFlagShortTernaryWithDifferentOperands(): void
     {
         $code = '<?php $result = $a ?: $b;';
         self::assertCount(0, $this->analyze($code));
     }
 
-    public function testShortTernaryWithSideEffectsNotFlagged(): void
+    #[Test]
+    public function itDoesNotFlagShortTernaryWithSideEffects(): void
     {
         $code = '<?php $result = foo() ?: foo();';
         self::assertCount(0, $this->analyze($code));
@@ -579,7 +643,8 @@ PHP;
 
     // ── Switch/Case Duplicates ──────────────────────────────────────
 
-    public function testDuplicateSwitchCase(): void
+    #[Test]
+    public function itFlagsDuplicateSwitchCase(): void
     {
         $code = <<<'PHP'
 <?php
@@ -602,7 +667,8 @@ PHP;
         self::assertSame(9, $findings[0]->line);
     }
 
-    public function testNoDuplicateSwitchCase(): void
+    #[Test]
+    public function itDoesNotFlagDistinctSwitchCases(): void
     {
         $code = <<<'PHP'
 <?php
@@ -619,7 +685,8 @@ PHP;
         self::assertCount(0, $this->analyze($code));
     }
 
-    public function testSwitchDefaultNotCompared(): void
+    #[Test]
+    public function itDoesNotCompareSwitchDefaultCase(): void
     {
         $code = <<<'PHP'
 <?php
@@ -636,7 +703,8 @@ PHP;
 
     // ── Match Multi-Condition Arms ──────────────────────────────────
 
-    public function testMatchMultiConditionDuplicate(): void
+    #[Test]
+    public function itFlagsMatchMultiConditionDuplicate(): void
     {
         $code = <<<'PHP'
 <?php
@@ -653,7 +721,8 @@ PHP;
 
     // ── Collector Integration ───────────────────────────────────────
 
-    public function testCollectorIntegration(): void
+    #[Test]
+    public function itIntegratesWithCollectorCorrectly(): void
     {
         $code = <<<'PHP'
 <?php
@@ -680,7 +749,8 @@ PHP;
         self::assertSame(0, $bag->entryCount('identicalSubExpression.duplicate_match_arm'));
     }
 
-    public function testCollectorNoFindings(): void
+    #[Test]
+    public function itProducesNoCollectorFindingsForCleanCode(): void
     {
         $code = '<?php $a = $x + $y;';
 
@@ -700,13 +770,15 @@ PHP;
         }
     }
 
-    public function testCollectorName(): void
+    #[Test]
+    public function itReturnsCollectorName(): void
     {
         $collector = new IdenticalSubExpressionCollector();
         self::assertSame('identical-subexpression', $collector->getName());
     }
 
-    public function testCollectorProvides(): void
+    #[Test]
+    public function itProvidesExpectedMetricKeys(): void
     {
         $collector = new IdenticalSubExpressionCollector();
         $provides = $collector->provides();

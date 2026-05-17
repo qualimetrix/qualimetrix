@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Reporting\Formatter\Support;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
@@ -28,7 +29,8 @@ final class DetailedViolationRendererTest extends TestCase
         );
     }
 
-    public function testEmptyViolationsShowsNoViolationsFound(): void
+    #[Test]
+    public function itShowsNoViolationsFoundForEmptyViolations(): void
     {
         $context = new FormatterContext(useColor: false);
         $output = $this->renderer->render([], $context);
@@ -36,7 +38,8 @@ final class DetailedViolationRendererTest extends TestCase
         self::assertStringContainsString('No violations found.', $output);
     }
 
-    public function testEmptyViolationsWithNamespaceFilterShowsScopedMessage(): void
+    #[Test]
+    public function itShowsScopedMessageForEmptyViolationsWithNamespaceFilter(): void
     {
         $context = new FormatterContext(useColor: false, namespace: 'App\\Service');
         $output = $this->renderer->render([], $context);
@@ -44,7 +47,8 @@ final class DetailedViolationRendererTest extends TestCase
         self::assertStringContainsString('No violations in this scope.', $output);
     }
 
-    public function testEmptyViolationsWithClassFilterShowsScopedMessage(): void
+    #[Test]
+    public function itShowsScopedMessageForEmptyViolationsWithClassFilter(): void
     {
         $context = new FormatterContext(useColor: false, class: 'App\\Service\\UserService');
         $output = $this->renderer->render([], $context);
@@ -52,7 +56,8 @@ final class DetailedViolationRendererTest extends TestCase
         self::assertStringContainsString('No violations in this scope.', $output);
     }
 
-    public function testDefaultGroupByIsFileInDetailMode(): void
+    #[Test]
+    public function itGroupsByFileByDefaultInDetailMode(): void
     {
         $violations = [
             new Violation(
@@ -81,7 +86,8 @@ final class DetailedViolationRendererTest extends TestCase
         self::assertStringContainsString('src/Bar.php (1 violation)', $output);
     }
 
-    public function testExplicitGroupByNoneRendersFlat(): void
+    #[Test]
+    public function itRendersFlatWhenGroupByNoneIsExplicit(): void
     {
         $violations = [
             new Violation(
@@ -103,7 +109,8 @@ final class DetailedViolationRendererTest extends TestCase
         self::assertStringContainsString('src/Foo.php', $output);
     }
 
-    public function testExplicitGroupByRuleGroupsByRule(): void
+    #[Test]
+    public function itGroupsByRuleWhenGroupByRuleIsExplicit(): void
     {
         $violations = [
             new Violation(
@@ -131,7 +138,8 @@ final class DetailedViolationRendererTest extends TestCase
         self::assertStringContainsString('size.method-count (1)', $output);
     }
 
-    public function testUsesHumanMessageWhenAvailable(): void
+    #[Test]
+    public function itUsesHumanMessageWhenAvailable(): void
     {
         $violations = [
             new Violation(
@@ -153,7 +161,8 @@ final class DetailedViolationRendererTest extends TestCase
         self::assertStringNotContainsString('exceeds threshold', $output);
     }
 
-    public function testFallsBackToMessageWhenHumanMessageNull(): void
+    #[Test]
+    public function itFallsBackToMessageWhenHumanMessageNull(): void
     {
         $violations = [
             new Violation(
@@ -173,7 +182,8 @@ final class DetailedViolationRendererTest extends TestCase
         self::assertStringContainsString('exceeds threshold', $output);
     }
 
-    public function testViolationShowsSeverityTag(): void
+    #[Test]
+    public function itShowsSeverityTagOnViolation(): void
     {
         $violations = [
             new Violation(
@@ -201,7 +211,8 @@ final class DetailedViolationRendererTest extends TestCase
         self::assertStringContainsString('WARN', $output);
     }
 
-    public function testViolationShowsRuleCode(): void
+    #[Test]
+    public function itShowsRuleCodeOnViolation(): void
     {
         $violations = [
             new Violation(
@@ -220,7 +231,8 @@ final class DetailedViolationRendererTest extends TestCase
         self::assertStringContainsString('[complexity.cyclomatic.method]', $output);
     }
 
-    public function testViolationShowsSymbolName(): void
+    #[Test]
+    public function itShowsSymbolNameOnViolation(): void
     {
         $violations = [
             new Violation(
@@ -239,7 +251,8 @@ final class DetailedViolationRendererTest extends TestCase
         self::assertStringContainsString('bar', $output);
     }
 
-    public function testDebtBreakdownByRule(): void
+    #[Test]
+    public function itShowsDebtBreakdownByRule(): void
     {
         $violations = [
             new Violation(
@@ -278,7 +291,8 @@ final class DetailedViolationRendererTest extends TestCase
         self::assertStringContainsString('1 violation', $output);
     }
 
-    public function testDebtBreakdownUsesAllViolationsWhenProvided(): void
+    #[Test]
+    public function itUsesAllViolationsForDebtBreakdownWhenProvided(): void
     {
         $displayed = [
             new Violation(
@@ -310,7 +324,8 @@ final class DetailedViolationRendererTest extends TestCase
         self::assertStringContainsString('complexity.cyclomatic', $output);
     }
 
-    public function testProjectLevelViolationGroupHeader(): void
+    #[Test]
+    public function itShowsProjectLevelViolationGroupHeader(): void
     {
         $violations = [
             new Violation(
@@ -329,7 +344,8 @@ final class DetailedViolationRendererTest extends TestCase
         self::assertStringContainsString('[project]', $output);
     }
 
-    public function testRelativizesPathsWithBasePath(): void
+    #[Test]
+    public function itRelativizesPathsWithBasePath(): void
     {
         $violations = [
             new Violation(

@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Rules\Coupling;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Qualimetrix\Core\Metric\MetricBag;
@@ -25,14 +26,16 @@ use Qualimetrix\Rules\Coupling\DistanceRule;
 #[CoversClass(DistanceOptions::class)]
 final class DistanceRuleTest extends TestCase
 {
-    public function testGetName(): void
+    #[Test]
+    public function itReturnsCorrectName(): void
     {
         $rule = new DistanceRule(new DistanceOptions(includeNamespaces: ['App'], minClassCount: 0));
 
         self::assertSame('coupling.distance', $rule->getName());
     }
 
-    public function testGetDescription(): void
+    #[Test]
+    public function itReturnsCorrectDescription(): void
     {
         $rule = new DistanceRule(new DistanceOptions(includeNamespaces: ['App'], minClassCount: 0));
 
@@ -42,21 +45,24 @@ final class DistanceRuleTest extends TestCase
         );
     }
 
-    public function testGetCategory(): void
+    #[Test]
+    public function itReturnsCouplingCategory(): void
     {
         $rule = new DistanceRule(new DistanceOptions(includeNamespaces: ['App'], minClassCount: 0));
 
         self::assertSame(RuleCategory::Coupling, $rule->getCategory());
     }
 
-    public function testRequires(): void
+    #[Test]
+    public function itRequiresDistanceMetrics(): void
     {
         $rule = new DistanceRule(new DistanceOptions(includeNamespaces: ['App'], minClassCount: 0));
 
         self::assertSame(['distance', 'abstractness', 'instability'], $rule->requires());
     }
 
-    public function testGetOptionsClass(): void
+    #[Test]
+    public function itReturnsCorrectOptionsClass(): void
     {
         self::assertSame(
             DistanceOptions::class,
@@ -64,7 +70,8 @@ final class DistanceRuleTest extends TestCase
         );
     }
 
-    public function testGetCliAliases(): void
+    #[Test]
+    public function itDeclaresCorrectCliAliases(): void
     {
         self::assertSame([
             'distance-warning' => 'max_distance_warning',
@@ -72,7 +79,8 @@ final class DistanceRuleTest extends TestCase
         ], CliAliasReader::read(DistanceRule::class));
     }
 
-    public function testAnalyzeReturnsEmptyWhenDisabled(): void
+    #[Test]
+    public function itReturnsEmptyWhenDisabled(): void
     {
         $rule = new DistanceRule(
             new DistanceOptions(enabled: false),
@@ -86,7 +94,8 @@ final class DistanceRuleTest extends TestCase
         self::assertSame([], $rule->analyze($context));
     }
 
-    public function testAnalyzeReturnsEmptyWhenNoNamespaces(): void
+    #[Test]
+    public function itReturnsEmptyWhenNoNamespaces(): void
     {
         $rule = new DistanceRule(new DistanceOptions(includeNamespaces: ['App'], minClassCount: 0));
 
@@ -99,7 +108,8 @@ final class DistanceRuleTest extends TestCase
         self::assertSame([], $rule->analyze($context));
     }
 
-    public function testAnalyzeSkipsWhenNoDistanceMetric(): void
+    #[Test]
+    public function itSkipsNamespacesWithoutDistanceMetric(): void
     {
         $rule = new DistanceRule(new DistanceOptions(includeNamespaces: ['App'], minClassCount: 0));
 
@@ -119,7 +129,8 @@ final class DistanceRuleTest extends TestCase
         self::assertSame([], $rule->analyze($context));
     }
 
-    public function testAnalyzeGeneratesWarning(): void
+    #[Test]
+    public function itGeneratesWarningWhenDistanceExceedsThreshold(): void
     {
         $rule = new DistanceRule(new DistanceOptions(includeNamespaces: ['App'], minClassCount: 0));
 
@@ -151,7 +162,8 @@ final class DistanceRuleTest extends TestCase
         self::assertSame('coupling.distance', $violations[0]->ruleName);
     }
 
-    public function testAnalyzeGeneratesError(): void
+    #[Test]
+    public function itGeneratesErrorWhenDistanceExceedsErrorThreshold(): void
     {
         $rule = new DistanceRule(new DistanceOptions(includeNamespaces: ['App'], minClassCount: 0));
 
@@ -178,7 +190,8 @@ final class DistanceRuleTest extends TestCase
         self::assertSame(0.6, $violations[0]->metricValue);
     }
 
-    public function testAnalyzeNoViolationWhenOnMainSequence(): void
+    #[Test]
+    public function itEmitsNoViolationWhenOnMainSequence(): void
     {
         $rule = new DistanceRule(new DistanceOptions(includeNamespaces: ['App'], minClassCount: 0));
 
@@ -203,7 +216,8 @@ final class DistanceRuleTest extends TestCase
         self::assertCount(0, $violations);
     }
 
-    public function testAnalyzeMultipleNamespaces(): void
+    #[Test]
+    public function itAnalyzesMultipleNamespaces(): void
     {
         $rule = new DistanceRule(new DistanceOptions(includeNamespaces: ['App'], minClassCount: 0));
 
@@ -242,7 +256,8 @@ final class DistanceRuleTest extends TestCase
 
     // Options tests
 
-    public function testOptionsFromArray(): void
+    #[Test]
+    public function itParsesOptionsFromArray(): void
     {
         $options = DistanceOptions::fromArray([
             'enabled' => false,
@@ -255,7 +270,8 @@ final class DistanceRuleTest extends TestCase
         self::assertSame(0.4, $options->maxDistanceError);
     }
 
-    public function testOptionsFromArrayWithLegacyKeys(): void
+    #[Test]
+    public function itParsesOptionsFromArrayWithLegacyKeys(): void
     {
         $options = DistanceOptions::fromArray([
             'maxDistanceWarning' => 0.25,
@@ -267,7 +283,8 @@ final class DistanceRuleTest extends TestCase
         self::assertSame(0.4, $options->maxDistanceError);
     }
 
-    public function testOptionsFromEmptyArray(): void
+    #[Test]
+    public function itUsesOptionDefaults(): void
     {
         $options = DistanceOptions::fromArray([]);
 
@@ -276,7 +293,8 @@ final class DistanceRuleTest extends TestCase
         self::assertSame(0.5, $options->maxDistanceError);
     }
 
-    public function testOptionsGetSeverity(): void
+    #[Test]
+    public function itReturnsSeverityForGivenDistance(): void
     {
         $options = new DistanceOptions(maxDistanceWarning: 0.3, maxDistanceError: 0.5);
 
@@ -287,8 +305,9 @@ final class DistanceRuleTest extends TestCase
         self::assertSame(Severity::Error, $options->getSeverity(1.0));
     }
 
+    #[Test]
     #[DataProvider('distanceThresholdDataProvider')]
-    public function testDistanceThresholdBoundaries(
+    public function itRespectsDistanceThresholdBoundaries(
         float $distance,
         float $warning,
         float $error,
@@ -336,7 +355,8 @@ final class DistanceRuleTest extends TestCase
         yield 'maximum distance' => [1.0, 0.3, 0.5, Severity::Error];
     }
 
-    public function testAnalyzeSkipsNamespaceWithTooFewClasses(): void
+    #[Test]
+    public function itSkipsNamespaceWithTooFewClasses(): void
     {
         $rule = new DistanceRule(
             new DistanceOptions(includeNamespaces: ['App'], minClassCount: 3),
@@ -364,7 +384,8 @@ final class DistanceRuleTest extends TestCase
         self::assertCount(0, $violations);
     }
 
-    public function testAnalyzeReportsViolationWhenClassCountMeetsMinimum(): void
+    #[Test]
+    public function itReportsViolationWhenClassCountMeetsMinimum(): void
     {
         $rule = new DistanceRule(
             new DistanceOptions(includeNamespaces: ['App'], minClassCount: 3),
@@ -393,7 +414,8 @@ final class DistanceRuleTest extends TestCase
         self::assertSame(Severity::Error, $violations[0]->severity);
     }
 
-    public function testAnalyzeWithMinClassCountZeroAnalyzesAll(): void
+    #[Test]
+    public function itAnalyzesAllWhenMinClassCountIsZero(): void
     {
         $rule = new DistanceRule(
             new DistanceOptions(includeNamespaces: ['App'], minClassCount: 0),
@@ -421,7 +443,8 @@ final class DistanceRuleTest extends TestCase
         self::assertSame(Severity::Error, $violations[0]->severity);
     }
 
-    public function testOptionsFromArrayParsesMinClassCount(): void
+    #[Test]
+    public function itParsesMinClassCountFromArray(): void
     {
         $options = DistanceOptions::fromArray([
             'min_class_count' => 5,
@@ -430,7 +453,8 @@ final class DistanceRuleTest extends TestCase
         self::assertSame(5, $options->minClassCount);
     }
 
-    public function testOptionsFromArrayParsesMinClassCountCamelCase(): void
+    #[Test]
+    public function itParsesMinClassCountCamelCaseAlias(): void
     {
         $options = DistanceOptions::fromArray([
             'minClassCount' => 7,
@@ -439,14 +463,16 @@ final class DistanceRuleTest extends TestCase
         self::assertSame(7, $options->minClassCount);
     }
 
-    public function testOptionsFromArrayDefaultsMinClassCount(): void
+    #[Test]
+    public function itDefaultsMinClassCountToThree(): void
     {
         $options = DistanceOptions::fromArray([]);
 
         self::assertSame(3, $options->minClassCount);
     }
 
-    public function testConstructorThrowsForInvalidOptions(): void
+    #[Test]
+    public function itThrowsForInvalidOptionsType(): void
     {
         self::expectException(InvalidArgumentException::class);
         self::expectExceptionMessage('Expected');
@@ -455,7 +481,8 @@ final class DistanceRuleTest extends TestCase
         new DistanceRule($invalidOptions);
     }
 
-    public function testAnalyzeLogsWarningWhenNoProjectNamespacesDetected(): void
+    #[Test]
+    public function itLogsWarningWhenNoProjectNamespacesDetected(): void
     {
         $resolver = self::createStub(ProjectNamespaceResolverInterface::class);
         $resolver->method('isProjectNamespace')
@@ -488,7 +515,8 @@ final class DistanceRuleTest extends TestCase
         self::assertSame([], $violations);
     }
 
-    public function testAnalyzeDoesNotLogWarningWhenProjectNamespacesExist(): void
+    #[Test]
+    public function itDoesNotLogWarningWhenProjectNamespacesExist(): void
     {
         $logger = $this->createMock(LoggerInterface::class);
         $logger->expects(self::never())
@@ -518,7 +546,8 @@ final class DistanceRuleTest extends TestCase
         $rule->analyze($context);
     }
 
-    public function testAnalyzeDoesNotLogWarningWhenNoNamespacesAtAll(): void
+    #[Test]
+    public function itDoesNotLogWarningWhenNoNamespacesAtAll(): void
     {
         $logger = $this->createMock(LoggerInterface::class);
         $logger->expects(self::never())
@@ -538,7 +567,8 @@ final class DistanceRuleTest extends TestCase
         $rule->analyze($context);
     }
 
-    public function testAnalyzeWarningIncludesRuleOptHint(): void
+    #[Test]
+    public function itIncludesRuleOptHintInWarning(): void
     {
         $resolver = self::createStub(ProjectNamespaceResolverInterface::class);
         $resolver->method('isProjectNamespace')

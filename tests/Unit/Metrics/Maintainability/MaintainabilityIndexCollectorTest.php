@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Metrics\Maintainability;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\MetricBag;
@@ -23,17 +24,20 @@ final class MaintainabilityIndexCollectorTest extends TestCase
         $this->collector = new MaintainabilityIndexCollector();
     }
 
-    public function testGetName(): void
+    #[Test]
+    public function itGetsName(): void
     {
         self::assertSame('maintainability-index', $this->collector->getName());
     }
 
-    public function testProvides(): void
+    #[Test]
+    public function itProvides(): void
     {
         self::assertSame(['mi'], $this->collector->provides());
     }
 
-    public function testRequires(): void
+    #[Test]
+    public function itRequiresExpectedMetrics(): void
     {
         $requires = $this->collector->requires();
 
@@ -41,7 +45,8 @@ final class MaintainabilityIndexCollectorTest extends TestCase
         self::assertContains('cyclomatic-complexity', $requires);
     }
 
-    public function testCalculateWithValidMetrics(): void
+    #[Test]
+    public function itCalculatesWithValidMetrics(): void
     {
         $sourceBag = (new MetricBag())
             ->with('halstead.volume', 100.0)
@@ -56,7 +61,8 @@ final class MaintainabilityIndexCollectorTest extends TestCase
         self::assertLessThanOrEqual(100, $mi);
     }
 
-    public function testCalculateWithZeroVolume(): void
+    #[Test]
+    public function itReturns100ForZeroVolume(): void
     {
         $sourceBag = (new MetricBag())
             ->with('halstead.volume', 0.0)
@@ -68,7 +74,8 @@ final class MaintainabilityIndexCollectorTest extends TestCase
         self::assertSame(100.0, $result->get('mi'));
     }
 
-    public function testCalculateWithMissingMetrics(): void
+    #[Test]
+    public function itSkipsCalculationWhenMetricsAreMissing(): void
     {
         $sourceBag = new MetricBag();
         // Missing halstead.volume and ccn
@@ -79,7 +86,8 @@ final class MaintainabilityIndexCollectorTest extends TestCase
         self::assertFalse($result->has('mi'));
     }
 
-    public function testCalculateWithHighComplexity(): void
+    #[Test]
+    public function itYieldsLowerMiForHighComplexity(): void
     {
         $sourceBag = (new MetricBag())
             ->with('halstead.volume', 500.0)
@@ -92,7 +100,8 @@ final class MaintainabilityIndexCollectorTest extends TestCase
         self::assertLessThan(80, $mi);
     }
 
-    public function testCalculateWithKnownValuesAndMethodLoc(): void
+    #[Test]
+    public function itCalculatesWithKnownValuesAndMethodLoc(): void
     {
         // Hand-calculate MI for known inputs:
         // Volume=8.0 (simple `return $a + $b`), CCN=1, LOC=1
@@ -111,7 +120,8 @@ final class MaintainabilityIndexCollectorTest extends TestCase
         self::assertEqualsWithDelta(93.54, $result->get('mi'), 0.1);
     }
 
-    public function testCalculateWithModerateComplexityKnownValues(): void
+    #[Test]
+    public function itCalculatesWithModerateComplexityKnownValues(): void
     {
         // Volume=100, CCN=5, LOC=20
         // MI_raw = 171 - 5.2*ln(100) - 0.23*5 - 16.2*ln(20)
@@ -129,7 +139,8 @@ final class MaintainabilityIndexCollectorTest extends TestCase
         self::assertEqualsWithDelta(56.94, $result->get('mi'), 0.2);
     }
 
-    public function testGetMetricDefinitions(): void
+    #[Test]
+    public function itProvidesMetricDefinitions(): void
     {
         $definitions = $this->collector->getMetricDefinitions();
 

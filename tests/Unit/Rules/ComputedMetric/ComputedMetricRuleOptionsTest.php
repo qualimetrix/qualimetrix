@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Rules\ComputedMetric;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinition;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinitionHolder;
@@ -19,7 +20,8 @@ final class ComputedMetricRuleOptionsTest extends TestCase
         ComputedMetricDefinitionHolder::reset();
     }
 
-    public function testFromArrayWithHolderPopulated(): void
+    #[Test]
+    public function itLoadsDefinitionsFromHolderWhenPopulated(): void
     {
         $definition = new ComputedMetricDefinition(
             name: 'health.score',
@@ -38,21 +40,24 @@ final class ComputedMetricRuleOptionsTest extends TestCase
         self::assertSame('health.score', $options->getDefinitions()[0]->name);
     }
 
-    public function testFromArrayWithEnabledFalse(): void
+    #[Test]
+    public function itDisablesWhenEnabledFalse(): void
     {
         $options = ComputedMetricRuleOptions::fromArray(['enabled' => false]);
 
         self::assertFalse($options->isEnabled());
     }
 
-    public function testFromArrayDefaultEnabled(): void
+    #[Test]
+    public function itIsEnabledByDefault(): void
     {
         $options = ComputedMetricRuleOptions::fromArray([]);
 
         self::assertTrue($options->isEnabled());
     }
 
-    public function testGetSeverityAlwaysReturnsNull(): void
+    #[Test]
+    public function itAlwaysReturnsNullSeverity(): void
     {
         $options = new ComputedMetricRuleOptions();
 
@@ -61,7 +66,8 @@ final class ComputedMetricRuleOptionsTest extends TestCase
         self::assertNull($options->getSeverity(-50.5));
     }
 
-    public function testGetDefinitionsReturnsHolderDefinitions(): void
+    #[Test]
+    public function itReturnsHolderDefinitions(): void
     {
         $def1 = new ComputedMetricDefinition(
             name: 'health.alpha',
@@ -84,7 +90,8 @@ final class ComputedMetricRuleOptionsTest extends TestCase
         self::assertSame('health.beta', $options->getDefinitions()[1]->name);
     }
 
-    public function testConstructorDefaults(): void
+    #[Test]
+    public function itHasCorrectConstructorDefaults(): void
     {
         $options = new ComputedMetricRuleOptions();
 

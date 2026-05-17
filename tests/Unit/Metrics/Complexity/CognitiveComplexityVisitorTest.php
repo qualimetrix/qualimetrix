@@ -8,6 +8,7 @@ use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Metrics\Complexity\CognitiveComplexityVisitor;
 
@@ -17,8 +18,9 @@ final class CognitiveComplexityVisitorTest extends TestCase
     /**
      * @param array<string, int> $expected Map of FQN => expected complexity
      */
+    #[Test]
     #[DataProvider('provideComplexityCases')]
-    public function testComplexity(string $code, array $expected): void
+    public function itComputesComplexity(string $code, array $expected): void
     {
         $visitor = new CognitiveComplexityVisitor();
         $parser = (new ParserFactory())->createForHostVersion();
@@ -664,7 +666,8 @@ PHP,
     /**
      * Fix 1: $other->process() inside process() should NOT be recursion.
      */
-    public function testOtherObjectMethodCallIsNotRecursion(): void
+    #[Test]
+    public function itDoesNotTreatOtherObjectMethodCallAsRecursion(): void
     {
         $code = <<<'PHP'
 <?php
@@ -697,7 +700,8 @@ PHP;
     /**
      * Fix 1: $this->process() inside process() should BE recursion.
      */
-    public function testThisMethodCallIsRecursion(): void
+    #[Test]
+    public function itDetectsThisMethodCallAsRecursion(): void
     {
         $code = <<<'PHP'
 <?php
@@ -730,7 +734,8 @@ PHP;
     /**
      * Fix 1: self::process() inside process() should BE recursion.
      */
-    public function testSelfStaticCallIsRecursion(): void
+    #[Test]
+    public function itDetectsSelfStaticCallAsRecursion(): void
     {
         $code = <<<'PHP'
 <?php
@@ -763,7 +768,8 @@ PHP;
     /**
      * Fix 1: OtherClass::process() inside process() should NOT be recursion.
      */
-    public function testOtherClassStaticCallIsNotRecursion(): void
+    #[Test]
+    public function itDoesNotTreatOtherClassStaticCallAsRecursion(): void
     {
         $code = <<<'PHP'
 <?php
@@ -796,7 +802,8 @@ PHP;
     /**
      * Fix 2: nested else should get +1 regardless of nesting depth.
      */
-    public function testNestedElseGetsNoNestingBonus(): void
+    #[Test]
+    public function itAssignsNoNestingBonusToNestedElse(): void
     {
         $code = <<<'PHP'
 <?php
@@ -831,7 +838,8 @@ PHP;
      * Problem #3: leaveNode for ClassMethod inside anonymous class must not call endMethod().
      * The method inside the anonymous class should not affect the outer method's complexity.
      */
-    public function testAnonymousClassMethodDoesNotLeakToOuterMethod(): void
+    #[Test]
+    public function itDoesNotLeakAnonymousClassMethodComplexityToOuterMethod(): void
     {
         $code = <<<'PHP'
 <?php
@@ -881,7 +889,8 @@ PHP;
      * Problem #11: FuncCall inside ClassMethod must NOT be treated as recursion.
      * A method named count() calling built-in count($arr) is not recursive.
      */
-    public function testFuncCallInClassMethodIsNotRecursion(): void
+    #[Test]
+    public function itDoesNotTreatFuncCallInClassMethodAsRecursion(): void
     {
         $code = <<<'PHP'
 <?php
@@ -915,7 +924,8 @@ PHP;
     /**
      * Standalone function calling itself IS recursion (FuncCall recursion still works).
      */
-    public function testFuncCallInStandaloneFunctionIsRecursion(): void
+    #[Test]
+    public function itDetectsFuncCallInStandaloneFunctionAsRecursion(): void
     {
         $code = <<<'PHP'
 <?php
@@ -944,7 +954,8 @@ PHP;
     /**
      * ElseIf at deep nesting should get only +1 (no nesting bonus per SonarSource spec).
      */
-    public function testElseifAtDeepNesting(): void
+    #[Test]
+    public function itAssignsNoNestingBonusToElseifAtDeepNesting(): void
     {
         $code = '<?php function f($a, $b, $c) { if ($a) { if ($b) {} elseif ($c) {} } }';
 
@@ -968,7 +979,8 @@ PHP;
     /**
      * Closure adds +1 structural increment to parent method.
      */
-    public function testClosureAddsOneToParent(): void
+    #[Test]
+    public function itAddsOneToParentForClosure(): void
     {
         $code = '<?php function f() { $fn = function() { return 1; }; }';
 
@@ -989,7 +1001,8 @@ PHP;
     /**
      * Arrow function adds +1 structural increment to parent method.
      */
-    public function testArrowFunctionAddsOneToParent(): void
+    #[Test]
+    public function itAddsOneToParentForArrowFunction(): void
     {
         $code = '<?php function f() { $fn = fn() => 1; }';
 
@@ -1010,7 +1023,8 @@ PHP;
     /**
      * Closure inside anonymous class method should NOT appear in metrics of outer class.
      */
-    public function testClosureInsideAnonymousClassNotInOuterMetrics(): void
+    #[Test]
+    public function itExcludesClosureInsideAnonymousClassFromOuterMetrics(): void
     {
         $code = <<<'PHP'
 <?php
@@ -1050,7 +1064,8 @@ PHP;
     /**
      * ArrowFunction inside anonymous class method should NOT appear in metrics of outer class.
      */
-    public function testArrowFunctionInsideAnonymousClassNotInOuterMetrics(): void
+    #[Test]
+    public function itExcludesArrowFunctionInsideAnonymousClassFromOuterMetrics(): void
     {
         $code = <<<'PHP'
 <?php
@@ -1087,7 +1102,8 @@ PHP;
     /**
      * Goto inside nested if should be +1 regardless of nesting depth (B1 only, no nesting bonus).
      */
-    public function testGotoNoNestingBonus(): void
+    #[Test]
+    public function itAssignsNoNestingBonusToGoto(): void
     {
         $code = <<<'PHP'
 <?php
@@ -1122,7 +1138,8 @@ PHP;
     /**
      * Labeled break inside nested loop should be +1 regardless of nesting depth.
      */
-    public function testLabeledBreakNoNestingBonus(): void
+    #[Test]
+    public function itAssignsNoNestingBonusToLabeledBreak(): void
     {
         $code = <<<'PHP'
 <?php
@@ -1157,7 +1174,8 @@ PHP;
      * Without this fix, the nodeStack from the outer method leaks into the closure,
      * causing incorrect logical operator chain detection.
      */
-    public function testNodeStackDoesNotLeakIntoClosure(): void
+    #[Test]
+    public function itDoesNotLeakNodeStackIntoClosure(): void
     {
         $code = <<<'PHP'
 <?php
@@ -1193,7 +1211,8 @@ PHP;
      * Bug fix: nodeStack must be restored after closure ends.
      * Logical operators after a closure should use the outer nodeStack, not an empty one.
      */
-    public function testNodeStackRestoredAfterClosure(): void
+    #[Test]
+    public function itRestoresNodeStackAfterClosure(): void
     {
         $code = <<<'PHP'
 <?php
@@ -1224,7 +1243,8 @@ PHP;
     /**
      * Bug fix: \Other\Namespace\foo() called inside function foo() must NOT be detected as recursion.
      */
-    public function testNamespacedFunctionCallIsNotFalseRecursion(): void
+    #[Test]
+    public function itDoesNotTreatNamespacedFunctionCallAsFalseRecursion(): void
     {
         $code = <<<'PHP'
 <?php
@@ -1253,7 +1273,8 @@ PHP;
     /**
      * Bug fix: Fully-qualified call to same function IS still recursion.
      */
-    public function testFullyQualifiedSameFunctionIsRecursion(): void
+    #[Test]
+    public function itDetectsFullyQualifiedSameFunctionAsRecursion(): void
     {
         $code = <<<'PHP'
 <?php
@@ -1282,7 +1303,8 @@ PHP;
     /**
      * Bug fix: parent::method() is NOT recursion — it calls the parent class method.
      */
-    public function testParentStaticCallIsNotRecursion(): void
+    #[Test]
+    public function itDoesNotTreatParentStaticCallAsRecursion(): void
     {
         $code = <<<'PHP'
 <?php
@@ -1315,7 +1337,8 @@ PHP;
     /**
      * Ensure static::method() IS still detected as recursion (late static binding calls self).
      */
-    public function testStaticCallIsStillRecursion(): void
+    #[Test]
+    public function itDetectsStaticCallAsRecursion(): void
     {
         $code = <<<'PHP'
 <?php
@@ -1345,7 +1368,8 @@ PHP;
         self::assertSame(2, $complexities['App\Service::process']);
     }
 
-    public function testReset(): void
+    #[Test]
+    public function itResetsState(): void
     {
         $visitor = new CognitiveComplexityVisitor();
         $parser = (new ParserFactory())->createForHostVersion();
@@ -1390,7 +1414,8 @@ PHP;
         self::assertSame(0, $complexities['second']);
     }
 
-    public function testIncrementsTrackingWithNestedStructures(): void
+    #[Test]
+    public function itTracksIncrementsWithNestedStructures(): void
     {
         $code = <<<'PHP'
 <?php
@@ -1449,7 +1474,8 @@ PHP;
         }
     }
 
-    public function testIncrementsPassedViaMethodsWithMetrics(): void
+    #[Test]
+    public function itPassesIncrementsViaMethodsWithMetrics(): void
     {
         $code = <<<'PHP'
 <?php

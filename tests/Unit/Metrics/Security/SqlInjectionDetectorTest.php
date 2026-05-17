@@ -14,6 +14,7 @@ use PhpParser\Node\Name;
 use PhpParser\Node\Scalar\InterpolatedString;
 use PhpParser\Node\Scalar\String_;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Metrics\Security\SqlInjectionDetector;
 use Qualimetrix\Metrics\Security\SuperglobalAnalyzer;
@@ -30,7 +31,8 @@ final class SqlInjectionDetectorTest extends TestCase
 
     // --- detectInFuncCall: SQL functions ---
 
-    public function testDetectsMysqlQueryWithSuperglobal(): void
+    #[Test]
+    public function itDetectsMysqlQueryWithSuperglobal(): void
     {
         $funcCall = $this->createFuncCall('mysql_query', [$this->createGetAccess('id')]);
 
@@ -42,7 +44,8 @@ final class SqlInjectionDetectorTest extends TestCase
         self::assertStringContainsString('mysql_query()', $locations[0]->context);
     }
 
-    public function testDetectsMysqliQueryWithSuperglobal(): void
+    #[Test]
+    public function itDetectsMysqliQueryWithSuperglobal(): void
     {
         $funcCall = $this->createFuncCall('mysqli_query', [
             new Variable('conn'),
@@ -55,7 +58,8 @@ final class SqlInjectionDetectorTest extends TestCase
         self::assertStringContainsString('_POST', $locations[0]->context);
     }
 
-    public function testDetectsPgQueryWithSuperglobal(): void
+    #[Test]
+    public function itDetectsPgQueryWithSuperglobal(): void
     {
         $funcCall = $this->createFuncCall('pg_query', [
             new Variable('conn'),
@@ -67,7 +71,8 @@ final class SqlInjectionDetectorTest extends TestCase
         self::assertCount(1, $locations);
     }
 
-    public function testNoDetectionForSafeVariable(): void
+    #[Test]
+    public function itDoesNotDetectForSafeVariable(): void
     {
         $funcCall = $this->createFuncCall('mysql_query', [new Variable('safeQuery')]);
 
@@ -76,7 +81,8 @@ final class SqlInjectionDetectorTest extends TestCase
         self::assertCount(0, $locations);
     }
 
-    public function testNoDetectionForDynamicFunctionName(): void
+    #[Test]
+    public function itDoesNotDetectForDynamicFunctionName(): void
     {
         // $func(...) — name is not a Name node
         $funcCall = new FuncCall(new Variable('func'));
@@ -86,7 +92,8 @@ final class SqlInjectionDetectorTest extends TestCase
         self::assertCount(0, $locations);
     }
 
-    public function testNoDetectionForNonSqlFunction(): void
+    #[Test]
+    public function itDoesNotDetectForNonSqlFunction(): void
     {
         $funcCall = $this->createFuncCall('array_map', [$this->createGetAccess('id')]);
 
@@ -97,7 +104,8 @@ final class SqlInjectionDetectorTest extends TestCase
 
     // --- detectInFuncCall: sprintf ---
 
-    public function testDetectsSprintfWithSqlAndSuperglobal(): void
+    #[Test]
+    public function itDetectsSprintfWithSqlAndSuperglobal(): void
     {
         $funcCall = $this->createFuncCall('sprintf', [
             new String_('SELECT * FROM users WHERE id = %s'),
@@ -110,7 +118,8 @@ final class SqlInjectionDetectorTest extends TestCase
         self::assertStringContainsString('sprintf()', $locations[0]->context);
     }
 
-    public function testNoDetectionForSprintfWithoutSqlKeyword(): void
+    #[Test]
+    public function itDoesNotDetectSprintfWithoutSqlKeyword(): void
     {
         $funcCall = $this->createFuncCall('sprintf', [
             new String_('Hello %s'),
@@ -122,7 +131,8 @@ final class SqlInjectionDetectorTest extends TestCase
         self::assertCount(0, $locations);
     }
 
-    public function testNoDetectionForSprintfWithNonStringFirstArg(): void
+    #[Test]
+    public function itDoesNotDetectSprintfWithNonStringFirstArg(): void
     {
         $funcCall = $this->createFuncCall('sprintf', [
             new Variable('template'),
@@ -134,7 +144,8 @@ final class SqlInjectionDetectorTest extends TestCase
         self::assertCount(0, $locations);
     }
 
-    public function testNoDetectionForSprintfWithNoArgs(): void
+    #[Test]
+    public function itDoesNotDetectSprintfWithNoArgs(): void
     {
         $funcCall = $this->createFuncCall('sprintf', []);
 
@@ -143,7 +154,8 @@ final class SqlInjectionDetectorTest extends TestCase
         self::assertCount(0, $locations);
     }
 
-    public function testNoDetectionForSprintfWithSqlButNoSuperglobal(): void
+    #[Test]
+    public function itDoesNotDetectSprintfWithSqlButNoSuperglobal(): void
     {
         $funcCall = $this->createFuncCall('sprintf', [
             new String_('SELECT * FROM users WHERE id = %d'),
@@ -157,7 +169,8 @@ final class SqlInjectionDetectorTest extends TestCase
 
     // --- detectInConcat ---
 
-    public function testDetectsConcatWithSqlKeywordAndSuperglobal(): void
+    #[Test]
+    public function itDetectsConcatWithSqlKeywordAndSuperglobal(): void
     {
         $concat = new Concat(
             new String_('SELECT * FROM users WHERE id = '),
@@ -171,7 +184,8 @@ final class SqlInjectionDetectorTest extends TestCase
         self::assertStringContainsString('concatenated with SQL query', $locations[0]->context);
     }
 
-    public function testDetectsConcatWithInsert(): void
+    #[Test]
+    public function itDetectsConcatWithInsert(): void
     {
         $concat = new Concat(
             new String_('INSERT INTO logs VALUES ('),
@@ -183,7 +197,8 @@ final class SqlInjectionDetectorTest extends TestCase
         self::assertCount(1, $locations);
     }
 
-    public function testDetectsConcatWithUpdate(): void
+    #[Test]
+    public function itDetectsConcatWithUpdate(): void
     {
         $concat = new Concat(
             new String_("UPDATE users SET name = '"),
@@ -195,7 +210,8 @@ final class SqlInjectionDetectorTest extends TestCase
         self::assertCount(1, $locations);
     }
 
-    public function testDetectsConcatWithDelete(): void
+    #[Test]
+    public function itDetectsConcatWithDelete(): void
     {
         $concat = new Concat(
             new String_('DELETE FROM users WHERE id = '),
@@ -207,7 +223,8 @@ final class SqlInjectionDetectorTest extends TestCase
         self::assertCount(1, $locations);
     }
 
-    public function testNoDetectionForConcatWithoutSqlKeyword(): void
+    #[Test]
+    public function itDoesNotDetectConcatWithoutSqlKeyword(): void
     {
         $concat = new Concat(
             new String_('Hello '),
@@ -219,7 +236,8 @@ final class SqlInjectionDetectorTest extends TestCase
         self::assertCount(0, $locations);
     }
 
-    public function testNoDetectionForConcatWithoutSuperglobal(): void
+    #[Test]
+    public function itDoesNotDetectConcatWithoutSuperglobal(): void
     {
         $concat = new Concat(
             new String_('SELECT * FROM users WHERE id = '),
@@ -233,7 +251,8 @@ final class SqlInjectionDetectorTest extends TestCase
 
     // --- detectInInterpolation ---
 
-    public function testDetectsInterpolationWithSqlAndSuperglobal(): void
+    #[Test]
+    public function itDetectsInterpolationWithSqlAndSuperglobal(): void
     {
         $interpolated = new InterpolatedString([
             new InterpolatedStringPart('SELECT * FROM users WHERE id = '),
@@ -246,7 +265,8 @@ final class SqlInjectionDetectorTest extends TestCase
         self::assertStringContainsString('interpolated in SQL query', $locations[0]->context);
     }
 
-    public function testNoDetectionForInterpolationWithoutSqlKeyword(): void
+    #[Test]
+    public function itDoesNotDetectInterpolationWithoutSqlKeyword(): void
     {
         $interpolated = new InterpolatedString([
             new InterpolatedStringPart('Hello '),
@@ -258,7 +278,8 @@ final class SqlInjectionDetectorTest extends TestCase
         self::assertCount(0, $locations);
     }
 
-    public function testNoDetectionForInterpolationWithoutSuperglobal(): void
+    #[Test]
+    public function itDoesNotDetectInterpolationWithoutSuperglobal(): void
     {
         $interpolated = new InterpolatedString([
             new InterpolatedStringPart('SELECT * FROM users WHERE id = '),
@@ -272,7 +293,8 @@ final class SqlInjectionDetectorTest extends TestCase
 
     // --- isSqlFuncCall ---
 
-    public function testIsSqlFuncCallReturnsTrueForSqlFunctions(): void
+    #[Test]
+    public function itReturnsTrueForSqlFunctions(): void
     {
         foreach (['mysql_query', 'mysqli_query', 'pg_query', 'pg_query_params', 'sqlite_query'] as $func) {
             $funcCall = $this->createFuncCall($func, []);
@@ -280,13 +302,15 @@ final class SqlInjectionDetectorTest extends TestCase
         }
     }
 
-    public function testIsSqlFuncCallReturnsFalseForNonSqlFunctions(): void
+    #[Test]
+    public function itReturnsFalseForNonSqlFunctions(): void
     {
         $funcCall = $this->createFuncCall('array_map', []);
         self::assertFalse($this->detector->isSqlFuncCall($funcCall));
     }
 
-    public function testIsSqlFuncCallReturnsFalseForDynamicName(): void
+    #[Test]
+    public function itReturnsFalseForDynamicName(): void
     {
         $funcCall = new FuncCall(new Variable('func'));
         self::assertFalse($this->detector->isSqlFuncCall($funcCall));
@@ -294,7 +318,8 @@ final class SqlInjectionDetectorTest extends TestCase
 
     // --- SQL keyword matching (case-insensitive, word boundary) ---
 
-    public function testDetectsCaseInsensitiveSqlKeywords(): void
+    #[Test]
+    public function itDetectsCaseInsensitiveSqlKeywords(): void
     {
         $concat = new Concat(
             new String_('select * from users where id = '),
@@ -306,7 +331,8 @@ final class SqlInjectionDetectorTest extends TestCase
         self::assertCount(1, $locations);
     }
 
-    public function testNoDetectionForNonSqlContent(): void
+    #[Test]
+    public function itDoesNotDetectNonSqlContent(): void
     {
         $concat = new Concat(
             new String_('Hello world'),

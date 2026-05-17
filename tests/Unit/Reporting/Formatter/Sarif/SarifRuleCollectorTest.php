@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
@@ -24,12 +25,14 @@ final class SarifRuleCollectorTest extends TestCase
 
     // --- collectRules ---
 
-    public function testCollectRulesFromEmptyViolations(): void
+    #[Test]
+    public function itCollectsRulesFromEmptyViolations(): void
     {
         self::assertSame([], $this->collector->collectRules([]));
     }
 
-    public function testCollectRulesProducesCorrectStructure(): void
+    #[Test]
+    public function itCollectsRulesWithCorrectStructure(): void
     {
         $violation = new Violation(
             location: new Location('src/Service.php', 10),
@@ -54,7 +57,8 @@ final class SarifRuleCollectorTest extends TestCase
         self::assertSame('warning', $rule['defaultConfiguration']['level']);
     }
 
-    public function testCollectRulesDeduplicatesByViolationCode(): void
+    #[Test]
+    public function itDeduplicatesRulesByViolationCode(): void
     {
         $v1 = new Violation(
             location: new Location('a.php', 1),
@@ -79,7 +83,8 @@ final class SarifRuleCollectorTest extends TestCase
         self::assertCount(1, $rules);
     }
 
-    public function testCollectRulesMultipleDistinctCodes(): void
+    #[Test]
+    public function itCollectsMultipleDistinctRuleCodes(): void
     {
         $v1 = new Violation(
             location: new Location('a.php', 1),
@@ -107,7 +112,8 @@ final class SarifRuleCollectorTest extends TestCase
         self::assertContains('size.loc', $ids);
     }
 
-    public function testCollectRulesPromotesToErrorSeverity(): void
+    #[Test]
+    public function itPromotesRulesToErrorSeverity(): void
     {
         $warning = new Violation(
             location: new Location('a.php', 1),
@@ -135,24 +141,28 @@ final class SarifRuleCollectorTest extends TestCase
 
     // --- formatRuleName ---
 
-    public function testFormatRuleNameConvertsDotSeparated(): void
+    #[Test]
+    public function itFormatsRuleNameConvertingDotSeparated(): void
     {
         self::assertSame('Complexity Cyclomatic', $this->collector->formatRuleName('complexity.cyclomatic'));
     }
 
-    public function testFormatRuleNameConvertsKebabCase(): void
+    #[Test]
+    public function itFormatsRuleNameConvertingKebabCase(): void
     {
         self::assertSame('Code Smell Long Parameter List', $this->collector->formatRuleName('code-smell.long-parameter-list'));
     }
 
-    public function testFormatRuleNameHandlesSingleWord(): void
+    #[Test]
+    public function itFormatsRuleNameHandlingSingleWord(): void
     {
         self::assertSame('Custom', $this->collector->formatRuleName('custom'));
     }
 
     // --- getRuleDescription ---
 
-    public function testGetRuleDescriptionKnownRules(): void
+    #[Test]
+    public function itReturnsDescriptionsForKnownRules(): void
     {
         self::assertSame('Code complexity exceeds threshold', $this->collector->getRuleDescription('complexity.cyclomatic'));
         self::assertSame('Code complexity exceeds threshold', $this->collector->getRuleDescription('complexity.cognitive'));
@@ -163,7 +173,8 @@ final class SarifRuleCollectorTest extends TestCase
         self::assertSame('Constructor has too many dependencies', $this->collector->getRuleDescription('code-smell.constructor-overinjection'));
     }
 
-    public function testGetRuleDescriptionUnknownRuleFallback(): void
+    #[Test]
+    public function itFallsBackForUnknownRuleDescription(): void
     {
         $description = $this->collector->getRuleDescription('custom.my-rule');
         self::assertSame('Custom my rule', $description);
@@ -171,7 +182,8 @@ final class SarifRuleCollectorTest extends TestCase
 
     // --- getHelpUri ---
 
-    public function testGetHelpUriKnownCategories(): void
+    #[Test]
+    public function itReturnsHelpUriForKnownCategories(): void
     {
         self::assertStringContainsString('complexity/', $this->collector->getHelpUri('complexity.cyclomatic'));
         self::assertStringContainsString('coupling/', $this->collector->getHelpUri('coupling.cbo'));
@@ -181,24 +193,28 @@ final class SarifRuleCollectorTest extends TestCase
         self::assertStringContainsString('architecture/', $this->collector->getHelpUri('duplication.code-duplication'));
     }
 
-    public function testGetHelpUriFallsBackToRepositoryUrl(): void
+    #[Test]
+    public function itFallsBackToRepositoryUrlForHelpUri(): void
     {
         self::assertSame(SarifRuleCollector::INFORMATION_URI, $this->collector->getHelpUri('unknown.rule'));
     }
 
-    public function testGetHelpUriWithNoDotFallsBack(): void
+    #[Test]
+    public function itFallsBackHelpUriWhenNoDot(): void
     {
         self::assertSame(SarifRuleCollector::INFORMATION_URI, $this->collector->getHelpUri('norule'));
     }
 
     // --- mapLevel ---
 
-    public function testMapLevelError(): void
+    #[Test]
+    public function itMapsErrorLevel(): void
     {
         self::assertSame('error', $this->collector->mapLevel(Severity::Error));
     }
 
-    public function testMapLevelWarning(): void
+    #[Test]
+    public function itMapsWarningLevel(): void
     {
         self::assertSame('warning', $this->collector->mapLevel(Severity::Warning));
     }

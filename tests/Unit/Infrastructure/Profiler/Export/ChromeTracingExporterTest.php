@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Unit\Infrastructure\Profiler\Export;
 
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Profiler\Span;
 use Qualimetrix\Infrastructure\Profiler\Export\ChromeTracingExporter;
@@ -17,7 +18,8 @@ final class ChromeTracingExporterTest extends TestCase
         $this->exporter = new ChromeTracingExporter();
     }
 
-    public function testExportNullSpanReturnsEmptyEvents(): void
+    #[Test]
+    public function itExportsEmptyEventsForNoSpans(): void
     {
         $result = $this->exporter->export([]);
         $data = json_decode($result, true);
@@ -27,7 +29,8 @@ final class ChromeTracingExporterTest extends TestCase
         self::assertSame([], $data['traceEvents']);
     }
 
-    public function testExportSingleSpan(): void
+    #[Test]
+    public function itExportsSingleSpan(): void
     {
         $span = new Span(
             name: 'test',
@@ -63,7 +66,8 @@ final class ChromeTracingExporterTest extends TestCase
         self::assertSame('category', $end['cat']);
     }
 
-    public function testExportSpanWithoutCategory(): void
+    #[Test]
+    public function itExportsSpanWithoutCategory(): void
     {
         $span = new Span(
             name: 'test',
@@ -81,7 +85,8 @@ final class ChromeTracingExporterTest extends TestCase
         self::assertArrayNotHasKey('cat', $data['traceEvents'][1]);
     }
 
-    public function testExportRunningSpan(): void
+    #[Test]
+    public function itExportsRunningSpan(): void
     {
         $span = new Span(
             name: 'test',
@@ -98,7 +103,8 @@ final class ChromeTracingExporterTest extends TestCase
         self::assertSame('B', $data['traceEvents'][0]['ph']);
     }
 
-    public function testExportNestedSpans(): void
+    #[Test]
+    public function itExportsNestedSpans(): void
     {
         $parent = new Span(
             name: 'parent',
@@ -147,7 +153,8 @@ final class ChromeTracingExporterTest extends TestCase
         self::assertEquals(3000.0, $data['traceEvents'][3]['ts']);
     }
 
-    public function testExportDeeplyNestedSpans(): void
+    #[Test]
+    public function itExportsDeeplyNestedSpans(): void
     {
         $level1 = new Span(
             name: 'level1',
@@ -194,7 +201,8 @@ final class ChromeTracingExporterTest extends TestCase
         self::assertSame(['B', 'B', 'B', 'E', 'E', 'E'], $phases);
     }
 
-    public function testExportProducesValidJson(): void
+    #[Test]
+    public function itExportsValidJson(): void
     {
         $span = new Span(
             name: 'test',

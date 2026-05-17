@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Reporting\Formatter;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
@@ -25,17 +26,20 @@ final class GithubActionsFormatterTest extends TestCase
         $this->formatter = new GithubActionsFormatter();
     }
 
-    public function testGetNameReturnsGithub(): void
+    #[Test]
+    public function itReturnsGithubAsName(): void
     {
         self::assertSame('github', $this->formatter->getName());
     }
 
-    public function testGetDefaultGroupByReturnsNone(): void
+    #[Test]
+    public function itReturnsNoneAsDefaultGroupBy(): void
     {
         self::assertSame(GroupBy::None, $this->formatter->getDefaultGroupBy());
     }
 
-    public function testFormatEmptyReportReturnsEmptyString(): void
+    #[Test]
+    public function itReturnsEmptyStringForEmptyReport(): void
     {
         $report = ReportBuilder::create()
             ->filesAnalyzed(10)
@@ -48,7 +52,8 @@ final class GithubActionsFormatterTest extends TestCase
         self::assertSame('', $output);
     }
 
-    public function testFormatWarningViolation(): void
+    #[Test]
+    public function itFormatsWarningViolation(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -73,7 +78,8 @@ final class GithubActionsFormatterTest extends TestCase
         );
     }
 
-    public function testFormatErrorViolation(): void
+    #[Test]
+    public function itFormatsErrorViolation(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -98,7 +104,8 @@ final class GithubActionsFormatterTest extends TestCase
         );
     }
 
-    public function testFormatInfoViolationUsesNoticeCommand(): void
+    #[Test]
+    public function itUsesNoticeCommandForInfoViolation(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -119,7 +126,8 @@ final class GithubActionsFormatterTest extends TestCase
         self::assertStringStartsWith('::notice ', $output);
     }
 
-    public function testFormatMultipleViolations(): void
+    #[Test]
+    public function itFormatsMultipleViolations(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -151,7 +159,8 @@ final class GithubActionsFormatterTest extends TestCase
         self::assertStringStartsWith('::warning ', $lines[1]);
     }
 
-    public function testFormatEscapesSpecialCharactersInMessage(): void
+    #[Test]
+    public function itEscapesSpecialCharactersInMessage(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -173,7 +182,8 @@ final class GithubActionsFormatterTest extends TestCase
         self::assertStringNotContainsString("\n" . 'not enough', $output);
     }
 
-    public function testFormatIncludesFilePathInOutput(): void
+    #[Test]
+    public function itIncludesFilePathInOutput(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -194,7 +204,8 @@ final class GithubActionsFormatterTest extends TestCase
         self::assertStringContainsString('file=src/Service/OrderService.php', $output);
     }
 
-    public function testFormatIncludesLineNumberInOutput(): void
+    #[Test]
+    public function itIncludesLineNumberInOutput(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -215,7 +226,8 @@ final class GithubActionsFormatterTest extends TestCase
         self::assertStringContainsString('line=99', $output);
     }
 
-    public function testFormatUsesViolationCodeAsTitle(): void
+    #[Test]
+    public function itUsesViolationCodeAsTitle(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -236,7 +248,8 @@ final class GithubActionsFormatterTest extends TestCase
         self::assertStringContainsString('title=complexity.method', $output);
     }
 
-    public function testFormatRelativizesPathsWithBasePath(): void
+    #[Test]
+    public function itRelativizesPathsWithBasePath(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -259,7 +272,8 @@ final class GithubActionsFormatterTest extends TestCase
         self::assertStringNotContainsString('/home/user/project', $output);
     }
 
-    public function testFormatViolationWithoutLine(): void
+    #[Test]
+    public function itFormatsViolationWithoutLine(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -281,7 +295,8 @@ final class GithubActionsFormatterTest extends TestCase
         self::assertStringNotContainsString('line=', $output);
     }
 
-    public function testFormatEscapesSpecialCharactersInPropertyValues(): void
+    #[Test]
+    public function itEscapesSpecialCharactersInPropertyValues(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -303,7 +318,8 @@ final class GithubActionsFormatterTest extends TestCase
         self::assertStringContainsString('title=test%3Arule%2Cname', $output);
     }
 
-    public function testFormatArchitecturalViolationWithoutFile(): void
+    #[Test]
+    public function itFormatsArchitecturalViolationWithoutFile(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(

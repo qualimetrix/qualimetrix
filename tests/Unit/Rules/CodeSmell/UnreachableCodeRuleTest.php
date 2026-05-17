@@ -6,6 +6,7 @@ namespace Qualimetrix\Tests\Unit\Rules\CodeSmell;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
@@ -23,40 +24,46 @@ use Qualimetrix\Rules\CodeSmell\UnreachableCodeRule;
 #[CoversClass(UnreachableCodeOptions::class)]
 final class UnreachableCodeRuleTest extends TestCase
 {
-    public function testGetName(): void
+    #[Test]
+    public function itGetName(): void
     {
         $rule = new UnreachableCodeRule(new UnreachableCodeOptions());
 
         self::assertSame('code-smell.unreachable-code', $rule->getName());
     }
 
-    public function testGetDescription(): void
+    #[Test]
+    public function itGetDescription(): void
     {
         $rule = new UnreachableCodeRule(new UnreachableCodeOptions());
 
         self::assertSame('Detects unreachable code after terminal statements', $rule->getDescription());
     }
 
-    public function testGetCategory(): void
+    #[Test]
+    public function itGetCategory(): void
     {
         $rule = new UnreachableCodeRule(new UnreachableCodeOptions());
 
         self::assertSame(RuleCategory::CodeSmell, $rule->getCategory());
     }
 
-    public function testRequires(): void
+    #[Test]
+    public function itRequires(): void
     {
         $rule = new UnreachableCodeRule(new UnreachableCodeOptions());
 
         self::assertSame(['unreachableCode'], $rule->requires());
     }
 
-    public function testGetOptionsClass(): void
+    #[Test]
+    public function itGetOptionsClass(): void
     {
         self::assertSame(UnreachableCodeOptions::class, UnreachableCodeRule::getOptionsClass());
     }
 
-    public function testGetCliAliases(): void
+    #[Test]
+    public function itGetCliAliases(): void
     {
         self::assertSame(
             ['unreachable-code-warning' => 'warning', 'unreachable-code-error' => 'error'],
@@ -64,7 +71,8 @@ final class UnreachableCodeRuleTest extends TestCase
         );
     }
 
-    public function testConstructorRejectsWrongOptionsType(): void
+    #[Test]
+    public function itConstructorRejectsWrongOptionsType(): void
     {
         self::expectException(InvalidArgumentException::class);
 
@@ -86,7 +94,8 @@ final class UnreachableCodeRuleTest extends TestCase
         });
     }
 
-    public function testAnalyzeDisabledReturnsEmpty(): void
+    #[Test]
+    public function itAnalyzeDisabledReturnsEmpty(): void
     {
         $rule = new UnreachableCodeRule(new UnreachableCodeOptions(enabled: false));
 
@@ -98,7 +107,8 @@ final class UnreachableCodeRuleTest extends TestCase
         self::assertSame([], $rule->analyze($context));
     }
 
-    public function testNoUnreachableCode(): void
+    #[Test]
+    public function itNoUnreachableCode(): void
     {
         $rule = new UnreachableCodeRule(new UnreachableCodeOptions());
 
@@ -118,7 +128,8 @@ final class UnreachableCodeRuleTest extends TestCase
         self::assertSame([], $rule->analyze($context));
     }
 
-    public function testWithUnreachableCode(): void
+    #[Test]
+    public function itWithUnreachableCode(): void
     {
         $rule = new UnreachableCodeRule(new UnreachableCodeOptions());
 
@@ -147,7 +158,8 @@ final class UnreachableCodeRuleTest extends TestCase
         self::assertSame('code-smell.unreachable-code', $violations[0]->violationCode);
     }
 
-    public function testWithUnreachableCodeFallsBackToMethodLine(): void
+    #[Test]
+    public function itWithUnreachableCodeFallsBackToMethodLine(): void
     {
         $rule = new UnreachableCodeRule(new UnreachableCodeOptions());
 
@@ -169,7 +181,8 @@ final class UnreachableCodeRuleTest extends TestCase
         self::assertSame(10, $violations[0]->location->line);
     }
 
-    public function testCustomThresholds(): void
+    #[Test]
+    public function itCustomThresholds(): void
     {
         $options = UnreachableCodeOptions::fromArray([
             'enabled' => true,
@@ -189,14 +202,16 @@ final class UnreachableCodeRuleTest extends TestCase
         self::assertSame(Severity::Error, $options->getSeverity(3));
     }
 
-    public function testOptionsFromEmptyArrayDisabled(): void
+    #[Test]
+    public function itOptionsFromEmptyArrayDisabled(): void
     {
         $options = UnreachableCodeOptions::fromArray([]);
 
         self::assertFalse($options->isEnabled());
     }
 
-    public function testOptionsDefaultValues(): void
+    #[Test]
+    public function itOptionsDefaultValues(): void
     {
         $options = new UnreachableCodeOptions();
 
@@ -205,7 +220,8 @@ final class UnreachableCodeRuleTest extends TestCase
         self::assertSame(2, $options->error);
     }
 
-    public function testDefaultThresholdsWarningSingleUnreachable(): void
+    #[Test]
+    public function itDefaultThresholdsWarningSingleUnreachable(): void
     {
         $options = new UnreachableCodeOptions();
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Rules\Design;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
@@ -22,40 +23,46 @@ use Qualimetrix\Rules\Design\GodClassRule;
 #[CoversClass(GodClassOptions::class)]
 final class GodClassRuleTest extends TestCase
 {
-    public function testGetName(): void
+    #[Test]
+    public function itGetsName(): void
     {
         $rule = new GodClassRule(new GodClassOptions());
 
         self::assertSame('design.god-class', $rule->getName());
     }
 
-    public function testGetDescription(): void
+    #[Test]
+    public function itGetsDescription(): void
     {
         $rule = new GodClassRule(new GodClassOptions());
 
         self::assertSame('Detects God Classes (overly complex, large, low cohesion)', $rule->getDescription());
     }
 
-    public function testGetCategory(): void
+    #[Test]
+    public function itGetsCategory(): void
     {
         $rule = new GodClassRule(new GodClassOptions());
 
         self::assertSame(RuleCategory::Design, $rule->getCategory());
     }
 
-    public function testRequires(): void
+    #[Test]
+    public function itRequires(): void
     {
         $rule = new GodClassRule(new GodClassOptions());
 
         self::assertSame(['wmc', 'lcom', 'tcc', 'classLoc', 'methodCount', 'isReadonly'], $rule->requires());
     }
 
-    public function testGetOptionsClass(): void
+    #[Test]
+    public function itGetsOptionsClass(): void
     {
         self::assertSame(GodClassOptions::class, GodClassRule::getOptionsClass());
     }
 
-    public function testGetCliAliases(): void
+    #[Test]
+    public function itGetsCliAliases(): void
     {
         self::assertSame(
             [
@@ -71,7 +78,8 @@ final class GodClassRuleTest extends TestCase
         );
     }
 
-    public function testAnalyzeDisabledReturnsEmpty(): void
+    #[Test]
+    public function itAnalyzeDisabledReturnsEmpty(): void
     {
         $rule = new GodClassRule(new GodClassOptions(enabled: false));
 
@@ -83,7 +91,8 @@ final class GodClassRuleTest extends TestCase
         self::assertSame([], $rule->analyze($context));
     }
 
-    public function testReadonlySkipped(): void
+    #[Test]
+    public function itSkipsReadonlyClassesWhenExcluded(): void
     {
         $rule = new GodClassRule(new GodClassOptions(excludeReadonly: true));
 
@@ -109,7 +118,8 @@ final class GodClassRuleTest extends TestCase
         self::assertSame([], $rule->analyze($context));
     }
 
-    public function testMinMethodsFilter(): void
+    #[Test]
+    public function itFiltersOnMinMethods(): void
     {
         $rule = new GodClassRule(new GodClassOptions(minMethods: 3));
 
@@ -135,7 +145,8 @@ final class GodClassRuleTest extends TestCase
         self::assertSame([], $rule->analyze($context));
     }
 
-    public function testAllFourCriteriaMet(): void
+    #[Test]
+    public function itDetectsWhenAllFourCriteriaMet(): void
     {
         $rule = new GodClassRule(new GodClassOptions());
 
@@ -166,7 +177,8 @@ final class GodClassRuleTest extends TestCase
         self::assertSame('design.god-class', $violations[0]->violationCode);
     }
 
-    public function testThreeOfFourCriteriaMet(): void
+    #[Test]
+    public function itDetectsWhenThreeOfFourCriteriaMet(): void
     {
         $rule = new GodClassRule(new GodClassOptions());
 
@@ -197,7 +209,8 @@ final class GodClassRuleTest extends TestCase
         self::assertSame(3, $violations[0]->metricValue);
     }
 
-    public function testTwoOfFourCriteriaMet(): void
+    #[Test]
+    public function itDoesNotFlagWhenOnlyTwoOfFourCriteriaMet(): void
     {
         $rule = new GodClassRule(new GodClassOptions());
 
@@ -224,7 +237,8 @@ final class GodClassRuleTest extends TestCase
         self::assertSame([], $rule->analyze($context));
     }
 
-    public function testHighTccVetoesLcomCriterion(): void
+    #[Test]
+    public function itVetoesLcomCriterionWhenTccIsHigh(): void
     {
         $rule = new GodClassRule(new GodClassOptions());
 
@@ -252,7 +266,8 @@ final class GodClassRuleTest extends TestCase
         self::assertSame([], $rule->analyze($context));
     }
 
-    public function testTccVetoThresholdExactlyHalf(): void
+    #[Test]
+    public function itVetoesLcomWhenTccIsExactlyHalf(): void
     {
         $rule = new GodClassRule(new GodClassOptions());
 
@@ -280,7 +295,8 @@ final class GodClassRuleTest extends TestCase
         self::assertSame([], $rule->analyze($context));
     }
 
-    public function testTccBelowVetoThresholdDoesNotVetoLcom(): void
+    #[Test]
+    public function itDoesNotVetoLcomWhenTccIsBelowVetoThreshold(): void
     {
         $rule = new GodClassRule(new GodClassOptions());
 
@@ -311,7 +327,8 @@ final class GodClassRuleTest extends TestCase
         self::assertSame(3, $violations[0]->metricValue);
     }
 
-    public function testMissingTccAdjustsEvaluableCount(): void
+    #[Test]
+    public function itAdjustsEvaluableCountWhenTccIsMissing(): void
     {
         $rule = new GodClassRule(new GodClassOptions());
 
@@ -340,7 +357,8 @@ final class GodClassRuleTest extends TestCase
         self::assertSame(3, $violations[0]->metricValue);
     }
 
-    public function testMissingTccAndLcom(): void
+    #[Test]
+    public function itDoesNotFlagWhenTccAndLcomAreMissing(): void
     {
         $rule = new GodClassRule(new GodClassOptions());
 
@@ -365,7 +383,8 @@ final class GodClassRuleTest extends TestCase
         self::assertSame([], $rule->analyze($context));
     }
 
-    public function testCustomThresholds(): void
+    #[Test]
+    public function itRespectsCustomThresholds(): void
     {
         $rule = new GodClassRule(new GodClassOptions(
             wmcThreshold: 20,
@@ -398,7 +417,8 @@ final class GodClassRuleTest extends TestCase
         self::assertSame(Severity::Error, $violations[0]->severity);
     }
 
-    public function testMessageListsMatchedCriteria(): void
+    #[Test]
+    public function itListsMatchedCriteriaInMessage(): void
     {
         $rule = new GodClassRule(new GodClassOptions());
 
@@ -430,7 +450,8 @@ final class GodClassRuleTest extends TestCase
         self::assertStringContainsString('4/4 criteria', $violations[0]->message);
     }
 
-    public function testOptionsFromArrayDefaults(): void
+    #[Test]
+    public function itHasOptionsDefaults(): void
     {
         $options = GodClassOptions::fromArray(['enabled' => true]);
 
@@ -444,7 +465,8 @@ final class GodClassRuleTest extends TestCase
         self::assertTrue($options->excludeReadonly);
     }
 
-    public function testOptionsFromArrayCustomValues(): void
+    #[Test]
+    public function itLoadsOptionsFromArrayWithCustomValues(): void
     {
         $options = GodClassOptions::fromArray([
             'wmc_threshold' => 30,
@@ -466,7 +488,8 @@ final class GodClassRuleTest extends TestCase
         self::assertFalse($options->excludeReadonly);
     }
 
-    public function testOptionsFromArrayDualKey(): void
+    #[Test]
+    public function itLoadsOptionsFromArrayWithDualKey(): void
     {
         $options = GodClassOptions::fromArray([
             'wmcThreshold' => 30,
@@ -487,7 +510,8 @@ final class GodClassRuleTest extends TestCase
         self::assertFalse($options->excludeReadonly);
     }
 
-    public function testOptionsFromEmptyArrayDisabled(): void
+    #[Test]
+    public function itDisablesWhenLoadedFromEmptyArray(): void
     {
         $options = GodClassOptions::fromArray([]);
 

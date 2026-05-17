@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Rules\CodeSmell;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Rules\CodeSmell\ErrorSuppressionOptions;
@@ -12,7 +13,8 @@ use Qualimetrix\Rules\CodeSmell\ErrorSuppressionOptions;
 #[CoversClass(ErrorSuppressionOptions::class)]
 final class ErrorSuppressionOptionsTest extends TestCase
 {
-    public function testDefaultsToEnabledWithNoAllowedFunctions(): void
+    #[Test]
+    public function itDefaultsToEnabledWithNoAllowedFunctions(): void
     {
         $options = new ErrorSuppressionOptions();
 
@@ -20,7 +22,8 @@ final class ErrorSuppressionOptionsTest extends TestCase
         self::assertSame([], $options->allowedFunctions);
     }
 
-    public function testFromArrayEmpty(): void
+    #[Test]
+    public function itFromArrayEmpty(): void
     {
         $options = ErrorSuppressionOptions::fromArray([]);
 
@@ -28,7 +31,8 @@ final class ErrorSuppressionOptionsTest extends TestCase
         self::assertSame([], $options->allowedFunctions);
     }
 
-    public function testFromArrayWithAllowedFunctions(): void
+    #[Test]
+    public function itFromArrayWithAllowedFunctions(): void
     {
         $options = ErrorSuppressionOptions::fromArray([
             'allowed_functions' => ['fopen', 'UNLINK', 'json_decode'],
@@ -37,7 +41,8 @@ final class ErrorSuppressionOptionsTest extends TestCase
         self::assertSame(['fopen', 'unlink', 'json_decode'], $options->allowedFunctions);
     }
 
-    public function testFromArrayWithCamelCaseKey(): void
+    #[Test]
+    public function itFromArrayWithCamelCaseKey(): void
     {
         $options = ErrorSuppressionOptions::fromArray([
             'allowedFunctions' => ['mkdir'],
@@ -46,7 +51,8 @@ final class ErrorSuppressionOptionsTest extends TestCase
         self::assertSame(['mkdir'], $options->allowedFunctions);
     }
 
-    public function testFromArrayDisabled(): void
+    #[Test]
+    public function itFromArrayDisabled(): void
     {
         $options = ErrorSuppressionOptions::fromArray([
             'enabled' => false,
@@ -55,7 +61,8 @@ final class ErrorSuppressionOptionsTest extends TestCase
         self::assertFalse($options->isEnabled());
     }
 
-    public function testIsFunctionAllowed(): void
+    #[Test]
+    public function itIsFunctionAllowed(): void
     {
         $options = new ErrorSuppressionOptions(allowedFunctions: ['fopen', 'unlink']);
 
@@ -66,14 +73,16 @@ final class ErrorSuppressionOptionsTest extends TestCase
         self::assertFalse($options->isFunctionAllowed(''));
     }
 
-    public function testIsFunctionAllowedWithEmptyList(): void
+    #[Test]
+    public function itIsFunctionAllowedWithEmptyList(): void
     {
         $options = new ErrorSuppressionOptions(allowedFunctions: []);
 
         self::assertFalse($options->isFunctionAllowed('fopen'));
     }
 
-    public function testGetSeverity(): void
+    #[Test]
+    public function itGetSeverity(): void
     {
         $options = new ErrorSuppressionOptions();
 

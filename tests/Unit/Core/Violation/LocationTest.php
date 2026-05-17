@@ -7,13 +7,15 @@ namespace Qualimetrix\Tests\Unit\Core\Violation;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Violation\Location;
 
 #[CoversClass(Location::class)]
 final class LocationTest extends TestCase
 {
-    public function testConstructorWithFileAndLine(): void
+    #[Test]
+    public function itConstructorWithFileAndLine(): void
     {
         $location = new Location('src/Service/UserService.php', 42);
 
@@ -21,7 +23,8 @@ final class LocationTest extends TestCase
         self::assertSame(42, $location->line);
     }
 
-    public function testConstructorWithFileOnly(): void
+    #[Test]
+    public function itConstructorWithFileOnly(): void
     {
         $location = new Location('src/Service/UserService.php');
 
@@ -30,7 +33,8 @@ final class LocationTest extends TestCase
     }
 
     #[DataProvider('toStringDataProvider')]
-    public function testToString(Location $location, string $expected): void
+    #[Test]
+    public function itToString(Location $location, string $expected): void
     {
         self::assertSame($expected, $location->toString());
     }
@@ -71,7 +75,8 @@ final class LocationTest extends TestCase
         ];
     }
 
-    public function testLocationIsReadonly(): void
+    #[Test]
+    public function itLocationIsReadonly(): void
     {
         $location = new Location('src/test.php', 10);
 
@@ -80,7 +85,8 @@ final class LocationTest extends TestCase
         self::assertInstanceOf(Location::class, $location); // @phpstan-ignore staticMethod.alreadyNarrowedType
     }
 
-    public function testLocationWithLineZeroThrowsException(): void
+    #[Test]
+    public function itLocationWithLineZeroThrowsException(): void
     {
         self::expectException(InvalidArgumentException::class);
         self::expectExceptionMessage('Line number must be >= 1 or null, got 0');
@@ -88,14 +94,16 @@ final class LocationTest extends TestCase
         new Location('src/test.php', 0);
     }
 
-    public function testLocationWithNegativeLineThrowsException(): void
+    #[Test]
+    public function itLocationWithNegativeLineThrowsException(): void
     {
         self::expectException(InvalidArgumentException::class);
 
         new Location('src/test.php', -1);
     }
 
-    public function testNoneCreatesLocationWithoutFile(): void
+    #[Test]
+    public function itNoneCreatesLocationWithoutFile(): void
     {
         $location = Location::none();
 
@@ -105,7 +113,8 @@ final class LocationTest extends TestCase
         self::assertSame('', $location->toString());
     }
 
-    public function testIsNoneReturnsFalseForRegularLocation(): void
+    #[Test]
+    public function itIsNoneReturnsFalseForRegularLocation(): void
     {
         $location = new Location('src/test.php', 10);
 

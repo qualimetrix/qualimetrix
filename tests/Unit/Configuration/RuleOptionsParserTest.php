@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Configuration;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Configuration\RuleOptionsParser;
 
@@ -24,7 +25,8 @@ final class RuleOptionsParserTest extends TestCase
         ]);
     }
 
-    public function testParseRuleOptionsBasic(): void
+    #[Test]
+    public function itParsesRuleOptionsBasic(): void
     {
         $result = $this->parser->parseRuleOptions([
             'cyclomatic-complexity:warningThreshold=15',
@@ -37,7 +39,8 @@ final class RuleOptionsParserTest extends TestCase
         ], $result);
     }
 
-    public function testParseRuleOptionsMultipleForSameRule(): void
+    #[Test]
+    public function itParsesRuleOptionsMultipleForSameRule(): void
     {
         $result = $this->parser->parseRuleOptions([
             'cyclomatic-complexity:warningThreshold=10',
@@ -52,7 +55,8 @@ final class RuleOptionsParserTest extends TestCase
         ], $result);
     }
 
-    public function testParseRuleOptionsNormalizesKebabCase(): void
+    #[Test]
+    public function itNormalizesKebabCaseInRuleOptions(): void
     {
         $result = $this->parser->parseRuleOptions([
             'cyclomatic-complexity:warning-threshold=15',
@@ -65,7 +69,8 @@ final class RuleOptionsParserTest extends TestCase
         ], $result);
     }
 
-    public function testParseRuleOptionsNormalizesSnakeCase(): void
+    #[Test]
+    public function itNormalizesSnakeCaseInRuleOptions(): void
     {
         $result = $this->parser->parseRuleOptions([
             'cyclomatic-complexity:warning_threshold=15',
@@ -78,7 +83,8 @@ final class RuleOptionsParserTest extends TestCase
         ], $result);
     }
 
-    public function testParseRuleOptionsNormalizesMixedKebabAndSnakeCase(): void
+    #[Test]
+    public function itNormalizesMixedKebabAndSnakeCaseInRuleOptions(): void
     {
         $result = $this->parser->parseRuleOptions([
             'test-rule:my_option-name=value',
@@ -89,7 +95,8 @@ final class RuleOptionsParserTest extends TestCase
         ], $result);
     }
 
-    public function testParseRuleOptionsBooleanValues(): void
+    #[Test]
+    public function itParsesBooleanValuesInRuleOptions(): void
     {
         $result = $this->parser->parseRuleOptions([
             'test-rule:enabled=true',
@@ -104,7 +111,8 @@ final class RuleOptionsParserTest extends TestCase
         ], $result);
     }
 
-    public function testParseRuleOptionsFloatValues(): void
+    #[Test]
+    public function itParsesFloatValuesInRuleOptions(): void
     {
         $result = $this->parser->parseRuleOptions([
             'test-rule:threshold=3.14',
@@ -115,7 +123,8 @@ final class RuleOptionsParserTest extends TestCase
         ], $result);
     }
 
-    public function testParseRuleOptionsNegativeInt(): void
+    #[Test]
+    public function itParsesNegativeIntInRuleOptions(): void
     {
         $result = $this->parser->parseRuleOptions([
             'test-rule:threshold=-10',
@@ -126,7 +135,8 @@ final class RuleOptionsParserTest extends TestCase
         ], $result);
     }
 
-    public function testParseRuleOptionsStringValues(): void
+    #[Test]
+    public function itParsesStringValuesInRuleOptions(): void
     {
         $result = $this->parser->parseRuleOptions([
             'test-rule:format=json',
@@ -137,7 +147,8 @@ final class RuleOptionsParserTest extends TestCase
         ], $result);
     }
 
-    public function testParseRuleOptionsIgnoresInvalidFormat(): void
+    #[Test]
+    public function itIgnoresInvalidFormatInRuleOptions(): void
     {
         $result = $this->parser->parseRuleOptions([
             'invalid-no-colon',
@@ -150,7 +161,8 @@ final class RuleOptionsParserTest extends TestCase
         ], $result);
     }
 
-    public function testParseShortAlias(): void
+    #[Test]
+    public function itParsesShortAlias(): void
     {
         $result = $this->parser->parseShortAlias('cyclomatic-warning', 10);
 
@@ -161,14 +173,16 @@ final class RuleOptionsParserTest extends TestCase
         ], $result);
     }
 
-    public function testParseShortAliasUnknown(): void
+    #[Test]
+    public function itReturnsNullForUnknownShortAlias(): void
     {
         $result = $this->parser->parseShortAlias('unknown-alias', 10);
 
         self::assertNull($result);
     }
 
-    public function testParseDisabledRules(): void
+    #[Test]
+    public function itParsesDisabledRules(): void
     {
         $result = $this->parser->parseDisabledRules([
             'cyclomatic-complexity',
@@ -183,7 +197,8 @@ final class RuleOptionsParserTest extends TestCase
         ], $result);
     }
 
-    public function testParseOnlyRules(): void
+    #[Test]
+    public function itParsesOnlyRules(): void
     {
         $result = $this->parser->parseOnlyRules([
             'cyclomatic-complexity',
@@ -192,7 +207,8 @@ final class RuleOptionsParserTest extends TestCase
         self::assertSame(['cyclomatic-complexity'], $result);
     }
 
-    public function testParserWithoutAliases(): void
+    #[Test]
+    public function itHandlesParserWithoutAliases(): void
     {
         $parser = new RuleOptionsParser();
 
@@ -201,7 +217,8 @@ final class RuleOptionsParserTest extends TestCase
         self::assertNull($result);
     }
 
-    public function testGetAliasNamesReturnsAllRegisteredAliases(): void
+    #[Test]
+    public function itReturnsAllRegisteredAliasNames(): void
     {
         $aliases = $this->parser->getAliasNames();
 
@@ -213,14 +230,16 @@ final class RuleOptionsParserTest extends TestCase
         ], $aliases);
     }
 
-    public function testGetAliasNamesReturnsEmptyForParserWithoutAliases(): void
+    #[Test]
+    public function itReturnsEmptyAliasNamesForParserWithoutAliases(): void
     {
         $parser = new RuleOptionsParser();
 
         self::assertSame([], $parser->getAliasNames());
     }
 
-    public function testParseDisabledRulesWithDotNotation(): void
+    #[Test]
+    public function itParsesDisabledRulesWithDotNotation(): void
     {
         $result = $this->parser->parseDisabledRules([
             'complexity',
@@ -237,7 +256,8 @@ final class RuleOptionsParserTest extends TestCase
         ], $result);
     }
 
-    public function testParseOnlyRulesWithDotNotation(): void
+    #[Test]
+    public function itParsesOnlyRulesWithDotNotation(): void
     {
         $result = $this->parser->parseOnlyRules([
             'complexity.method',

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Reporting;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
@@ -15,7 +16,8 @@ use Qualimetrix\Reporting\Report;
 #[CoversClass(Report::class)]
 final class ReportTest extends TestCase
 {
-    public function testEmptyReportIsEmpty(): void
+    #[Test]
+    public function itIsEmptyWhenNoViolations(): void
     {
         $report = new Report(
             violations: [],
@@ -30,7 +32,8 @@ final class ReportTest extends TestCase
         self::assertSame(0, $report->getTotalViolations());
     }
 
-    public function testReportWithViolationsIsNotEmpty(): void
+    #[Test]
+    public function itIsNotEmptyWhenHasViolations(): void
     {
         $violation = $this->createViolation(Severity::Error);
 
@@ -47,7 +50,8 @@ final class ReportTest extends TestCase
         self::assertSame(1, $report->getTotalViolations());
     }
 
-    public function testGetTotalViolations(): void
+    #[Test]
+    public function itCountsTotalViolations(): void
     {
         $violations = [
             $this->createViolation(Severity::Error),
@@ -67,7 +71,8 @@ final class ReportTest extends TestCase
         self::assertSame(3, $report->getTotalViolations());
     }
 
-    public function testGetViolationsBySeverity(): void
+    #[Test]
+    public function itFiltersViolationsBySeverity(): void
     {
         $error1 = $this->createViolation(Severity::Error, 'error1');
         $error2 = $this->createViolation(Severity::Error, 'error2');
@@ -92,14 +97,16 @@ final class ReportTest extends TestCase
         self::assertSame($warning, $warnings[0]);
     }
 
-    public function testGetExitCodeReturnsZeroForEmptyReport(): void
+    #[Test]
+    public function itReturnsZeroExitCodeForEmptyReport(): void
     {
         $report = new Report([], 10, 0, 0.5, 0, 0);
 
         self::assertSame(0, $report->getExitCode());
     }
 
-    public function testGetExitCodeReturnsOneForWarningsOnly(): void
+    #[Test]
+    public function itReturnsOneExitCodeForWarningsOnly(): void
     {
         $report = new Report(
             violations: [$this->createViolation(Severity::Warning)],
@@ -113,7 +120,8 @@ final class ReportTest extends TestCase
         self::assertSame(1, $report->getExitCode());
     }
 
-    public function testGetExitCodeReturnsTwoForErrors(): void
+    #[Test]
+    public function itReturnsTwoExitCodeForErrors(): void
     {
         $report = new Report(
             violations: [
@@ -130,7 +138,8 @@ final class ReportTest extends TestCase
         self::assertSame(2, $report->getExitCode());
     }
 
-    public function testReportProperties(): void
+    #[Test]
+    public function itExposesReportProperties(): void
     {
         $violations = [$this->createViolation(Severity::Error)];
 

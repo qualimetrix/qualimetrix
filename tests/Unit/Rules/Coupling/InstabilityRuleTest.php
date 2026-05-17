@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Rules\Coupling;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
@@ -29,14 +30,16 @@ use Qualimetrix\Rules\Coupling\NamespaceInstabilityOptions;
 #[CoversClass(NamespaceInstabilityOptions::class)]
 final class InstabilityRuleTest extends TestCase
 {
-    public function testGetName(): void
+    #[Test]
+    public function itReturnsCorrectName(): void
     {
         $rule = new InstabilityRule(new InstabilityOptions());
 
         self::assertSame('coupling.instability', $rule->getName());
     }
 
-    public function testGetDescription(): void
+    #[Test]
+    public function itReturnsCorrectDescription(): void
     {
         $rule = new InstabilityRule(new InstabilityOptions());
 
@@ -46,21 +49,24 @@ final class InstabilityRuleTest extends TestCase
         );
     }
 
-    public function testGetCategory(): void
+    #[Test]
+    public function itReturnsCouplingCategory(): void
     {
         $rule = new InstabilityRule(new InstabilityOptions());
 
         self::assertSame(RuleCategory::Coupling, $rule->getCategory());
     }
 
-    public function testRequires(): void
+    #[Test]
+    public function itRequiresInstabilityMetrics(): void
     {
         $rule = new InstabilityRule(new InstabilityOptions());
 
         self::assertSame(['instability', 'ca', 'ce'], $rule->requires());
     }
 
-    public function testGetOptionsClass(): void
+    #[Test]
+    public function itReturnsCorrectOptionsClass(): void
     {
         self::assertSame(
             InstabilityOptions::class,
@@ -68,14 +74,16 @@ final class InstabilityRuleTest extends TestCase
         );
     }
 
-    public function testGetSupportedLevels(): void
+    #[Test]
+    public function itReturnsClassAndNamespaceLevels(): void
     {
         $rule = new InstabilityRule(new InstabilityOptions());
 
         self::assertSame([RuleLevel::Class_, RuleLevel::Namespace_], $rule->getSupportedLevels());
     }
 
-    public function testGetCliAliases(): void
+    #[Test]
+    public function itDeclaresCorrectCliAliases(): void
     {
         self::assertSame([
             'instability-class-warning' => 'class.max_warning',
@@ -85,7 +93,8 @@ final class InstabilityRuleTest extends TestCase
         ], CliAliasReader::read(InstabilityRule::class));
     }
 
-    public function testConstructorThrowsForInvalidOptions(): void
+    #[Test]
+    public function itThrowsForInvalidOptionsType(): void
     {
         self::expectException(InvalidArgumentException::class);
         self::expectExceptionMessage('Expected');
@@ -96,7 +105,8 @@ final class InstabilityRuleTest extends TestCase
 
     // Class-level tests
 
-    public function testAnalyzeLevelClassReturnsEmptyWhenDisabled(): void
+    #[Test]
+    public function itReturnsEmptyWhenClassLevelDisabled(): void
     {
         $rule = new InstabilityRule(
             new InstabilityOptions(
@@ -112,7 +122,8 @@ final class InstabilityRuleTest extends TestCase
         self::assertSame([], $rule->analyzeLevel(RuleLevel::Class_, $context));
     }
 
-    public function testAnalyzeLevelClassReturnsEmptyWhenNoClasses(): void
+    #[Test]
+    public function itReturnsEmptyWhenNoClasses(): void
     {
         $rule = new InstabilityRule(new InstabilityOptions());
 
@@ -125,7 +136,8 @@ final class InstabilityRuleTest extends TestCase
         self::assertSame([], $rule->analyzeLevel(RuleLevel::Class_, $context));
     }
 
-    public function testAnalyzeLevelClassSkipsWhenNoInstabilityMetric(): void
+    #[Test]
+    public function itSkipsClassesWithoutInstabilityMetric(): void
     {
         $rule = new InstabilityRule(new InstabilityOptions());
 
@@ -145,7 +157,8 @@ final class InstabilityRuleTest extends TestCase
         self::assertSame([], $rule->analyzeLevel(RuleLevel::Class_, $context));
     }
 
-    public function testAnalyzeLevelClassGeneratesWarning(): void
+    #[Test]
+    public function itGeneratesClassInstabilityWarning(): void
     {
         $rule = new InstabilityRule(new InstabilityOptions());
 
@@ -176,7 +189,8 @@ final class InstabilityRuleTest extends TestCase
         self::assertSame(RuleLevel::Class_, $violations[0]->level);
     }
 
-    public function testAnalyzeLevelClassGeneratesError(): void
+    #[Test]
+    public function itGeneratesClassInstabilityError(): void
     {
         $rule = new InstabilityRule(new InstabilityOptions());
 
@@ -203,7 +217,8 @@ final class InstabilityRuleTest extends TestCase
         self::assertSame(0.97, $violations[0]->metricValue);
     }
 
-    public function testAnalyzeLevelClassSkipsBelowMinAfferentDefault(): void
+    #[Test]
+    public function itSkipsClassBelowDefaultMinAfferent(): void
     {
         $rule = new InstabilityRule(new InstabilityOptions());
 
@@ -228,7 +243,8 @@ final class InstabilityRuleTest extends TestCase
         self::assertCount(0, $violations);
     }
 
-    public function testAnalyzeLevelClassDoesNotSkipWhenMinAfferentIsZero(): void
+    #[Test]
+    public function itDoesNotSkipClassWhenMinAfferentIsZero(): void
     {
         $rule = new InstabilityRule(
             new InstabilityOptions(
@@ -258,7 +274,8 @@ final class InstabilityRuleTest extends TestCase
         self::assertSame(Severity::Error, $violations[0]->severity);
     }
 
-    public function testAnalyzeLevelClassSkipsCaOneWhenMinAfferentIsTwo(): void
+    #[Test]
+    public function itSkipsClassWhenCaOneBelowMinAfferentTwo(): void
     {
         $rule = new InstabilityRule(
             new InstabilityOptions(
@@ -287,7 +304,8 @@ final class InstabilityRuleTest extends TestCase
         self::assertCount(0, $violations);
     }
 
-    public function testAnalyzeLevelClassDoesNotSkipCaTwoWhenMinAfferentIsTwo(): void
+    #[Test]
+    public function itDoesNotSkipClassWhenCaTwoMeetsMinAfferentTwo(): void
     {
         $rule = new InstabilityRule(
             new InstabilityOptions(
@@ -319,7 +337,8 @@ final class InstabilityRuleTest extends TestCase
 
     // Namespace-level tests
 
-    public function testAnalyzeLevelNamespaceReturnsEmptyWhenDisabled(): void
+    #[Test]
+    public function itReturnsEmptyWhenNamespaceLevelDisabled(): void
     {
         $rule = new InstabilityRule(
             new InstabilityOptions(
@@ -335,7 +354,8 @@ final class InstabilityRuleTest extends TestCase
         self::assertSame([], $rule->analyzeLevel(RuleLevel::Namespace_, $context));
     }
 
-    public function testAnalyzeLevelNamespaceGeneratesWarning(): void
+    #[Test]
+    public function itGeneratesNamespaceInstabilityWarning(): void
     {
         $rule = new InstabilityRule(new InstabilityOptions());
 
@@ -365,7 +385,8 @@ final class InstabilityRuleTest extends TestCase
         self::assertSame(RuleLevel::Namespace_, $violations[0]->level);
     }
 
-    public function testAnalyzeLevelNamespaceGeneratesError(): void
+    #[Test]
+    public function itGeneratesNamespaceInstabilityError(): void
     {
         $rule = new InstabilityRule(new InstabilityOptions());
 
@@ -393,7 +414,8 @@ final class InstabilityRuleTest extends TestCase
         self::assertSame(0.98, $violations[0]->metricValue);
     }
 
-    public function testAnalyzeLevelNamespaceSkipsBelowMinAfferentDefault(): void
+    #[Test]
+    public function itSkipsNamespaceBelowDefaultMinAfferent(): void
     {
         $rule = new InstabilityRule(new InstabilityOptions());
 
@@ -419,7 +441,8 @@ final class InstabilityRuleTest extends TestCase
         self::assertCount(0, $violations);
     }
 
-    public function testAnalyzeLevelNamespaceDoesNotSkipWhenMinAfferentIsZero(): void
+    #[Test]
+    public function itDoesNotSkipNamespaceWhenMinAfferentIsZero(): void
     {
         $rule = new InstabilityRule(
             new InstabilityOptions(
@@ -450,7 +473,8 @@ final class InstabilityRuleTest extends TestCase
         self::assertSame(Severity::Error, $violations[0]->severity);
     }
 
-    public function testAnalyzeLevelNamespaceSkipsCaOneWhenMinAfferentIsTwo(): void
+    #[Test]
+    public function itSkipsNamespaceWhenCaOneBelowMinAfferentTwo(): void
     {
         $rule = new InstabilityRule(
             new InstabilityOptions(
@@ -482,7 +506,8 @@ final class InstabilityRuleTest extends TestCase
 
     // Namespace minClassCount tests
 
-    public function testAnalyzeLevelNamespaceSkipsWhenBelowMinClassCount(): void
+    #[Test]
+    public function itSkipsNamespaceBelowMinClassCount(): void
     {
         $rule = new InstabilityRule(new InstabilityOptions());
 
@@ -508,7 +533,8 @@ final class InstabilityRuleTest extends TestCase
         self::assertCount(0, $violations);
     }
 
-    public function testAnalyzeLevelNamespaceChecksWhenAboveMinClassCount(): void
+    #[Test]
+    public function itChecksNamespaceWhenAboveMinClassCount(): void
     {
         $rule = new InstabilityRule(new InstabilityOptions());
 
@@ -537,7 +563,8 @@ final class InstabilityRuleTest extends TestCase
 
     // Legacy analyze() tests
 
-    public function testAnalyzeCallsBothLevels(): void
+    #[Test]
+    public function itAnalyzesBothLevels(): void
     {
         $rule = new InstabilityRule(new InstabilityOptions());
 
@@ -581,7 +608,8 @@ final class InstabilityRuleTest extends TestCase
 
     // Options tests
 
-    public function testClassOptionsFromArray(): void
+    #[Test]
+    public function itParsesClassOptionsFromArray(): void
     {
         $options = ClassInstabilityOptions::fromArray([
             'enabled' => false,
@@ -594,7 +622,8 @@ final class InstabilityRuleTest extends TestCase
         self::assertSame(0.9, $options->maxError);
     }
 
-    public function testClassOptionsFromEmptyArray(): void
+    #[Test]
+    public function itUsesClassOptionDefaults(): void
     {
         $options = ClassInstabilityOptions::fromArray([]);
 
@@ -603,7 +632,8 @@ final class InstabilityRuleTest extends TestCase
         self::assertSame(0.95, $options->maxError);
     }
 
-    public function testNamespaceOptionsFromArray(): void
+    #[Test]
+    public function itParsesNamespaceOptionsFromArray(): void
     {
         $options = NamespaceInstabilityOptions::fromArray([
             'enabled' => false,
@@ -616,7 +646,8 @@ final class InstabilityRuleTest extends TestCase
         self::assertSame(0.92, $options->maxError);
     }
 
-    public function testInstabilityOptionsFromHierarchicalArray(): void
+    #[Test]
+    public function itParsesInstabilityOptionsFromHierarchicalArray(): void
     {
         $options = InstabilityOptions::fromArray([
             'class' => [
@@ -636,7 +667,8 @@ final class InstabilityRuleTest extends TestCase
         self::assertSame(0.75, $options->namespace->maxWarning);
     }
 
-    public function testInstabilityOptionsForLevel(): void
+    #[Test]
+    public function itReturnsCorrectOptionsForLevel(): void
     {
         $options = new InstabilityOptions();
 
@@ -644,7 +676,8 @@ final class InstabilityRuleTest extends TestCase
         self::assertSame($options->namespace, $options->forLevel(RuleLevel::Namespace_));
     }
 
-    public function testInstabilityOptionsForLevelThrowsForUnsupportedLevel(): void
+    #[Test]
+    public function itThrowsForUnsupportedLevel(): void
     {
         $options = new InstabilityOptions();
 
@@ -654,7 +687,8 @@ final class InstabilityRuleTest extends TestCase
         $options->forLevel(RuleLevel::Method);
     }
 
-    public function testInstabilityOptionsIsLevelEnabled(): void
+    #[Test]
+    public function itChecksWhetherLevelIsEnabled(): void
     {
         $options = new InstabilityOptions(
             class: new ClassInstabilityOptions(enabled: true),
@@ -665,14 +699,16 @@ final class InstabilityRuleTest extends TestCase
         self::assertFalse($options->isLevelEnabled(RuleLevel::Namespace_));
     }
 
-    public function testInstabilityOptionsGetSupportedLevels(): void
+    #[Test]
+    public function itGetsSupportedLevels(): void
     {
         $options = new InstabilityOptions();
 
         self::assertSame([RuleLevel::Class_, RuleLevel::Namespace_], $options->getSupportedLevels());
     }
 
-    public function testNamespaceOptionsFromArrayIncludesMinClassCount(): void
+    #[Test]
+    public function itParsesNamespaceMinClassCountFromArray(): void
     {
         $options = NamespaceInstabilityOptions::fromArray([
             'min_class_count' => 5,
@@ -681,7 +717,8 @@ final class InstabilityRuleTest extends TestCase
         self::assertSame(5, $options->minClassCount);
     }
 
-    public function testNamespaceOptionsFromArrayMinClassCountDefaultsToThree(): void
+    #[Test]
+    public function itDefaultsNamespaceMinClassCountToThree(): void
     {
         $options = NamespaceInstabilityOptions::fromArray([
             'enabled' => true,
@@ -690,7 +727,8 @@ final class InstabilityRuleTest extends TestCase
         self::assertSame(3, $options->minClassCount);
     }
 
-    public function testNamespaceOptionsFromArrayMinClassCountCamelCaseAlias(): void
+    #[Test]
+    public function itParsesNamespaceMinClassCountCamelCaseAlias(): void
     {
         $options = NamespaceInstabilityOptions::fromArray([
             'minClassCount' => 7,
@@ -699,8 +737,9 @@ final class InstabilityRuleTest extends TestCase
         self::assertSame(7, $options->minClassCount);
     }
 
+    #[Test]
     #[DataProvider('instabilityThresholdDataProvider')]
-    public function testInstabilityThresholdBoundaries(
+    public function itRespectsInstabilityThresholdBoundaries(
         float $instability,
         float $warning,
         float $error,
@@ -752,7 +791,8 @@ final class InstabilityRuleTest extends TestCase
         yield 'above error threshold' => [1.0, 0.8, 0.95, Severity::Error];
     }
 
-    public function testClassOptionsMinAfferentFromArray(): void
+    #[Test]
+    public function itParsesClassMinAfferentFromArray(): void
     {
         $options = ClassInstabilityOptions::fromArray([
             'min_afferent' => 3,
@@ -761,7 +801,8 @@ final class InstabilityRuleTest extends TestCase
         self::assertSame(3, $options->minAfferent);
     }
 
-    public function testClassOptionsMinAfferentFromArrayCamelCase(): void
+    #[Test]
+    public function itParsesClassMinAfferentCamelCaseAlias(): void
     {
         $options = ClassInstabilityOptions::fromArray([
             'minAfferent' => 5,
@@ -770,14 +811,16 @@ final class InstabilityRuleTest extends TestCase
         self::assertSame(5, $options->minAfferent);
     }
 
-    public function testClassOptionsMinAfferentDefaultOne(): void
+    #[Test]
+    public function itDefaultsClassMinAfferentToOne(): void
     {
         $options = ClassInstabilityOptions::fromArray([]);
 
         self::assertSame(1, $options->minAfferent);
     }
 
-    public function testClassOptionsWithOverridePreservesMinAfferent(): void
+    #[Test]
+    public function itPreservesClassMinAfferentOnOverride(): void
     {
         $options = new ClassInstabilityOptions(minAfferent: 3);
         $overridden = $options->withOverride(0.9, null);
@@ -786,7 +829,8 @@ final class InstabilityRuleTest extends TestCase
         self::assertSame(0.9, $overridden->maxWarning);
     }
 
-    public function testNamespaceOptionsMinAfferentFromArray(): void
+    #[Test]
+    public function itParsesNamespaceMinAfferentFromArray(): void
     {
         $options = NamespaceInstabilityOptions::fromArray([
             'min_afferent' => 2,
@@ -795,7 +839,8 @@ final class InstabilityRuleTest extends TestCase
         self::assertSame(2, $options->minAfferent);
     }
 
-    public function testNamespaceOptionsMinAfferentDefaultOne(): void
+    #[Test]
+    public function itDefaultsNamespaceMinAfferentToOne(): void
     {
         $options = NamespaceInstabilityOptions::fromArray([
             'enabled' => true,
@@ -804,7 +849,8 @@ final class InstabilityRuleTest extends TestCase
         self::assertSame(1, $options->minAfferent);
     }
 
-    public function testNamespaceOptionsWithOverridePreservesMinAfferent(): void
+    #[Test]
+    public function itPreservesNamespaceMinAfferentOnOverride(): void
     {
         $options = new NamespaceInstabilityOptions(minAfferent: 4);
         $overridden = $options->withOverride(0.9, null);
@@ -814,7 +860,8 @@ final class InstabilityRuleTest extends TestCase
         self::assertSame(3, $overridden->minClassCount);
     }
 
-    public function testClassOptionsFromArrayWithCamelCase(): void
+    #[Test]
+    public function itParsesClassOptionsFromArrayWithCamelCase(): void
     {
         $options = ClassInstabilityOptions::fromArray([
             'enabled' => false,
@@ -827,7 +874,8 @@ final class InstabilityRuleTest extends TestCase
         self::assertSame(0.9, $options->maxError);
     }
 
-    public function testNamespaceOptionsFromArrayWithCamelCase(): void
+    #[Test]
+    public function itParsesNamespaceOptionsFromArrayWithCamelCase(): void
     {
         $options = NamespaceInstabilityOptions::fromArray([
             'enabled' => false,

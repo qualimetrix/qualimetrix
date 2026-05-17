@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Core\Dependency;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Dependency\DependencyGraphInterface;
 use Qualimetrix\Core\Dependency\EmptyDependencyGraph;
@@ -20,63 +21,74 @@ final class EmptyDependencyGraphTest extends TestCase
         $this->graph = new EmptyDependencyGraph();
     }
 
-    public function testImplementsDependencyGraphInterface(): void
+    #[Test]
+    public function itImplementsDependencyGraphInterface(): void
     {
         self::assertInstanceOf(DependencyGraphInterface::class, $this->graph); // @phpstan-ignore staticMethod.alreadyNarrowedType
     }
 
-    public function testGetClassDependenciesReturnsEmptyArray(): void
+    #[Test]
+    public function itGetClassDependenciesReturnsEmptyArray(): void
     {
         self::assertSame([], $this->graph->getClassDependencies(SymbolPath::fromClassFqn('App\Service\UserService')));
         self::assertSame([], $this->graph->getClassDependencies(SymbolPath::fromClassFqn('NonExistent')));
     }
 
-    public function testGetClassDependentsReturnsEmptyArray(): void
+    #[Test]
+    public function itGetClassDependentsReturnsEmptyArray(): void
     {
         self::assertSame([], $this->graph->getClassDependents(SymbolPath::fromClassFqn('App\Service\UserService')));
         self::assertSame([], $this->graph->getClassDependents(SymbolPath::fromClassFqn('NonExistent')));
     }
 
-    public function testGetClassCeReturnsZero(): void
+    #[Test]
+    public function itGetClassCeReturnsZero(): void
     {
         self::assertSame(0, $this->graph->getClassCe(SymbolPath::fromClassFqn('App\Service\UserService')));
         self::assertSame(0, $this->graph->getClassCe(SymbolPath::fromClassFqn('NonExistent')));
     }
 
-    public function testGetClassCaReturnsZero(): void
+    #[Test]
+    public function itGetClassCaReturnsZero(): void
     {
         self::assertSame(0, $this->graph->getClassCa(SymbolPath::fromClassFqn('App\Service\UserService')));
         self::assertSame(0, $this->graph->getClassCa(SymbolPath::fromClassFqn('NonExistent')));
     }
 
-    public function testGetNamespaceCeReturnsZero(): void
+    #[Test]
+    public function itGetNamespaceCeReturnsZero(): void
     {
         self::assertSame(0, $this->graph->getNamespaceCe(SymbolPath::fromNamespaceFqn('App\Service')));
         self::assertSame(0, $this->graph->getNamespaceCe(SymbolPath::fromNamespaceFqn('NonExistent')));
     }
 
-    public function testGetNamespaceCaReturnsZero(): void
+    #[Test]
+    public function itGetNamespaceCaReturnsZero(): void
     {
         self::assertSame(0, $this->graph->getNamespaceCa(SymbolPath::fromNamespaceFqn('App\Service')));
         self::assertSame(0, $this->graph->getNamespaceCa(SymbolPath::fromNamespaceFqn('NonExistent')));
     }
 
-    public function testGetAllClassesReturnsEmptyArray(): void
+    #[Test]
+    public function itGetAllClassesReturnsEmptyArray(): void
     {
         self::assertSame([], $this->graph->getAllClasses());
     }
 
-    public function testGetAllNamespacesReturnsEmptyArray(): void
+    #[Test]
+    public function itGetAllNamespacesReturnsEmptyArray(): void
     {
         self::assertSame([], $this->graph->getAllNamespaces());
     }
 
-    public function testGetAllDependenciesReturnsEmptyArray(): void
+    #[Test]
+    public function itGetAllDependenciesReturnsEmptyArray(): void
     {
         self::assertSame([], $this->graph->getAllDependencies());
     }
 
-    public function testMultipleCallsReturnConsistentResults(): void
+    #[Test]
+    public function itMultipleCallsReturnConsistentResults(): void
     {
         $classPath = SymbolPath::fromClassFqn('App\Test');
         // First calls
@@ -90,7 +102,8 @@ final class EmptyDependencyGraphTest extends TestCase
         self::assertSame([], $this->graph->getAllClasses());
     }
 
-    public function testDifferentInstancesReturnSameResults(): void
+    #[Test]
+    public function itDifferentInstancesReturnSameResults(): void
     {
         $graph1 = new EmptyDependencyGraph();
         $graph2 = new EmptyDependencyGraph();

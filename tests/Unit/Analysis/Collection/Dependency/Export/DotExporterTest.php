@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\Export;
 
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Collection\Dependency\DependencyGraph;
 use Qualimetrix\Analysis\Collection\Dependency\Export\DotExporter;
@@ -15,7 +16,8 @@ use Qualimetrix\Core\Violation\Location;
 
 final class DotExporterTest extends TestCase
 {
-    public function testExportsValidDot(): void
+    #[Test]
+    public function itExportsValidDot(): void
     {
         $dependencies = [
             new Dependency(
@@ -41,7 +43,8 @@ final class DotExporterTest extends TestCase
         self::assertStringContainsString('"App\\\\ServiceB" -> "App\\\\ServiceC"', $dot);
     }
 
-    public function testGroupsByNamespace(): void
+    #[Test]
+    public function itGroupsByNamespace(): void
     {
         $dependencies = [
             new Dependency(
@@ -61,7 +64,8 @@ final class DotExporterTest extends TestCase
         self::assertStringContainsString('label="App\\\\Repository"', $dot);
     }
 
-    public function testUsesShortLabels(): void
+    #[Test]
+    public function itUsesShortLabels(): void
     {
         $dependencies = [
             new Dependency(
@@ -80,7 +84,8 @@ final class DotExporterTest extends TestCase
         self::assertStringContainsString('label="UserRepository"', $dot);
     }
 
-    public function testUsesFullLabelsWhenDisabled(): void
+    #[Test]
+    public function itUsesFullLabelsWhenDisabled(): void
     {
         $dependencies = [
             new Dependency(
@@ -102,7 +107,8 @@ final class DotExporterTest extends TestCase
         self::assertStringContainsString('label="App\\\\UserRepository"', $dot);
     }
 
-    public function testUsesFullLabelsInClusterModeWhenShortLabelsDisabled(): void
+    #[Test]
+    public function itUsesFullLabelsInClusterModeWhenShortLabelsDisabled(): void
     {
         $dependencies = [
             new Dependency(
@@ -125,7 +131,8 @@ final class DotExporterTest extends TestCase
         self::assertStringContainsString('label="App\\\\Repository\\\\UserRepository"', $dot);
     }
 
-    public function testUsesShortLabelsInClusterMode(): void
+    #[Test]
+    public function itUsesShortLabelsInClusterMode(): void
     {
         $dependencies = [
             new Dependency(
@@ -148,7 +155,8 @@ final class DotExporterTest extends TestCase
         self::assertStringContainsString('label="UserRepository"', $dot);
     }
 
-    public function testEscapesSpecialCharacters(): void
+    #[Test]
+    public function itEscapesSpecialCharacters(): void
     {
         $dependencies = [
             new Dependency(
@@ -169,7 +177,8 @@ final class DotExporterTest extends TestCase
         self::assertStringContainsString('\\\\', $dot);
     }
 
-    public function testFiltersIncludeNamespaces(): void
+    #[Test]
+    public function itFiltersIncludeNamespaces(): void
     {
         $dependencies = [
             new Dependency(
@@ -197,7 +206,8 @@ final class DotExporterTest extends TestCase
         self::assertStringNotContainsString('FooTest', $dot);
     }
 
-    public function testFiltersExcludeNamespaces(): void
+    #[Test]
+    public function itFiltersExcludeNamespaces(): void
     {
         $dependencies = [
             new Dependency(
@@ -225,7 +235,8 @@ final class DotExporterTest extends TestCase
         self::assertStringNotContainsString('FooTest', $dot);
     }
 
-    public function testColorsByInstability(): void
+    #[Test]
+    public function itColorsByInstability(): void
     {
         $dependencies = [
             new Dependency(
@@ -244,7 +255,8 @@ final class DotExporterTest extends TestCase
         self::assertStringContainsString('fillcolor=', $dot);
     }
 
-    public function testDisablesColorByInstability(): void
+    #[Test]
+    public function itDisablesColorByInstability(): void
     {
         $dependencies = [
             new Dependency(
@@ -262,7 +274,8 @@ final class DotExporterTest extends TestCase
         self::assertStringContainsString('fillcolor="lightblue"', $dot);
     }
 
-    public function testChangesDirection(): void
+    #[Test]
+    public function itChangesDirection(): void
     {
         $dependencies = [
             new Dependency(
@@ -280,7 +293,8 @@ final class DotExporterTest extends TestCase
         self::assertStringContainsString('rankdir=TB', $dot);
     }
 
-    public function testExportsEmptyGraph(): void
+    #[Test]
+    public function itExportsEmptyGraph(): void
     {
         $graph = $this->createGraph([]);
         $exporter = new DotExporter();
@@ -290,19 +304,22 @@ final class DotExporterTest extends TestCase
         self::assertStringContainsString('No classes to display', $dot);
     }
 
-    public function testGetFormat(): void
+    #[Test]
+    public function itGetsFormat(): void
     {
         $exporter = new DotExporter();
         self::assertSame('dot', $exporter->getFormat());
     }
 
-    public function testGetFileExtension(): void
+    #[Test]
+    public function itGetsFileExtension(): void
     {
         $exporter = new DotExporter();
         self::assertSame('dot', $exporter->getFileExtension());
     }
 
-    public function testFiltersEdgesWhenNodesAreFiltered(): void
+    #[Test]
+    public function itFiltersEdgesWhenNodesAreFiltered(): void
     {
         $dependencies = [
             new Dependency(

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Analysis\RuleExecution;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\RuleExecution\RuleExecutor;
 use Qualimetrix\Configuration\AnalysisConfiguration;
@@ -24,7 +25,8 @@ use Qualimetrix\Core\Violation\Violation;
 #[CoversClass(RuleExecutor::class)]
 final class RuleExecutorTest extends TestCase
 {
-    public function testExecuteWithNoRules(): void
+    #[Test]
+    public function itExecutesWithNoRules(): void
     {
         $provider = $this->createConfiguredProvider();
         $executor = new RuleExecutor([], $provider);
@@ -36,7 +38,8 @@ final class RuleExecutorTest extends TestCase
         self::assertSame(0, $executor->getTotalRulesCount());
     }
 
-    public function testExecuteWithAllRulesEnabled(): void
+    #[Test]
+    public function itExecutesWithAllRulesEnabled(): void
     {
         $violation1 = $this->createViolation('rule1');
         $violation2 = $this->createViolation('rule2');
@@ -56,7 +59,8 @@ final class RuleExecutorTest extends TestCase
         self::assertSame(2, $executor->getTotalRulesCount());
     }
 
-    public function testExecuteFiltersDisabledRules(): void
+    #[Test]
+    public function itFiltersDisabledRulesDuringExecute(): void
     {
         $violation1 = $this->createViolation('rule1');
         $violation2 = $this->createViolation('rule2');
@@ -75,7 +79,8 @@ final class RuleExecutorTest extends TestCase
         self::assertSame($violation2, $violations[0]);
     }
 
-    public function testExecuteWithOnlyRulesFilter(): void
+    #[Test]
+    public function itExecutesWithOnlyRulesFilter(): void
     {
         $violation1 = $this->createViolation('rule1');
         $violation2 = $this->createViolation('rule2');
@@ -97,7 +102,8 @@ final class RuleExecutorTest extends TestCase
         self::assertSame($violation3, $violations[1]);
     }
 
-    public function testGetActiveRulesReturnsOnlyEnabled(): void
+    #[Test]
+    public function itGetActiveRulesReturnsOnlyEnabled(): void
     {
         $rule1 = $this->createRule('enabled-rule', []);
         $rule2 = $this->createRule('disabled-rule', []);
@@ -112,7 +118,8 @@ final class RuleExecutorTest extends TestCase
         self::assertSame('enabled-rule', $activeRules[0]->getName());
     }
 
-    public function testGetTotalRulesCountIncludesDisabled(): void
+    #[Test]
+    public function itGetTotalRulesCountIncludesDisabled(): void
     {
         $rule1 = $this->createRule('rule1', []);
         $rule2 = $this->createRule('rule2', []);
@@ -125,7 +132,8 @@ final class RuleExecutorTest extends TestCase
         self::assertCount(1, $executor->getActiveRules());
     }
 
-    public function testExecuteWithIterableRules(): void
+    #[Test]
+    public function itExecutesWithIterableRules(): void
     {
         $violation = $this->createViolation('rule1');
         $rule = $this->createRule('rule1', [$violation]);
@@ -144,7 +152,8 @@ final class RuleExecutorTest extends TestCase
         self::assertSame(1, $executor->getTotalRulesCount());
     }
 
-    public function testDisabledRulesTakePrecedenceOverOnlyRules(): void
+    #[Test]
+    public function itDisabledRulesTakePrecedenceOverOnlyRules(): void
     {
         $violation = $this->createViolation('rule1');
         $rule = $this->createRule('rule1', [$violation]);
@@ -165,7 +174,8 @@ final class RuleExecutorTest extends TestCase
 
     // --- Prefix matching tests ---
 
-    public function testExecuteWithPrefixDisable(): void
+    #[Test]
+    public function itExecutesWithPrefixDisable(): void
     {
         $v1 = $this->createViolation('complexity.cyclomatic', violationCode: 'complexity.cyclomatic');
         $v2 = $this->createViolation('complexity.cognitive', violationCode: 'complexity.cognitive');
@@ -187,7 +197,8 @@ final class RuleExecutorTest extends TestCase
         self::assertSame('size.method-count', $violations[0]->ruleName);
     }
 
-    public function testExecuteFiltersViolationsByViolationCode(): void
+    #[Test]
+    public function itFiltersViolationsByViolationCodeDuringExecute(): void
     {
         $methodViolation = $this->createViolation('complexity.cyclomatic', violationCode: 'complexity.cyclomatic.method');
         $classViolation = $this->createViolation('complexity.cyclomatic', violationCode: 'complexity.cyclomatic.class');
@@ -213,7 +224,8 @@ final class RuleExecutorTest extends TestCase
         self::assertSame($methodViolation, $violations[0]);
     }
 
-    public function testGetActiveRulesWithPrefixOnlyRules(): void
+    #[Test]
+    public function itGetActiveRulesWithPrefixOnlyRules(): void
     {
         $rule1 = $this->createRule('complexity.cyclomatic', []);
         $rule2 = $this->createRule('complexity.cognitive', []);
@@ -230,7 +242,8 @@ final class RuleExecutorTest extends TestCase
 
     // --- Hierarchical rules tests ---
 
-    public function testExecuteHierarchicalRuleWithAllLevelsEnabled(): void
+    #[Test]
+    public function itExecutesHierarchicalRuleWithAllLevelsEnabled(): void
     {
         $methodViolation = $this->createViolation('complexity', violationCode: 'complexity.method', level: RuleLevel::Method);
         $classViolation = $this->createViolation('complexity', violationCode: 'complexity.class', level: RuleLevel::Class_);
@@ -255,7 +268,8 @@ final class RuleExecutorTest extends TestCase
         self::assertContains($classViolation, $violations);
     }
 
-    public function testExecuteHierarchicalRuleWithSpecificViolationCodeDisabled(): void
+    #[Test]
+    public function itExecutesHierarchicalRuleWithSpecificViolationCodeDisabled(): void
     {
         $methodViolation = $this->createViolation('complexity', violationCode: 'complexity.method', level: RuleLevel::Method);
         $classViolation = $this->createViolation('complexity', violationCode: 'complexity.class', level: RuleLevel::Class_);
@@ -282,7 +296,8 @@ final class RuleExecutorTest extends TestCase
         self::assertSame($methodViolation, $violations[0]);
     }
 
-    public function testExecuteHierarchicalRuleWithEntireRuleDisabled(): void
+    #[Test]
+    public function itExecutesHierarchicalRuleWithEntireRuleDisabled(): void
     {
         $rule = $this->createHierarchicalRule(
             'complexity',
@@ -304,7 +319,8 @@ final class RuleExecutorTest extends TestCase
         self::assertSame([], $violations);
     }
 
-    public function testHierarchicalRuleWithOnlyRulesFilter(): void
+    #[Test]
+    public function itAppliesOnlyRulesFilterToHierarchicalRule(): void
     {
         $methodViolation = $this->createViolation('complexity', violationCode: 'complexity.method', level: RuleLevel::Method);
         $classViolation = $this->createViolation('complexity', violationCode: 'complexity.class', level: RuleLevel::Class_);
@@ -332,7 +348,8 @@ final class RuleExecutorTest extends TestCase
 
     // --- Namespace exclusion tests ---
 
-    public function testNamespaceExclusionFiltersViolations(): void
+    #[Test]
+    public function itFiltersViolationsByNamespaceExclusion(): void
     {
         $excludedViolation = $this->createViolationWithNamespace('rule1', 'App\\Tests');
         $includedViolation = $this->createViolationWithNamespace('rule1', 'App\\Core');
@@ -352,7 +369,8 @@ final class RuleExecutorTest extends TestCase
         self::assertSame($includedViolation, $violations[0]);
     }
 
-    public function testNamespaceExclusionPassesThroughNullNamespace(): void
+    #[Test]
+    public function itNamespaceExclusionPassesThroughNullNamespace(): void
     {
         $fileViolation = $this->createViolation('rule1');
         $rule = $this->createRule('rule1', [$fileViolation]);
@@ -369,7 +387,8 @@ final class RuleExecutorTest extends TestCase
         self::assertCount(1, $violations);
     }
 
-    public function testNamespaceExclusionPassesThroughEmptyNamespace(): void
+    #[Test]
+    public function itNamespaceExclusionPassesThroughEmptyNamespace(): void
     {
         $globalViolation = $this->createViolationWithNamespace('rule1', '');
         $rule = $this->createRule('rule1', [$globalViolation]);
@@ -386,7 +405,8 @@ final class RuleExecutorTest extends TestCase
         self::assertCount(1, $violations);
     }
 
-    public function testNamespaceExclusionDoesNotAffectOtherRules(): void
+    #[Test]
+    public function itNamespaceExclusionDoesNotAffectOtherRules(): void
     {
         $v1 = $this->createViolationWithNamespace('rule1', 'App\\Tests');
         $v2 = $this->createViolationWithNamespace('rule2', 'App\\Tests');
@@ -486,7 +506,8 @@ final class RuleExecutorTest extends TestCase
 
     // --- Path exclusion tests ---
 
-    public function testExcludePathsFiltersViolations(): void
+    #[Test]
+    public function itFiltersViolationsByExcludePaths(): void
     {
         $excludedViolation = $this->createViolationWithFile('rule1', 'src/Generated/Model.php');
         $includedViolation = $this->createViolationWithFile('rule1', 'src/Core/Service.php');
@@ -506,7 +527,8 @@ final class RuleExecutorTest extends TestCase
         self::assertSame($includedViolation, $violations[0]);
     }
 
-    public function testExcludePathsIsolatedPerRule(): void
+    #[Test]
+    public function itExcludePathsAreIsolatedPerRule(): void
     {
         $v1 = $this->createViolationWithFile('rule1', 'src/Generated/Model.php');
         $v2 = $this->createViolationWithFile('rule2', 'src/Generated/Model.php');
@@ -527,7 +549,8 @@ final class RuleExecutorTest extends TestCase
         self::assertSame($v2, $violations[0]);
     }
 
-    public function testExcludePathsWithEmptyFilePassesThrough(): void
+    #[Test]
+    public function itExcludePathsWithEmptyFilePassesThrough(): void
     {
         $violation = $this->createViolationWithFile('rule1', '');
 

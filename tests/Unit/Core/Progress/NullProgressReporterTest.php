@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Unit\Core\Progress;
 
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Progress\NullProgressReporter;
 
 final class NullProgressReporterTest extends TestCase
 {
-    public function testDoesNothing(): void
+    #[Test]
+    public function itDoesNothing(): void
     {
         self::expectNotToPerformAssertions();
 
@@ -23,7 +25,8 @@ final class NullProgressReporterTest extends TestCase
         $reporter->finish();
     }
 
-    public function testCanBeCalledMultipleTimes(): void
+    #[Test]
+    public function itCanBeCalledMultipleTimes(): void
     {
         self::expectNotToPerformAssertions();
 

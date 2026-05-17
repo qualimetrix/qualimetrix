@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Configuration\Loader;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Configuration\Exception\ConfigLoadException;
 use Qualimetrix\Configuration\Loader\YamlConfigLoader;
@@ -27,7 +28,8 @@ final class YamlConfigLoaderTest extends TestCase
         $this->removeDirectory($this->tempDir);
     }
 
-    public function testSupportsYamlExtension(): void
+    #[Test]
+    public function itSupportsYamlExtension(): void
     {
         self::assertTrue($this->loader->supports('/path/to/config.yaml'));
         self::assertTrue($this->loader->supports('/path/to/config.yml'));
@@ -35,14 +37,16 @@ final class YamlConfigLoaderTest extends TestCase
         self::assertTrue($this->loader->supports('/path/to/config.YML'));
     }
 
-    public function testDoesNotSupportOtherExtensions(): void
+    #[Test]
+    public function itDoesNotSupportOtherExtensions(): void
     {
         self::assertFalse($this->loader->supports('/path/to/config.php'));
         self::assertFalse($this->loader->supports('/path/to/config.json'));
         self::assertFalse($this->loader->supports('/path/to/config.xml'));
     }
 
-    public function testLoadValidYaml(): void
+    #[Test]
+    public function itLoadsValidYaml(): void
     {
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, <<<'YAML'
@@ -73,7 +77,8 @@ YAML);
         self::assertSame('text', $config['format']);
     }
 
-    public function testLoadNormalizesSnakeCaseToCamelCase(): void
+    #[Test]
+    public function itNormalizesSnakeCaseToCamelCase(): void
     {
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, <<<'YAML'
@@ -95,7 +100,8 @@ YAML);
         self::assertFalse($config['rules']['namespace_size']['countTraits']);
     }
 
-    public function testLoadEmptyFile(): void
+    #[Test]
+    public function itLoadsEmptyFile(): void
     {
         $path = $this->tempDir . '/empty.yaml';
         file_put_contents($path, '');
@@ -105,7 +111,8 @@ YAML);
         self::assertSame([], $config);
     }
 
-    public function testLoadFileNotFound(): void
+    #[Test]
+    public function itThrowsWhenFileNotFound(): void
     {
         $path = $this->tempDir . '/nonexistent.yaml';
 
@@ -115,7 +122,8 @@ YAML);
         $this->loader->load($path);
     }
 
-    public function testLoadInvalidYaml(): void
+    #[Test]
+    public function itThrowsForInvalidYaml(): void
     {
         $path = $this->tempDir . '/invalid.yaml';
         file_put_contents($path, <<<'YAML'
@@ -131,7 +139,8 @@ YAML);
         $this->loader->load($path);
     }
 
-    public function testLoadScalarValueThrows(): void
+    #[Test]
+    public function itThrowsForScalarValue(): void
     {
         $path = $this->tempDir . '/scalar.yaml';
         file_put_contents($path, 'just a string');
@@ -142,7 +151,8 @@ YAML);
         $this->loader->load($path);
     }
 
-    public function testLoadPreservesCamelCaseKeys(): void
+    #[Test]
+    public function itPreservesCamelCaseKeys(): void
     {
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, <<<'YAML'
@@ -158,7 +168,8 @@ YAML);
         self::assertSame(15, $config['rules']['cyclomaticComplexity']['warningThreshold']);
     }
 
-    public function testLoadRejectsUnknownRootKeys(): void
+    #[Test]
+    public function itRejectsUnknownRootKeys(): void
     {
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, <<<'YAML'
@@ -176,7 +187,8 @@ YAML);
         $this->loader->load($path);
     }
 
-    public function testLoadRejectsNonArrayRules(): void
+    #[Test]
+    public function itRejectsNonArrayRules(): void
     {
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, 'rules: not_an_array');
@@ -187,7 +199,8 @@ YAML);
         $this->loader->load($path);
     }
 
-    public function testLoadRejectsInvalidRuleConfig(): void
+    #[Test]
+    public function itRejectsInvalidRuleConfig(): void
     {
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, <<<'YAML'
@@ -201,7 +214,8 @@ YAML);
         $this->loader->load($path);
     }
 
-    public function testLoadAcceptsBooleanRuleConfig(): void
+    #[Test]
+    public function itAcceptsBooleanRuleConfig(): void
     {
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, <<<'YAML'
@@ -216,7 +230,8 @@ YAML);
         self::assertFalse($config['rules']['size']);
     }
 
-    public function testLoadAcceptsNullRuleConfig(): void
+    #[Test]
+    public function itAcceptsNullRuleConfig(): void
     {
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, <<<'YAML'
@@ -229,7 +244,8 @@ YAML);
         self::assertNull($config['rules']['complexity']);
     }
 
-    public function testLoadRejectsNonArrayCache(): void
+    #[Test]
+    public function itRejectsNonArrayCache(): void
     {
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, 'cache: not_an_array');
@@ -240,7 +256,8 @@ YAML);
         $this->loader->load($path);
     }
 
-    public function testLoadRejectsNonArrayNamespace(): void
+    #[Test]
+    public function itRejectsNonArrayNamespace(): void
     {
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, 'namespace: not_an_array');
@@ -251,7 +268,8 @@ YAML);
         $this->loader->load($path);
     }
 
-    public function testLoadRejectsNonListDisabledRules(): void
+    #[Test]
+    public function itRejectsNonListDisabledRules(): void
     {
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, 'disabled_rules: not_a_list');
@@ -262,7 +280,8 @@ YAML);
         $this->loader->load($path);
     }
 
-    public function testLoadAcceptsAllValidRootKeys(): void
+    #[Test]
+    public function itAcceptsAllValidRootKeys(): void
     {
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, <<<'YAML'
@@ -297,7 +316,8 @@ YAML);
         self::assertSame(['src/Entity/*'], $config['excludePaths']);
     }
 
-    public function testLoadRejectsNonListExcludePaths(): void
+    #[Test]
+    public function itRejectsNonListExcludePaths(): void
     {
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, 'exclude_paths: not_a_list');
@@ -308,7 +328,8 @@ YAML);
         $this->loader->load($path);
     }
 
-    public function testLoadPreservesDottedKebabCaseRuleNames(): void
+    #[Test]
+    public function itPreservesDottedKebabCaseRuleNames(): void
     {
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, <<<'YAML'
@@ -327,7 +348,8 @@ YAML);
         self::assertSame(30, $config['rules']['size.method-count']['errorThreshold']);
     }
 
-    public function testLoadPreservesCodeSmellRuleNames(): void
+    #[Test]
+    public function itPreservesCodeSmellRuleNames(): void
     {
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, <<<'YAML'
@@ -342,7 +364,8 @@ YAML);
         self::assertFalse($config['rules']['code-smell.boolean-argument']['enabled']);
     }
 
-    public function testLoadNormalizesNonRuleRootKeys(): void
+    #[Test]
+    public function itNormalizesNonRuleRootKeys(): void
     {
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, <<<'YAML'
@@ -361,7 +384,8 @@ YAML);
         self::assertSame(['vendor'], $config['excludePaths']);
     }
 
-    public function testLoadAcceptsParallelSection(): void
+    #[Test]
+    public function itAcceptsParallelSection(): void
     {
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, <<<'YAML'
@@ -374,7 +398,8 @@ YAML);
         self::assertSame(4, $config['parallel']['workers']);
     }
 
-    public function testLoadAcceptsCouplingSection(): void
+    #[Test]
+    public function itAcceptsCouplingSection(): void
     {
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, <<<'YAML'
@@ -389,7 +414,8 @@ YAML);
         self::assertSame(['Symfony', 'Doctrine'], $config['coupling']['frameworkNamespaces']);
     }
 
-    public function testLoadProjectQmxYamlWithoutErrors(): void
+    #[Test]
+    public function itLoadsProjectQmxYamlWithoutErrors(): void
     {
         $projectRoot = \dirname(__DIR__, 4);
         $configPath = $projectRoot . '/qmx.yaml';
@@ -404,7 +430,8 @@ YAML);
         self::assertNotEmpty($config, 'Project qmx.yaml should produce non-empty config');
     }
 
-    public function testLoadProjectQmxYamlExampleWithoutErrors(): void
+    #[Test]
+    public function itLoadsProjectQmxYamlExampleWithoutErrors(): void
     {
         $projectRoot = \dirname(__DIR__, 4);
         $examplePath = $projectRoot . '/qmx.yaml.example';
@@ -419,7 +446,8 @@ YAML);
         self::assertSame([], $config);
     }
 
-    public function testLoadPreservesMultipleRuleNamesWithMixedFormats(): void
+    #[Test]
+    public function itPreservesMultipleRuleNamesWithMixedFormats(): void
     {
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, <<<'YAML'
@@ -447,7 +475,8 @@ YAML);
         self::assertSame(15, $config['rules']['size.method-count']['warningThreshold']);
     }
 
-    public function testLoadPreservesComputedMetricNameKeys(): void
+    #[Test]
+    public function itPreservesComputedMetricNameKeys(): void
     {
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, <<<'YAML'
@@ -471,7 +500,8 @@ YAML);
         self::assertSame(50, $config['computedMetrics']['health.complexity']['errorThreshold']);
     }
 
-    public function testLoadRejectsUnknownCacheSubKey(): void
+    #[Test]
+    public function itRejectsUnknownCacheSubKey(): void
     {
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, <<<'YAML'
@@ -486,7 +516,8 @@ YAML);
         $this->loader->load($path);
     }
 
-    public function testLoadRejectsUnknownNamespaceSubKeyWithSuggestion(): void
+    #[Test]
+    public function itRejectsUnknownNamespaceSubKeyWithSuggestion(): void
     {
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, <<<'YAML'
@@ -500,7 +531,8 @@ YAML);
         $this->loader->load($path);
     }
 
-    public function testLoadRejectsUnknownParallelSubKeyWithSuggestion(): void
+    #[Test]
+    public function itRejectsUnknownParallelSubKeyWithSuggestion(): void
     {
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, <<<'YAML'
@@ -514,7 +546,8 @@ YAML);
         $this->loader->load($path);
     }
 
-    public function testLoadSuggestsCorrectRootKeyForTypo(): void
+    #[Test]
+    public function itSuggestsCorrectRootKeyForTypo(): void
     {
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, <<<'YAML'
@@ -528,7 +561,8 @@ YAML);
         $this->loader->load($path);
     }
 
-    public function testLoadNoSuggestionForDistantKey(): void
+    #[Test]
+    public function itShowsNoSuggestionForDistantKey(): void
     {
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, <<<'YAML'
@@ -544,7 +578,8 @@ YAML);
         }
     }
 
-    public function testLoadRejectsMultipleUnknownSubKeys(): void
+    #[Test]
+    public function itRejectsMultipleUnknownSubKeys(): void
     {
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, <<<'YAML'
@@ -559,7 +594,8 @@ YAML);
         $this->loader->load($path);
     }
 
-    public function testLoadShowsAllowedKeysInSubKeyError(): void
+    #[Test]
+    public function itShowsAllowedKeysInSubKeyError(): void
     {
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, <<<'YAML'
@@ -575,7 +611,8 @@ YAML);
         }
     }
 
-    public function testLoadRejectsScalarArchitecture(): void
+    #[Test]
+    public function itRejectsScalarArchitecture(): void
     {
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, 'architecture: false');
@@ -586,7 +623,8 @@ YAML);
         $this->loader->load($path);
     }
 
-    public function testLoadRejectsScalarComputedMetrics(): void
+    #[Test]
+    public function itRejectsScalarComputedMetrics(): void
     {
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, 'computed_metrics: not_a_map');
@@ -598,7 +636,8 @@ YAML);
         $this->loader->load($path);
     }
 
-    public function testLoadPreservesArchitectureLayerNamesVerbatim(): void
+    #[Test]
+    public function itPreservesArchitectureLayerNamesVerbatim(): void
     {
         // Under ADR 0006 `architecture.layers` is an ordered list; layer names
         // live in the `name` field of each entry, not as map keys. The values
@@ -627,7 +666,8 @@ YAML);
         self::assertSame('appCore', $config['architecture']['layers'][2]['name']);
     }
 
-    public function testLoadPreservesArchitectureAllowSourceLayerNames(): void
+    #[Test]
+    public function itPreservesArchitectureAllowSourceLayerNames(): void
     {
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, <<<'YAML'
@@ -652,7 +692,8 @@ YAML);
         self::assertSame(['app_service'], $config['architecture']['allow']['app_core']);
     }
 
-    public function testLoadPreservesLongFormTargetSnakeCaseKeysUnderArchitectureAllow(): void
+    #[Test]
+    public function itPreservesLongFormTargetSnakeCaseKeysUnderArchitectureAllow(): void
     {
         // Subtree-preservation guarantee: long-form target maps below
         // architecture.allow.* carry documented snake_case keys
@@ -684,7 +725,8 @@ YAML);
         self::assertTrue($entry['allow_cross_instance']);
     }
 
-    public function testLoadStillNormalizesCliKeysOutsideArchitecture(): void
+    #[Test]
+    public function itStillNormalizesCliKeysOutsideArchitecture(): void
     {
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, <<<'YAML'
@@ -707,7 +749,8 @@ YAML);
         self::assertSame('app_core', $config['architecture']['layers'][0]['name']);
     }
 
-    public function testLoadAcceptsKebabCaseLayerNamesMatchingLayerDefinitionRegex(): void
+    #[Test]
+    public function itAcceptsKebabCaseLayerNamesMatchingLayerDefinitionRegex(): void
     {
         // LayerDefinition::NAME_REGEX accepts [a-z][a-z0-9_-]*; confirm the loader
         // preserves names that fit the regex without mutating them.

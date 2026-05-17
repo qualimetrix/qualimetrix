@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Reporting\Formatter;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
@@ -26,12 +27,14 @@ final class SarifFormatterTest extends TestCase
         $this->formatter = new SarifFormatter(new SarifRuleCollector());
     }
 
-    public function testGetNameReturnsSarif(): void
+    #[Test]
+    public function itReturnsSarifName(): void
     {
         self::assertSame('sarif', $this->formatter->getName());
     }
 
-    public function testFormatReturnsValidJson(): void
+    #[Test]
+    public function itReturnsValidJson(): void
     {
         $report = ReportBuilder::create()
             ->filesAnalyzed(10)
@@ -44,7 +47,8 @@ final class SarifFormatterTest extends TestCase
         self::assertJson($output);
     }
 
-    public function testFormatEmptyReport(): void
+    #[Test]
+    public function itFormatsEmptyReport(): void
     {
         $report = ReportBuilder::create()
             ->filesAnalyzed(42)
@@ -74,7 +78,8 @@ final class SarifFormatterTest extends TestCase
         self::assertSame([], $run['results']);
     }
 
-    public function testFormatReportWithViolations(): void
+    #[Test]
+    public function itFormatsReportWithViolations(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -135,7 +140,8 @@ final class SarifFormatterTest extends TestCase
         self::assertSame(120, $result2['locations'][0]['physicalLocation']['region']['startLine']);
     }
 
-    public function testFormatMultipleRules(): void
+    #[Test]
+    public function itFormatsMultipleRules(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -190,7 +196,8 @@ final class SarifFormatterTest extends TestCase
         self::assertCount(3, $run['results']);
     }
 
-    public function testFormatNamespaceLevelViolation(): void
+    #[Test]
+    public function itFormatsNamespaceLevelViolation(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -215,7 +222,8 @@ final class SarifFormatterTest extends TestCase
         self::assertSame(1, $result['locations'][0]['physicalLocation']['region']['startLine']);
     }
 
-    public function testMapsSeverityCorrectly(): void
+    #[Test]
+    public function itMapsSeverityCorrectly(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -249,7 +257,8 @@ final class SarifFormatterTest extends TestCase
         self::assertSame('warning', $results[1]['level']);
     }
 
-    public function testMapsInfoSeverityToNote(): void
+    #[Test]
+    public function itMapsInfoSeverityToNote(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -275,7 +284,8 @@ final class SarifFormatterTest extends TestCase
         self::assertSame('note', $data['runs'][0]['tool']['driver']['rules'][0]['defaultConfiguration']['level']);
     }
 
-    public function testRuleDescriptions(): void
+    #[Test]
+    public function itProducesCorrectRuleDescriptions(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -322,7 +332,8 @@ final class SarifFormatterTest extends TestCase
         self::assertSame('Inheritance structure issue', $inheritanceRule['shortDescription']['text']);
     }
 
-    public function testRuleIdUsesViolationCode(): void
+    #[Test]
+    public function itUsesViolationCodeForRuleId(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -352,12 +363,14 @@ final class SarifFormatterTest extends TestCase
         self::assertSame('complexity.method', $rule['id']);
     }
 
-    public function testGetDefaultGroupBy(): void
+    #[Test]
+    public function itReturnsDefaultGroupByNone(): void
     {
         self::assertSame(GroupBy::None, $this->formatter->getDefaultGroupBy());
     }
 
-    public function testRelativizesAbsolutePathsWithBasePath(): void
+    #[Test]
+    public function itRelativizesAbsolutePathsWithBasePath(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -388,7 +401,8 @@ final class SarifFormatterTest extends TestCase
         self::assertSame('file:///home/user/project/', $run['originalUriBaseIds']['%SRCROOT%']['uri']);
     }
 
-    public function testWindowsBasePathNormalizedToFileUri(): void
+    #[Test]
+    public function itNormalizesWindowsBasePathToFileUri(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -414,7 +428,8 @@ final class SarifFormatterTest extends TestCase
         self::assertSame('file:///C:/Users/project/', $run['originalUriBaseIds']['%SRCROOT%']['uri']);
     }
 
-    public function testAlreadyRelativePathUnchanged(): void
+    #[Test]
+    public function itLeavesAlreadyRelativePathUnchanged(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -439,7 +454,8 @@ final class SarifFormatterTest extends TestCase
         self::assertSame('src/Service/UserService.php', $uri);
     }
 
-    public function testNoBasePathKeepsAbsolutePaths(): void
+    #[Test]
+    public function itKeepsAbsolutePathsWhenNoBasePath(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -469,7 +485,8 @@ final class SarifFormatterTest extends TestCase
         self::assertArrayNotHasKey('originalUriBaseIds', $run);
     }
 
-    public function testProjectLevelViolationOmitsLocations(): void
+    #[Test]
+    public function itOmitsLocationsForProjectLevelViolation(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -493,7 +510,8 @@ final class SarifFormatterTest extends TestCase
         self::assertArrayNotHasKey('locations', $result);
     }
 
-    public function testUnixPathToFileUriProducesThreeSlashes(): void
+    #[Test]
+    public function itProducesThreeSlashesForUnixPathFileUri(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -521,7 +539,8 @@ final class SarifFormatterTest extends TestCase
         self::assertStringNotContainsString('file:////', $uri);
     }
 
-    public function testPathWithSpacesIsPercentEncoded(): void
+    #[Test]
+    public function itPercentEncodesPathWithSpaces(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -549,7 +568,8 @@ final class SarifFormatterTest extends TestCase
         self::assertStringNotContainsString(' ', $uri);
     }
 
-    public function testRuleHelpUriMapsToDocsCategoryPage(): void
+    #[Test]
+    public function itMapsRuleHelpUriToDocsCategoryPage(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -598,7 +618,8 @@ final class SarifFormatterTest extends TestCase
         self::assertSame('https://github.com/qualimetrix/qualimetrix', $rulesByCode['unknown-rule']['helpUri']);
     }
 
-    public function testRuleDescriptionUsesViolationCodeNotRuleName(): void
+    #[Test]
+    public function itUsesViolationCodeForRuleDescription(): void
     {
         // When ruleName differs from violationCode, the description should
         // be looked up by violationCode (which matches the match arms).
@@ -624,7 +645,8 @@ final class SarifFormatterTest extends TestCase
         self::assertSame('Code complexity exceeds threshold', $rule['shortDescription']['text']);
     }
 
-    public function testRelatedLocationsIncludedInResult(): void
+    #[Test]
+    public function itIncludesRelatedLocationsInResult(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -670,7 +692,8 @@ final class SarifFormatterTest extends TestCase
         self::assertSame(88, $rel1['physicalLocation']['region']['startLine']);
     }
 
-    public function testNoRelatedLocationsOmitsField(): void
+    #[Test]
+    public function itOmitsRelatedLocationsFieldWhenEmpty(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -695,7 +718,8 @@ final class SarifFormatterTest extends TestCase
         self::assertArrayNotHasKey('relatedLocations', $result);
     }
 
-    public function testDefaultConfigurationLevelUsesMaxSeverity(): void
+    #[Test]
+    public function itUsesMaxSeverityForDefaultConfigurationLevel(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(

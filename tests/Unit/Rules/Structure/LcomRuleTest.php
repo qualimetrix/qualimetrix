@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Rules\Structure;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
@@ -23,14 +24,16 @@ use Qualimetrix\Rules\Structure\LcomRule;
 #[CoversClass(LcomOptions::class)]
 final class LcomRuleTest extends TestCase
 {
-    public function testGetName(): void
+    #[Test]
+    public function itGetsName(): void
     {
         $rule = new LcomRule(new LcomOptions());
 
         self::assertSame('design.lcom', $rule->getName());
     }
 
-    public function testGetDescription(): void
+    #[Test]
+    public function itGetsDescription(): void
     {
         $rule = new LcomRule(new LcomOptions());
 
@@ -40,21 +43,24 @@ final class LcomRuleTest extends TestCase
         );
     }
 
-    public function testGetCategory(): void
+    #[Test]
+    public function itGetsCategory(): void
     {
         $rule = new LcomRule(new LcomOptions());
 
         self::assertSame(RuleCategory::Design, $rule->getCategory());
     }
 
-    public function testRequires(): void
+    #[Test]
+    public function itRequiresLcomMethodCountAndIsReadonly(): void
     {
         $rule = new LcomRule(new LcomOptions());
 
         self::assertSame(['lcom', 'methodCount', 'isReadonly'], $rule->requires());
     }
 
-    public function testGetOptionsClass(): void
+    #[Test]
+    public function itGetsOptionsClass(): void
     {
         self::assertSame(
             LcomOptions::class,
@@ -62,7 +68,8 @@ final class LcomRuleTest extends TestCase
         );
     }
 
-    public function testThrowsExceptionForWrongOptionsType(): void
+    #[Test]
+    public function itThrowsExceptionForWrongOptionsType(): void
     {
         $wrongOptions = self::createStub(\Qualimetrix\Core\Rule\RuleOptionsInterface::class);
 
@@ -72,7 +79,8 @@ final class LcomRuleTest extends TestCase
         new LcomRule($wrongOptions);
     }
 
-    public function testAnalyzeReturnsEmptyWhenDisabled(): void
+    #[Test]
+    public function itReturnsEmptyWhenDisabled(): void
     {
         $rule = new LcomRule(new LcomOptions(enabled: false));
 
@@ -84,7 +92,8 @@ final class LcomRuleTest extends TestCase
         self::assertSame([], $rule->analyze($context));
     }
 
-    public function testAnalyzeReturnsEmptyWhenNoClasses(): void
+    #[Test]
+    public function itReturnsEmptyWhenNoClasses(): void
     {
         $rule = new LcomRule(new LcomOptions());
 
@@ -97,7 +106,8 @@ final class LcomRuleTest extends TestCase
         self::assertSame([], $rule->analyze($context));
     }
 
-    public function testAnalyzeGeneratesWarning(): void
+    #[Test]
+    public function itGeneratesWarning(): void
     {
         $rule = new LcomRule(new LcomOptions());
 
@@ -128,7 +138,8 @@ final class LcomRuleTest extends TestCase
         self::assertSame('design.lcom', $violations[0]->ruleName);
     }
 
-    public function testAnalyzeGeneratesError(): void
+    #[Test]
+    public function itGeneratesError(): void
     {
         $rule = new LcomRule(new LcomOptions());
 
@@ -155,7 +166,8 @@ final class LcomRuleTest extends TestCase
         self::assertSame(5, $violations[0]->metricValue);
     }
 
-    public function testAnalyzeNoViolationForCohesiveClass(): void
+    #[Test]
+    public function itProducesNoViolationForCohesiveClass(): void
     {
         $rule = new LcomRule(new LcomOptions());
 
@@ -177,7 +189,8 @@ final class LcomRuleTest extends TestCase
         self::assertCount(0, $violations);
     }
 
-    public function testAnalyzeSkipsClassWithoutLcomMetric(): void
+    #[Test]
+    public function itSkipsClassWithoutLcomMetric(): void
     {
         $rule = new LcomRule(new LcomOptions());
 
@@ -201,7 +214,8 @@ final class LcomRuleTest extends TestCase
 
     // Options tests
 
-    public function testOptionsFromArray(): void
+    #[Test]
+    public function itLoadsOptionsFromArray(): void
     {
         $options = LcomOptions::fromArray([
             'enabled' => false,
@@ -214,14 +228,16 @@ final class LcomRuleTest extends TestCase
         self::assertSame(5, $options->error);
     }
 
-    public function testOptionsFromEmptyArray(): void
+    #[Test]
+    public function itDisablesOptionsWhenLoadedFromEmptyArray(): void
     {
         $options = LcomOptions::fromArray([]);
 
         self::assertFalse($options->enabled);
     }
 
-    public function testOptionsDefaults(): void
+    #[Test]
+    public function itHasCorrectOptionDefaults(): void
     {
         $options = new LcomOptions();
 
@@ -230,8 +246,9 @@ final class LcomRuleTest extends TestCase
         self::assertSame(5, $options->error);
     }
 
+    #[Test]
     #[DataProvider('thresholdDataProvider')]
-    public function testThresholdBoundaries(
+    public function itRespectsBoundaryThresholds(
         int $lcom,
         int $warning,
         int $error,
@@ -282,7 +299,8 @@ final class LcomRuleTest extends TestCase
         yield 'above error threshold' => [6, 2, 4, Severity::Error];
     }
 
-    public function testGetCliAliases(): void
+    #[Test]
+    public function itGetsCliAliases(): void
     {
         $aliases = CliAliasReader::read(LcomRule::class);
 
@@ -294,7 +312,8 @@ final class LcomRuleTest extends TestCase
         self::assertSame('excludeMethods', $aliases['lcom-exclude-methods']);
     }
 
-    public function testFromArrayWithExcludeMethods(): void
+    #[Test]
+    public function itLoadsExcludeMethodsFromArray(): void
     {
         $options = LcomOptions::fromArray([
             'exclude_methods' => ['getName', 'getDescription'],
@@ -303,7 +322,8 @@ final class LcomRuleTest extends TestCase
         self::assertSame(['getName', 'getDescription'], $options->excludeMethods);
     }
 
-    public function testFromArrayWithExcludeMethodsSnakeCase(): void
+    #[Test]
+    public function itLoadsExcludeMethodsFromArraySnakeCase(): void
     {
         $options = LcomOptions::fromArray([
             'excludeMethods' => ['getName', 'getDescription'],
@@ -312,7 +332,8 @@ final class LcomRuleTest extends TestCase
         self::assertSame(['getName', 'getDescription'], $options->excludeMethods);
     }
 
-    public function testFromArrayWithExcludeMethodsString(): void
+    #[Test]
+    public function itLoadsExcludeMethodsFromArrayAsString(): void
     {
         $options = LcomOptions::fromArray([
             'exclude_methods' => 'getName',
@@ -321,7 +342,8 @@ final class LcomRuleTest extends TestCase
         self::assertSame(['getName'], $options->excludeMethods);
     }
 
-    public function testFromArrayWithExcludeMethodsNull(): void
+    #[Test]
+    public function itSetsExcludeMethodsToNullWhenNotProvided(): void
     {
         $options = LcomOptions::fromArray([
             'warning' => 3,
@@ -331,7 +353,8 @@ final class LcomRuleTest extends TestCase
         self::assertNull($options->excludeMethods);
     }
 
-    public function testWithOverridePreservesExcludeMethods(): void
+    #[Test]
+    public function itPreservesExcludeMethodsOnOverride(): void
     {
         $options = LcomOptions::fromArray([
             'exclude_methods' => ['getName', 'getDescription'],

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Reporting\Formatter;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
@@ -39,17 +40,20 @@ final class TextVerboseFormatterTest extends TestCase
         $this->plainContext = new FormatterContext(useColor: false, groupBy: GroupBy::File);
     }
 
-    public function testGetNameReturnsTextVerbose(): void
+    #[Test]
+    public function itReturnsTextVerboseName(): void
     {
         self::assertSame('text-verbose', $this->formatter->getName());
     }
 
-    public function testGetDefaultGroupByReturnsFile(): void
+    #[Test]
+    public function itReturnsDefaultGroupByFile(): void
     {
         self::assertSame(GroupBy::File, $this->formatter->getDefaultGroupBy());
     }
 
-    public function testDelegatesToTextFormatterWithDetailEnabled(): void
+    #[Test]
+    public function itDelegatesToTextFormatterWithDetailEnabled(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -77,7 +81,8 @@ final class TextVerboseFormatterTest extends TestCase
         self::assertSame($detailOutput, $verboseOutput);
     }
 
-    public function testFormatEmptyReport(): void
+    #[Test]
+    public function itFormatsEmptyReport(): void
     {
         $report = ReportBuilder::create()
             ->filesAnalyzed(42)
@@ -91,7 +96,8 @@ final class TextVerboseFormatterTest extends TestCase
         self::assertStringContainsString('0 error(s), 0 warning(s) in 42 file(s)', $output);
     }
 
-    public function testFormatGroupedByFile(): void
+    #[Test]
+    public function itFormatsGroupedByFile(): void
     {
         $report = $this->buildMultiFileReport();
         $output = $this->formatter->format($report, $this->plainContext);
@@ -106,7 +112,8 @@ final class TextVerboseFormatterTest extends TestCase
         self::assertStringContainsString('B', $output);
     }
 
-    public function testFormatGroupedByRule(): void
+    #[Test]
+    public function itFormatsGroupedByRule(): void
     {
         $context = new FormatterContext(useColor: false, groupBy: GroupBy::Rule, isGroupByExplicit: true);
         $report = $this->buildMultiFileReport();
@@ -117,7 +124,8 @@ final class TextVerboseFormatterTest extends TestCase
         self::assertStringContainsString('lcom (1)', $output);
     }
 
-    public function testFormatGroupedBySeverity(): void
+    #[Test]
+    public function itFormatsGroupedBySeverity(): void
     {
         $context = new FormatterContext(useColor: false, groupBy: GroupBy::Severity, isGroupByExplicit: true);
         $report = $this->buildMultiFileReport();
@@ -133,7 +141,8 @@ final class TextVerboseFormatterTest extends TestCase
         self::assertLessThan($posWarnings, $posErrors);
     }
 
-    public function testFormatFlat(): void
+    #[Test]
+    public function itFormatsFlat(): void
     {
         $context = new FormatterContext(useColor: false, groupBy: GroupBy::None, isGroupByExplicit: true);
         $report = $this->buildMultiFileReport();
@@ -145,7 +154,8 @@ final class TextVerboseFormatterTest extends TestCase
         self::assertStringContainsString('b.php', $output);
     }
 
-    public function testUsesHumanMessageWhenAvailable(): void
+    #[Test]
+    public function itUsesHumanMessageWhenAvailable(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -169,7 +179,8 @@ final class TextVerboseFormatterTest extends TestCase
         self::assertStringContainsString('too many code paths', $output);
     }
 
-    public function testFallsBackToMessageWhenHumanMessageNull(): void
+    #[Test]
+    public function itFallsBackToMessageWhenHumanMessageNull(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -192,7 +203,8 @@ final class TextVerboseFormatterTest extends TestCase
         self::assertStringContainsString('Cyclomatic complexity is 25, exceeds threshold of 10', $output);
     }
 
-    public function testDebtBreakdownOutput(): void
+    #[Test]
+    public function itOutputsDebtBreakdown(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(

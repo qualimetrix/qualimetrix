@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Reporting\Formatter;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
@@ -25,12 +26,14 @@ final class GitLabCodeQualityFormatterTest extends TestCase
         $this->formatter = new GitLabCodeQualityFormatter();
     }
 
-    public function testGetNameReturnsGitlab(): void
+    #[Test]
+    public function itReturnsGitlabAsName(): void
     {
         self::assertSame('gitlab', $this->formatter->getName());
     }
 
-    public function testFormatReturnsValidJson(): void
+    #[Test]
+    public function itReturnsValidJson(): void
     {
         $report = ReportBuilder::create()
             ->filesAnalyzed(10)
@@ -43,7 +46,8 @@ final class GitLabCodeQualityFormatterTest extends TestCase
         self::assertJson($output);
     }
 
-    public function testFormatEmptyReport(): void
+    #[Test]
+    public function itFormatsEmptyReport(): void
     {
         $report = ReportBuilder::create()
             ->filesAnalyzed(42)
@@ -59,7 +63,8 @@ final class GitLabCodeQualityFormatterTest extends TestCase
         self::assertSame([], $data);
     }
 
-    public function testFormatReportWithViolations(): void
+    #[Test]
+    public function itFormatsReportWithViolations(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -110,7 +115,8 @@ final class GitLabCodeQualityFormatterTest extends TestCase
         self::assertArrayHasKey('fingerprint', $issue2);
     }
 
-    public function testMapsSeverityCorrectly(): void
+    #[Test]
+    public function itMapsSeverityCorrectly(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -142,7 +148,8 @@ final class GitLabCodeQualityFormatterTest extends TestCase
         self::assertSame('major', $data[1]['severity']);
     }
 
-    public function testMapsInfoSeverityToInfo(): void
+    #[Test]
+    public function itMapsInfoSeverityToInfo(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -164,7 +171,8 @@ final class GitLabCodeQualityFormatterTest extends TestCase
         self::assertSame('info', $data[0]['severity']);
     }
 
-    public function testGeneratesStableFingerprint(): void
+    #[Test]
+    public function itGeneratesStableFingerprint(): void
     {
         $violation = new Violation(
             location: new Location('src/Service/UserService.php', 42),
@@ -197,7 +205,8 @@ final class GitLabCodeQualityFormatterTest extends TestCase
         self::assertMatchesRegularExpression('/^[a-f0-9]{32}$/', $data1[0]['fingerprint']);
     }
 
-    public function testDifferentViolationsHaveDifferentFingerprints(): void
+    #[Test]
+    public function itGeneratesDifferentFingerprintsForDifferentViolations(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -240,7 +249,8 @@ final class GitLabCodeQualityFormatterTest extends TestCase
         self::assertCount(3, $uniqueFingerprints);
     }
 
-    public function testSameLineViolationsHaveDifferentFingerprints(): void
+    #[Test]
+    public function itGeneratesDifferentFingerprintsForSameLineViolations(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -272,7 +282,8 @@ final class GitLabCodeQualityFormatterTest extends TestCase
         self::assertNotSame($data[0]['fingerprint'], $data[1]['fingerprint']);
     }
 
-    public function testFormatNamespaceLevelViolation(): void
+    #[Test]
+    public function itFormatsNamespaceLevelViolation(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -297,7 +308,8 @@ final class GitLabCodeQualityFormatterTest extends TestCase
         self::assertSame(1, $issue['location']['lines']['begin']);
     }
 
-    public function testFormatStructureMatchesGitLabSpec(): void
+    #[Test]
+    public function itProducesStructureMatchingGitLabSpec(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -339,7 +351,8 @@ final class GitLabCodeQualityFormatterTest extends TestCase
         self::assertCount(1, $lines);
     }
 
-    public function testCheckNameUsesViolationCode(): void
+    #[Test]
+    public function itUsesViolationCodeAsCheckName(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -362,7 +375,8 @@ final class GitLabCodeQualityFormatterTest extends TestCase
         self::assertSame('complexity.method', $issue['check_name']);
     }
 
-    public function testProjectLevelViolationUsesDescriptiveSyntheticPath(): void
+    #[Test]
+    public function itUsesDescriptiveSyntheticPathForProjectLevelViolation(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -389,12 +403,14 @@ final class GitLabCodeQualityFormatterTest extends TestCase
         self::assertNotSame('', $issue['location']['path']);
     }
 
-    public function testGetDefaultGroupBy(): void
+    #[Test]
+    public function itReturnsNoneAsDefaultGroupBy(): void
     {
         self::assertSame(GroupBy::None, $this->formatter->getDefaultGroupBy());
     }
 
-    public function testRelativizesAbsolutePathsWithBasePath(): void
+    #[Test]
+    public function itRelativizesAbsolutePathsWithBasePath(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -417,7 +433,8 @@ final class GitLabCodeQualityFormatterTest extends TestCase
         self::assertSame('src/Service/UserService.php', $data[0]['location']['path']);
     }
 
-    public function testAlreadyRelativePathUnchanged(): void
+    #[Test]
+    public function itKeepsAlreadyRelativePathUnchanged(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
@@ -440,7 +457,8 @@ final class GitLabCodeQualityFormatterTest extends TestCase
         self::assertSame('src/Service/UserService.php', $data[0]['location']['path']);
     }
 
-    public function testNoBasePathKeepsAbsolutePaths(): void
+    #[Test]
+    public function itKeepsAbsolutePathsWhenNoBasePathSet(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(

@@ -16,6 +16,7 @@ use PhpParser\Node\Scalar\InterpolatedString;
 use PhpParser\Node\Scalar\String_;
 use PhpParser\Node\Stmt\Echo_;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Metrics\Security\SuperglobalAnalyzer;
 use Qualimetrix\Metrics\Security\XssDetector;
@@ -32,7 +33,8 @@ final class XssDetectorTest extends TestCase
 
     // --- detectInEcho: direct superglobal ---
 
-    public function testDetectsEchoOfGetSuperglobal(): void
+    #[Test]
+    public function itDetectsEchoOfGetSuperglobal(): void
     {
         $echo = new Echo_([$this->createGetAccess('name')]);
 
@@ -44,7 +46,8 @@ final class XssDetectorTest extends TestCase
         self::assertStringContainsString('_GET', $locations[0]->context);
     }
 
-    public function testDetectsEchoOfPostSuperglobal(): void
+    #[Test]
+    public function itDetectsEchoOfPostSuperglobal(): void
     {
         $echo = new Echo_([$this->createPostAccess('data')]);
 
@@ -53,7 +56,8 @@ final class XssDetectorTest extends TestCase
         self::assertCount(1, $locations);
     }
 
-    public function testDetectsEchoOfMultipleSuperglobals(): void
+    #[Test]
+    public function itDetectsEchoOfMultipleSuperglobals(): void
     {
         $echo = new Echo_([
             $this->createGetAccess('a'),
@@ -67,7 +71,8 @@ final class XssDetectorTest extends TestCase
 
     // --- detectInEcho: sanitized (true negatives) ---
 
-    public function testNoDetectionForHtmlspecialcharsWrapped(): void
+    #[Test]
+    public function itDoesNotDetectHtmlspecialcharsWrapped(): void
     {
         $sanitized = new FuncCall(
             new Name('htmlspecialchars'),
@@ -80,7 +85,8 @@ final class XssDetectorTest extends TestCase
         self::assertCount(0, $locations);
     }
 
-    public function testNoDetectionForIntCast(): void
+    #[Test]
+    public function itDoesNotDetectForIntCast(): void
     {
         $cast = new Cast\Int_($this->createGetAccess('id'));
         $echo = new Echo_([$cast]);
@@ -90,7 +96,8 @@ final class XssDetectorTest extends TestCase
         self::assertCount(0, $locations);
     }
 
-    public function testNoDetectionForSafeVariable(): void
+    #[Test]
+    public function itDoesNotDetectForSafeVariable(): void
     {
         $echo = new Echo_([new Variable('name')]);
 
@@ -99,7 +106,8 @@ final class XssDetectorTest extends TestCase
         self::assertCount(0, $locations);
     }
 
-    public function testNoDetectionForNonDangerousSuperglobal(): void
+    #[Test]
+    public function itDoesNotDetectForNonDangerousSuperglobal(): void
     {
         // $_SESSION is not in the dangerous list
         $echo = new Echo_([new ArrayDimFetch(new Variable('_SESSION'), new String_('user'))]);
@@ -111,7 +119,8 @@ final class XssDetectorTest extends TestCase
 
     // --- detectInEcho: interpolated string ---
 
-    public function testDetectsEchoOfInterpolatedStringWithSuperglobal(): void
+    #[Test]
+    public function itDetectsEchoOfInterpolatedStringWithSuperglobal(): void
     {
         $interpolated = new InterpolatedString([
             new InterpolatedStringPart('Hello '),
@@ -124,7 +133,8 @@ final class XssDetectorTest extends TestCase
         self::assertCount(1, $locations);
     }
 
-    public function testNoDetectionForInterpolatedStringWithSafeVariable(): void
+    #[Test]
+    public function itDoesNotDetectInterpolatedStringWithSafeVariable(): void
     {
         $interpolated = new InterpolatedString([
             new InterpolatedStringPart('Hello '),
@@ -139,7 +149,8 @@ final class XssDetectorTest extends TestCase
 
     // --- detectInEcho: concatenation ---
 
-    public function testDetectsEchoOfConcatWithUnsanitizedSuperglobal(): void
+    #[Test]
+    public function itDetectsEchoOfConcatWithUnsanitizedSuperglobal(): void
     {
         $concat = new Concat(
             $this->createGetAccess('x'),
@@ -152,7 +163,8 @@ final class XssDetectorTest extends TestCase
         self::assertCount(1, $locations);
     }
 
-    public function testNoDetectionForConcatWithSanitizedSuperglobal(): void
+    #[Test]
+    public function itDoesNotDetectConcatWithSanitizedSuperglobal(): void
     {
         $sanitized = new FuncCall(
             new Name('htmlspecialchars'),
@@ -168,7 +180,8 @@ final class XssDetectorTest extends TestCase
 
     // --- detectInPrint ---
 
-    public function testDetectsPrintOfGetSuperglobal(): void
+    #[Test]
+    public function itDetectsPrintOfGetSuperglobal(): void
     {
         $print = new Print_($this->createGetAccess('name'));
 
@@ -179,7 +192,8 @@ final class XssDetectorTest extends TestCase
         self::assertStringContainsString('print', $locations[0]->context);
     }
 
-    public function testNoDetectionForPrintOfSanitized(): void
+    #[Test]
+    public function itDoesNotDetectPrintOfSanitized(): void
     {
         $sanitized = new FuncCall(
             new Name('htmlentities'),
@@ -192,7 +206,8 @@ final class XssDetectorTest extends TestCase
         self::assertCount(0, $locations);
     }
 
-    public function testDetectsPrintOfInterpolatedStringWithSuperglobal(): void
+    #[Test]
+    public function itDetectsPrintOfInterpolatedStringWithSuperglobal(): void
     {
         $interpolated = new InterpolatedString([
             new InterpolatedStringPart('Welcome '),
@@ -205,7 +220,8 @@ final class XssDetectorTest extends TestCase
         self::assertCount(1, $locations);
     }
 
-    public function testDetectsPrintOfConcatWithUnsanitizedSuperglobal(): void
+    #[Test]
+    public function itDetectsPrintOfConcatWithUnsanitizedSuperglobal(): void
     {
         $concat = new Concat(
             new String_('Hello '),
@@ -218,7 +234,8 @@ final class XssDetectorTest extends TestCase
         self::assertCount(1, $locations);
     }
 
-    public function testNoDetectionForPrintOfSafeVariable(): void
+    #[Test]
+    public function itDoesNotDetectPrintOfSafeVariable(): void
     {
         $print = new Print_(new Variable('safe'));
 
@@ -227,7 +244,8 @@ final class XssDetectorTest extends TestCase
         self::assertCount(0, $locations);
     }
 
-    public function testNoDetectionForPrintOfFloatCast(): void
+    #[Test]
+    public function itDoesNotDetectPrintOfFloatCast(): void
     {
         $cast = new Cast\Double($this->createGetAccess('price'));
         $print = new Print_($cast);

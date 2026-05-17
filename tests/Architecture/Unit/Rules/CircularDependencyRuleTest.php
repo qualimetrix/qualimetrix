@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Architecture\Unit\Rules;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Collection\Dependency\Cycle;
 use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
@@ -18,28 +19,32 @@ use Qualimetrix\Core\Violation\Severity;
 #[CoversClass(CircularDependencyRule::class)]
 final class CircularDependencyRuleTest extends TestCase
 {
-    public function testGetName(): void
+    #[Test]
+    public function itReturnsCorrectName(): void
     {
         $rule = new CircularDependencyRule(new CircularDependencyOptions());
 
         self::assertSame('architecture.circular-dependency', $rule->getName());
     }
 
-    public function testGetDescription(): void
+    #[Test]
+    public function itReturnsDescriptionContainingCircular(): void
     {
         $rule = new CircularDependencyRule(new CircularDependencyOptions());
 
         self::assertStringContainsString('circular', strtolower($rule->getDescription()));
     }
 
-    public function testGetCategory(): void
+    #[Test]
+    public function itReturnsArchitectureCategory(): void
     {
         $rule = new CircularDependencyRule(new CircularDependencyOptions());
 
         self::assertSame(RuleCategory::Architecture, $rule->getCategory());
     }
 
-    public function testGeneratesViolationForCycle(): void
+    #[Test]
+    public function itGeneratesViolationForCycle(): void
     {
         $cycles = [
             new Cycle($this->paths(['A', 'B']), $this->paths(['A', 'B', 'A'])),
@@ -61,7 +66,8 @@ final class CircularDependencyRuleTest extends TestCase
         self::assertStringContainsString('Circular dependency (2 classes)', $violations[0]->message);
     }
 
-    public function testErrorSeverityForDirectCycle(): void
+    #[Test]
+    public function itAssignsErrorSeverityForDirectCycle(): void
     {
         $cycles = [
             new Cycle($this->paths(['A', 'B']), $this->paths(['A', 'B', 'A'])), // Size 2
@@ -82,7 +88,8 @@ final class CircularDependencyRuleTest extends TestCase
         self::assertSame(Severity::Error, $violations[0]->severity);
     }
 
-    public function testWarningSeverityForTransitiveCycle(): void
+    #[Test]
+    public function itAssignsWarningSeverityForTransitiveCycle(): void
     {
         $cycles = [
             new Cycle($this->paths(['A', 'B', 'C']), $this->paths(['A', 'B', 'C', 'A'])), // Size 3
@@ -103,7 +110,8 @@ final class CircularDependencyRuleTest extends TestCase
         self::assertSame(Severity::Warning, $violations[0]->severity);
     }
 
-    public function testRespectsMaxCycleSize(): void
+    #[Test]
+    public function itRespectsMaxCycleSize(): void
     {
         $cycles = [
             new Cycle($this->paths(['A', 'B']), $this->paths(['A', 'B', 'A'])), // Size 2
@@ -125,7 +133,8 @@ final class CircularDependencyRuleTest extends TestCase
         self::assertCount(1, $violations);
     }
 
-    public function testDisabledReturnsEmpty(): void
+    #[Test]
+    public function itReturnsEmptyWhenDisabled(): void
     {
         $cycles = [
             new Cycle($this->paths(['A', 'B']), $this->paths(['A', 'B', 'A'])),
@@ -145,7 +154,8 @@ final class CircularDependencyRuleTest extends TestCase
         self::assertEmpty($violations);
     }
 
-    public function testReturnsEmptyWhenNoCycles(): void
+    #[Test]
+    public function itReturnsEmptyWhenNoCycles(): void
     {
         $rule = new CircularDependencyRule(new CircularDependencyOptions());
 
@@ -159,7 +169,8 @@ final class CircularDependencyRuleTest extends TestCase
         self::assertEmpty($violations);
     }
 
-    public function testMetricValueIsCycleSize(): void
+    #[Test]
+    public function itSetsMetricValueToCycleSize(): void
     {
         $cycles = [
             new Cycle($this->paths(['A', 'B', 'C']), $this->paths(['A', 'B', 'C', 'A'])),
@@ -180,7 +191,8 @@ final class CircularDependencyRuleTest extends TestCase
         self::assertSame(3, $violations[0]->metricValue);
     }
 
-    public function testOptionsFromArrayWithSnakeCase(): void
+    #[Test]
+    public function itCreatesOptionsFromArrayWithSnakeCase(): void
     {
         $options = CircularDependencyOptions::fromArray([
             'enabled' => true,
@@ -193,7 +205,8 @@ final class CircularDependencyRuleTest extends TestCase
         self::assertFalse($options->directAsError);
     }
 
-    public function testOptionsFromArrayWithCamelCase(): void
+    #[Test]
+    public function itCreatesOptionsFromArrayWithCamelCase(): void
     {
         $options = CircularDependencyOptions::fromArray([
             'enabled' => true,
@@ -206,7 +219,8 @@ final class CircularDependencyRuleTest extends TestCase
         self::assertTrue($options->directAsError);
     }
 
-    public function testOptionsFromArraySnakeCaseTakesPrecedence(): void
+    #[Test]
+    public function itGivesSnakeCasePrecedenceOverCamelCase(): void
     {
         $options = CircularDependencyOptions::fromArray([
             'max_cycle_size' => 5,
@@ -216,7 +230,8 @@ final class CircularDependencyRuleTest extends TestCase
         self::assertSame(5, $options->maxCycleSize);
     }
 
-    public function testSmallCycleRecommendationIncludesInterfaceGuidance(): void
+    #[Test]
+    public function itIncludesInterfaceGuidanceForSmallCycles(): void
     {
         $cycles = [
             new Cycle($this->paths(['A', 'B']), $this->paths(['A', 'B', 'A'])),
@@ -236,7 +251,8 @@ final class CircularDependencyRuleTest extends TestCase
         self::assertStringContainsString('Break by introducing an interface', $violations[0]->recommendation);
     }
 
-    public function testMediumCycleRecommendationIncludesAbstractionGuidance(): void
+    #[Test]
+    public function itIncludesAbstractionGuidanceForMediumCycles(): void
     {
         // 10 classes → medium category (6-20)
         $classNames = array_map(static fn(int $i): string => "Class{$i}", range(1, 10));
@@ -260,7 +276,8 @@ final class CircularDependencyRuleTest extends TestCase
         self::assertStringContainsString('extracting a shared abstraction layer', $violations[0]->recommendation);
     }
 
-    public function testLargeCycleHasWarningSeverityAndEntryPointGuidance(): void
+    #[Test]
+    public function itHasWarningSeverityAndEntryPointGuidanceForLargeCycles(): void
     {
         // 30 classes → large category (>20)
         $classNames = array_map(static fn(int $i): string => "Class{$i}", range(1, 30));
@@ -285,7 +302,8 @@ final class CircularDependencyRuleTest extends TestCase
         self::assertStringContainsString('focus on the entry-point classes', $violations[0]->recommendation);
     }
 
-    public function testRecommendationContainsStructuredJsonData(): void
+    #[Test]
+    public function itContainsStructuredJsonDataInRecommendation(): void
     {
         $cycles = [
             new Cycle($this->paths(['A', 'B', 'C']), $this->paths(['A', 'B', 'C', 'A'])),
@@ -320,7 +338,8 @@ final class CircularDependencyRuleTest extends TestCase
         self::assertSame('small', $decoded['category']);
     }
 
-    public function testLargeCycleStructuredDataHasLargeCategory(): void
+    #[Test]
+    public function itLabelsCategoryAsLargeForBigCycles(): void
     {
         // 30 classes → large category (>20)
         $classNames = array_map(static fn(int $i): string => "Class{$i}", range(1, 30));

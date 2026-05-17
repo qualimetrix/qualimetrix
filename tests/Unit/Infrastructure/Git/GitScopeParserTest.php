@@ -6,6 +6,7 @@ namespace Qualimetrix\Tests\Unit\Infrastructure\Git;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\Git\GitScope;
 use Qualimetrix\Infrastructure\Git\GitScopeParser;
@@ -25,8 +26,9 @@ final class GitScopeParserTest extends TestCase
      * @param non-empty-string $input
      * @param non-empty-string $expectedRef
      */
+    #[Test]
     #[DataProvider('validGitScopesProvider')]
-    public function testParsesValidGitScopes(string $input, string $expectedRef): void
+    public function itParsesValidGitScopes(string $input, string $expectedRef): void
     {
         $scope = $this->parser->parse($input);
 
@@ -52,8 +54,9 @@ final class GitScopeParserTest extends TestCase
     /**
      * @param non-empty-string $input
      */
+    #[Test]
     #[DataProvider('invalidGitScopesProvider')]
-    public function testReturnsNullForInvalidScopes(string $input): void
+    public function itReturnsNullForInvalidScopes(string $input): void
     {
         $scope = $this->parser->parse($input);
 
@@ -74,8 +77,9 @@ final class GitScopeParserTest extends TestCase
     /**
      * @param non-empty-string $input
      */
+    #[Test]
     #[DataProvider('validGitScopesProvider')]
-    public function testIsValidReturnsTrueForValidScopes(string $input, string $_expectedRef): void
+    public function itIsValidReturnsTrueForValidScopes(string $input, string $_expectedRef): void
     {
         self::assertTrue($this->parser->isValid($input));
     }
@@ -83,8 +87,9 @@ final class GitScopeParserTest extends TestCase
     /**
      * @param non-empty-string $input
      */
+    #[Test]
     #[DataProvider('invalidGitScopesProvider')]
-    public function testIsValidReturnsFalseForInvalidScopes(string $input): void
+    public function itIsValidReturnsFalseForInvalidScopes(string $input): void
     {
         self::assertFalse($this->parser->isValid($input));
     }

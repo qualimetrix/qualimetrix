@@ -9,6 +9,7 @@ use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\Declare_;
 use PhpParser\Node\Stmt\Namespace_;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Constraint\IsType;
 use PHPUnit\Framework\NativeType;
 use PHPUnit\Framework\TestCase;
@@ -29,7 +30,8 @@ final class PhpFileParserTest extends TestCase
         $this->fixturesPath = \dirname(__DIR__, 3) . '/Fixtures/Ast';
     }
 
-    public function testParseValidPhpFile(): void
+    #[Test]
+    public function itParsesValidPhpFile(): void
     {
         $file = new SplFileInfo($this->fixturesPath . '/ValidClass.php');
 
@@ -39,7 +41,8 @@ final class PhpFileParserTest extends TestCase
         self::assertContainsOnlyInstancesOf(Node::class, $ast);
     }
 
-    public function testParseReturnsCorrectAstStructure(): void
+    #[Test]
+    public function itParsesAndReturnsCorrectAstStructure(): void
     {
         $file = new SplFileInfo($this->fixturesPath . '/ValidClass.php');
 
@@ -62,7 +65,8 @@ final class PhpFileParserTest extends TestCase
         self::assertSame('ValidClass', $classNode->name->toString());
     }
 
-    public function testParseMinimalPhpFile(): void
+    #[Test]
+    public function itParsesMinimalPhpFile(): void
     {
         $file = new SplFileInfo($this->fixturesPath . '/empty_file.php');
 
@@ -74,7 +78,8 @@ final class PhpFileParserTest extends TestCase
         self::assertInstanceOf(Declare_::class, $ast[0]);
     }
 
-    public function testParseThrowsExceptionForInvalidSyntax(): void
+    #[Test]
+    public function itThrowsExceptionForInvalidSyntax(): void
     {
         $file = new SplFileInfo($this->fixturesPath . '/invalid_syntax.php');
 
@@ -84,7 +89,8 @@ final class PhpFileParserTest extends TestCase
         $this->parser->parse($file);
     }
 
-    public function testParseThrowsExceptionForNonExistentFile(): void
+    #[Test]
+    public function itThrowsExceptionForNonExistentFile(): void
     {
         $file = new SplFileInfo($this->fixturesPath . '/nonexistent.php');
 
@@ -94,7 +100,8 @@ final class PhpFileParserTest extends TestCase
         $this->parser->parse($file);
     }
 
-    public function testParseExceptionContainsFilePath(): void
+    #[Test]
+    public function itIncludesFilePathInParseException(): void
     {
         $filePath = $this->fixturesPath . '/nonexistent.php';
         $file = new SplFileInfo($filePath);
@@ -108,7 +115,8 @@ final class PhpFileParserTest extends TestCase
         }
     }
 
-    public function testParserCanBeInjected(): void
+    #[Test]
+    public function itAllowsCustomParserInjection(): void
     {
         // Test that a custom parser can be injected (for testing purposes)
         $mockParser = $this->createMock(\PhpParser\Parser::class);
@@ -125,7 +133,8 @@ final class PhpFileParserTest extends TestCase
         self::assertSame([], $ast);
     }
 
-    public function testParserThrowsExceptionWhenParserReturnsNull(): void
+    #[Test]
+    public function itThrowsExceptionWhenParserReturnsNull(): void
     {
         $mockParser = self::createStub(\PhpParser\Parser::class);
         $mockParser->method('parse')
@@ -140,7 +149,8 @@ final class PhpFileParserTest extends TestCase
         $fileParser->parse($file);
     }
 
-    public function testParserPreservesPreviousExceptionOnError(): void
+    #[Test]
+    public function itPreservesPreviousExceptionOnParseError(): void
     {
         $originalException = new RuntimeException('Original error');
 

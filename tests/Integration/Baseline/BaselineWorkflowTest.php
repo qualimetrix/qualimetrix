@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Integration\Baseline;
 
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Baseline\BaselineGenerator;
 use Qualimetrix\Baseline\BaselineLoader;
@@ -47,7 +48,8 @@ final class BaselineWorkflowTest extends TestCase
         }
     }
 
-    public function testCompleteBaselineWorkflow(): void
+    #[Test]
+    public function itExecutesCompleteBaselineWorkflow(): void
     {
         // Create test violations
         $violations = [
@@ -113,7 +115,8 @@ final class BaselineWorkflowTest extends TestCase
         self::assertTrue($filter->shouldInclude($newViolation));
     }
 
-    public function testResolvedViolationsDetection(): void
+    #[Test]
+    public function itDetectsResolvedViolations(): void
     {
         // Create initial violations and baseline
         $hasher = new ViolationHasher();
@@ -168,7 +171,8 @@ final class BaselineWorkflowTest extends TestCase
         self::assertCount(1, $resolved[$methodKey]);
     }
 
-    public function testFilePathPortabilityRoundtrip(): void
+    #[Test]
+    public function itRoundtripsFilePathPortability(): void
     {
         $projectRoot = $this->tempDir;
 
@@ -215,7 +219,8 @@ final class BaselineWorkflowTest extends TestCase
         self::assertFalse($filter->shouldInclude($violations[1]), 'Method-level violation should be filtered by baseline');
     }
 
-    public function testStableHashAcrossLineChanges(): void
+    #[Test]
+    public function itProducesStableHashAcrossLineChanges(): void
     {
         $hasher = new ViolationHasher();
 
@@ -242,7 +247,8 @@ final class BaselineWorkflowTest extends TestCase
         self::assertSame($hasher->hash($violation1), $hasher->hash($violation2));
     }
 
-    public function testStableHashAcrossValueChanges(): void
+    #[Test]
+    public function itProducesStableHashAcrossValueChanges(): void
     {
         $hasher = new ViolationHasher();
 
@@ -269,7 +275,8 @@ final class BaselineWorkflowTest extends TestCase
         self::assertSame($hasher->hash($violation1), $hasher->hash($violation2));
     }
 
-    public function testHashChangesOnMethodRename(): void
+    #[Test]
+    public function itChangesHashOnMethodRename(): void
     {
         $hasher = new ViolationHasher();
 

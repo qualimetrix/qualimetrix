@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Rules\Size;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
@@ -20,19 +21,22 @@ use Qualimetrix\Rules\Size\PropertyCountRule;
 #[CoversClass(PropertyCountOptions::class)]
 final class PropertyCountRuleTest extends TestCase
 {
-    public function testGetName(): void
+    #[Test]
+    public function itGetsName(): void
     {
         $rule = new PropertyCountRule(new PropertyCountOptions());
         self::assertSame('size.property-count', $rule->getName());
     }
 
-    public function testGetCategory(): void
+    #[Test]
+    public function itGetsCategory(): void
     {
         $rule = new PropertyCountRule(new PropertyCountOptions());
         self::assertSame(RuleCategory::Size, $rule->getCategory());
     }
 
-    public function testNoViolationBelowThreshold(): void
+    #[Test]
+    public function itProducesNoViolationBelowThreshold(): void
     {
         $rule = new PropertyCountRule(new PropertyCountOptions(
             warning: 10,
@@ -45,7 +49,8 @@ final class PropertyCountRuleTest extends TestCase
         self::assertCount(0, $violations);
     }
 
-    public function testWarningAboveWarningThreshold(): void
+    #[Test]
+    public function itGeneratesWarningAboveWarningThreshold(): void
     {
         $rule = new PropertyCountRule(new PropertyCountOptions(
             warning: 10,
@@ -60,7 +65,8 @@ final class PropertyCountRuleTest extends TestCase
         self::assertStringContainsString('Property count is 12, exceeds threshold of 10. Consider splitting the class or using composition', $violations[0]->message);
     }
 
-    public function testErrorAboveErrorThreshold(): void
+    #[Test]
+    public function itGeneratesErrorAboveErrorThreshold(): void
     {
         $rule = new PropertyCountRule(new PropertyCountOptions(
             warning: 10,
@@ -75,7 +81,8 @@ final class PropertyCountRuleTest extends TestCase
         self::assertStringContainsString('Property count is 18, exceeds threshold of 15. Consider splitting the class or using composition', $violations[0]->message);
     }
 
-    public function testCustomThresholds(): void
+    #[Test]
+    public function itRespectsCustomThresholds(): void
     {
         $rule = new PropertyCountRule(new PropertyCountOptions(
             warning: 5,
@@ -99,7 +106,8 @@ final class PropertyCountRuleTest extends TestCase
         self::assertSame(Severity::Error, $violations[0]->severity);
     }
 
-    public function testViolationHasCorrectSymbolPath(): void
+    #[Test]
+    public function itSetsCorrectSymbolPathOnViolation(): void
     {
         $rule = new PropertyCountRule(new PropertyCountOptions(
             warning: 10,
@@ -120,7 +128,8 @@ final class PropertyCountRuleTest extends TestCase
         self::assertSame('User', $symbolPath->type);
     }
 
-    public function testNoViolationWhenPropertyCountIsNull(): void
+    #[Test]
+    public function itProducesNoViolationWhenPropertyCountIsNull(): void
     {
         $rule = new PropertyCountRule(new PropertyCountOptions(
             warning: 10,
@@ -149,7 +158,8 @@ final class PropertyCountRuleTest extends TestCase
         self::assertCount(0, $violations);
     }
 
-    public function testDefaultThresholds(): void
+    #[Test]
+    public function itAppliesDefaultThresholds(): void
     {
         $rule = new PropertyCountRule(new PropertyCountOptions());
 
@@ -182,7 +192,8 @@ final class PropertyCountRuleTest extends TestCase
         self::assertSame(Severity::Error, $violations[0]->severity);
     }
 
-    public function testReadonlyClassIsExcludedByDefault(): void
+    #[Test]
+    public function itExcludesReadonlyClassByDefault(): void
     {
         $rule = new PropertyCountRule(new PropertyCountOptions(
             warning: 10,
@@ -196,7 +207,8 @@ final class PropertyCountRuleTest extends TestCase
         self::assertCount(0, $violations, 'Readonly class should be excluded when excludeReadonly is true');
     }
 
-    public function testReadonlyClassNotExcludedWhenFilterDisabled(): void
+    #[Test]
+    public function itDoesNotExcludeReadonlyClassWhenFilterDisabled(): void
     {
         $rule = new PropertyCountRule(new PropertyCountOptions(
             warning: 10,
@@ -211,7 +223,8 @@ final class PropertyCountRuleTest extends TestCase
         self::assertSame(Severity::Warning, $violations[0]->severity);
     }
 
-    public function testPromotedOnlyClassIsExcludedByDefault(): void
+    #[Test]
+    public function itExcludesPromotedOnlyClassByDefault(): void
     {
         $rule = new PropertyCountRule(new PropertyCountOptions(
             warning: 10,
@@ -225,7 +238,8 @@ final class PropertyCountRuleTest extends TestCase
         self::assertCount(0, $violations, 'Promoted-only class should be excluded when excludePromotedOnly is true');
     }
 
-    public function testPromotedOnlyClassNotExcludedWhenFilterDisabled(): void
+    #[Test]
+    public function itDoesNotExcludePromotedOnlyClassWhenFilterDisabled(): void
     {
         $rule = new PropertyCountRule(new PropertyCountOptions(
             warning: 10,
@@ -240,7 +254,8 @@ final class PropertyCountRuleTest extends TestCase
         self::assertSame(Severity::Warning, $violations[0]->severity);
     }
 
-    public function testBothFiltersDisabledProducesViolations(): void
+    #[Test]
+    public function itProducesViolationsWhenBothFiltersDisabled(): void
     {
         $rule = new PropertyCountRule(new PropertyCountOptions(
             warning: 10,

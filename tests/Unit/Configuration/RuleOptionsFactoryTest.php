@@ -31,7 +31,8 @@ final class RuleOptionsFactoryTest extends TestCase
         $this->factory = new RuleOptionsFactory($this->registry);
     }
 
-    public function testCreateWithDefaults(): void
+    #[Test]
+    public function itCreatesWithDefaults(): void
     {
         /** @var TestRuleOptions $options */
         $options = $this->factory->create('test-rule', TestRuleOptions::class);
@@ -43,7 +44,8 @@ final class RuleOptionsFactoryTest extends TestCase
         self::assertTrue($options->countNullsafe);
     }
 
-    public function testCreateWithConfigFileOptions(): void
+    #[Test]
+    public function itCreatesWithConfigFileOptions(): void
     {
         $this->registry->setConfigFileOptions([
             'test-rule' => [
@@ -63,7 +65,8 @@ final class RuleOptionsFactoryTest extends TestCase
         self::assertTrue($options->countNullsafe);
     }
 
-    public function testCreateWithCliOptions(): void
+    #[Test]
+    public function itCreatesWithCliOptions(): void
     {
         $this->registry->addCliOption('test-rule', 'warningThreshold', 25);
         $this->registry->addCliOption('test-rule', 'countNullsafe', false);
@@ -78,7 +81,8 @@ final class RuleOptionsFactoryTest extends TestCase
         self::assertSame(20, $options->errorThreshold);
     }
 
-    public function testCliOptionsOverrideConfigFile(): void
+    #[Test]
+    public function itCliOptionsOverrideConfigFile(): void
     {
         $this->registry->setConfigFileOptions([
             'test-rule' => [
@@ -96,7 +100,8 @@ final class RuleOptionsFactoryTest extends TestCase
         self::assertSame(25, $options->warningThreshold);
     }
 
-    public function testSetCliOptions(): void
+    #[Test]
+    public function itSetsCliOptions(): void
     {
         $this->registry->setCliOptions('test-rule', [
             'warningThreshold' => 50,
@@ -111,7 +116,8 @@ final class RuleOptionsFactoryTest extends TestCase
         self::assertSame(100, $options->errorThreshold);
     }
 
-    public function testGetConfigFileOptions(): void
+    #[Test]
+    public function itGetsConfigFileOptions(): void
     {
         $this->registry->setConfigFileOptions([
             'rule-a' => ['enabled' => false],
@@ -123,7 +129,8 @@ final class RuleOptionsFactoryTest extends TestCase
         self::assertSame(['rule-a' => ['enabled' => false], 'rule-b' => ['enabled' => true]], $options);
     }
 
-    public function testGetCliOptions(): void
+    #[Test]
+    public function itGetsCliOptions(): void
     {
         $this->registry->addCliOption('rule-a', 'opt1', 'value1');
         $this->registry->addCliOption('rule-b', 'opt2', 'value2');
@@ -136,7 +143,8 @@ final class RuleOptionsFactoryTest extends TestCase
         ], $options);
     }
 
-    public function testReset(): void
+    #[Test]
+    public function itResetsState(): void
     {
         $this->registry->setConfigFileOptions(['rule' => ['opt' => 'val']]);
         $this->registry->addCliOption('rule', 'opt2', 'val2');
@@ -147,7 +155,8 @@ final class RuleOptionsFactoryTest extends TestCase
         self::assertSame([], $this->registry->getCliOptions());
     }
 
-    public function testCreateThrowsForNonExistentClass(): void
+    #[Test]
+    public function itThrowsForNonExistentClass(): void
     {
         self::expectException(InvalidArgumentException::class);
         self::expectExceptionMessage('does not exist');
@@ -156,7 +165,8 @@ final class RuleOptionsFactoryTest extends TestCase
         $this->factory->create('test-rule', 'NonExistent\\Class');
     }
 
-    public function testCreateThrowsForNonRuleOptionsClass(): void
+    #[Test]
+    public function itThrowsForNonRuleOptionsClass(): void
     {
         self::expectException(InvalidArgumentException::class);
         self::expectExceptionMessage('must implement');
@@ -165,7 +175,8 @@ final class RuleOptionsFactoryTest extends TestCase
         $this->factory->create('test-rule', stdClass::class);
     }
 
-    public function testNormalizesSnakeCaseKeys(): void
+    #[Test]
+    public function itNormalizesSnakeCaseKeys(): void
     {
         $this->registry->setConfigFileOptions([
             'test-rule' => [
@@ -182,7 +193,8 @@ final class RuleOptionsFactoryTest extends TestCase
         self::assertFalse($options->countNullsafe);
     }
 
-    public function testNormalizesKebabCaseKeys(): void
+    #[Test]
+    public function itNormalizesKebabCaseKeys(): void
     {
         $this->registry->setConfigFileOptions([
             'test-rule' => [

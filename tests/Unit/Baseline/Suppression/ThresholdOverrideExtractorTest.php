@@ -8,6 +8,7 @@ use PhpParser\Comment\Doc;
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\ClassMethod;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Baseline\Suppression\ThresholdOverrideExtractionResult;
 use Qualimetrix\Baseline\Suppression\ThresholdOverrideExtractor;
@@ -29,7 +30,8 @@ final class ThresholdOverrideExtractorTest extends TestCase
         ]);
     }
 
-    public function testExtractsShorthandSyntax(): void
+    #[Test]
+    public function itExtractsShorthandSyntax(): void
     {
         $node = $this->createClassNodeWithDoc(
             <<<'DOC'
@@ -51,7 +53,8 @@ final class ThresholdOverrideExtractorTest extends TestCase
         self::assertSame(50, $overrides[0]->endLine);
     }
 
-    public function testExtractsExplicitSyntaxBothValues(): void
+    #[Test]
+    public function itExtractsExplicitSyntaxBothValues(): void
     {
         $node = $this->createClassNodeWithDoc(
             <<<'DOC'
@@ -71,7 +74,8 @@ final class ThresholdOverrideExtractorTest extends TestCase
         self::assertSame(25, $overrides[0]->error);
     }
 
-    public function testExtractsExplicitSyntaxWarningOnly(): void
+    #[Test]
+    public function itExtractsExplicitSyntaxWarningOnly(): void
     {
         $node = $this->createClassNodeWithDoc(
             <<<'DOC'
@@ -90,7 +94,8 @@ final class ThresholdOverrideExtractorTest extends TestCase
         self::assertNull($overrides[0]->error);
     }
 
-    public function testExtractsExplicitSyntaxErrorOnly(): void
+    #[Test]
+    public function itExtractsExplicitSyntaxErrorOnly(): void
     {
         $node = $this->createClassNodeWithDoc(
             <<<'DOC'
@@ -109,7 +114,8 @@ final class ThresholdOverrideExtractorTest extends TestCase
         self::assertSame(25, $overrides[0]->error);
     }
 
-    public function testExtractsFloatThresholds(): void
+    #[Test]
+    public function itExtractsFloatThresholds(): void
     {
         $node = $this->createClassNodeWithDoc(
             <<<'DOC'
@@ -128,7 +134,8 @@ final class ThresholdOverrideExtractorTest extends TestCase
         self::assertSame(0.8, $overrides[0]->error);
     }
 
-    public function testExtractsFloatExplicitThresholds(): void
+    #[Test]
+    public function itExtractsFloatExplicitThresholds(): void
     {
         $node = $this->createClassNodeWithDoc(
             <<<'DOC'
@@ -147,7 +154,8 @@ final class ThresholdOverrideExtractorTest extends TestCase
         self::assertSame(0.9, $overrides[0]->error);
     }
 
-    public function testExtractsMultipleAnnotations(): void
+    #[Test]
+    public function itExtractsMultipleAnnotations(): void
     {
         $node = $this->createClassNodeWithDoc(
             <<<'DOC'
@@ -167,7 +175,8 @@ final class ThresholdOverrideExtractorTest extends TestCase
         self::assertSame('coupling.cbo', $overrides[1]->rulePattern);
     }
 
-    public function testExtractsWildcardPattern(): void
+    #[Test]
+    public function itExtractsWildcardPattern(): void
     {
         $node = $this->createClassNodeWithDoc(
             <<<'DOC'
@@ -187,7 +196,8 @@ final class ThresholdOverrideExtractorTest extends TestCase
         self::assertSame(30, $overrides[0]->error);
     }
 
-    public function testSkipsInvalidSyntax(): void
+    #[Test]
+    public function itSkipsInvalidSyntax(): void
     {
         $node = $this->createClassNodeWithDoc(
             <<<'DOC'
@@ -204,7 +214,8 @@ final class ThresholdOverrideExtractorTest extends TestCase
         self::assertCount(0, $overrides);
     }
 
-    public function testSkipsNegativeValues(): void
+    #[Test]
+    public function itSkipsNegativeValues(): void
     {
         $node = $this->createClassNodeWithDoc(
             <<<'DOC'
@@ -231,7 +242,8 @@ final class ThresholdOverrideExtractorTest extends TestCase
         self::assertSame(10, $overrides[0]->error);
     }
 
-    public function testSkipsWarningGreaterThanError(): void
+    #[Test]
+    public function itSkipsWarningGreaterThanError(): void
     {
         $node = $this->createClassNodeWithDoc(
             <<<'DOC'
@@ -248,7 +260,8 @@ final class ThresholdOverrideExtractorTest extends TestCase
         self::assertCount(0, $overrides);
     }
 
-    public function testReturnsEmptyForNoDocComment(): void
+    #[Test]
+    public function itReturnsEmptyForNoDocComment(): void
     {
         $node = new Class_('Foo');
         // No docblock
@@ -258,7 +271,8 @@ final class ThresholdOverrideExtractorTest extends TestCase
         self::assertCount(0, $overrides);
     }
 
-    public function testReturnsEmptyForDocCommentWithoutAnnotation(): void
+    #[Test]
+    public function itReturnsEmptyForDocCommentWithoutAnnotation(): void
     {
         $node = $this->createClassNodeWithDoc(
             <<<'DOC'
@@ -275,7 +289,8 @@ final class ThresholdOverrideExtractorTest extends TestCase
         self::assertCount(0, $overrides);
     }
 
-    public function testExtractsFromMethodDocblock(): void
+    #[Test]
+    public function itExtractsFromMethodDocblock(): void
     {
         $docComment = new Doc(
             <<<'DOC'
@@ -302,7 +317,8 @@ final class ThresholdOverrideExtractorTest extends TestCase
         self::assertSame(40, $overrides[0]->endLine);
     }
 
-    public function testExtractsPrefixPattern(): void
+    #[Test]
+    public function itExtractsPrefixPattern(): void
     {
         $node = $this->createClassNodeWithDoc(
             <<<'DOC'
@@ -327,7 +343,8 @@ final class ThresholdOverrideExtractorTest extends TestCase
     // Diagnostic tests — extractWithDiagnostics()
     // =====================================================================
 
-    public function testDiagnosticForInvalidSyntax(): void
+    #[Test]
+    public function itDiagnosticForInvalidSyntax(): void
     {
         $node = $this->createClassNodeWithDoc(
             <<<'DOC'
@@ -349,7 +366,8 @@ final class ThresholdOverrideExtractorTest extends TestCase
         self::assertStringContainsString('not-a-number', $result->diagnostics[0]->message);
     }
 
-    public function testDiagnosticForWarningGreaterThanError(): void
+    #[Test]
+    public function itDiagnosticForWarningGreaterThanError(): void
     {
         $node = $this->createClassNodeWithDoc(
             <<<'DOC'
@@ -369,7 +387,8 @@ final class ThresholdOverrideExtractorTest extends TestCase
         self::assertStringContainsString('warning threshold (25) must not exceed error threshold (10)', $result->diagnostics[0]->message);
     }
 
-    public function testDiagnosticForWarningGreaterThanErrorWithFloats(): void
+    #[Test]
+    public function itDiagnosticForWarningGreaterThanErrorWithFloats(): void
     {
         $node = $this->createClassNodeWithDoc(
             <<<'DOC'
@@ -388,7 +407,8 @@ final class ThresholdOverrideExtractorTest extends TestCase
         self::assertStringContainsString('warning threshold (0.9) must not exceed error threshold (0.5)', $result->diagnostics[0]->message);
     }
 
-    public function testDiagnosticForDuplicateRuleAnnotation(): void
+    #[Test]
+    public function itDiagnosticForDuplicateRuleAnnotation(): void
     {
         $node = $this->createClassNodeWithDoc(
             <<<'DOC'
@@ -410,7 +430,8 @@ final class ThresholdOverrideExtractorTest extends TestCase
         self::assertStringContainsString('complexity.cyclomatic', $result->diagnostics[0]->message);
     }
 
-    public function testDiagnosticForDuplicateRuleDoesNotAffectDifferentRules(): void
+    #[Test]
+    public function itDiagnosticForDuplicateRuleDoesNotAffectDifferentRules(): void
     {
         $node = $this->createClassNodeWithDoc(
             <<<'DOC'
@@ -429,7 +450,8 @@ final class ThresholdOverrideExtractorTest extends TestCase
         self::assertCount(0, $result->diagnostics);
     }
 
-    public function testNoDiagnosticsForValidAnnotations(): void
+    #[Test]
+    public function itNoDiagnosticsForValidAnnotations(): void
     {
         $node = $this->createClassNodeWithDoc(
             <<<'DOC'
@@ -447,7 +469,8 @@ final class ThresholdOverrideExtractorTest extends TestCase
         self::assertCount(0, $result->diagnostics);
     }
 
-    public function testNoDiagnosticsForNoDocComment(): void
+    #[Test]
+    public function itNoDiagnosticsForNoDocComment(): void
     {
         $node = new Class_('Foo');
 
@@ -457,7 +480,8 @@ final class ThresholdOverrideExtractorTest extends TestCase
         self::assertCount(0, $result->diagnostics);
     }
 
-    public function testNoDiagnosticsForDocCommentWithoutAnnotation(): void
+    #[Test]
+    public function itNoDiagnosticsForDocCommentWithoutAnnotation(): void
     {
         $node = $this->createClassNodeWithDoc(
             <<<'DOC'
@@ -475,7 +499,8 @@ final class ThresholdOverrideExtractorTest extends TestCase
         self::assertCount(0, $result->diagnostics);
     }
 
-    public function testMultipleDiagnosticsCollected(): void
+    #[Test]
+    public function itMultipleDiagnosticsCollected(): void
     {
         $node = $this->createClassNodeWithDoc(
             <<<'DOC'
@@ -496,7 +521,8 @@ final class ThresholdOverrideExtractorTest extends TestCase
         self::assertStringContainsString('invalid syntax', $result->diagnostics[1]->message);
     }
 
-    public function testMixedValidAndInvalidAnnotations(): void
+    #[Test]
+    public function itMixedValidAndInvalidAnnotations(): void
     {
         $node = $this->createClassNodeWithDoc(
             <<<'DOC'
@@ -519,7 +545,8 @@ final class ThresholdOverrideExtractorTest extends TestCase
         self::assertStringContainsString('coupling.cbo', $result->diagnostics[0]->message);
     }
 
-    public function testBacktickEscapedThresholdIsNotExtracted(): void
+    #[Test]
+    public function itBacktickEscapedThresholdIsNotExtracted(): void
     {
         $node = $this->createClassNodeWithDoc(
             <<<'DOC'
@@ -536,7 +563,8 @@ final class ThresholdOverrideExtractorTest extends TestCase
         self::assertEmpty($overrides);
     }
 
-    public function testMixedRealAndBacktickEscapedThresholds(): void
+    #[Test]
+    public function itMixedRealAndBacktickEscapedThresholds(): void
     {
         $node = $this->createClassNodeWithDoc(
             <<<'DOC'
@@ -556,7 +584,8 @@ final class ThresholdOverrideExtractorTest extends TestCase
         self::assertSame(15, $overrides[0]->warning);
     }
 
-    public function testBacktickEscapedThresholdProducesNoDiagnostics(): void
+    #[Test]
+    public function itBacktickEscapedThresholdProducesNoDiagnostics(): void
     {
         $node = $this->createClassNodeWithDoc(
             <<<'DOC'

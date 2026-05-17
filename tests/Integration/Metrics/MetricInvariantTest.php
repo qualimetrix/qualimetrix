@@ -62,7 +62,7 @@ final class MetricInvariantTest extends TestCase
     // ──────────────────────────────────────────────────────────────────
 
     #[Test]
-    public function testLeafNamespaceSumEqualsClassTotal(): void
+    public function itVerifiesLeafNamespaceSumEqualsClassTotal(): void
     {
         foreach (self::$namespaceTree->getLeaves() as $ns) {
             if (!$this->isFixtureNamespace($ns)) {
@@ -122,7 +122,7 @@ final class MetricInvariantTest extends TestCase
     // ──────────────────────────────────────────────────────────────────
 
     #[Test]
-    public function testParentNamespaceSumEqualsDescendantTotal(): void
+    public function itVerifiesParentNamespaceSumEqualsDescendantTotal(): void
     {
         foreach (self::$namespaceTree->getParentNamespaces() as $parentNs) {
             if (!$this->isFixtureNamespace($parentNs)) {
@@ -177,7 +177,7 @@ final class MetricInvariantTest extends TestCase
     // ──────────────────────────────────────────────────────────────────
 
     #[Test]
-    public function testProjectLocSumEqualsFileLocTotal(): void
+    public function itVerifiesProjectLocSumEqualsFileLocTotal(): void
     {
         $projectBag = self::$repository->get(SymbolPath::forProject());
         $projectLocSum = $projectBag->get('loc.sum');
@@ -204,7 +204,7 @@ final class MetricInvariantTest extends TestCase
     // ──────────────────────────────────────────────────────────────────
 
     #[Test]
-    public function testProjectClassCountEqualsFileTotal(): void
+    public function itVerifiesProjectClassCountEqualsFileTotal(): void
     {
         $projectBag = self::$repository->get(SymbolPath::forProject());
         $projectClassCountSum = $projectBag->get('classCount.sum');
@@ -232,7 +232,7 @@ final class MetricInvariantTest extends TestCase
     // ──────────────────────────────────────────────────────────────────
 
     #[Test]
-    public function testNamespaceMaxEqualsClassMax(): void
+    public function itVerifiesNamespaceMaxEqualsClassMax(): void
     {
         foreach (self::$namespaceTree->getAllNamespaces() as $ns) {
             if (!$this->isFixtureNamespace($ns)) {
@@ -290,7 +290,7 @@ final class MetricInvariantTest extends TestCase
     // ──────────────────────────────────────────────────────────────────
 
     #[Test]
-    public function testSymbolMethodCountMatchesActual(): void
+    public function itVerifiesSymbolMethodCountMatchesActual(): void
     {
         foreach (self::$namespaceTree->getAllNamespaces() as $ns) {
             if (!$this->isFixtureNamespace($ns)) {
@@ -354,7 +354,7 @@ final class MetricInvariantTest extends TestCase
     // ──────────────────────────────────────────────────────────────────
 
     #[Test]
-    public function testSymbolClassCountMatchesActual(): void
+    public function itVerifiesSymbolClassCountMatchesActual(): void
     {
         foreach (self::$namespaceTree->getAllNamespaces() as $ns) {
             if (!$this->isFixtureNamespace($ns)) {
@@ -412,7 +412,7 @@ final class MetricInvariantTest extends TestCase
     // ──────────────────────────────────────────────────────────────────
 
     #[Test]
-    public function testProjectSymbolCountEqualsLeafNsTotal(): void
+    public function itVerifiesProjectSymbolCountEqualsLeafNsTotal(): void
     {
         $projectBag = self::$repository->get(SymbolPath::forProject());
         $projectSymbolClassCount = $projectBag->get(AggregationMeta::SYMBOL_CLASS_COUNT);
@@ -462,7 +462,7 @@ final class MetricInvariantTest extends TestCase
     // ──────────────────────────────────────────────────────────────────
 
     #[Test]
-    public function testCrossFieldConsistency(): void
+    public function itVerifiesCrossFieldConsistency(): void
     {
         // At namespace level, ccn.avg is the average over all "source" values:
         // class-level ccn.sum for each class, plus raw ccn for each standalone function.
@@ -521,7 +521,7 @@ final class MetricInvariantTest extends TestCase
     // ──────────────────────────────────────────────────────────────────
 
     #[Test]
-    public function testPercentileBounds(): void
+    public function itVerifiesPercentileBounds(): void
     {
         // p95 must be within [min, max] range (not necessarily >= avg for skewed distributions)
         $symbolPaths = [];
@@ -562,7 +562,7 @@ final class MetricInvariantTest extends TestCase
     // ──────────────────────────────────────────────────────────────────
 
     #[Test]
-    public function testNamespaceCouplingConsistency(): void
+    public function itVerifiesNamespaceCouplingConsistency(): void
     {
         foreach (self::$namespaceTree->getLeaves() as $ns) {
             if (!$this->isFixtureNamespace($ns)) {
@@ -593,7 +593,7 @@ final class MetricInvariantTest extends TestCase
     // ──────────────────────────────────────────────────────────────────
 
     #[Test]
-    public function testNonAdditiveMetricsUseCorrectStrategy(): void
+    public function itVerifiesNonAdditiveMetricsUseCorrectAggregationStrategy(): void
     {
         $checked = false;
 

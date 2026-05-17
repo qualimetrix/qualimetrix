@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Core\Metric;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\DataBag;
 use Qualimetrix\Core\Metric\MetricBag;
@@ -13,7 +14,8 @@ use RuntimeException;
 #[CoversClass(MetricBag::class)]
 final class MetricBagTest extends TestCase
 {
-    public function testWithAndGet(): void
+    #[Test]
+    public function itWithAndGet(): void
     {
         $bag = (new MetricBag())
             ->with('complexity', 5)
@@ -23,7 +25,8 @@ final class MetricBagTest extends TestCase
         self::assertSame(100.5, $bag->get('loc'));
     }
 
-    public function testWithReturnsNewInstance(): void
+    #[Test]
+    public function itWithReturnsNewInstance(): void
     {
         $original = new MetricBag();
         $modified = $original->with('complexity', 5);
@@ -33,21 +36,24 @@ final class MetricBagTest extends TestCase
         self::assertSame(5, $modified->get('complexity'));
     }
 
-    public function testGetReturnsNullForNonexistentMetric(): void
+    #[Test]
+    public function itGetReturnsNullForNonexistentMetric(): void
     {
         $bag = new MetricBag();
 
         self::assertNull($bag->get('nonexistent'));
     }
 
-    public function testRequireReturnsExistingMetric(): void
+    #[Test]
+    public function itRequireReturnsExistingMetric(): void
     {
         $bag = (new MetricBag())->with('ccn', 7);
 
         self::assertSame(7, $bag->require('ccn'));
     }
 
-    public function testRequireThrowsForMissingMetric(): void
+    #[Test]
+    public function itRequireThrowsForMissingMetric(): void
     {
         $bag = (new MetricBag())->with('loc', 100);
 
@@ -57,7 +63,8 @@ final class MetricBagTest extends TestCase
         $bag->require('ccn');
     }
 
-    public function testRequireThrowsOnEmptyBag(): void
+    #[Test]
+    public function itRequireThrowsOnEmptyBag(): void
     {
         $bag = new MetricBag();
 
@@ -67,7 +74,8 @@ final class MetricBagTest extends TestCase
         $bag->require('anything');
     }
 
-    public function testHas(): void
+    #[Test]
+    public function itHas(): void
     {
         $bag = (new MetricBag())->with('complexity', 5);
 
@@ -75,7 +83,8 @@ final class MetricBagTest extends TestCase
         self::assertFalse($bag->has('nonexistent'));
     }
 
-    public function testAll(): void
+    #[Test]
+    public function itAll(): void
     {
         $bag = (new MetricBag())
             ->with('complexity', 5)
@@ -87,7 +96,8 @@ final class MetricBagTest extends TestCase
         );
     }
 
-    public function testMerge(): void
+    #[Test]
+    public function itMerge(): void
     {
         $bag1 = (new MetricBag())
             ->with('complexity', 5)
@@ -104,7 +114,8 @@ final class MetricBagTest extends TestCase
         self::assertSame(10, $merged->get('npath'));
     }
 
-    public function testMergeDoesNotModifyOriginalBags(): void
+    #[Test]
+    public function itMergeDoesNotModifyOriginalBags(): void
     {
         $bag1 = (new MetricBag())->with('complexity', 5);
         $bag2 = (new MetricBag())->with('loc', 100);
@@ -115,7 +126,8 @@ final class MetricBagTest extends TestCase
         self::assertFalse($bag2->has('complexity'));
     }
 
-    public function testWithPrefix(): void
+    #[Test]
+    public function itWithPrefix(): void
     {
         $bag = (new MetricBag())
             ->with('complexity', 5)
@@ -128,7 +140,8 @@ final class MetricBagTest extends TestCase
         self::assertNull($prefixed->get('complexity'));
     }
 
-    public function testSerializeAndUnserialize(): void
+    #[Test]
+    public function itSerializeAndUnserialize(): void
     {
         $bag = (new MetricBag())
             ->with('complexity', 5)
@@ -142,7 +155,8 @@ final class MetricBagTest extends TestCase
         self::assertSame(100.5, $unserialized->get('loc'));
     }
 
-    public function testFromArray(): void
+    #[Test]
+    public function itFromArray(): void
     {
         $bag = MetricBag::fromArray([
             'complexity' => 5,
@@ -157,7 +171,8 @@ final class MetricBagTest extends TestCase
         );
     }
 
-    public function testFromArrayWithEmptyArray(): void
+    #[Test]
+    public function itFromArrayWithEmptyArray(): void
     {
         $bag = MetricBag::fromArray([]);
 
@@ -166,7 +181,8 @@ final class MetricBagTest extends TestCase
 
     // --- withEntry / entries / entryCount / dataBag ---
 
-    public function testWithEntryAndEntries(): void
+    #[Test]
+    public function itWithEntryAndEntries(): void
     {
         $bag = (new MetricBag())
             ->withEntry('findings', ['line' => 10, 'type' => 'error'])
@@ -179,7 +195,8 @@ final class MetricBagTest extends TestCase
         self::assertSame(20, $entries[1]['line']);
     }
 
-    public function testWithEntryReturnsNewInstance(): void
+    #[Test]
+    public function itWithEntryReturnsNewInstance(): void
     {
         $original = new MetricBag();
         $modified = $original->withEntry('key', ['line' => 1]);
@@ -189,7 +206,8 @@ final class MetricBagTest extends TestCase
         self::assertCount(1, $modified->entries('key'));
     }
 
-    public function testEntryCount(): void
+    #[Test]
+    public function itEntryCount(): void
     {
         $bag = (new MetricBag())
             ->withEntry('findings', ['line' => 10])
@@ -201,14 +219,16 @@ final class MetricBagTest extends TestCase
         self::assertSame(0, $bag->entryCount('nonexistent'));
     }
 
-    public function testEntriesReturnsEmptyForNonexistentKey(): void
+    #[Test]
+    public function itEntriesReturnsEmptyForNonexistentKey(): void
     {
         $bag = new MetricBag();
 
         self::assertSame([], $bag->entries('nonexistent'));
     }
 
-    public function testDataBagReturnsDataBagInstance(): void
+    #[Test]
+    public function itDataBagReturnsDataBagInstance(): void
     {
         $bag = (new MetricBag())
             ->withEntry('key', ['line' => 1]);
@@ -219,7 +239,8 @@ final class MetricBagTest extends TestCase
         self::assertSame(1, $dataBag->count('key'));
     }
 
-    public function testDataBagIsEmptyForNewBag(): void
+    #[Test]
+    public function itDataBagIsEmptyForNewBag(): void
     {
         $bag = new MetricBag();
 
@@ -228,7 +249,8 @@ final class MetricBagTest extends TestCase
 
     // --- withEntry preserves metrics ---
 
-    public function testWithEntryPreservesExistingMetrics(): void
+    #[Test]
+    public function itWithEntryPreservesExistingMetrics(): void
     {
         $bag = (new MetricBag())
             ->with('complexity', 5)
@@ -240,7 +262,8 @@ final class MetricBagTest extends TestCase
 
     // --- merge preserves entries ---
 
-    public function testMergePreservesEntries(): void
+    #[Test]
+    public function itMergePreservesEntries(): void
     {
         $bag1 = (new MetricBag())
             ->with('a', 1)
@@ -259,7 +282,8 @@ final class MetricBagTest extends TestCase
 
     // --- serialize/unserialize with entries ---
 
-    public function testSerializeAndUnserializeWithEntries(): void
+    #[Test]
+    public function itSerializeAndUnserializeWithEntries(): void
     {
         $bag = (new MetricBag())
             ->with('complexity', 5)

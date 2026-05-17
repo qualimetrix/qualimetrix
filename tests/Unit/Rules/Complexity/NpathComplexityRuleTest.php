@@ -6,6 +6,7 @@ namespace Qualimetrix\Tests\Unit\Rules\Complexity;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
@@ -27,14 +28,16 @@ use Qualimetrix\Rules\Complexity\NpathComplexityRule;
 #[CoversClass(ClassNpathComplexityOptions::class)]
 final class NpathComplexityRuleTest extends TestCase
 {
-    public function testGetName(): void
+    #[Test]
+    public function itGetName(): void
     {
         $rule = new NpathComplexityRule(new NpathComplexityOptions());
 
         self::assertSame('complexity.npath', $rule->getName());
     }
 
-    public function testGetDescription(): void
+    #[Test]
+    public function itGetDescription(): void
     {
         $rule = new NpathComplexityRule(new NpathComplexityOptions());
 
@@ -44,21 +47,24 @@ final class NpathComplexityRuleTest extends TestCase
         );
     }
 
-    public function testGetCategory(): void
+    #[Test]
+    public function itGetCategory(): void
     {
         $rule = new NpathComplexityRule(new NpathComplexityOptions());
 
         self::assertSame(RuleCategory::Complexity, $rule->getCategory());
     }
 
-    public function testRequires(): void
+    #[Test]
+    public function itRequires(): void
     {
         $rule = new NpathComplexityRule(new NpathComplexityOptions());
 
         self::assertSame(['npath'], $rule->requires());
     }
 
-    public function testGetOptionsClass(): void
+    #[Test]
+    public function itGetOptionsClass(): void
     {
         self::assertSame(
             NpathComplexityOptions::class,
@@ -66,7 +72,8 @@ final class NpathComplexityRuleTest extends TestCase
         );
     }
 
-    public function testGetSupportedLevels(): void
+    #[Test]
+    public function itGetSupportedLevels(): void
     {
         $rule = new NpathComplexityRule(new NpathComplexityOptions());
 
@@ -75,7 +82,8 @@ final class NpathComplexityRuleTest extends TestCase
 
     // Method-level tests
 
-    public function testAnalyzeLevelMethodReturnsEmptyWhenDisabled(): void
+    #[Test]
+    public function itAnalyzeLevelMethodReturnsEmptyWhenDisabled(): void
     {
         $rule = new NpathComplexityRule(
             new NpathComplexityOptions(
@@ -91,7 +99,8 @@ final class NpathComplexityRuleTest extends TestCase
         self::assertSame([], $rule->analyzeLevel(RuleLevel::Method, $context));
     }
 
-    public function testAnalyzeLevelMethodReturnsEmptyWhenNoMethods(): void
+    #[Test]
+    public function itAnalyzeLevelMethodReturnsEmptyWhenNoMethods(): void
     {
         $rule = new NpathComplexityRule(new NpathComplexityOptions());
 
@@ -104,7 +113,8 @@ final class NpathComplexityRuleTest extends TestCase
         self::assertSame([], $rule->analyzeLevel(RuleLevel::Method, $context));
     }
 
-    public function testAnalyzeLevelMethodGeneratesWarning(): void
+    #[Test]
+    public function itAnalyzeLevelMethodGeneratesWarning(): void
     {
         $rule = new NpathComplexityRule(new NpathComplexityOptions());
 
@@ -130,7 +140,8 @@ final class NpathComplexityRuleTest extends TestCase
         self::assertSame(RuleLevel::Method, $violations[0]->level);
     }
 
-    public function testAnalyzeLevelMethodGeneratesError(): void
+    #[Test]
+    public function itAnalyzeLevelMethodGeneratesError(): void
     {
         $rule = new NpathComplexityRule(new NpathComplexityOptions());
 
@@ -155,7 +166,8 @@ final class NpathComplexityRuleTest extends TestCase
 
     // Class-level tests
 
-    public function testAnalyzeLevelClassReturnsEmptyWhenDisabled(): void
+    #[Test]
+    public function itAnalyzeLevelClassReturnsEmptyWhenDisabled(): void
     {
         $rule = new NpathComplexityRule(
             new NpathComplexityOptions(
@@ -171,7 +183,8 @@ final class NpathComplexityRuleTest extends TestCase
         self::assertSame([], $rule->analyzeLevel(RuleLevel::Class_, $context));
     }
 
-    public function testAnalyzeLevelClassGeneratesWarning(): void
+    #[Test]
+    public function itAnalyzeLevelClassGeneratesWarning(): void
     {
         $rule = new NpathComplexityRule(
             new NpathComplexityOptions(
@@ -200,7 +213,8 @@ final class NpathComplexityRuleTest extends TestCase
         self::assertSame(RuleLevel::Class_, $violations[0]->level);
     }
 
-    public function testAnalyzeLevelClassGeneratesError(): void
+    #[Test]
+    public function itAnalyzeLevelClassGeneratesError(): void
     {
         $rule = new NpathComplexityRule(
             new NpathComplexityOptions(
@@ -229,7 +243,8 @@ final class NpathComplexityRuleTest extends TestCase
 
     // Legacy analyze() tests
 
-    public function testAnalyzeCallsBothLevels(): void
+    #[Test]
+    public function itAnalyzeCallsBothLevels(): void
     {
         $rule = new NpathComplexityRule(
             new NpathComplexityOptions(
@@ -271,7 +286,8 @@ final class NpathComplexityRuleTest extends TestCase
 
     // Large NPath display format test
 
-    public function testLargeNpathDisplayFormat(): void
+    #[Test]
+    public function itLargeNpathDisplayFormat(): void
     {
         $rule = new NpathComplexityRule(new NpathComplexityOptions());
 
@@ -296,7 +312,8 @@ final class NpathComplexityRuleTest extends TestCase
 
     // Options tests
 
-    public function testMethodOptionsFromArray(): void
+    #[Test]
+    public function itMethodOptionsFromArray(): void
     {
         $options = MethodNpathComplexityOptions::fromArray([
             'enabled' => false,
@@ -309,7 +326,8 @@ final class NpathComplexityRuleTest extends TestCase
         self::assertSame(300, $options->error);
     }
 
-    public function testMethodOptionsFromEmptyArray(): void
+    #[Test]
+    public function itMethodOptionsFromEmptyArray(): void
     {
         $options = MethodNpathComplexityOptions::fromArray([]);
 
@@ -318,7 +336,8 @@ final class NpathComplexityRuleTest extends TestCase
         self::assertSame(1000, $options->error);
     }
 
-    public function testClassOptionsFromArray(): void
+    #[Test]
+    public function itClassOptionsFromArray(): void
     {
         $options = ClassNpathComplexityOptions::fromArray([
             'enabled' => true,
@@ -331,7 +350,8 @@ final class NpathComplexityRuleTest extends TestCase
         self::assertSame(800, $options->maxError);
     }
 
-    public function testClassOptionsFromEmptyArray(): void
+    #[Test]
+    public function itClassOptionsFromEmptyArray(): void
     {
         $options = ClassNpathComplexityOptions::fromArray([]);
 
@@ -340,7 +360,8 @@ final class NpathComplexityRuleTest extends TestCase
         self::assertSame(1000, $options->maxError);
     }
 
-    public function testNpathComplexityOptionsFromHierarchicalArray(): void
+    #[Test]
+    public function itNpathComplexityOptionsFromHierarchicalArray(): void
     {
         $options = NpathComplexityOptions::fromArray([
             'method' => [
@@ -361,7 +382,8 @@ final class NpathComplexityRuleTest extends TestCase
         self::assertSame(300, $options->class->maxWarning);
     }
 
-    public function testNpathComplexityOptionsFromLegacyArray(): void
+    #[Test]
+    public function itNpathComplexityOptionsFromLegacyArray(): void
     {
         $options = NpathComplexityOptions::fromArray([
             'enabled' => true,
@@ -377,7 +399,8 @@ final class NpathComplexityRuleTest extends TestCase
         self::assertFalse($options->class->isEnabled());
     }
 
-    public function testNpathComplexityOptionsForLevel(): void
+    #[Test]
+    public function itNpathComplexityOptionsForLevel(): void
     {
         $options = new NpathComplexityOptions();
 
@@ -385,7 +408,8 @@ final class NpathComplexityRuleTest extends TestCase
         self::assertSame($options->class, $options->forLevel(RuleLevel::Class_));
     }
 
-    public function testNpathComplexityOptionsIsLevelEnabled(): void
+    #[Test]
+    public function itNpathComplexityOptionsIsLevelEnabled(): void
     {
         $options = new NpathComplexityOptions(
             method: new MethodNpathComplexityOptions(enabled: true),
@@ -397,7 +421,8 @@ final class NpathComplexityRuleTest extends TestCase
     }
 
     #[DataProvider('methodThresholdDataProvider')]
-    public function testMethodThresholdBoundaries(
+    #[Test]
+    public function itMethodThresholdBoundaries(
         int $npath,
         int $warning,
         int $error,
@@ -446,7 +471,8 @@ final class NpathComplexityRuleTest extends TestCase
         yield 'above error threshold' => [750, 200, 500, Severity::Error];
     }
 
-    public function testLegacyDefaultErrorThresholdMatchesMethodDefault(): void
+    #[Test]
+    public function itLegacyDefaultErrorThresholdMatchesMethodDefault(): void
     {
         // Legacy format without explicit errorThreshold should use 1000 (same as MethodNpathComplexityOptions)
         $options = NpathComplexityOptions::fromArray([
@@ -456,7 +482,8 @@ final class NpathComplexityRuleTest extends TestCase
         self::assertSame(1000, $options->method->error);
     }
 
-    public function testLegacyPartialConfigUsesCorrectDefaults(): void
+    #[Test]
+    public function itLegacyPartialConfigUsesCorrectDefaults(): void
     {
         $options = NpathComplexityOptions::fromArray([
             'errorThreshold' => 800,
@@ -466,7 +493,8 @@ final class NpathComplexityRuleTest extends TestCase
         self::assertSame(800, $options->method->error);
     }
 
-    public function testClassOptionsFromArrayWithCamelCase(): void
+    #[Test]
+    public function itClassOptionsFromArrayWithCamelCase(): void
     {
         $options = ClassNpathComplexityOptions::fromArray([
             'enabled' => true,
@@ -482,7 +510,8 @@ final class NpathComplexityRuleTest extends TestCase
     // Severity category label tests
 
     #[DataProvider('categoryLabelDataProvider')]
-    public function testMethodViolationCategoryLabel(int $npath, string $expectedCategory): void
+    #[Test]
+    public function itMethodViolationCategoryLabel(int $npath, string $expectedCategory): void
     {
         $rule = new NpathComplexityRule(
             new NpathComplexityOptions(
@@ -512,7 +541,8 @@ final class NpathComplexityRuleTest extends TestCase
     }
 
     #[DataProvider('categoryLabelDataProvider')]
-    public function testClassViolationCategoryLabel(int $npath, string $expectedCategory): void
+    #[Test]
+    public function itClassViolationCategoryLabel(int $npath, string $expectedCategory): void
     {
         $rule = new NpathComplexityRule(
             new NpathComplexityOptions(
@@ -570,7 +600,8 @@ final class NpathComplexityRuleTest extends TestCase
         yield 'at 1 → moderate' => [1, 'moderate'];
     }
 
-    public function testClassLevelLargeNpathDisplayFormat(): void
+    #[Test]
+    public function itClassLevelLargeNpathDisplayFormat(): void
     {
         $rule = new NpathComplexityRule(
             new NpathComplexityOptions(
@@ -604,7 +635,8 @@ final class NpathComplexityRuleTest extends TestCase
         self::assertSame(2_500_000, $violations[0]->metricValue);
     }
 
-    public function testMethodViolationRecommendationUsesDisplayValue(): void
+    #[Test]
+    public function itMethodViolationRecommendationUsesDisplayValue(): void
     {
         $rule = new NpathComplexityRule(
             new NpathComplexityOptions(
@@ -636,7 +668,8 @@ final class NpathComplexityRuleTest extends TestCase
         );
     }
 
-    public function testClassViolationRecommendationUsesDisplayValue(): void
+    #[Test]
+    public function itClassViolationRecommendationUsesDisplayValue(): void
     {
         $rule = new NpathComplexityRule(
             new NpathComplexityOptions(
@@ -669,7 +702,8 @@ final class NpathComplexityRuleTest extends TestCase
         );
     }
 
-    public function testClassOptionsDefaultMaxWarningIs500(): void
+    #[Test]
+    public function itClassOptionsDefaultMaxWarningIs500(): void
     {
         $options = new ClassNpathComplexityOptions();
 
@@ -677,7 +711,8 @@ final class NpathComplexityRuleTest extends TestCase
         self::assertSame(1000, $options->maxError);
     }
 
-    public function testMethodViolationIncludesChainWhenEntriesPresent(): void
+    #[Test]
+    public function itMethodViolationIncludesChainWhenEntriesPresent(): void
     {
         $rule = new NpathComplexityRule(new NpathComplexityOptions());
 
@@ -708,7 +743,8 @@ final class NpathComplexityRuleTest extends TestCase
         self::assertStringContainsString('— explosive', $violations[0]->recommendation);
     }
 
-    public function testMethodViolationNoChainWhenNoEntries(): void
+    #[Test]
+    public function itMethodViolationNoChainWhenNoEntries(): void
     {
         $rule = new NpathComplexityRule(new NpathComplexityOptions());
 

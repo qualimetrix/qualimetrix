@@ -5,13 +5,15 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Core\Suppression;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Suppression\ThresholdOverride;
 
 #[CoversClass(ThresholdOverride::class)]
 final class ThresholdOverrideTest extends TestCase
 {
-    public function testMatchesExact(): void
+    #[Test]
+    public function itMatchesExact(): void
     {
         $override = new ThresholdOverride(
             rulePattern: 'complexity.cyclomatic',
@@ -25,7 +27,8 @@ final class ThresholdOverrideTest extends TestCase
         self::assertFalse($override->matches('coupling.cbo'));
     }
 
-    public function testMatchesPrefix(): void
+    #[Test]
+    public function itMatchesPrefix(): void
     {
         $override = new ThresholdOverride(
             rulePattern: 'complexity',
@@ -39,7 +42,8 @@ final class ThresholdOverrideTest extends TestCase
         self::assertFalse($override->matches('coupling.cbo'));
     }
 
-    public function testMatchesWildcard(): void
+    #[Test]
+    public function itMatchesWildcard(): void
     {
         $override = new ThresholdOverride(
             rulePattern: '*',
@@ -53,7 +57,8 @@ final class ThresholdOverrideTest extends TestCase
         self::assertTrue($override->matches('anything'));
     }
 
-    public function testFieldsAreAccessible(): void
+    #[Test]
+    public function itFieldsAreAccessible(): void
     {
         $override = new ThresholdOverride(
             rulePattern: 'complexity.cyclomatic',
@@ -70,7 +75,8 @@ final class ThresholdOverrideTest extends TestCase
         self::assertSame(50, $override->endLine);
     }
 
-    public function testNullWarningAndError(): void
+    #[Test]
+    public function itNullWarningAndError(): void
     {
         $override = new ThresholdOverride(
             rulePattern: 'complexity.cyclomatic',
@@ -83,7 +89,8 @@ final class ThresholdOverrideTest extends TestCase
         self::assertSame(25, $override->error);
     }
 
-    public function testFloatThresholds(): void
+    #[Test]
+    public function itFloatThresholds(): void
     {
         $override = new ThresholdOverride(
             rulePattern: 'coupling.instability',

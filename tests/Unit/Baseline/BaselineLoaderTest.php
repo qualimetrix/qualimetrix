@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Baseline;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Baseline\BaselineLoader;
 use RuntimeException;
@@ -35,7 +36,8 @@ final class BaselineLoaderTest extends TestCase
         }
     }
 
-    public function testLoadsValidBaseline(): void
+    #[Test]
+    public function itLoadsValidBaseline(): void
     {
         $json = <<<'JSON'
         {
@@ -71,7 +73,8 @@ final class BaselineLoaderTest extends TestCase
         self::assertCount(1, $baseline->entries['class:App\Foo']);
     }
 
-    public function testThrowsOnVersion3Baseline(): void
+    #[Test]
+    public function itThrowsOnVersion3Baseline(): void
     {
         $json = <<<'JSON'
         {
@@ -90,7 +93,8 @@ final class BaselineLoaderTest extends TestCase
         $this->loader->load($path);
     }
 
-    public function testThrowsOnVersion2Baseline(): void
+    #[Test]
+    public function itThrowsOnVersion2Baseline(): void
     {
         $json = <<<'JSON'
         {
@@ -117,7 +121,8 @@ final class BaselineLoaderTest extends TestCase
         $this->loader->load($path);
     }
 
-    public function testThrowsWhenFileNotFound(): void
+    #[Test]
+    public function itThrowsWhenFileNotFound(): void
     {
         self::expectException(RuntimeException::class);
         self::expectExceptionMessage('Baseline file not found');
@@ -125,7 +130,8 @@ final class BaselineLoaderTest extends TestCase
         $this->loader->load($this->tempDir . '/nonexistent.json');
     }
 
-    public function testThrowsOnInvalidJson(): void
+    #[Test]
+    public function itThrowsOnInvalidJson(): void
     {
         $path = $this->tempDir . '/invalid.json';
         file_put_contents($path, '{invalid json}');
@@ -136,7 +142,8 @@ final class BaselineLoaderTest extends TestCase
         $this->loader->load($path);
     }
 
-    public function testThrowsWhenMissingVersionField(): void
+    #[Test]
+    public function itThrowsWhenMissingVersionField(): void
     {
         $json = <<<'JSON'
         {
@@ -154,7 +161,8 @@ final class BaselineLoaderTest extends TestCase
         $this->loader->load($path);
     }
 
-    public function testThrowsOnUnsupportedVersion(): void
+    #[Test]
+    public function itThrowsOnUnsupportedVersion(): void
     {
         $json = <<<'JSON'
         {
@@ -173,7 +181,8 @@ final class BaselineLoaderTest extends TestCase
         $this->loader->load($path);
     }
 
-    public function testThrowsWhenMissingGeneratedField(): void
+    #[Test]
+    public function itThrowsWhenMissingGeneratedField(): void
     {
         $json = <<<'JSON'
         {
@@ -191,7 +200,8 @@ final class BaselineLoaderTest extends TestCase
         $this->loader->load($path);
     }
 
-    public function testThrowsWhenMissingViolationsField(): void
+    #[Test]
+    public function itThrowsWhenMissingViolationsField(): void
     {
         $json = <<<'JSON'
         {
@@ -209,7 +219,8 @@ final class BaselineLoaderTest extends TestCase
         $this->loader->load($path);
     }
 
-    public function testThrowsOnMalformedGeneratedDate(): void
+    #[Test]
+    public function itThrowsOnMalformedGeneratedDate(): void
     {
         $json = <<<'JSON'
         {
@@ -229,7 +240,8 @@ final class BaselineLoaderTest extends TestCase
         $this->loader->load($path);
     }
 
-    public function testKeepsRelativeFilePathsAsIs(): void
+    #[Test]
+    public function itKeepsRelativeFilePathsAsIs(): void
     {
         $json = <<<'JSON'
         {
@@ -262,7 +274,8 @@ final class BaselineLoaderTest extends TestCase
         self::assertArrayHasKey('class:App\Foo', $baseline->entries, 'Non-file keys should not change');
     }
 
-    public function testLoadsEmptyBaseline(): void
+    #[Test]
+    public function itLoadsEmptyBaseline(): void
     {
         $json = <<<'JSON'
         {

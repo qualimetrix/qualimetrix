@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Reporting\Health;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Symbol\SymbolInfo;
@@ -36,7 +37,8 @@ final class SummaryEnricherTest extends TestCase
         );
     }
 
-    public function testReturnsUnchangedReportWhenNoMetrics(): void
+    #[Test]
+    public function itReturnsUnchangedReportWhenNoMetrics(): void
     {
         $report = new Report(
             violations: [],
@@ -56,7 +58,8 @@ final class SummaryEnricherTest extends TestCase
         self::assertSame(0, $result->techDebtMinutes);
     }
 
-    public function testEnrichesWithHealthScores(): void
+    #[Test]
+    public function itEnrichesWithHealthScores(): void
     {
         $metrics = $this->createMetricRepository(
             projectMetrics: MetricBag::fromArray([
@@ -114,7 +117,8 @@ final class SummaryEnricherTest extends TestCase
         self::assertSame('Fair', $maintainability->label);
     }
 
-    public function testEnrichesWithTechDebt(): void
+    #[Test]
+    public function itEnrichesWithTechDebt(): void
     {
         $metrics = $this->createMetricRepository(
             projectMetrics: MetricBag::fromArray([
@@ -147,7 +151,8 @@ final class SummaryEnricherTest extends TestCase
         self::assertSame(60, $result->techDebtMinutes);
     }
 
-    public function testWorstNamespaces(): void
+    #[Test]
+    public function itWorstNamespaces(): void
     {
         $nsSymbol = SymbolPath::forNamespace('App\\Payment');
         $nsMetrics = MetricBag::fromArray([
@@ -204,7 +209,8 @@ final class SummaryEnricherTest extends TestCase
         self::assertArrayHasKey('complexity', $ns->healthScores);
     }
 
-    public function testWorstClasses(): void
+    #[Test]
+    public function itWorstClasses(): void
     {
         $classSymbol = SymbolPath::forClass('App\\Service', 'PaymentService');
         $classMetrics = MetricBag::fromArray([
@@ -251,7 +257,8 @@ final class SummaryEnricherTest extends TestCase
         self::assertSame(32, $cls->metrics['methodCount']);
     }
 
-    public function testSkipsSymbolsAboveWarningThreshold(): void
+    #[Test]
+    public function itSkipsSymbolsAboveWarningThreshold(): void
     {
         $classSymbol = SymbolPath::forClass('App\\Service', 'GoodService');
         $classMetrics = MetricBag::fromArray([
@@ -289,7 +296,8 @@ final class SummaryEnricherTest extends TestCase
         self::assertSame(85.0, $result->worstClasses[0]->healthOverall);
     }
 
-    public function testPreservesOriginalReportFields(): void
+    #[Test]
+    public function itPreservesOriginalReportFields(): void
     {
         $metrics = $this->createMetricRepository(
             projectMetrics: MetricBag::fromArray([
@@ -327,7 +335,8 @@ final class SummaryEnricherTest extends TestCase
         self::assertSame($metrics, $result->metrics);
     }
 
-    public function testHealthScoresEmptyWhenNoProjectHealthMetrics(): void
+    #[Test]
+    public function itHealthScoresEmptyWhenNoProjectHealthMetrics(): void
     {
         $metrics = $this->createMetricRepository(
             projectMetrics: MetricBag::fromArray([
@@ -351,7 +360,8 @@ final class SummaryEnricherTest extends TestCase
         self::assertSame([], $result->healthScores);
     }
 
-    public function testDecompositionShownWhenScoreBelowWarning(): void
+    #[Test]
+    public function itDecompositionShownWhenScoreBelowWarning(): void
     {
         $metrics = $this->createMetricRepository(
             projectMetrics: MetricBag::fromArray([
@@ -384,7 +394,8 @@ final class SummaryEnricherTest extends TestCase
         self::assertSame(10.0, $complexity->decomposition[1]->value);
     }
 
-    public function testNullMetricsReturnsUnchangedReport(): void
+    #[Test]
+    public function itNullMetricsReturnsUnchangedReport(): void
     {
         $report = new Report(
             violations: [],
@@ -402,7 +413,8 @@ final class SummaryEnricherTest extends TestCase
         self::assertSame([], $result->healthScores);
     }
 
-    public function testDebtPer1kLocComputedCorrectly(): void
+    #[Test]
+    public function itDebtPer1kLocComputedCorrectly(): void
     {
         $metrics = $this->createMetricRepository(
             projectMetrics: MetricBag::fromArray([
@@ -437,7 +449,8 @@ final class SummaryEnricherTest extends TestCase
         self::assertSame(12.0, $result->debtPer1kLoc);
     }
 
-    public function testDebtPer1kLocZeroWhenNoViolations(): void
+    #[Test]
+    public function itDebtPer1kLocZeroWhenNoViolations(): void
     {
         $metrics = $this->createMetricRepository(
             projectMetrics: MetricBag::fromArray([
@@ -461,7 +474,8 @@ final class SummaryEnricherTest extends TestCase
         self::assertSame(0.0, $result->debtPer1kLoc);
     }
 
-    public function testDebtPer1kLocNullWhenNoLoc(): void
+    #[Test]
+    public function itDebtPer1kLocNullWhenNoLoc(): void
     {
         $metrics = $this->createMetricRepository(
             projectMetrics: MetricBag::fromArray([
@@ -484,7 +498,8 @@ final class SummaryEnricherTest extends TestCase
         self::assertNull($result->debtPer1kLoc);
     }
 
-    public function testTypingNAWhenOtherDimensionsExist(): void
+    #[Test]
+    public function itTypingNAWhenOtherDimensionsExist(): void
     {
         $metrics = $this->createMetricRepository(
             projectMetrics: MetricBag::fromArray([
@@ -511,7 +526,8 @@ final class SummaryEnricherTest extends TestCase
         self::assertSame('0 classes analyzed', $typing->label);
     }
 
-    public function testTypingNotAddedWhenNoDimensions(): void
+    #[Test]
+    public function itTypingNotAddedWhenNoDimensions(): void
     {
         $metrics = $this->createMetricRepository(
             projectMetrics: MetricBag::fromArray([

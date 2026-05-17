@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Unit\Infrastructure\Profiler\Export;
 
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Profiler\Span;
 use Qualimetrix\Infrastructure\Profiler\Export\JsonExporter;
@@ -17,14 +18,16 @@ final class JsonExporterTest extends TestCase
         $this->exporter = new JsonExporter();
     }
 
-    public function testExportNullSpanReturnsEmptyArray(): void
+    #[Test]
+    public function itExportsEmptyArrayForNoSpans(): void
     {
         $result = $this->exporter->export([]);
 
         self::assertSame('[]', $result);
     }
 
-    public function testExportSingleSpan(): void
+    #[Test]
+    public function itExportsSingleSpan(): void
     {
         $span = new Span(
             name: 'test',
@@ -46,7 +49,8 @@ final class JsonExporterTest extends TestCase
         self::assertSame([], $data['children']);
     }
 
-    public function testExportSpanWithoutCategory(): void
+    #[Test]
+    public function itExportsSpanWithoutCategory(): void
     {
         $span = new Span(
             name: 'test',
@@ -63,7 +67,8 @@ final class JsonExporterTest extends TestCase
         self::assertNull($data['category']);
     }
 
-    public function testExportRunningSpan(): void
+    #[Test]
+    public function itExportsRunningSpan(): void
     {
         $span = new Span(
             name: 'test',
@@ -79,7 +84,8 @@ final class JsonExporterTest extends TestCase
         self::assertNull($data['memory_delta_bytes']);
     }
 
-    public function testExportNestedSpans(): void
+    #[Test]
+    public function itExportsNestedSpans(): void
     {
         $parent = new Span(
             name: 'parent',
@@ -112,7 +118,8 @@ final class JsonExporterTest extends TestCase
         self::assertSame(100, $data['children'][0]['memory_delta_bytes']);
     }
 
-    public function testExportDeeplyNestedSpans(): void
+    #[Test]
+    public function itExportsDeeplyNestedSpans(): void
     {
         $level1 = new Span(
             name: 'level1',
@@ -156,7 +163,8 @@ final class JsonExporterTest extends TestCase
         self::assertSame('level3', $data['children'][0]['children'][0]['name']);
     }
 
-    public function testExportProducesValidJson(): void
+    #[Test]
+    public function itExportsValidJson(): void
     {
         $span = new Span(
             name: 'test',

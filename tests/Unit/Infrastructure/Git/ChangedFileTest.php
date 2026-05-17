@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Infrastructure\Git;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\Git\ChangedFile;
 use Qualimetrix\Infrastructure\Git\ChangeStatus;
@@ -13,35 +14,40 @@ use Qualimetrix\Infrastructure\Git\ChangeStatus;
 #[CoversClass(ChangeStatus::class)]
 final class ChangedFileTest extends TestCase
 {
-    public function testIsPhpReturnsTrueForPhpFiles(): void
+    #[Test]
+    public function itReturnsIsPhpTrueForPhpFiles(): void
     {
         $file = new ChangedFile('src/Test.php', ChangeStatus::Modified);
 
         self::assertTrue($file->isPhp());
     }
 
-    public function testIsPhpReturnsFalseForNonPhpFiles(): void
+    #[Test]
+    public function itReturnsIsPhpFalseForNonPhpFiles(): void
     {
         $file = new ChangedFile('README.md', ChangeStatus::Modified);
 
         self::assertFalse($file->isPhp());
     }
 
-    public function testIsDeletedReturnsTrueForDeletedFiles(): void
+    #[Test]
+    public function itReturnsIsDeletedTrueForDeletedFiles(): void
     {
         $file = new ChangedFile('src/Test.php', ChangeStatus::Deleted);
 
         self::assertTrue($file->isDeleted());
     }
 
-    public function testIsDeletedReturnsFalseForNonDeletedFiles(): void
+    #[Test]
+    public function itReturnsIsDeletedFalseForNonDeletedFiles(): void
     {
         $file = new ChangedFile('src/Test.php', ChangeStatus::Modified);
 
         self::assertFalse($file->isDeleted());
     }
 
-    public function testSupportsRenamedFilesWithOldPath(): void
+    #[Test]
+    public function itSupportsRenamedFilesWithOldPath(): void
     {
         $file = new ChangedFile('src/NewTest.php', ChangeStatus::Renamed, 'src/OldTest.php');
 
@@ -50,7 +56,8 @@ final class ChangedFileTest extends TestCase
         self::assertSame('src/OldTest.php', $file->oldPath);
     }
 
-    public function testOldPathIsNullByDefault(): void
+    #[Test]
+    public function itHasNullOldPathByDefault(): void
     {
         $file = new ChangedFile('src/Test.php', ChangeStatus::Added);
 

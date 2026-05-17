@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Integration;
 
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Aggregator\AggregationHelper;
 use Qualimetrix\Analysis\Aggregator\MetricAggregator;
@@ -23,7 +24,8 @@ use Qualimetrix\Metrics\Complexity\CyclomaticComplexityCollector;
  */
 final class WmcIntegrationTest extends TestCase
 {
-    public function testWmcMetricAvailableAfterAggregation(): void
+    #[Test]
+    public function itMakesWmcMetricAvailableAfterAggregation(): void
     {
         // Setup repository with method-level CCN metrics
         $repository = new InMemoryMetricRepository();
@@ -53,7 +55,8 @@ final class WmcIntegrationTest extends TestCase
         self::assertSame(10, (int) $wmc, 'WMC should equal sum of method CCN values (5+3+2=10)');
     }
 
-    public function testWmcEqualsCcnSum(): void
+    #[Test]
+    public function itVerifiesWmcEqualsCcnSum(): void
     {
         // Setup repository
         $repository = new InMemoryMetricRepository();
@@ -82,7 +85,8 @@ final class WmcIntegrationTest extends TestCase
         self::assertSame(11, (int) $wmc); // 7 + 4 = 11
     }
 
-    public function testWmcForClassWithoutMethods(): void
+    #[Test]
+    public function itHandlesClassWithoutMethodsGracefully(): void
     {
         // Setup repository with class but no methods
         $repository = new InMemoryMetricRepository();
@@ -101,7 +105,8 @@ final class WmcIntegrationTest extends TestCase
         self::assertCount(0, $classes, 'Class without methods should not be in repository');
     }
 
-    public function testWmcForMultipleClasses(): void
+    #[Test]
+    public function itComputesWmcForMultipleClasses(): void
     {
         // Setup repository with multiple classes
         $repository = new InMemoryMetricRepository();

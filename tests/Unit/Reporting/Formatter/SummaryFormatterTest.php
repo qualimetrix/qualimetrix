@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Reporting\Formatter;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
@@ -55,17 +56,20 @@ final class SummaryFormatterTest extends TestCase
         $this->plainContext = new FormatterContext(useColor: false, terminalWidth: 120);
     }
 
-    public function testGetNameReturnsSummary(): void
+    #[Test]
+    public function itReturnsNameAsSummary(): void
     {
         self::assertSame('summary', $this->formatter->getName());
     }
 
-    public function testGetDefaultGroupByReturnsNone(): void
+    #[Test]
+    public function itReturnsDefaultGroupByAsNone(): void
     {
         self::assertSame(GroupBy::None, $this->formatter->getDefaultGroupBy());
     }
 
-    public function testFormatZeroViolations(): void
+    #[Test]
+    public function itFormatsZeroViolations(): void
     {
         $report = $this->createReport(violations: [], filesAnalyzed: 42, duration: 1.5);
 
@@ -79,7 +83,8 @@ final class SummaryFormatterTest extends TestCase
         self::assertStringNotContainsString('Worst classes', $output);
     }
 
-    public function testFormatSingleFileNoNamespacesOrClasses(): void
+    #[Test]
+    public function itFormatsSingleFileWithoutNamespacesOrClasses(): void
     {
         $report = $this->createReport(
             violations: [],
@@ -118,7 +123,8 @@ final class SummaryFormatterTest extends TestCase
         self::assertStringNotContainsString('Worst classes', $output);
     }
 
-    public function testFormatWithHealthScores(): void
+    #[Test]
+    public function itFormatsWithHealthScores(): void
     {
         $report = $this->createReport(
             violations: [],
@@ -147,7 +153,8 @@ final class SummaryFormatterTest extends TestCase
         self::assertStringContainsString('above 0.5', $output);
     }
 
-    public function testFormatWithWorstOffenders(): void
+    #[Test]
+    public function itFormatsWithWorstOffenders(): void
     {
         $report = $this->createReport(
             violations: [
@@ -198,7 +205,8 @@ final class SummaryFormatterTest extends TestCase
         self::assertStringContainsString('5 violations', $output);
     }
 
-    public function testFormatViolationSummary(): void
+    #[Test]
+    public function itFormatsViolationSummary(): void
     {
         $report = $this->createReport(
             violations: [
@@ -232,7 +240,8 @@ final class SummaryFormatterTest extends TestCase
         self::assertStringContainsString('Tech debt: 1h 30min', $output);
     }
 
-    public function testFormatScopedReporting(): void
+    #[Test]
+    public function itFormatsScopedReporting(): void
     {
         $report = $this->createReport(
             violations: [],
@@ -254,7 +263,8 @@ final class SummaryFormatterTest extends TestCase
         self::assertStringContainsString('scoped analysis', $output);
     }
 
-    public function testFormatMissingMetrics(): void
+    #[Test]
+    public function itFormatsMissingMetrics(): void
     {
         $report = $this->createReport(
             violations: [],
@@ -268,7 +278,8 @@ final class SummaryFormatterTest extends TestCase
         self::assertStringContainsString('Health: insufficient data', $output);
     }
 
-    public function testFormatWithColorContainsAnsiCodes(): void
+    #[Test]
+    public function itFormatsWithColorContainingAnsiCodes(): void
     {
         $colorContext = new FormatterContext(useColor: true, terminalWidth: 120);
 
@@ -294,7 +305,8 @@ final class SummaryFormatterTest extends TestCase
         self::assertStringContainsString("\e[1;31m", $output);
     }
 
-    public function testFormatNoAnsiCodesWithColorDisabled(): void
+    #[Test]
+    public function itFormatsWithoutAnsiCodesWhenColorDisabled(): void
     {
         $report = $this->createReport(
             violations: [
@@ -316,7 +328,8 @@ final class SummaryFormatterTest extends TestCase
         self::assertStringNotContainsString("\e[", $output);
     }
 
-    public function testAsciiMode(): void
+    #[Test]
+    public function itRendersInAsciiMode(): void
     {
         $originalEnv = getenv('QMX_ASCII');
         putenv('QMX_ASCII=1');
@@ -347,7 +360,8 @@ final class SummaryFormatterTest extends TestCase
         }
     }
 
-    public function testHintsShownForViolations(): void
+    #[Test]
+    public function itShowsHintsForViolations(): void
     {
         $report = $this->createReport(
             violations: [
@@ -369,7 +383,8 @@ final class SummaryFormatterTest extends TestCase
         self::assertStringContainsString('--detail', $output);
     }
 
-    public function testHintsDrillDownForWorstOffender(): void
+    #[Test]
+    public function itShowsDrillDownHintForWorstOffender(): void
     {
         $report = $this->createReport(
             violations: [],
@@ -397,7 +412,8 @@ final class SummaryFormatterTest extends TestCase
         self::assertStringContainsString("--namespace='App\\Service'", $output);
     }
 
-    public function testNamespaceFilterBoundaryAware(): void
+    #[Test]
+    public function itAppliesNamespaceFilterBoundaryAware(): void
     {
         $offenderMatch = new WorstOffender(
             symbolPath: SymbolPath::forNamespace('App\Payment\Gateway'),
@@ -436,7 +452,8 @@ final class SummaryFormatterTest extends TestCase
         self::assertStringNotContainsString('App\PaymentGateway', $output);
     }
 
-    public function testNamespaceFilterAppliesToViolations(): void
+    #[Test]
+    public function itAppliesNamespaceFilterToViolations(): void
     {
         $report = $this->createReport(
             violations: [
@@ -470,7 +487,8 @@ final class SummaryFormatterTest extends TestCase
         self::assertStringNotContainsString('warning', $output);
     }
 
-    public function testClassFilterAppliesToViolations(): void
+    #[Test]
+    public function itAppliesClassFilterToViolations(): void
     {
         $report = $this->createReport(
             violations: [
@@ -503,7 +521,8 @@ final class SummaryFormatterTest extends TestCase
         self::assertStringNotContainsString('warning', $output);
     }
 
-    public function testNoViolationsInScopeMessage(): void
+    #[Test]
+    public function itShowsNoViolationsInScopeMessage(): void
     {
         $report = $this->createReport(
             violations: [
@@ -526,7 +545,8 @@ final class SummaryFormatterTest extends TestCase
         self::assertStringContainsString('No violations in this scope.', $output);
     }
 
-    public function testClassFilterExactMatch(): void
+    #[Test]
+    public function itAppliesClassFilterWithExactMatch(): void
     {
         $offenderMatch = new WorstOffender(
             symbolPath: SymbolPath::forClass('App\Service', 'UserService'),
@@ -566,7 +586,8 @@ final class SummaryFormatterTest extends TestCase
         self::assertStringNotContainsString('OrderService', $output);
     }
 
-    public function testPlusNMoreForTruncatedList(): void
+    #[Test]
+    public function itShowsPlusNMoreForTruncatedList(): void
     {
         $offenders = [];
         for ($i = 0; $i < 5; $i++) {
@@ -604,7 +625,8 @@ final class SummaryFormatterTest extends TestCase
         self::assertStringContainsString('+2 more', $output);
     }
 
-    public function testExactly3OffendersNoPlusMore(): void
+    #[Test]
+    public function itShowsNoPlusMoreForExactly3Offenders(): void
     {
         $offenders = [];
         for ($i = 0; $i < 3; $i++) {
@@ -634,7 +656,8 @@ final class SummaryFormatterTest extends TestCase
         self::assertStringNotContainsString('+', $output);
     }
 
-    public function testTechDebtZeroNotShown(): void
+    #[Test]
+    public function itDoesNotShowZeroTechDebt(): void
     {
         $report = $this->createReport(
             violations: [
@@ -657,7 +680,8 @@ final class SummaryFormatterTest extends TestCase
         self::assertStringNotContainsString('Tech debt', $output);
     }
 
-    public function testHtmlHintAlwaysShown(): void
+    #[Test]
+    public function itAlwaysShowsHtmlHint(): void
     {
         // Even without health scores
         $report = $this->createReport(violations: [], filesAnalyzed: 10, duration: 0.5);
@@ -667,7 +691,8 @@ final class SummaryFormatterTest extends TestCase
         self::assertStringContainsString('--format=html', $output);
     }
 
-    public function testScopedReportingHint(): void
+    #[Test]
+    public function itShowsScopedReportingHint(): void
     {
         $report = $this->createReport(violations: [], filesAnalyzed: 5, duration: 0.5);
 
@@ -677,7 +702,8 @@ final class SummaryFormatterTest extends TestCase
         self::assertStringContainsString('scoped analysis', $output);
     }
 
-    public function testHeaderAnnotatedWithNamespaceFilter(): void
+    #[Test]
+    public function itAnnotatesHeaderWithNamespaceFilter(): void
     {
         $report = $this->createReport(violations: [], filesAnalyzed: 10, duration: 0.5);
 
@@ -687,7 +713,8 @@ final class SummaryFormatterTest extends TestCase
         self::assertStringContainsString('[namespace: App\Service]', $output);
     }
 
-    public function testHeaderAnnotatedWithClassFilter(): void
+    #[Test]
+    public function itAnnotatesHeaderWithClassFilter(): void
     {
         $report = $this->createReport(violations: [], filesAnalyzed: 10, duration: 0.5);
 
@@ -697,7 +724,8 @@ final class SummaryFormatterTest extends TestCase
         self::assertStringContainsString('[class: App\Service\UserService]', $output);
     }
 
-    public function testNanScoreRenderedAsDash(): void
+    #[Test]
+    public function itRendersNanScoreAsDash(): void
     {
         $report = $this->createReport(
             violations: [],
@@ -714,7 +742,8 @@ final class SummaryFormatterTest extends TestCase
         self::assertStringNotContainsString('NAN', $output);
     }
 
-    public function testScoreColorBoundaryAtWarningThreshold(): void
+    #[Test]
+    public function itColorsScoreBoundaryAtWarningThreshold(): void
     {
         $colorContext = new FormatterContext(useColor: true, terminalWidth: 120);
 
@@ -735,7 +764,8 @@ final class SummaryFormatterTest extends TestCase
         self::assertStringContainsString("\e[33m50%\e[0m", $output);
     }
 
-    public function testScoreColorAboveWarningThresholdIsGreen(): void
+    #[Test]
+    public function itColorsScoreGreenAboveWarningThreshold(): void
     {
         $colorContext = new FormatterContext(useColor: true, terminalWidth: 120);
 
@@ -754,7 +784,8 @@ final class SummaryFormatterTest extends TestCase
         self::assertStringContainsString("\e[32m", $output);
     }
 
-    public function testScoreColorAtErrorThresholdIsRed(): void
+    #[Test]
+    public function itColorsScoreRedAtErrorThreshold(): void
     {
         $colorContext = new FormatterContext(useColor: true, terminalWidth: 120);
 
@@ -773,7 +804,8 @@ final class SummaryFormatterTest extends TestCase
         self::assertStringContainsString("\e[31m30%\e[0m", $output);
     }
 
-    public function testTechDebtShownInScopedMode(): void
+    #[Test]
+    public function itShowsTechDebtInScopedMode(): void
     {
         $report = $this->createReport(
             violations: [
@@ -806,7 +838,8 @@ final class SummaryFormatterTest extends TestCase
         self::assertStringContainsString('Tech debt: 1h 15min', $output);
     }
 
-    public function testTechDebtShownInClassScopedMode(): void
+    #[Test]
+    public function itShowsTechDebtInClassScopedMode(): void
     {
         $report = $this->createReport(
             violations: [
@@ -839,7 +872,8 @@ final class SummaryFormatterTest extends TestCase
         self::assertStringContainsString('1 violation', $output);
     }
 
-    public function testTechDebtHiddenInScopedModeWithNoViolations(): void
+    #[Test]
+    public function itHidesTechDebtInScopedModeWithNoViolations(): void
     {
         $report = $this->createReport(
             violations: [
@@ -864,7 +898,8 @@ final class SummaryFormatterTest extends TestCase
         self::assertStringNotContainsString('Tech debt', $output);
     }
 
-    public function testDetailAppendsViolationSection(): void
+    #[Test]
+    public function itAppendsViolationSectionInDetailMode(): void
     {
         $report = $this->createReport(
             violations: [
@@ -896,7 +931,8 @@ final class SummaryFormatterTest extends TestCase
         self::assertStringContainsString('ERROR', $output);
     }
 
-    public function testDetailNotShownForEmptyReport(): void
+    #[Test]
+    public function itDoesNotShowDetailForEmptyReport(): void
     {
         $report = $this->createReport(
             violations: [],
@@ -912,7 +948,8 @@ final class SummaryFormatterTest extends TestCase
         self::assertStringContainsString('No violations found.', $output);
     }
 
-    public function testDetailWithNamespaceFilterShowsScopedViolationsOnly(): void
+    #[Test]
+    public function itShowsScopedViolationsOnlyInDetailWithNamespaceFilter(): void
     {
         // Violations are pre-filtered by ResultPresenter before reaching the formatter.
         // Only in-scope violations are included in the report.
@@ -938,7 +975,8 @@ final class SummaryFormatterTest extends TestCase
         self::assertStringNotContainsString('Out of scope', $output);
     }
 
-    public function testDetailHintNotShownWhenDetailActive(): void
+    #[Test]
+    public function itDoesNotShowDetailHintWhenDetailActive(): void
     {
         $report = $this->createReport(
             violations: [
@@ -962,7 +1000,8 @@ final class SummaryFormatterTest extends TestCase
         self::assertStringNotContainsString('--detail to see all violations', $output);
     }
 
-    public function testNamespaceFilterShowsNamespaceHealthScores(): void
+    #[Test]
+    public function itShowsNamespaceHealthScoresWhenFilteringByNamespace(): void
     {
         $nsPath = SymbolPath::forNamespace('App\Service');
         $nsMetrics = \Qualimetrix\Core\Metric\MetricBag::fromArray([
@@ -1015,7 +1054,8 @@ final class SummaryFormatterTest extends TestCase
         self::assertStringContainsString('30%', $output); // cohesion
     }
 
-    public function testNamespaceFilterBuildsWorstClassesFromMetrics(): void
+    #[Test]
+    public function itBuildsWorstClassesFromMetricsWhenFilteringByNamespace(): void
     {
         $classPath = SymbolPath::forClass('App\Service', 'UserService');
         $classMetrics = \Qualimetrix\Core\Metric\MetricBag::fromArray([
@@ -1069,7 +1109,8 @@ final class SummaryFormatterTest extends TestCase
         self::assertStringContainsString('Worst classes', $output);
     }
 
-    public function testNamespaceFilterFallsBackToProjectWhenNoNsMetrics(): void
+    #[Test]
+    public function itFallsBackToProjectWhenNoNsMetricsForNamespaceFilter(): void
     {
         $metrics = self::createStub(\Qualimetrix\Core\Metric\MetricRepositoryInterface::class);
         $metrics->method('has')->willReturn(false);
@@ -1097,7 +1138,8 @@ final class SummaryFormatterTest extends TestCase
         self::assertStringNotContainsString('72%', $output);
     }
 
-    public function testDetailTruncationShowsRemainingCount(): void
+    #[Test]
+    public function itShowsRemainingCountOnDetailTruncation(): void
     {
         $violations = [];
         for ($i = 0; $i < 8; $i++) {
@@ -1125,7 +1167,8 @@ final class SummaryFormatterTest extends TestCase
         self::assertStringContainsString('... and 3 more. Use --detail=all', $output);
     }
 
-    public function testDebtBreakdownIncludesAllRulesWhenDetailLimitTruncates(): void
+    #[Test]
+    public function itIncludesAllRulesInDebtBreakdownWhenDetailLimitTruncates(): void
     {
         $violations = [];
 

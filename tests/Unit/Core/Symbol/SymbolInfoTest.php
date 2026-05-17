@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Core\Symbol;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -12,7 +13,8 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 #[CoversClass(SymbolInfo::class)]
 final class SymbolInfoTest extends TestCase
 {
-    public function testConstructorWithAllProperties(): void
+    #[Test]
+    public function itConstructorWithAllProperties(): void
     {
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
         $symbolInfo = new SymbolInfo(
@@ -26,7 +28,8 @@ final class SymbolInfoTest extends TestCase
         self::assertSame(42, $symbolInfo->line);
     }
 
-    public function testConstructorForClassSymbol(): void
+    #[Test]
+    public function itConstructorForClassSymbol(): void
     {
         $symbolPath = SymbolPath::forClass('App\Domain', 'User');
         $symbolInfo = new SymbolInfo(
@@ -40,7 +43,8 @@ final class SymbolInfoTest extends TestCase
         self::assertSame(10, $symbolInfo->line);
     }
 
-    public function testConstructorForNamespaceSymbol(): void
+    #[Test]
+    public function itConstructorForNamespaceSymbol(): void
     {
         $symbolPath = SymbolPath::forNamespace('App\Service');
         $symbolInfo = new SymbolInfo(
@@ -54,7 +58,8 @@ final class SymbolInfoTest extends TestCase
         self::assertSame(1, $symbolInfo->line);
     }
 
-    public function testConstructorForFileSymbol(): void
+    #[Test]
+    public function itConstructorForFileSymbol(): void
     {
         $symbolPath = SymbolPath::forFile('src/bootstrap.php');
         $symbolInfo = new SymbolInfo(
@@ -68,7 +73,8 @@ final class SymbolInfoTest extends TestCase
         self::assertSame(1, $symbolInfo->line);
     }
 
-    public function testSymbolInfoIsReadonly(): void
+    #[Test]
+    public function itSymbolInfoIsReadonly(): void
     {
         $symbolPath = SymbolPath::forMethod('App', 'Test', 'method');
         $symbolInfo = new SymbolInfo(
@@ -82,7 +88,8 @@ final class SymbolInfoTest extends TestCase
         self::assertInstanceOf(SymbolInfo::class, $symbolInfo); // @phpstan-ignore staticMethod.alreadyNarrowedType
     }
 
-    public function testConstructorWithLineOne(): void
+    #[Test]
+    public function itConstructorWithLineOne(): void
     {
         $symbolPath = SymbolPath::forClass('', 'Test');
         $symbolInfo = new SymbolInfo(
@@ -94,7 +101,8 @@ final class SymbolInfoTest extends TestCase
         self::assertSame(1, $symbolInfo->line);
     }
 
-    public function testConstructorWithLargeLine(): void
+    #[Test]
+    public function itConstructorWithLargeLine(): void
     {
         $symbolPath = SymbolPath::forMethod('App', 'LargeClass', 'method');
         $symbolInfo = new SymbolInfo(
