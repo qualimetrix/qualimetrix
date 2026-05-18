@@ -32,7 +32,7 @@ final readonly class DebtCalculator
             $minutes = $this->registry->getMinutesForViolation($violation);
             $totalMinutes += $minutes;
 
-            $file = $violation->location->file;
+            $file = $violation->location->pathString();
             if ($file !== '') {
                 $perFile[$file] = ($perFile[$file] ?? 0) + $minutes;
             }

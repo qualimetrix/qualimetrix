@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinition;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinitionHolder;
 use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\Location;
@@ -282,7 +283,7 @@ final class HtmlTreeBuilderTest extends TestCase
 
         // Method-level violation should be attached to the class
         $violation = new Violation(
-            location: new Location('src/Service/UserService.php', 25),
+            location: new Location(RelativePath::fromString('src/Service/UserService.php'), 25),
             symbolPath: SymbolPath::forMethod('App\\Service', 'UserService', 'calculate'),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic',
@@ -338,7 +339,7 @@ final class HtmlTreeBuilderTest extends TestCase
         );
 
         $v1 = new Violation(
-            location: new Location('src/A/ClassA.php', 10),
+            location: new Location(RelativePath::fromString('src/A/ClassA.php'), 10),
             symbolPath: SymbolPath::forClass('App\\A', 'ClassA'),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic',
@@ -347,7 +348,7 @@ final class HtmlTreeBuilderTest extends TestCase
             metricValue: 10,
         );
         $v2 = new Violation(
-            location: new Location('src/A/ClassA.php', 20),
+            location: new Location(RelativePath::fromString('src/A/ClassA.php'), 20),
             symbolPath: SymbolPath::forMethod('App\\A', 'ClassA', 'doStuff'),
             ruleName: 'complexity.cognitive',
             violationCode: 'complexity.cognitive',
@@ -356,7 +357,7 @@ final class HtmlTreeBuilderTest extends TestCase
             metricValue: 8,
         );
         $v3 = new Violation(
-            location: new Location('src/B/ClassB.php', 5),
+            location: new Location(RelativePath::fromString('src/B/ClassB.php'), 5),
             symbolPath: SymbolPath::forClass('App\\B', 'ClassB'),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic',
@@ -447,7 +448,7 @@ final class HtmlTreeBuilderTest extends TestCase
         );
 
         $violation = new Violation(
-            location: new Location('src/Service.php', 10),
+            location: new Location(RelativePath::fromString('src/Service.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'Service'),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic',
@@ -655,7 +656,7 @@ final class HtmlTreeBuilderTest extends TestCase
         );
 
         $violation = new Violation(
-            location: new Location('src/Service.php', 10),
+            location: new Location(RelativePath::fromString('src/Service.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'Service'),
             ruleName: 'maintainability.index',
             violationCode: 'maintainability.index',
@@ -783,7 +784,7 @@ final class HtmlTreeBuilderTest extends TestCase
 
         // File-level violation should be skipped (not attached to any node)
         $violation = new Violation(
-            location: new Location('src/helpers.php', 1),
+            location: new Location(RelativePath::fromString('src/helpers.php'), 1),
             symbolPath: SymbolPath::forFile('src/helpers.php'),
             ruleName: 'size.loc',
             violationCode: 'size.loc',
@@ -805,42 +806,6 @@ final class HtmlTreeBuilderTest extends TestCase
         $tree = $result['tree'];
         // Violation count in tree should be 0 (file-level skipped)
         self::assertSame(0, $tree['violationCountTotal']);
-    }
-
-    #[Test]
-    public function itRelativizesFilePathsDuringBuild(): void
-    {
-        $metrics = new InMemoryMetricRepository();
-
-        $metrics->add(
-            SymbolPath::forClass('App', 'Service'),
-            MetricBag::fromArray(['ccn.sum' => 5]),
-            '/project/src/Service.php',
-            1,
-        );
-
-        $violation = new Violation(
-            location: new Location('/project/src/Service.php', 10),
-            symbolPath: SymbolPath::forClass('App', 'Service'),
-            ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic',
-            message: 'Complex',
-            severity: Severity::Warning,
-        );
-
-        $report = ReportBuilder::create()
-            ->filesAnalyzed(1)
-            ->filesSkipped(0)
-            ->duration(0.1)
-            ->metrics($metrics)
-            ->addViolation($violation)
-            ->build();
-
-        $context = new FormatterContext(basePath: '/project');
-        $result = $this->builder->build($report, $context);
-
-        $classNode = $result['tree']['children'][0]['children'][0];
-        self::assertSame('src/Service.php', $classNode['violations'][0]['file']);
     }
 
     #[Test]
@@ -871,7 +836,7 @@ final class HtmlTreeBuilderTest extends TestCase
 
         // Class-level violation (30 min debt via RemediationTimeRegistry)
         $classViolation = new Violation(
-            location: new Location('src/Foo.php', 10),
+            location: new Location(RelativePath::fromString('src/Foo.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'Foo'),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic',
@@ -881,7 +846,7 @@ final class HtmlTreeBuilderTest extends TestCase
 
         // File-level violation — won't be partitioned into any node
         $fileViolation = new Violation(
-            location: new Location('src/Foo.php', null),
+            location: new Location(RelativePath::fromString('src/Foo.php'), null),
             symbolPath: SymbolPath::forFile('src/Foo.php'),
             ruleName: 'size.loc',
             violationCode: 'size.loc',

@@ -11,6 +11,7 @@ use Qualimetrix\Baseline\BaselineGenerator;
 use Qualimetrix\Baseline\BaselineLoader;
 use Qualimetrix\Baseline\BaselineWriter;
 use Qualimetrix\Baseline\ViolationHasher;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
@@ -54,7 +55,7 @@ final class BaselineCleanupCommandTest extends TestCase
         // that the cleanup command can verify via file_exists()
         $violations = [
             new Violation(
-                location: new Location($testFile, 1),
+                location: new Location(RelativePath::fromString(basename($testFile)), 1),
                 symbolPath: SymbolPath::forFile($testFile),
                 ruleName: 'test-rule',
                 violationCode: 'test-rule',
@@ -62,7 +63,7 @@ final class BaselineCleanupCommandTest extends TestCase
                 severity: Severity::Warning,
             ),
             new Violation(
-                location: new Location($nonExistingFile, 1),
+                location: new Location(RelativePath::fromString(basename($nonExistingFile)), 1),
                 symbolPath: SymbolPath::forFile($nonExistingFile),
                 ruleName: 'test-rule',
                 violationCode: 'test-rule',
@@ -116,7 +117,7 @@ final class BaselineCleanupCommandTest extends TestCase
         // Use SymbolPath::forFile() which produces "file:path" canonical format
         $violations = [
             new Violation(
-                location: new Location($testFile, 1),
+                location: new Location(RelativePath::fromString(basename($testFile)), 1),
                 symbolPath: SymbolPath::forFile($testFile),
                 ruleName: 'test-rule',
                 violationCode: 'test-rule',
@@ -185,7 +186,7 @@ final class BaselineCleanupCommandTest extends TestCase
         // Use SymbolPath::forFile() which produces "file:path" canonical format
         $violations = [
             new Violation(
-                location: new Location($nonExistingFile, 1),
+                location: new Location(RelativePath::fromString(basename($nonExistingFile)), 1),
                 symbolPath: SymbolPath::forFile($nonExistingFile),
                 ruleName: 'test-rule',
                 violationCode: 'test-rule',

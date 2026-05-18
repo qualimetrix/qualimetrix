@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Reporting\Debt;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
@@ -122,7 +123,7 @@ final class DebtCalculatorTest extends TestCase
     {
         // CCN=50, threshold=20: ratio=2.5, ln(2.5)=0.916, max(1, 0.916)=1 → 30*1=30
         $violation = new Violation(
-            location: new Location('src/Foo.php', 1),
+            location: new Location(RelativePath::fromString('src/Foo.php'), 1),
             symbolPath: SymbolPath::forClass('App', 'TestClass'),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic',
@@ -145,7 +146,7 @@ final class DebtCalculatorTest extends TestCase
         $violations = [
             // With metric data: ratio=2.5, max(1, ln(2.5))=1 → 30*1=30
             new Violation(
-                location: new Location('src/Foo.php', 1),
+                location: new Location(RelativePath::fromString('src/Foo.php'), 1),
                 symbolPath: SymbolPath::forClass('App', 'TestClass'),
                 ruleName: 'complexity.cyclomatic',
                 violationCode: 'complexity.cyclomatic',
@@ -166,7 +167,7 @@ final class DebtCalculatorTest extends TestCase
     private function createViolation(string $file, string $ruleName): Violation
     {
         return new Violation(
-            location: new Location($file, 1),
+            location: new Location(RelativePath::fromString($file), 1),
             symbolPath: SymbolPath::forClass('App', 'TestClass'),
             ruleName: $ruleName,
             violationCode: $ruleName,

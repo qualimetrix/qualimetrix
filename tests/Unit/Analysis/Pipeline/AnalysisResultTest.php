@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Pipeline\AnalysisResult;
 use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Suppression\Suppression;
 use Qualimetrix\Core\Suppression\SuppressionType;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -189,16 +190,16 @@ final class AnalysisResultTest extends TestCase
 
         $sorted = $result->getSortedViolations();
 
-        self::assertSame('a.php', $sorted[0]->location->file);
+        self::assertSame('a.php', $sorted[0]->location->pathString());
         self::assertSame(5, $sorted[0]->location->line);
 
-        self::assertSame('a.php', $sorted[1]->location->file);
+        self::assertSame('a.php', $sorted[1]->location->pathString());
         self::assertSame(10, $sorted[1]->location->line);
 
-        self::assertSame('b.php', $sorted[2]->location->file);
+        self::assertSame('b.php', $sorted[2]->location->pathString());
         self::assertSame(10, $sorted[2]->location->line);
 
-        self::assertSame('b.php', $sorted[3]->location->file);
+        self::assertSame('b.php', $sorted[3]->location->pathString());
         self::assertSame(20, $sorted[3]->location->line);
     }
 
@@ -305,7 +306,7 @@ final class AnalysisResultTest extends TestCase
         ?int $line = 1,
     ): Violation {
         return new Violation(
-            location: new Location($file, $line),
+            location: new Location(RelativePath::fromString($file), $line),
             symbolPath: SymbolPath::forFile($file),
             ruleName: 'test-rule',
             violationCode: 'test-rule',

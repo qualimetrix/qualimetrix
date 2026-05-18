@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Baseline\BaselineGenerator;
 use Qualimetrix\Baseline\ViolationHasher;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
@@ -29,7 +30,7 @@ final class BaselineGeneratorTest extends TestCase
     {
         $violations = [
             new Violation(
-                location: new Location('src/Foo.php', 45),
+                location: new Location(RelativePath::fromString('src/Foo.php'), 45),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
                 ruleName: 'complexity',
                 violationCode: 'complexity',
@@ -51,7 +52,7 @@ final class BaselineGeneratorTest extends TestCase
     {
         $violations = [
             new Violation(
-                location: new Location('src/Foo.php', 45),
+                location: new Location(RelativePath::fromString('src/Foo.php'), 45),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
                 ruleName: 'complexity',
                 violationCode: 'complexity',
@@ -59,7 +60,7 @@ final class BaselineGeneratorTest extends TestCase
                 severity: Severity::Warning,
             ),
             new Violation(
-                location: new Location('src/Foo.php', 10),
+                location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'Foo'),
                 ruleName: 'size',
                 violationCode: 'size',
@@ -67,7 +68,7 @@ final class BaselineGeneratorTest extends TestCase
                 severity: Severity::Warning,
             ),
             new Violation(
-                location: new Location('src/Bar.php', 20),
+                location: new Location(RelativePath::fromString('src/Bar.php'), 20),
                 symbolPath: SymbolPath::forMethod('App', 'Bar', 'baz'),
                 ruleName: 'coupling',
                 violationCode: 'coupling',
@@ -89,7 +90,7 @@ final class BaselineGeneratorTest extends TestCase
     {
         $violations = [
             new Violation(
-                location: new Location('src/Foo.php', 50),
+                location: new Location(RelativePath::fromString('src/Foo.php'), 50),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'third'),
                 ruleName: 'complexity',
                 violationCode: 'complexity',
@@ -97,7 +98,7 @@ final class BaselineGeneratorTest extends TestCase
                 severity: Severity::Warning,
             ),
             new Violation(
-                location: new Location('src/Foo.php', 50),
+                location: new Location(RelativePath::fromString('src/Foo.php'), 50),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'third'),
                 ruleName: 'coupling',
                 violationCode: 'coupling',
@@ -105,7 +106,7 @@ final class BaselineGeneratorTest extends TestCase
                 severity: Severity::Warning,
             ),
             new Violation(
-                location: new Location('src/Foo.php', 10),
+                location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'third'),
                 ruleName: 'size',
                 violationCode: 'size',
@@ -137,7 +138,7 @@ final class BaselineGeneratorTest extends TestCase
     public function itDeduplicatesIdenticalViolations(): void
     {
         $violation = new Violation(
-            location: new Location('src/Foo.php', 45),
+            location: new Location(RelativePath::fromString('src/Foo.php'), 45),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
             ruleName: 'complexity',
             violationCode: 'complexity',
@@ -156,7 +157,7 @@ final class BaselineGeneratorTest extends TestCase
     {
         $violations = [
             new Violation(
-                location: new Location('src/Foo.php'),
+                location: new Location(RelativePath::fromString('src/Foo.php')),
                 symbolPath: SymbolPath::forNamespace('App'),
                 ruleName: 'namespace-size',
                 violationCode: 'namespace-size',

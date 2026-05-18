@@ -6,10 +6,12 @@ namespace Qualimetrix\Rules\Size;
 
 use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\MetricName;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Util\PathNormalizer;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
@@ -93,7 +95,7 @@ final class ClassCountRule extends AbstractRule
                 $threshold = $severity === Severity::Error ? $effectiveOptions->error : $effectiveOptions->warning;
 
                 $violations[] = new Violation(
-                    location: new Location($namespaceInfo->file),
+                    location: new Location(RelativePath::fromString(PathNormalizer::relativize($namespaceInfo->file))),
                     symbolPath: $namespaceInfo->symbolPath,
                     ruleName: $this->getName(),
                     violationCode: self::NAME,

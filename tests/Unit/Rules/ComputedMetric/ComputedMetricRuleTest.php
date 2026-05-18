@@ -488,7 +488,7 @@ final class ComputedMetricRuleTest extends TestCase
         $violations = $rule->analyze(new AnalysisContext($repository));
 
         self::assertCount(1, $violations);
-        self::assertSame('src/Foo.php', $violations[0]->location->file);
+        self::assertSame('src/Foo.php', $violations[0]->location->pathString());
         self::assertSame(42, $violations[0]->location->line);
     }
 

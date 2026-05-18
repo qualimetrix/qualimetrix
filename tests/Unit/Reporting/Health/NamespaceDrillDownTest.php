@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
@@ -247,7 +248,7 @@ final class NamespaceDrillDownTest extends TestCase
         // Two violations: one class-level, one method-level (both count toward the class)
         $violations = [
             new Violation(
-                location: new Location('src/Service/Foo.php', 10),
+                location: new Location(RelativePath::fromString('src/Service/Foo.php'), 10),
                 symbolPath: $classPath,
                 ruleName: 'test.rule',
                 violationCode: 'T001',
@@ -255,7 +256,7 @@ final class NamespaceDrillDownTest extends TestCase
                 severity: Severity::Warning,
             ),
             new Violation(
-                location: new Location('src/Service/Foo.php', 20),
+                location: new Location(RelativePath::fromString('src/Service/Foo.php'), 20),
                 symbolPath: $methodPath,
                 ruleName: 'test.rule',
                 violationCode: 'T002',
@@ -290,7 +291,7 @@ final class NamespaceDrillDownTest extends TestCase
 
         $violations = [
             new Violation(
-                location: new Location('src/Service/Foo.php', 10),
+                location: new Location(RelativePath::fromString('src/Service/Foo.php'), 10),
                 symbolPath: $nsPath,
                 ruleName: 'test.rule',
                 violationCode: 'T001',

@@ -13,6 +13,7 @@ use Qualimetrix\Baseline\Suppression\SuppressionFilter;
 use Qualimetrix\Baseline\ViolationHasher;
 use Qualimetrix\Configuration\AnalysisConfiguration;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Suppression\Suppression;
 use Qualimetrix\Core\Suppression\SuppressionType;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -277,7 +278,7 @@ final class ViolationFilterPipelineTest extends TestCase
         $result = $pipeline->filter([$v1, $v2], $options);
 
         self::assertCount(1, $result->violations);
-        self::assertSame('src/Service/UserService.php', $result->violations[0]->location->file);
+        self::assertSame('src/Service/UserService.php', $result->violations[0]->location->pathString());
         self::assertSame(1, $result->pathExclusionFiltered);
     }
 
@@ -347,7 +348,7 @@ final class ViolationFilterPipelineTest extends TestCase
         $result = $pipeline->filter([$v1, $v2, $v3], $options);
 
         self::assertCount(1, $result->violations);
-        self::assertSame('src/Service/UserService.php', $result->violations[0]->location->file);
+        self::assertSame('src/Service/UserService.php', $result->violations[0]->location->pathString());
         self::assertSame(2, $result->pathExclusionFiltered);
     }
 
@@ -448,7 +449,7 @@ final class ViolationFilterPipelineTest extends TestCase
     public function excludeNamespacesKeepsNullNamespace(): void
     {
         $vFile = new Violation(
-            location: new Location('src/helpers.php', 10),
+            location: new Location(RelativePath::fromString('src/helpers.php'), 10),
             symbolPath: SymbolPath::forFile('src/helpers.php'),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic.method',
@@ -571,7 +572,7 @@ final class ViolationFilterPipelineTest extends TestCase
     private function makeViolation(string $file, string $namespace = 'App', string $class = 'TestClass'): Violation
     {
         return new Violation(
-            location: new Location($file, 10),
+            location: new Location(RelativePath::fromString($file), 10),
             symbolPath: SymbolPath::forClass($namespace, $class),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic.method',

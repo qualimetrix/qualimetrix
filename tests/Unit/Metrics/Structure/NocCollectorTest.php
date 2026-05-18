@@ -12,8 +12,10 @@ use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\Dependency\Dependency;
 use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Util\PathNormalizer;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Metrics\Structure\NocCollector;
 
@@ -36,7 +38,7 @@ final class NocCollectorTest extends TestCase
             source: SymbolPath::fromClassFqn($childClass),
             target: SymbolPath::fromClassFqn($parentClass),
             type: DependencyType::Extends,
-            location: new Location($file, $line),
+            location: new Location(RelativePath::fromString(PathNormalizer::relativize($file)), $line),
         );
     }
 
@@ -86,7 +88,7 @@ final class NocCollectorTest extends TestCase
             source: SymbolPath::fromClassFqn('App\\ChildClass'),
             target: SymbolPath::fromClassFqn('App\\BaseClass'),
             type: DependencyType::Extends,
-            location: new Location('/child.php', 20),
+            location: new Location(RelativePath::fromString('child.php'), 20),
         );
         $graph = (new DependencyGraphBuilder())->build([$extends]);
 

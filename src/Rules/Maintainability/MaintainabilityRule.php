@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Qualimetrix\Rules\Maintainability;
 
 use Qualimetrix\Core\Metric\MetricName;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Util\PathNormalizer;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
@@ -95,7 +97,7 @@ final class MaintainabilityRule extends AbstractRule
                     : $effectiveOptions->warning;
 
                 $violations[] = new Violation(
-                    location: new Location($methodInfo->file, $methodInfo->line),
+                    location: new Location(RelativePath::fromString(PathNormalizer::relativize($methodInfo->file)), $methodInfo->line),
                     symbolPath: $methodInfo->symbolPath,
                     ruleName: $this->getName(),
                     violationCode: self::NAME,

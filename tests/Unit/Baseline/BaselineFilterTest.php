@@ -12,6 +12,7 @@ use Qualimetrix\Baseline\Baseline;
 use Qualimetrix\Baseline\BaselineEntry;
 use Qualimetrix\Baseline\Filter\BaselineFilter;
 use Qualimetrix\Baseline\ViolationHasher;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
@@ -31,7 +32,7 @@ final class BaselineFilterTest extends TestCase
     public function itFiltersOutKnownViolation(): void
     {
         $violation = new Violation(
-            location: new Location('src/Foo.php', 45),
+            location: new Location(RelativePath::fromString('src/Foo.php'), 45),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
             ruleName: 'complexity',
             violationCode: 'complexity',
@@ -60,7 +61,7 @@ final class BaselineFilterTest extends TestCase
     public function itPassesNewViolation(): void
     {
         $violation = new Violation(
-            location: new Location('src/Foo.php', 45),
+            location: new Location(RelativePath::fromString('src/Foo.php'), 45),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
             ruleName: 'complexity',
             violationCode: 'complexity',
@@ -83,7 +84,7 @@ final class BaselineFilterTest extends TestCase
     public function itPassesViolationFromDifferentFile(): void
     {
         $violation = new Violation(
-            location: new Location('src/Bar.php', 45),
+            location: new Location(RelativePath::fromString('src/Bar.php'), 45),
             symbolPath: SymbolPath::forMethod('App', 'Bar', 'baz'),
             ruleName: 'complexity',
             violationCode: 'complexity',
@@ -111,7 +112,7 @@ final class BaselineFilterTest extends TestCase
     {
         // Current run has only the first violation (second was fixed)
         $violation1 = new Violation(
-            location: new Location('src/Foo.php', 45),
+            location: new Location(RelativePath::fromString('src/Foo.php'), 45),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
             ruleName: 'complexity',
             violationCode: 'complexity',
@@ -120,7 +121,7 @@ final class BaselineFilterTest extends TestCase
         );
 
         $violation2 = new Violation(
-            location: new Location('src/Foo.php', 10),
+            location: new Location(RelativePath::fromString('src/Foo.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'Foo'),
             ruleName: 'size',
             violationCode: 'size',
@@ -156,7 +157,7 @@ final class BaselineFilterTest extends TestCase
     public function itReturnsEmptyWhenNothingResolved(): void
     {
         $violation = new Violation(
-            location: new Location('src/Foo.php', 45),
+            location: new Location(RelativePath::fromString('src/Foo.php'), 45),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
             ruleName: 'complexity',
             violationCode: 'complexity',
@@ -187,7 +188,7 @@ final class BaselineFilterTest extends TestCase
     {
         // Violation originally at line 45
         $violation1 = new Violation(
-            location: new Location('src/Foo.php', 45),
+            location: new Location(RelativePath::fromString('src/Foo.php'), 45),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
             ruleName: 'complexity',
             violationCode: 'complexity',
@@ -209,7 +210,7 @@ final class BaselineFilterTest extends TestCase
 
         // Same violation now at line 55 (line drift)
         $violation2 = new Violation(
-            location: new Location('src/Foo.php', 55),
+            location: new Location(RelativePath::fromString('src/Foo.php'), 55),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
             ruleName: 'complexity',
             violationCode: 'complexity',

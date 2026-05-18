@@ -54,7 +54,7 @@ final class JsonViolationSection
                 return $exceedOrder;
             }
 
-            return (($cmp1 = $a->location->file <=> $b->location->file) !== 0 ? $cmp1
+            return (($cmp1 = $a->location->pathString() <=> $b->location->pathString()) !== 0 ? $cmp1
                 : (($cmp2 = $a->location->line <=> $b->location->line) !== 0 ? $cmp2
                 : ($a->violationCode <=> $b->violationCode)));
         });
@@ -91,7 +91,7 @@ final class JsonViolationSection
         $ns = $violation->symbolPath->namespace ?? '';
         $file = $violation->location->isNone()
             ? null
-            : $context->relativizePath($violation->location->file);
+            : $context->relativizePath($violation->location->pathString());
 
         return [
             'file' => $file,

@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Violation\Location;
 
 #[CoversClass(Location::class)]
@@ -17,18 +18,18 @@ final class LocationTest extends TestCase
     #[Test]
     public function itConstructorWithFileAndLine(): void
     {
-        $location = new Location('src/Service/UserService.php', 42);
+        $location = new Location(RelativePath::fromString('src/Service/UserService.php'), 42);
 
-        self::assertSame('src/Service/UserService.php', $location->file);
+        self::assertSame('src/Service/UserService.php', $location->file?->value());
         self::assertSame(42, $location->line);
     }
 
     #[Test]
     public function itConstructorWithFileOnly(): void
     {
-        $location = new Location('src/Service/UserService.php');
+        $location = new Location(RelativePath::fromString('src/Service/UserService.php'));
 
-        self::assertSame('src/Service/UserService.php', $location->file);
+        self::assertSame('src/Service/UserService.php', $location->file?->value());
         self::assertNull($location->line);
     }
 
@@ -45,40 +46,40 @@ final class LocationTest extends TestCase
     public static function toStringDataProvider(): iterable
     {
         yield 'file with line' => [
-            new Location('src/Service/UserService.php', 42),
+            new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
             'src/Service/UserService.php:42',
         ];
 
         yield 'file without line' => [
-            new Location('src/Service/UserService.php'),
+            new Location(RelativePath::fromString('src/Service/UserService.php')),
             'src/Service/UserService.php',
         ];
 
         yield 'file with line 1' => [
-            new Location('src/test.php', 1),
+            new Location(RelativePath::fromString('src/test.php'), 1),
             'src/test.php:1',
         ];
 
         yield 'file with large line number' => [
-            new Location('src/large.php', 99999),
+            new Location(RelativePath::fromString('src/large.php'), 99999),
             'src/large.php:99999',
         ];
 
         yield 'relative path with line' => [
-            new Location('tests/Unit/CoreTest.php', 10),
+            new Location(RelativePath::fromString('tests/Unit/CoreTest.php'), 10),
             'tests/Unit/CoreTest.php:10',
         ];
 
-        yield 'absolute path with line' => [
-            new Location('/var/www/project/src/Class.php', 25),
-            '/var/www/project/src/Class.php:25',
+        yield 'deep nested path with line' => [
+            new Location(RelativePath::fromString('var/www/project/src/Class.php'), 25),
+            'var/www/project/src/Class.php:25',
         ];
     }
 
     #[Test]
     public function itLocationIsReadonly(): void
     {
-        $location = new Location('src/test.php', 10);
+        $location = new Location(RelativePath::fromString('src/test.php'), 10);
 
         // This test verifies that Location is readonly by attempting to create a new instance
         // The readonly keyword ensures immutability at the language level
@@ -91,7 +92,7 @@ final class LocationTest extends TestCase
         self::expectException(InvalidArgumentException::class);
         self::expectExceptionMessage('Line number must be >= 1 or null, got 0');
 
-        new Location('src/test.php', 0);
+        new Location(RelativePath::fromString('src/test.php'), 0);
     }
 
     #[Test]
@@ -99,7 +100,7 @@ final class LocationTest extends TestCase
     {
         self::expectException(InvalidArgumentException::class);
 
-        new Location('src/test.php', -1);
+        new Location(RelativePath::fromString('src/test.php'), -1);
     }
 
     #[Test]
@@ -108,7 +109,8 @@ final class LocationTest extends TestCase
         $location = Location::none();
 
         self::assertTrue($location->isNone());
-        self::assertSame('', $location->file);
+        self::assertNull($location->file);
+        self::assertSame('', $location->pathString());
         self::assertNull($location->line);
         self::assertSame('', $location->toString());
     }
@@ -116,7 +118,7 @@ final class LocationTest extends TestCase
     #[Test]
     public function itIsNoneReturnsFalseForRegularLocation(): void
     {
-        $location = new Location('src/test.php', 10);
+        $location = new Location(RelativePath::fromString('src/test.php'), 10);
 
         self::assertFalse($location->isNone());
     }

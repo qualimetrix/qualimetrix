@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Core\Violation;
 
 use InvalidArgumentException;
+use Qualimetrix\Core\Path\RelativePath;
 
 final readonly class Location
 {
@@ -15,7 +16,7 @@ final readonly class Location
      *                      Formatters use this hint to decide whether to display the line number.
      */
     public function __construct(
-        public string $file,
+        public ?RelativePath $file,
         public ?int $line = null,
         public bool $precise = false,
     ) {
@@ -31,7 +32,7 @@ final readonly class Location
      */
     public static function none(): self
     {
-        return new self('');
+        return new self(null, null, false);
     }
 
     /**
@@ -39,15 +40,30 @@ final readonly class Location
      */
     public function isNone(): bool
     {
-        return $this->file === '';
+        return $this->file === null;
+    }
+
+    /**
+     * Wire-surface string of the file path; empty string for {@see none()}.
+     *
+     * Used by formatters, comparators, and array-key writes that need the legacy
+     * string-shape semantics during the gradual VO migration (ADR 0015).
+     */
+    public function pathString(): string
+    {
+        return $this->file?->value() ?? '';
     }
 
     public function toString(): string
     {
-        if ($this->line === null) {
-            return $this->file;
+        if ($this->file === null) {
+            return '';
         }
 
-        return \sprintf('%s:%d', $this->file, $this->line);
+        if ($this->line === null) {
+            return $this->file->value();
+        }
+
+        return \sprintf('%s:%d', $this->file->value(), $this->line);
     }
 }

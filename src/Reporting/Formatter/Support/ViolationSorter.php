@@ -49,7 +49,7 @@ final class ViolationSorter
         foreach ($violations as $violation) {
             $key = match ($groupBy) {
                 GroupBy::None => '',
-                GroupBy::File => $violation->location->file,
+                GroupBy::File => $violation->location->pathString(),
                 GroupBy::Rule => $violation->ruleName,
                 GroupBy::Severity => $violation->severity->value,
                 GroupBy::ClassName => self::extractClassName($violation),
@@ -65,13 +65,13 @@ final class ViolationSorter
     private static function bySeverityFileLine(Violation $a, Violation $b): int
     {
         return ($cmp1 = self::severityOrder($a->severity) <=> self::severityOrder($b->severity)) !== 0 ? $cmp1
-            : (($cmp2 = $a->location->file <=> $b->location->file) !== 0 ? $cmp2
+            : (($cmp2 = $a->location->pathString() <=> $b->location->pathString()) !== 0 ? $cmp2
             : (($a->location->line ?? 0) <=> ($b->location->line ?? 0)));
     }
 
     private static function byFileSeverityLine(Violation $a, Violation $b): int
     {
-        return ($cmp1 = $a->location->file <=> $b->location->file) !== 0 ? $cmp1
+        return ($cmp1 = $a->location->pathString() <=> $b->location->pathString()) !== 0 ? $cmp1
             : (($cmp2 = self::severityOrder($a->severity) <=> self::severityOrder($b->severity)) !== 0 ? $cmp2
             : (($a->location->line ?? 0) <=> ($b->location->line ?? 0)));
     }
@@ -80,7 +80,7 @@ final class ViolationSorter
     {
         return ($cmp1 = $a->ruleName <=> $b->ruleName) !== 0 ? $cmp1
             : (($cmp2 = self::severityOrder($a->severity) <=> self::severityOrder($b->severity)) !== 0 ? $cmp2
-            : (($cmp3 = $a->location->file <=> $b->location->file) !== 0 ? $cmp3
+            : (($cmp3 = $a->location->pathString() <=> $b->location->pathString()) !== 0 ? $cmp3
             : (($a->location->line ?? 0) <=> ($b->location->line ?? 0))));
     }
 
@@ -88,7 +88,7 @@ final class ViolationSorter
     {
         return ($cmp1 = self::extractClassName($a) <=> self::extractClassName($b)) !== 0 ? $cmp1
             : (($cmp2 = self::severityOrder($a->severity) <=> self::severityOrder($b->severity)) !== 0 ? $cmp2
-            : (($cmp3 = $a->location->file <=> $b->location->file) !== 0 ? $cmp3
+            : (($cmp3 = $a->location->pathString() <=> $b->location->pathString()) !== 0 ? $cmp3
             : (($a->location->line ?? 0) <=> ($b->location->line ?? 0))));
     }
 
@@ -96,7 +96,7 @@ final class ViolationSorter
     {
         return ($cmp1 = self::extractNamespaceName($a) <=> self::extractNamespaceName($b)) !== 0 ? $cmp1
             : (($cmp2 = self::severityOrder($a->severity) <=> self::severityOrder($b->severity)) !== 0 ? $cmp2
-            : (($cmp3 = $a->location->file <=> $b->location->file) !== 0 ? $cmp3
+            : (($cmp3 = $a->location->pathString() <=> $b->location->pathString()) !== 0 ? $cmp3
             : (($a->location->line ?? 0) <=> ($b->location->line ?? 0))));
     }
 
@@ -114,7 +114,7 @@ final class ViolationSorter
         }
 
         // File-level violation without class context — group under file path
-        return $violation->location->file;
+        return $violation->location->pathString();
     }
 
     /**

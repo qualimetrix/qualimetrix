@@ -21,6 +21,7 @@ use Qualimetrix\Core\Dependency\Dependency;
 use Qualimetrix\Core\Dependency\DependencyGraphInterface;
 use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\CliAliasReader;
 use Qualimetrix\Core\Rule\RuleCategory;
@@ -179,7 +180,7 @@ final class LayerViolationRuleTest extends TestCase
 
         $source = SymbolPath::forClass('App\\Controller', 'UserController');
         $target = SymbolPath::forClass('App\\Repository', 'UserRepository');
-        $location = new Location('src/Controller/UserController.php', 42, precise: true);
+        $location = new Location(RelativePath::fromString('src/Controller/UserController.php'), 42, precise: true);
 
         $graph = $this->buildGraph([
             new Dependency($source, $target, DependencyType::New_, $location),
@@ -312,8 +313,8 @@ final class LayerViolationRuleTest extends TestCase
         $target = SymbolPath::forClass('App\\Repository', 'UserRepository');
 
         $graph = $this->buildGraph([
-            new Dependency($source, $target, DependencyType::New_, new Location('a.php', 10)),
-            new Dependency($source, $target, DependencyType::TypeHint, new Location('a.php', 20)),
+            new Dependency($source, $target, DependencyType::New_, new Location(RelativePath::fromString('a.php'), 10)),
+            new Dependency($source, $target, DependencyType::TypeHint, new Location(RelativePath::fromString('a.php'), 20)),
         ]);
 
         $violations = $this->filterByRule($rule->analyze($this->buildContext($graph, $arch, $repo)), LayerViolationRule::NAME);
@@ -733,7 +734,7 @@ final class LayerViolationRuleTest extends TestCase
             source: SymbolPath::forClass($sourceNamespace, $sourceClass),
             target: SymbolPath::forClass($targetNamespace, $targetClass),
             type: $type,
-            location: new Location('src/dummy.php', 1),
+            location: new Location(RelativePath::fromString('src/dummy.php'), 1),
         );
     }
 

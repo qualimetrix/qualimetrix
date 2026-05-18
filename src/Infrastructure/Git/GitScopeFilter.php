@@ -38,7 +38,7 @@ final class GitScopeFilter implements ViolationFilterInterface
         $symbolPath = $violation->symbolPath;
 
         // Check if violation is in a changed file
-        $filePath = $violation->location->file;
+        $filePath = $violation->location->pathString();
         if (isset($this->changedPaths[$filePath])) {
             return true; // Show this violation
         }

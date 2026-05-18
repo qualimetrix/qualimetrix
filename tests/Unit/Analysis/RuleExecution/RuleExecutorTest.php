@@ -13,6 +13,7 @@ use Qualimetrix\Configuration\ConfigurationHolder;
 use Qualimetrix\Configuration\RuleNamespaceExclusionProvider;
 use Qualimetrix\Configuration\RuleOptionsRegistry;
 use Qualimetrix\Configuration\RulePathExclusionProvider;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Rule\RuleInterface;
@@ -477,7 +478,7 @@ final class RuleExecutorTest extends TestCase
     {
         return new Violation(
             location: new Location(
-                file: '/test/file.php',
+                file: RelativePath::fromString('test/file.php'),
                 line: 1,
             ),
             symbolPath: SymbolPath::forFile('/test/file.php'),
@@ -493,7 +494,7 @@ final class RuleExecutorTest extends TestCase
     {
         return new Violation(
             location: new Location(
-                file: '/test/file.php',
+                file: RelativePath::fromString('test/file.php'),
                 line: 1,
             ),
             symbolPath: SymbolPath::forNamespace($namespace),
@@ -573,7 +574,7 @@ final class RuleExecutorTest extends TestCase
     {
         return new Violation(
             location: new Location(
-                file: $file,
+                file: $file !== '' ? RelativePath::fromString($file) : null,
                 line: 1,
             ),
             symbolPath: SymbolPath::forFile($file !== '' ? $file : '/unknown'),

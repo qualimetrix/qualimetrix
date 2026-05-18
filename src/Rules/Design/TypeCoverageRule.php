@@ -7,11 +7,13 @@ namespace Qualimetrix\Rules\Design;
 use LogicException;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricName;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Util\PathNormalizer;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
@@ -80,7 +82,7 @@ final class TypeCoverageRule extends AbstractRule
         foreach ($context->metrics->all(SymbolType::Class_) as $classInfo) {
             $metrics = $context->metrics->get($classInfo->symbolPath);
 
-            $location = new Location($classInfo->file, $classInfo->line);
+            $location = new Location(RelativePath::fromString(PathNormalizer::relativize($classInfo->file)), $classInfo->line);
 
             // Apply @qmx-threshold overrides for this class
             $effectiveOptions = $this->getEffectiveOptions(

@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Baseline\ViolationHasher;
 use Qualimetrix\Core\Dependency\DependencyType;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
@@ -75,7 +76,7 @@ final class ViolationHasherTest extends TestCase
     public function itHashChangesWhenViolationCodeChanges(): void
     {
         $violation1 = new Violation(
-            location: new Location('src/Foo.php', 42),
+            location: new Location(RelativePath::fromString('src/Foo.php'), 42),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
             ruleName: 'complexity',
             violationCode: 'complexity.method',
@@ -84,7 +85,7 @@ final class ViolationHasherTest extends TestCase
         );
 
         $violation2 = new Violation(
-            location: new Location('src/Foo.php', 42),
+            location: new Location(RelativePath::fromString('src/Foo.php'), 42),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
             ruleName: 'complexity',
             violationCode: 'complexity.class',
@@ -106,7 +107,7 @@ final class ViolationHasherTest extends TestCase
     public function itSameViolationCodeProducesSameHash(): void
     {
         $violation1 = new Violation(
-            location: new Location('src/Foo.php', 42),
+            location: new Location(RelativePath::fromString('src/Foo.php'), 42),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
             ruleName: 'complexity',
             violationCode: 'complexity.method',
@@ -115,7 +116,7 @@ final class ViolationHasherTest extends TestCase
         );
 
         $violation2 = new Violation(
-            location: new Location('src/Foo.php', 99),
+            location: new Location(RelativePath::fromString('src/Foo.php'), 99),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
             ruleName: 'complexity',
             violationCode: 'complexity.method',
@@ -137,7 +138,7 @@ final class ViolationHasherTest extends TestCase
     public function itHashStableAcrossSeverityChanges(): void
     {
         $violation1 = new Violation(
-            location: new Location('src/Foo.php', 42),
+            location: new Location(RelativePath::fromString('src/Foo.php'), 42),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
             ruleName: 'complexity',
             violationCode: 'complexity',
@@ -146,7 +147,7 @@ final class ViolationHasherTest extends TestCase
         );
 
         $violation2 = new Violation(
-            location: new Location('src/Foo.php', 42),
+            location: new Location(RelativePath::fromString('src/Foo.php'), 42),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
             ruleName: 'complexity',
             violationCode: 'complexity',
@@ -168,7 +169,7 @@ final class ViolationHasherTest extends TestCase
     public function itHashChangesWhenRuleChanges(): void
     {
         $violation1 = new Violation(
-            location: new Location('src/Foo.php', 42),
+            location: new Location(RelativePath::fromString('src/Foo.php'), 42),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
             ruleName: 'complexity',
             violationCode: 'complexity',
@@ -177,7 +178,7 @@ final class ViolationHasherTest extends TestCase
         );
 
         $violation2 = new Violation(
-            location: new Location('src/Foo.php', 42),
+            location: new Location(RelativePath::fromString('src/Foo.php'), 42),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
             ruleName: 'coupling',
             violationCode: 'coupling',
@@ -199,7 +200,7 @@ final class ViolationHasherTest extends TestCase
     public function itHashChangesWhenMethodNameChanges(): void
     {
         $violation1 = new Violation(
-            location: new Location('src/Foo.php', 42),
+            location: new Location(RelativePath::fromString('src/Foo.php'), 42),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'calculate'),
             ruleName: 'complexity',
             violationCode: 'complexity',
@@ -208,7 +209,7 @@ final class ViolationHasherTest extends TestCase
         );
 
         $violation2 = new Violation(
-            location: new Location('src/Foo.php', 42),
+            location: new Location(RelativePath::fromString('src/Foo.php'), 42),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'process'),
             ruleName: 'complexity',
             violationCode: 'complexity',
@@ -230,7 +231,7 @@ final class ViolationHasherTest extends TestCase
     public function itHashChangesWhenClassChanges(): void
     {
         $violation1 = new Violation(
-            location: new Location('src/Foo.php', 42),
+            location: new Location(RelativePath::fromString('src/Foo.php'), 42),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
             ruleName: 'complexity',
             violationCode: 'complexity',
@@ -239,7 +240,7 @@ final class ViolationHasherTest extends TestCase
         );
 
         $violation2 = new Violation(
-            location: new Location('src/Baz.php', 42),
+            location: new Location(RelativePath::fromString('src/Baz.php'), 42),
             symbolPath: SymbolPath::forMethod('App', 'Baz', 'bar'),
             ruleName: 'complexity',
             violationCode: 'complexity',
@@ -261,7 +262,7 @@ final class ViolationHasherTest extends TestCase
     public function itHashForClassLevelViolation(): void
     {
         $violation = new Violation(
-            location: new Location('src/Service/UserService.php', 10),
+            location: new Location(RelativePath::fromString('src/Service/UserService.php'), 10),
             symbolPath: SymbolPath::forClass('App\Service', 'UserService'),
             ruleName: 'class-size',
             violationCode: 'class-size',
@@ -278,7 +279,7 @@ final class ViolationHasherTest extends TestCase
     public function itHashForNamespaceLevelViolation(): void
     {
         $violation = new Violation(
-            location: new Location('src/Service/UserService.php'),
+            location: new Location(RelativePath::fromString('src/Service/UserService.php')),
             symbolPath: SymbolPath::forNamespace('App\Service'),
             ruleName: 'namespace-size',
             violationCode: 'namespace-size',
@@ -295,7 +296,7 @@ final class ViolationHasherTest extends TestCase
     public function itHashForFileLevelViolation(): void
     {
         $violation = new Violation(
-            location: new Location('src/bootstrap.php'),
+            location: new Location(RelativePath::fromString('src/bootstrap.php')),
             symbolPath: SymbolPath::forFile('src/bootstrap.php'),
             ruleName: 'file-length',
             violationCode: 'file-length',
@@ -323,7 +324,7 @@ final class ViolationHasherTest extends TestCase
     public function itRegressionPinForMethodLevelViolation(): void
     {
         $violation = new Violation(
-            location: new Location('src/Service/UserService.php', 42),
+            location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic',
@@ -353,7 +354,7 @@ final class ViolationHasherTest extends TestCase
     public function itRegressionPinForClassLevelViolation(): void
     {
         $violation = new Violation(
-            location: new Location('src/Service/OrderProcessor.php', 10),
+            location: new Location(RelativePath::fromString('src/Service/OrderProcessor.php'), 10),
             symbolPath: SymbolPath::forClass('App\Service', 'OrderProcessor'),
             ruleName: 'cohesion.lcom4',
             violationCode: 'cohesion.lcom4',
@@ -376,7 +377,7 @@ final class ViolationHasherTest extends TestCase
         // Asserts that explicitly passing null dependencyTarget/dependencyType is
         // byte-for-byte equivalent to not passing them at all.
         $violation = new Violation(
-            location: new Location('src/Service/UserService.php', 42),
+            location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic',
@@ -463,7 +464,7 @@ final class ViolationHasherTest extends TestCase
     public function itDependencyHashDiffersFromNonDependencyHashForSameSource(): void
     {
         $nonDep = new Violation(
-            location: new Location('src/Controller/UserController.php', 12),
+            location: new Location(RelativePath::fromString('src/Controller/UserController.php'), 12),
             symbolPath: SymbolPath::forClass('App\Controller', 'UserController'),
             ruleName: 'architecture.layer-violation',
             violationCode: 'architecture.layer-violation',
@@ -489,7 +490,7 @@ final class ViolationHasherTest extends TestCase
     private function createViolation(int $line, string $message): Violation
     {
         return new Violation(
-            location: new Location('src/Service/UserService.php', $line),
+            location: new Location(RelativePath::fromString('src/Service/UserService.php'), $line),
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
             ruleName: 'cyclomatic-complexity',
             violationCode: 'cyclomatic-complexity',
@@ -505,7 +506,7 @@ final class ViolationHasherTest extends TestCase
         DependencyType $type,
     ): Violation {
         return new Violation(
-            location: new Location('src/Controller/UserController.php', $line),
+            location: new Location(RelativePath::fromString('src/Controller/UserController.php'), $line),
             symbolPath: SymbolPath::forClass('App\Controller', 'UserController'),
             ruleName: 'architecture.layer-violation',
             violationCode: 'architecture.layer-violation',

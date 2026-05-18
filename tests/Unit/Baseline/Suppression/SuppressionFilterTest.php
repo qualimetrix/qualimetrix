@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Baseline\Suppression\SuppressionFilter;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Suppression\Suppression;
 use Qualimetrix\Core\Suppression\SuppressionType;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -162,7 +163,7 @@ final class SuppressionFilterTest extends TestCase
         ]);
 
         $violation1 = new Violation(
-            location: new Location('src/Foo.php', 42),
+            location: new Location(RelativePath::fromString('src/Foo.php'), 42),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic.method',
@@ -171,7 +172,7 @@ final class SuppressionFilterTest extends TestCase
         );
 
         $violation2 = new Violation(
-            location: new Location('src/Foo.php', 50),
+            location: new Location(RelativePath::fromString('src/Foo.php'), 50),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'baz'),
             ruleName: 'coupling.distance',
             violationCode: 'coupling.distance',
@@ -266,7 +267,7 @@ final class SuppressionFilterTest extends TestCase
 
         // Namespace/file-level violation with line=null should NOT be suppressed by symbol tag
         $violation = new Violation(
-            location: new Location('src/Foo.php', null),
+            location: new Location(RelativePath::fromString('src/Foo.php'), null),
             symbolPath: SymbolPath::forNamespace('App'),
             ruleName: 'coupling',
             violationCode: 'coupling',
@@ -312,7 +313,7 @@ final class SuppressionFilterTest extends TestCase
     private function createViolation(string $file, int $line, string $violationCode): Violation
     {
         return new Violation(
-            location: new Location($file, $line),
+            location: new Location(RelativePath::fromString($file), $line),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
             ruleName: $violationCode,
             violationCode: $violationCode,

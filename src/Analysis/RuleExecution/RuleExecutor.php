@@ -62,8 +62,8 @@ final class RuleExecutor implements RuleExecutorInterface
             $pathExclusion = $this->ruleOptionsRegistry->getPathExclusionProvider();
             $ruleViolations = array_filter(
                 $ruleViolations,
-                fn(Violation $v) => $v->location->file === ''
-                    || !$pathExclusion->isExcluded($ruleName, $v->location->file),
+                fn(Violation $v) => $v->location->isNone()
+                    || !$pathExclusion->isExcluded($ruleName, $v->location->pathString()),
             );
 
             $violations = [...$violations, ...$ruleViolations];

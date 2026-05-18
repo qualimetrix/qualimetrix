@@ -27,6 +27,12 @@ use Stringable;
  * Note on directionality: this VO has no static reference to {@see AbsolutePath}.
  * The conversion to absolute uses {@see AbsolutePath::joinRelative()}, mirroring
  * Java NIO / Python pathlib where the base owns the resolution operation.
+ *
+ * @qmx-threshold coupling.cbo warning=50 error=80 ADR 0015 Phase 1a — high
+ *                 afferent coupling is by design: every rule / formatter / value
+ *                 carrier consumes this VO. Inbound CBO will shrink in Phase 1c
+ *                 when the transient `RelativePath::fromString` bridges at rule
+ *                 construction sites are deleted.
  */
 final readonly class RelativePath implements Stringable
 {

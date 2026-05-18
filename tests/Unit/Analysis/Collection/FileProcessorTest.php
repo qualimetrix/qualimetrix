@@ -23,6 +23,7 @@ use Qualimetrix\Core\Metric\MethodMetricsProviderInterface;
 use Qualimetrix\Core\Metric\MethodWithMetrics;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricCollectorInterface;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Suppression\SuppressionType;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use SplFileInfo;
@@ -58,7 +59,7 @@ final class FileProcessorTest extends TestCase
         $result = $processor->process($file);
 
         self::assertTrue($result->success);
-        self::assertSame('/tmp/test.php', $result->filePath);
+        self::assertSame('tmp/test.php', $result->filePath);
         self::assertSame(50, $result->fileBag?->get('loc'));
         self::assertNull($result->error);
     }
@@ -69,7 +70,7 @@ final class FileProcessorTest extends TestCase
         $file = new SplFileInfo('/tmp/invalid.php');
 
         $this->parser->method('parse')->willThrowException(
-            new ParseException('/tmp/invalid.php', 'Syntax error'),
+            new ParseException(AbsolutePath::fromString('/tmp/invalid.php'), 'Syntax error'),
         );
 
         $compositeCollector = new CompositeCollector([]);
@@ -78,7 +79,7 @@ final class FileProcessorTest extends TestCase
         $result = $processor->process($file);
 
         self::assertFalse($result->success);
-        self::assertSame('/tmp/invalid.php', $result->filePath);
+        self::assertSame('tmp/invalid.php', $result->filePath);
         self::assertNull($result->fileBag);
         self::assertStringContainsString('Syntax error', $result->error ?? '');
     }

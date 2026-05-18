@@ -7,7 +7,9 @@ namespace Qualimetrix\Tests\Unit\Reporting\Formatter\Summary;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Util\PathNormalizer;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
@@ -143,38 +145,10 @@ final class TopIssuesRendererTest extends TestCase
     }
 
     #[Test]
-    public function itRelativizesPaths(): void
-    {
-        $report = new Report(
-            violations: [],
-            filesAnalyzed: 10,
-            filesSkipped: 0,
-            duration: 1.0,
-            errorCount: 1,
-            warningCount: 0,
-            topIssues: [
-                $this->createRankedIssue(100.0, Severity::Error, 'MyService', '/home/user/project/src/MyService.php', 25, 30),
-            ],
-        );
-
-        $context = new FormatterContext(basePath: '/home/user/project');
-        $lines = [];
-
-        $this->renderer->render($report, $context, $this->color, $lines);
-
-        $output = implode("\n", $lines);
-
-        self::assertStringContainsString('src/MyService.php', $output);
-        self::assertStringNotContainsString('/home/user/project/', $output);
-        // Line not shown because Location.precise defaults to false
-        self::assertStringNotContainsString(':25', $output);
-    }
-
-    #[Test]
     public function itRendersLineNumberWhenPrecise(): void
     {
         $violation = new Violation(
-            location: new Location('/project/src/Service.php', 42, precise: true),
+            location: new Location(RelativePath::fromString('project/src/Service.php'), 42, precise: true),
             symbolPath: SymbolPath::forMethod('App\Service', 'Service', 'process'),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic',
@@ -214,7 +188,7 @@ final class TopIssuesRendererTest extends TestCase
     public function itRendersNamespaceLevelViolations(): void
     {
         $violation = new Violation(
-            location: new Location('/project/src/Common/ApiResource/AbstractApiKey.php', null),
+            location: new Location(RelativePath::fromString('project/src/Common/ApiResource/AbstractApiKey.php'), null),
             symbolPath: SymbolPath::forNamespace('App\Common\ApiResource'),
             ruleName: 'size.namespace-size',
             violationCode: 'size.namespace-size',
@@ -261,7 +235,7 @@ final class TopIssuesRendererTest extends TestCase
     public function itRendersClassLevelWithoutSymbolSuffix(): void
     {
         $violation = new Violation(
-            location: new Location('/project/src/Service/UserService.php', 5),
+            location: new Location(RelativePath::fromString('project/src/Service/UserService.php'), 5),
             symbolPath: SymbolPath::forClass('App\Service', 'UserService'),
             ruleName: 'coupling.cbo',
             violationCode: 'coupling.cbo',
@@ -305,7 +279,7 @@ final class TopIssuesRendererTest extends TestCase
     public function itRendersFunctionLevelSymbol(): void
     {
         $violation = new Violation(
-            location: new Location('/project/src/helpers.php', 10, precise: true),
+            location: new Location(RelativePath::fromString('project/src/helpers.php'), 10, precise: true),
             symbolPath: SymbolPath::forGlobalFunction('App\Utils', 'calculateHash'),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic',
@@ -339,7 +313,7 @@ final class TopIssuesRendererTest extends TestCase
     public function itRendersFileLevelWithoutSymbolSuffix(): void
     {
         $violation = new Violation(
-            location: new Location('/project/src/config.php', null),
+            location: new Location(RelativePath::fromString('project/src/config.php'), null),
             symbolPath: SymbolPath::forFile('src/config.php'),
             ruleName: 'security.hardcoded-credentials',
             violationCode: 'security.hardcoded-credentials',
@@ -410,7 +384,7 @@ final class TopIssuesRendererTest extends TestCase
     public function itPrefersRecommendationOverMessage(): void
     {
         $violation = new Violation(
-            location: new Location('/project/src/Service.php', 5),
+            location: new Location(RelativePath::fromString('project/src/Service.php'), 5),
             symbolPath: SymbolPath::forClass('App\Service', 'Service'),
             ruleName: 'design.lcom',
             violationCode: 'design.lcom',
@@ -452,7 +426,7 @@ final class TopIssuesRendererTest extends TestCase
         int $debt,
     ): RankedIssue {
         $violation = new Violation(
-            location: new Location($file, $line),
+            location: new Location(RelativePath::fromString(PathNormalizer::relativize($file)), $line),
             symbolPath: SymbolPath::forMethod('App\Service', $symbol, 'process'),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic',

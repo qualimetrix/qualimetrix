@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
@@ -35,7 +36,7 @@ final class SarifRuleCollectorTest extends TestCase
     public function itCollectsRulesWithCorrectStructure(): void
     {
         $violation = new Violation(
-            location: new Location('src/Service.php', 10),
+            location: new Location(RelativePath::fromString('src/Service.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'Service'),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic',
@@ -61,7 +62,7 @@ final class SarifRuleCollectorTest extends TestCase
     public function itDeduplicatesRulesByViolationCode(): void
     {
         $v1 = new Violation(
-            location: new Location('a.php', 1),
+            location: new Location(RelativePath::fromString('a.php'), 1),
             symbolPath: SymbolPath::forFile('a.php'),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic',
@@ -70,7 +71,7 @@ final class SarifRuleCollectorTest extends TestCase
         );
 
         $v2 = new Violation(
-            location: new Location('b.php', 5),
+            location: new Location(RelativePath::fromString('b.php'), 5),
             symbolPath: SymbolPath::forFile('b.php'),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic',
@@ -87,7 +88,7 @@ final class SarifRuleCollectorTest extends TestCase
     public function itCollectsMultipleDistinctRuleCodes(): void
     {
         $v1 = new Violation(
-            location: new Location('a.php', 1),
+            location: new Location(RelativePath::fromString('a.php'), 1),
             symbolPath: SymbolPath::forFile('a.php'),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic',
@@ -96,7 +97,7 @@ final class SarifRuleCollectorTest extends TestCase
         );
 
         $v2 = new Violation(
-            location: new Location('b.php', 1),
+            location: new Location(RelativePath::fromString('b.php'), 1),
             symbolPath: SymbolPath::forFile('b.php'),
             ruleName: 'size.loc',
             violationCode: 'size.loc',
@@ -116,7 +117,7 @@ final class SarifRuleCollectorTest extends TestCase
     public function itPromotesRulesToErrorSeverity(): void
     {
         $warning = new Violation(
-            location: new Location('a.php', 1),
+            location: new Location(RelativePath::fromString('a.php'), 1),
             symbolPath: SymbolPath::forFile('a.php'),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic',
@@ -125,7 +126,7 @@ final class SarifRuleCollectorTest extends TestCase
         );
 
         $error = new Violation(
-            location: new Location('b.php', 1),
+            location: new Location(RelativePath::fromString('b.php'), 1),
             symbolPath: SymbolPath::forFile('b.php'),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic',

@@ -14,6 +14,7 @@ use Qualimetrix\Core\Dependency\DependencyGraphInterface;
 use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\CliAliasReader;
 use Qualimetrix\Core\Rule\RuleCategory;
@@ -678,7 +679,7 @@ final class CboRuleTest extends TestCase
         $repository->method('get')
             ->willReturn($metricBag);
 
-        $location = new Location('src/Service/GodService.php', 10);
+        $location = new Location(RelativePath::fromString('src/Service/GodService.php'), 10);
 
         // Create mock dependencies — 7 unique targets with varying occurrence counts
         $deps = [
@@ -728,7 +729,7 @@ final class CboRuleTest extends TestCase
         $repository->method('get')
             ->willReturn($metricBag);
 
-        $location = new Location('src/Service/HugeService.php', 10);
+        $location = new Location(RelativePath::fromString('src/Service/HugeService.php'), 10);
 
         // Create 7 unique dependencies — only top 5 should appear
         $deps = [];
@@ -876,7 +877,7 @@ final class CboRuleTest extends TestCase
         $repository->method('get')
             ->willReturn($metricBag);
 
-        $location = new Location('src/Service/MyService.php', 10);
+        $location = new Location(RelativePath::fromString('src/Service/MyService.php'), 10);
 
         // Dependency on a global class (no namespace)
         $deps = [

@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Core\Violation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\RuleLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
@@ -20,7 +21,7 @@ final class ViolationTest extends TestCase
     public function itGetFingerprintForMethod(): void
     {
         $violation = new Violation(
-            location: new Location('src/Service/UserService.php', 42),
+            location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
             ruleName: 'cyclomatic-complexity',
             violationCode: 'cyclomatic-complexity',
@@ -39,7 +40,7 @@ final class ViolationTest extends TestCase
     public function itGetFingerprintForClass(): void
     {
         $violation = new Violation(
-            location: new Location('src/Service/UserService.php', 10),
+            location: new Location(RelativePath::fromString('src/Service/UserService.php'), 10),
             symbolPath: SymbolPath::forClass('App\Service', 'UserService'),
             ruleName: 'class-size',
             violationCode: 'class-size',
@@ -57,7 +58,7 @@ final class ViolationTest extends TestCase
     public function itGetFingerprintForNamespace(): void
     {
         $violation = new Violation(
-            location: new Location('src/Service/UserService.php'),
+            location: new Location(RelativePath::fromString('src/Service/UserService.php')),
             symbolPath: SymbolPath::forNamespace('App\Service'),
             ruleName: 'namespace-size',
             violationCode: 'namespace-size',
@@ -76,7 +77,7 @@ final class ViolationTest extends TestCase
     public function itGetFingerprintForFile(): void
     {
         $violation = new Violation(
-            location: new Location('src/bootstrap.php'),
+            location: new Location(RelativePath::fromString('src/bootstrap.php')),
             symbolPath: SymbolPath::forFile('src/bootstrap.php'),
             ruleName: 'file-length',
             violationCode: 'file-length',
@@ -94,7 +95,7 @@ final class ViolationTest extends TestCase
     public function itGetFingerprintForGlobalFunction(): void
     {
         $violation = new Violation(
-            location: new Location('src/functions.php', 5),
+            location: new Location(RelativePath::fromString('src/functions.php'), 5),
             symbolPath: SymbolPath::forGlobalFunction('', 'myFunction'),
             ruleName: 'cyclomatic-complexity',
             violationCode: 'cyclomatic-complexity',
@@ -111,7 +112,7 @@ final class ViolationTest extends TestCase
     #[Test]
     public function itViolationProperties(): void
     {
-        $location = new Location('src/test.php', 42);
+        $location = new Location(RelativePath::fromString('src/test.php'), 42);
         $symbolPath = SymbolPath::forMethod('App', 'Test', 'method');
 
         $violation = new Violation(
@@ -136,7 +137,7 @@ final class ViolationTest extends TestCase
     public function itViolationWithNullMetricValue(): void
     {
         $violation = new Violation(
-            location: new Location('src/test.php'),
+            location: new Location(RelativePath::fromString('src/test.php')),
             symbolPath: SymbolPath::forFile('src/test.php'),
             ruleName: 'test-rule',
             violationCode: 'test-rule',
@@ -151,7 +152,7 @@ final class ViolationTest extends TestCase
     public function itViolationWithLevel(): void
     {
         $violation = new Violation(
-            location: new Location('src/Service/UserService.php', 42),
+            location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
             ruleName: 'complexity',
             violationCode: 'complexity',
@@ -168,7 +169,7 @@ final class ViolationTest extends TestCase
     public function itViolationWithNullLevel(): void
     {
         $violation = new Violation(
-            location: new Location('src/test.php'),
+            location: new Location(RelativePath::fromString('src/test.php')),
             symbolPath: SymbolPath::forFile('src/test.php'),
             ruleName: 'test-rule',
             violationCode: 'test-rule',
@@ -183,7 +184,7 @@ final class ViolationTest extends TestCase
     public function itGetDisplayMessageReturnsHumanMessageWhenAvailable(): void
     {
         $violation = new Violation(
-            location: new Location('src/test.php', 10),
+            location: new Location(RelativePath::fromString('src/test.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'Foo'),
             ruleName: 'complexity',
             violationCode: 'complexity.method',
@@ -202,7 +203,7 @@ final class ViolationTest extends TestCase
     public function itGetDisplayMessageFallsBackToMessageWhenHumanMessageNull(): void
     {
         $violation = new Violation(
-            location: new Location('src/test.php', 10),
+            location: new Location(RelativePath::fromString('src/test.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'Foo'),
             ruleName: 'complexity',
             violationCode: 'complexity.method',

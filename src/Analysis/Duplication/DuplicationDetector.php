@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Duplication;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Core\Duplication\DuplicateBlock;
 use Qualimetrix\Core\Duplication\DuplicateLocation;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Util\PathNormalizer;
 use SplFileInfo;
 
@@ -67,15 +68,18 @@ final class DuplicationDetector implements DuplicationDetectorInterface
 
         // Pass 1: Build hash index streaming (tokenize → hash → discard tokens)
         // Positions are packed as (fileIdx << 20 | offset) to avoid array-per-position overhead
-        /** @var list<string> $filePaths maps fileIdx → realPath */
+        /** @var list<string> $filePaths maps fileIdx → project-relative path (identifier surface for DuplicateLocation) */
         $filePaths = [];
+        /** @var list<string> $ioPaths maps fileIdx → path as supplied by the file source (absolute when Finder normalizes, relative when user passes relative args); used only for re-read I/O in pass 2 */
+        $ioPaths = [];
         /** @var array<int, list<int>> $hashIndex maps hash → list of packed positions */
         $hashIndex = [];
 
         foreach ($files as $file) {
-            $path = PathNormalizer::relativize($file->getPathname());
+            $ioPath = $file->getPathname();
+            $relativePath = PathNormalizer::relativize($ioPath);
 
-            $source = @file_get_contents($path);
+            $source = @file_get_contents($ioPath);
             if ($source === false) {
                 continue;
             }
@@ -86,7 +90,8 @@ final class DuplicationDetector implements DuplicationDetectorInterface
             }
 
             $fileIdx = \count($filePaths);
-            $filePaths[] = $path;
+            $filePaths[] = $relativePath;
+            $ioPaths[] = $ioPath;
 
             // Compute rolling hashes and add to index, then discard tokens
             $this->addFileHashesToIndex($tokens, $fileIdx, $hashIndex);
@@ -122,7 +127,7 @@ final class DuplicationDetector implements DuplicationDetectorInterface
         /** @var array<int, string> $fileSources fileIdx → source content (for hint extraction) */
         $fileSources = [];
         foreach ($neededFileIndices as $fileIdx => $_) {
-            $source = @file_get_contents($filePaths[$fileIdx]);
+            $source = @file_get_contents($ioPaths[$fileIdx]);
             if ($source === false) {
                 continue;
             }
@@ -271,8 +276,8 @@ final class DuplicationDetector implements DuplicationDetectorInterface
 
                     $blocks[] = new DuplicateBlock(
                         locations: [
-                            new DuplicateLocation($filePaths[$fileIdxA], $startLineA, $endLineA),
-                            new DuplicateLocation($filePaths[$fileIdxB], $startLineB, $endLineB),
+                            new DuplicateLocation(RelativePath::fromString($filePaths[$fileIdxA]), $startLineA, $endLineA),
+                            new DuplicateLocation(RelativePath::fromString($filePaths[$fileIdxB]), $startLineB, $endLineB),
                         ],
                         lines: $lineCount,
                         tokens: $matchLength,
@@ -347,7 +352,7 @@ final class DuplicationDetector implements DuplicationDetectorInterface
             $isSubsumed = true;
 
             foreach ($block->locations as $loc) {
-                if (!$this->isRangeCovered($covered[$loc->file] ?? [], $loc->startLine, $loc->endLine)) {
+                if (!$this->isRangeCovered($covered[$loc->pathString()] ?? [], $loc->startLine, $loc->endLine)) {
                     $isSubsumed = false;
 
                     break;
@@ -361,7 +366,7 @@ final class DuplicationDetector implements DuplicationDetectorInterface
             $result[] = $block;
 
             foreach ($block->locations as $loc) {
-                $covered[$loc->file][] = ['start' => $loc->startLine, 'end' => $loc->endLine];
+                $covered[$loc->pathString()][] = ['start' => $loc->startLine, 'end' => $loc->endLine];
             }
         }
 

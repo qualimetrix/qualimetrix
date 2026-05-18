@@ -88,7 +88,7 @@ final readonly class ViolationFilterOrchestrator
 
             $byFile = [];
             foreach ($filterResult->suppressedViolations as $v) {
-                $file = ($v->location->file !== '' ? $v->location->file : '(no file)');
+                $file = $v->location->isNone() ? '(no file)' : $v->location->pathString();
                 $byFile[$file][] = $v;
             }
 

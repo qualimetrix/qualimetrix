@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Reporting\Formatter\Support;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
@@ -152,7 +153,7 @@ final class ViolationSorterTest extends TestCase
     public function itGroupsByClassNameFallingBackToFileForNamespaceLevelViolation(): void
     {
         $v1 = new Violation(
-            location: new Location('src/Service.php', 1),
+            location: new Location(RelativePath::fromString('src/Service.php'), 1),
             symbolPath: SymbolPath::forNamespace('App\Service'),
             ruleName: 'size',
             violationCode: 'size.namespace',
@@ -186,7 +187,7 @@ final class ViolationSorterTest extends TestCase
     public function itGroupsByNamespaceNameUsingGlobalForEmptyNamespace(): void
     {
         $v1 = new Violation(
-            location: new Location('a.php', 1),
+            location: new Location(RelativePath::fromString('a.php'), 1),
             symbolPath: SymbolPath::forClass('', 'GlobalClass'),
             ruleName: 'test',
             violationCode: 'test',
@@ -202,7 +203,7 @@ final class ViolationSorterTest extends TestCase
     private function violation(string $file, int $line, Severity $severity, string $ruleName): Violation
     {
         return new Violation(
-            location: new Location($file, $line),
+            location: new Location(RelativePath::fromString($file), $line),
             symbolPath: SymbolPath::forClass('App', 'MyClass'),
             ruleName: $ruleName,
             violationCode: $ruleName . '.method',
@@ -220,7 +221,7 @@ final class ViolationSorterTest extends TestCase
         string $class,
     ): Violation {
         return new Violation(
-            location: new Location($file, $line),
+            location: new Location(RelativePath::fromString($file), $line),
             symbolPath: SymbolPath::forClass($namespace, $class),
             ruleName: $ruleName,
             violationCode: $ruleName . '.method',

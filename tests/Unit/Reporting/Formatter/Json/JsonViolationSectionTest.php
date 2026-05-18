@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Reporting\Formatter\Json;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
@@ -43,7 +44,7 @@ final class JsonViolationSectionTest extends TestCase
     public function itFormatsSingleViolation(): void
     {
         $violation = new Violation(
-            location: new Location('src/Service/UserService.php', 42),
+            location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
             symbolPath: SymbolPath::forMethod('App\\Service', 'UserService', 'process'),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic',
@@ -98,7 +99,7 @@ final class JsonViolationSectionTest extends TestCase
     public function itFormatsViolationWithEmptyNamespace(): void
     {
         $violation = new Violation(
-            location: new Location('src/helpers.php', 1),
+            location: new Location(RelativePath::fromString('src/helpers.php'), 1),
             symbolPath: SymbolPath::forFile('src/helpers.php'),
             ruleName: 'size.loc',
             violationCode: 'size.loc',
@@ -117,7 +118,7 @@ final class JsonViolationSectionTest extends TestCase
     public function itSanitizesNonFiniteMetricValues(): void
     {
         $violation = new Violation(
-            location: new Location('src/Bad.php', 10),
+            location: new Location(RelativePath::fromString('src/Bad.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'Bad'),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic',
@@ -140,7 +141,7 @@ final class JsonViolationSectionTest extends TestCase
     public function itSortsErrorsBeforeWarnings(): void
     {
         $warning = new Violation(
-            location: new Location('a.php', 1),
+            location: new Location(RelativePath::fromString('a.php'), 1),
             symbolPath: SymbolPath::forFile('a.php'),
             ruleName: 'size.loc',
             violationCode: 'size.loc',
@@ -149,7 +150,7 @@ final class JsonViolationSectionTest extends TestCase
         );
 
         $error = new Violation(
-            location: new Location('b.php', 1),
+            location: new Location(RelativePath::fromString('b.php'), 1),
             symbolPath: SymbolPath::forFile('b.php'),
             ruleName: 'size.loc',
             violationCode: 'size.loc',
@@ -167,7 +168,7 @@ final class JsonViolationSectionTest extends TestCase
     public function itSortsByExceedanceDescending(): void
     {
         $low = new Violation(
-            location: new Location('a.php', 1),
+            location: new Location(RelativePath::fromString('a.php'), 1),
             symbolPath: SymbolPath::forFile('a.php'),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic',
@@ -178,7 +179,7 @@ final class JsonViolationSectionTest extends TestCase
         );
 
         $high = new Violation(
-            location: new Location('b.php', 1),
+            location: new Location(RelativePath::fromString('b.php'), 1),
             symbolPath: SymbolPath::forFile('b.php'),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic',
@@ -198,7 +199,7 @@ final class JsonViolationSectionTest extends TestCase
     public function itSortsByFileThenLineThenCode(): void
     {
         $v1 = new Violation(
-            location: new Location('b.php', 10),
+            location: new Location(RelativePath::fromString('b.php'), 10),
             symbolPath: SymbolPath::forFile('b.php'),
             ruleName: 'r',
             violationCode: 'r.a',
@@ -207,7 +208,7 @@ final class JsonViolationSectionTest extends TestCase
         );
 
         $v2 = new Violation(
-            location: new Location('a.php', 20),
+            location: new Location(RelativePath::fromString('a.php'), 20),
             symbolPath: SymbolPath::forFile('a.php'),
             ruleName: 'r',
             violationCode: 'r.a',
@@ -216,7 +217,7 @@ final class JsonViolationSectionTest extends TestCase
         );
 
         $v3 = new Violation(
-            location: new Location('a.php', 10),
+            location: new Location(RelativePath::fromString('a.php'), 10),
             symbolPath: SymbolPath::forFile('a.php'),
             ruleName: 'r',
             violationCode: 'r.a',
@@ -235,7 +236,7 @@ final class JsonViolationSectionTest extends TestCase
     public function itSortsWithNonFiniteExceedancesTreatedAsZero(): void
     {
         $inf = new Violation(
-            location: new Location('a.php', 1),
+            location: new Location(RelativePath::fromString('a.php'), 1),
             symbolPath: SymbolPath::forFile('a.php'),
             ruleName: 'r',
             violationCode: 'r.a',
@@ -246,7 +247,7 @@ final class JsonViolationSectionTest extends TestCase
         );
 
         $normal = new Violation(
-            location: new Location('b.php', 1),
+            location: new Location(RelativePath::fromString('b.php'), 1),
             symbolPath: SymbolPath::forFile('b.php'),
             ruleName: 'r',
             violationCode: 'r.b',
@@ -275,7 +276,7 @@ final class JsonViolationSectionTest extends TestCase
     public function itCountsByRuleGroupsAndSortsDescending(): void
     {
         $makeViolation = static fn(string $rule): Violation => new Violation(
-            location: new Location('f.php', 1),
+            location: new Location(RelativePath::fromString('f.php'), 1),
             symbolPath: SymbolPath::forFile('f.php'),
             ruleName: $rule,
             violationCode: $rule,

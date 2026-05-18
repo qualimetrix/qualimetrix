@@ -28,6 +28,7 @@ use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Core\Dependency\Dependency;
 use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Suppression\ThresholdOverride;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
@@ -125,7 +126,7 @@ final class AnalysisPipelineTest extends TestCase
     {
         $files = [new SplFileInfo('/tmp/test.php')];
         $dependencies = [
-            new Dependency(SymbolPath::fromClassFqn('App\Foo'), SymbolPath::fromClassFqn('App\Bar'), DependencyType::New_, new Location('/tmp/test.php', 10)),
+            new Dependency(SymbolPath::fromClassFqn('App\Foo'), SymbolPath::fromClassFqn('App\Bar'), DependencyType::New_, new Location(RelativePath::fromString('tmp/test.php'), 10)),
         ];
 
         $this->defaultDiscovery->method('discover')->willReturn(new ArrayIterator($files));

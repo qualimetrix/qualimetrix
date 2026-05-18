@@ -29,6 +29,7 @@ use Qualimetrix\Core\Dependency\Dependency;
 use Qualimetrix\Core\Dependency\DependencyGraphInterface;
 use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\RuleInterface;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -78,7 +79,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
                 SymbolPath::fromClassFqn('App\Service\OrderService'),
                 SymbolPath::fromClassFqn('App\Repository\OrderRepository'),
                 DependencyType::New_,
-                new Location('/tmp/OrderService.php', 10),
+                new Location(RelativePath::fromString('tmp/OrderService.php'), 10),
             ),
         ];
 
@@ -131,13 +132,13 @@ final class AnalysisPipelineIntegrationTest extends TestCase
                 SymbolPath::fromClassFqn('Fixtures\CircularDeps\ServiceA'),
                 SymbolPath::fromClassFqn('Fixtures\CircularDeps\ServiceB'),
                 DependencyType::New_,
-                new Location('/tmp/ServiceA.php', 10),
+                new Location(RelativePath::fromString('tmp/ServiceA.php'), 10),
             ),
             new Dependency(
                 SymbolPath::fromClassFqn('Fixtures\CircularDeps\ServiceB'),
                 SymbolPath::fromClassFqn('Fixtures\CircularDeps\ServiceA'),
                 DependencyType::New_,
-                new Location('/tmp/ServiceB.php', 10),
+                new Location(RelativePath::fromString('tmp/ServiceB.php'), 10),
             ),
         ];
 
@@ -210,13 +211,13 @@ final class AnalysisPipelineIntegrationTest extends TestCase
                 SymbolPath::fromClassFqn('App\Service\OrderService'),
                 SymbolPath::fromClassFqn('App\Repository\OrderRepository'),
                 DependencyType::New_,
-                new Location('/tmp/OrderService.php', 10),
+                new Location(RelativePath::fromString('tmp/OrderService.php'), 10),
             ),
             new Dependency(
                 SymbolPath::fromClassFqn('App\Service\PaymentService'),
                 SymbolPath::fromClassFqn('App\Repository\PaymentRepository'),
                 DependencyType::New_,
-                new Location('/tmp/PaymentService.php', 10),
+                new Location(RelativePath::fromString('tmp/PaymentService.php'), 10),
             ),
         ];
 

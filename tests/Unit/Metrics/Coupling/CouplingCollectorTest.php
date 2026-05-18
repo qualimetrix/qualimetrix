@@ -16,6 +16,7 @@ use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\SymbolLevel;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Metrics\Coupling\CouplingCollector;
@@ -810,7 +811,7 @@ final class CouplingCollectorTest extends TestCase
             SymbolPath::fromClassFqn($source),
             SymbolPath::fromClassFqn($target),
             DependencyType::New_,
-            new Location('/test.php', 1),
+            new Location(RelativePath::fromString('test.php'), 1),
         );
     }
 

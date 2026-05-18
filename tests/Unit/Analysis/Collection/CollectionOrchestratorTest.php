@@ -21,6 +21,7 @@ use Qualimetrix\Core\Dependency\Dependency;
 use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Core\Metric\DerivedCollectorInterface;
 use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Progress\ProgressReporter;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
@@ -205,8 +206,8 @@ final class CollectionOrchestratorTest extends TestCase
     public function itCollectsDependenciesFromResults(): void
     {
         $files = [new SplFileInfo('/tmp/test.php')];
-        $dependency1 = new Dependency(SymbolPath::fromClassFqn('App\Foo'), SymbolPath::fromClassFqn('App\Bar'), DependencyType::New_, new Location('/tmp/test.php', 10));
-        $dependency2 = new Dependency(SymbolPath::fromClassFqn('App\Foo'), SymbolPath::fromClassFqn('App\Baz'), DependencyType::Extends, new Location('/tmp/test.php', 5));
+        $dependency1 = new Dependency(SymbolPath::fromClassFqn('App\Foo'), SymbolPath::fromClassFqn('App\Bar'), DependencyType::New_, new Location(RelativePath::fromString('tmp/test.php'), 10));
+        $dependency2 = new Dependency(SymbolPath::fromClassFqn('App\Foo'), SymbolPath::fromClassFqn('App\Baz'), DependencyType::Extends, new Location(RelativePath::fromString('tmp/test.php'), 5));
 
         $processingResults = [
             FileProcessingResult::success(
@@ -239,8 +240,8 @@ final class CollectionOrchestratorTest extends TestCase
             new SplFileInfo('/tmp/file2.php'),
         ];
 
-        $dep1 = new Dependency(SymbolPath::fromClassFqn('App\Foo'), SymbolPath::fromClassFqn('App\Bar'), DependencyType::New_, new Location('/tmp/file1.php', 10));
-        $dep2 = new Dependency(SymbolPath::fromClassFqn('App\Baz'), SymbolPath::fromClassFqn('App\Qux'), DependencyType::Implements, new Location('/tmp/file2.php', 5));
+        $dep1 = new Dependency(SymbolPath::fromClassFqn('App\Foo'), SymbolPath::fromClassFqn('App\Bar'), DependencyType::New_, new Location(RelativePath::fromString('tmp/file1.php'), 10));
+        $dep2 = new Dependency(SymbolPath::fromClassFqn('App\Baz'), SymbolPath::fromClassFqn('App\Qux'), DependencyType::Implements, new Location(RelativePath::fromString('tmp/file2.php'), 5));
 
         $processingResults = [
             FileProcessingResult::success(
