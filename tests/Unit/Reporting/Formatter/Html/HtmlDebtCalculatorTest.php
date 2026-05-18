@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Reporting\Formatter\Html;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
@@ -44,7 +45,7 @@ final class HtmlDebtCalculatorTest extends TestCase
         $node = new HtmlTreeNode('Service', 'App\\Service', 'class');
 
         $violation = new Violation(
-            location: new Location('src/Service.php', 10),
+            location: new Location(RelativePath::fromString('src/Service.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'Service'),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic',
@@ -68,7 +69,7 @@ final class HtmlDebtCalculatorTest extends TestCase
         $node = new HtmlTreeNode('Service', 'App\\Service', 'class');
 
         $violation = new Violation(
-            location: new Location('src/Other.php', 10),
+            location: new Location(RelativePath::fromString('src/Other.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'Other'),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic',

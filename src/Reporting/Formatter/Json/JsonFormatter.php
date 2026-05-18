@@ -121,7 +121,7 @@ final class JsonFormatter implements FormatterInterface
             $violation = $issue->violation;
             $result[] = [
                 'rank' => $rank + 1,
-                'file' => $context->relativizePath($violation->location->file),
+                'file' => $context->relativizePath($violation->location->pathString()),
                 'line' => $violation->location->line,
                 'symbol' => $violation->symbolPath->toString(),
                 'rule' => $violation->ruleName,

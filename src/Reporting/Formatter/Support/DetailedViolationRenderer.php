@@ -188,7 +188,7 @@ final class DetailedViolationRenderer
             return '[project]';
         }
 
-        $file = $context->relativizePath($violation->location->file);
+        $file = $context->relativizePath($violation->location->pathString());
         $line = $violation->location->line;
 
         if ($line === null || !$violation->location->precise) {

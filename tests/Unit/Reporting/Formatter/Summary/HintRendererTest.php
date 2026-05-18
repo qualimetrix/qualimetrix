@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Reporting\Formatter\Summary;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
@@ -41,7 +42,7 @@ final class HintRendererTest extends TestCase
     {
         // Report must be non-empty (has violations) for --detail hint to appear
         $violation = new Violation(
-            location: new Location('/src/Service.php', 10),
+            location: new Location(RelativePath::fromString('src/Service.php'), 10),
             symbolPath: SymbolPath::forClass('App\\Service', 'Service'),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic',
@@ -71,7 +72,7 @@ final class HintRendererTest extends TestCase
     public function itHidesHintDetailInDetailMode(): void
     {
         $violation = new Violation(
-            location: new Location('/src/Service.php', 10),
+            location: new Location(RelativePath::fromString('src/Service.php'), 10),
             symbolPath: SymbolPath::forClass('App\\Service', 'Service'),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic',

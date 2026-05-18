@@ -40,7 +40,7 @@ final class SuppressionFilter implements ViolationFilterInterface
      */
     public function shouldInclude(Violation $violation): bool
     {
-        $file = $violation->location->file;
+        $file = $violation->location->pathString();
 
         if (!isset($this->suppressions[$file])) {
             return true; // No suppressions — pass through

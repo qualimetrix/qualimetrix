@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\Dependency\Dependency;
 use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Metrics\Structure\DitGlobalCollector;
@@ -32,7 +33,7 @@ final class DitGlobalCollectorTest extends TestCase
             source: SymbolPath::fromClassFqn($childFqn),
             target: SymbolPath::fromClassFqn($parentFqn),
             type: DependencyType::Extends,
-            location: new Location('/test.php', 1),
+            location: new Location(RelativePath::fromString('test.php'), 1),
         );
     }
 

@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Reporting\Formatter\Summary;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Reporting\Filter\ViolationFilter;
 use Qualimetrix\Reporting\Formatter\Summary\OffenderListRenderer;
@@ -35,7 +36,7 @@ final class OffenderListRendererDensityTest extends TestCase
     {
         $offender = new WorstOffender(
             symbolPath: SymbolPath::forClass('App\\Service', 'HeavyService'),
-            file: 'src/Service/HeavyService.php',
+            file: RelativePath::fromString('src/Service/HeavyService.php'),
             healthOverall: 30.0,
             label: 'Poor',
             reason: 'high complexity',
@@ -70,7 +71,7 @@ final class OffenderListRendererDensityTest extends TestCase
     {
         $offender = new WorstOffender(
             symbolPath: SymbolPath::forClass('App\\Service', 'CleanService'),
-            file: 'src/Service/CleanService.php',
+            file: RelativePath::fromString('src/Service/CleanService.php'),
             healthOverall: 80.0,
             label: 'Good',
             reason: '',
@@ -104,7 +105,7 @@ final class OffenderListRendererDensityTest extends TestCase
     {
         $offender = new WorstOffender(
             symbolPath: SymbolPath::forClass('App\\Service', 'NoLocService'),
-            file: 'src/Service/NoLocService.php',
+            file: RelativePath::fromString('src/Service/NoLocService.php'),
             healthOverall: 40.0,
             label: 'Poor',
             reason: '',
@@ -140,7 +141,7 @@ final class OffenderListRendererDensityTest extends TestCase
         // Class A: 5 violations, 100 LOC => density = 5.0 (highest density)
         $offenderA = new WorstOffender(
             symbolPath: SymbolPath::forClass('App', 'SmallBad'),
-            file: 'a.php',
+            file: RelativePath::fromString('a.php'),
             healthOverall: 40.0,
             label: 'Poor',
             reason: '',
@@ -152,7 +153,7 @@ final class OffenderListRendererDensityTest extends TestCase
         // Class B: 10 violations, 1000 LOC => density = 1.0 (lower density but more violations)
         $offenderB = new WorstOffender(
             symbolPath: SymbolPath::forClass('App', 'BigBad'),
-            file: 'b.php',
+            file: RelativePath::fromString('b.php'),
             healthOverall: 35.0,
             label: 'Poor',
             reason: '',
@@ -191,7 +192,7 @@ final class OffenderListRendererDensityTest extends TestCase
     {
         $offenderA = new WorstOffender(
             symbolPath: SymbolPath::forClass('App', 'SmallBad'),
-            file: 'a.php',
+            file: RelativePath::fromString('a.php'),
             healthOverall: 40.0,
             label: 'Poor',
             reason: '',
@@ -202,7 +203,7 @@ final class OffenderListRendererDensityTest extends TestCase
 
         $offenderB = new WorstOffender(
             symbolPath: SymbolPath::forClass('App', 'BigBad'),
-            file: 'b.php',
+            file: RelativePath::fromString('b.php'),
             healthOverall: 35.0,
             label: 'Poor',
             reason: '',
@@ -241,7 +242,7 @@ final class OffenderListRendererDensityTest extends TestCase
     {
         $offenderWithDensity = new WorstOffender(
             symbolPath: SymbolPath::forClass('App', 'ClassA'),
-            file: 'a.php',
+            file: RelativePath::fromString('a.php'),
             healthOverall: 40.0,
             label: 'Poor',
             reason: '',
@@ -252,7 +253,7 @@ final class OffenderListRendererDensityTest extends TestCase
 
         $offenderNullDensity = new WorstOffender(
             symbolPath: SymbolPath::forClass('App', 'ClassB'),
-            file: 'b.php',
+            file: RelativePath::fromString('b.php'),
             healthOverall: 30.0,
             label: 'Poor',
             reason: '',

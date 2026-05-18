@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Rules\CodeSmell;
 
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Util\PathNormalizer;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
@@ -96,7 +98,7 @@ final class IdenticalSubExpressionRule extends AbstractRule
                     $line = (int) $entry['line'];
 
                     $violations[] = new Violation(
-                        location: new Location($fileInfo->file, $line, precise: true),
+                        location: new Location(RelativePath::fromString(PathNormalizer::relativize($fileInfo->file)), $line, precise: true),
                         symbolPath: $fileInfo->symbolPath,
                         ruleName: $this->getName(),
                         violationCode: self::NAME,

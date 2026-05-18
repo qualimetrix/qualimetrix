@@ -13,6 +13,7 @@ use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
 use Qualimetrix\Configuration\AnalysisConfiguration;
 use Qualimetrix\Configuration\ConfigurationHolder;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
 use Qualimetrix\Core\Profiler\ProfilerInterface;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -500,7 +501,7 @@ final class ResultPresenterTest extends TestCase
     private static function createViolation(Severity $severity): Violation
     {
         return new Violation(
-            location: new Location('test.php', 1),
+            location: new Location(RelativePath::fromString('test.php'), 1),
             symbolPath: SymbolPath::forFile('test.php'),
             ruleName: 'test.rule',
             violationCode: 'test.rule.violation',

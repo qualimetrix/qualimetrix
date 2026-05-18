@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Dependency\Dependency;
 use Qualimetrix\Core\Dependency\DependencyType;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 
@@ -19,7 +20,7 @@ final class DependencyTest extends TestCase
     #[Test]
     public function itConstructorWithAllProperties(): void
     {
-        $location = new Location('src/Service/UserService.php', 42);
+        $location = new Location(RelativePath::fromString('src/Service/UserService.php'), 42);
         $source = SymbolPath::fromClassFqn('App\Service\UserService');
         $target = SymbolPath::fromClassFqn('App\Repository\UserRepository');
         $dependency = new Dependency(
@@ -46,7 +47,7 @@ final class DependencyTest extends TestCase
             source: SymbolPath::fromClassFqn($sourceClass),
             target: SymbolPath::fromClassFqn($targetClass),
             type: DependencyType::New_,
-            location: new Location('test.php'),
+            location: new Location(RelativePath::fromString('test.php')),
         );
 
         self::assertSame($expectedIsCrossNamespace, $dependency->isCrossNamespace());
@@ -102,7 +103,7 @@ final class DependencyTest extends TestCase
             source: SymbolPath::fromClassFqn('App\Service\UserService'),
             target: SymbolPath::fromClassFqn('App\Repository\UserRepository'),
             type: $type,
-            location: new Location('test.php'),
+            location: new Location(RelativePath::fromString('test.php')),
         );
 
         self::assertSame($expectedIsStrongCoupling, $dependency->isStrongCoupling());
@@ -150,7 +151,7 @@ final class DependencyTest extends TestCase
             'App\Service\UserService',
             'App\Repository\UserRepository',
             DependencyType::New_,
-            new Location('src/Service/UserService.php', 42),
+            new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
             'App\Service\UserService instantiates App\Repository\UserRepository at src/Service/UserService.php:42',
         ];
 
@@ -158,7 +159,7 @@ final class DependencyTest extends TestCase
             'App\Service\UserService',
             'App\Service\BaseService',
             DependencyType::Extends,
-            new Location('src/Service/UserService.php', 10),
+            new Location(RelativePath::fromString('src/Service/UserService.php'), 10),
             'App\Service\UserService extends class App\Service\BaseService at src/Service/UserService.php:10',
         ];
 
@@ -166,7 +167,7 @@ final class DependencyTest extends TestCase
             'App\Service\UserService',
             'App\Contract\ServiceInterface',
             DependencyType::Implements,
-            new Location('src/Service/UserService.php', 8),
+            new Location(RelativePath::fromString('src/Service/UserService.php'), 8),
             'App\Service\UserService implements interface App\Contract\ServiceInterface at src/Service/UserService.php:8',
         ];
 
@@ -174,7 +175,7 @@ final class DependencyTest extends TestCase
             'App\Model\User',
             'App\Trait\Timestampable',
             DependencyType::TraitUse,
-            new Location('src/Model/User.php'),
+            new Location(RelativePath::fromString('src/Model/User.php')),
             'App\Model\User uses trait App\Trait\Timestampable at src/Model/User.php',
         ];
     }
@@ -186,7 +187,7 @@ final class DependencyTest extends TestCase
             source: SymbolPath::fromClassFqn('Source'),
             target: SymbolPath::fromClassFqn('Target'),
             type: DependencyType::New_,
-            location: new Location('test.php'),
+            location: new Location(RelativePath::fromString('test.php')),
         );
 
         // This test verifies that Dependency is readonly

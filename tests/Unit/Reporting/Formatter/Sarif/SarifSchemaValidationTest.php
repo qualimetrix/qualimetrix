@@ -8,6 +8,7 @@ use JsonSchema\Validator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
@@ -56,7 +57,7 @@ final class SarifSchemaValidationTest extends TestCase
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
-                location: new Location('src/Service/UserService.php', 42),
+                location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
                 symbolPath: SymbolPath::forMethod('App\\Service', 'UserService', 'calculateDiscount'),
                 ruleName: 'complexity.cyclomatic',
                 violationCode: 'complexity.cyclomatic',
@@ -65,7 +66,7 @@ final class SarifSchemaValidationTest extends TestCase
                 metricValue: 25,
             ))
             ->addViolation(new Violation(
-                location: new Location('src/Service/OrderService.php', 120),
+                location: new Location(RelativePath::fromString('src/Service/OrderService.php'), 120),
                 symbolPath: SymbolPath::forMethod('App\\Service', 'OrderService', 'processOrder'),
                 ruleName: 'design.lcom',
                 violationCode: 'design.lcom',
@@ -74,7 +75,7 @@ final class SarifSchemaValidationTest extends TestCase
                 metricValue: 8,
             ))
             ->addViolation(new Violation(
-                location: new Location('src/Controller/HomeController.php', 15),
+                location: new Location(RelativePath::fromString('src/Controller/HomeController.php'), 15),
                 symbolPath: SymbolPath::forClass('App\\Controller', 'HomeController'),
                 ruleName: 'architecture.coverage',
                 violationCode: 'architecture.coverage',
@@ -100,7 +101,7 @@ final class SarifSchemaValidationTest extends TestCase
         // Exercises the relatedLocations branch (duplication detector shape).
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
-                location: new Location('src/Service/UserService.php', 10),
+                location: new Location(RelativePath::fromString('src/Service/UserService.php'), 10),
                 symbolPath: SymbolPath::forFile('src/Service/UserService.php'),
                 ruleName: 'duplication.code-duplication',
                 violationCode: 'duplication.code-duplication',
@@ -108,8 +109,8 @@ final class SarifSchemaValidationTest extends TestCase
                 severity: Severity::Warning,
                 metricValue: 20,
                 relatedLocations: [
-                    new Location('src/Service/OrderService.php', 42),
-                    new Location('src/Service/PaymentService.php', 88),
+                    new Location(RelativePath::fromString('src/Service/OrderService.php'), 42),
+                    new Location(RelativePath::fromString('src/Service/PaymentService.php'), 88),
                 ],
             ))
             ->addViolation(new Violation(

@@ -19,6 +19,7 @@ use Qualimetrix\Core\Dependency\Dependency;
 use Qualimetrix\Core\Dependency\DependencyGraphInterface;
 use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Rules\Duplication\CodeDuplicationRule;
@@ -207,7 +208,7 @@ final class MetricEnricherTest extends TestCase
     {
         $classA = SymbolPath::forClass('App', 'ClassA');
         $classB = SymbolPath::forClass('App', 'ClassB');
-        $location = new Location('test.php', 1);
+        $location = new Location(RelativePath::fromString('test.php'), 1);
 
         $depAtoB = new Dependency($classA, $classB, DependencyType::TypeHint, $location);
         $depBtoA = new Dependency($classB, $classA, DependencyType::TypeHint, $location);

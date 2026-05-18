@@ -7,7 +7,9 @@ namespace Qualimetrix\Analysis\Collection\Dependency\Handler;
 use Qualimetrix\Analysis\Collection\Dependency\DependencyResolver;
 use Qualimetrix\Core\Dependency\Dependency;
 use Qualimetrix\Core\Dependency\DependencyType;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Util\PathNormalizer;
 use Qualimetrix\Core\Violation\Location;
 
 final class DependencyContext
@@ -35,7 +37,7 @@ final class DependencyContext
             SymbolPath::fromClassFqn($this->currentClass),
             SymbolPath::fromClassFqn($resolvedTargetClass),
             $type,
-            new Location($this->file, $line),
+            new Location(RelativePath::fromString(PathNormalizer::relativize($this->file)), $line),
         );
     }
 

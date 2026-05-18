@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Reporting\Formatter\Json;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Reporting\Filter\ViolationFilter;
 use Qualimetrix\Reporting\Formatter\Json\JsonOffenderSection;
@@ -58,7 +59,7 @@ final class JsonOffenderSectionDensityTest extends TestCase
     {
         $offender = new WorstOffender(
             symbolPath: SymbolPath::forClass('App\\Service', 'UserService'),
-            file: 'src/Service/UserService.php',
+            file: RelativePath::fromString('src/Service/UserService.php'),
             healthOverall: 30.0,
             label: 'Poor',
             reason: '',

@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Reporting\Formatter;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
@@ -68,7 +69,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
-                location: new Location('src/Service/UserService.php', 42),
+                location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculateDiscount'),
                 ruleName: 'cyclomatic-complexity',
                 violationCode: 'cyclomatic-complexity',
@@ -77,7 +78,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
                 metricValue: 25,
             ))
             ->addViolation(new Violation(
-                location: new Location('src/Service/UserService.php', 120),
+                location: new Location(RelativePath::fromString('src/Service/UserService.php'), 120),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'processOrder'),
                 ruleName: 'cyclomatic-complexity',
                 violationCode: 'cyclomatic-complexity',
@@ -120,7 +121,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
-                location: new Location('src/A.php', 10),
+                location: new Location(RelativePath::fromString('src/A.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'test',
                 violationCode: 'test',
@@ -128,7 +129,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
                 severity: Severity::Error,
             ))
             ->addViolation(new Violation(
-                location: new Location('src/B.php', 20),
+                location: new Location(RelativePath::fromString('src/B.php'), 20),
                 symbolPath: SymbolPath::forClass('App', 'B'),
                 ruleName: 'test',
                 violationCode: 'test',
@@ -153,7 +154,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
-                location: new Location('src/A.php', 10),
+                location: new Location(RelativePath::fromString('src/A.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'architecture.coverage',
                 violationCode: 'architecture.coverage',
@@ -175,7 +176,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
     public function itGeneratesStableFingerprint(): void
     {
         $violation = new Violation(
-            location: new Location('src/Service/UserService.php', 42),
+            location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
             ruleName: 'cyclomatic-complexity',
             violationCode: 'cyclomatic-complexity',
@@ -210,7 +211,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
-                location: new Location('src/A.php', 10),
+                location: new Location(RelativePath::fromString('src/A.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'test-rule',
                 violationCode: 'test-rule',
@@ -218,7 +219,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
                 severity: Severity::Warning,
             ))
             ->addViolation(new Violation(
-                location: new Location('src/B.php', 20),
+                location: new Location(RelativePath::fromString('src/B.php'), 20),
                 symbolPath: SymbolPath::forClass('App', 'B'),
                 ruleName: 'test-rule',
                 violationCode: 'test-rule',
@@ -226,7 +227,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
                 severity: Severity::Warning,
             ))
             ->addViolation(new Violation(
-                location: new Location('src/A.php', 10),
+                location: new Location(RelativePath::fromString('src/A.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'other-rule',
                 violationCode: 'other-rule',
@@ -254,7 +255,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
-                location: new Location('src/A.php', 10),
+                location: new Location(RelativePath::fromString('src/A.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'test-rule',
                 violationCode: 'test-rule',
@@ -262,7 +263,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
                 severity: Severity::Warning,
             ))
             ->addViolation(new Violation(
-                location: new Location('src/A.php', 10),
+                location: new Location(RelativePath::fromString('src/A.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'test-rule',
                 violationCode: 'test-rule',
@@ -287,7 +288,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
-                location: new Location('src/Service/UserService.php'),
+                location: new Location(RelativePath::fromString('src/Service/UserService.php')),
                 symbolPath: SymbolPath::forNamespace('App\Service'),
                 ruleName: 'namespace-size',
                 violationCode: 'namespace-size',
@@ -313,7 +314,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
-                location: new Location('src/Service/UserService.php', 45),
+                location: new Location(RelativePath::fromString('src/Service/UserService.php'), 45),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'foo'),
                 ruleName: 'complexity',
                 violationCode: 'complexity',
@@ -356,7 +357,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
-                location: new Location('src/Foo.php', 10),
+                location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
                 ruleName: 'complexity',
                 violationCode: 'complexity.method',
@@ -410,35 +411,11 @@ final class GitLabCodeQualityFormatterTest extends TestCase
     }
 
     #[Test]
-    public function itRelativizesAbsolutePathsWithBasePath(): void
-    {
-        $report = ReportBuilder::create()
-            ->addViolation(new Violation(
-                location: new Location('/home/user/project/src/Service/UserService.php', 42),
-                symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
-                ruleName: 'cyclomatic-complexity',
-                violationCode: 'cyclomatic-complexity',
-                message: 'Too complex',
-                severity: Severity::Error,
-            ))
-            ->filesAnalyzed(1)
-            ->filesSkipped(0)
-            ->duration(0.1)
-            ->build();
-
-        $context = new FormatterContext(basePath: '/home/user/project');
-        $output = $this->formatter->format($report, $context);
-        $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
-
-        self::assertSame('src/Service/UserService.php', $data[0]['location']['path']);
-    }
-
-    #[Test]
     public function itKeepsAlreadyRelativePathUnchanged(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
-                location: new Location('src/Service/UserService.php', 42),
+                location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
                 ruleName: 'cyclomatic-complexity',
                 violationCode: 'cyclomatic-complexity',
@@ -457,26 +434,4 @@ final class GitLabCodeQualityFormatterTest extends TestCase
         self::assertSame('src/Service/UserService.php', $data[0]['location']['path']);
     }
 
-    #[Test]
-    public function itKeepsAbsolutePathsWhenNoBasePathSet(): void
-    {
-        $report = ReportBuilder::create()
-            ->addViolation(new Violation(
-                location: new Location('/home/user/project/src/Service/UserService.php', 42),
-                symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
-                ruleName: 'cyclomatic-complexity',
-                violationCode: 'cyclomatic-complexity',
-                message: 'Too complex',
-                severity: Severity::Error,
-            ))
-            ->filesAnalyzed(1)
-            ->filesSkipped(0)
-            ->duration(0.1)
-            ->build();
-
-        $output = $this->formatter->format($report, new FormatterContext());
-        $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
-
-        self::assertSame('/home/user/project/src/Service/UserService.php', $data[0]['location']['path']);
-    }
 }

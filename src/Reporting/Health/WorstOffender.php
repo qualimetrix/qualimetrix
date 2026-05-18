@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Reporting\Health;
 
 use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**
@@ -19,7 +20,7 @@ final readonly class WorstOffender
      */
     public function __construct(
         public SymbolPath $symbolPath,
-        public ?string $file,
+        public ?RelativePath $file,
         public float $healthOverall,
         public string $label,
         public string $reason,
@@ -29,6 +30,14 @@ final readonly class WorstOffender
         public array $healthScores = [],
         public ?float $violationDensity = null,
     ) {}
+
+    /**
+     * Wire-surface string of the file path; empty string when this offender has no file (namespace-level).
+     */
+    public function pathString(): string
+    {
+        return $this->file?->value() ?? '';
+    }
 
     /**
      * Re-ranks offenders by violation density (descending) when requested.

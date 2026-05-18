@@ -110,7 +110,7 @@ final class PhpFileParserTest extends TestCase
             $this->parser->parse($file);
             self::fail('Expected ParseException was not thrown');
         } catch (ParseException $e) {
-            self::assertSame($filePath, $e->filePath);
+            self::assertSame($filePath, $e->filePath->value());
             self::assertStringContainsString($filePath, $e->getMessage());
         }
     }

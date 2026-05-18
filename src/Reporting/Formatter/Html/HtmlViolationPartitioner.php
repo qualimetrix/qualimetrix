@@ -99,7 +99,7 @@ final readonly class HtmlViolationPartitioner
                     'symbolPath' => $violation->symbolPath->toString(),
                     'file' => $violation->location->isNone()
                         ? ''
-                        : $context->relativizePath($violation->location->file),
+                        : $context->relativizePath($violation->location->pathString()),
                     'line' => $violation->location->line,
                 ];
             }

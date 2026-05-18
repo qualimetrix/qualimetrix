@@ -20,10 +20,10 @@ final readonly class PathExclusionFilter implements ViolationFilterInterface
 
     public function shouldInclude(Violation $violation): bool
     {
-        if ($violation->location->file === '') {
+        if ($violation->location->isNone()) {
             return true;
         }
 
-        return !$this->pathMatcher->matches($violation->location->file);
+        return !$this->pathMatcher->matches($violation->location->pathString());
     }
 }

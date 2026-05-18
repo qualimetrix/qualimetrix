@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Collection\Dependency\DependencyGraph;
 use Qualimetrix\Analysis\Collection\Dependency\DependencyGraphBuilder;
 use Qualimetrix\Core\Dependency\Dependency;
 use Qualimetrix\Core\Dependency\DependencyType;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 
@@ -486,7 +487,7 @@ final class DependencyGraphTest extends TestCase
             SymbolPath::fromClassFqn($source),
             SymbolPath::fromClassFqn($target),
             $type,
-            new Location('/test.php', 1),
+            new Location(RelativePath::fromString('test.php'), 1),
         );
     }
 }

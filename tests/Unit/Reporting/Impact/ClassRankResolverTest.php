@@ -10,6 +10,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
@@ -235,7 +236,7 @@ final class ClassRankResolverTest extends TestCase
     private function createViolation(SymbolPath $symbolPath): Violation
     {
         return new Violation(
-            location: new Location('test.php', 1),
+            location: new Location(RelativePath::fromString('test.php'), 1),
             symbolPath: $symbolPath,
             ruleName: 'test.rule',
             violationCode: 'test.rule',

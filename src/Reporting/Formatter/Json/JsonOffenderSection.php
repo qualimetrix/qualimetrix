@@ -68,7 +68,7 @@ final class JsonOffenderSection
                     'violationCount' => $offender->violationCount,
                     'violationDensity' => $offender->violationDensity,
                     'file' => $offender->file !== null
-                        ? $context->relativizePath($offender->file)
+                        ? $context->relativizePath($offender->pathString())
                         : null,
                     'metrics' => $this->sanitizer->sanitizeFloatArray($offender->metrics),
                     'healthScores' => $this->sanitizer->sanitizeFloatArray($offender->healthScores),
@@ -117,7 +117,7 @@ final class JsonOffenderSection
                 $entry['classCount'] = $offender->classCount;
             } else {
                 $entry['file'] = $offender->file !== null
-                    ? $context->relativizePath($offender->file)
+                    ? $context->relativizePath($offender->pathString())
                     : null;
                 $entry['metrics'] = $this->sanitizer->sanitizeFloatArray($offender->metrics);
             }

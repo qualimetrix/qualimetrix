@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Reporting\Filter;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
@@ -109,7 +110,7 @@ final class ViolationFilterTest extends TestCase
     {
         // Namespace-level violation (no type)
         $violation = new Violation(
-            location: new Location('src/Service.php', 1),
+            location: new Location(RelativePath::fromString('src/Service.php'), 1),
             symbolPath: SymbolPath::forNamespace('App\\Service'),
             ruleName: 'test.rule',
             violationCode: 'T001',
@@ -220,7 +221,7 @@ final class ViolationFilterTest extends TestCase
     private function createViolation(string $namespace, string $class): Violation
     {
         return new Violation(
-            location: new Location('src/test.php', 1),
+            location: new Location(RelativePath::fromString('src/test.php'), 1),
             symbolPath: SymbolPath::forClass($namespace, $class),
             ruleName: 'test.rule',
             violationCode: 'T001',
@@ -233,7 +234,7 @@ final class ViolationFilterTest extends TestCase
     {
         return new WorstOffender(
             symbolPath: SymbolPath::forClass($namespace, $class),
-            file: 'src/test.php',
+            file: RelativePath::fromString('src/test.php'),
             healthOverall: 50.0,
             label: 'Warning',
             reason: 'test reason',

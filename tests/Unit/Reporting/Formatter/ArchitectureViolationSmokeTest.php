@@ -12,6 +12,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Architecture\Rules\CircularDependencyRule;
 use Qualimetrix\Architecture\Rules\LayerViolationRule;
 use Qualimetrix\Core\Dependency\DependencyType;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
@@ -421,7 +422,7 @@ final class ArchitectureViolationSmokeTest extends TestCase
         $violations = [
             // architecture.layer-violation — per-class, with dependency metadata
             new Violation(
-                location: new Location(self::SOURCE_FILE, self::SOURCE_LINE, precise: true),
+                location: new Location(RelativePath::fromString(self::SOURCE_FILE), self::SOURCE_LINE, precise: true),
                 symbolPath: $sourcePath,
                 ruleName: LayerViolationRule::NAME,
                 violationCode: LayerViolationRule::NAME,

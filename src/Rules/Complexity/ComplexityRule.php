@@ -7,12 +7,14 @@ namespace Qualimetrix\Rules\Complexity;
 use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricName;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\HierarchicalRuleInterface;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Rule\RuleLevel;
 use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Util\PathNormalizer;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
@@ -147,7 +149,7 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
                 $recommendation = $this->buildMethodRecommendation($ccnValue, $threshold, $metrics);
 
                 $violations[] = new Violation(
-                    location: new Location($methodInfo->file, $methodInfo->line),
+                    location: new Location(RelativePath::fromString(PathNormalizer::relativize($methodInfo->file)), $methodInfo->line),
                     symbolPath: $methodInfo->symbolPath,
                     ruleName: $this->getName(),
                     violationCode: self::NAME . '.method',
@@ -215,7 +217,7 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
                 $threshold = $severity === Severity::Error ? $effectiveClassOptions->maxError : $effectiveClassOptions->maxWarning;
 
                 $violations[] = new Violation(
-                    location: new Location($classInfo->file, $classInfo->line),
+                    location: new Location(RelativePath::fromString(PathNormalizer::relativize($classInfo->file)), $classInfo->line),
                     symbolPath: $classInfo->symbolPath,
                     ruleName: $this->getName(),
                     violationCode: self::NAME . '.class',

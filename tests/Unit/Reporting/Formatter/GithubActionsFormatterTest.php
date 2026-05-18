@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Reporting\Formatter;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
@@ -57,7 +58,7 @@ final class GithubActionsFormatterTest extends TestCase
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
-                location: new Location('src/Service/UserService.php', 42),
+                location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
                 ruleName: 'complexity.cyclomatic',
                 violationCode: 'complexity.cyclomatic',
@@ -83,7 +84,7 @@ final class GithubActionsFormatterTest extends TestCase
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
-                location: new Location('src/Service/UserService.php', 42),
+                location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
                 ruleName: 'complexity.cyclomatic',
                 violationCode: 'complexity.cyclomatic',
@@ -109,7 +110,7 @@ final class GithubActionsFormatterTest extends TestCase
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
-                location: new Location('src/Service/UserService.php', 7),
+                location: new Location(RelativePath::fromString('src/Service/UserService.php'), 7),
                 symbolPath: SymbolPath::forClass('App\Service', 'UserService'),
                 ruleName: 'architecture.coverage',
                 violationCode: 'architecture.coverage',
@@ -131,7 +132,7 @@ final class GithubActionsFormatterTest extends TestCase
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
-                location: new Location('src/A.php', 10),
+                location: new Location(RelativePath::fromString('src/A.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'complexity.cyclomatic',
                 violationCode: 'complexity.cyclomatic',
@@ -139,7 +140,7 @@ final class GithubActionsFormatterTest extends TestCase
                 severity: Severity::Error,
             ))
             ->addViolation(new Violation(
-                location: new Location('src/B.php', 20),
+                location: new Location(RelativePath::fromString('src/B.php'), 20),
                 symbolPath: SymbolPath::forClass('App', 'B'),
                 ruleName: 'size.class-count',
                 violationCode: 'size.class-count',
@@ -164,7 +165,7 @@ final class GithubActionsFormatterTest extends TestCase
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
-                location: new Location('src/Test.php', 1),
+                location: new Location(RelativePath::fromString('src/Test.php'), 1),
                 symbolPath: SymbolPath::forClass('App', 'Test'),
                 ruleName: 'test-rule',
                 violationCode: 'test-rule',
@@ -187,7 +188,7 @@ final class GithubActionsFormatterTest extends TestCase
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
-                location: new Location('src/Service/OrderService.php', 55),
+                location: new Location(RelativePath::fromString('src/Service/OrderService.php'), 55),
                 symbolPath: SymbolPath::forMethod('App\Service', 'OrderService', 'process'),
                 ruleName: 'test',
                 violationCode: 'test',
@@ -209,7 +210,7 @@ final class GithubActionsFormatterTest extends TestCase
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
-                location: new Location('src/Test.php', 99),
+                location: new Location(RelativePath::fromString('src/Test.php'), 99),
                 symbolPath: SymbolPath::forClass('App', 'Test'),
                 ruleName: 'test',
                 violationCode: 'test',
@@ -231,7 +232,7 @@ final class GithubActionsFormatterTest extends TestCase
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
-                location: new Location('src/Test.php', 10),
+                location: new Location(RelativePath::fromString('src/Test.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'Test'),
                 ruleName: 'complexity',
                 violationCode: 'complexity.method',
@@ -249,35 +250,11 @@ final class GithubActionsFormatterTest extends TestCase
     }
 
     #[Test]
-    public function itRelativizesPathsWithBasePath(): void
-    {
-        $report = ReportBuilder::create()
-            ->addViolation(new Violation(
-                location: new Location('/home/user/project/src/Service/UserService.php', 42),
-                symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
-                ruleName: 'test',
-                violationCode: 'test',
-                message: 'Test',
-                severity: Severity::Warning,
-            ))
-            ->filesAnalyzed(1)
-            ->filesSkipped(0)
-            ->duration(0.1)
-            ->build();
-
-        $context = new FormatterContext(basePath: '/home/user/project');
-        $output = $this->formatter->format($report, $context);
-
-        self::assertStringContainsString('file=src/Service/UserService.php', $output);
-        self::assertStringNotContainsString('/home/user/project', $output);
-    }
-
-    #[Test]
     public function itFormatsViolationWithoutLine(): void
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
-                location: new Location('src/Service/UserService.php'),
+                location: new Location(RelativePath::fromString('src/Service/UserService.php')),
                 symbolPath: SymbolPath::forNamespace('App\Service'),
                 ruleName: 'namespace-size',
                 violationCode: 'size.namespace',
@@ -300,7 +277,7 @@ final class GithubActionsFormatterTest extends TestCase
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
-                location: new Location('src/path:with,special/File.php', 1),
+                location: new Location(RelativePath::fromString('src/path:with,special/File.php'), 1),
                 symbolPath: SymbolPath::forClass('App', 'Test'),
                 ruleName: 'test-rule',
                 violationCode: 'test:rule,name',

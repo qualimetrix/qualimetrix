@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Core\Violation\Filter;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Util\PathMatcher;
 use Qualimetrix\Core\Violation\Filter\PathExclusionFilter;
@@ -43,7 +44,7 @@ final class PathExclusionFilterTest extends TestCase
         $filter = new PathExclusionFilter(new PathMatcher(['src']));
 
         $violation = new Violation(
-            location: new Location(''),
+            location: Location::none(),
             symbolPath: SymbolPath::forNamespace('App\\Service'),
             ruleName: 'test.rule',
             violationCode: 'test.rule',
@@ -77,7 +78,7 @@ final class PathExclusionFilterTest extends TestCase
     private function createViolation(string $file): Violation
     {
         return new Violation(
-            location: new Location($file, 10),
+            location: new Location(RelativePath::fromString($file), 10),
             symbolPath: SymbolPath::forClass('App\\Entity', 'User'),
             ruleName: 'test.rule',
             violationCode: 'test.rule',

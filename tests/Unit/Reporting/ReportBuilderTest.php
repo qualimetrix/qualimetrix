@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
@@ -175,7 +176,7 @@ final class ReportBuilderTest extends TestCase
     private function createViolation(Severity $severity): Violation
     {
         return new Violation(
-            location: new Location('test.php', 1),
+            location: new Location(RelativePath::fromString('test.php'), 1),
             symbolPath: SymbolPath::forClass('App', 'Test'),
             ruleName: 'test-rule',
             violationCode: 'test-rule',

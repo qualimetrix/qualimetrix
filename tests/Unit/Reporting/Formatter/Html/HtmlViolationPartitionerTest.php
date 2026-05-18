@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Reporting\Formatter\Html;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
@@ -43,7 +44,7 @@ final class HtmlViolationPartitionerTest extends TestCase
         $node = new HtmlTreeNode('Service', 'App\\Service', 'class');
 
         $violation = new Violation(
-            location: new Location('src/Service.php', 10),
+            location: new Location(RelativePath::fromString('src/Service.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'Service'),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic',
@@ -64,7 +65,7 @@ final class HtmlViolationPartitionerTest extends TestCase
         $classNode = new HtmlTreeNode('Service', 'App\\Service', 'class');
 
         $violation = new Violation(
-            location: new Location('src/Service.php', 25),
+            location: new Location(RelativePath::fromString('src/Service.php'), 25),
             symbolPath: SymbolPath::forMethod('App', 'Service', 'calculate'),
             ruleName: 'complexity.cognitive',
             violationCode: 'complexity.cognitive',
@@ -105,7 +106,7 @@ final class HtmlViolationPartitionerTest extends TestCase
         $classNode = new HtmlTreeNode('Service', 'App\\Service', 'class');
 
         $violation = new Violation(
-            location: new Location('src/helpers.php', 1),
+            location: new Location(RelativePath::fromString('src/helpers.php'), 1),
             symbolPath: SymbolPath::forFile('src/helpers.php'),
             ruleName: 'size.loc',
             violationCode: 'size.loc',
@@ -124,7 +125,7 @@ final class HtmlViolationPartitionerTest extends TestCase
         $nsNode = new HtmlTreeNode('App', 'App', 'namespace');
 
         $violation = new Violation(
-            location: new Location('src/Service.php', 10),
+            location: new Location(RelativePath::fromString('src/Service.php'), 10),
             symbolPath: SymbolPath::forMethod('App', 'Service', 'calculate'),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic',
@@ -146,7 +147,7 @@ final class HtmlViolationPartitionerTest extends TestCase
         $nsNode = new HtmlTreeNode('App', 'App', 'namespace');
 
         $violation = new Violation(
-            location: new Location('src/Service.php', 10),
+            location: new Location(RelativePath::fromString('src/Service.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'Service'),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic',
@@ -164,7 +165,7 @@ final class HtmlViolationPartitionerTest extends TestCase
     public function itDropsMethodViolationWhenNoClassAndNoNamespaceNode(): void
     {
         $violation = new Violation(
-            location: new Location('src/Service.php', 10),
+            location: new Location(RelativePath::fromString('src/Service.php'), 10),
             symbolPath: SymbolPath::forMethod('App', 'Service', 'calculate'),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic',
@@ -184,7 +185,7 @@ final class HtmlViolationPartitionerTest extends TestCase
         $classB = new HtmlTreeNode('ClassB', 'App\\B\\ClassB', 'class');
 
         $v1 = new Violation(
-            location: new Location('src/A/ClassA.php', 10),
+            location: new Location(RelativePath::fromString('src/A/ClassA.php'), 10),
             symbolPath: SymbolPath::forClass('App\\A', 'ClassA'),
             ruleName: 'r1',
             violationCode: 'r1',
@@ -192,7 +193,7 @@ final class HtmlViolationPartitionerTest extends TestCase
             severity: Severity::Error,
         );
         $v2 = new Violation(
-            location: new Location('src/A/ClassA.php', 20),
+            location: new Location(RelativePath::fromString('src/A/ClassA.php'), 20),
             symbolPath: SymbolPath::forMethod('App\\A', 'ClassA', 'foo'),
             ruleName: 'r2',
             violationCode: 'r2',
@@ -200,7 +201,7 @@ final class HtmlViolationPartitionerTest extends TestCase
             severity: Severity::Warning,
         );
         $v3 = new Violation(
-            location: new Location('src/B/ClassB.php', 5),
+            location: new Location(RelativePath::fromString('src/B/ClassB.php'), 5),
             symbolPath: SymbolPath::forClass('App\\B', 'ClassB'),
             ruleName: 'r3',
             violationCode: 'r3',
@@ -242,7 +243,7 @@ final class HtmlViolationPartitionerTest extends TestCase
         $node = new HtmlTreeNode('Service', 'App\\Service', 'class');
 
         $violation = new Violation(
-            location: new Location('src/Service.php', 10),
+            location: new Location(RelativePath::fromString('src/Service.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'Service'),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic',
@@ -277,7 +278,7 @@ final class HtmlViolationPartitionerTest extends TestCase
         $node = new HtmlTreeNode('Service', 'App\\Service', 'class');
 
         $nanViolation = new Violation(
-            location: new Location('src/Service.php', 10),
+            location: new Location(RelativePath::fromString('src/Service.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'Service'),
             ruleName: 'r1',
             violationCode: 'r1',
@@ -287,7 +288,7 @@ final class HtmlViolationPartitionerTest extends TestCase
         );
 
         $infViolation = new Violation(
-            location: new Location('src/Service.php', 20),
+            location: new Location(RelativePath::fromString('src/Service.php'), 20),
             symbolPath: SymbolPath::forClass('App', 'Service'),
             ruleName: 'r2',
             violationCode: 'r2',
@@ -313,7 +314,7 @@ final class HtmlViolationPartitionerTest extends TestCase
         $node = new HtmlTreeNode('Service', 'App\\Service', 'class');
 
         $violation = new Violation(
-            location: new Location('src/Other.php', 10),
+            location: new Location(RelativePath::fromString('src/Other.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'Other'),
             ruleName: 'r1',
             violationCode: 'r1',

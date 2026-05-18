@@ -19,6 +19,7 @@ use Qualimetrix\Architecture\Rules\LayerViolationRule;
 use Qualimetrix\Core\Dependency\Dependency;
 use Qualimetrix\Core\Dependency\DependencyGraphInterface;
 use Qualimetrix\Core\Dependency\DependencyType;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
@@ -257,7 +258,7 @@ final class CoverageDiagnosticsTest extends TestCase
             source: SymbolPath::forClass($sourceNamespace, $sourceClass),
             target: SymbolPath::forClass($targetNamespace, $targetClass),
             type: $type,
-            location: new Location('src/dummy.php', 1),
+            location: new Location(RelativePath::fromString('src/dummy.php'), 1),
         );
     }
 

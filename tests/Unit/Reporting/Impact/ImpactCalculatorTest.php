@@ -10,6 +10,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
@@ -100,9 +101,9 @@ final class ImpactCalculatorTest extends TestCase
         $calculator = new ImpactCalculator($this->resolver, $this->registry);
         $issues = $calculator->computeTopIssues([$v1, $v2, $v3], $metrics);
 
-        self::assertSame('src/b.php', $issues[0]->violation->location->file); // High
-        self::assertSame('src/c.php', $issues[1]->violation->location->file); // Mid
-        self::assertSame('src/a.php', $issues[2]->violation->location->file); // Low
+        self::assertSame('src/b.php', $issues[0]->violation->location->pathString()); // High
+        self::assertSame('src/c.php', $issues[1]->violation->location->pathString()); // Mid
+        self::assertSame('src/a.php', $issues[2]->violation->location->pathString()); // Low
     }
 
     #[Test]
@@ -121,8 +122,8 @@ final class ImpactCalculatorTest extends TestCase
         $issues = $calculator->computeTopIssues([$v1, $v2], $metrics);
 
         // Same impact, sorted by file ascending: a.php before b.php
-        self::assertSame('src/a.php', $issues[0]->violation->location->file);
-        self::assertSame('src/b.php', $issues[1]->violation->location->file);
+        self::assertSame('src/a.php', $issues[0]->violation->location->pathString());
+        self::assertSame('src/b.php', $issues[1]->violation->location->pathString());
     }
 
     #[Test]
@@ -212,7 +213,7 @@ final class ImpactCalculatorTest extends TestCase
         // Find the function violation in results
         $funcIssue = null;
         foreach ($issues as $issue) {
-            if ($issue->violation->location->file === 'src/c.php') {
+            if ($issue->violation->location->pathString() === 'src/c.php') {
                 $funcIssue = $issue;
                 break;
             }
@@ -294,7 +295,7 @@ final class ImpactCalculatorTest extends TestCase
         string $rule = 'code-smell.debug-code',
     ): Violation {
         return new Violation(
-            location: new Location($file, $line),
+            location: new Location(RelativePath::fromString($file), $line),
             symbolPath: $symbolPath,
             ruleName: $rule,
             violationCode: $rule,

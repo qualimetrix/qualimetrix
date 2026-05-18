@@ -111,7 +111,7 @@ final class TextFormatter implements FormatterInterface
 
     private function formatViolation(Violation $violation, AnsiColor $color, FormatterContext $context): string
     {
-        $file = $violation->location->isNone() ? '[project]' : $context->relativizePath($violation->location->file);
+        $file = $violation->location->isNone() ? '[project]' : $context->relativizePath($violation->location->pathString());
         $line = $violation->location->line;
         $severity = $this->formatSeverity($violation->severity, $color);
         $rule = $color->dim($violation->violationCode);

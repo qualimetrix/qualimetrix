@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Reporting\Formatter;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
@@ -104,7 +105,7 @@ final class SummaryFormatterTest extends TestCase
             worstClasses: [
                 new WorstOffender(
                     symbolPath: SymbolPath::forClass('App', 'Foo'),
-                    file: 'src/Foo.php',
+                    file: RelativePath::fromString('src/Foo.php'),
                     healthOverall: 30.0,
                     label: 'Poor',
                     reason: 'test',
@@ -159,7 +160,7 @@ final class SummaryFormatterTest extends TestCase
         $report = $this->createReport(
             violations: [
                 new Violation(
-                    location: new Location('src/Service/UserService.php', 42),
+                    location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
                     symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
                     ruleName: 'complexity.cyclomatic',
                     violationCode: 'complexity.cyclomatic.method',
@@ -183,7 +184,7 @@ final class SummaryFormatterTest extends TestCase
             worstClasses: [
                 new WorstOffender(
                     symbolPath: SymbolPath::forClass('App\Service', 'UserService'),
-                    file: 'src/Service/UserService.php',
+                    file: RelativePath::fromString('src/Service/UserService.php'),
                     healthOverall: 22.0,
                     label: 'Critical',
                     reason: 'high coupling',
@@ -211,7 +212,7 @@ final class SummaryFormatterTest extends TestCase
         $report = $this->createReport(
             violations: [
                 new Violation(
-                    location: new Location('a.php', 1),
+                    location: new Location(RelativePath::fromString('a.php'), 1),
                     symbolPath: SymbolPath::forClass('App', 'A'),
                     ruleName: 'test',
                     violationCode: 'test',
@@ -219,7 +220,7 @@ final class SummaryFormatterTest extends TestCase
                     severity: Severity::Error,
                 ),
                 new Violation(
-                    location: new Location('b.php', 1),
+                    location: new Location(RelativePath::fromString('b.php'), 1),
                     symbolPath: SymbolPath::forClass('App', 'B'),
                     ruleName: 'test',
                     violationCode: 'test',
@@ -286,7 +287,7 @@ final class SummaryFormatterTest extends TestCase
         $report = $this->createReport(
             violations: [
                 new Violation(
-                    location: new Location('a.php', 1),
+                    location: new Location(RelativePath::fromString('a.php'), 1),
                     symbolPath: SymbolPath::forClass('App', 'A'),
                     ruleName: 'test',
                     violationCode: 'test',
@@ -311,7 +312,7 @@ final class SummaryFormatterTest extends TestCase
         $report = $this->createReport(
             violations: [
                 new Violation(
-                    location: new Location('a.php', 1),
+                    location: new Location(RelativePath::fromString('a.php'), 1),
                     symbolPath: SymbolPath::forClass('App', 'A'),
                     ruleName: 'test',
                     violationCode: 'test',
@@ -366,7 +367,7 @@ final class SummaryFormatterTest extends TestCase
         $report = $this->createReport(
             violations: [
                 new Violation(
-                    location: new Location('a.php', 1),
+                    location: new Location(RelativePath::fromString('a.php'), 1),
                     symbolPath: SymbolPath::forClass('App', 'A'),
                     ruleName: 'test',
                     violationCode: 'test',
@@ -458,7 +459,7 @@ final class SummaryFormatterTest extends TestCase
         $report = $this->createReport(
             violations: [
                 new Violation(
-                    location: new Location('a.php', 1),
+                    location: new Location(RelativePath::fromString('a.php'), 1),
                     symbolPath: SymbolPath::forClass('App\Service', 'UserService'),
                     ruleName: 'test',
                     violationCode: 'test',
@@ -466,7 +467,7 @@ final class SummaryFormatterTest extends TestCase
                     severity: Severity::Error,
                 ),
                 new Violation(
-                    location: new Location('b.php', 1),
+                    location: new Location(RelativePath::fromString('b.php'), 1),
                     symbolPath: SymbolPath::forClass('App\Controller', 'HomeController'),
                     ruleName: 'test',
                     violationCode: 'test',
@@ -493,7 +494,7 @@ final class SummaryFormatterTest extends TestCase
         $report = $this->createReport(
             violations: [
                 new Violation(
-                    location: new Location('a.php', 1),
+                    location: new Location(RelativePath::fromString('a.php'), 1),
                     symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
                     ruleName: 'test',
                     violationCode: 'test',
@@ -501,7 +502,7 @@ final class SummaryFormatterTest extends TestCase
                     severity: Severity::Error,
                 ),
                 new Violation(
-                    location: new Location('b.php', 1),
+                    location: new Location(RelativePath::fromString('b.php'), 1),
                     symbolPath: SymbolPath::forClass('App\Service', 'OrderService'),
                     ruleName: 'test',
                     violationCode: 'test',
@@ -527,7 +528,7 @@ final class SummaryFormatterTest extends TestCase
         $report = $this->createReport(
             violations: [
                 new Violation(
-                    location: new Location('a.php', 1),
+                    location: new Location(RelativePath::fromString('a.php'), 1),
                     symbolPath: SymbolPath::forClass('App\Other', 'Foo'),
                     ruleName: 'test',
                     violationCode: 'test',
@@ -550,7 +551,7 @@ final class SummaryFormatterTest extends TestCase
     {
         $offenderMatch = new WorstOffender(
             symbolPath: SymbolPath::forClass('App\Service', 'UserService'),
-            file: 'src/Service/UserService.php',
+            file: RelativePath::fromString('src/Service/UserService.php'),
             healthOverall: 22.0,
             label: 'Critical',
             reason: 'test',
@@ -560,7 +561,7 @@ final class SummaryFormatterTest extends TestCase
 
         $offenderNoMatch = new WorstOffender(
             symbolPath: SymbolPath::forClass('App\Service', 'OrderService'),
-            file: 'src/Service/OrderService.php',
+            file: RelativePath::fromString('src/Service/OrderService.php'),
             healthOverall: 30.0,
             label: 'Poor',
             reason: 'test',
@@ -662,7 +663,7 @@ final class SummaryFormatterTest extends TestCase
         $report = $this->createReport(
             violations: [
                 new Violation(
-                    location: new Location('a.php', 1),
+                    location: new Location(RelativePath::fromString('a.php'), 1),
                     symbolPath: SymbolPath::forClass('App', 'A'),
                     ruleName: 'test',
                     violationCode: 'test',
@@ -810,7 +811,7 @@ final class SummaryFormatterTest extends TestCase
         $report = $this->createReport(
             violations: [
                 new Violation(
-                    location: new Location('a.php', 1),
+                    location: new Location(RelativePath::fromString('a.php'), 1),
                     symbolPath: SymbolPath::forClass('App\Service', 'Foo'),
                     ruleName: 'complexity.cyclomatic',
                     violationCode: 'complexity.cyclomatic.method',
@@ -818,7 +819,7 @@ final class SummaryFormatterTest extends TestCase
                     severity: Severity::Error,
                 ),
                 new Violation(
-                    location: new Location('b.php', 1),
+                    location: new Location(RelativePath::fromString('b.php'), 1),
                     symbolPath: SymbolPath::forClass('App\Service', 'Bar'),
                     ruleName: 'coupling.cbo',
                     violationCode: 'coupling.cbo.class',
@@ -844,7 +845,7 @@ final class SummaryFormatterTest extends TestCase
         $report = $this->createReport(
             violations: [
                 new Violation(
-                    location: new Location('a.php', 1),
+                    location: new Location(RelativePath::fromString('a.php'), 1),
                     symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
                     ruleName: 'design.god-class',
                     violationCode: 'design.god-class',
@@ -852,7 +853,7 @@ final class SummaryFormatterTest extends TestCase
                     severity: Severity::Error,
                 ),
                 new Violation(
-                    location: new Location('b.php', 1),
+                    location: new Location(RelativePath::fromString('b.php'), 1),
                     symbolPath: SymbolPath::forClass('App\Service', 'OrderService'),
                     ruleName: 'coupling.cbo',
                     violationCode: 'coupling.cbo.class',
@@ -878,7 +879,7 @@ final class SummaryFormatterTest extends TestCase
         $report = $this->createReport(
             violations: [
                 new Violation(
-                    location: new Location('a.php', 1),
+                    location: new Location(RelativePath::fromString('a.php'), 1),
                     symbolPath: SymbolPath::forClass('App\Other', 'Foo'),
                     ruleName: 'test',
                     violationCode: 'test',
@@ -904,7 +905,7 @@ final class SummaryFormatterTest extends TestCase
         $report = $this->createReport(
             violations: [
                 new Violation(
-                    location: new Location('src/Foo.php', 10),
+                    location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                     symbolPath: SymbolPath::forClass('App', 'Foo'),
                     ruleName: 'complexity.cyclomatic',
                     violationCode: 'complexity.cyclomatic.method',
@@ -956,7 +957,7 @@ final class SummaryFormatterTest extends TestCase
         $report = $this->createReport(
             violations: [
                 new Violation(
-                    location: new Location('a.php', 1),
+                    location: new Location(RelativePath::fromString('a.php'), 1),
                     symbolPath: SymbolPath::forClass('App\Service', 'UserService'),
                     ruleName: 'test',
                     violationCode: 'test',
@@ -981,7 +982,7 @@ final class SummaryFormatterTest extends TestCase
         $report = $this->createReport(
             violations: [
                 new Violation(
-                    location: new Location('a.php', 1),
+                    location: new Location(RelativePath::fromString('a.php'), 1),
                     symbolPath: SymbolPath::forClass('App', 'A'),
                     ruleName: 'test',
                     violationCode: 'test',
@@ -1144,7 +1145,7 @@ final class SummaryFormatterTest extends TestCase
         $violations = [];
         for ($i = 0; $i < 8; $i++) {
             $violations[] = new Violation(
-                location: new Location('src/File' . $i . '.php', $i + 1),
+                location: new Location(RelativePath::fromString('src/File' . $i . '.php'), $i + 1),
                 symbolPath: SymbolPath::forClass('App', 'Class' . $i),
                 ruleName: 'complexity.cyclomatic',
                 violationCode: 'complexity.cyclomatic.method',
@@ -1175,7 +1176,7 @@ final class SummaryFormatterTest extends TestCase
         // 3 violations of rule A
         for ($i = 0; $i < 3; $i++) {
             $violations[] = new Violation(
-                location: new Location('src/Foo' . $i . '.php', 10),
+                location: new Location(RelativePath::fromString('src/Foo' . $i . '.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'Foo' . $i),
                 ruleName: 'complexity.cyclomatic',
                 violationCode: 'complexity.cyclomatic.method',
@@ -1186,7 +1187,7 @@ final class SummaryFormatterTest extends TestCase
 
         // 1 violation of rule B (will be beyond detailLimit=2)
         $violations[] = new Violation(
-            location: new Location('src/Bar.php', 5),
+            location: new Location(RelativePath::fromString('src/Bar.php'), 5),
             symbolPath: SymbolPath::forClass('App', 'Bar'),
             ruleName: 'design.lcom',
             violationCode: 'design.lcom',

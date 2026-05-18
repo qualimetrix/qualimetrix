@@ -14,6 +14,7 @@ use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\SymbolLevel;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\Location;
@@ -317,7 +318,7 @@ final class ClassRankCollectorTest extends TestCase
             SymbolPath::fromClassFqn($source),
             SymbolPath::fromClassFqn($target),
             DependencyType::New_,
-            new Location('/test.php', 1),
+            new Location(RelativePath::fromString('test.php'), 1),
         );
     }
 

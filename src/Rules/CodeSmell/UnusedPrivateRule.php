@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Qualimetrix\Rules\CodeSmell;
 
 use Qualimetrix\Core\Metric\MetricName;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Util\PathNormalizer;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
@@ -81,7 +83,7 @@ final class UnusedPrivateRule extends AbstractRule
                     $message = $name !== null ? \sprintf('%s `%s`', $label, $name) : $label;
 
                     $violations[] = new Violation(
-                        location: new Location($classInfo->file, $line, precise: true),
+                        location: new Location(RelativePath::fromString(PathNormalizer::relativize($classInfo->file)), $line, precise: true),
                         symbolPath: $classInfo->symbolPath,
                         ruleName: $this->getName(),
                         violationCode: $this->getName(),

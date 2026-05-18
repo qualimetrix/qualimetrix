@@ -104,7 +104,7 @@ final class SarifFormatter implements FormatterInterface
                         [
                             'physicalLocation' => [
                                 'artifactLocation' => $this->buildArtifactLocation(
-                                    $context->relativizePath($v->location->file),
+                                    $context->relativizePath($v->location->pathString()),
                                     $context->basePath !== '',
                                 ),
                                 'region' => [
@@ -122,7 +122,7 @@ final class SarifFormatter implements FormatterInterface
                             'id' => $index,
                             'physicalLocation' => [
                                 'artifactLocation' => $this->buildArtifactLocation(
-                                    $context->relativizePath($loc->file),
+                                    $context->relativizePath($loc->pathString()),
                                     $context->basePath !== '',
                                 ),
                                 'region' => [

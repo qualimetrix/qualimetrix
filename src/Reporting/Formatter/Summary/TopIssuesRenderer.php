@@ -97,7 +97,7 @@ final class TopIssuesRenderer
             return '[project]';
         }
 
-        $file = $context->relativizePath($violation->location->file);
+        $file = $context->relativizePath($violation->location->pathString());
         $line = $violation->location->line;
 
         return $line !== null && $violation->location->precise

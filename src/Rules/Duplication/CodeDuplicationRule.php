@@ -85,7 +85,7 @@ final class CodeDuplicationRule extends AbstractRule
             $otherLocations,
         );
 
-        $severity = $this->getEffectiveSeverity($context, $this->options, $primary->file, $primary->startLine, $block->lines);
+        $severity = $this->getEffectiveSeverity($context, $this->options, $primary->pathString(), $primary->startLine, $block->lines);
 
         // Build related locations for SARIF support
         $relatedViolationLocations = array_map(
@@ -95,7 +95,7 @@ final class CodeDuplicationRule extends AbstractRule
 
         return new Violation(
             location: new Location($primary->file, $primary->startLine, precise: true),
-            symbolPath: SymbolPath::forFile($primary->file),
+            symbolPath: SymbolPath::forFile($primary->pathString()),
             ruleName: $this->getName(),
             violationCode: $this->getName(),
             message: $message,

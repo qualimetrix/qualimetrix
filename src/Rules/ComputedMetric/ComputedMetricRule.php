@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Qualimetrix\Rules\ComputedMetric;
 
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinition;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Util\PathNormalizer;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
@@ -209,7 +211,7 @@ final class ComputedMetricRule extends AbstractRule
                 $context->metrics->getNamespaces(),
             ),
             SymbolType::Class_ => array_map(
-                static fn($info) => [$info->symbolPath, new Location($info->file, $info->line)],
+                static fn($info) => [$info->symbolPath, new Location(RelativePath::fromString(PathNormalizer::relativize($info->file)), $info->line)],
                 iterator_to_array($context->metrics->all(SymbolType::Class_), false),
             ),
             default => [],

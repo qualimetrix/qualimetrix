@@ -119,7 +119,7 @@ final readonly class AnalysisResult
         $sorted = $this->violations;
 
         usort($sorted, static function (Violation $a, Violation $b): int {
-            $fileCompare = strcmp($a->location->file, $b->location->file);
+            $fileCompare = strcmp($a->location->pathString(), $b->location->pathString());
             if ($fileCompare !== 0) {
                 return $fileCompare;
             }

@@ -10,6 +10,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Duplication\DuplicateBlock;
 use Qualimetrix\Core\Duplication\DuplicateLocation;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Violation\Severity;
@@ -48,7 +49,7 @@ final class CodeDuplicationRuleTest extends TestCase
             $repository,
             duplicateBlocks: [
                 new DuplicateBlock(
-                    [new DuplicateLocation('a.php', 1, 10), new DuplicateLocation('b.php', 1, 10)],
+                    [new DuplicateLocation(RelativePath::fromString('a.php'), 1, 10), new DuplicateLocation(RelativePath::fromString('b.php'), 1, 10)],
                     10,
                     50,
                 ),
@@ -80,8 +81,8 @@ final class CodeDuplicationRuleTest extends TestCase
             duplicateBlocks: [
                 new DuplicateBlock(
                     locations: [
-                        new DuplicateLocation('src/A.php', 10, 25),
-                        new DuplicateLocation('src/B.php', 30, 45),
+                        new DuplicateLocation(RelativePath::fromString('src/A.php'), 10, 25),
+                        new DuplicateLocation(RelativePath::fromString('src/B.php'), 30, 45),
                     ],
                     lines: 16,
                     tokens: 80,
@@ -95,7 +96,7 @@ final class CodeDuplicationRuleTest extends TestCase
 
         $v = $violations[0];
         self::assertSame('duplication.code-duplication', $v->ruleName);
-        self::assertSame('src/A.php', $v->location->file);
+        self::assertSame('src/A.php', $v->location->pathString());
         self::assertSame(10, $v->location->line);
         self::assertSame(Severity::Warning, $v->severity);
         self::assertSame(16, $v->metricValue);
@@ -115,8 +116,8 @@ final class CodeDuplicationRuleTest extends TestCase
             duplicateBlocks: [
                 new DuplicateBlock(
                     locations: [
-                        new DuplicateLocation('src/A.php', 10, 25),
-                        new DuplicateLocation('src/B.php', 30, 45),
+                        new DuplicateLocation(RelativePath::fromString('src/A.php'), 10, 25),
+                        new DuplicateLocation(RelativePath::fromString('src/B.php'), 30, 45),
                     ],
                     lines: 16,
                     tokens: 80,
@@ -146,8 +147,8 @@ final class CodeDuplicationRuleTest extends TestCase
             duplicateBlocks: [
                 new DuplicateBlock(
                     locations: [
-                        new DuplicateLocation('src/A.php', 10, 25),
-                        new DuplicateLocation('src/B.php', 30, 45),
+                        new DuplicateLocation(RelativePath::fromString('src/A.php'), 10, 25),
+                        new DuplicateLocation(RelativePath::fromString('src/B.php'), 30, 45),
                     ],
                     lines: 16,
                     tokens: 80,
@@ -175,8 +176,8 @@ final class CodeDuplicationRuleTest extends TestCase
             duplicateBlocks: [
                 new DuplicateBlock(
                     locations: [
-                        new DuplicateLocation('a.php', 1, 60),
-                        new DuplicateLocation('b.php', 1, 60),
+                        new DuplicateLocation(RelativePath::fromString('a.php'), 1, 60),
+                        new DuplicateLocation(RelativePath::fromString('b.php'), 1, 60),
                     ],
                     lines: 60,
                     tokens: 300,
@@ -200,12 +201,12 @@ final class CodeDuplicationRuleTest extends TestCase
             $repository,
             duplicateBlocks: [
                 new DuplicateBlock(
-                    [new DuplicateLocation('a.php', 1, 10), new DuplicateLocation('b.php', 1, 10)],
+                    [new DuplicateLocation(RelativePath::fromString('a.php'), 1, 10), new DuplicateLocation(RelativePath::fromString('b.php'), 1, 10)],
                     10,
                     50,
                 ),
                 new DuplicateBlock(
-                    [new DuplicateLocation('c.php', 5, 20), new DuplicateLocation('d.php', 5, 20)],
+                    [new DuplicateLocation(RelativePath::fromString('c.php'), 5, 20), new DuplicateLocation(RelativePath::fromString('d.php'), 5, 20)],
                     16,
                     80,
                 ),
@@ -228,9 +229,9 @@ final class CodeDuplicationRuleTest extends TestCase
             duplicateBlocks: [
                 new DuplicateBlock(
                     locations: [
-                        new DuplicateLocation('a.php', 1, 10),
-                        new DuplicateLocation('b.php', 5, 14),
-                        new DuplicateLocation('c.php', 20, 29),
+                        new DuplicateLocation(RelativePath::fromString('a.php'), 1, 10),
+                        new DuplicateLocation(RelativePath::fromString('b.php'), 5, 14),
+                        new DuplicateLocation(RelativePath::fromString('c.php'), 20, 29),
                     ],
                     lines: 10,
                     tokens: 50,

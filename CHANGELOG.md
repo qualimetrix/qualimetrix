@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - The project's own dogfooding `qmx.yaml` now declares the full 27-layer architecture topology (Core + Configuration + Architecture slice + per-category `metrics-{Category}` template + 10 `analysis-*` sub-layers + 10 `infra-*` sub-layers) that previously lived in `deptrac.yaml`. Sub-layer enforcement (e.g. `analysis-discovery → analysis-pipeline` is now caught) gained, on top of features deptrac never had: per-category metric isolation via template expansion, and a `relations:` filter that permits `infra-di → metrics-*` references but forbids inheritance. ADR 0014.
+- `Violation::$location->$file` is now typed as `?RelativePath` (was `string`). Architecture violations not tied to a single file use `Location::none()` (file is `null`). Wire/comparator surface preserved via `Location::pathString()` and `Location::isNone()` — formatters and JSON output emit the same shape as before, but file paths going *into* `Location` must be project-relative. `WorstOffender::$file` and `DuplicateLocation::$file` migrated similarly; `ParseException::$filePath` now carries `AbsolutePath` (lives at the parser boundary, where absolute paths are the natural representation). ADR 0015 Phase 1a.
 
 ### Removed
 - `deptrac/deptrac` dev-dependency. `composer check` is now `cs-check + test + phpstan + selfcheck`; architecture enforcement runs entirely through Qualimetrix's own `architecture.layer-violation` rule.

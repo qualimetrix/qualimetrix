@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Reporting\Formatter\Support;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
@@ -61,7 +62,7 @@ final class DetailedViolationRendererTest extends TestCase
     {
         $violations = [
             new Violation(
-                location: new Location('src/Foo.php', 10),
+                location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'Foo'),
                 ruleName: 'test',
                 violationCode: 'test.rule',
@@ -69,7 +70,7 @@ final class DetailedViolationRendererTest extends TestCase
                 severity: Severity::Error,
             ),
             new Violation(
-                location: new Location('src/Bar.php', 20),
+                location: new Location(RelativePath::fromString('src/Bar.php'), 20),
                 symbolPath: SymbolPath::forClass('App', 'Bar'),
                 ruleName: 'test',
                 violationCode: 'test.rule',
@@ -91,7 +92,7 @@ final class DetailedViolationRendererTest extends TestCase
     {
         $violations = [
             new Violation(
-                location: new Location('src/Foo.php', 10),
+                location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'Foo'),
                 ruleName: 'test',
                 violationCode: 'test.rule',
@@ -114,7 +115,7 @@ final class DetailedViolationRendererTest extends TestCase
     {
         $violations = [
             new Violation(
-                location: new Location('src/Foo.php', 10),
+                location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'Foo'),
                 ruleName: 'complexity.cyclomatic',
                 violationCode: 'complexity.cyclomatic.method',
@@ -122,7 +123,7 @@ final class DetailedViolationRendererTest extends TestCase
                 severity: Severity::Error,
             ),
             new Violation(
-                location: new Location('src/Bar.php', 5),
+                location: new Location(RelativePath::fromString('src/Bar.php'), 5),
                 symbolPath: SymbolPath::forClass('App', 'Bar'),
                 ruleName: 'size.method-count',
                 violationCode: 'size.method-count',
@@ -143,7 +144,7 @@ final class DetailedViolationRendererTest extends TestCase
     {
         $violations = [
             new Violation(
-                location: new Location('src/Foo.php', 10),
+                location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
                 ruleName: 'complexity.cyclomatic',
                 violationCode: 'complexity.cyclomatic.method',
@@ -166,7 +167,7 @@ final class DetailedViolationRendererTest extends TestCase
     {
         $violations = [
             new Violation(
-                location: new Location('src/Foo.php', 10),
+                location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
                 ruleName: 'complexity.cyclomatic',
                 violationCode: 'complexity.cyclomatic.method',
@@ -187,7 +188,7 @@ final class DetailedViolationRendererTest extends TestCase
     {
         $violations = [
             new Violation(
-                location: new Location('src/Foo.php', 10),
+                location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'Foo'),
                 ruleName: 'test',
                 violationCode: 'test.rule',
@@ -195,7 +196,7 @@ final class DetailedViolationRendererTest extends TestCase
                 severity: Severity::Error,
             ),
             new Violation(
-                location: new Location('src/Foo.php', 20),
+                location: new Location(RelativePath::fromString('src/Foo.php'), 20),
                 symbolPath: SymbolPath::forClass('App', 'Foo'),
                 ruleName: 'test',
                 violationCode: 'test.rule',
@@ -216,7 +217,7 @@ final class DetailedViolationRendererTest extends TestCase
     {
         $violations = [
             new Violation(
-                location: new Location('src/Foo.php', 10),
+                location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'Foo'),
                 ruleName: 'complexity.cyclomatic',
                 violationCode: 'complexity.cyclomatic.method',
@@ -236,7 +237,7 @@ final class DetailedViolationRendererTest extends TestCase
     {
         $violations = [
             new Violation(
-                location: new Location('src/Foo.php', 10),
+                location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
                 ruleName: 'test',
                 violationCode: 'test.rule',
@@ -256,7 +257,7 @@ final class DetailedViolationRendererTest extends TestCase
     {
         $violations = [
             new Violation(
-                location: new Location('src/Foo.php', 10),
+                location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'a'),
                 ruleName: 'complexity.cyclomatic',
                 violationCode: 'complexity.cyclomatic.method',
@@ -264,7 +265,7 @@ final class DetailedViolationRendererTest extends TestCase
                 severity: Severity::Error,
             ),
             new Violation(
-                location: new Location('src/Foo.php', 20),
+                location: new Location(RelativePath::fromString('src/Foo.php'), 20),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'b'),
                 ruleName: 'complexity.cyclomatic',
                 violationCode: 'complexity.cyclomatic.method',
@@ -272,7 +273,7 @@ final class DetailedViolationRendererTest extends TestCase
                 severity: Severity::Error,
             ),
             new Violation(
-                location: new Location('src/Bar.php', 5),
+                location: new Location(RelativePath::fromString('src/Bar.php'), 5),
                 symbolPath: SymbolPath::forClass('App', 'Bar'),
                 ruleName: 'design.lcom',
                 violationCode: 'design.lcom',
@@ -296,7 +297,7 @@ final class DetailedViolationRendererTest extends TestCase
     {
         $displayed = [
             new Violation(
-                location: new Location('src/Foo.php', 10),
+                location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'a'),
                 ruleName: 'complexity.cyclomatic',
                 violationCode: 'complexity.cyclomatic.method',
@@ -306,7 +307,7 @@ final class DetailedViolationRendererTest extends TestCase
         ];
 
         $extra = new Violation(
-            location: new Location('src/Bar.php', 5),
+            location: new Location(RelativePath::fromString('src/Bar.php'), 5),
             symbolPath: SymbolPath::forClass('App', 'Bar'),
             ruleName: 'design.lcom',
             violationCode: 'design.lcom',
@@ -344,24 +345,4 @@ final class DetailedViolationRendererTest extends TestCase
         self::assertStringContainsString('[project]', $output);
     }
 
-    #[Test]
-    public function itRelativizesPathsWithBasePath(): void
-    {
-        $violations = [
-            new Violation(
-                location: new Location('/home/user/project/src/Foo.php', 10),
-                symbolPath: SymbolPath::forClass('App', 'Foo'),
-                ruleName: 'test',
-                violationCode: 'test',
-                message: 'Test',
-                severity: Severity::Error,
-            ),
-        ];
-
-        $context = new FormatterContext(useColor: false, basePath: '/home/user/project');
-        $output = $this->renderer->render($violations, $context);
-
-        self::assertStringContainsString('src/Foo.php', $output);
-        self::assertStringNotContainsString('/home/user/project/', $output);
-    }
 }

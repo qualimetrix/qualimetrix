@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Reporting\Formatter;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
@@ -57,7 +58,7 @@ final class TextVerboseFormatterTest extends TestCase
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
-                location: new Location('src/Foo.php', 42),
+                location: new Location(RelativePath::fromString('src/Foo.php'), 42),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
                 ruleName: 'complexity.cyclomatic',
                 violationCode: 'complexity.cyclomatic.method',
@@ -159,7 +160,7 @@ final class TextVerboseFormatterTest extends TestCase
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
-                location: new Location('src/Foo.php', 42),
+                location: new Location(RelativePath::fromString('src/Foo.php'), 42),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
                 ruleName: 'complexity.cyclomatic',
                 violationCode: 'complexity.cyclomatic.method',
@@ -184,7 +185,7 @@ final class TextVerboseFormatterTest extends TestCase
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
-                location: new Location('src/Foo.php', 42),
+                location: new Location(RelativePath::fromString('src/Foo.php'), 42),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
                 ruleName: 'complexity.cyclomatic',
                 violationCode: 'complexity.cyclomatic.method',
@@ -208,7 +209,7 @@ final class TextVerboseFormatterTest extends TestCase
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
-                location: new Location('src/Foo.php', 10),
+                location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'doWork'),
                 ruleName: 'complexity.cyclomatic',
                 violationCode: 'complexity.cyclomatic',
@@ -217,7 +218,7 @@ final class TextVerboseFormatterTest extends TestCase
                 metricValue: 25,
             ))
             ->addViolation(new Violation(
-                location: new Location('src/Foo.php', 20),
+                location: new Location(RelativePath::fromString('src/Foo.php'), 20),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'process'),
                 ruleName: 'complexity.cyclomatic',
                 violationCode: 'complexity.cyclomatic',
@@ -226,7 +227,7 @@ final class TextVerboseFormatterTest extends TestCase
                 metricValue: 15,
             ))
             ->addViolation(new Violation(
-                location: new Location('src/Bar.php', 5),
+                location: new Location(RelativePath::fromString('src/Bar.php'), 5),
                 symbolPath: SymbolPath::forClass('App', 'Bar'),
                 ruleName: 'design.lcom',
                 violationCode: 'design.lcom',
@@ -252,7 +253,7 @@ final class TextVerboseFormatterTest extends TestCase
     {
         return ReportBuilder::create()
             ->addViolation(new Violation(
-                location: new Location('b.php', 20),
+                location: new Location(RelativePath::fromString('b.php'), 20),
                 symbolPath: SymbolPath::forClass('App', 'B'),
                 ruleName: 'lcom',
                 violationCode: 'lcom',
@@ -260,7 +261,7 @@ final class TextVerboseFormatterTest extends TestCase
                 severity: Severity::Warning,
             ))
             ->addViolation(new Violation(
-                location: new Location('a.php', 10),
+                location: new Location(RelativePath::fromString('a.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A1'),
                 ruleName: 'complexity',
                 violationCode: 'complexity.method',
@@ -268,7 +269,7 @@ final class TextVerboseFormatterTest extends TestCase
                 severity: Severity::Error,
             ))
             ->addViolation(new Violation(
-                location: new Location('a.php', 5),
+                location: new Location(RelativePath::fromString('a.php'), 5),
                 symbolPath: SymbolPath::forClass('App', 'A2'),
                 ruleName: 'complexity',
                 violationCode: 'complexity.class',

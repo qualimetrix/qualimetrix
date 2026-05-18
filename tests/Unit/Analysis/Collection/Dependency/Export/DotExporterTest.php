@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Collection\Dependency\Export\DotExporter;
 use Qualimetrix\Analysis\Collection\Dependency\Export\DotExporterOptions;
 use Qualimetrix\Core\Dependency\Dependency;
 use Qualimetrix\Core\Dependency\DependencyType;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 
@@ -24,13 +25,13 @@ final class DotExporterTest extends TestCase
                 SymbolPath::fromClassFqn('App\\ServiceA'),
                 SymbolPath::fromClassFqn('App\\ServiceB'),
                 DependencyType::TypeHint,
-                new Location('/test/file.php', 10),
+                new Location(RelativePath::fromString('test/file.php'), 10),
             ),
             new Dependency(
                 SymbolPath::fromClassFqn('App\\ServiceB'),
                 SymbolPath::fromClassFqn('App\\ServiceC'),
                 DependencyType::TypeHint,
-                new Location('/test/file.php', 20),
+                new Location(RelativePath::fromString('test/file.php'), 20),
             ),
         ];
 
@@ -51,7 +52,7 @@ final class DotExporterTest extends TestCase
                 SymbolPath::fromClassFqn('App\\Service\\UserService'),
                 SymbolPath::fromClassFqn('App\\Repository\\UserRepository'),
                 DependencyType::TypeHint,
-                new Location('/test/file.php', 10),
+                new Location(RelativePath::fromString('test/file.php'), 10),
             ),
         ];
 
@@ -72,7 +73,7 @@ final class DotExporterTest extends TestCase
                 SymbolPath::fromClassFqn('App\\Very\\Long\\Namespace\\UserService'),
                 SymbolPath::fromClassFqn('App\\Very\\Long\\Namespace\\UserRepository'),
                 DependencyType::TypeHint,
-                new Location('/test/file.php', 10),
+                new Location(RelativePath::fromString('test/file.php'), 10),
             ),
         ];
 
@@ -92,7 +93,7 @@ final class DotExporterTest extends TestCase
                 SymbolPath::fromClassFqn('App\\UserService'),
                 SymbolPath::fromClassFqn('App\\UserRepository'),
                 DependencyType::TypeHint,
-                new Location('/test/file.php', 10),
+                new Location(RelativePath::fromString('test/file.php'), 10),
             ),
         ];
 
@@ -115,7 +116,7 @@ final class DotExporterTest extends TestCase
                 SymbolPath::fromClassFqn('App\\Service\\UserService'),
                 SymbolPath::fromClassFqn('App\\Repository\\UserRepository'),
                 DependencyType::TypeHint,
-                new Location('/test/file.php', 10),
+                new Location(RelativePath::fromString('test/file.php'), 10),
             ),
         ];
 
@@ -139,7 +140,7 @@ final class DotExporterTest extends TestCase
                 SymbolPath::fromClassFqn('App\\Service\\UserService'),
                 SymbolPath::fromClassFqn('App\\Repository\\UserRepository'),
                 DependencyType::TypeHint,
-                new Location('/test/file.php', 10),
+                new Location(RelativePath::fromString('test/file.php'), 10),
             ),
         ];
 
@@ -163,7 +164,7 @@ final class DotExporterTest extends TestCase
                 SymbolPath::fromClassFqn('App\\Class"With"Quotes'),
                 SymbolPath::fromClassFqn('App\\Another'),
                 DependencyType::TypeHint,
-                new Location('/test/file.php', 10),
+                new Location(RelativePath::fromString('test/file.php'), 10),
             ),
         ];
 
@@ -185,13 +186,13 @@ final class DotExporterTest extends TestCase
                 SymbolPath::fromClassFqn('App\\Service\\Foo'),
                 SymbolPath::fromClassFqn('App\\Service\\Bar'),
                 DependencyType::TypeHint,
-                new Location('/test/file.php', 10),
+                new Location(RelativePath::fromString('test/file.php'), 10),
             ),
             new Dependency(
                 SymbolPath::fromClassFqn('App\\Tests\\FooTest'),
                 SymbolPath::fromClassFqn('App\\Service\\Foo'),
                 DependencyType::TypeHint,
-                new Location('/test/file.php', 20),
+                new Location(RelativePath::fromString('test/file.php'), 20),
             ),
         ];
 
@@ -214,13 +215,13 @@ final class DotExporterTest extends TestCase
                 SymbolPath::fromClassFqn('App\\Service\\Foo'),
                 SymbolPath::fromClassFqn('App\\Service\\Bar'),
                 DependencyType::TypeHint,
-                new Location('/test/file.php', 10),
+                new Location(RelativePath::fromString('test/file.php'), 10),
             ),
             new Dependency(
                 SymbolPath::fromClassFqn('App\\Tests\\FooTest'),
                 SymbolPath::fromClassFqn('App\\Service\\Foo'),
                 DependencyType::TypeHint,
-                new Location('/test/file.php', 20),
+                new Location(RelativePath::fromString('test/file.php'), 20),
             ),
         ];
 
@@ -243,7 +244,7 @@ final class DotExporterTest extends TestCase
                 SymbolPath::fromClassFqn('App\\Stable'),
                 SymbolPath::fromClassFqn('App\\Unstable'),
                 DependencyType::TypeHint,
-                new Location('/test/file.php', 10),
+                new Location(RelativePath::fromString('test/file.php'), 10),
             ),
         ];
 
@@ -263,7 +264,7 @@ final class DotExporterTest extends TestCase
                 SymbolPath::fromClassFqn('App\\ServiceA'),
                 SymbolPath::fromClassFqn('App\\ServiceB'),
                 DependencyType::TypeHint,
-                new Location('/test/file.php', 10),
+                new Location(RelativePath::fromString('test/file.php'), 10),
             ),
         ];
 
@@ -282,7 +283,7 @@ final class DotExporterTest extends TestCase
                 SymbolPath::fromClassFqn('App\\ServiceA'),
                 SymbolPath::fromClassFqn('App\\ServiceB'),
                 DependencyType::TypeHint,
-                new Location('/test/file.php', 10),
+                new Location(RelativePath::fromString('test/file.php'), 10),
             ),
         ];
 
@@ -326,7 +327,7 @@ final class DotExporterTest extends TestCase
                 SymbolPath::fromClassFqn('App\\Service\\Foo'),
                 SymbolPath::fromClassFqn('App\\Tests\\FooTest'),
                 DependencyType::TypeHint,
-                new Location('/test/file.php', 10),
+                new Location(RelativePath::fromString('test/file.php'), 10),
             ),
         ];
 

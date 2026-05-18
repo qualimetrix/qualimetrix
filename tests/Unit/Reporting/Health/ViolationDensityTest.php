@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
@@ -272,7 +273,7 @@ final class ViolationDensityTest extends TestCase
         $violations = [];
         for ($i = 0; $i < $count; $i++) {
             $violations[] = new Violation(
-                location: new Location("src/{$class}.php", $i + 1),
+                location: new Location(RelativePath::fromString("src/{$class}.php"), $i + 1),
                 symbolPath: SymbolPath::forClass($namespace, $class),
                 ruleName: 'complexity.cyclomatic',
                 violationCode: 'complexity.cyclomatic.method',

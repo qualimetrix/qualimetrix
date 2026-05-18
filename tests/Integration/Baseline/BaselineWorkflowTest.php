@@ -11,6 +11,7 @@ use Qualimetrix\Baseline\BaselineLoader;
 use Qualimetrix\Baseline\BaselineWriter;
 use Qualimetrix\Baseline\Filter\BaselineFilter;
 use Qualimetrix\Baseline\ViolationHasher;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
@@ -59,7 +60,7 @@ final class BaselineWorkflowTest extends TestCase
                 message: 'Complexity 15 exceeds threshold 10',
                 severity: Severity::Warning,
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculateDiscount'),
-                location: new Location(__FILE__, 45),
+                location: new Location(RelativePath::fromString(basename(__FILE__)), 45),
             ),
             new Violation(
                 ruleName: 'size',
@@ -67,7 +68,7 @@ final class BaselineWorkflowTest extends TestCase
                 message: 'Class has 300 lines of code',
                 severity: Severity::Warning,
                 symbolPath: SymbolPath::forClass('App\Service', 'UserService'),
-                location: new Location(__FILE__, 1),
+                location: new Location(RelativePath::fromString(basename(__FILE__)), 1),
             ),
         ];
 
@@ -108,7 +109,7 @@ final class BaselineWorkflowTest extends TestCase
             message: 'Complexity 25 exceeds threshold 10',
             severity: Severity::Error,
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'processOrder'),
-            location: new Location(__FILE__, 100),
+            location: new Location(RelativePath::fromString(basename(__FILE__)), 100),
         );
 
         // New violation should NOT be filtered
@@ -129,7 +130,7 @@ final class BaselineWorkflowTest extends TestCase
                 message: 'Complexity 15 exceeds threshold 10',
                 severity: Severity::Warning,
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'method1'),
-                location: new Location(__FILE__, 10),
+                location: new Location(RelativePath::fromString(basename(__FILE__)), 10),
             ),
             new Violation(
                 ruleName: 'complexity',
@@ -137,7 +138,7 @@ final class BaselineWorkflowTest extends TestCase
                 message: 'Complexity 20 exceeds threshold 10',
                 severity: Severity::Warning,
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'method2'),
-                location: new Location(__FILE__, 20),
+                location: new Location(RelativePath::fromString(basename(__FILE__)), 20),
             ),
         ];
 
@@ -158,7 +159,7 @@ final class BaselineWorkflowTest extends TestCase
                 message: 'Complexity 15 exceeds threshold 10',
                 severity: Severity::Warning,
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'method1'),
-                location: new Location(__FILE__, 10),
+                location: new Location(RelativePath::fromString(basename(__FILE__)), 10),
             ),
         ];
 
@@ -184,7 +185,7 @@ final class BaselineWorkflowTest extends TestCase
                 message: 'File has 500 lines',
                 severity: Severity::Warning,
                 symbolPath: SymbolPath::forFile('src/Service.php'),
-                location: new Location('src/Service.php', 1),
+                location: new Location(RelativePath::fromString('src/Service.php'), 1),
             ),
             new Violation(
                 ruleName: 'complexity',
@@ -192,7 +193,7 @@ final class BaselineWorkflowTest extends TestCase
                 message: 'Complexity 15',
                 severity: Severity::Warning,
                 symbolPath: SymbolPath::forMethod('App\Service', 'Service', 'handle'),
-                location: new Location('src/Service.php', 10),
+                location: new Location(RelativePath::fromString('src/Service.php'), 10),
             ),
         ];
 
@@ -231,7 +232,7 @@ final class BaselineWorkflowTest extends TestCase
             message: 'Complexity 15 exceeds threshold 10',
             severity: Severity::Warning,
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
-            location: new Location(__FILE__, 45),
+            location: new Location(RelativePath::fromString(basename(__FILE__)), 45),
         );
 
         $violation2 = new Violation(
@@ -240,7 +241,7 @@ final class BaselineWorkflowTest extends TestCase
             message: 'Complexity 15 exceeds threshold 10',
             severity: Severity::Warning,
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
-            location: new Location(__FILE__, 100), // Different line
+            location: new Location(RelativePath::fromString(basename(__FILE__)), 100), // Different line
         );
 
         // Hashes should be identical (line drift stability)
@@ -259,7 +260,7 @@ final class BaselineWorkflowTest extends TestCase
             message: 'Complexity 15 exceeds threshold 10',
             severity: Severity::Warning,
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
-            location: new Location(__FILE__, 45),
+            location: new Location(RelativePath::fromString(basename(__FILE__)), 45),
         );
 
         $violation2 = new Violation(
@@ -268,7 +269,7 @@ final class BaselineWorkflowTest extends TestCase
             message: 'Complexity 25 exceeds threshold 20', // Different values
             severity: Severity::Warning,
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
-            location: new Location(__FILE__, 45),
+            location: new Location(RelativePath::fromString(basename(__FILE__)), 45),
         );
 
         // Hashes should be identical (value normalization)
@@ -286,7 +287,7 @@ final class BaselineWorkflowTest extends TestCase
             message: 'Complexity 15 exceeds threshold 10',
             severity: Severity::Warning,
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
-            location: new Location(__FILE__, 45),
+            location: new Location(RelativePath::fromString(basename(__FILE__)), 45),
         );
 
         $violation2 = new Violation(
@@ -295,7 +296,7 @@ final class BaselineWorkflowTest extends TestCase
             message: 'Complexity 15 exceeds threshold 10',
             severity: Severity::Warning,
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'compute'), // Different method
-            location: new Location(__FILE__, 45),
+            location: new Location(RelativePath::fromString(basename(__FILE__)), 45),
         );
 
         // Hashes should be different (method name changed)

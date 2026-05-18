@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Qualimetrix\Rules\CodeSmell;
 
 use Qualimetrix\Core\Metric\MetricName;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Util\PathNormalizer;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
@@ -113,7 +115,7 @@ final class LongParameterListRule extends AbstractRule
             $threshold = $severity === Severity::Error ? $options->voError : $options->voWarning;
 
             return new Violation(
-                location: new Location($symbolInfo->file, $symbolInfo->line),
+                location: new Location(RelativePath::fromString(PathNormalizer::relativize($symbolInfo->file)), $symbolInfo->line),
                 symbolPath: $symbolInfo->symbolPath,
                 ruleName: $this->getName(),
                 violationCode: self::NAME,
@@ -137,7 +139,7 @@ final class LongParameterListRule extends AbstractRule
         $kind = $symbolType === SymbolType::Function_ ? 'Function' : 'Method';
 
         return new Violation(
-            location: new Location($symbolInfo->file, $symbolInfo->line),
+            location: new Location(RelativePath::fromString(PathNormalizer::relativize($symbolInfo->file)), $symbolInfo->line),
             symbolPath: $symbolInfo->symbolPath,
             ruleName: $this->getName(),
             violationCode: self::NAME,

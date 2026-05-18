@@ -8,6 +8,7 @@ use DOMDocument;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
@@ -76,7 +77,7 @@ final class CheckstyleFormatterTest extends TestCase
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
-                location: new Location('src/Service/UserService.php', 42),
+                location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculateDiscount'),
                 ruleName: 'cyclomatic-complexity',
                 violationCode: 'cyclomatic-complexity',
@@ -85,7 +86,7 @@ final class CheckstyleFormatterTest extends TestCase
                 metricValue: 25,
             ))
             ->addViolation(new Violation(
-                location: new Location('src/Service/UserService.php', 120),
+                location: new Location(RelativePath::fromString('src/Service/UserService.php'), 120),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'processOrder'),
                 ruleName: 'cyclomatic-complexity',
                 violationCode: 'cyclomatic-complexity',
@@ -131,7 +132,7 @@ final class CheckstyleFormatterTest extends TestCase
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
-                location: new Location('src/A.php', 10),
+                location: new Location(RelativePath::fromString('src/A.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'test',
                 violationCode: 'test',
@@ -139,7 +140,7 @@ final class CheckstyleFormatterTest extends TestCase
                 severity: Severity::Error,
             ))
             ->addViolation(new Violation(
-                location: new Location('src/B.php', 20),
+                location: new Location(RelativePath::fromString('src/B.php'), 20),
                 symbolPath: SymbolPath::forClass('App', 'B'),
                 ruleName: 'test',
                 violationCode: 'test',
@@ -147,7 +148,7 @@ final class CheckstyleFormatterTest extends TestCase
                 severity: Severity::Error,
             ))
             ->addViolation(new Violation(
-                location: new Location('src/A.php', 30),
+                location: new Location(RelativePath::fromString('src/A.php'), 30),
                 symbolPath: SymbolPath::forClass('App', 'A2'),
                 ruleName: 'test',
                 violationCode: 'test',
@@ -187,7 +188,7 @@ final class CheckstyleFormatterTest extends TestCase
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
-                location: new Location('src/Service/UserService.php'),
+                location: new Location(RelativePath::fromString('src/Service/UserService.php')),
                 symbolPath: SymbolPath::forNamespace('App\Service'),
                 ruleName: 'namespace-size',
                 violationCode: 'namespace-size',
@@ -217,7 +218,7 @@ final class CheckstyleFormatterTest extends TestCase
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
-                location: new Location('src/Test.php', 10),
+                location: new Location(RelativePath::fromString('src/Test.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'Test'),
                 ruleName: 'test-rule',
                 violationCode: 'test-rule',
@@ -253,7 +254,7 @@ final class CheckstyleFormatterTest extends TestCase
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
-                location: new Location('src/Foo.php', 10),
+                location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
                 ruleName: 'complexity',
                 violationCode: 'complexity.method',
@@ -294,7 +295,7 @@ final class CheckstyleFormatterTest extends TestCase
     {
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
-                location: new Location('src/Service/UserService.php', 7),
+                location: new Location(RelativePath::fromString('src/Service/UserService.php'), 7),
                 symbolPath: SymbolPath::forClass('App\Service', 'UserService'),
                 ruleName: 'architecture.coverage',
                 violationCode: 'architecture.coverage',
@@ -314,29 +315,4 @@ final class CheckstyleFormatterTest extends TestCase
         self::assertSame('info', $error->getAttribute('severity'));
     }
 
-    #[Test]
-    public function itRelativizesPathsWithBasePath(): void
-    {
-        $report = ReportBuilder::create()
-            ->addViolation(new Violation(
-                location: new Location('/home/user/project/src/Service/UserService.php', 42),
-                symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
-                ruleName: 'cyclomatic-complexity',
-                violationCode: 'cyclomatic-complexity',
-                message: 'Too complex',
-                severity: Severity::Error,
-            ))
-            ->filesAnalyzed(1)
-            ->filesSkipped(0)
-            ->duration(0.1)
-            ->build();
-
-        $context = new FormatterContext(basePath: '/home/user/project');
-        $output = $this->formatter->format($report, $context);
-        $xml = $this->parseXml($output);
-
-        $file = $xml->getElementsByTagName('file')->item(0);
-        self::assertNotNull($file);
-        self::assertSame('src/Service/UserService.php', $file->getAttribute('name'));
-    }
 }

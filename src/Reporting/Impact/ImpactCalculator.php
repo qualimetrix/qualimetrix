@@ -79,7 +79,7 @@ final readonly class ImpactCalculator
             }
 
             // Secondary: file ascending
-            $cmp = $a->violation->location->file <=> $b->violation->location->file;
+            $cmp = $a->violation->location->pathString() <=> $b->violation->location->pathString();
             if ($cmp !== 0) {
                 return $cmp;
             }

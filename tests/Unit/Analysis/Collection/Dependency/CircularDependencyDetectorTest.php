@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Collection\Dependency\CircularDependencyDetector;
 use Qualimetrix\Analysis\Collection\Dependency\DependencyGraph;
 use Qualimetrix\Core\Dependency\Dependency;
 use Qualimetrix\Core\Dependency\DependencyType;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 
@@ -197,7 +198,7 @@ final class CircularDependencyDetectorTest extends TestCase
                     source: $sourcePath,
                     target: $targetPath,
                     type: DependencyType::TypeHint,
-                    location: new Location('test.php', 1),
+                    location: new Location(RelativePath::fromString('test.php'), 1),
                 );
 
                 $dependencies[] = $dep;

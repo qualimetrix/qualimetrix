@@ -19,6 +19,7 @@ use Qualimetrix\Architecture\Processing\ArchitectureProcessorInterface;
 use Qualimetrix\Architecture\Rules\LayerViolationRule;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\HierarchicalRuleOptionsInterface;
@@ -28,6 +29,7 @@ use Qualimetrix\Core\Suppression\ThresholdDiagnostic;
 use Qualimetrix\Core\Suppression\ThresholdOverride;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Util\PathNormalizer;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
@@ -247,7 +249,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
 
                 if (!$this->overrideMatchesSupportedRule($override, $supportedRules)) {
                     $violations[] = new Violation(
-                        location: new Location($file, $override->line, precise: true),
+                        location: new Location(RelativePath::fromString(PathNormalizer::relativize($file)), $override->line, precise: true),
                         symbolPath: SymbolPath::forFile($file),
                         ruleName: 'annotation.unsupported-threshold',
                         violationCode: 'annotation.unsupported-threshold',
@@ -364,7 +366,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
                     : 'annotation.invalid-threshold';
 
                 $violations[] = new Violation(
-                    location: new Location($file, $diagnostic->line, precise: true),
+                    location: new Location(RelativePath::fromString(PathNormalizer::relativize($file)), $diagnostic->line, precise: true),
                     symbolPath: SymbolPath::forFile($file),
                     ruleName: 'annotation.invalid-threshold',
                     violationCode: $violationCode,

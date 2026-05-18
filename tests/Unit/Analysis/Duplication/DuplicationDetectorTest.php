@@ -13,6 +13,7 @@ use Qualimetrix\Analysis\Duplication\TokenNormalizer;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Core\Duplication\DuplicateBlock;
 use Qualimetrix\Core\Duplication\DuplicateLocation;
+use Qualimetrix\Core\Path\RelativePath;
 use SplFileInfo;
 
 #[CoversClass(DuplicationDetector::class)]
@@ -258,24 +259,24 @@ PHP;
     {
         $block = new DuplicateBlock(
             locations: [
-                new DuplicateLocation('a.php', 10, 20),
-                new DuplicateLocation('b.php', 30, 40),
-                new DuplicateLocation('c.php', 50, 60),
+                new DuplicateLocation(RelativePath::fromString('a.php'), 10, 20),
+                new DuplicateLocation(RelativePath::fromString('b.php'), 30, 40),
+                new DuplicateLocation(RelativePath::fromString('c.php'), 50, 60),
             ],
             lines: 11,
             tokens: 50,
         );
 
         self::assertSame(3, $block->occurrences());
-        self::assertSame('a.php', $block->primaryLocation()->file);
+        self::assertSame('a.php', $block->primaryLocation()->file->value());
         self::assertCount(2, $block->relatedLocations());
-        self::assertSame('b.php', $block->relatedLocations()[0]->file);
+        self::assertSame('b.php', $block->relatedLocations()[0]->file->value());
     }
 
     #[Test]
     public function itExercisesDuplicateLocationVo(): void
     {
-        $loc = new DuplicateLocation('src/Foo.php', 10, 25);
+        $loc = new DuplicateLocation(RelativePath::fromString('src/Foo.php'), 10, 25);
 
         self::assertSame(16, $loc->lineCount());
         self::assertSame('src/Foo.php:10-25', $loc->toString());
