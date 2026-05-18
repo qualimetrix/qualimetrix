@@ -41,10 +41,13 @@ adopt it everywhere except raw I/O boundaries:
 - `RelativePath` — POSIX relative path, `final readonly`, validates on
   construction (must not start with `/`, must not be empty, must not
   resolve to a leading `..` after lexical normalization — the in-base
-  invariant). Operations: `resolveAgainst(AbsolutePath): AbsolutePath`,
-  segment-based `startsWith(self): bool`, `withoutPrefix(self): self` /
-  `tryWithoutPrefix(): ?self`, `join(self): self`, `segments() /
-  parent() / basename() / extension()`.
+  invariant). Operations: segment-based `startsWith(self): bool`,
+  `withoutPrefix(self): self` / `tryWithoutPrefix(): ?self`,
+  `join(self): self`, `segments() / parent() / basename() /
+  extension()`. **No method references {@see AbsolutePath}** — the
+  conversion path uses `AbsolutePath::joinRelative(RelativePath)` so
+  the VO stays a one-way dependency leaf (avoids a 2-class cycle the
+  selfcheck flags as `architecture.circular-dependency` ERROR).
 
 Both VOs implement explicit `__serialize`/`__unserialize` returning
 `['value' => string]`, pinning the wire format independently of internal

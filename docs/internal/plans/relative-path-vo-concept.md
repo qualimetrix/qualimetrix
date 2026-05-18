@@ -71,7 +71,6 @@ fromString(string $value): self            // throws if absolute, empty, pure '.
 value(): string                            // raw normalized POSIX string, no leading './'
 __toString(): string                       // explicit (string)-cast form
 equals(self $other): bool
-resolveAgainst(AbsolutePath $base): AbsolutePath
 startsWith(self $prefix): bool             // segment-based, NOT str_starts_with — 'foobar' does not start with 'foo'
 withoutPrefix(self $prefix): self          // throws if !$this->startsWith($prefix)
 tryWithoutPrefix(self $prefix): ?self      // null on no-match; preferred form when both branches are valid

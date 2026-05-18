@@ -55,8 +55,12 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Qualimetrix\\Tests\\": "tests/"
-        }
+            "Qualimetrix\\Tests\\": "tests/",
+            "Qualimetrix\\PhpStan\\": "tools/phpstan/"
+        },
+        "classmap": [
+            "tests/Unit/PhpStan/Rules/data/"
+        ]
     },
     "bin": [
         "bin/qmx"
@@ -65,7 +69,7 @@
         "post-install-cmd": "@setup-hooks",
         "post-update-cmd": "@setup-hooks",
         "setup-hooks": "git config core.hooksPath .githooks || true",
-        "test": "phpunit --no-coverage",
+        "test": "phpunit --no-coverage --exclude-group=benchmark",
         "test:coverage": "phpunit --coverage-html coverage",
         "phpstan": "phpstan analyse --memory-limit=512M",
         "test:js": "cd src/Reporting/Template && npm test",

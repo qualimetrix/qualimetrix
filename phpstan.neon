@@ -14,6 +14,7 @@ parameters:
     excludePaths:
         - tests/Fixtures
         - tests/Architecture/Fixtures
+        - tests/Unit/PhpStan/Rules/data
     tmpDir: .phpstan.cache
     reportUnmatchedIgnoredErrors: true
     treatPhpDocTypesAsCertain: false
