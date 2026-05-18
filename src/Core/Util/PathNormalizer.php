@@ -9,6 +9,9 @@ namespace Qualimetrix\Core\Util;
  *
  * Ensures consistent canonical keys in baseline regardless of whether the user
  * passes absolute paths, ./src/, or src/ to the CLI.
+ *
+ * @internal Superseded by {@see \Qualimetrix\Core\Path\PathFactory}. Slated for removal
+ *           in the final phase of ADR 0015; new call sites should use the typed VOs.
  */
 final class PathNormalizer
 {
